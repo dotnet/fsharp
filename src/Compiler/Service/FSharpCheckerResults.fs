@@ -242,6 +242,8 @@ type FSharpSymbolUse(denv: DisplayEnv, symbol: FSharpSymbol, inst: TyparInstanti
 
     member _.IsFromDispatchSlotImplementation = itemOcc = ItemOccurence.Implemented
 
+    member _.IsFromUse = itemOcc = ItemOccurence.Use
+
     member _.IsFromComputationExpression =
         match symbol.Item, itemOcc with
         // 'seq' in 'seq { ... }' gets colored as keywords
@@ -259,11 +261,25 @@ type FSharpSymbolUse(denv: DisplayEnv, symbol: FSharpSymbol, inst: TyparInstanti
     member this.IsPrivateToFile =
         let isPrivate =
             match this.Symbol with
-            | :? FSharpMemberOrFunctionOrValue as m -> not m.IsModuleValueOrMember || m.Accessibility.IsPrivate
+            | :? FSharpMemberOrFunctionOrValue as m ->
+                let fileSignatureLocation =
+                    m.DeclaringEntity |> Option.bind (fun e -> e.SignatureLocation)
+
+                let fileDeclarationLocation =
+                    m.DeclaringEntity |> Option.map (fun e -> e.DeclarationLocation)
+
+                let fileHasSignatureFile = fileSignatureLocation <> fileDeclarationLocation
+
+                let symbolIsNotInSignatureFile = m.SignatureLocation = Some m.DeclarationLocation
+
+                fileHasSignatureFile && symbolIsNotInSignatureFile
+                || not m.IsModuleValueOrMember
+                || m.Accessibility.IsPrivate
             | :? FSharpEntity as m -> m.Accessibility.IsPrivate
             | :? FSharpGenericParameter -> true
             | :? FSharpUnionCase as m -> m.Accessibility.IsPrivate
             | :? FSharpField as m -> m.Accessibility.IsPrivate
+            | :? FSharpActivePatternCase as m -> m.Accessibility.IsPrivate
             | _ -> false
 
         let declarationLocation =
@@ -2331,6 +2347,7 @@ module internal ParseAndCheckFile =
 
     let parseFile (sourceText: ISourceText, fileName, options: FSharpParsingOptions, userOpName: string, suggestNamesForErrors: bool) =
         Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "parseFile", fileName)
+        use act = Activity.start "ParseAndCheckFile.parseFile" [| "fileName", fileName |]
 
         let errHandler =
             DiagnosticsHandler(true, fileName, options.DiagnosticOptions, sourceText, suggestNamesForErrors)
@@ -2486,7 +2503,8 @@ module internal ParseAndCheckFile =
         ) =
 
         cancellable {
-            use _logBlock = Logger.LogBlock LogCompilerFunctionId.Service_CheckOneFile
+            use _ =
+                Activity.start "ParseAndCheckFile.CheckOneFile" [| "fileName", mainInputFileName; "length", sourceText.Length.ToString() |]
 
             let parsedMainInput = parseResults.ParseTree
 

@@ -159,8 +159,25 @@
   <data name="6008" xml:space="preserve">
     <value>IntelliSense</value>
   </data>
+  <data name="IntelliSensePageKeywords" xml:space="preserve">
+    <value>Completion Lists;
+Show completion list after a character is deleted;
+Show completion list after a character is typed;
+Show symbols in unopened namespaces;
+Enter key behavior;
+Never add new line on enter;
+Only add new line on enter after end of fully typed word;
+Always add new line on enter;</value>
+  </data>
   <data name="6009" xml:space="preserve">
     <value>QuickInfo</value>
+  </data>
+  <data name="QuickInfoPageKeywords" xml:space="preserve">
+    <value>Navigation links;
+Show navigation links as;
+Solid underline;
+Dot underline;
+Dash underline;</value>
   </data>
   <data name="AddAssemblyReference" xml:space="preserve">
     <value>Add an assembly reference to '{0}'</value>
@@ -171,17 +188,44 @@
   <data name="6010" xml:space="preserve">
     <value>Code Fixes</value>
   </data>
+  <data name="CodeFixesPageKeywords" xml:space="preserve">
+    <value>Simplify names (remove unnecessary qualifiers);
+Always place open statements at the top level;
+Remove unused open statements;
+Analyze and suggest fixes for unused values;
+Suggest names for unresolved identifiers;</value>
+  </data>
   <data name="6011" xml:space="preserve">
     <value>Performance</value>
+  </data>
+  <data name="PerformancePageKeywords" xml:space="preserve">
+    <value>F# Project and Caching Performance Options;
+Enable in-memory cross project references;
+IntelliSense Performance Options;
+Enable stale data for IntelliSense features;
+Time until stale results are used (in milliseconds);
+Parallelization (requires restart);
+Enable parallel type checking with signature files;
+Enable parallel reference resolution;
+Enable fast find references &amp; rename (experimental)</value>
   </data>
   <data name="6012" xml:space="preserve">
     <value>Advanced</value>
   </data>
-  <data name="6013" xml:space="preserve">
-    <value>Lens</value>
+  <data name="AdvancedPageKeywords" xml:space="preserve">
+    <value>Block Structure Guides;
+Show structure guidelines for F# code;
+Outlining;
+Show outlining and collapsible nodes for F# code;
+Inline hints;
+Display inline type hints (experimental);
+Display inline parameter name hints (experimental);Beer</value>
   </data>
   <data name="6014" xml:space="preserve">
     <value>Formatting</value>
+  </data>
+  <data name="FormattingPageKeywords" xml:space="preserve">
+    <value>Re-format indentation on paste (Experimental)</value>
   </data>
   <data name="TheValueIsUnused" xml:space="preserve">
     <value>The value is unused</value>

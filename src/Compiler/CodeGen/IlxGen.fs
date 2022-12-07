@@ -611,7 +611,10 @@ let GenReadOnlyAttribute (g: TcGlobals) =
     mkILCustomAttribute (g.attrib_IsReadOnlyAttribute.TypeRef, [], [], [])
 
 let GenReadOnlyAttributeIfNecessary (g: TcGlobals) ty =
-    let add = isInByrefTy g ty && g.attrib_IsReadOnlyAttribute.TyconRef.CanDeref
+    let add =
+        g.isSystem_Runtime_CompilerServices_IsReadOnlyAttributeAvailable
+        && isInByrefTy g ty
+        && g.attrib_IsReadOnlyAttribute.TyconRef.CanDeref
 
     if add then
         let attr = GenReadOnlyAttribute g
@@ -2120,7 +2123,11 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
             let ilMethods =
                 [
                     for propName, fldName, fldTy in flds ->
-                        let attrs = if isStruct then [ GenReadOnlyAttribute g ] else []
+                        let attrs =
+                            if g.isSystem_Runtime_CompilerServices_IsReadOnlyAttributeAvailable && isStruct then
+                                [ GenReadOnlyAttribute g ]
+                            else
+                                []
 
                         mkLdfldMethodDef ("get_" + propName, ILMemberAccess.Public, false, ilTy, fldName, fldTy, attrs)
                         |> g.AddMethodGeneratedAttributes
@@ -10878,7 +10885,11 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                             let isStruct = isStructTyconRef tcref
 
                             let attrs =
-                                if isStruct && not isStatic then
+                                if
+                                    g.isSystem_Runtime_CompilerServices_IsReadOnlyAttributeAvailable
+                                    && isStruct
+                                    && not isStatic
+                                then
                                     [ GenReadOnlyAttribute g ]
                                 else
                                     []
@@ -11418,7 +11429,13 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
                     let ilFieldName = ComputeFieldName exnc fld
 
                     let ilMethodDef =
-                        mkLdfldMethodDef (ilMethName, reprAccess, false, ilThisTy, ilFieldName, ilPropType, [])
+                        let def =
+                            mkLdfldMethodDef (ilMethName, reprAccess, false, ilThisTy, ilFieldName, ilPropType, [])
+
+                        if ilPropName = "Message" then
+                            def.WithVirtual(true)
+                        else
+                            def
 
                     let ilFieldDef =
                         mkILInstanceField (ilFieldName, ilPropType, None, ILMemberAccess.Assembly)
@@ -11505,6 +11522,7 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
                     cenv.g.langVersion.SupportsFeature(LanguageFeature.BetterExceptionPrinting)
                     && not (exnc.HasMember g "get_Message" [])
                     && not (exnc.HasMember g "Message" [])
+                    && not (fspecs |> List.exists (fun rf -> rf.DisplayNameCore = "Message"))
                 then
                     yield! GenPrintingMethod cenv eenv "get_Message" ilThisTy m
             ]

@@ -124,6 +124,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Enable fast find references &amp; rename (experimental).
+        /// </summary>
+        public static string Enable_Fast_Find_References {
+            get {
+                return ResourceManager.GetString("Enable_Fast_Find_References", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to _Enable in-memory cross project references.
         /// </summary>
         public static string Enable_in_memory_cross_project_references {
@@ -196,11 +205,29 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Find References Performance Options.
+        /// </summary>
+        public static string Find_References_Performance {
+            get {
+                return ResourceManager.GetString("Find_References_Performance", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Re-format indentation on paste (Experimental).
         /// </summary>
         public static string Format_on_paste {
             get {
                 return ResourceManager.GetString("Format_on_paste", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Inline Hints.
+        /// </summary>
+        public static string Inline_Hints {
+            get {
+                return ResourceManager.GetString("Inline_Hints", resourceCulture);
             }
         }
         
@@ -219,42 +246,6 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Language_Service_Performance {
             get {
                 return ResourceManager.GetString("Language_Service_Performance", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Lens.
-        /// </summary>
-        public static string Lens {
-            get {
-                return ResourceManager.GetString("Lens", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Annotation prefix.
-        /// </summary>
-        public static string Lens_Prefix {
-            get {
-                return ResourceManager.GetString("Lens_Prefix", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Enable Lens (Experimental).
-        /// </summary>
-        public static string Lens_Switch {
-            get {
-                return ResourceManager.GetString("Lens_Switch", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Use colors in annotations.
-        /// </summary>
-        public static string Lens_UseColors {
-            get {
-                return ResourceManager.GetString("Lens_UseColors", resourceCulture);
             }
         }
         
@@ -327,6 +318,24 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Show_guides {
             get {
                 return ResourceManager.GetString("Show_guides", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Display inline parameter name hints (experimental).
+        /// </summary>
+        public static string Show_Inline_Parameter_Name_Hints {
+            get {
+                return ResourceManager.GetString("Show_Inline_Parameter_Name_Hints", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Display inline type hints (experimental).
+        /// </summary>
+        public static string Show_Inline_Type_Hints {
+            get {
+                return ResourceManager.GetString("Show_Inline_Type_Hints", resourceCulture);
             }
         }
         

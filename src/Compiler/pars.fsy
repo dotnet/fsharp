@@ -576,7 +576,7 @@ fileModuleSpec:
       (fun (mNamespaceOpt, isRec2, path, _) ->
         if not (isNil path) then errorR(Error(FSComp.SR.parsNamespaceOrModuleNotBoth(), m2))
         let lid = path@path2
-        let trivia: SynModuleOrNamespaceSigTrivia = { ModuleKeyword = Some mModule; NamespaceKeyword = mNamespaceOpt }
+        let trivia: SynModuleOrNamespaceSigTrivia = { LeadingKeyword = SynModuleOrNamespaceLeadingKeyword.Module mModule }
         ParsedSigFileFragment.NamedModule(SynModuleOrNamespaceSig(lid, (isRec || isRec2), SynModuleOrNamespaceKind.NamedModule, $4, xmlDoc, $1 @ attribs2, vis, m, trivia)))  }
 
   | moduleSpfnsPossiblyEmptyBlock 
@@ -588,7 +588,10 @@ fileModuleSpec:
             let lastDeclRange = List.tryLast $1 |> Option.map (fun decl -> decl.Range) |> Option.defaultValue (rhs parseState 1)
             let m = mkRange lastDeclRange.FileName (lhs parseState).Start lastDeclRange.End
             xml.MarkAsInvalid()
-            let trivia = { ModuleKeyword = None; NamespaceKeyword = mNamespaceOpt }
+            let trivia: SynModuleOrNamespaceSigTrivia = 
+                match mNamespaceOpt with
+                | None -> { LeadingKeyword = SynModuleOrNamespaceLeadingKeyword.None }
+                | Some mNamespace -> { LeadingKeyword = SynModuleOrNamespaceLeadingKeyword.Namespace mNamespace }
             ParsedSigFileFragment.NamespaceFragment(path, isRec, SynModuleOrNamespaceKind.DeclaredNamespace, $1, PreXmlDoc.Empty, [], m, trivia))  } 
 
 
@@ -664,7 +667,8 @@ moduleSpfn:
 
   | opt_attributes opt_access typeKeyword tyconSpfn tyconSpfnList
       { if Option.isSome $2 then errorR (Error (FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
-        let (SynTypeDefnSig (SynComponentInfo (cas, a, cs, b, _xmlDoc, d, d2, d3), typeRepr, members, range, trivia)) = $4
+        let leadingKeyword = SynTypeDefnLeadingKeyword.Type (rhs parseState 3)
+        let (SynTypeDefnSig (SynComponentInfo (cas, a, cs, b, _xmlDoc, d, d2, d3), typeRepr, members, range, trivia)) = $4 leadingKeyword
         _xmlDoc.MarkAsInvalid()
         let attrs = $1 @ cas
         let xmlDoc = grabXmlDoc(parseState, $1, 1)
@@ -672,7 +676,6 @@ moduleSpfn:
             (d3, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
             |> unionRanges range
             |> unionRangeWithXmlDoc xmlDoc
-        let trivia = { trivia with TypeKeyword = Some (rhs parseState 3) }
         let tc = (SynTypeDefnSig(SynComponentInfo(attrs, a, cs, b, xmlDoc, d, d2, d3), typeRepr, members, mDefn, trivia))
         let m = (mDefn, $5) ||> unionRangeWithListBy (fun (a: SynTypeDefnSig) -> a.Range) |> unionRanges (rhs parseState 3)
         SynModuleSigDecl.Types (tc :: $5, m) }
@@ -741,10 +744,11 @@ tyconSpfnList:
   | AND tyconSpfn tyconSpfnList
      { let xmlDoc = grabXmlDoc(parseState, [], 1)
        let tyconSpfn =
-           let (SynTypeDefnSig(componentInfo, typeRepr, members, range, trivia)) = $2
+           let leadingKeyword = SynTypeDefnLeadingKeyword.And(rhs parseState 1)
+           let (SynTypeDefnSig(componentInfo, typeRepr, members, range, trivia) as typeDefnSig) = $2 leadingKeyword
            let (SynComponentInfo(a, typars, c, lid, _xmlDoc, fixity, vis, mLongId)) = componentInfo
            if xmlDoc.IsEmpty then
-               if _xmlDoc.IsEmpty then $2 else
+               if _xmlDoc.IsEmpty then typeDefnSig else
                let range = unionRangeWithXmlDoc _xmlDoc range
                SynTypeDefnSig(componentInfo, typeRepr, members, range, trivia)
 
@@ -764,7 +768,7 @@ tyconSpfn:
   | typeNameInfo  EQUALS tyconSpfnRhsBlock 
       { let mLhs = rhs parseState 1 
         let mEquals = rhs parseState 2
-        $3 mLhs $1 (Some mEquals) }
+        fun leadingKeyword -> $3 leadingKeyword mLhs $1 (Some mEquals) }
   | typeNameInfo  opt_classSpfn       
       { let mWithKwd, members = $2
         let (SynComponentInfo(range=range)) = $1
@@ -776,8 +780,9 @@ tyconSpfn:
                 | Some mWithKwd -> unionRanges range mWithKwd
             | decls ->
                 (range, decls) ||> unionRangeWithListBy (fun (s: SynMemberSig) -> s.Range)
-        let trivia: SynTypeDefnSigTrivia = { TypeKeyword = None; EqualsRange = None; WithKeyword = mWithKwd }
-        SynTypeDefnSig($1, SynTypeDefnSigRepr.Simple (SynTypeDefnSimpleRepr.None m, m), members, m, trivia) }
+        fun leadingKeyword ->
+            let trivia: SynTypeDefnSigTrivia = { LeadingKeyword = leadingKeyword; EqualsRange = None; WithKeyword = mWithKwd }
+            SynTypeDefnSig($1, SynTypeDefnSigRepr.Simple (SynTypeDefnSimpleRepr.None m, m), members, m, trivia) }
 
 
 /* The right-hand-side of a type definition in a signature */
@@ -792,24 +797,24 @@ tyconSpfnRhsBlock:
   /* representation. */
   | OBLOCKBEGIN  tyconSpfnRhs opt_OBLOCKSEP classSpfnMembers opt_classSpfn oblockend opt_classSpfn  
      { let m = lhs parseState 
-       (fun mLhs nameInfo mEquals -> 
+       (fun leadingKeyword mLhs nameInfo mEquals -> 
            let members = $4 @ (snd $5)
-           $2 mLhs nameInfo mEquals (checkForMultipleAugmentations m members (snd $7))) }
+           $2 leadingKeyword mLhs nameInfo mEquals (checkForMultipleAugmentations m members (snd $7))) }
 
   | tyconSpfnRhs opt_classSpfn
      { let m = lhs parseState 
-       (fun mLhs nameInfo mEquals ->
+       (fun leadingKeyword mLhs nameInfo mEquals ->
            let _, members = $2 
-           $1 mLhs nameInfo mEquals members) }
+           $1 leadingKeyword mLhs nameInfo mEquals members) }
 
 
 /* The right-hand-side of a type definition in a signature */
 tyconSpfnRhs: 
   | tyconDefnOrSpfnSimpleRepr 
-     { (fun mLhs nameInfo mEquals augmentation -> 
+     { (fun leadingKeyword mLhs nameInfo mEquals augmentation -> 
            let declRange = unionRanges mLhs $1.Range
            let mWhole = (declRange, augmentation) ||> unionRangeWithListBy (fun (mem: SynMemberSig) -> mem.Range)
-           let trivia: SynTypeDefnSigTrivia = { TypeKeyword = None; WithKeyword = None; EqualsRange = mEquals }
+           let trivia: SynTypeDefnSigTrivia = { LeadingKeyword = leadingKeyword; WithKeyword = None; EqualsRange = mEquals }
            SynTypeDefnSig(nameInfo, SynTypeDefnSigRepr.Simple ($1, $1.Range), augmentation, mWhole, trivia)) }
 
   | tyconClassSpfn 
@@ -821,13 +826,13 @@ tyconSpfnRhs:
                 let start = mkSynRange parseState.ResultStartPosition parseState.ResultStartPosition
                 (start, decls) ||> unionRangeWithListBy (fun (s: SynMemberSig) -> s.Range)
 
-       (fun nameRange nameInfo mEquals augmentation -> 
+       (fun leadingKeyword nameRange nameInfo mEquals augmentation -> 
            if needsCheck && isNil decls then
               reportParseErrorAt nameRange (FSComp.SR.parsEmptyTypeDefinition())
            
            let declRange = unionRanges nameRange objectModelRange
            let mWhole = (declRange, augmentation) ||> unionRangeWithListBy (fun (mem: SynMemberSig) -> mem.Range)
-           let trivia: SynTypeDefnSigTrivia = { TypeKeyword = None; WithKeyword = None; EqualsRange = mEquals }
+           let trivia: SynTypeDefnSigTrivia = { LeadingKeyword = leadingKeyword; WithKeyword = None; EqualsRange = mEquals }
            SynTypeDefnSig(nameInfo, SynTypeDefnSigRepr.ObjectModel (kind, decls, objectModelRange), augmentation, mWhole, trivia)) }
 
   | DELEGATE OF topType
@@ -835,11 +840,11 @@ tyconSpfnRhs:
        let ty, arity = $3
        let flags = AbstractMemberFlags true SynMemberKind.Member
        let valSig = SynValSig([], (SynIdent(mkSynId m "Invoke", None)), inferredTyparDecls, ty, arity, false, false, PreXmlDoc.Empty, None, None, m, SynValSigTrivia.Zero)
-       let invoke = SynMemberSig.Member(valSig, flags, m) 
-       (fun nameRange nameInfo mEquals augmentation -> 
+       let invoke = SynMemberSig.Member(valSig, flags, m, SynMemberSigMemberTrivia.Zero) 
+       (fun leadingKeyword nameRange nameInfo mEquals augmentation -> 
            if not (isNil augmentation) then raiseParseErrorAt m (FSComp.SR.parsAugmentationsIllegalOnDelegateType())
            let mWhole = unionRanges nameRange m
-           let trivia: SynTypeDefnSigTrivia = { TypeKeyword = None; WithKeyword = None; EqualsRange = mEquals }
+           let trivia: SynTypeDefnSigTrivia = { LeadingKeyword = leadingKeyword; WithKeyword = None; EqualsRange = mEquals }
            SynTypeDefnSig(nameInfo, SynTypeDefnSigRepr.ObjectModel (SynTypeDefnKind.Delegate (ty, arity), [invoke], m), [], mWhole, trivia)) }
 
 
@@ -909,13 +914,13 @@ classMemberSpfn:
   | opt_attributes opt_access memberSpecFlags opt_inline opt_access nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints classMemberSpfnGetSet optLiteralValueSpfn
      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
        let isInline, doc, vis2, id, explicitValTyparDecls, (ty, arity), (mEquals, optLiteralValue) = $4, grabXmlDoc(parseState, $1, 1), $5, $6, $7, $9, $11
-       let mWith, getSetRangeOpt, getSet = $10 
+       let mWith, (getSet, getSetRangeOpt) = $10 
        let getSetAdjuster arity = match arity, getSet with SynValInfo([], _), SynMemberKind.Member -> SynMemberKind.PropertyGet | _ -> getSet
        let mWhole = 
            let m = rhs parseState 3 
            match getSetRangeOpt with 
            | None -> unionRanges m ty.Range
-           | Some m2 -> unionRanges m m2
+           | Some gs -> unionRanges m (gs : GetSetKeywords).Range
            |> fun m -> (m, $1) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
            |> unionRangeWithXmlDoc doc
            |> fun m -> 
@@ -927,7 +932,8 @@ classMemberSpfn:
        let flags = flags (getSetAdjuster arity)
        let trivia = { LeadingKeyword = leadingKeyword; WithKeyword = mWith; EqualsRange = mEquals }
        let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, arity, isInline, false, doc, vis2, optLiteralValue, mWhole, trivia)
-       SynMemberSig.Member(valSpfn, flags, mWhole) }
+       let trivia: SynMemberSigMemberTrivia = { GetSetKeywords = getSetRangeOpt }
+       SynMemberSig.Member(valSpfn, flags, mWhole, trivia) }
 
   | opt_attributes opt_access interfaceMember appType  
      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
@@ -955,8 +961,9 @@ classMemberSpfn:
        SynMemberSig.ValField(field, mWhole) }
 
   | opt_attributes  opt_access STATIC typeKeyword tyconSpfn 
-     { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-       SynMemberSig.NestedType($5, rhs2 parseState 1 5) }
+     { let leadingKeyword = SynTypeDefnLeadingKeyword.StaticType(rhs parseState 3, rhs parseState 4)
+       if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
+       SynMemberSig.NestedType($5 leadingKeyword, rhs2 parseState 1 5) }
 
   | opt_attributes opt_access NEW COLON topTypeWithTypeConstraints  
      { let vis, doc, (ty, valSynInfo) = $2, grabXmlDoc(parseState, $1, 1), $5
@@ -965,35 +972,38 @@ classMemberSpfn:
        let isInline = false
        let trivia: SynValSigTrivia = { LeadingKeyword = SynLeadingKeyword.New mNew; WithKeyword = None; EqualsRange = None }
        let valSpfn = SynValSig ($1, (SynIdent(mkSynId (rhs parseState 3) "new", None)), noInferredTypars, ty, valSynInfo, isInline, false, doc, vis, None, m, trivia)
-       SynMemberSig.Member(valSpfn, CtorMemberFlags, m) }
+       SynMemberSig.Member(valSpfn, CtorMemberFlags, m, SynMemberSigMemberTrivia.Zero) }
 
 
 /* The optional "with get, set" on a member in a signature */
 classMemberSpfnGetSet:
   | /* EMPTY */ 
-    { None, None, SynMemberKind.Member }
+    { None, (SynMemberKind.Member, None) }
 
   | WITH classMemberSpfnGetSetElements 
     { let mWith = rhs parseState 1
-      Some mWith, Some (rhs2 parseState 1 2), $2 }
+      Some mWith, $2 }
 
   | OWITH classMemberSpfnGetSetElements OEND
     { let mWith = rhs parseState 1
-      Some mWith, Some (rhs2 parseState 1 2), $2 }
+      Some mWith, $2 }
 
   | OWITH classMemberSpfnGetSetElements error
     {  let mWith = rhs parseState 1
        reportParseErrorAt mWith (FSComp.SR.parsUnmatchedWith())
-       Some mWith, Some (rhs2 parseState 1 2), $2 }
+       Some mWith, $2 }
 
 
 /* The "get, set" on a property member in a signature */
 classMemberSpfnGetSetElements:
   | nameop 
     { (let (SynIdent(id:Ident, _)) = $1 
-       if id.idText = "get" then SynMemberKind.PropertyGet 
-       else if id.idText = "set" then SynMemberKind.PropertySet 
-       else raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsGetOrSetRequired())) }
+       if id.idText = "get" then 
+           SynMemberKind.PropertyGet, Some (GetSetKeywords.Get id.idRange)
+       else if id.idText = "set" then 
+           SynMemberKind.PropertySet, Some (GetSetKeywords.Set id.idRange)
+       else 
+           raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsGetOrSetRequired())) }
 
   | nameop COMMA nameop
     { let (SynIdent(id, _)) = $1 
@@ -1001,7 +1011,11 @@ classMemberSpfnGetSetElements:
       if not ((id.idText = "get" && id2.idText = "set") ||
               (id.idText = "set" && id2.idText = "get")) then 
          raiseParseErrorAt (rhs2 parseState 1 3) (FSComp.SR.parsGetOrSetRequired())
-      SynMemberKind.PropertyGetSet }
+      
+      if id.idText = "get" then
+          SynMemberKind.PropertyGetSet, Some (GetSetKeywords.GetSet(id.idRange, id2.idRange))
+      else
+          SynMemberKind.PropertyGetSet, Some (GetSetKeywords.GetSet(id2.idRange, id.idRange)) }
 
 memberSpecFlags: 
   | memberFlags { $1 }  
@@ -1093,7 +1107,7 @@ fileModuleImpl:
       (fun (mNamespaceOpt, isRec, path, _) ->
         if not (isNil path) then errorR(Error(FSComp.SR.parsNamespaceOrModuleNotBoth(), m2))
         let lid = path@path2
-        let trivia: SynModuleOrNamespaceTrivia = { ModuleKeyword = Some mModule; NamespaceKeyword = mNamespaceOpt }
+        let trivia: SynModuleOrNamespaceTrivia = { LeadingKeyword = SynModuleOrNamespaceLeadingKeyword.Module mModule }
         ParsedImplFileFragment.NamedModule(SynModuleOrNamespace(lid, (isRec || isRec2), SynModuleOrNamespaceKind.NamedModule, $4, xmlDoc, $1@attribs2, vis, m, trivia))) }
 
   | moduleDefnsOrExprPossiblyEmptyOrBlock 
@@ -1105,7 +1119,10 @@ fileModuleImpl:
             let lastDeclRange = List.tryLast $1 |> Option.map (fun decl -> decl.Range) |> Option.defaultValue (rhs parseState 1)
             let m = mkRange lastDeclRange.FileName (lhs parseState).Start lastDeclRange.End
             xml.MarkAsInvalid()
-            let trivia: SynModuleOrNamespaceTrivia = { ModuleKeyword = None; NamespaceKeyword = mNamespaceOpt }
+            let trivia: SynModuleOrNamespaceTrivia = 
+                match mNamespaceOpt with
+                 | None -> { LeadingKeyword = SynModuleOrNamespaceLeadingKeyword.None }
+                 | Some mNamespace -> { LeadingKeyword = SynModuleOrNamespaceLeadingKeyword.Namespace mNamespace }
             ParsedImplFileFragment.NamespaceFragment(path, isRec, SynModuleOrNamespaceKind.DeclaredNamespace, $1, PreXmlDoc.Empty, [], m, trivia)) } 
 
 
@@ -1221,12 +1238,12 @@ moduleDefn:
   | opt_attributes opt_access typeKeyword tyconDefn tyconDefnList
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         let xmlDoc = grabXmlDoc(parseState, $1, 1)
-        let (SynTypeDefn(SynComponentInfo(cas, a, cs, b, _xmlDoc, d, d2, d3), e, f, g, h, trivia)) = $4
+        let leadingKeyword = SynTypeDefnLeadingKeyword.Type(rhs parseState 3)
+        let (SynTypeDefn(SynComponentInfo(cas, a, cs, b, _xmlDoc, d, d2, d3), e, f, g, h, trivia)) = $4 leadingKeyword
         _xmlDoc.MarkAsInvalid()
         let attrs = $1@cas
         let mDefn = (h, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range) |> unionRangeWithXmlDoc xmlDoc
-        let mType = rhs parseState 3
-        let tc = SynTypeDefn(SynComponentInfo(attrs, a, cs, b, xmlDoc, d, d2, d3), e, f, g, mDefn, { trivia with TypeKeyword = Some mType })
+        let tc = SynTypeDefn(SynComponentInfo(attrs, a, cs, b, xmlDoc, d, d2, d3), e, f, g, mDefn, trivia)
         let types = tc :: $5
         [ SynModuleDecl.Types(types, (rhs parseState 3, types) ||> unionRangeWithListBy (fun t -> t.Range) ) ] }
 
@@ -1469,10 +1486,11 @@ tyconDefnList:
   | AND tyconDefn tyconDefnList 
      { let xmlDoc = grabXmlDoc(parseState, [], 1)
        let tyconDefn =
-           let (SynTypeDefn(componentInfo, typeRepr, members, implicitConstructor, range, trivia)) = $2
+           let leadingKeyword = SynTypeDefnLeadingKeyword.And(rhs parseState 1)
+           let (SynTypeDefn(componentInfo, typeRepr, members, implicitConstructor, range, trivia) as typeDefn) = $2 leadingKeyword
            let (SynComponentInfo(a, typars, c, lid, _xmlDoc, fixity, vis, mLongId)) = componentInfo
            if xmlDoc.IsEmpty then
-               if _xmlDoc.IsEmpty then $2 else
+               if _xmlDoc.IsEmpty then typeDefn else
                let range = unionRangeWithXmlDoc _xmlDoc range
                SynTypeDefn(componentInfo, typeRepr, members, implicitConstructor, range, trivia)
 
@@ -1488,7 +1506,9 @@ tyconDefnList:
 /* A type definition */
 tyconDefn: 
   | typeNameInfo 
-     { SynTypeDefn($1, SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.None($1.Range), $1.Range), [], None, $1.Range, SynTypeDefnTrivia.Zero) }
+     { fun leadingKeyword ->
+           let trivia: SynTypeDefnTrivia = { LeadingKeyword = leadingKeyword; EqualsRange = None; WithKeyword = None }
+           SynTypeDefn($1, SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.None($1.Range), $1.Range), [], None, $1.Range, trivia) }
 
   | typeNameInfo opt_equals tyconDefnRhsBlock 
      { match $2 with
@@ -1503,13 +1523,17 @@ tyconDefn:
        let (tcDefRepr:SynTypeDefnRepr), mWith ,members = $3 nameRange
        let declRange = unionRanges (rhs parseState 1) tcDefRepr.Range
        let mWhole = (declRange, members) ||> unionRangeWithListBy (fun (mem:SynMemberDefn) -> mem.Range)
-       let trivia: SynTypeDefnTrivia = { TypeKeyword = None; EqualsRange = $2; WithKeyword = mWith }
-       SynTypeDefn($1, tcDefRepr, members, None, mWhole, trivia) }
+
+       fun leadingKeyword ->
+           let trivia: SynTypeDefnTrivia = { LeadingKeyword = leadingKeyword; EqualsRange = $2; WithKeyword = mWith }
+           SynTypeDefn($1, tcDefRepr, members, None, mWhole, trivia) }
 
   | typeNameInfo tyconDefnAugmentation
      { let mWithKwd, classDefns = $2
        let m = (rhs parseState 1, classDefns) ||> unionRangeWithListBy (fun mem -> mem.Range)
-       SynTypeDefn($1, SynTypeDefnRepr.ObjectModel(SynTypeDefnKind.Augmentation mWithKwd, [], m), classDefns, None, m, SynTypeDefnTrivia.Zero) }
+       fun leadingKeyword ->
+           let trivia: SynTypeDefnTrivia = { LeadingKeyword = leadingKeyword; EqualsRange = None; WithKeyword = None }
+           SynTypeDefn($1, SynTypeDefnRepr.ObjectModel(SynTypeDefnKind.Augmentation mWithKwd, [], m), classDefns, None, m, trivia) }
 
   | typeNameInfo opt_attributes opt_access opt_HIGH_PRECEDENCE_APP  simplePatterns optAsSpec EQUALS tyconDefnRhsBlock
      { let vis, spats, az = $3, $5, $6
@@ -1528,8 +1552,9 @@ tyconDefn:
        let mWhole = (declRange, members)
                     ||> unionRangeWithListBy (fun (mem:SynMemberDefn) -> mem.Range)
                     |> unionRangeWithXmlDoc xmlDoc
-       let trivia: SynTypeDefnTrivia = { TypeKeyword = None; EqualsRange = Some mEquals; WithKeyword = mWith }
-       SynTypeDefn($1, tcDefRepr, members, Some memberCtorPattern, mWhole, trivia) }
+       fun leadingKeyword ->
+           let trivia: SynTypeDefnTrivia = { LeadingKeyword = leadingKeyword; EqualsRange = Some mEquals; WithKeyword = mWith }
+           SynTypeDefn($1, tcDefRepr, members, Some memberCtorPattern, mWhole, trivia) }
 
 
 /* The right-hand-side of a type definition */
@@ -1593,7 +1618,7 @@ tyconDefnRhs:
        (fun nameRange augmentation -> 
            let valSig = SynValSig([], (SynIdent(mkSynId m "Invoke", None)), inferredTyparDecls, ty, arity, false, false, PreXmlDoc.Empty, None, None, m, SynValSigTrivia.Zero) 
            let flags = AbstractMemberFlags true SynMemberKind.Member
-           let invoke = SynMemberDefn.AbstractSlot(valSig, flags, m) 
+           let invoke = SynMemberDefn.AbstractSlot(valSig, flags, m, SynMemberDefnAbstractSlotTrivia.Zero) 
            if not (isNil augmentation) then raiseParseErrorAt m (FSComp.SR.parsAugmentationsIllegalOnDelegateType())
            SynTypeDefnRepr.ObjectModel (SynTypeDefnKind.Delegate (ty, arity), [invoke], m), []) }
 
@@ -1795,20 +1820,20 @@ classDefnMember:
   | opt_attributes opt_access abstractMemberFlags opt_inline nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints classMemberSpfnGetSet  opt_ODECLEND
      { let ty, arity = $8
        let isInline, doc, id, explicitValTyparDecls = $4, grabXmlDoc(parseState, $1, 1), $5, $6
-       let mWith, getSetRangeOpt, getSet = $9
+       let mWith, (getSet, getSetRangeOpt) = $9
        let getSetAdjuster arity = match arity, getSet with SynValInfo([], _), SynMemberKind.Member -> SynMemberKind.PropertyGet | _ -> getSet
        let mWhole = 
            let m = rhs parseState 1
            match getSetRangeOpt with 
            | None -> unionRanges m ty.Range
-           | Some m2 -> unionRanges m m2
+           | Some gs -> unionRanges m gs.Range
            |> unionRangeWithXmlDoc doc
        if Option.isSome $2 then errorR(Error(FSComp.SR.parsAccessibilityModsIllegalForAbstract(), mWhole))
        let mkFlags, leadingKeyword = $3
        let trivia = { LeadingKeyword = leadingKeyword; WithKeyword = mWith; EqualsRange = None }
        let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, arity, isInline, false, doc, None, None, mWhole, trivia)
-       
-       [ SynMemberDefn.AbstractSlot(valSpfn, mkFlags (getSetAdjuster arity), mWhole) ] }
+       let trivia: SynMemberDefnAbstractSlotTrivia = { GetSetKeywords = getSetRangeOpt } 
+       [ SynMemberDefn.AbstractSlot(valSpfn, mkFlags (getSetAdjuster arity), mWhole, trivia) ] }
        
   | opt_attributes opt_access inheritsDefn
      {  if not (isNil $1) then errorR(Error(FSComp.SR.parsAttributesIllegalOnInherit(), rhs parseState 1))
@@ -1850,7 +1875,8 @@ classDefnMember:
         
   | opt_attributes opt_access STATIC typeKeyword tyconDefn 
      {  if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-        [ SynMemberDefn.NestedType($5, None, rhs2 parseState 1 5) ] }
+        let leadingKeyword = SynTypeDefnLeadingKeyword.StaticType(rhs parseState 3, rhs parseState 4)
+        [ SynMemberDefn.NestedType($5 leadingKeyword, None, rhs2 parseState 1 5) ] }
 
 
 /* A 'val' definition in an object type definition */
@@ -1875,7 +1901,7 @@ valDefnDecl:
 autoPropsDefnDecl:
   | VAL opt_mutable opt_access ident opt_typ EQUALS typedSequentialExprBlock classMemberSpfnGetSet
      { let mVal = rhs parseState 1
-       let mWith, mGetSetOpt, getSet = $8
+       let mWith, (getSet, getSetOpt) = $8
        let mEquals = rhs parseState 6
        if $2 then
            errorR (Error (FSComp.SR.parsMutableOnAutoPropertyShouldBeGetSet (), rhs parseState 3))
@@ -1887,7 +1913,7 @@ autoPropsDefnDecl:
            let memberFlags = flags SynMemberKind.Member
            let memberFlagsForSet = flags SynMemberKind.PropertySet
            let isStatic = not memberFlags.IsInstance
-           let trivia = { LeadingKeyword = leadingKeyword; WithKeyword = mWith; EqualsRange = Some mEquals; GetSetKeyword = mGetSetOpt }
+           let trivia = { LeadingKeyword = leadingKeyword; WithKeyword = mWith; EqualsRange = Some mEquals; GetSetKeywords = getSetOpt }
            [ SynMemberDefn.AutoProperty(attribs, isStatic, $4, $5, getSet, memberFlags, memberFlagsForSet, xmlDoc, $3, $7, memberRange, trivia) ]) }
 
 /* An optional type on an auto-property definition */
@@ -4065,7 +4091,7 @@ patternClauses:
        fun _mBar ->
            (SynMatchClause(pat, guard, arbExpr ("patternClauses1", m.EndRange), m, DebugPointAtTarget.Yes, SynMatchClauseTrivia.Zero) :: clauses), mLast }
 
-  | patternAndGuard patternResult BAR error 
+  | patternAndGuard patternResult BAR recover 
      { let pat, guard = $1
        let mArrow, resultExpr = $2
        let mLast = rhs parseState 3 
@@ -4073,14 +4099,14 @@ patternClauses:
        fun mBar ->
            [SynMatchClause(pat, guard, resultExpr, m, DebugPointAtTarget.Yes, { ArrowRange = Some mArrow; BarRange = mBar })], mLast }
 
-  | patternAndGuard patternResult error
+  | patternAndGuard patternResult recover
      { let pat, guard = $1
        let mArrow, resultExpr = $2
        let m = unionRanges resultExpr.Range pat.Range
        fun mBar ->
            [SynMatchClause(pat, guard, resultExpr, m, DebugPointAtTarget.Yes, { ArrowRange = Some mArrow; BarRange = mBar })], m }
 
-  | patternAndGuard error
+  | patternAndGuard recover
      { let pat, guard = $1
        let patm = pat.Range
        let m = guard |> Option.map (fun e -> unionRanges patm e.Range) |> Option.defaultValue patm

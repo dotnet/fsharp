@@ -31,3 +31,9 @@ let c: System.IFormattable = $"string"
         """
         |> compile
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Percent sign characters in interpolated strings`` () =
+        Assert.Equal("%", $"%%")
+        Assert.Equal("42%", $"{42}%%")
+        Assert.Equal("% 42", $"%%%3d{42}")

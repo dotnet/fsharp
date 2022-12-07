@@ -27,6 +27,36 @@
         <target state="translated">Ajouter une annotation de type</target>
         <note />
       </trans-unit>
+      <trans-unit id="AdvancedPageKeywords">
+        <source>Block Structure Guides;
+Show structure guidelines for F# code;
+Outlining;
+Show outlining and collapsible nodes for F# code;
+Inline hints;
+Display inline type hints (experimental);
+Display inline parameter name hints (experimental);Beer</source>
+        <target state="new">Block Structure Guides;
+Show structure guidelines for F# code;
+Outlining;
+Show outlining and collapsible nodes for F# code;
+Inline hints;
+Display inline type hints (experimental);
+Display inline parameter name hints (experimental);Beer</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeFixesPageKeywords">
+        <source>Simplify names (remove unnecessary qualifiers);
+Always place open statements at the top level;
+Remove unused open statements;
+Analyze and suggest fixes for unused values;
+Suggest names for unresolved identifiers;</source>
+        <target state="new">Simplify names (remove unnecessary qualifiers);
+Always place open statements at the top level;
+Remove unused open statements;
+Analyze and suggest fixes for unused values;
+Suggest names for unresolved identifiers;</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ConvertCSharpUsingToFSharpOpen">
         <source>Convert C# 'using' to F# 'open'</source>
         <target state="new">Convert C# 'using' to F# 'open'</target>
@@ -72,6 +102,11 @@
         <target state="translated">Fonctions F#</target>
         <note />
       </trans-unit>
+      <trans-unit id="FormattingPageKeywords">
+        <source>Re-format indentation on paste (Experimental)</source>
+        <target state="new">Re-format indentation on paste (Experimental)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ImplementInterface">
         <source>Implement interface</source>
         <target state="translated">Implémenter l'interface</target>
@@ -80,6 +115,25 @@
       <trans-unit id="ImplementInterfaceWithoutTypeAnnotation">
         <source>Implement interface without type annotation</source>
         <target state="translated">Implémenter l'interface sans annotation de type</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="IntelliSensePageKeywords">
+        <source>Completion Lists;
+Show completion list after a character is deleted;
+Show completion list after a character is typed;
+Show symbols in unopened namespaces;
+Enter key behavior;
+Never add new line on enter;
+Only add new line on enter after end of fully typed word;
+Always add new line on enter;</source>
+        <target state="new">Completion Lists;
+Show completion list after a character is deleted;
+Show completion list after a character is typed;
+Show symbols in unopened namespaces;
+Enter key behavior;
+Never add new line on enter;
+Only add new line on enter after end of fully typed word;
+Always add new line on enter;</target>
         <note />
       </trans-unit>
       <trans-unit id="MakeDeclarationMutable">
@@ -92,9 +146,43 @@
         <target state="translated">Rendre '{0}' récursif</target>
         <note />
       </trans-unit>
+      <trans-unit id="PerformancePageKeywords">
+        <source>F# Project and Caching Performance Options;
+Enable in-memory cross project references;
+IntelliSense Performance Options;
+Enable stale data for IntelliSense features;
+Time until stale results are used (in milliseconds);
+Parallelization (requires restart);
+Enable parallel type checking with signature files;
+Enable parallel reference resolution;
+Enable fast find references &amp; rename (experimental)</source>
+        <target state="new">F# Project and Caching Performance Options;
+Enable in-memory cross project references;
+IntelliSense Performance Options;
+Enable stale data for IntelliSense features;
+Time until stale results are used (in milliseconds);
+Parallelization (requires restart);
+Enable parallel type checking with signature files;
+Enable parallel reference resolution;
+Enable fast find references &amp; rename (experimental)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
         <source>Prefix '{0}' with underscore</source>
         <target state="translated">Faire précéder '{0}' d'un trait de soulignement</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QuickInfoPageKeywords">
+        <source>Navigation links;
+Show navigation links as;
+Solid underline;
+Dot underline;
+Dash underline;</source>
+        <target state="new">Navigation links;
+Show navigation links as;
+Solid underline;
+Dot underline;
+Dash underline;</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">
@@ -164,7 +252,7 @@
       </trans-unit>
       <trans-unit id="6008">
         <source>IntelliSense</source>
-        <target state="translated">IntelliSense</target>
+        <target state="needs-review-translation">IntelliSense</target>
         <note />
       </trans-unit>
       <trans-unit id="6009">
@@ -240,11 +328,6 @@
       <trans-unit id="6012">
         <source>Advanced</source>
         <target state="translated">Avancé</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="6013">
-        <source>Lens</source>
-        <target state="translated">Lens</target>
         <note />
       </trans-unit>
       <trans-unit id="6014">
