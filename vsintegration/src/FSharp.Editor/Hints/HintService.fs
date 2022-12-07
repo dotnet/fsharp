@@ -37,12 +37,13 @@ module HintService =
         | _ -> 
             []
 
-    let getHintsForDocument (document: Document) source hintKinds userOpName cancellationToken = 
+    let getHintsForDocument (document: Document) hintKinds userOpName cancellationToken = 
         async {
             if isSignatureFile document.FilePath
             then 
                 return []
             else
+                let! source = document.GetTextAsync() |> Async.AwaitTask
                 let! parseResults, checkResults = 
                     document.GetFSharpParseAndCheckResultsAsync userOpName 
                 

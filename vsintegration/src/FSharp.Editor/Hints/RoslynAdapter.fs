@@ -31,7 +31,6 @@ type internal RoslynAdapter
                     let! nativeHints =
                         HintService.getHintsForDocument 
                             document 
-                            sourceText
                             hintKinds
                             userOpName 
                             cancellationToken
