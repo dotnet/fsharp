@@ -201,7 +201,6 @@ module HintTestFramework =
                                                     "-r:C:\\Program Files\\dotnet\\packs\\Microsoft.NETCore.App.Ref\\7.0.0\\ref\\net7.0\\System.Security.Cryptography.Encoding.dll"
                                                     "-r:C:\\Program Files\\dotnet\\packs\\Microsoft.NETCore.App.Ref\\7.0.0\\ref\\net7.0\\System.Security.Cryptography.OpenSsl.dll"
                                                     "-r:C:\\Program Files\\dotnet\\packs\\Microsoft.NETCore.App.Ref\\7.0.0\\ref\\net7.0\\System.Security.Cryptography.Primitives.dll"
-                                                    "-r:C:\\Program Files\\dotnet\\packs\\Microsoft.NETCore.App.Ref\\7.0.0\\ref\\net7.0\\System.Security.Cryptography.X509Certificates.dll"
                                                     "--ignorelinedirectives"
                                                 |] }
         let document, _ = RoslynTestHelpers.CreateSingleDocumentSolution(fileName, code, options)
