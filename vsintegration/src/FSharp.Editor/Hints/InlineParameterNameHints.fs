@@ -48,27 +48,18 @@ module InlineParameterNameHints =
     // Hopefully someone will have a better way to do that one day,
     // this is quite heavily tested so should be safe to refactor.
     let getSymbolPosition
-        (symbolUse: FSharpSymbolUse) 
-        (source: Microsoft.CodeAnalysis.Text.SourceText) = 
+        (symbolUse: FSharpSymbolUse) = 
 
-        let symbolName = symbolUse.Symbol.DisplayNameCore
         let symbolLine = symbolUse.Range.End.Line - 1
-        let symbolRow = source.Lines.[symbolLine]
-        let symbolColumns = $"{symbolRow}" |> allIndexesOf symbolName
-
-        if symbolColumns |> Seq.isEmpty
-        then None
-        else
-            let positionLine = symbolLine + 1
-            let positionColumn = symbolUse.Range.End.Column + 1
-            Some (Position.mkPos positionLine positionColumn)
+        let positionLine = symbolLine + 1
+        let positionColumn = symbolUse.Range.End.Column + 1
+        Some (Position.mkPos positionLine positionColumn)
 
     let private getTupleRanges
         (symbolUse: FSharpSymbolUse)
-        (source: Microsoft.CodeAnalysis.Text.SourceText)
         (parseResults: FSharpParseFileResults) =
         
-        getSymbolPosition symbolUse source
+        getSymbolPosition symbolUse
         |> Option.bind (parseResults.FindParameterLocations)
         |> Option.map (fun locations -> locations.ArgumentLocations)
         |> Option.map (Seq.map (fun location -> location.ArgumentRange))
@@ -100,13 +91,12 @@ module InlineParameterNameHints =
 
     let getHintsForMemberOrFunctionOrValue
         (parseResults: FSharpParseFileResults) 
-        (source: Microsoft.CodeAnalysis.Text.SourceText)
         (symbol: FSharpMemberOrFunctionOrValue) 
         (symbolUse: FSharpSymbolUse) =
 
         let parameters = symbol.CurriedParameterGroups |> Seq.concat
 
-        let tupleRanges = parseResults |> getTupleRanges symbolUse source
+        let tupleRanges = parseResults |> getTupleRanges symbolUse
         let curryRanges = parseResults |> getCurryRanges symbolUse
         let ranges = if tupleRanges |> (not << Seq.isEmpty) then tupleRanges else curryRanges
 

@@ -9,7 +9,7 @@ open FSharp.Compiler.Symbols
 open Hints
 
 module HintService =
-    let private getHintsForSymbol source parseResults hintKinds (symbolUse: FSharpSymbolUse) =
+    let private getHintsForSymbol parseResults hintKinds (symbolUse: FSharpSymbolUse) =
         match symbolUse.Symbol with
         | :? FSharpMemberOrFunctionOrValue as symbol 
           when hintKinds |> Set.contains HintKind.TypeHint 
@@ -23,7 +23,6 @@ module HintService =
 
             InlineParameterNameHints.getHintsForMemberOrFunctionOrValue
                 parseResults
-                source
                 symbol
                 symbolUse
 
@@ -43,12 +42,11 @@ module HintService =
             then 
                 return []
             else
-                let! source = document.GetTextAsync() |> Async.AwaitTask
                 let! parseResults, checkResults = 
                     document.GetFSharpParseAndCheckResultsAsync userOpName 
                 
                 return 
                     checkResults.GetAllUsesOfAllSymbolsInFile cancellationToken
                     |> Seq.toList
-                    |> List.collect (getHintsForSymbol source parseResults hintKinds)
+                    |> List.collect (getHintsForSymbol parseResults hintKinds)
         }
