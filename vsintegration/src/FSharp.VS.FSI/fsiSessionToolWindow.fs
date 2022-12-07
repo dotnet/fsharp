@@ -536,13 +536,13 @@ type internal FsiToolWindow() as this =
 
     let executeInteraction dbgBreak dir filename topLine (text:string) =
         let interaction = $"""
-#interactiveprompt "hide"
+//#interactiveprompt "hide"
 #silentCd @"{dir}";;
 {if dbgBreak then "#dbgbreak" else ""}
 #{topLine} @"{filename}"
 {text.ToString()}
 #1 "stdin"
-#interactiveprompt "show";;
+//#interactiveprompt "show";;
 """
         executeTextNoHistory filename interaction
 
