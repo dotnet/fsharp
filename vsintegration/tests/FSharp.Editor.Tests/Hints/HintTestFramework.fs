@@ -170,9 +170,6 @@ module HintTestFramework =
                                                     "-r:C:\\Program Files\\dotnet\\packs\\Microsoft.NETCore.App.Ref\\7.0.0\\ref\\net7.0\\System.Runtime.Intrinsics.dll"
                                                     "-r:C:\\Program Files\\dotnet\\packs\\Microsoft.NETCore.App.Ref\\7.0.0\\ref\\net7.0\\System.Runtime.Loader.dll"
                                                     "-r:C:\\Program Files\\dotnet\\packs\\Microsoft.NETCore.App.Ref\\7.0.0\\ref\\net7.0\\System.Runtime.Numerics.dll"
-                                                    "-r:C:\\Program Files\\dotnet\\packs\\Microsoft.NETCore.App.Ref\\7.0.0\\ref\\net7.0\\System.Runtime.Serialization.dll"
-                                                    "-r:C:\\Program Files\\dotnet\\packs\\Microsoft.NETCore.App.Ref\\7.0.0\\ref\\net7.0\\System.Runtime.Serialization.Formatters.dll"
-                                                    "--ignorelinedirectives"
                                                 |] }
         let document, _ = RoslynTestHelpers.CreateSingleDocumentSolution(fileName, code, options)
         document
