@@ -42,3 +42,9 @@ printf $"{a.Format}"
         |> compileExeAndRun
         |> shouldSucceed
         |> withStdOutContains "{{hello}} world"
+
+    [<Fact>]
+    let ``Percent sign characters in interpolated strings`` () =
+        Assert.Equal("%", $"%%")
+        Assert.Equal("42%", $"{42}%%")
+        Assert.Equal("% 42", $"%%%3d{42}")
