@@ -1122,6 +1122,9 @@ lexIfOCaml,"IF-FSHARP/IF-CAML regions are no longer supported"
 1245,lexInvalidUnicodeLiteral,"\U%s is not a valid Unicode character escape sequence"
 1246,tcCallerInfoWrongType,"'%s' must be applied to an argument of type '%s', but has been applied to an argument of type '%s'"
 1247,tcCallerInfoNotOptional,"'%s' can only be applied to optional arguments"
+1248,lexTooManyLBracesInTripleQuote,"The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive opening braces as content."
+1249,lexTooManyRBracesInTripleQuote,"The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive closing braces as content."
+1250,lexTooManyPercentsInTripleQuote,"The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive '%%' characters."
 # reshapedmsbuild.fs
 1300,toolLocationHelperUnsupportedFrameworkVersion,"The specified .NET Framework version '%s' is not supported. Please specify a value from the enumeration Microsoft.Build.Utilities.TargetDotNetFrameworkVersion."
 # -----------------------------------------------------------------------------
@@ -1599,8 +1602,6 @@ forFormatInvalidForInterpolated4,"Interpolated strings used as type IFormattable
 3372,tcInvalidAlignmentInInterpolatedString,"Invalid alignment in interpolated string"
 3373,lexSingleQuoteInSingleQuote,"Invalid interpolated string. Single quote or verbatim string literals may not be used in interpolated expressions in single quote or verbatim strings. Consider using an explicit 'let' binding for the interpolation expression or use a triple quote string as the outer string literal."
 3374,lexTripleQuoteInTripleQuote,"Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression."
-3375,lexTooManyLBracesInTripleQuote,"The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive opening braces as content."
-3375,lexTooManyRBracesInTripleQuote,"The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive closing braces as content."
 3376,tcUnableToParseInterpolatedString,"Invalid interpolated string. %s"
 3377,lexByteStringMayNotBeInterpolated,"a byte string may not be interpolated"
 3378,parsEofInInterpolatedStringFill,"Incomplete interpolated string expression fill begun at or before here"

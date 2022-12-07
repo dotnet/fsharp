@@ -547,6 +547,11 @@
         <target state="new">The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive opening braces as content.</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexTooManyPercentsInTripleQuote">
+        <source>The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive '%' characters.</source>
+        <target state="new">The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive '%' characters.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexTooManyRBracesInTripleQuote">
         <source>The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive closing braces as content.</source>
         <target state="new">The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive closing braces as content.</target>

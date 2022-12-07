@@ -1406,6 +1406,31 @@ and tripleQuoteString sargs skip = parse
  //     if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, args.numDollars, m))
  //     else tripleQuoteString sargs skip lexbuf }
 
+ | "%" +
+    { let (buf, _fin, m, kind, args) = sargs
+      let numPercents = lexeme lexbuf |> String.length
+      let result() =
+          if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, args.numDollars, m))
+          else tripleQuoteString sargs skip lexbuf
+      if kind.IsInterpolated && args.numDollars > 1 then
+          let maxPercents = 2 * args.numDollars - 1
+          if numPercents > maxPercents then
+              let m2 = lexbuf.LexemeRange
+              let rest = result()
+              args.diagnosticsLogger.ErrorR(Error(FSComp.SR.lexTooManyPercentsInTripleQuote(), m2))
+              rest
+          else
+              let n = if numPercents < args.numDollars then
+                        2 * numPercents
+                      else
+                        2 * (numPercents - args.numDollars) + 1
+              let s = String.replicate n "%"
+              addUnicodeString buf s
+              result()
+      else
+          addUnicodeString buf (lexeme lexbuf)
+          result() }
+
  | "{" +
     { let (buf, fin, m, kind, args) = sargs
       let numBraces = String.length (lexeme lexbuf)
@@ -1432,7 +1457,7 @@ and tripleQuoteString sargs skip = parse
               else tripleQuoteString sargs skip lexbuf
           else
               let s = lexeme lexbuf
-              addUnicodeString buf s[1..(numBraces - args.numDollars)] // XXX is it ok to addUnicode empty string
+              addUnicodeString buf s[1..(numBraces - args.numDollars)] // XXX is it ok to addUnicode empty string? Also why start at 1?
               // get a new range for where the fill starts
               let m2 = lexbuf.LexemeRange
               args.stringNest <- (1, LexerStringStyle.TripleQuote, args.numDollars, m2) :: args.stringNest
