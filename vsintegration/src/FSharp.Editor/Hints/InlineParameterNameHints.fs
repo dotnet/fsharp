@@ -30,17 +30,15 @@ module InlineParameterNameHints =
     let private doesFieldNameExist (field: FSharpField) = 
         not field.IsNameGenerated
 
-    let getSymbolPosition (symbolUse: FSharpSymbolUse) = 
-        let positionLine = symbolUse.Range.End.Line
-        let positionColumn = symbolUse.Range.End.Column + 1
-        Position.mkPos positionLine positionColumn
-
     let private getTupleRanges
         (symbolUse: FSharpSymbolUse)
         (parseResults: FSharpParseFileResults) =
 
-        getSymbolPosition symbolUse
-        |> parseResults.FindParameterLocations
+        let position = Position.mkPos 
+                        (symbolUse.Range.End.Line) 
+                        (symbolUse.Range.End.Column + 1)
+
+        parseResults.FindParameterLocations position
         |> Option.map (fun locations -> locations.ArgumentLocations)
         |> Option.map (Seq.map (fun location -> location.ArgumentRange))
         |> Option.defaultValue []
