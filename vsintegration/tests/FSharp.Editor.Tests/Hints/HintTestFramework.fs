@@ -45,7 +45,6 @@ module HintTestFramework =
         // I don't know, without this lib some symbols are just not loaded
         let options = { project.Options with OtherOptions = 
                                                 [|
-                                                    "-g"
                                                     "--targetprofile:netcore"
                                                     "-r:C:\\Users\\psemkin\\.nuget\\packages\\fsharp.core\\7.0.0\\lib\\netstandard2.1\\FSharp.Core.dll"
                                                     "-r:C:\\Program Files\\dotnet\\packs\\Microsoft.NETCore.App.Ref\\7.0.0\\ref\\net7.0\\Microsoft.CSharp.dll"
