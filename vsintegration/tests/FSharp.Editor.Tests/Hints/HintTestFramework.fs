@@ -7,7 +7,6 @@ open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.Editor.Hints
 open Microsoft.CodeAnalysis.Text
 open Hints
-open FSharp.Compiler.CodeAnalysis
 open FSharp.Editor.Tests.Helpers
 
 module HintTestFramework =
