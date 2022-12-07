@@ -681,7 +681,7 @@ let (++) x s = x @ [ s ]
 let setCompilingCoreLib (tcConfigB: TcConfigBuilder) (s: string) =
     match s.ToLowerInvariant() with
     | "fsharp.core" -> tcConfigB.compilingCoreLib <- tagCompilingFSharpCore
-    | "fscorlib" ->  tcConfigB.compilingCoreLib <- tagCompilingFSCorLib
+    | "fscorlib" -> tcConfigB.compilingCoreLib <- tagCompilingFSCorLib
     | _ -> error (Error(FSComp.SR.optsUnrecognizedCompilingCoreLib s, rangeCmdArgs))
 
 let SetTarget (tcConfigB: TcConfigBuilder) (s: string) =
@@ -1774,40 +1774,41 @@ let internalFlags (tcConfigB: TcConfigBuilder) =
 let compilingCorLibFlags (tcConfigB: TcConfigBuilder) =
     [|
         CompilerOption(
-            "compiling-fslib", 
-            tagNone, 
+            "compiling-fslib",
+            tagNone,
             OptionUnit(fun () -> setCompilingCoreLib tcConfigB "fsharp.core"),
             Some(InternalCommandLineOption("--compiling-corlib:fsharp.core", rangeCmdArgs)),
-            None);
+            None
+        )
         CompilerOption(
             "compiling-fslib-20",
             tagNone,
             OptionString(fun _ -> ()),
             Some(DeprecatedCommandLineOptionNoDescription("--compiling-fslib-20", rangeCmdArgs)),
             None
-        );
+        )
         CompilerOption(
             "compiling-fslib-40",
             tagNone,
             OptionUnit(fun () -> ()),
             Some(DeprecatedCommandLineOptionNoDescription("--compiling-fslib-40", rangeCmdArgs)),
             None
-        );
+        )
         CompilerOption(
             "compiling-fslib-nobigint",
             tagNone,
             OptionUnit(fun () -> ()),
             Some(DeprecatedCommandLineOptionNoDescription("compiling-fslib-nobigint", rangeCmdArgs)),
             None
-        );
+        )
         CompilerOption(
             "compiling-fscorlib",
             tagNone,
             OptionUnit(fun () -> setCompilingCoreLib tcConfigB "fscorlib"),
             Some(InternalCommandLineOption("--compiling-corlib:fscorlib", rangeCmdArgs)),
             None
-        );
-        CompilerOption("compiling-corlib", tagCompilingFSharpCore, OptionString(setCompilingCoreLib tcConfigB), None, None);
+        )
+        CompilerOption("compiling-corlib", tagCompilingFSharpCore, OptionString(setCompilingCoreLib tcConfigB), None, None)
         CompilerOption("compiling-corlib", tagCompilingFSCorLib, OptionString(setCompilingCoreLib tcConfigB), None, None)
     |]
 
@@ -1910,7 +1911,7 @@ let deprecatedFlagsFsc tcConfigB =
             None
         )
 
-        yield! compilingCorLibFlags  tcConfigB
+        yield! compilingCorLibFlags tcConfigB
 
         CompilerOption(
             "version",

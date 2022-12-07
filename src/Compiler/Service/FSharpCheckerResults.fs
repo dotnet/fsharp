@@ -2128,6 +2128,7 @@ type FSharpParsingOptions =
 
     static member FromTcConfigBuilder(tcConfigB: TcConfigBuilder, sourceFiles, isInteractive: bool) =
         let tcConfig = tcConfigB.ToTcConfig(false)
+
         {
             SourceFiles = sourceFiles
             ApplyLineDirectives = tcConfig.applyLineDirectives

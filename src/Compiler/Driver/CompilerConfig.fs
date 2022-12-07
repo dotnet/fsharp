@@ -1035,7 +1035,6 @@ type TcConfigBuilder =
 
     member tcConfigB.ToTcConfig validate = TcConfig(tcConfigB, validate)
 
-
 //----------------------------------------------------------------------------
 // TcConfig
 //--------------------------------------------------------------------------
@@ -1426,11 +1425,9 @@ type TcConfig internal (data: TcConfigBuilder, validate: bool) =
     member tcConfig.assumeDotNetFramework =
         tcConfig.primaryAssembly = PrimaryAssembly.Mscorlib
 
-    member tcConfig.compilingfscorlib =
-        tcConfig.compilingCoreLib = "fscorlib"
+    member tcConfig.compilingfscorlib = tcConfig.compilingCoreLib = "fscorlib"
 
-    member tcConfig.compilingFSharpCore =
-        tcConfig.compilingCoreLib = "fsharp.core"
+    member tcConfig.compilingFSharpCore = tcConfig.compilingCoreLib = "fsharp.core"
 
     /// InlineIL is supported only in fsharp.core and fscorlib
     member tcConfig.enableInlineIl =
