@@ -43,7 +43,7 @@ module HintTestFramework =
         use project = SingleFileProject code
         let fileName = fst project.Files.Head
         // I don't know, without this lib some symbols are just not loaded
-        let options = { project.Options with OtherOptions = [|$"-r:{locateMscorlib()}"|] }
+        let options = { project.Options with OtherOptions = [|(*$"-r:{locateMscorlib()}"*)|] }
         let document, _ = RoslynTestHelpers.CreateSingleDocumentSolution(fileName, code, options)
         document
 
