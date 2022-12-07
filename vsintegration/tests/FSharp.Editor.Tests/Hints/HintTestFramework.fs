@@ -46,7 +46,6 @@ module HintTestFramework =
         let options = { project.Options with OtherOptions = 
                                                 [|
                                                     "-g"
-                                                    "--debug:portable"
                                                     "--noframework"
                                                     "--targetprofile:netcore"
                                                     "--nocopyfsharpcore"
