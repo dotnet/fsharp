@@ -3128,13 +3128,17 @@ and CodeGenMethodForExpr cenv mgbuf (entryPointInfo, methodName, eenv, alreadyUs
     code
 
 and DelayCodeGenMethodForExpr cenv mgbuf ((_, _, eenv, _, _, _, _) as args) =
+    let change3rdOutOf7 (a1, a2, _, a4, a5, a6, a7) newA3 = (a1, a2, newA3, a4, a5, a6, a7)
+
     if eenv.delayCodeGen then
         let cenv =
             { cenv with
                 stackGuard = getEmptyStackGuard ()
             }
+        // Once this is lazily-evaluated later, it should not put things in queue. They would not be picked up by anyone.
+        let newArgs = change3rdOutOf7 args { eenv with delayCodeGen = false }
 
-        let lazyMethodBody = lazy (CodeGenMethodForExpr cenv mgbuf args)
+        let lazyMethodBody = lazy (CodeGenMethodForExpr cenv mgbuf newArgs)
         cenv.delayedGenMethods.Enqueue(fun () -> lazyMethodBody.Force() |> ignore)
         lazyMethodBody
     else
