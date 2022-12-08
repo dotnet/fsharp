@@ -685,7 +685,7 @@ type BackgroundCompiler
                     "BackgroundCompiler.CheckFileInProject"
                     [|
                         "project", options.ProjectFileName
-                        "fileName", fileName
+                        Activity.Tags.fileName, fileName
                         "userOpName", userOpName
                     |]
 
