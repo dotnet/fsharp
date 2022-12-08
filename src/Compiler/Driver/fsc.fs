@@ -577,7 +577,9 @@ let main1
             exiter.Exit 1
 
     tcConfig.reportTimeToFile
-    |> Option.iter (fun f -> Activity.addCsvFileListener f |> disposables.Register)
+    |> Option.iter (fun f -> 
+        Activity.addCsvFileListener f |> disposables.Register
+        Activity.start "FSC compilation" [ Activity.Tags.outputDllFile , tcConfig.outputFile |> Option.defaultValue String.Empty] |> disposables.Register)
 
     let diagnosticsLogger = diagnosticsLoggerProvider.CreateLogger(tcConfigB, exiter)
 
