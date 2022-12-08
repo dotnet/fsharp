@@ -517,7 +517,7 @@ type TcConfigBuilder =
 
         /// show times between passes?
         mutable showTimes: bool
-        mutable reportTimeToFile : string option
+        mutable reportTimeToFile: string option
         mutable showLoadedAssemblies: bool
         mutable continueAfterParseFailure: bool
 

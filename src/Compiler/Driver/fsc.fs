@@ -575,7 +575,10 @@ let main1
             errorRecovery e rangeStartup
             delayForFlagsLogger.CommitDelayedDiagnostics(diagnosticsLoggerProvider, tcConfigB, exiter)
             exiter.Exit 1
-    tcConfig.reportTimeToFile |> Option.iter(fun f -> Activity.addCsvFileListener f |> disposables.Register)
+
+    tcConfig.reportTimeToFile
+    |> Option.iter (fun f -> Activity.addCsvFileListener f |> disposables.Register)
+
     let diagnosticsLogger = diagnosticsLoggerProvider.CreateLogger(tcConfigB, exiter)
 
     // Install the global error logger and never remove it. This logger does have all command-line flags considered.

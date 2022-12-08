@@ -2348,7 +2348,7 @@ let PrintWholeAssemblyImplementation (tcConfig: TcConfig) outfile header expr =
 let mutable tPrev: (DateTime * DateTime * float * int[]) option = None
 let mutable nPrev: (string * IDisposable) option = None
 
-let private SimulateException simulateConfig = 
+let private SimulateException simulateConfig =
     match simulateConfig with
     | Some ("fsc-oom") -> raise (OutOfMemoryException())
     | Some ("fsc-an") -> raise (ArgumentNullException("simulated"))
@@ -2380,7 +2380,6 @@ let ReportTime (tcConfig: TcConfig) descr =
             Console.ReadLine() |> ignore
         // Intentionally putting this right after the pause so a debugger can be attached.
         SimulateException tcConfig.simulateException
-  
 
     if (tcConfig.showTimes || verbose || tcConfig.reportTimeToFile.IsSome) then
         // Note that timing calls are relatively expensive on the startup path so we don't
@@ -2401,13 +2400,16 @@ let ReportTime (tcConfig: TcConfig) descr =
                 let utDelta = utNow - utPrev
 
                 match prevActivity with
-                | :? System.Diagnostics.Activity as a when isNotNull a  -> 
-                    a.AddTag(Activity.Tags.gc0,spanGC[Operators.min 0 maxGen]) |> ignore
-                    a.AddTag(Activity.Tags.gc1,spanGC[Operators.min 1 maxGen]) |> ignore
-                    a.AddTag(Activity.Tags.gc2,spanGC[Operators.min 2 maxGen]) |> ignore
-                    a.AddTag(Activity.Tags.outputDllFile,tcConfig.outputFile |> Option.defaultValue String.Empty) |> ignore                  
-                    a.AddTag(Activity.Tags.cpuDelta,utDelta) |> ignore
-                    a.AddTag(Activity.Tags.realDelta,tDelta.TotalSeconds) |> ignore
+                | :? System.Diagnostics.Activity as a when isNotNull a ->
+                    a.AddTag(Activity.Tags.gc0, spanGC[Operators.min 0 maxGen]) |> ignore
+                    a.AddTag(Activity.Tags.gc1, spanGC[Operators.min 1 maxGen]) |> ignore
+                    a.AddTag(Activity.Tags.gc2, spanGC[Operators.min 2 maxGen]) |> ignore
+
+                    a.AddTag(Activity.Tags.outputDllFile, tcConfig.outputFile |> Option.defaultValue String.Empty)
+                    |> ignore
+
+                    a.AddTag(Activity.Tags.cpuDelta, utDelta) |> ignore
+                    a.AddTag(Activity.Tags.realDelta, tDelta.TotalSeconds) |> ignore
                 | _ -> ()
 
                 printf
@@ -2424,7 +2426,7 @@ let ReportTime (tcConfig: TcConfig) descr =
                     spanGC[Operators.min 1 maxGen]
                     spanGC[Operators.min 2 maxGen]
                     prevDescr
-               
+
                 //match tcConfig.reportTimeToFile with
                 //| Some f ->
                 //    if not (File.Exists(f)) then
@@ -2438,7 +2440,11 @@ let ReportTime (tcConfig: TcConfig) descr =
 
         tPrev <- Some(tStart, tNow, utNow, gcNow)
 
-    nPrev |> Option.iter (fun (_,act) -> if isNotNull act then  act.Dispose())
+    nPrev
+    |> Option.iter (fun (_, act) ->
+        if isNotNull act then
+            act.Dispose())
+
     nPrev <- Some(descr, Activity.startNoTags descr)
 
 let ignoreFailureOnMono1_1_16 f =

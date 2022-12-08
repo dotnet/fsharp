@@ -9,21 +9,21 @@ open System
 [<RequireQualifiedAccess>]
 module internal Activity =
 
-    module Tags = 
-        val fileName : string
-        val qualifiedNameOfFile : string
-        val project : string
-        val userOpName : string
-        val length : string
-        val cache : string
-        val cpuDelta : string
-        val realDelta : string
-        val gc0 : string
-        val gc1 : string
-        val gc2 : string
-        val outputDllFile : string
+    module Tags =
+        val fileName: string
+        val qualifiedNameOfFile: string
+        val project: string
+        val userOpName: string
+        val length: string
+        val cache: string
+        val cpuDelta: string
+        val realDelta: string
+        val gc0: string
+        val gc1: string
+        val gc2: string
+        val outputDllFile: string
 
-        val AllKnownTags : string[]
+        val AllKnownTags: string[]
 
     val startNoTags: name: string -> IDisposable
 
