@@ -30,6 +30,27 @@ module InlineParameterNameHints =
     let private doesFieldNameExist (field: FSharpField) = 
         not field.IsNameGenerated
 
+    let private getTupleRanges
+        (symbolUse: FSharpSymbolUse)
+        (parseResults: FSharpParseFileResults) =
+
+        let position = Position.mkPos 
+                        (symbolUse.Range.End.Line) 
+                        (symbolUse.Range.End.Column + 1)
+
+        parseResults.FindParameterLocations position
+        |> Option.map (fun locations -> locations.ArgumentLocations)
+        |> Option.map (Seq.map (fun location -> location.ArgumentRange))
+        |> Option.defaultValue []
+        |> Seq.toList
+
+    let private getCurryRanges 
+        (symbolUse: FSharpSymbolUse) 
+        (parseResults: FSharpParseFileResults) = 
+
+        parseResults.GetAllArgumentsForFunctionApplicationAtPosition symbolUse.Range.Start
+        |> Option.defaultValue []
+
     let isMemberOrFunctionOrValueValidForHint (symbol: FSharpMemberOrFunctionOrValue) (symbolUse: FSharpSymbolUse) =
         if symbolUse.IsFromUse then
             let isNotBuiltInOperator = 
@@ -52,18 +73,16 @@ module InlineParameterNameHints =
         (symbolUse: FSharpSymbolUse) =
 
         let parameters = symbol.CurriedParameterGroups |> Seq.concat
-        let ranges = parseResults.GetAllArgumentsForFunctionApplicationAtPosition symbolUse.Range.Start
 
-        match ranges with
-        | Some ranges -> 
-            parameters
-            |> Seq.zip ranges
-            |> Seq.where (snd >> doesParameterNameExist)
-            |> Seq.map getParameterHint
-            |> Seq.toList
-        
-        // this is the case at least for custom operators
-        | None -> []
+        let tupleRanges = parseResults |> getTupleRanges symbolUse
+        let curryRanges = parseResults |> getCurryRanges symbolUse
+        let ranges = if tupleRanges |> (not << Seq.isEmpty) then tupleRanges else curryRanges
+
+        parameters
+        |> Seq.zip ranges // Seq.zip is important as List.zip requires equal lengths
+        |> Seq.where (snd >> doesParameterNameExist)
+        |> Seq.map getParameterHint
+        |> Seq.toList
 
     let getHintsForUnionCase
         (parseResults: FSharpParseFileResults) 
