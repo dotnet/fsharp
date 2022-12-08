@@ -2401,6 +2401,9 @@ let ReportTime (tcConfig: TcConfig) descr =
 
                 match prevActivity with
                 | :? System.Diagnostics.Activity as a when isNotNull a ->
+                    // Yes, there is duplicity of code between the console reporting and Activity collection right now.
+                    // If current --times behaviour can be changed (=breaking change to the layout etc.), the GC and CPU time collecting logic can move to Activity
+                    // (if a special Tag is set for an activity, the listener itself could evaluate CPU and GC info and set it
                     a.AddTag(Activity.Tags.gc0, spanGC[Operators.min 0 maxGen]) |> ignore
                     a.AddTag(Activity.Tags.gc1, spanGC[Operators.min 1 maxGen]) |> ignore
                     a.AddTag(Activity.Tags.gc2, spanGC[Operators.min 2 maxGen]) |> ignore
