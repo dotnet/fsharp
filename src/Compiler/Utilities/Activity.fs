@@ -89,6 +89,11 @@ module Activity =
         appendWithLeadingComma (a.Id)
         appendWithLeadingComma (a.ParentId)
 
+        let rec rootID (act: Activity) =
+            if isNull act.ParentId then act.Id else rootID act.Parent
+
+        appendWithLeadingComma (rootID a)
+
         Tags.AllKnownTags
         |> Array.iter (fun t -> a.GetTagItem(t) |> escapeStringForCsv |> appendWithLeadingComma)
 
@@ -99,7 +104,7 @@ module Activity =
             File.WriteAllLines(
                 pathToFile,
                 [
-                    "Name,StartTime,EndTime,Duration(s),Id,ParentId,"
+                    "Name,StartTime,EndTime,Duration(s),Id,ParentId,RootId,"
                     + String.concat "," Tags.AllKnownTags
                 ]
             )
