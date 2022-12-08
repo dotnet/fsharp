@@ -2411,8 +2411,10 @@ let ReportTime (tcConfig: TcConfig) descr =
                     a.AddTag(Activity.Tags.outputDllFile, tcConfig.outputFile |> Option.defaultValue String.Empty)
                     |> ignore
 
-                    a.AddTag(Activity.Tags.cpuDelta, utDelta) |> ignore
-                    a.AddTag(Activity.Tags.realDelta, tDelta.TotalSeconds) |> ignore
+                    a.AddTag(Activity.Tags.cpuDelta, utDelta.ToString("000.000")) |> ignore
+
+                    a.AddTag(Activity.Tags.realDelta, tDelta.TotalSeconds.ToString("000.000"))
+                    |> ignore
                 | _ -> ()
 
                 printf

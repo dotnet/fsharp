@@ -19,8 +19,8 @@ module Activity =
         let userOpName = "userOpName"
         let length = "length"
         let cache = "cache"
-        let cpuDelta = "cpuDelta"
-        let realDelta = "realDelta"
+        let cpuDelta = "cpuDelta(s)"
+        let realDelta = "realDelta(s)"
         let gc0 = "gc0"
         let gc1 = "gc1"
         let gc2 = "gc2"
@@ -75,19 +75,22 @@ module Activity =
                 txtVal
 
     let private createCsvRow (a: Activity) =
-        let endTime = a.StartTimeUtc + a.Duration
-        let startTimeString = a.StartTimeUtc.ToString("HH-mm-ss.ffff")
-        let endTimeString = endTime.ToString("HH-mm-ss.ffff")
-        let duration = a.Duration.TotalMilliseconds
-
         let sb = new StringBuilder(128)
 
-        Printf.bprintf sb "%s,%s,%s,%f,%s,%s" a.DisplayName startTimeString endTimeString duration a.Id a.ParentId
+        let appendWithLeadingComma (s: string) =
+            sb.Append(',') |> ignore
+            sb.Append(s) |> ignore
+
+        // "Name,StartTime,EndTime,Duration,Id,ParentId"
+        sb.Append(a.DisplayName) |> ignore
+        appendWithLeadingComma (a.StartTimeUtc.ToString("HH-mm-ss.ffff"))
+        appendWithLeadingComma ((a.StartTimeUtc + a.Duration).ToString("HH-mm-ss.ffff"))
+        appendWithLeadingComma (a.Duration.TotalSeconds.ToString("000.0000"))
+        appendWithLeadingComma (a.Id)
+        appendWithLeadingComma (a.ParentId)
 
         Tags.AllKnownTags
-        |> Array.iter (fun t ->
-            sb.Append(',') |> ignore
-            sb.Append(escapeStringForCsv (a.GetTagItem(t))) |> ignore)
+        |> Array.iter (fun t -> a.GetTagItem(t) |> escapeStringForCsv |> appendWithLeadingComma)
 
         sb.ToString()
 
@@ -96,7 +99,7 @@ module Activity =
             File.WriteAllLines(
                 pathToFile,
                 [
-                    "Name,StartTime,EndTime,Duration,Id,ParentId,"
+                    "Name,StartTime,EndTime,Duration(s),Id,ParentId,"
                     + String.concat "," Tags.AllKnownTags
                 ]
             )
