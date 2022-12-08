@@ -1369,6 +1369,7 @@ and verbatimString sargs skip = parse
 and tripleQuoteString sargs skip = parse
  |  '"' '"' '"'
     { let (buf, fin, _m, kind, args) = sargs
+      args.numDollars <- 0
       let cont = LexCont.Token(args.ifdefStack, args.stringNest)
       fin.Finish buf kind (enum<LexerStringFinisherContext>(4)) cont }
 
@@ -1478,7 +1479,6 @@ and tripleQuoteString sargs skip = parse
       if kind.IsInterpolated then
           if args.numDollars = 1 then
               if numBraces % 2 = 1 then
-                  args.numDollars <- 0 // XXX
                   fail args lexbuf (FSComp.SR.lexRBraceInInterpolatedString()) (result())
               else
                   for _ in 2..2..numBraces do
@@ -1488,9 +1488,8 @@ and tripleQuoteString sargs skip = parse
               for _ in 1..numBraces do
                   addUnicodeString buf "}"
               (result())
-          else
-              args.numDollars <- 0 // XXX
-              fail args lexbuf (FSComp.SR.lexTooManyRBracesInTripleQuote()) (result())
+          else // numBraces >= args.numDollars
+              fail args lexbuf (FSComp.SR.lexUnmatchedRBracesInTripleQuote()) (result())
       else
           addUnicodeString buf (lexeme lexbuf)
           (result())

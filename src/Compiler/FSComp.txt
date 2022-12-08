@@ -1123,7 +1123,7 @@ lexIfOCaml,"IF-FSHARP/IF-CAML regions are no longer supported"
 1246,tcCallerInfoWrongType,"'%s' must be applied to an argument of type '%s', but has been applied to an argument of type '%s'"
 1247,tcCallerInfoNotOptional,"'%s' can only be applied to optional arguments"
 1248,lexTooManyLBracesInTripleQuote,"The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive opening braces as content."
-1249,lexTooManyRBracesInTripleQuote,"The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive closing braces as content."
+1249,lexUnmatchedRBracesInTripleQuote,"The interpolated string contains unmatched closing braces."
 1250,lexTooManyPercentsInTripleQuote,"The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive '%%' characters."
 # reshapedmsbuild.fs
 1300,toolLocationHelperUnsupportedFrameworkVersion,"The specified .NET Framework version '%s' is not supported. Please specify a value from the enumeration Microsoft.Build.Utilities.TargetDotNetFrameworkVersion."
