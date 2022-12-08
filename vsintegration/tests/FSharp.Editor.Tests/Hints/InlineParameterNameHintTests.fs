@@ -381,3 +381,28 @@ type X =
         let actual = getParameterNameHints document
 
         Assert.IsEmpty(actual)
+
+    [<Test>]
+    let ``Hints are not shown in front of indexes`` () =
+        let code =
+            """
+let x = "test".Split("").[0].Split("");
+"""
+
+        let document = getFsDocument code
+
+        let expected =
+            [
+                {
+                    Content = "separator = "
+                    Location = (1, 22)
+                }
+                {
+                    Content = "separator = "
+                    Location = (1, 36)
+                }
+            ]
+
+        let actual = getParameterNameHints document
+
+        Assert.AreEqual(expected, actual)
