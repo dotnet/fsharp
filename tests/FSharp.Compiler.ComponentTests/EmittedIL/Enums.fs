@@ -27,3 +27,27 @@ type Flags =
             """.field public static literal valuetype Enums/Flags B = int32(0x00000002)"""
             """.field public static literal valuetype Enums/Flags C = int32(0x00000004)"""
         ]
+
+    [<Fact>]
+    let ``Enum with inconsistent case types errors with the right message``() =
+        FSharp """
+module Enums
+
+type E =
+    | A = (1L <<< 0)
+    | B = (1 <<< 1)
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withResult {
+            Error = Error 1
+            Range = { StartLine = 6
+                      StartColumn = 7
+                      EndLine = 6
+                      EndColumn = 20 }
+            Message = "This expression was expected to have type
+    'int64'    
+but here has type
+    'int'    "
+        }

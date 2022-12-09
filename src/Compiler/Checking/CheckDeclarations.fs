@@ -582,7 +582,8 @@ module TcRecdUnionAndEnumDeclarations =
             TcEnumCaseConstDecl cenv env parent attrs thisTy m id xmldoc v
         | _ ->
             if cenv.g.langVersion.SupportsFeature LanguageFeature.ArithmeticInLiterals then
-                let expr, _ = TcExpr cenv (MustEqual fieldTy) env tpenv v
+                let expr, actualTy, _ = TcExprOfUnknownType cenv env tpenv v
+                UnifyTypes cenv env m fieldTy actualTy
                 
                 match EvalLiteralExprOrAttribArg cenv.g expr with
                 | Expr.Const (v, _, _) -> TcEnumCaseConstDecl cenv env parent attrs thisTy m id xmldoc v
@@ -3469,7 +3470,7 @@ module EstablishTypeDefinitionCores =
                     let vid = ident("value__", m)
                     let vfld = Construct.NewRecdField false None vid false fieldTy false false [] [] XmlDoc.Empty taccessPublic true
                     
-                    let legitEnumTypes = [ g.int32_ty; g.int16_ty; g.sbyte_ty; g.int64_ty; g.char_ty; g.bool_ty; g.uint32_ty; g.uint16_ty; g.byte_ty; g.uint64_ty ]
+                    let legitEnumTypes = [ g.int32_ty; g.int16_ty; g.sbyte_ty; g.int64_ty; g.char_ty; g.uint32_ty; g.uint16_ty; g.byte_ty; g.uint64_ty ]
                     if not (ListSet.contains (typeEquiv g) fieldTy legitEnumTypes) then 
                         errorR(Error(FSComp.SR.tcInvalidTypeForLiteralEnumeration(), m))
 
