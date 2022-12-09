@@ -1097,8 +1097,7 @@ let main6
                             outfile = outfile
                             pdbfile = None
                             emitTailcalls = tcConfig.emitTailcalls
-                            deterministic = tcConfig.deterministic
-                            showTimes = tcConfig.showTimes
+                            deterministic = tcConfig.deterministic                         
                             portablePDB = false
                             embeddedPDB = false
                             embedAllSource = tcConfig.embedAllSource
@@ -1128,8 +1127,7 @@ let main6
                             outfile = outfile
                             pdbfile = pdbfile
                             emitTailcalls = tcConfig.emitTailcalls
-                            deterministic = tcConfig.deterministic
-                            showTimes = tcConfig.showTimes
+                            deterministic = tcConfig.deterministic                     
                             portablePDB = tcConfig.portablePDB
                             embeddedPDB = tcConfig.embeddedPDB
                             embedAllSource = tcConfig.embedAllSource

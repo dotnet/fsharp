@@ -106,8 +106,7 @@ val generatePortablePdb:
     embedAllSource: bool ->
     embedSourceList: string list ->
     sourceLink: string ->
-    checksumAlgorithm: HashAlgorithm ->
-    showTimes: bool ->
+    checksumAlgorithm: HashAlgorithm ->  
     info: PdbData ->
     pathMap: PathMap ->
         int64 * BlobContentId * MemoryStream * string * byte[]

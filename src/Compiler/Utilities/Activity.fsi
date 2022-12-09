@@ -29,4 +29,6 @@ module internal Activity =
 
     val start: name: string -> tags: (string * string) seq -> IDisposable
 
+    val startAndMeasureEnvironmentStats: name: string -> IDisposable
+
     val addCsvFileListener: pathToFile: string -> IDisposable

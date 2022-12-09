@@ -2387,9 +2387,10 @@ let ReportTime (tcConfig: TcConfig) descr =
         let p = Process.GetCurrentProcess()
         let utNow = p.UserProcessorTime.TotalSeconds
         let tNow = DateTime.Now
-        let maxGen = GC.MaxGeneration
+        let maxGen = GC.MaxGeneration       
         let gcNow = [| for i in 0..maxGen -> GC.CollectionCount i |]
         let wsNow = p.WorkingSet64 / 1000000L
+   
 
         let tStart =
             match tPrev, nPrev with

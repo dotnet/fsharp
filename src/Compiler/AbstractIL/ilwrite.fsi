@@ -21,8 +21,7 @@ type options =
       checksumAlgorithm: HashAlgorithm
       signer: ILStrongNameSigner option
       emitTailcalls: bool
-      deterministic: bool
-      showTimes: bool
+      deterministic: bool    
       dumpDebugInfo: bool
       referenceAssemblyOnly: bool
       referenceAssemblyAttribOpt: ILAttribute option

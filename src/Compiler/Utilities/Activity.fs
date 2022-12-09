@@ -9,6 +9,7 @@ open System.Text
 open System.Collections.Concurrent
 open System.Threading.Tasks
 
+
 [<RequireQualifiedAccess>]
 module Activity =
 
@@ -26,6 +27,9 @@ module Activity =
         let gc2 = "gc2"
         let outputDllFile = "outputDllFile"
 
+        let envStatsStart = "#stats_start"
+        let envStatsEnd = "#stats_end"
+
         let AllKnownTags =
             [|
                 fileName
@@ -42,6 +46,19 @@ module Activity =
                 outputDllFile
             |]
 
+
+    type private EnvironmentStats = { Handles : int; Threads : int; WorkingSetMB : int64; GarbageCollectionsPerGeneration : int[]}
+
+    let private collectEnvironmentStats () = 
+        let p = Process.GetCurrentProcess()
+        {        
+            Handles = p.HandleCount
+            Threads = p.Threads.Count
+            WorkingSetMB = p.WorkingSet64 / 1_000_000L
+            GarbageCollectionsPerGeneration = [| for i in 0..GC.MaxGeneration  -> GC.CollectionCount i |]
+        }
+
+
     let private activitySourceName = "fsc"
     let private activitySource = new ActivitySource(activitySourceName)
 
@@ -57,6 +74,22 @@ module Activity =
         activity
 
     let startNoTags (name: string) : IDisposable = activitySource.StartActivity(name)
+
+
+    let private profiledSourceName = "fsc_with_env_stats"
+    let private profiledSource = new ActivitySource(profiledSourceName)
+
+    let startAndMeasureEnvironmentStats (name : string) : IDisposable = profiledSource.StartActivity(name)
+
+    let addStatsMeasurementListener () =
+        let l =
+            new ActivityListener(
+                ShouldListenTo = (fun a -> a.Name = profiledSourceName),
+                Sample = (fun _ -> ActivitySamplingResult.AllData),
+                ActivityStarted = (fun a -> a.AddTag(Tags.envStatsStart, collectEnvironmentStats()) |> ignore),
+                ActivityStopped = (fun a -> a.AddTag(Tags.envStatsEnd, collectEnvironmentStats()) |> ignore)
+            )
+        ActivitySource.AddActivityListener(l)
 
     let private escapeStringForCsv (o: obj) =
         if isNull o then
@@ -113,7 +146,7 @@ module Activity =
 
         let l =
             new ActivityListener(
-                ShouldListenTo = (fun a -> a.Name = activitySourceName),
+                ShouldListenTo = (fun a -> a.Name = activitySourceName || a.Name = profiledSourceName),
                 Sample = (fun _ -> ActivitySamplingResult.AllData),
                 ActivityStopped = (fun a -> messages.Add(createCsvRow a))
             )
