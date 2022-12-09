@@ -2432,13 +2432,6 @@ let ReportTime (tcConfig: TcConfig) descr =
                     spanGC[Operators.min 2 maxGen]
                     prevDescr
 
-                //match tcConfig.reportTimeToFile with
-                //| Some f ->
-                //    if not (File.Exists(f)) then
-                //        File.WriteAllLines(f,["Realdelta,CpuDelta,WorkingSet,GC0,GC1,GC2,Outputfile,PhaseName"])
-                //    File.AppendAllLines(f,[$"%f{tDelta.TotalSeconds},%f{utDelta},%i{wsNow},%i{spanGC[Operators.min 0 maxGen]},%i{spanGC[Operators.min 1 maxGen]},%i{spanGC[Operators.min 2 maxGen]},{tcConfig.outputFile |> Option.defaultValue String.Empty},{prevDescr}"])
-                //| None -> ()
-
                 tStart
 
             | _ -> DateTime.Now

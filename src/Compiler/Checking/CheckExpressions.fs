@@ -12095,6 +12095,6 @@ let TcAndPublishValSpec (cenv: cenv, env, containerInfo: ContainerInfo, declKind
         let xmlDoc = xmlDoc.ToXmlDoc(checkXmlDocs, paramNames)
         let vspec = MakeAndPublishVal cenv env (altActualParent, true, declKind, ValNotInRecScope, valscheme, attrs, xmlDoc, literalValue, false)
 
-        //assert(vspec.InlineInfo = inlineFlag)
+        assert(vspec.InlineInfo = inlineFlag)
 
         vspec, tpenv)
