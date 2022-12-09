@@ -17,14 +17,19 @@ module internal Activity =
 
     type System.Diagnostics.Activity with
 
-        member this.RootId = 
+        member this.RootId =
             let rec rootID (act: Activity) =
                 if isNull act.ParentId then act.Id else rootID act.Parent
+
             rootID this
 
-        member this.Depth = 
+        member this.Depth =
             let rec depth (act: Activity) acc =
-                if isNull act.ParentId then acc else depth act.Parent (acc+1)
+                if isNull act.ParentId then
+                    acc
+                else
+                    depth act.Parent (acc + 1)
+
             depth this 0
 
     module Tags =
@@ -105,7 +110,8 @@ module internal Activity =
             let nameColumnWidth = 36
 
             let header =
-                "|" + "Phase name".PadRight(nameColumnWidth)
+                "|"
+                + "Phase name".PadRight(nameColumnWidth)
                 + "|Elapsed |Duration| WS(MB)|  GC0  |  GC1  |  GC2  |Handles|Threads|"
 
             let l =
@@ -113,9 +119,9 @@ module internal Activity =
                     ShouldListenTo = (fun a -> a.Name = profiledSourceName),
                     Sample = (fun _ -> ActivitySamplingResult.AllData),
                     ActivityStopped =
-                        (fun a ->                            
+                        (fun a ->
                             Console.Write('|')
-                            let indentedName = new String('>',a.Depth) + a.DisplayName
+                            let indentedName = new String('>', a.Depth) + a.DisplayName
                             Console.Write(indentedName.PadRight(nameColumnWidth))
 
                             let elapsed = (a.StartTimeUtc + a.Duration - reportingStart).TotalSeconds

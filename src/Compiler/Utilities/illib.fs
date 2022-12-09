@@ -90,6 +90,7 @@ module internal PervasiveAutoOpens =
         fun descr ->
             if isNotNull tPrev then
                 tPrev.Dispose()
+
             tPrev <- FSharp.Compiler.Diagnostics.Activity.Profiling.startAndMeasureEnvironmentStats descr
 
     let foldOn p f z x = f z (p x)
