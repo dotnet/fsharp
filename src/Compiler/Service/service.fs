@@ -479,7 +479,13 @@ type BackgroundCompiler
     member _.ParseFile(fileName: string, sourceText: ISourceText, options: FSharpParsingOptions, cache: bool, userOpName: string) =
         async {
             use _ =
-                Activity.start "BackgroundCompiler.ParseFile" [| Activity.Tags.fileName, fileName; Activity.Tags.userOpName, userOpName; Activity.Tags.cache, cache.ToString() |]
+                Activity.start
+                    "BackgroundCompiler.ParseFile"
+                    [|
+                        Activity.Tags.fileName, fileName
+                        Activity.Tags.userOpName, userOpName
+                        Activity.Tags.cache, cache.ToString()
+                    |]
 
             if cache then
                 let hash = sourceText.GetHashCode() |> int64
@@ -506,7 +512,9 @@ type BackgroundCompiler
     member _.GetBackgroundParseResultsForFileInProject(fileName, options, userOpName) =
         node {
             use _ =
-                Activity.start "BackgroundCompiler.GetBackgroundParseResultsForFileInProject" [| Activity.Tags.fileName, fileName; Activity.Tags.userOpName, userOpName |]
+                Activity.start
+                    "BackgroundCompiler.GetBackgroundParseResultsForFileInProject"
+                    [| Activity.Tags.fileName, fileName; Activity.Tags.userOpName, userOpName |]
 
             let! builderOpt, creationDiags = getOrCreateBuilder (options, userOpName)
 
@@ -535,7 +543,9 @@ type BackgroundCompiler
 
     member _.GetCachedCheckFileResult(builder: IncrementalBuilder, fileName, sourceText: ISourceText, options) =
         node {
-            use _ = Activity.start "BackgroundCompiler.GetCachedCheckFileResult" [| Activity.Tags.fileName, fileName |]
+            use _ =
+                Activity.start "BackgroundCompiler.GetCachedCheckFileResult" [| Activity.Tags.fileName, fileName |]
+
             let hash = sourceText.GetHashCode() |> int64
             let key = (fileName, hash, options)
             let cachedResultsOpt = parseCacheLock.AcquireLock(fun ltok -> checkFileInProjectCache.TryGet(ltok, key))
@@ -980,7 +990,12 @@ type BackgroundCompiler
     member _.GetAssemblyData(options, userOpName) =
         node {
             use _ =
-                Activity.start "BackgroundCompiler.GetAssemblyData" [| Activity.Tags.project, options.ProjectFileName; Activity.Tags.userOpName, userOpName |]
+                Activity.start
+                    "BackgroundCompiler.GetAssemblyData"
+                    [|
+                        Activity.Tags.project, options.ProjectFileName
+                        Activity.Tags.userOpName, userOpName
+                    |]
 
             let! builderOpt, _ = getOrCreateBuilder (options, userOpName)
 
@@ -1003,7 +1018,12 @@ type BackgroundCompiler
     /// Parse and typecheck the whole project.
     member bc.ParseAndCheckProject(options, userOpName) =
         use _ =
-            Activity.start "BackgroundCompiler.ParseAndCheckProject" [| Activity.Tags.project, options.ProjectFileName; Activity.Tags.userOpName, userOpName |]
+            Activity.start
+                "BackgroundCompiler.ParseAndCheckProject"
+                [|
+                    Activity.Tags.project, options.ProjectFileName
+                    Activity.Tags.userOpName, userOpName
+                |]
 
         bc.ParseAndCheckProjectImpl(options, userOpName)
 
@@ -1022,7 +1042,9 @@ type BackgroundCompiler
             _userOpName
         ) =
         use _ =
-            Activity.start "BackgroundCompiler.GetProjectOptionsFromScript" [| Activity.Tags.fileName, fileName; Activity.Tags.userOpName, _userOpName |]
+            Activity.start
+                "BackgroundCompiler.GetProjectOptionsFromScript"
+                [| Activity.Tags.fileName, fileName; Activity.Tags.userOpName, _userOpName |]
 
         cancellable {
             use diagnostics = new DiagnosticsScope()
@@ -1109,7 +1131,12 @@ type BackgroundCompiler
 
     member bc.InvalidateConfiguration(options: FSharpProjectOptions, userOpName) =
         use _ =
-            Activity.start "BackgroundCompiler.InvalidateConfiguration" [| Activity.Tags.project, options.ProjectFileName; Activity.Tags.userOpName, userOpName |]
+            Activity.start
+                "BackgroundCompiler.InvalidateConfiguration"
+                [|
+                    Activity.Tags.project, options.ProjectFileName
+                    Activity.Tags.userOpName, userOpName
+                |]
 
         if incrementalBuildersCache.ContainsSimilarKey(AnyCallerThread, options) then
             parseCacheLock.AcquireLock(fun ltok ->
@@ -1120,7 +1147,7 @@ type BackgroundCompiler
             ()
 
     member bc.ClearCache(options: seq<FSharpProjectOptions>, _userOpName) =
-        use _ = Activity.start "BackgroundCompiler.ClearCache" [|Activity.Tags.userOpName, _userOpName |]
+        use _ = Activity.start "BackgroundCompiler.ClearCache" [| Activity.Tags.userOpName, _userOpName |]
 
         lock gate (fun () ->
             options
@@ -1128,7 +1155,12 @@ type BackgroundCompiler
 
     member _.NotifyProjectCleaned(options: FSharpProjectOptions, userOpName) =
         use _ =
-            Activity.start "BackgroundCompiler.NotifyProjectCleaned" [| Activity.Tags.project, options.ProjectFileName; Activity.Tags.userOpName, userOpName |]
+            Activity.start
+                "BackgroundCompiler.NotifyProjectCleaned"
+                [|
+                    Activity.Tags.project, options.ProjectFileName
+                    Activity.Tags.userOpName, userOpName
+                |]
 
         async {
             let! ct = Async.CancellationToken
@@ -1296,7 +1328,10 @@ type FSharpChecker
 
     member _.MatchBraces(fileName, sourceText: ISourceText, options: FSharpParsingOptions, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
-        use _ = Activity.start "FSharpChecker.MatchBraces" [| Activity.Tags.fileName, fileName; Activity.Tags.userOpName, userOpName |]
+
+        use _ =
+            Activity.start "FSharpChecker.MatchBraces" [| Activity.Tags.fileName, fileName; Activity.Tags.userOpName, userOpName |]
+
         let hash = sourceText.GetHashCode() |> int64
 
         async {
