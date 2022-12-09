@@ -1485,6 +1485,8 @@ type TcGlobals(
   member val unchecked_unary_not_vref = ValRefForIntrinsic v_unchecked_unary_not_info
   member val unchecked_subtraction_vref = ValRefForIntrinsic v_unchecked_subtraction_info
   member val unchecked_multiply_vref    = ValRefForIntrinsic v_unchecked_multiply_info
+  member val unchecked_division_vref    = ValRefForIntrinsic v_unchecked_division_info
+  member val unchecked_modulus_vref     = ValRefForIntrinsic v_unchecked_modulus_info
   member val unchecked_defaultof_vref    = ValRefForIntrinsic v_unchecked_defaultof_info
   member val refcell_deref_vref = ValRefForIntrinsic v_refcell_deref_info
   member val refcell_assign_vref = ValRefForIntrinsic v_refcell_assign_info
