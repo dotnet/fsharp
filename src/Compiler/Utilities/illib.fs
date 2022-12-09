@@ -85,10 +85,12 @@ module internal PervasiveAutoOpens =
         | Some x -> x
 
     let reportTime =
-        let mutable tPrev : IDisposable = null  
+        let mutable tPrev: IDisposable = null
+
         fun descr ->
-            use _ = tPrev
-            tPrev <- FSharp.Compiler.Diagnostics.Activity.startAndMeasureEnvironmentStats descr           
+            if isNotNull tPrev then
+                tPrev.Dispose()
+            tPrev <- FSharp.Compiler.Diagnostics.Activity.Profiling.startAndMeasureEnvironmentStats descr
 
     let foldOn p f z x = f z (p x)
 

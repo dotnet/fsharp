@@ -89,7 +89,7 @@ val DoWithColor: ConsoleColor -> (unit -> 'T) -> 'T
 
 val DoWithDiagnosticColor: FSharpDiagnosticSeverity -> (unit -> 'T) -> 'T
 
-val ReportTime: TcConfig -> string -> unit
+val ReportTime: (TcConfig -> string -> unit)
 
 val GetAbbrevFlagSet: TcConfigBuilder -> bool -> Set<string>
 

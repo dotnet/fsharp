@@ -344,7 +344,7 @@ type PortablePdbGenerator
         embedAllSource: bool,
         embedSourceList: string list,
         sourceLink: string,
-        checksumAlgorithm,      
+        checksumAlgorithm,
         info: PdbData,
         pathMap: PathMap
     ) =
@@ -829,7 +829,7 @@ let generatePortablePdb
     (embedAllSource: bool)
     (embedSourceList: string list)
     (sourceLink: string)
-    checksumAlgorithm    
+    checksumAlgorithm
     (info: PdbData)
     (pathMap: PathMap)
     =

@@ -576,14 +576,17 @@ let main1
             delayForFlagsLogger.CommitDelayedDiagnostics(diagnosticsLoggerProvider, tcConfigB, exiter)
             exiter.Exit 1
 
+    if tcConfig.showTimes then
+        Activity.Profiling.addConsoleListener () |> disposables.Register
+
     tcConfig.reportTimeToFile
     |> Option.iter (fun f ->
-        Activity.addCsvFileListener f |> disposables.Register
+        Activity.CsvExport.addCsvFileListener f |> disposables.Register
 
         Activity.start
             "FSC compilation"
             [
-                Activity.Tags.outputDllFile, tcConfig.outputFile |> Option.defaultValue String.Empty
+                Activity.Tags.project, tcConfig.outputFile |> Option.defaultValue String.Empty
             ]
         |> disposables.Register)
 
@@ -599,7 +602,7 @@ let main1
         AbortOnError(diagnosticsLogger, exiter)
 
     // Resolve assemblies
-    ReportTime tcConfig "Import mscorlib and FSharp.Core.dll"
+    ReportTime tcConfig "Import mscorlib+FSharp.Core"
     let foundationalTcConfigP = TcConfigProvider.Constant tcConfig
 
     let sysRes, otherRes, knownUnresolved =
@@ -773,7 +776,7 @@ let main2
     if tcConfig.printSignature || tcConfig.printAllSignatureFiles then
         InterfaceFileWriter.WriteInterfaceFile(tcGlobals, tcConfig, InfoReader(tcGlobals, tcImports.GetImportMap()), typedImplFiles)
 
-    ReportTime tcConfig "Write XML document signatures"
+    ReportTime tcConfig "Write XML doc signatures"
 
     if tcConfig.xmlDocOutputFile.IsSome then
         XmlDocWriter.ComputeXmlDocSigs(tcGlobals, generatedCcu)
@@ -1097,7 +1100,7 @@ let main6
                             outfile = outfile
                             pdbfile = None
                             emitTailcalls = tcConfig.emitTailcalls
-                            deterministic = tcConfig.deterministic                         
+                            deterministic = tcConfig.deterministic
                             portablePDB = false
                             embeddedPDB = false
                             embedAllSource = tcConfig.embedAllSource
@@ -1127,7 +1130,7 @@ let main6
                             outfile = outfile
                             pdbfile = pdbfile
                             emitTailcalls = tcConfig.emitTailcalls
-                            deterministic = tcConfig.deterministic                     
+                            deterministic = tcConfig.deterministic
                             portablePDB = tcConfig.portablePDB
                             embeddedPDB = tcConfig.embeddedPDB
                             embedAllSource = tcConfig.embedAllSource
