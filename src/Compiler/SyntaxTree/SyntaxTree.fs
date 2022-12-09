@@ -1197,8 +1197,7 @@ type SynEnumCase =
     | SynEnumCase of
         attributes: SynAttributes *
         ident: SynIdent *
-        value: SynConst *
-        valueRange: range *
+        value: SynExpr *
         xmlDoc: PreXmlDoc *
         range: range *
         trivia: SynEnumCaseTrivia
