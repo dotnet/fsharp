@@ -563,7 +563,7 @@ module TcRecdUnionAndEnumDeclarations =
         let unionCasesR = unionCases |> List.map (TcUnionCaseDecl cenv env parent thisTy thisTyInst tpenv hasRQAAttribute) 
         unionCasesR |> CheckDuplicates (fun uc -> uc.Id) "union case" 
 
-    let TcEnumCaseConstDecl cenv env parent attrs thisTy caseRange (caseIdent: Ident) (xmldoc: PreXmlDoc) value =
+    let MakeEnumCaseSpec cenv env parent attrs thisTy caseRange (caseIdent: Ident) (xmldoc: PreXmlDoc) value =
         let vis, _ = ComputeAccessAndCompPath env None caseRange None None parent
         let vis = CombineReprAccess parent vis
         if caseIdent.idText = "value__" then errorR(Error(FSComp.SR.tcNotValidEnumCaseName(), caseIdent.idRange))
@@ -571,25 +571,24 @@ module TcRecdUnionAndEnumDeclarations =
         let xmlDoc = xmldoc.ToXmlDoc(checkXmlDocs, Some [])
         Construct.NewRecdField true (Some value) caseIdent false thisTy false false [] attrs xmlDoc vis false
 
-    let TcEnumDecl cenv env tpenv parent thisTy fieldTy (SynEnumCase(attributes=Attributes synAttrs; ident= SynIdent(id,_); value=v; xmlDoc=xmldoc; range=m)) =
+    let TcEnumDecl cenv env tpenv parent thisTy fieldTy (SynEnumCase (attributes = Attributes synAttrs; ident = SynIdent (id, _); value = v; xmlDoc = xmldoc; range = m)) =
         let attrs = TcAttributes cenv env AttributeTargets.Field synAttrs
 
-        match v with 
+        match v with
         | SynExpr.Const (constant = SynConst.Bytes _ | SynConst.UInt16s _ | SynConst.UserNum _) ->
             error(Error(FSComp.SR.tcInvalidEnumerationLiteral(), m))
         | SynExpr.Const (v, _) -> 
             let v = TcConst cenv fieldTy m env v
-            TcEnumCaseConstDecl cenv env parent attrs thisTy m id xmldoc v
+            MakeEnumCaseSpec cenv env parent attrs thisTy m id xmldoc v
+        | _ when cenv.g.langVersion.SupportsFeature LanguageFeature.ArithmeticInLiterals ->
+            let expr, actualTy, _ = TcExprOfUnknownType cenv env tpenv v
+            UnifyTypes cenv env m fieldTy actualTy
+            
+            match EvalLiteralExprOrAttribArg cenv.g expr with
+            | Expr.Const (v, _, _) -> MakeEnumCaseSpec cenv env parent attrs thisTy m id xmldoc v
+            | _ -> error(Error(FSComp.SR.tcInvalidEnumerationLiteral(), m))
         | _ ->
-            if cenv.g.langVersion.SupportsFeature LanguageFeature.ArithmeticInLiterals then
-                let expr, actualTy, _ = TcExprOfUnknownType cenv env tpenv v
-                UnifyTypes cenv env m fieldTy actualTy
-                
-                match EvalLiteralExprOrAttribArg cenv.g expr with
-                | Expr.Const (v, _, _) -> TcEnumCaseConstDecl cenv env parent attrs thisTy m id xmldoc v
-                | _ -> error(Error(FSComp.SR.tcInvalidEnumerationLiteral(), m))
-            else
-                error(Error(FSComp.SR.tcInvalidEnumerationLiteral(), m))
+            error(Error(FSComp.SR.tcInvalidEnumerationLiteral(), m))
 
     let TcEnumDecls (cenv: cenv) env tpenv parent thisTy enumCases =
         let g = cenv.g
