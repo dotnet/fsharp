@@ -14,6 +14,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="FSharp.ProjectSystem.FSharp" />
     <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
+    <InternalsVisibleTo Include="FSharp.Editor.Tests" />
     <InternalsVisibleTo Include="VisualFSharp.Salsa" />
   </ItemGroup>
 
@@ -22,6 +23,11 @@
       <GenerateSource>true</GenerateSource>
       <GeneratedModuleName>Microsoft.VisualStudio.FSharp.Editor.SR</GeneratedModuleName>
     </EmbeddedResource>
+     <EmbeddedText Include="$(MSBuildThisFileDirectory)..\..\..\src\LegacyMSBuildResolver\LegacyResolver.txt">
+      <Link>LegacyResolver.txt</Link>
+    </EmbeddedText>
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\..\src\LegacyMSBuildResolver\LegacyMSBuildReferenceResolver.fsi" />
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\..\src\LegacyMSBuildResolver\LegacyMSBuildReferenceResolver.fs" />
     <Compile Include="Common\AssemblyInfo.fs" />
     <Compile Include="Common\Logger.fsi" />
     <Compile Include="Common\Logger.fs" />
@@ -50,8 +56,8 @@
     <Compile Include="LanguageService\SingleFileWorkspaceMap.fs" />
     <Compile Include="LanguageService\LegacyProjectWorkspaceMap.fs" />
     <Compile Include="LanguageService\FSharpAnalysisSaveFileCommandHandler.fs" />
-    <Compile Include="LanguageService\LanguageService.fs" />
     <Compile Include="LanguageService\WorkspaceExtensions.fs" />
+    <Compile Include="LanguageService\LanguageService.fs" />
     <Compile Include="LanguageService\AssemblyContentProvider.fs" />
     <Compile Include="LanguageService\SymbolHelpers.fs" />
     <Compile Include="Classification\ClassificationDefinitions.fs" />
@@ -114,6 +120,7 @@
     <Compile Include="CodeFix\AddOpenCodeFixProvider.fs" />
     <Compile Include="CodeFix\ProposeUppercaseLabel.fs" />
     <Compile Include="CodeFix\ReplaceWithSuggestion.fs" />
+    <Compile Include="CodeFix\RemoveSuperflousCaptureForUnionCaseWithNoData.fs" />
     <Compile Include="CodeFix\RemoveUnusedBinding.fs" />
     <Compile Include="CodeFix\RenameUnusedValue.fs" />
     <Compile Include="CodeFix\ImplementInterfaceCodeFixProvider.fs" />
@@ -126,9 +133,13 @@
     <Compile Include="Build\SetGlobalPropertiesForSdkProjects.fs" />
     <Compile Include="AutomaticCompletion\BraceCompletionSessionProvider.fsi" />
     <Compile Include="AutomaticCompletion\BraceCompletionSessionProvider.fs" />
-    <Compile Include="Lens\LensDisplayService.fs" />
-    <Compile Include="Lens\LensService.fs" />
-    <Compile Include="Lens\LensProvider.fs" />
+    <Compile Include="Hints\Hints.fs" />
+    <Compile Include="Hints\InlineTypeHints.fs" />
+    <Compile Include="Hints\InlineParameterNameHints.fs" />
+    <Compile Include="Hints\HintService.fs" />
+    <Compile Include="Hints\NativeToRoslynHintConverter.fs" />
+    <Compile Include="Hints\OptionParser.fs" />
+    <Compile Include="Hints\RoslynAdapter.fs" />
   </ItemGroup>
 
   <ItemGroup>

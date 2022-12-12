@@ -997,7 +997,7 @@ type CancellableBuilder() =
 
             match compRes with
             | ValueOrCancelled.Value res ->
-                (resource :> IDisposable).Dispose()
+                Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicFunctions.Dispose resource
 
                 match res with
                 | Choice1Of2 r -> ValueOrCancelled.Value r

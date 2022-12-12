@@ -423,6 +423,8 @@ and TcPatAnds warnOnUpper cenv env vFlags patEnv ty pats m =
 and TcPatTuple warnOnUpper cenv env vFlags patEnv ty isExplicitStruct args m =
     let g = cenv.g
     try
+        CheckTupleIsCorrectLength g env m ty args (fun argTys -> TcPatterns warnOnUpper cenv env vFlags patEnv argTys args |> ignore)
+
         let tupInfo, argTys = UnifyTupleTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv m ty isExplicitStruct args
         let argsR, acc = TcPatterns warnOnUpper cenv env vFlags patEnv argTys args
         let phase2 values = TPat_tuple(tupInfo, List.map (fun f -> f values) argsR, argTys, m)
@@ -553,8 +555,8 @@ and TcPatLongIdentNewDef warnOnUpperForId warnOnUpper (cenv: cenv) env ad valRep
     | [arg]
         when g.langVersion.SupportsFeature LanguageFeature.NameOf && IsNameOf cenv env ad m id ->
         match TcNameOfExpr cenv env tpenv (ConvSynPatToSynExpr arg) with
-        | Expr.Const(c, m, _) -> (fun _ -> TPat_const (c, m)), patEnv
-        | _ -> failwith "Impossible: TcNameOfExpr must return an Expr.Const"
+        | Expr.Const(Const.String s, m, _) -> TcConstPat warnOnUpper cenv env vFlags patEnv ty (SynConst.String(s, SynStringKind.Regular, m)) m
+        | _ -> failwith "Impossible: TcNameOfExpr must return an Expr.Const of type string"
 
     | _ ->
         let _, acc = TcArgPats warnOnUpper cenv env vFlags patEnv args

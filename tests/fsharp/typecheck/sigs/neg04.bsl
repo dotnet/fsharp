@@ -14,31 +14,31 @@ neg04.fs(26,8,26,17): typecheck error FS0912: This declaration element is not pe
 neg04.fs(32,8,32,11): typecheck error FS0039: The type 'Double' does not define the field, constructor or member 'Nan'. Maybe you want one of the following:
    IsNaN
 
-neg04.fs(46,69,46,94): typecheck error FS0001: Type mismatch. Expecting a
-    ''a * 'b * 'c * 'e'    
-but given a
-    ''a * 'b * 'c'    
-The tuples have differing lengths of 4 and 3
+neg04.fs(46,69,46,94): typecheck error FS0001: Type mismatch. Expecting a tuple of length 4 of type
+    'a * 'g * 'f * 'i    
+but given a tuple of length 3 of type
+    'c * 'l * 'm    
 
-neg04.fs(46,99,46,107): typecheck error FS0001: Type mismatch. Expecting a
-    ''a * 'b * 'c * 'e'    
-but given a
-    ''a * 'b * 'c'    
-The tuples have differing lengths of 4 and 3
+
+neg04.fs(46,99,46,107): typecheck error FS0001: Type mismatch. Expecting a tuple of length 4 of type
+    'a * 'g * 'f * 'i    
+but given a tuple of length 3 of type
+    'n * 'o * 'p    
+
 
 neg04.fs(47,30,47,51): typecheck error FS0001: Type mismatch. Expecting a
-    'seq<'a> -> 'f'    
+    'seq<'a> -> 'n'    
 but given a
-    ''g list -> 'h'    
-The type 'seq<'a>' does not match the type ''f list'
+    ''o list -> 'p'    
+The type 'seq<'a>' does not match the type ''n list'
 
 neg04.fs(47,49,47,51): typecheck error FS0784: This numeric literal requires that a module 'NumericLiteralN' defining functions FromZero, FromOne, FromInt32, FromInt64 and FromString be in scope
 
 neg04.fs(47,30,47,51): typecheck error FS0001: Type mismatch. Expecting a
-    'seq<'a> -> 'f'    
+    'seq<'a> -> 'n'    
 but given a
-    ''g list -> 'h'    
-The type 'seq<'a>' does not match the type ''f list'
+    ''o list -> 'p'    
+The type 'seq<'a>' does not match the type ''n list'
 
 neg04.fs(61,25,61,40): typecheck error FS0001: This expression was expected to have type
     'ClassType1'    

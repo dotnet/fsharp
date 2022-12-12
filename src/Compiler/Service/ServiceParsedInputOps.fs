@@ -647,7 +647,7 @@ module ParsedInput =
             |> Option.orElseWith (fun () -> walkExpr e)
             |> Option.orElseWith (fun () ->
                 match returnInfo with
-                | Some (SynBindingReturnInfo (t, _, _)) -> walkType t
+                | Some (SynBindingReturnInfo (typeName = t)) -> walkType t
                 | None -> None)
 
         and walkInterfaceImpl (SynInterfaceImpl (bindings = bindings)) = List.tryPick walkBinding bindings
@@ -668,7 +668,6 @@ module ParsedInput =
             | SynType.Fun (argType = t1; returnType = t2) -> walkType t1 |> Option.orElseWith (fun () -> walkType t2)
             | SynType.WithGlobalConstraints (t, _, _) -> walkType t
             | SynType.HashConstraint (t, _) -> walkType t
-            | SynType.MeasureDivide (t1, t2, _)
             | SynType.Or (t1, t2, _, _) -> walkType t1 |> Option.orElseWith (fun () -> walkType t2)
             | SynType.MeasurePower (t, _, _) -> walkType t
             | SynType.Paren (t, _)
@@ -857,7 +856,7 @@ module ParsedInput =
             | _ -> None
 
         and walkField synField =
-            let (SynField (Attributes attrs, _, _, t, _, _, _, _)) = synField
+            let (SynField (attributes = Attributes attrs; fieldType = t)) = synField
             List.tryPick walkAttribute attrs |> Option.orElseWith (fun () -> walkType t)
 
         and walkValSig synValSig =
@@ -868,7 +867,7 @@ module ParsedInput =
             match membSig with
             | SynMemberSig.Inherit (t, _) -> walkType t
 
-            | SynMemberSig.Member (vs, _, _) -> walkValSig vs
+            | SynMemberSig.Member (memberSig = vs) -> walkValSig vs
 
             | SynMemberSig.Interface (t, _) -> walkType t
 
@@ -881,7 +880,7 @@ module ParsedInput =
 
         and walkMember memb =
             match memb with
-            | SynMemberDefn.AbstractSlot (valSig, _, _) -> walkValSig valSig
+            | SynMemberDefn.AbstractSlot (slotSig = valSig) -> walkValSig valSig
 
             | SynMemberDefn.Member (binding, _) -> walkBinding binding
 
@@ -906,7 +905,7 @@ module ParsedInput =
 
             | SynMemberDefn.Inherit (t, _, _) -> walkType t
 
-            | SynMemberDefn.ValField (field, _) -> walkField field
+            | SynMemberDefn.ValField (fieldInfo = field) -> walkField field
 
             | SynMemberDefn.NestedType (tdef, _, _) -> walkTypeDefn tdef
 
@@ -1662,7 +1661,9 @@ module ParsedInput =
             List.iter walkAttribute attrs
             walkPat pat
             walkExpr e
-            returnInfo |> Option.iter (fun (SynBindingReturnInfo (t, _, _)) -> walkType t)
+
+            returnInfo
+            |> Option.iter (fun (SynBindingReturnInfo (typeName = t)) -> walkType t)
 
         and walkInterfaceImpl (SynInterfaceImpl (bindings = bindings)) = List.iter walkBinding bindings
 
@@ -1674,7 +1675,6 @@ module ParsedInput =
             | SynType.Paren (t, _)
             | SynType.SignatureParameter (usedType = t) -> walkType t
             | SynType.Fun (argType = t1; returnType = t2)
-            | SynType.MeasureDivide (t1, t2, _)
             | SynType.Or (t1, t2, _, _) ->
                 walkType t1
                 walkType t2
@@ -1853,7 +1853,7 @@ module ParsedInput =
                 walkType t
             | _ -> ()
 
-        and walkField (SynField (Attributes attrs, _, _, t, _, _, _, _)) =
+        and walkField (SynField (attributes = Attributes attrs; fieldType = t)) =
             List.iter walkAttribute attrs
             walkType t
 
@@ -1869,7 +1869,7 @@ module ParsedInput =
             match membSig with
             | SynMemberSig.Inherit (t, _)
             | SynMemberSig.Interface (t, _) -> walkType t
-            | SynMemberSig.Member (vs, _, _) -> walkValSig vs
+            | SynMemberSig.Member (memberSig = vs) -> walkValSig vs
             | SynMemberSig.ValField (f, _) -> walkField f
             | SynMemberSig.NestedType (nestedType = typeDefn) ->
                 let (SynTypeDefnSig (typeInfo = info; typeRepr = repr; members = memberSigs)) =
@@ -1888,7 +1888,7 @@ module ParsedInput =
 
         and walkMember memb =
             match memb with
-            | SynMemberDefn.AbstractSlot (valSig, _, _) -> walkValSig valSig
+            | SynMemberDefn.AbstractSlot (slotSig = valSig) -> walkValSig valSig
             | SynMemberDefn.Member (binding, _) -> walkBinding binding
             | SynMemberDefn.GetSetMember (getBinding, setBinding, _, _) ->
                 Option.iter walkBinding getBinding
@@ -1904,7 +1904,7 @@ module ParsedInput =
                 walkType t
                 members |> Option.iter (List.iter walkMember)
             | SynMemberDefn.Inherit (t, _, _) -> walkType t
-            | SynMemberDefn.ValField (field, _) -> walkField field
+            | SynMemberDefn.ValField (fieldInfo = field) -> walkField field
             | SynMemberDefn.NestedType (tdef, _, _) -> walkTypeDefn tdef
             | SynMemberDefn.AutoProperty (attributes = Attributes attrs; typeOpt = t; synExpr = e) ->
                 List.iter walkAttribute attrs

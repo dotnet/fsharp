@@ -10,6 +10,8 @@
 
   <PropertyGroup>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
+    <DisableImplicitLibraryPacksFolder>true</DisableImplicitLibraryPacksFolder>
     <PublishTrimmed>true</PublishTrimmed>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
   </PropertyGroup>
@@ -26,12 +28,6 @@
   </ItemGroup>
 
   <Import Project="$(MSBuildThisFileDirectory)../../../eng/Versions.props" />
-
-  <PropertyGroup>
-      <RestoreSources>
-        $(MSBuildThisFileDirectory)/../../../artifacts/packages/Release/Release
-      </RestoreSources>
-  </PropertyGroup>
 
   <ItemGroup>
       <PackageReference Include="FSharp.Core" Version="$(FSCoreProductVersion).*"/>

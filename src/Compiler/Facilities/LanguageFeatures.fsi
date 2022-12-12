@@ -45,6 +45,8 @@ type LanguageFeature =
     | InterfacesWithAbstractStaticMembers
     | SelfTypeConstraints
     | MatchNotAllowedForUnionCaseWithNoData
+    | CSharpExtensionAttributeNotRequired
+    | ErrorForNonVirtualMembersOverrides
 
 /// LanguageVersion management
 type LanguageVersion =

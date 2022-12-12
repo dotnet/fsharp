@@ -427,8 +427,6 @@ type SynType =
 
     | HashConstraint of innerType: SynType * range: range
 
-    | MeasureDivide of dividend: SynType * divisor: SynType * range: range
-
     | MeasurePower of baseMeasure: SynType * exponent: SynRationalConst * range: range
 
     | StaticConstant of constant: SynConst * range: range
@@ -458,7 +456,6 @@ type SynType =
         | SynType.StaticConstantExpr (range = m)
         | SynType.StaticConstantNamed (range = m)
         | SynType.HashConstraint (range = m)
-        | SynType.MeasureDivide (range = m)
         | SynType.MeasurePower (range = m)
         | SynType.Paren (range = m)
         | SynType.SignatureParameter (range = m)
@@ -1065,7 +1062,8 @@ type SynBinding =
     member x.RangeOfHeadPattern = let (SynBinding (headPat = headPat)) = x in headPat.Range
 
 [<NoEquality; NoComparison>]
-type SynBindingReturnInfo = SynBindingReturnInfo of typeName: SynType * range: range * attributes: SynAttributes
+type SynBindingReturnInfo =
+    | SynBindingReturnInfo of typeName: SynType * range: range * attributes: SynAttributes * trivia: SynBindingReturnInfoTrivia
 
 [<NoComparison; RequireQualifiedAccess; CustomEquality>]
 type SynMemberFlags =
@@ -1082,8 +1080,6 @@ type SynMemberFlags =
         GetterOrSetterIsCompilerGenerated: bool
 
         MemberKind: SynMemberKind
-
-        Trivia: SynMemberFlagsTrivia
     }
 
     override this.Equals other =
@@ -1123,7 +1119,7 @@ type SynMemberKind =
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynMemberSig =
 
-    | Member of memberSig: SynValSig * flags: SynMemberFlags * range: range
+    | Member of memberSig: SynValSig * flags: SynMemberFlags * range: range * trivia: SynMemberSigMemberTrivia
 
     | Interface of interfaceType: SynType * range: range
 
@@ -1273,7 +1269,8 @@ type SynField =
         isMutable: bool *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
-        range: range
+        range: range *
+        trivia: SynFieldTrivia
 
 [<NoEquality; NoComparison>]
 type SynComponentInfo =
@@ -1420,7 +1417,7 @@ type SynMemberDefn =
 
     | LetBindings of bindings: SynBinding list * isStatic: bool * isRecursive: bool * range: range
 
-    | AbstractSlot of slotSig: SynValSig * flags: SynMemberFlags * range: range
+    | AbstractSlot of slotSig: SynValSig * flags: SynMemberFlags * range: range * trivia: SynMemberDefnAbstractSlotTrivia
 
     | Interface of interfaceType: SynType * withKeyword: range option * members: SynMemberDefns option * range: range
 
@@ -1440,11 +1437,9 @@ type SynMemberDefn =
         memberFlagsForSet: SynMemberFlags *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
-        equalsRange: range *
         synExpr: SynExpr *
-        withKeyword: range option *
-        getSetRange: range option *
-        range: range
+        range: range *
+        trivia: SynMemberDefnAutoPropertyTrivia
 
     member d.Range =
         match d with
@@ -1685,7 +1680,8 @@ type ParsedImplFileInput =
         hashDirectives: ParsedHashDirective list *
         contents: SynModuleOrNamespace list *
         flags: (bool * bool) *
-        trivia: ParsedImplFileInputTrivia
+        trivia: ParsedImplFileInputTrivia *
+        identifiers: Set<string>
 
     member x.QualifiedName =
         (let (ParsedImplFileInput (qualifiedNameOfFile = qualNameOfFile)) = x in qualNameOfFile)
@@ -1717,7 +1713,8 @@ type ParsedSigFileInput =
         scopedPragmas: ScopedPragma list *
         hashDirectives: ParsedHashDirective list *
         contents: SynModuleOrNamespaceSig list *
-        trivia: ParsedSigFileInputTrivia
+        trivia: ParsedSigFileInputTrivia *
+        identifiers: Set<string>
 
     member x.QualifiedName =
         (let (ParsedSigFileInput (qualifiedNameOfFile = qualNameOfFile)) = x in qualNameOfFile)
@@ -1760,3 +1757,9 @@ type ParsedInput =
         | ParsedInput.ImplFile (ParsedImplFileInput(contents = SynModuleOrNamespace (range = m) :: _))
         | ParsedInput.SigFile (ParsedSigFileInput(contents = SynModuleOrNamespaceSig (range = m) :: _)) -> m
         | _ -> rangeN inp.FileName 0
+
+    [<Experimental("This FCS API is experimental and subject to change.")>]
+    member inp.Identifiers =
+        match inp with
+        | ParsedInput.ImplFile (ParsedImplFileInput (identifiers = identifiers))
+        | ParsedInput.SigFile (ParsedSigFileInput (identifiers = identifiers)) -> identifiers

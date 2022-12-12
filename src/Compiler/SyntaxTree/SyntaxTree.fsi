@@ -492,9 +492,6 @@ type SynType =
     /// F# syntax: #type
     | HashConstraint of innerType: SynType * range: range
 
-    /// F# syntax: for units of measure e.g. m / s
-    | MeasureDivide of dividend: SynType * divisor: SynType * range: range
-
     /// F# syntax: for units of measure e.g. m^3, kg^1/2
     | MeasurePower of baseMeasure: SynType * exponent: SynRationalConst * range: range
 
@@ -1209,7 +1206,12 @@ type SynBinding =
 
 /// Represents the return information in a binding for a 'let' or 'member' declaration
 [<NoEquality; NoComparison>]
-type SynBindingReturnInfo = SynBindingReturnInfo of typeName: SynType * range: range * attributes: SynAttributes
+type SynBindingReturnInfo =
+    | SynBindingReturnInfo of
+        typeName: SynType *
+        range: range *
+        attributes: SynAttributes *
+        trivia: SynBindingReturnInfoTrivia
 
 /// Represents the flags for a 'member' declaration
 [<NoComparison; RequireQualifiedAccess; CustomEquality>]
@@ -1232,9 +1234,6 @@ type SynMemberFlags =
 
         /// The kind of the member
         MemberKind: SynMemberKind
-
-        /// Additional information
-        Trivia: SynMemberFlagsTrivia
     }
 
 /// Note the member kind is actually computed partially by a syntax tree transformation in tc.fs
@@ -1266,7 +1265,7 @@ type SynMemberKind =
 type SynMemberSig =
 
     /// A member definition in a type in a signature file
-    | Member of memberSig: SynValSig * flags: SynMemberFlags * range: range
+    | Member of memberSig: SynValSig * flags: SynMemberFlags * range: range * trivia: SynMemberSigMemberTrivia
 
     /// An interface definition in a type in a signature file
     | Interface of interfaceType: SynType * range: range
@@ -1429,7 +1428,8 @@ type SynField =
         isMutable: bool *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
-        range: range
+        range: range *
+        trivia: SynFieldTrivia
 
 /// Represents the syntax tree associated with the name of a type definition or module
 /// in signature or implementation.
@@ -1598,7 +1598,11 @@ type SynMemberDefn =
     | LetBindings of bindings: SynBinding list * isStatic: bool * isRecursive: bool * range: range
 
     /// An abstract slot definition within a class or interface
-    | AbstractSlot of slotSig: SynValSig * flags: SynMemberFlags * range: range
+    | AbstractSlot of
+        slotSig: SynValSig *
+        flags: SynMemberFlags *
+        range: range *
+        trivia: SynMemberDefnAbstractSlotTrivia
 
     /// An interface implementation definition within a class
     | Interface of interfaceType: SynType * withKeyword: range option * members: SynMemberDefns option * range: range
@@ -1623,11 +1627,9 @@ type SynMemberDefn =
         memberFlagsForSet: SynMemberFlags *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
-        equalsRange: range *
         synExpr: SynExpr *
-        withKeyword: range option *
-        getSetRange: range option *
-        range: range
+        range: range *
+        trivia: SynMemberDefnAutoPropertyTrivia
 
     /// Gets the syntax range of this construct
     member Range: range
@@ -1887,7 +1889,8 @@ type ParsedImplFileInput =
         hashDirectives: ParsedHashDirective list *
         contents: SynModuleOrNamespace list *
         flags: (bool * bool) *
-        trivia: ParsedImplFileInputTrivia
+        trivia: ParsedImplFileInputTrivia *
+        identifiers: Set<string>
 
     member FileName: string
 
@@ -1916,7 +1919,8 @@ type ParsedSigFileInput =
         scopedPragmas: ScopedPragma list *
         hashDirectives: ParsedHashDirective list *
         contents: SynModuleOrNamespaceSig list *
-        trivia: ParsedSigFileInputTrivia
+        trivia: ParsedSigFileInputTrivia *
+        identifiers: Set<string>
 
     member FileName: string
 
@@ -1950,3 +1954,6 @@ type ParsedInput =
 
     /// Gets the #nowarn and other scoped pragmas
     member ScopedPragmas: ScopedPragma list
+
+    /// Gets a set of all identifiers used in this parsed input
+    member Identifiers: Set<string>

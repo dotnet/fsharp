@@ -581,7 +581,7 @@ let SetDeterministicSwitch (tcConfigB: TcConfigBuilder) switch =
 
 let SetReferenceAssemblyOnlySwitch (tcConfigB: TcConfigBuilder) switch =
     match tcConfigB.emitMetadataAssembly with
-    | MetadataAssemblyGeneration.None ->
+    | MetadataAssemblyGeneration.None when tcConfigB.standalone = false && tcConfigB.extraStaticLinkRoots.IsEmpty ->
         tcConfigB.emitMetadataAssembly <-
             if (switch = OptionSwitch.On) then
                 MetadataAssemblyGeneration.ReferenceOnly
@@ -591,7 +591,7 @@ let SetReferenceAssemblyOnlySwitch (tcConfigB: TcConfigBuilder) switch =
 
 let SetReferenceAssemblyOutSwitch (tcConfigB: TcConfigBuilder) outputPath =
     match tcConfigB.emitMetadataAssembly with
-    | MetadataAssemblyGeneration.None ->
+    | MetadataAssemblyGeneration.None when tcConfigB.standalone = false && tcConfigB.extraStaticLinkRoots.IsEmpty ->
         if FileSystem.IsInvalidPathShim outputPath then
             error (Error(FSComp.SR.optsInvalidRefOut (), rangeCmdArgs))
         else
@@ -1304,9 +1304,12 @@ let advancedFlagsFsc tcConfigB =
             "standalone",
             tagNone,
             OptionUnit(fun _ ->
-                tcConfigB.openDebugInformationForLaterStaticLinking <- true
-                tcConfigB.standalone <- true
-                tcConfigB.implicitlyResolveAssemblies <- true),
+                match tcConfigB.emitMetadataAssembly with
+                | MetadataAssemblyGeneration.None ->
+                    tcConfigB.openDebugInformationForLaterStaticLinking <- true
+                    tcConfigB.standalone <- true
+                    tcConfigB.implicitlyResolveAssemblies <- true
+                | _ -> error (Error(FSComp.SR.optsInvalidRefAssembly (), rangeCmdArgs))),
             None,
             Some(FSComp.SR.optsStandalone ())
         )
@@ -1315,8 +1318,11 @@ let advancedFlagsFsc tcConfigB =
             "staticlink",
             tagFile,
             OptionString(fun s ->
-                tcConfigB.extraStaticLinkRoots <- tcConfigB.extraStaticLinkRoots @ [ s ]
-                tcConfigB.implicitlyResolveAssemblies <- true),
+                match tcConfigB.emitMetadataAssembly with
+                | MetadataAssemblyGeneration.None ->
+                    tcConfigB.extraStaticLinkRoots <- tcConfigB.extraStaticLinkRoots @ [ s ]
+                    tcConfigB.implicitlyResolveAssemblies <- true
+                | _ -> error (Error(FSComp.SR.optsInvalidRefAssembly (), rangeCmdArgs))),
             None,
             Some(FSComp.SR.optsStaticlink ())
         )
@@ -1770,13 +1776,31 @@ let compilingFsLibFlag (tcConfigB: TcConfigBuilder) =
     )
 
 let compilingFsLib20Flag =
-    CompilerOption("compiling-fslib-20", tagNone, OptionString(fun _ -> ()), None, None)
+    CompilerOption(
+        "compiling-fslib-20",
+        tagNone,
+        OptionString(fun _ -> ()),
+        Some(DeprecatedCommandLineOptionNoDescription("--compiling-fslib-20", rangeCmdArgs)),
+        None
+    )
 
 let compilingFsLib40Flag =
-    CompilerOption("compiling-fslib-40", tagNone, OptionUnit(fun () -> ()), None, None)
+    CompilerOption(
+        "compiling-fslib-40",
+        tagNone,
+        OptionUnit(fun () -> ()),
+        Some(DeprecatedCommandLineOptionNoDescription("--compiling-fslib-40", rangeCmdArgs)),
+        None
+    )
 
 let compilingFsLibNoBigIntFlag =
-    CompilerOption("compiling-fslib-nobigint", tagNone, OptionUnit(fun () -> ()), None, None)
+    CompilerOption(
+        "compiling-fslib-nobigint",
+        tagNone,
+        OptionUnit(fun () -> ()),
+        Some(DeprecatedCommandLineOptionNoDescription("compiling-fslib-nobigint", rangeCmdArgs)),
+        None
+    )
 
 let mlKeywordsFlag =
     CompilerOption(
@@ -2313,13 +2337,14 @@ let PrintWholeAssemblyImplementation (tcConfig: TcConfig) outfile header expr =
 //----------------------------------------------------------------------------
 
 let mutable tPrev: (DateTime * DateTime * float * int[]) option = None
-let mutable nPrev: string option = None
+let mutable nPrev: (string * IDisposable) option = None
 
 let ReportTime (tcConfig: TcConfig) descr =
-
     match nPrev with
     | None -> ()
-    | Some prevDescr ->
+    | Some (prevDescr, prevActivity) ->
+        use _ = prevActivity // Finish the previous diagnostics activity by .Dispose() at the end of this block
+
         if tcConfig.pause then
             dprintf "[done '%s', entering '%s'] press <enter> to continue... " prevDescr descr
             Console.ReadLine() |> ignore
@@ -2358,7 +2383,7 @@ let ReportTime (tcConfig: TcConfig) descr =
 
         let tStart =
             match tPrev, nPrev with
-            | Some (tStart, tPrev, utPrev, gcPrev), Some prevDescr ->
+            | Some (tStart, tPrev, utPrev, gcPrev), Some (prevDescr, _) ->
                 let spanGC = [| for i in 0..maxGen -> GC.CollectionCount i - gcPrev[i] |]
                 let t = tNow - tStart
                 let tDelta = tNow - tPrev
@@ -2385,7 +2410,7 @@ let ReportTime (tcConfig: TcConfig) descr =
 
         tPrev <- Some(tStart, tNow, utNow, gcNow)
 
-    nPrev <- Some descr
+    nPrev <- Some(descr, Activity.startNoTags descr)
 
 let ignoreFailureOnMono1_1_16 f =
     try

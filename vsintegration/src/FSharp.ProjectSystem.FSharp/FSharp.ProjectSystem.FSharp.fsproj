@@ -72,11 +72,6 @@
       <CodeBase>$PackageFolder$\FSharp.Compiler.Service.dll</CodeBase>
     </AssemblyAttribute>
     <AssemblyAttribute Include="Microsoft.VisualStudio.Shell.ProvideCodeBaseAttribute">
-      <AssemblyName>FSharp.Compiler.Server.Shared</AssemblyName>
-      <Version>$(FSProductVersion)</Version>
-      <CodeBase>$PackageFolder$\FSharp.Compiler.Server.Shared.dll</CodeBase>
-    </AssemblyAttribute>
-    <AssemblyAttribute Include="Microsoft.VisualStudio.Shell.ProvideCodeBaseAttribute">
       <AssemblyName>FSharp.UIResources</AssemblyName>
       <Version>$(VSAssemblyVersion)</Version>
       <CodeBase>$PackageFolder$\FSharp.UIResources.dll</CodeBase>

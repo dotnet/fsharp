@@ -236,12 +236,16 @@ type TypeDirectedConversion =
 
 [<RequireQualifiedAccess>]
 type TypeDirectedConversionUsed =
-    | Yes of (DisplayEnv -> exn) * isTwoStepConversion: bool
+    | Yes of (DisplayEnv -> exn) * isTwoStepConversion: bool * isNullable: bool
     | No
     static member Combine a b =
         match a, b with 
-        | Yes(_,true), _ -> a
-        | _, Yes(_,true) -> b
+        // We want to know which candidates have one or more nullable conversions exclusively
+        // If one of the values is false we flow false for both.
+        | Yes(_, true, false), _ -> a
+        | _, Yes(_, true, false) -> b
+        | Yes(_, true, _), _ -> a
+        | _, Yes(_, true, _) -> b
         | Yes _, _ -> a
         | _, Yes _ -> b
         | No, No -> a
@@ -282,25 +286,25 @@ let rec AdjustRequiredTypeForTypeDirectedConversions (infoReader: InfoReader) ad
 
     // Adhoc int32 --> int64
     elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.int64_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
-        g.int32_ty, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn, false), None
+        g.int32_ty, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn, false, false), None
 
     // Adhoc int32 --> nativeint
     elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.nativeint_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
-        g.int32_ty, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn, false), None
+        g.int32_ty, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn, false, false), None
 
     // Adhoc int32 --> float64
     elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.float_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
-        g.int32_ty, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn, false), None
+        g.int32_ty, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn, false, false), None
 
     elif g.langVersion.SupportsFeature LanguageFeature.NullableOptionalInterop && isMethodArg && isNullableTy g reqdTy && not (isNullableTy g actualTy) then 
         let underlyingTy = destNullableTy g reqdTy
         // shortcut
         if typeEquiv g underlyingTy actualTy then
-            actualTy, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn, false), None
+            actualTy, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn, false, true), None
         else
             let adjustedTy, _, _ = AdjustRequiredTypeForTypeDirectedConversions infoReader ad isMethodArg isConstraint underlyingTy actualTy m
             if typeEquiv g adjustedTy actualTy then 
-                actualTy, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn, true), None
+                actualTy, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn, true, true), None
             else 
                 reqdTy, TypeDirectedConversionUsed.No, None
     
@@ -308,7 +312,7 @@ let rec AdjustRequiredTypeForTypeDirectedConversions (infoReader: InfoReader) ad
     // eliminate articifical constrained type variables.
     elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions then
          match TryFindRelevantImplicitConversion infoReader ad reqdTy actualTy m with
-         | Some (minfo, _staticTy, eqn) -> actualTy, TypeDirectedConversionUsed.Yes(warn (TypeDirectedConversion.Implicit minfo), false), Some eqn
+         | Some (minfo, _staticTy, eqn) -> actualTy, TypeDirectedConversionUsed.Yes(warn (TypeDirectedConversion.Implicit minfo), false, false), Some eqn
          | None -> reqdTy, TypeDirectedConversionUsed.No, None
 
     else reqdTy, TypeDirectedConversionUsed.No, None
@@ -634,7 +638,7 @@ type CalledMeth<'T>
                     let pinfos = GetIntrinsicPropInfoSetsOfType infoReader (Some nm) ad AllowMultiIntfInstantiations.Yes IgnoreOverrides id.idRange returnedObjTy
                     let pinfos = pinfos |> ExcludeHiddenOfPropInfos g infoReader.amap m 
                     match pinfos with 
-                    | [pinfo] when pinfo.HasSetter && not pinfo.IsIndexer -> 
+                    | [pinfo] when pinfo.HasSetter && not pinfo.IsStatic && not pinfo.IsIndexer -> 
                         let pminfo = pinfo.SetterMethod
                         let pminst = freshenMethInfo m pminfo
                         let propStaticTyOpt = if isTyparTy g returnedObjTy then Some returnedObjTy else None
@@ -642,10 +646,11 @@ type CalledMeth<'T>
                     | _ ->
                         let epinfos = 
                             match nameEnv with  
-                            | Some ne -> ExtensionPropInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader ne (Some nm) ad m returnedObjTy
+                            | Some ne -> ExtensionPropInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader ne (Some nm) LookupIsInstance.Ambivalent ad m returnedObjTy
                             | _ -> []
+
                         match epinfos with 
-                        | [pinfo] when pinfo.HasSetter && not pinfo.IsIndexer -> 
+                        | [pinfo] when pinfo.HasSetter && not pinfo.IsStatic && not pinfo.IsIndexer -> 
                             let pminfo = pinfo.SetterMethod
                             let pminst =
                                 match minfo with
@@ -661,11 +666,11 @@ type CalledMeth<'T>
                             Choice1Of2(AssignedItemSetter(id, AssignedPropSetter(propStaticTyOpt, pinfo, pminfo, pminst), e))
                         |  _ ->    
                             match infoReader.GetILFieldInfosOfType(Some(nm), ad, m, returnedObjTy) with
-                            | finfo :: _ -> 
+                            | finfo :: _ when not finfo.IsStatic -> 
                                 Choice1Of2(AssignedItemSetter(id, AssignedILFieldSetter(finfo), e))
                             | _ ->              
                               match infoReader.TryFindRecdOrClassFieldInfoOfType(nm, m, returnedObjTy) with
-                              | ValueSome rfinfo -> 
+                              | ValueSome rfinfo when not rfinfo.IsStatic -> 
                                   Choice1Of2(AssignedItemSetter(id, AssignedRecdFieldSetter(rfinfo), e))
                               | _ -> 
                                   Choice2Of2(arg))
