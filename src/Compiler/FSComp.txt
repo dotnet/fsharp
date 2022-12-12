@@ -1559,6 +1559,7 @@ featureMatchNotAllowedForUnionCaseWithNoData,"Pattern match discard is not allow
 featureCSharpExtensionAttributeNotRequired,"Allow implicit Extension attribute on declaring types, modules"
 featureErrorForNonVirtualMembersOverrides,"Raises errors for non-virtual members overrides"
 featureWarningWhenInliningMethodImplNoInlineMarkedFunction,"Raises warnings when 'let inline ... =' is used together with [<MethodImpl(MethodImplOptions.NoInlining)>] attribute. Function is not getting inlined."
+featureArithmeticInLiterals,"Allow arithmetic and logical operations in literals"
 3353,fsiInvalidDirective,"Invalid directive '#%s %s'"
 3354,tcNotAFunctionButIndexerNamedIndexingNotYetEnabled,"This value supports indexing, e.g. '%s.[index]'. The syntax '%s[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation."
 3354,tcNotAFunctionButIndexerIndexingNotYetEnabled,"This expression supports indexing, e.g. 'expr.[index]'. The syntax 'expr[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation."

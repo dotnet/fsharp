@@ -48,6 +48,7 @@ type LanguageFeature =
     | CSharpExtensionAttributeNotRequired
     | ErrorForNonVirtualMembersOverrides
     | WarningWhenInliningMethodImplNoInlineMarkedFunction
+    | ArithmeticInLiterals
 
 /// LanguageVersion management
 type LanguageVersion =
