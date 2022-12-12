@@ -43,7 +43,7 @@ type E =
         |> withResult {
             Error = Error 1
             Range = { StartLine = 6
-                      StartColumn = 7
+                      StartColumn = 11
                       EndLine = 6
                       EndColumn = 20 }
             Message = "This expression was expected to have type

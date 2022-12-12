@@ -571,24 +571,25 @@ module TcRecdUnionAndEnumDeclarations =
         let xmlDoc = xmldoc.ToXmlDoc(checkXmlDocs, Some [])
         Construct.NewRecdField true (Some value) caseIdent false thisTy false false [] attrs xmlDoc vis false
 
-    let TcEnumDecl cenv env tpenv parent thisTy fieldTy (SynEnumCase (attributes = Attributes synAttrs; ident = SynIdent (id, _); value = v; xmlDoc = xmldoc; range = m)) =
+    let TcEnumDecl cenv env tpenv parent thisTy fieldTy (SynEnumCase (attributes = Attributes synAttrs; ident = SynIdent (id, _); valueExpr = valueExpr; xmlDoc = xmldoc; range = caseRange)) =
         let attrs = TcAttributes cenv env AttributeTargets.Field synAttrs
+        let valueRange = valueExpr.Range
 
-        match v with
+        match valueExpr with
         | SynExpr.Const (constant = SynConst.Bytes _ | SynConst.UInt16s _ | SynConst.UserNum _) ->
-            error(Error(FSComp.SR.tcInvalidEnumerationLiteral(), m))
-        | SynExpr.Const (v, _) -> 
-            let v = TcConst cenv fieldTy m env v
-            MakeEnumCaseSpec cenv env parent attrs thisTy m id xmldoc v
+            error(Error(FSComp.SR.tcInvalidEnumerationLiteral(), valueRange))
+        | SynExpr.Const (synConst, _) -> 
+            let konst = TcConst cenv fieldTy valueRange env synConst
+            MakeEnumCaseSpec cenv env parent attrs thisTy caseRange id xmldoc konst
         | _ when cenv.g.langVersion.SupportsFeature LanguageFeature.ArithmeticInLiterals ->
-            let expr, actualTy, _ = TcExprOfUnknownType cenv env tpenv v
-            UnifyTypes cenv env m fieldTy actualTy
+            let expr, actualTy, _ = TcExprOfUnknownType cenv env tpenv valueExpr
+            UnifyTypes cenv env valueRange fieldTy actualTy
             
             match EvalLiteralExprOrAttribArg cenv.g expr with
-            | Expr.Const (v, _, _) -> MakeEnumCaseSpec cenv env parent attrs thisTy m id xmldoc v
-            | _ -> error(Error(FSComp.SR.tcInvalidEnumerationLiteral(), m))
+            | Expr.Const (konst, _, _) -> MakeEnumCaseSpec cenv env parent attrs thisTy caseRange id xmldoc konst
+            | _ -> error(Error(FSComp.SR.tcInvalidEnumerationLiteral(), valueRange))
         | _ ->
-            error(Error(FSComp.SR.tcInvalidEnumerationLiteral(), m))
+            error(Error(FSComp.SR.tcInvalidEnumerationLiteral(), valueRange))
 
     let TcEnumDecls (cenv: cenv) env tpenv parent thisTy enumCases =
         let g = cenv.g

@@ -17,7 +17,7 @@ type Foo = One = 0x00000001
     | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Types(typeDefns = [
             SynTypeDefn.SynTypeDefn(typeRepr =
-                SynTypeDefnRepr.Simple(simpleRepr = SynTypeDefnSimpleRepr.Enum(cases = [ SynEnumCase.SynEnumCase(value = e) ])))])
+                SynTypeDefnRepr.Simple(simpleRepr = SynTypeDefnSimpleRepr.Enum(cases = [ SynEnumCase.SynEnumCase(valueExpr = e) ])))])
     ]) ])) ->
         assertRange (2, 17) (2, 27) e.Range
     | _ -> Assert.Fail "Could not get valid AST"
@@ -36,8 +36,8 @@ type Foo =
     | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Types(typeDefns = [
             SynTypeDefn.SynTypeDefn(typeRepr =
-                SynTypeDefnRepr.Simple(simpleRepr = SynTypeDefnSimpleRepr.Enum(cases = [ SynEnumCase.SynEnumCase(value = e1)
-                                                                                         SynEnumCase.SynEnumCase(value = e2) ])))])
+                SynTypeDefnRepr.Simple(simpleRepr = SynTypeDefnSimpleRepr.Enum(cases = [ SynEnumCase.SynEnumCase(valueExpr = e1)
+                                                                                         SynEnumCase.SynEnumCase(valueExpr = e2) ])))])
     ]) ])) ->
         assertRange (3, 13) (3, 23) e1.Range
         assertRange (4, 12) (4, 13) e2.Range
