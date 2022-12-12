@@ -219,7 +219,9 @@ Outlining;
 Show outlining and collapsible nodes for F# code;
 Inline hints;
 Display inline type hints (experimental);
-Display inline parameter name hints (experimental);Beer</value>
+Display inline parameter name hints (experimental);Beer
+Live Buffers;
+Use live (unsaved) buffers for checking</value>
   </data>
   <data name="6014" xml:space="preserve">
     <value>Formatting</value>

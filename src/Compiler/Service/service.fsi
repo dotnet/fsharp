@@ -35,6 +35,7 @@ type public FSharpChecker =
     /// <param name="enableParallelCheckingWithSignatureFiles">Type check implementation files that are backed by a signature file in parallel.</param>
     /// <param name="parallelReferenceResolution">Indicates whether to resolve references in parallel.</param>
     /// <param name="getSource">Function to get source text for a file instead of reading it from the file system.</param>
+    /// <param name="useChangeNotifications">With this option set to true, checker will not be looking at the file system to find what was changed. Instead it expects to be notified via NotifyFileChanged method.</param>
     static member Create:
         ?projectCacheSize: int *
         ?keepAssemblyContents: bool *
@@ -47,7 +48,8 @@ type public FSharpChecker =
         ?enablePartialTypeChecking: bool *
         ?enableParallelCheckingWithSignatureFiles: bool *
         ?parallelReferenceResolution: bool *
-        ?getSource: (string -> ISourceText option) ->
+        [<Experimental "This parameter is experimental and likely to be removed in the future.">] ?getSource: (string -> ISourceText option) *
+        [<Experimental "This parameter is experimental and likely to be removed in the future.">] ?useChangeNotifications: bool ->
             FSharpChecker
 
     /// <summary>
@@ -375,6 +377,11 @@ type public FSharpChecker =
 
     /// Flush all caches and garbage collect
     member ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients: unit -> unit
+
+    /// Notify the checker that given file has changed. This needs to be used when checker is created with useChangeNotifications = true.
+    /// Although it is not mandatory when the changed file is the next thing requested to be checked.
+    [<Experimental "This FCS API is experimental and likely to be removed in the future.">]
+    member NotifyFileChanged: fileName: string * options: FSharpProjectOptions * ?userOpName: string -> Async<unit>
 
     /// <summary>
     /// This function is called when a project has been cleaned/rebuilt, and thus any live type providers should be refreshed.

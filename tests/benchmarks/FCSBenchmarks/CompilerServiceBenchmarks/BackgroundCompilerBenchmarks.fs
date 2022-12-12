@@ -5,6 +5,8 @@ open System.IO
 open BenchmarkDotNet.Attributes
 open FSharp.Test.ProjectGeneration
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Test.ProjectGeneration.Internal
+open FSharp.Compiler.Text
 
 
 [<Literal>]
@@ -25,13 +27,13 @@ type BackgroundCompilerBenchmarks () =
     [<ParamsAllValues>]
     member val EmptyCache = true with get,set
 
-    member val Benchmark = Unchecked.defaultof<ProjectBenchmarkBuilder> with get, set
+    member val Benchmark = Unchecked.defaultof<_> with get, set
 
     member this.setup(project) =
         let checker = FSharpChecker.Create(
             enableBackgroundItemKeyStoreAndSemanticClassification = true
         )
-        this.Benchmark <- ProjectBenchmarkBuilder.Create(project, checker) |> Async.RunSynchronously
+        this.Benchmark <- ProjectWorkflowBuilder(project, checker=checker).Benchmark()
 
     [<IterationSetup>]
     member this.EditFirstFile_OnlyInternalChange() =
@@ -95,6 +97,81 @@ type BackgroundCompilerBenchmarks () =
         this.Benchmark {
             findAllReferencesToModuleFromFile "File000" this.FastFindReferences (expectNumberOfResults (size + 2))
         }
+
+    [<GlobalCleanup>]
+    member this.Cleanup() =
+        this.Benchmark.DeleteProjectDir()
+
+
+[<MemoryDiagnoser>]
+[<BenchmarkCategory(FSharpCategory)>]
+type NoFileSystemCheckerBenchmark() =
+
+    let size = 30
+
+    let somethingToCompile = File.ReadAllText (__SOURCE_DIRECTORY__ ++ "SomethingToCompileSmaller.fs")
+
+    let project =
+        { SyntheticProject.Create() with
+            SourceFiles = [
+                sourceFile $"File%03d{0}" []
+                for i in 1..size do
+                    { sourceFile $"File%03d{i}" [$"File%03d{i-1}"] with ExtraSource = somethingToCompile }
+            ]
+        }
+
+    [<ParamsAllValues>]
+    member val UseGetSource = true with get,set
+
+    [<ParamsAllValues>]
+    member val UseChangeNotifications = true with get,set
+
+    member this.Benchmark =
+        ProjectWorkflowBuilder(
+        project,
+        useGetSource = this.UseGetSource,
+        useChangeNotifications = this.UseChangeNotifications).Benchmark()
+
+    [<Benchmark>]
+    member this.ExampleWorkflow() =
+
+        let first = "File001"
+        let middle = $"File%03d{size / 2}"
+        let last = $"File%03d{size}"
+
+        let benchmark = this.Benchmark
+
+        if this.UseGetSource && this.UseChangeNotifications then
+
+            benchmark {
+                updateFile first updatePublicSurface
+                checkFile first expectSignatureChanged
+                checkFile last expectSignatureChanged
+                updateFile middle updatePublicSurface
+                checkFile last expectSignatureChanged
+                addFileAbove middle (sourceFile "addedFile" [first])
+                updateFile middle (addDependency "addedFile")
+                checkFile middle expectSignatureChanged
+                checkFile last expectSignatureChanged
+            }
+
+        else
+
+            benchmark {
+                updateFile first updatePublicSurface
+                saveFile first
+                checkFile first expectSignatureChanged
+                checkFile last expectSignatureChanged
+                updateFile middle updatePublicSurface
+                saveFile middle
+                checkFile last expectSignatureChanged
+                addFileAbove middle (sourceFile "addedFile" [first])
+                saveFile "addedFile"
+                updateFile middle (addDependency "addedFile")
+                saveFile middle
+                checkFile middle expectSignatureChanged
+                checkFile last expectSignatureChanged
+            }
 
     [<GlobalCleanup>]
     member this.Cleanup() =

@@ -79,12 +79,14 @@ type AdvancedOptions =
     { IsBlockStructureEnabled: bool
       IsOutliningEnabled: bool
       IsInlineTypeHintsEnabled: bool
-      IsInlineParameterNameHintsEnabled: bool }
+      IsInlineParameterNameHintsEnabled: bool
+      IsLiveBuffersEnabled: bool }
     static member Default =
       { IsBlockStructureEnabled = true
         IsOutliningEnabled = true
         IsInlineTypeHintsEnabled = false 
-        IsInlineParameterNameHintsEnabled = false }
+        IsInlineParameterNameHintsEnabled = false
+        IsLiveBuffersEnabled = false }
 
 [<CLIMutable>]
 type FormattingOptions =
