@@ -1280,7 +1280,7 @@ type FSharpChecker
             ?enablePartialTypeChecking,
             ?enableParallelCheckingWithSignatureFiles,
             ?parallelReferenceResolution,
-            ?getSource: (string -> ISourceText option),
+            ?getSource,
             ?useChangeNotifications: bool
         ) =
 

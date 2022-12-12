@@ -1668,12 +1668,9 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
             let getFSharpSource fileName =
                 getSource
-                |> Option.map(fun getSourceTextOption ->
+                |> Option.map(fun getSource ->
                     let getTimeStamp() = DateTime.UtcNow
-                    let getSourceText() =
-                        getSourceTextOption fileName
-                        // TODO: fallback to try reading from file system?
-                        |> Option.defaultWith (fun () -> failwith $"Cannot get source for {fileName}")
+                    let getSourceText() = getSource fileName
                     FSharpSource.Create(fileName, getTimeStamp, getSourceText))
                 |> Option.defaultWith(fun () -> FSharpSource.CreateFromFile(fileName))
 
