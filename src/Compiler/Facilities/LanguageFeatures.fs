@@ -58,6 +58,7 @@ type LanguageFeature =
     | CSharpExtensionAttributeNotRequired
     | ErrorForNonVirtualMembersOverrides
     | EscapeDotnetFormattableStrings
+    | ArithmeticInLiterals
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -132,6 +133,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.CSharpExtensionAttributeNotRequired, previewVersion
                 LanguageFeature.ErrorForNonVirtualMembersOverrides, previewVersion
                 LanguageFeature.EscapeDotnetFormattableStrings, previewVersion
+                LanguageFeature.ArithmeticInLiterals, previewVersion
 
             ]
 
@@ -243,6 +245,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.CSharpExtensionAttributeNotRequired -> FSComp.SR.featureCSharpExtensionAttributeNotRequired ()
         | LanguageFeature.ErrorForNonVirtualMembersOverrides -> FSComp.SR.featureErrorForNonVirtualMembersOverrides ()
         | LanguageFeature.EscapeDotnetFormattableStrings -> FSComp.SR.featureEscapeBracesInFormattableString ()
+        | LanguageFeature.ArithmeticInLiterals -> FSComp.SR.featureArithmeticInLiterals ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =
