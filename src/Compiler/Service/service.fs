@@ -1427,6 +1427,7 @@ type FSharpChecker
 
     member _.NotifyFileChanged(fileName: string, options: FSharpProjectOptions, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
+
         backgroundCompiler.NotifyFileChanged(fileName, options, userOpName)
         |> Async.AwaitNodeCode
 
