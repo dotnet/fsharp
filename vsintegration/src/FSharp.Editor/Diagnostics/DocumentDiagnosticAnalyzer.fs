@@ -62,7 +62,7 @@ type internal FSharpDocumentDiagnosticAnalyzer
 
             let! sourceText = document.GetTextAsync(ct) |> Async.AwaitTask
             let filePath = document.FilePath
-            
+
             let! errors = 
                 async {
                     match diagnosticType with
