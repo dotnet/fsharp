@@ -192,6 +192,11 @@
         <target state="translated">donner une erreur sur l’accès déconseillé de la construction avec l’attribut RequireQualifiedAccess</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureEscapeBracesInFormattableString">
+        <source>Escapes curly braces before calling FormattableStringFactory.Create when interpolated string literal is typed as FormattableString</source>
+        <target state="new">Escapes curly braces before calling FormattableStringFactory.Create when interpolated string literal is typed as FormattableString</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
         <source>more types support units of measure</source>
         <target state="translated">d'autres types prennent en charge les unités de mesure</target>
