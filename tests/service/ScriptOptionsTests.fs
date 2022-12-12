@@ -24,11 +24,12 @@ let pi = Math.PI
 """
 
 [<TestCase(true, false, [| "--targetprofile:mscorlib" |])>]
+[<TestCase(false, false, [| "--targetprofile:netcore" |])>]
 [<TestCase(false, true, [| "--targetprofile:netcore" |])>]
 [<Test>]
 let ``can generate options for different frameworks regardless of execution environment``(assumeNetFx, useSdk, flags) =
     let path = Path.GetTempPath()
-    let file = tryCreateTemporaryFileName ()
+    let file = tryCreateTemporaryFileName () + ".fsx"
     let tempFile = Path.Combine(path, file)
     let _, errors =
         checker.GetProjectOptionsFromScript(tempFile, SourceText.ofString scriptSource, assumeDotNetFramework = assumeNetFx, useSdkRefs = useSdk, otherFlags = flags)
@@ -37,6 +38,32 @@ let ``can generate options for different frameworks regardless of execution envi
     | [] -> ()
     | errors -> failwithf "Error while parsing script with assumeDotNetFramework:%b, useSdkRefs:%b, and otherFlags:%A:\n%A" assumeNetFx useSdk flags errors
 
+#if NETFRAMEWORK
+// See https://github.com/dotnet/fsharp/pull/13994#issuecomment-1259663865
+//
+// .NET Core-based tooling can't resolve nuget packages to .NET Framework references
+[<TestCase(true, false, [| "--targetprofile:mscorlib" |])>]
+#endif
+[<TestCase(false, true, [| "--targetprofile:netcore" |])>]
+[<Test>]
+let ``can resolve nuget packages to right target framework for different frameworks regardless of execution environment``(assumeNetFx, useSdk, flags) =
+    let path = Path.GetTempPath()
+    let file = tryCreateTemporaryFileName () + ".fsx"
+    let tempFile = Path.Combine(path, file)
+    let scriptSource = """
+#r "nuget: FSharp.Data, 3.3.3"
+open System
+let pi = Math.PI
+"""
+    let options, errors =
+        checker.GetProjectOptionsFromScript(tempFile, SourceText.ofString scriptSource, assumeDotNetFramework = assumeNetFx, useSdkRefs = useSdk, otherFlags = flags)
+        |> Async.RunImmediate
+    match errors with
+    | [] -> ()
+    | errors -> failwithf "Error while parsing script with assumeDotNetFramework:%b, useSdkRefs:%b, and otherFlags:%A:\n%A" assumeNetFx useSdk flags errors
+    let expectedReferenceText = (if assumeNetFx then "net45" else "netstandard2.0")
+    let found = options.OtherOptions |> Array.exists (fun s -> s.Contains(expectedReferenceText) && s.Contains("FSharp.Data.dll"))
+    Assert.IsTrue(found)
 
 // This test atempts to use a bad SDK number 666.666.666
 //
