@@ -192,6 +192,11 @@
         <target state="translated">对具有 RequireQualifiedAccess 属性的构造进行弃用的访问时出错</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureEscapeBracesInFormattableString">
+        <source>Escapes curly braces before calling FormattableStringFactory.Create when interpolated string literal is typed as FormattableString</source>
+        <target state="new">Escapes curly braces before calling FormattableStringFactory.Create when interpolated string literal is typed as FormattableString</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
         <source>more types support units of measure</source>
         <target state="translated">更多类型支持度量单位</target>
