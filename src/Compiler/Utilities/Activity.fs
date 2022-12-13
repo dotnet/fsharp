@@ -108,12 +108,15 @@ module Activity =
             )
 
         let sw = new StreamWriter(path = pathToFile, append = true)
-        let msgQueue = MailboxProcessor<string>.Start(fun inbox -> 
-            async { 
-                while true do                    
-                    let! msg =  inbox.Receive() 
-                    do! sw.WriteLineAsync(msg) |> Async.AwaitTask
-            })
+
+        let msgQueue =
+            MailboxProcessor<string>.Start
+                (fun inbox ->
+                    async {
+                        while true do
+                            let! msg = inbox.Receive()
+                            do! sw.WriteLineAsync(msg) |> Async.AwaitTask
+                    })
 
         let l =
             new ActivityListener(
