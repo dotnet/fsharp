@@ -8,6 +8,7 @@ open System.IO
 open System.Text
 open System.Collections.Concurrent
 open System.Threading.Tasks
+open Microsoft.FSharp.Control
 
 [<RequireQualifiedAccess>]
 module Activity =
@@ -121,11 +122,12 @@ module Activity =
         ActivitySource.AddActivityListener(l)
 
         let writerTask =
-            Task.Factory.StartNew(fun () ->
+            backgroundTask {
                 use sw = new StreamWriter(path = pathToFile, append = true)
 
                 for msg in messages.GetConsumingEnumerable() do
-                    sw.WriteLine(msg))
+                    sw.WriteLine(msg)
+            }
 
         { new IDisposable with
             member this.Dispose() =
