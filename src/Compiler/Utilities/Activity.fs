@@ -83,7 +83,7 @@ module Activity =
         sb.Append(a.DisplayName) |> ignore
         appendWithLeadingComma (a.StartTimeUtc.ToString("HH-mm-ss.ffff"))
         appendWithLeadingComma ((a.StartTimeUtc + a.Duration).ToString("HH-mm-ss.ffff"))
-        appendWithLeadingComma (a.Duration.TotalSeconds.ToString("000.0000"))
+        appendWithLeadingComma (a.Duration.TotalSeconds.ToString("000.0000", System.Globalization.CultureInfo.InvariantCulture))
         appendWithLeadingComma (a.Id)
         appendWithLeadingComma (a.ParentId)
 
