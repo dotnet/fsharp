@@ -576,7 +576,7 @@ let main1
             delayForFlagsLogger.CommitDelayedDiagnostics(diagnosticsLoggerProvider, tcConfigB, exiter)
             exiter.Exit 1
 
-    tcConfig.reportTimeToFile
+    tcConfig.writeTimesToFile
     |> Option.iter (fun f ->
         Activity.addCsvFileListener f |> disposables.Register
 

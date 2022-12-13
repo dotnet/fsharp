@@ -1741,12 +1741,12 @@ let internalFlags (tcConfigB: TcConfigBuilder) =
             None
         )
 
-        // "Render timing profiles for compilation to a file"
+        // "Write timing profiles for compilation to a file"
         CompilerOption(
-            "reportTimeToFile",
-            tagString,
-            OptionString(fun s -> tcConfigB.reportTimeToFile <- Some s),
-            Some(InternalCommandLineOption("reportTimeToFile", rangeCmdArgs)),
+            "times",
+            tagFile,
+            OptionString(fun s -> tcConfigB.writeTimesToFile <- Some s),
+            Some(InternalCommandLineOption("times", rangeCmdArgs)),
             None
         )
 
@@ -2381,7 +2381,7 @@ let ReportTime (tcConfig: TcConfig) descr =
         // Intentionally putting this right after the pause so a debugger can be attached.
         SimulateException tcConfig.simulateException
 
-    if (tcConfig.showTimes || verbose || tcConfig.reportTimeToFile.IsSome) then
+    if (tcConfig.showTimes || verbose || tcConfig.writeTimesToFile.IsSome) then
         // Note that timing calls are relatively expensive on the startup path so we don't
         // make this call unless showTimes has been turned on.
         let p = Process.GetCurrentProcess()

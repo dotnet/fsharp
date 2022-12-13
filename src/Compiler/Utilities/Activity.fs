@@ -6,9 +6,6 @@ open System
 open System.Diagnostics
 open System.IO
 open System.Text
-open System.Collections.Concurrent
-open System.Threading.Tasks
-open Microsoft.FSharp.Control
 
 [<RequireQualifiedAccess>]
 module Activity =
@@ -110,27 +107,26 @@ module Activity =
                 ]
             )
 
-        let messages = new BlockingCollection<string>(new ConcurrentQueue<string>())
+        let sw = new StreamWriter(path = pathToFile, append = true)
+        let msgQueue = MailboxProcessor<string>.Start(fun inbox -> 
+            async { 
+                while true do                    
+                    let! msg =  inbox.Receive() 
+                    do! sw.WriteLineAsync(msg) |> Async.AwaitTask
+            })
 
         let l =
             new ActivityListener(
                 ShouldListenTo = (fun a -> a.Name = activitySourceName),
                 Sample = (fun _ -> ActivitySamplingResult.AllData),
-                ActivityStopped = (fun a -> messages.Add(createCsvRow a))
+                ActivityStopped = (fun a -> msgQueue.Post(createCsvRow a))
             )
 
         ActivitySource.AddActivityListener(l)
 
-        let writerTask =
-            backgroundTask {
-                use sw = new StreamWriter(path = pathToFile, append = true)
-
-                for msg in messages.GetConsumingEnumerable() do
-                    sw.WriteLine(msg)
-            }
-
         { new IDisposable with
             member this.Dispose() =
-                messages.CompleteAdding()
-                writerTask.Wait()
+                l.Dispose() // Unregister from listening new activities first
+                (msgQueue :> IDisposable).Dispose() // Wait for the msg queue to be written out
+                sw.Dispose() // Only then flush the messages and close the file
         }

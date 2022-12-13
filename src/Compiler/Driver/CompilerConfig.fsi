@@ -426,7 +426,7 @@ type TcConfigBuilder =
 
         mutable showTimes: bool
 
-        mutable reportTimeToFile: string option
+        mutable writeTimesToFile: string option
 
         mutable showLoadedAssemblies: bool
 
@@ -750,7 +750,7 @@ type TcConfig =
 
     member showTimes: bool
 
-    member reportTimeToFile: string option
+    member writeTimesToFile: string option
 
     member showLoadedAssemblies: bool
 
