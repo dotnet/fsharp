@@ -1742,6 +1742,15 @@ let internalFlags (tcConfigB: TcConfigBuilder) =
             None
         )
 
+        // "Write timing profiles for compilation to a file"
+        CompilerOption(
+            "times",
+            tagFile,
+            OptionString(fun s -> tcConfigB.writeTimesToFile <- Some s),
+            Some(InternalCommandLineOption("times", rangeCmdArgs)),
+            None
+        )
+
 #if !NO_TYPEPROVIDERS
         // "Display information about extension type resolution")
         CompilerOption(
@@ -2340,39 +2349,40 @@ let PrintWholeAssemblyImplementation (tcConfig: TcConfig) outfile header expr =
 let mutable tPrev: (DateTime * DateTime * float * int[]) option = None
 let mutable nPrev: (string * IDisposable) option = None
 
+let private SimulateException simulateConfig =
+    match simulateConfig with
+    | Some ("fsc-oom") -> raise (OutOfMemoryException())
+    | Some ("fsc-an") -> raise (ArgumentNullException("simulated"))
+    | Some ("fsc-invop") -> raise (InvalidOperationException())
+    | Some ("fsc-av") -> raise (AccessViolationException())
+    | Some ("fsc-aor") -> raise (ArgumentOutOfRangeException())
+    | Some ("fsc-dv0") -> raise (DivideByZeroException())
+    | Some ("fsc-nfn") -> raise (NotFiniteNumberException())
+    | Some ("fsc-oe") -> raise (OverflowException())
+    | Some ("fsc-atmm") -> raise (ArrayTypeMismatchException())
+    | Some ("fsc-bif") -> raise (BadImageFormatException())
+    | Some ("fsc-knf") -> raise (System.Collections.Generic.KeyNotFoundException())
+    | Some ("fsc-ior") -> raise (IndexOutOfRangeException())
+    | Some ("fsc-ic") -> raise (InvalidCastException())
+    | Some ("fsc-ip") -> raise (InvalidProgramException())
+    | Some ("fsc-ma") -> raise (MemberAccessException())
+    | Some ("fsc-ni") -> raise (NotImplementedException())
+    | Some ("fsc-nr") -> raise (NullReferenceException())
+    | Some ("fsc-oc") -> raise (OperationCanceledException())
+    | Some ("fsc-fail") -> failwith "simulated"
+    | _ -> ()
+
 let ReportTime (tcConfig: TcConfig) descr =
     match nPrev with
     | None -> ()
-    | Some (prevDescr, prevActivity) ->
-        use _ = prevActivity // Finish the previous diagnostics activity by .Dispose() at the end of this block
-
+    | Some (prevDescr, _) ->
         if tcConfig.pause then
             dprintf "[done '%s', entering '%s'] press <enter> to continue... " prevDescr descr
             Console.ReadLine() |> ignore
         // Intentionally putting this right after the pause so a debugger can be attached.
-        match tcConfig.simulateException with
-        | Some ("fsc-oom") -> raise (OutOfMemoryException())
-        | Some ("fsc-an") -> raise (ArgumentNullException("simulated"))
-        | Some ("fsc-invop") -> raise (InvalidOperationException())
-        | Some ("fsc-av") -> raise (AccessViolationException())
-        | Some ("fsc-aor") -> raise (ArgumentOutOfRangeException())
-        | Some ("fsc-dv0") -> raise (DivideByZeroException())
-        | Some ("fsc-nfn") -> raise (NotFiniteNumberException())
-        | Some ("fsc-oe") -> raise (OverflowException())
-        | Some ("fsc-atmm") -> raise (ArrayTypeMismatchException())
-        | Some ("fsc-bif") -> raise (BadImageFormatException())
-        | Some ("fsc-knf") -> raise (System.Collections.Generic.KeyNotFoundException())
-        | Some ("fsc-ior") -> raise (IndexOutOfRangeException())
-        | Some ("fsc-ic") -> raise (InvalidCastException())
-        | Some ("fsc-ip") -> raise (InvalidProgramException())
-        | Some ("fsc-ma") -> raise (MemberAccessException())
-        | Some ("fsc-ni") -> raise (NotImplementedException())
-        | Some ("fsc-nr") -> raise (NullReferenceException())
-        | Some ("fsc-oc") -> raise (OperationCanceledException())
-        | Some ("fsc-fail") -> failwith "simulated"
-        | _ -> ()
+        SimulateException tcConfig.simulateException
 
-    if (tcConfig.showTimes || verbose) then
+    if (tcConfig.showTimes || verbose || tcConfig.writeTimesToFile.IsSome) then
         // Note that timing calls are relatively expensive on the startup path so we don't
         // make this call unless showTimes has been turned on.
         let p = Process.GetCurrentProcess()
@@ -2384,11 +2394,29 @@ let ReportTime (tcConfig: TcConfig) descr =
 
         let tStart =
             match tPrev, nPrev with
-            | Some (tStart, tPrev, utPrev, gcPrev), Some (prevDescr, _) ->
+            | Some (tStart, tPrev, utPrev, gcPrev), Some (prevDescr, prevActivity) ->
                 let spanGC = [| for i in 0..maxGen -> GC.CollectionCount i - gcPrev[i] |]
                 let t = tNow - tStart
                 let tDelta = tNow - tPrev
                 let utDelta = utNow - utPrev
+
+                match prevActivity with
+                | :? System.Diagnostics.Activity as a when isNotNull a ->
+                    // Yes, there is duplicity of code between the console reporting and Activity collection right now.
+                    // If current --times behaviour can be changed (=breaking change to the layout etc.), the GC and CPU time collecting logic can move to Activity
+                    // (if a special Tag is set for an activity, the listener itself could evaluate CPU and GC info and set it
+                    a.AddTag(Activity.Tags.gc0, spanGC[Operators.min 0 maxGen]) |> ignore
+                    a.AddTag(Activity.Tags.gc1, spanGC[Operators.min 1 maxGen]) |> ignore
+                    a.AddTag(Activity.Tags.gc2, spanGC[Operators.min 2 maxGen]) |> ignore
+
+                    a.AddTag(Activity.Tags.outputDllFile, tcConfig.outputFile |> Option.defaultValue String.Empty)
+                    |> ignore
+
+                    a.AddTag(Activity.Tags.cpuDelta, utDelta.ToString("000.000")) |> ignore
+
+                    a.AddTag(Activity.Tags.realDelta, tDelta.TotalSeconds.ToString("000.000"))
+                    |> ignore
+                | _ -> ()
 
                 printf
                     "Real: %4.1f Realdelta: %4.1f Cpu: %4.1f Cpudelta: %4.1f Mem: %3d"
@@ -2410,6 +2438,11 @@ let ReportTime (tcConfig: TcConfig) descr =
             | _ -> DateTime.Now
 
         tPrev <- Some(tStart, tNow, utNow, gcNow)
+
+    nPrev
+    |> Option.iter (fun (_, act) ->
+        if isNotNull act then
+            act.Dispose())
 
     nPrev <- Some(descr, Activity.startNoTags descr)
 
