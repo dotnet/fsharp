@@ -33,6 +33,17 @@ let c: System.IFormattable = $"string"
         |> shouldSucceed
 
     [<Fact>]
+    let ``Interpolated string literal typed as FormattableString handles double braces correctly`` () =
+        Fsx """
+let a = $"{{hello}} world" : System.FormattableString
+printf $"{a.Format}"
+        """
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContains "{{hello}} world"
+
+    [<Fact>]
     let ``Percent sign characters in interpolated strings`` () =
         Assert.Equal("%", $"%%")
         Assert.Equal("42%", $"{42}%%")
