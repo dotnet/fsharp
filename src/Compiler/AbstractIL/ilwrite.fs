@@ -3775,14 +3775,11 @@ let writePdb (
     match signer with
     | None -> ()
     | Some s ->
+        use fs = reopenOutput()
         try
-            s.SignFile outfile
-            s.Close()
+            s.SignStream fs
         with exn ->
-            failwith ("Warning: A call to SignFile failed ("+exn.Message+")")
-            (try s.Close() with _ -> ())
-            (try FileSystem.FileDeleteShim outfile with _ -> ())
-            ()
+            failwith ($"Warning: A call to SignFile failed ({exn.Message})")
 
     reportTime showTimes "Signing Image"
     pdbBytes
