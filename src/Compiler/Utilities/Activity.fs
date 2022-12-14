@@ -60,17 +60,6 @@ module internal Activity =
 
             depth this 0
 
-    module Tags =
-        let fileName = "fileName"
-        let project = "project"
-        let qualifiedNameOfFile = "qualifiedNameOfFile"
-        let userOpName = "userOpName"
-        let length = "length"
-        let cache = "cache"
-
-        let AllKnownTags =
-            [| fileName; project; qualifiedNameOfFile; userOpName; length; cache |]
-
     let private activitySource = new ActivitySource(activitySourceName)
 
     let start (name: string) (tags: (string * string) seq) : IDisposable =

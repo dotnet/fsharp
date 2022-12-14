@@ -516,8 +516,7 @@ type TcConfigBuilder =
         mutable showBanner: bool
 
         /// show times between passes?
-        mutable showTimes: bool
-        mutable reportTimeToFile: string option
+        mutable showTimes: bool     
         mutable writeTimesToFile: string option
         mutable showLoadedAssemblies: bool
         mutable continueAfterParseFailure: bool
@@ -740,7 +739,7 @@ type TcConfigBuilder =
             preferredUiLang = None
             lcid = None
             productNameForBannerText = FSharpProductName
-            showBanner = true
+            showBanner = true           
             showTimes = false
             writeTimesToFile = None
             showLoadedAssemblies = false
