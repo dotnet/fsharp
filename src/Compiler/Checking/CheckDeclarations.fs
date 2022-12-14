@@ -5316,8 +5316,8 @@ let CheckOneImplFile
         use _ =
             Activity.start "CheckDeclarations.CheckOneImplFile"
                 [|
-                    "fileName", fileName
-                    "qualifiedNameOfFile", qualNameOfFile.Text
+                    Activity.Tags.fileName, fileName
+                    Activity.Tags.qualifiedNameOfFile, qualNameOfFile.Text
                 |]
         let cenv =
             cenv.Create (g, isScript, amap, thisCcu, false, Option.isSome rootSigOpt,
@@ -5450,8 +5450,8 @@ let CheckOneSigFile (g, amap, thisCcu, checkForErrors, conditionalDefines, tcSin
     use _ =
         Activity.start "CheckDeclarations.CheckOneSigFile"
             [|
-                "fileName", sigFile.FileName
-                "qualifiedNameOfFile", sigFile.QualifiedName.Text
+                Activity.Tags.fileName, sigFile.FileName
+                Activity.Tags.qualifiedNameOfFile, sigFile.QualifiedName.Text
             |]
     let cenv =
         cenv.Create 
