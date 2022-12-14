@@ -31,7 +31,7 @@ type BackgroundCompilerBenchmarks () =
         let checker = FSharpChecker.Create(
             enableBackgroundItemKeyStoreAndSemanticClassification = true
         )
-        this.Benchmark <- ProjectWorkflowBuilder(project, checker=checker).Benchmark()
+        this.Benchmark <- ProjectWorkflowBuilder(project, checker=checker).CreateBenchmarkBuilder()
 
     [<IterationSetup>]
     member this.EditFirstFile_OnlyInternalChange() =
@@ -125,13 +125,22 @@ type NoFileSystemCheckerBenchmark() =
     [<ParamsAllValues>]
     member val UseChangeNotifications = true with get,set
 
+    [<ParamsAllValues>]
+    member val EmptyCache = true with get,set
+
     [<GlobalSetup>]
     member this.Setup() =
         benchmark <-
             ProjectWorkflowBuilder(
             project,
             useGetSource = this.UseGetSource,
-            useChangeNotifications = this.UseChangeNotifications).Benchmark()
+            useChangeNotifications = this.UseChangeNotifications).CreateBenchmarkBuilder()
+
+    [<IterationSetup>]
+    member this.EditFirstFile_OnlyInternalChange() =
+        if this.EmptyCache then
+            benchmark.Checker.InvalidateAll()
+            benchmark.Checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
 
     [<Benchmark>]
     member this.ExampleWorkflow() =

@@ -134,6 +134,7 @@ type SyntheticProject =
         if not (OptionsCache.ContainsKey cacheKey) then
             OptionsCache[cacheKey] <-
                 use _ = Activity.start "SyntheticProject.GetProjectOptions" [ "project", this.Name ]
+
                 let baseOptions, _ =
                     checker.GetProjectOptionsFromScript(
                         "file.fs",
@@ -281,7 +282,7 @@ module ProjectOperations =
                     rootProject.DependsOn
                     |> List.updateAt index (updateFile fileId updateFunction project) }
 
-    let private counter = (Seq.initInfinite (id >> (+) 2)).GetEnumerator()
+    let private counter = (Seq.initInfinite ((+) 2)).GetEnumerator()
 
     let updatePublicSurface f =
         counter.MoveNext() |> ignore
@@ -466,7 +467,10 @@ type ProjectWorkflowBuilder
 
     let mapProject f = mapProjectAsync (f >> async.Return)
 
-    member this.Benchmark() =
+    /// Creates a ProjectWorkflowBuilder which will already have the project
+    /// saved and checked so time won't be spent on that.
+    /// Also the project won't be deleted after the computation expression is evaluated
+    member this.CreateBenchmarkBuilder() =
         let ctx = this.Yield() |> Async.RunSynchronously
 
         ProjectWorkflowBuilder(
@@ -488,7 +492,11 @@ type ProjectWorkflowBuilder
             Directory.Delete(initialProject.ProjectDir, true)
 
     member this.Run(workflow: Async<WorkflowContext>) =
-        Async.RunSynchronously workflow
+        try
+            Async.RunSynchronously workflow
+        finally
+            if initialContext.IsNone then
+                this.DeleteProjectDir()
 
     /// Change contents of given file using `processFile` function.
     /// Does not save the file to disk.
@@ -497,7 +505,9 @@ type ProjectWorkflowBuilder
         workflow
         |> mapProjectAsync (fun project ->
             async {
-                use _ = Activity.start "ProjectWorkflowBuilder.UpdateFile" [ "project", project.Name; "fileId", fileId ]
+                use _ =
+                    Activity.start "ProjectWorkflowBuilder.UpdateFile" [ "project", project.Name; "fileId", fileId ]
+
                 let result = project |> updateFileInAnyProject fileId processFile
 
                 if useChangeNotifications then
@@ -513,7 +523,9 @@ type ProjectWorkflowBuilder
     member this.AddFileAbove(workflow: Async<WorkflowContext>, addAboveId: string, newFile) =
         workflow
         |> mapProject (fun project ->
-            use _ = Activity.start "ProjectWorkflowBuilder.AddFileAbove" [ "project", project.Name; "fileId", newFile.Id ]
+            use _ =
+                Activity.start "ProjectWorkflowBuilder.AddFileAbove" [ "project", project.Name; "fileId", newFile.Id ]
+
             let index =
                 project.SourceFiles
                 |> List.tryFindIndex (fun f -> f.Id = addAboveId)
@@ -532,7 +544,9 @@ type ProjectWorkflowBuilder
     [<CustomOperation "checkFile">]
     member this.CheckFile(workflow: Async<WorkflowContext>, fileId: string, processResults) =
         async {
-            use _ = Activity.start "ProjectWorkflowBuilder.CheckFile" [ "project", initialProject.Name; "fileId", fileId ]
+            use _ =
+                Activity.start "ProjectWorkflowBuilder.CheckFile" [ "project", initialProject.Name; "fileId", fileId ]
+
             let! ctx = workflow
             let! results = checkFile fileId ctx.Project checker
 
@@ -546,7 +560,9 @@ type ProjectWorkflowBuilder
 
     member this.CheckFile(workflow: Async<WorkflowContext>, fileId: string, processResults) =
         async {
-            use _ = Activity.start "ProjectWorkflowBuilder.CheckFile" [ "project", initialProject.Name; "fileId", fileId ]
+            use _ =
+                Activity.start "ProjectWorkflowBuilder.CheckFile" [ "project", initialProject.Name; "fileId", fileId ]
+
             let! ctx = workflow
             let! results = checkFile fileId ctx.Project checker
             let typeCheckResults = getTypeCheckResult results
@@ -676,17 +692,6 @@ type ProjectWorkflowBuilder
 /// Execute a set of operations on a given synthetic project.
 /// The project is saved to disk and type checked at the start.
 let projectWorkflow project = ProjectWorkflowBuilder project
-
-
-/// Just like ProjectWorkflowBuilder but expects a saved and checked project
-/// so time is not spent on it during the benchmark.
-/// Also does not delete the project at the end of a run - so it keeps working for the next iteration
-type ProjectBenchmarkBuilder(initialContext: WorkflowContext, checker, useGetSource, useChangeNotifications) =
-    inherit ProjectWorkflowBuilder(initialContext.Project, checker, useGetSource, useChangeNotifications)
-
-    member this.Yield _ = async.Return initialContext
-
-    member this.Run(workflow: Async<WorkflowContext>) = Async.RunSynchronously workflow
 
 
 type SyntheticProject with
