@@ -6,11 +6,39 @@ open System
 open System.Diagnostics
 open System.IO
 open System.Text
-open System.Collections.Concurrent
-open System.Threading.Tasks
 
 [<RequireQualifiedAccess>]
 module internal Activity =
+
+    module Tags =
+        let fileName = "fileName"
+        let project = "project"
+        let qualifiedNameOfFile = "qualifiedNameOfFile"
+        let userOpName = "userOpName"
+        let length = "length"
+        let cache = "cache"
+        let cpuDelta = "cpuDelta(s)"
+        let realDelta = "realDelta(s)"
+        let gc0 = "gc0"
+        let gc1 = "gc1"
+        let gc2 = "gc2"
+        let outputDllFile = "outputDllFile"
+
+        let AllKnownTags =
+            [|
+                fileName
+                project
+                qualifiedNameOfFile
+                userOpName
+                length
+                cache
+                cpuDelta
+                realDelta
+                gc0
+                gc1
+                gc2
+                outputDllFile
+            |]
 
     let private activitySourceName = "fsc"
     let private profiledSourceName = "fsc_with_env_stats"
@@ -131,7 +159,6 @@ module internal Activity =
                                 Console.Write("{0,7}|", a.GetTagItem(t))
 
                             Console.WriteLine())
-
                 )
 
             Console.WriteLine(new String('-', header.Length))
@@ -174,7 +201,7 @@ module internal Activity =
             sb.Append(a.DisplayName) |> ignore
             appendWithLeadingComma (a.StartTimeUtc.ToString("HH-mm-ss.ffff"))
             appendWithLeadingComma ((a.StartTimeUtc + a.Duration).ToString("HH-mm-ss.ffff"))
-            appendWithLeadingComma (a.Duration.TotalSeconds.ToString("000.0000"))
+            appendWithLeadingComma (a.Duration.TotalSeconds.ToString("000.0000", System.Globalization.CultureInfo.InvariantCulture))
             appendWithLeadingComma (a.Id)
             appendWithLeadingComma (a.ParentId)
             appendWithLeadingComma (a.RootId)
@@ -194,26 +221,29 @@ module internal Activity =
                     ]
                 )
 
-            let messages = new BlockingCollection<string>(new ConcurrentQueue<string>())
+            let sw = new StreamWriter(path = pathToFile, append = true)
+
+            let msgQueue =
+                MailboxProcessor<string>.Start
+                    (fun inbox ->
+                        async {
+                            while true do
+                                let! msg = inbox.Receive()
+                                do! sw.WriteLineAsync(msg) |> Async.AwaitTask
+                        })
 
             let l =
                 new ActivityListener(
-                    ShouldListenTo = (fun a -> a.Name = activitySourceName || a.Name = profiledSourceName),
+                    ShouldListenTo = (fun a -> a.Name = activitySourceName),
                     Sample = (fun _ -> ActivitySamplingResult.AllData),
-                    ActivityStopped = (fun a -> messages.Add(createCsvRow a))
+                    ActivityStopped = (fun a -> msgQueue.Post(createCsvRow a))
                 )
 
             ActivitySource.AddActivityListener(l)
 
-            let writerTask =
-                Task.Factory.StartNew(fun () ->
-                    use sw = new StreamWriter(path = pathToFile, append = true)
-
-                    for msg in messages.GetConsumingEnumerable() do
-                        sw.WriteLine(msg))
-
             { new IDisposable with
                 member this.Dispose() =
-                    messages.CompleteAdding()
-                    writerTask.Wait()
+                    l.Dispose() // Unregister from listening new activities first
+                    (msgQueue :> IDisposable).Dispose() // Wait for the msg queue to be written out
+                    sw.Dispose() // Only then flush the messages and close the file
             }

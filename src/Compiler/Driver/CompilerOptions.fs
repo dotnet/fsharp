@@ -1740,13 +1740,13 @@ let internalFlags (tcConfigB: TcConfigBuilder) =
             Some(InternalCommandLineOption("times", rangeCmdArgs)),
             None
         )
-
-        // "Render timing profiles for compilation to a file"
+        
+        // "Write timing profiles for compilation to a file"
         CompilerOption(
-            "reportTimeToFile",
-            tagString,
-            OptionString(fun s -> tcConfigB.reportTimeToFile <- Some s),
-            Some(InternalCommandLineOption("reportTimeToFile", rangeCmdArgs)),
+            "times",
+            tagFile,
+            OptionString(fun s -> tcConfigB.writeTimesToFile <- Some s),
+            Some(InternalCommandLineOption("times", rangeCmdArgs)),
             None
         )
 

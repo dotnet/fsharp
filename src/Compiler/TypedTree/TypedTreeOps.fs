@@ -3742,6 +3742,28 @@ let (|SpecificUnopExpr|_|) g vrefReqd expr =
     | UnopExpr g (vref, arg1) when valRefEq g vref vrefReqd -> Some arg1
     | _ -> None
 
+let (|SignedConstExpr|_|) expr =
+    match expr with
+    | Expr.Const (Const.Int32 _, _, _)
+    | Expr.Const (Const.SByte _, _, _)
+    | Expr.Const (Const.Int16 _, _, _)
+    | Expr.Const (Const.Int64 _, _, _)
+    | Expr.Const (Const.Single _, _, _)
+    | Expr.Const (Const.Double _, _, _) -> Some ()
+    | _ -> None
+
+let (|IntegerConstExpr|_|) expr =
+    match expr with
+    | Expr.Const (Const.Int32 _, _, _)
+    | Expr.Const (Const.SByte _, _, _)
+    | Expr.Const (Const.Int16 _, _, _)
+    | Expr.Const (Const.Int64 _, _, _)
+    | Expr.Const (Const.Byte _, _, _)
+    | Expr.Const (Const.UInt16 _, _, _)
+    | Expr.Const (Const.UInt32 _, _, _)
+    | Expr.Const (Const.UInt64 _, _, _) -> Some ()
+    | _ -> None
+
 let (|SpecificBinopExpr|_|) g vrefReqd expr = 
     match expr with 
     | BinopExpr g (vref, arg1, arg2) when valRefEq g vref vrefReqd -> Some (arg1, arg2)
@@ -9647,12 +9669,46 @@ let IsSimpleSyntacticConstantExpr g inputExpr =
         checkExpr vrefs e
 
     checkExpr Set.empty inputExpr    
-    
-let EvalArithBinOp (opInt8, opInt16, opInt32, opInt64, opUInt8, opUInt16, opUInt32, opUInt64) (arg1: Expr) (arg2: Expr) = 
-    // At compile-time we check arithmetic 
+
+let EvalArithShiftOp (opInt8, opInt16, opInt32, opInt64, opUInt8, opUInt16, opUInt32, opUInt64) (arg1: Expr) (arg2: Expr) =
+    // At compile-time we check arithmetic
     let m = unionRanges arg1.Range arg2.Range
-    try 
-        match arg1, arg2 with 
+    try
+        match arg1, arg2 with
+        | Expr.Const (Const.Int32 x1, _, ty), Expr.Const (Const.Int32 shift, _, _) -> Expr.Const (Const.Int32 (opInt32 x1 shift), m, ty)
+        | Expr.Const (Const.SByte x1, _, ty), Expr.Const (Const.Int32 shift, _, _) -> Expr.Const (Const.SByte (opInt8 x1 shift), m, ty)
+        | Expr.Const (Const.Int16 x1, _, ty), Expr.Const (Const.Int32 shift, _, _) -> Expr.Const (Const.Int16 (opInt16 x1 shift), m, ty)
+        | Expr.Const (Const.Int64 x1, _, ty), Expr.Const (Const.Int32 shift, _, _) -> Expr.Const (Const.Int64 (opInt64 x1 shift), m, ty)
+        | Expr.Const (Const.Byte x1, _, ty), Expr.Const (Const.Int32 shift, _, _) -> Expr.Const (Const.Byte (opUInt8 x1 shift), m, ty)
+        | Expr.Const (Const.UInt16 x1, _, ty), Expr.Const (Const.Int32 shift, _, _) -> Expr.Const (Const.UInt16 (opUInt16 x1 shift), m, ty)
+        | Expr.Const (Const.UInt32 x1, _, ty), Expr.Const (Const.Int32 shift, _, _) -> Expr.Const (Const.UInt32 (opUInt32 x1 shift), m, ty)
+        | Expr.Const (Const.UInt64 x1, _, ty), Expr.Const (Const.Int32 shift, _, _) -> Expr.Const (Const.UInt64 (opUInt64 x1 shift), m, ty)
+        | _ -> error (Error ( FSComp.SR.tastNotAConstantExpression(), m))
+    with :? System.OverflowException -> error (Error ( FSComp.SR.tastConstantExpressionOverflow(), m))
+
+let EvalArithUnOp (opInt8, opInt16, opInt32, opInt64, opUInt8, opUInt16, opUInt32, opUInt64, opSingle, opDouble) (arg1: Expr) =
+    // At compile-time we check arithmetic
+    let m = arg1.Range
+    try
+        match arg1 with
+        | Expr.Const (Const.Int32 x1, _, ty) -> Expr.Const (Const.Int32 (opInt32 x1), m, ty)
+        | Expr.Const (Const.SByte x1, _, ty) -> Expr.Const (Const.SByte (opInt8 x1), m, ty)
+        | Expr.Const (Const.Int16 x1, _, ty) -> Expr.Const (Const.Int16 (opInt16 x1), m, ty)
+        | Expr.Const (Const.Int64 x1, _, ty) -> Expr.Const (Const.Int64 (opInt64 x1), m, ty)
+        | Expr.Const (Const.Byte x1, _, ty) -> Expr.Const (Const.Byte (opUInt8 x1), m, ty)
+        | Expr.Const (Const.UInt16 x1, _, ty) -> Expr.Const (Const.UInt16 (opUInt16 x1), m, ty)
+        | Expr.Const (Const.UInt32 x1, _, ty) -> Expr.Const (Const.UInt32 (opUInt32 x1), m, ty)
+        | Expr.Const (Const.UInt64 x1, _, ty) -> Expr.Const (Const.UInt64 (opUInt64 x1), m, ty)
+        | Expr.Const (Const.Single x1, _, ty) -> Expr.Const (Const.Single (opSingle x1), m, ty)
+        | Expr.Const (Const.Double x1, _, ty) -> Expr.Const (Const.Double (opDouble x1), m, ty)
+        | _ -> error (Error ( FSComp.SR.tastNotAConstantExpression(), m))
+    with :? System.OverflowException -> error (Error ( FSComp.SR.tastConstantExpressionOverflow(), m))
+
+let EvalArithBinOp (opInt8, opInt16, opInt32, opInt64, opUInt8, opUInt16, opUInt32, opUInt64, opSingle, opDouble) (arg1: Expr) (arg2: Expr) =
+    // At compile-time we check arithmetic
+    let m = unionRanges arg1.Range arg2.Range
+    try
+        match arg1, arg2 with
         | Expr.Const (Const.Int32 x1, _, ty), Expr.Const (Const.Int32 x2, _, _) -> Expr.Const (Const.Int32 (opInt32 x1 x2), m, ty)
         | Expr.Const (Const.SByte x1, _, ty), Expr.Const (Const.SByte x2, _, _) -> Expr.Const (Const.SByte (opInt8 x1 x2), m, ty)
         | Expr.Const (Const.Int16 x1, _, ty), Expr.Const (Const.Int16 x2, _, _) -> Expr.Const (Const.Int16 (opInt16 x1 x2), m, ty)
@@ -9661,11 +9717,18 @@ let EvalArithBinOp (opInt8, opInt16, opInt32, opInt64, opUInt8, opUInt16, opUInt
         | Expr.Const (Const.UInt16 x1, _, ty), Expr.Const (Const.UInt16 x2, _, _) -> Expr.Const (Const.UInt16 (opUInt16 x1 x2), m, ty)
         | Expr.Const (Const.UInt32 x1, _, ty), Expr.Const (Const.UInt32 x2, _, _) -> Expr.Const (Const.UInt32 (opUInt32 x1 x2), m, ty)
         | Expr.Const (Const.UInt64 x1, _, ty), Expr.Const (Const.UInt64 x2, _, _) -> Expr.Const (Const.UInt64 (opUInt64 x1 x2), m, ty)
+        | Expr.Const (Const.Single x1, _, ty), Expr.Const (Const.Single x2, _, _) -> Expr.Const (Const.Single (opSingle x1 x2), m, ty)
+        | Expr.Const (Const.Double x1, _, ty), Expr.Const (Const.Double x2, _, _) -> Expr.Const (Const.Double (opDouble x1 x2), m, ty)
         | _ -> error (Error ( FSComp.SR.tastNotAConstantExpression(), m))
     with :? System.OverflowException -> error (Error ( FSComp.SR.tastConstantExpressionOverflow(), m))
 
 // See also PostTypeCheckSemanticChecks.CheckAttribArgExpr, which must match this precisely
-let rec EvalAttribArgExpr g x = 
+let rec EvalAttribArgExpr (g: TcGlobals) x = 
+    let ignore (_x: 'a) = Unchecked.defaultof<'a>
+    let ignore2 (_x: 'a) (_y: 'a) = Unchecked.defaultof<'a>
+
+    let arithmeticInLiteralsEnabled = g.langVersion.SupportsFeature LanguageFeature.ArithmeticInLiterals
+
     match x with 
 
     // Detect standard constants 
@@ -9699,29 +9762,92 @@ let rec EvalAttribArgExpr g x =
         EvalAttribArgExpr g arg1
     // Detect bitwise or of attribute flags
     | AttribBitwiseOrExpr g (arg1, arg2) -> 
-        EvalArithBinOp ((|||), (|||), (|||), (|||), (|||), (|||), (|||), (|||)) (EvalAttribArgExpr g arg1) (EvalAttribArgExpr g arg2) 
-    | SpecificBinopExpr g g.unchecked_addition_vref (arg1, arg2) -> 
-       // At compile-time we check arithmetic 
-       let v1, v2 = EvalAttribArgExpr g arg1, EvalAttribArgExpr g arg2 
-       match v1, v2 with 
-       | Expr.Const (Const.String x1, m, ty), Expr.Const (Const.String x2, _, _) -> Expr.Const (Const.String (x1 + x2), m, ty)
-       | _ -> 
-#if ALLOW_ARITHMETIC_OPS_IN_LITERAL_EXPRESSIONS_AND_ATTRIBUTE_ARGS
-           EvalArithBinOp (Checked.(+), Checked.(+), Checked.(+), Checked.(+), Checked.(+), Checked.(+), Checked.(+), Checked.(+)) g v1 v2
-#else
-           errorR (Error ( FSComp.SR.tastNotAConstantExpression(), x.Range))
-           x
-#endif
-#if ALLOW_ARITHMETIC_OPS_IN_LITERAL_EXPRESSIONS_AND_ATTRIBUTE_ARGS
-    | SpecificBinopExpr g g.unchecked_subtraction_vref (arg1, arg2) -> 
-       EvalArithBinOp (Checked.(-), Checked.(-), Checked.(-), Checked.(-), Checked.(-), Checked.(-), Checked.(-), Checked.(-)) g (EvalAttribArgExpr g arg1) (EvalAttribArgExpr g arg2)
-    | SpecificBinopExpr g g.unchecked_multiply_vref (arg1, arg2) -> 
-       EvalArithBinOp (Checked.(*), Checked.(*), Checked.(*), Checked.(*), Checked.(*), Checked.(*), Checked.(*), Checked.(*)) g (EvalAttribArgExpr g arg1) (EvalAttribArgExpr g arg2)
-#endif
+        let v1 = EvalAttribArgExpr g arg1
+
+        match v1 with
+        | IntegerConstExpr ->
+            EvalArithBinOp ((|||), (|||), (|||), (|||), (|||), (|||), (|||), (|||), ignore2, ignore2) v1 (EvalAttribArgExpr g arg2) 
+        | _ ->
+            errorR (Error ( FSComp.SR.tastNotAConstantExpression(), x.Range))
+            x
+    | SpecificBinopExpr g g.unchecked_addition_vref (arg1, arg2) ->
+        // At compile-time we check arithmetic
+        let v1, v2 = EvalAttribArgExpr g arg1, EvalAttribArgExpr g arg2
+        match v1, v2 with
+        | Expr.Const (Const.String x1, m, ty), Expr.Const (Const.String x2, _, _) ->
+            Expr.Const (Const.String (x1 + x2), m, ty)
+        | Expr.Const (Const.Char x1, m, ty), Expr.Const (Const.Char x2, _, _) when arithmeticInLiteralsEnabled ->
+            Expr.Const (Const.Char (x1 + x2), m, ty)
+        | _ ->
+            if arithmeticInLiteralsEnabled then
+                EvalArithBinOp (Checked.(+), Checked.(+), Checked.(+), Checked.(+), Checked.(+), Checked.(+), Checked.(+), Checked.(+), Checked.(+), Checked.(+)) v1 v2
+            else
+                errorR (Error ( FSComp.SR.tastNotAConstantExpression(), x.Range))
+                x
+    | SpecificBinopExpr g g.unchecked_subtraction_vref (arg1, arg2) when arithmeticInLiteralsEnabled ->
+        let v1, v2 = EvalAttribArgExpr g arg1, EvalAttribArgExpr g arg2
+        match v1, v2 with
+        | Expr.Const (Const.Char x1, m, ty), Expr.Const (Const.Char x2, _, _) ->
+            Expr.Const (Const.Char (x1 - x2), m, ty)
+        | _ ->
+            EvalArithBinOp (Checked.(-), Checked.(-), Checked.(-), Checked.(-), Checked.(-), Checked.(-), Checked.(-), Checked.(-), Checked.(-), Checked.(-)) v1 v2
+    | SpecificBinopExpr g g.unchecked_multiply_vref (arg1, arg2) when arithmeticInLiteralsEnabled ->
+        EvalArithBinOp (Checked.(*), Checked.(*), Checked.(*), Checked.(*), Checked.(*), Checked.(*), Checked.(*), Checked.(*), Checked.(*), Checked.(*)) (EvalAttribArgExpr g arg1) (EvalAttribArgExpr g arg2)
+    | SpecificBinopExpr g g.unchecked_division_vref (arg1, arg2) when arithmeticInLiteralsEnabled ->
+        EvalArithBinOp ((/), (/), (/), (/), (/), (/), (/), (/), (/), (/)) (EvalAttribArgExpr g arg1) (EvalAttribArgExpr g arg2)
+    | SpecificBinopExpr g g.unchecked_modulus_vref (arg1, arg2) when arithmeticInLiteralsEnabled ->
+        EvalArithBinOp ((%), (%), (%), (%), (%), (%), (%), (%), (%), (%)) (EvalAttribArgExpr g arg1) (EvalAttribArgExpr g arg2)
+    | SpecificBinopExpr g g.bitwise_shift_left_vref (arg1, arg2) when arithmeticInLiteralsEnabled ->
+        EvalArithShiftOp ((<<<), (<<<), (<<<), (<<<), (<<<), (<<<), (<<<), (<<<)) (EvalAttribArgExpr g arg1) (EvalAttribArgExpr g arg2)
+    | SpecificBinopExpr g g.bitwise_shift_right_vref (arg1, arg2) when arithmeticInLiteralsEnabled ->
+        EvalArithShiftOp ((>>>), (>>>), (>>>), (>>>), (>>>), (>>>), (>>>), (>>>)) (EvalAttribArgExpr g arg1) (EvalAttribArgExpr g arg2)
+    | SpecificBinopExpr g g.bitwise_and_vref (arg1, arg2) when arithmeticInLiteralsEnabled ->
+        let v1 = EvalAttribArgExpr g arg1
+
+        match v1 with
+        | IntegerConstExpr ->
+            EvalArithBinOp ((&&&), (&&&), (&&&), (&&&), (&&&), (&&&), (&&&), (&&&), ignore2, ignore2) v1 (EvalAttribArgExpr g arg2)
+        | _ ->
+            errorR (Error ( FSComp.SR.tastNotAConstantExpression(), x.Range))
+            x
+    | SpecificUnopExpr g g.unchecked_unary_minus_vref arg1 when arithmeticInLiteralsEnabled ->
+        let v1 = EvalAttribArgExpr g arg1
+
+        match v1 with
+        | SignedConstExpr ->
+            EvalArithUnOp (Checked.(~-), Checked.(~-), Checked.(~-), Checked.(~-), ignore, ignore, ignore, ignore, Checked.(~-), Checked.(~-)) v1
+        | _ ->
+            errorR (Error ( FSComp.SR.tastNotAConstantExpression(), v1.Range))
+            x
+    | SpecificUnopExpr g g.unchecked_unary_plus_vref arg1 when arithmeticInLiteralsEnabled ->
+        EvalArithUnOp ((~+), (~+), (~+), (~+), (~+), (~+), (~+), (~+), (~+), (~+)) (EvalAttribArgExpr g arg1)
+    | SpecificUnopExpr g g.unchecked_unary_not_vref arg1 when arithmeticInLiteralsEnabled ->
+        match EvalAttribArgExpr g arg1 with
+        | Expr.Const (Const.Bool value, m, ty) ->
+            Expr.Const (Const.Bool (not value), m, ty)
+        | expr ->
+            errorR (Error ( FSComp.SR.tastNotAConstantExpression(), expr.Range))
+            x
+    // Detect logical operations on booleans, which are represented as a match expression
+    | Expr.Match (decision = TDSwitch (input = input; cases = [ TCase (DecisionTreeTest.Const (Const.Bool test), TDSuccess ([], targetNum)) ]); targets = [| TTarget (_, t0, _); TTarget (_, t1, _) |]) when arithmeticInLiteralsEnabled ->
+        match EvalAttribArgExpr g (stripDebugPoints input) with
+        | Expr.Const (Const.Bool value, _, _) ->
+            let pass, fail =
+                if targetNum = 0 then
+                    t0, t1
+                else
+                    t1, t0
+
+            if value = test then
+                EvalAttribArgExpr g (stripDebugPoints pass)
+            else
+                EvalAttribArgExpr g (stripDebugPoints fail)
+        | _ ->
+            errorR (Error ( FSComp.SR.tastNotAConstantExpression(), x.Range))
+            x
     | _ -> 
         errorR (Error ( FSComp.SR.tastNotAConstantExpression(), x.Range))
         x
-
 
 and EvaledAttribExprEquality g e1 e2 = 
     match e1, e2 with 

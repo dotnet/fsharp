@@ -579,10 +579,9 @@ let main1
     if tcConfig.showTimes then
         Activity.Profiling.addConsoleListener () |> disposables.Register
 
-    tcConfig.reportTimeToFile
+    tcConfig.writeTimesToFile
     |> Option.iter (fun f ->
         Activity.CsvExport.addCsvFileListener f |> disposables.Register
-
         Activity.start
             "FSC compilation"
             [
