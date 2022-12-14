@@ -1740,7 +1740,7 @@ let internalFlags (tcConfigB: TcConfigBuilder) =
             Some(InternalCommandLineOption("times", rangeCmdArgs)),
             None
         )
-        
+
         // "Write timing profiles for compilation to a file"
         CompilerOption(
             "times",

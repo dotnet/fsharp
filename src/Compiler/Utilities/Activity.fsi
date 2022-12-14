@@ -16,10 +16,10 @@ module internal Activity =
         val userOpName: string
         val length: string
         val cache: string
+
     val startNoTags: name: string -> IDisposable
 
     val start: name: string -> tags: (string * string) seq -> IDisposable
-
 
     module Profiling =
         val startAndMeasureEnvironmentStats: name: string -> IDisposable

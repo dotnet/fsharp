@@ -582,6 +582,7 @@ let main1
     tcConfig.writeTimesToFile
     |> Option.iter (fun f ->
         Activity.CsvExport.addCsvFileListener f |> disposables.Register
+
         Activity.start
             "FSC compilation"
             [
