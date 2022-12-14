@@ -1,12 +1,10 @@
 ﻿module FSharp.Benchmarks.BackgroundCompilerBenchmarks
 
-
 open System.IO
 open BenchmarkDotNet.Attributes
-open FSharp.Test.ProjectGeneration
 open FSharp.Compiler.CodeAnalysis
-open FSharp.Test.ProjectGeneration.Internal
-open FSharp.Compiler.Text
+open FSharp.Compiler.Diagnostics
+open FSharp.Test.ProjectGeneration
 
 
 [<Literal>]
@@ -102,7 +100,6 @@ type BackgroundCompilerBenchmarks () =
     member this.Cleanup() =
         this.Benchmark.DeleteProjectDir()
 
-
 [<MemoryDiagnoser>]
 [<BenchmarkCategory(FSharpCategory)>]
 type NoFileSystemCheckerBenchmark() =
@@ -120,26 +117,33 @@ type NoFileSystemCheckerBenchmark() =
             ]
         }
 
+    let mutable benchmark : ProjectWorkflowBuilder = Unchecked.defaultof<_>
+
     [<ParamsAllValues>]
     member val UseGetSource = true with get,set
 
     [<ParamsAllValues>]
     member val UseChangeNotifications = true with get,set
 
-    member this.Benchmark =
-        ProjectWorkflowBuilder(
-        project,
-        useGetSource = this.UseGetSource,
-        useChangeNotifications = this.UseChangeNotifications).Benchmark()
+    [<GlobalSetup>]
+    member this.Setup() =
+        benchmark <-
+            ProjectWorkflowBuilder(
+            project,
+            useGetSource = this.UseGetSource,
+            useChangeNotifications = this.UseChangeNotifications).Benchmark()
 
     [<Benchmark>]
     member this.ExampleWorkflow() =
 
+        use _ = Activity.start "Benchmark" [
+            "UseGetSource", this.UseGetSource.ToString()
+            "UseChangeNotifications", this.UseChangeNotifications.ToString()
+        ]
+
         let first = "File001"
         let middle = $"File%03d{size / 2}"
         let last = $"File%03d{size}"
-
-        let benchmark = this.Benchmark
 
         if this.UseGetSource && this.UseChangeNotifications then
 
@@ -175,4 +179,4 @@ type NoFileSystemCheckerBenchmark() =
 
     [<GlobalCleanup>]
     member this.Cleanup() =
-        this.Benchmark.DeleteProjectDir()
+        benchmark.DeleteProjectDir()

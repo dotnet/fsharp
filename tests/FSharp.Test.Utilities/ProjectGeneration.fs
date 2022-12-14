@@ -133,6 +133,7 @@ type SyntheticProject =
 
         if not (OptionsCache.ContainsKey cacheKey) then
             OptionsCache[cacheKey] <-
+                use _ = Activity.start "SyntheticProject.GetProjectOptions" [ "project", this.Name ]
                 let baseOptions, _ =
                     checker.GetProjectOptionsFromScript(
                         "file.fs",
@@ -398,6 +399,7 @@ type WorkflowContext =
 
 let SaveAndCheckProject project checker =
     async {
+        use _ = Activity.start "SaveAndCheckProject" [ "project", project.Name ]
         validateFileIdsAreUnique project
 
         do! saveProject project true checker
@@ -486,11 +488,7 @@ type ProjectWorkflowBuilder
             Directory.Delete(initialProject.ProjectDir, true)
 
     member this.Run(workflow: Async<WorkflowContext>) =
-        try
-            Async.RunSynchronously workflow
-        finally
-            if initialContext.IsSome then
-                this.DeleteProjectDir()
+        Async.RunSynchronously workflow
 
     /// Change contents of given file using `processFile` function.
     /// Does not save the file to disk.
@@ -499,12 +497,15 @@ type ProjectWorkflowBuilder
         workflow
         |> mapProjectAsync (fun project ->
             async {
+                use _ = Activity.start "ProjectWorkflowBuilder.UpdateFile" [ "project", project.Name; "fileId", fileId ]
+                let result = project |> updateFileInAnyProject fileId processFile
+
                 if useChangeNotifications then
                     let project, file = project.FindInAllProjects fileId
                     let filePath = project.ProjectDir ++ file.FileName
                     do! checker.NotifyFileChanged(filePath, project.GetProjectOptions checker)
 
-                return project |> updateFileInAnyProject fileId processFile
+                return result
             })
 
     /// Add a file above given file in the project.
@@ -512,6 +513,7 @@ type ProjectWorkflowBuilder
     member this.AddFileAbove(workflow: Async<WorkflowContext>, addAboveId: string, newFile) =
         workflow
         |> mapProject (fun project ->
+            use _ = Activity.start "ProjectWorkflowBuilder.AddFileAbove" [ "project", project.Name; "fileId", newFile.Id ]
             let index =
                 project.SourceFiles
                 |> List.tryFindIndex (fun f -> f.Id = addAboveId)
@@ -530,6 +532,7 @@ type ProjectWorkflowBuilder
     [<CustomOperation "checkFile">]
     member this.CheckFile(workflow: Async<WorkflowContext>, fileId: string, processResults) =
         async {
+            use _ = Activity.start "ProjectWorkflowBuilder.CheckFile" [ "project", initialProject.Name; "fileId", fileId ]
             let! ctx = workflow
             let! results = checkFile fileId ctx.Project checker
 
@@ -543,6 +546,7 @@ type ProjectWorkflowBuilder
 
     member this.CheckFile(workflow: Async<WorkflowContext>, fileId: string, processResults) =
         async {
+            use _ = Activity.start "ProjectWorkflowBuilder.CheckFile" [ "project", initialProject.Name; "fileId", fileId ]
             let! ctx = workflow
             let! results = checkFile fileId ctx.Project checker
             let typeCheckResults = getTypeCheckResult results
