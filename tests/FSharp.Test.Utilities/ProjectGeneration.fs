@@ -13,7 +13,7 @@
 /// To model changes to "private" code in a file we change the body of a second function which
 /// no one calls.
 ///
-module rec FSharp.Test.ProjectGeneration
+module FSharp.Test.ProjectGeneration
 
 open System
 open System.IO
@@ -22,8 +22,6 @@ open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Text
 open Xunit
 open System.Collections.Concurrent
-
-open FSharp.Test.ProjectGeneration.Internal
 
 #nowarn "57" // Experimental feature use
 
@@ -175,7 +173,6 @@ type SyntheticProject =
           for p in this.DependsOn do
               yield! p.GetAllFiles() ]
 
-
 module Internal =
 
     let renderSourceFile (project: SyntheticProject) (f: SyntheticSourceFile) =
@@ -257,6 +254,7 @@ module Internal =
             failwith
                 $"""Source file IDs have to be unique across the project and all referenced projects. Found duplicates: {String.Join(", ", duplicates |> List.map fst)}"""
 
+open Internal
 
 [<AutoOpen>]
 module ProjectOperations =
@@ -503,19 +501,18 @@ type ProjectWorkflowBuilder
     [<CustomOperation "updateFile">]
     member this.UpdateFile(workflow: Async<WorkflowContext>, fileId: string, processFile) =
         workflow
+        |> mapProject (updateFileInAnyProject fileId processFile)
         |> mapProjectAsync (fun project ->
             async {
                 use _ =
                     Activity.start "ProjectWorkflowBuilder.UpdateFile" [ "project", project.Name; "fileId", fileId ]
-
-                let result = project |> updateFileInAnyProject fileId processFile
 
                 if useChangeNotifications then
                     let project, file = project.FindInAllProjects fileId
                     let filePath = project.ProjectDir ++ file.FileName
                     do! checker.NotifyFileChanged(filePath, project.GetProjectOptions checker)
 
-                return result
+                return project
             })
 
     /// Add a file above given file in the project.
@@ -523,9 +520,6 @@ type ProjectWorkflowBuilder
     member this.AddFileAbove(workflow: Async<WorkflowContext>, addAboveId: string, newFile) =
         workflow
         |> mapProject (fun project ->
-            use _ =
-                Activity.start "ProjectWorkflowBuilder.AddFileAbove" [ "project", project.Name; "fileId", newFile.Id ]
-
             let index =
                 project.SourceFiles
                 |> List.tryFindIndex (fun f -> f.Id = addAboveId)
