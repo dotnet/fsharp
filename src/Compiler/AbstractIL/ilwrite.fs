@@ -3725,8 +3725,7 @@ let writePdb (
 
     // Now we've done the bulk of the binary, do the PDB file and fixup the binary.
     match pdbfile with
-    | None ->
-        signImage ()
+    | None -> signImage ()
 
     | Some pdbfile ->
         let idd =
@@ -4528,7 +4527,7 @@ let writeBinaryFiles (options: options, modul, normalizeAssemblyRefs) =
             reraise()
 
     let reopenOutput () =
-        FileSystem.OpenFileForWriteShim(options.outfile, FileMode.Open, FileAccess.Write, FileShare.Read)
+        FileSystem.OpenFileForWriteShim(options.outfile, FileMode.Open, FileAccess.ReadWrite, FileShare.Read)
 
     writePdb (options.dumpDebugInfo,
         options.showTimes,
