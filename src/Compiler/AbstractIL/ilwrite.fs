@@ -3711,9 +3711,23 @@ let writePdb (
     // Used to capture the pdb file bytes in the case we're generating in-memory
     let mutable pdbBytes = None
 
+    let signImage () =
+        // Sign the binary. No further changes to binary allowed past this point!
+        match signer with
+        | None -> ()
+        | Some s ->
+            use fs = reopenOutput()
+            try
+                s.SignStream fs
+            with exn ->
+                failwith ($"Warning: A call to SignFile failed ({exn.Message})")
+        reportTime showTimes "Signing Image"
+
     // Now we've done the bulk of the binary, do the PDB file and fixup the binary.
     match pdbfile with
-    | None -> ()
+    | None ->
+        signImage ()
+
     | Some pdbfile ->
         let idd =
             match pdbInfoOpt with
@@ -3763,25 +3777,14 @@ let writePdb (
                     os2.BaseStream.Seek (int64 (textV2P i.iddChunk.addr), SeekOrigin.Begin) |> ignore
                     if i.iddChunk.size < i.iddData.Length then failwith "Debug data area is not big enough. Debug info may not be usable"
                     writeBytes os2 i.iddData
+            reportTime showTimes "Finalize PDB"
+            signImage ()
             os2.Dispose()
         with exn ->
             failwith ("Error while writing debug directory entry: " + exn.Message)
             (try os2.Dispose(); FileSystem.FileDeleteShim outfile with _ -> ())
             reraise()
 
-    reportTime showTimes "Finalize PDB"
-
-    // Sign the binary. No further changes to binary allowed past this point!
-    match signer with
-    | None -> ()
-    | Some s ->
-        use fs = reopenOutput()
-        try
-            s.SignStream fs
-        with exn ->
-            failwith ($"Warning: A call to SignFile failed ({exn.Message})")
-
-    reportTime showTimes "Signing Image"
     pdbBytes
 
 type options =
@@ -4555,7 +4558,9 @@ let writeBinaryInMemory (options: options, modul, normalizeAssemblyRefs) =
     let pdbData, pdbInfoOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, _mappings =
         writeBinaryAux(stream, options, modul, normalizeAssemblyRefs)
 
-    let reopenOutput () = stream
+    let reopenOutput () =
+        stream.Seek(0, SeekOrigin.Begin) |> ignore
+        stream
 
     let pdbBytes =
         writePdb (options.dumpDebugInfo,
