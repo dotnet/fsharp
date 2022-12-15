@@ -576,6 +576,17 @@ let main1
             delayForFlagsLogger.CommitDelayedDiagnostics(diagnosticsLoggerProvider, tcConfigB, exiter)
             exiter.Exit 1
 
+    tcConfig.writeTimesToFile
+    |> Option.iter (fun f ->
+        Activity.addCsvFileListener f |> disposables.Register
+
+        Activity.start
+            "FSC compilation"
+            [
+                Activity.Tags.outputDllFile, tcConfig.outputFile |> Option.defaultValue String.Empty
+            ]
+        |> disposables.Register)
+
     let diagnosticsLogger = diagnosticsLoggerProvider.CreateLogger(tcConfigB, exiter)
 
     // Install the global error logger and never remove it. This logger does have all command-line flags considered.
