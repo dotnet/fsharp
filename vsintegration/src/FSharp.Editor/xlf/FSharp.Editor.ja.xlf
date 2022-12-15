@@ -104,7 +104,7 @@ Suggest names for unresolved identifiers;</target>
       </trans-unit>
       <trans-unit id="FormattingPageKeywords">
         <source>Re-format indentation on paste (Experimental)</source>
-        <target state="new">Re-format indentation on paste (Experimental)</target>
+        <target state="translated">貼り付け時にインデントを再フォーマットする (試験段階)</target>
         <note />
       </trans-unit>
       <trans-unit id="ImplementInterface">

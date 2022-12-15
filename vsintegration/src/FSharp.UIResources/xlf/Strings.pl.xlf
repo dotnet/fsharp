@@ -19,7 +19,7 @@
       </trans-unit>
       <trans-unit id="Inline_Hints">
         <source>Inline Hints</source>
-        <target state="new">Inline Hints</target>
+        <target state="translated">Wskazówki w tekście</target>
         <note />
       </trans-unit>
       <trans-unit id="Code_Fixes">
