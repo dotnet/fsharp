@@ -6,6 +6,7 @@
 ///
 
 module internal FSharp.Compiler.AbstractIL.StrongNameSign
+
 open System
 open System.IO
 
