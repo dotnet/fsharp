@@ -505,7 +505,7 @@ type ProjectWorkflowBuilder
         |> mapProjectAsync (fun project ->
             async {
                 use _ =
-                    Activity.start "ProjectWorkflowBuilder.UpdateFile" [ "project", project.Name; "fileId", fileId ]
+                    Activity.start "ProjectWorkflowBuilder.UpdateFile" [ Activity.Tags.project, project.Name; "fileId", fileId ]
 
                 if useChangeNotifications then
                     let project, file = project.FindInAllProjects fileId
@@ -539,7 +539,7 @@ type ProjectWorkflowBuilder
     member this.CheckFile(workflow: Async<WorkflowContext>, fileId: string, processResults) =
         async {
             use _ =
-                Activity.start "ProjectWorkflowBuilder.CheckFile" [ "project", initialProject.Name; "fileId", fileId ]
+                Activity.start "ProjectWorkflowBuilder.CheckFile" [ Activity.Tags.project, initialProject.Name; "fileId", fileId ]
 
             let! ctx = workflow
             let! results = checkFile fileId ctx.Project checker
@@ -555,7 +555,7 @@ type ProjectWorkflowBuilder
     member this.CheckFile(workflow: Async<WorkflowContext>, fileId: string, processResults) =
         async {
             use _ =
-                Activity.start "ProjectWorkflowBuilder.CheckFile" [ "project", initialProject.Name; "fileId", fileId ]
+                Activity.start "ProjectWorkflowBuilder.CheckFile" [ Activity.Tags.project, initialProject.Name; "fileId", fileId ]
 
             let! ctx = workflow
             let! results = checkFile fileId ctx.Project checker

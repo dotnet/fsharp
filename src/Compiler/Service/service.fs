@@ -774,9 +774,9 @@ type BackgroundCompiler
                 Activity.start
                     "BackgroundCompiler.NotifyFileChanged"
                     [|
-                        "project", options.ProjectFileName
-                        "fileName", fileName
-                        "userOpName", userOpName
+                        Activity.Tags.project, options.ProjectFileName
+                        Activity.Tags.fileName, fileName
+                        Activity.Tags.userOpName, userOpName
                     |]
 
             let! builderOpt, _ = getOrCreateBuilder (options, userOpName)
