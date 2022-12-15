@@ -26,36 +26,35 @@ type FSharpSource internal () =
 
     abstract FilePath: string
 
-    abstract GetTimeStamp: unit -> DateTime
+    abstract TimeStamp: DateTime
 
     abstract GetTextContainer: unit -> TextContainer
 
-//type private FSharpSourceMemoryMappedFile(filePath: string, timeStamp: DateTime, openStream: unit -> Stream) =
-//    inherit FSharpSource()
+type private FSharpSourceMemoryMappedFile(filePath: string, timeStamp: DateTime, openStream: unit -> Stream) =
+    inherit FSharpSource()
 
-//    override _.FilePath = filePath
+    override _.FilePath = filePath
 
-//    override _.TimeStamp = timeStamp
+    override _.TimeStamp = timeStamp
 
-//    override _.GetTextContainer() = openStream () |> TextContainer.Stream
+    override _.GetTextContainer() = openStream () |> TextContainer.Stream
 
-//type private FSharpSourceByteArray(filePath: string, timeStamp: DateTime, bytes: byte[]) =
-//    inherit FSharpSource()
+type private FSharpSourceByteArray(filePath: string, timeStamp: DateTime, bytes: byte[]) =
+    inherit FSharpSource()
 
-//    override _.FilePath = filePath
+    override _.FilePath = filePath
 
-//    override _.TimeStamp = timeStamp
+    override _.TimeStamp = timeStamp
 
-//    override _.GetTextContainer() =
-//        TextContainer.Stream(new MemoryStream(bytes, 0, bytes.Length, false) :> Stream)
+    override _.GetTextContainer() =
+        TextContainer.Stream(new MemoryStream(bytes, 0, bytes.Length, false) :> Stream)
 
 type private FSharpSourceFromFile(filePath: string) =
     inherit FSharpSource()
 
     override _.FilePath = filePath
 
-    override _.GetTimeStamp() =
-        FileSystem.GetLastWriteTimeShim(filePath)
+    override _.TimeStamp = FileSystem.GetLastWriteTimeShim(filePath)
 
     override _.GetTextContainer() = TextContainer.OnDisk
 
@@ -64,7 +63,7 @@ type private FSharpSourceCustom(filePath: string, getTimeStamp, getSourceText) =
 
     override _.FilePath = filePath
 
-    override _.GetTimeStamp() = getTimeStamp ()
+    override _.TimeStamp = getTimeStamp ()
 
     override _.GetTextContainer() =
         getSourceText ()
@@ -79,10 +78,10 @@ type FSharpSource with
     static member CreateFromFile(filePath: string) =
         FSharpSourceFromFile(filePath) :> FSharpSource
 
-//static member CreateCopyFromFile(filePath: string) =
-//    let timeStamp = FileSystem.GetLastWriteTimeShim(filePath)
+    static member CreateCopyFromFile(filePath: string) =
+        let timeStamp = FileSystem.GetLastWriteTimeShim(filePath)
 
-//    let openStream =
-//        fun () -> FileSystem.OpenFileForReadShim(filePath, useMemoryMappedFile = true, shouldShadowCopy = true)
+        let openStream =
+            fun () -> FileSystem.OpenFileForReadShim(filePath, useMemoryMappedFile = true, shouldShadowCopy = true)
 
-//    FSharpSourceMemoryMappedFile(filePath, timeStamp, openStream) :> FSharpSource
+        FSharpSourceMemoryMappedFile(filePath, timeStamp, openStream) :> FSharpSource

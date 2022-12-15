@@ -223,12 +223,7 @@ type TimeStampCache(defaultTimeStamp: DateTime) =
         if ok then
             v
         else
-            let v =
-                try
-                    FileSystem.GetLastWriteTimeShim fileName
-                with :? FileNotFoundException -> // TODO: .NET API never throws this exception, is it needed?
-                    defaultTimeStamp
-
+            let v = FileSystem.GetLastWriteTimeShim fileName
             files[fileName] <- v
             v
 
