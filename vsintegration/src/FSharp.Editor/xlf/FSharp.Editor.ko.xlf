@@ -104,7 +104,7 @@ Suggest names for unresolved identifiers;</target>
       </trans-unit>
       <trans-unit id="FormattingPageKeywords">
         <source>Re-format indentation on paste (Experimental)</source>
-        <target state="new">Re-format indentation on paste (Experimental)</target>
+        <target state="translated">붙여넣을 때 들여쓰기 서식 다시 지정(실험적)</target>
         <note />
       </trans-unit>
       <trans-unit id="ImplementInterface">
@@ -252,7 +252,7 @@ Dash underline;</target>
       </trans-unit>
       <trans-unit id="6008">
         <source>IntelliSense</source>
-        <target state="needs-review-translation">IntelliSense</target>
+        <target state="translated">IntelliSense</target>
         <note />
       </trans-unit>
       <trans-unit id="6009">
