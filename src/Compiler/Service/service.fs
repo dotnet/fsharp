@@ -621,6 +621,9 @@ type BackgroundCompiler
         ) =
 
         node {
+            if useChangeNotifications then
+                do! builder.NotifyFileChanged(fileName, DateTime.UtcNow)
+
             match! bc.GetCachedCheckFileResult(builder, fileName, sourceText, options) with
             | Some (_, results) -> return FSharpCheckFileAnswer.Succeeded results
             | _ ->
@@ -748,9 +751,6 @@ type BackgroundCompiler
 
                     let parseResults =
                         FSharpParseFileResults(parseDiagnostics, parseTree, anyErrors, builder.AllDependenciesDeprecated)
-
-                    if useChangeNotifications then
-                        do! builder.NotifyFileChanged(fileName, DateTime.UtcNow)
 
                     let! checkResults =
                         bc.CheckOneFileImpl(parseResults, sourceText, fileName, options, fileVersion, builder, tcPrior, tcInfo, creationDiags)
