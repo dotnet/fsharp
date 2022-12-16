@@ -1413,7 +1413,7 @@ type internal FsiDynamicCompiler(
         let multiAssemblyName = ilxMainModule.ManifestOfAssembly.Name
 
         // Adjust the assembly name of this fragment, and add InternalsVisibleTo attributes to 
-        // allow internals access by multiple future assemblies
+        // allow internals access by all future assemblies with the same name (and only differing in version)
         let manifest =
             let manifest = ilxMainModule.Manifest.Value
             let attrs = [
