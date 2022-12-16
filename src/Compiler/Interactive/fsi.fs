@@ -1407,7 +1407,7 @@ type internal FsiDynamicCompiler(
     /// Generate one assembly using multi-assembly emit
     let EmitInMemoryAssembly (tcConfig: TcConfig, emEnv: ILMultiInMemoryAssemblyEmitEnv, ilxMainModule: ILModuleDef) =
         
-        // The name of the assembly is "FSI-ASSEMBLY1" etc
+        // The name of the assembly is "FSI-ASSEMBLY" for all submissions. This number is used for the Version 
         dynamicAssemblyId <- dynamicAssemblyId + 1
  
         let multiAssemblyName = ilxMainModule.ManifestOfAssembly.Name
