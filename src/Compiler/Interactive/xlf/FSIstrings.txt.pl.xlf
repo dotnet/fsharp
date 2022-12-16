@@ -7,11 +7,6 @@
         <target state="translated">Funkcje z elementem [&lt;EntryPoint&gt;] nie są wywoływane w interfejsie FSI. „{0}” nie został wywołany. Wykonaj polecenie „{1} &lt;args&gt;”, aby wywołać „{2}” z odpowiednią tablicą ciągów argumentów wiersza polecenia.</target>
         <note />
       </trans-unit>
-      <trans-unit id="fsiInternalAccess">
-        <source>Accessing the internal type, method or field '{0}' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--multiemit-' option.</source>
-        <target state="translated">Uzyskiwanie dostępu do typu wewnętrznego, metody lub pola „{0}“ z poprzedniej oceny w programie F# Interactive jest przestarzałe i może powodować kolejne błędy dostępu. Aby włączyć starszą generację pojedynczego zestawu dynamicznego, który może uzyskiwać dostęp wewnętrzny, użyj opcji „--multiemit-“.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="fsiIntroPackageSourceUriInfo">
         <source>Include package source uri when searching for packages</source>
         <target state="translated">Uwzględnij identyfikator URI źródła pakietów podczas wyszukiwania pakietów</target>

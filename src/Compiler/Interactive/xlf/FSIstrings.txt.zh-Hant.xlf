@@ -7,11 +7,6 @@
         <target state="translated">FSI 中未叫用具有 [&lt;EntryPoint&gt;] 的函數。未叫用'{0}'。執行 '{1} &lt;args&gt;'，以使用適當的命令列引數字串陣列叫用 '{2}'。</target>
         <note />
       </trans-unit>
-      <trans-unit id="fsiInternalAccess">
-        <source>Accessing the internal type, method or field '{0}' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--multiemit-' option.</source>
-        <target state="translated">從之前 F# 互動中的評估存取內部類型、方法或欄位 '{0}' 已過時，可能造成後續存取錯誤。若要啟用可存取內部之單一動態組件的舊版世代，請使用 '--multiemit-' 選項。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="fsiIntroPackageSourceUriInfo">
         <source>Include package source uri when searching for packages</source>
         <target state="translated">搜尋套件時包含套件來源 URI</target>

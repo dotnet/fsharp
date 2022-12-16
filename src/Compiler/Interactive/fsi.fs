@@ -41,6 +41,7 @@ open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerGlobalState
+open FSharp.Compiler.CreateILModule
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditorServices
@@ -1360,8 +1361,6 @@ type internal FsiDynamicCompiler(
 
     let dynamicCcuName = "FSI-ASSEMBLY"
 
-    let maxInternalsVisibleTo = 30 // In multi-assembly emit, how many future interactions can access internals with a warning
-
     let valueBoundEvent = Control.Event<_>()
 
     let mutable fragmentId = 0
@@ -1406,43 +1405,28 @@ type internal FsiDynamicCompiler(
                  Some { man with  CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs codegenResults.ilAssemAttrs) }) }
 
     /// Generate one assembly using multi-assembly emit
-    let EmitInMemoryAssembly (tcConfig: TcConfig, emEnv: ILMultiInMemoryAssemblyEmitEnv, ilxMainModule: ILModuleDef, m) =
+    let EmitInMemoryAssembly (tcConfig: TcConfig, emEnv: ILMultiInMemoryAssemblyEmitEnv, ilxMainModule: ILModuleDef) =
         
         // The name of the assembly is "FSI-ASSEMBLY1" etc
         dynamicAssemblyId <- dynamicAssemblyId + 1
-
-        let multiAssemblyName = ilxMainModule.ManifestOfAssembly.Name + string dynamicAssemblyId
+ 
+        let multiAssemblyName = ilxMainModule.ManifestOfAssembly.Name
 
         // Adjust the assembly name of this fragment, and add InternalsVisibleTo attributes to 
         // allow internals access by multiple future assemblies
         let manifest =
             let manifest = ilxMainModule.Manifest.Value
-            let attrs =
-                [ for i in 1..maxInternalsVisibleTo do
-                    let fwdAssemblyName = ilxMainModule.ManifestOfAssembly.Name + string (dynamicAssemblyId + i)
-                    tcGlobals.MakeInternalsVisibleToAttribute(fwdAssemblyName)
-                    yield! manifest.CustomAttrs.AsList() ]
+            let attrs = [
+                tcGlobals.MakeInternalsVisibleToAttribute(ilxMainModule.ManifestOfAssembly.Name)
+                yield! manifest.CustomAttrs.AsList()
+                ]
             { manifest with 
-                Name = multiAssemblyName 
+                Name = multiAssemblyName
+                Version = Some (parseILVersion $"0.0.0.{dynamicAssemblyId}")
                 CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs attrs)
             }
 
         let ilxMainModule = { ilxMainModule with Manifest = Some manifest }
-
-        // Check access of internals across fragments and give warning
-        let refs = computeILRefs ilGlobals ilxMainModule
-
-        for tref in refs.TypeReferences do
-            if emEnv.IsLocalInternalType(tref) then
-                warning(Error((FSIstrings.SR.fsiInternalAccess(tref.FullName)), m))
-
-        for mref in refs.MethodReferences do
-            if emEnv.IsLocalInternalMethod(mref) then
-                warning(Error((FSIstrings.SR.fsiInternalAccess(mref.Name)), m))
-
-        for fref in refs.FieldReferences do
-            if emEnv.IsLocalInternalField(fref) then
-                warning(Error((FSIstrings.SR.fsiInternalAccess(fref.Name)), m))
 
         // Rewrite references to local types to their respective dynamic assemblies
         let ilxMainModule =
@@ -1479,6 +1463,7 @@ type internal FsiDynamicCompiler(
 
         let assemblyBytes, pdbBytes = WriteILBinaryInMemory (opts, ilxMainModule, normalizeAssemblyRefs)
 
+        File.WriteAllBytes($"""c:\temp\FSI-ASSEMBLY-{dynamicAssemblyId}""", assemblyBytes)
         let asm =
             match pdbBytes with
             | None -> Assembly.Load(assemblyBytes)
@@ -1563,7 +1548,7 @@ type internal FsiDynamicCompiler(
 
             | MultipleInMemoryAssemblies emEnv ->
 
-                let execs  = EmitInMemoryAssembly (tcConfig, emEnv, ilxMainModule, m)
+                let execs  = EmitInMemoryAssembly (tcConfig, emEnv, ilxMainModule)
 
                 MultipleInMemoryAssemblies emEnv, execs
 
@@ -1851,8 +1836,14 @@ type internal FsiDynamicCompiler(
 
     member _.DynamicAssemblies = dynamicAssemblies.ToArray()
 
-    member _.FindDynamicAssembly(simpleAssemName) =
-        dynamicAssemblies |> ResizeArray.tryFind (fun asm -> asm.GetName().Name = simpleAssemName)
+    member _.FindDynamicAssembly (name, useFullName: bool) =
+        let getName (assemblyName: AssemblyName) =
+            if useFullName then
+                assemblyName.FullName
+            else
+                assemblyName.Name
+
+        dynamicAssemblies |> ResizeArray.tryFind (fun asm -> getName (asm.GetName()) = name)
 
     member _.EvalParsedSourceFiles (ctok, diagnosticsLogger, istate, inputs, m) =
         let i = nextFragmentId()
@@ -2469,9 +2460,15 @@ type internal MagicAssemblyResolution () =
             if simpleAssemName.EndsWith(".XmlSerializers", StringComparison.OrdinalIgnoreCase) ||
                simpleAssemName = "UIAutomationWinforms" then null
             else
-                match fsiDynamicCompiler.FindDynamicAssembly(simpleAssemName) with
+                // Check dynamic assemblies by exact version
+                match fsiDynamicCompiler.FindDynamicAssembly(fullAssemName, true) with
                 | Some asm -> asm
                 | None ->
+                // Check dynamic assemblies by simple name
+                match fsiDynamicCompiler.FindDynamicAssembly(simpleAssemName, false) with
+                | Some asm -> asm
+                | None ->
+                
 
                 // Otherwise continue
                 let assemblyReferenceTextDll = (simpleAssemName + ".dll")
