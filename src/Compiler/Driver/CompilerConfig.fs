@@ -588,6 +588,8 @@ type TcConfigBuilder =
         mutable exiter: Exiter
 
         mutable parallelReferenceResolution: ParallelReferenceResolution
+
+        mutable captureIdentifiersWhenParsing: bool
     }
 
     // Directories to start probing in
@@ -777,6 +779,7 @@ type TcConfigBuilder =
             xmlDocInfoLoader = None
             exiter = QuitProcessExiter
             parallelReferenceResolution = ParallelReferenceResolution.Off
+            captureIdentifiersWhenParsing = false
         }
 
     member tcConfigB.FxResolver =
@@ -1322,6 +1325,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.xmlDocInfoLoader = data.xmlDocInfoLoader
     member _.exiter = data.exiter
     member _.parallelReferenceResolution = data.parallelReferenceResolution
+    member _.captureIdentifiersWhenParsing = data.captureIdentifiersWhenParsing
 
     static member Create(builder, validate) =
         use _ = UseBuildPhase BuildPhase.Parameter

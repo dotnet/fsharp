@@ -1,10 +1,10 @@
 ﻿module FSharp.Benchmarks.BackgroundCompilerBenchmarks
 
-
 open System.IO
 open BenchmarkDotNet.Attributes
-open FSharp.Test.ProjectGeneration
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Text
+open FSharp.Test.ProjectGeneration
 
 
 [<Literal>]
@@ -99,3 +99,33 @@ type BackgroundCompilerBenchmarks () =
     [<GlobalCleanup>]
     member this.Cleanup() =
         this.Benchmark.DeleteProjectDir()
+
+[<MemoryDiagnoser>]
+[<BenchmarkCategory(FSharpCategory)>]
+type ParsingBenchmark() =
+
+    let mutable checker: FSharpChecker = Unchecked.defaultof<_>
+    let mutable parsingOptions: FSharpParsingOptions = Unchecked.defaultof<_>
+
+    let filePath = __SOURCE_DIRECTORY__ ++ ".." ++ ".." ++ ".." ++ ".." ++ "src" ++ "Compiler" ++ "Checking" ++ "CheckExpressions.fs"
+    let source = File.ReadAllText filePath |> SourceText.ofString
+
+    [<ParamsAllValues>]
+    member val IdentCapture = true with get, set
+
+    [<GlobalSetup>]
+    member this.Setup() =
+        checker <- FSharpChecker.Create(captureIdentifiersWhenParsing = this.IdentCapture)
+        parsingOptions <- { (checker.GetParsingOptionsFromCommandLineArgs([]) |> fst) with SourceFiles = [| filePath |] }
+
+    [<IterationSetup>]
+    member _.IterationSetup() =
+        checker.InvalidateAll()
+        checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+
+    [<Benchmark>]
+    member _.ParseBigFile() =
+        let result = checker.ParseFile(filePath, source, parsingOptions) |> Async.RunSynchronously
+
+        if result.ParseHadErrors then
+            failwith "ParseHadErrors"
