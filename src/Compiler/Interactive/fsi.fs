@@ -1463,7 +1463,6 @@ type internal FsiDynamicCompiler(
 
         let assemblyBytes, pdbBytes = WriteILBinaryInMemory (opts, ilxMainModule, normalizeAssemblyRefs)
 
-        File.WriteAllBytes($"""c:\temp\FSI-ASSEMBLY-{dynamicAssemblyId}""", assemblyBytes)
         let asm =
             match pdbBytes with
             | None -> Assembly.Load(assemblyBytes)
