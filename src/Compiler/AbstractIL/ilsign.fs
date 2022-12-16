@@ -349,8 +349,7 @@ type ILStrongNameSigner =
     | KeyPair of keyPair
     | KeyContainer of keyContainerName
 
-    static member OpenPublicKeyOptions kp p =
-        PublicKeyOptionsSigner(kp, p)
+    static member OpenPublicKeyOptions kp p = PublicKeyOptionsSigner(kp, p)
 
     static member OpenPublicKey bytes = PublicKeySigner bytes
     static member OpenKeyPairFile bytes = KeyPair(bytes)

@@ -65,7 +65,8 @@ module AttributeHelpers =
 //----------------------------------------------------------------------------
 
 /// Represents the configuration settings used to perform strong-name signing
-type StrongNameSigningInfo = StrongNameSigningInfo of delaysign: bool * publicsign: bool * signer: byte array option * container: string option
+type StrongNameSigningInfo =
+    | StrongNameSigningInfo of delaysign: bool * publicsign: bool * signer: byte array option * container: string option
 
 let GetStrongNameSigningInfo (delaysign, publicsign, signer, container) =
     StrongNameSigningInfo(delaysign, publicsign, signer, container)
@@ -103,10 +104,11 @@ let ValidateKeySigningAttributes (tcConfig: TcConfig, tcGlobals, topAttrs) =
                 else
                     Some signer
             | None -> tcConfig.signer
+
         match signerFile with
         | Some signerPath ->
             try
-                Some (FileSystem.OpenFileForReadShim(signerPath).ReadAllBytes())
+                Some(FileSystem.OpenFileForReadShim(signerPath).ReadAllBytes())
             with _ ->
                 // Note :: don't use errorR here since we really want to fail and not produce a binary
                 error (Error(FSComp.SR.fscKeyFileCouldNotBeOpened signerPath, rangeCmdArgs))
