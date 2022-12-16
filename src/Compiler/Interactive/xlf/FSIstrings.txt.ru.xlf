@@ -17,11 +17,6 @@
         <target state="translated">Очистить экран</target>
         <note />
       </trans-unit>
-      <trans-unit id="fsiMultiAssemblyEmitOptionOffByDefault">
-        <source>Emit multiple assemblies (off by default for .NET Framework)</source>
-        <target state="translated">Выпуск нескольких сборок (отключено по умолчанию для .NET Framework)</target>
-        <note />
-      </trans-unit>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
         <source>Operation could not be completed due to earlier error</source>
         <target state="translated">Операция не может быть завершена из-за предыдущей ошибки</target>

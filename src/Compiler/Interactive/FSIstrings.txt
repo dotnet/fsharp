@@ -56,5 +56,4 @@ shadowCopyReferences,"Prevents references from being locked by the F# Interactiv
 fsiOperationCouldNotBeCompleted,"Operation could not be completed due to earlier error"
 fsiOperationFailed,"Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpDiagnostic use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing"
 fsiMultiAssemblyEmitOption,"Emit multiple assemblies (on by default)"
-fsiMultiAssemblyEmitOptionOffByDefault,"Emit multiple assemblies (off by default for .NET Framework)"
 2304,fsiEntryPointWontBeInvoked,"Functions with [<EntryPoint>] are not invoked in FSI. '%s' was not invoked. Execute '%s <args>' in order to invoke '%s' with the appropriate string array of command line arguments."

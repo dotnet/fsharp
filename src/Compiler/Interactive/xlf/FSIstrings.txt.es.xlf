@@ -17,11 +17,6 @@
         <target state="translated">Borrar pantalla</target>
         <note />
       </trans-unit>
-      <trans-unit id="fsiMultiAssemblyEmitOptionOffByDefault">
-        <source>Emit multiple assemblies (off by default for .NET Framework)</source>
-        <target state="translated">Emitir varios ensamblados (desactivado de forma predeterminada para .NET Framework)</target>
-        <note />
-      </trans-unit>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
         <source>Operation could not be completed due to earlier error</source>
         <target state="translated">La operación no se pudo completar debido a un error anterior</target>

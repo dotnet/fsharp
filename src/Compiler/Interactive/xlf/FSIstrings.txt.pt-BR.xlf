@@ -17,11 +17,6 @@
         <target state="translated">Limpar tela</target>
         <note />
       </trans-unit>
-      <trans-unit id="fsiMultiAssemblyEmitOptionOffByDefault">
-        <source>Emit multiple assemblies (off by default for .NET Framework)</source>
-        <target state="translated">Emitir várias montagens (desligadas por padrão para .NET Framework)</target>
-        <note />
-      </trans-unit>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
         <source>Operation could not be completed due to earlier error</source>
         <target state="translated">Não foi possível concluir a operação devido a um erro anterior</target>

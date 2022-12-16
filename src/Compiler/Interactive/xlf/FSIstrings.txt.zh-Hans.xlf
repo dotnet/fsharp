@@ -17,11 +17,6 @@
         <target state="translated">清除屏幕</target>
         <note />
       </trans-unit>
-      <trans-unit id="fsiMultiAssemblyEmitOptionOffByDefault">
-        <source>Emit multiple assemblies (off by default for .NET Framework)</source>
-        <target state="translated">发出多个程序集(默认情况下为 .NET Framework 关闭)</target>
-        <note />
-      </trans-unit>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
         <source>Operation could not be completed due to earlier error</source>
         <target state="translated">由于早期错误，无法完成操作</target>

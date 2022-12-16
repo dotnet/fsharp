@@ -17,11 +17,6 @@
         <target state="translated">Vymazat obrazovku</target>
         <note />
       </trans-unit>
-      <trans-unit id="fsiMultiAssemblyEmitOptionOffByDefault">
-        <source>Emit multiple assemblies (off by default for .NET Framework)</source>
-        <target state="translated">Vygenerovat více sestavení (pro .NET Framework je to ve výchozím nastavení vypnuto)</target>
-        <note />
-      </trans-unit>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
         <source>Operation could not be completed due to earlier error</source>
         <target state="translated">Operaci nešlo dokončit z důvodu dřívější chyby.</target>

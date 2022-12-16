@@ -17,11 +17,6 @@
         <target state="translated">화면 지우기</target>
         <note />
       </trans-unit>
-      <trans-unit id="fsiMultiAssemblyEmitOptionOffByDefault">
-        <source>Emit multiple assemblies (off by default for .NET Framework)</source>
-        <target state="translated">여러 어셈블리 내보내기(기본적으로 .NET Framework 해제)</target>
-        <note />
-      </trans-unit>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
         <source>Operation could not be completed due to earlier error</source>
         <target state="translated">이전 오류로 인해 작업을 완료할 수 없습니다.</target>

@@ -17,11 +17,6 @@
         <target state="translated">Cancella schermata</target>
         <note />
       </trans-unit>
-      <trans-unit id="fsiMultiAssemblyEmitOptionOffByDefault">
-        <source>Emit multiple assemblies (off by default for .NET Framework)</source>
-        <target state="translated">Creare più assembly (disattivato per impostazione predefinita per .NET Framework)</target>
-        <note />
-      </trans-unit>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
         <source>Operation could not be completed due to earlier error</source>
         <target state="translated">Non è stato possibile completare l'operazione a causa di un errore precedente</target>
