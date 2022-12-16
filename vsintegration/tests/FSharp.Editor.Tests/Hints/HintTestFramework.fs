@@ -32,7 +32,9 @@ module HintTestFramework =
     let getFsDocument code =
         use project = SingleFileProject code
         let fileName = fst project.Files.Head
-        let document, _ = RoslynTestHelpers.CreateSingleDocumentSolution(fileName, code)
+        // I don't know, without this lib some symbols are just not loaded
+        let options = { project.Options with OtherOptions = [| "--targetprofile:netcore" |] }
+        let document, _ = RoslynTestHelpers.CreateSingleDocumentSolution(fileName, code, options)
         document
 
     let getFsiAndFsDocuments (fsiCode: string) (fsCode: string) =

@@ -1076,13 +1076,6 @@ let mkExceptionFieldName =
 let FsiDynamicModulePrefix = "FSI_"
 
 [<RequireQualifiedAccess>]
-module FSharpLib =
-    let Root = "Microsoft.FSharp"
-    let RootPath = IL.splitNamespace Root
-    let Core = Root + ".Core"
-    let CorePath = IL.splitNamespace Core
-
-[<RequireQualifiedAccess>]
 module CustomOperations =
     [<Literal>]
     let Into = "into"

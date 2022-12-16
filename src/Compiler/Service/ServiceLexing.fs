@@ -1127,6 +1127,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
                     | true, "savedll"
                     | true, "nosavedll"
 #endif
+                    | true, "interactiveprompt"
                     | true, "silentCd"
                     | true, "q"
                     | true, "quit"
