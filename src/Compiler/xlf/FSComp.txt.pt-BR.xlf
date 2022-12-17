@@ -132,6 +132,11 @@
         <target state="translated">O atributo de assembly '{0}' refere-se a um assembly de designer '{1}' que não pode ser carregado ou que não existe. A exceção relatada foi {2} – {3}</target>
         <note />
       </trans-unit>
+      <trans-unit id="etProviderWarning">
+        <source>The type provider '{0}' reported a warning: {1}</source>
+        <target state="new">The type provider '{0}' reported a warning: {1}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAdditionalImplicitConversions">
         <source>additional type-directed conversions</source>
         <target state="translated">conversões direcionadas por tipos adicionais</target>

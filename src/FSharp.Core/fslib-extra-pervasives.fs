@@ -527,6 +527,15 @@ type IProvidedNamespace =
 
     abstract ResolveTypeName: typeName: string -> Type
 
+[<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
+type TypeProviderDiagnosticSeverity =
+    | Warning
+    | Error
+
+[<AllowNullLiteral>]
+type ITypeProviderDiagnosticsContext =
+    abstract ReportDiagnostic: staticParameterName: string * rangeInParameterIfString: (int * int) option * message: string * severity: TypeProviderDiagnosticSeverity -> unit
+
 type ITypeProvider =
     inherit System.IDisposable
 
@@ -549,3 +558,10 @@ type ITypeProvider2 =
 
     abstract ApplyStaticArgumentsForMethod:
         methodWithoutArguments: MethodBase * methodNameWithArguments: string * staticArguments: obj[] -> MethodBase
+
+type ITypeProvider3 =
+    abstract ApplyStaticArguments:
+        context: ITypeProviderDiagnosticsContext * typeWithoutArguments: Type * typePathWithArguments: string[] * staticArguments: obj[] -> Type
+
+    abstract ApplyStaticArgumentsForMethod:
+        context: ITypeProviderDiagnosticsContext * methodWithoutArguments: MethodBase * methodNameWithArguments: string * staticArguments: obj[] -> MethodBase

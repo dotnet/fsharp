@@ -132,6 +132,11 @@
         <target state="translated">Атрибут сборки "{0}" ссылается на сборку конструктора "{1}", которая не может быть загружена или не существует. Получено исключение: {2} — {3}</target>
         <note />
       </trans-unit>
+      <trans-unit id="etProviderWarning">
+        <source>The type provider '{0}' reported a warning: {1}</source>
+        <target state="new">The type provider '{0}' reported a warning: {1}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAdditionalImplicitConversions">
         <source>additional type-directed conversions</source>
         <target state="translated">дополнительные преобразования на основе типа</target>

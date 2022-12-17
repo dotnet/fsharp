@@ -1075,22 +1075,42 @@ and ProvidedMethod(isTgt: bool, methodName: string, attrs: MethodAttributes, par
     member __.AddMethodAttrs attributes = attrs <- attrs ||| attributes
     member __.PatchDeclaringType x = patchOption declaringType (fun () -> declaringType <- Some x)
 
-    /// Abstract a type to a parametric-type. Requires "formal parameters" and "instantiation function".
+    member val private DiagnosticsContext: ITypeProviderDiagnosticsContext = null with get, set
+
+    member x.ReportWarning (staticParameterName, rangeInParameterIfString, message, throwIfNotSupported) =
+        if isNull x.DiagnosticsContext |> not then
+            x.DiagnosticsContext.ReportDiagnostic (staticParameterName, rangeInParameterIfString, message, TypeProviderDiagnosticSeverity.Warning)
+        elif throwIfNotSupported then
+            failwith message
+
+    member x.ReportError (staticParameterName, rangeInParameterIfString, message) =
+        if isNull x.DiagnosticsContext then
+            failwith message
+        else
+            x.DiagnosticsContext.ReportDiagnostic (staticParameterName, rangeInParameterIfString, message, TypeProviderDiagnosticSeverity.Error)
+
     member __.DefineStaticParameters(parameters: ProvidedStaticParameter list, instantiationFunction: (string -> obj[] -> ProvidedMethod)) =
         staticParams      <- parameters
-        staticParamsApply <- Some instantiationFunction
+        staticParamsApply <- Some (fun _this methodName staticArgs -> instantiationFunction methodName staticArgs)
+
+    /// Abstract a type to a parametric-type. Requires "formal parameters" and "instantiation function".
+    member __.DefineStaticParameters(parameters: ProvidedStaticParameter list, instantiationFunction: (ProvidedMethod -> string -> obj[] -> ProvidedMethod)) =
+        staticParams      <- parameters
+        staticParamsApply <- Some (fun this methodName staticArgs -> instantiationFunction this methodName staticArgs)
 
     /// Get ParameterInfo[] for the parametric type parameters
     member __.GetStaticParametersInternal() = [| for p in staticParams -> p :> ParameterInfo |]
 
     /// Instantiate parametric method
-    member this.ApplyStaticArguments(mangledName:string, args:obj[]) =
+    member this.ApplyStaticArguments(diagnosticsContext, mangledName:string, args:obj[]) =
         if staticParams.Length <> args.Length then
             failwithf "ProvidedMethod: expecting %d static parameters but given %d for method %s" staticParams.Length args.Length methodName
         if staticParams.Length > 0 then
             match staticParamsApply with
             | None -> failwith "ProvidedMethod: DefineStaticParameters was not called"
-            | Some f -> f mangledName args
+            | Some f ->
+                this.DiagnosticsContext <- diagnosticsContext
+                f this mangledName args
         else
             this
 
@@ -9390,7 +9410,7 @@ namespace ProviderImplementation.ProvidedTypes
                                     x.ReturnType |> convTypeToTgt, 
                                     x.GetInvokeCode |> Option.map (fun invokeCode -> convCodeToTgt (invokeCode, x.IsStatic, false, x.Parameters, not x.IsErased)), 
                                     x.StaticParams |> List.map convStaticParameterDefToTgt, 
-                                    x.StaticParamsApply |> Option.map (fun f s p -> f s p |> convProvidedMethodDefToTgt declTyT), 
+                                    x.StaticParamsApply |> Option.map (fun f this s p -> f this s p |> convProvidedMethodDefToTgt declTyT), 
                                     (x.GetCustomAttributesData >> convCustomAttributesDataToTgt)) :> _
                 | :? ProvidedTypeDefinition as x -> convTypeDefToTgt x :> _
                 | _ -> failwith "unknown member type"
@@ -15864,6 +15884,20 @@ namespace ProviderImplementation.ProvidedTypes
                 AppDomain.CurrentDomain.remove_AssemblyResolve handler
 #endif
 
+        member val private DiagnosticsContext: ITypeProviderDiagnosticsContext = null with get, set
+
+        member x.ReportWarning (staticParameterName, rangeInParameterIfString, message, throwIfNotSupported) =
+            if isNull x.DiagnosticsContext |> not then
+                x.DiagnosticsContext.ReportDiagnostic (staticParameterName, rangeInParameterIfString, message, TypeProviderDiagnosticSeverity.Warning)
+            elif throwIfNotSupported then
+                failwith message
+
+        member x.ReportError (staticParameterName, rangeInParameterIfString, message) =
+            if isNull x.DiagnosticsContext then
+                failwith message
+            else
+                x.DiagnosticsContext.ReportDiagnostic (staticParameterName, rangeInParameterIfString, message, TypeProviderDiagnosticSeverity.Error)
+
         member __.AddNamespace (namespaceName, types) = 
             namespacesT.Add (makeProvidedNamespace namespaceName types)
 
@@ -15880,7 +15914,7 @@ namespace ProviderImplementation.ProvidedTypes
 
         member __.ApplyStaticArgumentsForMethod(mb: MethodBase, mangledName, objs) =
             match mb with
-            | :? ProvidedMethod as t -> t.ApplyStaticArguments(mangledName, objs) :> MethodBase
+            | :? ProvidedMethod as t -> t.ApplyStaticArguments(null, mangledName, objs) :> MethodBase
             | _ -> failwithf "ApplyStaticArguments: static parameters for method %s are unexpected. Please report this bug to https://github.com/fsprojects/FSharp.TypeProviders.SDK/issues" mb.Name
 
         interface ITypeProvider with
@@ -15983,6 +16017,16 @@ namespace ProviderImplementation.ProvidedTypes
             let key = assembly.GetName().Name
             theTable[key] <- assemblyBytes
             assembly
+
+        interface ITypeProvider3 with
+            member x.ApplyStaticArguments (diagnosticsContext, ty, typePathAfterArguments, objs) =
+                x.DiagnosticsContext <- diagnosticsContext
+                (x :> ITypeProvider).ApplyStaticArguments (ty, typePathAfterArguments, objs)
+
+            member _.ApplyStaticArgumentsForMethod (diagnosticsContext, mb: MethodBase, mangledName, objs) =
+                match mb with
+                | :? ProvidedMethod as t -> t.ApplyStaticArguments(diagnosticsContext, mangledName, objs) :> MethodBase
+                | _ -> failwithf "ApplyStaticArguments: static parameters for method %s are unexpected. Please report this bug to https://github.com/fsprojects/FSharp.TypeProviders.SDK/issues" mb.Name
 
 #endif 
 #endif

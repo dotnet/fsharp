@@ -119,6 +119,12 @@ type ProvidedMethod =
     /// Define the static parameters available on a statically parameterized method
     member DefineStaticParameters: parameters: ProvidedStaticParameter list * instantiationFunction: (string -> obj[] -> ProvidedMethod) -> unit
 
+    member DefineStaticParameters: parameters: ProvidedStaticParameter list * instantiationFunction: (ProvidedMethod -> string -> obj[] -> ProvidedMethod) -> unit
+
+    member ReportWarning: staticParameterName: string * rangeInParameterIfString: (int * int) option * message: string * throwIfNotSupported: bool -> unit
+
+    member ReportError: staticParameterName: string * rangeInParameterIfString: (int * int) option * message: string -> unit
+
     /// This method is for internal use only in the type provider SDK
     member internal GetInvokeCode: (Expr list -> Expr) option
 
@@ -522,7 +528,13 @@ type TypeProviderForNamespaces =
     /// the design-time context will normally be performed automatically.
     member TargetContext: ProvidedTypesContext
 
+    member ReportWarning: staticParameterName: string * rangeInParameterIfString: (int * int) option * message: string * throwIfNotSupported: bool -> unit
+
+    member ReportError: staticParameterName: string * rangeInParameterIfString: (int * int) option * message: string -> unit
+
     interface ITypeProvider
+
+    interface ITypeProvider3
 
 module internal UncheckedQuotations =
 

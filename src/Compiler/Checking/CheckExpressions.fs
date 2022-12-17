@@ -4759,23 +4759,37 @@ and CrackStaticConstantArgs (cenv: cenv) env tpenv (staticParameters: Tainted<Pr
         error (Error(FSComp.SR.etTooManyStaticParameters(staticParameters.Length, unnamedArgs.Length, namedArgs.Length), m))
 
     let argsInStaticParameterOrderIncludingDefaults =
+        let adjustRangeForQuotes (arg: SynType) =
+            match arg with
+            | SynType.StaticConstant (SynConst.String (_, kind, m), _) ->
+                let startOffset, endOffset =
+                    match kind with
+                    | SynStringKind.Regular -> 1, 1
+                    | SynStringKind.Verbatim -> 2, 1
+                    | SynStringKind.TripleQuote -> 3, 3
+
+                mkFileIndexRange m.FileIndex (mkPos m.StartLine (m.StartColumn + startOffset)) (mkPos m.EndLine (m.EndColumn - endOffset))
+                |> Some
+            | _ ->
+                None
+
         staticParameters |> Array.mapi (fun i sp ->
             let spKind = Import.ImportProvidedType cenv.amap m (sp.PApply((fun x -> x.ParameterType), m))
             let spName = sp.PUntaint((fun sp -> sp.Name), m)
             if i < unnamedArgs.Length then
-                let v = unnamedArgs[i]
-                let v, _tpenv = TcStaticConstantParameter cenv env tpenv spKind v None container
-                v
+                let arg = unnamedArgs[i]
+                let v, _tpenv = TcStaticConstantParameter cenv env tpenv spKind arg None container
+                { Name = spName; Value = v; ValueRange = arg.Range; ValueRangeAdjusted = adjustRangeForQuotes arg }
             else
                 match namedArgs |> List.filter (fun (n, _) -> n.idText = spName) with
-                | [(n, v)] ->
-                    let v, _tpenv = TcStaticConstantParameter cenv env tpenv spKind v (Some n) container
-                    v
+                | [(n, arg)] ->
+                    let v, _tpenv = TcStaticConstantParameter cenv env tpenv spKind arg (Some n) container
+                    { Name = spName; Value = v; ValueRange = arg.Range; ValueRangeAdjusted = adjustRangeForQuotes arg }
                 | [] ->
                     if sp.PUntaint((fun sp -> sp.IsOptional), m) then
                          match sp.PUntaint((fun sp -> sp.RawDefaultValue), m) with
                          | Null -> error (Error(FSComp.SR.etStaticParameterRequiresAValue (spName, containerName, containerName, spName), m))
-                         | NonNull v -> v
+                         | NonNull v -> { Name = spName; Value = v; ValueRange = range0; ValueRangeAdjusted = None }
                     else
                       error (Error(FSComp.SR.etStaticParameterRequiresAValue (spName, containerName, containerName, spName), m))
                  | ps ->

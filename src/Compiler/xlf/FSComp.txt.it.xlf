@@ -132,6 +132,11 @@
         <target state="translated">L'attributo di assembly '{0}' fa riferimento a un assembly '{1}' della finestra di progettazione che non è stato caricato o non esiste. L'eccezione restituita è {2} - {3}</target>
         <note />
       </trans-unit>
+      <trans-unit id="etProviderWarning">
+        <source>The type provider '{0}' reported a warning: {1}</source>
+        <target state="new">The type provider '{0}' reported a warning: {1}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAdditionalImplicitConversions">
         <source>additional type-directed conversions</source>
         <target state="translated">conversioni aggiuntive dirette ai tipi</target>

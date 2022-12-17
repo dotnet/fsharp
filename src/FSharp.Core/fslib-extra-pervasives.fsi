@@ -509,6 +509,15 @@ namespace Microsoft.FSharp.Core.CompilerServices
         /// <returns></returns>
         abstract ResolveTypeName : typeName: string -> Type
 
+    [<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
+    type TypeProviderDiagnosticSeverity =
+        | Warning
+        | Error
+
+    [<AllowNullLiteral>]
+    type ITypeProviderDiagnosticsContext =
+        abstract ReportDiagnostic: staticParameterName: string * rangeInParameterIfString: (int * int) option * message: string * severity: TypeProviderDiagnosticSeverity -> unit
+
     /// <summary>
     /// Represents an instantiation of a type provider component.
     /// </summary>
@@ -585,3 +594,9 @@ namespace Microsoft.FSharp.Core.CompilerServices
         ///
         /// <returns>The provided method definition corresponding to the given static parameter values</returns>
         abstract ApplyStaticArgumentsForMethod : methodWithoutArguments:MethodBase * methodNameWithArguments:string * staticArguments:obj[] -> MethodBase
+
+    type ITypeProvider3 =
+        abstract ApplyStaticArguments : context:ITypeProviderDiagnosticsContext * typeWithoutArguments:Type * typePathWithArguments:string[] * staticArguments:obj[] -> Type 
+
+        abstract ApplyStaticArgumentsForMethod:
+            context: ITypeProviderDiagnosticsContext * methodWithoutArguments: MethodBase * methodNameWithArguments: string * staticArguments: obj[] -> MethodBase

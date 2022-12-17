@@ -283,6 +283,25 @@ type BasicProvider (config : TypeProviderConfig) as this =
                             invokeCode = fun args -> <@@ Helper.C.StaticAutoProperty <- 1; Helper.C.StaticAutoProperty @@>)
         myType.AddMember(someMethod)
 
+        let duplicatorParams = [ ProvidedParameter("c", typeof<char>) ]
+        let duplicator = ProvidedMethod("Duplicator", duplicatorParams, typeof<string>, isStatic = true)
+        duplicator.DefineStaticParameters(
+            [
+                ProvidedStaticParameter("Length", typeof<int>)
+            ],
+            fun this methodName (staticArgs: obj[]) ->
+                let count = unbox staticArgs[0]
+
+                if count > 3 then
+                    this.ReportWarning ("Length", None, "More than 3 not recommended.", false)
+
+                let duplicate = ProvidedMethod(methodName, duplicatorParams, typeof<string>, isStatic = true, invokeCode = (fun args -> <@@ System.String (%%args[0], count) @@>))
+                myType.AddMember duplicate
+                duplicate
+                
+        )
+        myType.AddMember duplicator
+
         [myType]  
 
     do
@@ -295,9 +314,16 @@ type BasicGenerativeProvider (config : TypeProviderConfig) as this =
     let ns = "GeneratedWithConstructor.Provided"
     let asm = Assembly.GetExecutingAssembly()
 
-    let createType typeName (count:int) =
+    let createType typeName (count:int) (text: string) =
         let asm = ProvidedAssembly()
         let myType = ProvidedTypeDefinition(asm, ns, typeName, Some typeof<obj>, isErased=false)
+
+        if count > 5 then
+            this.ReportWarning ("Count", None, "More than 5 not recommended.", false)
+
+        if text.Contains "tabl" then
+            let start = text.IndexOf "tabl"
+            this.ReportError ("Query", Some (start, start + 4), "Table does not exist.")
 
         let ctor = ProvidedConstructor([], invokeCode = fun args -> <@@ "My internal state" :> obj @@>)
         myType.AddMember(ctor)
@@ -311,13 +337,20 @@ type BasicGenerativeProvider (config : TypeProviderConfig) as this =
 
         let meth = ProvidedMethod("StaticMethod", [], typeof<CSharpClass>, isStatic=true, invokeCode = (fun args -> Expr.Value(null, typeof<CSharpClass>)))
         myType.AddMember(meth)
+
         asm.AddTypes [ myType ]
 
         myType
 
     let myParamType = 
         let t = ProvidedTypeDefinition(asm, ns, "GenerativeProvider", Some typeof<obj>, isErased=false)
-        t.DefineStaticParameters( [ProvidedStaticParameter("Count", typeof<int>)], fun typeName args -> createType typeName (unbox<int> args[0]))
+        t.DefineStaticParameters(
+            [
+                ProvidedStaticParameter("Count", typeof<int>)
+                ProvidedStaticParameter("Query", typeof<string>)
+            ],
+            fun typeName args -> createType typeName (unbox<int> args[0]) (unbox<string> args[1]))
+        
         t
     do
         this.AddNamespace(ns, [myParamType])

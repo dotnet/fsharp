@@ -132,6 +132,11 @@
         <target state="translated">程序集属性“{0}”引用了无法加载或不存在的设计器程序集“{1}”。报告的异常是: {2} - {3}</target>
         <note />
       </trans-unit>
+      <trans-unit id="etProviderWarning">
+        <source>The type provider '{0}' reported a warning: {1}</source>
+        <target state="new">The type provider '{0}' reported a warning: {1}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAdditionalImplicitConversions">
         <source>additional type-directed conversions</source>
         <target state="translated">附加类型定向转换</target>

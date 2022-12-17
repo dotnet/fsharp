@@ -132,6 +132,11 @@
         <target state="translated">Das Assemblyattribut "{0}" verweist auf eine Designerassembly "{1}", die entweder nicht geladen werden kann oder nicht vorhanden ist. Gemeldete Ausnahme: {2} – {3}</target>
         <note />
       </trans-unit>
+      <trans-unit id="etProviderWarning">
+        <source>The type provider '{0}' reported a warning: {1}</source>
+        <target state="new">The type provider '{0}' reported a warning: {1}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAdditionalImplicitConversions">
         <source>additional type-directed conversions</source>
         <target state="translated">zusätzliche typgesteuerte Konvertierungen</target>

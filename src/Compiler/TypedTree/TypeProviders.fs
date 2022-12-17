@@ -19,6 +19,7 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 
 type TypeProviderDesignation = TypeProviderDesignation of string
@@ -412,8 +413,12 @@ type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
 
     member _.GetGenericArguments() = x.GetGenericArguments() |> ProvidedType.CreateArray ctxt
 
-    member _.ApplyStaticArguments(provider: ITypeProvider, fullTypePathAfterArguments, staticArgs: obj[]) = 
-        provider.ApplyStaticArguments(x, fullTypePathAfterArguments,  staticArgs) |> ProvidedType.Create ctxt
+    member _.ApplyStaticArguments(provider: ITypeProvider, fullTypePathAfterArguments, staticArgs: obj[], diagnosticsContext: ITypeProviderDiagnosticsContext) = 
+        match provider with
+        | (:? ITypeProvider3 as provider) ->
+            provider.ApplyStaticArguments(diagnosticsContext, x, fullTypePathAfterArguments, staticArgs) |> ProvidedType.Create ctxt
+        | _ ->
+            provider.ApplyStaticArguments(x, fullTypePathAfterArguments, staticArgs) |> ProvidedType.Create ctxt
 
     member _.IsVoid = (Type.op_Equality(x, typeof<Void>) || (x.Namespace = "System" && x.Name = "Void"))
 
@@ -625,6 +630,36 @@ type ProvidedAssembly (x: Assembly) =
 
     override _.GetHashCode() = assert false; x.GetHashCode()
 
+[<NoComparison; NoEquality>]
+type CrackedStaticArgument = {
+    Name: string
+    Value: obj
+    ValueRange: range
+    /// Range stripped of quotes if the argument is a string constant
+    ValueRangeAdjusted: range option
+}
+
+type TypeProviderDiagnosticsContext (staticArgs: CrackedStaticArgument[], tpDesignation, fallbackRange) =
+    interface ITypeProviderDiagnosticsContext with
+        member _.ReportDiagnostic (staticParameterName, rangeInParameterIfString, message, severity) =
+            let m =
+                match staticArgs |> Array.tryFind (fun x -> x.Name = staticParameterName) with
+                | Some x when x.ValueRange <> range0 ->
+                    match x.ValueRangeAdjusted, rangeInParameterIfString with
+                    | Some m, Some (startPosition, endPosition) when startPosition < endPosition && startPosition >= 0 ->
+                        // todo highlighted range spanning multiple lines :/
+                        mkFileIndexRange m.FileIndex (mkPos m.StartLine (m.StartColumn + startPosition)) (mkPos m.EndLine (m.StartColumn + endPosition))
+                    | _ ->
+                        x.ValueRange
+                | _ ->
+                    fallbackRange
+
+            match severity with
+            | TypeProviderDiagnosticSeverity.Warning ->
+                Error (FSComp.SR.etProviderWarning (tpDesignation, message), m) |> warning
+            | TypeProviderDiagnosticSeverity.Error ->
+                stopProcessingRecovery (Error (FSComp.SR.etProviderError (tpDesignation, message), m)) m
+
 [<AllowNullLiteral; AbstractClass>] 
 type ProvidedMethodBase (x: MethodBase, ctxt) = 
     inherit ProvidedMemberInfo(x, ctxt)
@@ -686,15 +721,18 @@ type ProvidedMethodBase (x: MethodBase, ctxt) =
 
         staticParams |> ProvidedParameterInfo.CreateArray ctxt
 
-    member _.ApplyStaticArgumentsForMethod(provider: ITypeProvider, fullNameAfterArguments: string, staticArgs: obj[]) = 
+    member _.ApplyStaticArgumentsForMethod(provider: ITypeProvider, fullNameAfterArguments: string, staticArgs: CrackedStaticArgument[], tpDesignation, m) = 
         let bindingFlags = BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.InvokeMethod
+        let staticArgValues = staticArgs |> Array.map (fun x -> x.Value)
 
         let mb = 
             match provider with 
+            | :? ITypeProvider3 as itp3 -> 
+                let ctx = TypeProviderDiagnosticsContext (staticArgs, tpDesignation, m)
+                itp3.ApplyStaticArgumentsForMethod(ctx, x, fullNameAfterArguments, staticArgValues)  
             | :? ITypeProvider2 as itp2 -> 
-                itp2.ApplyStaticArgumentsForMethod(x, fullNameAfterArguments, staticArgs)  
+                itp2.ApplyStaticArgumentsForMethod(x, fullNameAfterArguments, staticArgValues)  
             | _ -> 
-
                 // To allow a type provider to depend only on FSharp.Core 4.3.0.0, it can alternatively implement a method called GetStaticParametersForMethod
                 let meth =
                     provider.GetType().GetMethod( "ApplyStaticArgumentsForMethod", bindingFlags, null,
@@ -704,7 +742,7 @@ type ProvidedMethodBase (x: MethodBase, ctxt) =
                 | null -> failwith (FSComp.SR.estApplyStaticArgumentsForMethodNotImplemented())
                 | _ -> 
                 let mbAsObj = 
-                    try meth.Invoke(provider, bindingFlags ||| BindingFlags.InvokeMethod, null, [| box x; box fullNameAfterArguments; box staticArgs  |], null) 
+                    try meth.Invoke(provider, bindingFlags ||| BindingFlags.InvokeMethod, null, [| box x; box fullNameAfterArguments; box staticArgValues |], null) 
                     with err -> raise (StripException (StripException err))
 
                 match mbAsObj with 
@@ -1194,25 +1232,27 @@ let ILPathToProvidedType  (st: Tainted<ProvidedType>, m) =
 
     encContrib st, nameContrib st
 
-let ComputeMangledNameForApplyStaticParameters(nm, staticArgs, staticParams: Tainted<ProvidedParameterInfo[]>, m) =
+let ComputeMangledNameForApplyStaticParameters(nm, staticArgs: obj[], staticParams: Tainted<ProvidedParameterInfo[]>, m) =
     let defaultArgValues = 
-        staticParams.PApply((fun ps ->  ps |> Array.map (fun sp -> sp.Name, (if sp.IsOptional then Some (string sp.RawDefaultValue) else None ))), range=m)
+        staticParams.PApply((fun ps ->  ps |> Array.map (fun sp -> sp.Name, (if sp.IsOptional then Some (string sp.RawDefaultValue) else None ))), range = m)
 
     let defaultArgValues = defaultArgValues.PUntaint(id, m)
     PrettyNaming.ComputeMangledNameWithoutDefaultArgValues(nm, staticArgs, defaultArgValues)
 
 /// Apply the given provided method to the given static arguments (the arguments are assumed to have been sorted into application order)
-let TryApplyProvidedMethod(methBeforeArgs: Tainted<ProvidedMethodBase>, staticArgs: obj[], m: range) =
+let TryApplyProvidedMethod(methBeforeArgs: Tainted<ProvidedMethodBase>, staticArgs: CrackedStaticArgument[], m: range) =
     if staticArgs.Length = 0 then 
         Some methBeforeArgs
     else
+        let staticArgValues = staticArgs |> Array.map (fun x -> x.Value)
+
         let mangledName = 
             let nm = methBeforeArgs.PUntaint((fun x -> x.Name), m)
-            let staticParams = methBeforeArgs.PApplyWithProvider((fun (mb, resolver) -> mb.GetStaticParametersForMethod resolver), range=m) 
-            let mangledName = ComputeMangledNameForApplyStaticParameters(nm, staticArgs, staticParams, m)
+            let staticParams = methBeforeArgs.PApplyWithProvider((fun (mb, resolver) -> mb.GetStaticParametersForMethod resolver), range = m) 
+            let mangledName = ComputeMangledNameForApplyStaticParameters(nm, staticArgValues, staticParams, m)
             mangledName
  
-        match methBeforeArgs.PApplyWithProvider((fun (mb, provider) -> mb.ApplyStaticArgumentsForMethod(provider, mangledName, staticArgs)), range=m) with 
+        match methBeforeArgs.PApplyWithProvider((fun (mb, provider) -> mb.ApplyStaticArgumentsForMethod(provider, mangledName, staticArgs, methBeforeArgs.TypeProviderDesignation, m)), range = m) with 
         | Tainted.Null -> None
         | Tainted.NonNull methWithArguments -> 
             let actualName = methWithArguments.PUntaint((fun x -> x.Name), m)
@@ -1220,12 +1260,12 @@ let TryApplyProvidedMethod(methBeforeArgs: Tainted<ProvidedMethodBase>, staticAr
                 error(Error(FSComp.SR.etProvidedAppliedMethodHadWrongName(methWithArguments.TypeProviderDesignation, mangledName, actualName), m))
             Some methWithArguments
 
-
 /// Apply the given provided type to the given static arguments (the arguments are assumed to have been sorted into application order
-let TryApplyProvidedType(typeBeforeArguments: Tainted<ProvidedType>, optGeneratedTypePath: string list option, staticArgs: obj[], m: range) =
+let TryApplyProvidedType(typeBeforeArguments: Tainted<ProvidedType>, optGeneratedTypePath: string list option, staticArgs: CrackedStaticArgument[], m: range) =
     if staticArgs.Length = 0 then 
         Some (typeBeforeArguments, (fun () -> ()))
     else 
+        let staticArgValues = staticArgs |> Array.map (fun x -> x.Value)
             
         let fullTypePathAfterArguments = 
             // If there is a generated type name, then use that
@@ -1236,10 +1276,12 @@ let TryApplyProvidedType(typeBeforeArguments: Tainted<ProvidedType>, optGenerate
                 let nm = typeBeforeArguments.PUntaint((fun x -> x.Name), m)
                 let enc, _ = ILPathToProvidedType (typeBeforeArguments, m)
                 let staticParams = typeBeforeArguments.PApplyWithProvider((fun (mb, resolver) -> mb.GetStaticParameters resolver), range=m) 
-                let mangledName = ComputeMangledNameForApplyStaticParameters(nm, staticArgs, staticParams, m)
+                let mangledName = ComputeMangledNameForApplyStaticParameters(nm, staticArgValues, staticParams, m)
                 enc @ [ mangledName ]
+
+        let ctx = TypeProviderDiagnosticsContext (staticArgs, typeBeforeArguments.TypeProviderDesignation, m)
  
-        match typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments, provider) -> typeBeforeArguments.ApplyStaticArguments(provider, Array.ofList fullTypePathAfterArguments, staticArgs)), range=m) with 
+        match typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments, provider) -> typeBeforeArguments.ApplyStaticArguments(provider, Array.ofList fullTypePathAfterArguments, staticArgValues, ctx)), range=m) with 
         | Tainted.Null -> None
         | Tainted.NonNull typeWithArguments -> 
             let actualName = typeWithArguments.PUntaint((fun x -> x.Name), m)
@@ -1287,28 +1329,30 @@ let TryLinkProvidedType(resolver: Tainted<ITypeProvider>, moduleOrNamespace: str
                             let uet = if pt.IsEnum then pt.GetEnumUnderlyingType() else pt
                             uet.FullName), range)
 
-                    match spReprTypeName with 
-                    | "System.SByte" -> box (sbyte arg)
-                    | "System.Int16" -> box (int16 arg)
-                    | "System.Int32" -> box (int32 arg)
-                    | "System.Int64" -> box (int64 arg)
-                    | "System.Byte" -> box (byte arg)
-                    | "System.UInt16" -> box (uint16 arg)
-                    | "System.UInt32" -> box (uint32 arg)
-                    | "System.UInt64" -> box (uint64 arg)
-                    | "System.Decimal" -> box (decimal arg)
-                    | "System.Single" -> box (single arg)
-                    | "System.Double" -> box (double arg)
-                    | "System.Char" -> box (char arg)
-                    | "System.Boolean" -> box (arg = "True")
-                    | "System.String" -> box (string arg)
-                    | s -> error(Error(FSComp.SR.etUnknownStaticArgumentKind(s, typeLogicalName), range0))
+                    let v =
+                        match spReprTypeName with 
+                        | "System.SByte" -> box (sbyte arg)
+                        | "System.Int16" -> box (int16 arg)
+                        | "System.Int32" -> box (int32 arg)
+                        | "System.Int64" -> box (int64 arg)
+                        | "System.Byte" -> box (byte arg)
+                        | "System.UInt16" -> box (uint16 arg)
+                        | "System.UInt32" -> box (uint32 arg)
+                        | "System.UInt64" -> box (uint64 arg)
+                        | "System.Decimal" -> box (decimal arg)
+                        | "System.Single" -> box (single arg)
+                        | "System.Double" -> box (double arg)
+                        | "System.Char" -> box (char arg)
+                        | "System.Boolean" -> box (arg = "True")
+                        | "System.String" -> box (string arg)
+                        | s -> error(Error(FSComp.SR.etUnknownStaticArgumentKind(s, typeLogicalName), range0))
 
+                    { Name = spName; Value = v; ValueRange = range0; ValueRangeAdjusted = None }
                 | _ ->
                     if sp.PUntaint ((fun sp -> sp.IsOptional), range) then 
                         match sp.PUntaint((fun sp -> sp.RawDefaultValue), range) with
                         | Null -> error (Error(FSComp.SR.etStaticParameterRequiresAValue (spName, typeBeforeArgumentsName, typeBeforeArgumentsName, spName), range0))
-                        | NonNull v -> v
+                        | NonNull v -> { Name = spName; Value = v; ValueRange = range0; ValueRangeAdjusted = None }
                     else
                         error(Error(FSComp.SR.etProvidedTypeReferenceMissingArgument spName, range0)))
                     

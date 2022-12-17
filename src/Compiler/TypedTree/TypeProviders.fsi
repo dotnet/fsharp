@@ -439,6 +439,15 @@ type ProvidedVar =
 
     override GetHashCode: unit -> int
 
+[<NoComparison; NoEquality>]
+type CrackedStaticArgument = {
+    Name: string
+    Value: obj
+    ValueRange: range
+    /// Range stripped of quotes if the argument is a string constant
+    ValueRangeAdjusted: range option
+}
+
 /// Get the provided expression for a particular use of a method.
 val GetInvokerExpression: ITypeProvider * ProvidedMethodBase * ProvidedVar[] -> ProvidedExpr
 
@@ -450,12 +459,12 @@ val ValidateProvidedTypeAfterStaticInstantiation:
 /// to check the type name is as expected (this function is called by the caller of TryApplyProvidedType
 /// after other checks are made).
 val TryApplyProvidedType:
-    typeBeforeArguments: Tainted<ProvidedType> * optGeneratedTypePath: string list option * staticArgs: obj[] * range ->
+    typeBeforeArguments: Tainted<ProvidedType> * optGeneratedTypePath: string list option * staticArgs: CrackedStaticArgument[] * range ->
         (Tainted<ProvidedType> * (unit -> unit)) option
 
 /// Try to apply a provided method to the given static arguments.
 val TryApplyProvidedMethod:
-    methBeforeArgs: Tainted<ProvidedMethodBase> * staticArgs: obj[] * range -> Tainted<ProvidedMethodBase> option
+    methBeforeArgs: Tainted<ProvidedMethodBase> * staticArgs: CrackedStaticArgument[] * range -> Tainted<ProvidedMethodBase> option
 
 /// Try to resolve a type in the given extension type resolver
 val TryResolveProvidedType: Tainted<ITypeProvider> * range * string[] * typeName: string -> Tainted<ProvidedType> option
