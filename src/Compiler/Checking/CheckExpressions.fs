@@ -4378,7 +4378,7 @@ and CheckIWSAM (cenv: cenv) (env: TcEnv) checkConstraints iwsam m tcref =
     if iwsam = WarnOnIWSAM.Yes && isInterfaceTy g ty && checkConstraints = CheckCxs then
         let tcref = tcrefOfAppTy g ty
         let meths = AllMethInfosOfTypeInScope ResultCollectionSettings.AllResults cenv.infoReader env.NameEnv None ad IgnoreOverrides m ty
-        if meths |> List.exists (fun meth -> not meth.IsInstance && meth.IsDispatchSlot) then
+        if meths |> List.exists (fun meth -> not meth.IsInstance && meth.IsDispatchSlot && not meth.IsExtensionMember) then
             warning(Error(FSComp.SR.tcUsingInterfaceWithStaticAbstractMethodAsType(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
 
 and TcLongIdentType kindOpt (cenv: cenv) newOk checkConstraints occ iwsam env tpenv synLongId =

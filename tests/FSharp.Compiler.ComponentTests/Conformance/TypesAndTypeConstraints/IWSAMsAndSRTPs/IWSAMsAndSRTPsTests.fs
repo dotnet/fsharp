@@ -320,6 +320,33 @@ module ``Equivalence of properties and getters`` =
             IL_000e:  ret
           }"""]
 
+module ``Type checking behavior`` =   
+
+    #if !NETCOREAPP
+    [<Theory(Skip = "IWSAMs are not supported by NET472.")>]
+    #else   
+    [<InlineData("""
+        type INormalInterface =
+            abstract member IntMember: int
+
+        module INormalInterfaceExtensions =
+            type INormalInterface with
+                static member ExtMethod (a: INormalInterface) =
+                    ()""")>]
+    [<Theory>]
+    #endif
+    let ``Extension method on interface without SAM does not produce a warning`` code =
+        Fsx code
+        |> withLangVersion60
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+        Fsx code
+        |> withLangVersion70
+        |> compile
+        |> shouldSucceed
+        |> ignore
 
 module Negative =
 
@@ -374,7 +401,6 @@ module Negative =
         |> withErrorCode 3537
         |> withDiagnosticMessage "The trait 'A' invoked by this call has multiple support types. This invocation syntax is not permitted for such traits. See https://aka.ms/fsharp-srtp for guidance."
         |> ignore
-
 
 module InvocationBehavior =
 
