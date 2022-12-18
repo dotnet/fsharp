@@ -160,6 +160,13 @@ type FsiEvaluationSession =
         ?legacyReferenceResolver: LegacyReferenceResolver ->
             FsiEvaluationSession
 
+    /// A host calls this to request an abort of the evaluation thread.
+    /// This works only on net framework and on net7.0 or later.
+    /// On net framework it calls thread.Abort(). 
+    /// On net7.0 or higher it cancels an internal cancellation token passed to System.Runtime.ControlledExecution.Run().
+    /// On net6.0 or lower it does nothing.
+    member TryAbort : unit -> unit  
+
     /// A host calls this to request an interrupt on the evaluation thread.
     member Interrupt: unit -> unit
 

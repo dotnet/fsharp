@@ -3560,6 +3560,8 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
             (tcImports :> IDisposable).Dispose()
             uninstallMagicAssemblyResolution.Dispose()
 
+    member _.TryAbort() = controlledExecution.TryAbort() 
+         
     /// Load the dummy interaction, load the initial files, and,
     /// if interacting, start the background thread to read the standard input.
     member _.Interrupt() = fsiInterruptController.Interrupt()
