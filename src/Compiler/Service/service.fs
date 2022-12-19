@@ -752,7 +752,14 @@ type BackgroundCompiler
                     GraphNode.SetPreferredUILang tcPrior.TcConfig.preferredUiLang
 
                     let parseDiagnostics, parseTree, anyErrors =
-                        ParseAndCheckFile.parseFile (sourceText, fileName, parsingOptions, userOpName, suggestNamesForErrors, captureIdentifiersWhenParsing)
+                        ParseAndCheckFile.parseFile (
+                            sourceText,
+                            fileName,
+                            parsingOptions,
+                            userOpName,
+                            suggestNamesForErrors,
+                            captureIdentifiersWhenParsing
+                        )
 
                     let parseResults =
                         FSharpParseFileResults(parseDiagnostics, parseTree, anyErrors, builder.AllDependenciesDeprecated)
@@ -1510,10 +1517,11 @@ type FSharpChecker
                 return! backgroundCompiler.FindReferencesInFile(fileName, options, symbol, canInvalidateProject, userOpName)
             else
                 let! parseResults = backgroundCompiler.GetBackgroundParseResultsForFileInProject(fileName, options, userOpName)
+                let allIdentifiers = FSharp.Compiler.Service.Service.FindAllIdentifiers.visitFile parseResults.ParseTree
 
                 if
-                    parseResults.ParseTree.Identifiers |> Set.contains symbol.DisplayNameCore
-                    || parseResults.ParseTree.Identifiers |> NamesContainAttribute symbol
+                    Set.contains symbol.DisplayNameCore allIdentifiers
+                    || NamesContainAttribute symbol allIdentifiers
                 then
                     return! backgroundCompiler.FindReferencesInFile(fileName, options, symbol, canInvalidateProject, userOpName)
                 else

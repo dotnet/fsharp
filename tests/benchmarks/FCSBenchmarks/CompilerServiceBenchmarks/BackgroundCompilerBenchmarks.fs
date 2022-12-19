@@ -4,6 +4,7 @@ open System.IO
 open BenchmarkDotNet.Attributes
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
+open FSharp.Compiler.Syntax
 open FSharp.Test.ProjectGeneration
 
 
@@ -129,3 +130,23 @@ type ParsingBenchmark() =
 
         if result.ParseHadErrors then
             failwith "ParseHadErrors"
+
+[<MemoryDiagnoser>]
+[<BenchmarkCategory(FSharpCategory)>]
+type FindAllIdentifiersFromASTBenchmark() =
+    let mutable parseTree : ParsedInput = Unchecked.defaultof<_>
+    [<GlobalSetup>]
+    member this.Setup() =
+        let checker = FSharpChecker.Create()
+        let filePath = __SOURCE_DIRECTORY__ ++ ".." ++ ".." ++ ".." ++ ".." ++ "src" ++ "Compiler" ++ "Checking" ++ "CheckExpressions.fs"
+        let source = File.ReadAllText filePath |> SourceText.ofString
+        let parsingOptions = { FSharpParsingOptions.Default with SourceFiles = [| filePath |] }
+        let result = 
+            checker.ParseFile(filePath, source, parsingOptions)
+            |> Async.RunSynchronously
+        parseTree <- result.ParseTree
+        
+    [<Benchmark>]
+    member x.FindAllIdentifiers() =
+        let _identifiers = FSharp.Compiler.Service.Service.FindAllIdentifiers.visitFile parseTree
+        ()

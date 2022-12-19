@@ -13,6 +13,8 @@ Running all benchmarks:
 Running a specific benchmark:
 ```dotnet run -c Release --filter *ParsingTypeCheckerFs*```
 
+dotnet run -c Release --filter *FindAllIdentifiersFromASTBenchmark*
+
 ## Sample results
 
 *TODO*

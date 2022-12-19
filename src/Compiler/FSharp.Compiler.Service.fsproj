@@ -449,6 +449,7 @@
     <Compile Include="Service\QuickParse.fs" />
     <Compile Include="Service\FSharpCheckerResults.fsi" />
     <Compile Include="Service\FSharpCheckerResults.fs" />
+    <Compile Include="Service\FindAllIndentifiers.fs" />
     <Compile Include="Service\service.fsi" />
     <Compile Include="Service\service.fs" />
     <Compile Include="Service\ServiceInterfaceStubGenerator.fsi" />

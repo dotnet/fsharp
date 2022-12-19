@@ -12,6 +12,7 @@
     -->
     <NoWarn>$(NoWarn);NU1505</NoWarn>
     <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+    <Tailcalls>true</Tailcalls>
   </PropertyGroup>
 
   <ItemGroup>
