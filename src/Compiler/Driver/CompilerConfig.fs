@@ -393,6 +393,15 @@ type ParallelReferenceResolution =
     | On
     | Off
 
+[<RequireQualifiedAccess>]
+type TypeCheckingMode =
+    | Sequential
+    | ParallelCheckingOfBackedImplFiles
+    | Graph
+
+[<RequireQualifiedAccess>]
+type TypeCheckingConfig = { Mode: TypeCheckingMode }
+
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
     {
@@ -507,7 +516,6 @@ type TcConfigBuilder =
         mutable emitTailcalls: bool
         mutable deterministic: bool
         mutable concurrentBuild: bool
-        mutable parallelCheckingWithSignatureFiles: bool
         mutable emitMetadataAssembly: MetadataAssemblyGeneration
         mutable preferredUiLang: string option
         mutable lcid: int option
@@ -588,6 +596,8 @@ type TcConfigBuilder =
         mutable exiter: Exiter
 
         mutable parallelReferenceResolution: ParallelReferenceResolution
+
+        mutable typeCheckingConfig: TypeCheckingConfig
     }
 
     // Directories to start probing in
@@ -734,7 +744,6 @@ type TcConfigBuilder =
             emitTailcalls = true
             deterministic = false
             concurrentBuild = true
-            parallelCheckingWithSignatureFiles = false
             emitMetadataAssembly = MetadataAssemblyGeneration.None
             preferredUiLang = None
             lcid = None
@@ -777,6 +786,10 @@ type TcConfigBuilder =
             xmlDocInfoLoader = None
             exiter = QuitProcessExiter
             parallelReferenceResolution = ParallelReferenceResolution.Off
+            typeCheckingConfig =
+                {
+                    TypeCheckingConfig.Mode = TypeCheckingMode.Sequential
+                }
         }
 
     member tcConfigB.FxResolver =
@@ -1288,7 +1301,6 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.emitTailcalls = data.emitTailcalls
     member _.deterministic = data.deterministic
     member _.concurrentBuild = data.concurrentBuild
-    member _.parallelCheckingWithSignatureFiles = data.parallelCheckingWithSignatureFiles
     member _.emitMetadataAssembly = data.emitMetadataAssembly
     member _.pathMap = data.pathMap
     member _.langVersion = data.langVersion
@@ -1322,6 +1334,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.xmlDocInfoLoader = data.xmlDocInfoLoader
     member _.exiter = data.exiter
     member _.parallelReferenceResolution = data.parallelReferenceResolution
+    member _.typeCheckingConfig = data.typeCheckingConfig
 
     static member Create(builder, validate) =
         use _ = UseBuildPhase BuildPhase.Parameter

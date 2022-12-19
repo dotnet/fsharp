@@ -186,6 +186,16 @@
     <Compile Include="Scripting\Interactive.fs" />
     <Compile Include="TypeChecks\CheckDeclarationsTests.fs" />
     <Compile Include="TypeChecks\ParallelCheckingWithSignatureFilesTests.fs" />
+    <Compile Include="TypeChecks\Graph\Utils.fs" />
+    <Compile Include="TypeChecks\Graph\QueryTrieTests.fs" />
+    <Compile Include="TypeChecks\Graph\TrieMappingTests.fs" />
+    <Compile Include="TypeChecks\Graph\FileContentMappingTests.fs" />
+    <Compile Include="TypeChecks\Graph\Scenarios.fs" />
+    <Compile Include="TypeChecks\Graph\DependencyResolutionTests.fs" />
+    <Compile Include="TypeChecks\Graph\CompilationTests.fs" />
+    <None Include="TypeChecks\Graph\scrape.fsx" />
+    <Compile Include="TypeChecks\Graph\CompilationFromCmdlineArgsTests.fs" />
+    <Compile Include="TypeChecks\Graph\TypedTreeGraph.fs" />
     <Compile Include="CompilerOptions\fsc\checked\checked.fs" />
     <Compile Include="CompilerOptions\fsc\cliversion.fs" />
     <Compile Include="CompilerOptions\fsc\debug.fs" />

@@ -203,6 +203,18 @@ type ParallelReferenceResolution =
     | On
     | Off
 
+[<RequireQualifiedAccess>]
+type TypeCheckingMode =
+    /// Default mode where all source files are processed sequentially in compilation order.
+    | Sequential
+    /// Signature files and implementation files without backing files are processed sequentially, then backed implementation files are processed in parallel.
+    | ParallelCheckingOfBackedImplFiles
+    /// Parallel type-checking that uses automated file-to-file dependency detection to construct a highly-parallelisable file graph.
+    | Graph
+
+[<RequireQualifiedAccess>]
+type TypeCheckingConfig = { Mode: TypeCheckingMode }
+
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
     {
@@ -412,8 +424,6 @@ type TcConfigBuilder =
 
         mutable concurrentBuild: bool
 
-        mutable parallelCheckingWithSignatureFiles: bool
-
         mutable emitMetadataAssembly: MetadataAssemblyGeneration
 
         mutable preferredUiLang: string option
@@ -491,6 +501,8 @@ type TcConfigBuilder =
         mutable exiter: Exiter
 
         mutable parallelReferenceResolution: ParallelReferenceResolution
+
+        mutable typeCheckingConfig: TypeCheckingConfig
     }
 
     static member CreateNew:
@@ -734,8 +746,6 @@ type TcConfig =
 
     member concurrentBuild: bool
 
-    member parallelCheckingWithSignatureFiles: bool
-
     member emitMetadataAssembly: MetadataAssemblyGeneration
 
     member pathMap: PathMap
@@ -857,6 +867,8 @@ type TcConfig =
     member exiter: Exiter
 
     member parallelReferenceResolution: ParallelReferenceResolution
+
+    member typeCheckingConfig: TypeCheckingConfig
 
 /// Represents a computation to return a TcConfig. Normally this is just a constant immutable TcConfig,
 /// but for F# Interactive it may be based on an underlying mutable TcConfigBuilder.

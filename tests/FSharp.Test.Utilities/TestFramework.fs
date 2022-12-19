@@ -448,7 +448,7 @@ let initializeSuite () =
         let usedEnvVars = c.EnvironmentVariables  |> Map.add "FSC" c.FSC
         { c with EnvironmentVariables = usedEnvVars }
 
-    logConfig cfg
+    // logConfig cfg
 
     cfg
 

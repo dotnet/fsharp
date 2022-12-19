@@ -1521,7 +1521,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                     }
                     |> Some
 
-                tcConfigB.parallelCheckingWithSignatureFiles <- enableParallelCheckingWithSignatureFiles
+                let mode = if enableParallelCheckingWithSignatureFiles then TypeCheckingMode.ParallelCheckingOfBackedImplFiles else TypeCheckingMode.Sequential
+                tcConfigB.typeCheckingConfig <- { tcConfigB.typeCheckingConfig with Mode = mode }
                 tcConfigB.parallelReferenceResolution <- parallelReferenceResolution
                 
                 tcConfigB, sourceFilesNew

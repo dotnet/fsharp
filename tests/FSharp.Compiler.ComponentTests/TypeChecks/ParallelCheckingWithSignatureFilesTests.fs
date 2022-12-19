@@ -46,7 +46,7 @@ val decode: string -> obj
             "Decode.fs",
             """
 module Decode
-
+let x : int = ""
 let decode (v: string) : obj = failwith "todo"
 """
         )

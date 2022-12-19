@@ -75,6 +75,7 @@
     <InternalsVisibleTo Include="FSharp.Compiler.ComponentTests" />
     <InternalsVisibleTo Include="FSharp.Compiler.UnitTests" />
     <InternalsVisibleTo Include="FSharp.Compiler.Service.Tests" />
+    <InternalsVisibleTo Include="ParallelTypeCheckingTests" />
     <InternalsVisibleTo Include="HostedCompilerServer" />
     <InternalsVisibleTo Include="FSharp.Tests.FSharpSuite" />
     <InternalsVisibleTo Include="LanguageServiceProfiling" />
@@ -380,6 +381,16 @@
     <Compile Include="Driver\CompilerImports.fs" />
     <Compile Include="Driver\CompilerDiagnostics.fsi" />
     <Compile Include="Driver\CompilerDiagnostics.fs" />
+    <Compile Include="Driver\GraphChecking\Continuation.fs" />
+    <Compile Include="Driver\GraphChecking\Types.fs" />
+    <Compile Include="Driver\GraphChecking\Graph.fs" />
+    <Compile Include="Driver\GraphChecking\TrieMapping.fs" />
+    <Compile Include="Driver\GraphChecking\FileContentMapping.fs" />
+    <Compile Include="Driver\GraphChecking\DependencyResolution.fs" />
+    <Compile Include="Driver\GraphChecking\Parallel.fs" />
+    <Compile Include="Driver\GraphChecking\GraphProcessing.fs" />
+    <Compile Include="Driver\GraphChecking\TypeCheckingGraphProcessing.fs" />
+    <Content Include="Driver\GraphChecking\Docs.md" />
     <Compile Include="Driver\ParseAndCheckInputs.fsi" />
     <Compile Include="Driver\ParseAndCheckInputs.fs" />
     <Compile Include="Driver\ScriptClosure.fsi" />

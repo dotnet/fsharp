@@ -193,7 +193,7 @@ module rec Compiler =
     // Load the source file from the path
     let loadSourceFromFile path = getSource(TestType.Path path)
 
-    let private fsFromString (source: SourceCodeFileKind): FSharpCompilationSource =
+    let fsFromString (source: SourceCodeFileKind): FSharpCompilationSource =
         {
             Source            = source
             AdditionalSources = []
@@ -466,17 +466,18 @@ module rec Compiler =
         | CS cs -> CS { cs with LangVersion = ver }
         | _ -> failwith "Only supported in C#"
 
-    let asLibrary (cUnit: CompilationUnit) : CompilationUnit =
+    let withOutputType (outputType : CompileOutput) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
-        | FS fs -> FS { fs with OutputType = CompileOutput.Library }
-        | _ -> failwith "TODO: Implement asLibrary where applicable."
-
-    let asExe (cUnit: CompilationUnit) : CompilationUnit =
-        match cUnit with
-        | FS x -> FS { x with OutputType = Exe }
-        | CS x -> CS { x with OutputType = Exe }
+        | FS x -> FS { x with OutputType = outputType }
+        | CS x -> CS { x with OutputType = outputType }
         | _ -> failwith "TODO: Implement where applicable."
 
+    let asLibrary (cUnit: CompilationUnit) : CompilationUnit =
+        withOutputType CompileOutput.Library cUnit
+
+    let asExe (cUnit: CompilationUnit) : CompilationUnit =
+        withOutputType CompileOutput.Exe cUnit    
+    
     let withPlatform (platform:ExecutionPlatform) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
         | FS _ ->
