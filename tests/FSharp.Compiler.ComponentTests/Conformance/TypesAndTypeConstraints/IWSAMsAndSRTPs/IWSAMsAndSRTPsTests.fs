@@ -325,28 +325,23 @@ module ``Type checking behavior`` =
     #if !NETCOREAPP
     [<Theory(Skip = "IWSAMs are not supported by NET472.")>]
     #else   
-    [<InlineData("""
+    [<InlineData("6.0")>]
+    [<InlineData("7.0")>]
+    [<Theory>]
+    #endif
+    let ``Extension method on interface without SAM does not produce a warning`` version =
+        Fsx """
         type INormalInterface =
             abstract member IntMember: int
 
         module INormalInterfaceExtensions =
             type INormalInterface with
                 static member ExtMethod (a: INormalInterface) =
-                    ()""")>]
-    [<Theory>]
-    #endif
-    let ``Extension method on interface without SAM does not produce a warning`` code =
-        Fsx code
-        |> withLangVersion60
+                    ()
+        """
+        |> withLangVersion version
         |> compile
         |> shouldSucceed
-        |> ignore
-
-        Fsx code
-        |> withLangVersion70
-        |> compile
-        |> shouldSucceed
-        |> ignore
 
 module Negative =
 
