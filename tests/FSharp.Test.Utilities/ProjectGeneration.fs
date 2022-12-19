@@ -410,7 +410,8 @@ type ProjectWorkflowBuilder(initialProject: SyntheticProject, ?checker: FSharpCh
             (FSharpChecker.Create(
                 keepAllBackgroundSymbolUses = false,
                 enableBackgroundItemKeyStoreAndSemanticClassification = true,
-                enablePartialTypeChecking = true
+                enablePartialTypeChecking = true,
+                captureIdentifiersWhenParsing = true
             ))
 
     let mapProject f workflow =

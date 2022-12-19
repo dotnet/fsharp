@@ -1506,7 +1506,7 @@ type FSharpChecker
         let userOpName = defaultArg userOpName "Unknown"
 
         node {
-            if fastCheck <> Some true then
+            if fastCheck <> Some true || not captureIdentifiersWhenParsing then
                 return! backgroundCompiler.FindReferencesInFile(fileName, options, symbol, canInvalidateProject, userOpName)
             else
                 let! parseResults = backgroundCompiler.GetBackgroundParseResultsForFileInProject(fileName, options, userOpName)
