@@ -1412,7 +1412,7 @@ type internal FsiDynamicCompiler(
             { manifest with 
                 Name = multiAssemblyName
                 // Because the coreclr loader will not load a higher assembly make versions go downwards
-                Version = Some (parseILVersion $"0.0.0.{UInt16.MaxValue - uint16(dynamicAssemblyId)}")
+                Version = Some (parseILVersion $"0.0.0.{uint16(Int16.MaxValue) - uint16(dynamicAssemblyId)}")
                 CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs attrs)
             }
 
@@ -3387,10 +3387,6 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     do tcConfigB.useSimpleResolution <- true
     do if isRunningOnCoreClr then SetTargetProfile tcConfigB "netcore" // always assume System.Runtime codegen
 #endif
-
-    // Preset: --multiemit- on .NET Framework and Mono
-    do if not isRunningOnCoreClr then
-        tcConfigB.fsiMultiAssemblyEmit <- false
 
     // Preset: --optimize+ -g --tailcalls+ (see 4505)
     do SetOptimizeSwitch tcConfigB OptionSwitch.On
