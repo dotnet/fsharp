@@ -1412,7 +1412,7 @@ type internal FsiDynamicCompiler(
             { manifest with 
                 Name = multiAssemblyName
                 // Because the coreclr loader will not load a higher assembly make versions go downwards
-                Version = Some (parseILVersion $"0.0.0.{5000 - dynamicAssemblyId}")
+                Version = Some (parseILVersion $"0.0.0.{UInt16.MaxValue - uint16(dynamicAssemblyId)}")
                 CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs attrs)
             }
 
