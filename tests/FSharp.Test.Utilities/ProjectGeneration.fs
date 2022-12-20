@@ -451,8 +451,7 @@ type ProjectWorkflowBuilder
                 keepAllBackgroundSymbolUses = false,
                 enableBackgroundItemKeyStoreAndSemanticClassification = true,
                 enablePartialTypeChecking = true,
-                ?getSource = (if useGetSource then Some getSource else None),
-                useChangeNotifications = useChangeNotifications
+                documentSource = (if useGetSource then DocumentSource.Custom getSource else DocumentSource.FileSystem)
             ))
 
     let mapProjectAsync f workflow =

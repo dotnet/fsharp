@@ -1935,6 +1935,23 @@ FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryRe
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+Shim
+FSharp.Compiler.CodeAnalysis.DocumentSource
+FSharp.Compiler.CodeAnalysis.DocumentSource+Custom: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.ISourceText]] Item
+FSharp.Compiler.CodeAnalysis.DocumentSource+Custom: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.ISourceText]] get_Item()
+FSharp.Compiler.CodeAnalysis.DocumentSource+Tags: Int32 Custom
+FSharp.Compiler.CodeAnalysis.DocumentSource+Tags: Int32 FileSystem
+FSharp.Compiler.CodeAnalysis.DocumentSource: Boolean IsCustom
+FSharp.Compiler.CodeAnalysis.DocumentSource: Boolean IsFileSystem
+FSharp.Compiler.CodeAnalysis.DocumentSource: Boolean get_IsCustom()
+FSharp.Compiler.CodeAnalysis.DocumentSource: Boolean get_IsFileSystem()
+FSharp.Compiler.CodeAnalysis.DocumentSource: FSharp.Compiler.CodeAnalysis.DocumentSource FileSystem
+FSharp.Compiler.CodeAnalysis.DocumentSource: FSharp.Compiler.CodeAnalysis.DocumentSource NewCustom(Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.ISourceText]])
+FSharp.Compiler.CodeAnalysis.DocumentSource: FSharp.Compiler.CodeAnalysis.DocumentSource get_FileSystem()
+FSharp.Compiler.CodeAnalysis.DocumentSource: FSharp.Compiler.CodeAnalysis.DocumentSource+Custom
+FSharp.Compiler.CodeAnalysis.DocumentSource: FSharp.Compiler.CodeAnalysis.DocumentSource+Tags
+FSharp.Compiler.CodeAnalysis.DocumentSource: Int32 Tag
+FSharp.Compiler.CodeAnalysis.DocumentSource: Int32 get_Tag()
+FSharp.Compiler.CodeAnalysis.DocumentSource: System.String ToString()
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer+Succeeded: FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults Item
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer+Succeeded: FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults get_Item()
@@ -2009,7 +2026,7 @@ FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults: System.String ToString()
 FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults: System.String[] DependencyFiles
 FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults: System.String[] get_DependencyFiles()
 FSharp.Compiler.CodeAnalysis.FSharpChecker
-FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpChecker Create(Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.LegacyReferenceResolver], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[System.String,System.DateTime],Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[System.Object,System.IntPtr,System.Int32]]]], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.ISourceText]]], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
+FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpChecker Create(Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.LegacyReferenceResolver], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[System.String,System.DateTime],Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[System.Object,System.IntPtr,System.Int32]]]], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.DocumentSource])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpChecker Instance
 FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpChecker get_Instance()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpProjectOptions GetProjectOptionsFromCommandLineArgs(System.String, System.String[], Microsoft.FSharp.Core.FSharpOption`1[System.DateTime], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])

@@ -49,6 +49,10 @@ module EnvMisc =
 // BackgroundCompiler
 //
 
+[<RequireQualifiedAccess>]
+type DocumentSource = FileSystem | Custom of (string -> ISourceText option)
+
+
 /// Callback that indicates whether a requested result has become obsolete.
 [<NoComparison; NoEquality>]
 type IsResultObsolete = IsResultObsolete of (unit -> bool)
@@ -1312,8 +1316,7 @@ type FSharpChecker
             ?enablePartialTypeChecking,
             ?enableParallelCheckingWithSignatureFiles,
             ?parallelReferenceResolution,
-            ?getSource,
-            ?useChangeNotifications: bool
+            ?documentSource: DocumentSource
         ) =
 
         use _ = Activity.startNoTags "FSharpChecker.Create"
@@ -1335,7 +1338,8 @@ type FSharpChecker
 
         let enablePartialTypeChecking = defaultArg enablePartialTypeChecking false
         let enableParallelCheckingWithSignatureFiles = defaultArg enableParallelCheckingWithSignatureFiles false
-        let useChangeNotifications = defaultArg useChangeNotifications false
+        let useChangeNotifications =
+            match documentSource with Some (DocumentSource.Custom _) -> true | _ -> false
 
         if keepAssemblyContents && enablePartialTypeChecking then
             invalidArg "enablePartialTypeChecking" "'keepAssemblyContents' and 'enablePartialTypeChecking' cannot be both enabled."
@@ -1354,7 +1358,7 @@ type FSharpChecker
             enablePartialTypeChecking,
             enableParallelCheckingWithSignatureFiles,
             parallelReferenceResolution,
-            getSource,
+            (match documentSource with Some (DocumentSource.Custom f) -> Some f | _ -> None),
             useChangeNotifications
         )
 

@@ -136,8 +136,7 @@ type internal FSharpWorkspaceServiceFactory
                                     enablePartialTypeChecking = true,
                                     enableParallelCheckingWithSignatureFiles = enableParallelCheckingWithSignatureFiles,
                                     parallelReferenceResolution = enableParallelReferenceResolution,
-                                    ?getSource = (if enableLiveBuffers then Some getSource else None),
-                                    useChangeNotifications = enableLiveBuffers)
+                                    documentSource = (if enableLiveBuffers then DocumentSource.Custom getSource else DocumentSource.FileSystem))
 
                             if enableLiveBuffers then
                                 workspace.WorkspaceChanged.Add(fun args ->
