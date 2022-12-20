@@ -1355,9 +1355,9 @@ type internal FsiDynamicCompiler(
     let valueBoundEvent = Control.Event<_>()
 
     let mutable fragmentId = 0
-
     static let mutable dynamicAssemblyId = 0
-    
+    static let maxVersion = int Int16.MaxValue
+
     let mutable prevIt : ValRef option = None
 
     let dynamicAssemblies = ResizeArray<Assembly>()
@@ -1395,10 +1395,6 @@ type internal FsiDynamicCompiler(
 
     /// Generate one assembly using multi-assembly emit
     let EmitInMemoryAssembly (tcConfig: TcConfig, emEnv: ILMultiInMemoryAssemblyEmitEnv, ilxMainModule: ILModuleDef) =
-        
-        // The name of the assembly is "FSI-ASSEMBLY" for all submissions. This number is used for the Version 
-        dynamicAssemblyId <- dynamicAssemblyId + 1
- 
         let multiAssemblyName = ilxMainModule.ManifestOfAssembly.Name
 
         // Adjust the assembly name of this fragment, and add InternalsVisibleTo attributes to 
@@ -1412,9 +1408,12 @@ type internal FsiDynamicCompiler(
             { manifest with 
                 Name = multiAssemblyName
                 // Because the coreclr loader will not load a higher assembly make versions go downwards
-                Version = Some (parseILVersion $"0.0.0.{uint16(Int16.MaxValue) - uint16(dynamicAssemblyId)}")
+                Version = Some (parseILVersion $"0.0.0.{maxVersion - dynamicAssemblyId}")
                 CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs attrs)
             }
+
+        // The name of the assembly is "FSI-ASSEMBLY" for all submissions. This number is used for the Version 
+        dynamicAssemblyId <- (dynamicAssemblyId + 1) % maxVersion
 
         let ilxMainModule = { ilxMainModule with Manifest = Some manifest }
 
@@ -1457,7 +1456,6 @@ type internal FsiDynamicCompiler(
             match pdbBytes with
             | None -> Assembly.Load(assemblyBytes)
             | Some pdbBytes -> Assembly.Load(assemblyBytes, pdbBytes)
-
         dynamicAssemblies.Add(asm)
 
         let loadedTypes = [ for t in asm.GetTypes() -> t]
