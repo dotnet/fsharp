@@ -1,6 +1,5 @@
 [<AutoOpen>]
 module internal FSharp.Compiler.Service.Tests.Common
-#nowarn "1182"
 
 open System
 open System.Diagnostics
@@ -9,6 +8,7 @@ open System.Collections.Generic
 open System.Threading.Tasks
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.IO
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
@@ -106,6 +106,7 @@ let mkProjectCommandLineArgs (dllName, fileNames) =
   let args = mkProjectCommandLineArgsSilent (dllName, fileNames)
   printfn "dllName = %A, args = %A" dllName args
   args
+
 #if NETCOREAPP
 let mkProjectCommandLineArgsForScript (dllName, fileNames) =
     [|  yield "--simpleresolution"
