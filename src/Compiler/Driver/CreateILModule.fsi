@@ -15,7 +15,7 @@ open FSharp.Compiler.TypedTree
 /// Represents the configuration settings used to perform strong-name signing
 type StrongNameSigningInfo
 
-/// Get the SsigningInfo for specific values(delaysign, tcConfig.publicsign, signer, container)
+/// Get the SigningInfo for specific values(delaysign, tcConfig.publicsign, signer, container)
 val GetStrongNameSigningInfo:
     delaysign: bool * publicsign: bool * signer: byte array option * container: string option -> StrongNameSigningInfo
 

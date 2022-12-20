@@ -1380,8 +1380,6 @@ type internal FsiDynamicCompiler(
 
     let rangeStdin0 = rangeN stdinMockFileName 0
 
-    //let _writer = moduleBuilder.GetSymWriter()
-
     let infoReader = InfoReader(tcGlobals,tcImports.GetImportMap())
 
     let reportedAssemblies = Dictionary<string, DateTime>()
@@ -1413,7 +1411,8 @@ type internal FsiDynamicCompiler(
                 ]
             { manifest with 
                 Name = multiAssemblyName
-                Version = Some (parseILVersion $"0.0.0.{dynamicAssemblyId}")
+                // Because the coreclr loader will not load a higher assembly make versions go downwards
+                Version = Some (parseILVersion $"0.0.0.{5000 - dynamicAssemblyId}")
                 CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs attrs)
             }
 
@@ -1476,18 +1475,23 @@ type internal FsiDynamicCompiler(
                     yield! loop (enc@[tdef]) ntdef  ]
             [ for tdef in ilxMainModule.TypeDefs do yield! loop [] tdef ]
                                 
-        // Make the 'exec' functions for the entry point initializations
-        let execs = 
+        let execs =
             [ for edef in entries do
                 if edef.ArgCount = 0 then
-                    yield
-                      (fun () -> 
+                    yield (fun () -> 
                         let typ = asm.GetType(edef.DeclaringTypeRef.BasicQualifiedName)
                         try
                             ignore (typ.InvokeMember (edef.Name, BindingFlags.InvokeMethod ||| BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Static, null, null, [| |], Globalization.CultureInfo.InvariantCulture))
                             None
-                        with :? TargetInvocationException as e ->
-                            Some e.InnerException) ]
+                        with
+                            //| :? TargetInvocationException as e when e.InnerException.GetType() = typeof<TypeLoadException> ->
+                            //    ignore (typ.InvokeMember (edef.Name, BindingFlags.InvokeMethod ||| BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Static, null, null, [| |], Globalization.CultureInfo.InvariantCulture))
+                            //    File.WriteAllBytes($"""c:\temp\FSI-ASSEMBLY-{dynamicAssemblyId} - {Guid.NewGuid()}""", assemblyBytes)
+                            //    None
+                            //    //Some e.InnerException
+                            | :? TargetInvocationException as e ->
+                                Some e.InnerException)
+            ]
 
         emEnv.AddModuleDef asm ilScopeRef ilxMainModule
 
@@ -1707,11 +1711,10 @@ type internal FsiDynamicCompiler(
 
     let nextFragmentId() =
         fragmentId <- fragmentId + 1
-        fragmentId
+        $"%04d{fragmentId}"
 
-    let mkFragmentPath m i =
-        // NOTE: this text shows in exn traces and type names. Make it clear and fixed width
-        [mkSynId m (FsiDynamicModulePrefix + sprintf "%04d" i)]
+    let mkFragmentPath m fragmentId =
+        [mkSynId m (FsiDynamicModulePrefix + fragmentId())]
 
     let processContents istate declaredImpls =
         let tcState = istate.tcState
@@ -1836,8 +1839,7 @@ type internal FsiDynamicCompiler(
         dynamicAssemblies |> ResizeArray.tryFind (fun asm -> getName (asm.GetName()) = name)
 
     member _.EvalParsedSourceFiles (ctok, diagnosticsLogger, istate, inputs, m) =
-        let i = nextFragmentId()
-        let prefix = mkFragmentPath m i
+        let prefix = mkFragmentPath m nextFragmentId
         // Ensure the path includes the qualifying name
         let inputs = inputs |> List.map (PrependPathToInput prefix)
         let isIncrementalFragment = false
@@ -1847,9 +1849,8 @@ type internal FsiDynamicCompiler(
     /// Evaluate the given definitions and produce a new interactive state.
     member _.EvalParsedDefinitions (ctok, diagnosticsLogger: DiagnosticsLogger, istate, showTypes, isInteractiveItExpr, defs: SynModuleDecl list) =
         let fileName = stdinMockFileName
-        let i = nextFragmentId()
         let m = match defs with [] -> rangeStdin0 | _ -> List.reduce unionRanges [for d in defs -> d.Range] 
-        let prefix = mkFragmentPath m i
+        let prefix = mkFragmentPath m nextFragmentId
         let prefixPath = pathOfLid prefix
         let impl = SynModuleOrNamespace(prefix,false, SynModuleOrNamespaceKind.NamedModule,defs,PreXmlDoc.Empty,[],None,m, { LeadingKeyword = SynModuleOrNamespaceLeadingKeyword.None })
         let isLastCompiland = true
@@ -2203,9 +2204,8 @@ type internal FsiDynamicCompiler(
             let ty = List.head tys
             let amap = istate.tcImports.GetImportMap()
 
-            let i = nextFragmentId()
             let m = rangeStdin0
-            let prefix = mkFragmentPath m i
+            let prefix = mkFragmentPath m nextFragmentId
             let prefixPath = pathOfLid prefix
             let qualifiedName = ComputeQualifiedNameOfFileFromUniquePath (m,prefixPath)
 
