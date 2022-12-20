@@ -2009,7 +2009,7 @@ FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults: System.String ToString()
 FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults: System.String[] DependencyFiles
 FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults: System.String[] get_DependencyFiles()
 FSharp.Compiler.CodeAnalysis.FSharpChecker
-FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpChecker Create(Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.LegacyReferenceResolver], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[System.String,System.DateTime],Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[System.Object,System.IntPtr,System.Int32]]]], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
+FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpChecker Create(Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.LegacyReferenceResolver], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[System.String,System.DateTime],Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[System.Object,System.IntPtr,System.Int32]]]], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpChecker Instance
 FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpChecker get_Instance()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpProjectOptions GetProjectOptionsFromCommandLineArgs(System.String, System.String[], Microsoft.FSharp.Core.FSharpOption`1[System.DateTime], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
@@ -2162,8 +2162,8 @@ FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean IsFromDispatchSlotImplemen
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean IsFromOpenStatement
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean IsFromPattern
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean IsFromType
-FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean IsPrivateToFile
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean IsFromUse
+FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean IsPrivateToFile
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean get_IsFromAttribute()
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean get_IsFromComputationExpression()
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean get_IsFromDefinition()
@@ -2171,8 +2171,8 @@ FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean get_IsFromDispatchSlotImpl
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean get_IsFromOpenStatement()
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean get_IsFromPattern()
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean get_IsFromType()
-FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean get_IsPrivateToFile()
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean get_IsFromUse()
+FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean get_IsPrivateToFile()
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: FSharp.Compiler.Symbols.FSharpDisplayContext DisplayContext
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: FSharp.Compiler.Symbols.FSharpDisplayContext get_DisplayContext()
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: FSharp.Compiler.Symbols.FSharpSymbol Symbol
@@ -5170,10 +5170,10 @@ FSharp.Compiler.Symbols.FSharpType: FSharp.Compiler.Symbols.FSharpGenericParamet
 FSharp.Compiler.Symbols.FSharpType: FSharp.Compiler.Symbols.FSharpGenericParameter get_GenericParameter()
 FSharp.Compiler.Symbols.FSharpType: FSharp.Compiler.Symbols.FSharpParameter Prettify(FSharp.Compiler.Symbols.FSharpParameter)
 FSharp.Compiler.Symbols.FSharpType: FSharp.Compiler.Symbols.FSharpType AbbreviatedType
+FSharp.Compiler.Symbols.FSharpType: FSharp.Compiler.Symbols.FSharpType ErasedType
 FSharp.Compiler.Symbols.FSharpType: FSharp.Compiler.Symbols.FSharpType Instantiate(Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[FSharp.Compiler.Symbols.FSharpGenericParameter,FSharp.Compiler.Symbols.FSharpType]])
 FSharp.Compiler.Symbols.FSharpType: FSharp.Compiler.Symbols.FSharpType Prettify(FSharp.Compiler.Symbols.FSharpType)
 FSharp.Compiler.Symbols.FSharpType: FSharp.Compiler.Symbols.FSharpType StripAbbreviations()
-FSharp.Compiler.Symbols.FSharpType: FSharp.Compiler.Symbols.FSharpType ErasedType
 FSharp.Compiler.Symbols.FSharpType: FSharp.Compiler.Symbols.FSharpType get_AbbreviatedType()
 FSharp.Compiler.Symbols.FSharpType: FSharp.Compiler.Symbols.FSharpType get_ErasedType()
 FSharp.Compiler.Symbols.FSharpType: FSharp.Compiler.Text.TaggedText[] FormatLayout(FSharp.Compiler.Symbols.FSharpDisplayContext)
