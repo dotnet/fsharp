@@ -1484,11 +1484,6 @@ type internal FsiDynamicCompiler(
                             ignore (typ.InvokeMember (edef.Name, BindingFlags.InvokeMethod ||| BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Static, null, null, [| |], Globalization.CultureInfo.InvariantCulture))
                             None
                         with
-                            //| :? TargetInvocationException as e when e.InnerException.GetType() = typeof<TypeLoadException> ->
-                            //    ignore (typ.InvokeMember (edef.Name, BindingFlags.InvokeMethod ||| BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Static, null, null, [| |], Globalization.CultureInfo.InvariantCulture))
-                            //    File.WriteAllBytes($"""c:\temp\FSI-ASSEMBLY-{dynamicAssemblyId} - {Guid.NewGuid()}""", assemblyBytes)
-                            //    None
-                            //    //Some e.InnerException
                             | :? TargetInvocationException as e ->
                                 Some e.InnerException)
             ]
