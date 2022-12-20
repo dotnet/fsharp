@@ -11,10 +11,6 @@ vsintegration/*
 !vsintegration/tests/FSharp.Editor.Tests
 artifacts/
 
-# Explicitly formatted Tests/ subdirectories (with exceptions)
-!tests/ParallelTypeCheckingTests/
-*/.fcs_test/
-
 # Explicitly unformatted implementation files
 
 src/Compiler/Checking/AccessibilityLogic.fs

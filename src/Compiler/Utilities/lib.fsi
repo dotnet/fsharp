@@ -319,7 +319,7 @@ module ArrayParallel =
 
     val inline iteri: (int -> 'T -> unit) -> 'T[] -> unit
 
-    val map: ('T -> 'U) -> 'T[] -> 'U[]
+    val inline map: ('T -> 'U) -> 'T[] -> 'U[]
 
     val inline mapi: (int -> 'T -> 'U) -> 'T[] -> 'U[]
 

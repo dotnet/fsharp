@@ -606,7 +606,7 @@ module ArrayParallel =
         arr |> iteri (fun i item -> mapped[i] <- f i item)
         mapped
 
-    let map f (arr: 'T []) =
+    let inline map f (arr: 'T []) =
         arr |> mapi (fun _ item -> f item)
 
 [<RequireQualifiedAccess>]

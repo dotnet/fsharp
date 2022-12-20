@@ -12,13 +12,13 @@ open System.Collections.Generic
 
 [<NoEquality; NoComparison>]
 [<AllowNullLiteral>]
-type private SetTree<'T>(k: 'T) =
+type internal SetTree<'T>(k: 'T) =
     member _.Key = k
 
 [<NoEquality; NoComparison>]
 [<Sealed>]
 [<AllowNullLiteral>]
-type private SetTreeNode<'T>(v: 'T, left: SetTree<'T>, right: SetTree<'T>, h: int) =
+type internal SetTreeNode<'T>(v: 'T, left: SetTree<'T>, right: SetTree<'T>, h: int) =
     inherit SetTree<'T>(v)
 
     member _.Left = left
@@ -26,7 +26,7 @@ type private SetTreeNode<'T>(v: 'T, left: SetTree<'T>, right: SetTree<'T>, h: in
     member _.Height = h
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module private SetTree =
+module SetTree =
     let empty = null
 
     let inline isEmpty (t: SetTree<'T>) = isNull t
@@ -576,12 +576,12 @@ module private SetTree =
 
 [<System.Diagnostics.DebuggerDisplay "Count = {Count}">]
 [<Sealed>]
-type internal Set<'T, 'ComparerTag> when 'ComparerTag :> IComparer<'T> private (comparer: IComparer<'T>, tree: SetTree<'T>) =
+type internal Set<'T, 'ComparerTag> when 'ComparerTag :> IComparer<'T>(comparer: IComparer<'T>, tree: SetTree<'T>) =
 
     static let refresh (s: Set<_, _>) t =
         Set<_, _>(comparer = s.Comparer, tree = t)
 
-    member private s.Tree = tree
+    member s.Tree = tree
     member s.Comparer: IComparer<'T> = comparer
 
     static member Empty(comparer: 'ComparerTag) : Set<'T, 'ComparerTag> =

@@ -104,8 +104,7 @@ let mkProjectCommandLineArgsSilent (dllName, fileNames) =
 
 let mkProjectCommandLineArgs (dllName, fileNames) =
   let args = mkProjectCommandLineArgsSilent (dllName, fileNames)
-  // TODO uncomment
-  // printfn "dllName = %A, args = %A" dllName args
+  printfn "dllName = %A, args = %A" dllName args
   args
 #if NETCOREAPP
 let mkProjectCommandLineArgsForScript (dllName, fileNames) =

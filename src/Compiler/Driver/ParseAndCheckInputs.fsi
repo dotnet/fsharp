@@ -31,11 +31,6 @@ type ModuleNamesDict = Map<string, Map<string, QualifiedNameOfFile>>
 /// Checks if a ParsedInput is using a module name that was already given and deduplicates the name if needed.
 val DeduplicateParsedInputModuleName: ModuleNamesDict -> ParsedInput -> ParsedInput * ModuleNamesDict
 
-val UseMultipleDiagnosticLoggers<'a, 'b> :
-    ('a list * DiagnosticsLogger * (PhasedDiagnostic -> PhasedDiagnostic) option) ->
-    (('a * CapturingDiagnosticsLogger) list -> 'b) ->
-        'b
-
 /// Parse a single input (A signature file or implementation file)
 val ParseInput:
     lexer: (Lexbuf -> Parser.token) *
@@ -120,10 +115,6 @@ type TcState =
     /// The CcuThunk for the current assembly being checked
     member Ccu: CcuThunk
 
-    member TcsRootSigs: Internal.Utilities.Collections.Zmap<QualifiedNameOfFile, ModuleOrNamespaceType>
-
-    member TcsRootImpls: Internal.Utilities.Collections.Zset<QualifiedNameOfFile>
-
     /// Get the typing environment implied by the set of signature files and/or inferred signatures of implementation files checked so far
     member TcEnvFromSignatures: TcEnv
 
@@ -137,23 +128,6 @@ type TcState =
     member NextStateAfterIncrementalFragment: TcEnv -> TcState
 
     member CreatesGeneratedProvidedTypes: bool
-
-    member TcsImplicitOpenDeclarations: OpenDeclaration list
-
-    member WithStuff:
-        TcEnv -> Internal.Utilities.Collections.Zmap<QualifiedNameOfFile, ModuleOrNamespaceType> -> bool -> TcState
-
-    member WithCreatesGeneratedProvidedTypes: bool -> TcState
-
-val AddCheckResultsToTcState:
-    (TcGlobals * Import.ImportMap * bool * LongIdent option * NameResolution.TcResultsSink * TcEnv * QualifiedNameOfFile * ModuleOrNamespaceType) ->
-    TcState ->
-        (ModuleOrNamespaceType * TcState)
-
-type PartialResult = TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType
-
-type CheckArgs =
-    CompilationThreadToken * (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcState * (PhasedDiagnostic -> PhasedDiagnostic) * ParsedInput list
 
 /// Get the initial type checking state for a set of inputs
 val GetInitialTcState: range * string * TcConfig * TcGlobals * TcImports * TcEnv * OpenDeclaration list -> TcState
@@ -170,10 +144,6 @@ val CheckOneInput:
     input: ParsedInput *
     skipImplIfSigExists: bool ->
         Cancellable<(TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType) * TcState>
-
-val CheckMultipleInputsInParallel:
-    (CompilationThreadToken * (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcState * (PhasedDiagnostic -> PhasedDiagnostic) * ParsedInput list) ->
-        PartialResult list * TcState
 
 /// Finish the checking of multiple inputs
 val CheckMultipleInputsFinish:

@@ -15,10 +15,6 @@
     <PlatformTarget Condition="'$(TargetFramework)' == 'net472'">x86</PlatformTarget>
   </PropertyGroup>
 
-  <ItemGroup>
-    <InternalsVisibleTo Include="ParallelTypeCheckingTests" />
-  </ItemGroup>
-
   <Import Project="$([MSBuild]::GetPathOfFileAbove('fsc.targets', '$(MSBuildThisFileDirectory)../'))" />
 
 </Project>

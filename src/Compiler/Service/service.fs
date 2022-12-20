@@ -146,8 +146,7 @@ module CompileHelpers =
                     exiter,
                     loggerProvider,
                     tcImportsCapture,
-                    dynamicAssemblyCreator,
-                    true
+                    dynamicAssemblyCreator
                 ))
 
         diagnostics.ToArray(), result

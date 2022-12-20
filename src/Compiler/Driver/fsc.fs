@@ -1177,8 +1177,7 @@ let CompileFromCommandLineArguments
         exiter: Exiter,
         loggerProvider,
         tcImportsCapture,
-        dynamicAssemblyCreator,
-        notJustTypeCheck: bool
+        dynamicAssemblyCreator
     ) =
 
     use disposables = new DisposablesTracker()
@@ -1193,25 +1192,19 @@ let CompileFromCommandLineArguments
                     ()
         }
 
-    let main1Result =
-        main1 (
-            ctok,
-            argv,
-            legacyReferenceResolver,
-            bannerAlreadyPrinted,
-            reduceMemoryUsage,
-            defaultCopyFSharpCore,
-            exiter,
-            loggerProvider,
-            disposables
-        )
-
-    if notJustTypeCheck then
-        main1Result
-        |> main2
-        |> main3
-        |> main4 (tcImportsCapture, dynamicAssemblyCreator)
-        |> main5
-        |> main6 dynamicAssemblyCreator
-    else
-        ()
+    main1 (
+        ctok,
+        argv,
+        legacyReferenceResolver,
+        bannerAlreadyPrinted,
+        reduceMemoryUsage,
+        defaultCopyFSharpCore,
+        exiter,
+        loggerProvider,
+        disposables
+    )
+    |> main2
+    |> main3
+    |> main4 (tcImportsCapture, dynamicAssemblyCreator)
+    |> main5
+    |> main6 dynamicAssemblyCreator

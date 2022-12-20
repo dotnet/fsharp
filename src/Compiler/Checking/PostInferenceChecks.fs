@@ -492,7 +492,7 @@ let AccessInternalsVisibleToAsInternal thisCompPath internalsVisibleToPaths acce
         accessSubstPaths (thisCompPath, internalsVisibleToPath) access)
     
 
-let CheckTypeForAccess (cenv: cenv) env _objName valAcc _m ty =
+let CheckTypeForAccess (cenv: cenv) env objName valAcc m ty =
     if cenv.reportErrors then 
 
         let visitType ty =         
@@ -504,12 +504,11 @@ let CheckTypeForAccess (cenv: cenv) env _objName valAcc _m ty =
                 let thisCompPath = compPathOfCcu cenv.viewCcu
                 let tyconAcc = tcref.Accessibility |> AccessInternalsVisibleToAsInternal thisCompPath cenv.internalsVisibleToPaths
                 if isLessAccessible tyconAcc valAcc then
-                    ()
-                    //errorR(Error(FSComp.SR.chkTypeLessAccessibleThanType(tcref.DisplayName, (objName())), m))
+                    errorR(Error(FSComp.SR.chkTypeLessAccessibleThanType(tcref.DisplayName, (objName())), m))
 
         CheckTypeDeep cenv (visitType, None, None, None, None) cenv.g env false ty
 
-let WarnOnWrongTypeForAccess (cenv: cenv) env _objName valAcc _m ty =
+let WarnOnWrongTypeForAccess (cenv: cenv) env objName valAcc m ty =
     if cenv.reportErrors then 
 
         let visitType ty =         
@@ -521,10 +520,9 @@ let WarnOnWrongTypeForAccess (cenv: cenv) env _objName valAcc _m ty =
                 let thisCompPath = compPathOfCcu cenv.viewCcu
                 let tyconAcc = tcref.Accessibility |> AccessInternalsVisibleToAsInternal thisCompPath cenv.internalsVisibleToPaths
                 if isLessAccessible tyconAcc valAcc then
-                    ()
-                    // let errorText = FSComp.SR.chkTypeLessAccessibleThanType(tcref.DisplayName, (objName())) |> snd
-                    // let warningText = errorText + Environment.NewLine + FSComp.SR.tcTypeAbbreviationsCheckedAtCompileTime()
-                    // warning(AttributeChecking.ObsoleteWarning(warningText, m))
+                    let errorText = FSComp.SR.chkTypeLessAccessibleThanType(tcref.DisplayName, (objName())) |> snd
+                    let warningText = errorText + Environment.NewLine + FSComp.SR.tcTypeAbbreviationsCheckedAtCompileTime()
+                    warning(AttributeChecking.ObsoleteWarning(warningText, m))
 
         CheckTypeDeep cenv (visitType, None, None, None, None) cenv.g env false ty 
 

@@ -924,12 +924,12 @@ module Cancellable =
 
 type CancellableBuilder() =
 
-    member _.Delay(f) =
+    member inline _.Delay([<InlineIfLambda>] f) =
         Cancellable(fun ct ->
             let (Cancellable g) = f ()
             g ct)
 
-    member _.Bind(comp, k) =
+    member inline _.Bind(comp, [<InlineIfLambda>] k) =
         Cancellable(fun ct ->
 #if !FSHARPCORE_USE_PACKAGE
             __debugPoint ""
@@ -939,7 +939,7 @@ type CancellableBuilder() =
             | ValueOrCancelled.Value v1 -> Cancellable.run ct (k v1)
             | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
 
-    member _.BindReturn(comp, k) =
+    member inline _.BindReturn(comp, [<InlineIfLambda>] k) =
         Cancellable(fun ct ->
 #if !FSHARPCORE_USE_PACKAGE
             __debugPoint ""
@@ -949,7 +949,7 @@ type CancellableBuilder() =
             | ValueOrCancelled.Value v1 -> ValueOrCancelled.Value(k v1)
             | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
 
-    member _.Combine(comp1, comp2) =
+    member inline _.Combine(comp1, comp2) =
         Cancellable(fun ct ->
 #if !FSHARPCORE_USE_PACKAGE
             __debugPoint ""
@@ -959,7 +959,7 @@ type CancellableBuilder() =
             | ValueOrCancelled.Value () -> Cancellable.run ct comp2
             | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
 
-    member _.TryWith(comp, handler) =
+    member inline _.TryWith(comp, [<InlineIfLambda>] handler) =
         Cancellable(fun ct ->
 #if !FSHARPCORE_USE_PACKAGE
             __debugPoint ""
@@ -980,7 +980,7 @@ type CancellableBuilder() =
                 | Choice2Of2 err -> Cancellable.run ct (handler err)
             | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
 
-    member _.Using(resource, comp) =
+    member inline _.Using(resource, [<InlineIfLambda>] comp) =
         Cancellable(fun ct ->
 #if !FSHARPCORE_USE_PACKAGE
             __debugPoint ""
@@ -1004,7 +1004,7 @@ type CancellableBuilder() =
                 | Choice2Of2 err -> raise err
             | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
 
-    member _.TryFinally(comp, compensation) =
+    member inline _.TryFinally(comp, [<InlineIfLambda>] compensation) =
         Cancellable(fun ct ->
 #if !FSHARPCORE_USE_PACKAGE
             __debugPoint ""
@@ -1027,12 +1027,12 @@ type CancellableBuilder() =
                 | Choice2Of2 err -> raise err
             | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
 
-    member _.Return v =
+    member inline _.Return v =
         Cancellable(fun _ -> ValueOrCancelled.Value v)
 
-    member _.ReturnFrom(v: Cancellable<'T>) = v
+    member inline _.ReturnFrom(v: Cancellable<'T>) = v
 
-    member _.Zero() =
+    member inline _.Zero() =
         Cancellable(fun _ -> ValueOrCancelled.Value())
 
 [<AutoOpen>]
