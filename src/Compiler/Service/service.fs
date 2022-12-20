@@ -752,7 +752,14 @@ type BackgroundCompiler
                     GraphNode.SetPreferredUILang tcPrior.TcConfig.preferredUiLang
 
                     let parseDiagnostics, parseTree, anyErrors =
-                        ParseAndCheckFile.parseFile (sourceText, fileName, parsingOptions, userOpName, suggestNamesForErrors, captureIdentifiersWhenParsing)
+                        ParseAndCheckFile.parseFile (
+                            sourceText,
+                            fileName,
+                            parsingOptions,
+                            userOpName,
+                            suggestNamesForErrors,
+                            captureIdentifiersWhenParsing
+                        )
 
                     let parseResults =
                         FSharpParseFileResults(parseDiagnostics, parseTree, anyErrors, builder.AllDependenciesDeprecated)
