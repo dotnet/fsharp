@@ -127,7 +127,7 @@ module internal ParameterLocationsImpl =
 
         match inner with
         | None ->
-            if SyntaxTraversal.rangeContainsPosLeftEdgeExclusiveAndRightEdgeInclusive parenRange pos then
+            if SyntaxTraversal.rangeContainsPosLeftEdgeInclusive parenRange pos then
                 let argRanges =
                     [
                         {
