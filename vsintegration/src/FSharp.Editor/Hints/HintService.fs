@@ -13,21 +13,21 @@ module HintService =
     let private getHintsForSymbol parseResults hintKinds (longIdEndLocations: Position list) (symbolUse: FSharpSymbolUse) =
         match symbolUse.Symbol with
         | :? FSharpMemberOrFunctionOrValue as symbol 
-            when hintKinds |> Set.contains HintKind.TypeHint 
+          when hintKinds |> Set.contains HintKind.TypeHint 
             && InlineTypeHints.isValidForHint parseResults symbol symbolUse ->
             
             InlineTypeHints.getHints symbol symbolUse, 
             longIdEndLocations
         
         | :? FSharpMemberOrFunctionOrValue as symbol
-            when hintKinds |> Set.contains HintKind.ParameterNameHint 
+          when hintKinds |> Set.contains HintKind.ParameterNameHint 
             && InlineParameterNameHints.isMemberOrFunctionOrValueValidForHint symbol symbolUse ->
 
             InlineParameterNameHints.getHintsForMemberOrFunctionOrValue parseResults symbol symbolUse longIdEndLocations, 
             symbolUse.Range.End :: longIdEndLocations
 
         | :? FSharpUnionCase as symbol
-            when hintKinds |> Set.contains HintKind.ParameterNameHint
+          when hintKinds |> Set.contains HintKind.ParameterNameHint
             && InlineParameterNameHints.isUnionCaseValidForHint symbol symbolUse ->
 
             InlineParameterNameHints.getHintsForUnionCase parseResults symbol symbolUse, 
@@ -35,7 +35,8 @@ module HintService =
 
         // we'll be adding other stuff gradually here
         | _ -> 
-            [], longIdEndLocations
+            [], 
+            longIdEndLocations
 
     let getHintsForDocument (document: Document) hintKinds userOpName cancellationToken = 
         async {

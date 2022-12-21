@@ -414,7 +414,7 @@ let x = "test".Split("").[0].Split("");
 type MyType() =
 
     member _.MyMethod(?beep: int, ?bap: int, ?boop: int) = ()
-    
+
     member this.Foo = this.MyMethod(3, boop = 4)
 """
 
@@ -439,7 +439,7 @@ type MyType() =
 type MyType() =
 
     member _.MyMethod(?beep: int, ?bap : int, ?boop : int) = ()
-    
+
     member this.Foo = this.MyMethod(bap = 3, beep = 4)
 """
 
