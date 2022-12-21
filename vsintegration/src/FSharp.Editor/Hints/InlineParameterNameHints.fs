@@ -87,7 +87,7 @@ module InlineParameterNameHints =
         (longIdEndLocations: Position list) =
 
         let parameters = symbol.CurriedParameterGroups |> Seq.concat
-        let argumentLocations = getArgumentLocations symbolUse parseResults longIdEndLocations
+        let argumentLocations = parseResults |> getArgumentLocations symbolUse longIdEndLocations
 
         let tupleRanges = argumentLocations |> getTupleRanges
         let curryRanges = parseResults |> getCurryRanges symbolUse
