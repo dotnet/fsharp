@@ -14,7 +14,7 @@
     <PreReleaseVersionLabel>beta</PreReleaseVersionLabel>
     <!-- F# Version components -->
     <FSMajorVersion>7</FSMajorVersion>
-    <FSMinorVersion>0</FSMinorVersion>
+    <FSMinorVersion>1</FSMinorVersion>
     <FSBuildVersion>0</FSBuildVersion>
     <FSRevisionVersion>0</FSRevisionVersion>
     <!-- -->
