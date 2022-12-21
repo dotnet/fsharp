@@ -406,13 +406,15 @@ let x = "test".Split("").[0].Split("");
         let actual = getParameterNameHints document
 
         Assert.AreEqual(expected, actual)
-        
+
     [<Test>]
     let ``Hints are not shown for optional parameters with specified names`` () =
         let code =
             """
 type MyType() =
+
     member _.MyMethod(?beep: int, ?bap: int, ?boop: int) = ()
+    
     member this.Foo = this.MyMethod(3, boop = 4)
 """
 
@@ -435,7 +437,9 @@ type MyType() =
         let code =
             """
 type MyType() =
+
     member _.MyMethod(?beep: int, ?bap : int, ?boop : int) = ()
+    
     member this.Foo = this.MyMethod(bap = 3, beep = 4)
 """
 
@@ -471,3 +475,7 @@ let test sequences =
                     Location = (3, 92)
                 }
             ]
+
+        let actual = getParameterNameHints document
+
+        Assert.AreEqual(expected, actual)
