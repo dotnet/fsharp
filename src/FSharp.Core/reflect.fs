@@ -743,6 +743,40 @@ module internal Impl =
             table.[7].MakeGenericType(Array.append tysA [| tyB |])
         | _ -> invalidArg "tys" (SR.GetString(SR.invalidTupleTypes))
 
+
+    let refTupleTypesNetStandard = 
+        [| typedefof<System.Tuple<_>>
+           typedefof<System.Tuple<_,_>>
+           typedefof<System.Tuple<_,_,_>>
+           typedefof<System.Tuple<_,_,_,_>>
+           typedefof<System.Tuple<_,_,_,_,_>>
+           typedefof<System.Tuple<_,_,_,_,_,_>>
+           typedefof<System.Tuple<_,_,_,_,_,_,_>>
+           typedefof<System.Tuple<_,_,_,_,_,_,_,_>> |]
+
+    let structTupleTypesNetStandard = 
+        [| typedefof<System.ValueTuple<_>>
+           typedefof<System.ValueTuple<_,_>>
+           typedefof<System.ValueTuple<_,_,_>>
+           typedefof<System.ValueTuple<_,_,_,_>>
+           typedefof<System.ValueTuple<_,_,_,_,_>>
+           typedefof<System.ValueTuple<_,_,_,_,_,_>>
+           typedefof<System.ValueTuple<_,_,_,_,_,_,_>>
+           typedefof<System.ValueTuple<_,_,_,_,_,_,_,_>> |]
+
+    let rec mkTupleTypeNetStandard (tupleTable:Type[]) (tys: Type[]) = 
+        let tableIndex = tys.Length - 1
+        if tableIndex < 0 then
+            invalidArg "tys" (SR.GetString(SR.invalidTupleTypes))
+        elif tableIndex < (tupleTable.Length-1) then
+            tupleTable[tableIndex].MakeGenericType tys
+        else
+            let 
+            let tysA = tys.[0 .. tupleEncField - 1]
+            invalidArg "tys" (SR.GetString(SR.invalidTupleTypes))
+    
+        
+
     let rec getTupleTypeInfo (typ: Type) =
         if not (isTupleType typ) then
             let msg = String.Format(SR.GetString(SR.notATupleType), typ.FullName)
@@ -1195,6 +1229,7 @@ type FSharpType =
 
         mkTupleType false asm types
 
+    [<ObsoleteAttribute("The assembly attribute is no longer needed after netstandard2.0. Use the overload without it.")>]
     static member MakeStructTupleType(asm: Assembly, types: Type[]) =
         checkNonNull "types" types
 
@@ -1207,6 +1242,8 @@ type FSharpType =
             invalidArg "types" (SR.GetString(SR.nullsNotAllowedInArray))
 
         mkTupleType true asm types
+
+    static member MakeStructTupleType(types: Type[])  = FSharpType.MakeStructTupleType(null,types)
 
     static member GetTupleElements(tupleType: Type) =
         checkTupleType ("tupleType", tupleType)

@@ -617,7 +617,17 @@ type FSharpType =
     /// <returns>The type representing the struct tuple containing the input elements.</returns>
     ///
     /// <example-tbd></example-tbd>
+    [<ObsoleteAttribute("The assembly attribute is no longer needed after netstandard2.0. Use the overload without it.")>]
     static member MakeStructTupleType: asm: Assembly * types: Type[] -> Type
+
+    /// <summary>Returns a <see cref="T:System.Type"/> representing an F# struct tuple type with the given element types</summary>
+    ///
+    /// <param name="types">An array of types for the tuple elements.</param>
+    ///
+    /// <returns>The type representing the struct tuple containing the input elements.</returns>
+    ///
+    /// <example-tbd></example-tbd> 
+    static member MakeStructTupleType: types: Type[] -> Type
 
     /// <summary>Return true if the <c>typ</c> is a representation of an F# tuple type </summary>
     ///
