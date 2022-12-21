@@ -1131,6 +1131,10 @@ module Patterns =
         let ty = FSharpType.MakeStructTupleType(asm, Array.map typeOf (Array.ofList args))
         mkFEN (NewTupleOp ty) args
 
+    let mkNewStructTupleNetStandard args =
+        let ty = FSharpType.MakeStructTupleType(Array.map typeOf (Array.ofList args))
+        mkFEN (NewTupleOp ty) args
+
     let mkTupleGet (ty, n, x) =
         checkTypesSR ty (typeOf x) "tupleGet" (SR.GetString(SR.QtmmExprNotMatchTuple))
         let mems = FSharpType.GetTupleElements ty
@@ -2662,8 +2666,12 @@ type Expr with
     static member NewTuple elements =
         mkNewTuple elements
 
+    // Obsolete in .fsi
     static member NewStructTuple(asm: Assembly, elements) =
         mkNewStructTuple (asm, elements)
+
+    static member NewStructTuple elements =
+        mkNewStructTupleNetStandard elements
 
     static member NewRecord(recordType: Type, elements) =
         checkNonNull "recordType" recordType

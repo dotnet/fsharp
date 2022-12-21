@@ -740,7 +740,7 @@ module LeafExpressionConverter =
              let tupTy = 
                 let argTypes = args |> List.map (fun arg -> arg.Type) |> Array.ofList
                 if inp.Type.IsValueType then 
-                    Reflection.FSharpType.MakeStructTupleType(inp.Type.Assembly, argTypes)
+                    Reflection.FSharpType.MakeStructTupleType(argTypes)
                 else
                     Reflection.FSharpType.MakeTupleType(argTypes)
              let argsP = ConvExprsToLinq env args
