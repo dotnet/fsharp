@@ -4551,16 +4551,6 @@ and TcTypeMeasurePower kindOpt (cenv: cenv) newOk checkConstraints occ env tpenv
         let ms, tpenv = TcMeasure cenv newOk checkConstraints occ env tpenv ty m
         TType_measure (Measure.RationalPower (ms, TcSynRationalConst exponent)), tpenv
 
-and TcTypeMeasureDivide kindOpt (cenv: cenv) newOk checkConstraints occ env tpenv typ1 typ2 m =
-    match kindOpt with
-    | Some TyparKind.Type ->
-        errorR(Error(FSComp.SR.tcUnexpectedSymbolInTypeExpression("/"), m))
-        NewErrorType (), tpenv
-    | _ ->
-        let ms1, tpenv = TcMeasure cenv newOk checkConstraints occ env tpenv typ1 m
-        let ms2, tpenv = TcMeasure cenv newOk checkConstraints occ env tpenv typ2 m
-        TType_measure (Measure.Prod(ms1, Measure.Inv ms2)), tpenv
-
 and TcTypeMeasureApp kindOpt (cenv: cenv) newOk checkConstraints occ env tpenv arg1 args postfix m =
     match arg1 with
     | StripParenTypes (SynType.Var(_, m1) | SynType.MeasurePower(_, _, m1)) ->
