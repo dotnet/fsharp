@@ -534,17 +534,16 @@ type internal FsiToolWindow() as this =
             executeTextNoHistory null text
         with _ -> ()
 
-    let executeInteraction dbgBreak dir (filename: string) topLine text =
-        // Preserving previous functionality, including the #directives...
-        let interaction =
-            "\n"
-          + (sprintf "# silentCd @\"%s\" ;; " dir) + "\n"
-          + (if dbgBreak then "# dbgbreak\n" else "")
-          + (sprintf "# %d @\"%s\" " topLine filename) + "\n"
-          + text + "\n"
-          + "# 1 \"stdin\"" + "\n" (* stdin line number reset code *)
-          + ";;" + "\n"
-
+    let executeInteraction dbgBreak dir filename topLine (text:string) =
+        let interaction = $"""
+#interactiveprompt "hide"
+#silentCd @"{dir}";;
+{if dbgBreak then "#dbgbreak" else ""}
+#{topLine} @"{filename}"
+{text.ToString()}
+#1 "stdin"
+#interactiveprompt "show";;
+"""
         executeTextNoHistory filename interaction
 
     let sendSelectionToFSI action =
@@ -555,8 +554,8 @@ type internal FsiToolWindow() as this =
             | DebugSelection -> true, false
 
         try
-            let dte = provider.GetService(typeof<DTE>) :?> DTE        
-            let activeD = dte.ActiveDocument            
+            let dte = provider.GetService(typeof<DTE>) :?> DTE
+            let activeD = dte.ActiveDocument
             match activeD.Selection with
             | :? TextSelection as selection when selectLine || selection.Text = "" ->
                 selection.SelectLine()
