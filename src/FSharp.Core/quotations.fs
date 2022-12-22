@@ -19,7 +19,7 @@ open Microsoft.FSharp.Text.StructuredPrintfImpl.Layout
 open Microsoft.FSharp.Text.StructuredPrintfImpl.TaggedText
 
 #nowarn "52" // The value has been copied to ensure the original is not mutated by this operation
-
+#nowarn "44" //  Deprecated construct - uses obsolete reflect functionality to provide an obsolete quotations API
 //--------------------------------------------------------------------------
 // RAW quotations - basic data types
 //--------------------------------------------------------------------------
