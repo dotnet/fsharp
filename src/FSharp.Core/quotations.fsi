@@ -671,7 +671,7 @@ type Expr =
     /// </code>
     /// Evaluates to a quotation with the same structure as <c>&lt;@ struct (1, "a") @&gt;</c>.
     /// </example>
-    [<ObsoleteAttribute("The assembly attribute is no longer needed after netstandard2.0. Use the overload without it.")>]
+    [<Obsolete("The assembly attribute is no longer needed after netstandard2.0. Use the overload without it.")>]
     static member NewStructTuple: asm: Assembly * elements: Expr list -> Expr
 
     /// <summary>Builds an expression that represents the creation of an F# tuple value</summary>
