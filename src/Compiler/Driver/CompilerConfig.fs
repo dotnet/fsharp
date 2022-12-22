@@ -1131,13 +1131,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                         yield clrFacades
 
                 | None ->
-                    // "there is no really good notion of runtime directory on .NETCore"
-#if NETSTANDARD
                     let runtimeRoot = Path.GetDirectoryName(typeof<Object>.Assembly.Location)
-#else
-                    let runtimeRoot =
-                        System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
-#endif
                     let runtimeRootWithoutSlash = runtimeRoot.TrimEnd('/', '\\')
                     let runtimeRootFacades = Path.Combine(runtimeRootWithoutSlash, "Facades")
                     let runtimeRootWPF = Path.Combine(runtimeRootWithoutSlash, "WPF")
