@@ -22,6 +22,11 @@
         <target state="new">Duplicate parameter. The parameter '{0}' has been used more that once in this method.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkErrorOnStaticClasses">
+        <source>if a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] it means it is static. No {0} allowed</source>
+        <target state="new">if a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] it means it is static. No {0} allowed</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
         <source>Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</source>
         <target state="translated">Funkcja „{0}” nie jest dostępna w języku F# {1}. Użyj języka w wersji {2} lub nowszej.</target>
@@ -190,6 +195,11 @@
       <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
         <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
         <target state="translated">wskazywanie błędu w przypadku przestarzałego dostępu do konstrukcji z atrybutem RequireQualifiedAccess</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureErrorReportingOnStaticClasses">
+        <source>Error reporting on static classes</source>
+        <target state="new">Error reporting on static classes</target>
         <note />
       </trans-unit>
       <trans-unit id="featureEscapeBracesInFormattableString">

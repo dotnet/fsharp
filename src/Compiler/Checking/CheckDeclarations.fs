@@ -4027,9 +4027,13 @@ module TcDeclarations =
     ///        where simpleRepr can contain inherit type, declared fields and virtual slots.
     /// body = members
     ///        where members contain methods/overrides, also implicit ctor, inheritCall and local definitions.
-    let rec private SplitTyconDefn (SynTypeDefn(typeInfo=synTyconInfo;typeRepr=trepr; members=extraMembers)) =
+    let rec private SplitTyconDefn (cenv: cenv) envInitial (SynTypeDefn(typeInfo=SynComponentInfo(attributes= Attributes synAttrs) as synTyconInfo; typeRepr=trepr; members=extraMembers)) =
         let extraMembers = desugarGetSetMembers extraMembers
         let implements1 = List.choose (function SynMemberDefn.Interface (interfaceType=ty) -> Some(ty, ty.Range) | _ -> None) extraMembers
+        let attrs = TcAttributes cenv envInitial AttributeTargets.TyconDecl synAttrs
+        let isStaticClass = HasFSharpAttribute cenv.g cenv.g.attrib_SealedAttribute attrs && HasFSharpAttribute cenv.g cenv.g.attrib_AbstractClassAttribute attrs
+        let reportErrorOnStaticClass = isStaticClass && cenv.g.langVersion.SupportsFeature(LanguageFeature.ErrorReportingOnStaticClasses)
+        
         match trepr with
         | SynTypeDefnRepr.ObjectModel(kind, cspec, m) ->
             let cspec = desugarGetSetMembers cspec
@@ -4047,7 +4051,13 @@ module TcDeclarations =
             let members = 
                 let membersIncludingAutoProps = 
                     cspec |> List.filter (fun memb -> 
-                      match memb with 
+                      match memb with
+                      | SynMemberDefn.ImplicitCtor(ctorArgs= SynSimplePats.SimplePats(pats, _)) when  not pats.IsEmpty && reportErrorOnStaticClass ->
+                            for pat in pats do
+                                 errorR(Error(FSComp.SR.chkErrorOnStaticClasses "constructor arguments are", pat.Range))
+                            false
+                      | SynMemberDefn.Member(SynBinding(valData = SynValData(Some memberFlags, _, _)), m)  when memberFlags.MemberKind = SynMemberKind.Constructor && reportErrorOnStaticClass ->
+                          errorR(Error(FSComp.SR.chkErrorOnStaticClasses "additional constructors are", m)); false
                       | SynMemberDefn.Interface _
                       | SynMemberDefn.Member _
                       | SynMemberDefn.GetSetMember _
@@ -4204,7 +4214,7 @@ module TcDeclarations =
 
         // Split the definitions into "core representations" and "members". The code to process core representations
         // is shared between processing of signature files and implementation files.
-        let mutRecDefnsAfterSplit = mutRecDefns |> MutRecShapes.mapTycons SplitTyconDefn
+        let mutRecDefnsAfterSplit = MutRecShapes.mapTycons (SplitTyconDefn cenv envInitial) mutRecDefns
 
         // Create the entities for each module and type definition, and process the core representation of each type definition.
         let tycons, envMutRecPrelim, mutRecDefnsAfterCore = 
