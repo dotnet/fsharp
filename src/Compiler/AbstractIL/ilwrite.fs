@@ -3714,7 +3714,7 @@ let writePdb (
                 s.SignStream fs
             with exn ->
                 failwith ($"Warning: A call to SignFile failed ({exn.Message})")
-        reportTime showTimes "Signing Image"
+        reportTime "Signing Image"
 
     // Now we've done the bulk of the binary, do the PDB file and fixup the binary.
     match pdbfile with
@@ -3769,14 +3769,15 @@ let writePdb (
                     os2.BaseStream.Seek (int64 (textV2P i.iddChunk.addr), SeekOrigin.Begin) |> ignore
                     if i.iddChunk.size < i.iddData.Length then failwith "Debug data area is not big enough. Debug info may not be usable"
                     writeBytes os2 i.iddData
-            reportTime showTimes "Finalize PDB"
+            reportTime "Finalize PDB"
             signImage ()
             os2.Dispose()
         with exn ->
             failwith ("Error while writing debug directory entry: " + exn.Message)
             (try os2.Dispose(); FileSystem.FileDeleteShim outfile with _ -> ())
             reraise()
-            
+           
+    reportTime "Finish"
     pdbBytes
 
 type options =
