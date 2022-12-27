@@ -1131,7 +1131,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                         yield clrFacades
 
                 | None ->
-                    let runtimeRoot = Path.GetDirectoryName(typeof<Object>.Assembly.Location)
+                    let runtimeRoot = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
                     let runtimeRootWithoutSlash = runtimeRoot.TrimEnd('/', '\\')
                     let runtimeRootFacades = Path.Combine(runtimeRootWithoutSlash, "Facades")
                     let runtimeRootWPF = Path.Combine(runtimeRootWithoutSlash, "WPF")
