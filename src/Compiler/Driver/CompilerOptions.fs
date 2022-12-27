@@ -2384,7 +2384,7 @@ let ReportTime =
 
         if descr <> "Exiting" then
             nPrev <- Some(descr, Activity.Profiling.startAndMeasureEnvironmentStats descr)
-        else   
+        else
             nPrev <- None
 
 let ignoreFailureOnMono1_1_16 f =

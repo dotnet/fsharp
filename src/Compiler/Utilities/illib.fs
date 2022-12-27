@@ -91,7 +91,7 @@ module internal PervasiveAutoOpens =
             if isNotNull tPrev then
                 tPrev.Dispose()
 
-            tPrev <- 
+            tPrev <-
                 if descr <> "Finish" then
                     FSharp.Compiler.Diagnostics.Activity.Profiling.startAndMeasureEnvironmentStats descr
                 else

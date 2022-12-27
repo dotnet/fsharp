@@ -108,7 +108,7 @@ module internal Activity =
                         (fun a ->
                             if isNull a then
                                 printfn "%A" a
-                                // houston problem
+                            // houston problem
                             let statsBefore = a.GetTagItem(gcStatsInnerTag) :?> GCStats
                             let statsAfter = collectGCStats ()
                             let p = Process.GetCurrentProcess()
