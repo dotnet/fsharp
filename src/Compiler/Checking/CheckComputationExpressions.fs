@@ -2075,8 +2075,27 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
 
             Some(mkLet spMatch inputExprMark matchv inputExpr matchExpr, tpenv)
 
-        | SynExpr.TryWith (trivia={ TryToWithRange = mTryToWith }) ->
-            error(Error(FSComp.SR.tcTryIllegalInSequenceExpression(), mTryToWith))
+        | SynExpr.TryWith (innerTry,withList,mTryToWith,spTry,spWith,trivia) ->
+            let env = { env with eIsControlFlow = true }
+            let innerExpr, tpenv = tcSequenceExprBody env genOuterTy tpenv innerTry
+            let withExpr, tpenv = TcExpr cenv (MustEqual cenv.g.unit_ty) env tpenv unwindExpr
+            
+            // We attach the debug points to the lambda expressions so we can fetch it out again in LowerComputedListOrArraySeqExpr
+            let mTry = 
+                match spTry with 
+                | DebugPointAtTry.Yes m -> m.NoteSourceConstruct(NotedSourceConstruct.Try)
+                | _ -> trivia.TryKeyword
+
+            let mWith = 
+                match spWith with 
+                | DebugPointAtWith.Yes m -> m.NoteSourceConstruct(NotedSourceConstruct.Finally)
+                | _ -> trivia.WithKeyword
+
+            let innerExpr = mkSeqDelayedExpr mTry innerExpr
+            let unwindExpr = mkUnitDelayLambda cenv.g mFinally unwindExpr
+            mkTryWith cenv.g 
+            Some(mkSeqFinally cenv env mTryToLast genOuterTy innerExpr unwindExpr, tpenv)
+            //error(Error(FSComp.SR.tcTryIllegalInSequenceExpression(), mTryToWith))
 
         | SynExpr.YieldOrReturnFrom ((isYield, _), synYieldExpr, m) -> 
             let env = { env with eIsControlFlow = false }
