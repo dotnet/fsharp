@@ -106,18 +106,12 @@ module internal Activity =
                     ActivityStarted = (fun a -> a.AddTag(gcStatsInnerTag, collectGCStats ()) |> ignore),
                     ActivityStopped =
                         (fun a ->
-                            if isNull a then
-                                printfn "%A" a
-                            // houston problem
                             let statsBefore = a.GetTagItem(gcStatsInnerTag) :?> GCStats
                             let statsAfter = collectGCStats ()
                             let p = Process.GetCurrentProcess()
                             a.AddTag(Tags.workingSetMB, p.WorkingSet64 / 1_000_000L) |> ignore
                             a.AddTag(Tags.handles, p.HandleCount) |> ignore
                             a.AddTag(Tags.threads, p.Threads.Count) |> ignore
-
-                            if isNull statsBefore then
-                                printfn "Houston problem %A" a
 
                             for i = 0 to statsAfter.Length - 1 do
                                 a.AddTag($"gc{i}", statsAfter[i] - statsBefore[i]) |> ignore)
@@ -159,7 +153,7 @@ module internal Activity =
 
             Console.WriteLine(new String('-', header.Length))
             Console.WriteLine(header)
-            Console.WriteLine(new String('-', header.Length))
+            Console.WriteLine(header |> String.map (fun c -> if c = '|' then c else '-'))
 
             ActivitySource.AddActivityListener(consoleWriterListener)
 
