@@ -3778,6 +3778,7 @@ let writePdb (
             ()
 
     reportTime "Signing Image"
+    reportTime "Finish"
     pdbBytes
 
 type options =

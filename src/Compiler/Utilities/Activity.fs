@@ -106,6 +106,9 @@ module internal Activity =
                     ActivityStarted = (fun a -> a.AddTag(gcStatsInnerTag, collectGCStats ()) |> ignore),
                     ActivityStopped =
                         (fun a ->
+                            if isNull a then
+                                printfn "%A" a
+                                // houston problem
                             let statsBefore = a.GetTagItem(gcStatsInnerTag) :?> GCStats
                             let statsAfter = collectGCStats ()
                             let p = Process.GetCurrentProcess()
@@ -113,15 +116,19 @@ module internal Activity =
                             a.AddTag(Tags.handles, p.HandleCount) |> ignore
                             a.AddTag(Tags.threads, p.Threads.Count) |> ignore
 
+                            if isNull statsBefore then
+                                printfn "Houston problem %A" a
+
                             for i = 0 to statsAfter.Length - 1 do
                                 a.AddTag($"gc{i}", statsAfter[i] - statsBefore[i]) |> ignore)
 
                 )
 
             ActivitySource.AddActivityListener(l)
+            l
 
         let addConsoleListener () =
-            addStatsMeasurementListener ()
+            let statsMeasurementListener = addStatsMeasurementListener ()
 
             let reportingStart = DateTime.UtcNow
             let nameColumnWidth = 36
@@ -131,7 +138,7 @@ module internal Activity =
                 + "Phase name".PadRight(nameColumnWidth)
                 + "|Elapsed |Duration| WS(MB)|  GC0  |  GC1  |  GC2  |Handles|Threads|"
 
-            let l =
+            let consoleWriterListener =
                 new ActivityListener(
                     ShouldListenTo = (fun a -> a.Name = profiledSourceName),
                     Sample = (fun _ -> ActivitySamplingResult.AllData),
@@ -154,10 +161,12 @@ module internal Activity =
             Console.WriteLine(header)
             Console.WriteLine(new String('-', header.Length))
 
-            ActivitySource.AddActivityListener(l)
+            ActivitySource.AddActivityListener(consoleWriterListener)
 
             { new IDisposable with
                 member this.Dispose() =
+                    statsMeasurementListener.Dispose()
+                    consoleWriterListener.Dispose()
                     Console.WriteLine(new String('-', header.Length))
             }
 
@@ -223,7 +232,7 @@ module internal Activity =
 
             let l =
                 new ActivityListener(
-                    ShouldListenTo = (fun a -> a.Name = activitySourceName),
+                    ShouldListenTo = (fun a -> a.Name = activitySourceName || a.Name = profiledSourceName),
                     Sample = (fun _ -> ActivitySamplingResult.AllData),
                     ActivityStopped = (fun a -> msgQueue.Post(createCsvRow a))
                 )

@@ -2382,7 +2382,10 @@ let ReportTime =
             // Intentionally putting this right after the pause so a debugger can be attached.
             SimulateException tcConfig.simulateException)
 
-        nPrev <- Some(descr, Activity.Profiling.startAndMeasureEnvironmentStats descr)
+        if descr <> "Exiting" then
+            nPrev <- Some(descr, Activity.Profiling.startAndMeasureEnvironmentStats descr)
+        else   
+            nPrev <- None
 
 let ignoreFailureOnMono1_1_16 f =
     try
