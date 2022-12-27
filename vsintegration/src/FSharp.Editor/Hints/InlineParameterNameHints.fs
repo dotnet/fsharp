@@ -33,6 +33,7 @@ module InlineParameterNameHints =
 
     let private getArgumentLocations
         (symbolUse: FSharpSymbolUse)
+        (longIdEndLocations: Position list)
         (parseResults: FSharpParseFileResults) =
 
         let position = Position.mkPos 
@@ -40,6 +41,7 @@ module InlineParameterNameHints =
                         (symbolUse.Range.End.Column + 1)
 
         parseResults.FindParameterLocations position
+        |> Option.filter (fun locations -> longIdEndLocations |> List.contains locations.LongIdEndLocation |> not)
         |> Option.map (fun locations -> locations.ArgumentLocations)
         |> Option.defaultValue [||]
 
@@ -81,10 +83,11 @@ module InlineParameterNameHints =
     let getHintsForMemberOrFunctionOrValue
         (parseResults: FSharpParseFileResults) 
         (symbol: FSharpMemberOrFunctionOrValue) 
-        (symbolUse: FSharpSymbolUse) =
+        (symbolUse: FSharpSymbolUse)
+        (longIdEndLocations: Position list) =
 
         let parameters = symbol.CurriedParameterGroups |> Seq.concat
-        let argumentLocations = getArgumentLocations symbolUse parseResults
+        let argumentLocations = parseResults |> getArgumentLocations symbolUse longIdEndLocations
 
         let tupleRanges = argumentLocations |> getTupleRanges
         let curryRanges = parseResults |> getCurryRanges symbolUse
