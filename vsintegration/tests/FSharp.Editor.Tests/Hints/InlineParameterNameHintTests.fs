@@ -406,3 +406,45 @@ let x = "test".Split("").[0].Split("");
         let actual = getParameterNameHints document
 
         Assert.AreEqual(expected, actual)
+
+    [<Test>]
+    let ``Hints are not shown for optional parameters with specified names`` () =
+        let code =
+            """
+type MyType() =
+
+    member _.MyMethod(?beep: int, ?bap: int, ?boop: int) = ()
+
+    member this.Foo = this.MyMethod(3, boop = 4)
+"""
+
+        let document = getFsDocument code
+
+        let expected =
+            [
+                {
+                    Content = "beep = "
+                    Location = (5, 37)
+                }
+            ]
+
+        let actual = getParameterNameHints document
+
+        Assert.AreEqual(expected, actual)
+
+    [<Test>]
+    let ``Hints are not shown when all optional parameters are named`` () =
+        let code =
+            """
+type MyType() =
+
+    member _.MyMethod(?beep: int, ?bap : int, ?boop : int) = ()
+
+    member this.Foo = this.MyMethod(bap = 3, beep = 4)
+"""
+
+        let document = getFsDocument code
+
+        let actual = getParameterNameHints document
+
+        Assert.IsEmpty(actual)
