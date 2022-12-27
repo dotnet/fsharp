@@ -5,6 +5,7 @@ module internal FSharp.Compiler.CompilerConfig
 
 open System
 open System.Collections.Concurrent
+open System.Runtime.InteropServices
 open System.IO
 open Internal.Utilities
 open Internal.Utilities.FSharpEnvironment
@@ -1131,12 +1132,10 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                         yield clrFacades
 
                 | None ->
-                    let runtimeRoot =
-                        System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
+                    let runtimeRoot = RuntimeEnvironment.GetRuntimeDirectory().TrimEnd('/', '\\')
 
-                    let runtimeRootWithoutSlash = runtimeRoot.TrimEnd('/', '\\')
-                    let runtimeRootFacades = Path.Combine(runtimeRootWithoutSlash, "Facades")
-                    let runtimeRootWPF = Path.Combine(runtimeRootWithoutSlash, "WPF")
+                    let runtimeRootFacades = Path.Combine(runtimeRoot, "Facades")
+                    let runtimeRootWPF = Path.Combine(runtimeRoot, "WPF")
 
                     match data.resolutionEnvironment with
                     | LegacyResolutionEnvironment.CompilationAndEvaluation ->

@@ -14,6 +14,12 @@ open Microsoft.CodeAnalysis.CSharp
 open TestFramework
 open NUnit.Framework
 
+type TheoryForNETCOREAPPAttribute() = 
+    inherit Xunit.TheoryAttribute()
+    #if !NETCOREAPP    
+        do base.Skip <- "Only NETCOREAPP is supported runtime for this kind of test."
+    #endif
+
 type FactForNETCOREAPPAttribute() =
     inherit Xunit.FactAttribute()
     #if !NETCOREAPP    
