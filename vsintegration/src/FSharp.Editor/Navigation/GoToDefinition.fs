@@ -93,7 +93,7 @@ module private ExternalSymbol =
                     |> Option.map (fun args -> upcast methsym, FindDeclExternalSymbol.Constructor(fullTypeName, args))
                     )
                 |> List.ofSeq
-                
+
             (symbol, FindDeclExternalSymbol.Type fullTypeName) :: constructors
 
         | :? IMethodSymbol as methsym ->
@@ -119,9 +119,9 @@ type StatusBar(statusBar: IVsStatusbar) =
 
     let _clear() =
         // unfreeze the statusbar
-        statusBar.FreezeOutput 0 |> ignore  
+        statusBar.FreezeOutput 0 |> ignore
         statusBar.Clear() |> ignore
-        
+
     member _.Message(_msg: string) =
         ()
         //let _, frozen = statusBar.IsFrozen()
@@ -140,11 +140,11 @@ type StatusBar(statusBar: IVsStatusbar) =
         //    | 0, currentText when currentText <> msg -> ()
         //    | _ -> clear()
         //}|> Async.Start
-    
+
     member _.Clear() = () //clear()
 
     /// Animated magnifying glass that displays on the status bar while a symbol search is in progress.
-    member _.Animate() : IDisposable = 
+    member _.Animate() : IDisposable =
         //statusBar.Animation (1, &searchIcon) |> ignore
         { new IDisposable with
             member _.Dispose() = () } //statusBar.Animation(0, &searchIcon) |> ignore }
@@ -158,18 +158,18 @@ type internal FSharpGoToDefinitionResult =
     | ExternalAssembly of FSharpSymbolUse * MetadataReference seq
 
 type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
-    /// Use an origin document to provide the solution & workspace used to 
+    /// Use an origin document to provide the solution & workspace used to
     /// find the corresponding textSpan and INavigableItem for the range
-    let rangeToNavigableItem (range: range, document: Document) = 
+    let rangeToNavigableItem (range: range, document: Document) =
         async {
             let fileName = try System.IO.Path.GetFullPath range.FileName with _ -> range.FileName
             let refDocumentIds = document.Project.Solution.GetDocumentIdsWithFilePath fileName
-            if not refDocumentIds.IsEmpty then 
+            if not refDocumentIds.IsEmpty then
                 let refDocumentId = refDocumentIds.First()
                 let refDocument = document.Project.Solution.GetDocument refDocumentId
                 let! cancellationToken = Async.CancellationToken
                 let! refSourceText = refDocument.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                match RoslynHelpers.TryFSharpRangeToTextSpan (refSourceText, range) with 
+                match RoslynHelpers.TryFSharpRangeToTextSpan (refSourceText, range) with
                 | None -> return None
                 | Some refTextSpan -> return Some (FSharpGoToDefinitionNavigableItem (refDocument, refTextSpan))
             else return None
@@ -184,7 +184,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
             let! lexerSymbol = originDocument.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false, userOpName)
             let textLinePos = sourceText.Lines.GetLinePosition position
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
-            let lineText = (sourceText.Lines.GetLineFromPosition position).ToString()  
+            let lineText = (sourceText.Lines.GetLineFromPosition position).ToString()
             let idRange = lexerSymbol.Ident.idRange
 
             let! _, checkFileResults = originDocument.GetFSharpParseAndCheckResultsAsync(nameof(GoToDefinition)) |> liftAsync
@@ -193,14 +193,14 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
             // if the tooltip was spawned in an implementation file and we have a range targeting
             // a signature file, try to find the corresponding implementation file and target the
             // desired symbol
-            if isSignatureFile fsSymbolUse.FileName && preferSignature = false then 
+            if isSignatureFile fsSymbolUse.FileName && preferSignature = false then
                 let fsfilePath = Path.ChangeExtension (originRange.FileName,"fs")
                 if not (File.Exists fsfilePath) then return! None else
                 let! implDoc = originDocument.Project.Solution.TryGetDocumentFromPath fsfilePath
                 let! implSourceText = implDoc.GetTextAsync ()
                 let! _, checkFileResults = implDoc.GetFSharpParseAndCheckResultsAsync(userOpName) |> liftAsync
                 let symbolUses = checkFileResults.GetUsesOfSymbolInFile symbol
-                let! implSymbol  = symbolUses |> Array.tryHead 
+                let! implSymbol  = symbolUses |> Array.tryHead
                 let! implTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (implSourceText, implSymbol.Range)
                 return FSharpGoToDefinitionNavigableItem (implDoc, implTextSpan)
             else
@@ -208,10 +208,10 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                 return! rangeToNavigableItem (fsSymbolUse.Range, targetDocument)
         }
 
-    /// if the symbol is defined in the given file, return its declaration location, otherwise use the targetSymbol to find the first 
+    /// if the symbol is defined in the given file, return its declaration location, otherwise use the targetSymbol to find the first
     /// instance of its presence in the provided source file. The first case is needed to return proper declaration location for
     /// recursive type definitions, where the first its usage may not be the declaration.
-    member _.FindSymbolDeclarationInDocument(targetSymbolUse: FSharpSymbolUse, document: Document) = 
+    member _.FindSymbolDeclarationInDocument(targetSymbolUse: FSharpSymbolUse, document: Document) =
         asyncMaybe {
             let filePath = document.FilePath
             match targetSymbolUse.Symbol.DeclarationLocation with
@@ -219,7 +219,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
             | _ ->
                 let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync("FindSymbolDeclarationInDocument") |> liftAsync
                 let symbolUses = checkFileResults.GetUsesOfSymbolInFile targetSymbolUse.Symbol
-                let! implSymbol  = symbolUses |> Array.tryHead 
+                let! implSymbol  = symbolUses |> Array.tryHead
                 return implSymbol.Range
         }
 
@@ -231,10 +231,10 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
             let textLinePos = sourceText.Lines.GetLinePosition position
             let textLineString = textLine.ToString()
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
-            let lineText = (sourceText.Lines.GetLineFromPosition position).ToString()  
-            
+            let lineText = (sourceText.Lines.GetLineFromPosition position).ToString()
+
             let preferSignature = isSignatureFile originDocument.FilePath
-                
+
             let! lexerSymbol = originDocument.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false, userOpName)
             let idRange = lexerSymbol.Ident.idRange
 
@@ -264,10 +264,10 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                     let! location = symbol.Locations |> Seq.tryHead
                     return (FSharpGoToDefinitionResult.NavigableItem(FSharpGoToDefinitionNavigableItem(project.GetDocument(location.SourceTree), location.SourceSpan)), idRange)
                 | _ ->
-                    let metadataReferences = originDocument.Project.MetadataReferences                        
+                    let metadataReferences = originDocument.Project.MetadataReferences
                     return (FSharpGoToDefinitionResult.ExternalAssembly(targetSymbolUse, metadataReferences), idRange)
 
-            | FindDeclResult.DeclFound targetRange -> 
+            | FindDeclResult.DeclFound targetRange ->
                 // If the file is not associated with a document, it's considered external.
                 if not (originDocument.Project.Solution.ContainsDocumentWithFilePath(targetRange.FileName)) then
                     let metadataReferences = originDocument.Project.MetadataReferences
@@ -281,7 +281,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                             let implFilePath = Path.ChangeExtension (originDocument.FilePath,"fs")
                             if not (File.Exists implFilePath) then return! None else
                             let! implDocument = originDocument.Project.Solution.TryGetDocumentFromPath implFilePath
-                        
+
                             let! targetRange = this.FindSymbolDeclarationInDocument(targetSymbolUse, implDocument)
                             let! implSourceText = implDocument.GetTextAsync(cancellationToken) |> liftTaskAsync
                             let! implTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (implSourceText, targetRange)
@@ -290,7 +290,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                         else // jump from implementation to the corresponding signature
                             let declarations = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLineString, lexerSymbol.FullIsland, true)
                             match declarations with
-                            | FindDeclResult.DeclFound targetRange -> 
+                            | FindDeclResult.DeclFound targetRange ->
                                 let! sigDocument = originDocument.Project.Solution.TryGetDocumentFromPath targetRange.FileName
                                 let! sigSourceText = sigDocument.GetTextAsync(cancellationToken) |> liftTaskAsync
                                 let! sigTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (sigSourceText, targetRange)
@@ -298,28 +298,28 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                                 return (FSharpGoToDefinitionResult.NavigableItem(navItem), idRange)
                             | _ ->
                                 return! None
-                    // when the target range is different follow the navigation convention of 
+                    // when the target range is different follow the navigation convention of
                     // - gotoDefn origin = signature , gotoDefn destination = signature
-                    // - gotoDefn origin = implementation, gotoDefn destination = implementation 
+                    // - gotoDefn origin = implementation, gotoDefn destination = implementation
                     else
                         let! sigDocument = originDocument.Project.Solution.TryGetDocumentFromPath targetRange.FileName
                         let! sigSourceText = sigDocument.GetTextAsync(cancellationToken) |> liftTaskAsync
                         let! sigTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (sigSourceText, targetRange)
                         // if the gotodef call originated from a signature and the returned target is a signature, navigate there
-                        if isSignatureFile targetRange.FileName && preferSignature then 
+                        if isSignatureFile targetRange.FileName && preferSignature then
                             let navItem = FSharpGoToDefinitionNavigableItem (sigDocument, sigTextSpan)
                             return (FSharpGoToDefinitionResult.NavigableItem(navItem), idRange)
                         else // we need to get an FSharpSymbol from the targetRange found in the signature
                              // that symbol will be used to find the destination in the corresponding implementation file
                             let implFilePath =
                                 // Bugfix: apparently sigDocument not always is a signature file
-                                if isSignatureFile sigDocument.FilePath then Path.ChangeExtension (sigDocument.FilePath, "fs") 
+                                if isSignatureFile sigDocument.FilePath then Path.ChangeExtension (sigDocument.FilePath, "fs")
                                 else sigDocument.FilePath
 
                             let! implDocument = originDocument.Project.Solution.TryGetDocumentFromPath implFilePath
-                        
-                            let! targetRange = this.FindSymbolDeclarationInDocument(targetSymbolUse, implDocument)    
-                        
+
+                            let! targetRange = this.FindSymbolDeclarationInDocument(targetSymbolUse, implDocument)
+
                             let! implSourceText = implDocument.GetTextAsync () |> liftTaskAsync
                             let! implTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (implSourceText, targetRange)
                             let navItem = FSharpGoToDefinitionNavigableItem (implDocument, implTextSpan)
@@ -328,7 +328,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                     return! None
         }
 
-    /// find the declaration location (signature file/.fsi) of the target symbol if possible, fall back to definition 
+    /// find the declaration location (signature file/.fsi) of the target symbol if possible, fall back to definition
     member this.FindDeclarationOfSymbolAtRange(targetDocument: Document, symbolRange: range, targetSource: SourceText) =
         this.FindSymbolHelper(targetDocument, symbolRange, targetSource, preferSignature=true)
 
@@ -343,7 +343,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                 >> Array.toSeq)
         |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
-    /// Construct a task that will return a navigation target for the implementation definition of the symbol 
+    /// Construct a task that will return a navigation target for the implementation definition of the symbol
     /// at the provided position in the document.
     member this.FindDefinitionTask(originDocument: Document, position: int, cancellationToken: CancellationToken) =
         this.FindDefinitionAtPosition(originDocument, position, cancellationToken)
@@ -357,7 +357,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
         let navigationService = workspace.Services.GetService<IFSharpDocumentNavigationService>()
         let navigationSucceeded = navigationService.TryNavigateToSpan(workspace, navigableItem.Document.Id, navigableItem.SourceSpan, cancellationToken)
 
-        if not navigationSucceeded then 
+        if not navigationSucceeded then
             statusBar.TempMessage (SR.CannotNavigateUnknown())
 
     member _.NavigateToItem(navigableItem: FSharpNavigableItem, statusBar: StatusBar, cancellationToken: CancellationToken) =
@@ -370,13 +370,13 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
 
         // Prefer open documents in the preview tab.
         let result = navigationService.TryNavigateToSpan(workspace, navigableItem.Document.Id, navigableItem.SourceSpan, cancellationToken)
-            
-        if result then 
+
+        if result then
             statusBar.Clear()
-        else 
+        else
             statusBar.TempMessage (SR.CannotNavigateUnknown())
 
-    /// Find the declaration location (signature file/.fsi) of the target symbol if possible, fall back to definition 
+    /// Find the declaration location (signature file/.fsi) of the target symbol if possible, fall back to definition
     member this.NavigateToSymbolDeclarationAsync(targetDocument: Document, targetSourceText: SourceText, symbolRange: range, statusBar: StatusBar, cancellationToken: CancellationToken) =
         asyncMaybe {
             let! item = this.FindDeclarationOfSymbolAtRange(targetDocument, symbolRange, targetSourceText)
@@ -408,10 +408,10 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
         let result =
             match textOpt with
             | Some (text, fileName) ->
-                let tmpProjInfo, tmpDocInfo = 
+                let tmpProjInfo, tmpDocInfo =
                     MetadataAsSource.generateTemporaryDocument(
-                        AssemblyIdentity(targetSymbolUse.Symbol.Assembly.QualifiedName), 
-                        fileName, 
+                        AssemblyIdentity(targetSymbolUse.Symbol.Assembly.QualifiedName),
+                        fileName,
                         metadataReferences)
                 let tmpShownDocOpt = metadataAsSource.ShowDocument(tmpProjInfo, tmpDocInfo.FilePath, SourceText.From(text.ToString()))
                 match tmpShownDocOpt with
@@ -429,7 +429,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                                             ty1.GenericArguments.Count = ty2.GenericArguments.Count &&
                                             (ty1.GenericArguments, ty2.GenericArguments)
                                             ||> Seq.forall2 areTypesEqual
-                                        )                                                    
+                                        )
                                     if generic then
                                         true
                                     else
@@ -438,7 +438,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                                         namesEqual && accessPathsEqual
 
                                 // This tries to find the best possible location of the target symbol's location in the metadata source.
-                                // We really should rely on symbol equality within FCS instead of doing it here, 
+                                // We really should rely on symbol equality within FCS instead of doing it here,
                                 //     but the generated metadata as source isn't perfect for symbol equality.
                                 checkResults.GetAllUsesOfAllSymbolsInFile(cancellationToken)
                                 |> Seq.tryFind (fun x ->
@@ -472,7 +472,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                                 | Some span -> span
                                 | _ -> TextSpan()
 
-                            return span                             
+                            return span
                         }
 
                     let span =
@@ -480,7 +480,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                         | Some span -> span
                         | _ -> TextSpan()
 
-                    let navItem = FSharpGoToDefinitionNavigableItem(tmpShownDoc, span)                               
+                    let navItem = FSharpGoToDefinitionNavigableItem(tmpShownDoc, span)
                     this.NavigateToItem(navItem, statusBar, cancellationToken)
                     true
                 | _ ->
@@ -488,9 +488,9 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
             | _ ->
                 false
 
-        if result then 
+        if result then
             statusBar.Clear()
-        else 
+        else
             statusBar.TempMessage (SR.CannotNavigateUnknown())
 
 type internal QuickInfo =
@@ -528,7 +528,7 @@ module internal FSharpQuickInfo =
             let! extLexerSymbol = extDocument.TryFindFSharpLexerSymbolAsync(extSpan.Start, SymbolLookupKind.Greedy, true, true, userOpName)
             let! _, extCheckFileResults = extDocument.GetFSharpParseAndCheckResultsAsync(userOpName) |> liftAsync
 
-            let extQuickInfoText = 
+            let extQuickInfoText =
                 extCheckFileResults.GetToolTip
                     (declRange.StartLine, extLexerSymbol.Ident.idRange.EndColumn, extLineText, extLexerSymbol.FullIsland, FSharpTokenTag.IDENT)
 
@@ -560,7 +560,7 @@ module internal FSharpQuickInfo =
             let! lexerSymbol = document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, true, true, userOpName)
             let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(userOpName) |> liftAsync
             let! sourceText = document.GetTextAsync cancellationToken
-            let idRange = lexerSymbol.Ident.idRange  
+            let idRange = lexerSymbol.Ident.idRange
             let textLinePos = sourceText.Lines.GetLinePosition position
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
             let lineText = (sourceText.Lines.GetLineFromPosition position).ToString()
@@ -586,13 +586,13 @@ module internal FSharpQuickInfo =
                                  SymbolKind = lexerSymbol.Kind }
                 }
 
-            match lexerSymbol.Kind with 
+            match lexerSymbol.Kind with
             | LexerSymbolKind.Keyword
             | LexerSymbolKind.String ->
                 let! targetQuickInfo = getTargetSymbolQuickInfo (None, FSharpTokenTag.STRING)
                 return lexerSymbol.Range, None, Some targetQuickInfo
-            
-            | _ -> 
+
+            | _ ->
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland)
 
             // if the target is in a signature file, adjusting the quick info is unnecessary
@@ -608,7 +608,7 @@ module internal FSharpQuickInfo =
                 let! targetQuickInfo = getTargetSymbolQuickInfo (Some symbolUse.Symbol, FSharpTokenTag.IDENT)
 
                 let! result =
-                    match findSigDeclarationResult with 
+                    match findSigDeclarationResult with
                     | FindDeclResult.DeclFound declRange when isSignatureFile declRange.FileName ->
                         asyncMaybe {
                             let! sigQuickInfo = getQuickInfoFromRange(document, declRange, cancellationToken)
@@ -668,11 +668,11 @@ type internal FSharpNavigation
 
             // To ensure proper navigation decsions, we need to check the type of document the navigation call
             // is originating from and the target we're provided by default:
-            //  - signature files (.fsi) should navigate to other signature files 
+            //  - signature files (.fsi) should navigate to other signature files
             //  - implementation files (.fs) should navigate to other implementation files
             let (|Signature|Implementation|) filepath =
                 if isSignatureFile filepath then Signature else Implementation
-               
+
             match initialDoc.FilePath, targetPath with
             | Signature, Signature
             | Implementation, Implementation ->
@@ -681,7 +681,7 @@ type internal FSharpNavigation
             // Adjust the target from signature to implementation.
             | Implementation, Signature  ->
                 return! gtd.NavigateToSymbolDefinitionAsync(targetDoc, targetSource, range, statusBar, cancellationToken)
-                    
+
             // Adjust the target from implmentation to signature.
             | Signature, Implementation ->
                 return! gtd.NavigateToSymbolDeclarationAsync(targetDoc, targetSource, range, statusBar, cancellationToken)
@@ -704,7 +704,7 @@ type internal FSharpNavigation
     member _.TryGoToDefinition(position, cancellationToken) =
         let gtd = GoToDefinition(metadataAsSource)
         let gtdTask = gtd.FindDefinitionTask(initialDoc, position, cancellationToken)
-        
+
         // Wrap this in a try/with as if the user clicks "Cancel" on the thread dialog, we'll be cancelled.
         // Task.Wait throws an exception if the task is cancelled, so be sure to catch it.
         try
@@ -720,12 +720,12 @@ type internal FSharpNavigation
                     gtd.NavigateToExternalDeclaration(targetSymbolUse, metadataReferences, cancellationToken, statusBar)
                     // 'true' means do it, like Sheev Palpatine would want us to.
                     true
-            else 
+            else
                 statusBar.TempMessage (SR.CannotDetermineSymbol())
                 false
-        with exc -> 
+        with exc ->
             statusBar.TempMessage(String.Format(SR.NavigateToFailed(), Exception.flattenMessage exc))
-        
+
             // Don't show the dialog box as it's most likely that the user cancelled.
             // Don't make them click twice.
             true
@@ -761,7 +761,7 @@ type FSharpNavigableLocation(statusBar: StatusBar, metadataAsSource: FSharpMetad
 
                 let (|Signature|Implementation|) filepath =
                     if isSignatureFile filepath then Signature else Implementation
-                
+
                 match targetPath with
                 | Signature  ->
                     return! gtd.NavigateToSymbolDefinitionAsync(targetDoc, targetSource, symbolRange, statusBar, cancellationToken)
@@ -795,7 +795,7 @@ type FSharpCrossLanguageSymbolNavigationService()  =
         // "T:" prefix for types
         // "T:N.X.Nested" - type
         // "T:N.X.D" - delegate
-        // 
+        //
         // "M:" prefix is for methods
         // "M:N.X.#ctor" - constructor
         // "M:N.X.#ctor(System.Int32)" - constructor with one parameter
@@ -811,7 +811,7 @@ type FSharpCrossLanguageSymbolNavigationService()  =
         // "E:" prefix for events
         //
         // "E:N.X.d".
-        // 
+        //
         // "F:" prefix for fields
         // "F:N.X.q" - field
         //
@@ -827,7 +827,7 @@ type FSharpCrossLanguageSymbolNavigationService()  =
             let entityPath = parts[..(parts.Length - 2)] |> List.ofArray
             let memberOrVal = parts[parts.Length - 1]
 
-            // Try and parse generic params count from the name (e.g. NameOfTheFunction``1, where ``1 is amount of type parameters) 
+            // Try and parse generic params count from the name (e.g. NameOfTheFunction``1, where ``1 is amount of type parameters)
             let genericM = fnGenericArgsRx.Match(memberOrVal)
             let (memberOrVal, genericParametersCount) =
                 if genericM.Success then
@@ -841,7 +841,7 @@ type FSharpCrossLanguageSymbolNavigationService()  =
             else
                 DocCommentId.Member ({ EntityPath = entityPath; MemberOrValName = memberOrVal; GenericParameters = genericParametersCount }, (SymbolMemberType.FromString t))
         | true, "T" ->
-            let entityPath = m.Groups[2].Value.Split('.') |> List.ofArray
+            let entityPath = m.Groups["entity"].Value.Split('.') |> List.ofArray
             DocCommentId.Type entityPath
         | true, "F" ->
             let parts = m.Groups[2].Value.Split('.')
@@ -864,16 +864,18 @@ type FSharpCrossLanguageSymbolNavigationService()  =
         else
             fields
 
-    let tryFindValByNameAndType (name: string) (symbolMemberType: SymbolMemberType) (genericParametersCount: int) (e: FSharpEntity) =
-
-        let entities = e.TryGetMembersFunctionsAndValues()
+    let tryFindValByNameAndType (name: string) (symbolMemberType: SymbolMemberType) (genericParametersCount: int) (e: FSharpEntity) (entities: FSharpMemberOrFunctionOrValue seq) =
 
         let defaultFilter (e: FSharpMemberOrFunctionOrValue) =
-            (e.DisplayName = name || e.CompiledName = name) && e.GenericParameters.Count = genericParametersCount
+            (e.DisplayName = name || e.CompiledName = name) &&
+            e.GenericParameters.Count = genericParametersCount
+
+        let isProperty (e: FSharpMemberOrFunctionOrValue) = defaultFilter e && e.IsProperty
+        let isConstructor (e: FSharpMemberOrFunctionOrValue) = defaultFilter e && e.IsConstructor
 
         let  getLocation (e: FSharpMemberOrFunctionOrValue) = e.DeclarationLocation
 
-        let filteredEntities: range seq = 
+        let filteredEntities: range seq =
             match symbolMemberType with
             | SymbolMemberType.Other
             | SymbolMemberType.Method ->
@@ -885,30 +887,47 @@ type FSharpCrossLanguageSymbolNavigationService()  =
             | SymbolMemberType.Constructor when e.IsFSharpRecord ->
                 Seq.singleton e.DeclarationLocation
             | SymbolMemberType.Property when e.IsFSharpRecord ->
-                let properties = 
+                let properties =
                     entities
-                    |> Seq.filter (fun x -> defaultFilter x && x.IsProperty)
+                    |> Seq.filter isProperty
                     |> Seq.map getLocation
                 let fields = tryFindFieldByName name e
                 Seq.append properties fields
             | SymbolMemberType.Constructor ->
                 entities
-                |> Seq.filter (fun x -> defaultFilter x && x.IsConstructor)
+                |> Seq.filter isConstructor
                 |> Seq.map getLocation
             // When navigating to property for the record, it will be in members bag for custom ones, but will be in the fields in fields.
-            | SymbolMemberType.Event // Events are just properties
+            | SymbolMemberType.Event // Events are just properties`
             | SymbolMemberType.Property ->
                 entities
-                |> Seq.filter (fun x -> defaultFilter x && x.IsProperty)
+                |> Seq.filter isProperty
                 |> Seq.map getLocation
+
         filteredEntities
+
+    let tryFindVal (name: string) (documentCommentId: string) (symbolMemberType: SymbolMemberType) (genericParametersCount: int) (e: FSharpEntity) =
+        let entities = e.TryGetMembersFunctionsAndValues()
+
+        // First, try and find entity by exact xml signature, return if found,
+        // otherwise, just try and match by parsed name and number of arguments.
+
+        let entitiesByXmlSig =
+            entities
+            |> Seq.filter (fun e -> e.XmlDocSig = documentCommentId)
+            |> Seq.map (fun e -> e.DeclarationLocation)
+
+        if Seq.isEmpty entitiesByXmlSig then
+            tryFindValByNameAndType name symbolMemberType genericParametersCount e entities
+        else
+            entitiesByXmlSig
 
     interface IFSharpCrossLanguageSymbolNavigationService with
         member _.TryGetNavigableLocationAsync(assemblyName: string, documentationCommentId: string, cancellationToken: CancellationToken) : Task<IFSharpNavigableLocation> =
             let path = docCommentIdToPath documentationCommentId
             backgroundTask {
                 let projects = workspace.CurrentSolution.Projects |> Seq.filter (fun p -> p.IsFSharp && p.AssemblyName = assemblyName)
-                
+
                 let mutable locations = Seq.empty
 
                 for project in projects do
@@ -916,25 +935,24 @@ type FSharpCrossLanguageSymbolNavigationService()  =
                     let! result = checker.ParseAndCheckProject(options)
 
                     match path with
-                    | DocCommentId.Member ({ EntityPath = entityPath; MemberOrValName = memberOrVal; GenericParameters = genericParametersCount }, memberType)  ->
+                    | DocCommentId.Member ({ EntityPath = entityPath; MemberOrValName = memberOrVal; GenericParameters = genericParametersCount }, memberType) ->
                         let entity = result.AssemblySignature.FindEntityByPath (entityPath)
                         entity |> Option.iter (fun e ->
-                            locations <- e |> tryFindValByNameAndType memberOrVal memberType genericParametersCount
+                            locations <- e |> tryFindVal memberOrVal documentationCommentId memberType genericParametersCount
                                      |> Seq.map (fun m -> (m, project))
                                      |> Seq.append locations)
-
                     | DocCommentId.Field { EntityPath = entityPath; MemberOrValName = memberOrVal } ->
                         let entity = result.AssemblySignature.FindEntityByPath (entityPath)
                         entity |> Option.iter (fun e ->
-                            locations <- e |> tryFindFieldByName memberOrVal 
-                                     |> Seq.map (fun m -> (m, project)) 
+                            locations <- e |> tryFindFieldByName memberOrVal
+                                     |> Seq.map (fun m -> (m, project))
                                      |> Seq.append locations)
                     | DocCommentId.Type entityPath ->
                         let entity = result.AssemblySignature.FindEntityByPath (entityPath)
                         entity |> Option.iter (fun e ->
                             locations <- Seq.append locations [e.DeclarationLocation, project])
-                    | _ -> ()
-                
+                    | DocCommentId.None -> ()
+
                 // TODO: Figure out the way of giving the user choice where to navigate, if there are more than one result
                 // For now, we only take 1st one, since it's usually going to be only one result (given we process names correctly).
                 // More results can theoretically be returned in case of method overloads, or when we have both signature and implementation files.
