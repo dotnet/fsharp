@@ -120,6 +120,28 @@ type B =
          |> withLangVersion70
          |> compile
          |> shouldSucceed
+    [<Fact>]
+    let ``When Sealed and AbstractClass on a generic type with constructor in lang version70`` () =
+        Fsx """
+[<Sealed; AbstractClass>]
+type ListDebugView<'T>(l: 'T list) = class end
+        """
+         |> withLangVersion70
+         |> compile
+         |> shouldSucceed
+         
+    [<Fact>]
+    let ``When Sealed and AbstractClass on a generic type with constructor in lang preview`` () =
+        Fsx """
+[<Sealed; AbstractClass>]
+type ListDebugView<'T>(l: 'T list) = class end
+        """
+         |> withLangVersionPreview
+         |> compile
+         |> shouldFail
+         |> withDiagnostics [
+             (Error 3551, Line 3, Col 24, Line 3, Col 34, "if a type uses both [<Sealed>] and [<AbstractClass>] it means it is static. No constructor arguments are allowed")
+         ]
 
     [<Fact>]
     let ``When Sealed and AbstractClass on a type with explicit fields and constructor in lang preview`` () =
