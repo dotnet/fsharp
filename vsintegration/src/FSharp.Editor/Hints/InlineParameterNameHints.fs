@@ -70,9 +70,12 @@ module InlineParameterNameHints =
                 symbol.DeclaringEntity 
                 |> Option.exists (fun entity -> entity.CompiledName <> "Operators")
 
+            let isNotCustomOperation = 
+                not <| symbol.HasAttribute<CustomOperationAttribute>()
+
             (symbol.IsFunction && isNotBuiltInOperator) // arguably, hints for those would be rather useless
             || symbol.IsConstructor
-            || symbol.IsMethod
+            || (symbol.IsMethod && isNotCustomOperation)
         else
             false
 
