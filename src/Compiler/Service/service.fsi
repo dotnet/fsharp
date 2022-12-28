@@ -16,11 +16,11 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
 
-
 [<Experimental "This type is experimental and likely to be removed in the future.">]
 [<RequireQualifiedAccess>]
-type DocumentSource = FileSystem | Custom of (string -> ISourceText option)
-
+type DocumentSource =
+    | FileSystem
+    | Custom of (string -> ISourceText option)
 
 /// Used to parse and check F# source code.
 [<Sealed; AutoSerializable(false)>]

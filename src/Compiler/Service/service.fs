@@ -50,8 +50,9 @@ module EnvMisc =
 //
 
 [<RequireQualifiedAccess>]
-type DocumentSource = FileSystem | Custom of (string -> ISourceText option)
-
+type DocumentSource =
+    | FileSystem
+    | Custom of (string -> ISourceText option)
 
 /// Callback that indicates whether a requested result has become obsolete.
 [<NoComparison; NoEquality>]
@@ -1338,8 +1339,11 @@ type FSharpChecker
 
         let enablePartialTypeChecking = defaultArg enablePartialTypeChecking false
         let enableParallelCheckingWithSignatureFiles = defaultArg enableParallelCheckingWithSignatureFiles false
+
         let useChangeNotifications =
-            match documentSource with Some (DocumentSource.Custom _) -> true | _ -> false
+            match documentSource with
+            | Some (DocumentSource.Custom _) -> true
+            | _ -> false
 
         if keepAssemblyContents && enablePartialTypeChecking then
             invalidArg "enablePartialTypeChecking" "'keepAssemblyContents' and 'enablePartialTypeChecking' cannot be both enabled."
@@ -1358,7 +1362,9 @@ type FSharpChecker
             enablePartialTypeChecking,
             enableParallelCheckingWithSignatureFiles,
             parallelReferenceResolution,
-            (match documentSource with Some (DocumentSource.Custom f) -> Some f | _ -> None),
+            (match documentSource with
+             | Some (DocumentSource.Custom f) -> Some f
+             | _ -> None),
             useChangeNotifications
         )
 
