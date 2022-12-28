@@ -120,6 +120,16 @@ type ListType() =
         Assert.AreEqual("[1; 2; 3]", [1; 2; 3].ToString())
         Assert.AreEqual("[]", [].ToString())
         Assert.AreEqual("[]", ([] : decimal list list).ToString())
+
+    [<Fact>]
+    member this.HashCodeNotThrowingStackOverflow() = 
+        let l = 1 :: 2 :: [0.. 35_000]
+        let hash = l.GetHashCode()
+
+        let l2 = [1;2] @ [0.. 35_000]
+        let hash2 = l.GetHashCode()
+
+        Assert.AreEqual(hash,hash2)
     
     [<Fact>]
     member this.ObjectEquals() =
