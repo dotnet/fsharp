@@ -158,3 +158,45 @@ type B =
          |> withDiagnostics [
              (Error 3551, Line 6, Col 5, Line 6, Col 30, "if a type uses both [<Sealed>] and [<AbstractClass>] it means it is static. No additional constructors are allowed")
          ]
+
+
+    [<Fact>]
+    let ``Annoying bug``() =
+        let code = """
+        module Test
+
+        open System.Diagnostics
+
+        [<DefaultAugmentation(false)>]
+        [<DebuggerTypeProxyAttribute(typedefof<MyCustomListDebugView<_>>)>]
+        [<DebuggerDisplay("{DebugDisplay,nq}")>]
+        [<CompiledName("FSharpList`1")>]
+        type MyCustomList<'T> = 
+            | Empty
+            | NonEmpty of Head: 'T * Tail: MyCustomList<'T>
+        
+        and MyImbaAlias<'T> = MyCustomList<'T>
+
+        //-------------------------------------------------------------------------
+        // List (debug view)
+        //-------------------------------------------------------------------------
+
+        and
+            MyCustomListDebugView<'T>(l: MyCustomList<'T>) =
+                let asList =
+                    let rec toList ml = 
+                        match ml with
+                        | Empty -> []
+                        | NonEmpty (head,tail) -> head :: (toList tail)
+                    toList l
+
+                [<DebuggerBrowsable(DebuggerBrowsableState.RootHidden)>]
+                member x.Items = asList |> List.toArray
+
+                [<DebuggerBrowsable(DebuggerBrowsableState.Collapsed)>]
+                member x._FullList = asList |> List.toArray
+
+        """
+        Fs code
+        |> compile
+        |> shouldSucceed
