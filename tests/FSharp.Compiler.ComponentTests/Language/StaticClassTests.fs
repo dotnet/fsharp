@@ -159,11 +159,10 @@ type B =
              (Error 3551, Line 6, Col 5, Line 6, Col 30, "if a type uses both [<Sealed>] and [<AbstractClass>] it means it is static. No additional constructors are allowed")
          ]
 
-
     [<Theory>]
     [<InlineData("preview")>]
     [<InlineData("7.0")>]
-    let ``Annoying bug``(langVersion) =
+    let ``Mutually recursive type definition that using custom attributes``(langVersion) =
         let code = """
         module Test
 

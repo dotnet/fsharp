@@ -4027,21 +4027,10 @@ module TcDeclarations =
     ///        where simpleRepr can contain inherit type, declared fields and virtual slots.
     /// body = members
     ///        where members contain methods/overrides, also implicit ctor, inheritCall and local definitions.
-    let rec private SplitTyconDefn (g:TcGlobals) (SynTypeDefn(typeInfo=synTyconInfo;typeRepr=trepr; members=extraMembers)) =
+    let rec private SplitTyconDefn (SynTypeDefn(typeInfo=synTyconInfo;typeRepr=trepr; members=extraMembers)) =
         let extraMembers = desugarGetSetMembers extraMembers
         let implements1 = List.choose (function SynMemberDefn.Interface (interfaceType=ty) -> Some(ty, ty.Range) | _ -> None) extraMembers
-        
-        let reportErrorOnStaticClass = 
-            g.langVersion.SupportsFeature(LanguageFeature.ErrorReportingOnStaticClasses) &&
-                (let (SynComponentInfo(attributes=Attributes(synAttrs))) = synTyconInfo
-                 let hasAttr possibleNames = synAttrs |> List.exists (fun a -> possibleNames |> Array.contains (a.TypeName.LongIdent |> List.last).idText)             
-                 let isStaticClass = hasAttr [|"SealedAttribute";"Sealed"|] && hasAttr  [|"AbstractClassAttribute";"AbstractClass"|]
-                 // At this point in time, type checking attributes is too soon. Possibly, this entire check could move to be done after recursive definitions are processed.
-                 // Or, use attribute scanning that will not do eager type checking, but only scan for  Selaed and AbstractClass attributes from the runtime -> those will not suffer from mut-rec problem
-                 // Current string solution of course is bad, because that matches any attribute with that name, even user defined.
-                 isStaticClass)
-          
-        
+       
         match trepr with
         | SynTypeDefnRepr.ObjectModel(kind, cspec, m) ->
             let cspec = desugarGetSetMembers cspec
@@ -4060,13 +4049,6 @@ module TcDeclarations =
                 let membersIncludingAutoProps = 
                     cspec |> List.filter (fun memb -> 
                       match memb with
-                      | SynMemberDefn.ImplicitCtor(ctorArgs= SynSimplePats.SimplePats(pats, _)) when  (not pats.IsEmpty) && reportErrorOnStaticClass ->
-                            for pat in pats do
-                                 errorR(Error(FSComp.SR.chkErrorOnStaticClasses "constructor arguments are", pat.Range))
-                            true
-                      | SynMemberDefn.Member(SynBinding(valData = SynValData(Some memberFlags, _, _)), m)  when memberFlags.MemberKind = SynMemberKind.Constructor && reportErrorOnStaticClass ->
-                          errorR(Error(FSComp.SR.chkErrorOnStaticClasses "additional constructors are", m));
-                          true
                       | SynMemberDefn.Interface _
                       | SynMemberDefn.Member _
                       | SynMemberDefn.GetSetMember _
@@ -4223,7 +4205,7 @@ module TcDeclarations =
 
         // Split the definitions into "core representations" and "members". The code to process core representations
         // is shared between processing of signature files and implementation files.
-        let mutRecDefnsAfterSplit = MutRecShapes.mapTycons (SplitTyconDefn cenv.g) mutRecDefns
+        let mutRecDefnsAfterSplit = mutRecDefns |> MutRecShapes.mapTycons SplitTyconDefn
 
         // Create the entities for each module and type definition, and process the core representation of each type definition.
         let tycons, envMutRecPrelim, mutRecDefnsAfterCore = 
@@ -4856,7 +4838,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
               let moduleEntity = Construct.NewModuleOrNamespace (Some env.eCompPath) vis id xmlDoc modAttrs (MaybeLazy.Strict moduleTy)
 
               // Now typecheck. 
-              let! moduleContents, topAttrsNew, envAtEnd = TcModuleOrNamespaceElements cenv (Parent (mkLocalModuleRef moduleEntity)) endm envForModule xml None [] moduleDefs 
+              let! moduleContents, topAttrsNew, envAtEnd = TcModuleOrNamespaceElements cenv (Parent (mkLocalModuleRef moduleEntity)) endm envForModule xml None [] moduleDefs
 
               // Get the inferred type of the decls and record it in the modul. 
               moduleEntity.entity_modul_type <- MaybeLazy.Strict moduleTyAcc.Value
@@ -4944,6 +4926,15 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
           let! moduleContents, topAttrs, envAtEnd = TcModuleOrNamespaceElements cenv parent endm envNS xml mutRecNSInfo [] defs
 
           MutRecBindingChecking.TcMutRecDefns_UpdateNSContents nsInfo
+          
+          if cenv.g.langVersion.SupportsFeature(LanguageFeature.ErrorReportingOnStaticClasses) then
+              do for def in defs do
+                  match def with
+                  | SynModuleDecl.NestedModule(decls = synModuleDecls) ->
+                      CheckStaticClassElements cenv envAtEnd synModuleDecls
+                  | _ -> ()
+          
+          
           
           let env, openDecls = 
               if isNil enclosingNamespacePath then 
@@ -5093,6 +5084,37 @@ and TcMutRecDefsFinish cenv defs m =
                 [ ModuleOrNamespaceBinding.Module(moduleEntity, moduleContents) ])
 
     TMDefRec(true, opens, tycons, binds, m)
+    
+and CheckStaticClassElements cenv env (synModuleDecls: SynModuleDecl list) =
+    let typeDefs =
+        synModuleDecls
+        |> List.collect (fun decl ->
+            match decl with
+            | SynModuleDecl.Types (typeDefns = typeDefs) -> typeDefs
+            | _ -> [])
+        |> List.choose (fun synTypeDef ->
+            match synTypeDef with
+            | SynTypeDefn(typeInfo= synTyconInfo; typeRepr= trepr; members= extraMembers) ->
+                let (SynComponentInfo(attributes=Attributes(synAttrs))) = synTyconInfo
+                Some (TcAttributes cenv env AttributeTargets.TyconDecl synAttrs, trepr, extraMembers))
+        
+    for attrs, tRepr, _members in typeDefs do
+        let isStaticClass = HasFSharpAttribute cenv.g cenv.g.attrib_SealedAttribute attrs && HasFSharpAttribute cenv.g cenv.g.attrib_AbstractClassAttribute attrs
+        
+        if isStaticClass then
+            match tRepr with
+            | SynTypeDefnRepr.ObjectModel(_, synMemberDefns, _) ->
+                let cspec = desugarGetSetMembers synMemberDefns
+                for memb in cspec do
+                      match memb with
+                      | SynMemberDefn.ImplicitCtor(ctorArgs= SynSimplePats.SimplePats(pats, _)) when  (not pats.IsEmpty) ->
+                            for pat in pats do
+                                 errorR(Error(FSComp.SR.chkErrorOnStaticClasses "constructor arguments are", pat.Range))
+                           
+                      | SynMemberDefn.Member(SynBinding(valData = SynValData(Some memberFlags, _, _)), m)  when memberFlags.MemberKind = SynMemberKind.Constructor ->
+                          errorR(Error(FSComp.SR.chkErrorOnStaticClasses "additional constructors are", m));
+                      | _ -> ()
+            | _ -> ()
 
 and TcModuleOrNamespaceElements cenv parent endm env xml mutRecNSInfo openDecls0 synModuleDecls =
   cancellable {
