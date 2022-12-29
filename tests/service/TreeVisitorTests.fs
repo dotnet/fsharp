@@ -73,5 +73,5 @@ let ``Visit recursive let binding`` () =
     let parseTree = parseSourceCode("C:\\test.fs", source)
 
     match SyntaxTraversal.Traverse(pos0, parseTree, visitor) with
-    | Some [ SynBinding (_, _, _, _, _, _, SynValData(_, SynValInfo([[ SynArgInfo(_, _, Some id) ]], _), _), _, _, _, _, _, _) ] when id.idText = "n" -> ()
+    | Some [ SynBinding(valData = SynValData(valInfo = SynValInfo(curriedArgInfos = [ [ SynArgInfo(ident = Some id) ] ]))) ] when id.idText = "n" -> ()
     | _ -> failwith "Did not visit recursive let binding"
