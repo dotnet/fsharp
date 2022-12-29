@@ -4027,12 +4027,17 @@ module TcDeclarations =
     ///        where simpleRepr can contain inherit type, declared fields and virtual slots.
     /// body = members
     ///        where members contain methods/overrides, also implicit ctor, inheritCall and local definitions.
-    let rec private SplitTyconDefn (cenv: cenv) envInitial (SynTypeDefn(typeInfo=SynComponentInfo(attributes= Attributes synAttrs) as synTyconInfo; typeRepr=trepr; members=extraMembers)) =
+    let rec private SplitTyconDefn (cenv: cenv) envInitial (SynTypeDefn(typeInfo=synTyconInfo;typeRepr=trepr; members=extraMembers)) =
         let extraMembers = desugarGetSetMembers extraMembers
         let implements1 = List.choose (function SynMemberDefn.Interface (interfaceType=ty) -> Some(ty, ty.Range) | _ -> None) extraMembers
-        let attrs = TcAttributes cenv envInitial AttributeTargets.TyconDecl synAttrs
-        let isStaticClass = HasFSharpAttribute cenv.g cenv.g.attrib_SealedAttribute attrs && HasFSharpAttribute cenv.g cenv.g.attrib_AbstractClassAttribute attrs
-        let reportErrorOnStaticClass = isStaticClass && cenv.g.langVersion.SupportsFeature(LanguageFeature.ErrorReportingOnStaticClasses)
+        
+        let reportErrorOnStaticClass = 
+            cenv.g.langVersion.SupportsFeature(LanguageFeature.ErrorReportingOnStaticClasses) &&
+                (let (SynComponentInfo(attributes=Attributes(synAttrs))) = synTyconInfo
+                 let attrs = TcAttributes cenv envInitial AttributeTargets.TyconDecl synAttrs
+                 let isStaticClass = HasFSharpAttribute cenv.g cenv.g.attrib_SealedAttribute attrs && HasFSharpAttribute cenv.g cenv.g.attrib_AbstractClassAttribute attrs
+                 isStaticClass)
+          
         
         match trepr with
         | SynTypeDefnRepr.ObjectModel(kind, cspec, m) ->
@@ -4052,12 +4057,13 @@ module TcDeclarations =
                 let membersIncludingAutoProps = 
                     cspec |> List.filter (fun memb -> 
                       match memb with
-                      | SynMemberDefn.ImplicitCtor(ctorArgs= SynSimplePats.SimplePats(pats, _)) when  not pats.IsEmpty && reportErrorOnStaticClass ->
+                      | SynMemberDefn.ImplicitCtor(ctorArgs= SynSimplePats.SimplePats(pats, _)) when  (not pats.IsEmpty) && reportErrorOnStaticClass ->
                             for pat in pats do
                                  errorR(Error(FSComp.SR.chkErrorOnStaticClasses "constructor arguments are", pat.Range))
-                            false
+                            true
                       | SynMemberDefn.Member(SynBinding(valData = SynValData(Some memberFlags, _, _)), m)  when memberFlags.MemberKind = SynMemberKind.Constructor && reportErrorOnStaticClass ->
-                          errorR(Error(FSComp.SR.chkErrorOnStaticClasses "additional constructors are", m)); false
+                          errorR(Error(FSComp.SR.chkErrorOnStaticClasses "additional constructors are", m));
+                          true
                       | SynMemberDefn.Interface _
                       | SynMemberDefn.Member _
                       | SynMemberDefn.GetSetMember _

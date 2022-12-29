@@ -160,8 +160,10 @@ type B =
          ]
 
 
-    [<Fact>]
-    let ``Annoying bug``() =
+    [<Theory>]
+    [<InlineData("preview")>]
+    [<InlineData("7.0")>]
+    let ``Annoying bug``(langVersion) =
         let code = """
         module Test
 
@@ -170,7 +172,7 @@ type B =
         [<DefaultAugmentation(false)>]
         [<DebuggerTypeProxyAttribute(typedefof<MyCustomListDebugView<_>>)>]
         [<DebuggerDisplay("{DebugDisplay,nq}")>]
-        [<CompiledName("FSharpList`1")>]
+        [<CompiledName("MyCustomList")>]
         type MyCustomList<'T> = 
             | Empty
             | NonEmpty of Head: 'T * Tail: MyCustomList<'T>
@@ -198,5 +200,6 @@ type B =
 
         """
         Fs code
+        |> withLangVersion langVersion
         |> compile
         |> shouldSucceed
