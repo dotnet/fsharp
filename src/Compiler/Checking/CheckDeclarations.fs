@@ -4027,15 +4027,18 @@ module TcDeclarations =
     ///        where simpleRepr can contain inherit type, declared fields and virtual slots.
     /// body = members
     ///        where members contain methods/overrides, also implicit ctor, inheritCall and local definitions.
-    let rec private SplitTyconDefn (cenv: cenv) envInitial (SynTypeDefn(typeInfo=synTyconInfo;typeRepr=trepr; members=extraMembers)) =
+    let rec private SplitTyconDefn (g:TcGlobals) (SynTypeDefn(typeInfo=synTyconInfo;typeRepr=trepr; members=extraMembers)) =
         let extraMembers = desugarGetSetMembers extraMembers
         let implements1 = List.choose (function SynMemberDefn.Interface (interfaceType=ty) -> Some(ty, ty.Range) | _ -> None) extraMembers
         
         let reportErrorOnStaticClass = 
-            cenv.g.langVersion.SupportsFeature(LanguageFeature.ErrorReportingOnStaticClasses) &&
+            g.langVersion.SupportsFeature(LanguageFeature.ErrorReportingOnStaticClasses) &&
                 (let (SynComponentInfo(attributes=Attributes(synAttrs))) = synTyconInfo
-                 let attrs = TcAttributes cenv envInitial AttributeTargets.TyconDecl synAttrs
-                 let isStaticClass = HasFSharpAttribute cenv.g cenv.g.attrib_SealedAttribute attrs && HasFSharpAttribute cenv.g cenv.g.attrib_AbstractClassAttribute attrs
+                 let hasAttr possibleNames = synAttrs |> List.exists (fun a -> possibleNames |> Array.contains (a.TypeName.LongIdent |> List.last).idText)             
+                 let isStaticClass = hasAttr [|"SealedAttribute";"Sealed"|] && hasAttr  [|"AbstractClassAttribute";"AbstractClass"|]
+                 // At this point in time, type checking attributes is too soon. Possibly, this entire check could move to be done after recursive definitions are processed.
+                 // Or, use attribute scanning that will not do eager type checking, but only scan for  Selaed and AbstractClass attributes from the runtime -> those will not suffer from mut-rec problem
+                 // Current string solution of course is bad, because that matches any attribute with that name, even user defined.
                  isStaticClass)
           
         
@@ -4220,7 +4223,7 @@ module TcDeclarations =
 
         // Split the definitions into "core representations" and "members". The code to process core representations
         // is shared between processing of signature files and implementation files.
-        let mutRecDefnsAfterSplit = MutRecShapes.mapTycons (SplitTyconDefn cenv envInitial) mutRecDefns
+        let mutRecDefnsAfterSplit = MutRecShapes.mapTycons (SplitTyconDefn cenv.g) mutRecDefns
 
         // Create the entities for each module and type definition, and process the core representation of each type definition.
         let tycons, envMutRecPrelim, mutRecDefnsAfterCore = 

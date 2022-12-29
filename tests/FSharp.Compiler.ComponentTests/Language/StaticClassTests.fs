@@ -98,14 +98,14 @@ type T =
         Fsx """
 [<Sealed; AbstractClass>]
 type T(x: int) =
-    new () = {}
+    new () = T(42)
         """
          |> withLangVersionPreview
          |> compile
          |> shouldFail
          |> withDiagnostics [
              (Error 3551, Line 3, Col 8, Line 3, Col 14, "if a type uses both [<Sealed>] and [<AbstractClass>] it means it is static. No constructor arguments are allowed")
-             (Error 3551, Line 4, Col 5, Line 4, Col 16, "if a type uses both [<Sealed>] and [<AbstractClass>] it means it is static. No additional constructors are allowed")
+             (Error 3551, Line 4, Col 5, Line 4, Col 19, "if a type uses both [<Sealed>] and [<AbstractClass>] it means it is static. No additional constructors are allowed")
          ]
          
     [<Fact>]
