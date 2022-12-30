@@ -757,12 +757,10 @@ module Structure =
         let collectConditionalDirectives (directives: ConditionalDirectiveTrivia list) =
             let rec group directives unfinishedIfs =
                 match directives with
-                | [] ->
-                    ()
+                | [] -> ()
                 | h :: t ->
                     match h with
-                    | ConditionalDirectiveTrivia.If (_, ifRange) ->
-                        group t (ifRange :: unfinishedIfs)
+                    | ConditionalDirectiveTrivia.If (_, ifRange) -> group t (ifRange :: unfinishedIfs)
                     | ConditionalDirectiveTrivia.EndIf endIfRange ->
                         match unfinishedIfs with
                         | [] ->
@@ -780,8 +778,7 @@ module Structure =
                             |> acc.Add
 
                             group t remainingUnfinishedIfs
-                    | _ ->
-                        group t unfinishedIfs
+                    | _ -> group t unfinishedIfs
 
             group directives []
 
