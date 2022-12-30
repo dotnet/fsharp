@@ -5,6 +5,7 @@ namespace FSharp.Compiler.EditorServices
 open Internal.Utilities.Library
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
@@ -753,6 +754,37 @@ module Structure =
                     Some(mkRange "" (mkPos r.StartLine prefixLength) r.End)
                 | _ -> None)
 
+        let collectConditionalDirectives (directives: ConditionalDirectiveTrivia list) =
+            let rec group directives unfinishedIfs =
+                match directives with
+                | [] ->
+                    ()
+                | h :: t ->
+                    match h with
+                    | ConditionalDirectiveTrivia.If (_, ifRange) ->
+                        group t (ifRange :: unfinishedIfs)
+                    | ConditionalDirectiveTrivia.EndIf endIfRange ->
+                        match unfinishedIfs with
+                        | [] ->
+                            // shouldn't happen
+                            group t unfinishedIfs
+                        | ifRange :: remainingUnfinishedIfs ->
+                            let range = Range.startToEnd ifRange endIfRange
+
+                            {
+                                Scope = Scope.HashDirective
+                                Collapse = Collapse.Same
+                                Range = range
+                                CollapseRange = range
+                            }
+                            |> acc.Add
+
+                            group t remainingUnfinishedIfs
+                    | _ ->
+                        group t unfinishedIfs
+
+            group directives []
+
         let rec parseDeclaration (decl: SynModuleDecl) =
             match decl with
             | SynModuleDecl.Let (_, bindings, r) ->
@@ -1059,9 +1091,11 @@ module Structure =
         match parsedInput with
         | ParsedInput.ImplFile file ->
             file.Contents |> List.iter parseModuleOrNamespace
+            collectConditionalDirectives file.Trivia.ConditionalDirectives
             getCommentRanges sourceLines
         | ParsedInput.SigFile file ->
             file.Contents |> List.iter parseModuleOrNamespaceSigs
+            collectConditionalDirectives file.Trivia.ConditionalDirectives
             getCommentRanges sourceLines
 
         acc :> seq<_>
