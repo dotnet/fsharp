@@ -758,27 +758,25 @@ module Structure =
             let rec group directives unfinishedIfs =
                 match directives with
                 | [] -> ()
-                | h :: t ->
-                    match h with
-                    | ConditionalDirectiveTrivia.If (_, ifRange) -> group t (ifRange :: unfinishedIfs)
-                    | ConditionalDirectiveTrivia.EndIf endIfRange ->
-                        match unfinishedIfs with
-                        | [] ->
-                            // shouldn't happen
-                            group t unfinishedIfs
-                        | ifRange :: remainingUnfinishedIfs ->
-                            let range = Range.startToEnd ifRange endIfRange
+                | ConditionalDirectiveTrivia.If (_, ifRange) :: directives -> group directives (ifRange :: unfinishedIfs)
+                | ConditionalDirectiveTrivia.Else _ :: directives -> group directives unfinishedIfs
+                | ConditionalDirectiveTrivia.EndIf endIfRange :: directives ->
+                    match unfinishedIfs with
+                    | [] ->
+                        // shouldn't happen
+                        group directives unfinishedIfs
+                    | ifRange :: remainingUnfinishedIfs ->
+                        let range = Range.startToEnd ifRange endIfRange
 
-                            {
-                                Scope = Scope.HashDirective
-                                Collapse = Collapse.Same
-                                Range = range
-                                CollapseRange = range
-                            }
-                            |> acc.Add
+                        {
+                            Scope = Scope.HashDirective
+                            Collapse = Collapse.Same
+                            Range = range
+                            CollapseRange = range
+                        }
+                        |> acc.Add
 
-                            group t remainingUnfinishedIfs
-                    | _ -> group t unfinishedIfs
+                        group directives remainingUnfinishedIfs
 
             group directives []
 
