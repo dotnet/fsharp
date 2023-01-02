@@ -7,6 +7,11 @@
         <target state="new">All elements of an array must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</target>
         <note />
       </trans-unit>
+      <trans-unit id="buildDuplicateFile">
+        <source>The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</source>
+        <target state="new">The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="buildInvalidSourceFileExtensionML">
         <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript. To enable the deprecated use of .ml or .mli extensions, use '--langversion:5.0' and '--mlcompatibility'.</source>
         <target state="translated">Die Dateierweiterung von „{0}“ wurde nicht erkannt. Quelldateien müssen die Erweiterung .fs, .fsi, .fsx oder .fsscript haben. Um die veraltete Verwendung der Erweiterungen .ml oder .mli zu aktivieren, verwenden Sie „--langversion:5.0“ und „--mlcompatibility“.</target>
@@ -335,6 +340,11 @@
       <trans-unit id="featureStructActivePattern">
         <source>struct representation for active patterns</source>
         <target state="translated">Strukturdarstellung für aktive Muster</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
+        <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
+        <target state="new">Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">

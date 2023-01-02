@@ -1457,8 +1457,7 @@ type internal FsiDynamicCompiler(
               // but needs to be set for some logic of ilwrite to function.
               pdbfile = (if tcConfig.debuginfo then Some (multiAssemblyName + ".pdb") else None)
               emitTailcalls = tcConfig.emitTailcalls
-              deterministic = tcConfig.deterministic
-              showTimes = tcConfig.showTimes
+              deterministic = tcConfig.deterministic           
               // we always use portable for F# Interactive debug emit
               portablePDB = true
               // we don't use embedded for F# Interactive debug emit
