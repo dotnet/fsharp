@@ -66,6 +66,8 @@ val GetCoreFsiCompilerOptions: TcConfigBuilder -> CompilerOptionBlock list
 
 val GetCoreServiceCompilerOptions: TcConfigBuilder -> CompilerOptionBlock list
 
+val CheckAndReportSourceFileDuplicates: ResizeArray<string> -> string list
+
 /// Apply args to TcConfigBuilder and return new list of source files
 val ApplyCommandLineArgs: tcConfigB: TcConfigBuilder * sourceFiles: string list * argv: string list -> string list
 

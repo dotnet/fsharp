@@ -2304,6 +2304,23 @@ let GetCoreFsiCompilerOptions (tcConfigB: TcConfigBuilder) =
         )
     ]
 
+let CheckAndReportSourceFileDuplicates (sourceFiles: ResizeArray<string>) =
+    let visited = Dictionary.newWithSize (sourceFiles.Count * 2)
+    let count = sourceFiles.Count
+
+    [
+        for i = 0 to (count - 1) do
+            let source = sourceFiles[i]
+
+            match visited.TryGetValue source with
+            | true, duplicatePosition ->
+
+                warning (Error(FSComp.SR.buildDuplicateFile (source, i + 1, count, duplicatePosition + 1, count), range0))
+            | false, _ ->
+                visited.Add(source, i)
+                yield source
+    ]
+
 let ApplyCommandLineArgs (tcConfigB: TcConfigBuilder, sourceFiles: string list, argv) =
     try
         let sourceFilesAcc = ResizeArray sourceFiles
@@ -2313,7 +2330,7 @@ let ApplyCommandLineArgs (tcConfigB: TcConfigBuilder, sourceFiles: string list, 
                 sourceFilesAcc.Add name
 
         ParseCompilerOptions(collect, GetCoreServiceCompilerOptions tcConfigB, argv)
-        ResizeArray.toList sourceFilesAcc
+        sourceFilesAcc |> CheckAndReportSourceFileDuplicates
     with e ->
         errorRecovery e range0
         sourceFiles

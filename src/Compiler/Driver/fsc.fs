@@ -536,6 +536,7 @@ let main1
         // Rather than start processing, just collect names, then process them.
         try
             let files = ProcessCommandLineFlags(tcConfigB, lcidFromCodePage, argv)
+            let files = CheckAndReportSourceFileDuplicates(ResizeArray.ofList files)
             AdjustForScriptCompile(tcConfigB, files, lexResourceManager, dependencyProvider)
         with e ->
             errorRecovery e rangeStartup
