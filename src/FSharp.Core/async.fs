@@ -1192,9 +1192,14 @@ module AsyncPrimitives =
         let tcs = TaskCompletionSource<'T>()
         let task = tcs.Task
 
-        let cont k = tcs.SetResult k
-        let econt (edi: ExceptionDispatchInfo) = tcs.SetException (edi.GetAssociatedSourceException())
-        let ccont _ = tcs.SetCanceled()
+        let cont k =
+            tcs.SetResult k
+
+        let econt (edi: ExceptionDispatchInfo) =
+            tcs.SetException(edi.GetAssociatedSourceException())
+
+        let ccont _ =
+            tcs.SetCanceled()
 
         StartWithContinuations cancellationToken computation cont econt ccont
 
@@ -1514,7 +1519,7 @@ type Async =
 
             computation.Invoke newCtxt)
 
-    static member RunImmediate (computation: Async<'T>, ?cancellationToken: CancellationToken) =
+    static member RunImmediate(computation: Async<'T>, ?cancellationToken: CancellationToken) =
         let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
         AsyncPrimitives.RunImmediateOnCurrentThread cancellationToken computation
 
