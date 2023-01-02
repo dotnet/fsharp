@@ -311,4 +311,4 @@ module Result =
     /// </code>
     /// </example>
     [<CompiledName("ToValueOption")>]
-    val toValueOption: result: Result<'T, 'Error> -> ValueOption<'T>
+    val toValueOption: result: Result<'T, 'Error> -> 'T voption
