@@ -7,6 +7,11 @@
         <target state="translated">Todos os elementos de uma matriz devem ser implicitamente conversíveis ao tipo do primeiro elemento, que aqui é uma tupla de comprimento {0} do tipo\n    {1}    \nEste elemento é uma tupla de comprimento {2} do tipo\n    {3}    \n</target>
         <note />
       </trans-unit>
+      <trans-unit id="buildDuplicateFile">
+        <source>The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</source>
+        <target state="new">The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="buildInvalidSourceFileExtensionML">
         <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript. To enable the deprecated use of .ml or .mli extensions, use '--langversion:5.0' and '--mlcompatibility'.</source>
         <target state="translated">A extensão do arquivo '{0}' não foi reconhecida. Os arquivos de origem devem ter a extensão .fs, .fsi, .fsx ou .fsscript. Para ativar o uso preterido das extensões .ml ou .mli, use '--langversion:5.0' e '--mlcompatibility'.</target>

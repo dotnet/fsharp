@@ -502,9 +502,7 @@ type cenv =
 
       emitTailcalls: bool
 
-      deterministic: bool
-
-      showTimes: bool
+      deterministic: bool    
 
       desiredMetadataVersion: ILVersionInfo
 
@@ -3023,14 +3021,14 @@ let GenModule (cenv : cenv) (modul: ILModuleDef) =
     let midx = AddUnsharedRow cenv TableNames.Module (GetModuleAsRow cenv modul)
     List.iter (GenResourcePass3 cenv) (modul.Resources.AsList())
     let tdefs = destTypeDefsWithGlobalFunctionsFirst cenv.ilg modul.TypeDefs
-    reportTime cenv.showTimes "Module Generation Preparation"
+    reportTime "Module Generation Preparation"
     GenTypeDefsPass1 [] cenv tdefs
-    reportTime cenv.showTimes "Module Generation Pass 1"
+    reportTime "Module Generation Pass 1"
     GenTypeDefsPass2 0 [] cenv tdefs
-    reportTime cenv.showTimes "Module Generation Pass 2"
+    reportTime "Module Generation Pass 2"
     (match modul.Manifest with None -> () | Some m -> GenManifestPass3 cenv m)
     GenTypeDefsPass3 [] cenv tdefs
-    reportTime cenv.showTimes "Module Generation Pass 3"
+    reportTime "Module Generation Pass 3"
     GenCustomAttrsPass3Or4 cenv (hca_Module, midx) modul.CustomAttrs
     // GenericParam is the only sorted table indexed by Columns in other tables (GenericParamConstraint\CustomAttributes).
     // Hence we need to sort it before we emit any entries in GenericParamConstraint\CustomAttributes that are attached to generic params.
@@ -3038,7 +3036,7 @@ let GenModule (cenv : cenv) (modul: ILModuleDef) =
     // the key --> index map since it is no longer valid
     cenv.GetTable(TableNames.GenericParam).SetRowsOfSharedTable (SortTableRows TableNames.GenericParam (cenv.GetTable(TableNames.GenericParam).GenericRowsOfTable))
     GenTypeDefsPass4 [] cenv tdefs
-    reportTime cenv.showTimes "Module Generation Pass 4"
+    reportTime "Module Generation Pass 4"
 
 /// Arbitrary value
 [<Literal>]
@@ -3056,8 +3054,7 @@ let generateIL (
     generatePdb,
     ilg: ILGlobals,
     emitTailcalls,
-    deterministic,
-    showTimes,
+    deterministic,  
     referenceAssemblyOnly,
     referenceAssemblyAttribOpt: ILAttribute option,
     allGivenSources,
@@ -3098,8 +3095,7 @@ let generateIL (
                 MetadataTable.Unshared (MetadataTable<UnsharedRow>.New ("row table "+string i, EqualityComparer.Default)))
     use cenv =
         { emitTailcalls=emitTailcalls
-          deterministic = deterministic
-          showTimes=showTimes
+          deterministic = deterministic         
           ilg = ilg
           desiredMetadataVersion=desiredMetadataVersion
           requiredDataFixups= requiredDataFixups
@@ -3183,7 +3179,7 @@ let generateIL (
        EventTokenMap = (fun t edef ->
         let tidx = idxForNextedTypeDef t
         getUncodedToken TableNames.Event (cenv.eventDefs.GetTableEntry (EventKey (tidx, edef.Name)))) }
-    reportTime cenv.showTimes "Finalize Module Generation Results"
+    reportTime "Finalize Module Generation Results"
     // New return the results
     let data = cenv.data.AsMemory().ToArray()
     let resources = cenv.resources.AsMemory().ToArray()
@@ -3217,8 +3213,7 @@ let writeILMetadataAndCode (
     desiredMetadataVersion,
     ilg,
     emitTailcalls,
-    deterministic,
-    showTimes,
+    deterministic,   
     referenceAssemblyOnly,
     referenceAssemblyAttribOpt,
     allGivenSources,
@@ -3240,8 +3235,7 @@ let writeILMetadataAndCode (
           generatePdb,
           ilg,
           emitTailcalls,
-          deterministic,
-          showTimes,
+          deterministic,       
           referenceAssemblyOnly,
           referenceAssemblyAttribOpt,
           allGivenSources,
@@ -3249,7 +3243,7 @@ let writeILMetadataAndCode (
           cilStartAddress,
           normalizeAssemblyRefs)
 
-    reportTime showTimes "Generated Tables and Code"
+    reportTime "Generated Tables and Code"
     let tableSize (tab: TableName) = tables[tab.Index].Count
 
    // Now place the code
@@ -3321,7 +3315,7 @@ let writeILMetadataAndCode (
       (if tableSize TableNames.GenericParamConstraint > 0 then 0x00001000 else 0x00000000) |||
       0x00000200
 
-    reportTime showTimes "Layout Header of Tables"
+    reportTime "Layout Header of Tables"
 
     let guidAddress n = (if n = 0 then 0 else (n - 1) * 0x10 + 0x01)
 
@@ -3365,7 +3359,7 @@ let writeILMetadataAndCode (
         if n >= blobAddressTable.Length then failwith "blob index out of range"
         blobAddressTable[n]
 
-    reportTime showTimes "Build String/Blob Address Tables"
+    reportTime "Build String/Blob Address Tables"
 
     let sortedTables =
       Array.init 64 (fun i ->
@@ -3374,7 +3368,7 @@ let writeILMetadataAndCode (
           let rows = tab.GenericRowsOfTable
           if TableRequiresSorting tabName then SortTableRows tabName rows else rows)
 
-    reportTime showTimes "Sort Tables"
+    reportTime "Sort Tables"
 
     let codedTables =
 
@@ -3489,7 +3483,7 @@ let writeILMetadataAndCode (
                 tablesBuf.EmitInt32 rows.Length
 
 
-        reportTime showTimes "Write Header of tablebuf"
+        reportTime "Write Header of tablebuf"
 
       // The tables themselves
         for rows in sortedTables do
@@ -3524,7 +3518,7 @@ let writeILMetadataAndCode (
 
         tablesBuf.AsMemory().ToArray()
 
-    reportTime showTimes "Write Tables to tablebuf"
+    reportTime "Write Tables to tablebuf"
 
     let tablesStreamUnpaddedSize = codedTables.Length
     // QUERY: extra 4 empty bytes in array.exe - why? Include some extra padding after
@@ -3541,7 +3535,7 @@ let writeILMetadataAndCode (
     let blobsChunk, _next = chunk blobsStreamPaddedSize next
     let blobsStreamPadding = blobsChunk.size - blobsStreamUnpaddedSize
 
-    reportTime showTimes "Layout Metadata"
+    reportTime "Layout Metadata"
 
     let metadata, guidStart =
       use mdbuf = ByteBuffer.Create(MetadataCapacity, useArrayPool = true)
@@ -3576,12 +3570,12 @@ let writeILMetadataAndCode (
       mdbuf.EmitInt32 blobsChunk.size
       mdbuf.EmitIntsAsBytes [| 0x23; 0x42; 0x6c; 0x6f; 0x62; 0x00; 0x00; 0x00; (* #Blob000 *)|]
 
-      reportTime showTimes "Write Metadata Header"
+      reportTime "Write Metadata Header"
      // Now the coded tables themselves
       mdbuf.EmitBytes codedTables
       for i = 1 to tablesStreamPadding do
           mdbuf.EmitIntAsByte 0x00
-      reportTime showTimes "Write Metadata Tables"
+      reportTime "Write Metadata Tables"
 
      // The string stream
       mdbuf.EmitByte 0x00uy
@@ -3589,7 +3583,7 @@ let writeILMetadataAndCode (
           mdbuf.EmitBytes s
       for i = 1 to stringsStreamPadding do
           mdbuf.EmitIntAsByte 0x00
-      reportTime showTimes "Write Metadata Strings"
+      reportTime "Write Metadata Strings"
      // The user string stream
       mdbuf.EmitByte 0x00uy
       for s in userStrings do
@@ -3599,7 +3593,7 @@ let writeILMetadataAndCode (
       for i = 1 to userStringsStreamPadding do
           mdbuf.EmitIntAsByte 0x00
 
-      reportTime showTimes "Write Metadata User Strings"
+      reportTime "Write Metadata User Strings"
     // The GUID stream
       let guidStart = mdbuf.Position
       Array.iter mdbuf.EmitBytes guids
@@ -3611,7 +3605,7 @@ let writeILMetadataAndCode (
           mdbuf.EmitBytes s
       for i = 1 to blobsStreamPadding do
           mdbuf.EmitIntAsByte 0x00
-      reportTime showTimes "Write Blob Stream"
+      reportTime "Write Blob Stream"
      // Done - close the buffer and return the result.
       mdbuf.AsMemory().ToArray(), guidStart
 
@@ -3627,7 +3621,7 @@ let writeILMetadataAndCode (
               let token = getUncodedToken TableNames.UserStrings (userStringAddress userStringIndex)
               if (Bytes.get code (locInCode-1) <> i_ldstr) then failwith "strings-in-code fixup: not at ldstr instruction!"
               applyFixup32 code locInCode token
-    reportTime showTimes "Fixup Metadata"
+    reportTime "Fixup Metadata"
 
     entryPointToken, code, codePadding, metadata, data, resources, requiredDataFixups.Value, pdbData, mappings, guidStart
 
@@ -3690,8 +3684,7 @@ let writeDirectory os dict =
 let writeBytes (os: BinaryWriter) (chunk: byte[]) = os.Write(chunk, 0, chunk.Length)
 
 let writePdb (
-    dumpDebugInfo,
-    showTimes,
+    dumpDebugInfo,   
     embeddedPDB,
     pdbfile,
     outfile,
@@ -3724,7 +3717,7 @@ let writePdb (
                 s.SignStream fs
             with exn ->
                 failwith ($"Warning: A call to SignFile failed ({exn.Message})")
-        reportTime showTimes "Signing Image"
+        reportTime "Signing Image"
 
     // Now we've done the bulk of the binary, do the PDB file and fixup the binary.
     match pdbfile with
@@ -3754,7 +3747,7 @@ let writePdb (
                         stream.WriteTo fs
                     getInfoForPortablePdb contentId pdbfile pathMap debugDataChunk debugDeterministicPdbChunk debugChecksumPdbChunk algorithmName checkSum embeddedPDB deterministic
             | None -> [| |]
-        reportTime showTimes "Generate PDB Info"
+        reportTime "Generate PDB Info"
 
         // Now we have the debug data we can go back and fill in the debug directory in the image
         use fs2 = reopenOutput()
@@ -3779,14 +3772,15 @@ let writePdb (
                     os2.BaseStream.Seek (int64 (textV2P i.iddChunk.addr), SeekOrigin.Begin) |> ignore
                     if i.iddChunk.size < i.iddData.Length then failwith "Debug data area is not big enough. Debug info may not be usable"
                     writeBytes os2 i.iddData
-            reportTime showTimes "Finalize PDB"
+            reportTime "Finalize PDB"
             signImage ()
             os2.Dispose()
         with exn ->
             failwith ("Error while writing debug directory entry: " + exn.Message)
             (try os2.Dispose(); FileSystem.FileDeleteShim outfile with _ -> ())
             reraise()
-
+           
+    reportTime "Finish"
     pdbBytes
 
 type options =
@@ -3802,8 +3796,7 @@ type options =
      checksumAlgorithm: HashAlgorithm
      signer: ILStrongNameSigner option
      emitTailcalls: bool
-     deterministic: bool
-     showTimes: bool
+     deterministic: bool  
      dumpDebugInfo: bool
      referenceAssemblyOnly: bool
      referenceAssemblyAttribOpt: ILAttribute option
@@ -3814,7 +3807,7 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
     // Store the public key from the signer into the manifest. This means it will be written
     // to the binary and also acts as an indicator to leave space for delay sign
 
-    reportTime options.showTimes "Write Started"
+    reportTime "Write Started"
     let isDll = modul.IsDLL
     let ilg = options.ilg
 
@@ -3928,8 +3921,7 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
                   desiredMetadataVersion,
                   ilg,
                   options.emitTailcalls,
-                  options.deterministic,
-                  options.showTimes,
+                  options.deterministic,                 
                   options.referenceAssemblyOnly,
                   options.referenceAssemblyAttribOpt,
                   options.allGivenSources,
@@ -3938,7 +3930,7 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
                   normalizeAssemblyRefs
               )
 
-          reportTime options.showTimes "Generated IL and metadata"
+          reportTime "Generated IL and metadata"
           let _codeChunk, next = chunk code.Length next
           let _codePaddingChunk, next = chunk codePadding.Length next
 
@@ -3971,7 +3963,7 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
             match options.pdbfile, options.portablePDB with
             | Some _, true ->
                 let pdbInfo =
-                    generatePortablePdb options.embedAllSource options.embedSourceList options.sourceLink options.checksumAlgorithm options.showTimes pdbData options.pathMap
+                    generatePortablePdb options.embedAllSource options.embedSourceList options.sourceLink options.checksumAlgorithm pdbData options.pathMap
 
                 if options.embeddedPDB then
                     let (uncompressedLength, contentId, stream, algorithmName, checkSum) = pdbInfo
@@ -4097,7 +4089,7 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
           let imageEndSectionPhysLoc = nextPhys
           let imageEndAddr = next
 
-          reportTime options.showTimes "Layout image"
+          reportTime "Layout image"
 
           let write p (os: BinaryWriter) chunkName chunk =
               match p with
@@ -4504,7 +4496,7 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
 
           pdbData, pdbInfoOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, mappings
 
-    reportTime options.showTimes "Writing Image"
+    reportTime "Writing Image"
     pdbData, pdbInfoOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, mappings
 
 let writeBinaryFiles (options: options, modul, normalizeAssemblyRefs) =
@@ -4532,8 +4524,7 @@ let writeBinaryFiles (options: options, modul, normalizeAssemblyRefs) =
     let reopenOutput () =
         FileSystem.OpenFileForWriteShim(options.outfile, FileMode.Open, FileAccess.ReadWrite, FileShare.Read)
 
-    writePdb (options.dumpDebugInfo,
-        options.showTimes,
+    writePdb (options.dumpDebugInfo,      
         options.embeddedPDB,
         options.pdbfile,
         options.outfile,
@@ -4565,8 +4556,7 @@ let writeBinaryInMemory (options: options, modul, normalizeAssemblyRefs) =
         stream
 
     let pdbBytes =
-        writePdb (options.dumpDebugInfo,
-            options.showTimes,
+        writePdb (options.dumpDebugInfo,         
             options.embeddedPDB,
             options.pdbfile,
             options.outfile,

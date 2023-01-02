@@ -7,6 +7,11 @@
         <target state="translated">Tutti gli elementi di una matrice devono essere convertibili in modo implicito nel tipo del primo elemento, che qui è una tupla di lunghezza {0} di tipo\n {1}    \nQuesto elemento è una tupla di lunghezza {2} di tipo\n    {3} \n</target>
         <note />
       </trans-unit>
+      <trans-unit id="buildDuplicateFile">
+        <source>The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</source>
+        <target state="new">The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="buildInvalidSourceFileExtensionML">
         <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript. To enable the deprecated use of .ml or .mli extensions, use '--langversion:5.0' and '--mlcompatibility'.</source>
         <target state="translated">L'estensione di file di '{0}' non è riconosciuta. I file di origine devono avere estensione fs, fsi, fsx o fsscript. Per abilitare l'uso deprecato delle estensioni ml o mli, usare '--langversion:5.0' e '--mlcompatibility'.</target>

@@ -7,6 +7,11 @@
         <target state="translated">配列のすべての要素は、最初の要素の型に暗黙的に変換できる必要があります。これは、型の長さ {0} のタプルです\n    {1}    \nこの要素は、型の長さ {2} のタプルです\n    {3}    \n</target>
         <note />
       </trans-unit>
+      <trans-unit id="buildDuplicateFile">
+        <source>The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</source>
+        <target state="new">The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="buildInvalidSourceFileExtensionML">
         <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript. To enable the deprecated use of .ml or .mli extensions, use '--langversion:5.0' and '--mlcompatibility'.</source>
         <target state="translated">'{0}' のファイル拡張子を認識できません。ソース ファイル拡張子は .fs、.fsi、.fsx、または .fsscript にする必要があります。非推奨の拡張子 .ml または .mli の使用を有効にするには、'--langversion:5.0' および '--mlcompatibility' を使用してください。</target>
