@@ -193,7 +193,7 @@ module rec Compiler =
     // Load the source file from the path
     let loadSourceFromFile path = getSource(TestType.Path path)
 
-    let private fsFromString (source: SourceCodeFileKind): FSharpCompilationSource =
+    let fsFromString (source: SourceCodeFileKind): FSharpCompilationSource =
         {
             Source            = source
             AdditionalSources = []
@@ -321,6 +321,7 @@ module rec Compiler =
 
     let asFs (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
+        | FS { Source = SourceCodeFileKind.Fsi _} -> cUnit
         | FS src -> FS {src with Source=SourceCodeFileKind.Fs({FileName=src.Source.GetSourceFileName; SourceText=src.Source.GetSourceText})}
         | _ -> failwith "Only F# compilation can be of type Fs."
 
