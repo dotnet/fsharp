@@ -6,37 +6,48 @@ open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
-open FSharp.Compiler.Text
 open Hints
 
 module HintService =
-    let private getHintsForSymbol parseResults hintKinds (longIdEndLocations: Position list) (symbolUse: FSharpSymbolUse) =
-        match symbolUse.Symbol with
-        | :? FSharpMemberOrFunctionOrValue as symbol 
-          when hintKinds |> Set.contains HintKind.TypeHint 
-            && InlineTypeHints.isValidForHint parseResults symbol symbolUse ->
-            
-            InlineTypeHints.getHints symbol symbolUse, 
-            longIdEndLocations
+
+    type private NativeHintResolver = FSharpSymbolUse seq -> NativeHint seq
+
+    let inline private getTypeHints parseResults symbol: NativeHintResolver =
+        Seq.filter (InlineTypeHints.isValidForHint parseResults symbol) 
+        >> Seq.collect (InlineTypeHints.getHints symbol)
+
+    let inline private getHintsForMemberOrFunctionOrValue parseResults symbol: NativeHintResolver =
+        Seq.filter (InlineParameterNameHints.isMemberOrFunctionOrValueValidForHint symbol)
+        >> Seq.collect (InlineParameterNameHints.getHintsForMemberOrFunctionOrValue parseResults symbol)
+
+    let inline private getHintsForUnionCase parseResults symbol: NativeHintResolver =
+        Seq.filter (InlineParameterNameHints.isUnionCaseValidForHint symbol) 
+        >> Seq.collect (InlineParameterNameHints.getHintsForUnionCase parseResults symbol)
+
+    let private getHintResolvers parseResults hintKinds (symbol: FSharpSymbol): NativeHintResolver seq = 
+        let rec resolve hintKinds resolvers =
+            match hintKinds with
+            | [] -> resolvers |> Seq.choose id
+            | hintKind :: hintKinds ->
+                match hintKind with
+                | HintKind.TypeHint -> 
+                    match symbol with
+                    | :? FSharpMemberOrFunctionOrValue as symbol -> getTypeHints parseResults symbol |> Some
+                    | _ -> None
+                | HintKind.ParameterNameHint ->
+                    match symbol with
+                    | :? FSharpMemberOrFunctionOrValue as symbol -> getHintsForMemberOrFunctionOrValue parseResults symbol |> Some
+                    | :? FSharpUnionCase as symbol -> getHintsForUnionCase parseResults symbol |> Some
+                    | _ -> None
+                // we'll be adding other stuff gradually here
+                :: resolvers |> resolve hintKinds
+
+        in resolve hintKinds []
         
-        | :? FSharpMemberOrFunctionOrValue as symbol
-          when hintKinds |> Set.contains HintKind.ParameterNameHint 
-            && InlineParameterNameHints.isMemberOrFunctionOrValueValidForHint symbol symbolUse ->
-
-            InlineParameterNameHints.getHintsForMemberOrFunctionOrValue parseResults symbol symbolUse longIdEndLocations, 
-            symbolUse.Range.End :: longIdEndLocations
-
-        | :? FSharpUnionCase as symbol
-          when hintKinds |> Set.contains HintKind.ParameterNameHint
-            && InlineParameterNameHints.isUnionCaseValidForHint symbol symbolUse ->
-
-            InlineParameterNameHints.getHintsForUnionCase parseResults symbol symbolUse, 
-            longIdEndLocations
-
-        // we'll be adding other stuff gradually here
-        | _ -> 
-            [], 
-            longIdEndLocations
+    let private getHintsForSymbol parseResults hintKinds (symbol: FSharpSymbol, symbolUses: FSharpSymbolUse seq) =
+        symbol 
+        |> getHintResolvers parseResults hintKinds 
+        |> Seq.collect (fun resolve -> resolve symbolUses)
 
     let getHintsForDocument (document: Document) hintKinds userOpName cancellationToken = 
         async {
@@ -49,8 +60,7 @@ module HintService =
                 
                 return 
                     checkResults.GetAllUsesOfAllSymbolsInFile cancellationToken
-                    |> Seq.mapFold (getHintsForSymbol parseResults hintKinds) []
-                    |> fst
-                    |> Seq.concat
+                    |> Seq.groupBy (fun symbolUse -> symbolUse.Symbol)
+                    |> Seq.collect (getHintsForSymbol parseResults (hintKinds |> Set.toList))
                     |> Seq.toList
         }
