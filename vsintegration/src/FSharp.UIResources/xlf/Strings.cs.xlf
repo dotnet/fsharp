@@ -9,12 +9,12 @@
       </trans-unit>
       <trans-unit id="Enable_Fast_Find_References">
         <source>Enable fast find references &amp; rename (experimental)</source>
-        <target state="new">Enable fast find references &amp; rename (experimental)</target>
+        <target state="translated">Povolit odkazy rychlého hledání a přejmenování (experimentální)</target>
         <note />
       </trans-unit>
       <trans-unit id="Find_References_Performance">
         <source>Find References Performance Options</source>
-        <target state="new">Find References Performance Options</target>
+        <target state="translated">Najít možnosti výkonu odkazů</target>
         <note />
       </trans-unit>
       <trans-unit id="Inline_Hints">
@@ -39,12 +39,12 @@
       </trans-unit>
       <trans-unit id="Enable_Parallel_Checking_With_Signature_Files">
         <source>Enable parallel type checking with signature files</source>
-        <target state="new">Enable parallel type checking with signature files</target>
+        <target state="translated">Povolit paralelní kontrolu typů pomocí souborů podpisu</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_Parallel_Reference_Resolution">
         <source>Enable parallel reference resolution</source>
-        <target state="new">Enable parallel reference resolution</target>
+        <target state="translated">Povolit paralelní referenční rozlišení</target>
         <note />
       </trans-unit>
       <trans-unit id="Language_Service_Performance">
@@ -69,17 +69,17 @@
       </trans-unit>
       <trans-unit id="Parallelization">
         <source>Parallelization (requires restart)</source>
-        <target state="new">Parallelization (requires restart)</target>
+        <target state="translated">Paralelizace (vyžaduje restartování)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Parameter_Name_Hints">
         <source>Display inline parameter name hints (experimental)</source>
-        <target state="new">Display inline parameter name hints (experimental)</target>
+        <target state="translated">Zobrazit nápovědy k názvům vložených parametrů (experimentální)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Type_Hints">
         <source>Display inline type hints (experimental)</source>
-        <target state="new">Display inline type hints (experimental)</target>
+        <target state="translated">Zobrazení tipů pro vložený typ (experimentální)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_all_symbols">
