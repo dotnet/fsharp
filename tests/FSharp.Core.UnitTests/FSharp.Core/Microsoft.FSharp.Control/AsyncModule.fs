@@ -80,13 +80,13 @@ module ChoiceUtils =
         let result =
             let cancellationToken =
                 match cancelAfter with
-                | Some ca -> 
+                | Some ca ->
                     let cts = new CancellationTokenSource()
                     cts.CancelAfter(ca)
                     Some cts.Token
                 | None -> None
 
-            try Async.RunSynchronously(choiceWorkflow, ?cancellationToken = cancellationToken) |> Choice1Of2 
+            try Async.RunSynchronously(choiceWorkflow, ?cancellationToken = cancellationToken) |> Choice1Of2
             with e -> Choice2Of2 e
 
         // Step 3. check that results are up to spec
@@ -94,7 +94,7 @@ module ChoiceUtils =
             seq {
                 yield Int32.MaxValue // "infinity": avoid exceptions if list is empty
 
-                for op in ops do 
+                for op in ops do
                     match op with
                     | NoneResultAfter _ -> ()
                     | op -> yield op.Timeout
@@ -105,7 +105,7 @@ module ChoiceUtils =
         let verifyIndex index =
             if index < 0 || index >= ops.Length then
                 Assert.Fail "Returned choice index is out of bounds."
-        
+
         // Step 3a. check that output is up to spec
         match result with
         | Choice1Of2 (Some index) ->
@@ -142,36 +142,36 @@ module LeakUtils =
     // We also need something non trivial to dissuade the compiler from inlining in Release builds.
     type ToRun<'a>(f : unit -> 'a) =
         member _.Invoke() = f()
-   
+
     let run (toRun : ToRun<'a>) = toRun.Invoke()
 
 // ---------------------------------------------------
 
 type AsyncModule() =
-    
+
     /// Simple asynchronous task that delays 200ms and returns a list of the current tick count
     let getTicksTask =
         async {
             do! Async.SwitchToThreadPool()
             let mutable tickstamps = [] // like timestamps but for ticks :)
-            
+
             for i = 1 to 10 do
                 tickstamps <- DateTime.UtcNow.Ticks :: tickstamps
                 do! Async.Sleep(20)
-                
+
             return tickstamps
         }
 
-    let wait (wh : System.Threading.WaitHandle) (timeoutMilliseconds : int) = 
+    let wait (wh : System.Threading.WaitHandle) (timeoutMilliseconds : int) =
         wh.WaitOne(timeoutMilliseconds, exitContext=false)
 
     let dispose(d : #IDisposable) = d.Dispose()
 
-    let testErrorAndCancelRace testCaseName computation = 
+    let testErrorAndCancelRace testCaseName computation =
         for i in 1..20 do
             let cts = new System.Threading.CancellationTokenSource()
             use barrier = new System.Threading.ManualResetEvent(false)
-            async { cts.Cancel() } 
+            async { cts.Cancel() }
             |> Async.Start
 
             let c = ref 0
@@ -190,6 +190,25 @@ type AsyncModule() =
             if c.Value = 2 then Assert.Fail("both error and cancel continuations were called")
 
     [<Fact>]
+    member _.``Async.RunImmediate should execute on the same thread`` () =
+        let t =
+            async {
+                let a = Thread.CurrentThread.ManagedThreadId
+                let b =
+                    async {
+                        return Thread.CurrentThread.ManagedThreadId
+                    } |> Async.RunImmediate
+                let c = Thread.CurrentThread.ManagedThreadId
+                return $"Before: {a}, in async: {b}, after async: {c}"
+            } |> Async.RunImmediate
+
+        let d = Thread.CurrentThread.ManagedThreadId
+        let actual = $"{t}, after task: {d}"
+
+        if not (actual = $"Before: {d}, in async: {d}, after async: {d}, after task: {d}") then
+            failwith actual
+
+    [<Fact>]
     member _.AwaitIAsyncResult() =
 
         let beginOp, endOp, cancelOp = Async.AsBeginEnd(fun() -> getTicksTask)
@@ -203,8 +222,8 @@ type AsyncModule() =
         // When the operation has already completed
         let operationIAR = beginOp ((), new AsyncCallback(fun iar -> ()), null)
         sleep(250)
-        
-        let result = Async.AwaitIAsyncResult(operationIAR) |> Async.RunSynchronously        
+
+        let result = Async.AwaitIAsyncResult(operationIAR) |> Async.RunSynchronously
         match result with
         | true  -> ()
         | false -> Assert.Fail("Timed out. Expected to succeed.")
@@ -217,11 +236,11 @@ type AsyncModule() =
         | false -> ()
 
     [<Fact(Skip = "Flaky")>]
-    member _.``AwaitWaitHandle.Timeout``() = 
+    member _.``AwaitWaitHandle.Timeout``() =
         use waitHandle = new System.Threading.ManualResetEvent(false)
         let startTime = DateTime.UtcNow
 
-        let r = 
+        let r =
             Async.AwaitWaitHandle(waitHandle, 500)
             |> Async.RunSynchronously
 
@@ -232,19 +251,19 @@ type AsyncModule() =
         Assert.True(delta.TotalMilliseconds < 1100.0, sprintf "Expected faster timeout than %.0f ms" delta.TotalMilliseconds)
 
     [<Fact>]
-    member _.``AwaitWaitHandle.TimeoutWithCancellation``() = 
+    member _.``AwaitWaitHandle.TimeoutWithCancellation``() =
         use barrier = new System.Threading.ManualResetEvent(false)
         use waitHandle = new System.Threading.ManualResetEvent(false)
         let cts = new System.Threading.CancellationTokenSource()
 
         Async.AwaitWaitHandle(waitHandle, 5000)
         |> Async.Ignore
-        |> fun c -> 
+        |> fun c ->
                     Async.StartWithContinuations(
-                        c, 
-                        (failwithf "Unexpected success %A"), 
-                        (failwithf "Unexpected error %A"), 
-                        (fun _ -> barrier.Set() |> ignore), 
+                        c,
+                        (failwithf "Unexpected success %A"),
+                        (failwithf "Unexpected error %A"),
+                        (fun _ -> barrier.Set() |> ignore),
                         cts.Token
                     )
 
@@ -259,9 +278,9 @@ type AsyncModule() =
         if not ok then Assert.Fail("Async computation was not completed in given time")
 
     [<Fact>]
-    member _.``AwaitWaitHandle.DisposedWaitHandle1``() = 
+    member _.``AwaitWaitHandle.DisposedWaitHandle1``() =
         let wh = new System.Threading.ManualResetEvent(false)
-        
+
         dispose wh
         let test = async {
             try
@@ -275,8 +294,8 @@ type AsyncModule() =
 
     // test is flaky: https://github.com/dotnet/fsharp/issues/11586
     //[<Fact>]
-    member _.``OnCancel.RaceBetweenCancellationHandlerAndDisposingHandlerRegistration``() = 
-        let test() = 
+    member _.``OnCancel.RaceBetweenCancellationHandlerAndDisposingHandlerRegistration``() =
+        let test() =
             use flag = new ManualResetEvent(false)
             use cancelHandlerRegistered = new ManualResetEvent(false)
             let cts = new System.Threading.CancellationTokenSource()
@@ -299,7 +318,7 @@ type AsyncModule() =
 
     // test is flaky: https://github.com/dotnet/fsharp/issues/11586
     //[<Fact>]
-    member _.``OnCancel.RaceBetweenCancellationAndDispose``() = 
+    member _.``OnCancel.RaceBetweenCancellationAndDispose``() =
         let mutable flag = 0
         let cts = new System.Threading.CancellationTokenSource()
         let go = async {
@@ -318,8 +337,8 @@ type AsyncModule() =
 
     // test is flaky: https://github.com/dotnet/fsharp/issues/11586
     //[<Fact>]
-    member _.``OnCancel.CancelThatWasSignalledBeforeRunningTheComputation``() = 
-        let test() = 
+    member _.``OnCancel.CancelThatWasSignalledBeforeRunningTheComputation``() =
+        let test() =
             let cts = new System.Threading.CancellationTokenSource()
             let go e (flag : bool ref) = async {
                 let! _ = Async.AwaitWaitHandle e
@@ -347,13 +366,13 @@ type AsyncModule() =
         // This test checks that AwaitWaitHandle does not leak continuations (described in #131),
         // We only test the worst case - when the AwaitWaitHandle is already set.
         use manualResetEvent = new System.Threading.ManualResetEvent(true)
-        
-        let tryToLeak() = 
-            let resource = 
+
+        let tryToLeak() =
+            let resource =
                 LeakUtils.ToRun (fun () ->
                     let resource = obj()
-                    let work = 
-                        async { 
+                    let work =
+                        async {
                             let! _ = Async.AwaitWaitHandle manualResetEvent
                             GC.KeepAlive(resource)
                             return ()
@@ -372,13 +391,13 @@ type AsyncModule() =
             GC.Collect()
 
             Assert.False(resource.IsAlive)
-        
+
         // The leak hangs on a race condition which is really hard to trigger in F# 3.0, hence the 100000 runs...
         for _ in 1..10 do tryToLeak()
 #endif
 
     [<Fact>]
-    member _.``AwaitWaitHandle.DisposedWaitHandle2``() = 
+    member _.``AwaitWaitHandle.DisposedWaitHandle2``() =
         let wh = new System.Threading.ManualResetEvent(false)
         let barrier = new System.Threading.ManualResetEvent(false)
 
@@ -393,12 +412,12 @@ type AsyncModule() =
         let timeout = wait barrier 3000
         Assert.False(timeout, "Barrier was reached too early")
         dispose wh
-        
+
         let ok = wait barrier 10000
         if not ok then Assert.Fail("Async computation was not completed in given time")
 
     [<Fact>]
-    member _.``RunSynchronously.NoThreadJumpsAndTimeout``() = 
+    member _.``RunSynchronously.NoThreadJumpsAndTimeout``() =
             let longRunningTask = async { sleep(5000) }
             try
                 Async.RunSynchronously(longRunningTask, timeout = 500)
@@ -407,7 +426,7 @@ type AsyncModule() =
                 :? System.TimeoutException -> ()
 
     [<Fact>]
-    member _.``RunSynchronously.NoThreadJumpsAndTimeout.DifferentSyncContexts``() = 
+    member _.``RunSynchronously.NoThreadJumpsAndTimeout.DifferentSyncContexts``() =
         let run syncContext =
             let old = SynchronizationContext.Current
             SynchronizationContext.SetSynchronizationContext(syncContext)
@@ -425,7 +444,7 @@ type AsyncModule() =
 
     [<Fact>]
     // See https://github.com/dotnet/fsharp/issues/12637#issuecomment-1020199383
-    member _.``RunSynchronously.ThreadJump.IfSyncCtxtNonNull``() = 
+    member _.``RunSynchronously.ThreadJump.IfSyncCtxtNonNull``() =
         async {
             do! Async.SwitchToThreadPool()
             let old = SynchronizationContext.Current
@@ -444,7 +463,7 @@ type AsyncModule() =
         |> Async.RunSynchronously
 
     [<Fact>]
-    member _.``RaceBetweenCancellationAndError.AwaitWaitHandle``() = 
+    member _.``RaceBetweenCancellationAndError.AwaitWaitHandle``() =
         let disposedEvent = new System.Threading.ManualResetEvent(false)
         dispose disposedEvent
         testErrorAndCancelRace "RaceBetweenCancellationAndError.AwaitWaitHandle" (Async.AwaitWaitHandle disposedEvent)
@@ -476,13 +495,13 @@ type AsyncModule() =
 
     [<Fact>]
     member _.``error on one workflow should cancel all others``() =
-        let counter = 
+        let counter =
             async {
                 let mutable counter = 0
-                let job i = async { 
-                    if i = 55 then failwith "boom" 
-                    else 
-                        do! Async.Sleep 1000 
+                let job i = async {
+                    if i = 55 then failwith "boom"
+                    else
+                        do! Async.Sleep 1000
                         counter <- counter + 1
                 }
 
@@ -494,7 +513,7 @@ type AsyncModule() =
         Assert.AreEqual(0, counter)
 
     [<Fact>]
-    member _.``AwaitWaitHandle.ExceptionsAfterTimeout``() = 
+    member _.``AwaitWaitHandle.ExceptionsAfterTimeout``() =
         let wh = new System.Threading.ManualResetEvent(false)
         let test = async {
             try
@@ -506,40 +525,40 @@ type AsyncModule() =
                 :? InvalidOperationException as e when e.Message = "EXPECTED" -> return ()
             }
         Async.RunSynchronously(test)
-        
+
     [<Fact>]
-    member _.``FromContinuationsCanTailCallCurrentThread``() = 
+    member _.``FromContinuationsCanTailCallCurrentThread``() =
         let mutable cnt = 0
-        let origTid = System.Threading.Thread.CurrentThread.ManagedThreadId 
+        let origTid = System.Threading.Thread.CurrentThread.ManagedThreadId
         let mutable finalTid = -1
         let rec f n =
             if n = 0 then
-                async { 
+                async {
                     finalTid <- System.Threading.Thread.CurrentThread.ManagedThreadId
                     return () }
             else
                 async {
                     cnt <- cnt + 1
                     do! Async.FromContinuations(fun (k,_,_) -> k())
-                    do! f (n-1) 
+                    do! f (n-1)
                 }
         // 5000 is big enough that does-not-stackoverflow means we are tailcalling thru FromContinuations
-        f 5000 |> Async.StartImmediate 
+        f 5000 |> Async.StartImmediate
         Assert.AreEqual(origTid, finalTid)
         Assert.AreEqual(5000, cnt)
 
     [<Fact>]
-    member _.``AwaitWaitHandle With Cancellation``() = 
+    member _.``AwaitWaitHandle With Cancellation``() =
         let run wh = async {
             let! r = Async.AwaitWaitHandle wh
             Assert.True(r, "Timeout not expected")
-            return() 
+            return()
             }
-        let test () = 
+        let test () =
             let wh = new System.Threading.ManualResetEvent(false)
             let cts = new System.Threading.CancellationTokenSource()
             let asyncs =
-                [ 
+                [
                   yield! List.init 100 (fun _ -> run wh)
                   yield async { cts.Cancel() }
                   yield async { wh.Set() |> ignore }
@@ -554,7 +573,7 @@ type AsyncModule() =
         for _ in 1..1000 do test()
 
     [<Fact>]
-    member _.``StartWithContinuationsVersusDoBang``() = 
+    member _.``StartWithContinuationsVersusDoBang``() =
         // worthwhile to note these three
         // case 1
         let mutable r = ""
@@ -563,8 +582,8 @@ type AsyncModule() =
                 do! Async.FromContinuations(fun (s, _, _) -> s())
                 return failwith "boom"
             with
-                e-> r <- e.Message 
-            } |> Async.RunSynchronously 
+                e-> r <- e.Message
+            } |> Async.RunSynchronously
         Assert.AreEqual("boom", r)
         // case 2
         r <- ""
@@ -581,37 +600,37 @@ type AsyncModule() =
 
 #if IGNORED
     [<Test; Ignore("See https://github.com/dotnet/fsharp/issues/4887")>]
-    member _.``SleepContinuations``() = 
+    member _.``SleepContinuations``() =
         let okCount = ref 0
         let errCount = ref 0
-        let test() = 
-            let cts = new System.Threading.CancellationTokenSource() 
- 
-            System.Threading.ThreadPool.QueueUserWorkItem(fun _-> 
-                System.Threading.Thread.Sleep 50 
-                try 
-                    Async.StartWithContinuations( 
-                        Async.Sleep(1000), 
-                        (fun _ -> printfn "ok"; incr okCount), 
-                        (fun _ -> printfn "error"; incr errCount), 
-                        (fun _ -> printfn "cancel"; failwith "BOOM!"), 
-                        cancellationToken = cts.Token 
-                    ) 
-                with _ -> () 
-            ) |> ignore 
-            System.Threading.Thread.Sleep 50 
-            try cts.Cancel() with _ -> () 
-            System.Threading.Thread.Sleep 1500 
-            printfn "====" 
+        let test() =
+            let cts = new System.Threading.CancellationTokenSource()
+
+            System.Threading.ThreadPool.QueueUserWorkItem(fun _->
+                System.Threading.Thread.Sleep 50
+                try
+                    Async.StartWithContinuations(
+                        Async.Sleep(1000),
+                        (fun _ -> printfn "ok"; incr okCount),
+                        (fun _ -> printfn "error"; incr errCount),
+                        (fun _ -> printfn "cancel"; failwith "BOOM!"),
+                        cancellationToken = cts.Token
+                    )
+                with _ -> ()
+            ) |> ignore
+            System.Threading.Thread.Sleep 50
+            try cts.Cancel() with _ -> ()
+            System.Threading.Thread.Sleep 1500
+            printfn "===="
         for i = 1 to 3 do test()
         Assert.AreEqual(0, !okCount)
         Assert.AreEqual(0, !errCount)
 #endif
 
     [<Fact>]
-    member _.``Async caching should work``() = 
+    member _.``Async caching should work``() =
         let mutable x = 0
-        let someSlowFunc _mykey = async { 
+        let someSlowFunc _mykey = async {
             Console.WriteLine "Simulated downloading..."
             do! Async.Sleep 400
             Console.WriteLine "Simulated downloading Done."
@@ -625,7 +644,7 @@ type AsyncModule() =
             do! memFunc "a" |> Async.Ignore
             do! memFunc "a" |> Async.Ignore
             do! memFunc "a" |> Async.Ignore
-            do! [|1 .. 30|] |> Seq.map(fun _ -> (memFunc "a")) 
+            do! [|1 .. 30|] |> Seq.map(fun _ -> (memFunc "a"))
                 |> Async.Parallel |> Async.Ignore
 
             Console.WriteLine "Still more ways...."
@@ -640,7 +659,7 @@ type AsyncModule() =
                 Async.Start( memFunc "a" |> Async.Ignore )
 
             Console.WriteLine "Still more ways again again...."
-            do! [|1 .. 30|] |> Seq.map(fun _ -> (memFunc "a")) 
+            do! [|1 .. 30|] |> Seq.map(fun _ -> (memFunc "a"))
                 |> Async.Parallel |> Async.Ignore
         } |> Async.RunSynchronously
         Console.WriteLine "Checking result...."
@@ -737,16 +756,16 @@ type AsyncModule() =
                         // index 1 will enter the try/finally quickly, call failwith and cancel the other tasks
                         // One of index 2 and index 3 will be stuck here before the try/finally. But having got
                         // this far it should enter the try/finally before cancellation takes effect
-                        do 
+                        do
                           lock gate <| fun () -> printfn "[%i] Acquired semaphore" index
                           Interlocked.Increment(&acquiredCount) |> ignore
-                          if index <> 0 then 
+                          if index <> 0 then
                               lock gate <| fun () -> printfn "[%i] Slowly entering try/finally" index
                               System.Threading.Thread.Sleep(100)
 
                         try
                             lock gate <| fun () -> printfn "[%i] Within try-finally" index
-                            if index = 0 then 
+                            if index = 0 then
                                 lock gate <| fun () -> printfn "[%i] Error" index
                                 // The failure will cause others to cancel
                                 failwith "Something bad happened!"
