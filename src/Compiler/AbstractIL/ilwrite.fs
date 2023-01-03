@@ -3744,7 +3744,6 @@ let writePdb (
                         stream.WriteTo fs
                     getInfoForPortablePdb contentId pdbfile pathMap debugDataChunk debugDeterministicPdbChunk debugChecksumPdbChunk algorithmName checkSum embeddedPDB deterministic
             | None -> [| |]
-        reportTime "Generate PDB Info"
 
         // Now we have the debug data we can go back and fill in the debug directory in the image
         use fs2 = reopenOutput()
@@ -3772,6 +3771,7 @@ let writePdb (
             reportTime "Finalize PDB"
             signImage ()
             os2.Dispose()
+            reportTime "Generate PDB Info"
         with exn ->
             failwith ("Error while writing debug directory entry: " + exn.Message)
             (try os2.Dispose(); FileSystem.FileDeleteShim outfile with _ -> ())

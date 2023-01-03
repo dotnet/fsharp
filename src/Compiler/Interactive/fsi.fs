@@ -1328,6 +1328,37 @@ let internal mkBoundValueTypedImpl tcGlobals m moduleName name ty =
     let qname = QualifiedNameOfFile.QualifiedNameOfFile(Ident(moduleName, m))
     entity, v, CheckedImplFile.CheckedImplFile(qname, [], mty, contents, false, false, StampMap.Empty, Map.empty)
 
+
+let scriptingDirectory =
+    let createDirectory directory =
+        lazy
+            try
+                if not (Directory.Exists(directory)) then
+                    Directory.CreateDirectory(directory) |> ignore
+
+                directory
+            with _ ->
+                directory
+
+    createDirectory (Path.Combine(Path.GetTempPath(), $"{DateTime.Now:s}-{Guid.NewGuid():n}".Replace(':', '-')))
+
+let deleteScripts () =
+    try
+#if !DEBUG
+            if scriptingDirectory.IsValueCreated then
+                if Directory.Exists(scriptingDirectory.Value) then
+                    Directory.Delete(scriptingDirectory.Value, true)
+#else
+            ()
+#endif
+    with _ ->
+        ()
+
+do AppDomain.CurrentDomain.ProcessExit |> Event.add (fun _ -> deleteScripts ())
+
+let dynamicCcuName = "FSI-ASSEMBLY"
+let dynamicCCuInternalsVisibleArgument = $"{dynamicCcuName}"
+
 /// Encapsulates the coordination of the typechecking, optimization and code generation
 /// components of the F# compiler for interactively executed fragments of code.
 ///
@@ -1350,12 +1381,12 @@ type internal FsiDynamicCompiler(
 
     let outfile = "TMPFSCI.exe"
 
-    let dynamicCcuName = "FSI-ASSEMBLY"
-
     let valueBoundEvent = Control.Event<_>()
 
     let mutable fragmentId = 0
+
     static let mutable dynamicAssemblyId = 0
+
     static let maxVersion = int Int16.MaxValue
 
     let mutable prevIt : ValRef option = None
@@ -1387,7 +1418,8 @@ type internal FsiDynamicCompiler(
     /// Add attributes
     let CreateModuleFragment (tcConfigB: TcConfigBuilder, dynamicCcuName, codegenResults) =
         if progress then fprintfn fsiConsoleOutput.Out "Creating main module..."
-        let mainModule = mkILSimpleModule dynamicCcuName (GetGeneratedILModuleName tcConfigB.target dynamicCcuName) (tcConfigB.target = CompilerTarget.Dll) tcConfigB.subsystemVersion tcConfigB.useHighEntropyVA (mkILTypeDefs codegenResults.ilTypeDefs) None None 0x0 (mkILExportedTypes []) ""
+        let mainModule =
+            mkILSimpleModule dynamicCcuName (GetGeneratedILModuleName tcConfigB.target dynamicCcuName) (tcConfigB.target = CompilerTarget.Dll) tcConfigB.subsystemVersion tcConfigB.useHighEntropyVA (mkILTypeDefs codegenResults.ilTypeDefs) None None 0x0 (mkILExportedTypes []) ""
         { mainModule
           with Manifest =
                 (let man = mainModule.ManifestOfAssembly
@@ -1402,7 +1434,7 @@ type internal FsiDynamicCompiler(
         let manifest =
             let manifest = ilxMainModule.Manifest.Value
             let attrs = [
-                tcGlobals.MakeInternalsVisibleToAttribute(ilxMainModule.ManifestOfAssembly.Name)
+                tcGlobals.MakeInternalsVisibleToAttribute(dynamicCCuInternalsVisibleArgument)
                 yield! manifest.CustomAttrs.AsList()
                 ]
             { manifest with 
@@ -1412,7 +1444,7 @@ type internal FsiDynamicCompiler(
                 CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs attrs)
             }
 
-        // The name of the assembly is "FSI-ASSEMBLY" for all submissions. This number is used for the Version 
+        // The name of the assembly is "FSI-ASSEMBLY" for all submissions. This number is used for the Version
         dynamicAssemblyId <- (dynamicAssemblyId + 1) % maxVersion
 
         let ilxMainModule = { ilxMainModule with Manifest = Some manifest }
@@ -1421,44 +1453,58 @@ type internal FsiDynamicCompiler(
         let ilxMainModule =
             ilxMainModule |> Morphs.morphILTypeRefsInILModuleMemoized emEnv.MapTypeRef
 
-        let opts = 
-            { ilg = tcGlobals.ilg
-              // This is not actually written, because we are writing to a stream,
-              // but needs to be set for some logic of ilwrite to function.
-              outfile = multiAssemblyName + ".dll"
-              // This is not actually written, because we embed debug info,
-              // but needs to be set for some logic of ilwrite to function.
-              pdbfile = (if tcConfig.debuginfo then Some (multiAssemblyName + ".pdb") else None)
-              emitTailcalls = tcConfig.emitTailcalls
-              deterministic = tcConfig.deterministic           
-              // we always use portable for F# Interactive debug emit
-              portablePDB = true
-              // we don't use embedded for F# Interactive debug emit
-              embeddedPDB = false
-              embedAllSource = tcConfig.embedAllSource
-              embedSourceList = tcConfig.embedSourceList
-              // we don't add additional source files to the debug document set
-              allGivenSources = []
-              sourceLink = tcConfig.sourceLink
-              checksumAlgorithm = tcConfig.checksumAlgorithm
-              signer = None
-              dumpDebugInfo = tcConfig.dumpDebugInfo
-              referenceAssemblyOnly = false
-              referenceAssemblyAttribOpt = None
-              pathMap = tcConfig.pathMap }
+        let opts = {
+            ilg = tcGlobals.ilg
+            // This is not actually written, because we are writing to a stream,
+            // but needs to be set for some logic of ilwrite to function.
+            outfile = multiAssemblyName + ".dll"
+            // This is not actually written, because we embed debug info,
+            // but needs to be set for some logic of ilwrite to function.
+            pdbfile = (if tcConfig.debuginfo then Some ($"{multiAssemblyName}-{dynamicAssemblyId}.pdb") else None)
+            emitTailcalls = tcConfig.emitTailcalls
+            deterministic = tcConfig.deterministic
+            showTimes = tcConfig.showTimes
+            // we always use portable for F# Interactive debug emit
+            portablePDB = true
+            embeddedPDB = false
+            embedAllSource = true
+            embedSourceList = tcConfig.embedSourceList
+            // we don't add additional source files to the debug document set
+            allGivenSources = []
+            sourceLink = tcConfig.sourceLink
+            checksumAlgorithm = tcConfig.checksumAlgorithm
+            signer = None
+            dumpDebugInfo = tcConfig.dumpDebugInfo
+            referenceAssemblyOnly = false
+            referenceAssemblyAttribOpt = None
+            pathMap = tcConfig.pathMap
+        }
 
-        let normalizeAssemblyRefs = id
-
-        let assemblyBytes, pdbBytes = WriteILBinaryInMemory (opts, ilxMainModule, normalizeAssemblyRefs)
+        let assemblyBytes, pdbBytes = WriteILBinaryInMemory (opts, ilxMainModule, id)
 
         let asm =
-            match pdbBytes with
-            | None -> Assembly.Load(assemblyBytes)
-            | Some pdbBytes -> Assembly.Load(assemblyBytes, pdbBytes)
-        dynamicAssemblies.Add(asm)
+            if tcConfig.debuginfo then
+                //debug+ specified so debugging is possible, write pdb file to disk
+                match opts.pdbfile, pdbBytes with
+                | (Some pdbfile), (Some pdbBytes) ->
+                    let path = Path.Combine(scriptingDirectory.Value, pdbfile)
+                    File.WriteAllBytes(path,  pdbBytes)
+                | _ -> ()
 
-        let loadedTypes = [ for t in asm.GetTypes() -> t]
-        ignore loadedTypes
+                //debug+ specified so debugging is possible, write file to disk
+                let path = Path.Combine(scriptingDirectory.Value, $"{multiAssemblyName}-{dynamicAssemblyId}.exe")
+                File.WriteAllBytes(path,  assemblyBytes)
+                Assembly.LoadFile(path)
+            else
+                match pdbBytes with
+                | None -> Assembly.Load(assemblyBytes)
+                | Some pdbBytes -> Assembly.Load(assemblyBytes, pdbBytes)
+
+        // Force generated types to load
+        do [ for t in asm.GetTypes() -> t] |> ignore
+
+        // remember this assembly
+        dynamicAssemblies.Add(asm)
 
         let ilScopeRef = ILScopeRef.Assembly (ILAssemblyRef.FromAssemblyName(asm.GetName()))
 
@@ -1475,7 +1521,7 @@ type internal FsiDynamicCompiler(
         let execs =
             [ for edef in entries do
                 if edef.ArgCount = 0 then
-                    yield (fun () -> 
+                    yield (fun () ->
                         let typ = asm.GetType(edef.DeclaringTypeRef.BasicQualifiedName)
                         try
                             ignore (typ.InvokeMember (edef.Name, BindingFlags.InvokeMethod ||| BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Static, null, null, [| |], Globalization.CultureInfo.InvariantCulture))
