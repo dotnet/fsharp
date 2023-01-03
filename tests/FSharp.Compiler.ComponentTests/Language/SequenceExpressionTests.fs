@@ -8,8 +8,7 @@ open FSharp.Test.Compiler
 
 [<Fact>]
 let ``A sequence expression can yield from with clause``() =
-    FSharp """
-module SequenceTryWithTest
+    Fsx """
 let sum =
     seq {
         for x in [0;1] do       
@@ -22,14 +21,13 @@ let sum =
 if sum <> 110 then
     failwith $"Sum was {sum} instead"
     """
+    |> asExe
     |> compileAndRun
     |> shouldSucceed
-    |> ignore
 
 [<Fact>]
 let ``A sequence expression can yield from try and have empty with``() =
-    FSharp """
-module SequenceTryWithTest
+    Fsx """
 let sum =
     seq {
         for x in [1;0] do       
@@ -42,14 +40,13 @@ let sum =
 if sum <> 10 then
     failwith $"Sum was {sum} instead"
     """
+    |> asExe
     |> compileAndRun
     |> shouldSucceed
-    |> ignore
 
 [<Fact>]
 let ``A sequence expression can yield from with and have empty try``() =
-    FSharp """
-module SequenceTryWithTest
+    Fsx """
 let sum =
     seq {
         for x in [1;0] do       
@@ -63,15 +60,14 @@ let sum =
 if sum <> 100 then
     failwith $"Sum was {sum} instead"
     """
+    |> asExe
     |> compileAndRun
     |> shouldSucceed
-    |> ignore
 
 
 [<Fact>]
 let ``A sequence expression can have implicit yields in try-with``() =
-    FSharp """
-module SequenceTryWithTest
+    Fsx """
 let sum =
     seq {
         for x in [0;1] do       
@@ -84,7 +80,31 @@ let sum =
 if sum <> 110 then
     failwith $"Sum was {sum} instead"
     """
+    |> asExe
     |> compileAndRun
     |> shouldSucceed
-    |> ignore
+
+[<Theory>]
+[<InlineData("42","false","false")>]
+[<InlineData("42","43","false")>]
+[<InlineData("42","false","43")>]
+[<InlineData("41","42","43")>]
+[<InlineData("()","42","43")>]
+[<InlineData("41","()","43")>]
+[<InlineData("41","42","()")>]
+[<InlineData("()","()","()")>]
+let ``Typecheck mismatch between try and match return types``(valInTry,valInWith1,valInWith2) =
+    Fsx $"""
+let typedSeq =
+    seq {{
+        for x in [0;1] do       
+            try
+                %s{valInTry}
+            with
+            |_ when x = 0 -> %s{valInWith1}
+            |_ when x = 0 -> %s{valInWith2}
+    }}
+    """
+    |> typecheck
+    |> shouldSucceed
  

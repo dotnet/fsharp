@@ -2085,7 +2085,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
 
             // Compile the pattern twice, once as a List.filter with all succeeding targets returning "1", and once as a proper catch block.
             let clauses, tpenv = 
-                (tpenv, withList) ||> List.mapFold (fun tpenv (SynMatchClause(pat, cond, innerComp, m, sp, trivia)) ->
+                (tpenv, withList) ||> List.mapFold (fun tpenv (SynMatchClause(pat, cond, innerComp, m, sp, _)) ->
                     let patR, condR, vspecs, envinner, tpenv = TcMatchPattern cenv g.exn_ty env tpenv pat cond
                     let envinner =
                         match sp with
