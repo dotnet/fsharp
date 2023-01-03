@@ -3,10 +3,10 @@
 open System.Collections.Generic
 open FSharp.Compiler.Syntax
 
-type File = string
-type ModuleSegment = string
+type internal File = string
+type internal ModuleSegment = string
 
-type FileWithAST =
+type internal FileWithAST =
     {
         Idx: int
         File: File
@@ -17,7 +17,7 @@ type FileWithAST =
 /// A namespace does not necessarily expose a set of dependent files.
 /// Only when the namespace exposes types that could later be inferred.
 /// Children of a namespace don't automatically depend on each other for that reason
-type TrieNodeInfo =
+type internal TrieNodeInfo =
     | Root of files: HashSet<int>
     | Module of segment: string * file: int
     | Namespace of segment: string * filesThatExposeTypes: HashSet<int>
@@ -28,7 +28,7 @@ type TrieNodeInfo =
         | Module (file = file) -> Set.singleton file
         | Namespace (filesThatExposeTypes = files) -> set files
 
-type TrieNode =
+type internal TrieNode =
     {
         Current: TrieNodeInfo
         Children: Dictionary<ModuleSegment, TrieNode>
@@ -36,7 +36,7 @@ type TrieNode =
 
     member x.Files = x.Current.Files
 
-type FileContentEntry =
+type internal FileContentEntry =
     /// Any toplevel namespace a file might have.
     /// In case a file has `module X.Y.Z`, then `X.Y` is considered to be the toplevel namespace
     | TopLevelNamespace of path: ModuleSegment list * content: FileContentEntry list
@@ -49,14 +49,14 @@ type FileContentEntry =
     /// We can scope an `OpenStatement` to the everything that is happening inside the nested module.
     | NestedModule of name: string * nestedContent: FileContentEntry list
 
-type FileContent =
+type internal FileContent =
     {
         Name: File
         Idx: int
         Content: FileContentEntry array
     }
 
-type FileContentQueryState =
+type internal FileContentQueryState =
     {
         OwnNamespace: ModuleSegment list option
         OpenedNamespaces: Set<ModuleSegment list>
@@ -111,7 +111,7 @@ type FileContentQueryState =
         | Some ownNs -> Set.add ownNs x.OpenedNamespaces
 
 [<RequireQualifiedAccess>]
-type QueryTrieNodeResult =
+type internal QueryTrieNodeResult =
     /// No node was found for the path in the trie
     | NodeDoesNotExist
     /// A node was found but it yielded no file links
@@ -119,10 +119,10 @@ type QueryTrieNodeResult =
     /// A node was found with one or more file links
     | NodeExposesData of Set<int>
 
-type QueryTrie = ModuleSegment list -> QueryTrieNodeResult
+type internal QueryTrie = ModuleSegment list -> QueryTrieNodeResult
 
 /// Helper class to help map signature files to implementation files and vice versa.
-type FilePairMap(files: FileWithAST array) =
+type internal FilePairMap(files: FileWithAST array) =
     let implToSig, sigToImpl =
         Array.choose
             (fun f ->

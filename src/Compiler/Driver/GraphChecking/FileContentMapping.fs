@@ -1,4 +1,4 @@
-﻿module rec FSharp.Compiler.GraphChecking.FileContentMapping
+﻿module internal rec FSharp.Compiler.GraphChecking.FileContentMapping
 
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps

@@ -8,9 +8,9 @@ open System.Collections.Generic
 open System.Linq
 
 /// <summary> Directed Acyclic Graph (DAG) of arbitrary nodes </summary>
-type Graph<'Node> = IReadOnlyDictionary<'Node, 'Node[]>
+type internal Graph<'Node> = IReadOnlyDictionary<'Node, 'Node[]>
 
-module Graph =
+module internal Graph =
     let memoize<'a, 'b when 'a: equality> f : ('a -> 'b) =
         let y = HashIdentity.Structural<'a>
         let d = new ConcurrentDictionary<'a, 'b>(y)

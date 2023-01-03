@@ -1,5 +1,5 @@
 ﻿[<RequireQualifiedAccess>]
-module Continuation
+module internal Continuation
 
 let rec sequence<'a, 'ret> (recursions: (('a -> 'ret) -> 'ret) list) (finalContinuation: 'a list -> 'ret) : 'ret =
     match recursions with

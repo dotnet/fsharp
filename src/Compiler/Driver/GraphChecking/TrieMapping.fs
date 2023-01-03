@@ -1,4 +1,4 @@
-﻿module FSharp.Compiler.GraphChecking.TrieMapping
+﻿module internal FSharp.Compiler.GraphChecking.TrieMapping
 
 open System.Collections.Generic
 open FSharp.Compiler.Syntax

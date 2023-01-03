@@ -1,4 +1,4 @@
-﻿module FSharp.Compiler.GraphChecking.DependencyResolution
+﻿module internal FSharp.Compiler.GraphChecking.DependencyResolution
 
 open FSharp.Compiler.Syntax
 
