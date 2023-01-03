@@ -1654,18 +1654,17 @@ module MutRecBindingChecking =
              mBinds 
         
         defnsEs, envMutRec
-        
-let private CheckStaticClassElements (synMembers: SynMemberDefn list) =
+
+let private ReportErrorOnStaticClass (synMembers: SynMemberDefn list) =
     for mem in synMembers do
         match mem with
         | SynMemberDefn.ImplicitCtor(ctorArgs= SynSimplePats.SimplePats(pats= pats)) when  (not pats.IsEmpty) ->
             for pat in pats do
-                errorR(Error(FSComp.SR.chkErrorOnStaticClasses "constructor arguments are", pat.Range))
+                errorR(Error(FSComp.SR.chkConstructorWithArgumentsOnStaticClasses(), pat.Range))
            
         | SynMemberDefn.Member(SynBinding(valData = SynValData(memberFlags = Some memberFlags)), m)  when memberFlags.MemberKind = SynMemberKind.Constructor ->
-            errorR(Error(FSComp.SR.chkErrorOnStaticClasses "additional constructors are", m));
+            errorR(Error(FSComp.SR.chkAdditionalConstructorOnStaticClasses(), m));
         | _ -> ()
-
 
 /// Check and generalize the interface implementations, members, 'let' definitions in a mutually recursive group of definitions.
 let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (envMutRec: TcEnv) (mutRecDefns: MutRecDefnsPhase2Data) isMutRec =     
@@ -1768,9 +1767,11 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (env
       let binds: MutRecDefnsPhase2Info = 
           (envMutRec, mutRecDefns) ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls tyconData -> 
               let (MutRecDefnsPhase2DataForTycon(tyconOpt, _x, declKind, tcref, _, _, declaredTyconTypars, synMembers, _, _, fixupFinalAttrs)) = tyconData
+              
+              // If a tye uses both [<Sealed>] and [<AbstractClass>] attributes it means it is a static class.
               let isStaticClass = HasFSharpAttribute cenv.g cenv.g.attrib_SealedAttribute tcref.Attribs && HasFSharpAttribute cenv.g cenv.g.attrib_AbstractClassAttribute tcref.Attribs
               if isStaticClass && cenv.g.langVersion.SupportsFeature(LanguageFeature.ErrorReportingOnStaticClasses) then
-                  CheckStaticClassElements synMembers
+                  ReportErrorOnStaticClass synMembers
               
               let envForDecls = 
                 // This allows to implement protected interface methods if it's a DIM.
