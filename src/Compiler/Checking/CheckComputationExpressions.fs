@@ -2081,7 +2081,17 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
 
         | SynExpr.TryWith (innerTry,withList,mTryToWith,spTry,spWith,trivia) ->
             let env = { env with eIsControlFlow = true }
-            let tryExpr, tpenv = tcSequenceExprBody env genOuterTy tpenv innerTry
+            let tryExpr, tpenv = 
+                // If we have multiple yields/implicit below each other, we want to keep the results before failure
+                // Therefore, each 'Sequential' (expr1;expr2) can either fail the first one (outer with caters for it)
+                // -OR-, the first expr can suceed and yield something, and only the second fails - we add an artificial 'with' 
+                let liftedInnerSynExpr = 
+                    match innerTry with
+                    | SynExpr.Sequential(sp, isTrueSeq, innerComp1, innerComp2, m) ->
+                        let wrappedComp2 = SynExpr.TryWith(innerComp2,withList,m,spTry,spWith,trivia)
+                        SynExpr.Sequential(sp, isTrueSeq, innerComp1, wrappedComp2, m)
+                    | other -> other
+                tcSequenceExprBody env genOuterTy tpenv liftedInnerSynExpr
 
             // Compile the pattern twice, once as a List.filter with all succeeding targets returning "1", and once as a proper catch block.
             let clauses, tpenv = 

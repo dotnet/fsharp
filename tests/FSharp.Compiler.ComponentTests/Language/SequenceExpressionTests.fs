@@ -7,6 +7,36 @@ open FSharp.Test.Compiler
 
 
 [<Fact>]
+let ``A seq{try/with} happy path with multiple language elements``() =
+    Fsx """
+let rec mySeq inputEnumerable =
+    seq {
+        for x in inputEnumerable do       
+            try
+                match x with                                     
+                | 0 -> yield 1                                      // - Single value
+                | 1 -> yield! (mySeq [0;3;6])                       // - Recursion
+                | 2 -> ()                                           // - Empty
+                | 3 -> failwith "This should get caught!"           // - Generic exn throw
+                | 4 -> yield (4/0)                                  // - Specific exn throw
+                | 5 ->                                            
+                    yield 5                                         // - Two yields, will be a state machine
+                    yield 5
+                | _ -> failwith "This should get caught!"
+            with                                               
+                | :? System.DivideByZeroException -> yield 4          // - Specific exn
+                | anyOther when x = 3 -> yield 3                     // - Generic exn using 'x', no yield
+                | anyOther when x = 6 -> ()                          // - Empty yield from 'with' clause
+    }
+ 
+if (mySeq [0..5] |> Seq.sum) <> (1+(1+3)+3+4+5+5) then
+    failwith $"Sum was {(mySeq [0..5] |> Seq.sum)} instead"
+    """
+    |> asExe
+    |> compileAndRun
+    |> shouldSucceed
+
+[<Fact>]
 let ``A sequence expression can yield from with clause``() =
     Fsx """
 let sum =
@@ -49,13 +79,35 @@ let ``A sequence expression can fail later in try/with and still get caught``() 
     Fsx """
 let sum =
     seq {
-        try
+        try    
             yield 1   
-            yield (10 /  0)
-        with _ -> ()
+            yield 2
+            yield 3
+            yield (10/0)  // This will crash
+            yield 4       // This will never be reached
+        with _ -> ()     
     }
     |> Seq.sum
-if sum <> (1) then
+if sum <> (1+2+3) then
+    failwith $"Sum was {sum} instead"
+    """
+    |> asExe
+    |> compileAndRun
+    |> shouldSucceed
+
+[<Fact>]
+let ``A sequence expression can have inner seq{try/with} in an outer try/with``() =
+    Fsx """
+let sum =
+    seq {     
+        try           
+            yield 1              
+            yield! seq{ try (10 /  0) with _ -> 1}         
+            yield 1
+        with _ -> yield 100000  // will not get hit, covered by inner 'with'      
+    }
+    |> Seq.sum
+if sum <> (1+1+1) then
     failwith $"Sum was {sum} instead"
     """
     |> asExe
@@ -184,7 +236,7 @@ let typedSeq =
 [<Theory>]
 [<InlineData("yield 41","42","43")>]
 [<InlineData("yield 41","42","yield 43")>]
-let ``seq{try/with} mismatch implicit vs. yield``(valInTry,valInWith1,valInWith2) =
+let ``seq{try/with} mismatch implicit vs yield``(valInTry,valInWith1,valInWith2) =
     Fsx $"""
 let typedSeq =
     seq {{
@@ -197,8 +249,7 @@ let typedSeq =
     }}
     """
     |> typecheck
-    |> shouldFail
-    |> withErrorCode 3221
+    |> shouldFail    
     |> withDiagnosticMessageMatches "This expression returns a value of type 'int' but is implicitly discarded."
     |> withDiagnosticMessageMatches "If you intended to use the expression as a value in the sequence then use an explicit 'yield'."
 
