@@ -2081,25 +2081,28 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
 
         | SynExpr.TryWith (innerTry,withList,mTryToWith,spTry,spWith,trivia) ->
             let env = { env with eIsControlFlow = true }
-            let innerExpr, tpenv = tcSequenceExprBody env genOuterTy tpenv innerTry
-            let withExpr, tpenv = TcExpr cenv (MustEqual cenv.g.unit_ty) env tpenv unwindExpr
-            
-            // We attach the debug points to the lambda expressions so we can fetch it out again in LowerComputedListOrArraySeqExpr
-            let mTry = 
-                match spTry with 
-                | DebugPointAtTry.Yes m -> m.NoteSourceConstruct(NotedSourceConstruct.Try)
-                | _ -> trivia.TryKeyword
+            let tryExpr, tpenv = tcSequenceExprBody env genOuterTy tpenv innerTry
 
-            let mWith = 
-                match spWith with 
-                | DebugPointAtWith.Yes m -> m.NoteSourceConstruct(NotedSourceConstruct.Finally)
-                | _ -> trivia.WithKeyword
+            // Compile the pattern twice, once as a List.filter with all succeeding targets returning "1", and once as a proper catch block.
+            let clauses, tpenv = 
+                (tpenv, withList) ||> List.mapFold (fun tpenv (SynMatchClause(pat, cond, innerComp, m, sp, trivia)) ->
+                    let patR, condR, vspecs, envinner, tpenv = TcMatchPattern cenv g.exn_ty env tpenv pat cond
+                    let envinner =
+                        match sp with
+                        | DebugPointAtTarget.Yes -> { envinner with eIsControlFlow = true }
+                        | DebugPointAtTarget.No -> envinner
+                    let matchBody, tpenv = tcSequenceExprBody envinner genOuterTy tpenv innerComp
+                    let handlerClause = MatchClause(patR, condR, TTarget(vspecs, matchBody, None), patR.Range)
+                    let filterClause = MatchClause(patR, condR, TTarget([], Expr.Const(Const.Int32 1,m,g.int_ty), None), patR.Range)
+                    (handlerClause,filterClause), tpenv)
 
-            let innerExpr = mkSeqDelayedExpr mTry innerExpr
-            let unwindExpr = mkUnitDelayLambda cenv.g mFinally unwindExpr
-            mkTryWith cenv.g 
-            Some(mkSeqFinally cenv env mTryToLast genOuterTy innerExpr unwindExpr, tpenv)
-            //error(Error(FSComp.SR.tcTryIllegalInSequenceExpression(), mTryToWith))
+            let handlers, filterClauses = List.unzip clauses
+            let withRange = trivia.WithToEndRange
+            let v1, filterExpr = CompilePatternForMatchClauses cenv env withRange withRange true FailFilter None g.exn_ty g.int_ty filterClauses
+            let v2, handlerExpr = CompilePatternForMatchClauses cenv env withRange withRange true Rethrow None g.exn_ty genOuterTy handlers
+            let finalExpr = mkTryWith g (tryExpr, v1, filterExpr, v2, handlerExpr, mTryToWith, genOuterTy, spTry, spWith)
+
+            Some(finalExpr,tpenv)
 
         | SynExpr.YieldOrReturnFrom ((isYield, _), synYieldExpr, m) -> 
             let env = { env with eIsControlFlow = false }
