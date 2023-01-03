@@ -4,33 +4,33 @@ open NUnit.Framework
 open FSharp.Compiler.GraphChecking
 open TestUtils
 
-let getContent isSignature sourceCode =
+let private getContent isSignature sourceCode =
     let fileName = if isSignature then "Test.fsi" else "Test.fs"
     let ast = parseSourceCode ("Test.fs", sourceCode)
     FileContentMapping.mkFileContent { Idx = 0; File = fileName; AST = ast }
 
-let (|TopLevelNamespace|_|) value e =
+let private (|TopLevelNamespace|_|) value e =
     match e with
     | FileContentEntry.TopLevelNamespace(path, content) ->
         let combined = String.concat "." path
         if combined = value then Some content else None
     | _ -> None
 
-let (|OpenStatement|_|) value e =
+let private (|OpenStatement|_|) value e =
     match e with
     | FileContentEntry.OpenStatement path ->
         let combined = String.concat "." path
         if combined = value then Some() else None
     | _ -> None
 
-let (|PrefixedIdentifier|_|) value e =
+let private (|PrefixedIdentifier|_|) value e =
     match e with
     | FileContentEntry.PrefixedIdentifier path ->
         let combined = String.concat "." path
         if combined = value then Some() else None
     | _ -> None
 
-let (|NestedModule|_|) value e =
+let private (|NestedModule|_|) value e =
     match e with
     | FileContentEntry.NestedModule(name, nestedContent) -> if name = value then Some(nestedContent) else None
     | _ -> None

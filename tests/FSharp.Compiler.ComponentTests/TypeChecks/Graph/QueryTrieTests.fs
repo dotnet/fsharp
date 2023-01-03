@@ -14,12 +14,12 @@ type System.String with
     member x.Split(v: string) =
         x.Split([| v |], System.StringSplitOptions.RemoveEmptyEntries)
 
-let topLevelNS (topLevelNamespaceString: string) (content: FileContentEntry list) =
+let private topLevelNS (topLevelNamespaceString: string) (content: FileContentEntry list) =
     topLevelNamespaceString.Split(".")
     |> Array.toList
     |> fun name -> FileContentEntry.TopLevelNamespace(name, content)
 
-let topLevelMod (topLevelModuleString: string) (content: FileContentEntry list) =
+let private topLevelMod (topLevelModuleString: string) (content: FileContentEntry list) =
     let parts = topLevelModuleString.Split(".")
 
     parts
@@ -27,19 +27,19 @@ let topLevelMod (topLevelModuleString: string) (content: FileContentEntry list) 
     |> Array.toList
     |> fun name -> FileContentEntry.TopLevelNamespace(name, content)
 
-let openSt (openStatement: string) =
+let private openSt (openStatement: string) =
     openStatement.Split(".") |> Array.toList |> FileContentEntry.OpenStatement
 
-let nestedModule name content =
+let private nestedModule name content =
     FileContentEntry.NestedModule(name, content)
 
-let prefIdent (lid: string) =
+let private prefIdent (lid: string) =
     let parts = lid.Split(".")
     Array.take (parts.Length - 1) parts |> List.ofArray |> PrefixedIdentifier
 
 // Some hardcoded files that reflect the file content of the first files in the Fantomas.Core project.
 // See https://github.com/fsprojects/fantomas/tree/0938a3daabec80a22d2e17f82aba38456bb793df/src/Fantomas.Core
-let files =
+let private files =
     [|
         {
             Name = "AssemblyInfo.fs"
@@ -621,14 +621,14 @@ let dictionary<'key, 'value when 'key: equality> (entries: ('key * 'value) seq) 
 
     dict
 
-let noChildren = Dictionary(0)
+let private noChildren = Dictionary(0)
 let emptyHS () = HashSet(0)
 
 let indexOf name =
     Array.find (fun (fc: FileContent) -> fc.Name = name) files |> fun fc -> fc.Idx
 
 // This should be constructed from the AST, again a hard coded subset of Fantomas.Core
-let fantomasCoreTrie: TrieNode =
+let private fantomasCoreTrie: TrieNode =
     {
         Current = TrieNodeInfo.Root(emptyHS ())
         Children =
