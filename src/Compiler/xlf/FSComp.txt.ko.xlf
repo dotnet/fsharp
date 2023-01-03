@@ -132,6 +132,11 @@
         <target state="translated">'{0}' 어셈블리 특성이 로드할 수 없거나 존재하지 않는 디자이너 어셈블리'{1}'을(를) 참조합니다. 보고된 예외: {2} - {3}</target>
         <note />
       </trans-unit>
+      <trans-unit id="etProviderInformational">
+        <source>The type provider '{0}' reported an informational warning: {1}</source>
+        <target state="new">The type provider '{0}' reported an informational warning: {1}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="etProviderWarning">
         <source>The type provider '{0}' reported a warning: {1}</source>
         <target state="new">The type provider '{0}' reported a warning: {1}</target>

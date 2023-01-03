@@ -529,10 +529,10 @@ type IProvidedNamespace =
 
 [<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
 type TypeProviderDiagnosticSeverity =
+    | Informational
     | Warning
     | Error
 
-[<AllowNullLiteral>]
 type ITypeProviderDiagnosticsContext =
     abstract ReportDiagnostic: staticParameterName: string * rangeInParameterIfString: (int * int) option * message: string * severity: TypeProviderDiagnosticSeverity -> unit
 

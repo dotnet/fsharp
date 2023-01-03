@@ -121,6 +121,8 @@ type ProvidedMethod =
 
     member DefineStaticParameters: parameters: ProvidedStaticParameter list * instantiationFunction: (ProvidedMethod -> string -> obj[] -> ProvidedMethod) -> unit
 
+    member ReportInformational: staticParameterName: string * rangeInParameterIfString: (int * int) option * message: string * throwIfNotSupported: bool -> unit
+
     member ReportWarning: staticParameterName: string * rangeInParameterIfString: (int * int) option * message: string * throwIfNotSupported: bool -> unit
 
     member ReportError: staticParameterName: string * rangeInParameterIfString: (int * int) option * message: string -> unit
@@ -527,6 +529,8 @@ type TypeProviderForNamespaces =
     /// need to use this property directly, as translation from the compiler-hosted context to 
     /// the design-time context will normally be performed automatically.
     member TargetContext: ProvidedTypesContext
+
+    member ReportInformational: staticParameterName: string * rangeInParameterIfString: (int * int) option * message: string * throwIfNotSupported: bool -> unit
 
     member ReportWarning: staticParameterName: string * rangeInParameterIfString: (int * int) option * message: string * throwIfNotSupported: bool -> unit
 

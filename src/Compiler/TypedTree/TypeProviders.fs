@@ -655,6 +655,8 @@ type TypeProviderDiagnosticsContext (staticArgs: CrackedStaticArgument[], tpDesi
                     fallbackRange
 
             match severity with
+            | TypeProviderDiagnosticSeverity.Informational ->
+                Error (FSComp.SR.etProviderInformational (tpDesignation, message), m) |> informationalWarning
             | TypeProviderDiagnosticSeverity.Warning ->
                 Error (FSComp.SR.etProviderWarning (tpDesignation, message), m) |> warning
             | TypeProviderDiagnosticSeverity.Error ->

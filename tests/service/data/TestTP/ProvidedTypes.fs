@@ -1075,19 +1075,24 @@ and ProvidedMethod(isTgt: bool, methodName: string, attrs: MethodAttributes, par
     member __.AddMethodAttrs attributes = attrs <- attrs ||| attributes
     member __.PatchDeclaringType x = patchOption declaringType (fun () -> declaringType <- Some x)
 
-    member val private DiagnosticsContext: ITypeProviderDiagnosticsContext = null with get, set
+    member val private DiagnosticsContext: ITypeProviderDiagnosticsContext option = None with get, set
+
+    member x.ReportInformational (staticParameterName, rangeInParameterIfString, message, throwIfNotSupported) =
+        match x.DiagnosticsContext with
+        | Some ctx -> ctx.ReportDiagnostic (staticParameterName, rangeInParameterIfString, message, TypeProviderDiagnosticSeverity.Informational)
+        | _ when throwIfNotSupported -> failwith message
+        | _ -> ()
 
     member x.ReportWarning (staticParameterName, rangeInParameterIfString, message, throwIfNotSupported) =
-        if isNull x.DiagnosticsContext |> not then
-            x.DiagnosticsContext.ReportDiagnostic (staticParameterName, rangeInParameterIfString, message, TypeProviderDiagnosticSeverity.Warning)
-        elif throwIfNotSupported then
-            failwith message
+        match x.DiagnosticsContext with
+        | Some ctx -> ctx.ReportDiagnostic (staticParameterName, rangeInParameterIfString, message, TypeProviderDiagnosticSeverity.Warning)
+        | _ when throwIfNotSupported -> failwith message
+        | _ -> ()
 
     member x.ReportError (staticParameterName, rangeInParameterIfString, message) =
-        if isNull x.DiagnosticsContext then
-            failwith message
-        else
-            x.DiagnosticsContext.ReportDiagnostic (staticParameterName, rangeInParameterIfString, message, TypeProviderDiagnosticSeverity.Error)
+        match x.DiagnosticsContext with
+        | Some ctx -> ctx.ReportDiagnostic (staticParameterName, rangeInParameterIfString, message, TypeProviderDiagnosticSeverity.Error)
+        | _ -> failwith message
 
     member __.DefineStaticParameters(parameters: ProvidedStaticParameter list, instantiationFunction: (string -> obj[] -> ProvidedMethod)) =
         staticParams      <- parameters
@@ -15884,19 +15889,24 @@ namespace ProviderImplementation.ProvidedTypes
                 AppDomain.CurrentDomain.remove_AssemblyResolve handler
 #endif
 
-        member val private DiagnosticsContext: ITypeProviderDiagnosticsContext = null with get, set
+        member val private DiagnosticsContext: ITypeProviderDiagnosticsContext option = None with get, set
+
+        member x.ReportInformational (staticParameterName, rangeInParameterIfString, message, throwIfNotSupported) =
+            match x.DiagnosticsContext with
+            | Some ctx -> ctx.ReportDiagnostic (staticParameterName, rangeInParameterIfString, message, TypeProviderDiagnosticSeverity.Informational)
+            | _ when throwIfNotSupported -> failwith message
+            | _ -> ()
 
         member x.ReportWarning (staticParameterName, rangeInParameterIfString, message, throwIfNotSupported) =
-            if isNull x.DiagnosticsContext |> not then
-                x.DiagnosticsContext.ReportDiagnostic (staticParameterName, rangeInParameterIfString, message, TypeProviderDiagnosticSeverity.Warning)
-            elif throwIfNotSupported then
-                failwith message
+            match x.DiagnosticsContext with
+            | Some ctx -> ctx.ReportDiagnostic (staticParameterName, rangeInParameterIfString, message, TypeProviderDiagnosticSeverity.Warning)
+            | _ when throwIfNotSupported -> failwith message
+            | _ -> ()
 
         member x.ReportError (staticParameterName, rangeInParameterIfString, message) =
-            if isNull x.DiagnosticsContext then
-                failwith message
-            else
-                x.DiagnosticsContext.ReportDiagnostic (staticParameterName, rangeInParameterIfString, message, TypeProviderDiagnosticSeverity.Error)
+            match x.DiagnosticsContext with
+            | Some ctx -> ctx.ReportDiagnostic (staticParameterName, rangeInParameterIfString, message, TypeProviderDiagnosticSeverity.Error)
+            | _ -> failwith message
 
         member __.AddNamespace (namespaceName, types) = 
             namespacesT.Add (makeProvidedNamespace namespaceName types)
@@ -15914,7 +15924,7 @@ namespace ProviderImplementation.ProvidedTypes
 
         member __.ApplyStaticArgumentsForMethod(mb: MethodBase, mangledName, objs) =
             match mb with
-            | :? ProvidedMethod as t -> t.ApplyStaticArguments(null, mangledName, objs) :> MethodBase
+            | :? ProvidedMethod as t -> t.ApplyStaticArguments(None, mangledName, objs) :> MethodBase
             | _ -> failwithf "ApplyStaticArguments: static parameters for method %s are unexpected. Please report this bug to https://github.com/fsprojects/FSharp.TypeProviders.SDK/issues" mb.Name
 
         interface ITypeProvider with
@@ -16020,12 +16030,12 @@ namespace ProviderImplementation.ProvidedTypes
 
         interface ITypeProvider3 with
             member x.ApplyStaticArguments (diagnosticsContext, ty, typePathAfterArguments, objs) =
-                x.DiagnosticsContext <- diagnosticsContext
+                x.DiagnosticsContext <- Some diagnosticsContext
                 (x :> ITypeProvider).ApplyStaticArguments (ty, typePathAfterArguments, objs)
 
             member _.ApplyStaticArgumentsForMethod (diagnosticsContext, mb: MethodBase, mangledName, objs) =
                 match mb with
-                | :? ProvidedMethod as t -> t.ApplyStaticArguments(diagnosticsContext, mangledName, objs) :> MethodBase
+                | :? ProvidedMethod as t -> t.ApplyStaticArguments(Some diagnosticsContext, mangledName, objs) :> MethodBase
                 | _ -> failwithf "ApplyStaticArguments: static parameters for method %s are unexpected. Please report this bug to https://github.com/fsprojects/FSharp.TypeProviders.SDK/issues" mb.Name
 
 #endif 

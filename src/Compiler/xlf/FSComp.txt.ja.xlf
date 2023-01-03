@@ -132,6 +132,11 @@
         <target state="translated">アセンブリ属性 '{0}' は、デザイナー アセンブリ '{1}' を参照していますが、これは読み込むことができないか、存在していません。報告された例外: {2} - {3}</target>
         <note />
       </trans-unit>
+      <trans-unit id="etProviderInformational">
+        <source>The type provider '{0}' reported an informational warning: {1}</source>
+        <target state="new">The type provider '{0}' reported an informational warning: {1}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="etProviderWarning">
         <source>The type provider '{0}' reported a warning: {1}</source>
         <target state="new">The type provider '{0}' reported a warning: {1}</target>
