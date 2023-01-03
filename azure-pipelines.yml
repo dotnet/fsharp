@@ -534,12 +534,42 @@ stages:
                 workingDirectory: $(Build.SourcesDirectory)
                 installationPath: $(Build.SourcesDirectory)/.dotnet
             - script: .\build.cmd -c Release -binaryLog /p:ParallelCheckingWithSignatureFilesOn=true
-              displayName: ParallelCheckingWithSignatureFiles build with Debug configuration
+              displayName: ParallelCheckingWithSignatureFiles build with Release configuration
             - task: PublishPipelineArtifact@1
               displayName: Publish ParallelCheckingWithSignatureFiles Logs
               inputs:
                 targetPath: '$(Build.SourcesDirectory)/artifacts/log/Release'
                 artifactName: 'ParallelCheckingWithSignatureFiles Attempt $(System.JobAttempt) Logs'
+              continueOnError: true
+
+          # Run Build with --test:GraphBasedChecking
+        - job: GraphBasedChecking
+          condition: eq(variables['Build.Reason'], 'PullRequest')
+          variables:
+            - name: _SignType
+              value: Test
+          pool:
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
+          timeoutInMinutes: 90
+          steps:
+            - checkout: self
+              clean: true
+            - task: UseDotNet@2
+              displayName: install SDK
+              inputs:
+                packageType: sdk
+                useGlobalJson: true
+                includePreviewVersions: false
+                workingDirectory: $(Build.SourcesDirectory)
+                installationPath: $(Build.SourcesDirectory)/.dotnet
+            - script: .\build.cmd -c Release -binaryLog /p:GraphBasedCheckingOn=true
+              displayName: GraphBasedChecking build with Release configuration
+            - task: PublishPipelineArtifact@1
+              displayName: Publish GraphBasedChecking Logs
+              inputs:
+                targetPath: '$(Build.SourcesDirectory)/artifacts/log/Release'
+                artifactName: 'GraphBasedChecking Attempt $(System.JobAttempt) Logs'
               continueOnError: true
 
         # Plain build Windows
