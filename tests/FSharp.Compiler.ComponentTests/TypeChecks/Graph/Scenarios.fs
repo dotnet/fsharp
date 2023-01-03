@@ -3,7 +3,7 @@
 open FSharp.Compiler.GraphChecking
 open TestUtils
 
-type Scenario =
+type internal Scenario =
     {
         Name: string
         Files: FileInScenario array
@@ -11,18 +11,18 @@ type Scenario =
 
     override x.ToString() = x.Name
 
-and FileInScenario =
+and internal FileInScenario =
     {
         FileWithAST: FileWithAST
         ExpectedDependencies: Set<int>
         Content: string
     }
 
-let scenario name files =
+let private scenario name files =
     let files = files |> List.toArray |> Array.mapi (fun idx f -> f idx)
     { Name = name; Files = files }
 
-let sourceFile fileName content (dependencies: Set<int>) =
+let private sourceFile fileName content (dependencies: Set<int>) =
     fun idx ->
         let fileWithAST =
             {
@@ -37,7 +37,7 @@ let sourceFile fileName content (dependencies: Set<int>) =
             Content = content
         }
 
-let codebases =
+let internal codebases =
     [
         scenario
             "Link via full open statement"
