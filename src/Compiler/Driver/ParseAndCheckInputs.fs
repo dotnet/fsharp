@@ -1771,7 +1771,21 @@ let CheckMultipleInputsUsingGraphMode
             })
 
     let filePairs = FilePairMap(sourceFiles)
-    let graph = DependencyResolution.mkGraph filePairs sourceFiles
+
+    let graph =
+        let graph = DependencyResolution.mkGraph filePairs sourceFiles
+
+        if not tcConfig.compilingFSharpCore then
+            graph
+        else
+            // Every single file should depend on prim-types-prelude.fsi
+            graph.Keys
+            |> Seq.map (fun idx ->
+                if idx > 0 && Seq.isEmpty graph.[idx] then
+                    idx, [| 0 |]
+                else
+                    idx, graph.[idx])
+            |> readOnlyDict
 
     // TcState has two typing environments: TcEnvFromSignatures && TcEnvFromImpls
     // When type checking a file, depending on the type (implementation or signature), it will use one of these typing environments (TcEnv).
