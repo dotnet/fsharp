@@ -47,6 +47,9 @@ let FSharpScriptFileSuffixes = [ ".fsscript"; ".fsx" ]
 let FSharpIndentationAwareSyntaxFileSuffixes =
     [ ".fs"; ".fsscript"; ".fsx"; ".fsi" ]
 
+let FsharpExperimentalFeaturesEnabledAutomatically =
+    Environment.GetEnvironmentVariable("FSHARP_EXPERIMENTAL_FEATURES") |> isNotNull
+
 //--------------------------------------------------------------------------
 // General file name resolver
 //--------------------------------------------------------------------------
@@ -788,7 +791,11 @@ type TcConfigBuilder =
             parallelReferenceResolution = ParallelReferenceResolution.Off
             typeCheckingConfig =
                 {
-                    TypeCheckingConfig.Mode = TypeCheckingMode.Sequential
+                    TypeCheckingConfig.Mode =
+                        if FsharpExperimentalFeaturesEnabledAutomatically then
+                            TypeCheckingMode.Graph
+                        else
+                            TypeCheckingMode.Sequential
                 }
         }
 
