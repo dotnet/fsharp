@@ -1463,7 +1463,6 @@ type internal FsiDynamicCompiler(
             pdbfile = (if tcConfig.debuginfo then Some ($"{multiAssemblyName}-{dynamicAssemblyId}.pdb") else None)
             emitTailcalls = tcConfig.emitTailcalls
             deterministic = tcConfig.deterministic
-            showTimes = tcConfig.showTimes
             // we always use portable for F# Interactive debug emit
             portablePDB = true
             embeddedPDB = false
