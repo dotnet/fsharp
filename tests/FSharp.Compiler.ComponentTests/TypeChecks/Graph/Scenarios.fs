@@ -1,9 +1,8 @@
 ﻿module FSharp.Compiler.ComponentTests.TypeChecks.Graph.Scenarios
 
-open FSharp.Compiler.GraphChecking
 open TestUtils
 
-type internal Scenario =
+type Scenario =
     {
         Name: string
         Files: FileInScenario array
@@ -11,9 +10,9 @@ type internal Scenario =
 
     override x.ToString() = x.Name
 
-and internal FileInScenario =
+and FileInScenario =
     {
-        FileWithAST: FileWithAST
+        FileWithAST: TestFileWithAST
         ExpectedDependencies: Set<int>
         Content: string
     }

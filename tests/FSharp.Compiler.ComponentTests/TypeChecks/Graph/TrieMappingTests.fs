@@ -35,7 +35,7 @@ type C = { CX: int; CY: int }
                 Idx = idx
                 File = fileName
                 AST = parseSourceCode (fileName, code)
-            })
+            } : FileWithAST)
 
     let trie = TrieMapping.mkTrie files
 

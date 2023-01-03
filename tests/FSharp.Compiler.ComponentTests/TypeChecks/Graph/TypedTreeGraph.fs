@@ -9,6 +9,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Symbols
 open NUnit.Framework
 open FSharp.Compiler.GraphChecking
+open FSharp.Compiler.ComponentTests.TypeChecks.Graph.TestUtils
 
 let localProjects = CompilationFromCmdlineArgsTests.localProjects
 
@@ -56,9 +57,9 @@ let rec collectFromSymbol (collector: DepCollector) (s: FSharpSymbol) =
     | _ -> ()
 
 // Fair warning: this isn't fast or optimized code
-let graphFromTypedTree (checker: FSharpChecker) (projectOptions: FSharpProjectOptions) : Async<IDictionary<int, FileWithAST> * Graph<int>> =
+let graphFromTypedTree (checker: FSharpChecker) (projectOptions: FSharpProjectOptions) : Async<IDictionary<int, TestFileWithAST> * Graph<int>> =
     async {
-        let files = ConcurrentDictionary<int, FileWithAST>()
+        let files = ConcurrentDictionary<int, TestFileWithAST>()
 
         let! filesWithDeps =
             projectOptions.SourceFiles
@@ -77,7 +78,7 @@ let graphFromTypedTree (checker: FSharpChecker) (projectOptions: FSharpProjectOp
                         for s in allSymbols do
                             collectFromSymbol collector s.Symbol
 
-                        let file: FileWithAST =
+                        let file: TestFileWithAST =
                             {
                                 Idx = idx
                                 AST = parseResult.ParseTree
@@ -153,10 +154,10 @@ let ``Create Graph from typed tree`` (projectArgumentsFilePath: string) =
 
             let typedTreeMap = collectAllDeps graphFromTypedTree
 
-            let filePairs = files.Values |> Seq.toArray |> FilePairMap
+            let filePairs = files.Values |> Seq.map TestFileWithAST.Map |> Seq.toArray |> FilePairMap
 
             let graphFromHeuristic =
-                files.Values |> Seq.toArray |> DependencyResolution.mkGraph filePairs
+                files.Values |> Seq.map TestFileWithAST.Map |> Seq.toArray |> DependencyResolution.mkGraph filePairs
 
             graphFromHeuristic
             |> Graph.map (fun n -> files.[n].File)
