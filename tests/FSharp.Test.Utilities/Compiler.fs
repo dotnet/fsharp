@@ -1182,6 +1182,10 @@ module rec Compiler =
                       match r.Output with
                       | Some (ExecutionOutput output) ->
                           sprintf "----output-----\n%s\n----error-------\n%s\n----------" output.StdOut output.StdErr
+                      | Some (EvalOutput (Result.Error exn) ) -> 
+                          sprintf "----script error-----\n%s\n----------" (exn.ToString())
+                      | Some (EvalOutput (Result.Ok fsiVal) ) -> 
+                          sprintf "----script output-----\n%A\n----------" (fsiVal)                   
                       | _ -> () ]
                     |> String.concat "\n"
                 failwith message

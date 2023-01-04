@@ -7809,6 +7809,9 @@ let mkCallSeqGenerated g m elemTy arg1 arg2 =
                        
 let mkCallSeqFinally g m elemTy arg1 arg2 = 
     mkApps g (typedExprForIntrinsic g m g.seq_finally_info, [[elemTy]], [ arg1; arg2 ], m) 
+
+let mkCallSeqTryWith g m elemTy origSeq exnFilter exnHandler = 
+    mkApps g (typedExprForIntrinsic g m g.seq_trywith_info, [[elemTy]], [ origSeq; exnFilter; exnHandler ], m) 
                        
 let mkCallSeqOfFunctions g m ty1 ty2 arg1 arg2 arg3 = 
     mkApps g (typedExprForIntrinsic g m g.seq_of_functions_info, [[ty1;ty2]], [ arg1; arg2; arg3 ], m) 

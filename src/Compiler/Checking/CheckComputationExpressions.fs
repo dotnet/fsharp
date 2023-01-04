@@ -1854,6 +1854,13 @@ let mkSeqFinally (cenv: cenv) env m genTy e1 e2 =
     let e1 = mkCoerceIfNeeded cenv.g (mkSeqTy cenv.g genResultTy) (tyOfExpr cenv.g e1) e1
     mkCallSeqFinally cenv.g m genResultTy e1 e2 
 
+let mkSeqTryWith (cenv: cenv) env m genTy origSeq exnFilter exnHandler =
+    let g = cenv.g
+    let genResultTy = NewInferenceType g
+    UnifyTypes cenv env m genTy (mkSeqTy cenv.g genResultTy)
+    let origSeq = mkCoerceIfNeeded cenv.g (mkSeqTy cenv.g genResultTy) (tyOfExpr cenv.g origSeq) origSeq
+    mkCallSeqTryWith cenv.g m genResultTy origSeq exnFilter exnHandler 
+
 let mkSeqExprMatchClauses (pat, vspecs) innerExpr = 
     [MatchClause(pat, None, TTarget(vspecs, innerExpr, None), pat.Range) ] 
 
@@ -2079,7 +2086,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
 
             Some(mkLet spMatch inputExprMark matchv inputExpr matchExpr, tpenv)
 
-        | SynExpr.TryWith (innerTry,withList,mTryToWith,spTry,spWith,trivia) ->
+        | SynExpr.TryWith (innerTry,withList,mTryToWith,_spTry,_spWith,trivia) ->
             let env = { env with eIsControlFlow = true }
             let tryExpr, tpenv = 
                 // If we have multiple yields/implicit below each other, we want to keep the results before failure
@@ -2087,9 +2094,9 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
                 // -OR-, the first expr can suceed and yield something, and only the second fails - we add an artificial 'with' 
                 let liftedInnerSynExpr = 
                     match innerTry with
-                    | SynExpr.Sequential(sp, isTrueSeq, innerComp1, innerComp2, m) ->
-                        let wrappedComp2 = SynExpr.TryWith(innerComp2,withList,m,spTry,spWith,trivia)
-                        SynExpr.Sequential(sp, isTrueSeq, innerComp1, wrappedComp2, m)
+                    //| SynExpr.Sequential(sp, isTrueSeq, innerComp1, innerComp2, m) ->
+                    //    let wrappedComp2 = SynExpr.TryWith(innerComp2,withList,m,spTry,spWith,trivia)
+                    //    SynExpr.Sequential(sp, isTrueSeq, innerComp1, wrappedComp2, m)
                     | other -> other
                 tcSequenceExprBody env genOuterTy tpenv liftedInnerSynExpr
 
@@ -2108,11 +2115,15 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
 
             let handlers, filterClauses = List.unzip clauses
             let withRange = trivia.WithToEndRange
-            let v1, filterExpr = CompilePatternForMatchClauses cenv env withRange withRange true FailFilter None g.exn_ty g.int_ty filterClauses
-            let v2, handlerExpr = CompilePatternForMatchClauses cenv env withRange withRange true Rethrow None g.exn_ty genOuterTy handlers
-            let finalExpr = mkTryWith g (tryExpr, v1, filterExpr, v2, handlerExpr, mTryToWith, genOuterTy, spTry, spWith)
+            let _v1, filterExpr = CompilePatternForMatchClauses cenv env withRange withRange true FailFilter None g.exn_ty g.int_ty filterClauses
+            //let _v2, handlerExpr = CompilePatternForMatchClauses cenv env withRange withRange true Rethrow None g.exn_ty genOuterTy handlers
+            let _v2, handlerExpr = CompilePatternForMatchClauses cenv env withRange withRange true FailFilter None g.exn_ty genOuterTy handlers
+            let combinatorExpr = mkSeqTryWith cenv env mTryToWith genOuterTy tryExpr filterExpr handlerExpr
+            Some (combinatorExpr,tpenv)
 
-            Some(finalExpr,tpenv)
+            //let finalExpr = mkTryWith g (tryExpr, v1, filterExpr, v2, handlerExpr, mTryToWith, genOuterTy, spTry, spWith)
+
+            //Some(finalExpr,tpenv)
 
         | SynExpr.YieldOrReturnFrom ((isYield, _), synYieldExpr, m) -> 
             let env = { env with eIsControlFlow = false }

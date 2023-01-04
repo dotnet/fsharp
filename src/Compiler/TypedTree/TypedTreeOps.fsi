@@ -2132,6 +2132,8 @@ val mkCallSeqAppend: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
 val mkCallSeqFinally: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
+val mkCallSeqTryWith: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr
+
 val mkCallSeqGenerated: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
 val mkCallSeqOfFunctions: TcGlobals -> range -> TType -> TType -> Expr -> Expr -> Expr -> Expr

@@ -61,7 +61,8 @@ let totalSum = s() |> Seq.sum
 if totalSum <> 1 then
     failwith $"Sum was {{totalSum}} instead"
 
-failwith $"List is %A{l}"
+if l<> [] then
+    failwith $" List is %A{l}"
     """
     |> runCode
     |> shouldSucceed
