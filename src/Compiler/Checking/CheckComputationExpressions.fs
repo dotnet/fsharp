@@ -2089,19 +2089,10 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
         | SynExpr.TryWith (innerTry,withList,mTryToWith,_spTry,_spWith,trivia) ->
             let env = { env with eIsControlFlow = true }
             let tryExpr, tpenv = 
-                // If we have multiple yields/implicit below each other, we want to keep the results before failure
-                // Therefore, each 'Sequential' (expr1;expr2) can either fail the first one (outer with caters for it)
-                // -OR-, the first expr can suceed and yield something, and only the second fails - we add an artificial 'with' 
-                let liftedInnerSynExpr = 
-                    match innerTry with
-                    //| SynExpr.Sequential(sp, isTrueSeq, innerComp1, innerComp2, m) ->
-                    //    let wrappedComp2 = SynExpr.TryWith(innerComp2,withList,m,spTry,spWith,trivia)
-                    //    SynExpr.Sequential(sp, isTrueSeq, innerComp1, wrappedComp2, m)
-                    | other -> other
-                let inner,tpenv = tcSequenceExprBody env genOuterTy tpenv liftedInnerSynExpr
+                let inner,tpenv = tcSequenceExprBody env genOuterTy tpenv innerTry
                 mkSeqDelayedExpr mTryToWith inner, tpenv
 
-            // Compile the pattern twice, once as a List.filter with all succeeding targets returning "1", and once as a proper catch block.
+            // Compile the pattern twice, once as a filter with all succeeding targets returning "1", and once as a proper catch block.
             let clauses, tpenv = 
                 (tpenv, withList) ||> List.mapFold (fun tpenv (SynMatchClause(pat, cond, innerComp, m, sp, _)) ->
                     let patR, condR, vspecs, envinner, tpenv = TcMatchPattern cenv g.exn_ty env tpenv pat cond
@@ -2117,19 +2108,13 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
             let handlers, filterClauses = List.unzip clauses
             let withRange = trivia.WithToEndRange
             let v1, filterExpr = CompilePatternForMatchClauses cenv env withRange withRange true FailFilter None g.exn_ty g.int_ty filterClauses
-            //let _v2, handlerExpr = CompilePatternForMatchClauses cenv env withRange withRange true Rethrow None g.exn_ty genOuterTy handlers
             let v2, handlerExpr = CompilePatternForMatchClauses cenv env withRange withRange true FailFilter None g.exn_ty genOuterTy handlers
 
             let filterLambda = mkLambda filterExpr.Range v1 (filterExpr, genOuterTy)
             let handlerLambda = mkLambda handlerExpr.Range v2 (handlerExpr, genOuterTy)
 
-
             let combinatorExpr = mkSeqTryWith cenv env mTryToWith genOuterTy tryExpr filterLambda handlerLambda
             Some (combinatorExpr,tpenv)
-
-            //let finalExpr = mkTryWith g (tryExpr, v1, filterExpr, v2, handlerExpr, mTryToWith, genOuterTy, spTry, spWith)
-
-            //Some(finalExpr,tpenv)
 
         | SynExpr.YieldOrReturnFrom ((isYield, _), synYieldExpr, m) -> 
             let env = { env with eIsControlFlow = false }
