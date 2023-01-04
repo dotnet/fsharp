@@ -1075,10 +1075,6 @@ type TcState =
         tcsImplicitOpenDeclarations: OpenDeclaration list
     }
 
-    member x.TcsRootSigs = x.tcsRootSigs
-
-    member x.TcsRootImpls = x.tcsRootImpls
-
     member x.TcEnvFromSignatures = x.tcsTcSigEnv
 
     member x.TcEnvFromImpls = x.tcsTcImplEnv
@@ -1090,24 +1086,10 @@ type TcState =
     // a.fsi + b.fsi + c.fsi (after checking implementation file for c.fs)
     member x.CcuSig = x.tcsCcuSig
 
-    member x.TcsImplicitOpenDeclarations = x.tcsImplicitOpenDeclarations
-
     member x.NextStateAfterIncrementalFragment tcEnvAtEndOfLastInput =
         { x with
             tcsTcSigEnv = tcEnvAtEndOfLastInput
             tcsTcImplEnv = tcEnvAtEndOfLastInput
-        }
-
-    member x.WithCreatesGeneratedProvidedTypes(y: bool) : TcState =
-        { x with
-            tcsCreatesGeneratedProvidedTypes = y
-        }
-
-    member x.WithStuff tcEnv rootSigs creates : TcState =
-        { x with
-            tcsTcSigEnv = tcEnv
-            tcsRootSigs = rootSigs
-            tcsCreatesGeneratedProvidedTypes = creates
         }
 
 /// Create the initial type checking state for compiling an assembly
