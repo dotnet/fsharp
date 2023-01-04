@@ -779,77 +779,6 @@ type FSharpCrossLanguageSymbolNavigationService()  =
     let statusBar = StatusBar(ServiceProvider.GlobalProvider.GetService<SVsStatusbar,IVsStatusbar>())
     let metadataAsSource = componentModel.DefaultExportProvider.GetExport<FSharpMetadataAsSourceService>().Value
 
-    // So, the groups are following:
-    //   1 - type (see below).
-    //   2 - Path - a dotted path to a symbol.
-    //   3 - parameters, opetional, only for methods and properties.
-    //   4 - return type, optional, only for methods.
-    let docCommentIdRx = Regex(@"^(?<kind>\w):(?<entity>[\w\d#`.]+)(?<args>\(.+\))?(?:~([\w\d.]+))?$", RegexOptions.Compiled)
-
-    // Parse generic args out of the function name
-    let fnGenericArgsRx = Regex(@"^(?<entity>.+)``(?<typars>\d+)$", RegexOptions.Compiled)
-
-    let docCommentIdToPath (docId:string) =
-        // docCommentId is in the following format:
-        //
-        // "T:" prefix for types
-        // "T:N.X.Nested" - type
-        // "T:N.X.D" - delegate
-        //
-        // "M:" prefix is for methods
-        // "M:N.X.#ctor" - constructor
-        // "M:N.X.#ctor(System.Int32)" - constructor with one parameter
-        // "M:N.X.f" - method with unit parameter
-        // "M:N.X.bb(System.String,System.Int32@)" - method with two parameters
-        // "M:N.X.gg(System.Int16[],System.Int32[0:,0:])" - method with two parameters, 1d and 2d array
-        // "M:N.X.op_Addition(N.X,N.X)" - operator
-        // "M:N.X.op_Explicit(N.X)~System.Int32" - operator with return type
-        // "M:N.GenericMethod.WithNestedType``1(N.GenericType{``0}.NestedType)" - generic type with one parameter
-        // "M:N.GenericMethod.WithIntOfNestedType``1(N.GenericType{System.Int32}.NestedType)" - generic type with one parameter
-        // "M:N.X.N#IX{N#KVP{System#String,System#Int32}}#IXA(N.KVP{System.String,System.Int32})" - explicit interface implementation
-        //
-        // "E:" prefix for events
-        //
-        // "E:N.X.d".
-        //
-        // "F:" prefix for fields
-        // "F:N.X.q" - field
-        //
-        // "P:" prefix for properties
-        // "P:N.X.prop" - property with getter and setter
-
-        let m = docCommentIdRx.Match(docId)
-        let t = m.Groups["kind"].Value
-        match m.Success, t with
-        | true, ("M" | "P" | "E") ->
-            // TODO: Probably, there's less janky way of dealing with those.
-            let parts = m.Groups["entity"].Value.Split('.')
-            let entityPath = parts[..(parts.Length - 2)] |> List.ofArray
-            let memberOrVal = parts[parts.Length - 1]
-
-            // Try and parse generic params count from the name (e.g. NameOfTheFunction``1, where ``1 is amount of type parameters)
-            let genericM = fnGenericArgsRx.Match(memberOrVal)
-            let (memberOrVal, genericParametersCount) =
-                if genericM.Success then
-                    (genericM.Groups["entity"].Value, int genericM.Groups["typars"].Value)
-                else
-                    memberOrVal, 0
-
-            // A hack/fixup for the constructor name (#ctor in doccommentid and ``.ctor`` in F#)
-            if memberOrVal = "#ctor" then
-                DocCommentId.Member ({ EntityPath = entityPath; MemberOrValName = "``.ctor``"; GenericParameters = 0 },SymbolMemberType.Constructor)
-            else
-                DocCommentId.Member ({ EntityPath = entityPath; MemberOrValName = memberOrVal; GenericParameters = genericParametersCount }, (SymbolMemberType.FromString t))
-        | true, "T" ->
-            let entityPath = m.Groups["entity"].Value.Split('.') |> List.ofArray
-            DocCommentId.Type entityPath
-        | true, "F" ->
-            let parts = m.Groups[2].Value.Split('.')
-            let entityPath = parts[..(parts.Length - 2)] |> List.ofArray
-            let memberOrVal = parts[parts.Length - 1]
-            DocCommentId.Field { EntityPath = entityPath; MemberOrValName = memberOrVal; GenericParameters = 0 }
-        | _ -> DocCommentId.None
-
     let tryFindFieldByName (name: string) (e: FSharpEntity) =
         let fields =
             e.FSharpFields
@@ -922,9 +851,79 @@ type FSharpCrossLanguageSymbolNavigationService()  =
         else
             entitiesByXmlSig
 
+    static member internal DocCommentIdToPath (docId:string) =
+        // The groups are following:
+        //   1 - type (see below).
+        //   2 - Path - a dotted path to a symbol.
+        //   3 - parameters, opetional, only for methods and properties.
+        //   4 - return type, optional, only for methods.
+        let docCommentIdRx = Regex(@"^(?<kind>\w):(?<entity>[\w\d#`.]+)(?<args>\(.+\))?(?:~([\w\d.]+))?$", RegexOptions.Compiled)
+
+        // Parse generic args out of the function name
+        let fnGenericArgsRx = Regex(@"^(?<entity>.+)``(?<typars>\d+)$", RegexOptions.Compiled)
+        // docCommentId is in the following format:
+        //
+        // "T:" prefix for types
+        // "T:N.X.Nested" - type
+        // "T:N.X.D" - delegate
+        //
+        // "M:" prefix is for methods
+        // "M:N.X.#ctor" - constructor
+        // "M:N.X.#ctor(System.Int32)" - constructor with one parameter
+        // "M:N.X.f" - method with unit parameter
+        // "M:N.X.bb(System.String,System.Int32@)" - method with two parameters
+        // "M:N.X.gg(System.Int16[],System.Int32[0:,0:])" - method with two parameters, 1d and 2d array
+        // "M:N.X.op_Addition(N.X,N.X)" - operator
+        // "M:N.X.op_Explicit(N.X)~System.Int32" - operator with return type
+        // "M:N.GenericMethod.WithNestedType``1(N.GenericType{``0}.NestedType)" - generic type with one parameter
+        // "M:N.GenericMethod.WithIntOfNestedType``1(N.GenericType{System.Int32}.NestedType)" - generic type with one parameter
+        // "M:N.X.N#IX{N#KVP{System#String,System#Int32}}#IXA(N.KVP{System.String,System.Int32})" - explicit interface implementation
+        //
+        // "E:" prefix for events
+        //
+        // "E:N.X.d".
+        //
+        // "F:" prefix for fields
+        // "F:N.X.q" - field
+        //
+        // "P:" prefix for properties
+        // "P:N.X.prop" - property with getter and setter
+
+        let m = docCommentIdRx.Match(docId)
+        let t = m.Groups["kind"].Value
+        match m.Success, t with
+        | true, ("M" | "P" | "E") ->
+            // TODO: Probably, there's less janky way of dealing with those.
+            let parts = m.Groups["entity"].Value.Split('.')
+            let entityPath = parts[..(parts.Length - 2)] |> List.ofArray
+            let memberOrVal = parts[parts.Length - 1]
+
+            // Try and parse generic params count from the name (e.g. NameOfTheFunction``1, where ``1 is amount of type parameters)
+            let genericM = fnGenericArgsRx.Match(memberOrVal)
+            let (memberOrVal, genericParametersCount) =
+                if genericM.Success then
+                    (genericM.Groups["entity"].Value, int genericM.Groups["typars"].Value)
+                else
+                    memberOrVal, 0
+
+            // A hack/fixup for the constructor name (#ctor in doccommentid and ``.ctor`` in F#)
+            if memberOrVal = "#ctor" then
+                DocCommentId.Member ({ EntityPath = entityPath; MemberOrValName = "``.ctor``"; GenericParameters = 0 },SymbolMemberType.Constructor)
+            else
+                DocCommentId.Member ({ EntityPath = entityPath; MemberOrValName = memberOrVal; GenericParameters = genericParametersCount }, (SymbolMemberType.FromString t))
+        | true, "T" ->
+            let entityPath = m.Groups["entity"].Value.Split('.') |> List.ofArray
+            DocCommentId.Type entityPath
+        | true, "F" ->
+            let parts = m.Groups[2].Value.Split('.')
+            let entityPath = parts[..(parts.Length - 2)] |> List.ofArray
+            let memberOrVal = parts[parts.Length - 1]
+            DocCommentId.Field { EntityPath = entityPath; MemberOrValName = memberOrVal; GenericParameters = 0 }
+        | _ -> DocCommentId.None
+
     interface IFSharpCrossLanguageSymbolNavigationService with
         member _.TryGetNavigableLocationAsync(assemblyName: string, documentationCommentId: string, cancellationToken: CancellationToken) : Task<IFSharpNavigableLocation> =
-            let path = docCommentIdToPath documentationCommentId
+            let path = FSharpCrossLanguageSymbolNavigationService.DocCommentIdToPath documentationCommentId
             backgroundTask {
                 let projects = workspace.CurrentSolution.Projects |> Seq.filter (fun p -> p.IsFSharp && p.AssemblyName = assemblyName)
 
