@@ -1127,15 +1127,38 @@ type internal FsiConsolePrompt(fsiOptions: FsiCommandLineOptions, fsiConsoleOutp
     // A prompt gets "printed ahead" at start up. Tells users to start type while initialisation completes.
     // A prompt can be skipped by "silent directives", e.g. ones sent to FSI by VS.
     let mutable dropPrompt = 0
+    let mutable showPrompt = true
+
     // NOTE: SERVER-PROMPT is not user displayed, rather it's a prefix that code elsewhere
     // uses to identify the prompt, see service\FsPkgs\FSharp.VS.FSI\fsiSessionToolWindow.fs
-    let prompt = if fsiOptions.UseServerPrompt then "SERVER-PROMPT>\n" else "> "
 
-    member _.Print()      = if dropPrompt = 0 then fsiConsoleOutput.uprintf "%s" prompt else dropPrompt <- dropPrompt - 1
+    let prompt =
+        if fsiOptions.UseServerPrompt then
+            "SERVER-PROMPT>" + Environment.NewLine
+        else
+            "> "
 
-    member _.PrintAhead() = dropPrompt <- dropPrompt + 1; fsiConsoleOutput.uprintf "%s" prompt
+    member _.Print() =
+        if showPrompt then
+            if dropPrompt = 0 then
+                fsiConsoleOutput.uprintf "%s" prompt
+            else
+                dropPrompt <- dropPrompt - 1
 
-    member _.SkipNext()   = dropPrompt <- dropPrompt + 1
+    member _.PrintAhead() =
+        if showPrompt then
+            dropPrompt <- dropPrompt + 1
+            fsiConsoleOutput.uprintf "%s" prompt
+
+    // Can be turned off when executing blocks of code using:
+    // # silentPrompt
+    member _.ShowPrompt
+        with get () = showPrompt
+        and set (value) = showPrompt <- value
+
+    member _.SkipNext() =
+        if showPrompt then
+            dropPrompt <- dropPrompt + 1
 
     member _.FsiOptions = fsiOptions
 
@@ -1434,8 +1457,7 @@ type internal FsiDynamicCompiler(
               // but needs to be set for some logic of ilwrite to function.
               pdbfile = (if tcConfig.debuginfo then Some (multiAssemblyName + ".pdb") else None)
               emitTailcalls = tcConfig.emitTailcalls
-              deterministic = tcConfig.deterministic
-              showTimes = tcConfig.showTimes
+              deterministic = tcConfig.deterministic           
               // we always use portable for F# Interactive debug emit
               portablePDB = true
               // we don't use embedded for F# Interactive debug emit
@@ -2772,6 +2794,15 @@ type FsiInteractionProcessor
             fsiConsolePrompt.SkipNext() (* "silent" directive *)
             istate, Completed None
 
+        | ParsedHashDirective("interactiveprompt", ParsedHashDirectiveArguments ["show" | "hide" | "skip" as showPrompt], m) ->
+            match showPrompt with
+            | "show" -> fsiConsolePrompt.ShowPrompt <- true
+            | "hide" -> fsiConsolePrompt.ShowPrompt <- false
+            | "skip" -> fsiConsolePrompt.SkipNext()
+            | _ -> error(Error((FSComp.SR.fsiInvalidDirective("prompt", String.concat " " [showPrompt])), m))
+
+            istate, Completed None
+
         | ParsedHashDirective("dbgbreak", [], _) ->
             let istate = {istate with debugBreak = true}
             istate, Completed None
@@ -3072,7 +3103,7 @@ type FsiInteractionProcessor
 
                 // After we've unblocked and got something to run we switch
                 // over to the run-thread (e.g. the GUI thread)
-                let res = istate  |> runCodeOnMainThread (fun ctok istate -> ExecuteParsedInteractionOnMainThread (ctok, diagnosticsLogger, action, istate, cancellationToken))
+                let res = istate |> runCodeOnMainThread (fun ctok istate -> ExecuteParsedInteractionOnMainThread (ctok, diagnosticsLogger, action, istate, cancellationToken))
 
                 if progress then fprintfn fsiConsoleOutput.Out "Just called runCodeOnMainThread, res = %O..." res
                 res)

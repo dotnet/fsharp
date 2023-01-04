@@ -7,6 +7,9 @@
 
 module internal FSharp.Compiler.AbstractIL.StrongNameSign
 
+open System
+open System.IO
+
 //---------------------------------------------------------------------
 // Strong name signing
 //---------------------------------------------------------------------
@@ -17,8 +20,7 @@ type ILStrongNameSigner =
     static member OpenPublicKey: byte[] -> ILStrongNameSigner
     static member OpenKeyPairFile: string -> ILStrongNameSigner
     static member OpenKeyContainer: string -> ILStrongNameSigner
-    member Close: unit -> unit
     member IsFullySigned: bool
     member PublicKey: byte[]
     member SignatureSize: int
-    member SignFile: string -> unit
+    member SignStream: Stream -> unit
