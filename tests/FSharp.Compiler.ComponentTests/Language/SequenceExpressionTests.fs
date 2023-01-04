@@ -12,6 +12,20 @@ let fsiSession = getSessionForEval()
 let runCode = evalInSharedSession fsiSession
 
 [<Fact>]
+let ``Simplest call of them all to check IL``() =
+    Fsx """
+let mySeq  =
+    seq {       
+            try
+                yield (10 /  0)
+            with _ ->
+                yield 100
+    }
+    """
+    |> compile
+    |> verifyIL ["abcde"]
+
+[<Fact>]
 let ``A seq{try/with} happy path with multiple language elements``() =
     Fsx """
 let rec mySeq inputEnumerable =
@@ -57,11 +71,23 @@ let s() = seq {
         yield 1
         l <- "End of with body" :: l
 }
+l <- "Before sum" :: l
 let totalSum = s() |> Seq.sum
+l <- "After sum" :: l
 if totalSum <> 1 then
     failwith $"Sum was {{totalSum}} instead"
 
-if l<> [] then
+l <- List.rev l
+let expectedList = 
+    [ "Before sum"   // Seq is lazy, so we do not expect anything until iteration starts
+      "Before try"
+      "Inside finally"
+      "Inside with pattern"
+      "Inside with pattern"   // Yes indeed, the exn matching pattern is executed twice
+      "Inside with body"
+      "End of with body"
+      "After sum"]
+if l<> expectedList then
     failwith $" List is %A{l}"
     """
     |> runCode
@@ -70,6 +96,7 @@ if l<> [] then
 [<Theory>]
 [<InlineData(2)>]
 [<InlineData(5000)>]
+[<InlineData(100000)>]
 let ``A sequence expression can recurse itself from with clause``(recLevel:int) =
     Fsx $"""
 let rec f () = seq {{
@@ -116,7 +143,7 @@ let mySeq (providedInput: seq<int>) =
                 yield 100
     } 
 let mySum = (mySeq [3;2;1;0]) |> Seq.sum 
-if mySum <> 100 then
+if mySum <> (6/3 + 6/2 + 6/1 + 100) then
     failwith $"Sum was {mySum} instead"
     """
     |> runCode
@@ -135,7 +162,7 @@ let mySeq () =
         with _ ->
                 yield 100
     } 
-let mySum = (mySeq () |> Seq.take 10) |> Seq.sum 
+let mySum = (mySeq () |> Seq.truncate 10) |> Seq.sum 
 if mySum <> (6/3 + 6/2 + 6/1 + 100) then
     failwith $"Sum was {mySum} instead"
     """

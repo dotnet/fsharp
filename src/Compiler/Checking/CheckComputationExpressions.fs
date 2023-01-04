@@ -2098,7 +2098,8 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
                     //    let wrappedComp2 = SynExpr.TryWith(innerComp2,withList,m,spTry,spWith,trivia)
                     //    SynExpr.Sequential(sp, isTrueSeq, innerComp1, wrappedComp2, m)
                     | other -> other
-                tcSequenceExprBody env genOuterTy tpenv liftedInnerSynExpr
+                let inner,tpenv = tcSequenceExprBody env genOuterTy tpenv liftedInnerSynExpr
+                mkSeqDelayedExpr mTryToWith inner, tpenv
 
             // Compile the pattern twice, once as a List.filter with all succeeding targets returning "1", and once as a proper catch block.
             let clauses, tpenv = 
@@ -2115,10 +2116,15 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
 
             let handlers, filterClauses = List.unzip clauses
             let withRange = trivia.WithToEndRange
-            let _v1, filterExpr = CompilePatternForMatchClauses cenv env withRange withRange true FailFilter None g.exn_ty g.int_ty filterClauses
+            let v1, filterExpr = CompilePatternForMatchClauses cenv env withRange withRange true FailFilter None g.exn_ty g.int_ty filterClauses
             //let _v2, handlerExpr = CompilePatternForMatchClauses cenv env withRange withRange true Rethrow None g.exn_ty genOuterTy handlers
-            let _v2, handlerExpr = CompilePatternForMatchClauses cenv env withRange withRange true FailFilter None g.exn_ty genOuterTy handlers
-            let combinatorExpr = mkSeqTryWith cenv env mTryToWith genOuterTy tryExpr filterExpr handlerExpr
+            let v2, handlerExpr = CompilePatternForMatchClauses cenv env withRange withRange true FailFilter None g.exn_ty genOuterTy handlers
+
+            let filterLambda = mkLambda filterExpr.Range v1 (filterExpr, genOuterTy)
+            let handlerLambda = mkLambda handlerExpr.Range v2 (handlerExpr, genOuterTy)
+
+
+            let combinatorExpr = mkSeqTryWith cenv env mTryToWith genOuterTy tryExpr filterLambda handlerLambda
             Some (combinatorExpr,tpenv)
 
             //let finalExpr = mkTryWith g (tryExpr, v1, filterExpr, v2, handlerExpr, mTryToWith, genOuterTy, spTry, spWith)
