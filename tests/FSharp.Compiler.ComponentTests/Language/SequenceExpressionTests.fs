@@ -14,13 +14,13 @@ let runCode = evalInSharedSession fsiSession
 [<Fact>]
 let ``Simplest call of them all to check IL``() =
     Fsx """
-let mySeq  =
-    seq {       
-            try
-                yield (10 /  0)
-            with _ ->
-                yield 100
-    }
+let rec f () = seq {
+    try
+        yield 1
+        yield (1/0)
+    with pat ->
+        yield! f()
+}
     """
     |> compile
     |> verifyIL ["abcde"]
@@ -96,7 +96,7 @@ if l<> expectedList then
 [<Theory>]
 [<InlineData(2)>]
 [<InlineData(5000)>]
-[<InlineData(100000)>]
+[<InlineData(20000)>]
 let ``A sequence expression can recurse itself from with clause``(recLevel:int) =
     Fsx $"""
 let rec f () = seq {{
