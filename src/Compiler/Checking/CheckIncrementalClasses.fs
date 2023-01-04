@@ -4,16 +4,17 @@ module internal FSharp.Compiler.CheckIncrementalClasses
 
 open System
 
+open FSharp.Compiler.Diagnostics
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.CheckPatterns
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Syntax
-open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Xml
@@ -121,7 +122,7 @@ let TcImplicitCtorLhs_Phase2A(cenv: cenv, env, tpenv, tcref: TyconRef, vis, attr
 
         // NOTE: no attributes can currently be specified for the implicit constructor 
         let attribs = TcAttributes cenv env (AttributeTargets.Constructor ||| AttributeTargets.Method) attrs
-        let memberFlags = CtorMemberFlags SynMemberFlagsTrivia.Zero
+        let memberFlags = CtorMemberFlags
                                   
         let synArgInfos = List.map (SynInfo.InferSynArgInfoFromSimplePat []) spats
         let valSynData = SynValInfo([synArgInfos], SynInfo.unnamedRetVal)
@@ -135,7 +136,9 @@ let TcImplicitCtorLhs_Phase2A(cenv: cenv, env, tpenv, tcref: TyconRef, vis, attr
         let varReprInfo = InferGenericArityFromTyScheme prelimTyschemeG prelimValReprInfo
         let ctorValScheme = ValScheme(id, prelimTyschemeG, Some varReprInfo, None, Some memberInfo, false, ValInline.Never, NormalVal, vis, false, true, false, false)
         let paramNames = varReprInfo.ArgNames
-        let xmlDoc = xmlDoc.ToXmlDoc(true, Some paramNames)
+
+        let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
+        let xmlDoc = xmlDoc.ToXmlDoc(checkXmlDocs, Some paramNames)
         let ctorVal = MakeAndPublishVal cenv env (Parent tcref, false, ModuleOrMemberBinding, ValInRecScope isComplete, ctorValScheme, attribs, xmlDoc, None, false) 
         ctorValScheme, ctorVal
 
@@ -149,8 +152,8 @@ let TcImplicitCtorLhs_Phase2A(cenv: cenv, env, tpenv, tcref: TyconRef, vis, attr
             let cctorTy = mkFunTy g g.unit_ty g.unit_ty
             let valSynData = SynValInfo([[]], SynInfo.unnamedRetVal)
             let id = ident ("cctor", m)
-            CheckForNonAbstractInterface ModuleOrMemberBinding tcref (ClassCtorMemberFlags SynMemberFlagsTrivia.Zero) id.idRange
-            let memberInfo = MakeMemberDataAndMangledNameForMemberVal(g, tcref, false, [], [], (ClassCtorMemberFlags SynMemberFlagsTrivia.Zero), valSynData, id, false)
+            CheckForNonAbstractInterface ModuleOrMemberBinding tcref ClassCtorMemberFlags id.idRange
+            let memberInfo = MakeMemberDataAndMangledNameForMemberVal(g, tcref, false, [], [], ClassCtorMemberFlags, valSynData, id, false)
             let prelimValReprInfo = TranslateSynValInfo m (TcAttributes cenv env) valSynData
             let prelimTyschemeG = GeneralizedType(copyOfTyconTypars, cctorTy)
             let valReprInfo = InferGenericArityFromTyScheme prelimTyschemeG prelimValReprInfo
@@ -245,7 +248,7 @@ type IncrClassReprInfo =
         if isUnitTy g v.Type then 
             false
         else 
-            let arity = InferArityOfExprBinding g AllowTypeDirectedDetupling.Yes v bind.Expr 
+            let arity = InferValReprInfoOfBinding g AllowTypeDirectedDetupling.Yes v bind.Expr 
             not arity.HasNoArgs && not v.IsMutable
 
 
@@ -292,7 +295,7 @@ type IncrClassReprInfo =
                 warning (Error(FSComp.SR.chkUnusedValue(v.DisplayName), v.Range))
 
         let repr = 
-            match InferArityOfExprBinding g AllowTypeDirectedDetupling.Yes v bind.Expr with 
+            match InferValReprInfoOfBinding g AllowTypeDirectedDetupling.Yes v bind.Expr with 
             | arity when arity.HasNoArgs || v.IsMutable -> 
                 // all mutable variables are forced into fields, since they may escape into closures within the implicit constructor
                 // e.g. 
@@ -319,16 +322,16 @@ type IncrClassReprInfo =
                     InVar isCtorArg
             | valReprInfo -> 
                 //dprintfn "Representing %s as a method %s" v.LogicalName name
-                let tps, _, argInfos, _, _ = GetTopValTypeInCompiledForm g valReprInfo 0 v.Type v.Range
+                let tps, _, argInfos, _, _ = GetValReprTypeInCompiledForm g valReprInfo 0 v.Type v.Range
 
                 let valSynInfo = SynValInfo(argInfos |> List.mapSquared (fun (_, argInfo) -> SynArgInfo([], false, argInfo.Name)), SynInfo.unnamedRetVal)
-                let memberFlags = (if isStatic then StaticMemberFlags else NonVirtualMemberFlags) SynMemberFlagsTrivia.Zero SynMemberKind.Member
+                let memberFlags = (if isStatic then StaticMemberFlags else NonVirtualMemberFlags) SynMemberKind.Member
                 let id = mkSynId v.Range name
                 let memberInfo = MakeMemberDataAndMangledNameForMemberVal(g, tcref, false, [], [], memberFlags, valSynInfo, mkSynId v.Range name, true)
 
                 let copyOfTyconTypars = ctorInfo.GetNormalizedInstanceCtorDeclaredTypars cenv env.DisplayEnv ctorInfo.TyconRef.Range
                 
-                AdjustValToTopVal v (Parent tcref) valReprInfo
+                AdjustValToHaveValReprInfo v (Parent tcref) valReprInfo
 
                 // Add the 'this' pointer on to the function
                 let memberTauTy, valReprInfo = 
@@ -403,7 +406,7 @@ type IncrClassReprInfo =
                 
         | InMethod(isStatic, methodVal, valReprInfo), _ -> 
             //dprintfn "Rewriting application of %s to be call to method %s" v.LogicalName methodVal.LogicalName
-            let expr, exprTy = AdjustValForExpectedArity g m (mkLocalValRef methodVal) NormalValUse valReprInfo 
+            let expr, exprTy = AdjustValForExpectedValReprInfo g m (mkLocalValRef methodVal) NormalValUse valReprInfo 
             // Prepend the the type arguments for the class
             let tyargs = tinst @ tyargs 
             let thisArgs =
@@ -526,7 +529,7 @@ type IncrClassReprInfo =
                         PostTransform = (fun _ -> None)
                         PreInterceptBinding = None
                         RewriteQuotations = true
-                        StackGuard = StackGuard(TcClassRewriteStackGuardDepth) } expr 
+                        StackGuard = StackGuard(TcClassRewriteStackGuardDepth, "FixupIncrClassExprPhase2C") } expr 
 
 type IncrClassConstructionBindingsPhase2C =
     | Phase2CBindings of IncrClassBindingGroup list

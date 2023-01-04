@@ -20,7 +20,19 @@
     <UseAppHost Condition="'$(DotNetBuildFromSource)' == 'true'">false</UseAppHost>
   </PropertyGroup>
 
+  <!--  The fsc application does not provide a referencable public interface  -->
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
+      <NoOptimizationData>true</NoOptimizationData>
+      <NoInterfaceData>true</NoInterfaceData>
+      <CompressMetadata Condition="'$(CompressAllMetadata)' != 'true'">false</CompressMetadata>
+  </PropertyGroup>
+
   <ItemGroup>
+    <EmbeddedText Include="$(MSBuildThisFileDirectory)..\LegacyMSBuildResolver\LegacyResolver.txt">
+      <Link>LegacyResolver.txt</Link>
+    </EmbeddedText>
+    <Compile Include="$(MSBuildThisFileDirectory)..\LegacyMSBuildResolver\LegacyMSBuildReferenceResolver.fsi" />
+    <Compile Include="$(MSBuildThisFileDirectory)..\LegacyMSBuildResolver\LegacyMSBuildReferenceResolver.fs" />
     <Compile Include="$(MSBuildThisFileDirectory)fscmain.fs" />
     <NoneSubstituteText Include="$(MSBuildThisFileDirectory)App.config">
       <Pattern1>{{FSCoreVersion}}</Pattern1>
@@ -29,20 +41,20 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(MSBuildThisFileDirectory)../FSharp.Core/FSharp.Core.fsproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)../FSharp.Core/FSharp.Core.fsproj" AdditionalProperties="TargetFramework=netstandard2.0" />
     <ProjectReference Include="$(MSBuildThisFileDirectory)../FSharp.Build/FSharp.Build.fsproj" />
     <ProjectReference Include="$(MSBuildThisFileDirectory)../Compiler/FSharp.Compiler.Service.fsproj" />
     <ProjectReference Include="$(MSBuildThisFileDirectory)../FSharp.DependencyManager.Nuget/FSharp.DependencyManager.Nuget.fsproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Console" Version="$(SystemConsoleVersion)" />
-    <PackageReference Include="System.Linq.Expressions" Version="$(SystemLinqExpressionsVersion)" />
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="$(SystemDiagnosticsDiagnosticSourceVersion)" />
     <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" />
     <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
-    <PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderVersion)" />
-    <PackageReference Include="System.Security.Principal" Version="$(SystemSecurityPrincipalVersion)" />
+    <PackageReference Include="Microsoft.Build.Framework" Version="$(MicrosoftBuildVersion)" />
+    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="$(MicrosoftBuildVersion)" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="$(MicrosoftBuildVersion)" />
   </ItemGroup>
 
 </Project>

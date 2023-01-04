@@ -19,7 +19,7 @@ type Foo =
                     |> getParseResults
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Types ([
                 SynTypeDefn.SynTypeDefn (typeRepr = SynTypeDefnRepr.Simple (simpleRepr = SynTypeDefnSimpleRepr.Union(unionCases = [
@@ -50,7 +50,7 @@ type Foo = | Bar of string
                     |> getParseResults
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Types ([
                 SynTypeDefn.SynTypeDefn (typeRepr = SynTypeDefnRepr.Simple (simpleRepr = SynTypeDefnSimpleRepr.Union(unionCases = [
@@ -73,7 +73,7 @@ type Foo =
                     |> getParseResults
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Types ([
                 SynTypeDefn.SynTypeDefn (typeRepr = SynTypeDefnRepr.Simple (simpleRepr = SynTypeDefnSimpleRepr.Union(unionCases = [
@@ -96,7 +96,7 @@ type Foo = Bar of string
                     |> getParseResults
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Types ([
                 SynTypeDefn.SynTypeDefn (typeRepr = SynTypeDefnRepr.Simple (simpleRepr = SynTypeDefnSimpleRepr.Union(unionCases = [
@@ -124,7 +124,7 @@ type Currency =
                     |> getParseResults
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Types ([
                 SynTypeDefn.SynTypeDefn (typeRepr = SynTypeDefnRepr.Simple (simpleRepr = SynTypeDefnSimpleRepr.Union(
@@ -136,3 +136,30 @@ type Currency =
         assertRange (7, 4) (7, 11) mPrivate
     | _ ->
         Assert.Fail "Could not get valid AST"
+
+[<Test>]
+let ``SynUnionCaseKind.FullType`` () =
+    let parseResults =
+        getParseResults
+             """
+type X =
+    | a: int * z:int
+ """
+
+    match parseResults with
+    | ParsedInput.ImplFile (ParsedImplFileInput(contents = [
+        SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(typeDefns = [
+                SynTypeDefn(typeRepr = SynTypeDefnRepr.Simple(simpleRepr =
+                    SynTypeDefnSimpleRepr.Union(unionCases = [
+                        SynUnionCase(caseType = SynUnionCaseKind.FullType(fullType = SynType.Tuple(path = [
+                            SynTupleTypeSegment.Type(SynType.LongIdent _)
+                            SynTupleTypeSegment.Star _
+                            SynTupleTypeSegment.Type(SynType.SignatureParameter(id = Some z))
+                        ])))
+                    ])))
+            ])
+        ])
+    ])) ->
+        Assert.AreEqual("z", z.idText)
+    | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"

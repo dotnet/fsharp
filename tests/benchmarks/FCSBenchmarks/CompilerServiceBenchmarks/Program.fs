@@ -1,8 +1,8 @@
 ﻿open BenchmarkDotNet.Running
 open FSharp.Compiler.Benchmarks
+open BenchmarkDotNet.Configs
 
 [<EntryPoint>]
-let main _ =
-    //BenchmarkRunner.Run<CompilerService>() |> ignore
-    BenchmarkRunner.Run<TypeCheckingBenchmark1>() |> ignore
+let main args =
+    BenchmarkSwitcher.FromAssembly(typeof<DecentlySizedStandAloneFileBenchmark>.Assembly).Run(args) |> ignore
     0

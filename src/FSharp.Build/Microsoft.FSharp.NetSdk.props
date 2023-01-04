@@ -30,7 +30,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
   </Choose>
 
   <PropertyGroup>
-    <EnableDefaultCompileItems Condition=" '$(EnableDefaultCompileItems)' == '' ">false</EnableDefaultCompileItems>                                <!--- Do not glob F# source files -->
+    <EnableDefaultCompileItems Condition=" '$(EnableDefaultCompileItems)' == '' ">false</EnableDefaultCompileItems>                                <!-- Do not glob F# source files -->
     <EnableDefaultNoneItems Condition=" '$(EnableDefaultNoneItems)' == '' ">false</EnableDefaultNoneItems>
   </PropertyGroup>
 
@@ -42,6 +42,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <WarningsAsErrors>3239;$(WarningsAsErrors)</WarningsAsErrors>
     <UseStandardResourceNames Condition=" '$(UseStandardResourceNames)' == '' ">true</UseStandardResourceNames>
     <FsiExec Condition=" '$(FsiExec)' == '' ">true</FsiExec>
+    <ReflectionFree Condition=" '$(ReflectionFree)' == '' ">false</ReflectionFree>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -64,6 +65,11 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <FsiToolPath Condition="'$(FsiToolPath)' == ''">$([System.IO.Path]::GetDirectoryName($(DOTNET_HOST_PATH)))</FsiToolPath>
     <FsiToolExe Condition="'$(FsiToolExe)' == ''">$([System.IO.Path]::GetFileName($(DOTNET_HOST_PATH)))</FsiToolExe>
     <DotnetFsiCompilerPath Condition="'$(DotnetFscCompilerPath)' == ''">"$(MSBuildThisFileDirectory)fsi.dll"</DotnetFsiCompilerPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(ManagePackageVersionsCentrally)' == 'true' ">
+    <DisableImplicitSystemValueTupleReference Condition="'$(DisableImplicitSystemValueTupleReference)' == ''">true</DisableImplicitSystemValueTupleReference>
+    <DisableImplicitFSharpCoreReference Condition="'$(DisableImplicitFSharpCoreReference)' == ''">true</DisableImplicitFSharpCoreReference>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(DisableImplicitSystemValueTupleReference)' != 'true'

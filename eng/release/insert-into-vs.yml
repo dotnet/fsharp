@@ -15,7 +15,7 @@ stages:
   - job: Insert_VS
     pool:
       name: NetCore1ESPool-Internal
-      demands: ImageOverride -equals build.windows.10.amd64.vs2019
+      demands: ImageOverride -equals windows.vs2019.amd64
     variables:
     - group: DotNet-VSTS-Infra-Access
     - name: InsertAccessToken

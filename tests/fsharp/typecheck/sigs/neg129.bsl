@@ -1,9 +1,9 @@
 
 neg129.fs(67,47,67,54): typecheck error FS0043: A unique overload for method 'convert_witness' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
-Known return type:  ^output
+Known return type: ^output
 
-Known type parameters: < bigint ,  ^output >
+Known type parameters: < bigint , ^output >
 
 Candidates:
  - static member witnesses.convert_witness: x: bigint * _output: Complex -> Complex

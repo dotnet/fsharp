@@ -132,7 +132,7 @@
 – Být prázdnými řetězci
 – Být systémem rezervovanými názvy včetně CON, AUX, PRN, COM1 nebo LPT2
 – Obsahovat jenom tečku (.)
-– Obsahovat jakýkoli z následujících znaků: / ? : &amp;  \ * " &lt; &gt; | # %</target>
+– Obsahovat kterýkoli z následujících znaků: / ? : &amp;  \ * " &lt; &gt; | # %</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorInvalidProjectName">
@@ -672,7 +672,7 @@
       </trans-unit>
       <trans-unit id="NoZeroImpactProjects">
         <source>Microsoft Visual F# does not support zero-impact projects. To create an F# project from this project template, either go to the Visual Studio menu 'Tools, Options..., Projects and Solutions, General' and check the box marked 'Save new projects when created', or specify &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt; in the &lt;TemplateData&gt; section of this project template's .vstemplate file, and then retry this operation.</source>
-        <target state="translated">Microsoft Visual F# nepodporuje projekty s nulovým dopadem. Pokud chcete z této šablony projektu vytvořit projekt F#, přejděte buď do nabídky Visual Studia Nástroje, Možnosti..., Projekty a řešení, Obecné a zaškrtněte políčko Uložit nové projekty při vytvoření, nebo v části &lt;TemplateData&gt; souboru .vstemplate této šablony projektu zadejte &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt; a potom to zkuste znovu.</target>
+        <target state="translated">Microsoft Visual F# nepodporuje projekty s nulovým dopadem. Pokud chcete z této šablony projektu vytvořit projekt F#, přejděte buď do nabídky Visual Studia Nástroje, Možnosti..., Projekty a řešení, Obecné a zaškrtněte políčko Uložit nové projekty při vytvoření, nebo v oddílu &lt;TemplateData&gt; souboru .vstemplate této šablony projektu zadejte &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt; a potom to zkuste znovu.</target>
         <note />
       </trans-unit>
       <trans-unit id="NoWildcardsInProject">

@@ -123,50 +123,116 @@ type SynUnionCaseTrivia = { BarRange: range option }
 type SynPatOrTrivia = { BarRange: range }
 
 [<NoEquality; NoComparison>]
+type SynPatListConsTrivia = { ColonColonRange: range }
+
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
+type SynTypeDefnLeadingKeyword =
+    | Type of range
+    | And of range
+    | StaticType of staticRange: range * typeRange: range
+    | Synthetic
+
+[<NoEquality; NoComparison>]
 type SynTypeDefnTrivia =
     {
-        TypeKeyword: range option
+        LeadingKeyword: SynTypeDefnLeadingKeyword
         EqualsRange: range option
         WithKeyword: range option
     }
 
     static member Zero: SynTypeDefnTrivia =
         {
-            TypeKeyword = None
+            LeadingKeyword = SynTypeDefnLeadingKeyword.Synthetic
             EqualsRange = None
             WithKeyword = None
         }
 
 [<NoEquality; NoComparison>]
+type SynTypeDefnSigTrivia =
+    {
+        LeadingKeyword: SynTypeDefnLeadingKeyword
+        EqualsRange: range option
+        WithKeyword: range option
+    }
+
+    static member Zero: SynTypeDefnSigTrivia =
+        {
+            LeadingKeyword = SynTypeDefnLeadingKeyword.Synthetic
+            EqualsRange = None
+            WithKeyword = None
+        }
+
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
+type SynLeadingKeyword =
+    | Let of letRange: range
+    | LetRec of letRange: range * recRange: range
+    | And of andRange: range
+    | Use of useRange: range
+    | UseRec of useRange: range * recRange: range
+    | Extern of externRange: range
+    | Member of memberRange: range
+    | MemberVal of memberRange: range * valRange: range
+    | Override of overrideRange: range
+    | OverrideVal of overrideRange: range * valRange: range
+    | Abstract of abstractRange: range
+    | AbstractMember of abstractRange: range * memberRange: range
+    | StaticMember of staticRange: range * memberRange: range
+    | StaticMemberVal of staticRange: range * memberRange: range * valRange: range
+    | StaticAbstract of staticRange: range * abstractRange: range
+    | StaticAbstractMember of staticRange: range * abstractMember: range * memberRange: range
+    | StaticVal of staticRange: range * valRange: range
+    | StaticLet of staticRange: range * letRange: range
+    | StaticLetRec of staticRange: range * letRange: range * recRange: range
+    | StaticDo of staticRange: range * doRange: range
+    | Default of defaultRange: range
+    | DefaultVal of defaultRange: range * valRange: range
+    | Val of valRange: range
+    | New of newRange: range
+    | Do of doRange: range
+    | Synthetic
+
+    member this.Range =
+        match this with
+        | Let m
+        | And m
+        | Use m
+        | Extern m
+        | Member m
+        | Override m
+        | Abstract m
+        | Default m
+        | Val m
+        | New m
+        | Do m -> m
+        | LetRec (m1, m2)
+        | UseRec (m1, m2)
+        | AbstractMember (m1, m2)
+        | StaticMember (m1, m2)
+        | StaticAbstract (m1, m2)
+        | StaticAbstractMember (m1, _, m2)
+        | StaticVal (m1, m2)
+        | StaticLet (m1, m2)
+        | StaticLetRec (m1, _, m2)
+        | StaticDo (m1, m2)
+        | DefaultVal (m1, m2)
+        | MemberVal (m1, m2)
+        | OverrideVal (m1, m2)
+        | StaticMemberVal (m1, _, m2) -> Range.unionRanges m1 m2
+        | Synthetic -> Range.Zero
+
+[<NoEquality; NoComparison>]
 type SynBindingTrivia =
     {
-        LetKeyword: range option
+        LeadingKeyword: SynLeadingKeyword
+        InlineKeyword: range option
         EqualsRange: range option
     }
 
     static member Zero: SynBindingTrivia =
         {
-            LetKeyword = None
+            LeadingKeyword = SynLeadingKeyword.Synthetic
+            InlineKeyword = None
             EqualsRange = None
-        }
-
-[<NoEquality; NoComparison>]
-type SynMemberFlagsTrivia =
-    {
-        MemberRange: range option
-        OverrideRange: range option
-        AbstractRange: range option
-        StaticRange: range option
-        DefaultRange: range option
-    }
-
-    static member Zero: SynMemberFlagsTrivia =
-        {
-            MemberRange = None
-            OverrideRange = None
-            AbstractRange = None
-            StaticRange = None
-            DefaultRange = None
         }
 
 [<NoEquality; NoComparison>]
@@ -202,31 +268,37 @@ type SynModuleSigDeclNestedModuleTrivia =
             EqualsRange = None
         }
 
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
+type SynModuleOrNamespaceLeadingKeyword =
+    | Module of moduleRange: range
+    | Namespace of namespaceRange: range
+    | None
+
 [<NoEquality; NoComparison>]
 type SynModuleOrNamespaceTrivia =
     {
-        ModuleKeyword: range option
-        NamespaceKeyword: range option
+        LeadingKeyword: SynModuleOrNamespaceLeadingKeyword
     }
 
 [<NoEquality; NoComparison>]
 type SynModuleOrNamespaceSigTrivia =
     {
-        ModuleKeyword: range option
-        NamespaceKeyword: range option
+        LeadingKeyword: SynModuleOrNamespaceLeadingKeyword
     }
 
 [<NoEquality; NoComparison>]
 type SynValSigTrivia =
     {
-        ValKeyword: range option
+        LeadingKeyword: SynLeadingKeyword
+        InlineKeyword: range option
         WithKeyword: range option
         EqualsRange: range option
     }
 
     static member Zero: SynValSigTrivia =
         {
-            ValKeyword = None
+            LeadingKeyword = SynLeadingKeyword.Synthetic
+            InlineKeyword = None
             WithKeyword = None
             EqualsRange = None
         }
@@ -237,8 +309,67 @@ type SynTypeFunTrivia = { ArrowRange: range }
 [<NoEquality; NoComparison>]
 type SynMemberGetSetTrivia =
     {
+        InlineKeyword: range option
         WithKeyword: range
         GetKeyword: range option
         AndKeyword: range option
         SetKeyword: range option
     }
+
+[<NoEquality; NoComparison>]
+type SynArgPatsNamePatPairsTrivia = { ParenRange: range }
+
+[<NoEquality; NoComparison>]
+type GetSetKeywords =
+    | Get of range
+    | Set of range
+    | GetSet of get: range * set: range
+
+    member x.Range =
+        match x with
+        | Get m
+        | Set m -> m
+        | GetSet (mG, mS) ->
+            if Range.rangeBeforePos mG mS.Start then
+                Range.unionRanges mG mS
+            else
+                Range.unionRanges mS mG
+
+[<NoEquality; NoComparison>]
+type SynMemberDefnAutoPropertyTrivia =
+    {
+        LeadingKeyword: SynLeadingKeyword
+        WithKeyword: range option
+        EqualsRange: range option
+        GetSetKeywords: GetSetKeywords option
+    }
+
+[<NoEquality; NoComparison>]
+type SynMemberDefnAbstractSlotTrivia =
+    {
+        GetSetKeywords: GetSetKeywords option
+    }
+
+    static member Zero = { GetSetKeywords = None }
+
+[<NoEquality; NoComparison>]
+type SynFieldTrivia =
+    {
+        LeadingKeyword: SynLeadingKeyword option
+    }
+
+    static member Zero: SynFieldTrivia = { LeadingKeyword = None }
+
+[<NoEquality; NoComparison>]
+type SynTypeOrTrivia = { OrKeyword: range }
+
+[<NoEquality; NoComparison>]
+type SynBindingReturnInfoTrivia = { ColonRange: range option }
+
+[<NoEquality; NoComparison>]
+type SynMemberSigMemberTrivia =
+    {
+        GetSetKeywords: GetSetKeywords option
+    }
+
+    static member Zero: SynMemberSigMemberTrivia = { GetSetKeywords = None }

@@ -1,0 +1,74 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net7.0</TargetFramework>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <Configurations>Release</Configurations>
+    <!-- Workaround to get rid of:
+        error NU1505: Duplicate 'PackageDownload' items found.
+        Remove the duplicate items or use the Update functionality to ensure a consistent restore behavior.
+        The duplicate 'PackageDownload' items are:
+          Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2].
+    -->
+    <NoWarn>$(NoWarn);NU1505</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <Optimize>true</Optimize>
+    <Tailcalls>true</Tailcalls>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <FcsReferenceType Condition="'$(FcsReferenceType)' == ''">project</FcsReferenceType>
+    <FcsProjectPath Condition="'$(FcsProjectPath)' == ''">..\..\..\..\src\Compiler\FSharp.Compiler.Service.fsproj</FcsProjectPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Helpers.fs" />
+    <Compile Include="SingleFileCompiler.fs" />
+    <Compile Include="Program.fs" />
+    <None Include="sample_results\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="$(BenchmarkDotNetVersion)" />
+  </ItemGroup>
+
+  <!-- Reference FCS in one of three different ways -->
+
+  <!-- Reference a project -->
+  <ItemGroup Condition="'$(FcsReferenceType)' == 'project'">
+    <ProjectReference Include="$(FcsProjectPath)" />
+  </ItemGroup>
+  <!-- Reference the FCS NuGet package with the specified $FcsVersion, use locally built FSharp.Core
+       Arguably this could be changed to depend on the version of FSharp.Core that's pulled in via FSharp.Compiler.Service.
+       Keeping the old behaviour for now
+  -->
+  <ItemGroup Condition=" '$(FcsReferenceType)' == 'nuget' ">
+    <PackageReference Include="FSharp.Compiler.Service" Version="$(FcsNuGetVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' != 'true'">
+    <ProjectReference Include="..\..\..\..\src\FSharp.Core\FSharp.Core.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">
+    <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" />
+  </ItemGroup>
+
+  <!-- Reference the dlls specified in $FcsDllPath and $FSharpCoreDllPath -->
+  <ItemGroup Condition=" '$(FcsReferenceType)' == 'dll' ">
+    <Reference Include="FSharp.Compiler.Service">
+      <HintPath>$(FcsDllPath)</HintPath>
+    </Reference>
+    <Reference Include="FSharp.Core">
+      <HintPath>$(FSharpCoreDllPath)</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <Target Name="FakeBuild" BeforeTargets="Build">
+    <Message Text="Type=$(FcsReferenceType) FcsDllPath=$(FcsDllPath)" />
+  </Target>
+
+</Project>

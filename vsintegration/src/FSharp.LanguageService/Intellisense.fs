@@ -127,7 +127,7 @@ type internal FSharpDeclarations_DEPRECATED(documentationBuilder, declarations: 
     inherit Declarations_DEPRECATED()  
 
     // Sort the declarations, NOTE: we used ORDINAL comparison here, this is "by design" from F# 2.0, partly because it puts lowercase last.
-    let declarations = declarations |> Array.sortWith (fun d1 d2 -> compare d1.Name d2.Name)
+    let declarations = declarations |> Array.sortWith (fun d1 d2 -> compare d1.NameInList d2.NameInList)
     let mutable lastBestMatch = ""
     let isEmpty = (declarations.Length = 0)
 
@@ -146,7 +146,7 @@ type internal FSharpDeclarations_DEPRECATED(documentationBuilder, declarations: 
                             let filterTextPrefix = filterText.[0..i]
                             match tab.TryGetValue filterTextPrefix with
                             | true, decls -> yield decls
-                            | false, _ -> yield declarations |> Array.filter (fun s -> matcher.MatchSingleWordPattern(s.Name, filterTextPrefix)<>null) 
+                            | false, _ -> yield declarations |> Array.filter (fun s -> matcher.MatchSingleWordPattern(s.NameInList, filterTextPrefix)<>null) 
                       yield declarations }
                 |> Seq.tryFind (fun arr -> arr.Length > 0)
                 |> (function None -> declarations | Some s -> s)
@@ -160,7 +160,7 @@ type internal FSharpDeclarations_DEPRECATED(documentationBuilder, declarations: 
     override decl.GetDisplayText(filterText, index) =
         let decls = trimmedDeclarations filterText
         if (index >= 0 && index < decls.Length) then
-            decls.[index].Name
+            decls.[index].NameInList
         else ""
 
     override decl.IsEmpty() = isEmpty
@@ -172,7 +172,7 @@ type internal FSharpDeclarations_DEPRECATED(documentationBuilder, declarations: 
             if (item.Glyph = FSharpGlyph.Error) then
                 ""
             else 
-                item.Name
+                item.NameInList
         else String.Empty
     
     override decl.GetNameInCode(filterText, index) =
@@ -231,7 +231,7 @@ type internal FSharpDeclarations_DEPRECATED(documentationBuilder, declarations: 
         // We intercept this call only to get the initial extent
         // of what was committed to the source buffer.
         let result = decl.GetName(filterText, index)
-        PrettyNaming.AddBackticksToIdentifierIfNeeded result
+        PrettyNaming.NormalizeIdentifierBackticks result
 
     override decl.IsCommitChar(commitCharacter) =
         // Usual language identifier rules...
@@ -246,7 +246,7 @@ type internal FSharpDeclarations_DEPRECATED(documentationBuilder, declarations: 
         let compareStrings(s,t,l,b : bool) = System.String.Compare(s,0,t,0,l,b)
         let tryFindDeclIndex text length ignoreCase = 
             decls 
-            |> Array.tryFindIndex (fun d -> compareStrings(d.Name, text, length, ignoreCase) = 0)
+            |> Array.tryFindIndex (fun d -> compareStrings(d.NameInList, text, length, ignoreCase) = 0)
         // The best match is the first item that begins with the longest prefix of the 
         // given word (value).  
         let rec findMatchOfLength len ignoreCase = 
@@ -259,9 +259,9 @@ type internal FSharpDeclarations_DEPRECATED(documentationBuilder, declarations: 
                 let firstMatchingLenChars = tryFindDeclIndex textSoFar len ignoreCase
                 match firstMatchingLenChars with
                 | Some index -> 
-                    lastBestMatch <- decls.[index].Name
+                    lastBestMatch <- decls.[index].NameInList
                     let select = len = textSoFar.Length
-                    if (index <> decls.Length- 1) && (compareStrings(decls.[index+1].Name , textSoFar, len, ignoreCase) = 0) 
+                    if (index <> decls.Length- 1) && (compareStrings(decls.[index+1].NameInList , textSoFar, len, ignoreCase) = 0) 
                     then (index, false, select)
                     else (index, select, select)
                 | None -> 
@@ -278,7 +278,7 @@ type internal FSharpDeclarations_DEPRECATED(documentationBuilder, declarations: 
                 // for example, "System.Console.WrL" will filter down to one, and still be a match, whereas
                 // "System.Console.WrLx" will filter down to one, but no longer be a match
                 decls.Length = 1 &&
-                AbstractPatternMatcher.Singleton.MatchSingleWordPattern(decls.[0].Name, textSoFar)<>null
+                AbstractPatternMatcher.Singleton.MatchSingleWordPattern(decls.[0].NameInList, textSoFar)<>null
             )
         shouldSelectItem <- preselect
 

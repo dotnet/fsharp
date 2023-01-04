@@ -166,7 +166,7 @@ and accLambdas cenv env valReprInfo expr exprTy =
     | Expr.TyChoose (_tps, bodyExpr, _m)  -> accLambdas cenv env valReprInfo bodyExpr exprTy      
     | Expr.Lambda _
     | Expr.TyLambda _ ->
-        let _tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy = destTopLambda cenv.g cenv.amap valReprInfo (expr, exprTy) 
+        let _tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy = destLambdaWithValReprInfo cenv.g cenv.amap valReprInfo (expr, exprTy) 
         accTy cenv env bodyTy
         vsl |> List.iterSquared (accVal cenv env)
         baseValOpt |> Option.iter (accVal cenv env)
@@ -285,7 +285,7 @@ let UnsolvedTyparsOfModuleDef g amap denv mdef extraAttribs =
           amap=amap 
           denv=denv 
           unsolved = [] 
-          stackGuard = StackGuard(FindUnsolvedStackGuardDepth) }
+          stackGuard = StackGuard(FindUnsolvedStackGuardDepth, "UnsolvedTyparsOfModuleDef") }
     accModuleOrNamespaceDef cenv NoEnv mdef
     accAttribs cenv NoEnv extraAttribs
     List.rev cenv.unsolved

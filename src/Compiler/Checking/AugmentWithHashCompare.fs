@@ -7,7 +7,6 @@ open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Syntax
-open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Xml
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
@@ -855,8 +854,8 @@ let slotImplMethod (final, c, slotsig) : ValMemberInfo =
           IsDispatchSlot=false
           IsFinal=final
           IsOverrideOrExplicitImpl=true
-          MemberKind=SynMemberKind.Member
-          Trivia=SynMemberFlagsTrivia.Zero}
+          GetterOrSetterIsCompilerGenerated=false
+          MemberKind=SynMemberKind.Member }
     IsImplemented=false
     ApparentEnclosingEntity=c} 
 
@@ -866,8 +865,8 @@ let nonVirtualMethod c : ValMemberInfo =
                   IsDispatchSlot=false
                   IsFinal=false
                   IsOverrideOrExplicitImpl=false
-                  MemberKind=SynMemberKind.Member
-                  Trivia=SynMemberFlagsTrivia.Zero}
+                  GetterOrSetterIsCompilerGenerated=false
+                  MemberKind=SynMemberKind.Member }
     IsImplemented=false
     ApparentEnclosingEntity=c} 
 

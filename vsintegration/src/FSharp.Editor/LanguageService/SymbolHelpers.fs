@@ -3,6 +3,7 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
+open System.Collections.Concurrent
 open System.Collections.Immutable
 open System.Threading
 open System.Threading.Tasks
@@ -10,7 +11,6 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 
-open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
@@ -36,12 +36,13 @@ module internal SymbolHelpers =
             return symbolUses
         }
 
-    let getSymbolUsesInProjects (symbol: FSharpSymbol, projects: Project list, onFound: Document -> TextSpan -> range -> Async<unit>) =
+    let getSymbolUsesInProjects (symbol: FSharpSymbol, projects: Project list, onFound: Document -> TextSpan -> range -> Async<unit>, ct: CancellationToken) =
         projects
-        |> Seq.map (fun project -> project.FindFSharpReferencesAsync(symbol, onFound, "getSymbolUsesInProjects"))
-        |> Async.Parallel
+        |> Seq.map (fun project ->
+            Task.Run(fun () -> project.FindFSharpReferencesAsync(symbol, onFound, "getSymbolUsesInProjects", ct)))
+        |> Task.WhenAll
 
-    let getSymbolUsesInSolution (symbol: FSharpSymbol, declLoc: SymbolDeclarationLocation, checkFileResults: FSharpCheckFileResults, solution: Solution) =
+    let getSymbolUsesInSolution (symbol: FSharpSymbol, declLoc: SymbolDeclarationLocation, checkFileResults: FSharpCheckFileResults, solution: Solution, ct: CancellationToken) =
         async {
             let toDict (symbolUseRanges: range seq) =
                 let groups =
@@ -59,7 +60,7 @@ module internal SymbolHelpers =
                 let symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbol, ct)
                 return toDict (symbolUses |> Seq.map (fun symbolUse -> symbolUse.Range))
             | SymbolDeclarationLocation.Projects (projects, isInternalToProject) -> 
-                let symbolUseRanges = ImmutableArray.CreateBuilder()
+                let symbolUseRanges = ConcurrentBag()
                     
                 let projects =
                     if isInternalToProject then projects
@@ -73,11 +74,11 @@ module internal SymbolHelpers =
                     fun _ _ symbolUseRange ->
                         async { symbolUseRanges.Add symbolUseRange }
 
-                let! _ = getSymbolUsesInProjects (symbol, projects, onFound)
+                do! getSymbolUsesInProjects (symbol, projects, onFound, ct) |> Async.AwaitTask
                     
                 // Distinct these down because each TFM will produce a new 'project'.
                 // Unless guarded by a #if define, symbols with the same range will be added N times
-                let symbolUseRanges = symbolUseRanges.ToArray() |> Array.distinct
+                let symbolUseRanges = symbolUseRanges |> Seq.distinct
                 return toDict symbolUseRanges
         }
  
@@ -115,7 +116,7 @@ module internal SymbolHelpers =
                 Func<_,_>(fun (cancellationToken: CancellationToken) ->
                     async {
                         let! symbolUsesByDocumentId = 
-                            getSymbolUsesInSolution(symbolUse.Symbol, declLoc, checkFileResults, document.Project.Solution)
+                            getSymbolUsesInSolution(symbolUse.Symbol, declLoc, checkFileResults, document.Project.Solution, cancellationToken)
                         
                         let mutable solution = document.Project.Solution
                             

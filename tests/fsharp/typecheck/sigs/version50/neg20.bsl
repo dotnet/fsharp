@@ -200,8 +200,8 @@ neg20.fs(182,14,182,31): typecheck error FS0041: No overloads match for method '
 Known types of arguments: string * obj
 
 Available overloads:
- - static member C2.M: fmt: string * [<System.ParamArray>] args: int[] -> string // Argument 'args' doesn't match
- - static member C2.M: fmt: string * [<System.ParamArray>] args: int[] -> string // Argument at index 1 doesn't match
+ - static member C2.M: fmt: string * [<System.ParamArray>] args: int array -> string // Argument 'args' doesn't match
+ - static member C2.M: fmt: string * [<System.ParamArray>] args: int array -> string // Argument at index 1 doesn't match
 
 neg20.fs(183,29,183,34): typecheck error FS0001: This expression was expected to have type
     'int'    
@@ -253,8 +253,8 @@ neg20.fs(188,14,188,31): typecheck error FS0041: No overloads match for method '
 Known types of arguments: string * obj
 
 Available overloads:
- - static member C3.M: fmt: string * [<System.ParamArray>] args: string[] -> string // Argument 'args' doesn't match
- - static member C3.M: fmt: string * [<System.ParamArray>] args: string[] -> string // Argument at index 1 doesn't match
+ - static member C3.M: fmt: string * [<System.ParamArray>] args: string array -> string // Argument 'args' doesn't match
+ - static member C3.M: fmt: string * [<System.ParamArray>] args: string array -> string // Argument at index 1 doesn't match
 
 neg20.fs(189,29,189,34): typecheck error FS0001: This expression was expected to have type
     'string'    
@@ -319,7 +319,7 @@ neg20.fs(216,5,216,12): typecheck error FS0842: This attribute is not valid for 
 
 neg20.fs(219,5,219,15): typecheck error FS0842: This attribute is not valid for use on this language element
 
-neg20.fs(222,5,222,24): typecheck error FS0842: This attribute is not valid for use on this language element
+neg20.fs(222,5,222,31): typecheck error FS0842: This attribute is not valid for use on this language element
 
 neg20.fs(225,5,225,22): typecheck error FS0842: This attribute is not valid for use on this language element
 
@@ -337,9 +337,9 @@ neg20.fs(243,5,243,23): typecheck error FS0842: This attribute is not valid for 
 
 neg20.fs(249,9,249,27): typecheck error FS0842: This attribute is not valid for use on this language element
 
-neg20.fs(255,5,255,21): typecheck error FS0842: This attribute is not valid for use on this language element
+neg20.fs(255,5,255,28): typecheck error FS0842: This attribute is not valid for use on this language element
 
-neg20.fs(258,5,258,31): typecheck error FS0842: This attribute is not valid for use on this language element
+neg20.fs(258,5,258,38): typecheck error FS0842: This attribute is not valid for use on this language element
 
 neg20.fs(261,5,261,17): typecheck error FS0842: This attribute is not valid for use on this language element
 
@@ -347,7 +347,7 @@ neg20.fs(265,5,265,24): typecheck error FS0842: This attribute is not valid for 
 
 neg20.fs(268,5,268,27): typecheck error FS0842: This attribute is not valid for use on this language element
 
-neg20.fs(271,5,271,13): typecheck error FS0842: This attribute is not valid for use on this language element
+neg20.fs(271,5,271,15): typecheck error FS0842: This attribute is not valid for use on this language element
 
 neg20.fs(278,14,278,95): typecheck error FS0507: No accessible member or object constructor named 'ProcessStartInfo' takes 0 arguments. Note the call to this member also provides 2 named arguments.
 
@@ -382,7 +382,7 @@ neg20.fs(335,11,335,24): typecheck error FS0041: A unique overload for method 'S
 Known type of argument: 'a0
 
 Candidates:
- - System.String(value: char[]) : System.String
+ - System.String(value: char array) : System.String
  - System.String(value: nativeptr<char>) : System.String
  - System.String(value: nativeptr<sbyte>) : System.String
 
@@ -391,7 +391,7 @@ neg20.fs(336,11,336,22): typecheck error FS0041: A unique overload for method 'G
 Known type of argument: 'a0
 
 Candidates:
- - System.Guid(b: byte[]) : System.Guid
+ - System.Guid(b: byte array) : System.Guid
  - System.Guid(g: string) : System.Guid
 
 neg20.fs(355,19,355,38): typecheck error FS1124: Multiple types exist called 'OverloadedClassName', taking different numbers of generic parameters. Provide a type instantiation to disambiguate the type resolution, e.g. 'OverloadedClassName<_>'.

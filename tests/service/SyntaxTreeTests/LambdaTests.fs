@@ -11,7 +11,7 @@ let ``Lambda with two parameters gives correct body`` () =
             "fun a b -> x"
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Expr(
             expr = SynExpr.Lambda(parsedData = Some([SynPat.Named _; SynPat.Named _], SynExpr.Ident ident))
         )
@@ -26,7 +26,7 @@ let ``Lambda with wild card parameter gives correct body`` () =
             "fun a _ b -> x"
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Expr(
             expr = SynExpr.Lambda(parsedData = Some([SynPat.Named _; SynPat.Wild _; SynPat.Named _], SynExpr.Ident ident))
         )
@@ -41,7 +41,7 @@ let ``Lambda with tuple parameter with wild card gives correct body`` () =
             "fun a (b, _) c -> x"
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Expr(
             expr = SynExpr.Lambda(parsedData = Some([SynPat.Named _; SynPat.Paren(SynPat.Tuple _,_); SynPat.Named _], SynExpr.Ident ident))
         )
@@ -56,7 +56,7 @@ let ``Lambda with wild card that returns a lambda gives correct body`` () =
             "fun _ -> fun _ -> x"
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Expr(
             expr = SynExpr.Lambda(parsedData = Some([SynPat.Wild _], SynExpr.Lambda(parsedData = Some([SynPat.Wild _], SynExpr.Ident ident))))
         )
@@ -71,7 +71,7 @@ let ``Simple lambda has arrow range`` () =
             "fun x -> x"
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Expr(
             expr = SynExpr.Lambda(trivia={ ArrowRange = Some mArrow })
         )
@@ -88,7 +88,7 @@ let ``Multiline lambda has arrow range`` () =
                                 x * y * z"
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Expr(
             expr = SynExpr.Lambda(trivia={ ArrowRange = Some mArrow })
         )
@@ -103,7 +103,7 @@ let ``Destructed lambda has arrow range`` () =
             "fun { X = x } -> x * 2"
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Expr(
             expr = SynExpr.Lambda(trivia={ ArrowRange = Some mArrow })
         )
@@ -118,7 +118,7 @@ let ``Tuple in lambda has arrow range`` () =
             "fun (x, _) -> x * 3"
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Expr(
             expr = SynExpr.Lambda(trivia={ ArrowRange = Some mArrow })
         )
@@ -137,7 +137,7 @@ let ``Complex arguments lambda has arrow range`` () =
     x * y + z"
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Expr(
             expr = SynExpr.Lambda(trivia={ ArrowRange = Some mArrow })
         )

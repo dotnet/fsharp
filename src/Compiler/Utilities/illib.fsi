@@ -48,9 +48,7 @@ module internal PervasiveAutoOpens =
     /// We set the limit to be 80k to account for larger pointer sizes for when F# is running 64-bit.
     val LOH_SIZE_THRESHOLD_BYTES: int
 
-    val reportTime: (bool -> string -> unit)
-
-    val runningOnMono: bool
+    val reportTime: (string -> unit)
 
     /// Get an initialization hole
     val getHole: r: 'a option ref -> 'a
@@ -594,7 +592,7 @@ module internal MapAutoOpens =
 
         static member Empty: Map<'Key, 'Value> when 'Key: comparison
 
-#if USE_SHIPPED_FSCORE
+#if FSHARPCORE_USE_PACKAGE
         member Values: 'Value list
 #endif
 

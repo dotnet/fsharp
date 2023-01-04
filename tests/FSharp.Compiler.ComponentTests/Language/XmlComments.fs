@@ -50,6 +50,17 @@ module M =
                 ]
 
     [<Fact>]
+    let ``diagnostic is not reported when disabled`` () =
+        Fsx"""
+    /// <summary> F </summary>
+    /// <param name="x"> the parameter </param>
+    let f a = a
+        """
+         |> compile
+         |> shouldSucceed
+         |> withDiagnostics []
+
+    [<Fact>]
     let ``invalid parameter name is reported`` () =
         Fsx"""
     /// <summary> Return <paramref name="b" /> </summary>
@@ -206,4 +217,28 @@ module M =
          |> ignoreWarnings
          |> compile
          |> shouldSucceed
+         |> withDiagnostics [ ]
+
+    [<Fact>]
+    let ``Union field - unnamed 01`` () =
+        Fsx"""
+        type A =
+            /// <summary>A</summary>
+            /// <param name="Item">Item</param>
+            | A of int
+        """
+         |> withXmlCommentChecking
+         |> compile
+         |> withDiagnostics [ Warning 3390, Line 3, Col 13, Line 4, Col 48, "This XML comment is invalid: unknown parameter 'Item'" ]
+
+    [<Fact>]
+    let ``Union field - unnamed 02`` () =
+        Fsx"""
+        type A =
+            /// <summary>A</summary>
+            /// <param name="a">a</param>
+            | A of int * a: int
+        """
+         |> withXmlCommentChecking
+         |> compile
          |> withDiagnostics [ ]

@@ -98,7 +98,7 @@ extern int private c()
 extern int AccessibleChildren()"""
 
         match parseResults with
-        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+        | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Let(false, [ SynBinding(range = mb) ] , ml)
         ]) ])) ->
             assertRange (2, 0) (3, 31) ml
@@ -113,7 +113,7 @@ extern void setCallbridgeSupportTarget(IntPtr newTarget)
 """
 
         match ast with
-        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+        | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
             SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                 SynModuleDecl.Let(false, [ SynBinding(returnInfo =
                     Some (SynBindingReturnInfo(typeName =
@@ -133,7 +133,7 @@ extern int AccessibleChildren(int* x)
 """
 
         match ast with
-        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+        | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
             SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                 SynModuleDecl.Let(false, [ SynBinding(headPat =
                     SynPat.LongIdent(argPats = SynArgPats.Pats [
@@ -157,7 +157,7 @@ extern int AccessibleChildren(obj& x)
 """
 
         match ast with
-        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+        | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
             SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                 SynModuleDecl.Let(false, [ SynBinding(headPat =
                     SynPat.LongIdent(argPats = SynArgPats.Pats [
@@ -181,7 +181,7 @@ extern int AccessibleChildren(void* x)
 """
 
         match ast with
-        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+        | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
             SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                 SynModuleDecl.Let(false, [ SynBinding(headPat =
                     SynPat.LongIdent(argPats = SynArgPats.Pats [
@@ -361,3 +361,15 @@ let tester2: int Group = []
                         |> should equal expectedTypeFormat
                 | _ -> Assert.Fail (sprintf "Couldn't get member: %s" entityName)
             )
+
+    [<Test>]
+    let ``FsharpType.Format default to arrayNd shorthands for multidimensional arrays`` ([<Values(2,6,32)>]rank) = 
+            let commas = System.String(',', rank - 1)
+            let _, checkResults = getParseAndCheckResults $""" let myArr : int[{commas}] = Unchecked.defaultOf<_>"""  
+            let symbolUse = findSymbolUseByName "myArr" checkResults
+            match symbolUse.Symbol  with
+            | :? FSharpMemberOrFunctionOrValue as v ->
+                v.FullType.Format symbolUse.DisplayContext
+                |> shouldEqual $"int array{rank}d"
+
+            | other -> Assert.Fail(sprintf "myArr was supposed to be a value, but is %A"  other)

@@ -6,8 +6,15 @@ open FluentAssertions
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Test
 open Xunit
+open System.Threading
 
-[<Collection("SingleThreaded")>]
+type Sentinel () =
+    let x = ()
+
+module MyModule =
+    let test(x: int) = ()
+
+[<CollectionDefinition("FsiTests", DisableParallelization = true)>]
 module FsiTests =
 
     let createFsiSession (useOneDynamicAssembly: bool) =
@@ -636,3 +643,51 @@ module FsiTests =
         let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
         Assert.shouldBe typeof<CustomType2[,]> boundValue.Value.ReflectionType
         boundValue.Value.ReflectionValue.Should().Be(mdArr, "") |> ignore
+
+#if NETCOREAPP
+    [<Fact>]
+    let ``Evaluating simple reference and code succeeds with multiemit on``() =
+
+        use fsiSession = createFsiSession false
+        let assemblyPath = typeof<Sentinel>.Assembly.Location.Replace("\\", "/")
+        let res, errors = fsiSession.EvalInteractionNonThrowing($"""
+            #r "{assemblyPath}"
+            FSharp.Compiler.UnitTests.MyModule.test(3)""")
+
+        errors
+        |> Array.iter (fun e -> printfn "error: %A" e)
+
+        match res with
+        | Choice1Of2 v ->
+            let v =
+                match v with
+                | Some v -> sprintf "%A" v.ReflectionValue
+                | None -> "(none)"
+            printfn "value: %A" v
+        | Choice2Of2 e ->
+            printfn "exception: %A" e
+            raise e
+
+    [<Fact>]
+    let ``Evaluating simple reference and code succeeds with multiemit off``() =
+
+        use fsiSession = createFsiSession true
+        let assemblyPath = typeof<Sentinel>.Assembly.Location.Replace("\\", "/")
+        let res, errors = fsiSession.EvalInteractionNonThrowing($"""
+            #r "{assemblyPath}"
+            FSharp.Compiler.UnitTests.MyModule.test(3)""")
+
+        errors
+        |> Array.iter (fun e -> printfn "error: %A" e)
+
+        match res with
+        | Choice1Of2 v ->
+            let v =
+                match v with
+                | Some v -> sprintf "%A" v.ReflectionValue
+                | None -> "(none)"
+            printfn "value: %A" v
+        | Choice2Of2 e ->
+            printfn "exception: %A" e
+            raise e
+#endif

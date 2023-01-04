@@ -82,6 +82,11 @@ val stringOfMethInfo: infoReader: InfoReader -> m: range -> denv: DisplayEnv -> 
 val multiLineStringOfMethInfos:
     infoReader: InfoReader -> m: range -> denv: DisplayEnv -> minfos: MethInfo list -> string
 
+val stringOfPropInfo: g: TcGlobals -> amap: ImportMap -> m: range -> denv: DisplayEnv -> pinfo: PropInfo -> string
+
+val multiLineStringOfPropInfos:
+    g: TcGlobals -> amap: ImportMap -> m: range -> denv: DisplayEnv -> pinfos: PropInfo list -> string
+
 val stringOfParamData: denv: DisplayEnv -> paramData: ParamData -> string
 
 val layoutOfParamData: denv: DisplayEnv -> paramData: ParamData -> Layout
@@ -107,6 +112,8 @@ val stringOfTyparConstraint: denv: DisplayEnv -> Typar * TyparConstraint -> stri
 val stringOfTy: denv: DisplayEnv -> x: TType -> string
 
 val prettyLayoutOfType: denv: DisplayEnv -> x: TType -> Layout
+
+val prettyLayoutOfTrait: denv: DisplayEnv -> x: TraitConstraintInfo -> Layout
 
 val prettyLayoutOfTypeNoCx: denv: DisplayEnv -> x: TType -> Layout
 
