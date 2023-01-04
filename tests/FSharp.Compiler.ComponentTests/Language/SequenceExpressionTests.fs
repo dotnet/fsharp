@@ -37,6 +37,53 @@ if (mySeq [0..5] |> Seq.sum) <> (1+(1+3)+3+4+5+5) then
     |> shouldSucceed
 
 [<Fact>]
+let ``Inner try-finally's Dispose is executed before yielding from outer try-with``() =
+    Fsx """
+let mutable l = []
+let s() = seq {
+    try
+        try
+            l <- "Before try" :: l
+            yield (1/0)
+            l <- "After crash should never happen" :: l
+        finally
+            l <- "Inside finally" :: l
+    with ex when (l <- "Inside with pattern" :: l;true) ->
+        l <- "Inside with body" :: l
+        yield 1
+        l <- "End of with body" :: l
+}
+let totalSum = s() |> Seq.sum
+if totalSum <> 1 then
+    failwith $"Sum was {{totalSum}} instead"
+
+failwith $"List is %A{l}"
+    """
+    |> asExe
+    |> compileAndRun
+    |> shouldSucceed
+
+[<Theory>]
+[<InlineData(2)>]
+[<InlineData(150000)>]
+let ``A sequence expression can recurse itself from with clause``(recLevel:int) =
+    Fsx $"""
+let rec f () = seq {{
+    try
+        yield 1
+        yield (1/0)
+    with pat ->
+        yield! f()
+}}
+let topNsum = f() |> Seq.take {recLevel} |> Seq.sum
+if topNsum <> {recLevel} then
+    failwith $"Sum was {{topNsum}} instead"
+    """
+    |> asExe
+    |> compileAndRun
+    |> shouldSucceed
+
+[<Fact>]
 let ``A sequence expression can yield from with clause``() =
     Fsx """
 let sum =
@@ -50,6 +97,46 @@ let sum =
     |> Seq.sum
 if sum <> 110 then
     failwith $"Sum was {sum} instead"
+    """
+    |> asExe
+    |> compileAndRun
+    |> shouldSucceed
+
+[<Fact>]
+let ``A sequence expression can have try-with around foreach``() =
+    Fsx """
+let mySeq (providedInput: seq<int>) =
+    seq {
+        try
+            for x in providedInput do
+                yield (6 /  x)
+        with _ ->
+                yield 100
+    } 
+let mySum = (mySeq [3;2;1;0]) |> Seq.sum 
+if mySum <> 100 then
+    failwith $"Sum was {mySum} instead"
+    """
+    |> asExe
+    |> compileAndRun
+    |> shouldSucceed
+
+[<Fact>]
+let ``A sequence expression can have try-with around while``() =
+    Fsx """
+let mySeq () =
+    seq {
+        let mutable x = 3
+        try
+            while true do                
+                yield (6/x)
+                x <- x-1
+        with _ ->
+                yield 100
+    } 
+let mySum = (mySeq () |> Seq.take 10) |> Seq.sum 
+if mySum <> (6/3 + 6/2 + 6/1 + 100) then
+    failwith $"Sum was {mySum} instead"
     """
     |> asExe
     |> compileAndRun
