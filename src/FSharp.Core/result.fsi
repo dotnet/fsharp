@@ -281,7 +281,7 @@ module Result =
     /// </code>
     /// </example>
     [<CompiledName("ToList")>]
-    val toList: result: Result<'T, 'Error> -> List<'T>
+    val toList: result: Result<'T, 'Error> -> 'T list
 
     /// <summary>Convert the result to an Option value.</summary>
     ///
