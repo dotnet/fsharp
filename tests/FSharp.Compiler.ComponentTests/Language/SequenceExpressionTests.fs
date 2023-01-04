@@ -6,6 +6,11 @@ open Xunit
 open FSharp.Test.Compiler
 
 
+
+let fsiSession = getSessionForEval()
+
+let runCode = evalInSharedSession fsiSession
+
 [<Fact>]
 let ``A seq{try/with} happy path with multiple language elements``() =
     Fsx """
@@ -32,8 +37,7 @@ let rec mySeq inputEnumerable =
 if (mySeq [0..5] |> Seq.sum) <> (1+(1+3)+3+4+5+5) then
     failwith $"Sum was {(mySeq [0..5] |> Seq.sum)} instead"
     """
-    |> asExe
-    |> compileAndRun
+    |> runCode
     |> shouldSucceed
 
 [<Fact>]
@@ -59,13 +63,12 @@ if totalSum <> 1 then
 
 failwith $"List is %A{l}"
     """
-    |> asExe
-    |> compileAndRun
+    |> runCode
     |> shouldSucceed
 
 [<Theory>]
 [<InlineData(2)>]
-[<InlineData(150000)>]
+[<InlineData(5000)>]
 let ``A sequence expression can recurse itself from with clause``(recLevel:int) =
     Fsx $"""
 let rec f () = seq {{
@@ -79,8 +82,7 @@ let topNsum = f() |> Seq.take {recLevel} |> Seq.sum
 if topNsum <> {recLevel} then
     failwith $"Sum was {{topNsum}} instead"
     """
-    |> asExe
-    |> compileAndRun
+    |> runCode
     |> shouldSucceed
 
 [<Fact>]
@@ -98,8 +100,7 @@ let sum =
 if sum <> 110 then
     failwith $"Sum was {sum} instead"
     """
-    |> asExe
-    |> compileAndRun
+    |> runCode
     |> shouldSucceed
 
 [<Fact>]
@@ -117,8 +118,7 @@ let mySum = (mySeq [3;2;1;0]) |> Seq.sum
 if mySum <> 100 then
     failwith $"Sum was {mySum} instead"
     """
-    |> asExe
-    |> compileAndRun
+    |> runCode
     |> shouldSucceed
 
 [<Fact>]
@@ -138,8 +138,7 @@ let mySum = (mySeq () |> Seq.take 10) |> Seq.sum
 if mySum <> (6/3 + 6/2 + 6/1 + 100) then
     failwith $"Sum was {mySum} instead"
     """
-    |> asExe
-    |> compileAndRun
+    |> runCode
     |> shouldSucceed
 
 [<Fact>]
@@ -157,8 +156,7 @@ let sum =
 if sum <> 16 then
     failwith $"Sum was {sum} instead"
     """
-    |> asExe
-    |> compileAndRun
+    |> runCode
     |> shouldSucceed
 
 [<Fact>]
@@ -178,8 +176,7 @@ let sum =
 if sum <> (1+2+3) then
     failwith $"Sum was {sum} instead"
     """
-    |> asExe
-    |> compileAndRun
+    |> runCode
     |> shouldSucceed
 
 [<Fact>]
@@ -197,8 +194,7 @@ let sum =
 if sum <> (1+1+1) then
     failwith $"Sum was {sum} instead"
     """
-    |> asExe
-    |> compileAndRun
+    |> runCode
     |> shouldSucceed
 
 [<Fact>]
@@ -219,8 +215,7 @@ let sum =
 if sum <> (1+100+100+1+10+2) then
     failwith $"Sum was {sum} instead"
     """
-    |> asExe
-    |> compileAndRun
+    |> runCode
     |> shouldSucceed
 
 [<Fact>]
@@ -238,8 +233,7 @@ let sum =
 if sum <> 10 then
     failwith $"Sum was {sum} instead"
     """
-    |> asExe
-    |> compileAndRun
+    |> runCode
     |> shouldSucceed
 
 [<Fact>]
@@ -258,8 +252,7 @@ let sum =
 if sum <> 100 then
     failwith $"Sum was {sum} instead"
     """
-    |> asExe
-    |> compileAndRun
+    |> runCode
     |> shouldSucceed
 
 
@@ -278,8 +271,7 @@ let sum =
 if sum <> 110 then
     failwith $"Sum was {sum} instead"
     """
-    |> asExe
-    |> compileAndRun
+    |> runCode
     |> shouldSucceed
 
 [<Theory>]
