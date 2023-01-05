@@ -82,6 +82,12 @@ module InlineParameterNameHints =
         symbolUse.IsFromUse
         && symbol.DisplayName <> "(::)"
 
+    let isTooBasic (symbol: FSharpSymbol) = 
+        let denyList = ["Some"; "Ok"; "Error"]
+
+        symbol.Assembly.SimpleName = "FSharp.Core" &&
+        denyList |> Seq.contains symbol.DisplayName
+
     let getHintsForMemberOrFunctionOrValue
         (parseResults: FSharpParseFileResults) 
         (symbol: FSharpMemberOrFunctionOrValue) 
@@ -108,20 +114,23 @@ module InlineParameterNameHints =
         (symbol: FSharpUnionCase) 
         (symbolUse: FSharpSymbolUse) =
 
-        let fields = Seq.toList symbol.Fields
-
-        // If a case does not use field names, don't even bother getting applied argument ranges
-        if fields |> List.exists doesFieldNameExist |> not then
+        if symbol |> isTooBasic then 
             []
         else
-            let ranges = parseResults.GetAllArgumentsForFunctionApplicationAtPosition symbolUse.Range.Start
+            let fields = Seq.toList symbol.Fields
+
+            // If a case does not use field names, don't even bother getting applied argument ranges
+            if fields |> List.exists doesFieldNameExist |> not then
+                []
+            else
+                let ranges = parseResults.GetAllArgumentsForFunctionApplicationAtPosition symbolUse.Range.Start
             
-            // When not all field values are provided (as the user is typing), don't show anything yet
-            match ranges with
-            | Some ranges when ranges.Length = fields.Length -> 
-                fields
-                |> List.zip ranges
-                |> List.where (snd >> doesFieldNameExist)
-                |> List.map getFieldHint
+                // When not all field values are provided (as the user is typing), don't show anything yet
+                match ranges with
+                | Some ranges when ranges.Length = fields.Length -> 
+                    fields
+                    |> List.zip ranges
+                    |> List.where (snd >> doesFieldNameExist)
+                    |> List.map getFieldHint
             
-            | _ -> []
+                | _ -> []

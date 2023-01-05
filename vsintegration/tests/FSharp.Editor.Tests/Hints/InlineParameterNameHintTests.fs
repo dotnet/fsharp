@@ -492,3 +492,18 @@ let q = query { for x in { 1 .. 10 } do select x }
         let actual = getParameterNameHints document
 
         Assert.IsEmpty actual
+
+    [<Test>]
+    let ``Hints are not shown for options and results`` () =
+        let code =
+            """
+let theAnswer1 = Some 42
+let theAnswer2 = Ok 42
+let theAnswer3 = Error 42
+"""
+
+        let document = getFsDocument code
+
+        let actual = getParameterNameHints document
+
+        Assert.IsEmpty actual
