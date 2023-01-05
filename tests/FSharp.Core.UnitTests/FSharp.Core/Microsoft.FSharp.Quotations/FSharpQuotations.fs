@@ -4,8 +4,6 @@
 
 namespace FSharp.Core.UnitTests.Quotations
 
-#nowarn "44" //  Deprecated construct - tests also cover obsolete API
-
 open System
 open FSharp.Core.UnitTests.LibraryTestFx
 open Xunit

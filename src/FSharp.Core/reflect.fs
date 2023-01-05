@@ -1224,7 +1224,6 @@ type FSharpType =
 
         mkTupleTypeNetStandard refTupleTypesNetStandard types
 
-    // Obsolete in .fsi
     static member MakeTupleType(asm: Assembly, types: Type[]) =
         checkNonNull "types" types
 
@@ -1238,7 +1237,6 @@ type FSharpType =
 
         ObsoleteTupleTypeMaking.mkTupleType false asm types
 
-    // Obsolete in .fsi
     static member MakeStructTupleType(asm: Assembly, types: Type[]) =
         checkNonNull "types" types
 

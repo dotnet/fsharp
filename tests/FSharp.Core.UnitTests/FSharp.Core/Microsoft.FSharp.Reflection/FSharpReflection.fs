@@ -4,8 +4,6 @@
 
 namespace FSharp.Core.UnitTests.Reflection
 
-#nowarn "44" //  Deprecated construct - tests also cover obsolete API
-
 open System
 open System.Reflection
 
