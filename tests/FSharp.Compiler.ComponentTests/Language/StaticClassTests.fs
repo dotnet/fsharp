@@ -55,7 +55,7 @@ type T(x: int) = class end
          |> compile
          |> shouldFail
          |> withDiagnostics [
-             (Error 3552, Line 3, Col 8, Line 3, Col 14, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. constructor with arguments is not allowed.")
+             (Error 3552, Line 3, Col 8, Line 3, Col 14, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Constructor with arguments is not allowed.")
          ]
 
     [<Fact>]
@@ -79,7 +79,7 @@ type T =
          |> compile
          |> shouldFail
          |> withDiagnostics [
-             (Error 3553, Line 4, Col 5, Line 4, Col 16, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. additional constructor is not allowed.")
+             (Error 3553, Line 4, Col 5, Line 4, Col 16, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Additional constructor is not allowed.")
          ]
 
     [<Fact>]
@@ -104,8 +104,8 @@ type T(x: int) =
          |> compile
          |> shouldFail
          |> withDiagnostics [
-             (Error 3552, Line 3, Col 8, Line 3, Col 14, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. constructor with arguments is not allowed.")
-             (Error 3553, Line 4, Col 5, Line 4, Col 19, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. additional constructor is not allowed.")
+             (Error 3552, Line 3, Col 8, Line 3, Col 14, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Constructor with arguments is not allowed.")
+             (Error 3553, Line 4, Col 5, Line 4, Col 19, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Additional constructor is not allowed.")
          ]
          
     [<Fact>]
@@ -140,7 +140,7 @@ type ListDebugView<'T>(l: 'T list) = class end
          |> compile
          |> shouldFail
          |> withDiagnostics [
-             (Error 3552, Line 3, Col 24, Line 3, Col 34, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. constructor with arguments is not allowed.")
+             (Error 3552, Line 3, Col 24, Line 3, Col 34, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Constructor with arguments is not allowed.")
          ]
 
     [<Fact>]
@@ -156,7 +156,7 @@ type B =
          |> compile
          |> shouldFail
          |> withDiagnostics [
-             (Error 3553, Line 6, Col 5, Line 6, Col 30, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. additional constructor is not allowed.")
+             (Error 3553, Line 6, Col 5, Line 6, Col 30, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Additional constructor is not allowed.")
          ]
 
     [<Theory>]
