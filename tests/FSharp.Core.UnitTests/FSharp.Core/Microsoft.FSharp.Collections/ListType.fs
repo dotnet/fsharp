@@ -130,6 +130,19 @@ type ListType() =
         let hash2 = l.GetHashCode()
 
         Assert.AreEqual(hash,hash2)
+
+    [<Fact>]
+    member this.HashCodeDoesNotThrowOnListOfNullStrings() = 
+        let l = ["1";"2";null;null]
+        Assert.AreEqual(l.GetHashCode(),l.GetHashCode())
+
+    [<Fact>]
+    member this.HashCodeIsDifferentForListsWithSamePrefix() = 
+        let sharedPrefix = [0..500]
+        let l1 = sharedPrefix @ [1]
+        let l2 = sharedPrefix @ [2]       
+
+        Assert.AreNotEqual(l1.GetHashCode(),l2.GetHashCode())
     
     [<Fact>]
     member this.ObjectEquals() =

@@ -3917,7 +3917,9 @@ namespace Microsoft.FSharp.Collections
                 match l with
                 | [] -> acc           
                 | h::t ->
-                    loop t  (LanguagePrimitives.HashCompare.HashCombine position acc (c.GetHashCode(h))) (position+1)
+                    let hashOfH = GenericHashWithComparer c h
+                    let acc = LanguagePrimitives.HashCompare.HashCombine position acc hashOfH
+                    loop t acc (position+1)
 
             loop this 0 0
        interface IEnumerable<'T>
