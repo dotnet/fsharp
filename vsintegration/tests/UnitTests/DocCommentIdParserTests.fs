@@ -29,4 +29,4 @@ let ``Test DocCommentId parser``() =
         let docId = pair.Key
         let expected = pair.Value
         let actual = FSharpCrossLanguageSymbolNavigationService.DocCommentIdToPath(docId)
-        printfn $"{docId} = {expected} = %A{actual}"
+        failwith $"{docId} = {expected} = %A{actual}"

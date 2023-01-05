@@ -165,21 +165,3 @@ let f_IWSAM_flex_StaticProperty(x: #IStaticProperty<'T>) =
         let expected = Some(3, 3, 20, 34)
 
         GoToDefinitionTest(fileContents, caretMarker, expected, [| "/langversion:preview" |])
-
-
-    [<Test>]
-    let ``Go to definition by documment comment id smoke test`` () =
-        let fileContents =
-            """
-"""
-        let filePath = Path.GetTempFileName() + ".fs"
-        File.WriteAllText(filePath, fileContents)
-        let options = makeOptions filePath opts
-
-
-        let document, sourceText =
-            RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents, options = options)
-
-        let actual =
-            findDefinition (document, sourceText, caretPosition, [])
-            |> Option.map (fun range -> (range.StartLine, range.EndLine, range.StartColumn, range.EndColumn))
