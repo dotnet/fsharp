@@ -3912,16 +3912,14 @@ namespace Microsoft.FSharp.Collections
     type List<'T> = 
        | ([])  :                  'T list
        | ( :: )  : Head: 'T * Tail: 'T list -> 'T list
-       member private this.CustomHashCode(c:IEqualityComparer) =
-            let upperBoundAllowedIterations = LanguagePrimitives.HashCompare.defaultHashNodes
-            let rec loop l acc remainingIterations =
+       member private this.CustomHashCode(c:IEqualityComparer) =        
+            let rec loop l acc position =
                 match l with
-                | [] -> acc
-                | _ when remainingIterations < 1 -> acc
+                | [] -> acc           
                 | h::t ->
-                    loop t  (LanguagePrimitives.HashCompare.HashCombine remainingIterations acc (c.GetHashCode(h))) (remainingIterations-1)
+                    loop t  (LanguagePrimitives.HashCompare.HashCombine position acc (c.GetHashCode(h))) (position+1)
 
-            loop this 0 upperBoundAllowedIterations
+            loop this 0 0
        interface IEnumerable<'T>
        interface IEnumerable
        interface IReadOnlyCollection<'T>
