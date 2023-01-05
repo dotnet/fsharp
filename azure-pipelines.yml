@@ -238,6 +238,39 @@ stages:
             continueOnError: true
             condition: not(succeeded())
 
+          # Determinism with experimental features on
+        - job: Determinism_Experimental_Features
+          condition: eq(variables['Build.Reason'], 'PullRequest')
+          variables:
+          - name: _SignType
+            value: Test
+          pool:
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
+          timeoutInMinutes: 90
+          steps:
+          - checkout: self
+            clean: true
+          - task: UseDotNet@2
+            displayName: install SDK
+            inputs:
+              packageType: sdk
+              useGlobalJson: true
+              includePreviewVersions: false
+              workingDirectory: $(Build.SourcesDirectory)
+              installationPath: $(Build.SourcesDirectory)/.dotnet
+          - script: .\eng\test-determinism.cmd -configuration Debug
+            env:
+              FSHARP_EXPERIMENTAL_FEATURES: 1
+            displayName: Determinism Experimental Features tests with Debug configuration
+          - task: PublishPipelineArtifact@1
+            displayName: Publish Determinism Experimental Logs
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/artifacts/log/Debug'
+              artifactName: 'Determinism_Experimental_Features Attempt $(System.JobAttempt) Logs'
+            continueOnError: true
+            condition: not(succeeded())
+
           # Check code formatting
         - job: CheckCodeFormatting
           pool:
@@ -512,8 +545,9 @@ stages:
         #      filePath: eng\tests\UpToDate.ps1
         #      arguments: -configuration $(_BuildConfig) -ci -binaryLog
 
-        # Run Build with --test:ParallelCheckingWithSignatureFilesOn
-        - job: ParallelCheckingWithSignatureFiles
+        # Run Build with Fsharp Experimental Features
+        # Possible change: --times:$(Build.SourcesDirectory)/artifacts/log/Release/compiler_timing.csv
+        - job: FsharpExperimentalFeaturesBuild
           condition: eq(variables['Build.Reason'], 'PullRequest')
           variables:
             - name: _SignType
@@ -533,13 +567,15 @@ stages:
                 includePreviewVersions: false
                 workingDirectory: $(Build.SourcesDirectory)
                 installationPath: $(Build.SourcesDirectory)/.dotnet
-            - script: .\build.cmd -c Release -binaryLog /p:ParallelCheckingWithSignatureFilesOn=true
-              displayName: ParallelCheckingWithSignatureFiles build with Debug configuration
+            - script: .\build.cmd -c Release -binaryLog /p:AdditionalFscCmdFlags="--times"
+              env:
+                FSHARP_EXPERIMENTAL_FEATURES: 1
+              displayName: FsharpExperimentalFeaturesBuild in release mode
             - task: PublishPipelineArtifact@1
-              displayName: Publish ParallelCheckingWithSignatureFiles Logs
+              displayName: Publish FsharpExperimentalFeaturesBuild Logs
               inputs:
                 targetPath: '$(Build.SourcesDirectory)/artifacts/log/Release'
-                artifactName: 'ParallelCheckingWithSignatureFiles Attempt $(System.JobAttempt) Logs'
+                artifactName: 'FsharpExperimentalFeaturesBuild Attempt $(System.JobAttempt) Logs'
               continueOnError: true
 
         # Plain build Windows
