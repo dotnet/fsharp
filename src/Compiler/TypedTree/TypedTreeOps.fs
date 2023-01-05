@@ -9574,7 +9574,7 @@ type Entity with
                 membInfo.MemberFlags.IsOverrideOrExplicitImpl
             | _ -> false) 
 
-    member internal tycon.TryGetMember g nm argTys = 
+    member tycon.TryGetMember g nm argTys = 
         tycon.TypeContents.tcaug_adhoc 
         |> NameMultiMap.find nm
         |> List.tryFind (fun vref -> 
