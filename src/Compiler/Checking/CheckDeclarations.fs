@@ -1658,11 +1658,11 @@ module MutRecBindingChecking =
 let private ReportErrorOnStaticClass (synMembers: SynMemberDefn list) =
     for mem in synMembers do
         match mem with
-        | SynMemberDefn.ImplicitCtor(ctorArgs= SynSimplePats.SimplePats(pats= pats)) when  (not pats.IsEmpty) ->
+        | SynMemberDefn.ImplicitCtor(ctorArgs = SynSimplePats.SimplePats(pats = pats)) when (not pats.IsEmpty) ->
             for pat in pats do
                 errorR(Error(FSComp.SR.chkConstructorWithArgumentsOnStaticClasses(), pat.Range))
            
-        | SynMemberDefn.Member(SynBinding(valData = SynValData(memberFlags = Some memberFlags)), m)  when memberFlags.MemberKind = SynMemberKind.Constructor ->
+        | SynMemberDefn.Member(SynBinding(valData = SynValData(memberFlags = Some memberFlags)), m) when memberFlags.MemberKind = SynMemberKind.Constructor ->
             errorR(Error(FSComp.SR.chkAdditionalConstructorOnStaticClasses(), m));
         | _ -> ()
 
