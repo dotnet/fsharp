@@ -1342,19 +1342,7 @@ let scriptingDirectory =
 
     createDirectory (Path.Combine(Path.GetTempPath(), $"{DateTime.Now:s}-{Guid.NewGuid():n}".Replace(':', '-')))
 
-let deleteScripts () =
-    try
-#if !DEBUG
-            if scriptingDirectory.IsValueCreated then
-                if Directory.Exists(scriptingDirectory.Value) then
-                    Directory.Delete(scriptingDirectory.Value, true)
-#else
-            ()
-#endif
-    with _ ->
-        ()
 
-do AppDomain.CurrentDomain.ProcessExit |> Event.add (fun _ -> deleteScripts ())
 
 let dynamicCcuName = "FSI-ASSEMBLY"
 let dynamicCCuInternalsVisibleArgument = $"{dynamicCcuName}"
@@ -2558,7 +2546,7 @@ type internal MagicAssemblyResolution () =
                     let res = CommitOperationResult overallSearchResult
                     match res with
                     | Choice1Of2 assemblyName ->
-                        if simpleAssemName <> "Mono.Posix" then fsiConsoleOutput.uprintfn "%s" (FSIstrings.SR.fsiBindingSessionTo(assemblyName))
+                        if simpleAssemName <> "Mono.Posix" && progress then fsiConsoleOutput.uprintfn "%s" (FSIstrings.SR.fsiBindingSessionTo(assemblyName))
                         if isRunningOnCoreClr then
                             assemblyLoadFrom assemblyName
                         else
