@@ -47,6 +47,9 @@ type LanguageFeature =
     | MatchNotAllowedForUnionCaseWithNoData
     | CSharpExtensionAttributeNotRequired
     | ErrorForNonVirtualMembersOverrides
+    | WarningWhenInliningMethodImplNoInlineMarkedFunction
+    | EscapeDotnetFormattableStrings
+    | ArithmeticInLiterals
 
 /// LanguageVersion management
 type LanguageVersion =

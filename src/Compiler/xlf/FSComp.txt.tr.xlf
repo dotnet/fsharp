@@ -4,7 +4,12 @@
     <body>
       <trans-unit id="arrayElementHasWrongTypeTuple">
         <source>All elements of an array must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</source>
-        <target state="new">All elements of an array must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</target>
+        <target state="translated">Bir dizinin tüm öğeleri örtük olarak ilk öğenin türüne dönüştürülebilir olmalıdır. Burada ilk öğe {0} uzunluğunda türü\n {1} \nolan bir demet. Bu öğe ise {2} uzunluğunda türü\n {3} \nolan bir demet.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="buildDuplicateFile">
+        <source>The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</source>
+        <target state="new">The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidSourceFileExtensionML">
@@ -19,7 +24,7 @@
       </trans-unit>
       <trans-unit id="chkDuplicatedMethodParameter">
         <source>Duplicate parameter. The parameter '{0}' has been used more that once in this method.</source>
-        <target state="new">Duplicate parameter. The parameter '{0}' has been used more that once in this method.</target>
+        <target state="translated">Yinelenen parametre. '{0}' parametresi bu metotta bir kereden fazla kullanıldı.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
@@ -114,7 +119,7 @@
       </trans-unit>
       <trans-unit id="elseBranchHasWrongTypeTuple">
         <source>All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</source>
-        <target state="new">All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</target>
+        <target state="translated">Bir 'if' ifadesinin tüm dalları, örtük olarak ilk dalın türüne dönüştürülebilir değerler döndürmelidir. Burada ilk dal {0} uzunluğunda türü\n    {1} olan bir demet    \nBu dal {2} uzunluğunda türü\n    {3}    \nolan bir demet döndürüyor</target>
         <note />
       </trans-unit>
       <trans-unit id="etProviderHasDesignerAssemblyDependency">
@@ -142,6 +147,11 @@
         <target state="translated">uygulama hesaplama ifadeleri</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureArithmeticInLiterals">
+        <source>Allow arithmetic and logical operations in literals</source>
+        <target state="translated">Sabit değerlerle aritmetik ve mantıksal işlemlere izin ver</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAttributesToRightOfModuleKeyword">
         <source>attributes to the right of the 'module' keyword</source>
         <target state="translated">'modül' anahtar sözcüğünün sağındaki öznitelikler</target>
@@ -154,7 +164,7 @@
       </trans-unit>
       <trans-unit id="featureCSharpExtensionAttributeNotRequired">
         <source>Allow implicit Extension attribute on declaring types, modules</source>
-        <target state="new">Allow implicit Extension attribute on declaring types, modules</target>
+        <target state="translated">Türler, modüller bildirirken örtük Extension özniteliğine izin ver</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
@@ -179,12 +189,17 @@
       </trans-unit>
       <trans-unit id="featureErrorForNonVirtualMembersOverrides">
         <source>Raises errors for non-virtual members overrides</source>
-        <target state="new">Raises errors for non-virtual members overrides</target>
+        <target state="translated">Sanal olmayan üyelerde geçersiz kılmalar için hatalar oluştur</target>
         <note />
       </trans-unit>
       <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
         <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
         <target state="translated">RequireQualifiedAccess özniteliğine sahip yapının kullanım dışı erişiminde hata</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureEscapeBracesInFormattableString">
+        <source>Escapes curly braces before calling FormattableStringFactory.Create when interpolated string literal is typed as FormattableString</source>
+        <target state="translated">İçe eklenmiş dize sabit değerinin türü FormattableString olduğunda FormattableStringFactory.Create çağrılmadan önce küme ayraçlarını atlar</target>
         <note />
       </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
@@ -239,7 +254,7 @@
       </trans-unit>
       <trans-unit id="featureMatchNotAllowedForUnionCaseWithNoData">
         <source>Pattern match discard is not allowed for union case that takes no data.</source>
-        <target state="new">Pattern match discard is not allowed for union case that takes no data.</target>
+        <target state="translated">Veri almayan birleşim durumu için desen eşleştirme atma kullanılamaz.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNameOf">
@@ -327,6 +342,11 @@
         <target state="translated">etkin desenler için yapı gösterimi</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
+        <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
+        <target state="new">Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
         <source>wild card in for loop</source>
         <target state="translated">for döngüsünde joker karakter</target>
@@ -339,7 +359,7 @@
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongTypeTuple">
         <source>All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</source>
-        <target state="new">All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</target>
+        <target state="translated">Bir desen eşleştirme ifadesinin tüm dalları, örtük olarak ilk dalın türüne dönüştürülebilir değerler döndürmelidir. Burada ilk dal {0} uzunluğunda türü\n    {1} olan bir demet    \nBu dal {2} uzunluğunda türü\n    {3}    \nolan bir demet döndürüyor</target>
         <note />
       </trans-unit>
       <trans-unit id="forFormatInvalidForInterpolated">
@@ -384,7 +404,7 @@
       </trans-unit>
       <trans-unit id="ifExpressionTuple">
         <source>The 'if' expression needs to return a tuple of length {0} of type\n    {1}    \nto satisfy context type requirements. It currently returns a tuple of length {2} of type\n    {3}    \n</source>
-        <target state="new">The 'if' expression needs to return a tuple of length {0} of type\n    {1}    \nto satisfy context type requirements. It currently returns a tuple of length {2} of type\n    {3}    \n</target>
+        <target state="translated">Bağlam türü gereksinimlerini karşılaması için 'if' ifadesinin {0} uzunluğunda türü\n    {1}    \nolan bir demet döndürmesi gerekiyor. Şu anda {2} uzunluğunda türü\n    {3}    \nolan bir demet döndürüyor</target>
         <note />
       </trans-unit>
       <trans-unit id="ilxGenUnknownDebugPoint">
@@ -449,12 +469,12 @@
       </trans-unit>
       <trans-unit id="listElementHasWrongTypeTuple">
         <source>All elements of a list must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</source>
-        <target state="new">All elements of a list must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</target>
+        <target state="translated">Bir listenin tüm öğeleri örtük olarak ilk öğenin türüne dönüştürülebilir olmalıdır. Burada ilk öğe {0} uzunluğunda türü\n {1} \nolan bir demet. Bu öğe ise {2} uzunluğunda türü\n {3} \nolan bir demet.</target>
         <note />
       </trans-unit>
       <trans-unit id="matchNotAllowedForUnionCaseWithNoData">
         <source>Pattern discard is not allowed for union case that takes no data.</source>
-        <target state="new">Pattern discard is not allowed for union case that takes no data.</target>
+        <target state="translated">Veri almayan birleşim durumu için desen atma kullanılamaz.</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatError">
@@ -539,7 +559,7 @@
       </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
         <source>Invalid use of emitting a reference assembly, do not use '--standalone or --staticlink' with '--refonly or --refout'.</source>
-        <target state="new">Invalid use of emitting a reference assembly, do not use '--standalone or --staticlink' with '--refonly or --refout'.</target>
+        <target state="translated">Başvuru bütünleştirilmiş kodu oluşturmanın geçersiz kullanımı; '--standalone’ veya ‘--staticlink' seçeneğini '--refonly’ veya ‘--refout' ile birlikte kullanmayın.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidRefOut">
@@ -649,7 +669,7 @@
       </trans-unit>
       <trans-unit id="parsExpectedPatternAfterToken">
         <source>Expected a pattern after this point</source>
-        <target state="new">Expected a pattern after this point</target>
+        <target state="translated">Bu noktadan sonra bir desen bekleniyordu</target>
         <note />
       </trans-unit>
       <trans-unit id="parsExpectingExpressionInTuple">
@@ -659,7 +679,7 @@
       </trans-unit>
       <trans-unit id="parsExpectingPatternInTuple">
         <source>Expecting pattern</source>
-        <target state="new">Expecting pattern</target>
+        <target state="translated">Desen bekleniyor</target>
         <note />
       </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr1">
@@ -1019,7 +1039,7 @@
       </trans-unit>
       <trans-unit id="tcSynTypeOrInvalidInDeclaration">
         <source>SynType.Or is not permitted in this declaration</source>
-        <target state="new">SynType.Or is not permitted in this declaration</target>
+        <target state="translated">Bu bildirimde SynType.Or'a izin verilmiyor</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTraitHasMultipleSupportTypes">
@@ -3849,7 +3869,7 @@
       </trans-unit>
       <trans-unit id="tcUnionCaseExpectsTupledArguments">
         <source>This union case expects {0} arguments in tupled form, but was given {1}. The missing field arguments may be any of:{2}</source>
-        <target state="new">This union case expects {0} arguments in tupled form, but was given {1}. The missing field arguments may be any of:{2}</target>
+        <target state="translated">Bu birleşim durumu demet halinde {0} bağımsız değişken bekliyordu ancak {1} verildi. Eksik alan bağımsız değişkenleri şunlardan biri olabilir:{2}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcFieldIsNotStatic">
@@ -7529,7 +7549,7 @@
       </trans-unit>
       <trans-unit id="tcStructUnionMultiCaseDistinctFields">
         <source>If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'.</source>
-        <target state="new">If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'.</target>
+        <target state="translated">Çok durumlu bir birleşim türü bir yapıysa, tüm birleşim durumlarının adları benzersiz olmalıdır. Örneğin: 'type A = B of b: int | C of c: int'.</target>
         <note />
       </trans-unit>
       <trans-unit id="CallerMemberNameIsOverriden">

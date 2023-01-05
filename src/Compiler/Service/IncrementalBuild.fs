@@ -127,7 +127,7 @@ module IncrementalBuildSyntaxTree =
                 use act =
                     Activity.start "IncrementalBuildSyntaxTree.parse"
                         [|
-                            "fileName", source.FilePath
+                            Activity.Tags.fileName, source.FilePath
                             "buildPhase", BuildPhase.Parse.ToString()
                             "canSkip", canSkip.ToString()
                         |]             
@@ -475,7 +475,7 @@ type BoundModel private (tcConfig: TcConfig,
                 let! res = defaultTypeCheck ()
                 return res
             | Some syntaxTree ->
-                use _ = Activity.start "BoundModel.TypeCheck" [|"fileName", syntaxTree.FileName|]
+                use _ = Activity.start "BoundModel.TypeCheck" [|Activity.Tags.fileName, syntaxTree.FileName|]
                 let sigNameOpt =
                     if partialCheck then
                         this.BackingSignature
@@ -538,7 +538,7 @@ type BoundModel private (tcConfig: TcConfig,
                         // Build symbol keys
                         let itemKeyStore, semanticClassification =
                             if enableBackgroundItemKeyStoreAndSemanticClassification then
-                                use _ = Activity.start "IncrementalBuild.CreateItemKeyStoreAndSemanticClassification" [|"fileName", fileName|]
+                                use _ = Activity.start "IncrementalBuild.CreateItemKeyStoreAndSemanticClassification" [|Activity.Tags.fileName, fileName|]
                                 let sResolutions = sink.GetResolutions()
                                 let builder = ItemKeyStoreBuilder()
                                 let preventDuplicates = HashSet({ new IEqualityComparer<struct(pos * pos)> with
@@ -1043,7 +1043,7 @@ module IncrementalBuilderStateHelpers =
 
     let rec createFinalizeBoundModelGraphNode (initialState: IncrementalBuilderInitialState) (boundModels: ImmutableArray<GraphNode<BoundModel>>.Builder) =
         GraphNode(node {
-            use _ = Activity.start "GetCheckResultsAndImplementationsForProject" [|"projectOutFile", initialState.outfile|]
+            use _ = Activity.start "GetCheckResultsAndImplementationsForProject" [|Activity.Tags.project, initialState.outfile|]
             // Compute last bound model then get all the evaluated models.
             let! _ = boundModels[boundModels.Count - 1].GetOrComputeValue()
             let boundModels =

@@ -127,17 +127,6 @@ module AttributeUsage =
             (Error 685, Line 20, Col 5, Line 20, Col 10, "The generic function 'Foo' must be given explicit type argument(s)")
         ]
 
-    // #	SOURCE=E_WithBitwiseAnd01.fsx SCFLAGS="--test:ErrorRanges -a"	# E_WithBitwiseAnd01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_WithBitwiseAnd01.fsx"|])>]
-    let ``E_WithBitwiseAnd01_fsx`` compilation =
-        compilation
-        |> verifyCompile
-        |> shouldFail
-        |> withDiagnostics [
-            (Error 267, Line 7, Col 25, Line 7, Col 91, "This is not a valid constant expression or custom attribute value")
-            (Warning 839, Line 12, Col 3, Line 12, Col 6, "Unexpected condition in imported assembly: failed to decode AttributeUsage attribute")
-        ]
-
     // SOURCE=E_WithBitwiseOr01.fsx  SCFLAGS="--test:ErrorRanges -a"	# E_WithBitwiseOr01.fsx
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_WithBitwiseOr01.fsx"|])>]
     let ``E_WithBitwiseOr01_fsx`` compilation =
