@@ -754,18 +754,30 @@ module Structure =
                     Some(mkRange "" (mkPos r.StartLine prefixLength) r.End)
                 | _ -> None)
 
-        let collectConditionalDirectives (directives: ConditionalDirectiveTrivia list) =
-            let rec group directives unfinishedIfs =
+        let collectConditionalDirectives directives sourceLines =
+            let rec group directives stack (sourceLines: string array) =
                 match directives with
                 | [] -> ()
-                | ConditionalDirectiveTrivia.If (_, ifRange) :: directives -> group directives (ifRange :: unfinishedIfs)
-                | ConditionalDirectiveTrivia.Else _ :: directives -> group directives unfinishedIfs
+                | ConditionalDirectiveTrivia.If _ as ifDirective :: directives -> group directives (ifDirective :: stack) sourceLines
+                | ConditionalDirectiveTrivia.Else elseRange as elseDirective :: directives ->
+                    match stack with
+                    | ConditionalDirectiveTrivia.If (_, ifRange) :: stack ->
+                        // start of #if until the end of the line directly above #else
+                        let range = mkFileIndexRange ifRange.FileIndex ifRange.Start (mkPos (elseRange.StartLine - 1) sourceLines[elseRange.StartLine - 2].Length)
+
+                        {
+                            Scope = Scope.HashDirective
+                            Collapse = Collapse.Same
+                            Range = range
+                            CollapseRange = range
+                        }
+                        |> acc.Add
+
+                        group directives (elseDirective :: stack) sourceLines
+                    | _ -> group directives stack sourceLines
                 | ConditionalDirectiveTrivia.EndIf endIfRange :: directives ->
-                    match unfinishedIfs with
-                    | [] ->
-                        // shouldn't happen
-                        group directives unfinishedIfs
-                    | ifRange :: remainingUnfinishedIfs ->
+                    match stack with
+                    | ConditionalDirectiveTrivia.If (_, ifRange) :: stack ->
                         let range = Range.startToEnd ifRange endIfRange
 
                         {
@@ -776,9 +788,22 @@ module Structure =
                         }
                         |> acc.Add
 
-                        group directives remainingUnfinishedIfs
+                        group directives stack sourceLines
+                    | ConditionalDirectiveTrivia.Else elseRange :: directives ->
+                        let range = Range.startToEnd elseRange endIfRange
 
-            group directives []
+                        {
+                            Scope = Scope.HashDirective
+                            Collapse = Collapse.Same
+                            Range = range
+                            CollapseRange = range
+                        }
+                        |> acc.Add
+
+                        group directives stack sourceLines
+                    | _ -> group directives stack sourceLines
+
+            group directives [] sourceLines
 
         let rec parseDeclaration (decl: SynModuleDecl) =
             match decl with
@@ -1086,11 +1111,11 @@ module Structure =
         match parsedInput with
         | ParsedInput.ImplFile file ->
             file.Contents |> List.iter parseModuleOrNamespace
-            collectConditionalDirectives file.Trivia.ConditionalDirectives
+            collectConditionalDirectives file.Trivia.ConditionalDirectives sourceLines
             getCommentRanges sourceLines
         | ParsedInput.SigFile file ->
             file.Contents |> List.iter parseModuleOrNamespaceSigs
-            collectConditionalDirectives file.Trivia.ConditionalDirectives
+            collectConditionalDirectives file.Trivia.ConditionalDirectives sourceLines
             getCommentRanges sourceLines
 
         acc :> seq<_>
