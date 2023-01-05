@@ -14,7 +14,7 @@ type Sentinel () =
 module MyModule =
     let test(x: int) = ()
 
-[<Collection("SingleThreaded")>]
+[<CollectionDefinition("FsiTests", DisableParallelization = true)>]
 module FsiTests =
 
     let createFsiSession (useOneDynamicAssembly: bool) =
@@ -678,3 +678,49 @@ module FsiTests =
             printfn "exception: %A" e
             raise e
 
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Evaluating simple reference and code succeeds with multiemit on``() =
+
+        use fsiSession = createFsiSession false
+        let assemblyPath = typeof<Sentinel>.Assembly.Location.Replace("\\", "/")
+        let res, errors = fsiSession.EvalInteractionNonThrowing($"""
+            #r "{assemblyPath}"
+            FSharp.Compiler.UnitTests.MyModule.test(3)""")
+
+        errors
+        |> Array.iter (fun e -> printfn "error: %A" e)
+
+        match res with
+        | Choice1Of2 v ->
+            let v =
+                match v with
+                | Some v -> sprintf "%A" v.ReflectionValue
+                | None -> "(none)"
+            printfn "value: %A" v
+        | Choice2Of2 e ->
+            printfn "exception: %A" e
+            raise e
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Evaluating simple reference and code succeeds with multiemit off``() =
+
+        use fsiSession = createFsiSession true
+        let assemblyPath = typeof<Sentinel>.Assembly.Location.Replace("\\", "/")
+        let res, errors = fsiSession.EvalInteractionNonThrowing($"""
+            #r "{assemblyPath}"
+            FSharp.Compiler.UnitTests.MyModule.test(3)""")
+
+        errors
+        |> Array.iter (fun e -> printfn "error: %A" e)
+
+        match res with
+        | Choice1Of2 v ->
+            let v =
+                match v with
+                | Some v -> sprintf "%A" v.ReflectionValue
+                | None -> "(none)"
+            printfn "value: %A" v
+        | Choice2Of2 e ->
+            printfn "exception: %A" e
+            raise e
