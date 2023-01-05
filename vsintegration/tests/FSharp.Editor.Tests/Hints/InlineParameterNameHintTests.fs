@@ -479,3 +479,16 @@ let test sequences =
         let actual = getParameterNameHints document
 
         Assert.AreEqual(expected, actual)
+
+    [<Test>]
+    let ``Hints are not shown when CustomOperation attribute is detected`` () =
+        let code =
+            """
+let q = query { for x in { 1 .. 10 } do select x }
+"""
+
+        let document = getFsDocument code
+
+        let actual = getParameterNameHints document
+
+        Assert.IsEmpty actual

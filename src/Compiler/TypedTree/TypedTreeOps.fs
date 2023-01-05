@@ -1604,13 +1604,13 @@ type TyconRefMultiMap<'T>(contents: TyconRefMap<'T list>) =
 //--------------------------------------------------------------------------
 
 /// Try to create a EntityRef suitable for accessing the given Entity from another assembly 
-let tryRescopeEntity viewedCcu (entity: Entity) : ValueOption<EntityRef> = 
+let tryRescopeEntity viewedCcu (entity: Entity) : EntityRef voption =
     match entity.PublicPath with 
     | Some pubpath -> ValueSome (ERefNonLocal (rescopePubPath viewedCcu pubpath))
     | None -> ValueNone
 
 /// Try to create a ValRef suitable for accessing the given Val from another assembly 
-let tryRescopeVal viewedCcu (entityRemap: Remap) (vspec: Val) : ValueOption<ValRef> =
+let tryRescopeVal viewedCcu (entityRemap: Remap) (vspec: Val) : ValRef voption =
     match vspec.PublicPath with 
     | Some (ValPubPath(p, fullLinkageKey)) -> 
         // The type information in the val linkage doesn't need to keep any information to trait solutions.
