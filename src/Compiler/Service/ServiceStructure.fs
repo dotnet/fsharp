@@ -763,7 +763,11 @@ module Structure =
                     match stack with
                     | ConditionalDirectiveTrivia.If (_, ifRange) :: stack ->
                         // start of #if until the end of the line directly above #else
-                        let range = mkFileIndexRange ifRange.FileIndex ifRange.Start (mkPos (elseRange.StartLine - 1) sourceLines[elseRange.StartLine - 2].Length)
+                        let range =
+                            mkFileIndexRange
+                                ifRange.FileIndex
+                                ifRange.Start
+                                (mkPos (elseRange.StartLine - 1) sourceLines[elseRange.StartLine - 2].Length)
 
                         {
                             Scope = Scope.HashDirective
