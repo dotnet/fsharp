@@ -22,7 +22,7 @@ module OptionParserTests =
 
         let actual = OptionParser.getHintKinds options
 
-        Assert.AreEqual(expected, actual)
+        CollectionAssert.AreEquivalent(expected, actual)
 
     [<Test>]
     let ``Type hints on, parameter name hints off`` () =
@@ -36,7 +36,7 @@ module OptionParserTests =
 
         let actual = OptionParser.getHintKinds options
 
-        Assert.AreEqual(expected, actual)
+        CollectionAssert.AreEquivalent(expected, actual)
 
     [<Test>]
     let ``Type hints off, parameter name hints on`` () =
@@ -50,7 +50,7 @@ module OptionParserTests =
 
         let actual = OptionParser.getHintKinds options
 
-        Assert.AreEqual(expected, actual)
+        CollectionAssert.AreEquivalent(expected, actual)
 
     [<Test>]
     let ``Type hints on, parameter name hints on`` () =
@@ -64,4 +64,4 @@ module OptionParserTests =
 
         let actual = OptionParser.getHintKinds options
 
-        Assert.AreEqual(expected, actual)
+        CollectionAssert.AreEquivalent(expected, actual)
