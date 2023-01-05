@@ -448,3 +448,47 @@ type MyType() =
         let actual = getParameterNameHints document
 
         Assert.IsEmpty(actual)
+        
+    [<Test>]
+    let ``Hints are shown correctly for inner bindings`` () =
+        let code =
+            """
+let test sequences = 
+    sequences
+    |> Seq.map (fun sequence -> sequence |> Seq.map (fun sequence' -> sequence' |> Seq.map (fun item -> item)))
+"""
+
+        let document = getFsDocument code
+
+        let expected =
+            [
+                {
+                    Content = "mapping = "
+                    Location = (3, 16)
+                }
+                {
+                    Content = "mapping = "
+                    Location = (3, 53)
+                }
+                {
+                    Content = "mapping = "
+                    Location = (3, 92)
+                }
+            ]
+
+        let actual = getParameterNameHints document
+
+        Assert.AreEqual(expected, actual)
+
+    [<Test>]
+    let ``Hints are not shown when CustomOperation attribute is detected`` () =
+        let code =
+            """
+let q = query { for x in { 1 .. 10 } do select x }
+"""
+
+        let document = getFsDocument code
+
+        let actual = getParameterNameHints document
+
+        Assert.IsEmpty actual
