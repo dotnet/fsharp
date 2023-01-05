@@ -157,7 +157,8 @@ let ``Create Graph from typed tree`` (projectArgumentsFilePath: string) =
             let filePairs = files.Values |> Seq.map TestFileWithAST.Map |> Seq.toArray |> FilePairMap
 
             let graphFromHeuristic =
-                files.Values |> Seq.map TestFileWithAST.Map |> Seq.toArray |> DependencyResolution.mkGraph filePairs
+                let isFSharpCore = Path.GetFileNameWithoutExtension(projectArgumentsFilePath).StartsWith("FSharp.Core")
+                files.Values |> Seq.map TestFileWithAST.Map |> Seq.toArray |> DependencyResolution.mkGraph isFSharpCore filePairs
 
             graphFromHeuristic
             |> Graph.map (fun n -> files.[n].File)

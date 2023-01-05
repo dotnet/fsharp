@@ -171,7 +171,7 @@ let collectGhostDependencies (fileIndex: int) (trie: TrieNode) (queryTrie: Query
                 // The partial open did eventually lead to a link in a file
                 Array.empty)
 
-let mkGraph (filePairs: FilePairMap) (files: FileWithAST array) : Graph<int> =
+let mkGraph (compilingFSharpCore: bool) (filePairs: FilePairMap) (files: FileWithAST array) : Graph<int> =
     // Implementation files backed by signatures should be excluded to construct the trie.
     let trieInput =
         Array.choose
@@ -205,11 +205,29 @@ let mkGraph (filePairs: FilePairMap) (files: FileWithAST array) : Graph<int> =
             | None -> Array.empty
             | Some sigIdx -> Array.singleton sigIdx
 
+        // Files in FSharp.Core that occur between `prim-types-prelude` and `prim-types`
+        // need to know about `prim-types-prelude` that came before it.
+        let fsharpCoreBuildProperties =
+            if not compilingFSharpCore then
+                Array.empty
+            else
+                let idxOf (fileName: string) =
+                    Array.findIndex (fun f -> f.File.EndsWith fileName) files
+
+                let primTypesPreludeFsi = idxOf "prim-types-prelude.fsi"
+                let primTypesFsiIdx = idxOf "prim-types.fsi"
+
+                if primTypesPreludeFsi < file.Idx && file.Idx < primTypesFsiIdx then
+                    [| primTypesPreludeFsi |]
+                else
+                    Array.empty
+
         let allDependencies =
             [|
                 yield! result.FoundDependencies
                 yield! ghostDependencies
                 yield! signatureDependency
+                yield! fsharpCoreBuildProperties
             |]
             |> Array.distinct
 
