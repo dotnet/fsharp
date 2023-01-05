@@ -915,7 +915,7 @@ type FSharpCrossLanguageSymbolNavigationService()  =
             let entityPath = m.Groups["entity"].Value.Split('.') |> List.ofArray
             DocCommentId.Type entityPath
         | true, "F" ->
-            let parts = m.Groups[2].Value.Split('.')
+            let parts = m.Groups["entity"].Value.Split('.')
             let entityPath = parts[..(parts.Length - 2)] |> List.ofArray
             let memberOrVal = parts[parts.Length - 1]
             DocCommentId.Field { EntityPath = entityPath; MemberOrValName = memberOrVal; GenericParameters = 0 }
