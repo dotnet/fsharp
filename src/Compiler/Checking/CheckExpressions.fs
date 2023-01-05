@@ -4218,7 +4218,17 @@ and TcValSpec (cenv: cenv) env declKind newOk containerInfo memFlagsOpt thisTyOp
     | _ ->
         let valSynInfo = AdjustValSynInfoInSignature g declaredTy valSynInfo
         let prelimValReprInfo = TranslateSynValInfo id.idRange (TcAttributes cenv env) valSynInfo
-        [ ValSpecResult(altActualParent, None, id, enclosingDeclaredTypars, declaredTypars, declaredTy, prelimValReprInfo, declKind) ], tpenv
+
+        let curriedArgTys, _retTy = stripFunTy g declaredTy
+
+        [ ValSpecResult(altActualParent, None, id, enclosingDeclaredTypars, declaredTypars, declaredTy, prelimValReprInfo, declKind)
+          for argTy, argInfo in valSynInfo.CurriedArgInfos |> Seq.collect (fun x -> x) |> Seq.zip curriedArgTys do
+            match argInfo.Ident with
+            | Some ident ->
+                ValSpecResult(ParentNone, None, ident, [], [], argTy, (PrelimValReprInfo ([], (argInfo |> TranslateTopArgSynInfo true ident.idRange (TcAttributes cenv env AttributeTargets.Parameter)))), ExpressionBinding)
+            | None -> ()
+
+        ], tpenv
 
 //-------------------------------------------------------------------------
 // Bind types
