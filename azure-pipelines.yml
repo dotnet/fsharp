@@ -238,7 +238,7 @@ stages:
             continueOnError: true
             condition: not(succeeded())
 
-          # Determinism with experimental features on
+          # Determinism with experimental features 
         - job: Determinism_Experimental_Features
           condition: eq(variables['Build.Reason'], 'PullRequest')
           variables:
