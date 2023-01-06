@@ -48,7 +48,8 @@ let FSharpIndentationAwareSyntaxFileSuffixes =
     [ ".fs"; ".fsscript"; ".fsx"; ".fsi" ]
 
 let FsharpExperimentalFeaturesEnabledAutomatically =
-    Environment.GetEnvironmentVariable("FSHARP_EXPERIMENTAL_FEATURES") |> isNotNull
+    String.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("FSHARP_EXPERIMENTAL_FEATURES"))
+    |> not
 
 //--------------------------------------------------------------------------
 // General file name resolver
