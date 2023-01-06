@@ -1443,20 +1443,14 @@ type internal FsiDynamicCompiler(
 
         let opts = {
             ilg = tcGlobals.ilg
-            // This is not actually written, because we are writing to a stream,
-            // but needs to be set for some logic of ilwrite to function.
             outfile = multiAssemblyName + ".dll"
-            // This is not actually written, because we embed debug info,
-            // but needs to be set for some logic of ilwrite to function.
-            pdbfile = (if tcConfig.debuginfo then Some ($"{multiAssemblyName}-{dynamicAssemblyId}.pdb") else None)
+            pdbfile = Some (Path.Combine(scriptingDirectory.Value, $"{multiAssemblyName}-{dynamicAssemblyId}.pdb"))
             emitTailcalls = tcConfig.emitTailcalls
             deterministic = tcConfig.deterministic
-            // we always use portable for F# Interactive debug emit
             portablePDB = true
             embeddedPDB = false
-            embedAllSource = true
-            embedSourceList = tcConfig.embedSourceList
-            // we don't add additional source files to the debug document set
+            embedAllSource = false
+            embedSourceList = []
             allGivenSources = []
             sourceLink = tcConfig.sourceLink
             checksumAlgorithm = tcConfig.checksumAlgorithm
@@ -1470,22 +1464,14 @@ type internal FsiDynamicCompiler(
         let assemblyBytes, pdbBytes = WriteILBinaryInMemory (opts, ilxMainModule, id)
 
         let asm =
-            if tcConfig.debuginfo then
-                //debug+ specified so debugging is possible, write pdb file to disk
-                match opts.pdbfile, pdbBytes with
-                | (Some pdbfile), (Some pdbBytes) ->
-                    let path = Path.Combine(scriptingDirectory.Value, pdbfile)
-                    File.WriteAllBytes(path,  pdbBytes)
-                | _ -> ()
+            match opts.pdbfile, pdbBytes with
+            | (Some pdbfile), (Some pdbBytes) ->
+                File.WriteAllBytes(pdbfile,  pdbBytes)
+            | _ -> ()
 
-                //debug+ specified so debugging is possible, write file to disk
-                let path = Path.Combine(scriptingDirectory.Value, $"{multiAssemblyName}-{dynamicAssemblyId}.exe")
-                File.WriteAllBytes(path,  assemblyBytes)
-                Assembly.LoadFile(path)
-            else
-                match pdbBytes with
-                | None -> Assembly.Load(assemblyBytes)
-                | Some pdbBytes -> Assembly.Load(assemblyBytes, pdbBytes)
+            match pdbBytes with
+            | None -> Assembly.Load(assemblyBytes)
+            | Some pdbBytes -> Assembly.Load(assemblyBytes, pdbBytes)
 
         // Force generated types to load
         do [ for t in asm.GetTypes() -> t] |> ignore
