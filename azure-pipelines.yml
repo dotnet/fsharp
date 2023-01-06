@@ -591,6 +591,8 @@ stages:
             matrix:
               compressed_metadata:
                 _kind: "-compressAllMetadata"
+              classic_metadata:
+                _kind: ""
           variables:
           - name: _BuildConfig
             value: Release
