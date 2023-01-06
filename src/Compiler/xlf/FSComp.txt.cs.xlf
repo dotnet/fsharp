@@ -72,6 +72,11 @@
         <target state="translated">Použití incr z knihovny F# je zastaralé. Více informací: https://aka.ms/fsharp-refcell-ops. Změňte prosím například incr cell na cell.Value &lt;- cell.Value + 1.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkInstanceMemberOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance member is not allowed.</source>
+        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance member is not allowed.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="containerDeprecated">
         <source>The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead.</source>
         <target state="translated">Atribut AssemblyKeyNameAttribute je zastaralý. Použijte místo něj AssemblyKeyFileAttribute.</target>

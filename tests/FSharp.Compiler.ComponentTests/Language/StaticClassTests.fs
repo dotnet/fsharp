@@ -202,3 +202,54 @@ type B =
         |> withLangVersion langVersion
         |> compile
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Sealed and AbstractClass on on a type with instance members in lang version70`` () =
+        Fsx """
+[<Sealed; AbstractClass>]
+type T() =
+    member this.M() = ()
+    static member X = 1
+        """
+         |> withLangVersion70
+         |> compile
+         |> shouldSucceed
+         
+    [<Fact>]
+    let ``Sealed and AbstractClass on on a type with instance members in lang preview`` () =
+        Fsx """
+[<Sealed; AbstractClass>]
+type T() =
+    member this.M() = ()
+    static member X = 1
+        """
+         |> withLangVersionPreview
+         |> compile
+         |> shouldFail
+         |> withDiagnostics [
+             (Error 3554, Line 4, Col 5, Line 4, Col 25, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance member is not allowed.")
+         ]
+         
+    [<Fact>]
+    let ``Sealed and AbstractClass on on a type with static members in lang version70`` () =
+        Fsx """
+[<Sealed; AbstractClass>]
+type T() =
+    static member M() = ()
+    static member X = T.M()
+        """
+         |> withLangVersion70
+         |> compile
+         |> shouldSucceed
+         
+    [<Fact>]
+    let ``Sealed and AbstractClass on on a type with static members in lang preview`` () =
+        Fsx """
+[<Sealed; AbstractClass>]
+type T() =
+    static member M() = ()
+    static member X = T.M()
+        """
+         |> withLangVersionPreview
+         |> compile
+         |> shouldSucceed

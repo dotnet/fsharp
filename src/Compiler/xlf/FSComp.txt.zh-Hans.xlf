@@ -72,6 +72,11 @@
         <target state="translated">已弃用 F# 库中的“incr”。请参阅 https://aka.ms/fsharp-refcell-ops。 例如，请将“incr cell”更改为“cell.Value &lt;- cell.Value + 1”。</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkInstanceMemberOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance member is not allowed.</source>
+        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance member is not allowed.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="containerDeprecated">
         <source>The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead.</source>
         <target state="translated">"AssemblyKeyNameAttribute" 已被弃用。请改为使用 "AssemblyKeyFileAttribute"。</target>
