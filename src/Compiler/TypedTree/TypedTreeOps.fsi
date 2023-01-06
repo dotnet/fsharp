@@ -2449,6 +2449,8 @@ type Entity with
 
     member HasMember: TcGlobals -> string -> TType list -> bool
 
+    member internal TryGetMember: TcGlobals -> string -> TType list -> ValRef option
+
 type EntityRef with
 
     member HasInterface: TcGlobals -> TType -> bool

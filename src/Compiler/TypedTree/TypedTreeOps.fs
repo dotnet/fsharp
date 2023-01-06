@@ -9573,11 +9573,11 @@ type Entity with
                 List.lengthsEqAndForall2 (typeEquiv g) (List.map fst argInfos) argTys &&  
                 membInfo.MemberFlags.IsOverrideOrExplicitImpl
             | _ -> false) 
-    
-    member tycon.HasMember g nm argTys = 
+
+    member tycon.TryGetMember g nm argTys = 
         tycon.TypeContents.tcaug_adhoc 
         |> NameMultiMap.find nm
-        |> List.exists (fun vref -> 
+        |> List.tryFind (fun vref -> 
             match vref.MemberInfo with 
             | None -> false 
             | _ ->
@@ -9586,7 +9586,8 @@ type Entity with
             match argInfos with
             | [argInfos] -> List.lengthsEqAndForall2 (typeEquiv g) (List.map fst argInfos) argTys
             | _ -> false) 
-
+    
+    member tycon.HasMember g nm argTys = (tycon.TryGetMember g nm argTys).IsSome
 
 type EntityRef with 
     member tcref.HasInterface g ty = tcref.Deref.HasInterface g ty
