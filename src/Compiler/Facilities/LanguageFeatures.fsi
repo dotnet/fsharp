@@ -50,6 +50,7 @@ type LanguageFeature =
     | WarningWhenInliningMethodImplNoInlineMarkedFunction
     | EscapeDotnetFormattableStrings
     | ArithmeticInLiterals
+    | ErrorReportingOnStaticClasses
 
 /// LanguageVersion management
 type LanguageVersion =
