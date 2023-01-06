@@ -762,20 +762,23 @@ module Structure =
                 | ConditionalDirectiveTrivia.Else elseRange as elseDirective :: directives ->
                     match stack with
                     | ConditionalDirectiveTrivia.If (_, ifRange) :: stack ->
-                        // start of #if until the end of the line directly above #else
-                        let range =
-                            mkFileIndexRange
-                                ifRange.FileIndex
-                                ifRange.Start
-                                (mkPos (elseRange.StartLine - 1) sourceLines[elseRange.StartLine - 2].Length)
+                        let startLineIndex = elseRange.StartLine - 2
 
-                        {
-                            Scope = Scope.HashDirective
-                            Collapse = Collapse.Same
-                            Range = range
-                            CollapseRange = range
-                        }
-                        |> acc.Add
+                        if startLineIndex >= 0 then
+                            // start of #if until the end of the line directly above #else
+                            let range =
+                                mkFileIndexRange
+                                    ifRange.FileIndex
+                                    ifRange.Start
+                                    (mkPos (elseRange.StartLine - 1) sourceLines[startLineIndex].Length)
+
+                            {
+                                Scope = Scope.HashDirective
+                                Collapse = Collapse.Same
+                                Range = range
+                                CollapseRange = range
+                            }
+                            |> acc.Add
 
                         group directives (elseDirective :: stack) sourceLines
                     | _ -> group directives stack sourceLines
@@ -793,7 +796,7 @@ module Structure =
                         |> acc.Add
 
                         group directives stack sourceLines
-                    | ConditionalDirectiveTrivia.Else elseRange :: directives ->
+                    | ConditionalDirectiveTrivia.Else elseRange :: stack ->
                         let range = Range.startToEnd elseRange endIfRange
 
                         {
