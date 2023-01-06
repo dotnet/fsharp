@@ -344,12 +344,18 @@ module ProjectOperations =
             failwith $"Found {results.Length} references but expected to find {expected}"
 
     let expectToFind expected (foundRanges: range seq) =
+        let expected =
+            expected 
+            |> Seq.sortBy (fun (file, _, _, _) -> file) 
+            |> Seq.toArray
+        
         let actual =
             foundRanges
             |> Seq.map (fun r -> Path.GetFileName(r.FileName), r.StartLine, r.StartColumn, r.EndColumn)
             |> Seq.sortBy (fun (file, _, _, _) -> file)
             |> Seq.toArray
-        Assert.Equal<(string * int * int * int)[]>(expected |> Seq.toArray, actual)
+        
+        Assert.Equal<(string * int * int * int)[]>(expected, actual)
 
     let rec saveProject (p: SyntheticProject) generateSignatureFiles checker =
         async {

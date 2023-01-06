@@ -229,7 +229,12 @@ type Project with
             | Some document when this.IsFastFindReferencesEnabled && document.Project = this ->
                 backgroundTask {
                     let! _, _, _, options = document.GetFSharpCompilationOptionsAsync(userOpName) |> RoslynHelpers.StartAsyncAsTask ct
-                    return options.SourceFiles |> Seq.takeWhile ((<>) document.FilePath) |> Set
+                    let signatureFile = if not (document.FilePath |> isSignatureFile) then $"{document.FilePath}i" else null
+                    return 
+                        options.SourceFiles 
+                        |> Seq.takeWhile ((<>) document.FilePath) 
+                        |> Seq.filter ((<>) signatureFile)
+                        |> Set
                 }
             | _ -> Task.FromResult Set.empty
 
