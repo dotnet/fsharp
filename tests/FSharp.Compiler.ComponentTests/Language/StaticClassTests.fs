@@ -204,7 +204,7 @@ type B =
         |> shouldSucceed
 
     [<Fact>]
-    let ``Sealed and AbstractClass on on a type with instance members in lang version70`` () =
+    let ``Sealed and AbstractClass on a type with instance members in lang version70`` () =
         Fsx """
 [<Sealed; AbstractClass>]
 type T() =
@@ -216,7 +216,7 @@ type T() =
          |> shouldSucceed
          
     [<Fact>]
-    let ``Sealed and AbstractClass on on a type with instance members in lang preview`` () =
+    let ``Sealed and AbstractClass on a type with instance members in lang preview`` () =
         Fsx """
 [<Sealed; AbstractClass>]
 type T() =
@@ -227,11 +227,11 @@ type T() =
          |> compile
          |> shouldFail
          |> withDiagnostics [
-             (Error 3554, Line 4, Col 5, Line 4, Col 25, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance member is not allowed.")
+             (Error 3554, Line 4, Col 5, Line 4, Col 25, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance members are not allowed.")
          ]
          
     [<Fact>]
-    let ``Sealed and AbstractClass on on a type with static members in lang version70`` () =
+    let ``Sealed and AbstractClass on a type with static members in lang version70`` () =
         Fsx """
 [<Sealed; AbstractClass>]
 type T() =
@@ -243,7 +243,7 @@ type T() =
          |> shouldSucceed
          
     [<Fact>]
-    let ``Sealed and AbstractClass on on a type with static members in lang preview`` () =
+    let ``Sealed and AbstractClass on a type with static members in lang preview`` () =
         Fsx """
 [<Sealed; AbstractClass>]
 type T() =
