@@ -3669,7 +3669,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         let errorOptions = TcConfig.Create(tcConfigB,validate = false).diagnosticsOptions
         let diagnosticsLogger = CompilationDiagnosticLogger("EvalInteraction", errorOptions, eagerFormat)
         fsiInteractionProcessor.EvalInteraction(ctok, code, dummyScriptFileName, diagnosticsLogger, cancellationToken)
-        |> commitResultNonThrowing errorOptions "input.fsx" diagnosticsLogger
+        |> commitResultNonThrowing errorOptions dummyScriptFileName diagnosticsLogger
 
     member _.EvalScript(filePath) : unit =
         // Explanation: When the user of the FsiInteractiveSession object calls this method, the
