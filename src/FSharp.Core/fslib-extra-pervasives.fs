@@ -51,10 +51,7 @@ module ExtraTopLevelOperators =
             makeSafeKey: 'Key -> 'SafeKey,
             getKey: 'SafeKey -> 'Key
         ) =
-#if NETSTANDARD
-        static let emptyEnumerator =
-            (Array.empty<KeyValuePair<'Key, 'T>> :> seq<_>).GetEnumerator()
-#endif
+
         member _.Count = t.Count
 
         // Give a read-only view of the dictionary
@@ -169,47 +166,8 @@ module ExtraTopLevelOperators =
             member _.GetEnumerator() =
                 // We use an array comprehension here instead of seq {} as otherwise we get incorrect
                 // IEnumerator.Reset() and IEnumerator.Current semantics.
-                // Coreclr has a bug with SZGenericEnumerators --- implement a correct enumerator.  On desktop use the desktop implementation because it's ngened.
-#if !NETSTANDARD
                 let kvps = [| for (KeyValue (k, v)) in t -> KeyValuePair(getKey k, v) |] :> seq<_>
                 kvps.GetEnumerator()
-#else
-                let endIndex = t.Count
-
-                if endIndex = 0 then
-                    emptyEnumerator
-                else
-                    let kvps = [| for (KeyValue (k, v)) in t -> KeyValuePair(getKey k, v) |]
-                    let mutable index = -1
-
-                    let current () =
-                        if index < 0 then
-                            raise <| InvalidOperationException(SR.GetString(SR.enumerationNotStarted))
-
-                        if index >= endIndex then
-                            raise <| InvalidOperationException(SR.GetString(SR.enumerationAlreadyFinished))
-
-                        kvps.[index]
-
-                    { new IEnumerator<_> with
-                        member _.Current = current ()
-                      interface System.Collections.IEnumerator with
-                          member _.Current = box (current ())
-
-                          member _.MoveNext() =
-                              if index < endIndex then
-                                  index <- index + 1
-                                  index < endIndex
-                              else
-                                  false
-
-                          member _.Reset() =
-                              index <- -1
-                      interface System.IDisposable with
-                          member _.Dispose() =
-                              ()
-                    }
-#endif
 
         interface System.Collections.IEnumerable with
             member _.GetEnumerator() =

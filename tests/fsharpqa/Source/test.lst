@@ -10,7 +10,7 @@ CompilerOptions01,NoMT				CompilerOptions\fsc\crossoptimize
 CompilerOptions01,NoMT,Determinism  CompilerOptions\fsc\determinism
 CompilerOptions01,NoMT				CompilerOptions\fsc\dumpAllCommandLineOptions
 CompilerOptions01,NoMT				CompilerOptions\fsc\flaterrors
-CompilerOptions02,NoMT				CompilerOptions\fsc\gccerrors
+CompilerOptions02,NoMT,gcc			CompilerOptions\fsc\gccerrors
 CompilerOptions01,NoMT,help			CompilerOptions\fsc\help
 CompilerOptions01,NoMT				CompilerOptions\fsc\highentropyva
 CompilerOptions01,NoMT				CompilerOptions\fsc\langversion
