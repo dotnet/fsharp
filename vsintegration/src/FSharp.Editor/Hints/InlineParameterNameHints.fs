@@ -40,8 +40,9 @@ module InlineParameterNameHints =
                         (symbolUse.Range.End.Column + 1)
 
         parseResults.FindParameterLocations position
-        |> Option.map (fun locations -> locations.ArgumentLocations)
-        |> Option.defaultValue [||]
+        |> Option.map (fun locations -> locations.ArgumentLocations |> Seq.filter (fun location -> Position.posGeq location.ArgumentRange.Start position))
+        |> Option.filter (not << Seq.isEmpty)
+        |> Option.defaultValue Seq.empty
 
     let private getTupleRanges =
         Seq.map (fun location -> location.ArgumentRange)
@@ -68,9 +69,12 @@ module InlineParameterNameHints =
                 symbol.DeclaringEntity 
                 |> Option.exists (fun entity -> entity.CompiledName <> "Operators")
 
+            let isNotCustomOperation = 
+                not <| symbol.HasAttribute<CustomOperationAttribute>()
+
             (symbol.IsFunction && isNotBuiltInOperator) // arguably, hints for those would be rather useless
             || symbol.IsConstructor
-            || symbol.IsMethod
+            || (symbol.IsMethod && isNotCustomOperation)
         else
             false
 
@@ -84,7 +88,7 @@ module InlineParameterNameHints =
         (symbolUse: FSharpSymbolUse) =
 
         let parameters = symbol.CurriedParameterGroups |> Seq.concat
-        let argumentLocations = getArgumentLocations symbolUse parseResults
+        let argumentLocations = parseResults |> getArgumentLocations symbolUse
 
         let tupleRanges = argumentLocations |> getTupleRanges
         let curryRanges = parseResults |> getCurryRanges symbolUse
