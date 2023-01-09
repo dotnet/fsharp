@@ -1329,37 +1329,34 @@ let internal mkBoundValueTypedImpl tcGlobals m moduleName name ty =
     entity, v, CheckedImplFile.CheckedImplFile(qname, [], mty, contents, false, false, StampMap.Empty, Map.empty)
 
 
-let scriptingDirectory =
-    let createDirectory directory =
+let scriptingSymbolsPath =
+    let createDirectory path =
         lazy
             try
-                if not (Directory.Exists(directory)) then
-                    Directory.CreateDirectory(directory) |> ignore
+                if not (Directory.Exists(path)) then
+                    Directory.CreateDirectory(path) |> ignore
 
-                directory
+                path
             with _ ->
-                directory
+                path
 
     createDirectory (Path.Combine(Path.GetTempPath(), $"{DateTime.Now:s}-{Guid.NewGuid():n}".Replace(':', '-')))
 
-let deleteScripts () =
+let deleteScriptingSymbols () =
     try
 #if !DEBUG
-            if scriptingDirectory.IsValueCreated then
-                if Directory.Exists(scriptingDirectory.Value) then
-                    Directory.Delete(scriptingDirectory.Value, true)
+            if scriptingSymbolsPath.IsValueCreated then
+                if Directory.Exists(scriptingSymbolsPath.Value) then
+                    Directory.Delete(scriptingSymbolsPath.Value, true)
 #else
             ()
 #endif
     with _ ->
         ()
 
-do AppDomain.CurrentDomain.ProcessExit |> Event.add (fun _ -> deleteScripts ())
-
-
+AppDomain.CurrentDomain.ProcessExit |> Event.add (fun _ -> deleteScriptingSymbols ())
 
 let dynamicCcuName = "FSI-ASSEMBLY"
-let dynamicCCuInternalsVisibleArgument = $"{dynamicCcuName}"
 
 /// Encapsulates the coordination of the typechecking, optimization and code generation
 /// components of the F# compiler for interactively executed fragments of code.
@@ -1436,7 +1433,7 @@ type internal FsiDynamicCompiler(
         let manifest =
             let manifest = ilxMainModule.Manifest.Value
             let attrs = [
-                tcGlobals.MakeInternalsVisibleToAttribute(dynamicCCuInternalsVisibleArgument)
+                tcGlobals.MakeInternalsVisibleToAttribute(dynamicCcuName)
                 yield! manifest.CustomAttrs.AsList()
                 ]
             { manifest with 
@@ -1458,7 +1455,7 @@ type internal FsiDynamicCompiler(
         let opts = {
             ilg = tcGlobals.ilg
             outfile = multiAssemblyName + ".dll"
-            pdbfile = Some (Path.Combine(scriptingDirectory.Value, $"{multiAssemblyName}-{dynamicAssemblyId}.pdb"))
+            pdbfile = Some (Path.Combine(scriptingSymbolsPath.Value, $"{multiAssemblyName}-{dynamicAssemblyId}.pdb"))
             emitTailcalls = tcConfig.emitTailcalls
             deterministic = tcConfig.deterministic
             portablePDB = true
