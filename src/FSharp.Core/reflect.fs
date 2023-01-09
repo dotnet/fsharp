@@ -664,7 +664,7 @@ module internal Impl =
     // Which field holds the nested tuple?
     let tupleEncField = maxTuple - 1
 
-    module internal ObsoleteTupleTypeMaking =
+    module internal TupleFromSpecifiedAssembly =
         let private tupleNames =
             [|
                 "System.Tuple`1"
@@ -1235,7 +1235,7 @@ type FSharpType =
         then
             invalidArg "types" (SR.GetString(SR.nullsNotAllowedInArray))
 
-        ObsoleteTupleTypeMaking.mkTupleType false asm types
+        TupleFromSpecifiedAssembly.mkTupleType false asm types
 
     static member MakeStructTupleType(asm: Assembly, types: Type[]) =
         checkNonNull "types" types
@@ -1248,7 +1248,7 @@ type FSharpType =
         then
             invalidArg "types" (SR.GetString(SR.nullsNotAllowedInArray))
 
-        ObsoleteTupleTypeMaking.mkTupleType true asm types
+        TupleFromSpecifiedAssembly.mkTupleType true asm types
 
     static member MakeStructTupleType(types: Type[]) =
         checkNonNull "types" types
