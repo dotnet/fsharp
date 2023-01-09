@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="buildDuplicateFile">
         <source>The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</source>
-        <target state="new">The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</target>
+        <target state="translated">來源檔案 '{0}' ( 位於位置 {1}/{2}) 已出現在編譯清單 ( 位於位置 {3}/{4})。請確認它在專案檔中只包含一次。</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidSourceFileExtensionML">
@@ -344,7 +344,7 @@
       </trans-unit>
       <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
         <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
-        <target state="new">Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</target>
+        <target state="translated">當 'let inline ... =' 與 [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] 屬性一起使用時引發警告。函數未內嵌。</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">

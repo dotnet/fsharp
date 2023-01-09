@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="buildDuplicateFile">
         <source>The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</source>
-        <target state="new">The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</target>
+        <target state="translated">Plik źródłowy „{0}” (na pozycji {1}/{2}) już pojawił się na liście kompilacji (na pozycji {3}/{4}). Sprawdź, czy jest on uwzględniony tylko raz w pliku projektu.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidSourceFileExtensionML">
@@ -344,7 +344,7 @@
       </trans-unit>
       <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
         <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
-        <target state="new">Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</target>
+        <target state="translated">Zgłasza ostrzeżenia, gdy element „let inline ... =” jest używany razem z atrybutem [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;]. Funkcja nie jest wstawiana.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
