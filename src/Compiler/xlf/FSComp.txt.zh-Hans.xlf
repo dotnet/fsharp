@@ -4,12 +4,7 @@
     <body>
       <trans-unit id="arrayElementHasWrongTypeTuple">
         <source>All elements of an array must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</source>
-        <target state="translated">数组的所有元素必须可隐式转换为第一个元素的类型，这是一个长度为 {0} 的类型的元组\n    {1}    \n此元素是长度为 {2} 类型的元组\n    {3}    \n</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildDuplicateFile">
-        <source>The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</source>
-        <target state="new">The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</target>
+        <target state="new">All elements of an array must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidSourceFileExtensionML">
@@ -22,19 +17,9 @@
         <target state="translated">无法识别“{0}”的文件扩展名。源文件必须具有扩展名 .fs、.fsi、.fsx 或 .fsscript</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkAdditionalConstructorOnStaticClasses">
-        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Additional constructor is not allowed.</source>
-        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Additional constructor is not allowed.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="chkConstructorWithArgumentsOnStaticClasses">
-        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Constructor with arguments is not allowed.</source>
-        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Constructor with arguments is not allowed.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="chkDuplicatedMethodParameter">
         <source>Duplicate parameter. The parameter '{0}' has been used more that once in this method.</source>
-        <target state="translated">参数重复。此方法中多次使用了参数“{0}”。</target>
+        <target state="new">Duplicate parameter. The parameter '{0}' has been used more that once in this method.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
@@ -70,11 +55,6 @@
       <trans-unit id="chkInfoRefcellIncr">
         <source>The use of 'incr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'incr cell' to 'cell.Value &lt;- cell.Value + 1'.</source>
         <target state="translated">已弃用 F# 库中的“incr”。请参阅 https://aka.ms/fsharp-refcell-ops。 例如，请将“incr cell”更改为“cell.Value &lt;- cell.Value + 1”。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="chkInstanceMemberOnStaticClasses">
-        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance members are not allowed.</source>
-        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance members are not allowed.</target>
         <note />
       </trans-unit>
       <trans-unit id="containerDeprecated">
@@ -134,7 +114,7 @@
       </trans-unit>
       <trans-unit id="elseBranchHasWrongTypeTuple">
         <source>All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</source>
-        <target state="translated">“if” 表达式的所有分支必须返回可隐式转换为第一个分支类型的值，这是一个长度为 {0} 的类型的元组\n    {1}    \n此分支会返回长度为 {2} 的类型的元组\n    {3}    \n</target>
+        <target state="new">All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</target>
         <note />
       </trans-unit>
       <trans-unit id="etProviderHasDesignerAssemblyDependency">
@@ -164,7 +144,7 @@
       </trans-unit>
       <trans-unit id="featureArithmeticInLiterals">
         <source>Allow arithmetic and logical operations in literals</source>
-        <target state="translated">允许在文本中进行算术和逻辑运算</target>
+        <target state="new">Allow arithmetic and logical operations in literals</target>
         <note />
       </trans-unit>
       <trans-unit id="featureAttributesToRightOfModuleKeyword">
@@ -179,7 +159,7 @@
       </trans-unit>
       <trans-unit id="featureCSharpExtensionAttributeNotRequired">
         <source>Allow implicit Extension attribute on declaring types, modules</source>
-        <target state="translated">允许对声明类型、模块使用隐式扩展属性</target>
+        <target state="new">Allow implicit Extension attribute on declaring types, modules</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
@@ -204,22 +184,12 @@
       </trans-unit>
       <trans-unit id="featureErrorForNonVirtualMembersOverrides">
         <source>Raises errors for non-virtual members overrides</source>
-        <target state="translated">引发非虚拟成员替代的错误</target>
+        <target state="new">Raises errors for non-virtual members overrides</target>
         <note />
       </trans-unit>
       <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
         <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
         <target state="translated">对具有 RequireQualifiedAccess 属性的构造进行弃用的访问时出错</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureErrorReportingOnStaticClasses">
-        <source>Error reporting on static classes</source>
-        <target state="new">Error reporting on static classes</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureEscapeBracesInFormattableString">
-        <source>Escapes curly braces before calling FormattableStringFactory.Create when interpolated string literal is typed as FormattableString</source>
-        <target state="translated">当内插字符串文本键入为 FormattableString 时，在调用 FormattableStringFactory.Create 之前转义大括号</target>
         <note />
       </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
@@ -274,7 +244,7 @@
       </trans-unit>
       <trans-unit id="featureMatchNotAllowedForUnionCaseWithNoData">
         <source>Pattern match discard is not allowed for union case that takes no data.</source>
-        <target state="translated">不允许将模式匹配丢弃用于不采用数据的联合事例。</target>
+        <target state="new">Pattern match discard is not allowed for union case that takes no data.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNameOf">
@@ -362,11 +332,6 @@
         <target state="translated">活动模式的结构表示形式</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
-        <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
-        <target state="new">Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
         <source>wild card in for loop</source>
         <target state="translated">for 循环中的通配符</target>
@@ -379,7 +344,7 @@
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongTypeTuple">
         <source>All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</source>
-        <target state="translated">模式匹配表达式的所有分支必须返回可隐式转换为第一个分支类型的值，这是一个长度为 {0} 的类型的元组\n    {1}    \n此分支会返回长度为 {2} 的类型的元组\n    {3}    \n</target>
+        <target state="new">All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</target>
         <note />
       </trans-unit>
       <trans-unit id="forFormatInvalidForInterpolated">
@@ -424,7 +389,7 @@
       </trans-unit>
       <trans-unit id="ifExpressionTuple">
         <source>The 'if' expression needs to return a tuple of length {0} of type\n    {1}    \nto satisfy context type requirements. It currently returns a tuple of length {2} of type\n    {3}    \n</source>
-        <target state="translated">“if” 表达式需要返回长度为 {0} 的类型的元组\n    {1}    \n以满足上下文类型要求。它当前返回了长度为 {2} 的类型的元组\n    {3}    \n</target>
+        <target state="new">The 'if' expression needs to return a tuple of length {0} of type\n    {1}    \nto satisfy context type requirements. It currently returns a tuple of length {2} of type\n    {3}    \n</target>
         <note />
       </trans-unit>
       <trans-unit id="ilxGenUnknownDebugPoint">
@@ -489,12 +454,12 @@
       </trans-unit>
       <trans-unit id="listElementHasWrongTypeTuple">
         <source>All elements of a list must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</source>
-        <target state="translated">列表的所有元素必须可隐式转换为第一个元素的类型，这是一个长度为 {0} 的类型的元组\n    {1}    \n此元素是长度为 {2} 类型的元组\n    {3}    \n</target>
+        <target state="new">All elements of a list must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</target>
         <note />
       </trans-unit>
       <trans-unit id="matchNotAllowedForUnionCaseWithNoData">
         <source>Pattern discard is not allowed for union case that takes no data.</source>
-        <target state="translated">不允许将模式丢弃用于不采用数据的联合事例。</target>
+        <target state="new">Pattern discard is not allowed for union case that takes no data.</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatError">
@@ -579,7 +544,7 @@
       </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
         <source>Invalid use of emitting a reference assembly, do not use '--standalone or --staticlink' with '--refonly or --refout'.</source>
-        <target state="translated">发出引用程序集的使用无效，请勿将 '--standalone 或 --staticlink' 与 '--refonly 或 --refout' 一起使用。</target>
+        <target state="new">Invalid use of emitting a reference assembly, do not use '--standalone or --staticlink' with '--refonly or --refout'.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidRefOut">
@@ -689,7 +654,7 @@
       </trans-unit>
       <trans-unit id="parsExpectedPatternAfterToken">
         <source>Expected a pattern after this point</source>
-        <target state="translated">此点之后应有一个模式</target>
+        <target state="new">Expected a pattern after this point</target>
         <note />
       </trans-unit>
       <trans-unit id="parsExpectingExpressionInTuple">
@@ -699,7 +664,7 @@
       </trans-unit>
       <trans-unit id="parsExpectingPatternInTuple">
         <source>Expecting pattern</source>
-        <target state="translated">预期模式</target>
+        <target state="new">Expecting pattern</target>
         <note />
       </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr1">
@@ -1059,7 +1024,7 @@
       </trans-unit>
       <trans-unit id="tcSynTypeOrInvalidInDeclaration">
         <source>SynType.Or is not permitted in this declaration</source>
-        <target state="translated">此声明中不允许使用 SynType.Or</target>
+        <target state="new">SynType.Or is not permitted in this declaration</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTraitHasMultipleSupportTypes">
@@ -3889,7 +3854,7 @@
       </trans-unit>
       <trans-unit id="tcUnionCaseExpectsTupledArguments">
         <source>This union case expects {0} arguments in tupled form, but was given {1}. The missing field arguments may be any of:{2}</source>
-        <target state="translated">此联合事例需要元组形式的 {0} 个参数，但提供了 {1} 个。缺少的字段参数可以是 {2} 的任何参数</target>
+        <target state="new">This union case expects {0} arguments in tupled form, but was given {1}. The missing field arguments may be any of:{2}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcFieldIsNotStatic">
@@ -7569,7 +7534,7 @@
       </trans-unit>
       <trans-unit id="tcStructUnionMultiCaseDistinctFields">
         <source>If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'.</source>
-        <target state="translated">如果多事例联合类型是结构，则所有联合事例都必须具有唯一的名称。例如: “type A = B of b: int | C of c: int”。</target>
+        <target state="new">If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'.</target>
         <note />
       </trans-unit>
       <trans-unit id="CallerMemberNameIsOverriden">

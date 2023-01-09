@@ -4,7 +4,6 @@ namespace Microsoft.VisualStudio.FSharp.Editor.Hints
 
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open Hints
@@ -31,7 +30,7 @@ module InlineParameterNameHints =
     let private doesFieldNameExist (field: FSharpField) = 
         not field.IsNameGenerated
 
-    let private getArgumentLocations
+    let private getTupleRanges
         (symbolUse: FSharpSymbolUse)
         (parseResults: FSharpParseFileResults) =
 
@@ -40,13 +39,10 @@ module InlineParameterNameHints =
                         (symbolUse.Range.End.Column + 1)
 
         parseResults.FindParameterLocations position
-        |> Option.map (fun locations -> locations.ArgumentLocations |> Seq.filter (fun location -> Position.posGeq location.ArgumentRange.Start position))
-        |> Option.filter (not << Seq.isEmpty)
-        |> Option.defaultValue Seq.empty
-
-    let private getTupleRanges =
-        Seq.map (fun location -> location.ArgumentRange)
-        >> Seq.toList
+        |> Option.map (fun locations -> locations.ArgumentLocations)
+        |> Option.map (Seq.map (fun location -> location.ArgumentRange))
+        |> Option.defaultValue []
+        |> Seq.toList
 
     let private getCurryRanges 
         (symbolUse: FSharpSymbolUse) 
@@ -55,26 +51,15 @@ module InlineParameterNameHints =
         parseResults.GetAllArgumentsForFunctionApplicationAtPosition symbolUse.Range.Start
         |> Option.defaultValue []
 
-    let private isNamedArgument range =
-        Seq.filter (fun location -> location.IsNamedArgument)
-        >> Seq.map (fun location -> location.ArgumentRange) 
-        >> Seq.contains range
-
-    let isMemberOrFunctionOrValueValidForHint 
-        (symbol: FSharpMemberOrFunctionOrValue) 
-        (symbolUse: FSharpSymbolUse) =
-
+    let isMemberOrFunctionOrValueValidForHint (symbol: FSharpMemberOrFunctionOrValue) (symbolUse: FSharpSymbolUse) =
         if symbolUse.IsFromUse then
             let isNotBuiltInOperator = 
                 symbol.DeclaringEntity 
                 |> Option.exists (fun entity -> entity.CompiledName <> "Operators")
 
-            let isNotCustomOperation = 
-                not <| symbol.HasAttribute<CustomOperationAttribute>()
-
             (symbol.IsFunction && isNotBuiltInOperator) // arguably, hints for those would be rather useless
             || symbol.IsConstructor
-            || (symbol.IsMethod && isNotCustomOperation)
+            || symbol.IsMethod
         else
             false
 
@@ -88,14 +73,10 @@ module InlineParameterNameHints =
         (symbolUse: FSharpSymbolUse) =
 
         let parameters = symbol.CurriedParameterGroups |> Seq.concat
-        let argumentLocations = parseResults |> getArgumentLocations symbolUse
 
-        let tupleRanges = argumentLocations |> getTupleRanges
+        let tupleRanges = parseResults |> getTupleRanges symbolUse
         let curryRanges = parseResults |> getCurryRanges symbolUse
-
-        let ranges = 
-            if tupleRanges |> (not << Seq.isEmpty) then tupleRanges else curryRanges
-            |> Seq.filter (fun range -> argumentLocations |> (not << isNamedArgument range))
+        let ranges = if tupleRanges |> (not << Seq.isEmpty) then tupleRanges else curryRanges
 
         parameters
         |> Seq.zip ranges // Seq.zip is important as List.zip requires equal lengths

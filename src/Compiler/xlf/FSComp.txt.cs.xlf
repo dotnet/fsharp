@@ -4,12 +4,7 @@
     <body>
       <trans-unit id="arrayElementHasWrongTypeTuple">
         <source>All elements of an array must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</source>
-        <target state="translated">Všechny prvky pole musí být implicitně převoditelné na typ prvního elementu, což je řazená kolekce členů o délce {0} typu\n    {1}    \nTento element je řazená kolekce členů o délce {2} typu\n    {3}    \n</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildDuplicateFile">
-        <source>The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</source>
-        <target state="new">The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</target>
+        <target state="new">All elements of an array must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidSourceFileExtensionML">
@@ -22,19 +17,9 @@
         <target state="translated">Soubor {0} má nerozpoznanou příponu. Zdrojové soubory musí mít příponu .fs, .fsi, .fsx nebo .fsscript.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkAdditionalConstructorOnStaticClasses">
-        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Additional constructor is not allowed.</source>
-        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Additional constructor is not allowed.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="chkConstructorWithArgumentsOnStaticClasses">
-        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Constructor with arguments is not allowed.</source>
-        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Constructor with arguments is not allowed.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="chkDuplicatedMethodParameter">
         <source>Duplicate parameter. The parameter '{0}' has been used more that once in this method.</source>
-        <target state="translated">Duplicitní parametr Parametr {0} byl v této metodě použit vícekrát.</target>
+        <target state="new">Duplicate parameter. The parameter '{0}' has been used more that once in this method.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
@@ -70,11 +55,6 @@
       <trans-unit id="chkInfoRefcellIncr">
         <source>The use of 'incr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'incr cell' to 'cell.Value &lt;- cell.Value + 1'.</source>
         <target state="translated">Použití incr z knihovny F# je zastaralé. Více informací: https://aka.ms/fsharp-refcell-ops. Změňte prosím například incr cell na cell.Value &lt;- cell.Value + 1.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="chkInstanceMemberOnStaticClasses">
-        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance members are not allowed.</source>
-        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance members are not allowed.</target>
         <note />
       </trans-unit>
       <trans-unit id="containerDeprecated">
@@ -134,7 +114,7 @@
       </trans-unit>
       <trans-unit id="elseBranchHasWrongTypeTuple">
         <source>All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</source>
-        <target state="translated">Všechny větve výrazu if musí vracet hodnoty implicitně převoditelné na typ první větve, což je řazená kolekce členů o délce {0} typu\n    {1}    \nTato větev vrací řazenou kolekci členů o délce {2} typu\n    {3}    \n</target>
+        <target state="new">All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</target>
         <note />
       </trans-unit>
       <trans-unit id="etProviderHasDesignerAssemblyDependency">
@@ -164,7 +144,7 @@
       </trans-unit>
       <trans-unit id="featureArithmeticInLiterals">
         <source>Allow arithmetic and logical operations in literals</source>
-        <target state="translated">Povolit aritmetické a logické operace v literálech</target>
+        <target state="new">Allow arithmetic and logical operations in literals</target>
         <note />
       </trans-unit>
       <trans-unit id="featureAttributesToRightOfModuleKeyword">
@@ -179,7 +159,7 @@
       </trans-unit>
       <trans-unit id="featureCSharpExtensionAttributeNotRequired">
         <source>Allow implicit Extension attribute on declaring types, modules</source>
-        <target state="translated">Povolit implicitní atribut Extension pro deklarující typy, moduly</target>
+        <target state="new">Allow implicit Extension attribute on declaring types, modules</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
@@ -204,22 +184,12 @@
       </trans-unit>
       <trans-unit id="featureErrorForNonVirtualMembersOverrides">
         <source>Raises errors for non-virtual members overrides</source>
-        <target state="translated">Vyvolá chyby pro přepsání jiných než virtuálních členů</target>
+        <target state="new">Raises errors for non-virtual members overrides</target>
         <note />
       </trans-unit>
       <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
         <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
         <target state="translated">chyba při zastaralém přístupu konstruktoru s atributem RequireQualifiedAccess</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureErrorReportingOnStaticClasses">
-        <source>Error reporting on static classes</source>
-        <target state="new">Error reporting on static classes</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureEscapeBracesInFormattableString">
-        <source>Escapes curly braces before calling FormattableStringFactory.Create when interpolated string literal is typed as FormattableString</source>
-        <target state="translated">Uvede složené závorky před voláním formattableStringFactory.Create, pokud je interpolovaný řetězcový literál zadán jako FormattableString.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
@@ -274,7 +244,7 @@
       </trans-unit>
       <trans-unit id="featureMatchNotAllowedForUnionCaseWithNoData">
         <source>Pattern match discard is not allowed for union case that takes no data.</source>
-        <target state="translated">Zahození shody vzoru není povolené pro případ sjednocení, který nepřijímá žádná data.</target>
+        <target state="new">Pattern match discard is not allowed for union case that takes no data.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNameOf">
@@ -362,11 +332,6 @@
         <target state="translated">reprezentace struktury aktivních vzorů</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
-        <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
-        <target state="new">Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
         <source>wild card in for loop</source>
         <target state="translated">zástupný znak ve smyčce for</target>
@@ -379,7 +344,7 @@
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongTypeTuple">
         <source>All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</source>
-        <target state="translated">Všechny větve výrazu shody vzoru musí vracet hodnoty implicitně převoditelné na typ první větve, což je řazená kolekce členů o délce {0} typu\n    {1}    \nTato větev vrací řazenou kolekci členů o délce {2} typu\n    {3}    \n</target>
+        <target state="new">All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</target>
         <note />
       </trans-unit>
       <trans-unit id="forFormatInvalidForInterpolated">
@@ -424,7 +389,7 @@
       </trans-unit>
       <trans-unit id="ifExpressionTuple">
         <source>The 'if' expression needs to return a tuple of length {0} of type\n    {1}    \nto satisfy context type requirements. It currently returns a tuple of length {2} of type\n    {3}    \n</source>
-        <target state="translated">Výraz if musí vrátit řazenou kolekci členů o délce {0} typu\n    {1}    \nto splňovat požadavky na typ kontextu. Aktuálně vrací řazenou kolekci členů o délce {2} typu\n    {3}    \n</target>
+        <target state="new">The 'if' expression needs to return a tuple of length {0} of type\n    {1}    \nto satisfy context type requirements. It currently returns a tuple of length {2} of type\n    {3}    \n</target>
         <note />
       </trans-unit>
       <trans-unit id="ilxGenUnknownDebugPoint">
@@ -489,12 +454,12 @@
       </trans-unit>
       <trans-unit id="listElementHasWrongTypeTuple">
         <source>All elements of a list must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</source>
-        <target state="translated">Všechny prvky seznamu musí být implicitně převoditelné na typ prvního prvku, což je řazená kolekce členů o délce {0} typu\n    {1}    \nTento element je řazená kolekce členů o délce {2} typu\n    {3}    \n</target>
+        <target state="new">All elements of a list must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</target>
         <note />
       </trans-unit>
       <trans-unit id="matchNotAllowedForUnionCaseWithNoData">
         <source>Pattern discard is not allowed for union case that takes no data.</source>
-        <target state="translated">Pro případ sjednocení, který nepřijímá žádná data, se zahození vzoru nepovoluje.</target>
+        <target state="new">Pattern discard is not allowed for union case that takes no data.</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatError">
@@ -579,7 +544,7 @@
       </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
         <source>Invalid use of emitting a reference assembly, do not use '--standalone or --staticlink' with '--refonly or --refout'.</source>
-        <target state="translated">Neplatné použití generování referenčního sestavení, nepoužívejte --standalone ani --staticlink s --refonly nebo --refout.</target>
+        <target state="new">Invalid use of emitting a reference assembly, do not use '--standalone or --staticlink' with '--refonly or --refout'.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidRefOut">
@@ -689,7 +654,7 @@
       </trans-unit>
       <trans-unit id="parsExpectedPatternAfterToken">
         <source>Expected a pattern after this point</source>
-        <target state="translated">Za tímto bodem byl očekáván vzor</target>
+        <target state="new">Expected a pattern after this point</target>
         <note />
       </trans-unit>
       <trans-unit id="parsExpectingExpressionInTuple">
@@ -699,7 +664,7 @@
       </trans-unit>
       <trans-unit id="parsExpectingPatternInTuple">
         <source>Expecting pattern</source>
-        <target state="translated">Očekává se vzorek.</target>
+        <target state="new">Expecting pattern</target>
         <note />
       </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr1">
@@ -1059,7 +1024,7 @@
       </trans-unit>
       <trans-unit id="tcSynTypeOrInvalidInDeclaration">
         <source>SynType.Or is not permitted in this declaration</source>
-        <target state="translated">SynType.Or není v této deklaraci povoleno</target>
+        <target state="new">SynType.Or is not permitted in this declaration</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTraitHasMultipleSupportTypes">
@@ -3889,7 +3854,7 @@
       </trans-unit>
       <trans-unit id="tcUnionCaseExpectsTupledArguments">
         <source>This union case expects {0} arguments in tupled form, but was given {1}. The missing field arguments may be any of:{2}</source>
-        <target state="translated">Tento případ sjednocení očekává argumenty {0} ve formě řazené kolekce členů, ale byl zadán {1}. Argumenty chybějícího pole mohou být následující:{2}</target>
+        <target state="new">This union case expects {0} arguments in tupled form, but was given {1}. The missing field arguments may be any of:{2}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcFieldIsNotStatic">
@@ -7569,7 +7534,7 @@
       </trans-unit>
       <trans-unit id="tcStructUnionMultiCaseDistinctFields">
         <source>If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'.</source>
-        <target state="translated">Pokud je typ sjednocení s více písmeny struktura, musí mít všechny případy sjednocení jedinečné názvy. Příklad: 'type A = B of b: int | C z c: int</target>
+        <target state="new">If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'.</target>
         <note />
       </trans-unit>
       <trans-unit id="CallerMemberNameIsOverriden">

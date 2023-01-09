@@ -35,13 +35,13 @@ Show outlining and collapsible nodes for F# code;
 Inline hints;
 Display inline type hints (experimental);
 Display inline parameter name hints (experimental);Beer</source>
-        <target state="translated">Repères de structure de bloc ;
-Afficher les instructions de structure pour le code F# ;
-Décrivant;
-Afficher les nœuds plan et réductibles pour le code F# ;
-Indicateurs inline ;
-Afficher les indicateurs de type inline (expérimental);
-Afficher les indicateurs de nom de paramètre inline (expérimental); Bière</target>
+        <target state="new">Block Structure Guides;
+Show structure guidelines for F# code;
+Outlining;
+Show outlining and collapsible nodes for F# code;
+Inline hints;
+Display inline type hints (experimental);
+Display inline parameter name hints (experimental);Beer</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeFixesPageKeywords">
@@ -50,16 +50,16 @@ Always place open statements at the top level;
 Remove unused open statements;
 Analyze and suggest fixes for unused values;
 Suggest names for unresolved identifiers;</source>
-        <target state="translated">Simplifier les noms (supprimer les qualificateurs inutiles) ;
-Toujours placer les instructions ouvertes au niveau supérieur ;
-Supprimer les instructions open inutilisées ;
-Analyser et suggérer des correctifs pour les valeurs inutilisées ;
-Suggérer des noms pour les identificateurs non résolus ;</target>
+        <target state="new">Simplify names (remove unnecessary qualifiers);
+Always place open statements at the top level;
+Remove unused open statements;
+Analyze and suggest fixes for unused values;
+Suggest names for unresolved identifiers;</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertCSharpUsingToFSharpOpen">
         <source>Convert C# 'using' to F# 'open'</source>
-        <target state="translated">Convertir 'using' C# en F# 'open'</target>
+        <target state="new">Convert C# 'using' to F# 'open'</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertToAnonymousRecord">
@@ -104,7 +104,7 @@ Suggérer des noms pour les identificateurs non résolus ;</target>
       </trans-unit>
       <trans-unit id="FormattingPageKeywords">
         <source>Re-format indentation on paste (Experimental)</source>
-        <target state="translated">Formater de nouveau la mise en retrait lors du collage (expérimental)</target>
+        <target state="new">Re-format indentation on paste (Experimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="ImplementInterface">
@@ -126,14 +126,14 @@ Enter key behavior;
 Never add new line on enter;
 Only add new line on enter after end of fully typed word;
 Always add new line on enter;</source>
-        <target state="translated">Listes de saisie semi-automatique ;
- Afficher la liste de saisie semi-automatique après la suppression d’un caractère ;
- Afficher la liste de saisie semi-automatique après la saisie d’un caractère ;
- Afficher les symboles dans les espaces de noms non ouverts ;
- Entrer le comportement de la clé ;
- Ne jamais ajouter de nouvelle ligne lors de l’entrée ;
- Ajouter uniquement une nouvelle ligne à l’entrée après la fin du mot entièrement typé ;
- Toujours ajouter une nouvelle ligne lors de l’entrée ;</target>
+        <target state="new">Completion Lists;
+Show completion list after a character is deleted;
+Show completion list after a character is typed;
+Show symbols in unopened namespaces;
+Enter key behavior;
+Never add new line on enter;
+Only add new line on enter after end of fully typed word;
+Always add new line on enter;</target>
         <note />
       </trans-unit>
       <trans-unit id="MakeDeclarationMutable">
@@ -156,15 +156,15 @@ Parallelization (requires restart);
 Enable parallel type checking with signature files;
 Enable parallel reference resolution;
 Enable fast find references &amp; rename (experimental)</source>
-        <target state="translated">Options de performances du projet F# et de la mise en cache ;
-Activer les références entre projets en mémoire ;
-Options de performances IntelliSense ;
-Activer les données périmées pour les fonctionnalités IntelliSense ;
-Durée d’utilisation des résultats périmés (en millisecondes) ;
-Parallélisation (redémarrage nécessaire);
-Activer la vérification de type parallèle avec les fichiers de signature ;
-Activer la résolution de référence parallèle ;
-Activer les références de recherche rapide et renommer (expérimental)</target>
+        <target state="new">F# Project and Caching Performance Options;
+Enable in-memory cross project references;
+IntelliSense Performance Options;
+Enable stale data for IntelliSense features;
+Time until stale results are used (in milliseconds);
+Parallelization (requires restart);
+Enable parallel type checking with signature files;
+Enable parallel reference resolution;
+Enable fast find references &amp; rename (experimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
@@ -178,11 +178,11 @@ Show navigation links as;
 Solid underline;
 Dot underline;
 Dash underline;</source>
-        <target state="translated">Liens de navigation ;
-Afficher les liens de navigation en tant que ;
-Soulignement uni ;
-Soulignement pointé ;
-Soulignement en tirets ;</target>
+        <target state="new">Navigation links;
+Show navigation links as;
+Solid underline;
+Dot underline;
+Dash underline;</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">

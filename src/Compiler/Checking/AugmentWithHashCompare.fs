@@ -996,16 +996,7 @@ let MakeBindingsForEqualityWithComparerAugmentation (g: TcGlobals) (tycon: Tycon
             // build the hash rhs
             let withcGetHashCodeExpr =
                 let compv, compe = mkCompGenLocal m "comp" g.IEqualityComparer_ty
-
-                // Special case List<T> type to avoid StackOverflow exception , call custom hash code instead
-                let thisv,hashe = 
-                    if tyconRefEq g tcref g.list_tcr_canon && tycon.HasMember g "CustomHashCode" [g.IEqualityComparer_ty] then
-                        let customCodeVal = (tycon.TryGetMember g "CustomHashCode" [g.IEqualityComparer_ty]).Value                  
-                        let tinst, ty = mkMinimalTy g tcref
-                        let thisv, thise = mkThisVar g m ty   
-                        thisv,mkApps g ((exprForValRef m customCodeVal, customCodeVal.Type), (if isNil tinst then [] else [tinst]), [thise; compe], m)
-                    else                     
-                        hashf g tcref tycon compe
+                let thisv, hashe = hashf g tcref tycon compe
                 mkLambdas g m tps [thisv; compv] (hashe, g.int_ty)
                 
             // build the equals rhs

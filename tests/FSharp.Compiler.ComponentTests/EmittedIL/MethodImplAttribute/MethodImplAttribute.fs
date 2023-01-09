@@ -33,20 +33,6 @@ module MethodImplAttribute =
     let ``NoInlining_fs`` compilation =
         compilation
         |> verifyCompilation
-     
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"MethodImplAttribute.NoInlining_InlineKeyword.fs"|])>]
-    let ``NoInlining_fs with inline keyword => should warn in preview version`` compilation =
-        compilation
-        |> withLangVersionPreview
-        |> typecheck
-        |> withSingleDiagnostic (Warning 3151, Line 2, Col 1, Line 3, Col 38, "This member, function or value declaration may not be declared 'inline'")
-    
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"MethodImplAttribute.NoInlining_InlineKeyword.fs"|])>]
-    let ``NoInlining_fs with inline keyword => should not warn in F# 7 or older`` compilation =
-        compilation
-        |> withLangVersion70
-        |> typecheck
-        |> withDiagnostics  []       
 
     // SOURCE=MethodImplAttribute.AggressiveInlining.fs SCFLAGS="-a -g --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd MethodImplAttribute.AggressiveInlining.dll"	# MethodImplAttribute.AggressiveInlining.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"MethodImplAttribute.AggressiveInlining.fs"|])>]

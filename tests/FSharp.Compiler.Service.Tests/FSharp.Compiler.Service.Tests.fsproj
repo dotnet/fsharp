@@ -131,9 +131,6 @@
     <Compile Include="..\service\SyntaxTreeTests\LeadingKeywordTests.fs">
       <Link>SyntaxTree\LeadingKeywordTests.fs</Link>
     </Compile>
-    <Compile Include="..\service\SyntaxTreeTests\ValTests.fs">
-      <Link>SyntaxTree\ValTests.fs</Link>
-    </Compile>
     <Compile Include="..\service\FileSystemTests.fs">
       <Link>FileSystemTests.fs</Link>
     </Compile>

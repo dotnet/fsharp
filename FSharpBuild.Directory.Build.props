@@ -27,7 +27,6 @@
     <OtherFlags>$(OtherFlags) --nowarn:3384</OtherFlags>
     <OtherFlags>$(OtherFlags) --times --nowarn:75</OtherFlags>
     <OtherFlags Condition="$(ParallelCheckingWithSignatureFilesOn) == 'true'">$(OtherFlags) --test:ParallelCheckingWithSignatureFilesOn</OtherFlags>
-    <OtherFlags Condition="$(AdditionalFscCmdFlags) != ''">$(OtherFlags) $(AdditionalFscCmdFlags)</OtherFlags>
   </PropertyGroup>
 
   <!-- nuget -->

@@ -116,7 +116,7 @@ type ImportedAssembly =
       IsProviderGenerated: bool
       mutable TypeProviders: Tainted<ITypeProvider> list
 #endif
-      FSharpOptimizationData: Lazy<LazyModuleInfo option> }
+      FSharpOptimizationData: Lazy<Option<LazyModuleInfo>> }
 
 /// Tables of assembly resolutions
 [<Sealed>]

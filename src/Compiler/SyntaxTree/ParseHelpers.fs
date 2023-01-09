@@ -420,9 +420,9 @@ let (|GetIdent|SetIdent|OtherIdent|) (ident: Ident option) =
 
 let mkSynMemberDefnGetSet
     (parseState: IParseState)
-    (opt_inline: range option)
+    (opt_inline: bool)
     (mWith: range)
-    (classDefnMemberGetSetElements: (range option * SynAttributeList list * (SynPat * range) * (range option * SynReturnInfo) option * range option * SynExpr * range) list)
+    (classDefnMemberGetSetElements: (bool * SynAttributeList list * (SynPat * range) * (range option * SynReturnInfo) option * range option * SynExpr * range) list)
     (mAnd: range option)
     (mWhole: range)
     (propertyNameBindingPat: SynPat)
@@ -441,7 +441,7 @@ let mkSynMemberDefnGetSet
 
     let tryMkSynMemberDefnMember
         (
-            mOptInline: range option,
+            optInline,
             optAttrs: SynAttributeList list,
             (bindingPat, mBindLhs),
             optReturnType,
@@ -449,7 +449,7 @@ let mkSynMemberDefnGetSet
             expr,
             mExpr
         ) : (SynMemberDefn * Ident option) option =
-        let optInline = Option.isSome opt_inline || Option.isSome mOptInline
+        let optInline = opt_inline || optInline
         // optional attributes are only applied to getters and setters
         // the "top level" attrs will be applied to both
         let optAttrs =
@@ -469,7 +469,6 @@ let mkSynMemberDefnGetSet
         let trivia: SynBindingTrivia =
             {
                 LeadingKeyword = leadingKeyword
-                InlineKeyword = mOptInline
                 EqualsRange = mEquals
             }
 
@@ -730,7 +729,6 @@ let mkSynMemberDefnGetSet
                 if getOrSet.idText = "get" then
                     let trivia =
                         {
-                            InlineKeyword = opt_inline
                             WithKeyword = mWith
                             GetKeyword = Some getOrSet.idRange
                             AndKeyword = None
@@ -741,7 +739,6 @@ let mkSynMemberDefnGetSet
                 else
                     let trivia =
                         {
-                            InlineKeyword = opt_inline
                             WithKeyword = mWith
                             GetKeyword = None
                             AndKeyword = None
@@ -762,7 +759,6 @@ let mkSynMemberDefnGetSet
 
             let trivia =
                 {
-                    InlineKeyword = opt_inline
                     WithKeyword = mWith
                     GetKeyword = Some mGet
                     AndKeyword = mAnd
@@ -776,7 +772,6 @@ let mkSynMemberDefnGetSet
                 match getOrSet with
                 | GetIdent mGet ->
                     {
-                        InlineKeyword = opt_inline
                         WithKeyword = mWith
                         GetKeyword = Some mGet
                         AndKeyword = mAnd
@@ -784,7 +779,6 @@ let mkSynMemberDefnGetSet
                     }
                 | SetIdent mSet ->
                     {
-                        InlineKeyword = opt_inline
                         WithKeyword = mWith
                         GetKeyword = None
                         AndKeyword = mAnd
@@ -792,7 +786,6 @@ let mkSynMemberDefnGetSet
                     }
                 | OtherIdent ->
                     {
-                        InlineKeyword = opt_inline
                         WithKeyword = mWith
                         AndKeyword = mAnd
                         GetKeyword = None
@@ -906,7 +899,6 @@ let mkSynDoBinding (vis: SynAccess option, mDo, expr, m) =
         DebugPointAtBinding.NoneAtDo,
         {
             LeadingKeyword = SynLeadingKeyword.Do mDo
-            InlineKeyword = None
             EqualsRange = None
         }
     )

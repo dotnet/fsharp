@@ -1205,7 +1205,7 @@ let CheckOneInputAux
     cancellable {
         try
             use _ =
-                Activity.start "ParseAndCheckInputs.CheckOneInput" [| Activity.Tags.fileName, inp.FileName |]
+                Activity.start "ParseAndCheckInputs.CheckOneInput" [| "fileName", inp.FileName |]
 
             CheckSimulateException tcConfig
 

@@ -14,7 +14,7 @@ type Sentinel () =
 module MyModule =
     let test(x: int) = ()
 
-[<CollectionDefinition("FsiTests", DisableParallelization = true)>]
+[<Collection("SingleThreaded")>]
 module FsiTests =
 
     let createFsiSession (useOneDynamicAssembly: bool) =
@@ -646,48 +646,35 @@ module FsiTests =
 
 #if NETCOREAPP
     [<Fact>]
-    let ``Evaluating simple reference and code succeeds with multiemit on``() =
+    let ``Evaluating simple reference and code succeeds under permutations``() =
 
-        use fsiSession = createFsiSession false
-        let assemblyPath = typeof<Sentinel>.Assembly.Location.Replace("\\", "/")
-        let res, errors = fsiSession.EvalInteractionNonThrowing($"""
-            #r "{assemblyPath}"
-            FSharp.Compiler.UnitTests.MyModule.test(3)""")
-
-        errors
-        |> Array.iter (fun e -> printfn "error: %A" e)
-
-        match res with
-        | Choice1Of2 v ->
-            let v =
-                match v with
-                | Some v -> sprintf "%A" v.ReflectionValue
-                | None -> "(none)"
-            printfn "value: %A" v
-        | Choice2Of2 e ->
-            printfn "exception: %A" e
-            raise e
-
-    [<Fact>]
-    let ``Evaluating simple reference and code succeeds with multiemit off``() =
-
-        use fsiSession = createFsiSession true
-        let assemblyPath = typeof<Sentinel>.Assembly.Location.Replace("\\", "/")
-        let res, errors = fsiSession.EvalInteractionNonThrowing($"""
-            #r "{assemblyPath}"
-            FSharp.Compiler.UnitTests.MyModule.test(3)""")
-
-        errors
-        |> Array.iter (fun e -> printfn "error: %A" e)
-
-        match res with
-        | Choice1Of2 v ->
-            let v =
-                match v with
-                | Some v -> sprintf "%A" v.ReflectionValue
-                | None -> "(none)"
-            printfn "value: %A" v
-        | Choice2Of2 e ->
-            printfn "exception: %A" e
-            raise e
+        for useSdkRefsFlag in ["/usesdkrefs"; "/usesdkrefs-"] do
+            for multiemitFlag in ["/multiemit"; "/multiemit-"] do
+                let config = FsiEvaluationSession.GetDefaultConfiguration()
+                let argv = [|
+                    typeof<Sentinel>.Assembly.Location
+                    "--noninteractive"
+                    "--targetprofile:netcore"
+                    "--langversion:preview"
+                    multiemitFlag
+                    useSdkRefsFlag
+                    |]
+                let fsi = FsiEvaluationSession.Create(config, argv, TextReader.Null, TextWriter.Null, TextWriter.Null)
+                let assemblyPath = typeof<Sentinel>.Assembly.Location.Replace("\\", "/")
+                let code = $@"
+            #r ""{assemblyPath}""
+            FSharp.Compiler.UnitTests.MyModule.test(3)"
+                let ch, errors = fsi.EvalInteractionNonThrowing(code, CancellationToken.None)
+                errors
+                |> Array.iter (fun e -> printfn "error: %A" e)
+                match ch with
+                | Choice1Of2 v ->
+                    let v =
+                        match v with
+                        | Some v -> sprintf "%A" v.ReflectionValue
+                        | None -> "(none)"
+                    printfn "value: %A" v
+                | Choice2Of2 e ->
+                    printfn "exception: %A" e
+                    raise e
 #endif

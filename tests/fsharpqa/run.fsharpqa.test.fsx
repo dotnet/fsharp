@@ -60,4 +60,4 @@ let runPerl arguments =
 
 let testResultDir = Path.Combine(rootFolder, "tests", "TestResults")
 let perlScript = Path.Combine(rootFolder, "tests", "fsharpqa", "testenv", "bin", "runall.pl")
-runPerl [|perlScript; "-resultsroot";testResultDir ;"-ttags:gcc"|]
+runPerl [|perlScript; "-resultsroot";testResultDir ;"-ttags:Determinism"|]

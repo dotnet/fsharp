@@ -4,22 +4,22 @@
     <body>
       <trans-unit id="assemblyResolutionFoundByAssemblyFoldersExKey">
         <source>Found by AssemblyFoldersEx registry key</source>
-        <target state="translated">依 AssemblyFoldersEx 登錄機碼找到</target>
+        <target state="new">Found by AssemblyFoldersEx registry key</target>
         <note />
       </trans-unit>
       <trans-unit id="assemblyResolutionFoundByAssemblyFoldersKey">
         <source>Found by AssemblyFolders registry key</source>
-        <target state="translated">依 AssemblyFolders 登錄機碼找到</target>
+        <target state="new">Found by AssemblyFolders registry key</target>
         <note />
       </trans-unit>
       <trans-unit id="assemblyResolutionGAC">
         <source>Global Assembly Cache</source>
-        <target state="translated">全域組件快取</target>
+        <target state="new">Global Assembly Cache</target>
         <note />
       </trans-unit>
       <trans-unit id="assemblyResolutionNetFramework">
         <source>.NET Framework</source>
-        <target state="translated">.NET Framework</target>
+        <target state="new">.NET Framework</target>
         <note />
       </trans-unit>
     </body>

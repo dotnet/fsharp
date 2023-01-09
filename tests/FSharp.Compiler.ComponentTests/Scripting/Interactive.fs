@@ -3,7 +3,6 @@
 namespace FSharp.Compiler.ComponentTests.Scripting
 
 open Xunit
-open System
 open FSharp.Test.Compiler
 
 module ``Interactive tests`` =
@@ -36,17 +35,3 @@ module ``External FSI tests`` =
         Fsx "1+a"
         |> runFsi
         |> shouldFail
-
-
-    [<Fact>]
-    let ``Internals visible over a large number of submissions``() =
-        let submission =
-            let lines = [|
-                yield """let internal original_submission = "From the first submission";;""" + Environment.NewLine
-                for _ in 1 .. 200 do yield """if original_submission <> "From the first submission" then failwith $"Failed to read an internal at line: {__LINE__}";;""" + Environment.NewLine
-                |]
-            lines |> Array.fold(fun acc line -> acc + line) ""
-        Fsx submission
-        |> runFsi
-        |> shouldSucceed
-

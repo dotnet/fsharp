@@ -287,9 +287,6 @@ type SynBindingTrivia =
         /// Used leading keyword of SynBinding
         LeadingKeyword: SynLeadingKeyword
 
-        /// The syntax range of the `inline` keyword
-        InlineKeyword: range option
-
         /// The syntax range of the `=` token.
         EqualsRange: range option
     }
@@ -365,9 +362,6 @@ type SynValSigTrivia =
         /// but in case of `SynMemberDefn.AutoProperty` or `SynMemberDefn.AbstractSlot` it could be something else.
         LeadingKeyword: SynLeadingKeyword
 
-        /// The syntax range of the `inline` keyword
-        InlineKeyword: range option
-
         /// The syntax range of the `with` keyword
         WithKeyword: range option
 
@@ -389,9 +383,6 @@ type SynTypeFunTrivia =
 [<NoEquality; NoComparison>]
 type SynMemberGetSetTrivia =
     {
-        /// The syntax range of the `inline` keyword
-        InlineKeyword: range option
-
         /// The syntax range of the `with` keyword
         WithKeyword: range
 

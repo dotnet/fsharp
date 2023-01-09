@@ -4,12 +4,7 @@
     <body>
       <trans-unit id="arrayElementHasWrongTypeTuple">
         <source>All elements of an array must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</source>
-        <target state="translated">Tous les éléments d’un tableau doivent être implicitement convertibles en type du premier élément, qui est ici un tuple de longueur {0} de type\n    {1}    \nCet élément est un tuple de longueur {2} de type\n    {3}    \n</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildDuplicateFile">
-        <source>The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</source>
-        <target state="new">The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</target>
+        <target state="new">All elements of an array must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidSourceFileExtensionML">
@@ -22,19 +17,9 @@
         <target state="translated">L'extension de fichier de '{0}' n'est pas reconnue. Les fichiers sources doivent avoir l'extension .fs, .fsi, .fsx, ou .fsscript.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkAdditionalConstructorOnStaticClasses">
-        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Additional constructor is not allowed.</source>
-        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Additional constructor is not allowed.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="chkConstructorWithArgumentsOnStaticClasses">
-        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Constructor with arguments is not allowed.</source>
-        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Constructor with arguments is not allowed.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="chkDuplicatedMethodParameter">
         <source>Duplicate parameter. The parameter '{0}' has been used more that once in this method.</source>
-        <target state="translated">Paramètre dupliqué. Le paramètre « {0} » a été utilisé une fois de plus dans cette méthode.</target>
+        <target state="new">Duplicate parameter. The parameter '{0}' has been used more that once in this method.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
@@ -70,11 +55,6 @@
       <trans-unit id="chkInfoRefcellIncr">
         <source>The use of 'incr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'incr cell' to 'cell.Value &lt;- cell.Value + 1'.</source>
         <target state="translated">L’utilisation de « incr » à partir de la bibliothèque F# est déconseillée. Voir https://aka.ms/fsharp-refcell-ops. Par exemple, veuillez remplacer « incr cell » par « cell.Value &lt;- cell.Value + 1 ».</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="chkInstanceMemberOnStaticClasses">
-        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance members are not allowed.</source>
-        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance members are not allowed.</target>
         <note />
       </trans-unit>
       <trans-unit id="containerDeprecated">
@@ -134,7 +114,7 @@
       </trans-unit>
       <trans-unit id="elseBranchHasWrongTypeTuple">
         <source>All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</source>
-        <target state="translated">Toutes les branches d’une expression « if » doivent retourner des valeurs implicitement convertibles au type de la première branche, qui est ici un tuple de longueur {0} de type\n    {1}    \nCette branche renvoie un tuple de longueur {2} de type\n    {3}    \n</target>
+        <target state="new">All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</target>
         <note />
       </trans-unit>
       <trans-unit id="etProviderHasDesignerAssemblyDependency">
@@ -164,7 +144,7 @@
       </trans-unit>
       <trans-unit id="featureArithmeticInLiterals">
         <source>Allow arithmetic and logical operations in literals</source>
-        <target state="translated">Autoriser les opérations arithmétiques et logiques dans les littéraux</target>
+        <target state="new">Allow arithmetic and logical operations in literals</target>
         <note />
       </trans-unit>
       <trans-unit id="featureAttributesToRightOfModuleKeyword">
@@ -179,7 +159,7 @@
       </trans-unit>
       <trans-unit id="featureCSharpExtensionAttributeNotRequired">
         <source>Allow implicit Extension attribute on declaring types, modules</source>
-        <target state="translated">Autoriser l’attribut implicite Extension lors de la déclaration des types, modules</target>
+        <target state="new">Allow implicit Extension attribute on declaring types, modules</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
@@ -204,22 +184,12 @@
       </trans-unit>
       <trans-unit id="featureErrorForNonVirtualMembersOverrides">
         <source>Raises errors for non-virtual members overrides</source>
-        <target state="translated">Déclenche des erreurs pour les remplacements de membres non virtuels</target>
+        <target state="new">Raises errors for non-virtual members overrides</target>
         <note />
       </trans-unit>
       <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
         <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
         <target state="translated">donner une erreur sur l’accès déconseillé de la construction avec l’attribut RequireQualifiedAccess</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureErrorReportingOnStaticClasses">
-        <source>Error reporting on static classes</source>
-        <target state="new">Error reporting on static classes</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureEscapeBracesInFormattableString">
-        <source>Escapes curly braces before calling FormattableStringFactory.Create when interpolated string literal is typed as FormattableString</source>
-        <target state="translated">Échappe les accolades avant d’appeler FormattableStringFactory.Create lorsque le littéral de chaîne interpolé est tapé en tant que FormattableString.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
@@ -274,7 +244,7 @@
       </trans-unit>
       <trans-unit id="featureMatchNotAllowedForUnionCaseWithNoData">
         <source>Pattern match discard is not allowed for union case that takes no data.</source>
-        <target state="translated">L’abandon des correspondances de modèle n’est pas autorisé pour un cas d’union qui n’accepte aucune donnée.</target>
+        <target state="new">Pattern match discard is not allowed for union case that takes no data.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNameOf">
@@ -362,11 +332,6 @@
         <target state="translated">représentation de structure pour les modèles actifs</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
-        <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
-        <target state="new">Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
         <source>wild card in for loop</source>
         <target state="translated">caractère générique dans une boucle for</target>
@@ -379,7 +344,7 @@
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongTypeTuple">
         <source>All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</source>
-        <target state="translated">Toutes les branches d’une expression de correspondance de motifs doivent retourner des valeurs implicitement convertibles au type de la première branche, qui est ici un tuple de longueur {0} de type\n    {1}    \nCette branche renvoie un tuple de longueur {2} de type\n    {3}    \n</target>
+        <target state="new">All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</target>
         <note />
       </trans-unit>
       <trans-unit id="forFormatInvalidForInterpolated">
@@ -424,7 +389,7 @@
       </trans-unit>
       <trans-unit id="ifExpressionTuple">
         <source>The 'if' expression needs to return a tuple of length {0} of type\n    {1}    \nto satisfy context type requirements. It currently returns a tuple of length {2} of type\n    {3}    \n</source>
-        <target state="translated">L’expression « if » doit retourner un tuple de longueur {0} de type\n    {1}    \npour répondre aux exigences de type de contexte. Il retourne actuellement un tuple de longueur {2} de type\n    {3}    \n</target>
+        <target state="new">The 'if' expression needs to return a tuple of length {0} of type\n    {1}    \nto satisfy context type requirements. It currently returns a tuple of length {2} of type\n    {3}    \n</target>
         <note />
       </trans-unit>
       <trans-unit id="ilxGenUnknownDebugPoint">
@@ -489,12 +454,12 @@
       </trans-unit>
       <trans-unit id="listElementHasWrongTypeTuple">
         <source>All elements of a list must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</source>
-        <target state="translated">Tous les éléments d’une liste doivent être implicitement convertibles en type du premier élément, qui est ici un tuple de longueur {0} de type\n    {1}    \nCet élément est un tuple de longueur {2} de type\n    {3}    \n</target>
+        <target state="new">All elements of a list must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</target>
         <note />
       </trans-unit>
       <trans-unit id="matchNotAllowedForUnionCaseWithNoData">
         <source>Pattern discard is not allowed for union case that takes no data.</source>
-        <target state="translated">L’abandon de modèle n’est pas autorisé pour un cas d’union qui n’accepte aucune donnée.</target>
+        <target state="new">Pattern discard is not allowed for union case that takes no data.</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatError">
@@ -579,7 +544,7 @@
       </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
         <source>Invalid use of emitting a reference assembly, do not use '--standalone or --staticlink' with '--refonly or --refout'.</source>
-        <target state="translated">Utilisation non valide de l’émission d’un assembly de référence, n’utilisez pas '--standalone ou --staticlink' avec '--refonly ou --refout'.</target>
+        <target state="new">Invalid use of emitting a reference assembly, do not use '--standalone or --staticlink' with '--refonly or --refout'.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidRefOut">
@@ -689,7 +654,7 @@
       </trans-unit>
       <trans-unit id="parsExpectedPatternAfterToken">
         <source>Expected a pattern after this point</source>
-        <target state="translated">Modèle attendu après ce point</target>
+        <target state="new">Expected a pattern after this point</target>
         <note />
       </trans-unit>
       <trans-unit id="parsExpectingExpressionInTuple">
@@ -699,7 +664,7 @@
       </trans-unit>
       <trans-unit id="parsExpectingPatternInTuple">
         <source>Expecting pattern</source>
-        <target state="translated">Modèle attendu</target>
+        <target state="new">Expecting pattern</target>
         <note />
       </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr1">
@@ -1059,7 +1024,7 @@
       </trans-unit>
       <trans-unit id="tcSynTypeOrInvalidInDeclaration">
         <source>SynType.Or is not permitted in this declaration</source>
-        <target state="translated">SynType.Or n’est pas autorisé dans cette déclaration</target>
+        <target state="new">SynType.Or is not permitted in this declaration</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTraitHasMultipleSupportTypes">
@@ -3889,7 +3854,7 @@
       </trans-unit>
       <trans-unit id="tcUnionCaseExpectsTupledArguments">
         <source>This union case expects {0} arguments in tupled form, but was given {1}. The missing field arguments may be any of:{2}</source>
-        <target state="translated">Ce cas d’union attend des arguments {0} sous forme tuple, mais a reçu {1}. Les arguments de champ manquants peuvent être l’un des suivants : {2}</target>
+        <target state="new">This union case expects {0} arguments in tupled form, but was given {1}. The missing field arguments may be any of:{2}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcFieldIsNotStatic">
@@ -7569,7 +7534,7 @@
       </trans-unit>
       <trans-unit id="tcStructUnionMultiCaseDistinctFields">
         <source>If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'.</source>
-        <target state="translated">Si un type d’union multi-cas est un struct, alors tous les cas d’union doivent avoir des noms uniques. Par exemple : 'type A = B de b : int | C de c : int'.</target>
+        <target state="new">If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'.</target>
         <note />
       </trans-unit>
       <trans-unit id="CallerMemberNameIsOverriden">

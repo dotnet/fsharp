@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="ErrorFromAddingTypeEquationTuples">
         <source>Type mismatch. Expecting a tuple of length {0} of type\n    {1}    \nbut given a tuple of length {2} of type\n    {3}    {4}\n</source>
-        <target state="translated">Typenkonflikt. Es wurde ein Tupel der Länge {0} des Typs\n    {1}    \nerwartet, aber ein Tupel der Länge {2} des Typs\n    {3}{4}\n angegeben.</target>
+        <target state="new">Type mismatch. Expecting a tuple of length {0} of type\n    {1}    \nbut given a tuple of length {2} of type\n    {3}    {4}\n</target>
         <note />
       </trans-unit>
       <trans-unit id="HashLoadedSourceHasIssues0">
@@ -1564,7 +1564,7 @@
       </trans-unit>
       <trans-unit id="IntfImplInIntrinsicAugmentation">
         <source>Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using #nowarn "69" if you have checked this is not the case.</source>
-        <target state="translated">Die Implementierung von Schnittstellen sollte normalerweise in der ersten Deklaration eines Typs angegeben werden. Schnittstellenimplementierungen in Augmentationen können dazu führen, dass vor der Initialisierung auf statische Bindungen zugegriffen wird. Die gilt allerdings nur, wenn die Schnittstellenimplementierung während der Initialisierung der statischen Daten aufgerufen wird, und wiederum auf die statischen Daten zugreift. Sie können diese Warnung mit #nowarn "69" entfernen, wenn Sie überprüft haben, dass dies nicht der Fall ist.</target>
+        <target state="new">Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using #nowarn "69" if you have checked this is not the case.</target>
         <note />
       </trans-unit>
       <trans-unit id="IntfImplInExtrinsicAugmentation">

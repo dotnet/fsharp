@@ -193,7 +193,7 @@ module rec Compiler =
     // Load the source file from the path
     let loadSourceFromFile path = getSource(TestType.Path path)
 
-    let fsFromString (source: SourceCodeFileKind): FSharpCompilationSource =
+    let private fsFromString (source: SourceCodeFileKind): FSharpCompilationSource =
         {
             Source            = source
             AdditionalSources = []
@@ -321,7 +321,6 @@ module rec Compiler =
 
     let asFs (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
-        | FS { Source = SourceCodeFileKind.Fsi _} -> cUnit
         | FS src -> FS {src with Source=SourceCodeFileKind.Fs({FileName=src.Source.GetSourceFileName; SourceText=src.Source.GetSourceText})}
         | _ -> failwith "Only F# compilation can be of type Fs."
 
@@ -392,14 +391,8 @@ module rec Compiler =
     let withLangVersion70 (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:7.0" ] "withLangVersion70 is only supported on F#" cUnit
 
-    let withLangVersion80 (cUnit: CompilationUnit) : CompilationUnit =
-        withOptionsHelper [ "--langversion:8.0" ] "withLangVersion80 is only supported on F#" cUnit
-
     let withLangVersionPreview (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:preview" ] "withLangVersionPreview is only supported on F#" cUnit
-        
-    let withLangVersion (version: string) (cUnit: CompilationUnit) : CompilationUnit =
-        withOptionsHelper [ $"--langversion:{version}" ] "withLangVersion is only supported on F#" cUnit
 
     let withAssemblyVersion (version:string) (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ $"--version:{version}" ] "withAssemblyVersion is only supported on F#" cUnit

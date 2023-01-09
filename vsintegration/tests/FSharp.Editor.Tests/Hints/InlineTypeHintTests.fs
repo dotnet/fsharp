@@ -247,21 +247,3 @@ type Number<'T when IAddition<'T>>(value: 'T) =
         let actual = getTypeHints document
 
         CollectionAssert.AreEquivalent(expected, actual)
-
-
-    [<Test>]
-    let ``Hints are not shown when type is specified`` () =
-        let code =
-            """
-type MyType() =
-
-    member _.MyMethod(?beep: int, ?bap: int, ?boop: int) = ()
-
-    member this.Foo = this.MyMethod(bap = 3, boop = 4)
-"""
-
-        let document = getFsDocument code
-
-        let result = getTypeHints document
-
-        Assert.IsEmpty(result)

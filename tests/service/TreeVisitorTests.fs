@@ -59,19 +59,3 @@ let ``Visit enum definition test`` () =
     match SyntaxTraversal.Traverse(pos0, parseTree, visitor) with
     | Some [ SynEnumCase (_, SynIdent(id1,_), _, _, _, _, _); SynEnumCase (_, SynIdent(id2,_), _, _, _, _, _) ] when id1.idText = "A" && id2.idText = "B" -> ()
     | _ -> failwith "Did not visit enum definition"
-
-[<Test>]
-let ``Visit recursive let binding`` () =
-    let visitor =
-        { new SyntaxVisitorBase<_>() with
-            member x.VisitExpr(_, _, defaultTraverse, expr) = defaultTraverse expr
-            member x.VisitLetOrUse(_, isRecursive, _, bindings, _) =
-                if not isRecursive then failwith $"{nameof isRecursive} should be true"
-                Some bindings }
-
-    let source = "let rec fib n = if n < 2 then n else fib (n - 1) + fib (n - 2) in fib 10"
-    let parseTree = parseSourceCode("C:\\test.fs", source)
-
-    match SyntaxTraversal.Traverse(pos0, parseTree, visitor) with
-    | Some [ SynBinding(valData = SynValData(valInfo = SynValInfo(curriedArgInfos = [ [ SynArgInfo(ident = Some id) ] ]))) ] when id.idText = "n" -> ()
-    | _ -> failwith "Did not visit recursive let binding"

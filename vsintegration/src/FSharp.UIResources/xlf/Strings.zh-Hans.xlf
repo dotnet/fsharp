@@ -9,17 +9,17 @@
       </trans-unit>
       <trans-unit id="Enable_Fast_Find_References">
         <source>Enable fast find references &amp; rename (experimental)</source>
-        <target state="translated">启用快速查找引用和重命名(实验性)</target>
+        <target state="new">Enable fast find references &amp; rename (experimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="Find_References_Performance">
         <source>Find References Performance Options</source>
-        <target state="translated">查找引用性能选项</target>
+        <target state="new">Find References Performance Options</target>
         <note />
       </trans-unit>
       <trans-unit id="Inline_Hints">
         <source>Inline Hints</source>
-        <target state="translated">内联提示</target>
+        <target state="new">Inline Hints</target>
         <note />
       </trans-unit>
       <trans-unit id="Code_Fixes">
@@ -39,12 +39,12 @@
       </trans-unit>
       <trans-unit id="Enable_Parallel_Checking_With_Signature_Files">
         <source>Enable parallel type checking with signature files</source>
-        <target state="translated">使用签名文件启用并行类型检查</target>
+        <target state="new">Enable parallel type checking with signature files</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_Parallel_Reference_Resolution">
         <source>Enable parallel reference resolution</source>
-        <target state="translated">启用并行引用解析</target>
+        <target state="new">Enable parallel reference resolution</target>
         <note />
       </trans-unit>
       <trans-unit id="Language_Service_Performance">
@@ -69,17 +69,17 @@
       </trans-unit>
       <trans-unit id="Parallelization">
         <source>Parallelization (requires restart)</source>
-        <target state="translated">并行化(需要重启)</target>
+        <target state="new">Parallelization (requires restart)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Parameter_Name_Hints">
         <source>Display inline parameter name hints (experimental)</source>
-        <target state="translated">显示内联参数名称提示(实验性)</target>
+        <target state="new">Display inline parameter name hints (experimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Type_Hints">
         <source>Display inline type hints (experimental)</source>
-        <target state="translated">显示内联类型提示(实验性)</target>
+        <target state="new">Display inline type hints (experimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_all_symbols">
