@@ -34,3 +34,33 @@ module warnon =
         |> withDiagnosticMessageMatches "The value 'n' is unused$"
         |> ignore
 
+    [<Fact>]
+    let ``warnon unused public function backed by signature file`` () =
+        let signatureFile: SourceCodeFileKind =
+            SourceCodeFileKind.Create(
+                "Library.fsi",
+                """
+module Foo
+
+val add: a:int -> b:int -> int
+    """     )
+
+        let implementationFile =
+            SourceCodeFileKind.Create(
+                "Library.fs",
+                """
+module Foo
+
+let add a b = a + b
+let subtract a b = a - b
+    """         )
+            
+        fsFromString signatureFile
+        |> FS
+        |> withAdditionalSourceFile implementationFile
+        |> withOptions ["--warnon:FS1182"]
+        |> asLibrary
+        |> compile
+        |> withWarningCode 1182
+        |> withDiagnosticMessageMatches "The value 'subtract' is unused$"
+        |> ignore
