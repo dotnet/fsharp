@@ -85,17 +85,27 @@ module internal PervasiveAutoOpens =
         | Some x -> x
 
     let reportTime =
-        let mutable tPrev: IDisposable = null
+        let mutable tFirst = None
+        let mutable tPrev = None
 
-        fun descr ->
-            if isNotNull tPrev then
-                tPrev.Dispose()
+        fun showTimes descr ->
+            if showTimes then
+                let t = Process.GetCurrentProcess().UserProcessorTime.TotalSeconds
 
-            tPrev <-
-                if descr <> "Finish" then
-                    FSharp.Compiler.Diagnostics.Activity.Profiling.startAndMeasureEnvironmentStats descr
-                else
-                    null
+                let prev =
+                    match tPrev with
+                    | None -> 0.0
+                    | Some t -> t
+
+                let first =
+                    match tFirst with
+                    | None ->
+                        (tFirst <- Some t
+                         t)
+                    | Some t -> t
+
+                printf "  ilwrite: Cpu %4.1f (total)   %4.1f (delta) - %s\n" (t - first) (t - prev) descr
+                tPrev <- Some t
 
     let foldOn p f z x = f z (p x)
 

@@ -135,6 +135,7 @@ module Observable =
     /// let observableNumbers = Observable.ToObservable numbers
     ///
     /// let isEvenNumber = fun number -> number % 2 = 0
+    /// let initialState = 2
     ///
     /// let leftPartition, rightPartition =
     ///     Observable.partition isEvenNumber observableNumbers

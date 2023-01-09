@@ -1136,7 +1136,7 @@ module Bug5762 =
       let moduleType = typeof<T>.DeclaringType
       let mFindFirstFile = moduleType.GetMethod("FindFirstFile")
       let dataParam = mFindFirstFile.GetParameters().[1]
-      let marshalAsAttrs = dataParam.GetCustomAttributes(typeof<MarshalAsAttribute>, false) |> Array.distinct
+      let marshalAsAttrs = dataParam.GetCustomAttributes(typeof<MarshalAsAttribute>, false)
       check "gjhfdey547"
         (match marshalAsAttrs with
          | [| (:? MarshalAsAttribute as ma) |] when ma.Value = UnmanagedType.LPStruct -> true
@@ -1145,7 +1145,7 @@ module Bug5762 =
         
       let findDataType = typeof<WIN32_FIND_DATA>
       check "dguyestgfuysdc"
-        (match findDataType.GetField("cFileName").GetCustomAttributes(typeof<MarshalAsAttribute>, false) |> Array.distinct with
+        (match findDataType.GetField("cFileName").GetCustomAttributes(typeof<MarshalAsAttribute>, false) with
          | [| (:? MarshalAsAttribute as ma) |] 
                 when ma.Value = UnmanagedType.ByValTStr && ma.SizeConst = 260 ->
                     true

@@ -164,9 +164,9 @@ val raiseParseErrorAt: range -> (int * string) -> 'a
 
 val mkSynMemberDefnGetSet:
     parseState: IParseState ->
-    opt_inline: range option ->
+    opt_inline: bool ->
     mWith: range ->
-    classDefnMemberGetSetElements: (range option * SynAttributeList list * (SynPat * range) * (range option * SynReturnInfo) option * range option * SynExpr * range) list ->
+    classDefnMemberGetSetElements: (bool * SynAttributeList list * (SynPat * range) * (range option * SynReturnInfo) option * range option * SynExpr * range) list ->
     mAnd: range option ->
     mWhole: range ->
     propertyNameBindingPat: SynPat ->

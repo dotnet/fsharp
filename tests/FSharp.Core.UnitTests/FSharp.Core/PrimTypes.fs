@@ -202,45 +202,6 @@ type LanguagePrimitivesModule() =
 
         let resultNul = LanguagePrimitives.GenericEquality "ABC" null
         Assert.False(resultNul)
-
-    [<Fact>]
-    member _.GenericEqualityForNans() = 
-        Assert.DoesNotContain(true,
-            [| LanguagePrimitives.GenericEquality nan nan
-               LanguagePrimitives.GenericEquality [nan] [nan]
-               LanguagePrimitives.GenericEquality [|nan|] [|nan|]
-               LanguagePrimitives.GenericEquality (Set.ofList [nan]) (Set.ofList [nan])       
-               LanguagePrimitives.GenericEquality (Map.ofList [1,nan]) (Map.ofList [1,nan])
-               LanguagePrimitives.GenericEquality (Map.ofList [nan,1]) (Map.ofList [nan,1])
-               LanguagePrimitives.GenericEquality (Map.ofList [nan,nan]) (Map.ofList [nan,nan])
-               
-               LanguagePrimitives.GenericEquality nanf nanf
-               LanguagePrimitives.GenericEquality [nanf] [nanf]
-               LanguagePrimitives.GenericEquality [|nanf|] [|nanf|]
-               LanguagePrimitives.GenericEquality (Set.ofList [nanf]) (Set.ofList [nanf])          
-               LanguagePrimitives.GenericEquality (Map.ofList [1,nanf]) (Map.ofList [1,nanf])
-               LanguagePrimitives.GenericEquality (Map.ofList [nanf,1]) (Map.ofList [nanf,1])
-               LanguagePrimitives.GenericEquality (Map.ofList [nanf,nanf]) (Map.ofList [nanf,nanf])|])
-
-    [<Fact>]
-    member _.GenericEqualityER() = 
-        Assert.DoesNotContain(false,
-            [| LanguagePrimitives.GenericEqualityER nan nan
-               LanguagePrimitives.GenericEqualityER [nan] [nan]
-               LanguagePrimitives.GenericEqualityER [|nan|] [|nan|]
-               LanguagePrimitives.GenericEqualityER (Set.ofList [nan]) (Set.ofList [nan])        
-               LanguagePrimitives.GenericEqualityER (Map.ofList [1,nan]) (Map.ofList [1,nan])
-               LanguagePrimitives.GenericEqualityER (Map.ofList [nan,1]) (Map.ofList [nan,1])
-               LanguagePrimitives.GenericEqualityER (Map.ofList [nan,nan]) (Map.ofList [nan,nan])
-               
-               LanguagePrimitives.GenericEqualityER nanf nanf
-               LanguagePrimitives.GenericEqualityER [nanf] [nanf]
-               LanguagePrimitives.GenericEqualityER [|nanf|] [|nanf|]
-               LanguagePrimitives.GenericEqualityER (Set.ofList [nanf]) (Set.ofList [nanf])        
-               LanguagePrimitives.GenericEqualityER (Map.ofList [1,nanf]) (Map.ofList [1,nanf])
-               LanguagePrimitives.GenericEqualityER (Map.ofList [nanf,1]) (Map.ofList [nanf,1])
-               LanguagePrimitives.GenericEqualityER (Map.ofList [nanf,nanf]) (Map.ofList [nanf,nanf])|])
-        
         
     [<Fact>]
     member this.GenericGreaterOrEqual() =

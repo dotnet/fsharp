@@ -426,8 +426,6 @@ type TcConfigBuilder =
 
         mutable showTimes: bool
 
-        mutable writeTimesToFile: string option
-
         mutable showLoadedAssemblies: bool
 
         mutable continueAfterParseFailure: bool
@@ -749,8 +747,6 @@ type TcConfig =
     member showBanner: bool
 
     member showTimes: bool
-
-    member writeTimesToFile: string option
 
     member showLoadedAssemblies: bool
 

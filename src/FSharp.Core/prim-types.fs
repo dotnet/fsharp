@@ -3912,16 +3912,6 @@ namespace Microsoft.FSharp.Collections
     type List<'T> = 
        | ([])  :                  'T list
        | ( :: )  : Head: 'T * Tail: 'T list -> 'T list
-       member private this.CustomHashCode(c:IEqualityComparer) =        
-            let rec loop l acc position =
-                match l with
-                | [] -> acc           
-                | h::t ->
-                    let hashOfH = GenericHashWithComparer c h
-                    let acc = LanguagePrimitives.HashCompare.HashCombine position acc hashOfH
-                    loop t acc (position+1)
-
-            loop this 0 0
        interface IEnumerable<'T>
        interface IEnumerable
        interface IReadOnlyCollection<'T>

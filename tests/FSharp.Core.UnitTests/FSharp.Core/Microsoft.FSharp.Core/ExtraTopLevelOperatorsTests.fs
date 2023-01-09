@@ -8,7 +8,7 @@ open System.Collections.Generic
 type DictTests () =
 
     [<Fact>]
-    member this.IEnumerableOnDict() =
+    member this.IEnumerable() =
         // Legit IE
         let ie = (dict [|(1,1);(2,4);(3,9)|]) :> IEnumerable
         let enum = ie.GetEnumerator()
@@ -38,7 +38,7 @@ type DictTests () =
         CheckThrowsInvalidOperationExn(fun () -> enum.Current |> ignore)
 
     [<Fact>]
-    member this.IEnumerable_T_OnDict() =
+    member this.IEnumerable_T() =
         // Legit IE
         let ie = (dict [|(1,1);(2,4);(3,9)|]) :> IEnumerable<KeyValuePair<_,_>>
         let enum = ie.GetEnumerator()

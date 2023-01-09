@@ -459,7 +459,7 @@ module MediumPriority =
                 computation: Async<'TResult1>,
                 continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)
             ) : TaskCode<'TOverall, 'TResult2> =
-            this.Bind(Async.StartImmediateAsTask computation, continuation)
+            this.Bind(Async.StartAsTask computation, continuation)
 
         member inline this.ReturnFrom(computation: Async<'T>) : TaskCode<'T, 'T> =
-            this.ReturnFrom(Async.StartImmediateAsTask computation)
+            this.ReturnFrom(Async.StartAsTask computation)

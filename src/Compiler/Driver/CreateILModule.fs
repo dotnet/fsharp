@@ -65,11 +65,7 @@ module AttributeHelpers =
 //----------------------------------------------------------------------------
 
 /// Represents the configuration settings used to perform strong-name signing
-type StrongNameSigningInfo =
-    | StrongNameSigningInfo of delaysign: bool * publicsign: bool * signer: byte array option * container: string option
-
-let GetStrongNameSigningInfo (delaysign, publicsign, signer, container) =
-    StrongNameSigningInfo(delaysign, publicsign, signer, container)
+type StrongNameSigningInfo = StrongNameSigningInfo of delaysign: bool * publicsign: bool * signer: string option * container: string option
 
 /// Validate the attributes and configuration settings used to perform strong-name signing
 let ValidateKeySigningAttributes (tcConfig: TcConfig, tcGlobals, topAttrs) =
@@ -95,24 +91,14 @@ let ValidateKeySigningAttributes (tcConfig: TcConfig, tcGlobals, topAttrs) =
 
     // if signer is set via an attribute, validate that it wasn't set via an option
     let signer =
-        let signerFile =
-            match signerAttrib with
-            | Some signer ->
-                if tcConfig.signer.IsSome && tcConfig.signer <> Some signer then
-                    warning (Error(FSComp.SR.fscKeyFileWarning (), rangeCmdArgs))
-                    tcConfig.signer
-                else
-                    Some signer
-            | None -> tcConfig.signer
-
-        match signerFile with
-        | Some signerPath ->
-            try
-                Some(FileSystem.OpenFileForReadShim(signerPath).ReadAllBytes())
-            with _ ->
-                // Note :: don't use errorR here since we really want to fail and not produce a binary
-                error (Error(FSComp.SR.fscKeyFileCouldNotBeOpened signerPath, rangeCmdArgs))
-        | None -> None
+        match signerAttrib with
+        | Some signer ->
+            if tcConfig.signer.IsSome && tcConfig.signer <> Some signer then
+                warning (Error(FSComp.SR.fscKeyFileWarning (), rangeCmdArgs))
+                tcConfig.signer
+            else
+                Some signer
+        | None -> tcConfig.signer
 
     // if container is set via an attribute, validate that it wasn't set via an option, and that they keyfile wasn't set
     // if keyfile was set, use that instead (silently)
@@ -141,11 +127,15 @@ let GetStrongNameSigner signingInfo =
     | None ->
         match signer with
         | None -> None
-        | Some bytes ->
-            if publicsign || delaysign then
-                Some(ILStrongNameSigner.OpenPublicKeyOptions bytes publicsign)
-            else
-                Some(ILStrongNameSigner.OpenKeyPairFile bytes)
+        | Some s ->
+            try
+                if publicsign || delaysign then
+                    Some(ILStrongNameSigner.OpenPublicKeyOptions s publicsign)
+                else
+                    Some(ILStrongNameSigner.OpenKeyPairFile s)
+            with _ ->
+                // Note :: don't use errorR here since we really want to fail and not produce a binary
+                error (Error(FSComp.SR.fscKeyFileCouldNotBeOpened s, rangeCmdArgs))
 
 //----------------------------------------------------------------------------
 // Building the contents of the finalized IL module

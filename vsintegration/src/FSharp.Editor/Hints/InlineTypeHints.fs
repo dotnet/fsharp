@@ -6,7 +6,6 @@ open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
-open FSharp.Compiler.Text.Position
 open Hints
 
 module InlineTypeHints =
@@ -45,20 +44,8 @@ module InlineTypeHints =
         (symbol: FSharpMemberOrFunctionOrValue)
         (symbolUse: FSharpSymbolUse) =
 
-        let isOptionalParameter = 
-            symbolUse.IsFromDefinition
-            && symbol.FullType.IsAbbreviation 
-            && symbol.FullType.TypeDefinition.DisplayName = "option"
-
-        let adjustedRangeStart =
-            if isOptionalParameter then 
-                // we need the position to start at the '?' symbol
-                mkPos symbolUse.Range.StartLine (symbolUse.Range.StartColumn - 1) 
-            else 
-                symbolUse.Range.Start
-
         let isNotAnnotatedManually = 
-            not (parseFileResults.IsTypeAnnotationGivenAtPosition adjustedRangeStart)
+            not (parseFileResults.IsTypeAnnotationGivenAtPosition symbolUse.Range.Start)
 
         let isNotAfterDot = 
             symbolUse.IsFromDefinition 
