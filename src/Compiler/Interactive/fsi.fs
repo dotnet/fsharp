@@ -1342,6 +1342,20 @@ let scriptingDirectory =
 
     createDirectory (Path.Combine(Path.GetTempPath(), $"{DateTime.Now:s}-{Guid.NewGuid():n}".Replace(':', '-')))
 
+let deleteScripts () =
+    try
+#if !DEBUG
+            if scriptingDirectory.IsValueCreated then
+                if Directory.Exists(scriptingDirectory.Value) then
+                    Directory.Delete(scriptingDirectory.Value, true)
+#else
+            ()
+#endif
+    with _ ->
+        ()
+
+do AppDomain.CurrentDomain.ProcessExit |> Event.add (fun _ -> deleteScripts ())
+
 
 
 let dynamicCcuName = "FSI-ASSEMBLY"
