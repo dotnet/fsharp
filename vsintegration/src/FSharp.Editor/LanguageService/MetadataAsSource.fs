@@ -94,7 +94,7 @@ module internal MetadataAsSource =
 
 [<Sealed>]
 [<Export(typeof<FSharpMetadataAsSourceService>); Composition.Shared>]
-type internal FSharpMetadataAsSourceService() =
+type FSharpMetadataAsSourceService() =
 
     let serviceProvider = ServiceProvider.GlobalProvider
     let projs = System.Collections.Concurrent.ConcurrentDictionary<string, IFSharpWorkspaceProjectContext>()

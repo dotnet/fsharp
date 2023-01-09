@@ -1604,13 +1604,13 @@ type TyconRefMultiMap<'T>(contents: TyconRefMap<'T list>) =
 //--------------------------------------------------------------------------
 
 /// Try to create a EntityRef suitable for accessing the given Entity from another assembly 
-let tryRescopeEntity viewedCcu (entity: Entity) : ValueOption<EntityRef> = 
+let tryRescopeEntity viewedCcu (entity: Entity) : EntityRef voption =
     match entity.PublicPath with 
     | Some pubpath -> ValueSome (ERefNonLocal (rescopePubPath viewedCcu pubpath))
     | None -> ValueNone
 
 /// Try to create a ValRef suitable for accessing the given Val from another assembly 
-let tryRescopeVal viewedCcu (entityRemap: Remap) (vspec: Val) : ValueOption<ValRef> =
+let tryRescopeVal viewedCcu (entityRemap: Remap) (vspec: Val) : ValRef voption =
     match vspec.PublicPath with 
     | Some (ValPubPath(p, fullLinkageKey)) -> 
         // The type information in the val linkage doesn't need to keep any information to trait solutions.
@@ -9573,11 +9573,11 @@ type Entity with
                 List.lengthsEqAndForall2 (typeEquiv g) (List.map fst argInfos) argTys &&  
                 membInfo.MemberFlags.IsOverrideOrExplicitImpl
             | _ -> false) 
-    
-    member tycon.HasMember g nm argTys = 
+
+    member tycon.TryGetMember g nm argTys = 
         tycon.TypeContents.tcaug_adhoc 
         |> NameMultiMap.find nm
-        |> List.exists (fun vref -> 
+        |> List.tryFind (fun vref -> 
             match vref.MemberInfo with 
             | None -> false 
             | _ ->
@@ -9586,7 +9586,8 @@ type Entity with
             match argInfos with
             | [argInfos] -> List.lengthsEqAndForall2 (typeEquiv g) (List.map fst argInfos) argTys
             | _ -> false) 
-
+    
+    member tycon.HasMember g nm argTys = (tycon.TryGetMember g nm argTys).IsSome
 
 type EntityRef with 
     member tcref.HasInterface g ty = tcref.Deref.HasInterface g ty
