@@ -1777,7 +1777,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         if isUnresolved() then false else 
         match fsharpInfo() with 
         | None -> false
-        | Some v -> 
+        | Some v ->
         v.IsCompilerGenerated
 
     member _.InlineAnnotation = 
