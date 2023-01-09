@@ -300,7 +300,7 @@ type ImportedAssembly =
         IsProviderGenerated: bool
         mutable TypeProviders: Tainted<ITypeProvider> list
 #endif
-        FSharpOptimizationData: Microsoft.FSharp.Control.Lazy<Option<Optimizer.LazyModuleInfo>>
+        FSharpOptimizationData: Microsoft.FSharp.Control.Lazy<Optimizer.LazyModuleInfo option>
     }
 
 type AvailableImportedAssembly =
@@ -517,6 +517,7 @@ type TcConfigBuilder =
 
         /// show times between passes?
         mutable showTimes: bool
+        mutable writeTimesToFile: string option
         mutable showLoadedAssemblies: bool
         mutable continueAfterParseFailure: bool
 
@@ -740,6 +741,7 @@ type TcConfigBuilder =
             productNameForBannerText = FSharpProductName
             showBanner = true
             showTimes = false
+            writeTimesToFile = None
             showLoadedAssemblies = false
             continueAfterParseFailure = false
 #if !NO_TYPEPROVIDERS
@@ -1296,6 +1298,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.productNameForBannerText = data.productNameForBannerText
     member _.showBanner = data.showBanner
     member _.showTimes = data.showTimes
+    member _.writeTimesToFile = data.writeTimesToFile
     member _.showLoadedAssemblies = data.showLoadedAssemblies
     member _.continueAfterParseFailure = data.continueAfterParseFailure
 #if !NO_TYPEPROVIDERS

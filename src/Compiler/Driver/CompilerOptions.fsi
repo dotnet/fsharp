@@ -36,7 +36,7 @@ and CompilerOption =
         name: string *
         argumentDescriptionString: string *
         actionSpec: OptionSpec *
-        deprecationError: Option<exn> *
+        deprecationError: exn option *
         helpText: string option
 
 and CompilerOptionBlock =
@@ -66,6 +66,8 @@ val GetCoreFsiCompilerOptions: TcConfigBuilder -> CompilerOptionBlock list
 
 val GetCoreServiceCompilerOptions: TcConfigBuilder -> CompilerOptionBlock list
 
+val CheckAndReportSourceFileDuplicates: ResizeArray<string> -> string list
+
 /// Apply args to TcConfigBuilder and return new list of source files
 val ApplyCommandLineArgs: tcConfigB: TcConfigBuilder * sourceFiles: string list * argv: string list -> string list
 
@@ -89,7 +91,7 @@ val DoWithColor: ConsoleColor -> (unit -> 'T) -> 'T
 
 val DoWithDiagnosticColor: FSharpDiagnosticSeverity -> (unit -> 'T) -> 'T
 
-val ReportTime: TcConfig -> string -> unit
+val ReportTime: (TcConfig -> string -> unit)
 
 val GetAbbrevFlagSet: TcConfigBuilder -> bool -> Set<string>
 

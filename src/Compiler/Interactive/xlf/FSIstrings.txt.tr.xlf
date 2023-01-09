@@ -7,11 +7,6 @@
         <target state="translated">[&lt;EntryPoint&gt;] ile işlevler, FSI'de çağrılmaz. '{0}' başlatılmadı. '{1} &lt;args&gt;' komutunu çalıştırarak uygun komut satırı bağımsız değişken dizisiyle '{2}' komutunu başlatın.</target>
         <note />
       </trans-unit>
-      <trans-unit id="fsiInternalAccess">
-        <source>Accessing the internal type, method or field '{0}' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--multiemit-' option.</source>
-        <target state="translated">F# Etkileşimli’de önceki bir değerlendirmeden '{0}' iç türüne, yöntemine veya alanına erişim kullanım dışıdır ve sonraki erişim hatalarına neden olabilir. İç öğelere erişen tek bir dinamik bütünleştirilmiş kodun eski neslini etkinleştirmek için '--multiemit-' seçeneğini kullanın.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="fsiIntroPackageSourceUriInfo">
         <source>Include package source uri when searching for packages</source>
         <target state="translated">Paketler aranırken paket kaynağı URI'si ekleyin</target>
@@ -20,11 +15,6 @@
       <trans-unit id="fsiIntroTextHashclearInfo">
         <source>Clear screen</source>
         <target state="translated">Ekranı temizle</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="fsiMultiAssemblyEmitOptionOffByDefault">
-        <source>Emit multiple assemblies (off by default for .NET Framework)</source>
-        <target state="translated">Birden çok bütünleştirilmiş kod göster (.NET Framework için varsayılan olarak kapalı)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
