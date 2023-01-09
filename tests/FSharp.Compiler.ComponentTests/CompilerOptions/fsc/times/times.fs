@@ -68,8 +68,8 @@ module times =
         let consoleContents = sw.ToString()
         Assert.Contains("Parse inputs",consoleContents)
         Assert.Contains("Typecheck",consoleContents)
-        Assert.Contains("Mem",consoleContents)
-        Assert.Contains("Realdelta",consoleContents)
+        Assert.Contains("GC0",consoleContents)
+        Assert.Contains("Duration",consoleContents)
 
 
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"error_01.fs"|])>]
