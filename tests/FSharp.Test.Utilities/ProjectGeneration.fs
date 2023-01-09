@@ -222,15 +222,6 @@ module Internal =
         let content = renderSourceFile p f
         writeFileIfChanged fileName content
 
-    let validateFileIdsAreUnique (project: SyntheticProject) =
-        let ids = [ for _, f in project.GetAllFiles() -> f.Id ]
-        let duplicates = ids |> List.groupBy id |> List.filter (fun (_, g) -> g.Length > 1)
-
-        if duplicates.Length > 0 then
-            failwith
-                $"""Source file IDs have to be unique across the project and all referenced projects. Found duplicates: {String.Join(", ", duplicates |> List.map fst)}"""
-
-
 open Internal
 
 
@@ -311,6 +302,21 @@ module ProjectOperations =
         if checkResult.Diagnostics.Length > 0 then
             failwith $"Expected no errors, but there were some: \n%A{checkResult.Diagnostics}"
 
+    let expectSingleWarningAndNoErrors (warningSubString:string) parseAndCheckResults _  = 
+        let checkResult = getTypeCheckResult parseAndCheckResults
+        let errors = checkResult.Diagnostics|> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+        if errors.Length > 0 then
+            failwith $"Expected no errors, but there were some: \n%A{errors}"
+
+        let warnings = checkResult.Diagnostics|> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Warning)
+        match warnings |> Array.tryExactlyOne with
+        | None -> failwith $"Expected 1 warning, but got {warnings.Length} instead: \n%A{warnings}"
+        | Some w -> 
+            if w.Message.Contains warningSubString then
+                ()
+            else 
+                failwith $"Expected 1 warning with substring '{warningSubString}' but got %A{w}"
+
     let expectErrors parseAndCheckResults _ =
         let checkResult = getTypeCheckResult parseAndCheckResults
 
@@ -378,7 +384,6 @@ type WorkflowContext =
 
 let SaveAndCheckProject project checker =
     async {
-        validateFileIdsAreUnique project
 
         do! saveProject project true checker
 

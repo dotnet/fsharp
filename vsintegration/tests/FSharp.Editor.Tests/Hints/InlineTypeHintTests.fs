@@ -147,7 +147,7 @@ type Song() as x =
         Assert.IsEmpty(result)
 
     [<Test>]
-    let ``Hints are shown for lambdas`` () =
+    let ``Hints are shown within lambdas`` () =
         let code =
             """
 let iamboring() =
@@ -162,7 +162,7 @@ let iamboring() =
         Assert.AreEqual(expected, actual)
 
     [<Test>]
-    let ``Hints are shown for lambdas with tuples`` () =
+    let ``Hints are shown within lambdas with tuples`` () =
         let code =
             """
 let zip4 (l1: 'a list) (l2: 'b list) (l3: 'c list) (l4: 'd list) =
@@ -183,6 +183,19 @@ let zip4 (l1: 'a list) (l2: 'b list) (l3: 'c list) (l4: 'd list) =
         let actual = getTypeHints document
 
         CollectionAssert.AreEquivalent(expected, actual)
+
+    [<Test>]
+    let ``Hints are not shown for lambda return types`` () =
+        let code =
+            """
+let func = fun () -> 3
+"""
+
+        let document = getFsDocument code
+
+        let result = getTypeHints document
+
+        Assert.IsEmpty(result)
 
     [<Test>]
     let ``Hints are not shown for unfinished expressions`` () =
@@ -247,3 +260,20 @@ type Number<'T when IAddition<'T>>(value: 'T) =
         let actual = getTypeHints document
 
         CollectionAssert.AreEquivalent(expected, actual)
+
+    [<Test>]
+    let ``Hints are not shown when type is specified`` () =
+        let code =
+            """
+type MyType() =
+
+    member _.MyMethod(?beep: int, ?bap: int, ?boop: int) = ()
+
+    member this.Foo = this.MyMethod(bap = 3, boop = 4)
+"""
+
+        let document = getFsDocument code
+
+        let result = getTypeHints document
+
+        Assert.IsEmpty(result)
