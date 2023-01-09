@@ -7,6 +7,11 @@
         <target state="translated">Alle Elemente eines Arrays müssen implizit in den Typ des ersten Elements konvertiert werden. Hierbei handelt es sich um ein Tupel der Länge {0} vom Typ\n    {1}    \nDieses Element ist ein Tupel der Länge {2} vom Typ\n    {3}.    \n</target>
         <note />
       </trans-unit>
+      <trans-unit id="buildDuplicateFile">
+        <source>The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</source>
+        <target state="translated">Die Quelldatei „{0}“ (an Position {1}/{2}) wurde bereits in der Kompilierungsliste angezeigt (an Position {3}/{4}). Bitte stellen Sie sicher, dass sie nur einmal in der Projektdatei enthalten ist.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="buildInvalidSourceFileExtensionML">
         <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript. To enable the deprecated use of .ml or .mli extensions, use '--langversion:5.0' and '--mlcompatibility'.</source>
         <target state="translated">Die Dateierweiterung von „{0}“ wurde nicht erkannt. Quelldateien müssen die Erweiterung .fs, .fsi, .fsx oder .fsscript haben. Um die veraltete Verwendung der Erweiterungen .ml oder .mli zu aktivieren, verwenden Sie „--langversion:5.0“ und „--mlcompatibility“.</target>
@@ -15,6 +20,16 @@
       <trans-unit id="buildInvalidSourceFileExtensionUpdated">
         <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript</source>
         <target state="translated">Die Dateierweiterung von „{0}“ wurde nicht erkannt. Quelldateien müssen die Erweiterung .fs, .fsi, .fsx oder .fsscript haben</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkAdditionalConstructorOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Additional constructor is not allowed.</source>
+        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Additional constructor is not allowed.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkConstructorWithArgumentsOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Constructor with arguments is not allowed.</source>
+        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Constructor with arguments is not allowed.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkDuplicatedMethodParameter">
@@ -55,6 +70,11 @@
       <trans-unit id="chkInfoRefcellIncr">
         <source>The use of 'incr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'incr cell' to 'cell.Value &lt;- cell.Value + 1'.</source>
         <target state="translated">Die Verwendung von "incr" aus der F#-Bibliothek ist veraltet. Siehe https://aka.ms/fsharp-refcell-ops. Ändern Sie z. B. "incr cell" in "cell.Value &lt;- cell.Value + 1".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInstanceMemberOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance members are not allowed.</source>
+        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance members are not allowed.</target>
         <note />
       </trans-unit>
       <trans-unit id="containerDeprecated">
@@ -190,6 +210,16 @@
       <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
         <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
         <target state="translated">Beim veralteten Zugriff auf das Konstrukt mit dem RequireQualifiedAccess-Attribut wird ein Fehler ausgegeben.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureErrorReportingOnStaticClasses">
+        <source>Error reporting on static classes</source>
+        <target state="new">Error reporting on static classes</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureEscapeBracesInFormattableString">
+        <source>Escapes curly braces before calling FormattableStringFactory.Create when interpolated string literal is typed as FormattableString</source>
+        <target state="translated">Escapezeichen mit geschweiften Klammern, bevor FormattableStringFactory.Create aufgerufen wird, wenn ein interpoliertes Zeichenfolgenliteral als FormattableString eingegeben wird.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
@@ -330,6 +360,11 @@
       <trans-unit id="featureStructActivePattern">
         <source>struct representation for active patterns</source>
         <target state="translated">Strukturdarstellung für aktive Muster</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
+        <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
+        <target state="translated">Löst Warnungen aus, wenn „let inline ... =“ zusammen mit dem Attribut [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] verwendet wird. Die Funktion wird nicht inline gesetzt.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">

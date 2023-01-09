@@ -7,6 +7,11 @@
         <target state="translated">Bir dizinin tüm öğeleri örtük olarak ilk öğenin türüne dönüştürülebilir olmalıdır. Burada ilk öğe {0} uzunluğunda türü\n {1} \nolan bir demet. Bu öğe ise {2} uzunluğunda türü\n {3} \nolan bir demet.</target>
         <note />
       </trans-unit>
+      <trans-unit id="buildDuplicateFile">
+        <source>The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</source>
+        <target state="translated">Kaynak dosya '{0}' ({1}/{2} konumunda) derleme listesinde ({3}/{4} konumunda) zaten göründü. Lütfen proje dosyasına yalnızca bir kez eklendiğinden emin olun.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="buildInvalidSourceFileExtensionML">
         <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript. To enable the deprecated use of .ml or .mli extensions, use '--langversion:5.0' and '--mlcompatibility'.</source>
         <target state="translated">'{0}' kaynak dosyasının dosya uzantısı tanınmadı. Kaynak dosyaların uzantısı .fs, .fsi, .fsx veya .fsscript olmalıdır. Kullanım dışı .ml veya .mli uzantılarını etkinleştirmek için '--langversion:5.0' ve '--mlcompatibility' kullanın.</target>
@@ -15,6 +20,16 @@
       <trans-unit id="buildInvalidSourceFileExtensionUpdated">
         <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript</source>
         <target state="translated">'{0}' kaynak dosyasının dosya uzantısı tanınmadı. Kaynak dosyaların uzantısı .fs, .fsi, .fsx veya .fsscript olmalıdır.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkAdditionalConstructorOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Additional constructor is not allowed.</source>
+        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Additional constructor is not allowed.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkConstructorWithArgumentsOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Constructor with arguments is not allowed.</source>
+        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Constructor with arguments is not allowed.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkDuplicatedMethodParameter">
@@ -55,6 +70,11 @@
       <trans-unit id="chkInfoRefcellIncr">
         <source>The use of 'incr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'incr cell' to 'cell.Value &lt;- cell.Value + 1'.</source>
         <target state="translated">F# kitaplığından gelen 'incr' kullanımı kullanım dışı. https://aka.ms/fsharp-refcell-ops’a bakın. Örneğin, lütfen 'incr cell' ifadesini 'cell.Value &lt;- cell.Value + 1' olarak değiştirin.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInstanceMemberOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance members are not allowed.</source>
+        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance members are not allowed.</target>
         <note />
       </trans-unit>
       <trans-unit id="containerDeprecated">
@@ -190,6 +210,16 @@
       <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
         <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
         <target state="translated">RequireQualifiedAccess özniteliğine sahip yapının kullanım dışı erişiminde hata</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureErrorReportingOnStaticClasses">
+        <source>Error reporting on static classes</source>
+        <target state="new">Error reporting on static classes</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureEscapeBracesInFormattableString">
+        <source>Escapes curly braces before calling FormattableStringFactory.Create when interpolated string literal is typed as FormattableString</source>
+        <target state="translated">İçe eklenmiş dize sabit değerinin türü FormattableString olduğunda FormattableStringFactory.Create çağrılmadan önce küme ayraçlarını atlar</target>
         <note />
       </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
@@ -330,6 +360,11 @@
       <trans-unit id="featureStructActivePattern">
         <source>struct representation for active patterns</source>
         <target state="translated">etkin desenler için yapı gösterimi</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
+        <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
+        <target state="translated">[&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] özniteliği ile birlikte 'let inline ... =' kullanıldığında uyarı verir. İşlev satır içine alınmıyor.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
