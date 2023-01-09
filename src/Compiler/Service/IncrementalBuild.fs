@@ -1049,7 +1049,7 @@ module IncrementalBuilderStateHelpers =
 
     let rec createFinalizeBoundModelGraphNode (initialState: IncrementalBuilderInitialState) (boundModels: ImmutableArray<GraphNode<BoundModel>>.Builder) =
         GraphNode(node {
-            use _ = Activity.start "GetCheckResultsAndImplementationsForProject" [|Activity.Tags.outputDllFile, initialState.outfile|]
+            use _ = Activity.start "GetCheckResultsAndImplementationsForProject" [|Activity.Tags.project, initialState.outfile|]
             // Compute last bound model then get all the evaluated models.
             let! _ = boundModels[boundModels.Count - 1].GetOrComputeValue()
             let boundModels =

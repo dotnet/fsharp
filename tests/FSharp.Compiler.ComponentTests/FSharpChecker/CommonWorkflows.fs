@@ -94,6 +94,16 @@ let ``Changes in a referenced project`` () =
     }
 
 [<Fact>]
+let ``Language service works if the same file is listed twice`` () = 
+    let file = sourceFile "First" []
+    let project =  SyntheticProject.Create(file)
+    project.Workflow {
+        checkFile "First" expectOk
+        addFileAbove "First" file
+        checkFile "First" (expectSingleWarningAndNoErrors "Please verify that it is included only once in the project file.")
+    }
+
+[<Fact>]
 let ``Using getSource and notifications instead of filesystem`` () =
 
     let size = 20
