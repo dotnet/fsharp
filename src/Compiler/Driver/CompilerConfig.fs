@@ -1138,10 +1138,10 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                         yield clrFacades
 
                 | None ->
-                    let runtimeRoot = RuntimeEnvironment.GetRuntimeDirectory().TrimEnd('/', '\\')
-
-                    let runtimeRootFacades = Path.Combine(runtimeRoot, "Facades")
-                    let runtimeRootWPF = Path.Combine(runtimeRoot, "WPF")
+                    let runtimeRoot = Path.GetDirectoryName(typeof<Object>.Assembly.Location)
+                    let runtimeRootWithoutSlash = runtimeRoot.TrimEnd('/', '\\')
+                    let runtimeRootFacades = Path.Combine(runtimeRootWithoutSlash, "Facades")
+                    let runtimeRootWPF = Path.Combine(runtimeRootWithoutSlash, "WPF")
 
                     match data.resolutionEnvironment with
                     | LegacyResolutionEnvironment.CompilationAndEvaluation ->
