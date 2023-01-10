@@ -1663,7 +1663,9 @@ let private ReportErrorOnStaticClass (synMembers: SynMemberDefn list) =
                 errorR(Error(FSComp.SR.chkConstructorWithArgumentsOnStaticClasses(), pat.Range))
            
         | SynMemberDefn.Member(SynBinding(valData = SynValData(memberFlags = Some memberFlags)), m) when memberFlags.MemberKind = SynMemberKind.Constructor ->
-            errorR(Error(FSComp.SR.chkAdditionalConstructorOnStaticClasses(), m));
+            errorR(Error(FSComp.SR.chkAdditionalConstructorOnStaticClasses(), m))
+        | SynMemberDefn.Member(SynBinding(valData = SynValData(memberFlags = Some memberFlags)), m) when memberFlags.MemberKind = SynMemberKind.Member && memberFlags.IsInstance ->
+            errorR(Error(FSComp.SR.chkInstanceMemberOnStaticClasses(), m));
         | _ -> ()
 
 /// Check and generalize the interface implementations, members, 'let' definitions in a mutually recursive group of definitions.
