@@ -1668,6 +1668,8 @@ let private ReportErrorOnStaticClass (synMembers: SynMemberDefn list) =
             errorR(Error(FSComp.SR.chkInstanceMemberOnStaticClasses(), m))
         | SynMemberDefn.LetBindings(isStatic = false; range = range) ->
             errorR(Error(FSComp.SR.chkInstanceLetBindingOnStaticClasses(), range))
+        | SynMemberDefn.Interface(range = range) ->
+            errorR(Error(FSComp.SR.chkImplementingInterfacesOnStaticClasses(), range))
         | _ -> ()
 
 /// Check and generalize the interface implementations, members, 'let' definitions in a mutually recursive group of definitions.
