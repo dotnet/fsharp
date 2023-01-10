@@ -789,16 +789,17 @@ module rec Compiler =
 
     let private processScriptResults fs (evalResult: Result<FsiValue option, exn>, err: FSharpDiagnostic[])  =
         let diagnostics = err |> fromFSharpDiagnostic
+        let (errors, warnings) = partitionErrors diagnostics
         let result =
             { OutputPath   = None
               Dependencies = []
               Adjust       = 0
-              Diagnostics  = diagnostics
+              Diagnostics  = if fs.IgnoreWarnings then errors else diagnostics
               Output       = Some (EvalOutput evalResult)
               Compilation  = FS fs }
-        let (errors, warnings) = partitionErrors diagnostics
+        
         let evalError = match evalResult with Ok _ -> false | _ -> true
-        if evalError || errors.Length > 0 || (warnings.Length > 0 && not fs.IgnoreWarnings) then
+        if evalError || errors.Length > 0 || (warnings.Length > 0 && not fs.IgnoreWarnings) then       
             CompilationResult.Failure result
         else
             CompilationResult.Success result
@@ -809,11 +810,16 @@ module rec Compiler =
         script.Eval(source) |> (processScriptResults fs)  
 
     let private evalScriptFromDisk (fs: FSharpCompilationSource) (script:FSharpScript) : CompilationResult =
-        //let cdBefore = Environment.CurrentDirectory
-        //do Environment.CurrentDirectory <- Path.GetDirectoryName(fs.Source.GetSourceFileName)  
-        //use _ = {new IDisposable with
-        //             member this.Dispose() = do Environment.CurrentDirectory <- cdBefore}
-        script.EvalScript(fs.Source.GetSourceFileName) |> (processScriptResults fs) 
+        let fileNames = 
+            [ yield! fs.AdditionalSources
+              yield fs.Source]
+            |> List.map (fun x -> x.GetSourceFileName)
+            |> List.map (sprintf " @\"%s\"")
+            |> String.Concat
+
+        script.Eval("#load" + fileNames )
+        |> (processScriptResults fs) 
+     
 
     let eval (cUnit: CompilationUnit) : CompilationResult =
         match cUnit with

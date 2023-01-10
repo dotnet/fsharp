@@ -9,25 +9,25 @@ open FSharp.Test
 open FSharp.Test.Compiler
 open FSharp.Test.ScriptHelpers 
 
-module RunnerEngine = 
+module ScriptRunner = 
     open Internal.Utilities.Library
+    
     let private createEngine(args,version) = 
-        let s = getSessionForEval args version
-        s.Eval """let exit no = if no=0 then 0 else failwith $"Error in running, exit code={no}" """ |> ignore
-        s
+        let scriptingEnv = getSessionForEval args version
+        scriptingEnv.Eval """let exit (code:int) = if code=0 then () else failwith $"Error in running, exit code={code}" """ |> ignore
+        scriptingEnv
+
     let getOrCreateEngine = Tables.memoize createEngine
 
-    let private definesForExe = 
-        [ "TESTS_AS_APP"
+    let private defaultDefines = 
+        [ 
 #if NETCOREAPP
           "NETCOREAPP"
 #endif
         ]
 
-    let runExe = 
-        asFs >> withDefines definesForExe >> compileExeAndRun
-
-    let runScriptFile version (cu:CompilationUnit)  =   
+    let runScriptFile version (cu:CompilationUnit)  =
+        let cu  = cu |> withDefines defaultDefines
         match cu with 
         | FS fsSource ->
             File.Delete("test.ok")           
@@ -43,13 +43,12 @@ module RunnerEngine =
 
         | _ -> failwith $"Compilation unit other than fsharp is not supported, cannot process %A{cu}"
 
-
 /// This test file was created by porting over (slower) FsharpSuite.Tests
 /// In order to minimize human error, the test definitions have been copy-pasted and this adapter provides implementations of the test functions
 module TestFrameworkAdapter = 
     type ExecutionMode = FSC_DEBUG | FSC_OPTIMIZED | FSI
     let baseFolder = Path.Combine(__SOURCE_DIRECTORY__,"..","..","fsharp") |> Path.GetFullPath
-    let inline testConfig (relativeFolder:string) = relativeFolder
+    let inline testConfig (relativeFolder:string) = relativeFolder    
 
     let adjustVersion version bonusArgs = 
         match version with 
@@ -59,26 +58,41 @@ module TestFrameworkAdapter =
         | LangVersion.Latest  -> "latest", bonusArgs
         | LangVersion.SupportsMl -> "5.0",  "--mlcompatibility" :: bonusArgs       
 
+    let supportedNames = set ["testlib.fsi";"testlib.fs";"test.mli";"test.ml";"test.fsi";"test.fs";"test2.fsi";"test2.fs";"test.fsx";"test2.fsx"]
+
     let singleTestBuildAndRunAuxVersion (folder:string) bonusArgs mode langVersion = 
         let absFolder = Path.Combine(baseFolder,folder)
      
-        let file = Directory.GetFiles(absFolder,"*.fs*") |> Array.exactlyOne
+        let files = Directory.GetFiles(absFolder,"test*.fs*")
+        let mainFile,otherFiles = 
+            match files.Length with
+            | 0 -> Directory.GetFiles(absFolder,"*.ml") |> Array.exactlyOne, [||]
+            | 1 -> files |> Array.exactlyOne, [||]
+            | _ -> 
+                let dependencies,mainFile = 
+                    files 
+                    |> Array.filter (fun n -> supportedNames.Contains(Path.GetFileName(n))) 
+                     // Convention in older FsharpSuite: test2 goes last, longer names like testlib before test, .fsi before .fs on equal filenames
+                    |> Array.sortBy (fun n -> n.Contains("test2"), -n.IndexOf('.'), n.EndsWith(".fsi") |> not)                  
+                    |> Array.splitAt (files.Length-1)             
+                mainFile[0],dependencies
 
         let version,bonusArgs = adjustVersion langVersion bonusArgs
 
-        FsFromPath file
+        FsFromPath mainFile
+        |> withAdditionalSourceFiles [for f in otherFiles -> SourceFromPath f]
         |> withLangVersion version  
         |> ignoreWarnings
         |> withOptions (["--nowarn:0988;3370"] @ bonusArgs)    
         |> fun cu -> 
             match mode with
-            | FSC_DEBUG -> cu |> withDebug |> withNoOptimize |> RunnerEngine.runScriptFile langVersion
-            | FSC_OPTIMIZED -> cu |> withOptimize |> withNoDebug |> RunnerEngine.runScriptFile langVersion
-            | FSI -> cu |> asFsx |> RunnerEngine.runScriptFile langVersion
+            | FSC_DEBUG -> cu |> withDebug |> withNoOptimize 
+            | FSC_OPTIMIZED -> cu |> withOptimize |> withNoDebug
+            | FSI -> cu
+        |> ScriptRunner.runScriptFile langVersion
         |> shouldSucceed 
         |> ignore<CompilationResult>
-        
-        //checker.CheckExists()
+    
 
     let singleTestBuildAndRunAux folder bonusArgs mode = singleTestBuildAndRunAuxVersion folder bonusArgs mode LangVersion.Latest
     let singleTestBuildAndRunVersion folder mode version = singleTestBuildAndRunAuxVersion folder [] mode version
