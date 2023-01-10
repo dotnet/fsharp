@@ -787,12 +787,7 @@ module rec Compiler =
 
     let compileExeAndRun = asExe >> compileAndRun
 
-    let private evalFSharp (fs: FSharpCompilationSource) : CompilationResult =
-        let source = fs.Source.GetSourceText |> Option.defaultValue ""
-        let options = fs.Options |> Array.ofList
-
-        use script = new FSharpScript(additionalArgs=options)
-        let (evalResult: Result<FsiValue option, exn>), (err: FSharpDiagnostic[]) = script.Eval(source)
+    let private processScriptResults fs (evalResult: Result<FsiValue option, exn>, err: FSharpDiagnostic[])  =
         let diagnostics = err |> fromFSharpDiagnostic
         let result =
             { OutputPath   = None
@@ -801,17 +796,43 @@ module rec Compiler =
               Diagnostics  = diagnostics
               Output       = Some (EvalOutput evalResult)
               Compilation  = FS fs }
-
         let (errors, warnings) = partitionErrors diagnostics
         let evalError = match evalResult with Ok _ -> false | _ -> true
         if evalError || errors.Length > 0 || (warnings.Length > 0 && not fs.IgnoreWarnings) then
             CompilationResult.Failure result
         else
             CompilationResult.Success result
+        
+
+    let private evalFSharp (fs: FSharpCompilationSource) (script:FSharpScript) : CompilationResult =
+        let source = fs.Source.GetSourceText |> Option.defaultValue ""
+        script.Eval(source) |> (processScriptResults fs)  
+
+    let private evalScriptFromDisk (fs: FSharpCompilationSource) (script:FSharpScript) : CompilationResult =
+        //let cdBefore = Environment.CurrentDirectory
+        //do Environment.CurrentDirectory <- Path.GetDirectoryName(fs.Source.GetSourceFileName)  
+        //use _ = {new IDisposable with
+        //             member this.Dispose() = do Environment.CurrentDirectory <- cdBefore}
+        script.EvalScript(fs.Source.GetSourceFileName) |> (processScriptResults fs) 
 
     let eval (cUnit: CompilationUnit) : CompilationResult =
         match cUnit with
-        | FS fs -> evalFSharp fs
+        | FS fs -> 
+            let options = fs.Options |> Array.ofList
+            use script = new FSharpScript(additionalArgs=options)
+            evalFSharp fs script
+        | _ -> failwith "Script evaluation is only supported for F#."
+
+    let getSessionForEval args version = new FSharpScript(additionalArgs=args,quiet=false,langVersion=version)
+
+    let evalInSharedSession (script:FSharpScript) (cUnit: CompilationUnit)  : CompilationResult =
+        match cUnit with
+        | FS fs -> evalFSharp fs script
+        | _ -> failwith "Script evaluation is only supported for F#."
+
+    let evalScriptFromDiskInSharedSession (script:FSharpScript) (cUnit: CompilationUnit) : CompilationResult =
+        match cUnit with
+        | FS fs -> evalScriptFromDisk fs script
         | _ -> failwith "Script evaluation is only supported for F#."
 
     let runFsi (cUnit: CompilationUnit) : CompilationResult =
@@ -1175,6 +1196,10 @@ module rec Compiler =
                       match r.Output with
                       | Some (ExecutionOutput output) ->
                           sprintf "----output-----\n%s\n----error-------\n%s\n----------" output.StdOut output.StdErr
+                      | Some (EvalOutput (Result.Error exn) ) -> 
+                          sprintf "----script error-----\n%s\n----------" (exn.ToString())
+                      | Some (EvalOutput (Result.Ok fsiVal) ) -> 
+                          sprintf "----script output-----\n%A\n----------" (fsiVal)  
                       | _ -> () ]
                     |> String.concat "\n"
                 failwith message

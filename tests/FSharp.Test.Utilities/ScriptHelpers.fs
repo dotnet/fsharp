@@ -76,6 +76,8 @@ type LangVersion =
     | V47
     | V50
     | Preview
+    | Latest
+    | SupportsMl
 
 type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVersion) =
 
@@ -96,8 +98,9 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
         if quiet then "--quiet"
         match langVersion with
         | LangVersion.V47 -> "--langversion:4.7"
-        | LangVersion.V50 -> "--langversion:5.0"
+        | LangVersion.V50 | LangVersion.SupportsMl -> "--langversion:5.0"
         | LangVersion.Preview -> "--langversion:preview"
+        | LangVersion.Latest -> "--langversion:latest"
         |]
 
     let argv = Array.append baseArgs additionalArgs
@@ -113,6 +116,12 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
         let ch, errors = fsi.EvalInteractionNonThrowing(code, cancellationToken)
         match ch with
         | Choice1Of2 v -> Ok(v), errors
+        | Choice2Of2 ex -> Error(ex), errors
+
+    member _.EvalScript(absFilePath: string) = 
+        let ch, errors = fsi.EvalScriptNonThrowing(absFilePath)
+        match ch with
+        | Choice1Of2 _ -> Ok(Option<FsiValue>.None), errors
         | Choice2Of2 ex -> Error(ex), errors
 
     /// Get the available completion items from the code at the specified location.
