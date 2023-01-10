@@ -2,7 +2,7 @@
 
 namespace FSharp.Editor.Tests.Hints
 
-open NUnit.Framework
+open Xunit
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.Editor.Hints
 open Microsoft.VisualStudio.FSharp.Editor.Hints.Hints
@@ -10,7 +10,7 @@ open Microsoft.VisualStudio.FSharp.Editor.Hints.Hints
 // best tests ever - very scalable
 module OptionParserTests =
 
-    [<Test>]
+    [<Fact>]
     let ``Type hints off, parameter name hints off`` () =
         let options =
             { AdvancedOptions.Default with
@@ -22,9 +22,9 @@ module OptionParserTests =
 
         let actual = OptionParser.getHintKinds options
 
-        CollectionAssert.AreEquivalent(expected, actual)
+        Assert.Equal(expected, actual)
 
-    [<Test>]
+    [<Fact>]
     let ``Type hints on, parameter name hints off`` () =
         let options =
             { AdvancedOptions.Default with
@@ -36,9 +36,9 @@ module OptionParserTests =
 
         let actual = OptionParser.getHintKinds options
 
-        CollectionAssert.AreEquivalent(expected, actual)
+        Assert.Equal(expected, actual)
 
-    [<Test>]
+    [<Fact>]
     let ``Type hints off, parameter name hints on`` () =
         let options =
             { AdvancedOptions.Default with
@@ -50,9 +50,9 @@ module OptionParserTests =
 
         let actual = OptionParser.getHintKinds options
 
-        CollectionAssert.AreEquivalent(expected, actual)
+        Assert.Equal(expected, actual)
 
-    [<Test>]
+    [<Fact>]
     let ``Type hints on, parameter name hints on`` () =
         let options =
             { AdvancedOptions.Default with
@@ -64,4 +64,4 @@ module OptionParserTests =
 
         let actual = OptionParser.getHintKinds options
 
-        CollectionAssert.AreEquivalent(expected, actual)
+        Assert.Equal(expected, actual)

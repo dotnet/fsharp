@@ -242,9 +242,8 @@ type RoslynTestHelpers private () =
             SolutionInfo.Create(SolutionId.CreateNewId(), VersionStamp.Create(DateTime.UtcNow), "test.sln", [ projInfo ])
 
         let solution = workspace.AddSolution(solutionInfo)
-
-        let workspaceService = workspace.Services.GetService<IFSharpWorkspaceService>()
-
+        let checker = FSharpChecker.Create()
+        let manager = FSharpProjectOptionsManager(checker, workspace)
         let document = solution.GetProject(projId).GetDocument(docId)
 
         match options with
@@ -254,14 +253,14 @@ type RoslynTestHelpers private () =
                     ProjectId = Some(Guid.NewGuid().ToString())
                 }
 
-            workspaceService.FSharpProjectOptionsManager.SetCommandLineOptions(
+            manager.SetCommandLineOptions(
                 projId,
                 options.SourceFiles,
                 options.OtherOptions |> ImmutableArray.CreateRange
             )
 
             document.SetFSharpProjectOptionsForTesting(options)
-        | _ -> workspaceService.FSharpProjectOptionsManager.SetCommandLineOptions(projId, [| filePath |], ImmutableArray.Empty)
+        | _ -> manager.SetCommandLineOptions(projId, [| filePath |], ImmutableArray.Empty)
 
         document
 
@@ -307,11 +306,9 @@ type RoslynTestHelpers private () =
             SolutionInfo.Create(SolutionId.CreateNewId(), VersionStamp.Create(DateTime.UtcNow), "test.sln", [ projInfo ])
 
         let solution = workspace.AddSolution(solutionInfo)
-
-        workspace
-            .Services
-            .GetService<IFSharpWorkspaceService>()
-            .FSharpProjectOptionsManager.SetCommandLineOptions(projId, [| filePath1; filePath2 |], ImmutableArray.Empty)
+        let checker = FSharpChecker.Create()
+        let manager = FSharpProjectOptionsManager(checker, workspace)
+        manager.SetCommandLineOptions(projId, [| filePath1; filePath2 |], ImmutableArray.Empty)
 
         let document1 = solution.GetProject(projId).GetDocument(docId1)
         let document2 = solution.GetProject(projId).GetDocument(docId2)

@@ -4,7 +4,7 @@ namespace FSharp.Editor.Tests
 
 open System
 open System.IO
-open NUnit.Framework
+open Xunit
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
@@ -13,7 +13,6 @@ open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 open FSharp.Editor.Tests.Helpers
 
-[<TestFixture>]
 module GoToDefinitionServiceTests =
 
     let userOpName = "GoToDefinitionServiceTests"
@@ -85,16 +84,14 @@ module GoToDefinitionServiceTests =
             |> Option.map (fun range -> (range.StartLine, range.EndLine, range.StartColumn, range.EndColumn))
 
         if actual <> expected then
-            Assert.Fail(
-                sprintf
-                    "Incorrect information returned for fileContents=<<<%s>>>, caretMarker=<<<%s>>>, expected =<<<%A>>>, actual = <<<%A>>>"
-                    fileContents
-                    caretMarker
-                    expected
-                    actual
-            )
+            failwithf
+                "Incorrect information returned for fileContents=<<<%s>>>, caretMarker=<<<%s>>>, expected =<<<%A>>>, actual = <<<%A>>>"
+                fileContents
+                caretMarker
+                expected
+                actual
 
-    [<Test>]
+    [<Fact>]
     let ``goto definition smoke test`` () =
 
         let manyTestCases =
@@ -136,7 +133,7 @@ let _ = Module1.foo 1
                 printfn "Test case: caretMarker=<<<%s>>>" caretMarker
                 GoToDefinitionTest(fileContents, caretMarker, expected, [||])
 
-    [<Test>]
+    [<Fact>]
     let ``goto definition for string interpolation`` () =
 
         let fileContents =
@@ -149,7 +146,7 @@ let yyyy = $"{abc{xxxxx}def}" """
 
         GoToDefinitionTest(fileContents, caretMarker, expected, [||])
 
-    [<Test>]
+    [<Fact>]
     let ``goto definition for static abstract method invocation`` () =
 
         let fileContents =

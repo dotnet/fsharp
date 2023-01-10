@@ -4,14 +4,13 @@ namespace FSharp.Editor.Tests
 
 open System
 open System.Threading
-open NUnit.Framework
+open Xunit
 open Microsoft.CodeAnalysis
 open FSharp.Compiler.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.IO
 open FSharp.Editor.Tests.Helpers
 
-[<TestFixture>]
 type HelpContextServiceTests() =
     let PathRelativeToTestAssembly p =
         Path.Combine(Path.GetDirectoryName(Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).LocalPath), p)
@@ -72,12 +71,12 @@ type HelpContextServiceTests() =
         Assert.True(equalLength)
 
         for (exp, res) in List.zip expectedKeywords res do
-            Assert.AreEqual(exp, res)
+            Assert.Equal(exp, res)
 
     let TestF1Keywords (expectedKeywords, lines) =
         TestF1KeywordsWithOptions(expectedKeywords, lines, [||])
 
-    [<Test>]
+    [<Fact>]
 #if RELEASE
     [<Ignore "Fails in some CI, reproduces locally in Release mode, needs investigation">]
 #endif
@@ -94,19 +93,19 @@ type HelpContextServiceTests() =
         let keywords = [ None; None; None ]
         TestF1Keywords(keywords, file)
 
-    [<Test>]
+    [<Fact>]
     member _.``F1 help keyword Preprocessor``() =
         let file = [ "#i$f foobaz"; "#e$ndif" ]
         let keywords = [ Some "#if_FS"; Some "#endif_FS" ]
         TestF1Keywords(keywords, file)
 
-    [<Test>]
+    [<Fact>]
     member _.``F1 help keyword Regression.DotNetMethod.854364``() =
         let file = [ "let i : int = 42"; "i.ToStri$ng()"; "i.ToStri$ng(\"format\")" ]
         let keywords = [ Some "System.Int32.ToString"; Some "System.Int32.ToString" ]
         TestF1Keywords(keywords, file)
 
-    [<Test>]
+    [<Fact>]
     member _.``F1 help keyword Namespaces``() =
         let file =
             [
@@ -122,7 +121,7 @@ type HelpContextServiceTests() =
 
         TestF1Keywords(keywords, file)
 
-    [<Test>]
+    [<Fact>]
     member _.``F1 help keyword Namespaces.BeforeDot``() =
         let file =
             [
@@ -148,7 +147,7 @@ type HelpContextServiceTests() =
 
         TestF1Keywords(keywords, file)
 
-    [<Test>]
+    [<Fact>]
     member _.``F1 help keyword Namespaces.AfterDot``() =
         let file =
             [
@@ -175,7 +174,7 @@ type HelpContextServiceTests() =
 
         TestF1Keywords(keywords, file)
 
-    [<Test>]
+    [<Fact>]
     member _.``F1 help keyword QuotedIdentifiers``() =
         let file =
             [
@@ -202,7 +201,7 @@ type HelpContextServiceTests() =
 
         TestF1Keywords(keywords, file)
 
-    [<Test>]
+    [<Fact>]
     member _.``F1 help keyword Attributes``() =
         let file =
             [
@@ -228,7 +227,7 @@ type HelpContextServiceTests() =
 
         TestF1Keywords(keywords, file)
 
-    [<Test>]
+    [<Fact>]
 #if RELEASE
     [<Ignore "Fails in some CI, reproduces locally in Release mode, needs investigation">]
 #endif
@@ -246,7 +245,7 @@ type HelpContextServiceTests() =
             |]
         )
 
-    [<Test>]
+    [<Fact>]
 #if RELEASE
     [<Ignore "Fails in some CI, reproduces locally in Release mode, needs investigation">]
 #endif
@@ -270,19 +269,19 @@ type HelpContextServiceTests() =
             |]
         )
 
-    [<Test>]
+    [<Fact>]
     member _.``F1 help keyword EndOfLine``() =
         let file = [ "open System.Net$"; "open System.IO$" ]
         let keywords = [ Some "System.Net"; Some "System.IO" ]
         TestF1Keywords(keywords, file)
 
-    [<Test>]
+    [<Fact>]
     member _.``F1 help keyword EndOfLine2``() =
         let file = [ "module M"; "open System.Net$"; "open System.IO$" ]
         let keywords = [ Some "System.Net"; Some "System.IO" ]
         TestF1Keywords(keywords, file)
 
-    [<Test>]
+    [<Fact>]
     member _.``F1 help keyword Comments``() =
         let file = [ "($* co$mment *$)"; "/$/ com$ment" ]
 
@@ -297,7 +296,7 @@ type HelpContextServiceTests() =
 
         TestF1Keywords(keywords, file)
 
-    [<Test>]
+    [<Fact>]
     member _.``F1 help keyword FSharpEntities``() =
         let file =
             [
@@ -333,7 +332,7 @@ type HelpContextServiceTests() =
 
         TestF1Keywords(keywords, file)
 
-    [<Test>]
+    [<Fact>]
     member _.``F1 help keyword Keywords``() =
         let file =
             [
@@ -349,13 +348,13 @@ type HelpContextServiceTests() =
 
         TestF1Keywords(keywords, file)
 
-    [<Test>]
+    [<Fact>]
     member _.``F1 help keyword Regression.NewInstance.854367``() =
         let file = [ "let q : System.Runtime.Remoting.TypeE$ntry = null" ]
         let keywords = [ Some "System.Runtime.Remoting.TypeEntry" ]
         TestF1Keywords(keywords, file)
 
-    [<Test>]
+    [<Fact>]
     member _.``F1 help keyword Regression.NewInstance.854367.2``() =
         let file =
             [
@@ -365,31 +364,31 @@ type HelpContextServiceTests() =
         let keywords = [ Some "System.Runtime.Remoting.TypeEntry" ]
         TestF1Keywords(keywords, file)
 
-    [<Test>]
+    [<Fact>]
     member _.``F1 help keyword Classes.WebClient``() =
         let file = [ "let w : System.Net.Web$Client = new System.Net.Web$Client()" ]
         let keywords = [ Some "System.Net.WebClient"; Some "System.Net.WebClient.#ctor" ]
         TestF1Keywords(keywords, file)
 
-    [<Test>]
+    [<Fact>]
     member _.``F1 help keyword Classes.Object``() =
         let file = [ "let w : System.Ob$ject = new System.Obj$ect()" ]
         let keywords = [ Some "System.Object"; Some "System.Object.#ctor" ]
         TestF1Keywords(keywords, file)
 
-    [<Test>]
+    [<Fact>]
     member _.``F1 help keyword Classes.Generic``() =
         let file = [ "let x : System.Collections.Generic.L$ist<int> = null" ]
         let keywords = [ Some "System.Collections.Generic.List`1" ]
         TestF1Keywords(keywords, file)
 
-    [<Test>]
+    [<Fact>]
     member _.``F1 help keyword Classes.Abbrev``() =
         let file = [ "let z : Resi$zeArray<int> = null" ]
         let keywords = [ Some "System.Collections.Generic.List`1" ]
         TestF1Keywords(keywords, file)
 
-    [<Test>]
+    [<Fact>]
     member _.``F1 help keyword Members``() =
         let file =
             [
@@ -421,7 +420,7 @@ type HelpContextServiceTests() =
 
         TestF1Keywords(keywords, file)
 
-    [<Test>]
+    [<Fact>]
     member _.``F1 help keyword static abstract interface method``() =
         let file =
             [

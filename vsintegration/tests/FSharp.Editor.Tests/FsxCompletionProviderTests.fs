@@ -4,7 +4,7 @@ namespace FSharp.Editor.Tests
 
 open System
 open System.Collections.Generic
-open NUnit.Framework
+open Xunit
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.CodeAnalysis
@@ -52,19 +52,17 @@ type Worker() =
         let actualNames = actual |> List.map (fun x -> x.DisplayText)
 
         if actualNames <> expected then
-            Assert.Fail(
-                sprintf
-                    "Expected:\n%s,\nbut was:\n%s\nactual with sort text:\n%s"
-                    (String.Join("; ", expected |> List.map (sprintf "\"%s\"")))
-                    (String.Join("; ", actualNames |> List.map (sprintf "\"%s\"")))
-                    (String.Join("\n", actual |> List.map (fun x -> sprintf "%s => %s" x.DisplayText x.SortText)))
-            )
+            failwithf
+                "Expected:\n%s,\nbut was:\n%s\nactual with sort text:\n%s"
+                (String.Join("; ", expected |> List.map (sprintf "\"%s\"")))
+                (String.Join("; ", actualNames |> List.map (sprintf "\"%s\"")))
+                (String.Join("\n", actual |> List.map (fun x -> sprintf "%s => %s" x.DisplayText x.SortText)))
 
 module FsxCompletionProviderTests =
 
     let getWorker () = Worker()
 
-    [<Test>]
+    [<Fact>]
 #if RELEASE
     [<Ignore "Fails in some CI, reproduces locally in Release mode, needs investigation">]
 #endif

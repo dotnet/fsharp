@@ -3,16 +3,14 @@
 namespace FSharp.Editor.Tests
 
 open System
-open NUnit.Framework
+open Xunit
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Editor.Tests.Helpers
 
-[<SetUpFixture>]
 type public AssemblyResolverTestFixture() =
 
-    [<OneTimeSetUp>]
     member public __.Init() = AssemblyResolver.addResolver ()
 
 module QuickInfoProviderTests =
@@ -79,25 +77,25 @@ module QuickInfoProviderTests =
         let document, _ =
             RoslynTestHelpers.CreateSingleDocumentSolution(filePath, programText)
 
-        Assert.Multiple(fun _ ->
-            for (symbol: string, expected: string option) in testCases do
-                let expected =
-                    expected
-                    |> Option.map normalizeLineEnds
-                    |> Option.map (fun s -> s.Replace("___", ""))
+        for (symbol: string, expected: string option) in testCases do
+            let expected =
+                expected
+                |> Option.map normalizeLineEnds
+                |> Option.map (fun s -> s.Replace("___", ""))
 
-                let caretPosition = programText.IndexOf(symbol) + symbol.Length - 1
+            let caretPosition = programText.IndexOf(symbol) + symbol.Length - 1
 
-                let quickInfo =
-                    FSharpAsyncQuickInfoSource.ProvideQuickInfo(document, caretPosition)
-                    |> Async.RunSynchronously
+            let quickInfo =
+                FSharpAsyncQuickInfoSource.ProvideQuickInfo(document, caretPosition)
+                |> Async.RunSynchronously
 
-                let actual =
-                    quickInfo |> Option.map (fun qi -> tooltipTextToRawString qi.StructuredText)
+            let actual =
+                quickInfo |> Option.map (fun qi -> tooltipTextToRawString qi.StructuredText)
 
-                Assert.AreEqual(expected, actual, "Symbol: " + symbol))
+            let result = expected = actual
+            Assert.True(result, "Symbol: " + symbol)
 
-    [<Test>]
+    [<Fact>]
     let ShouldShowQuickInfoAtCorrectPositions () =
         let fileContents =
             """
@@ -126,7 +124,7 @@ Full name: Microsoft.FSharp.Core.Operators.(+)
 
         executeQuickInfoTest fileContents testCases
 
-    [<Test>]
+    [<Fact>]
     let ShouldShowQuickKeywordInfoAtCorrectPositionsForSignatureFiles () =
         let fileContents =
             """
@@ -152,7 +150,7 @@ module internal MyModule =
 
         executeQuickInfoTest fileContents testCases
 
-    [<Test>]
+    [<Fact>]
     let ShouldShowQuickKeywordInfoAtCorrectPositionsWithinComputationExpressions () =
         let fileContents =
             """
@@ -178,7 +176,7 @@ let x =
 
         executeQuickInfoTest fileContents testCases
 
-    [<Test>]
+    [<Fact>]
     let ShouldShowQuickInfoForGenericParameters () =
         let fileContents =
             """
