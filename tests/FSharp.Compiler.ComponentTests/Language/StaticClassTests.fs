@@ -372,6 +372,21 @@ type C() =
          |> shouldSucceed
          
     [<Fact>]
+    let ``Sealed and AbstractClass on a type implicit constructor implementing interface in lang 70`` () =
+        Fsx """
+type MyInterface =
+    abstract member M : unit -> unit
+
+[<Sealed; AbstractClass>]
+type C =
+    interface MyInterface with
+        member this.M() = ()
+        """
+         |> withLangVersion70
+         |> compile
+         |> shouldSucceed
+         
+    [<Fact>]
     let ``Sealed and AbstractClass on a type implementing interface in lang preview`` () =
         Fsx """
 type MyInterface =
@@ -379,6 +394,24 @@ type MyInterface =
 
 [<Sealed; AbstractClass>]
 type C() =
+    interface MyInterface with
+        member this.M() = ()
+        """
+         |> withLangVersionPreview
+         |> compile
+         |> shouldFail
+         |> withDiagnostics [
+            (Error 3556, Line 7, Col 5, Line 8, Col 29, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Implementing interfaces is not allowed.")
+         ]
+         
+    [<Fact>]
+    let ``Sealed and AbstractClass on a type implicit constructor implementing interface in lang preview`` () =
+        Fsx """
+type MyInterface =
+    abstract member M : unit -> unit
+
+[<Sealed; AbstractClass>]
+type C =
     interface MyInterface with
         member this.M() = ()
         """
