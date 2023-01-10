@@ -217,6 +217,13 @@ stages:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(WindowsMachineQueueName)
           timeoutInMinutes: 90
+          strategy:
+            maxParallel: 2
+            matrix:
+              regular:
+                _experimental_flag: null
+              experimental_features:
+                _experimental_flag: 1
           steps:
           - checkout: self
             clean: true
@@ -229,6 +236,8 @@ stages:
               workingDirectory: $(Build.SourcesDirectory)
               installationPath: $(Build.SourcesDirectory)/.dotnet
           - script: .\eng\test-determinism.cmd -configuration Debug
+            env:
+              FSHARP_EXPERIMENTAL_FEATURES: $(_experimental_flag)
             displayName: Determinism tests with Debug configuration
           - task: PublishPipelineArtifact@1
             displayName: Publish Determinism Logs
@@ -492,11 +501,22 @@ stages:
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(WindowsMachineQueueName)
+          strategy:
+            maxParallel: 2
+            matrix:
+              regular:
+                _experimental_flag: null
+              experimental_features:
+                _experimental_flag: 1
           steps:
           - checkout: self
             clean: true
           - script: .\Build.cmd -c Release -pack
+            env:
+              FSHARP_EXPERIMENTAL_FEATURES: $(_experimental_flag)
           - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c Release
+            env:
+              FSHARP_EXPERIMENTAL_FEATURES: $(_experimental_flag)
             displayName: End to end build tests
 
         # Up-to-date - disabled due to it being flaky
@@ -512,35 +532,8 @@ stages:
         #      filePath: eng\tests\UpToDate.ps1
         #      arguments: -configuration $(_BuildConfig) -ci -binaryLog
 
-        # Run Build with --test:ParallelCheckingWithSignatureFilesOn
-        - job: ParallelCheckingWithSignatureFiles
-          condition: eq(variables['Build.Reason'], 'PullRequest')
-          variables:
-            - name: _SignType
-              value: Test
-          pool:
-            name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(WindowsMachineQueueName)
-          timeoutInMinutes: 90
-          steps:
-            - checkout: self
-              clean: true
-            - task: UseDotNet@2
-              displayName: install SDK
-              inputs:
-                packageType: sdk
-                useGlobalJson: true
-                includePreviewVersions: false
-                workingDirectory: $(Build.SourcesDirectory)
-                installationPath: $(Build.SourcesDirectory)/.dotnet
-            - script: .\build.cmd -c Release -binaryLog /p:ParallelCheckingWithSignatureFilesOn=true
-              displayName: ParallelCheckingWithSignatureFiles build with Debug configuration
-            - task: PublishPipelineArtifact@1
-              displayName: Publish ParallelCheckingWithSignatureFiles Logs
-              inputs:
-                targetPath: '$(Build.SourcesDirectory)/artifacts/log/Release'
-                artifactName: 'ParallelCheckingWithSignatureFiles Attempt $(System.JobAttempt) Logs'
-              continueOnError: true
+        # Run Build with Fsharp Experimental Features
+        # Possible change: --times:$(Build.SourcesDirectory)/artifacts/log/Release/compiler_timing.csv
 
         # Plain build Windows
         - job: Plain_Build_Windows
