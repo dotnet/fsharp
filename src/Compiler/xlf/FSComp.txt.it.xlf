@@ -52,6 +52,11 @@
         <target state="translated">Con la funzionalità '{0}' è richiesta la libreria F# per la versione {1} o successiva del linguaggio.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkImplementingInterfacesOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Implementing interfaces is not allowed.</source>
+        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Implementing interfaces is not allowed.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkInfoRefcellAssign">
         <source>The use of ':=' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'cell := expr' to 'cell.Value &lt;- expr'.</source>
         <target state="translated">L'uso di ':=' dalla libreria F # è deprecato. Vedere https://aka.ms/fsharp-refcell-ops. Ad esempio, modificare 'cell:= expr' in 'cell.Value &lt;- expr'.</target>
