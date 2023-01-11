@@ -86,11 +86,11 @@ stages:
   #                                                  Signed build                                                     #
   #-------------------------------------------------------------------------------------------------------------------#
   - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
-    - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/dev17.4') }}:
+    - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/dev17.5') }}:
       - template: /eng/common/templates/job/onelocbuild.yml
         parameters:
           MirrorRepo: fsharp
-          MirrorBranch: release/dev17.4
+          MirrorBranch: release/dev17.5
           LclSource: lclFilesfromPackage
           LclPackageId: 'LCL-JUNO-PROD-FSHARP'
     - template: /eng/common/templates/jobs/jobs.yml
@@ -120,6 +120,7 @@ stages:
           steps:
           - checkout: self
             clean: true
+          - template: /eng/restore-internal-tools.yml
           - script: eng\CIBuild.cmd
                     -configuration $(_BuildConfig)
                     -prepareMachine
@@ -140,6 +141,7 @@ stages:
                     /p:OfficialBuildId=$(BUILD.BUILDNUMBER)
                     /p:PublishToSymbolServer=true
                     /p:VisualStudioDropName=$(VisualStudioDropName)
+                    /p:GenerateSbom=true
           - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c $(_BuildConfig)
             displayName: End to end build tests
           - task: PublishTestResults@2
@@ -761,9 +763,8 @@ stages:
 - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
   - template: eng/release/insert-into-vs.yml
     parameters:
-      componentBranchName: refs/heads/release/dev17.4
-      insertTargetBranch: rel/d17.4
-
+      componentBranchName: refs/heads/release/dev17.5
+      insertTargetBranch: rel/d17.5
       insertTeamEmail: fsharpteam@microsoft.com
       insertTeamName: 'F#'
       completeInsertion: 'auto'

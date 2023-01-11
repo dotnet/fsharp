@@ -297,12 +297,6 @@ let signStream stream keyBlob =
     let signature = createSignature hash keyBlob KeyType.KeyPair
     patchSignature stream peReader signature
 
-let signFile fileName keyBlob =
-    use fs =
-        FileSystem.OpenFileForWriteShim(fileName, FileMode.Open, FileAccess.ReadWrite)
-
-    signStream fs keyBlob
-
 let signatureSize (pk: byte[]) =
     if pk.Length < 25 then
         raise (CryptographicException(getResourceString (FSComp.SR.ilSignInvalidPKBlob ())))
@@ -339,18 +333,9 @@ let signerOpenKeyPairFile filePath =
 
 let signerGetPublicKeyForKeyPair (kp: keyPair) : pubkey = getPublicKeyForKeyPair kp
 
-let signerGetPublicKeyForKeyContainer (_kcName: keyContainerName) : pubkey =
-    raise (NotImplementedException("signerGetPublicKeyForKeyContainer is not yet implemented"))
-
-let signerCloseKeyContainer (_kc: keyContainerName) : unit =
-    raise (NotImplementedException("signerCloseKeyContainer is not yet implemented"))
-
 let signerSignatureSize (pk: pubkey) : int = signatureSize pk
 
-let signerSignFileWithKeyPair (fileName: string) (kp: keyPair) : unit = signFile fileName kp
-
-let signerSignFileWithKeyContainer (_fileName: string) (_kcName: keyContainerName) : unit =
-    raise (NotImplementedException("signerSignFileWithKeyContainer is not yet implemented"))
+let signerSignStreamWithKeyPair stream keyBlob = signStream stream keyBlob
 
 let failWithContainerSigningUnsupportedOnThisPlatform () =
     failwith (FSComp.SR.containerSigningUnsupportedOnThisPlatform () |> snd)
@@ -364,19 +349,11 @@ type ILStrongNameSigner =
     | KeyPair of keyPair
     | KeyContainer of keyContainerName
 
-    static member OpenPublicKeyOptions s p =
-        PublicKeyOptionsSigner((signerOpenPublicKeyFile s), p)
+    static member OpenPublicKeyOptions kp p = PublicKeyOptionsSigner(kp, p)
 
-    static member OpenPublicKey pubkey = PublicKeySigner pubkey
-    static member OpenKeyPairFile s = KeyPair(signerOpenKeyPairFile s)
+    static member OpenPublicKey bytes = PublicKeySigner bytes
+    static member OpenKeyPairFile bytes = KeyPair(bytes)
     static member OpenKeyContainer s = KeyContainer s
-
-    member s.Close() =
-        match s with
-        | PublicKeySigner _
-        | PublicKeyOptionsSigner _
-        | KeyPair _ -> ()
-        | KeyContainer _ -> failWithContainerSigningUnsupportedOnThisPlatform ()
 
     member s.IsFullySigned =
         match s with
@@ -412,9 +389,9 @@ type ILStrongNameSigner =
         | KeyPair kp -> pkSignatureSize (signerGetPublicKeyForKeyPair kp)
         | KeyContainer _ -> failWithContainerSigningUnsupportedOnThisPlatform ()
 
-    member s.SignFile file =
+    member s.SignStream stream =
         match s with
         | PublicKeySigner _ -> ()
         | PublicKeyOptionsSigner _ -> ()
-        | KeyPair kp -> signerSignFileWithKeyPair file kp
+        | KeyPair kp -> signerSignStreamWithKeyPair stream kp
         | KeyContainer _ -> failWithContainerSigningUnsupportedOnThisPlatform ()

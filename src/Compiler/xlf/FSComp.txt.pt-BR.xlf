@@ -2,6 +2,16 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="pt-BR" original="../FSComp.resx">
     <body>
+      <trans-unit id="arrayElementHasWrongTypeTuple">
+        <source>All elements of an array must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</source>
+        <target state="translated">Todos os elementos de uma matriz devem ser implicitamente conversíveis ao tipo do primeiro elemento, que aqui é uma tupla de comprimento {0} do tipo\n    {1}    \nEste elemento é uma tupla de comprimento {2} do tipo\n    {3}    \n</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="buildDuplicateFile">
+        <source>The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</source>
+        <target state="new">The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="buildInvalidSourceFileExtensionML">
         <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript. To enable the deprecated use of .ml or .mli extensions, use '--langversion:5.0' and '--mlcompatibility'.</source>
         <target state="translated">A extensão do arquivo '{0}' não foi reconhecida. Os arquivos de origem devem ter a extensão .fs, .fsi, .fsx ou .fsscript. Para ativar o uso preterido das extensões .ml ou .mli, use '--langversion:5.0' e '--mlcompatibility'.</target>
@@ -10,6 +20,21 @@
       <trans-unit id="buildInvalidSourceFileExtensionUpdated">
         <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript</source>
         <target state="translated">A extensão do arquivo de '{0}' não foi reconhecida. Os arquivos de origem devem ter a extensão .fs, .fsi, .fsx or .fsscript</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkAdditionalConstructorOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Additional constructor is not allowed.</source>
+        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Additional constructor is not allowed.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkConstructorWithArgumentsOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Constructor with arguments is not allowed.</source>
+        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Constructor with arguments is not allowed.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkDuplicatedMethodParameter">
+        <source>Duplicate parameter. The parameter '{0}' has been used more that once in this method.</source>
+        <target state="translated">Parâmetro duplicado. O parâmetro '{0}' foi usado mais de uma vez neste método.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
@@ -45,6 +70,11 @@
       <trans-unit id="chkInfoRefcellIncr">
         <source>The use of 'incr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'incr cell' to 'cell.Value &lt;- cell.Value + 1'.</source>
         <target state="translated">O uso de 'incr' da biblioteca F# foi preterido. Consulte https://aka.ms/fsharp-refcell-ops. Por exemplo, altere a célula 'incr cell' para 'cell.Value &lt;- cell.Value + 1'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInstanceMemberOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance members are not allowed.</source>
+        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance members are not allowed.</target>
         <note />
       </trans-unit>
       <trans-unit id="containerDeprecated">
@@ -102,6 +132,11 @@
         <target state="translated">O argumento '{0}' não corresponde</target>
         <note />
       </trans-unit>
+      <trans-unit id="elseBranchHasWrongTypeTuple">
+        <source>All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</source>
+        <target state="translated">Todas as ramificações de uma expressão 'if' devem retornar valores implicitamente conversíveis ao tipo da primeira ramificação, que aqui é uma tupla de comprimento {0} do tipo\n    {1}    \nEsta ramificação retorna uma tupla de comprimento {2} do tipo\n    {3}    \n</target>
+        <note />
+      </trans-unit>
       <trans-unit id="etProviderHasDesignerAssemblyDependency">
         <source>The type provider designer assembly '{0}' could not be loaded from folder '{1}' because a dependency was missing or could not loaded. All dependencies of the type provider designer assembly must be located in the same folder as that assembly. The exception reported was: {2} - {3}</source>
         <target state="translated">Não foi possível carregar o assembly do designer do provedor de tipos '{0}' da pasta '{1}' porque uma dependência estava ausente ou não pôde ser carregada. Todas as dependências do assembly do designer do provedor de tipos precisam estar localizadas na mesma pasta que esse assembly. A exceção relatada foi: {2} – {3}</target>
@@ -127,6 +162,11 @@
         <target state="translated">expressões de computação aplicáveis</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureArithmeticInLiterals">
+        <source>Allow arithmetic and logical operations in literals</source>
+        <target state="translated">Permitir operações aritméticas e lógicas em literais</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAttributesToRightOfModuleKeyword">
         <source>attributes to the right of the 'module' keyword</source>
         <target state="translated">atributos à direita da palavra-chave 'módulo'</target>
@@ -135,6 +175,11 @@
       <trans-unit id="featureBetterExceptionPrinting">
         <source>automatic generation of 'Message' property for 'exception' declarations</source>
         <target state="translated">geração automática da propriedade 'Message' para declarações de 'exception'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureCSharpExtensionAttributeNotRequired">
+        <source>Allow implicit Extension attribute on declaring types, modules</source>
+        <target state="translated">Permitir atributo de Extensão implícito em tipos declarativos, módulos</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
@@ -157,9 +202,24 @@
         <target state="translated">literal float32 sem ponto</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureErrorForNonVirtualMembersOverrides">
+        <source>Raises errors for non-virtual members overrides</source>
+        <target state="translated">Gera erros para substituições de membros não virtuais</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
         <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
         <target state="translated">fornecer erro no acesso preterido do constructo com o atributo RequireQualifiedAccess</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureErrorReportingOnStaticClasses">
+        <source>Error reporting on static classes</source>
+        <target state="new">Error reporting on static classes</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureEscapeBracesInFormattableString">
+        <source>Escapes curly braces before calling FormattableStringFactory.Create when interpolated string literal is typed as FormattableString</source>
+        <target state="translated">Sai das chaves antes de chamar FormattableStringFactory.Create quando o literal de cadeia de caracteres é digitado como FormattableString</target>
         <note />
       </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
@@ -187,14 +247,14 @@
         <target state="translated">notação expr[idx] para indexação e fatia</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureInterfacesWithAbstractStaticMembers">
-        <source>static abstract interface members</source>
-        <target state="translated">membros de interface abstrata estática</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureInitProperties">
         <source>support for consuming init properties</source>
         <target state="translated">suporte para consumir propriedades de inicialização</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureInterfacesWithAbstractStaticMembers">
+        <source>static abstract interface members</source>
+        <target state="translated">membros de interface abstrata estática</target>
         <note />
       </trans-unit>
       <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
@@ -210,6 +270,11 @@
       <trans-unit id="featureMLCompatRevisions">
         <source>ML compatibility revisions</source>
         <target state="translated">Revisões de compatibilidade de ML</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureMatchNotAllowedForUnionCaseWithNoData">
+        <source>Pattern match discard is not allowed for union case that takes no data.</source>
+        <target state="translated">O descarte de correspondência de padrão não é permitido para casos união que não aceitam dados.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNameOf">
@@ -297,6 +362,11 @@
         <target state="translated">representação estrutural para padrões ativos</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
+        <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
+        <target state="new">Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
         <source>wild card in for loop</source>
         <target state="translated">curinga para loop</target>
@@ -305,6 +375,11 @@
       <trans-unit id="featureWitnessPassing">
         <source>witness passing for trait constraints in F# quotations</source>
         <target state="translated">Passagem de testemunha para restrições de característica nas citações do F#</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="followingPatternMatchClauseHasWrongTypeTuple">
+        <source>All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</source>
+        <target state="translated">Todas as ramificações de uma expressão de correspondência de padrão devem retornar valores implicitamente conversíveis ao tipo da primeira ramificação, que aqui é uma tupla de comprimento {0} do tipo\n    {1}    \nEsta ramificação retorna uma tupla de comprimento {2} do tipo\n    {3}    \n</target>
         <note />
       </trans-unit>
       <trans-unit id="forFormatInvalidForInterpolated">
@@ -347,6 +422,11 @@
         <target state="translated">Diretriz inválida '#{0} {1}'</target>
         <note />
       </trans-unit>
+      <trans-unit id="ifExpressionTuple">
+        <source>The 'if' expression needs to return a tuple of length {0} of type\n    {1}    \nto satisfy context type requirements. It currently returns a tuple of length {2} of type\n    {3}    \n</source>
+        <target state="translated">Se a expressão 'if' precisa retornar uma tupla de comprimento {0} do tipo\n    {1}    \npara atender aos requisitos de tipo de contexto. Atualmente, ele retorna uma tupla de comprimento {2} do tipo\n    {3}    \n</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ilxGenUnknownDebugPoint">
         <source>Unknown debug point '{0}'. The available debug points are '{1}'.</source>
         <target state="translated">Ponto de depuração desconhecido '{0}'. Os pontos de depuração disponíveis são '{1}'.</target>
@@ -365,6 +445,11 @@
       <trans-unit id="invalidXmlDocPosition">
         <source>XML comment is not placed on a valid language element.</source>
         <target state="translated">O comentário XML não está inserido em um elemento de linguagem válido.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="keywordDescriptionAnd">
+        <source>Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.</source>
+        <target state="translated">Usado em associações mutualmente recursivas, em declarações de propriedade e em múltiplas restrições em parâmetros genéricos.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionConst">
@@ -400,6 +485,16 @@
       <trans-unit id="lexTripleQuoteInTripleQuote">
         <source>Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.</source>
         <target state="translated">Cadeia de caracteres interpolada inválida. Literais de cadeia de caracteres de aspas triplas não podem ser usados em expressões interpoladas. Considere usar uma associação 'let' explícita para a expressão de interpolação.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="listElementHasWrongTypeTuple">
+        <source>All elements of a list must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</source>
+        <target state="translated">Todos os elementos de uma lista devem ser implicitamente conversíveis ao tipo do primeiro elemento, que aqui é uma tupla de comprimento {0} do tipo\n    {1}    \nEste elemento é uma tupla de comprimento {2} do tipo\n    {3}    \n</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="matchNotAllowedForUnionCaseWithNoData">
+        <source>Pattern discard is not allowed for union case that takes no data.</source>
+        <target state="translated">O descarte de padrão não é permitido para casos união que não aceitam dados.</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatError">
@@ -483,8 +578,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
-        <source>Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</source>
-        <target state="translated">Uso inválido de emitir um assembly de referência, não use '--staticlink' ou '--reutilly' e '--refout' juntos.</target>
+        <source>Invalid use of emitting a reference assembly, do not use '--standalone or --staticlink' with '--refonly or --refout'.</source>
+        <target state="translated">Uso inválido da emissão de um assembly de referência, não use '--standalone ou --staticlink' com '--refonly ou --refout'.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidRefOut">
@@ -592,6 +687,21 @@
         <target state="translated">Token inesperado na definição de tipo. Esperava-se '=' após o tipo '{0}'.</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsExpectedPatternAfterToken">
+        <source>Expected a pattern after this point</source>
+        <target state="translated">Um padrão é esperado após este ponto</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsExpectingExpressionInTuple">
+        <source>Expecting expression</source>
+        <target state="translated">Esperando uma expressão</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsExpectingPatternInTuple">
+        <source>Expecting pattern</source>
+        <target state="translated">Padrão esperado</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr1">
         <source>Incomplete character literal (example: 'Q') or qualified type invocation (example: 'T.Name)</source>
         <target state="translated">Literal de caractere incompleto (exemplo: 'Q') ou invocação de tipo qualificado (exemplo: 'T.Name)</target>
@@ -600,11 +710,6 @@
       <trans-unit id="parsIncompleteTyparExpr2">
         <source>Incomplete operator expression (example a^b) or qualified type invocation (example: ^T.Name)</source>
         <target state="translated">Expressão de operador incompleta (exemplo a^b) ou invocação de tipo qualificado (exemplo: ^T.Name)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="parsExpectingExpressionInTuple">
-        <source>Expecting expression</source>
-        <target state="translated">Esperando uma expressão</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNewExprMemberAccess">
@@ -950,6 +1055,11 @@
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
         <source>This expression implicitly converts type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</source>
         <target state="translated">Essa expressão converte implicitamente o tipo '{0}' ao tipo '{1}'. Consulte https://aka.ms/fsharp-implicit-convs.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcSynTypeOrInvalidInDeclaration">
+        <source>SynType.Or is not permitted in this declaration</source>
+        <target state="translated">SynType.Or não é permitido nesta declaração</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTraitHasMultipleSupportTypes">
@@ -1305,11 +1415,6 @@
       <trans-unit id="buildCouldNotResolveAssembly">
         <source>Could not resolve assembly '{0}'</source>
         <target state="translated">Não foi possível resolver o assembly '{0}'</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildCouldNotResolveAssemblyRequiredByFile">
-        <source>Could not resolve assembly '{0}' required by '{1}'</source>
-        <target state="translated">Não foi possível resolver o assembly '{0}' requerido por '{1}'</target>
         <note />
       </trans-unit>
       <trans-unit id="buildErrorOpeningBinaryFile">
@@ -3783,8 +3888,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcUnionCaseExpectsTupledArguments">
-        <source>This union case expects {0} arguments in tupled form</source>
-        <target state="translated">Este caso união espera argumentos {0} na forma de tupla</target>
+        <source>This union case expects {0} arguments in tupled form, but was given {1}. The missing field arguments may be any of:{2}</source>
+        <target state="translated">Este caso união espera {0} argumentos em formato de tupla, mas recebeu {1}. Os argumentos de campo ausente pode ser:{2}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcFieldIsNotStatic">
@@ -5595,26 +5700,6 @@
       <trans-unit id="typeInfoGeneratedType">
         <source>generated type</source>
         <target state="translated">tipo gerado</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="assemblyResolutionFoundByAssemblyFoldersKey">
-        <source>Found by AssemblyFolders registry key</source>
-        <target state="translated">Localizada pela chave de registro AssemblyFolders</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="assemblyResolutionFoundByAssemblyFoldersExKey">
-        <source>Found by AssemblyFoldersEx registry key</source>
-        <target state="translated">Localizada pela chave de registro AssemblyFoldersEx</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="assemblyResolutionNetFramework">
-        <source>.NET Framework</source>
-        <target state="translated">.NET Framework</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="assemblyResolutionGAC">
-        <source>Global Assembly Cache</source>
-        <target state="translated">Cache de Assembly Global</target>
         <note />
       </trans-unit>
       <trans-unit id="recursiveClassHierarchy">
@@ -7483,8 +7568,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcStructUnionMultiCaseDistinctFields">
-        <source>If a union type has more than one case and is a struct, then all fields within the union type must be given unique names.</source>
-        <target state="translated">Se um tipo de união tiver mais de um caso e for struct, então todos os campos dentro do tipo de união deverão ter nomes exclusivos.</target>
+        <source>If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'.</source>
+        <target state="translated">Se um tipo de união multicase for um struct, todos os casos união deverão ter nomes exclusivos. Por exemplo: tipo A = B de b: int | C de c: int'.</target>
         <note />
       </trans-unit>
       <trans-unit id="CallerMemberNameIsOverriden">
@@ -7535,11 +7620,6 @@
       <trans-unit id="keywordDescriptionAbstract">
         <source>Indicates a method that either has no implementation in the type in which it is declared or that is virtual and has a default implementation.</source>
         <target state="translated">Indica um método que não tem implementação no tipo no qual ele é declarado ou que é virtual e tem uma implementação padrão.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="keywordDescriptionAnd">
-        <source>Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.</source>
-        <target state="translated">Usado em associações mutualmente recursivas, em declarações de propriedade e em múltiplas restrições em parâmetros genéricos.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionAs">

@@ -51,10 +51,7 @@ module ExtraTopLevelOperators =
             makeSafeKey: 'Key -> 'SafeKey,
             getKey: 'SafeKey -> 'Key
         ) =
-#if NETSTANDARD
-        static let emptyEnumerator =
-            (Array.empty<KeyValuePair<'Key, 'T>> :> seq<_>).GetEnumerator()
-#endif
+
         member _.Count = t.Count
 
         // Give a read-only view of the dictionary
@@ -169,47 +166,8 @@ module ExtraTopLevelOperators =
             member _.GetEnumerator() =
                 // We use an array comprehension here instead of seq {} as otherwise we get incorrect
                 // IEnumerator.Reset() and IEnumerator.Current semantics.
-                // Coreclr has a bug with SZGenericEnumerators --- implement a correct enumerator.  On desktop use the desktop implementation because it's ngened.
-#if !NETSTANDARD
                 let kvps = [| for (KeyValue (k, v)) in t -> KeyValuePair(getKey k, v) |] :> seq<_>
                 kvps.GetEnumerator()
-#else
-                let endIndex = t.Count
-
-                if endIndex = 0 then
-                    emptyEnumerator
-                else
-                    let kvps = [| for (KeyValue (k, v)) in t -> KeyValuePair(getKey k, v) |]
-                    let mutable index = -1
-
-                    let current () =
-                        if index < 0 then
-                            raise <| InvalidOperationException(SR.GetString(SR.enumerationNotStarted))
-
-                        if index >= endIndex then
-                            raise <| InvalidOperationException(SR.GetString(SR.enumerationAlreadyFinished))
-
-                        kvps.[index]
-
-                    { new IEnumerator<_> with
-                        member _.Current = current ()
-                      interface System.Collections.IEnumerator with
-                          member _.Current = box (current ())
-
-                          member _.MoveNext() =
-                              if index < endIndex then
-                                  index <- index + 1
-                                  index < endIndex
-                              else
-                                  false
-
-                          member _.Reset() =
-                              index <- -1
-                      interface System.IDisposable with
-                          member _.Dispose() =
-                              ()
-                    }
-#endif
 
         interface System.Collections.IEnumerable with
             member _.GetEnumerator() =
@@ -461,7 +419,11 @@ type TypeProviderTypeAttributes =
     | SuppressRelocate = 0x80000000
     | IsErased = 0x40000000
 
-type TypeProviderConfig(systemRuntimeContainsType: string -> bool) =
+type TypeProviderConfig
+    (
+        systemRuntimeContainsType: string -> bool,
+        getReferencedAssembliesOption: (unit -> string array) option
+    ) =
     let mutable resolutionFolder: string = null
     let mutable runtimeAssembly: string = null
     let mutable referencedAssemblies: string[] = null
@@ -469,6 +431,11 @@ type TypeProviderConfig(systemRuntimeContainsType: string -> bool) =
     let mutable isInvalidationSupported: bool = false
     let mutable useResolutionFolderAtRuntime: bool = false
     let mutable systemRuntimeAssemblyVersion: System.Version = null
+
+    new(systemRuntimeContainsType) = TypeProviderConfig(systemRuntimeContainsType, getReferencedAssembliesOption = None)
+
+    new(systemRuntimeContainsType, getReferencedAssemblies) =
+        TypeProviderConfig(systemRuntimeContainsType, getReferencedAssembliesOption = Some getReferencedAssemblies)
 
     member _.ResolutionFolder
         with get () = resolutionFolder
@@ -479,8 +446,15 @@ type TypeProviderConfig(systemRuntimeContainsType: string -> bool) =
         and set v = runtimeAssembly <- v
 
     member _.ReferencedAssemblies
-        with get () = referencedAssemblies
-        and set v = referencedAssemblies <- v
+        with get () =
+            match getReferencedAssembliesOption with
+            | None -> referencedAssemblies
+            | Some f -> f ()
+
+        and set v =
+            match getReferencedAssembliesOption with
+            | None -> referencedAssemblies <- v
+            | Some _ -> raise (InvalidOperationException())
 
     member _.TemporaryFolder
         with get () = temporaryFolder

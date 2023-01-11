@@ -81,6 +81,18 @@ module Helpers =
     let AreSubsumable3 ((fileName1: string, _, o1: FSharpProjectOptions), (fileName2: string, _, o2: FSharpProjectOptions)) =
         (fileName1 = fileName2) && FSharpProjectOptions.UseSameProject(o1, o2)
 
+    /// If a symbol is an attribute check if given set of names contains its name without the Attribute suffix
+    let rec NamesContainAttribute (symbol: FSharpSymbol) names =
+        match symbol with
+        | :? FSharpMemberOrFunctionOrValue as mofov ->
+            mofov.DeclaringEntity
+            |> Option.map (fun entity -> NamesContainAttribute entity names)
+            |> Option.defaultValue false
+        | :? FSharpEntity as entity when entity.IsAttributeType && symbol.DisplayNameCore.EndsWithOrdinal "Attribute" ->
+            let nameWithoutAttribute = String.dropSuffix symbol.DisplayNameCore "Attribute"
+            names |> Set.contains nameWithoutAttribute
+        | _ -> false
+
 module CompileHelpers =
     let mkCompilationDiagnosticsHandlers () =
         let diagnostics = ResizeArray<_>()
@@ -274,6 +286,9 @@ type BackgroundCompiler
     /// creates an incremental builder used by the command line compiler.
     let CreateOneIncrementalBuilder (options: FSharpProjectOptions, userOpName) =
         node {
+            use _ =
+                Activity.start "BackgroundCompiler.CreateOneIncrementalBuilder" [| Activity.Tags.project, options.ProjectFileName |]
+
             Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "CreateOneIncrementalBuilder", options.ProjectFileName)
             let projectReferences = getProjectReferences options userOpName
 
@@ -402,9 +417,7 @@ type BackgroundCompiler
         | Some getBuilder ->
             node {
                 match! getBuilder with
-                | builderOpt, creationDiags when builderOpt.IsNone || not builderOpt.Value.IsReferencesInvalidated ->
-                    Logger.Log LogCompilerFunctionId.Service_IncrementalBuildersCache_GettingCache
-                    return builderOpt, creationDiags
+                | builderOpt, creationDiags when builderOpt.IsNone || not builderOpt.Value.IsReferencesInvalidated -> return builderOpt, creationDiags
                 | _ ->
                     // The builder could be re-created,
                     //    clear the check file caches that are associated with it.
@@ -434,9 +447,7 @@ type BackgroundCompiler
 
     let getAnyBuilder (options, userOpName) =
         match tryGetAnyBuilder options with
-        | Some getBuilder ->
-            Logger.Log LogCompilerFunctionId.Service_IncrementalBuildersCache_GettingCache
-            getBuilder
+        | Some getBuilder -> getBuilder
         | _ -> getOrCreateBuilder (options, userOpName)
 
     static let mutable actualParseFileCount = 0
@@ -467,6 +478,15 @@ type BackgroundCompiler
 
     member _.ParseFile(fileName: string, sourceText: ISourceText, options: FSharpParsingOptions, cache: bool, userOpName: string) =
         async {
+            use _ =
+                Activity.start
+                    "BackgroundCompiler.ParseFile"
+                    [|
+                        Activity.Tags.fileName, fileName
+                        Activity.Tags.userOpName, userOpName
+                        Activity.Tags.cache, cache.ToString()
+                    |]
+
             if cache then
                 let hash = sourceText.GetHashCode() |> int64
 
@@ -491,6 +511,11 @@ type BackgroundCompiler
     /// Fetch the parse information from the background compiler (which checks w.r.t. the FileSystem API)
     member _.GetBackgroundParseResultsForFileInProject(fileName, options, userOpName) =
         node {
+            use _ =
+                Activity.start
+                    "BackgroundCompiler.GetBackgroundParseResultsForFileInProject"
+                    [| Activity.Tags.fileName, fileName; Activity.Tags.userOpName, userOpName |]
+
             let! builderOpt, creationDiags = getOrCreateBuilder (options, userOpName)
 
             match builderOpt with
@@ -518,6 +543,9 @@ type BackgroundCompiler
 
     member _.GetCachedCheckFileResult(builder: IncrementalBuilder, fileName, sourceText: ISourceText, options) =
         node {
+            use _ =
+                Activity.start "BackgroundCompiler.GetCachedCheckFileResult" [| Activity.Tags.fileName, fileName |]
+
             let hash = sourceText.GetHashCode() |> int64
             let key = (fileName, hash, options)
             let cachedResultsOpt = parseCacheLock.AcquireLock(fun ltok -> checkFileInProjectCache.TryGet(ltok, key))
@@ -620,6 +648,15 @@ type BackgroundCompiler
             userOpName
         ) =
         node {
+            use _ =
+                Activity.start
+                    "BackgroundCompiler.CheckFileInProjectAllowingStaleCachedResults"
+                    [|
+                        Activity.Tags.project, options.ProjectFileName
+                        Activity.Tags.fileName, fileName
+                        Activity.Tags.userOpName, userOpName
+                    |]
+
             let! cachedResults =
                 node {
                     let! builderOpt, creationDiags = getAnyBuilder (options, userOpName)
@@ -653,6 +690,15 @@ type BackgroundCompiler
     /// Type-check the result obtained by parsing. Force the evaluation of the antecedent type checking context if needed.
     member bc.CheckFileInProject(parseResults: FSharpParseFileResults, fileName, fileVersion, sourceText: ISourceText, options, userOpName) =
         node {
+            use _ =
+                Activity.start
+                    "BackgroundCompiler.CheckFileInProject"
+                    [|
+                        Activity.Tags.project, options.ProjectFileName
+                        Activity.Tags.fileName, fileName
+                        Activity.Tags.userOpName, userOpName
+                    |]
+
             let! builderOpt, creationDiags = getOrCreateBuilder (options, userOpName)
 
             match builderOpt with
@@ -672,15 +718,19 @@ type BackgroundCompiler
     /// Parses and checks the source file and returns untyped AST and check results.
     member bc.ParseAndCheckFileInProject(fileName: string, fileVersion, sourceText: ISourceText, options: FSharpProjectOptions, userOpName) =
         node {
-            let strGuid = "_ProjectId=" + (options.ProjectId |> Option.defaultValue "null")
-            Logger.LogBlockMessageStart (fileName + strGuid) LogCompilerFunctionId.Service_ParseAndCheckFileInProject
+            use _ =
+                Activity.start
+                    "BackgroundCompiler.ParseAndCheckFileInProject"
+                    [|
+                        Activity.Tags.project, options.ProjectFileName
+                        Activity.Tags.fileName, fileName
+                        Activity.Tags.userOpName, userOpName
+                    |]
 
             let! builderOpt, creationDiags = getOrCreateBuilder (options, userOpName)
 
             match builderOpt with
             | None ->
-                Logger.LogBlockMessageStop (fileName + strGuid + "-Failed_Aborted") LogCompilerFunctionId.Service_ParseAndCheckFileInProject
-
                 let parseTree = EmptyParsedInput(fileName, (false, false))
                 let parseResults = FSharpParseFileResults(creationDiags, parseTree, true, [||])
                 return (parseResults, FSharpCheckFileAnswer.Aborted)
@@ -689,10 +739,7 @@ type BackgroundCompiler
                 let! cachedResults = bc.GetCachedCheckFileResult(builder, fileName, sourceText, options)
 
                 match cachedResults with
-                | Some (parseResults, checkResults) ->
-                    Logger.LogBlockMessageStop (fileName + strGuid + "-Successful_Cached") LogCompilerFunctionId.Service_ParseAndCheckFileInProject
-
-                    return (parseResults, FSharpCheckFileAnswer.Succeeded checkResults)
+                | Some (parseResults, checkResults) -> return (parseResults, FSharpCheckFileAnswer.Succeeded checkResults)
                 | _ ->
                     let! tcPrior = builder.GetCheckResultsBeforeFileInProject fileName
                     let! tcInfo = tcPrior.GetOrComputeTcInfo()
@@ -711,14 +758,21 @@ type BackgroundCompiler
                     let! checkResults =
                         bc.CheckOneFileImpl(parseResults, sourceText, fileName, options, fileVersion, builder, tcPrior, tcInfo, creationDiags)
 
-                    Logger.LogBlockMessageStop (fileName + strGuid + "-Successful") LogCompilerFunctionId.Service_ParseAndCheckFileInProject
-
                     return (parseResults, checkResults)
         }
 
     /// Fetch the check information from the background compiler (which checks w.r.t. the FileSystem API)
     member _.GetBackgroundCheckResultsForFileInProject(fileName, options, userOpName) =
         node {
+            use _ =
+                Activity.start
+                    "BackgroundCompiler.ParseAndCheckFileInProject"
+                    [|
+                        Activity.Tags.project, options.ProjectFileName
+                        Activity.Tags.fileName, fileName
+                        Activity.Tags.userOpName, userOpName
+                    |]
+
             let! builderOpt, creationDiags = getOrCreateBuilder (options, userOpName)
 
             match builderOpt with
@@ -802,6 +856,16 @@ type BackgroundCompiler
             userOpName: string
         ) =
         node {
+            use _ =
+                Activity.start
+                    "BackgroundCompiler.FindReferencesInFile"
+                    [|
+                        Activity.Tags.project, options.ProjectFileName
+                        Activity.Tags.fileName, fileName
+                        Activity.Tags.userOpName, userOpName
+                        "symbol", symbol.FullName
+                    |]
+
             let! builderOpt, _ = getOrCreateBuilderWithInvalidationFlag (options, canInvalidateProject, userOpName)
 
             match builderOpt with
@@ -820,6 +884,15 @@ type BackgroundCompiler
 
     member _.GetSemanticClassificationForFile(fileName: string, options: FSharpProjectOptions, userOpName: string) =
         node {
+            use _ =
+                Activity.start
+                    "BackgroundCompiler.GetSemanticClassificationForFile"
+                    [|
+                        Activity.Tags.project, options.ProjectFileName
+                        Activity.Tags.fileName, fileName
+                        Activity.Tags.userOpName, userOpName
+                    |]
+
             let! builderOpt, _ = getOrCreateBuilder (options, userOpName)
 
             match builderOpt with
@@ -835,6 +908,15 @@ type BackgroundCompiler
 
     /// Try to get recent approximate type check results for a file.
     member _.TryGetRecentCheckResultsForFile(fileName: string, options: FSharpProjectOptions, sourceText: ISourceText option, _userOpName: string) =
+        use _ =
+            Activity.start
+                "BackgroundCompiler.GetSemanticClassificationForFile"
+                [|
+                    Activity.Tags.project, options.ProjectFileName
+                    Activity.Tags.fileName, fileName
+                    Activity.Tags.userOpName, _userOpName
+                |]
+
         match sourceText with
         | Some sourceText ->
             let hash = sourceText.GetHashCode() |> int64
@@ -907,6 +989,14 @@ type BackgroundCompiler
 
     member _.GetAssemblyData(options, userOpName) =
         node {
+            use _ =
+                Activity.start
+                    "BackgroundCompiler.GetAssemblyData"
+                    [|
+                        Activity.Tags.project, options.ProjectFileName
+                        Activity.Tags.userOpName, userOpName
+                    |]
+
             let! builderOpt, _ = getOrCreateBuilder (options, userOpName)
 
             match builderOpt with
@@ -927,6 +1017,14 @@ type BackgroundCompiler
 
     /// Parse and typecheck the whole project.
     member bc.ParseAndCheckProject(options, userOpName) =
+        use _ =
+            Activity.start
+                "BackgroundCompiler.ParseAndCheckProject"
+                [|
+                    Activity.Tags.project, options.ProjectFileName
+                    Activity.Tags.userOpName, userOpName
+                |]
+
         bc.ParseAndCheckProjectImpl(options, userOpName)
 
     member _.GetProjectOptionsFromScript
@@ -943,6 +1041,11 @@ type BackgroundCompiler
             optionsStamp: int64 option,
             _userOpName
         ) =
+        use _ =
+            Activity.start
+                "BackgroundCompiler.GetProjectOptionsFromScript"
+                [| Activity.Tags.fileName, fileName; Activity.Tags.userOpName, _userOpName |]
+
         cancellable {
             use diagnostics = new DiagnosticsScope()
 
@@ -1027,6 +1130,14 @@ type BackgroundCompiler
         |> Cancellable.toAsync
 
     member bc.InvalidateConfiguration(options: FSharpProjectOptions, userOpName) =
+        use _ =
+            Activity.start
+                "BackgroundCompiler.InvalidateConfiguration"
+                [|
+                    Activity.Tags.project, options.ProjectFileName
+                    Activity.Tags.userOpName, userOpName
+                |]
+
         if incrementalBuildersCache.ContainsSimilarKey(AnyCallerThread, options) then
             parseCacheLock.AcquireLock(fun ltok ->
                 for sourceFile in options.SourceFiles do
@@ -1036,11 +1147,21 @@ type BackgroundCompiler
             ()
 
     member bc.ClearCache(options: seq<FSharpProjectOptions>, _userOpName) =
+        use _ = Activity.start "BackgroundCompiler.ClearCache" [| Activity.Tags.userOpName, _userOpName |]
+
         lock gate (fun () ->
             options
             |> Seq.iter (fun options -> incrementalBuildersCache.RemoveAnySimilar(AnyCallerThread, options)))
 
     member _.NotifyProjectCleaned(options: FSharpProjectOptions, userOpName) =
+        use _ =
+            Activity.start
+                "BackgroundCompiler.NotifyProjectCleaned"
+                [|
+                    Activity.Tags.project, options.ProjectFileName
+                    Activity.Tags.userOpName, userOpName
+                |]
+
         async {
             let! ct = Async.CancellationToken
             // If there was a similar entry (as there normally will have been) then re-establish an empty builder .  This
@@ -1060,6 +1181,8 @@ type BackgroundCompiler
     member _.ProjectChecked = projectChecked.Publish
 
     member _.ClearCaches() =
+        use _ = Activity.startNoTags "BackgroundCompiler.ClearCaches"
+
         lock gate (fun () ->
             parseCacheLock.AcquireLock(fun ltok ->
                 checkFileInProjectCache.Clear(ltok)
@@ -1070,6 +1193,8 @@ type BackgroundCompiler
             scriptClosureCache.Clear AnyCallerThread)
 
     member _.DownsizeCaches() =
+        use _ = Activity.startNoTags "BackgroundCompiler.DownsizeCaches"
+
         lock gate (fun () ->
             parseCacheLock.AcquireLock(fun ltok ->
                 checkFileInProjectCache.Resize(ltok, newKeepStrongly = 1)
@@ -1160,6 +1285,8 @@ type FSharpChecker
             ?parallelReferenceResolution
         ) =
 
+        use _ = Activity.startNoTags "FSharpChecker.Create"
+
         let legacyReferenceResolver =
             match legacyReferenceResolver with
             | Some rr -> rr
@@ -1201,6 +1328,10 @@ type FSharpChecker
 
     member _.MatchBraces(fileName, sourceText: ISourceText, options: FSharpParsingOptions, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
+
+        use _ =
+            Activity.start "FSharpChecker.MatchBraces" [| Activity.Tags.fileName, fileName; Activity.Tags.userOpName, userOpName |]
+
         let hash = sourceText.GetHashCode() |> int64
 
         async {
@@ -1252,6 +1383,7 @@ type FSharpChecker
 
     member _.Compile(argv: string[], ?userOpName: string) =
         let _userOpName = defaultArg userOpName "Unknown"
+        use _ = Activity.start "FSharpChecker.Compile" [| Activity.Tags.userOpName, _userOpName |]
 
         async {
             let ctok = CompilationThreadToken()
@@ -1270,6 +1402,9 @@ type FSharpChecker
 
     // This is for unit testing only
     member ic.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients() =
+        use _ =
+            Activity.startNoTags "FsharpChecker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients"
+
         ic.ClearCaches()
         GC.Collect()
         GC.WaitForPendingFinalizers()
@@ -1357,12 +1492,26 @@ type FSharpChecker
             options: FSharpProjectOptions,
             symbol: FSharpSymbol,
             ?canInvalidateProject: bool,
+            ?fastCheck: bool,
             ?userOpName: string
         ) =
         let canInvalidateProject = defaultArg canInvalidateProject true
         let userOpName = defaultArg userOpName "Unknown"
 
-        backgroundCompiler.FindReferencesInFile(fileName, options, symbol, canInvalidateProject, userOpName)
+        node {
+            if fastCheck <> Some true then
+                return! backgroundCompiler.FindReferencesInFile(fileName, options, symbol, canInvalidateProject, userOpName)
+            else
+                let! parseResults = backgroundCompiler.GetBackgroundParseResultsForFileInProject(fileName, options, userOpName)
+
+                if
+                    parseResults.ParseTree.Identifiers |> Set.contains symbol.DisplayNameCore
+                    || parseResults.ParseTree.Identifiers |> NamesContainAttribute symbol
+                then
+                    return! backgroundCompiler.FindReferencesInFile(fileName, options, symbol, canInvalidateProject, userOpName)
+                else
+                    return Seq.empty
+        }
         |> Async.AwaitNodeCode
 
     member _.GetBackgroundSemanticClassificationForFile(fileName: string, options: FSharpProjectOptions, ?userOpName) =

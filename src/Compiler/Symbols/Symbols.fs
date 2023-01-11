@@ -266,7 +266,10 @@ type FSharpSymbol(cenv: SymbolEnv, item: unit -> Item, access: FSharpSymbol -> C
 
     static member Create(cenv, item): FSharpSymbol = 
         let dflt() = FSharpSymbol(cenv, (fun () -> item), (fun _ _ _ -> true)) 
-        match item with 
+        match item with
+        | Item.Value v when v.Deref.IsClassConstructor ->
+            FSharpMemberOrFunctionOrValue(cenv, C (FSMeth(cenv.g, generalizeTyconRef cenv.g v.DeclaringEntity |> snd, v, None)), item) :> _
+
         | Item.Value v -> FSharpMemberOrFunctionOrValue(cenv, V v, item) :> _
         | Item.UnionCase (uinfo, _) -> FSharpUnionCase(cenv, uinfo.UnionCaseRef) :> _
         | Item.ExnCase tcref -> FSharpEntity(cenv, tcref) :>_
@@ -430,18 +433,27 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef) =
             Some (buildAccessPath (Some cp))
         | Some _ -> None
 
-    member x.QualifiedName = 
+    member x.CompiledRepresentation =
         checkIsResolved()
-        let fail() = invalidOp (sprintf "the type '%s' does not have a qualified name" x.LogicalName)
+
+        let fail () =
+            invalidOp $"the type '{x.LogicalName}' does not have a qualified name"
+
 #if !NO_TYPEPROVIDERS
-        if entity.IsTypeAbbrev || entity.IsProvidedErasedTycon || entity.IsNamespace then fail()
-        #else
-        if entity.IsTypeAbbrev || entity.IsNamespace then fail()
+        if entity.IsTypeAbbrev || entity.IsProvidedErasedTycon || entity.IsNamespace then fail ()
+#else
+        if entity.IsTypeAbbrev || entity.IsNamespace then fail ()
 #endif
-        match entity.CompiledRepresentation with 
-        | CompiledTypeRepr.ILAsmNamed(tref, _, _) -> tref.QualifiedName
-        | CompiledTypeRepr.ILAsmOpen _ -> fail()
-        
+        match entity.CompiledRepresentation with
+        | CompiledTypeRepr.ILAsmNamed(tref, _, _) -> tref
+        | CompiledTypeRepr.ILAsmOpen _ -> fail ()
+
+    member x.QualifiedName =
+        x.CompiledRepresentation.QualifiedName
+
+    member x.BasicQualifiedName =
+        x.CompiledRepresentation.BasicQualifiedName
+
     member x.FullName = 
         checkIsResolved()
         match x.TryFullName with 
@@ -632,8 +644,10 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef) =
       protect <| fun () -> 
         ([ let entityTy = generalizedTyconRef cenv.g entity
            let createMember (minfo: MethInfo) =
-               if minfo.IsConstructor then FSharpMemberOrFunctionOrValue(cenv, C minfo, Item.CtorGroup (minfo.DisplayName, [minfo]))
-               else FSharpMemberOrFunctionOrValue(cenv, M minfo, Item.MethodGroup (minfo.DisplayName, [minfo], None))
+               if minfo.IsConstructor || minfo.IsClassConstructor then
+                   FSharpMemberOrFunctionOrValue(cenv, C minfo, Item.CtorGroup (minfo.DisplayName, [minfo]))
+               else
+                   FSharpMemberOrFunctionOrValue(cenv, M minfo, Item.MethodGroup (minfo.DisplayName, [minfo], None))
            if x.IsFSharpAbbreviation then 
                ()
            elif x.IsFSharp then 
@@ -740,6 +754,10 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef) =
         match entity.TypeAbbrev with
         | None -> invalidOp "not a type abbreviation"
         | Some ty -> FSharpType(cenv, ty)
+
+    member _.AsType() =
+        let ty = generalizedTyconRef cenv.g entity
+        FSharpType(cenv, ty)
 
     override _.Attributes = 
         if isUnresolved() then makeReadOnlyCollection [] else
@@ -1759,7 +1777,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         if isUnresolved() then false else 
         match fsharpInfo() with 
         | None -> false
-        | Some v -> 
+        | Some v ->
         v.IsCompilerGenerated
 
     member _.InlineAnnotation = 
@@ -2245,6 +2263,11 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | V vref -> isForallFunctionTy cenv.g vref.Type
         | _ -> false
 
+    member x.IsRefCell =
+        match d with
+        | V vref -> not vref.IsCtorThisVal && isRefCellTy cenv.g vref.Type
+        | _ -> false
+
     override x.Equals(other: obj) =
         box x === other ||
         match other with
@@ -2378,7 +2401,7 @@ type FSharpType(cenv, ty:TType) =
        isResolved() &&
        protect <| fun () -> 
          match stripTyparEqns ty with 
-         | TType_app _ | TType_measure (Measure.Const _ | Measure.Prod _ | Measure.Inv _ | Measure.One _) -> true 
+         | TType_app _ | TType_measure (Measure.Const _ | Measure.Prod _ | Measure.Inv _ | Measure.One) -> true 
          | _ -> false
 
     member _.IsTupleType = 
@@ -2477,6 +2500,21 @@ type FSharpType(cenv, ty:TType) =
     member _.BaseType = 
         GetSuperTypeOfType cenv.g cenv.amap range0 ty
         |> Option.map (fun ty -> FSharpType(cenv, ty)) 
+
+    member x.ErasedType=
+        FSharpType(cenv, stripTyEqnsWrtErasure EraseAll cenv.g ty)
+
+    member x.BasicQualifiedName =
+        let fail () =
+            invalidOp $"the type '{x}' does not have a qualified name"
+
+        protect <| fun () ->
+            match stripTyparEqns ty with 
+            | TType_app(tcref, _, _) ->
+                match tcref.CompiledRepresentation with 
+                | CompiledTypeRepr.ILAsmNamed(tref, _, _) -> tref.BasicQualifiedName
+                | CompiledTypeRepr.ILAsmOpen _ -> fail () 
+            | _ -> fail ()
 
     member _.Instantiate(instantiation:(FSharpGenericParameter * FSharpType) list) = 
         let resTy = instType (instantiation |> List.map (fun (tyv, ty) -> tyv.TypeParameter, ty.Type)) ty

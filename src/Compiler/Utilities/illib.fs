@@ -10,7 +10,7 @@ open System.IO
 open System.Threading
 open System.Threading.Tasks
 open System.Runtime.CompilerServices
-#if !USE_SHIPPED_FSCORE
+#if !FSHARPCORE_USE_PACKAGE
 open FSharp.Core.CompilerServices.StateMachineHelpers
 #endif
 
@@ -85,27 +85,17 @@ module internal PervasiveAutoOpens =
         | Some x -> x
 
     let reportTime =
-        let mutable tFirst = None
-        let mutable tPrev = None
+        let mutable tPrev: IDisposable = null
 
-        fun showTimes descr ->
-            if showTimes then
-                let t = Process.GetCurrentProcess().UserProcessorTime.TotalSeconds
+        fun descr ->
+            if isNotNull tPrev then
+                tPrev.Dispose()
 
-                let prev =
-                    match tPrev with
-                    | None -> 0.0
-                    | Some t -> t
-
-                let first =
-                    match tFirst with
-                    | None ->
-                        (tFirst <- Some t
-                         t)
-                    | Some t -> t
-
-                printf "  ilwrite: Cpu %4.1f (total)   %4.1f (delta) - %s\n" (t - first) (t - prev) descr
-                tPrev <- Some t
+            tPrev <-
+                if descr <> "Finish" then
+                    FSharp.Compiler.Diagnostics.Activity.Profiling.startAndMeasureEnvironmentStats descr
+                else
+                    null
 
     let foldOn p f z x = f z (p x)
 
@@ -931,7 +921,7 @@ type CancellableBuilder() =
 
     member inline _.Bind(comp, [<InlineIfLambda>] k) =
         Cancellable(fun ct ->
-#if !USE_SHIPPED_FSCORE
+#if !FSHARPCORE_USE_PACKAGE
             __debugPoint ""
 #endif
 
@@ -941,7 +931,7 @@ type CancellableBuilder() =
 
     member inline _.BindReturn(comp, [<InlineIfLambda>] k) =
         Cancellable(fun ct ->
-#if !USE_SHIPPED_FSCORE
+#if !FSHARPCORE_USE_PACKAGE
             __debugPoint ""
 #endif
 
@@ -951,7 +941,7 @@ type CancellableBuilder() =
 
     member inline _.Combine(comp1, comp2) =
         Cancellable(fun ct ->
-#if !USE_SHIPPED_FSCORE
+#if !FSHARPCORE_USE_PACKAGE
             __debugPoint ""
 #endif
 
@@ -961,7 +951,7 @@ type CancellableBuilder() =
 
     member inline _.TryWith(comp, [<InlineIfLambda>] handler) =
         Cancellable(fun ct ->
-#if !USE_SHIPPED_FSCORE
+#if !FSHARPCORE_USE_PACKAGE
             __debugPoint ""
 #endif
 
@@ -982,7 +972,7 @@ type CancellableBuilder() =
 
     member inline _.Using(resource, [<InlineIfLambda>] comp) =
         Cancellable(fun ct ->
-#if !USE_SHIPPED_FSCORE
+#if !FSHARPCORE_USE_PACKAGE
             __debugPoint ""
 #endif
             let body = comp resource
@@ -997,7 +987,7 @@ type CancellableBuilder() =
 
             match compRes with
             | ValueOrCancelled.Value res ->
-                (resource :> IDisposable).Dispose()
+                Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicFunctions.Dispose resource
 
                 match res with
                 | Choice1Of2 r -> ValueOrCancelled.Value r
@@ -1006,7 +996,7 @@ type CancellableBuilder() =
 
     member inline _.TryFinally(comp, [<InlineIfLambda>] compensation) =
         Cancellable(fun ct ->
-#if !USE_SHIPPED_FSCORE
+#if !FSHARPCORE_USE_PACKAGE
             __debugPoint ""
 #endif
 
@@ -1396,7 +1386,7 @@ module MapAutoOpens =
 
         static member Empty: Map<'Key, 'Value> = Map.empty
 
-#if USE_SHIPPED_FSCORE
+#if FSHARPCORE_USE_PACKAGE
         member x.Values = [ for KeyValue (_, v) in x -> v ]
 #endif
 

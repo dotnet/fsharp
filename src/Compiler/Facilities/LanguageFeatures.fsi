@@ -44,6 +44,13 @@ type LanguageFeature =
     | LowercaseDUWhenRequireQualifiedAccess
     | InterfacesWithAbstractStaticMembers
     | SelfTypeConstraints
+    | MatchNotAllowedForUnionCaseWithNoData
+    | CSharpExtensionAttributeNotRequired
+    | ErrorForNonVirtualMembersOverrides
+    | WarningWhenInliningMethodImplNoInlineMarkedFunction
+    | EscapeDotnetFormattableStrings
+    | ArithmeticInLiterals
+    | ErrorReportingOnStaticClasses
 
 /// LanguageVersion management
 type LanguageVersion =

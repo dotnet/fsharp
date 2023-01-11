@@ -17,8 +17,9 @@ namespace FSharpTest
         """
         |> compile
         |> shouldFail
-        |> withErrorCode 552
-        |> withErrorMessage "Only class types may take value arguments"
+        |> withDiagnostics [
+            (Error 552, Line 3, Col 11, Line 3, Col 19, "Only class types may take value arguments")
+        ]
         
     [<Fact>]
     let ``Delegate definition with primary constructor no argument.`` () =
@@ -30,8 +31,10 @@ namespace FSharpTest
         """
         |> compile
         |> shouldFail
-        |> withErrorCode 552
-        |> withErrorMessage "Only class types may take value arguments"
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 552, Line 3, Col 11, Line 3, Col 13, "Only class types may take value arguments")
+        ]
 
     [<Fact>]
     let ``Delegate definition`` () =

@@ -2,6 +2,16 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="cs" original="../FSComp.resx">
     <body>
+      <trans-unit id="arrayElementHasWrongTypeTuple">
+        <source>All elements of an array must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</source>
+        <target state="translated">Všechny prvky pole musí být implicitně převoditelné na typ prvního elementu, což je řazená kolekce členů o délce {0} typu\n    {1}    \nTento element je řazená kolekce členů o délce {2} typu\n    {3}    \n</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="buildDuplicateFile">
+        <source>The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</source>
+        <target state="new">The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="buildInvalidSourceFileExtensionML">
         <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript. To enable the deprecated use of .ml or .mli extensions, use '--langversion:5.0' and '--mlcompatibility'.</source>
         <target state="translated">Soubor {0} má nerozpoznanou příponu. Zdrojové soubory musí mít příponu .fs, .fsi, .fsx nebo .fsscript. Pokud chcete povolit použití zastaralých přípon .ml nebo .mli, použijte parametry --langversion:5.0 a --mlcompatibility.</target>
@@ -10,6 +20,21 @@
       <trans-unit id="buildInvalidSourceFileExtensionUpdated">
         <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript</source>
         <target state="translated">Soubor {0} má nerozpoznanou příponu. Zdrojové soubory musí mít příponu .fs, .fsi, .fsx nebo .fsscript.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkAdditionalConstructorOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Additional constructor is not allowed.</source>
+        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Additional constructor is not allowed.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkConstructorWithArgumentsOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Constructor with arguments is not allowed.</source>
+        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Constructor with arguments is not allowed.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkDuplicatedMethodParameter">
+        <source>Duplicate parameter. The parameter '{0}' has been used more that once in this method.</source>
+        <target state="translated">Duplicitní parametr Parametr {0} byl v této metodě použit vícekrát.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
@@ -45,6 +70,11 @@
       <trans-unit id="chkInfoRefcellIncr">
         <source>The use of 'incr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'incr cell' to 'cell.Value &lt;- cell.Value + 1'.</source>
         <target state="translated">Použití incr z knihovny F# je zastaralé. Více informací: https://aka.ms/fsharp-refcell-ops. Změňte prosím například incr cell na cell.Value &lt;- cell.Value + 1.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInstanceMemberOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance members are not allowed.</source>
+        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance members are not allowed.</target>
         <note />
       </trans-unit>
       <trans-unit id="containerDeprecated">
@@ -102,6 +132,11 @@
         <target state="translated">Argument {0} neodpovídá</target>
         <note />
       </trans-unit>
+      <trans-unit id="elseBranchHasWrongTypeTuple">
+        <source>All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</source>
+        <target state="translated">Všechny větve výrazu if musí vracet hodnoty implicitně převoditelné na typ první větve, což je řazená kolekce členů o délce {0} typu\n    {1}    \nTato větev vrací řazenou kolekci členů o délce {2} typu\n    {3}    \n</target>
+        <note />
+      </trans-unit>
       <trans-unit id="etProviderHasDesignerAssemblyDependency">
         <source>The type provider designer assembly '{0}' could not be loaded from folder '{1}' because a dependency was missing or could not loaded. All dependencies of the type provider designer assembly must be located in the same folder as that assembly. The exception reported was: {2} - {3}</source>
         <target state="translated">Navržené sestavení poskytovatele typu {0} nešlo načíst ze složky {1}, protože chyběla závislost nebo ji nešlo načíst. Všechny závislosti tohoto sestavení se musí nacházet ve stejné složce jako toto sestavení. Ohlášená výjimka: {2} – {3}</target>
@@ -127,6 +162,11 @@
         <target state="translated">aplikativní výpočetní výrazy</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureArithmeticInLiterals">
+        <source>Allow arithmetic and logical operations in literals</source>
+        <target state="translated">Povolit aritmetické a logické operace v literálech</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAttributesToRightOfModuleKeyword">
         <source>attributes to the right of the 'module' keyword</source>
         <target state="translated">atributy napravo od klíčového slova Module</target>
@@ -135,6 +175,11 @@
       <trans-unit id="featureBetterExceptionPrinting">
         <source>automatic generation of 'Message' property for 'exception' declarations</source>
         <target state="translated">automatické generování vlastnosti Message pro deklarace exception</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureCSharpExtensionAttributeNotRequired">
+        <source>Allow implicit Extension attribute on declaring types, modules</source>
+        <target state="translated">Povolit implicitní atribut Extension pro deklarující typy, moduly</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
@@ -157,9 +202,24 @@
         <target state="translated">literál float32 bez tečky</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureErrorForNonVirtualMembersOverrides">
+        <source>Raises errors for non-virtual members overrides</source>
+        <target state="translated">Vyvolá chyby pro přepsání jiných než virtuálních členů</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
         <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
         <target state="translated">chyba při zastaralém přístupu konstruktoru s atributem RequireQualifiedAccess</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureErrorReportingOnStaticClasses">
+        <source>Error reporting on static classes</source>
+        <target state="new">Error reporting on static classes</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureEscapeBracesInFormattableString">
+        <source>Escapes curly braces before calling FormattableStringFactory.Create when interpolated string literal is typed as FormattableString</source>
+        <target state="translated">Uvede složené závorky před voláním formattableStringFactory.Create, pokud je interpolovaný řetězcový literál zadán jako FormattableString.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
@@ -187,14 +247,14 @@
         <target state="translated">Notace expr[idx] pro indexování a vytváření řezů</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureInterfacesWithAbstractStaticMembers">
-        <source>static abstract interface members</source>
-        <target state="translated">statičtí abstraktní členové rozhraní</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureInitProperties">
         <source>support for consuming init properties</source>
         <target state="translated">podpora využívání vlastností init</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureInterfacesWithAbstractStaticMembers">
+        <source>static abstract interface members</source>
+        <target state="translated">statičtí abstraktní členové rozhraní</target>
         <note />
       </trans-unit>
       <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
@@ -210,6 +270,11 @@
       <trans-unit id="featureMLCompatRevisions">
         <source>ML compatibility revisions</source>
         <target state="translated">Revize kompatibility ML</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureMatchNotAllowedForUnionCaseWithNoData">
+        <source>Pattern match discard is not allowed for union case that takes no data.</source>
+        <target state="translated">Zahození shody vzoru není povolené pro případ sjednocení, který nepřijímá žádná data.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNameOf">
@@ -297,6 +362,11 @@
         <target state="translated">reprezentace struktury aktivních vzorů</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
+        <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
+        <target state="new">Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
         <source>wild card in for loop</source>
         <target state="translated">zástupný znak ve smyčce for</target>
@@ -305,6 +375,11 @@
       <trans-unit id="featureWitnessPassing">
         <source>witness passing for trait constraints in F# quotations</source>
         <target state="translated">Předávání kopie clusteru pro omezení vlastností v uvozovkách v jazyce F#</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="followingPatternMatchClauseHasWrongTypeTuple">
+        <source>All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</source>
+        <target state="translated">Všechny větve výrazu shody vzoru musí vracet hodnoty implicitně převoditelné na typ první větve, což je řazená kolekce členů o délce {0} typu\n    {1}    \nTato větev vrací řazenou kolekci členů o délce {2} typu\n    {3}    \n</target>
         <note />
       </trans-unit>
       <trans-unit id="forFormatInvalidForInterpolated">
@@ -347,6 +422,11 @@
         <target state="translated">Neplatná direktiva #{0} {1}</target>
         <note />
       </trans-unit>
+      <trans-unit id="ifExpressionTuple">
+        <source>The 'if' expression needs to return a tuple of length {0} of type\n    {1}    \nto satisfy context type requirements. It currently returns a tuple of length {2} of type\n    {3}    \n</source>
+        <target state="translated">Výraz if musí vrátit řazenou kolekci členů o délce {0} typu\n    {1}    \nto splňovat požadavky na typ kontextu. Aktuálně vrací řazenou kolekci členů o délce {2} typu\n    {3}    \n</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ilxGenUnknownDebugPoint">
         <source>Unknown debug point '{0}'. The available debug points are '{1}'.</source>
         <target state="translated">Neznámý bod ladění {0}. Dostupné body ladění jsou {1}.</target>
@@ -365,6 +445,11 @@
       <trans-unit id="invalidXmlDocPosition">
         <source>XML comment is not placed on a valid language element.</source>
         <target state="translated">Komentář XML není umístěn v platném prvku jazyka.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="keywordDescriptionAnd">
+        <source>Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.</source>
+        <target state="translated">Používá se ve vzájemně rekurzivních vazbách, v deklaracích vlastností a s několika omezeními u generických parametrů.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionConst">
@@ -400,6 +485,16 @@
       <trans-unit id="lexTripleQuoteInTripleQuote">
         <source>Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.</source>
         <target state="translated">Neplatný interpolovaný řetězec. V interpolovaných výrazech se nedají použít řetězcové literály s trojitými uvozovkami. Zvažte možnost použít pro interpolovaný výraz explicitní vazbu let.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="listElementHasWrongTypeTuple">
+        <source>All elements of a list must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</source>
+        <target state="translated">Všechny prvky seznamu musí být implicitně převoditelné na typ prvního prvku, což je řazená kolekce členů o délce {0} typu\n    {1}    \nTento element je řazená kolekce členů o délce {2} typu\n    {3}    \n</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="matchNotAllowedForUnionCaseWithNoData">
+        <source>Pattern discard is not allowed for union case that takes no data.</source>
+        <target state="translated">Pro případ sjednocení, který nepřijímá žádná data, se zahození vzoru nepovoluje.</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatError">
@@ -483,8 +578,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
-        <source>Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</source>
-        <target state="translated">Neplatné použití generování referenčního sestavení, nepoužívejte --staticlink ani --refonly a --refout společně.</target>
+        <source>Invalid use of emitting a reference assembly, do not use '--standalone or --staticlink' with '--refonly or --refout'.</source>
+        <target state="translated">Neplatné použití generování referenčního sestavení, nepoužívejte --standalone ani --staticlink s --refonly nebo --refout.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidRefOut">
@@ -592,6 +687,21 @@
         <target state="translated">Neočekávaný token v definici typu. Za typem {0} se očekává =.</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsExpectedPatternAfterToken">
+        <source>Expected a pattern after this point</source>
+        <target state="translated">Za tímto bodem byl očekáván vzor</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsExpectingExpressionInTuple">
+        <source>Expecting expression</source>
+        <target state="translated">Byl očekáván výraz.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsExpectingPatternInTuple">
+        <source>Expecting pattern</source>
+        <target state="translated">Očekává se vzorek.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr1">
         <source>Incomplete character literal (example: 'Q') or qualified type invocation (example: 'T.Name)</source>
         <target state="translated">Neúplný znakový literál (příklad: Q) nebo volání kvalifikovaného typu (příklad: T.Name)</target>
@@ -600,11 +710,6 @@
       <trans-unit id="parsIncompleteTyparExpr2">
         <source>Incomplete operator expression (example a^b) or qualified type invocation (example: ^T.Name)</source>
         <target state="translated">Neúplný výraz operátoru (například^b) nebo volání kvalifikovaného typu (příklad: ^T.Name)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="parsExpectingExpressionInTuple">
-        <source>Expecting expression</source>
-        <target state="translated">Byl očekáván výraz.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNewExprMemberAccess">
@@ -950,6 +1055,11 @@
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
         <source>This expression implicitly converts type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</source>
         <target state="translated">Tento výraz implicitně převede typ {0} na typ {1}. Přečtěte si téma https://aka.ms/fsharp-implicit-convs.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcSynTypeOrInvalidInDeclaration">
+        <source>SynType.Or is not permitted in this declaration</source>
+        <target state="translated">SynType.Or není v této deklaraci povoleno</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTraitHasMultipleSupportTypes">
@@ -1305,11 +1415,6 @@
       <trans-unit id="buildCouldNotResolveAssembly">
         <source>Could not resolve assembly '{0}'</source>
         <target state="translated">Sestavení {0} se nedalo přeložit.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildCouldNotResolveAssemblyRequiredByFile">
-        <source>Could not resolve assembly '{0}' required by '{1}'</source>
-        <target state="translated">Sestavení {0} požadované souborem {1} se nedalo přeložit.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildErrorOpeningBinaryFile">
@@ -3783,8 +3888,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcUnionCaseExpectsTupledArguments">
-        <source>This union case expects {0} arguments in tupled form</source>
-        <target state="translated">Tento případ typu union očekává argumenty v počtu {0} v podobě řazené kolekce členů.</target>
+        <source>This union case expects {0} arguments in tupled form, but was given {1}. The missing field arguments may be any of:{2}</source>
+        <target state="translated">Tento případ sjednocení očekává argumenty {0} ve formě řazené kolekce členů, ale byl zadán {1}. Argumenty chybějícího pole mohou být následující:{2}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcFieldIsNotStatic">
@@ -5595,26 +5700,6 @@
       <trans-unit id="typeInfoGeneratedType">
         <source>generated type</source>
         <target state="translated">generovaný typ</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="assemblyResolutionFoundByAssemblyFoldersKey">
-        <source>Found by AssemblyFolders registry key</source>
-        <target state="translated">Nalezené klíčem registru AssemblyFolders</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="assemblyResolutionFoundByAssemblyFoldersExKey">
-        <source>Found by AssemblyFoldersEx registry key</source>
-        <target state="translated">Nalezené klíčem registru AssemblyFoldersEx</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="assemblyResolutionNetFramework">
-        <source>.NET Framework</source>
-        <target state="translated">.NET Framework</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="assemblyResolutionGAC">
-        <source>Global Assembly Cache</source>
-        <target state="translated">Globální mezipaměť sestavení</target>
         <note />
       </trans-unit>
       <trans-unit id="recursiveClassHierarchy">
@@ -7483,8 +7568,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcStructUnionMultiCaseDistinctFields">
-        <source>If a union type has more than one case and is a struct, then all fields within the union type must be given unique names.</source>
-        <target state="translated">Pokud je typ sjednocení struktura a obsahuje více než jeden případ, všem polím v tomto typu sjednocení se musí přiřadit jedinečný název.</target>
+        <source>If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'.</source>
+        <target state="translated">Pokud je typ sjednocení s více písmeny struktura, musí mít všechny případy sjednocení jedinečné názvy. Příklad: 'type A = B of b: int | C z c: int</target>
         <note />
       </trans-unit>
       <trans-unit id="CallerMemberNameIsOverriden">
@@ -7535,11 +7620,6 @@
       <trans-unit id="keywordDescriptionAbstract">
         <source>Indicates a method that either has no implementation in the type in which it is declared or that is virtual and has a default implementation.</source>
         <target state="translated">Označuje metodu, která buď nemá implementaci v typu, ve kterém je deklarovaná, nebo která je virtuální a má výchozí implementaci.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="keywordDescriptionAnd">
-        <source>Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.</source>
-        <target state="translated">Používá se ve vzájemně rekurzivních vazbách, v deklaracích vlastností a s několika omezeními u generických parametrů.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionAs">

@@ -532,11 +532,11 @@ let main1
 
     // Process command line, flags and collect filenames
     let sourceFiles =
-
         // The ParseCompilerOptions function calls imperative function to process "real" args
         // Rather than start processing, just collect names, then process them.
         try
             let files = ProcessCommandLineFlags(tcConfigB, lcidFromCodePage, argv)
+            let files = CheckAndReportSourceFileDuplicates(ResizeArray.ofList files)
             AdjustForScriptCompile(tcConfigB, files, lexResourceManager, dependencyProvider)
         with e ->
             errorRecovery e rangeStartup
@@ -577,6 +577,20 @@ let main1
             delayForFlagsLogger.CommitDelayedDiagnostics(diagnosticsLoggerProvider, tcConfigB, exiter)
             exiter.Exit 1
 
+    if tcConfig.showTimes then
+        Activity.Profiling.addConsoleListener () |> disposables.Register
+
+    tcConfig.writeTimesToFile
+    |> Option.iter (fun f ->
+        Activity.CsvExport.addCsvFileListener f |> disposables.Register
+
+        Activity.start
+            "FSC compilation"
+            [
+                Activity.Tags.project, tcConfig.outputFile |> Option.defaultValue String.Empty
+            ]
+        |> disposables.Register)
+
     let diagnosticsLogger = diagnosticsLoggerProvider.CreateLogger(tcConfigB, exiter)
 
     // Install the global error logger and never remove it. This logger does have all command-line flags considered.
@@ -589,7 +603,7 @@ let main1
         AbortOnError(diagnosticsLogger, exiter)
 
     // Resolve assemblies
-    ReportTime tcConfig "Import mscorlib and FSharp.Core.dll"
+    ReportTime tcConfig "Import mscorlib+FSharp.Core"
     let foundationalTcConfigP = TcConfigProvider.Constant tcConfig
 
     let sysRes, otherRes, knownUnresolved =
@@ -710,7 +724,6 @@ let main2
            exiter: Exiter,
            ilSourceDocs))
     =
-
     if tcConfig.typeCheckOnly then
         exiter.Exit 0
 
@@ -764,7 +777,7 @@ let main2
     if tcConfig.printSignature || tcConfig.printAllSignatureFiles then
         InterfaceFileWriter.WriteInterfaceFile(tcGlobals, tcConfig, InfoReader(tcGlobals, tcImports.GetImportMap()), typedImplFiles)
 
-    ReportTime tcConfig "Write XML document signatures"
+    ReportTime tcConfig "Write XML doc signatures"
 
     if tcConfig.xmlDocOutputFile.IsSome then
         XmlDocWriter.ComputeXmlDocSigs(tcGlobals, generatedCcu)
@@ -818,7 +831,6 @@ let main3
            exiter: Exiter,
            ilSourceDocs))
     =
-
     // Encode the signature data
     ReportTime tcConfig "Encode Interface Data"
     let exportRemapping = MakeExportRemapping generatedCcu generatedCcu.Contents
@@ -914,7 +926,6 @@ let main4
            exiter: Exiter,
            ilSourceDocs))
     =
-
     match tcImportsCapture with
     | None -> ()
     | Some f -> f tcImports
@@ -1049,7 +1060,6 @@ let main6
            exiter: Exiter,
            ilSourceDocs))
     =
-
     ReportTime tcConfig "Write .NET Binary"
 
     use _ = UseBuildPhase BuildPhase.Output
@@ -1092,7 +1102,6 @@ let main6
                             pdbfile = None
                             emitTailcalls = tcConfig.emitTailcalls
                             deterministic = tcConfig.deterministic
-                            showTimes = tcConfig.showTimes
                             portablePDB = false
                             embeddedPDB = false
                             embedAllSource = tcConfig.embedAllSource
@@ -1123,7 +1132,6 @@ let main6
                             pdbfile = pdbfile
                             emitTailcalls = tcConfig.emitTailcalls
                             deterministic = tcConfig.deterministic
-                            showTimes = tcConfig.showTimes
                             portablePDB = tcConfig.portablePDB
                             embeddedPDB = tcConfig.embeddedPDB
                             embedAllSource = tcConfig.embedAllSource
