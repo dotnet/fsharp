@@ -2,7 +2,6 @@
 
 namespace FSharp.Editor.Tests.Hints
 
-open System.Threading
 open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.Editor.Hints
@@ -43,8 +42,8 @@ module HintTestFramework =
 
     let getHints (document: Document) hintKinds =
         async {
-            let! sourceText = document.GetTextAsync CancellationToken.None |> Async.AwaitTask
-            let! hints = HintService.getHintsForDocument sourceText document hintKinds "test" CancellationToken.None
+            let! sourceText = document.GetTextAsync Async.DefaultCancellationToken |> Async.AwaitTask
+            let! hints = HintService.getHintsForDocument sourceText document hintKinds "test" Async.DefaultCancellationToken
             return hints |> Seq.map convert
         }
         |> Async.RunSynchronously
