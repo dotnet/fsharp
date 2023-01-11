@@ -811,15 +811,13 @@ module rec Compiler =
 
     let private evalScriptFromDisk (fs: FSharpCompilationSource) (script:FSharpScript) : CompilationResult =
         let fileNames = 
-            [ yield! fs.AdditionalSources
-              yield fs.Source]
+            (fs.Source :: fs.AdditionalSources)
             |> List.map (fun x -> x.GetSourceFileName)
             |> List.map (sprintf " @\"%s\"")
             |> String.Concat
 
         script.Eval("#load" + fileNames )
         |> (processScriptResults fs) 
-     
 
     let eval (cUnit: CompilationUnit) : CompilationResult =
         match cUnit with

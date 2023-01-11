@@ -14,12 +14,12 @@ module ScriptRunner =
     
     let private createEngine(args,version) = 
         let scriptingEnv = getSessionForEval args version
-        scriptingEnv.Eval """let exit (code:int) = if code=0 then () else failwith $"Error in running, exit code={code}" """ |> ignore
+        scriptingEnv.Eval """let exit (code:int) = if code=0 then () else failwith $"Script called function 'exit' with code={code}" """ |> ignore
         scriptingEnv
 
-    let getOrCreateEngine = Tables.memoize createEngine
+    //let private getOrCreateEngine = createEngine//Tables.memoize createEngine
 
-    let private defaultDefines = 
+    let defaultDefines = 
         [ 
 #if NETCOREAPP
           "NETCOREAPP"
@@ -31,7 +31,7 @@ module ScriptRunner =
         match cu with 
         | FS fsSource ->
             File.Delete("test.ok")           
-            let engine = getOrCreateEngine (fsSource.Options |> Array.ofList,version)
+            let engine = createEngine (fsSource.Options |> Array.ofList,version)
             let res = evalScriptFromDiskInSharedSession engine cu
             match res with
             | CompilationResult.Failure _ -> res
@@ -46,7 +46,12 @@ module ScriptRunner =
 /// This test file was created by porting over (slower) FsharpSuite.Tests
 /// In order to minimize human error, the test definitions have been copy-pasted and this adapter provides implementations of the test functions
 module TestFrameworkAdapter = 
-    type ExecutionMode = FSC_DEBUG | FSC_OPTIMIZED | FSI
+    type ExecutionMode = 
+        | FSC_DEBUG 
+        | FSC_OPTIMIZED 
+        | FSI
+        | COMPILED_EXE_APP
+
     let baseFolder = Path.Combine(__SOURCE_DIRECTORY__,"..","..","fsharp") |> Path.GetFullPath
     let inline testConfig (relativeFolder:string) = relativeFolder    
 
@@ -69,12 +74,13 @@ module TestFrameworkAdapter =
             | 0 -> Directory.GetFiles(absFolder,"*.ml") |> Array.exactlyOne, [||]
             | 1 -> files |> Array.exactlyOne, [||]
             | _ -> 
-                let dependencies,mainFile = 
+                let mainFile,dependencies = 
                     files 
                     |> Array.filter (fun n -> supportedNames.Contains(Path.GetFileName(n))) 
                      // Convention in older FsharpSuite: test2 goes last, longer names like testlib before test, .fsi before .fs on equal filenames
                     |> Array.sortBy (fun n -> n.Contains("test2"), -n.IndexOf('.'), n.EndsWith(".fsi") |> not)                  
-                    |> Array.splitAt (files.Length-1)             
+                    |> Array.splitAt 1        
+                 
                 mainFile[0],dependencies
 
         let version,bonusArgs = adjustVersion langVersion bonusArgs
@@ -86,10 +92,10 @@ module TestFrameworkAdapter =
         |> withOptions (["--nowarn:0988;3370"] @ bonusArgs)    
         |> fun cu -> 
             match mode with
-            | FSC_DEBUG -> cu |> withDebug |> withNoOptimize 
-            | FSC_OPTIMIZED -> cu |> withOptimize |> withNoDebug
-            | FSI -> cu
-        |> ScriptRunner.runScriptFile langVersion
+            | FSC_DEBUG -> cu |> withDebug |> withNoOptimize  |> ScriptRunner.runScriptFile langVersion
+            | FSC_OPTIMIZED -> cu |> withOptimize |> withNoDebug |> ScriptRunner.runScriptFile langVersion
+            | FSI -> cu |> ScriptRunner.runScriptFile langVersion    
+            | COMPILED_EXE_APP -> cu |> withDefines ("TESTS_AS_APP" :: ScriptRunner.defaultDefines) |> compileExeAndRun
         |> shouldSucceed 
         |> ignore<CompilationResult>
     
@@ -223,10 +229,10 @@ module CoreTests =
     let ``innerpoly-FSI`` () = singleTestBuildAndRun "core/innerpoly" FSI
 
     [<Fact>]
-    let ``namespaceAttributes-FSC_DEBUG`` () = singleTestBuildAndRun "core/namespaces" FSC_DEBUG
+    let ``namespaceAttributes-FSC_DEBUG`` () = singleTestBuildAndRun "core/namespaces" COMPILED_EXE_APP
 
     [<Fact>]
-    let ``namespaceAttributes-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/namespaces" FSC_OPTIMIZED
+    let ``namespaceAttributes-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/namespaces" COMPILED_EXE_APP
 
     [<Fact>]
     let ``unicode2-FSC_DEBUG`` () = singleTestBuildAndRun "core/unicode" FSC_DEBUG // TODO: fails on coreclr
@@ -447,6 +453,8 @@ module CoreTests =
     [<Fact>]
     let ``test int32-FSI`` () = singleTestBuildAndRun "core/int32" FSI
 
+    // This test stays in FsharpSuite for a later migration phases, it uses hardcoded #r to a C# compiled cslib.dll inside
+#if NETCOREAPP
     [<Fact>]
     let ``quotes-FSC-FSC_DEBUG`` () = singleTestBuildAndRun "core/quotes" FSC_DEBUG
 
@@ -455,6 +463,7 @@ module CoreTests =
 
     [<Fact>]
     let ``quotes-FSI-BASIC`` () = singleTestBuildAndRun "core/quotes" FSI
+#endif
 
     [<Fact>]
     let ``recordResolution-FSC_DEBUG`` () = singleTestBuildAndRun "core/recordResolution" FSC_DEBUG
@@ -465,6 +474,9 @@ module CoreTests =
     [<Fact>]
     let ``recordResolution-FSI`` () = singleTestBuildAndRun "core/recordResolution" FSI
 
+#if NETCOREAPP
+// This test has hardcoded expectations about current synchronization context
+// Will be moved out of FsharpSuite.Tests in a later phase
     [<Fact>]
     let ``control-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/control" FSC_OPTIMIZED
 
@@ -475,6 +487,7 @@ module CoreTests =
     let ``control --tailcalls`` () =
         let cfg = testConfig "core/control"
         singleTestBuildAndRunAux cfg  ["--tailcalls"] FSC_OPTIMIZED
+#endif
 
     [<Fact>]
     let ``controlChamenos-FSC_OPTIMIZED`` () =

@@ -118,12 +118,6 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
         | Choice1Of2 v -> Ok(v), errors
         | Choice2Of2 ex -> Error(ex), errors
 
-    member _.EvalScript(absFilePath: string) = 
-        let ch, errors = fsi.EvalScriptNonThrowing(absFilePath)
-        match ch with
-        | Choice1Of2 _ -> Ok(Option<FsiValue>.None), errors
-        | Choice2Of2 ex -> Error(ex), errors
-
     /// Get the available completion items from the code at the specified location.
     ///
     /// <param name="text">The input text on which completions will be calculated</param>

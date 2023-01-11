@@ -32,9 +32,11 @@ let singleTestBuildAndRun = getTestsDirectory >> singleTestBuildAndRun
 let singleTestBuildAndRunVersion = getTestsDirectory >> singleTestBuildAndRunVersion
 let testConfig = getTestsDirectory >> testConfig
 
-
 [<NonParallelizable; SetUICulture("en-US"); SetCulture("en-US")>]
-module CoreTests =
+module TestsToBeDeletedBecauseTheyHaveMoved =
+    let x = 42
+
+
     // These tests are enabled for .NET Framework and .NET Core
     [<Test>]
     let ``access-FSC_DEBUG``() = singleTestBuildAndRun "core/access" FSC_DEBUG
@@ -376,6 +378,8 @@ module CoreTests =
     [<Test>]
     let ``test int32-FSI`` () = singleTestBuildAndRun "core/int32" FSI
 
+#if !NETCOREAPP
+// This test stays in FsharpSuite for a later migration phases, it uses hardcoded #r to a C# compiled cslib.dll inside
     [<Test>]
     let ``quotes-FSC-FSC_DEBUG`` () = singleTestBuildAndRun "core/quotes" FSC_DEBUG
 
@@ -384,6 +388,7 @@ module CoreTests =
 
     [<Test>]
     let ``quotes-FSI-BASIC`` () = singleTestBuildAndRun "core/quotes" FSI
+#endif
 
     [<Test>]
     let ``recordResolution-FSC_DEBUG`` () = singleTestBuildAndRun "core/recordResolution" FSC_DEBUG
@@ -393,6 +398,97 @@ module CoreTests =
 
     [<Test>]
     let ``recordResolution-FSI`` () = singleTestBuildAndRun "core/recordResolution" FSI
+
+#if !NETCOREAPP
+// This test has hardcoded expectations about current synchronization context
+// Will be moved out of FsharpSuite.Tests in a later phase
+    [<Test>]
+    let ``control-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/control" FSC_OPTIMIZED
+
+    [<Test>]
+    let ``control-FSI`` () = singleTestBuildAndRun "core/control" FSI
+
+    [<Test>]
+    let ``control --tailcalls`` () =
+        let cfg = testConfig "core/control"
+        singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSC_OPTIMIZED
+#endif
+
+    [<Test>]
+    let ``controlChamenos-FSC_OPTIMIZED`` () =
+        let cfg = testConfig "core/controlChamenos"
+        singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSC_OPTIMIZED
+
+    [<Test>]
+    let ``controlChamenos-FSI`` () =
+        let cfg = testConfig "core/controlChamenos"
+        singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSI
+
+    [<Test>]
+    let ``controlMailbox-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/controlMailbox" FSC_OPTIMIZED
+
+    [<Test>]
+    let ``controlMailbox-FSI`` () = singleTestBuildAndRun "core/controlMailbox" FSI
+
+    [<Test>]
+    let ``controlMailbox --tailcalls`` () =
+        let cfg = testConfig "core/controlMailbox"
+        singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSC_OPTIMIZED
+
+    [<Test>]
+    let ``csext-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/csext" FSC_OPTIMIZED
+
+    [<Test>]
+    let ``csext-FSI`` () = singleTestBuildAndRun "core/csext" FSI
+
+    [<Test>]
+    let ``enum-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/enum" FSC_OPTIMIZED
+
+    [<Test>]
+    let ``enum-FSI`` () = singleTestBuildAndRun "core/enum" FSI
+
+    [<Test>]
+    let ``longnames-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/longnames" FSC_OPTIMIZED
+
+    [<Test>]
+    let ``longnames-FSI`` () = singleTestBuildAndRun "core/longnames" FSI
+
+    [<Test>]
+    let ``math-numbersVS2008-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/math/numbersVS2008" FSC_OPTIMIZED
+
+    [<Test>]
+    let ``math-numbersVS2008-FSI`` () = singleTestBuildAndRun "core/math/numbersVS2008" FSI
+
+    [<Test>]
+    let ``patterns-FSC_OPTIMIZED`` () = singleTestBuildAndRunVersion "core/patterns" FSC_OPTIMIZED "preview"
+
+// This requires --multiemit on by default, which is not the case for .NET Framework
+#if NETCOREAPP
+    [<Test>]
+    let ``patterns-FSI`` () = singleTestBuildAndRun "core/patterns" FSI
+#endif
+
+    [<Test>]
+    let ``pinvoke-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/pinvoke" FSC_OPTIMIZED
+
+    [<Test>]
+    let ``pinvoke-FSI`` () =
+        singleTestBuildAndRun "core/pinvoke" FSI
+
+    [<Test>]
+    let ``fsi_load-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/fsi-load" FSC_OPTIMIZED
+
+    [<Test>]
+    let ``fsi_load-FSI`` () = singleTestBuildAndRun "core/fsi-load" FSI
+
+    [<Test>]
+    let ``reflect-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/reflect" FSC_OPTIMIZED
+
+    [<Test>]
+    let ``reflect-FSI`` () = singleTestBuildAndRun "core/reflect" FSI
+
+[<NonParallelizable; SetUICulture("en-US"); SetCulture("en-US")>]
+module CoreTests =
 
     [<Test>]
     let ``SDKTests`` () =
@@ -647,49 +743,7 @@ module CoreTests =
 
 #endif
 
-    [<Test>]
-    let ``control-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/control" FSC_OPTIMIZED
 
-    [<Test>]
-    let ``control-FSI`` () = singleTestBuildAndRun "core/control" FSI
-
-    [<Test>]
-    let ``control --tailcalls`` () =
-        let cfg = testConfig "core/control"
-        singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSC_OPTIMIZED
-
-    [<Test>]
-    let ``controlChamenos-FSC_OPTIMIZED`` () =
-        let cfg = testConfig "core/controlChamenos"
-        singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSC_OPTIMIZED
-
-    [<Test>]
-    let ``controlChamenos-FSI`` () =
-        let cfg = testConfig "core/controlChamenos"
-        singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSI
-
-    [<Test>]
-    let ``controlMailbox-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/controlMailbox" FSC_OPTIMIZED
-
-    [<Test>]
-    let ``controlMailbox-FSI`` () = singleTestBuildAndRun "core/controlMailbox" FSI
-
-    [<Test>]
-    let ``controlMailbox --tailcalls`` () =
-        let cfg = testConfig "core/controlMailbox"
-        singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSC_OPTIMIZED
-
-    [<Test>]
-    let ``csext-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/csext" FSC_OPTIMIZED
-
-    [<Test>]
-    let ``csext-FSI`` () = singleTestBuildAndRun "core/csext" FSI
-
-    [<Test>]
-    let ``enum-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/enum" FSC_OPTIMIZED
-
-    [<Test>]
-    let ``enum-FSI`` () = singleTestBuildAndRun "core/enum" FSI
 
 #if !NETCOREAPP
 
@@ -1576,39 +1630,7 @@ module CoreTests =
         | _ -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" stderrPath stderrBaseline diffs2)
 #endif
 
-    [<Test>]
-    let ``longnames-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/longnames" FSC_OPTIMIZED
 
-    [<Test>]
-    let ``longnames-FSI`` () = singleTestBuildAndRun "core/longnames" FSI
-
-    [<Test>]
-    let ``math-numbersVS2008-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/math/numbersVS2008" FSC_OPTIMIZED
-
-    [<Test>]
-    let ``math-numbersVS2008-FSI`` () = singleTestBuildAndRun "core/math/numbersVS2008" FSI
-
-    [<Test>]
-    let ``patterns-FSC_OPTIMIZED`` () = singleTestBuildAndRunVersion "core/patterns" FSC_OPTIMIZED "preview"
-
-// This requires --multiemit on by default, which is not the case for .NET Framework
-#if NETCOREAPP
-    [<Test>]
-    let ``patterns-FSI`` () = singleTestBuildAndRun "core/patterns" FSI
-#endif
-
-    [<Test>]
-    let ``pinvoke-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/pinvoke" FSC_OPTIMIZED
-
-    [<Test>]
-    let ``pinvoke-FSI`` () =
-        singleTestBuildAndRun "core/pinvoke" FSI
-
-    [<Test>]
-    let ``fsi_load-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/fsi-load" FSC_OPTIMIZED
-
-    [<Test>]
-    let ``fsi_load-FSI`` () = singleTestBuildAndRun "core/fsi-load" FSI
 
 #if !NETCOREAPP
     [<Test>]
@@ -1835,11 +1857,7 @@ module CoreTests =
         testOkFile.CheckExists()
 #endif
 
-    [<Test>]
-    let ``reflect-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/reflect" FSC_OPTIMIZED
 
-    [<Test>]
-    let ``reflect-FSI`` () = singleTestBuildAndRun "core/reflect" FSI
 
 #if !NETCOREAPP
     [<Test>]
