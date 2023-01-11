@@ -46,8 +46,6 @@ open FSharp.Compiler.TypeProviders
 
 type cenv = TcFileState
 
-let TcClassRewriteStackGuardDepth = StackGuard.GetDepthOption "TcClassRewrite"
-
 //-------------------------------------------------------------------------
 // Mutually recursive shapes
 //------------------------------------------------------------------------- 

@@ -283,6 +283,21 @@ module Result =
     [<CompiledName("ToList")>]
     val toList: result: Result<'T, 'Error> -> 'T list
 
+    /// <summary>Convert the result to a sequence of count 0 or 1.</summary>
+    ///
+    /// <param name="result">The input result.</param>
+    ///
+    /// <returns>The result sequence.</returns>
+    ///
+    /// <example id="toSeq-1">
+    /// <code lang="fsharp">
+    /// Error 42 |> Result.toSeq // evaluates to Seq.empty
+    /// Ok 42 |> Result.toSeq // evaluates to seq { 42 }
+    /// </code>
+    /// </example>
+    [<CompiledName("ToSeq")>]
+    val toSeq: result: Result<'T, 'Error> -> 'T seq
+
     /// <summary>Convert the result to an Option value.</summary>
     ///
     /// <param name="result">The input result.</param>

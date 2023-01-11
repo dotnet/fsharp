@@ -112,11 +112,6 @@ and callsig_scoref2scoref_tyvar2ty f x =
 and tys_scoref2scoref_tyvar2ty f i =
     List.map (ty_scoref2scoref_tyvar2ty f) i
 
-and gparams_scoref2scoref_tyvar2ty f i =
-    List.map (gparam_scoref2scoref_tyvar2ty f) i
-
-and gparam_scoref2scoref_tyvar2ty _f i = i
-
 and morphILScopeRefsInILTypeRef fscope (tref: ILTypeRef) =
     ILTypeRef.Create(scope = fscope tref.Scope, enclosing = tref.Enclosing, name = tref.Name)
 

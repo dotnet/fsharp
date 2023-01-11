@@ -104,7 +104,7 @@ module Result =
     [<CompiledName("ToSeq")>]
     let toSeq result =
         match result with
-        | Error _ -> []
+        | Error _ -> ([] :> System.Collections.Generic.IEnumerable<'T>)
         | Ok x -> [ x ]
 
     [<CompiledName("ToOption")>]

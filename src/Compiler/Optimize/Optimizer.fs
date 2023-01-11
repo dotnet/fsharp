@@ -37,10 +37,6 @@ open System.Collections.ObjectModel
 let OptimizerStackGuardDepth = GetEnvInteger "FSHARP_Optimizer" 50
 
 #if DEBUG
-let verboseOptimizationInfo = 
-    try not (System.String.IsNullOrEmpty (System.Environment.GetEnvironmentVariable "FSHARP_verboseOptimizationInfo")) with _ -> false
-let verboseOptimizations = 
-    try not (System.String.IsNullOrEmpty (System.Environment.GetEnvironmentVariable "FSHARP_verboseOptimizations")) with _ -> false
 #else
 let [<Literal>] verboseOptimizationInfo = false
 let [<Literal>] verboseOptimizations = false
@@ -744,8 +740,6 @@ let mkUInt32Val (g: TcGlobals) n = ConstValue(Const.UInt32 n, g.uint32_ty)
 
 let mkUInt64Val (g: TcGlobals) n = ConstValue(Const.UInt64 n, g.uint64_ty)
 
-let (|StripInt32Value|_|) = function StripConstValue(Const.Int32 n) -> Some n | _ -> None
-      
 let MakeValueInfoForValue g m vref vinfo = 
 #if DEBUG
     let rec check x = 
