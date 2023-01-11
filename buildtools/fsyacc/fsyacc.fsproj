@@ -18,6 +18,7 @@
     <Compile Include="fsyaccast.fs" />
     <Compile Include="fsyaccpars.fs" />
     <Compile Include="fsyacclex.fs" />
+    <Compile Include="fsyaccdriver.fs" />
     <Compile Include="fsyacc.fs" />
   </ItemGroup>
 

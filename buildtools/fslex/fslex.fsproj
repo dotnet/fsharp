@@ -18,6 +18,7 @@
     <Compile Include="fslexast.fs" />
     <Compile Include="fslexpars.fs" />
     <Compile Include="fslexlex.fs" />
+    <Compile Include="fslexdriver.fs" />
     <Compile Include="fslex.fs" />
   </ItemGroup>
 
