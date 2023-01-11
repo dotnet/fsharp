@@ -303,11 +303,19 @@ let BindVal cenv env (v: Val) =
     let alreadyDone = cenv.boundVals.ContainsKey v.Stamp
     cenv.boundVals[v.Stamp] <- 1
     
+    let parentHasSignatureFile =
+        match v.TryDeclaringEntity with
+        | ParentNone -> false
+        | Parent p ->
+            match p.TryDeref with
+            | ValueNone -> false
+            | ValueSome e -> e.HasSignatureFile
+    
     if not env.external &&
        not alreadyDone &&
        cenv.reportErrors && 
        not v.HasBeenReferenced && 
-       (not v.IsCompiledAsTopLevel || (v.IsCompiledAsTopLevel && not v.HasSignatureFile)) &&
+       (not v.IsCompiledAsTopLevel || (parentHasSignatureFile && v.IsCompiledAsTopLevel && not v.HasSignatureFile)) &&
        not (v.DisplayName.StartsWithOrdinal("_")) && 
        not v.IsCompilerGenerated then 
 

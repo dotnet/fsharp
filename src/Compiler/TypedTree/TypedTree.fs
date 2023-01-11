@@ -1276,6 +1276,8 @@ type Entity =
 
     /// Indicates if we have pre-determined that a type definition has a self-referential constructor using 'as x'
     member x.HasSelfReferentialConstructor = x.entity_flags.HasSelfReferentialConstructor
+    
+    member x.HasSignatureFile = x.SigRange <> x.DefinitionRange
 
     /// Set the custom attributes on an F# type definition.
     member x.SetAttribs attribs = x.entity_attribs <- attribs

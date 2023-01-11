@@ -64,3 +64,23 @@ let subtract a b = a - b
         |> withWarningCode 1182
         |> withDiagnosticMessageMatches "The value 'subtract' is unused$"
         |> ignore
+
+    [<Fact>]
+    let ``Don't warnon unused public function`` () =
+        let implementationFile =
+            SourceCodeFileKind.Create(
+                "Library.fs",
+                """
+module Foo
+
+let add a b = a + b
+let subtract a b = a - b
+    """         )
+            
+        fsFromString implementationFile
+        |> FS
+        |> withOptions ["--warnon:FS1182"]
+        |> asLibrary
+        |> compile
+        |> withDiagnostics []
+        |> ignore

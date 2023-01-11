@@ -571,6 +571,9 @@ type Entity =
     /// Indicates if we have pre-determined that a type definition has a self-referential constructor using 'as x'
     member HasSelfReferentialConstructor: bool
 
+    /// Indicates if the value has a signature file counterpart
+    member HasSignatureFile: bool
+
     /// Get the Abstract IL scope, nesting type metadata for this
     /// type definition, assuming it is backed by Abstract IL metadata.
     member ILTyconInfo: TILObjectReprData
