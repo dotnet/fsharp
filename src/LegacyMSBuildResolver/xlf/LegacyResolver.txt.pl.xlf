@@ -4,22 +4,22 @@
     <body>
       <trans-unit id="assemblyResolutionFoundByAssemblyFoldersExKey">
         <source>Found by AssemblyFoldersEx registry key</source>
-        <target state="new">Found by AssemblyFoldersEx registry key</target>
+        <target state="translated">Znalezione przez klucz rejestru AssemblyFoldersEx</target>
         <note />
       </trans-unit>
       <trans-unit id="assemblyResolutionFoundByAssemblyFoldersKey">
         <source>Found by AssemblyFolders registry key</source>
-        <target state="new">Found by AssemblyFolders registry key</target>
+        <target state="translated">Znalezione przez klucz rejestru AssemblyFolders</target>
         <note />
       </trans-unit>
       <trans-unit id="assemblyResolutionGAC">
         <source>Global Assembly Cache</source>
-        <target state="new">Global Assembly Cache</target>
+        <target state="translated">Globalna pamięć podręczna zestawów</target>
         <note />
       </trans-unit>
       <trans-unit id="assemblyResolutionNetFramework">
         <source>.NET Framework</source>
-        <target state="new">.NET Framework</target>
+        <target state="translated">.NET Framework</target>
         <note />
       </trans-unit>
     </body>
