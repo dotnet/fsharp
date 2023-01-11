@@ -1501,6 +1501,10 @@ type Async =
 
             computation.Invoke newCtxt)
 
+    static member RunImmediate(computation: Async<'T>, ?cancellationToken: CancellationToken) =
+        let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
+        AsyncPrimitives.RunImmediate cancellationToken computation
+
     static member RunSynchronously(computation: Async<'T>, ?timeout, ?cancellationToken: CancellationToken) =
         let timeout, cancellationToken =
             match cancellationToken with
