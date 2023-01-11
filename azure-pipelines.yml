@@ -266,7 +266,7 @@ stages:
         # We will try to restore both FSharp.Core and FCS and if restore is _successful_, package version needs to be bumped.
         # NOTE: This CI check should only run on the release branches.
         - job: Check_Published_Package_Versions
-          condition: contains(variables['Build.SourceBranch'], 'refs/heads/release/dev17.4')
+          condition: or(contains(variables['Build.SourceBranch'], 'refs/heads/release/'), contains(variables['Build.TargetBranch'], 'refs/heads/release/'))
           pool:
             vmImage: $(UbuntuMachineQueueName)
           strategy:
