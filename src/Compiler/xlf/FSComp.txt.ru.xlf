@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="arrayElementHasWrongTypeTuple">
         <source>All elements of an array must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</source>
-        <target state="new">All elements of an array must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</target>
+        <target state="translated">Все элементы массива должны поддерживать неявное преобразование в тип первого элемента, который здесь является кортежем длиной {0} типа\n    {1}    \nЭтот элемент является кортежем длиной {2} типа\n    {3}    \n</target>
         <note />
       </trans-unit>
       <trans-unit id="buildDuplicateFile">
@@ -34,7 +34,7 @@
       </trans-unit>
       <trans-unit id="chkDuplicatedMethodParameter">
         <source>Duplicate parameter. The parameter '{0}' has been used more that once in this method.</source>
-        <target state="new">Duplicate parameter. The parameter '{0}' has been used more that once in this method.</target>
+        <target state="translated">Повторяющийся параметр. Параметр "{0}" использовался в этом методе несколько раз.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
@@ -144,7 +144,7 @@
       </trans-unit>
       <trans-unit id="elseBranchHasWrongTypeTuple">
         <source>All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</source>
-        <target state="new">All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</target>
+        <target state="translated">Все ветви выражения "if" должны возвращать значения, поддерживающие неявное преобразование в тип первой ветви, которым здесь является кортеж длиной {0} типа\n    {1}    \nЭта ветвь возвращает кортеж длиной {2} типа\n    {3}    \n</target>
         <note />
       </trans-unit>
       <trans-unit id="etProviderHasDesignerAssemblyDependency">
@@ -174,7 +174,7 @@
       </trans-unit>
       <trans-unit id="featureArithmeticInLiterals">
         <source>Allow arithmetic and logical operations in literals</source>
-        <target state="new">Allow arithmetic and logical operations in literals</target>
+        <target state="translated">Разрешить арифметические и логические операции в литералах</target>
         <note />
       </trans-unit>
       <trans-unit id="featureAttributesToRightOfModuleKeyword">
@@ -189,7 +189,7 @@
       </trans-unit>
       <trans-unit id="featureCSharpExtensionAttributeNotRequired">
         <source>Allow implicit Extension attribute on declaring types, modules</source>
-        <target state="new">Allow implicit Extension attribute on declaring types, modules</target>
+        <target state="translated">Разрешить атрибут неявного расширения для объявляющих типов, модулей</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
@@ -214,7 +214,7 @@
       </trans-unit>
       <trans-unit id="featureErrorForNonVirtualMembersOverrides">
         <source>Raises errors for non-virtual members overrides</source>
-        <target state="new">Raises errors for non-virtual members overrides</target>
+        <target state="translated">Вызывает ошибки при переопределениях невиртуальных элементов</target>
         <note />
       </trans-unit>
       <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
@@ -229,7 +229,7 @@
       </trans-unit>
       <trans-unit id="featureEscapeBracesInFormattableString">
         <source>Escapes curly braces before calling FormattableStringFactory.Create when interpolated string literal is typed as FormattableString</source>
-        <target state="new">Escapes curly braces before calling FormattableStringFactory.Create when interpolated string literal is typed as FormattableString</target>
+        <target state="translated">Экранирует фигурные скобки перед вызовом FormattableStringFactory.Create, когда интерполированный строковый литерал введен как FormattableString</target>
         <note />
       </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
@@ -259,12 +259,12 @@
       </trans-unit>
       <trans-unit id="featureInitProperties">
         <source>support for consuming init properties</source>
-        <target state="new">support for consuming init properties</target>
+        <target state="translated">поддержка использования свойств инициализации</target>
         <note />
       </trans-unit>
       <trans-unit id="featureInterfacesWithAbstractStaticMembers">
         <source>static abstract interface members</source>
-        <target state="new">static abstract interface members</target>
+        <target state="translated">статические абстрактные элементы интерфейса</target>
         <note />
       </trans-unit>
       <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
@@ -274,7 +274,7 @@
       </trans-unit>
       <trans-unit id="featureLowercaseDUWhenRequireQualifiedAccess">
         <source>Allow lowercase DU when RequireQualifiedAccess attribute</source>
-        <target state="new">Allow lowercase DU when RequireQualifiedAccess attribute</target>
+        <target state="translated">Разрешить du в нижнем регистре, если атрибут RequireQualifiedAccess</target>
         <note />
       </trans-unit>
       <trans-unit id="featureMLCompatRevisions">
@@ -284,7 +284,7 @@
       </trans-unit>
       <trans-unit id="featureMatchNotAllowedForUnionCaseWithNoData">
         <source>Pattern match discard is not allowed for union case that takes no data.</source>
-        <target state="new">Pattern match discard is not allowed for union case that takes no data.</target>
+        <target state="translated">Отмена сопоставления с шаблоном не разрешена для случая объединения, не принимающего данные.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNameOf">
@@ -344,7 +344,7 @@
       </trans-unit>
       <trans-unit id="featureRequiredProperties">
         <source>support for required properties</source>
-        <target state="new">support for required properties</target>
+        <target state="translated">поддержка обязательных свойств</target>
         <note />
       </trans-unit>
       <trans-unit id="featureResumableStateMachines">
@@ -354,7 +354,7 @@
       </trans-unit>
       <trans-unit id="featureSelfTypeConstraints">
         <source>self type constraints</source>
-        <target state="new">self type constraints</target>
+        <target state="translated">ограничения самостоятельного типа</target>
         <note />
       </trans-unit>
       <trans-unit id="featureSingleUnderscorePattern">
@@ -389,7 +389,7 @@
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongTypeTuple">
         <source>All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</source>
-        <target state="new">All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</target>
+        <target state="translated">Все ветви выражения сопоставления с шаблоном должны возвращать значения, поддерживающие неявное преобразование в тип первой ветви, которым здесь является кортеж длиной {0} типа\n    {1}    \nЭта ветвь возвращает кортеж длиной {2} типа\n    {3}    \n</target>
         <note />
       </trans-unit>
       <trans-unit id="forFormatInvalidForInterpolated">
@@ -414,7 +414,7 @@
       </trans-unit>
       <trans-unit id="forPercentAInReflectionFreeCode">
         <source>The '%A' format specifier may not be used in an assembly being compiled with option '--reflectionfree'. This construct implicitly uses reflection.</source>
-        <target state="new">The '%A' format specifier may not be used in an assembly being compiled with option '--reflectionfree'. This construct implicitly uses reflection.</target>
+        <target state="translated">Определитель формата "%A" нельзя использовать в сборке, компилируемой с параметром "--reflectionfree". Эта конструкция неявно использует отражение.</target>
         <note />
       </trans-unit>
       <trans-unit id="formatDashItem">
@@ -434,7 +434,7 @@
       </trans-unit>
       <trans-unit id="ifExpressionTuple">
         <source>The 'if' expression needs to return a tuple of length {0} of type\n    {1}    \nto satisfy context type requirements. It currently returns a tuple of length {2} of type\n    {3}    \n</source>
-        <target state="new">The 'if' expression needs to return a tuple of length {0} of type\n    {1}    \nto satisfy context type requirements. It currently returns a tuple of length {2} of type\n    {3}    \n</target>
+        <target state="translated">Выражение "if" должно возвращать кортеж длиной {0} типа\n    {1}    \nдля соответствия требованиям к типу контекста. В настоящее время возвращается кортеж длиной {2} типа\n    {3}    \n</target>
         <note />
       </trans-unit>
       <trans-unit id="ilxGenUnknownDebugPoint">
@@ -459,7 +459,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionAnd">
         <source>Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.</source>
-        <target state="new">Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.</target>
+        <target state="translated">Используется во взаимно рекурсивных привязках, объявлениях свойств и с несколькими ограничениями для универсальных параметров.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionConst">
@@ -469,7 +469,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionTypeTest">
         <source>Used to check if an object is of the given type in a pattern or binding.</source>
-        <target state="new">Used to check if an object is of the given type in a pattern or binding.</target>
+        <target state="translated">Используется для проверки принадлежности объекта заданному типу в шаблоне или привязке.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexByteStringMayNotBeInterpolated">
@@ -499,12 +499,12 @@
       </trans-unit>
       <trans-unit id="listElementHasWrongTypeTuple">
         <source>All elements of a list must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</source>
-        <target state="new">All elements of a list must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</target>
+        <target state="translated">Все элементы списка должны поддерживать неявное преобразование в тип первого элемента, который здесь является кортежем длиной {0} типа\n    {1}    \nЭтот элемент является кортежем длиной {2} типа\n    {3}    \n</target>
         <note />
       </trans-unit>
       <trans-unit id="matchNotAllowedForUnionCaseWithNoData">
         <source>Pattern discard is not allowed for union case that takes no data.</source>
-        <target state="new">Pattern discard is not allowed for union case that takes no data.</target>
+        <target state="translated">Отмена шаблона не разрешена для случая объединения, не принимающего данные.</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatError">
@@ -579,17 +579,17 @@
       </trans-unit>
       <trans-unit id="optsCompressMetadata">
         <source>Compress interface and optimization data files</source>
-        <target state="new">Compress interface and optimization data files</target>
+        <target state="translated">Сжатие файлов данных интерфейса и оптимизации</target>
         <note />
       </trans-unit>
       <trans-unit id="optsGetLangVersions">
         <source>Display the allowed values for language version.</source>
-        <target state="new">Display the allowed values for language version.</target>
+        <target state="translated">Отображение допустимых значений для версии языка.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
         <source>Invalid use of emitting a reference assembly, do not use '--standalone or --staticlink' with '--refonly or --refout'.</source>
-        <target state="needs-review-translation">Недопустимое использование при создании базовой сборки. Не используйте "--staticlink" или "--refonly" и "--refout" вместе.</target>
+        <target state="translated">Недопустимое использование при создании базовой сборки. Не используйте "--standalone or --staticlink" с "--refonly or --refout".</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidRefOut">
@@ -599,12 +599,12 @@
       </trans-unit>
       <trans-unit id="optsOptimizationData">
         <source>Specify included optimization information, the default is file. Important for distributed libraries.</source>
-        <target state="new">Specify included optimization information, the default is file. Important for distributed libraries.</target>
+        <target state="translated">Укажите включенные сведения об оптимизации, по умолчанию это файл. Необходимо для распределенных библиотек.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsPdbMatchesOutputFileName">
         <source>The pdb output file name cannot match the build output filename use --pdb:filename.pdb</source>
-        <target state="new">The pdb output file name cannot match the build output filename use --pdb:filename.pdb</target>
+        <target state="translated">Имя выходного файла pdb не может совпадать с именем выходного файла сборки. Используйте --pdb:filename.pdb</target>
         <note />
       </trans-unit>
       <trans-unit id="optsRefOnly">
@@ -619,17 +619,17 @@
       </trans-unit>
       <trans-unit id="optsReflectionFree">
         <source>Disable implicit generation of constructs using reflection</source>
-        <target state="new">Disable implicit generation of constructs using reflection</target>
+        <target state="translated">Отключить неявное создание конструкций с помощью отражения</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSetLangVersion">
         <source>Specify language version such as 'latest' or 'preview'.</source>
-        <target state="new">Specify language version such as 'latest' or 'preview'.</target>
+        <target state="translated">Укажите версию языка, например "новейшая" или "предварительная версия".</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSignatureData">
         <source>Include F# interface information, the default is file. Essential for distributing libraries.</source>
-        <target state="new">Include F# interface information, the default is file. Essential for distributing libraries.</target>
+        <target state="translated">Включить сведения об интерфейсе F#, по умолчанию используется файл. Необходимо для распространения библиотек.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
@@ -639,12 +639,12 @@
       </trans-unit>
       <trans-unit id="optsUnknownOptimizationData">
         <source>Invalid value '{0}' for --optimizationdata, valid value are: none, file, compress.</source>
-        <target state="new">Invalid value '{0}' for --optimizationdata, valid value are: none, file, compress.</target>
+        <target state="translated">Недопустимое значение "{0}" для --optimizationdata. Допустимые значения: none, file, compress.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnknownSignatureData">
         <source>Invalid value '{0}' for --interfacedata, valid value are: none, file, compress.</source>
-        <target state="new">Invalid value '{0}' for --interfacedata, valid value are: none, file, compress.</target>
+        <target state="translated">Недопустимое значение "{0}" для --interfacedata. Допустимые значения: none, file, compress.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageVersion">
@@ -699,7 +699,7 @@
       </trans-unit>
       <trans-unit id="parsExpectedPatternAfterToken">
         <source>Expected a pattern after this point</source>
-        <target state="new">Expected a pattern after this point</target>
+        <target state="translated">После этой точки ожидался шаблон</target>
         <note />
       </trans-unit>
       <trans-unit id="parsExpectingExpressionInTuple">
@@ -709,17 +709,17 @@
       </trans-unit>
       <trans-unit id="parsExpectingPatternInTuple">
         <source>Expecting pattern</source>
-        <target state="new">Expecting pattern</target>
+        <target state="translated">Ожидается шаблон</target>
         <note />
       </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr1">
         <source>Incomplete character literal (example: 'Q') or qualified type invocation (example: 'T.Name)</source>
-        <target state="new">Incomplete character literal (example: 'Q') or qualified type invocation (example: 'T.Name)</target>
+        <target state="translated">Неполный символьный литерал (например: "Q") или вызов квалифицированного типа (например: "T.Name)</target>
         <note />
       </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr2">
         <source>Incomplete operator expression (example a^b) or qualified type invocation (example: ^T.Name)</source>
-        <target state="new">Incomplete operator expression (example a^b) or qualified type invocation (example: ^T.Name)</target>
+        <target state="translated">Неполное выражение оператора (например, a^b) или вызов квалифицированного типа (например, ^T.Name)</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNewExprMemberAccess">
@@ -899,7 +899,7 @@
       </trans-unit>
       <trans-unit id="tcInitOnlyPropertyCannotBeSet1">
         <source>Init-only property '{0}' cannot be set outside the initialization code. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</source>
-        <target state="new">Init-only property '{0}' cannot be set outside the initialization code. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</target>
+        <target state="translated">Свойство только для инициализации "{0}" невозможно установить за пределами кода инициализации. См. https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInlineIfLambdaUsedOnNonInlineFunctionOrMethod">
@@ -929,7 +929,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidSelfConstraint">
         <source>Invalid constraint. Valid constraint forms include \"'T :&gt; ISomeInterface\" for interface constraints and \"SomeConstrainingType&lt;'T&gt;\" for self-constraints. See https://aka.ms/fsharp-type-constraints.</source>
-        <target state="new">Invalid constraint. Valid constraint forms include \"'T :&gt; ISomeInterface\" for interface constraints and \"SomeConstrainingType&lt;'T&gt;\" for self-constraints. See https://aka.ms/fsharp-type-constraints.</target>
+        <target state="translated">Недопустимое ограничение. Допустимые формы ограничения включают \"'T:&gt; ISomeInterface\" для ограничений интерфейса и \"SomeConstrainingType&lt;'T&gt;\" для собственных ограничений. См. https://aka.ms/fsharp-type-constraints.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidStructReturn">
@@ -974,7 +974,7 @@
       </trans-unit>
       <trans-unit id="tcMissingRequiredMembers">
         <source>The following required properties have to be initalized:{0}</source>
-        <target state="new">The following required properties have to be initalized:{0}</target>
+        <target state="translated">Необходимо инициализировать следующие обязательные свойства:{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNoEagerConstraintApplicationAttribute">
@@ -1059,7 +1059,7 @@
       </trans-unit>
       <trans-unit id="tcSetterForInitOnlyPropertyCannotBeCalled1">
         <source>Cannot call '{0}' - a setter for init-only property, please use object initialization instead. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</source>
-        <target state="new">Cannot call '{0}' - a setter for init-only property, please use object initialization instead. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</target>
+        <target state="translated">Не удается вызвать '{0}' — установщик для свойства только для инициализации, вместо этого используйте инициализацию объекта. См. https://aka.ms/fsharp-assigning-values-to-properties-at-initialization.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
@@ -1069,32 +1069,32 @@
       </trans-unit>
       <trans-unit id="tcSynTypeOrInvalidInDeclaration">
         <source>SynType.Or is not permitted in this declaration</source>
-        <target state="new">SynType.Or is not permitted in this declaration</target>
+        <target state="translated">SynType.Or не допускается в этом объявлении</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTraitHasMultipleSupportTypes">
         <source>The trait '{0}' invoked by this call has multiple support types. This invocation syntax is not permitted for such traits. See https://aka.ms/fsharp-srtp for guidance.</source>
-        <target state="new">The trait '{0}' invoked by this call has multiple support types. This invocation syntax is not permitted for such traits. See https://aka.ms/fsharp-srtp for guidance.</target>
+        <target state="translated">Признак "{0}", вызываемый этим звонком, имеет несколько типов поддержки. Этот синтаксис вызова не разрешен для таких признаков. См. руководство на https://aka.ms/fsharp-srtp.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTraitInvocationShouldUseTick">
         <source>Invocation of a static constraint should use \"'T.Ident\" and not \"^T.Ident\", even for statically resolved type parameters.</source>
-        <target state="new">Invocation of a static constraint should use \"'T.Ident\" and not \"^T.Ident\", even for statically resolved type parameters.</target>
+        <target state="translated">Вызов статического ограничения должен использовать \"'T.Ident\", а не \"^T.Ident\", даже для статически разрешенных параметров типа.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTraitIsNotStatic">
         <source>Trait '{0}' is not static</source>
-        <target state="new">Trait '{0}' is not static</target>
+        <target state="translated">Признак "{0}" не является статическим</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTraitIsStatic">
         <source>Trait '{0}' is static</source>
-        <target state="new">Trait '{0}' is static</target>
+        <target state="translated">Признак "{0}" является статическим</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTraitMayNotUseComplexThings">
         <source>A trait may not specify optional, in, out, ParamArray, CallerInfo or Quote arguments</source>
-        <target state="new">A trait may not specify optional, in, out, ParamArray, CallerInfo or Quote arguments</target>
+        <target state="translated">Признак не может указывать необязательные аргументы in, out, ParamArray, CallerInfo или Quote</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnableToParseInterpolatedString">
@@ -1104,12 +1104,12 @@
       </trans-unit>
       <trans-unit id="tcUsingInterfaceWithStaticAbstractMethodAsType">
         <source>'{0}' is normally used as a type constraint in generic code, e.g. \"'T when ISomeInterface&lt;'T&gt;\" or \"let f (x: #ISomeInterface&lt;_&gt;)\". See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3536\"' or '--nowarn:3536'.</source>
-        <target state="new">'{0}' is normally used as a type constraint in generic code, e.g. \"'T when ISomeInterface&lt;'T&gt;\" or \"let f (x: #ISomeInterface&lt;_&gt;)\". See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3536\"' or '--nowarn:3536'.</target>
+        <target state="translated">"{0}" обычно используется в качестве ограничения типа в универсальном коде, например \"'T when ISomeInterface&lt;"T&gt;\" или \"let f (x: #ISomeInterface&lt;_&gt;)\". См. руководство на https://aka.ms/fsharp-iwsams. Это предупреждение можно отключить с помощью "#nowarn \"3536\"" или "--nowarn:3536".</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUsingInterfacesWithStaticAbstractMethods">
         <source>Declaring \"interfaces with static abstract methods\" is an advanced feature. See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3535\"' or '--nowarn:3535'.</source>
-        <target state="new">Declaring \"interfaces with static abstract methods\" is an advanced feature. See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3535\"' or '--nowarn:3535'.</target>
+        <target state="translated">Объявление \"интерфейсов со статическими абстрактными методами\" является расширенной функцией. См. руководство на https://aka.ms/fsharp-iwsams. Это предупреждение можно отключить с помощью используя "#nowarn \"3535\"" or "--nowarn:3535".</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
@@ -3899,7 +3899,7 @@
       </trans-unit>
       <trans-unit id="tcUnionCaseExpectsTupledArguments">
         <source>This union case expects {0} arguments in tupled form, but was given {1}. The missing field arguments may be any of:{2}</source>
-        <target state="new">This union case expects {0} arguments in tupled form, but was given {1}. The missing field arguments may be any of:{2}</target>
+        <target state="translated">Этот вариант объединения ожидает аргументы {0} в форме кортежа, но было предоставлено: {1}. Отсутствующие аргументы поля могут быть любыми из следующих: {2}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcFieldIsNotStatic">
@@ -7579,7 +7579,7 @@
       </trans-unit>
       <trans-unit id="tcStructUnionMultiCaseDistinctFields">
         <source>If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'.</source>
-        <target state="needs-review-translation">Если тип объединения имеет более одного варианта и является структурой, всем полям в типе объединения необходимо присвоить уникальные имена.</target>
+        <target state="translated">Если тип объединения с несколькими регистрами является структурой, все случаи объединения должны иметь уникальные имена. Например: "type A = B of b: int | C of c: int".</target>
         <note />
       </trans-unit>
       <trans-unit id="CallerMemberNameIsOverriden">
