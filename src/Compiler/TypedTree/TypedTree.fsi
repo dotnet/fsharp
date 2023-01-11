@@ -2085,6 +2085,9 @@ type Val =
 
     member IsTypeFunction: bool
 
+    /// Indicates if the value has a signature file counterpart
+    member HasSignatureFile: bool
+
     /// The value of a value or member marked with [<LiteralAttribute>]
     member LiteralValue: Const option
 

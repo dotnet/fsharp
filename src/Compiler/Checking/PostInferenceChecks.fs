@@ -303,15 +303,11 @@ let BindVal cenv env (v: Val) =
     let alreadyDone = cenv.boundVals.ContainsKey v.Stamp
     cenv.boundVals[v.Stamp] <- 1
     
-    let notTopLevel () =
-        let parentHasSignature = v.DeclaringEntity.SigRange.FileName.EndsWith(".fsi")
-        not v.IsCompiledAsTopLevel || (parentHasSignature && v.SigRange.FileName.EndsWith(".fs"))
-    
     if not env.external &&
        not alreadyDone &&
        cenv.reportErrors && 
        not v.HasBeenReferenced && 
-       notTopLevel () && 
+       (not v.IsCompiledAsTopLevel || (v.IsCompiledAsTopLevel && not v.HasSignatureFile)) &&
        not (v.DisplayName.StartsWithOrdinal("_")) && 
        not v.IsCompilerGenerated then 
 

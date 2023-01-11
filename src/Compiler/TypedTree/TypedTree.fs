@@ -2803,6 +2803,9 @@ type Val =
     //  Indicates if this value was declared to be a type function, e.g. "let f<'a> = typeof<'a>"
     member x.IsTypeFunction = x.val_flags.IsTypeFunction
 
+    member x.HasSignatureFile =
+        x.SigRange <> x.DefinitionRange
+    
     /// Get the inline declaration on the value
     member x.InlineInfo = x.val_flags.InlineInfo
 
