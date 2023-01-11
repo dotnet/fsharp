@@ -421,3 +421,63 @@ type C =
          |> withDiagnostics [
             (Error 3556, Line 7, Col 5, Line 8, Col 29, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Implementing interfaces is not allowed.")
          ]
+         
+    [<Fact>]
+    let ``Sealed and AbstractClass on a type implicit constructor declaring abstract members in Lang 70`` () =
+        Fsx """
+[<Sealed; AbstractClass>]
+type T =
+    abstract A : int
+    abstract B : int with get, set
+    abstract C : i:int -> int
+    abstract D : i:int -> int
+        """
+         |> withLangVersion70
+         |> compile
+         |> shouldSucceed
+    
+    [<Fact>]
+    let ``Sealed and AbstractClass on a type declaring abstract members in Lang 70`` () =
+        Fsx """
+[<Sealed; AbstractClass>]
+type T() =
+    abstract A : int
+    abstract B : int with get, set
+    abstract C : i:int -> int
+    abstract D : i:int -> int
+        """
+         |> withLangVersion70
+         |> compile
+         |> shouldSucceed
+         
+    [<Fact>]
+    let ``Sealed and AbstractClass on a type with implicit constructor declaring abstract members in Lang preview`` () =
+        Fsx """
+[<Sealed; AbstractClass>]
+type T =
+    abstract C : i:int -> int
+    abstract D : i:int -> int
+        """
+         |> withLangVersionPreview
+         |> compile
+         |> shouldFail
+         |> withDiagnostics [
+             (Error 3557, Line 4, Col 14, Line 4, Col 15, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Abstract member declarations are not allowed.")
+             (Error 3557, Line 5, Col 14, Line 5, Col 15, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Abstract member declarations are not allowed.")
+         ]
+         
+    [<Fact>]
+    let ``Sealed and AbstractClass on a type declaring abstract members in Lang preview`` () =
+        Fsx """
+[<Sealed; AbstractClass>]
+type T() =
+    abstract C : i:int -> int
+    abstract D : i:int -> int
+        """
+         |> withLangVersionPreview
+         |> compile
+         |> shouldFail
+         |> withDiagnostics [
+             (Error 3557, Line 4, Col 14, Line 4, Col 15, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Abstract member declarations are not allowed.")
+             (Error 3557, Line 5, Col 14, Line 5, Col 15, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Abstract member declarations are not allowed.")
+         ]

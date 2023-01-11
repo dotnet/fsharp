@@ -1778,6 +1778,11 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (env
               let isStaticClass = HasFSharpAttribute cenv.g cenv.g.attrib_SealedAttribute tcref.Attribs && HasFSharpAttribute cenv.g cenv.g.attrib_AbstractClassAttribute tcref.Attribs
               if isStaticClass && cenv.g.langVersion.SupportsFeature(LanguageFeature.ErrorReportingOnStaticClasses) then
                   ReportErrorOnStaticClass synMembers
+                  match tyconOpt with
+                  | Some tycon ->
+                        for slot in tycon.FSharpObjectModelTypeInfo.fsobjmodel_vslots do
+                            errorR(Error(FSComp.SR.chkAbstractMembersDeclarationsOnStaticClasses(), slot.Range))
+                  | None -> ()
               
               let envForDecls = 
                 // This allows to implement protected interface methods if it's a DIM.
