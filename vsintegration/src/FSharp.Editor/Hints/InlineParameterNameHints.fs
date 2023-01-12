@@ -2,6 +2,7 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor.Hints
 
+open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
@@ -40,8 +41,9 @@ module InlineParameterNameHints =
                         (symbolUse.Range.End.Column + 1)
 
         parseResults.FindParameterLocations position
-        |> Option.map (fun locations -> locations.ArgumentLocations)
-        |> Option.defaultValue [||]
+        |> Option.map (fun locations -> locations.ArgumentLocations |> Seq.filter (fun location -> Position.posGeq location.ArgumentRange.Start position))
+        |> Option.filter (not << Seq.isEmpty)
+        |> Option.defaultValue Seq.empty
 
     let private getTupleRanges =
         Seq.map (fun location -> location.ArgumentRange)
@@ -59,6 +61,14 @@ module InlineParameterNameHints =
         >> Seq.map (fun location -> location.ArgumentRange) 
         >> Seq.contains range
 
+    let private getSourceTextAtRange 
+        (sourceText: SourceText)
+        (range: range) =
+
+        let line = sourceText.Lines[range.Start.Line - 1].ToString()
+        let length = range.EndColumn - range.StartColumn
+        line.Substring(range.Start.Column, length)
+
     let isMemberOrFunctionOrValueValidForHint 
         (symbol: FSharpMemberOrFunctionOrValue) 
         (symbolUse: FSharpSymbolUse) =
@@ -68,9 +78,12 @@ module InlineParameterNameHints =
                 symbol.DeclaringEntity 
                 |> Option.exists (fun entity -> entity.CompiledName <> "Operators")
 
+            let isNotCustomOperation = 
+                not <| symbol.HasAttribute<CustomOperationAttribute>()
+
             (symbol.IsFunction && isNotBuiltInOperator) // arguably, hints for those would be rather useless
             || symbol.IsConstructor
-            || symbol.IsMethod
+            || (symbol.IsMethod && isNotCustomOperation)
         else
             false
 
@@ -79,12 +92,13 @@ module InlineParameterNameHints =
         && symbol.DisplayName <> "(::)"
 
     let getHintsForMemberOrFunctionOrValue
+        (sourceText: SourceText)
         (parseResults: FSharpParseFileResults) 
         (symbol: FSharpMemberOrFunctionOrValue) 
         (symbolUse: FSharpSymbolUse) =
 
         let parameters = symbol.CurriedParameterGroups |> Seq.concat
-        let argumentLocations = getArgumentLocations symbolUse parseResults
+        let argumentLocations = parseResults |> getArgumentLocations symbolUse
 
         let tupleRanges = argumentLocations |> getTupleRanges
         let curryRanges = parseResults |> getCurryRanges symbolUse
@@ -93,10 +107,16 @@ module InlineParameterNameHints =
             if tupleRanges |> (not << Seq.isEmpty) then tupleRanges else curryRanges
             |> Seq.filter (fun range -> argumentLocations |> (not << isNamedArgument range))
 
+        let argumentNames = 
+            ranges
+            |> Seq.map (getSourceTextAtRange sourceText)
+
         parameters
         |> Seq.zip ranges // Seq.zip is important as List.zip requires equal lengths
         |> Seq.where (snd >> doesParameterNameExist)
-        |> Seq.map getParameterHint
+        |> Seq.zip argumentNames
+        |> Seq.choose (fun (argumentName, (range, parameter)) -> 
+            if argumentName <> parameter.DisplayName then Some (getParameterHint (range, parameter)) else None)
         |> Seq.toList
 
     let getHintsForUnionCase

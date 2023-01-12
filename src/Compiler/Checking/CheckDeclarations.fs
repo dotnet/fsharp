@@ -1655,6 +1655,23 @@ module MutRecBindingChecking =
         
         defnsEs, envMutRec
 
+let private ReportErrorOnStaticClass (synMembers: SynMemberDefn list) =
+    for mem in synMembers do
+        match mem with
+        | SynMemberDefn.ImplicitCtor(ctorArgs = SynSimplePats.SimplePats(pats = pats)) when (not pats.IsEmpty) ->
+            for pat in pats do
+                errorR(Error(FSComp.SR.chkConstructorWithArgumentsOnStaticClasses(), pat.Range))
+           
+        | SynMemberDefn.Member(SynBinding(valData = SynValData(memberFlags = Some memberFlags)), m) when memberFlags.MemberKind = SynMemberKind.Constructor ->
+            errorR(Error(FSComp.SR.chkAdditionalConstructorOnStaticClasses(), m))
+        | SynMemberDefn.Member(SynBinding(valData = SynValData(memberFlags = Some memberFlags)), m) when memberFlags.MemberKind = SynMemberKind.Member && memberFlags.IsInstance ->
+            errorR(Error(FSComp.SR.chkInstanceMemberOnStaticClasses(), m))
+        | SynMemberDefn.LetBindings(isStatic = false; range = range) ->
+            errorR(Error(FSComp.SR.chkInstanceLetBindingOnStaticClasses(), range))
+        | SynMemberDefn.Interface(range = range) ->
+            errorR(Error(FSComp.SR.chkImplementingInterfacesOnStaticClasses(), range))
+        | _ -> ()
+
 /// Check and generalize the interface implementations, members, 'let' definitions in a mutually recursive group of definitions.
 let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (envMutRec: TcEnv) (mutRecDefns: MutRecDefnsPhase2Data) isMutRec =     
     let g = cenv.g
@@ -1755,7 +1772,13 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (env
 
       let binds: MutRecDefnsPhase2Info = 
           (envMutRec, mutRecDefns) ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls tyconData -> 
-              let (MutRecDefnsPhase2DataForTycon(tyconOpt, _, declKind, tcref, _, _, declaredTyconTypars, _, _, _, fixupFinalAttrs)) = tyconData
+              let (MutRecDefnsPhase2DataForTycon(tyconOpt, _x, declKind, tcref, _, _, declaredTyconTypars, synMembers, _, _, fixupFinalAttrs)) = tyconData
+              
+              // If a tye uses both [<Sealed>] and [<AbstractClass>] attributes it means it is a static class.
+              let isStaticClass = HasFSharpAttribute cenv.g cenv.g.attrib_SealedAttribute tcref.Attribs && HasFSharpAttribute cenv.g cenv.g.attrib_AbstractClassAttribute tcref.Attribs
+              if isStaticClass && cenv.g.langVersion.SupportsFeature(LanguageFeature.ErrorReportingOnStaticClasses) then
+                  ReportErrorOnStaticClass synMembers
+              
               let envForDecls = 
                 // This allows to implement protected interface methods if it's a DIM.
                 // Does not need to be hidden behind a lang version as it needs to be possible to
@@ -4030,6 +4053,7 @@ module TcDeclarations =
     let rec private SplitTyconDefn (SynTypeDefn(typeInfo=synTyconInfo;typeRepr=trepr; members=extraMembers)) =
         let extraMembers = desugarGetSetMembers extraMembers
         let implements1 = List.choose (function SynMemberDefn.Interface (interfaceType=ty) -> Some(ty, ty.Range) | _ -> None) extraMembers
+       
         match trepr with
         | SynTypeDefnRepr.ObjectModel(kind, cspec, m) ->
             let cspec = desugarGetSetMembers cspec
@@ -4047,7 +4071,7 @@ module TcDeclarations =
             let members = 
                 let membersIncludingAutoProps = 
                     cspec |> List.filter (fun memb -> 
-                      match memb with 
+                      match memb with
                       | SynMemberDefn.Interface _
                       | SynMemberDefn.Member _
                       | SynMemberDefn.GetSetMember _
@@ -4837,7 +4861,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
               let moduleEntity = Construct.NewModuleOrNamespace (Some env.eCompPath) vis id xmlDoc modAttrs (MaybeLazy.Strict moduleTy)
 
               // Now typecheck. 
-              let! moduleContents, topAttrsNew, envAtEnd = TcModuleOrNamespaceElements cenv (Parent (mkLocalModuleRef moduleEntity)) endm envForModule xml None [] moduleDefs 
+              let! moduleContents, topAttrsNew, envAtEnd = TcModuleOrNamespaceElements cenv (Parent (mkLocalModuleRef moduleEntity)) endm envForModule xml None [] moduleDefs
 
               // Get the inferred type of the decls and record it in the modul. 
               moduleEntity.entity_modul_type <- MaybeLazy.Strict moduleTyAcc.Value
@@ -4924,8 +4948,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
 
           let! moduleContents, topAttrs, envAtEnd = TcModuleOrNamespaceElements cenv parent endm envNS xml mutRecNSInfo [] defs
 
-          MutRecBindingChecking.TcMutRecDefns_UpdateNSContents nsInfo
-          
+          MutRecBindingChecking.TcMutRecDefns_UpdateNSContents nsInfo 
           let env, openDecls = 
               if isNil enclosingNamespacePath then 
                   envAtEnd, []

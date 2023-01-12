@@ -47,6 +47,10 @@ let FSharpScriptFileSuffixes = [ ".fsscript"; ".fsx" ]
 let FSharpIndentationAwareSyntaxFileSuffixes =
     [ ".fs"; ".fsscript"; ".fsx"; ".fsi" ]
 
+let FsharpExperimentalFeaturesEnabledAutomatically =
+    String.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("FSHARP_EXPERIMENTAL_FEATURES"))
+    |> not
+
 //--------------------------------------------------------------------------
 // General file name resolver
 //--------------------------------------------------------------------------
@@ -300,7 +304,7 @@ type ImportedAssembly =
         IsProviderGenerated: bool
         mutable TypeProviders: Tainted<ITypeProvider> list
 #endif
-        FSharpOptimizationData: Microsoft.FSharp.Control.Lazy<Option<Optimizer.LazyModuleInfo>>
+        FSharpOptimizationData: Microsoft.FSharp.Control.Lazy<Optimizer.LazyModuleInfo option>
     }
 
 type AvailableImportedAssembly =
@@ -508,6 +512,7 @@ type TcConfigBuilder =
         mutable deterministic: bool
         mutable concurrentBuild: bool
         mutable parallelCheckingWithSignatureFiles: bool
+        mutable parallelIlxGen: bool
         mutable emitMetadataAssembly: MetadataAssemblyGeneration
         mutable preferredUiLang: string option
         mutable lcid: int option
@@ -734,7 +739,8 @@ type TcConfigBuilder =
             emitTailcalls = true
             deterministic = false
             concurrentBuild = true
-            parallelCheckingWithSignatureFiles = false
+            parallelCheckingWithSignatureFiles = FsharpExperimentalFeaturesEnabledAutomatically
+            parallelIlxGen = FsharpExperimentalFeaturesEnabledAutomatically
             emitMetadataAssembly = MetadataAssemblyGeneration.None
             preferredUiLang = None
             lcid = None
@@ -1289,6 +1295,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.deterministic = data.deterministic
     member _.concurrentBuild = data.concurrentBuild
     member _.parallelCheckingWithSignatureFiles = data.parallelCheckingWithSignatureFiles
+    member _.parallelIlxGen = data.parallelIlxGen
     member _.emitMetadataAssembly = data.emitMetadataAssembly
     member _.pathMap = data.pathMap
     member _.langVersion = data.langVersion
