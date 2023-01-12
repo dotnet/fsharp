@@ -205,22 +205,18 @@ let mkGraph (compilingFSharpCore: bool) (filePairs: FilePairMap) (files: FileInP
             | None -> Array.empty
             | Some sigIdx -> Array.singleton sigIdx
 
-        // Files in FSharp.Core that occur between `prim-types-prelude` and `prim-types`
-        // need to know about `prim-types-prelude` that came before it.
+        // Files in FSharp.Core all need to know about `prim-types-prelude`.
         let fsharpCoreBuildProperties =
             if not compilingFSharpCore then
                 Array.empty
             else
-                let idxOf (fileName: string) =
-                    files |> Array.findIndex (fun f -> f.FileName.EndsWith fileName)
+                let primTypesPreludeFsi =
+                    files |> Array.findIndex (fun f -> f.FileName.EndsWith "prim-types-prelude.fsi")
 
-                let primTypesPreludeFsi = idxOf "prim-types-prelude.fsi"
-                let primTypesFsiIdx = idxOf "prim-types.fsi"
-
-                if primTypesPreludeFsi < file.Idx && file.Idx < primTypesFsiIdx then
-                    [| primTypesPreludeFsi |]
-                else
-                    Array.empty
+                [|
+                    if file.Idx > primTypesPreludeFsi then
+                        yield primTypesPreludeFsi
+                |]
 
         let allDependencies =
             [|
