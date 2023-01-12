@@ -1454,7 +1454,6 @@ open FSharp.Compiler.GraphChecking
 
 type State = TcState * bool
 type FinalFileResult = TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType
-type SingleResult = State -> FinalFileResult * State
 
 [<RequireQualifiedAccess>]
 type NodeToTypeCheck =
@@ -1466,7 +1465,7 @@ type NodeToTypeCheck =
     /// Even though the actual implementation file was not type-checked.
     | ArtificialImplFile of signatureFileIndex: int
 
-let folder (state: State) (result: SingleResult) : FinalFileResult * State = result state
+let folder (state: State) (finisher: Finisher<State, FinalFileResult>) : FinalFileResult * State = finisher.Invoke(state)
 
 /// Typecheck a single file (or interactive entry into F# Interactive)
 /// <returns>a callback functions that takes a `TcState` and will add the checked result to it.</returns>
@@ -1480,7 +1479,7 @@ let CheckOneInputWithCallback
       tcState: TcState,
       inp: ParsedInput,
       _skipImplIfSigExists: bool): (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcResultsSink * TcState * ParsedInput * bool)
-    : Cancellable<TcState -> PartialResult * TcState> =
+    : Cancellable<Finisher<TcState, PartialResult>> =
     cancellable {
         try
             CheckSimulateException tcConfig
@@ -1531,7 +1530,7 @@ let CheckOneInputWithCallback
 
                 // printfn $"Finished Processing Sig {file.FileName}"
                 return
-                    fun tcState ->
+                    Finisher(fun tcState ->
                         // printfn $"Applying Sig {file.FileName}"
 
                         let rootSigs = Zmap.add qualNameOfFile sigFileType tcState.tcsRootSigs
@@ -1551,7 +1550,7 @@ let CheckOneInputWithCallback
                                 tcsCreatesGeneratedProvidedTypes = tcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
                             }
 
-                        partialResult, tcState
+                        partialResult, tcState)
 
             | ParsedInput.ImplFile file ->
                 // printfn $"Processing Impl {file.FileName}"
@@ -1580,7 +1579,7 @@ let CheckOneInputWithCallback
 
                 // printfn $"Finished Processing Impl {file.FileName}"
                 return
-                    fun tcState ->
+                    Finisher(fun tcState ->
                         // Check if we've already seen an implementation for this fragment
                         if Zset.contains qualNameOfFile tcState.tcsRootImpls then
                             errorR (Error(FSComp.SR.buildImplementationAlreadyGiven (qualNameOfFile.Text), m))
@@ -1603,11 +1602,11 @@ let CheckOneInputWithCallback
                             }
 
                         // printfn $"Finished applying Impl {file.FileName}"
-                        partialResult, tcState
+                        partialResult, tcState)
 
         with e ->
             errorRecovery e range0
-            return fun tcState -> (tcState.TcEnvFromSignatures, EmptyTopAttrs, None, tcState.tcsCcuSig), tcState
+            return Finisher(fun tcState -> (tcState.TcEnvFromSignatures, EmptyTopAttrs, None, tcState.tcsCcuSig), tcState)
     }
 
 let AddSignatureResultToTcImplEnv (tcImports: TcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input: ParsedInput) =
@@ -1731,8 +1730,8 @@ let CheckMultipleInputsUsingGraphMode
 
     let mutable cnt = 1
 
-    let processArtificialImplFile (input: ParsedInput) ((currentTcState, _currentPriorErrors): State) : State -> PartialResult * State =
-        fun (state: State) ->
+    let processArtificialImplFile (input: ParsedInput) ((currentTcState, _currentPriorErrors): State) : Finisher<State, PartialResult> =
+        Finisher(fun (state: State) ->
             let tcState, currentPriorErrors = state
 
             let f =
@@ -1742,12 +1741,12 @@ let CheckMultipleInputsUsingGraphMode
             // The `partialResult` will be excluded at the end of `GraphProcessing.processGraph`.
             // The important thing is that `nextTcState` will populated the necessary information to TcEnvFromImpls.
             let partialResult, nextTcState = f tcState
-            partialResult, (nextTcState, currentPriorErrors)
+            partialResult, (nextTcState, currentPriorErrors))
 
     let processFile
         ((input, logger): ParsedInput * DiagnosticsLogger)
         ((currentTcState, _currentPriorErrors): State)
-        : State -> PartialResult * State =
+        : Finisher<State, PartialResult> =
         cancellable {
             use _ = UseDiagnosticsLogger logger
             // TODO Is it OK that we don't update 'priorErrors' after processing batches?
@@ -1773,11 +1772,11 @@ let CheckMultipleInputsUsingGraphMode
 
             // printfn $"Finished Processing AST {file.ToString()}"
             return
-                (fun (state: State) ->
+                Finisher(fun (state: State) ->
 
                     // printfn $"Applying {file.ToString()}"
                     let tcState, priorErrors = state
-                    let (partialResult: PartialResult, tcState) = f tcState
+                    let (partialResult: PartialResult, tcState) = f.Invoke(tcState)
 
                     let hasErrors = logger.ErrorCount > 0
                     // TODO Should we use local _priorErrors or global priorErrors?
@@ -1797,7 +1796,7 @@ let CheckMultipleInputsUsingGraphMode
                 let logger = DiagnosticsLoggerForInput(tcConfig, input, oldLogger)
                 input, logger)
 
-        let processFile (node: NodeToTypeCheck) (state: State) : State -> PartialResult * State =
+        let processFile (node: NodeToTypeCheck) (state: State) : Finisher<State, PartialResult> =
             match node with
             | NodeToTypeCheck.ArtificialImplFile idx ->
                 let parsedInput, _ = inputsWithLoggers[idx]
@@ -1814,7 +1813,7 @@ let CheckMultipleInputsUsingGraphMode
             | NodeToTypeCheck.PhysicalFile file -> Some file
 
         let partialResults, (tcState, _) =
-            TypeCheckingGraphProcessing.processTypeCheckingGraph<NodeToTypeCheck, int, State, SingleResult, FinalFileResult>
+            TypeCheckingGraphProcessing.processTypeCheckingGraph<NodeToTypeCheck, int, State, FinalFileResult>
                 nodeGraph
                 processFile
                 folder

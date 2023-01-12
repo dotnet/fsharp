@@ -20,9 +20,9 @@ open System.Threading
 /// </remarks>
 let private combineResults
     (emptyState: 'State)
-    (deps: ProcessedNode<'Item, 'State * 'Result>[])
-    (transitiveDeps: ProcessedNode<'Item, 'State * 'Result>[])
-    (folder: 'State -> 'Result -> 'State)
+    (deps: ProcessedNode<'Item, 'State * Finisher<'State, 'FinalFileResult>>[])
+    (transitiveDeps: ProcessedNode<'Item, 'State * Finisher<'State, 'FinalFileResult>>[])
+    (folder: 'State -> Finisher<'State, 'FinalFileResult> -> 'State)
     : 'State =
     match deps with
     | [||] -> emptyState
@@ -60,17 +60,20 @@ let private combineResults
 /// Process a graph of items.
 /// A version of 'GraphProcessing.processGraph' with a signature slightly specific to type-checking.
 /// </summary>
-let processTypeCheckingGraph<'Item, 'ChosenItem, 'State, 'Result, 'FinalFileResult when 'Item: equality and 'Item: comparison>
+let processTypeCheckingGraph<'Item, 'ChosenItem, 'State, 'FinalFileResult when 'Item: equality and 'Item: comparison>
     (graph: Graph<'Item>)
-    (work: 'Item -> 'State -> 'Result)
-    (folder: 'State -> 'Result -> 'FinalFileResult * 'State)
+    (work: 'Item -> 'State -> Finisher<'State, 'FinalFileResult>)
+    (folder: 'State -> Finisher<'State, 'FinalFileResult> -> 'FinalFileResult * 'State)
     // Decides whether a result for an item should be included in the final state, and how to map the item if it should.
     (finalStateChooser: 'Item -> 'ChosenItem option)
     (emptyState: 'State)
     (ct: CancellationToken)
     : ('ChosenItem * 'FinalFileResult) list * 'State =
 
-    let workWrapper (getProcessedNode: 'Item -> ProcessedNode<'Item, 'State * 'Result>) (node: NodeInfo<'Item>) : 'State * 'Result =
+    let workWrapper
+        (getProcessedNode: 'Item -> ProcessedNode<'Item, 'State * Finisher<'State, 'FinalFileResult>>)
+        (node: NodeInfo<'Item>)
+        : 'State * Finisher<'State, 'FinalFileResult> =
         let folder x y = folder x y |> snd
         let deps = node.Deps |> Array.except [| node.Item |] |> Array.map getProcessedNode
 
