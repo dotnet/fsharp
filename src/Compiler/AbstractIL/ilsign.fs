@@ -349,11 +349,10 @@ type ILStrongNameSigner =
     | KeyPair of keyPair
     | KeyContainer of keyContainerName
 
-    static member OpenPublicKeyOptions s p =
-        PublicKeyOptionsSigner((signerOpenPublicKeyFile s), p)
+    static member OpenPublicKeyOptions kp p = PublicKeyOptionsSigner(kp, p)
 
-    static member OpenPublicKey pubkey = PublicKeySigner pubkey
-    static member OpenKeyPairFile s = KeyPair(signerOpenKeyPairFile s)
+    static member OpenPublicKey bytes = PublicKeySigner bytes
+    static member OpenKeyPairFile bytes = KeyPair(bytes)
     static member OpenKeyContainer s = KeyContainer s
 
     member s.IsFullySigned =

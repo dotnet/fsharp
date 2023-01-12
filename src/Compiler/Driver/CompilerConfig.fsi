@@ -424,6 +424,8 @@ type TcConfigBuilder =
 
         mutable concurrentBuild: bool
 
+        mutable parallelIlxGen: bool
+
         mutable emitMetadataAssembly: MetadataAssemblyGeneration
 
         mutable preferredUiLang: string option
@@ -745,6 +747,8 @@ type TcConfig =
     member deterministic: bool
 
     member concurrentBuild: bool
+
+    member parallelIlxGen: bool
 
     member emitMetadataAssembly: MetadataAssemblyGeneration
 

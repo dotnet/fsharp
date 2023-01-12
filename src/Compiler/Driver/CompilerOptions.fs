@@ -69,7 +69,7 @@ and CompilerOption =
         name: string *
         argumentDescriptionString: string *
         actionSpec: OptionSpec *
-        deprecationError: Option<exn> *
+        deprecationError: exn option *
         helpText: string option
 
 and CompilerOptionBlock =
@@ -1393,6 +1393,7 @@ let testFlag tcConfigB =
             | "ShowLoadedAssemblies" -> tcConfigB.showLoadedAssemblies <- true
             | "ContinueAfterParseFailure" -> tcConfigB.continueAfterParseFailure <- true
             | "ParallelOff" -> tcConfigB.concurrentBuild <- false
+            | "ParallelIlxGen" -> tcConfigB.parallelIlxGen <- true
             | "ParallelCheckingWithSignatureFilesOn" ->
                 tcConfigB.typeCheckingConfig <-
                     { tcConfigB.typeCheckingConfig with
