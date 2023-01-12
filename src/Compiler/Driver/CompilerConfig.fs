@@ -400,7 +400,6 @@ type ParallelReferenceResolution =
 [<RequireQualifiedAccess>]
 type TypeCheckingMode =
     | Sequential
-    | ParallelCheckingOfBackedImplFiles
     | Graph
 
 [<RequireQualifiedAccess>]

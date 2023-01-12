@@ -26,8 +26,6 @@
     <WarningsAsErrors>1182;0025;$(WarningsAsErrors)</WarningsAsErrors>
     <OtherFlags>$(OtherFlags) --nowarn:3384</OtherFlags>
     <OtherFlags>$(OtherFlags) --times --nowarn:75</OtherFlags>
-    <OtherFlags Condition="$(ParallelCheckingWithSignatureFilesOn) == 'true'">$(OtherFlags) --test:ParallelCheckingWithSignatureFilesOn</OtherFlags>
-    <OtherFlags Condition="$(GraphBasedCheckingOn) == 'true'">$(OtherFlags) --test:GraphBasedChecking</OtherFlags>
     <OtherFlags Condition="$(AdditionalFscCmdFlags) != ''">$(OtherFlags) $(AdditionalFscCmdFlags)</OtherFlags>
   </PropertyGroup>
 

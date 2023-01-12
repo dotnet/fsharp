@@ -8,13 +8,11 @@ open Scenarios
 [<Struct>]
 type Method =
     | Sequential
-    | ParallelCheckingOfBackedImplFiles
     | Graph
 
 let methodOptions (method: Method) =
     match method with
     | Method.Sequential -> []
-    | Method.ParallelCheckingOfBackedImplFiles -> [ "--test:ParallelCheckingWithSignatureFilesOn" ]
     | Method.Graph -> [ "--test:GraphBasedChecking" ]
 
 let withMethod (method: Method) (cu: CompilationUnit) : CompilationUnit =
@@ -51,10 +49,6 @@ let scenarios = codebases
 [<TestCaseSource(nameof scenarios)>]
 let ``Compile a valid scenario using graph-based type-checking`` (scenario: Scenario) =
     compileAValidScenario scenario Method.Graph
-
-[<TestCaseSource(nameof scenarios)>]
-let ``Compile a valid scenario using parallel backed implementation files type-checking`` (scenario: Scenario) =
-    compileAValidScenario scenario Method.ParallelCheckingOfBackedImplFiles
 
 [<TestCaseSource(nameof scenarios)>]
 let ``Compile a valid scenario using sequential type-checking`` (scenario: Scenario) =

@@ -207,8 +207,6 @@ type ParallelReferenceResolution =
 type TypeCheckingMode =
     /// Default mode where all source files are processed sequentially in compilation order.
     | Sequential
-    /// Signature files and implementation files without backing files are processed sequentially, then backed implementation files are processed in parallel.
-    | ParallelCheckingOfBackedImplFiles
     /// Parallel type-checking that uses automated file-to-file dependency detection to construct a highly-parallelisable file graph.
     | Graph
 

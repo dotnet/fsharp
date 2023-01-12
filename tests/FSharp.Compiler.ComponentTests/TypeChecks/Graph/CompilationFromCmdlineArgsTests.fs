@@ -47,15 +47,10 @@ let testCompilerFromArgs (method: Method) (projectArgumentsFilePath: string) : u
 
 [<TestCaseSource(nameof localProjects)>]
 [<Explicit("Slow, only useful as a sanity check that the test codebase is sound and type-checks using the old method")>]
-let ``1. Test sequential type-checking`` (projectArgumentsFilePath: string) =
+let ``Test sequential type-checking`` (projectArgumentsFilePath: string) =
     testCompilerFromArgs Method.Sequential projectArgumentsFilePath
 
 [<TestCaseSource(nameof localProjects)>]
-[<Explicit("Slow, only useful as a sanity check that the test codebase is sound and type-checks using the parallel-fs method")>]
-let ``2. Test parallelfs type-checking`` (projectArgumentsFilePath: string) =
-    testCompilerFromArgs Method.ParallelCheckingOfBackedImplFiles projectArgumentsFilePath
-
-[<TestCaseSource(nameof localProjects)>]
 [<Explicit("This only runs with the explicitly mentioned projects above")>]
-let ``3. Test graph-based type-checking`` (projectArgumentsFilePath: string) =
+let ``Test graph-based type-checking`` (projectArgumentsFilePath: string) =
     testCompilerFromArgs Method.Graph projectArgumentsFilePath

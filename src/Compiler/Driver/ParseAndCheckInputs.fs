@@ -1450,110 +1450,6 @@ let CheckMultipleInputsSequential (ctok, checkForErrors, tcConfig, tcImports, tc
     (tcState, inputs)
     ||> List.mapFold (CheckOneInputEntry(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, false))
 
-/// Use parallel checking of implementation files that have signature files
-let CheckMultipleInputsInParallel
-    ((ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs): CompilationThreadToken * (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcState * (PhasedDiagnostic -> PhasedDiagnostic) * ParsedInput list)
-    : PartialResult list * TcState =
-
-    let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
-
-    // We create one CapturingDiagnosticLogger for each file we are processing and
-    // ensure the diagnostics are presented in deterministic order.
-    //
-    // eagerFormat is used to format diagnostics as they are emitted, just as they would be in the command-line
-    // compiler. This is necessary because some formatting of diagnostics is dependent on the
-    // type inference state at precisely the time the diagnostic is emitted.
-    UseMultipleDiagnosticLoggers (inputs, diagnosticsLogger, Some eagerFormat) (fun inputsWithLoggers ->
-
-        // Equip loggers to locally filter w.r.t. scope pragmas in each input
-        let inputsWithLoggers =
-            inputsWithLoggers
-            |> List.map (fun (input, oldLogger) ->
-                let logger = DiagnosticsLoggerForInput(tcConfig, input, oldLogger)
-                input, logger)
-
-        // In the first linear part of parallel checking, we use a 'checkForErrors' that checks either for errors
-        // somewhere in the files processed prior to each one, or in the processing of this particular file.
-        let priorErrors = checkForErrors ()
-
-        // Do the first linear phase, checking all signatures and any implementation files that don't have a signature.
-        // Implementation files that do have a signature will result in a Choice2Of2 indicating to next do some of the
-        // checking in parallel.
-        let partialResults, (tcState, _) =
-            ((tcState, priorErrors), inputsWithLoggers)
-            ||> List.mapFold (fun (tcState, priorErrors) (input, logger) ->
-                use _ = UseDiagnosticsLogger logger
-
-                let checkForErrors2 () = priorErrors || (logger.ErrorCount > 0)
-
-                let partialResult, tcState =
-                    CheckOneInputAux(
-                        checkForErrors2,
-                        tcConfig,
-                        tcImports,
-                        tcGlobals,
-                        prefixPathOpt,
-                        TcResultsSink.NoSink,
-                        tcState,
-                        input,
-                        true
-                    )
-                    |> Cancellable.runWithoutCancellation
-
-                let priorErrors = checkForErrors2 ()
-                partialResult, (tcState, priorErrors))
-
-        // Do the parallel phase, checking all implementation files that did have a signature, in parallel.
-        let results, createsGeneratedProvidedTypesFlags =
-
-            List.zip partialResults inputsWithLoggers
-            |> List.toArray
-            |> ArrayParallel.map (fun (partialResult, (_, logger)) ->
-                use _ = UseDiagnosticsLogger logger
-                use _ = UseBuildPhase BuildPhase.TypeCheck
-
-                RequireCompilationThread ctok
-
-                match partialResult with
-                | Choice1Of2 result -> result, false
-                | Choice2Of2 (amap, conditionalDefines, rootSig, priorErrors, file, tcStateForImplFile, ccuSigForFile) ->
-
-                    // In the first linear part of parallel checking, we use a 'checkForErrors' that checks either for errors
-                    // somewhere in the files processed prior to this one, including from the first phase, or in the processing
-                    // of this particular file.
-                    let checkForErrors2 () = priorErrors || (logger.ErrorCount > 0)
-
-                    let topAttrs, implFile, tcEnvAtEnd, createsGeneratedProvidedTypes =
-                        CheckOneImplFile(
-                            tcGlobals,
-                            amap,
-                            tcStateForImplFile.tcsCcu,
-                            tcStateForImplFile.tcsImplicitOpenDeclarations,
-                            checkForErrors2,
-                            conditionalDefines,
-                            TcResultsSink.NoSink,
-                            tcConfig.internalTestSpanStackReferring,
-                            tcStateForImplFile.tcsTcImplEnv,
-                            Some rootSig,
-                            file,
-                            tcConfig.diagnosticsOptions
-                        )
-                        |> Cancellable.runWithoutCancellation
-
-                    let result = (tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile)
-                    result, createsGeneratedProvidedTypes)
-            |> Array.toList
-            |> List.unzip
-
-        let tcState =
-            { tcState with
-                tcsCreatesGeneratedProvidedTypes =
-                    tcState.tcsCreatesGeneratedProvidedTypes
-                    || (createsGeneratedProvidedTypesFlags |> List.exists id)
-            }
-
-        results, tcState)
-
 open FSharp.Compiler.GraphChecking
 
 type State = TcState * bool
@@ -1940,8 +1836,6 @@ let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tc
         match tcConfig.typeCheckingConfig.Mode with
         | TypeCheckingMode.Sequential ->
             CheckMultipleInputsSequential(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs)
-        | TypeCheckingMode.ParallelCheckingOfBackedImplFiles ->
-            CheckMultipleInputsInParallel(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs)
         | TypeCheckingMode.Graph ->
             CheckMultipleInputsUsingGraphMode(
                 ctok,

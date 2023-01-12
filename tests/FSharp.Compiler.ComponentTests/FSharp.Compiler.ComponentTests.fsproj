@@ -187,7 +187,6 @@
     <Compile Include="Interop\VisibilityTests.fs" />
     <Compile Include="Scripting\Interactive.fs" />
     <Compile Include="TypeChecks\CheckDeclarationsTests.fs" />
-    <Compile Include="TypeChecks\ParallelCheckingWithSignatureFilesTests.fs" />
     <Compile Include="TypeChecks\Graph\Utils.fs" />
     <Compile Include="TypeChecks\Graph\QueryTrieTests.fs" />
     <Compile Include="TypeChecks\Graph\TrieMappingTests.fs" />

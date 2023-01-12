@@ -1394,11 +1394,6 @@ let testFlag tcConfigB =
             | "ContinueAfterParseFailure" -> tcConfigB.continueAfterParseFailure <- true
             | "ParallelOff" -> tcConfigB.concurrentBuild <- false
             | "ParallelIlxGen" -> tcConfigB.parallelIlxGen <- true
-            | "ParallelCheckingWithSignatureFilesOn" ->
-                tcConfigB.typeCheckingConfig <-
-                    { tcConfigB.typeCheckingConfig with
-                        Mode = TypeCheckingMode.ParallelCheckingOfBackedImplFiles
-                    }
             | "GraphBasedChecking" ->
                 tcConfigB.typeCheckingConfig <-
                     { tcConfigB.typeCheckingConfig with
