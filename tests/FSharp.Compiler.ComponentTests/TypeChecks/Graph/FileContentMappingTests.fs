@@ -7,7 +7,7 @@ open TestUtils
 let private getContent isSignature sourceCode =
     let fileName = if isSignature then "Test.fsi" else "Test.fs"
     let ast = parseSourceCode ("Test.fs", sourceCode)
-    FileContentMapping.mkFileContent { Idx = 0; File = fileName; AST = ast }
+    FileContentMapping.mkFileContent { Idx = 0; FileName = fileName; ParsedInput = ast }
 
 let private (|TopLevelNamespace|_|) value e =
     match e with

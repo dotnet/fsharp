@@ -4,8 +4,8 @@ open FSharp.Compiler.Syntax
 
 // This code just looks for a path in the trie
 // It could be cached and is easy to reason about.
-let queryTrie (trie: TrieNode) (path: ModuleSegment list) : QueryTrieNodeResult =
-    let rec visit (currentNode: TrieNode) (path: ModuleSegment list) =
+let queryTrie (trie: TrieNode) (path: LongIdentifier) : QueryTrieNodeResult =
+    let rec visit (currentNode: TrieNode) (path: LongIdentifier) =
         match path with
         | [] -> failwith "path should not be empty"
         | [ lastNodeFromPath ] ->
@@ -29,7 +29,7 @@ let queryTrieMemoized (trie: TrieNode) : QueryTrie =
 // Now how to detect the deps between files?
 // Process the content of each file using some state
 
-let processOwnNamespace (queryTrie: QueryTrie) (path: ModuleSegment list) (state: FileContentQueryState) : FileContentQueryState =
+let processOwnNamespace (queryTrie: QueryTrie) (path: LongIdentifier) (state: FileContentQueryState) : FileContentQueryState =
     let queryResult = queryTrie path
 
     match queryResult with
@@ -39,7 +39,7 @@ let processOwnNamespace (queryTrie: QueryTrie) (path: ModuleSegment list) (state
 
 // Helper function to process a open statement
 // The statement could link to files and/or should be tracked as an open namespace
-let processOpenPath (queryTrie: QueryTrie) (path: ModuleSegment list) (state: FileContentQueryState) : FileContentQueryState =
+let processOpenPath (queryTrie: QueryTrie) (path: LongIdentifier) (state: FileContentQueryState) : FileContentQueryState =
     let queryResult = queryTrie path
 
     match queryResult with
@@ -48,7 +48,7 @@ let processOpenPath (queryTrie: QueryTrie) (path: ModuleSegment list) (state: Fi
     | QueryTrieNodeResult.NodeExposesData files -> state.AddOpenNamespace(path, files)
 
 // Helper function to process an identifier
-let processIdentifier (queryTrie: QueryTrie) (path: ModuleSegment list) (state: FileContentQueryState) : FileContentQueryState =
+let processIdentifier (queryTrie: QueryTrie) (path: LongIdentifier) (state: FileContentQueryState) : FileContentQueryState =
     let queryResult = queryTrie path
 
     match queryResult with
@@ -109,13 +109,13 @@ let rec processStateEntry (queryTrie: QueryTrie) (state: FileContentQueryState) 
             FoundDependencies = foundDependencies
         }
 
-let getFileNameBefore (files: FileWithAST array) idx =
+let getFileNameBefore2 (files: FileInProject array) idx =
     files[0 .. (idx - 1)] |> Array.map (fun f -> f.Idx) |> Set.ofArray
 
 /// Returns files contain in any node of the given Trie
-let indicesUnderNode (node: TrieNode) : Set<int> =
-    let rec collect (node: TrieNode) (continuation: int list -> int list) : int list =
-        let continuations: ((int list -> int list) -> int list) list =
+let indicesUnderNode (node: TrieNode) : Set<FileIndex> =
+    let rec collect (node: TrieNode) (continuation: FileIndex list -> FileIndex list) : FileIndex list =
+        let continuations: ((FileIndex list -> FileIndex list) -> FileIndex list) list =
             [
                 for node in node.Children.Values do
                     yield collect node
@@ -137,7 +137,7 @@ let indicesUnderNode (node: TrieNode) : Set<int> =
 /// In order to still be able to compile the current file, the given namespace should be known to the file.
 /// We did not find it via the trie, because there are no files that contribute to this namespace.
 /// </remarks>
-let collectGhostDependencies (fileIndex: int) (trie: TrieNode) (queryTrie: QueryTrie) (result: FileContentQueryState) =
+let collectGhostDependencies (fileIndex: FileIndex) (trie: TrieNode) (queryTrie: QueryTrie) (result: FileContentQueryState) =
     // Go over all open namespaces, and assert all those links eventually went anywhere
     Set.toArray result.OpenedNamespaces
     |> Array.collect (fun path ->
@@ -147,7 +147,7 @@ let collectGhostDependencies (fileIndex: int) (trie: TrieNode) (queryTrie: Query
         | QueryTrieNodeResult.NodeDoesNotExposeData ->
             // At this point we are following up if an open namespace really lead nowhere.
             let node =
-                let rec visit (node: TrieNode) (path: ModuleSegment list) =
+                let rec visit (node: TrieNode) (path: LongIdentifier) =
                     match path with
                     | [] -> node
                     | head :: tail -> visit node.Children[head] tail
@@ -171,12 +171,12 @@ let collectGhostDependencies (fileIndex: int) (trie: TrieNode) (queryTrie: Query
                 // The partial open did eventually lead to a link in a file
                 Array.empty)
 
-let mkGraph (compilingFSharpCore: bool) (filePairs: FilePairMap) (files: FileWithAST array) : Graph<int> =
+let mkGraph (compilingFSharpCore: bool) (filePairs: FilePairMap) (files: FileInProject array) : Graph<FileIndex> =
     // Implementation files backed by signatures should be excluded to construct the trie.
     let trieInput =
         Array.choose
             (fun f ->
-                match f.AST with
+                match f.ParsedInput with
                 | ParsedInput.SigFile _ -> Some f
                 | ParsedInput.ImplFile _ -> if filePairs.HasSignature f.Idx then None else Some f)
             files
@@ -186,9 +186,9 @@ let mkGraph (compilingFSharpCore: bool) (filePairs: FilePairMap) (files: FileWit
 
     let fileContents = Array.Parallel.map FileContentMapping.mkFileContent files
 
-    let findDependencies (file: FileWithAST) : int * int array =
+    let findDependencies (file: FileInProject) : FileIndex * FileIndex array =
         let fileContent = fileContents[file.Idx]
-        let knownFiles = getFileNameBefore files file.Idx
+        let knownFiles = set [ 0 .. (file.Idx - 1) ]
         let filesFromRoot = trie.Files |> Set.filter (fun rootIdx -> rootIdx < file.Idx)
 
         // Process all entries of a file and query the trie when required to find the dependent files.
@@ -212,7 +212,7 @@ let mkGraph (compilingFSharpCore: bool) (filePairs: FilePairMap) (files: FileWit
                 Array.empty
             else
                 let idxOf (fileName: string) =
-                    Array.findIndex (fun f -> f.File.EndsWith fileName) files
+                    files |> Array.findIndex (fun f -> f.FileName.EndsWith fileName)
 
                 let primTypesPreludeFsi = idxOf "prim-types-prelude.fsi"
                 let primTypesFsiIdx = idxOf "prim-types.fsi"

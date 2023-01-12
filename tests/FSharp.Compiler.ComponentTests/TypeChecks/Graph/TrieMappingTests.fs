@@ -35,9 +35,9 @@ type C = { CX: int; CY: int }
         |> Array.mapi (fun idx (fileName, code) ->
             {
                 Idx = idx
-                File = fileName
-                AST = parseSourceCode (fileName, code)
-            } : FileWithAST)
+                FileName = fileName
+                ParsedInput = parseSourceCode (fileName, code)
+            } : FileInProject)
 
     let trie = TrieMapping.mkTrie files
 
@@ -68,8 +68,8 @@ let ``Toplevel AutoOpen module with prefixed namespace`` () =
             [|
                 {
                     Idx = 0
-                    File = "A.fs"
-                    AST =
+                    FileName = "A.fs"
+                    ParsedInput =
                         parseSourceCode (
                             "A.fs",
                             """
@@ -95,8 +95,8 @@ let ``Toplevel AutoOpen module with multi prefixed namespace`` () =
             [|
                 {
                     Idx = 0
-                    File = "A.fsi"
-                    AST =
+                    FileName = "A.fsi"
+                    ParsedInput =
                         parseSourceCode (
                             "A.fsi",
                             """
@@ -124,8 +124,8 @@ let ``Global namespace should link files to the root node`` () =
             [|
                 {
                     Idx = 0
-                    File = "A.fs"
-                    AST =
+                    FileName = "A.fs"
+                    ParsedInput =
                         parseSourceCode (
                             "A.fs",
                             """
@@ -137,8 +137,8 @@ type A = { A : int }
                 }
                 {
                     Idx = 1
-                    File = "B.fsi"
-                    AST =
+                    FileName = "B.fsi"
+                    ParsedInput =
                         parseSourceCode (
                             "B.fsi",
                             """
@@ -159,8 +159,8 @@ let ``Module with a single ident and AutoOpen attribute should link files to roo
             [|
                 {
                     Idx = 0
-                    File = "A.fs"
-                    AST =
+                    FileName = "A.fs"
+                    ParsedInput =
                         parseSourceCode (
                             "A.fs",
                             """
@@ -173,8 +173,8 @@ type A = { A : int }
                 }
                 {
                     Idx = 1
-                    File = "B.fsi"
-                    AST =
+                    FileName = "B.fsi"
+                    ParsedInput =
                         parseSourceCode (
                             "B.fsi",
                             """
@@ -197,8 +197,8 @@ let ``Module with AutoOpen attribute and two ident should expose file at two lev
             [|
                 {
                     Idx = 0
-                    File = "Y.fs"
-                    AST =
+                    FileName = "Y.fs"
+                    ParsedInput =
                         parseSourceCode (
                             "Y.fs",
                             """
@@ -224,8 +224,8 @@ let ``Module with AutoOpen attribute and three ident should expose file at last 
             [|
                 {
                     Idx = 0
-                    File = "Z.fsi"
-                    AST =
+                    FileName = "Z.fsi"
+                    ParsedInput =
                         parseSourceCode (
                             "Z.fsi",
                             """
@@ -253,8 +253,8 @@ let ``Nested AutoOpen module in namespace will expose the file to the namespace 
             [|
                 {
                     Idx = 0
-                    File = "Z.fs"
-                    AST =
+                    FileName = "Z.fs"
+                    ParsedInput =
                         parseSourceCode (
                             "Z.fs",
                             """
@@ -284,8 +284,8 @@ let ``Two modules with the same name, only the first file exposes the index`` ()
             [|
                 {
                     Idx = 0
-                    File = "A.fs"
-                    AST =
+                    FileName = "A.fs"
+                    ParsedInput =
                         parseSourceCode (
                             "A.fs",
                             """
@@ -297,8 +297,8 @@ type B = { C: int }
                 }
                 {
                     Idx = 1
-                    File = "A2.fs"
-                    AST =
+                    FileName = "A2.fs"
+                    ParsedInput =
                         parseSourceCode (
                             "A2.fs",
                             """

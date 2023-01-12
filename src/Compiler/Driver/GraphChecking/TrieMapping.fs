@@ -109,8 +109,8 @@ let private mkSingletonDict key value =
 
 /// Process a top level SynModuleOrNamespace(Sig)
 let processSynModuleOrNamespace<'Decl>
-    (mkTrieForDeclaration: int -> 'Decl -> KeyValuePair<string, TrieNode> option)
-    (idx: int)
+    (mkTrieForDeclaration: FileIndex -> 'Decl -> KeyValuePair<string, TrieNode> option)
+    (idx: FileIndex)
     (name: LongIdent)
     (attributes: SynAttributes)
     (kind: SynModuleOrNamespaceKind)
@@ -198,17 +198,17 @@ let processSynModuleOrNamespace<'Decl>
         Children = children
     }
 
-let rec mkTrieNodeFor (file: FileWithAST) : TrieNode =
+let rec mkTrieNodeFor (file: FileInProject) : TrieNode =
     let idx = file.Idx
 
-    if doesFileExposeContentToTheRoot file.AST then
+    if doesFileExposeContentToTheRoot file.ParsedInput then
         // If a file exposes content which does not need an open statement to access, we consider the file to be part of the root.
         {
             Current = Root(hs idx)
             Children = Dictionary(0)
         }
     else
-        match file.AST with
+        match file.ParsedInput with
         | ParsedInput.SigFile (ParsedSigFileInput (contents = contents)) ->
             contents
             |> List.map
@@ -246,7 +246,7 @@ let rec mkTrieNodeFor (file: FileWithAST) : TrieNode =
             |> List.toArray
             |> mergeTrieNodes contents.Length
 
-and mkTrieForSynModuleDecl (fileIndex: int) (decl: SynModuleDecl) : KeyValuePair<string, TrieNode> option =
+and mkTrieForSynModuleDecl (fileIndex: FileIndex) (decl: SynModuleDecl) : KeyValuePair<string, TrieNode> option =
     match decl with
     | SynModuleDecl.NestedModule (moduleInfo = SynComponentInfo(longId = [ nestedModuleIdent ]); decls = decls) ->
         let name = nestedModuleIdent.idText
@@ -265,7 +265,7 @@ and mkTrieForSynModuleDecl (fileIndex: int) (decl: SynModuleDecl) : KeyValuePair
         )
     | _ -> None
 
-and mkTrieForSynModuleSigDecl (fileIndex: int) (decl: SynModuleSigDecl) : KeyValuePair<string, TrieNode> option =
+and mkTrieForSynModuleSigDecl (fileIndex: FileIndex) (decl: SynModuleSigDecl) : KeyValuePair<string, TrieNode> option =
     match decl with
     | SynModuleSigDecl.NestedModule (moduleInfo = SynComponentInfo(longId = [ nestedModuleIdent ]); moduleDecls = decls) ->
         let name = nestedModuleIdent.idText
@@ -286,5 +286,5 @@ and mkTrieForSynModuleSigDecl (fileIndex: int) (decl: SynModuleSigDecl) : KeyVal
 
     | _ -> None
 
-let mkTrie (files: FileWithAST array) : TrieNode =
+let mkTrie (files: FileInProject array) : TrieNode =
     mergeTrieNodes 0 (Array.Parallel.map mkTrieNodeFor files)

@@ -42,7 +42,7 @@ let private prefIdent (lid: string) =
 let private files =
     [|
         {
-            Name = "AssemblyInfo.fs"
+            FileName = "AssemblyInfo.fs"
             Idx = 0
             Content =
                 [|
@@ -55,7 +55,7 @@ let private files =
                 |]
         }
         {
-            Name = "ISourceTextExtensions.fs"
+            FileName = "ISourceTextExtensions.fs"
             Idx = 1
             Content =
                 [|
@@ -77,7 +77,7 @@ let private files =
                 |]
         }
         {
-            Name = "RangeHelpers.fs"
+            FileName = "RangeHelpers.fs"
             Idx = 2
             Content =
                 [|
@@ -126,7 +126,7 @@ let private files =
                 |]
         }
         {
-            Name = "AstExtensions.fsi"
+            FileName = "AstExtensions.fsi"
             Idx = 3
             Content =
                 [|
@@ -134,7 +134,7 @@ let private files =
                 |]
         }
         {
-            Name = "AstExtensions.fs"
+            FileName = "AstExtensions.fs"
             Idx = 4
             Content =
                 [|
@@ -210,7 +210,7 @@ let private files =
                 |]
         }
         {
-            Name = "TriviaTypes.fs"
+            FileName = "TriviaTypes.fs"
             Idx = 5
             Content =
                 [|
@@ -218,7 +218,7 @@ let private files =
                 |]
         }
         {
-            Name = "Utils.fs"
+            FileName = "Utils.fs"
             Idx = 6
             Content =
                 [|
@@ -285,7 +285,7 @@ let private files =
                 |]
         }
         {
-            Name = "SourceParser.fs"
+            FileName = "SourceParser.fs"
             Idx = 7
             Content =
                 [|
@@ -625,7 +625,7 @@ let private noChildren = Dictionary(0)
 let emptyHS () = HashSet(0)
 
 let indexOf name =
-    Array.find (fun (fc: FileContent) -> fc.Name = name) files |> fun fc -> fc.Idx
+    Array.find (fun (fc: FileContent) -> fc.FileName = name) files |> fun fc -> fc.Idx
 
 // This should be constructed from the AST, again a hard coded subset of Fantomas.Core
 let private fantomasCoreTrie: TrieNode =
@@ -768,7 +768,7 @@ let ``Query module node that exposes one file`` () =
 [<Test>]
 let ``ProcessOpenStatement full path match`` () =
     let sourceParser =
-        Array.find (fun (f: FileContent) -> f.Name = "SourceParser.fs") files
+        Array.find (fun (f: FileContent) -> f.FileName = "SourceParser.fs") files
 
     let state =
         FileContentQueryState.Create

@@ -10,7 +10,7 @@ let cfo f a = lc f (Option.toList a)
 /// List.collect
 let lc = List.collect
 
-let longIdentToPath (skipLast: bool) (longId: LongIdent) : ModuleSegment list =
+let longIdentToPath (skipLast: bool) (longId: LongIdent) : LongIdentifier =
     if skipLast then
         List.take (longId.Length - 1) longId
     else
@@ -627,8 +627,8 @@ let visitSynMemberSig (ms: SynMemberSig) : FileContentEntry list =
     | SynMemberSig.ValField (field, _) -> visitSynField field
     | SynMemberSig.NestedType _ -> []
 
-let mkFileContent (f: FileWithAST) : FileContentEntry list =
-    match f.AST with
+let mkFileContent (f: FileInProject) : FileContentEntry list =
+    match f.ParsedInput with
     | ParsedInput.SigFile (ParsedSigFileInput (contents = contents)) ->
         lc
             (fun (SynModuleOrNamespaceSig (longId = longId; kind = kind; decls = decls; attribs = attribs)) ->

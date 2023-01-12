@@ -1637,14 +1637,14 @@ let CheckMultipleInputsUsingGraphMode
     : FinalFileResult list * TcState =
     use cts = new CancellationTokenSource()
 
-    let sourceFiles: FileWithAST array =
+    let sourceFiles: FileInProject array =
         inputs
         |> List.toArray
         |> Array.mapi (fun idx (input: ParsedInput) ->
             {
                 Idx = idx
-                File = input.FileName
-                AST = input
+                FileName = input.FileName
+                ParsedInput = input
             })
 
     let filePairs = FilePairMap(sourceFiles)
