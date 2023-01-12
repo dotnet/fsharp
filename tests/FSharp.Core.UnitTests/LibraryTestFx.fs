@@ -73,7 +73,7 @@ module SurfaceArea =
         let fsCoreFullName = asm.FullName
 
         // public types only
-        let types = asm.ExportedTypes |> Seq.filter (fun ty -> let ti = ty.GetTypeInfo() in ti.IsPublic || ti.IsNestedPublic) |> Array.ofSeq
+        let types = asm.ExportedTypes |> Seq.filter (fun ty -> let ti = ty.GetTypeInfo() in ti.IsPublic || ti.IsNestedPublic) |> Seq.sortBy (fun ty -> ty.Name) |> Array.ofSeq
 
         // extract canonical string form for every public member of every type
         let getTypeMemberStrings (t : Type) =
