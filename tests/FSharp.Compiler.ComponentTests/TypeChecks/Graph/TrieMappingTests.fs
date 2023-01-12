@@ -4,6 +4,8 @@ open NUnit.Framework
 open FSharp.Compiler.GraphChecking
 open TestUtils
 
+let private noDependencies = Set.empty<int>
+
 [<Test>]
 let ``Basic trie`` () =
     let sampleFiles =
@@ -109,7 +111,7 @@ let a = 0
 
     // Assert that B and C expose file index 0, namespace A should not.
     let aNode = trie.Children.["A"]
-    Assert.AreEqual(Set.empty, aNode.Files)
+    Assert.AreEqual(noDependencies, aNode.Files)
     let bNode = aNode.Children.["B"]
     Assert.AreEqual(set [| 0 |], bNode.Files)
     let cNode = bNode.Children.["C"]
@@ -209,7 +211,7 @@ type A = { A : int }
                 }
             |]
 
-    Assert.AreEqual(Set.empty, trie.Files)
+    Assert.AreEqual(noDependencies, trie.Files)
     let xNode = trie.Children.["X"]
     Assert.AreEqual(set [| 0 |], xNode.Files)
     let yNode = xNode.Children.["Y"]
@@ -236,9 +238,9 @@ type A = { A : int }
                 }
             |]
 
-    Assert.AreEqual(Set.empty, trie.Files)
+    Assert.AreEqual(noDependencies, trie.Files)
     let xNode = trie.Children.["X"]
-    Assert.AreEqual(Set.empty, xNode.Files)
+    Assert.AreEqual(noDependencies, xNode.Files)
     let yNode = xNode.Children.["Y"]
     Assert.AreEqual(set [| 0 |], yNode.Files)
     let zNode = yNode.Children.["Z"]
@@ -267,9 +269,9 @@ module Z =
                 }
             |]
 
-    Assert.AreEqual(Set.empty, trie.Files)
+    Assert.AreEqual(noDependencies, trie.Files)
     let xNode = trie.Children.["X"]
-    Assert.AreEqual(Set.empty, xNode.Files)
+    Assert.AreEqual(noDependencies, xNode.Files)
     let yNode = xNode.Children.["Y"]
     Assert.AreEqual(set [| 0 |], yNode.Files)
     let zNode = yNode.Children.["Z"]
