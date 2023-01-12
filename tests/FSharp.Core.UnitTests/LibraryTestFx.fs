@@ -100,33 +100,44 @@ module SurfaceArea =
 
         asm, actual
 
-    // verify public surface area matches expected
-    let verify expected platform (fileName : string) =
+    // verify public surface area matches expected, handles baseline update when TEST_UPDATE_BSL is set
+    let verify baseline platform flavor : unit =
         printfn "Verify"
-        let normalize (s:string) =
-            Regex.Replace(s, "(\\r\\n|\\n|\\r)+", "\r\n").Trim()
 
+        let appendNewLine str = str + System.Environment.NewLine
+        let expected =
+            File.ReadAllLines(baseline)
+            |> String.concat System.Environment.NewLine
+            |> appendNewLine
+
+        let normalize (s:string) = Regex.Replace(s, "(\\r\\n|\\n|\\r)+", Environment.NewLine).Trim()
         let asm, actualNotNormalized = getActual ()
         let actual = 
             actualNotNormalized 
             |> Seq.map normalize 
-            |> Seq.filter (String.IsNullOrWhiteSpace >> not) 
+            |> Seq.filter (String.IsNullOrWhiteSpace >> not)
+            |> Seq.sort
             |> String.concat Environment.NewLine
-        
+
         let expected = normalize expected
 
-        match Tests.TestHelpers.assembleDiffMessage actual expected with
+        let logFile =
+            Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), $"FSharp.Core.SurfaceArea.{platform}.{flavor}.out")
+
+        System.IO.File.WriteAllText(logFile, actual (*String.Join(Environment.NewLine, actual)*))
+
+        match Tests.TestHelpers.assembleDiffMessage expected actual with
         | None -> ()
         | Some diff ->
-            let logFile =
-                let workDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
-                sprintf "%s\\FSharp.Core.SurfaceArea.%s.txt" workDir platform
-            System.IO.File.WriteAllText(logFile, String.Join("\r\n", actual))
-
+            // Update baselines here
+            match Environment.GetEnvironmentVariable("TEST_UPDATE_BSL") with
+            | null -> ()
+            | _ -> File.Copy(logFile, baseline, true)
+                
             let msg = $"""Assembly: %A{asm}
 
               Expected and actual surface area don't match. To see the delta, run:
-                  windiff %s{fileName} %s{logFile}
+                  windiff %s{baseline} %s{logFile}
 
               {diff}"""
 
