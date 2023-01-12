@@ -401,7 +401,7 @@ type C() =
          |> compile
          |> shouldFail
          |> withDiagnostics [
-            (Error 3556, Line 7, Col 5, Line 8, Col 29, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Implementing interfaces is not allowed.")
+            (Error 3556, Line 8, Col 9, Line 8, Col 29, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Implementing interfaces is not allowed.")
          ]
          
     [<Fact>]
@@ -419,7 +419,7 @@ type C =
          |> compile
          |> shouldFail
          |> withDiagnostics [
-            (Error 3556, Line 7, Col 5, Line 8, Col 29, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Implementing interfaces is not allowed.")
+            (Error 3556, Line 8, Col 9, Line 8, Col 29, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Implementing interfaces is not allowed.")
          ]
          
     [<Fact>]
@@ -481,3 +481,72 @@ type T() =
              (Error 3557, Line 4, Col 14, Line 4, Col 15, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Abstract member declarations are not allowed.")
              (Error 3557, Line 5, Col 14, Line 5, Col 15, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Abstract member declarations are not allowed.")
          ]
+
+    #if !NETCOREAPP
+    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
+    #else
+    [<Fact>]
+    #endif
+    let ``Sealed and AbstractClass on a type implementing an interface with static abstract members in Lang 70`` () =
+        Fsx """
+[<Interface>]
+type InputRetriever<'T when 'T:>InputRetriever<'T>> =
+    static abstract Read: unit -> string
+
+[<AbstractClass;Sealed>]
+type ConsoleRetriever = 
+    interface InputRetriever<ConsoleRetriever> with
+        static member Read() = 
+            stdout.WriteLine("Please enter a value and press enter")
+            stdin.ReadLine()
+        """
+         |> withNoWarn 3535
+         |> withLangVersion70
+         |> compile
+         |> shouldSucceed
+         
+    #if !NETCOREAPP
+    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
+    #else
+    [<Fact>]
+    #endif
+    let ``Sealed and AbstractClass on a type implicit constructor implementing an interface with static abstract members in Lang preview`` () =
+        Fsx """
+[<Interface>]
+type InputRetriever<'T when 'T:>InputRetriever<'T>> =
+    static abstract Read: unit -> string
+
+[<AbstractClass;Sealed>]
+type ConsoleRetriever = 
+    interface InputRetriever<ConsoleRetriever> with
+        static member Read() = 
+            stdout.WriteLine("Please enter a value and press enter")
+            stdin.ReadLine()
+        """
+         |> withNoWarn 3535
+         |> withLangVersionPreview
+         |> compile
+         |> shouldSucceed
+         
+    #if !NETCOREAPP
+    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
+    #else
+    [<Fact>]
+    #endif
+    let ``Sealed and AbstractClass on a type implementing an interface with static abstract members in Lang preview`` () =
+        Fsx """
+[<Interface>]
+type InputRetriever<'T when 'T:>InputRetriever<'T>> =
+    static abstract Read: unit -> string
+
+[<AbstractClass;Sealed>]
+type ConsoleRetriever() = 
+    interface InputRetriever<ConsoleRetriever> with
+        static member Read() = 
+            stdout.WriteLine("Please enter a value and press enter")
+            stdin.ReadLine()
+        """
+         |> withNoWarn 3535
+         |> withLangVersionPreview
+         |> compile
+         |> shouldSucceed
