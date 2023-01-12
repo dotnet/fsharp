@@ -544,13 +544,6 @@ module CoreTests =
 #endif
 
     [<Fact>]
-    let ``pinvoke-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/pinvoke" FSC_OPTIMIZED
-
-    [<Fact>]
-    let ``pinvoke-FSI`` () =
-        singleTestBuildAndRun "core/pinvoke" FSI
-
-    [<Fact>]
     let ``fsi_load-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/fsi-load" FSC_OPTIMIZED
 
     [<Fact>]
@@ -561,3 +554,17 @@ module CoreTests =
 
     [<Fact>]
     let ``reflect-FSI`` () = singleTestBuildAndRun "core/reflect" FSI
+
+    module PInvokeTests = 
+        open System.Runtime.InteropServices
+        let isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+
+        [<Fact()>]
+        let ``pinvoke-FSC_OPTIMIZED`` () =   
+            if isWindows then
+                singleTestBuildAndRun "core/pinvoke" FSC_OPTIMIZED
+
+        [<Fact>]
+        let ``pinvoke-FSI`` () =
+            if isWindows then
+                singleTestBuildAndRun "core/pinvoke" FSI
