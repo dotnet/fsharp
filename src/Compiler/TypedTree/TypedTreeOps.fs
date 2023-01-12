@@ -3834,6 +3834,7 @@ module DebugPrint =
 
     let angleBracketListL l = angleBracketL (sepListL (sepL (tagText ",")) l)
 
+#if DEBUG
     let layoutMemberFlags (memFlags: SynMemberFlags) = 
         let stat = 
             if memFlags.IsInstance || (memFlags.MemberKind = SynMemberKind.Constructor) then emptyL 
@@ -3843,6 +3844,7 @@ module DebugPrint =
             elif memFlags.IsOverrideOrExplicitImpl then stat ++ wordL (tagText "override")
             else stat
         stat
+#endif
 
     let stampL (n: Stamp) w = 
         if layoutStamps then w ^^ wordL (tagText ("#" + string n)) else w
@@ -4069,6 +4071,7 @@ module DebugPrint =
           ^^ (if v.IsMutable then wordL(tagText "mutable ") else emptyL)
           ^^ (if layoutTypes then wordL (tagText ":") ^^ typeL v.Type else emptyL)
 
+#if DEBUG
     let tslotparamL (TSlotParam(nmOpt, ty, inFlag, outFlag, _, _)) =
         (optionL (tagText >> wordL) nmOpt) ^^ 
          wordL(tagText ":") ^^ 
@@ -4076,6 +4079,7 @@ module DebugPrint =
          (if inFlag then wordL(tagText "[in]") else emptyL) ^^ 
          (if outFlag then wordL(tagText "[out]") else emptyL) ^^ 
          (if inFlag then wordL(tagText "[opt]") else emptyL)
+#endif
 
     let slotSigL (slotsig: SlotSig) =
 #if DEBUG

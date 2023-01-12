@@ -36,12 +36,6 @@ open System.Collections.ObjectModel
 
 let OptimizerStackGuardDepth = GetEnvInteger "FSHARP_Optimizer" 50
 
-#if DEBUG
-#else
-let [<Literal>] verboseOptimizationInfo = false
-let [<Literal>] verboseOptimizations = false
-#endif
-
 let i_ldlen = [ I_ldlen; (AI_conv DT_I4) ] 
 
 /// size of a function call 
