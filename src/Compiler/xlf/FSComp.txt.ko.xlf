@@ -22,6 +22,11 @@
         <target state="translated">'{0}'의 파일 확장명을 인식할 수 없습니다. 원본 파일의 확장명은 .fs, .fsi, .fsx 또는 .fsscript여야 합니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkAbstractMembersDeclarationsOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Abstract member declarations are not allowed.</source>
+        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Abstract member declarations are not allowed.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkAdditionalConstructorOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Additional constructor is not allowed.</source>
         <target state="translated">형식이 [&lt;Sealed&gt;] 및 [&lt;AbstractClass&gt;] 특성을 모두 사용하는 경우 정적임을 의미합니다. 추가 생성자는 허용되지 않습니다.</target>
@@ -52,6 +57,11 @@
         <target state="translated">언어 버전 {1} 이상에서 '{0}' 기능을 사용하려면 F# 라이브러리가 필요합니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkImplementingInterfacesOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Implementing interfaces is not allowed.</source>
+        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Implementing interfaces is not allowed.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkInfoRefcellAssign">
         <source>The use of ':=' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'cell := expr' to 'cell.Value &lt;- expr'.</source>
         <target state="translated">F# 라이브러리의 ':=' 사용은 더 이상 사용되지 않습니다. https://aka.ms/fsharp-refcell-ops를 참조하세요. 예를 들어 'cell := expr'을 'cell.Value &lt;- expr'로 변경하세요.</target>
@@ -70,6 +80,11 @@
       <trans-unit id="chkInfoRefcellIncr">
         <source>The use of 'incr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'incr cell' to 'cell.Value &lt;- cell.Value + 1'.</source>
         <target state="translated">F# 라이브러리의 'incr' 사용은 더 이상 사용되지 않습니다. https://aka.ms/fsharp-refcell-ops를 참조하세요. 예를 들어 'incr cell'을 'cell.Value &lt;- cell.Value + 1'로 변경하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInstanceLetBindingOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance let bindings are not allowed.</source>
+        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance let bindings are not allowed.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInstanceMemberOnStaticClasses">

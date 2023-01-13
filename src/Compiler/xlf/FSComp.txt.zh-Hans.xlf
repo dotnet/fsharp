@@ -22,6 +22,11 @@
         <target state="translated">无法识别“{0}”的文件扩展名。源文件必须具有扩展名 .fs、.fsi、.fsx 或 .fsscript</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkAbstractMembersDeclarationsOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Abstract member declarations are not allowed.</source>
+        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Abstract member declarations are not allowed.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkAdditionalConstructorOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Additional constructor is not allowed.</source>
         <target state="translated">如果类型同时使用 [&lt;Sealed&gt;] 和 [&lt;AbstractClass&gt;] 属性，则表示它是静态的。不允许使用其他构造函数。</target>
@@ -52,6 +57,11 @@
         <target state="translated">功能“{0}”需要 {1} 或更高语言版本的 F# 库。</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkImplementingInterfacesOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Implementing interfaces is not allowed.</source>
+        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Implementing interfaces is not allowed.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkInfoRefcellAssign">
         <source>The use of ':=' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'cell := expr' to 'cell.Value &lt;- expr'.</source>
         <target state="translated">已弃用 F# 库中的“:=”。请参阅 https://aka.ms/fsharp-refcell-ops。 例如，请将“cell := expr”更改为“cell.Value &lt;- expr”。</target>
@@ -70,6 +80,11 @@
       <trans-unit id="chkInfoRefcellIncr">
         <source>The use of 'incr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'incr cell' to 'cell.Value &lt;- cell.Value + 1'.</source>
         <target state="translated">已弃用 F# 库中的“incr”。请参阅 https://aka.ms/fsharp-refcell-ops。 例如，请将“incr cell”更改为“cell.Value &lt;- cell.Value + 1”。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInstanceLetBindingOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance let bindings are not allowed.</source>
+        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance let bindings are not allowed.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInstanceMemberOnStaticClasses">
