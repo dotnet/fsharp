@@ -86,11 +86,11 @@ stages:
   #                                                  Signed build                                                     #
   #-------------------------------------------------------------------------------------------------------------------#
   - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
-    - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/dev17.5') }}:
+    - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/dev17.6') }}:
       - template: /eng/common/templates/job/onelocbuild.yml
         parameters:
           MirrorRepo: fsharp
-          MirrorBranch: release/dev17.5
+          MirrorBranch: release/dev17.6
           LclSource: lclFilesfromPackage
           LclPackageId: 'LCL-JUNO-PROD-FSHARP'
     - template: /eng/common/templates/jobs/jobs.yml
@@ -217,6 +217,13 @@ stages:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(WindowsMachineQueueName)
           timeoutInMinutes: 90
+          strategy:
+            maxParallel: 2
+            matrix:
+              regular:
+                _experimental_flag: null
+              experimental_features:
+                _experimental_flag: 1
           steps:
           - checkout: self
             clean: true
@@ -229,6 +236,8 @@ stages:
               workingDirectory: $(Build.SourcesDirectory)
               installationPath: $(Build.SourcesDirectory)/.dotnet
           - script: .\eng\test-determinism.cmd -configuration Debug
+            env:
+              FSHARP_EXPERIMENTAL_FEATURES: $(_experimental_flag)
             displayName: Determinism tests with Debug configuration
           - task: PublishPipelineArtifact@1
             displayName: Publish Determinism Logs
@@ -279,64 +288,6 @@ stages:
         enableTelemetry: true
         helixRepo: dotnet/fsharp
         jobs:
-
-        # Windows
-        - job: Windows
-          pool:
-            # The PR build definition sets this variable:
-            #   WindowsMachineQueueName=Windows.vs2022.amd64.open
-            # and there is an alternate build definition that sets this to a queue that is always scouting the
-            # next preview of Visual Studio.
-            name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(WindowsMachineQueueName)
-          timeoutInMinutes: 120
-          strategy:
-            maxParallel: 4
-            matrix:
-              desktop_release:
-                _configuration: Release
-                _testKind: testDesktop
-              coreclr_release:
-                _configuration: Release
-                _testKind: testCoreclr
-              fsharpqa_release:
-                _configuration: Release
-                _testKind: testFSharpQA
-              vs_release:
-                _configuration: Release
-                _testKind: testVs
-          steps:
-          - checkout: self
-            clean: true
-          - script: eng\CIBuild.cmd -configuration $(_configuration) -$(_testKind)
-            displayName: Build / Test
-          - task: PublishTestResults@2
-            displayName: Publish Test Results
-            inputs:
-              testResultsFormat: 'NUnit'
-              testResultsFiles: '*.xml'
-              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_configuration)'
-            continueOnError: true
-            condition: ne(variables['_testKind'], 'testFSharpQA')
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Test Logs
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\TestResults\$(_configuration)'
-              ArtifactName: 'Windows $(_configuration) $(_testKind) test logs'
-              publishLocation: Container
-            continueOnError: true
-            condition: failed()
-          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
-            displayName: Dump NuGet cache contents
-            condition: failed()
-          - task: PublishBuildArtifacts@1
-            displayName: Publish NuGet cache contents
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\NugetPackageRootContents'
-              ArtifactName: 'NuGetPackageContents Windows $(_testKind)'
-              publishLocation: Container
-            continueOnError: true
-            condition: failed()
 
         # Windows With Compressed Metadata
         - job: WindowsCompressedMetadata
@@ -492,11 +443,22 @@ stages:
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(WindowsMachineQueueName)
+          strategy:
+            maxParallel: 2
+            matrix:
+              regular:
+                _experimental_flag: null
+              experimental_features:
+                _experimental_flag: 1
           steps:
           - checkout: self
             clean: true
           - script: .\Build.cmd -c Release -pack
+            env:
+              FSHARP_EXPERIMENTAL_FEATURES: $(_experimental_flag)
           - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c Release
+            env:
+              FSHARP_EXPERIMENTAL_FEATURES: $(_experimental_flag)
             displayName: End to end build tests
 
         # Up-to-date - disabled due to it being flaky
@@ -512,35 +474,8 @@ stages:
         #      filePath: eng\tests\UpToDate.ps1
         #      arguments: -configuration $(_BuildConfig) -ci -binaryLog
 
-        # Run Build with --test:ParallelCheckingWithSignatureFilesOn
-        - job: ParallelCheckingWithSignatureFiles
-          condition: eq(variables['Build.Reason'], 'PullRequest')
-          variables:
-            - name: _SignType
-              value: Test
-          pool:
-            name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(WindowsMachineQueueName)
-          timeoutInMinutes: 90
-          steps:
-            - checkout: self
-              clean: true
-            - task: UseDotNet@2
-              displayName: install SDK
-              inputs:
-                packageType: sdk
-                useGlobalJson: true
-                includePreviewVersions: false
-                workingDirectory: $(Build.SourcesDirectory)
-                installationPath: $(Build.SourcesDirectory)/.dotnet
-            - script: .\build.cmd -c Release -binaryLog /p:ParallelCheckingWithSignatureFilesOn=true
-              displayName: ParallelCheckingWithSignatureFiles build with Debug configuration
-            - task: PublishPipelineArtifact@1
-              displayName: Publish ParallelCheckingWithSignatureFiles Logs
-              inputs:
-                targetPath: '$(Build.SourcesDirectory)/artifacts/log/Release'
-                artifactName: 'ParallelCheckingWithSignatureFiles Attempt $(System.JobAttempt) Logs'
-              continueOnError: true
+        # Run Build with Fsharp Experimental Features
+        # Possible change: --times:$(Build.SourcesDirectory)/artifacts/log/Release/compiler_timing.csv
 
         # Plain build Windows
         - job: Plain_Build_Windows
@@ -731,8 +666,8 @@ stages:
 - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
   - template: eng/release/insert-into-vs.yml
     parameters:
-      componentBranchName: refs/heads/release/dev17.5
-      insertTargetBranch: rel/d17.5
+      componentBranchName: refs/heads/release/dev17.6
+      insertTargetBranch: main
       insertTeamEmail: fsharpteam@microsoft.com
       insertTeamName: 'F#'
       completeInsertion: 'auto'
