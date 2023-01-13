@@ -491,9 +491,9 @@ let q = query { for x in { 1 .. 10 } do select x }
 
         let actual = getParameterNameHints document
 
-        Assert.IsEmpty actual
+        Assert.Empty actual
 
-    [<Test>]
+    [<Fact>]
     let ``Hints are not shown when parameter names coinside with variable names`` () =
         let code =
             """
@@ -516,4 +516,4 @@ let fullName = getFullName name lastName
 
         let actual = getParameterNameHints document
 
-        Assert.AreEqual(expected, actual)
+        Assert.Equal(expected, actual)
