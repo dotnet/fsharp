@@ -842,7 +842,7 @@ type internal TypeCheckInfo
             if p >= 0 then Some p else None
 
     /// Build a CompetionItem
-    let CompletionItem (ty: ValueOption<TyconRef>) (assemblySymbol: ValueOption<AssemblySymbol>) (item: ItemWithInst) =
+    let CompletionItem (ty: TyconRef voption) (assemblySymbol: AssemblySymbol voption) (item: ItemWithInst) =
         let kind =
             match item.Item with
             | Item.FakeInterfaceCtor _

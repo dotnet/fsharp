@@ -69,7 +69,7 @@ and CompilerOption =
         name: string *
         argumentDescriptionString: string *
         actionSpec: OptionSpec *
-        deprecationError: Option<exn> *
+        deprecationError: exn option *
         helpText: string option
 
 and CompilerOptionBlock =
@@ -508,7 +508,6 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
 // Compiler options
 //--------------------------------------------------------------------------
 
-let lexFilterVerbose = false
 let mutable enableConsoleColoring = true // global state
 
 let setFlag r n =
@@ -709,11 +708,9 @@ let tagModule = "module"
 let tagFile = "<file>"
 let tagFileList = "<file;...>"
 let tagDirList = "<dir;...>"
-let tagPathList = "<path;...>"
 let tagResInfo = "<resinfo>"
 let tagFullPDBOnlyPortable = "{full|pdbonly|portable|embedded}"
 let tagWarnList = "<warn;...>"
-let tagSymbolList = "<symbol;...>"
 let tagAddress = "<address>"
 let tagAlgorithm = "{SHA1|SHA256}"
 let tagInt = "<n>"
@@ -768,24 +765,6 @@ let inputFileFlagsBoth (tcConfigB: TcConfigBuilder) =
             Some(FSComp.SR.optsCompilerTool ())
         )
     ]
-
-let referenceFlagAbbrev (tcConfigB: TcConfigBuilder) =
-    CompilerOption(
-        "r",
-        tagFile,
-        OptionString(fun s -> tcConfigB.AddReferencedAssemblyByPath(rangeStartup, s)),
-        None,
-        Some(FSComp.SR.optsShortFormOf ("--reference"))
-    )
-
-let compilerToolFlagAbbrev (tcConfigB: TcConfigBuilder) =
-    CompilerOption(
-        "t",
-        tagFile,
-        OptionString(fun s -> tcConfigB.AddCompilerToolsByPath s),
-        None,
-        Some(FSComp.SR.optsShortFormOf ("--compilertool"))
-    )
 
 let inputFileFlagsFsc tcConfigB = inputFileFlagsBoth tcConfigB
 
@@ -1394,6 +1373,7 @@ let testFlag tcConfigB =
             | "ContinueAfterParseFailure" -> tcConfigB.continueAfterParseFailure <- true
             | "ParallelOff" -> tcConfigB.concurrentBuild <- false
             | "ParallelCheckingWithSignatureFilesOn" -> tcConfigB.parallelCheckingWithSignatureFiles <- true
+            | "ParallelIlxGen" -> tcConfigB.parallelIlxGen <- true
 #if DEBUG
             | "ShowParserStackOnParseError" -> showParserStackOnParseError <- true
 #endif
@@ -2334,29 +2314,6 @@ let ApplyCommandLineArgs (tcConfigB: TcConfigBuilder, sourceFiles: string list, 
     with e ->
         errorRecovery e range0
         sourceFiles
-
-//----------------------------------------------------------------------------
-// PrintWholeAssemblyImplementation
-//----------------------------------------------------------------------------
-
-let mutable showTermFileCount = 0
-
-let PrintWholeAssemblyImplementation (tcConfig: TcConfig) outfile header expr =
-    if tcConfig.showTerms then
-        if tcConfig.writeTermsToFiles then
-            let fileName = outfile + ".terms"
-
-            use f =
-                FileSystem
-                    .OpenFileForWriteShim(fileName + "-" + string showTermFileCount + "-" + header, FileMode.Create)
-                    .GetWriter()
-
-            showTermFileCount <- showTermFileCount + 1
-            LayoutRender.outL f (Display.squashTo 192 (DebugPrint.implFilesL expr))
-        else
-            dprintf "\n------------------\nshowTerm: %s:\n" header
-            LayoutRender.outL stderr (Display.squashTo 192 (DebugPrint.implFilesL expr))
-            dprintf "\n------------------\n"
 
 //----------------------------------------------------------------------------
 // ReportTime
