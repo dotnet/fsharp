@@ -492,3 +492,28 @@ let q = query { for x in { 1 .. 10 } do select x }
         let actual = getParameterNameHints document
 
         Assert.IsEmpty actual
+
+    [<Test>]
+    let ``Hints are not shown when parameter names coinside with variable names`` () =
+        let code =
+            """
+let getFullName name surname = $"{name} {surname}"
+
+let name = "Robert"
+let lastName = "Smith"
+let fullName = getFullName name lastName
+"""
+
+        let document = getFsDocument code
+
+        let expected =
+            [
+                {
+                    Content = "surname = "
+                    Location = (5, 33)
+                }
+            ]
+
+        let actual = getParameterNameHints document
+
+        Assert.AreEqual(expected, actual)
