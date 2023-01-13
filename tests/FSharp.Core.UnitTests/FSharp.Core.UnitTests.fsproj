@@ -90,7 +90,6 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Control\EventModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Reflection\FSharpReflection.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Quotations\FSharpQuotations.fs" />
-    <Compile Include="TypeForwarding.fs" />
     <Compile Include="StructTuples.fs" />
     <Compile Include="SurfaceArea.fs" />
   </ItemGroup>

@@ -1628,114 +1628,114 @@ module ComparersRegression =
         static member I = inlinable
         static member N = noninlinable
 
-#if !NETSTANDARD1_6 && !NETCOREAPP
-    let create<'a,'b when 'b : equality> name operation (f:IOperation<'a>) (items:array<'a>) =
-        printf """ [<Fact>]
- member _.``%s %s``() =
-  validate (%s) %s """ name operation name operation
+    module TestGenerationMethods = 
+        let create<'a,'b when 'b : equality> name operation (f:IOperation<'a>) (items:array<'a>) =
+            printf """ [<Fact>]
+     member _.``%s %s``() =
+      validate (%s) %s """ name operation name operation
 
-        make_result_set f items None
-        |> Seq.iteri (fun n result ->
-            if n = 0 
-                then printf "[|"
-                else printf ";"
-            if n % 40 = 0 then printf "\n   "
-            printf "%d" result)
-        printfn "\n  |]\n"
+            make_result_set f items None
+            |> Seq.iteri (fun n result ->
+                if n = 0 
+                    then printf "[|"
+                    else printf ";"
+                if n % 40 = 0 then printf "\n   "
+                printf "%d" result)
+            printfn "\n  |]\n"
 
-    let create_inequalities name (items:array<'a>) =
-        create name "C.I.equals"           C.I.equals           items
-        create name "C.I.equal"            C.I.equal            items
-        create name "C.I.not_equal"        C.I.not_equal        items
-        create name "C.I.compare"          C.I.compare          items
-        create name "C.I.less_than"        C.I.less_than        items
-        create name "C.I.less_or_equal"    C.I.less_or_equal    items
-        create name "C.I.greater_than"     C.I.greater_than     items
-        create name "C.I.greater_or_equal" C.I.greater_or_equal items
-        create name "C.N.equals"           C.N.equals           items
-        create name "C.N.equal"            C.N.equal            items
-        create name "C.N.not_equal"        C.N.not_equal        items
-        create name "C.N.compare"          C.N.compare          items
-        create name "C.N.less_than"        C.N.less_than        items
-        create name "C.N.less_or_equal"    C.N.less_or_equal    items
-        create name "C.N.greater_than"     C.N.greater_than     items
-        create name "C.N.greater_or_equal" C.N.greater_or_equal items
+        let create_inequalities name (items:array<'a>) =
+            create name "C.I.equals"           C.I.equals           items
+            create name "C.I.equal"            C.I.equal            items
+            create name "C.I.not_equal"        C.I.not_equal        items
+            create name "C.I.compare"          C.I.compare          items
+            create name "C.I.less_than"        C.I.less_than        items
+            create name "C.I.less_or_equal"    C.I.less_or_equal    items
+            create name "C.I.greater_than"     C.I.greater_than     items
+            create name "C.I.greater_or_equal" C.I.greater_or_equal items
+            create name "C.N.equals"           C.N.equals           items
+            create name "C.N.equal"            C.N.equal            items
+            create name "C.N.not_equal"        C.N.not_equal        items
+            create name "C.N.compare"          C.N.compare          items
+            create name "C.N.less_than"        C.N.less_than        items
+            create name "C.N.less_or_equal"    C.N.less_or_equal    items
+            create name "C.N.greater_than"     C.N.greater_than     items
+            create name "C.N.greater_or_equal" C.N.greater_or_equal items
 
-    let create_equalities name (items:array<'a>) =
-        create name "E.I.equals"    E.I.equals    items
-        create name "E.I.equal"     E.I.equal     items
-        create name "E.I.not_equal" E.I.not_equal items
-        create name "E.N.equals"    E.N.equals    items
-        create name "E.N.equal"     E.N.equal     items
-        create name "E.N.not_equal" E.N.not_equal items
+        let create_equalities name (items:array<'a>) =
+            create name "E.I.equals"    E.I.equals    items
+            create name "E.I.equal"     E.I.equal     items
+            create name "E.I.not_equal" E.I.not_equal items
+            create name "E.N.equals"    E.N.equals    items
+            create name "E.N.equal"     E.N.equal     items
+            create name "E.N.not_equal" E.N.not_equal items
 
-    let create_collection_inequalities name (collection:Collection<_,_,_,_>) =
-        create_inequalities (name + ".Array")          collection.Array
-        create_inequalities (name + ".OptionArray")    collection.OptionArray
-        create_inequalities (name + ".RefArray")       collection.RefArray
-        create_inequalities (name + ".RefWrapArray")   collection.RefWrapArray
-        create_inequalities (name + ".UnionArray")     collection.UnionArray
-        create_inequalities (name + ".UnionWrapArray") collection.UnionWrapArray
-        create_inequalities (name + ".ValueArray")     collection.ValueArray
-        create_inequalities (name + ".ValueWrapArray") collection.ValueWrapArray
-        create_inequalities (name + ".ArrayArray")     collection.ArrayArray
-        create_inequalities (name + ".ListArray")      collection.ListArray
-        create_inequalities (name + ".ArrayArray |> Array.map Set.ofArray") (collection.ArrayArray |> Array.map Set.ofArray)
+        let create_collection_inequalities name (collection:Collection<_,_,_,_>) =
+            create_inequalities (name + ".Array")          collection.Array
+            create_inequalities (name + ".OptionArray")    collection.OptionArray
+            create_inequalities (name + ".RefArray")       collection.RefArray
+            create_inequalities (name + ".RefWrapArray")   collection.RefWrapArray
+            create_inequalities (name + ".UnionArray")     collection.UnionArray
+            create_inequalities (name + ".UnionWrapArray") collection.UnionWrapArray
+            create_inequalities (name + ".ValueArray")     collection.ValueArray
+            create_inequalities (name + ".ValueWrapArray") collection.ValueWrapArray
+            create_inequalities (name + ".ArrayArray")     collection.ArrayArray
+            create_inequalities (name + ".ListArray")      collection.ListArray
+            create_inequalities (name + ".ArrayArray |> Array.map Set.ofArray") (collection.ArrayArray |> Array.map Set.ofArray)
 
-    let create_tuples_tests name (collection:Collection<_,_,_,_>) =
-        create_inequalities (name + ".Array")          collection.Array
+        let create_tuples_tests name (collection:Collection<_,_,_,_>) =
+            create_inequalities (name + ".Array")          collection.Array
 
-    let create_collection_equalities name (collection:Collection<_,_,_,_>) =
-        create_equalities (name + ".Array")          collection.Array
-        create_equalities (name + ".OptionArray")    collection.OptionArray
-        create_equalities (name + ".RefArray")       collection.RefArray
-        create_equalities (name + ".RefWrapArray")   collection.RefWrapArray
-        create_equalities (name + ".UnionArray")     collection.UnionArray
-        create_equalities (name + ".UnionWrapArray") collection.UnionWrapArray
-        create_equalities (name + ".ValueArray")     collection.ValueArray
-        create_equalities (name + ".ValueWrapArray") collection.ValueWrapArray
-        create_equalities (name + ".ArrayArray")     collection.ArrayArray
-        create_equalities (name + ".ListArray")      collection.ListArray
+        let create_collection_equalities name (collection:Collection<_,_,_,_>) =
+            create_equalities (name + ".Array")          collection.Array
+            create_equalities (name + ".OptionArray")    collection.OptionArray
+            create_equalities (name + ".RefArray")       collection.RefArray
+            create_equalities (name + ".RefWrapArray")   collection.RefWrapArray
+            create_equalities (name + ".UnionArray")     collection.UnionArray
+            create_equalities (name + ".UnionWrapArray") collection.UnionWrapArray
+            create_equalities (name + ".ValueArray")     collection.ValueArray
+            create_equalities (name + ".ValueWrapArray") collection.ValueWrapArray
+            create_equalities (name + ".ArrayArray")     collection.ArrayArray
+            create_equalities (name + ".ListArray")      collection.ListArray
 
-    let createData () =
-        create_collection_inequalities "Bools.Collection"               Bools.Collection
-        create_collection_equalities   "NullableBools.Collection"       NullableBools.Collection
-        create_collection_inequalities "SBytes.Collection"              SBytes.Collection
-        create_collection_equalities   "NullableSbytes.Collection"      NullableSbytes.Collection
-        create_collection_inequalities "Int16s.Collection"              Int16s.Collection
-        create_collection_equalities   "NullableInt16s.Collection"      NullableInt16s.Collection
-        create_collection_inequalities "Int32s.Collection"              Int32s.Collection
-        create_collection_equalities   "NullableInt32s.Collection"      NullableInt32s.Collection
-        create_collection_inequalities "Int64s.Collection"              Int64s.Collection
-        create_collection_equalities   "NullableInt64s.Collection"      NullableInt64s.Collection
-        create_collection_inequalities "NativeInts.Collection"          NativeInts.Collection
-        create_collection_equalities   "NullableNativeInts.Collection"  NullableNativeInts.Collection
-        create_collection_inequalities "Bytes.Collection"               Bytes.Collection
-        create_collection_equalities   "NullableBytes.Collection"       NullableBytes.Collection
-        create_collection_inequalities "Uint16s.Collection"             Uint16s.Collection
-        create_collection_equalities   "NullableUInt16s.Collection"     NullableUInt16s.Collection
-        create_collection_inequalities "UInt32s.Collection"             UInt32s.Collection
-        create_collection_equalities   "NullableUInt32s.Collection"     NullableUInt32s.Collection
-        create_collection_inequalities "UInt64s.Collection"             UInt64s.Collection
-        create_collection_equalities   "NullableUInt64s.Collection"     NullableUInt64s.Collection
-        create_collection_inequalities "UNativeInts.Collection"         UNativeInts.Collection
-        create_collection_equalities   "NullableUNativeInts.Collection" NullableUNativeInts.Collection
-        create_collection_inequalities "Chars.Collection"               Chars.Collection
-        create_collection_equalities   "NullableChars.Collection"       NullableChars.Collection
-        create_collection_inequalities "Strings.Collection"             Strings.Collection
-        create_collection_inequalities "Decimals.Collection"            Decimals.Collection
-        create_collection_equalities   "NullableDecimals.Collection"    NullableDecimals.Collection
-        create_collection_inequalities "Floats.Collection"              Floats.Collection
-        create_collection_equalities   "NullableFloats.Collection"      NullableFloats.Collection
-        create_collection_inequalities "Float32s.Collection"            Float32s.Collection
-        create_collection_equalities   "NullableFloat32s.Collection"    NullableFloat32s.Collection
-        create_collection_inequalities "DateTimes.Collection"           DateTimes.Collection
-        create_collection_equalities   "NullableDateTimes.Collection"   NullableDateTimes.Collection
-        create_collection_inequalities "Tuple2s.Collection"             Tuple2s.Collection
-        create_tuples_tests            "Tuple3s.Collection"             Tuple3s.Collection
-        create_tuples_tests            "Tuple4s.Collection"             Tuple4s.Collection
-        create_tuples_tests            "Tuple5s.Collection"             Tuple5s.Collection
-#endif
+        let createData () =
+            create_collection_inequalities "Bools.Collection"               Bools.Collection
+            create_collection_equalities   "NullableBools.Collection"       NullableBools.Collection
+            create_collection_inequalities "SBytes.Collection"              SBytes.Collection
+            create_collection_equalities   "NullableSbytes.Collection"      NullableSbytes.Collection
+            create_collection_inequalities "Int16s.Collection"              Int16s.Collection
+            create_collection_equalities   "NullableInt16s.Collection"      NullableInt16s.Collection
+            create_collection_inequalities "Int32s.Collection"              Int32s.Collection
+            create_collection_equalities   "NullableInt32s.Collection"      NullableInt32s.Collection
+            create_collection_inequalities "Int64s.Collection"              Int64s.Collection
+            create_collection_equalities   "NullableInt64s.Collection"      NullableInt64s.Collection
+            create_collection_inequalities "NativeInts.Collection"          NativeInts.Collection
+            create_collection_equalities   "NullableNativeInts.Collection"  NullableNativeInts.Collection
+            create_collection_inequalities "Bytes.Collection"               Bytes.Collection
+            create_collection_equalities   "NullableBytes.Collection"       NullableBytes.Collection
+            create_collection_inequalities "Uint16s.Collection"             Uint16s.Collection
+            create_collection_equalities   "NullableUInt16s.Collection"     NullableUInt16s.Collection
+            create_collection_inequalities "UInt32s.Collection"             UInt32s.Collection
+            create_collection_equalities   "NullableUInt32s.Collection"     NullableUInt32s.Collection
+            create_collection_inequalities "UInt64s.Collection"             UInt64s.Collection
+            create_collection_equalities   "NullableUInt64s.Collection"     NullableUInt64s.Collection
+            create_collection_inequalities "UNativeInts.Collection"         UNativeInts.Collection
+            create_collection_equalities   "NullableUNativeInts.Collection" NullableUNativeInts.Collection
+            create_collection_inequalities "Chars.Collection"               Chars.Collection
+            create_collection_equalities   "NullableChars.Collection"       NullableChars.Collection
+            create_collection_inequalities "Strings.Collection"             Strings.Collection
+            create_collection_inequalities "Decimals.Collection"            Decimals.Collection
+            create_collection_equalities   "NullableDecimals.Collection"    NullableDecimals.Collection
+            create_collection_inequalities "Floats.Collection"              Floats.Collection
+            create_collection_equalities   "NullableFloats.Collection"      NullableFloats.Collection
+            create_collection_inequalities "Float32s.Collection"            Float32s.Collection
+            create_collection_equalities   "NullableFloat32s.Collection"    NullableFloat32s.Collection
+            create_collection_inequalities "DateTimes.Collection"           DateTimes.Collection
+            create_collection_equalities   "NullableDateTimes.Collection"   NullableDateTimes.Collection
+            create_collection_inequalities "Tuple2s.Collection"             Tuple2s.Collection
+            create_tuples_tests            "Tuple3s.Collection"             Tuple3s.Collection
+            create_tuples_tests            "Tuple4s.Collection"             Tuple4s.Collection
+            create_tuples_tests            "Tuple5s.Collection"             Tuple5s.Collection
+
 
     let validate (items:array<'a>) (f:IOperation<'a>) (expected:array<int>) =
         try

@@ -16,18 +16,8 @@ let DateTime1970Jan01 =
 let absilWriteGetTimeStamp () =
     (DateTime.UtcNow - DateTime1970Jan01).TotalSeconds |> int
 
-// Force inline, so GetLastWin32Error calls are immediately after interop calls as seen by FxCop under Debug build.
-let inline ignore _x = ()
-
 // Native Resource linking/unlinking
 type IStream = System.Runtime.InteropServices.ComTypes.IStream
-
-let check _action hresult =
-    if uint32 hresult >= 0x80000000ul then
-        Marshal.ThrowExceptionForHR hresult
-//printf "action = %s, hresult = 0x%nx \n" action hresult
-
-let MAX_PATH = 260
 
 let E_FAIL = 0x80004005
 
@@ -35,16 +25,6 @@ let bytesToWord (b0: byte, b1: byte) = int16 b0 ||| (int16 b1 <<< 8)
 
 let bytesToDWord (b0: byte, b1: byte, b2: byte, b3: byte) =
     int b0 ||| (int b1 <<< 8) ||| (int b2 <<< 16) ||| (int b3 <<< 24)
-
-let bytesToQWord (b0: byte, b1: byte, b2: byte, b3: byte, b4: byte, b5: byte, b6: byte, b7: byte) =
-    int64 b0
-    ||| (int64 b1 <<< 8)
-    ||| (int64 b2 <<< 16)
-    ||| (int64 b3 <<< 24)
-    ||| (int64 b4 <<< 32)
-    ||| (int64 b5 <<< 40)
-    ||| (int64 b6 <<< 48)
-    ||| (int64 b7 <<< 56)
 
 let dwToBytes n =
     [|
@@ -109,20 +89,6 @@ type IMAGE_FILE_HEADER(m: int16, secs: int16, tds: int32, ptst: int32, nos: int3
         buf.EmitUInt16(uint16 sizeOfOptionalHeader)
         buf.EmitUInt16(uint16 characteristics)
         buf.AsMemory().ToArray()
-
-let bytesToIFH (buffer: byte[]) (offset: int) =
-    if (buffer.Length - offset) < IMAGE_FILE_HEADER.Width then
-        invalidArg "buffer" "buffer too small to fit an IMAGE_FILE_HEADER"
-
-    IMAGE_FILE_HEADER(
-        bytesToWord (buffer[offset], buffer[offset + 1]), // Machine
-        bytesToWord (buffer[offset + 2], buffer[offset + 3]), // NumberOfSections
-        bytesToDWord (buffer[offset + 4], buffer[offset + 5], buffer[offset + 6], buffer[offset + 7]), // TimeDateStamp
-        bytesToDWord (buffer[offset + 8], buffer[offset + 9], buffer[offset + 10], buffer[offset + 11]), // PointerToSymbolTable
-        bytesToDWord (buffer[offset + 12], buffer[offset + 13], buffer[offset + 14], buffer[offset + 15]), // NumberOfSymbols
-        bytesToWord (buffer[offset + 16], buffer[offset + 17]), // SizeOfOptionalHeader
-        bytesToWord (buffer[offset + 18], buffer[offset + 19])
-    ) // Characteristics
 
 type IMAGE_SECTION_HEADER(n: int64, ai: int32, va: int32, srd: int32, prd: int32, pr: int32, pln: int32, nr: int16, nl: int16, c: int32) =
     let mutable name = n
@@ -196,32 +162,6 @@ type IMAGE_SECTION_HEADER(n: int64, ai: int32, va: int32, srd: int32, prd: int32
         buf.EmitInt32 characteristics
         buf.AsMemory().ToArray()
 
-let bytesToISH (buffer: byte[]) (offset: int) =
-    if (buffer.Length - offset) < IMAGE_SECTION_HEADER.Width then
-        invalidArg "buffer" "buffer too small to fit an IMAGE_SECTION_HEADER"
-
-    IMAGE_SECTION_HEADER(
-        bytesToQWord (
-            buffer[offset],
-            buffer[offset + 1],
-            buffer[offset + 2],
-            buffer[offset + 3],
-            buffer[offset + 4],
-            buffer[offset + 5],
-            buffer[offset + 6],
-            buffer[offset + 7]
-        ), // Name
-        bytesToDWord (buffer[offset + 8], buffer[offset + 9], buffer[offset + 10], buffer[offset + 11]), // AddressInfo
-        bytesToDWord (buffer[offset + 12], buffer[offset + 13], buffer[offset + 14], buffer[offset + 15]), // VirtualAddress
-        bytesToDWord (buffer[offset + 16], buffer[offset + 17], buffer[offset + 18], buffer[offset + 19]), // SizeOfRawData
-        bytesToDWord (buffer[offset + 20], buffer[offset + 21], buffer[offset + 22], buffer[offset + 23]), // PointerToRawData
-        bytesToDWord (buffer[offset + 24], buffer[offset + 25], buffer[offset + 26], buffer[offset + 27]), // PointerToRelocations
-        bytesToDWord (buffer[offset + 28], buffer[offset + 29], buffer[offset + 30], buffer[offset + 31]), // PointerToLineNumbers
-        bytesToWord (buffer[offset + 32], buffer[offset + 33]), // NumberOfRelocations
-        bytesToWord (buffer[offset + 34], buffer[offset + 35]), // NumberOfLineNumbers
-        bytesToDWord (buffer[offset + 36], buffer[offset + 37], buffer[offset + 38], buffer[offset + 39])
-    ) // Characteristics
-
 type IMAGE_SYMBOL(n: int64, v: int32, sn: int16, t: int16, sc: byte, nas: byte) =
     let mutable name = n
     let mutable value = v
@@ -266,28 +206,6 @@ type IMAGE_SYMBOL(n: int64, v: int32, sn: int16, t: int16, sc: byte, nas: byte) 
         buf.EmitByte numberOfAuxSymbols
         buf.AsMemory().ToArray()
 
-let bytesToIS (buffer: byte[]) (offset: int) =
-    if (buffer.Length - offset) < IMAGE_SYMBOL.Width then
-        invalidArg "buffer" "buffer too small to fit an IMAGE_SYMBOL"
-
-    IMAGE_SYMBOL(
-        bytesToQWord (
-            buffer[offset],
-            buffer[offset + 1],
-            buffer[offset + 2],
-            buffer[offset + 3],
-            buffer[offset + 4],
-            buffer[offset + 5],
-            buffer[offset + 6],
-            buffer[offset + 7]
-        ), // Name
-        bytesToDWord (buffer[offset + 8], buffer[offset + 9], buffer[offset + 10], buffer[offset + 11]), // Value
-        bytesToWord (buffer[offset + 12], buffer[offset + 13]), // SectionNumber
-        bytesToWord (buffer[offset + 14], buffer[offset + 15]), // Type
-        buffer[offset + 16],
-        buffer[offset + 17]
-    ) // NumberOfAuxSymbols
-
 type IMAGE_RELOCATION(va: int32, sti: int32, t: int16) =
     let mutable virtualAddress = va // Also RelocCount
     let mutable symbolTableIndex = sti
@@ -317,16 +235,6 @@ type IMAGE_RELOCATION(va: int32, sti: int32, t: int16) =
         buf.EmitInt32 symbolTableIndex
         buf.EmitUInt16(uint16 ty)
         buf.AsMemory().ToArray()
-
-let bytesToIR (buffer: byte[]) (offset: int) =
-    if (buffer.Length - offset) < IMAGE_RELOCATION.Width then
-        invalidArg "buffer" "buffer too small to fit an IMAGE_RELOCATION"
-
-    IMAGE_RELOCATION(
-        bytesToDWord (buffer[offset], buffer[offset + 1], buffer[offset + 2], buffer[offset + 3]),
-        bytesToDWord (buffer[offset + 4], buffer[offset + 5], buffer[offset + 6], buffer[offset + 7]),
-        bytesToWord (buffer[offset + 8], buffer[offset + 9])
-    )
 
 type IMAGE_RESOURCE_DIRECTORY(c: int32, tds: int32, mjv: int16, mnv: int16, nne: int16, nie: int16) =
     let mutable characteristics = c
