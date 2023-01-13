@@ -644,11 +644,12 @@ module FsiTests =
         Assert.shouldBe typeof<CustomType2[,]> boundValue.Value.ReflectionType
         boundValue.Value.ReflectionValue.Should().Be(mdArr, "") |> ignore
 
-#if NETCOREAPP
-    [<Fact>]
-    let ``Evaluating simple reference and code succeeds with multiemit on``() =
+    [<TheoryForNETCOREAPP>]
+    [<InlineData(true)>]
+    [<InlineData(false)>]
+    let ``Evaluating simple reference and code succeeds``(useOneDynamicAssembly:bool) =
 
-        use fsiSession = createFsiSession false
+        use fsiSession = createFsiSession useOneDynamicAssembly
         let assemblyPath = typeof<Sentinel>.Assembly.Location.Replace("\\", "/")
         let res, errors = fsiSession.EvalInteractionNonThrowing($"""
             #r "{assemblyPath}"
@@ -667,27 +668,3 @@ module FsiTests =
         | Choice2Of2 e ->
             printfn "exception: %A" e
             raise e
-
-    [<Fact>]
-    let ``Evaluating simple reference and code succeeds with multiemit off``() =
-
-        use fsiSession = createFsiSession true
-        let assemblyPath = typeof<Sentinel>.Assembly.Location.Replace("\\", "/")
-        let res, errors = fsiSession.EvalInteractionNonThrowing($"""
-            #r "{assemblyPath}"
-            FSharp.Compiler.UnitTests.MyModule.test(3)""")
-
-        errors
-        |> Array.iter (fun e -> printfn "error: %A" e)
-
-        match res with
-        | Choice1Of2 v ->
-            let v =
-                match v with
-                | Some v -> sprintf "%A" v.ReflectionValue
-                | None -> "(none)"
-            printfn "value: %A" v
-        | Choice2Of2 e ->
-            printfn "exception: %A" e
-            raise e
-#endif

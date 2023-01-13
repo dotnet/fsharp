@@ -253,3 +253,300 @@ type T() =
          |> withLangVersionPreview
          |> compile
          |> shouldSucceed
+         
+    [<Fact>]
+    let ``Sealed and AbstractClass on a type with static and non static let bindings in lang 70`` () =
+        Fsx """
+[<Sealed; AbstractClass>]
+type C() =
+    let a = 1
+    static let x = 1
+        """
+         |> withLangVersion70
+         |> compile
+         |> shouldSucceed
+         
+    [<Fact>]
+    let ``Sealed and AbstractClass on a type with static and non static recursive let bindings in lang 70`` () =
+        Fsx """
+[<Sealed; AbstractClass>]
+type C() =
+    let rec a = 1
+    static let x = 1
+        """
+         |> withLangVersion70
+         |> compile
+         |> shouldSucceed
+         
+    [<Fact>]
+    let ``Sealed and AbstractClass on a type with static let bindings in lang 70`` () =
+        Fsx """
+[<Sealed; AbstractClass>]
+type C() =
+    static let a = 1
+    static let x = a
+        """
+         |> withLangVersion70
+         |> compile
+         |> shouldSucceed
+         
+    [<Fact>]
+    let ``Sealed and AbstractClass on a type with recursive static let bindings in lang 70`` () =
+        Fsx """
+[<Sealed; AbstractClass>]
+type C() =
+    static let rec a = 1
+    static let x = a
+        """
+         |> withLangVersion70
+         |> compile
+         |> shouldSucceed
+         
+    [<Fact>]
+    let ``Sealed and AbstractClass with static and non static let bindings in lang preview`` () =
+        Fsx """
+[<Sealed; AbstractClass>]
+type C() =
+    let a = 1
+    static let X = 1
+        """
+         |> withLangVersionPreview
+         |> compile
+         |> shouldFail
+         |> withDiagnostics [
+             (Error 3555, Line 4, Col 5, Line 4, Col 14, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance let bindings are not allowed.")
+         ]
+         
+    [<Fact>]
+    let ``Sealed and AbstractClass with static and non static recursive let bindings in lang preview`` () =
+        Fsx """
+[<Sealed; AbstractClass>]
+type C() =
+    let rec a = 1
+    static let X = 1
+        """
+         |> withLangVersionPreview
+         |> compile
+         |> shouldFail
+         |> withDiagnostics [
+             (Error 3555, Line 4, Col 5, Line 4, Col 18, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance let bindings are not allowed.")
+         ]
+
+    [<Fact>]
+    let ``Sealed and AbstractClass with static let bindings in lang preview`` () =
+        Fsx """
+[<Sealed; AbstractClass>]
+type C() =
+    static let a = 1
+    static let X = a
+        """
+         |> withLangVersionPreview
+         |> compile
+         |> shouldSucceed
+         
+    [<Fact>]
+    let ``Sealed and AbstractClass with recursive static let bindings in lang preview`` () =
+        Fsx """
+[<Sealed; AbstractClass>]
+type C() =
+    static let rec a = 1
+    static let X = a
+        """
+         |> withLangVersionPreview
+         |> compile
+         |> shouldSucceed
+         
+    [<Fact>]
+    let ``Sealed and AbstractClass on a type implementing interface in lang 70`` () =
+        Fsx """
+type MyInterface =
+    abstract member M : unit -> unit
+
+[<Sealed; AbstractClass>]
+type C() =
+    interface MyInterface with
+        member this.M() = ()
+        """
+         |> withLangVersion70
+         |> compile
+         |> shouldSucceed
+         
+    [<Fact>]
+    let ``Sealed and AbstractClass on a type implicit constructor implementing interface in lang 70`` () =
+        Fsx """
+type MyInterface =
+    abstract member M : unit -> unit
+
+[<Sealed; AbstractClass>]
+type C =
+    interface MyInterface with
+        member this.M() = ()
+        """
+         |> withLangVersion70
+         |> compile
+         |> shouldSucceed
+         
+    [<Fact>]
+    let ``Sealed and AbstractClass on a type implementing interface in lang preview`` () =
+        Fsx """
+type MyInterface =
+    abstract member M : unit -> unit
+
+[<Sealed; AbstractClass>]
+type C() =
+    interface MyInterface with
+        member this.M() = ()
+        """
+         |> withLangVersionPreview
+         |> compile
+         |> shouldFail
+         |> withDiagnostics [
+            (Error 3556, Line 8, Col 9, Line 8, Col 29, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Implementing interfaces is not allowed.")
+         ]
+         
+    [<Fact>]
+    let ``Sealed and AbstractClass on a type implicit constructor implementing interface in lang preview`` () =
+        Fsx """
+type MyInterface =
+    abstract member M : unit -> unit
+
+[<Sealed; AbstractClass>]
+type C =
+    interface MyInterface with
+        member this.M() = ()
+        """
+         |> withLangVersionPreview
+         |> compile
+         |> shouldFail
+         |> withDiagnostics [
+            (Error 3556, Line 8, Col 9, Line 8, Col 29, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Implementing interfaces is not allowed.")
+         ]
+         
+    [<Fact>]
+    let ``Sealed and AbstractClass on a type implicit constructor declaring abstract members in Lang 70`` () =
+        Fsx """
+[<Sealed; AbstractClass>]
+type T =
+    abstract A : int
+    abstract B : int with get, set
+    abstract C : i:int -> int
+    abstract D : i:int -> int
+        """
+         |> withLangVersion70
+         |> compile
+         |> shouldSucceed
+    
+    [<Fact>]
+    let ``Sealed and AbstractClass on a type declaring abstract members in Lang 70`` () =
+        Fsx """
+[<Sealed; AbstractClass>]
+type T() =
+    abstract A : int
+    abstract B : int with get, set
+    abstract C : i:int -> int
+    abstract D : i:int -> int
+        """
+         |> withLangVersion70
+         |> compile
+         |> shouldSucceed
+         
+    [<Fact>]
+    let ``Sealed and AbstractClass on a type with implicit constructor declaring abstract members in Lang preview`` () =
+        Fsx """
+[<Sealed; AbstractClass>]
+type T =
+    abstract C : i:int -> int
+    abstract D : i:int -> int
+        """
+         |> withLangVersionPreview
+         |> compile
+         |> shouldFail
+         |> withDiagnostics [
+             (Error 3557, Line 4, Col 14, Line 4, Col 15, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Abstract member declarations are not allowed.")
+             (Error 3557, Line 5, Col 14, Line 5, Col 15, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Abstract member declarations are not allowed.")
+         ]
+         
+    [<Fact>]
+    let ``Sealed and AbstractClass on a type declaring abstract members in Lang preview`` () =
+        Fsx """
+[<Sealed; AbstractClass>]
+type T() =
+    abstract C : i:int -> int
+    abstract D : i:int -> int
+        """
+         |> withLangVersionPreview
+         |> compile
+         |> shouldFail
+         |> withDiagnostics [
+             (Error 3557, Line 4, Col 14, Line 4, Col 15, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Abstract member declarations are not allowed.")
+             (Error 3557, Line 5, Col 14, Line 5, Col 15, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Abstract member declarations are not allowed.")
+         ]
+
+    #if !NETCOREAPP
+    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
+    #else
+    [<Fact>]
+    #endif
+    let ``Sealed and AbstractClass on a type implementing an interface with static abstract members in Lang 70`` () =
+        Fsx """
+[<Interface>]
+type InputRetriever<'T when 'T:>InputRetriever<'T>> =
+    static abstract Read: unit -> string
+
+[<AbstractClass;Sealed>]
+type ConsoleRetriever = 
+    interface InputRetriever<ConsoleRetriever> with
+        static member Read() = 
+            stdout.WriteLine("Please enter a value and press enter")
+            stdin.ReadLine()
+        """
+         |> withNoWarn 3535
+         |> withLangVersion70
+         |> compile
+         |> shouldSucceed
+         
+    #if !NETCOREAPP
+    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
+    #else
+    [<Fact>]
+    #endif
+    let ``Sealed and AbstractClass on a type implicit constructor implementing an interface with static abstract members in Lang preview`` () =
+        Fsx """
+[<Interface>]
+type InputRetriever<'T when 'T:>InputRetriever<'T>> =
+    static abstract Read: unit -> string
+
+[<AbstractClass;Sealed>]
+type ConsoleRetriever = 
+    interface InputRetriever<ConsoleRetriever> with
+        static member Read() = 
+            stdout.WriteLine("Please enter a value and press enter")
+            stdin.ReadLine()
+        """
+         |> withNoWarn 3535
+         |> withLangVersionPreview
+         |> compile
+         |> shouldSucceed
+         
+    #if !NETCOREAPP
+    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
+    #else
+    [<Fact>]
+    #endif
+    let ``Sealed and AbstractClass on a type implementing an interface with static abstract members in Lang preview`` () =
+        Fsx """
+[<Interface>]
+type InputRetriever<'T when 'T:>InputRetriever<'T>> =
+    static abstract Read: unit -> string
+
+[<AbstractClass;Sealed>]
+type ConsoleRetriever() = 
+    interface InputRetriever<ConsoleRetriever> with
+        static member Read() = 
+            stdout.WriteLine("Please enter a value and press enter")
+            stdin.ReadLine()
+        """
+         |> withNoWarn 3535
+         |> withLangVersionPreview
+         |> compile
+         |> shouldSucceed

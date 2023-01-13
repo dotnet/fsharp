@@ -388,9 +388,7 @@ let rebuildTS g m ts vs =
 /// - the definition formal projection info suggests a CallPattern
 type CallPattern = TupleStructure list 
       
-let callPatternOrder = (compare : CallPattern -> CallPattern -> int)
 let argsCP exprs = List.map exprTS exprs
-let noArgsCP = []
 let inline isTrivialCP xs = isNil xs
 
 let rec minimalCallPattern callPattern =
@@ -826,25 +824,6 @@ let passBinds penv binds = binds |> List.map (passBind penv)
 //   3. run pass over following code.
 //-------------------------------------------------------------------------
 
-let passBindRhs conv (TBind (v, repr, letSeqPtOpt)) = TBind(v, conv repr, letSeqPtOpt)
-
-let preInterceptExpr (penv: penv) conv expr =
-  match expr with
-  | Expr.LetRec (binds, e, m, _) ->
-     let binds = List.map (passBindRhs conv) binds
-     let binds = passBinds penv binds
-     Some (mkLetRecBinds m binds (conv e))
-  | Expr.Let (bind, e, m, _) ->  
-     let bind = passBindRhs conv bind
-     let bind = passBind penv bind
-     Some (mkLetBind m bind (conv e))
-  | TyappAndApp(f, fty, tys, args, m) ->
-     // match app, and fixup if needed 
-     let args = List.map conv args
-     let f = conv f
-     Some (fixupApp penv (f, fty, tys, args, m) )
-  | _ -> None
-  
 let postTransformExpr (penv: penv) expr =
     match expr with
     | Expr.LetRec (binds, e, m, _) ->
