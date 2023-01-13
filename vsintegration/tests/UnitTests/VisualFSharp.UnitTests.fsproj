@@ -57,6 +57,9 @@
     <Compile Include="LegacyProjectSystem\Tests.ProjectSystem.References.fs" />
     <Compile Include="LegacyProjectSystem\Tests.ProjectSystem.RoundTrip.fs" />
     <Compile Include="LegacyProjectSystem\Tests.ProjectSystem.UpToDate.fs" />
+	  <Compile Include="DocCommentIdParserTests.fs">
+		  <Link>CompilerService\DocCommentIdParserTests.fs</Link>
+	  </Compile>
     <Compile Include="UnusedOpensTests.fs">
       <Link>CompilerService\UnusedOpensTests.fs</Link>
     </Compile>
