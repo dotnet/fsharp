@@ -5,6 +5,7 @@ module internal FSharp.Compiler.CompilerConfig
 
 open System
 open System.Collections.Concurrent
+open System.Runtime.InteropServices
 open System.IO
 open Internal.Utilities
 open Internal.Utilities.FSharpEnvironment
@@ -1137,26 +1138,19 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                         yield clrFacades
 
                 | None ->
-                    // "there is no really good notion of runtime directory on .NETCore"
-#if NETSTANDARD
-                    let runtimeRoot = Path.GetDirectoryName(typeof<Object>.Assembly.Location)
-#else
-                    let runtimeRoot =
-                        System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
-#endif
-                    let runtimeRootWithoutSlash = runtimeRoot.TrimEnd('/', '\\')
-                    let runtimeRootFacades = Path.Combine(runtimeRootWithoutSlash, "Facades")
-                    let runtimeRootWPF = Path.Combine(runtimeRootWithoutSlash, "WPF")
-
                     match data.resolutionEnvironment with
                     | LegacyResolutionEnvironment.CompilationAndEvaluation ->
                         // Default compilation-and-execution-time references on .NET Framework and Mono, e.g. for F# Interactive
-                        //
                         // In the current way of doing things, F# Interactive refers to implementation assemblies.
+                        let runtimeRoot = RuntimeEnvironment.GetRuntimeDirectory().TrimEnd('/', '\\')
                         yield runtimeRoot
+
+                        let runtimeRootFacades = Path.Combine(runtimeRoot, "Facades")
 
                         if FileSystem.DirectoryExistsShim runtimeRootFacades then
                             yield runtimeRootFacades // System.Runtime.dll is in /usr/lib/mono/4.5/Facades
+
+                        let runtimeRootWPF = Path.Combine(runtimeRoot, "WPF")
 
                         if FileSystem.DirectoryExistsShim runtimeRootWPF then
                             yield runtimeRootWPF // PresentationCore.dll is in C:\Windows\Microsoft.NET\Framework\v4.0.30319\WPF

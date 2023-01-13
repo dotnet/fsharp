@@ -5,9 +5,8 @@ namespace FSharp.Compiler.ComponentTests.EmittedIL
 open Xunit
 open FSharp.Test.Compiler
 
-#if NETCOREAPP
 module ``SkipLocalsInit`` =
-    [<Fact>]
+    [<FSharp.Test.FactForNETCOREAPP>]
     let ``Init in function and closure not emitted when applied on function``() =
         FSharp """
 module SkipLocalsInit
@@ -35,7 +34,7 @@ let x () =
   .maxstack  6
   .locals (int32 V_0)"""]
 
-    [<Fact>]
+    [<FSharp.Test.FactForNETCOREAPP>]
     let ``Init in static method not emitted when applied on class``() =
         FSharp """
 module SkipLocalsInit
@@ -60,7 +59,7 @@ type X () =
   .maxstack  4
   .locals (int32 V_0)"""]
 
-    [<Fact>]
+    [<FSharp.Test.FactForNETCOREAPP>]
     let ``Init in static method and function not emitted when applied on module``() =
         FSharp """
 [<System.Runtime.CompilerServices.SkipLocalsInitAttribute>]
@@ -97,7 +96,7 @@ type X () =
   .maxstack  4
   .locals (int32 V_0)"""]
 
-    [<Fact>]
+    [<FSharp.Test.FactForNETCOREAPP>]
     let ``Init in method and closure not emitted when applied on method``() =
         FSharp """
 module SkipLocalsInit
@@ -131,7 +130,7 @@ type X () =
   .locals (int32 V_0)
 """ ]
 
-    [<Fact>]
+    [<FSharp.Test.FactForNETCOREAPP>]
     let ``Zero init performed to get defaults despite the attribute``() =
         FSharp """
 module SkipLocalsInit
@@ -181,4 +180,3 @@ IL_001a:  ldloc.0
 IL_001b:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [runtime]System.Nullable`1<int64>,!!a>::Invoke(!0)
 IL_0020:  stloc.2
 IL_0021:  ret"""]
-#endif
