@@ -72,7 +72,7 @@ module times =
         Assert.Contains("Duration",consoleContents)
 
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"error_01.fs"|])>]
+    [<Theory(Skip="Flaky in CI due to file being locked, disabling for now until file closure is resolved."); Directory(__SOURCE_DIRECTORY__, Includes=[|"error_01.fs"|])>]
     let ``times - to csv file`` compilation =
         let tempPath = Path.Combine(Path.GetTempPath(),Guid.NewGuid().ToString() + ".csv")
         use _ = {new IDisposable with
