@@ -235,8 +235,6 @@ let mkTagFieldFormalType (ilg: ILGlobals) _cuspec = ilg.typ_Int32
 
 let mkTagFieldId ilg cuspec = "_tag", mkTagFieldType ilg cuspec
 
-let mkTailOrNullId baseTy = "tail", constFormalFieldTy baseTy
-
 let altOfUnionSpec (cuspec: IlxUnionSpec) cidx =
     try
         cuspec.Alternative cidx

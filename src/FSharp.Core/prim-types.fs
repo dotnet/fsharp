@@ -1601,11 +1601,6 @@ namespace Microsoft.FSharp.Core
                   when 'T : string  = System.String.Equals((# "" x : string #),(# "" y : string #))                  
                   when 'T : decimal = System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
                   when 'T : DateTime = DateTime.Equals((# "" x : DateTime #), (# "" y : DateTime #))
-                  
-
-            let inline GenericInequalityFast (x:'T) (y:'T) = (not(GenericEqualityFast x y) : bool)
-            let inline GenericInequalityERFast (x:'T) (y:'T) = (not(GenericEqualityERFast x y) : bool)
-
 
             //-------------------------------------------------------------------------
             // LanguagePrimitives.HashCompare: HASHING.  
