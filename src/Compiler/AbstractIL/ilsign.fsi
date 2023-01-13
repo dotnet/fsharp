@@ -16,9 +16,9 @@ open System.IO
 [<Sealed>]
 type ILStrongNameSigner =
     member PublicKey: byte[]
-    static member OpenPublicKeyOptions: string -> bool -> ILStrongNameSigner
+    static member OpenPublicKeyOptions: byte array -> bool -> ILStrongNameSigner
     static member OpenPublicKey: byte[] -> ILStrongNameSigner
-    static member OpenKeyPairFile: string -> ILStrongNameSigner
+    static member OpenKeyPairFile: byte[] -> ILStrongNameSigner
     static member OpenKeyContainer: string -> ILStrongNameSigner
     member IsFullySigned: bool
     member PublicKey: byte[]

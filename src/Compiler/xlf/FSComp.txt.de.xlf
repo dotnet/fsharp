@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="buildDuplicateFile">
         <source>The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</source>
-        <target state="new">The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</target>
+        <target state="translated">Die Quelldatei „{0}“ (an Position {1}/{2}) wurde bereits in der Kompilierungsliste angezeigt (an Position {3}/{4}). Bitte stellen Sie sicher, dass sie nur einmal in der Projektdatei enthalten ist.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidSourceFileExtensionML">
@@ -20,6 +20,16 @@
       <trans-unit id="buildInvalidSourceFileExtensionUpdated">
         <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript</source>
         <target state="translated">Die Dateierweiterung von „{0}“ wurde nicht erkannt. Quelldateien müssen die Erweiterung .fs, .fsi, .fsx oder .fsscript haben</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkAdditionalConstructorOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Additional constructor is not allowed.</source>
+        <target state="translated">Wenn ein Typ sowohl das Attribute [&lt;Sealed&gt;] wie auch [&lt;AbstractClass&gt;] verwendet, bedeutet dies, dass er statisch ist. Ein zusätzlicher Konstruktor ist nicht zulässig.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkConstructorWithArgumentsOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Constructor with arguments is not allowed.</source>
+        <target state="translated">Wenn ein Typ sowohl das Attribute [&lt;Sealed&gt;] wie auch [&lt;AbstractClass&gt;] verwendet, bedeutet dies, dass er statisch ist. Der Konstruktor mit Argumenten ist nicht zulässig.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkDuplicatedMethodParameter">
@@ -60,6 +70,11 @@
       <trans-unit id="chkInfoRefcellIncr">
         <source>The use of 'incr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'incr cell' to 'cell.Value &lt;- cell.Value + 1'.</source>
         <target state="translated">Die Verwendung von "incr" aus der F#-Bibliothek ist veraltet. Siehe https://aka.ms/fsharp-refcell-ops. Ändern Sie z. B. "incr cell" in "cell.Value &lt;- cell.Value + 1".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInstanceMemberOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance members are not allowed.</source>
+        <target state="translated">Wenn ein Typ sowohl das Attribute [&lt;Sealed&gt;] wie auch [&lt;AbstractClass&gt;] verwendet, bedeutet dies, dass er statisch ist. Members in Instanzen sind nicht zulässig.</target>
         <note />
       </trans-unit>
       <trans-unit id="containerDeprecated">
@@ -195,6 +210,11 @@
       <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
         <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
         <target state="translated">Beim veralteten Zugriff auf das Konstrukt mit dem RequireQualifiedAccess-Attribut wird ein Fehler ausgegeben.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureErrorReportingOnStaticClasses">
+        <source>Error reporting on static classes</source>
+        <target state="translated">Fehlerberichterstattung für statische Klassen</target>
         <note />
       </trans-unit>
       <trans-unit id="featureEscapeBracesInFormattableString">
@@ -344,7 +364,7 @@
       </trans-unit>
       <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
         <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
-        <target state="new">Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</target>
+        <target state="translated">Löst Warnungen aus, wenn „let inline ... =“ zusammen mit dem Attribut [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] verwendet wird. Die Funktion wird nicht inline gesetzt.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">

@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="buildDuplicateFile">
         <source>The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</source>
-        <target state="new">The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</target>
+        <target state="translated">來源檔案 '{0}' ( 位於位置 {1}/{2}) 已出現在編譯清單 ( 位於位置 {3}/{4})。請確認它在專案檔中只包含一次。</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidSourceFileExtensionML">
@@ -20,6 +20,16 @@
       <trans-unit id="buildInvalidSourceFileExtensionUpdated">
         <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript</source>
         <target state="translated">無法辨識 '{0}' 的副檔名。來源檔案的副檔名必須是 .fs、.fsi、.fsx 或 .fsscript。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkAdditionalConstructorOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Additional constructor is not allowed.</source>
+        <target state="translated">如果類型同時使用 [&lt;Sealed&gt;] 和 [&lt;AbstractClass&gt;] 屬性，表示其為靜態。不允許其他建構函式。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkConstructorWithArgumentsOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Constructor with arguments is not allowed.</source>
+        <target state="translated">如果類型同時使用 [&lt;Sealed&gt;] 和 [&lt;AbstractClass&gt;] 屬性，表示其為靜態。不允許具有引數的建構函式。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkDuplicatedMethodParameter">
@@ -60,6 +70,11 @@
       <trans-unit id="chkInfoRefcellIncr">
         <source>The use of 'incr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'incr cell' to 'cell.Value &lt;- cell.Value + 1'.</source>
         <target state="translated">透過 F# 程式庫使用 'incr' 的方式已淘汰。請參閱 https://aka.ms/fsharp-refcell-ops。舉例來說，請將 'incr cell' 變更為 'cell.Value &lt;- cell.Value + 1'。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInstanceMemberOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance members are not allowed.</source>
+        <target state="translated">如果類型同時使用 [&lt;Sealed&gt;] 和 [&lt;AbstractClass&gt;] 屬性，表示其為靜態。不允許執行個體成員。</target>
         <note />
       </trans-unit>
       <trans-unit id="containerDeprecated">
@@ -195,6 +210,11 @@
       <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
         <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
         <target state="translated">對具有 RequireQualifiedAccess 屬性的建構的已取代存取發出錯誤</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureErrorReportingOnStaticClasses">
+        <source>Error reporting on static classes</source>
+        <target state="translated">報告靜態類別時發生錯誤</target>
         <note />
       </trans-unit>
       <trans-unit id="featureEscapeBracesInFormattableString">
@@ -344,7 +364,7 @@
       </trans-unit>
       <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
         <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
-        <target state="new">Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</target>
+        <target state="translated">當 'let inline ... =' 與 [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] 屬性一起使用時引發警告。函數未內嵌。</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">

@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="buildDuplicateFile">
         <source>The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</source>
-        <target state="new">The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</target>
+        <target state="translated">ソース ファイル '{0}' (位置 {1}/{2}) は、コンパイル リスト (位置 {3}/{4}) に既に存在します。プロジェクト ファイルに 1 回だけ含まれていることを確認してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidSourceFileExtensionML">
@@ -20,6 +20,16 @@
       <trans-unit id="buildInvalidSourceFileExtensionUpdated">
         <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript</source>
         <target state="translated">'{0}' のファイル拡張子は認識されません。ソース ファイルの拡張子は .fs、.fsi、.fsx、または .fsscript にする必要があります。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkAdditionalConstructorOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Additional constructor is not allowed.</source>
+        <target state="translated">型が [&lt;Sealed&gt;] と [&lt;AbstractClass&gt;] の両方の属性を使用する場合、それは静的であることを意味します。追加のコンストラクターは許可されていません。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkConstructorWithArgumentsOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Constructor with arguments is not allowed.</source>
+        <target state="translated">型が [&lt;Sealed&gt;] と [&lt;AbstractClass&gt;] の両方の属性を使用する場合、それは静的であることを意味します。引数を持つコンストラクターは許可されていません。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkDuplicatedMethodParameter">
@@ -60,6 +70,11 @@
       <trans-unit id="chkInfoRefcellIncr">
         <source>The use of 'incr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'incr cell' to 'cell.Value &lt;- cell.Value + 1'.</source>
         <target state="translated">F# ライブラリからの 'incr' の使用は非推奨です。https://aka.ms/fsharp-refcell-ops を参照してください。たとえば、'incr cell' を 'cell.Value &lt;- cell.Value +1' に変更してください。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInstanceMemberOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance members are not allowed.</source>
+        <target state="translated">型が [&lt;Sealed&gt;] と [&lt;AbstractClass&gt;] の両方の属性を使用する場合、それは静的であることを意味します。インスタンス メンバーは許可されません。</target>
         <note />
       </trans-unit>
       <trans-unit id="containerDeprecated">
@@ -195,6 +210,11 @@
       <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
         <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
         <target state="translated">RequireQualifiedAccess 属性を持つコンストラクトの非推奨アクセスでエラーが発生しました</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureErrorReportingOnStaticClasses">
+        <source>Error reporting on static classes</source>
+        <target state="translated">静的クラスに関するエラー報告</target>
         <note />
       </trans-unit>
       <trans-unit id="featureEscapeBracesInFormattableString">
@@ -344,7 +364,7 @@
       </trans-unit>
       <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
         <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
-        <target state="new">Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</target>
+        <target state="translated">'let inline ... =' が [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] 属性と一緒に使用されるときに警告を生成します。関数はインライン化されていません。</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
