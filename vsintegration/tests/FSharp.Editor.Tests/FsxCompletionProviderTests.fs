@@ -62,9 +62,10 @@ module FsxCompletionProviderTests =
 
     let getWorker () = Worker()
 
-    [<Fact>]
 #if RELEASE
-    [<Ignore "Fails in some CI, reproduces locally in Release mode, needs investigation">]
+    [<Fact(Skip="Fails in some CI, reproduces locally in Release mode, needs investigation")>]
+#else
+    [<Fact>]
 #endif
     let fsiShouldTriggerCompletionInFsxFile () =
         let fileContents =

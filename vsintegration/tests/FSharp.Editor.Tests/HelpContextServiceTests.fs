@@ -76,9 +76,10 @@ type HelpContextServiceTests() =
     let TestF1Keywords (expectedKeywords, lines) =
         TestF1KeywordsWithOptions(expectedKeywords, lines, [||])
 
-    [<Fact>]
 #if RELEASE
-    [<Ignore "Fails in some CI, reproduces locally in Release mode, needs investigation">]
+    [<Fact(Skip="Fails in some CI, reproduces locally in Release mode, needs investigation")>]
+#else
+    [<Fact>]
 #endif
     member _.``F1 help keyword NoKeyword.Negative``() =
         let file =
@@ -227,9 +228,10 @@ type HelpContextServiceTests() =
 
         TestF1Keywords(keywords, file)
 
-    [<Fact>]
 #if RELEASE
-    [<Ignore "Fails in some CI, reproduces locally in Release mode, needs investigation">]
+    [<Fact(Skip="Fails in some CI, reproduces locally in Release mode, needs investigation")>]
+#else
+    [<Fact>]
 #endif
     //This test case Verify that when F1 is Hit on TypeProvider namespaces it contain the right keyword
     member _.``F1 help keyword TypeProvider.Namespaces``() =
@@ -245,9 +247,10 @@ type HelpContextServiceTests() =
             |]
         )
 
-    [<Fact>]
 #if RELEASE
-    [<Ignore "Fails in some CI, reproduces locally in Release mode, needs investigation">]
+    [<Fact(Skip="Fails in some CI, reproduces locally in Release mode, needs investigation")>]
+#else
+    [<Fact>]
 #endif
     //This test case Verify that when F1 is Hit on TypeProvider Type it contain the right keyword
     member _.``F1 help keyword TypeProvider.type``() =
