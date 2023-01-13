@@ -43,6 +43,32 @@ module ScriptRunner =
 
         | _ -> failwith $"Compilation unit other than fsharp is not supported, cannot process %A{cu}"
 
+module DiagnosticsComparison = 
+    open FSharp.Compiler.Text.Range
+
+    let messageAndNumber erroryType = 
+        match erroryType with
+        | ErrorType.Error n -> "error",n
+        | ErrorType.Warning n-> "warning",n
+        | ErrorType.Hidden n
+        | ErrorType.Information n-> "info",n
+
+    let renderToString (cr:CompilationResult) = 
+        [ for (file,err) in cr.Output.PerFileErrors do
+            let m = err.Range
+            let file = file.Replace("/", "\\")
+
+            let msg,no = messageAndNumber err.Error
+
+            if  (equals m range0) || (equals m rangeStartup) || (equals m rangeCmdArgs) then
+                ""
+            else 
+                sprintf "%s(%d,%d,%d,%d): " file m.StartLine m.StartColumn m.EndLine m.EndColumn
+
+        ]
+
+
+
 /// This test file was created by porting over (slower) FsharpSuite.Tests
 /// In order to minimize human error, the test definitions have been copy-pasted and this adapter provides implementations of the test functions
 module TestFrameworkAdapter = 
@@ -51,9 +77,17 @@ module TestFrameworkAdapter =
         | FSC_OPTIMIZED 
         | FSI
         | COMPILED_EXE_APP
+        | NEG_TEST_BUILD of testName:string
 
     let baseFolder = Path.Combine(__SOURCE_DIRECTORY__,"..","..","fsharp") |> Path.GetFullPath
     let inline testConfig (relativeFolder:string) = relativeFolder    
+
+    let diffNegativeBaseline (cr:CompilationUnit) absFolder testName  =
+        let expectedFiles = Directory.GetFiles(absFolder, testName + ".*")
+        for f in expectedFiles do
+            match Path.GetExtension(f) with
+            | "bsl" -> cr |> typecheck
+            | "vsbsl" -> cr |> withOptions ["--test:ContinueAfterParseFailure"]
 
     let adjustVersion version bonusArgs = 
         match version with 
@@ -88,15 +122,19 @@ module TestFrameworkAdapter =
         FsFromPath mainFile
         |> withAdditionalSourceFiles [for f in otherFiles -> SourceFromPath f]
         |> withLangVersion version  
-        |> ignoreWarnings
-        |> withOptions (["--nowarn:0988;3370"] @ bonusArgs)    
         |> fun cu -> 
             match mode with
-            | FSC_DEBUG -> cu |> withDebug |> withNoOptimize  |> ScriptRunner.runScriptFile langVersion
-            | FSC_OPTIMIZED -> cu |> withOptimize |> withNoDebug |> ScriptRunner.runScriptFile langVersion
-            | FSI -> cu |> ScriptRunner.runScriptFile langVersion    
-            | COMPILED_EXE_APP -> cu |> withDefines ("TESTS_AS_APP" :: ScriptRunner.defaultDefines) |> compileExeAndRun
-        |> shouldSucceed 
+            | FSC_DEBUG | FSC_OPTIMIZED | FSI | COMPILED_EXE_APP -> 
+                cu |> ignoreWarnings |> withOptions (["--nowarn:0988;3370"] @ bonusArgs) 
+            | NEG_TEST_BUILD _ -> cu |> withOptions (["--vserrors";"--maxerrors:10000"] @ bonusArgs) 
+        |> fun cu -> 
+            match mode with
+            | FSC_DEBUG -> cu |> withDebug |> withNoOptimize  |> ScriptRunner.runScriptFile langVersion |> shouldSucceed 
+            | FSC_OPTIMIZED -> cu |> withOptimize |> withNoDebug |> ScriptRunner.runScriptFile langVersion |> shouldSucceed 
+            | FSI -> cu |> ScriptRunner.runScriptFile langVersion |> shouldSucceed 
+            | COMPILED_EXE_APP -> cu |> withDefines ("TESTS_AS_APP" :: ScriptRunner.defaultDefines) |> compileExeAndRun |> shouldSucceed 
+            | NEG_TEST_BUILD testName -> cu |> typecheck |> shouldFail
+        
         |> ignore<CompilationResult>
     
 

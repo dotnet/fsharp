@@ -155,13 +155,16 @@ module rec Compiler =
         | EvalOutput of Result<FsiValue option, exn>
         | ExecutionOutput of ExecutionOutput
 
+    type SourceCodeFileName = string
+
     type CompilationOutput =
-        { OutputPath:   string option
-          Dependencies: string list
-          Adjust:       int
-          Diagnostics:  ErrorInfo list
-          Output:       RunOutput option
-          Compilation:  CompilationUnit }
+        { OutputPath:    string option
+          Dependencies:  string list
+          Adjust:        int
+          Diagnostics:   ErrorInfo list
+          PerFileErrors: (SourceCodeFileName * ErrorInfo) list
+          Output:        RunOutput option
+          Compilation:   CompilationUnit }
 
     [<RequireQualifiedAccess>]
     type CompilationResult =
@@ -217,13 +220,14 @@ module rec Compiler =
             References      = []
         }
 
-    let private fromFSharpDiagnostic (errors: FSharpDiagnostic[]) : ErrorInfo list =
-        let toErrorInfo (e: FSharpDiagnostic) : ErrorInfo =
+    let private fromFSharpDiagnostic (errors: FSharpDiagnostic[]) : (SourceCodeFileName * ErrorInfo) list =
+        let toErrorInfo (e: FSharpDiagnostic) : SourceCodeFileName * ErrorInfo =
             let errorNumber = e.ErrorNumber
             let severity = e.Severity
 
             let error = if severity = FSharpDiagnosticSeverity.Warning then Warning errorNumber else Error errorNumber
 
+            e.FileName |> Path.GetFileName,
             { Error   = error
               Range   =
                   { StartLine   = e.StartLine
@@ -234,7 +238,7 @@ module rec Compiler =
 
         errors
         |> List.ofArray
-        |> List.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLine, e.StartColumn, e.EndLine, e.EndColumn, e.Message)
+        |> List.distinctBy (fun e -> e.FileName,e.Severity, e.ErrorNumber, e.StartLine, e.StartColumn, e.EndLine, e.EndColumn, e.Message)
         |> List.map toErrorInfo
 
     let private partitionErrors diagnostics = diagnostics |> List.partition (fun e -> match e.Error with Error _ -> true | _ -> false)
@@ -556,14 +560,15 @@ module rec Compiler =
         let diagnostics = err |> fromFSharpDiagnostic
 
         let result =
-            { OutputPath   = None
-              Dependencies = deps
-              Adjust       = 0
-              Diagnostics  = diagnostics
-              Output       = None
-              Compilation  = cUnit }
+            { OutputPath    = None
+              Dependencies  = deps
+              Adjust        = 0
+              PerFileErrors = diagnostics
+              Diagnostics   = diagnostics |> List.map snd
+              Output        = None
+              Compilation   = cUnit }
 
-        let (errors, warnings) = partitionErrors diagnostics
+        let (errors, warnings) = partitionErrors result.Diagnostics
 
         // Treat warnings as errors if "IgnoreWarnings" is false
         if errors.Length > 0 || (warnings.Length > 0 && not ignoreWarnings) then
@@ -609,6 +614,7 @@ module rec Compiler =
               Dependencies = dependencies
               Adjust       = 0
               Diagnostics  = cmplResult.Diagnostics |> Seq.map toErrorInfo |> Seq.toList
+              PerFileErrors= List.empty // Not needed for C# testing for now. Implement when needed
               Output       = None
               Compilation  = CS csSource }
 
@@ -708,7 +714,8 @@ module rec Compiler =
             { OutputPath   = None
               Dependencies = []
               Adjust       = 0
-              Diagnostics  = diagnostics
+              Diagnostics  = diagnostics |> List.map snd
+              PerFileErrors= diagnostics
               Output       = None
               Compilation  = FS fsSource }
 
@@ -738,10 +745,11 @@ module rec Compiler =
             { OutputPath   = None
               Dependencies = []
               Adjust       = 0
-              Diagnostics  = diagnostics
+              Diagnostics  = diagnostics |> List.map snd
+              PerFileErrors= diagnostics
               Output       = None
               Compilation  = FS fsSource }
-        let (errors, warnings) = partitionErrors diagnostics
+        let (errors, warnings) = partitionErrors result.Diagnostics
 
         // Treat warnings as errors if "IgnoreWarnings" is false;
         if errors.Length > 0 || (warnings.Length > 0 && not fsSource.IgnoreWarnings) then
@@ -788,13 +796,15 @@ module rec Compiler =
     let compileExeAndRun = asExe >> compileAndRun
 
     let private processScriptResults fs (evalResult: Result<FsiValue option, exn>, err: FSharpDiagnostic[])  =
-        let diagnostics = err |> fromFSharpDiagnostic
+        let perFileDiagnostics = err |> fromFSharpDiagnostic
+        let diagnostics = perFileDiagnostics |> List.map snd
         let (errors, warnings) = partitionErrors diagnostics
         let result =
             { OutputPath   = None
               Dependencies = []
               Adjust       = 0
               Diagnostics  = if fs.IgnoreWarnings then errors else diagnostics
+              PerFileErrors = perFileDiagnostics
               Output       = Some (EvalOutput evalResult)
               Compilation  = FS fs }
         
@@ -877,6 +887,7 @@ module rec Compiler =
                       Dependencies = []
                       Adjust       = 0
                       Diagnostics  = []
+                      PerFileErrors= []
                       Output       = None
                       Compilation  = cUnit }
 
