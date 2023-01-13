@@ -374,11 +374,7 @@ module Negative =
         |> ignore
 
 
-    #if !NETCOREAPP
-    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
-    #else
-    [<Fact>]
-    #endif
+    [<FactForNETCOREAPP>]
     let ``IWSAM warning`` () =
         Fsx "let fExpectAWarning(x: Types.ISinOperator<'T>) = ()"
         |> withReferences [typesModule]
@@ -415,11 +411,7 @@ module InvocationBehavior =
         |> shouldFail
         |> withErrorMessage "This function takes too many arguments, or is used in a context where a function is not expected"
 
-    #if !NETCOREAPP
-    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
-    #else
-    [<Fact>]
-    #endif
+    [<FactForNETCOREAPP>]
     let ``IWSAM Delegate conversion works`` () =
         Fsx
             """
@@ -436,11 +428,7 @@ module InvocationBehavior =
         |> compileAndRun
         |> shouldSucceed
 
-    #if !NETCOREAPP
-    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
-    #else
-    [<Fact>]
-    #endif
+    [<FactForNETCOREAPP>]
     let ``IWSAM Expression conversion works`` () =
         Fsx
             """
@@ -597,11 +585,7 @@ module ``Implicit conversion`` =
         |> withLangVersion70
         |> withOptions ["--nowarn:3535"]
 
-    #if !NETCOREAPP
-    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
-    #else
-    [<Fact>]
-    #endif
+    [<FactForNETCOREAPP>]
     let ``Function implicit conversion not supported on constrained type`` () =
         Fsx
             """
@@ -615,11 +599,7 @@ module ``Implicit conversion`` =
         |> shouldFail
         |> withDiagnosticMessageMatches "This expression was expected to have type\\s+'int'\\s+but here has type\\s+''T'"
 
-    #if !NETCOREAPP
-    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
-    #else
-    [<Fact>]
-    #endif
+    [<FactForNETCOREAPP>]
     let ``Method implicit conversion not supported on constrained type`` () =
         Fsx
             """
@@ -633,11 +613,7 @@ module ``Implicit conversion`` =
         |> shouldFail
         |> withDiagnosticMessageMatches "This expression was expected to have type\\s+'int'\\s+but here has type\\s+''T'"
 
-    #if !NETCOREAPP
-    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
-    #else
-    [<Fact>]
-    #endif
+    [<FactForNETCOREAPP>]
     let ``Function explicit conversion works on constrained type`` () =
         Fsx
             """
@@ -650,11 +626,7 @@ module ``Implicit conversion`` =
         |> compile
         |> shouldSucceed
 
-    #if !NETCOREAPP
-    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
-    #else
-    [<Fact>]
-    #endif
+    [<FactForNETCOREAPP>]
     let ``Method explicit conversion works on constrained type`` () =
         Fsx
             """
@@ -752,11 +724,7 @@ module ``Active patterns`` =
         |> withName "Potato"
         |> withOptions ["--nowarn:3535"]
 
-    #if !NETCOREAPP
-    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
-    #else
-    [<Fact>]
-    #endif
+    [<FactForNETCOREAPP>]
     let ``Using IWSAM in active pattern`` () =
         FSharp """
             module Potato.Test
@@ -786,11 +754,7 @@ module ``Active patterns`` =
             """
         ]
 
-    #if !NETCOREAPP
-    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
-    #else
-    [<Fact>]
-    #endif
+    [<FactForNETCOREAPP>]
     let ``Using IWSAM equality in active pattern uses generic equality intrinsic`` () =
         FSharp """
             module Potato.Test
@@ -828,11 +792,7 @@ module ``Active patterns`` =
 
 module ``Suppression of System Numerics interfaces on unitized types`` =
 
-#if !NETCOREAPP
-    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
-#else
-    [<Fact>]
-#endif
+    [<FactForNETCOREAPP>]
     let Baseline () =
         Fsx """
             open System.Numerics

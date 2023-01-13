@@ -22,6 +22,11 @@
         <target state="translated">A extensão do arquivo de '{0}' não foi reconhecida. Os arquivos de origem devem ter a extensão .fs, .fsi, .fsx or .fsscript</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkAbstractMembersDeclarationsOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Abstract member declarations are not allowed.</source>
+        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Abstract member declarations are not allowed.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkAdditionalConstructorOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Additional constructor is not allowed.</source>
         <target state="translated">Se um tipo usa os atributos [&lt;Sealed&gt;] e [&lt;AbstractClass&gt;], significa que é estático. Construtor adicional não é permitido.</target>
