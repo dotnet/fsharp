@@ -453,15 +453,6 @@ type AsyncModule() =
     member _.``RaceBetweenCancellationAndError.Sleep``() =
         testErrorAndCancelRace "RaceBetweenCancellationAndError.Sleep" (Async.Sleep (-5))
 
-#if EXPENSIVE
-#if NET46
-    [<Test; Category("Expensive"); Explicit>] // takes 3 minutes!
-    member _.``Async.Choice specification test``() =
-        ThreadPool.SetMinThreads(100,100) |> ignore
-        Check.One ({Config.QuickThrowOnFailure with EndSize = 20}, normalize >> runChoice)
-#endif
-#endif
-
     [<Fact>]
     member _.``dispose should not throw when called on null``() =
         let result = async { use x = null in return () } |> Async.RunSynchronously

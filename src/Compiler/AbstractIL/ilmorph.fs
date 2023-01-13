@@ -37,7 +37,7 @@ let code_instr2instrs f (code: ILCode) =
     adjust[old] <- nw
 
     let labels =
-        let dict = Dictionary.newWithSize code.Labels.Count
+        let dict = Dictionary.newWithSize (code.Labels.Count * 2) // Decrease chance of collisions by oversizing the hashtable
 
         for kvp in code.Labels do
             dict.Add(kvp.Key, adjust[kvp.Value])
