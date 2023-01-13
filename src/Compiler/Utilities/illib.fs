@@ -908,10 +908,6 @@ module Cancellable =
     let token () =
         Cancellable(fun ct -> ValueOrCancelled.Value ct)
 
-    /// Represents a canceled computation
-    let canceled () =
-        Cancellable(fun ct -> ValueOrCancelled.Cancelled(OperationCanceledException ct))
-
 type CancellableBuilder() =
 
     member inline _.Delay([<InlineIfLambda>] f) =
