@@ -28,10 +28,6 @@ let CALG_RSA_SIGN = int (ALG_CLASS_SIGNATURE ||| ALG_TYPE_RSA)
 let ALG_CLASS_HASH = int (4 <<< 13)
 let ALG_TYPE_ANY = int 0
 let CALG_SHA1 = int (ALG_CLASS_HASH ||| ALG_TYPE_ANY ||| 4)
-let CALG_SHA_256 = int (ALG_CLASS_HASH ||| ALG_TYPE_ANY ||| 12)
-let CALG_SHA_384 = int (ALG_CLASS_HASH ||| ALG_TYPE_ANY ||| 13)
-let CALG_SHA_512 = int (ALG_CLASS_HASH ||| ALG_TYPE_ANY ||| 14)
-
 let PUBLICKEYBLOB = int 0x6
 let PRIVATEKEYBLOB = int 0x7
 let BLOBHEADER_CURRENT_BVERSION = int 0x2
@@ -40,10 +36,6 @@ let RSA_PUB_MAGIC = int 0x31415352
 let RSA_PRIV_MAGIC = int 0x32415352
 
 let getResourceString (_, str) = str
-
-let check _action hresult =
-    if uint32 hresult >= 0x80000000ul then
-        Marshal.ThrowExceptionForHR hresult
 
 [<Struct; StructLayout(LayoutKind.Explicit)>]
 type ByteArrayUnion =
@@ -324,12 +316,6 @@ type keyContainerName = string
 type keyPair = byte array
 type pubkey = byte array
 type pubkeyOptions = byte array * bool
-
-let signerOpenPublicKeyFile filePath =
-    FileSystem.OpenFileForReadShim(filePath).ReadAllBytes()
-
-let signerOpenKeyPairFile filePath =
-    FileSystem.OpenFileForReadShim(filePath).ReadAllBytes()
 
 let signerGetPublicKeyForKeyPair (kp: keyPair) : pubkey = getPublicKeyForKeyPair kp
 

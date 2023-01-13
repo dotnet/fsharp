@@ -36,7 +36,6 @@ module LeafExpressionConverter =
         {   varEnv : Map<Var, Expression> }
     let asExpr x = (x :> Expression)
 
-    let bindingFlags = BindingFlags.Public ||| BindingFlags.NonPublic
     let instanceBindingFlags = BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.DeclaredOnly
 
     let isNamedType(typ:Type) = not (typ.IsArray || typ.IsByRef || typ.IsPointer)
@@ -55,9 +54,6 @@ module LeafExpressionConverter =
         let tyargs = typ.GetGenericArguments()
         tyargs.[0], tyargs.[1]
 
-    let GetGenericMethodDefinition (methInfo:MethodInfo) =
-        if methInfo.IsGenericMethod then methInfo.GetGenericMethodDefinition() else methInfo
-
     let StringConcat =
        methodhandleof (fun (x:obj, y:obj) -> String.Concat (x, y))
        |> System.Reflection.MethodInfo.GetMethodFromHandle
@@ -72,9 +68,6 @@ module LeafExpressionConverter =
 
     let showAll =
         BindingFlags.Public ||| BindingFlags.NonPublic
-
-    let NullableConstructor =
-        typedefof<Nullable<int>>.GetConstructors().[0]
     
     let getNonNullableType typ = match Nullable.GetUnderlyingType typ with null -> typ | t -> t
 
