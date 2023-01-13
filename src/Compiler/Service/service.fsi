@@ -33,6 +33,7 @@ type public FSharpChecker =
     /// <param name="enableBackgroundItemKeyStoreAndSemanticClassification">Indicates whether a table of symbol keys should be kept for background compilation</param>
     /// <param name="enablePartialTypeChecking">Indicates whether to perform partial type checking. Cannot be set to true if keepAssmeblyContents is true. If set to true, can cause duplicate type-checks when richer information on a file is needed, but can skip background type-checking entirely on implementation files with signature files.</param>
     /// <param name="parallelReferenceResolution">Indicates whether to resolve references in parallel.</param>
+    /// <param name="captureIdentifiersWhenParsing">When set to true we create a set of all identifiers for each parsed file which can be used to speed up finding references.</param>
     static member Create:
         ?projectCacheSize: int *
         ?keepAssemblyContents: bool *
@@ -43,7 +44,8 @@ type public FSharpChecker =
         ?keepAllBackgroundSymbolUses: bool *
         ?enableBackgroundItemKeyStoreAndSemanticClassification: bool *
         ?enablePartialTypeChecking: bool *
-        ?parallelReferenceResolution: bool ->
+        ?parallelReferenceResolution: bool *
+        ?captureIdentifiersWhenParsing: bool ->
             FSharpChecker
 
     /// <summary>
@@ -298,14 +300,14 @@ type public FSharpChecker =
     /// <param name="options">The options for the project or script, used to determine active --define conditionals and other options relevant to parsing.</param>
     /// <param name="symbol">The symbol to find all uses in the file.</param>
     /// <param name="canInvalidateProject">Default: true. If true, this call can invalidate the current state of project if the options have changed. If false, the current state of the project will be used.</param>
-    /// <param name="fastCheck">Default: false. Experimental feature that makes the operation faster.</param>
+    /// <param name="fastCheck">Default: false. Experimental feature that makes the operation faster. Requires FSharpChecker to be created with captureIdentifiersWhenParsing = true.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member FindBackgroundReferencesInFile:
         fileName: string *
         options: FSharpProjectOptions *
         symbol: FSharpSymbol *
         ?canInvalidateProject: bool *
-        ?fastCheck: bool *
+        [<Experimental("This FCS API is experimental and subject to change.")>] ?fastCheck: bool *
         ?userOpName: string ->
             Async<range seq>
 

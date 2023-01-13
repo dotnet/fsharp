@@ -17,8 +17,6 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeHierarchy
 
-let LowerSequenceExpressionsStackGuardDepth = StackGuard.GetDepthOption "LowerSequenceExpressions"
-
 //----------------------------------------------------------------------------
 // General helpers
 

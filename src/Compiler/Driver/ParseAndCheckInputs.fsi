@@ -39,7 +39,8 @@ val ParseInput:
     lexbuf: Lexbuf *
     defaultNamespace: string option *
     fileName: string *
-    isLastCompiland: (bool * bool) ->
+    isLastCompiland: (bool * bool) *
+    identCapture: bool ->
         ParsedInput
 
 /// A general routine to process hash directives

@@ -502,6 +502,8 @@ type TcConfigBuilder =
 
         mutable parallelReferenceResolution: ParallelReferenceResolution
 
+        mutable captureIdentifiersWhenParsing: bool
+
         mutable typeCheckingConfig: TypeCheckingConfig
     }
 
@@ -869,6 +871,8 @@ type TcConfig =
     member exiter: Exiter
 
     member parallelReferenceResolution: ParallelReferenceResolution
+
+    member captureIdentifiersWhenParsing: bool
 
     member typeCheckingConfig: TypeCheckingConfig
 
