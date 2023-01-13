@@ -11,8 +11,6 @@ open Microsoft.FSharp.Control
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 [<RequireQualifiedAccess>]
 module Event =
-    [<CompiledName("Create")>]
-    val create<'T> : unit -> ('T -> unit) * IEvent<'T>
 
     /// <summary>Fires the output event when either of the input events fire.</summary>
     /// <param name="event1">The first input event.</param>

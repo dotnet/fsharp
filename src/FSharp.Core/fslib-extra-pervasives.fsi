@@ -65,9 +65,6 @@ module ExtraTopLevelOperators =
     [<CompiledName("PrintFormatToString")>]
     val sprintf: format: Printf.StringFormat<'T> -> 'T
 
-    [<CompiledName("FailWith")>]
-    val failwith: s: string -> 'T
-    
     /// <summary>Print to a string buffer and raise an exception with the given
     /// result. Helper printers must return strings.</summary>
     ///
