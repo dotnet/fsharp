@@ -1,3 +1,5 @@
+! AssemblyReference: System.Runtime.Numerics
+! AssemblyReference: netstandard
 Microsoft.FSharp.Collections.Array2DModule: Int32 Base1[T](T[,])
 Microsoft.FSharp.Collections.Array2DModule: Int32 Base2[T](T[,])
 Microsoft.FSharp.Collections.Array2DModule: Int32 Length1[T](T[,])
@@ -672,6 +674,7 @@ Microsoft.FSharp.Control.TaskBuilderBase: Microsoft.FSharp.Core.CompilerServices
 Microsoft.FSharp.Control.TaskBuilderBase: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T] Delay[TOverall,T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T]])
 Microsoft.FSharp.Control.TaskBuilderBase: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T] TryFinally[TOverall,T](Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit])
 Microsoft.FSharp.Control.TaskBuilderBase: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T] TryWith[TOverall,T](Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T], Microsoft.FSharp.Core.FSharpFunc`2[System.Exception,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T]])
+Microsoft.FSharp.Control.TaskBuilderBase: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T] Using[TResource,TOverall,T](TResource, Microsoft.FSharp.Core.FSharpFunc`2[TResource,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],T]])
 Microsoft.FSharp.Control.TaskBuilderBase: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[T],T] Return[T](T)
 Microsoft.FSharp.Control.TaskBuilderExtensions.HighPriority: Boolean TaskBuilderBase.BindDynamic.Static[TOverall,TResult1,TResult2](Microsoft.FSharp.Core.CompilerServices.ResumableStateMachine`1[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall]] ByRef, System.Threading.Tasks.Task`1[TResult1], Microsoft.FSharp.Core.FSharpFunc`2[TResult1,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],TResult2]])
 Microsoft.FSharp.Control.TaskBuilderExtensions.HighPriority: Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],TResult2] TaskBuilderBase.Bind[TResult1,TOverall,TResult2](Microsoft.FSharp.Control.TaskBuilderBase, System.Threading.Tasks.Task`1[TResult1], Microsoft.FSharp.Core.FSharpFunc`2[TResult1,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[Microsoft.FSharp.Control.TaskStateMachineData`1[TOverall],TResult2]])
@@ -1761,6 +1764,7 @@ Microsoft.FSharp.Core.Operators: System.IO.TextReader ConsoleIn[T]()
 Microsoft.FSharp.Core.Operators: System.IO.TextWriter ConsoleError[T]()
 Microsoft.FSharp.Core.Operators: System.IO.TextWriter ConsoleOut[T]()
 Microsoft.FSharp.Core.Operators: System.Object Box[T](T)
+Microsoft.FSharp.Core.Operators: System.RuntimeMethodHandle MethodHandleOf[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,TResult])
 Microsoft.FSharp.Core.Operators: System.String NameOf[T](T)
 Microsoft.FSharp.Core.Operators: System.String ToString[T](T)
 Microsoft.FSharp.Core.Operators: System.String op_Concatenate(System.String, System.String)

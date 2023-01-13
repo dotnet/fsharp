@@ -1,3 +1,5 @@
+! AssemblyReference: System.Runtime.Numerics
+! AssemblyReference: netstandard
 Microsoft.FSharp.Collections.Array2DModule: Int32 Base1[T](T[,])
 Microsoft.FSharp.Collections.Array2DModule: Int32 Base2[T](T[,])
 Microsoft.FSharp.Collections.Array2DModule: Int32 Length1[T](T[,])
