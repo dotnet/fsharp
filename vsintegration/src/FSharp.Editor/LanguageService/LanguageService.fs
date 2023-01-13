@@ -102,11 +102,6 @@ type internal FSharpWorkspaceServiceFactory
                                 | null -> None
                                 | _ -> Some editorOptions
 
-                            let enableParallelCheckingWithSignatureFiles =
-                                editorOptions
-                                |> Option.map (fun options -> options.LanguageServicePerformance.EnableParallelCheckingWithSignatureFiles)
-                                |> Option.defaultValue false
-
                             let enableParallelReferenceResolution =
                                 editorOptions
                                 |> Option.map (fun options -> options.LanguageServicePerformance.EnableParallelReferenceResolution)
@@ -121,7 +116,6 @@ type internal FSharpWorkspaceServiceFactory
                                     keepAllBackgroundSymbolUses = false,
                                     enableBackgroundItemKeyStoreAndSemanticClassification = true,
                                     enablePartialTypeChecking = true,
-                                    enableParallelCheckingWithSignatureFiles = enableParallelCheckingWithSignatureFiles,
                                     parallelReferenceResolution = enableParallelReferenceResolution,
                                     captureIdentifiersWhenParsing = true)
                             checker
