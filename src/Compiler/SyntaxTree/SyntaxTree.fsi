@@ -1955,5 +1955,5 @@ type ParsedInput =
     /// Gets the #nowarn and other scoped pragmas
     member ScopedPragmas: ScopedPragma list
 
-    /// Gets a set of all identifiers used in this parsed input
+    /// Gets a set of all identifiers used in this parsed input. Only populated if captureIdentifiersWhenParsing option was used.
     member Identifiers: Set<string>

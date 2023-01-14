@@ -28,6 +28,7 @@
     <Compile Include="Peverifier.fs" />
     <Compile Include="DirectoryAttribute.fs" />
     <Compile Include="ReflectionHelper.fs" />
+    <Compile Include="SurfaceArea.fs" />
   </ItemGroup>
 
   <ItemGroup>
