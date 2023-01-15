@@ -10977,11 +10977,11 @@ and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (baseValOpt: Val o
                     match stripTyEqns g ttype.Type with
                     | TType_app(tyconRef, _, _) ->
                         let ilMethods = tyconRef.ILTyconRawMetadata.Methods.AsList()
-                        let nameOpt = ilMethods |> List.tryFind(fun id -> id.Name = memberId.idText)
-                        match nameOpt with
-                        | Some name when not name.IsVirtual ->
-                            errorR(Error(FSComp.SR.tcNoMemberFoundForOverride(), memberId.idRange))
-                        | _ -> ()
+                        let membersFound = ilMethods |> List.filter(fun id -> id.Name = memberId.idText && id.Parameters.Length = valSynData.ArgNames.Length)
+                    
+                        for mem in membersFound do
+                            if not mem.IsVirtual then
+                                errorR(Error(FSComp.SR.tcNoMemberFoundForOverride(), memberId.idRange))
                     | _ -> ()
                  | _ -> ()
 
@@ -11256,7 +11256,7 @@ and AnalyzeRecursiveInstanceMemberDecl
 
          // The type being augmented tells us the type of 'this'
          let isExtrinsic = (declKind = ExtrinsicExtensionBinding)
-         let tcrefObjTy, enclosingDeclaredTypars, renaming, objTy, thisTy = FreshenObjectArgType cenv mBinding TyparRigidity.WillBeRigid tcref isExtrinsic declaredTyconTypars
+         let tcrefObjTy, enclosingDeclaredTypars, renaming, objTy, thisTy = FreshenObjectArgType cenv mBinding TyparRigidity.WillBeRigid tcref isExtrinsic declaredTyconTypars 
 
          let envinner = AddDeclaredTypars CheckForDuplicateTypars enclosingDeclaredTypars envinner
 

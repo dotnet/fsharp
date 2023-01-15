@@ -543,3 +543,165 @@ type C() =
             (Error 855, Line 7, Col 19, Line 7, Col 21, "No abstract or interface member was found that corresponds to this override")
             (Error 855, Line 9, Col 19, Line 9, Col 21, "No abstract or interface member was found that corresponds to this override")
         ]
+        
+    [<Fact>]
+    let ``Virtual member was found among virtual and non-virtual overloads with lang 70`` () =
+        let CSLib =
+            CSharp """
+public class A
+{
+    public void M1() { }
+    public virtual void M1(string s) { }
+    public virtual void M2(int x) { }
+    public virtual void M3(int x, int y) { }
+}
+        """ |> withName "CSLib"
+
+        let app =
+            FSharp """
+module ClassTests
+
+type B () =
+    inherit A ()
+
+    override _.M1(s: string) = ()
+    override _.M2(_) = ()
+    override _.M3(x, _) = ()
+        """
+        app
+        |> withReferences [CSLib]
+        |> withLangVersion70
+        |> compile
+        |> shouldSucceed
+        
+    [<Fact>]
+    let ``Virtual member was found among virtual and non-virtual overloads mixed with lang 70`` () =
+        let CSLib =
+            CSharp """
+public class A
+{
+    public void M1() { }
+    public virtual void M1(string s) { }
+    public virtual void M2(int x) { }
+    public virtual void M3(int x, int y) { }
+}
+        """ |> withName "CSLib"
+
+        let app =
+            FSharp """
+module ClassTests
+
+type B () =
+    inherit A ()
+
+    override _.M1() = ()
+    override _.M1(s: string) = ()
+    override _.M2(_) = ()
+    override _.M3(x, _) = ()
+        """ 
+        app
+        |> withReferences [CSLib]
+        |> withLangVersion70
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 856, Line 7, Col 16, Line 7, Col 18, "This override takes a different number of arguments to the corresponding abstract member. The following abstract members were found:"  + System.Environment.NewLine + "   A.M1(s: string) : unit")
+        ]
+        
+    [<Fact>]
+    let ``Error virtual member was found among virtual and non-virtual overloads with lang 70`` () =
+        let CSLib =
+            CSharp """
+public class A
+{
+    public void M0() { }
+    public virtual void M1(string s) { }
+    public virtual void M2(int x) { }
+    public virtual void M3(int x, int y) { }
+}
+        """ |> withName "CSLib"
+
+        let app =
+            FSharp """
+module ClassTests
+
+type B () =
+    inherit A ()
+
+    override _.M0() = ()
+    override _.M1(s: string) = ()
+    override _.M2(_) = ()
+    override _.M3(x, _) = ()
+        """
+        app
+        |> withReferences [CSLib]
+        |> withLangVersion70
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 855, Line 7, Col 16, Line 7, Col 18, "No abstract or interface member was found that corresponds to this override")
+        ]
+        
+    [<Fact>]
+    let ``Virtual member was found among virtual and non-virtual overloads with lang preview`` () =
+        let CSLib =
+            CSharp """
+public class A
+{
+    public void M1() { }
+    public virtual void M1(string s) { }
+    public virtual void M2(int x) { }
+    public virtual void M3(int x, int y) { }
+}
+        """ |> withName "CSLib"
+
+        let app =
+            FSharp """
+module ClassTests
+
+type B () =
+    inherit A ()
+
+    override _.M1(s: string) = ()
+    override _.M2(_) = ()
+    override _.M3(x, _) = ()
+        """
+        app
+        |> withReferences [CSLib]
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+        
+    [<Fact>]
+    let ``Error virtual member was found among virtual and non-virtual overloads with lang preview`` () =
+        let CSLib =
+            CSharp """
+public class A
+{
+    public void M0() { }
+    public virtual void M1(string s) { }
+    public virtual void M2(int x) { }
+    public virtual void M3(int x, int y) { }
+}
+        """ |> withName "CSLib"
+
+        let app =
+            FSharp """
+module ClassTests
+
+type B () =
+    inherit A ()
+
+    override _.M0 () = ()
+    override _.M1 (s: string) = ()
+    override _.M2(_) = ()
+    override _.M3(x, _) = ()
+        """
+        app
+        |> withReferences [CSLib]
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 855, Line 7, Col 16, Line 7, Col 18, "No abstract or interface member was found that corresponds to this override")
+        ]
