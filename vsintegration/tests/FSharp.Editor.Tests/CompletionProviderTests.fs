@@ -156,11 +156,8 @@ System.Console.WriteLine(x + y)
                     IntelliSenseOptions.Default
                 )
 
-
-            let result = shouldBeTriggered = triggered
-            Assert.True(result,
+            triggered |> Assert.shouldBeEqualWith shouldBeTriggered 
                 "FSharpCompletionProvider.ShouldTriggerCompletionAux() should compute the correct result"
-            )
 
     [<Fact>]
     let ShouldNotTriggerCompletionAfterAnyTriggerOtherThanInsertionOrDeletion () =
@@ -260,11 +257,8 @@ let z = $"abc  {System.Console.WriteLine(x + y)} def"
                     IntelliSenseOptions.Default
                 )
 
-            let result = shouldBeTriggered = triggered
-            Assert.True(
-                result,
-                sprintf "FSharpCompletionProvider.ShouldTriggerCompletionAux() should compute the correct result for marker '%s'" marker
-            )
+            triggered |> Assert.shouldBeEqualWith shouldBeTriggered 
+                $"FSharpCompletionProvider.ShouldTriggerCompletionAux() should compute the correct result for marker '{marker}"
 
     [<Fact>]
     let ShouldNotTriggerCompletionInExcludedCode () =

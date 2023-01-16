@@ -7,10 +7,31 @@ open Xunit
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Editor.Tests.Helpers
+open FSharp.Compiler.CodeAnalysis
 
 type BreakpointResolutionServiceTests() =
 
     let fileName = "C:\\test.fs"
+
+    let projectOptions: FSharpProjectOptions =
+        {
+            ProjectFileName = "C:\\test.fsproj"
+            ProjectId = None
+            SourceFiles = [| fileName |]
+            ReferencedProjects = [||]
+            OtherOptions = [||]
+            IsIncompleteTypeCheckEnvironment = true
+            UseScriptResolutionRules = false
+            LoadTime = DateTime.MaxValue
+            OriginalLoadReferences = []
+            UnresolvedReferences = None
+            Stamp = None
+        }
+        
+    let parsingOptions =
+        { FSharpParsingOptions.Default with
+            SourceFiles = [| fileName |]
+        }
 
     let code =
         "
@@ -35,7 +56,7 @@ let main argv =
     0 // return an integer exit code
     "
 
-    static member private testCases: Object[][] =
+    static member testCases: Object[][] =
         [|
             [| "This is a comment"; None |]
             [| "123456"; Some("let integerValue = 123456") |]
@@ -46,33 +67,33 @@ let main argv =
             [| "0"; Some("0") |]
         |]
 
-    //[<TestCaseSource("testCases")>]
-    //member this.TestBreakpointResolution(searchToken: string, expectedResolution: string option) =
-    //    let searchPosition = code.IndexOf(searchToken)
-    //    Assert.True(searchPosition >= 0, $"SearchToken '{searchToken}' is not found in code")
+    [<Theory>]
+    [<MemberData(nameof(BreakpointResolutionServiceTests.testCases))>]
+    member this.TestBreakpointResolution(searchToken: string, expectedResolution: string option) =
+        let searchPosition = code.IndexOf(searchToken)
+        Assert.True(searchPosition >= 0, $"SearchToken '{searchToken}' is not found in code")
 
-    //    let document, sourceText =
-    //        RoslynTestHelpers.CreateSingleDocumentSolution(fileName, code)
+        let document, sourceText =
+            RoslynTestHelpers.CreateSingleDocumentSolution(fileName, code, projectOptions, parsingOptions)
 
-    //    let searchSpan =
-    //        TextSpan.FromBounds(searchPosition, searchPosition + searchToken.Length)
+        let searchSpan =
+            TextSpan.FromBounds(searchPosition, searchPosition + searchToken.Length)
 
-    //    let actualResolutionOption =
-    //        FSharpBreakpointResolutionService.GetBreakpointLocation(document, searchSpan)
-    //        |> Async.RunSynchronously
+        let actualResolutionOption =
+            FSharpBreakpointResolutionService.GetBreakpointLocation(document, searchSpan)
+            |> Async.RunSynchronously
 
-    //    match actualResolutionOption with
-    //    | None -> Assert.True(expectedResolution.IsNone, "BreakpointResolutionService failed to resolve breakpoint position")
-    //    | Some (actualResolutionRange) ->
-    //        let actualResolution =
-    //            sourceText
-    //                .GetSubText(RoslynHelpers.FSharpRangeToTextSpan(sourceText, actualResolutionRange))
-    //                .ToString()
+        match actualResolutionOption with
+        | None -> Assert.True(expectedResolution.IsNone, "BreakpointResolutionService failed to resolve breakpoint position")
+        | Some (actualResolutionRange) ->
+            let actualResolution =
+                sourceText
+                    .GetSubText(RoslynHelpers.FSharpRangeToTextSpan(sourceText, actualResolutionRange))
+                    .ToString()
 
-    //        Assert.True(
-    //            expectedResolution.IsSome,
-    //            $"BreakpointResolutionService resolved a breakpoint while it shouldn't at: {actualResolution}"
-    //        )
+            Assert.True(
+                expectedResolution.IsSome,
+                $"BreakpointResolutionService resolved a breakpoint while it shouldn't at: {actualResolution}"
+            )
 
-    //        let result = expectedResolution.Value = actualResolution
-    //        Assert.True(result, "Expected and actual resolutions should match")
+            Assert.Equal(expectedResolution.Value, actualResolution)
