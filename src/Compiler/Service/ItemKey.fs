@@ -416,6 +416,14 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             writeString ItemKeyTags.itemDelegateCtor
             writeType false ty
 
+        // Named argument in a signature
+        | Item.OtherName (ident = Some(ident); argType = ty; argInfo = Some _) ->
+            writeString ItemKeyTags.itemValue
+            writeString ident.idText
+            writeString ItemKeyTags.parameters
+            writeType false ty
+            writeChar '%'
+
         // We should consider writing ItemKey for each of these
         | Item.OtherName _ -> ()
         | Item.FakeInterfaceCtor _ -> ()

@@ -12067,11 +12067,17 @@ let TcAndPublishValSpec (cenv: cenv, env, containerInfo: ContainerInfo, declKind
         let numEnclosingTypars = allDeclaredTypars.Length
         let _tps, _witnessInfos, curriedArgInfos, _retTy, _ = GetValReprTypeInCompiledForm cenv.g arities numEnclosingTypars vspec.Type vspec.DefinitionRange
 
+        let argInfos =
+            // Drop "this" argument for instance methods
+            match vspec.IsInstanceMember, curriedArgInfos with
+            | true, _::args
+            | _, args -> args
+
         let synArgInfos = synValSig.SynInfo.CurriedArgInfos
         let argData =
-            (synArgInfos, curriedArgInfos)
-            ||> List.zip
-            |> Seq.collect (fun x -> x ||> List.zip)
+            (synArgInfos, argInfos)
+            ||> Seq.zip
+            |> Seq.collect (fun x -> x ||> Seq.zip)
             |> Seq.choose (fun (synArgInfo, argInfo) -> synArgInfo.Ident |> Option.map (pair argInfo))
 
         for (argTy, argReprInfo), ident in argData do
