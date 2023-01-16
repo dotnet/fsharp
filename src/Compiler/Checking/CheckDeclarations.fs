@@ -1784,6 +1784,10 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (env
                   | Some tycon ->
                         for slot in tycon.FSharpObjectModelTypeInfo.fsobjmodel_vslots do
                             errorR(Error(FSComp.SR.chkAbstractMembersDeclarationsOnStaticClasses(), slot.Range))
+                            
+                        for fld in tycon.AllFieldsArray do
+                            if not fld.IsStatic then
+                                errorR(Error(FSComp.SR.chkExplicitFieldsDeclarationsOnStaticClasses(), fld.Range))
                   | None -> ()
               
               let envForDecls = 
