@@ -32,6 +32,11 @@
         <target state="translated">Se um tipo usa os atributos [&lt;Sealed&gt;] e [&lt;AbstractClass&gt;], significa que é estático. Construtor adicional não é permitido.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkAutoOpenAttributeInTypeAbbrev">
+        <source>FSharp.Core.AutoOpenAttribute should not be aliased.</source>
+        <target state="new">FSharp.Core.AutoOpenAttribute should not be aliased.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkConstructorWithArgumentsOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Constructor with arguments is not allowed.</source>
         <target state="translated">Se um tipo usa os atributos [&lt;Sealed&gt;] e [&lt;AbstractClass&gt;], significa que é estático. Construtor com argumentos não é permitido.</target>
