@@ -303,7 +303,7 @@ let BindVal cenv env (v: Val) =
     let alreadyDone = cenv.boundVals.ContainsKey v.Stamp
     cenv.boundVals[v.Stamp] <- 1
     
-    let topLevelPublicLetBindingNotInSignatureFile () =
+    let topLevelBindingHiddenBySignatureFile () =
         let parentHasSignatureFile () =
             match v.TryDeclaringEntity with
             | ParentNone -> false
@@ -312,13 +312,13 @@ let BindVal cenv env (v: Val) =
                 | ValueNone -> false
                 | ValueSome e -> e.HasSignatureFile
 
-        v.IsModuleBinding && parentHasSignatureFile () && not v.HasSignatureFile
+        v.IsModuleBinding && not v.HasSignatureFile && parentHasSignatureFile ()
     
     if not env.external &&
        not alreadyDone &&
        cenv.reportErrors && 
        not v.HasBeenReferenced && 
-       (not v.IsCompiledAsTopLevel || topLevelPublicLetBindingNotInSignatureFile ()) &&
+       (not v.IsCompiledAsTopLevel || topLevelBindingHiddenBySignatureFile ()) &&
        not (v.DisplayName.StartsWithOrdinal("_")) &&
        not v.IsCompilerGenerated then 
 

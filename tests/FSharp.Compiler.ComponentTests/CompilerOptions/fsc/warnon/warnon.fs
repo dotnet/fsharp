@@ -35,7 +35,7 @@ module warnon =
         |> ignore
 
     [<Fact>]
-    let ``warnon unused public function backed by signature file`` () =
+    let ``warnon unused public function hidden by signature file`` () =
         let signatureFile: SourceCodeFileKind =
             SourceCodeFileKind.Create(
                 "Library.fsi",
@@ -54,7 +54,7 @@ module Foo
 let add a b = a + b
 let subtract a b = a - b
     """         )
-            
+
         fsFromString signatureFile
         |> FS
         |> withAdditionalSourceFile implementationFile
@@ -76,9 +76,39 @@ module Foo
 let add a b = a + b
 let subtract a b = a - b
     """         )
-            
+
         fsFromString implementationFile
         |> FS
+        |> withOptions ["--warnon:FS1182"]
+        |> asLibrary
+        |> compile
+        |> withDiagnostics []
+        |> ignore
+
+    [<Fact>]
+    let ``Don't warnon unused public function hidden by signature file that starts with an underscore`` () =
+        let signatureFile: SourceCodeFileKind =
+            SourceCodeFileKind.Create(
+                "Library.fsi",
+                """
+module Foo
+
+val add: a:int -> b:int -> int
+    """     )
+
+        let implementationFile =
+            SourceCodeFileKind.Create(
+                "Library.fs",
+                """
+module Foo
+
+let add a b = a + b
+let _subtract a b = a - b
+    """         )
+
+        fsFromString signatureFile
+        |> FS
+        |> withAdditionalSourceFile implementationFile
         |> withOptions ["--warnon:FS1182"]
         |> asLibrary
         |> compile
