@@ -543,3 +543,30 @@ type C() =
             (Error 855, Line 7, Col 19, Line 7, Col 21, "No abstract or interface member was found that corresponds to this override")
             (Error 855, Line 9, Col 19, Line 9, Col 21, "No abstract or interface member was found that corresponds to this override")
         ]
+
+    [<Fact>]
+    let ``Virtual member was found among virtual and non-virtual overloads with lang preview`` () =
+        let CSLib =
+            CSharp """
+public class A
+{
+    public void M1(int i) { }
+    public virtual void M1(string s) { }
+}
+        """ |> withName "CSLib"
+
+        let app =
+            FSharp """
+module ClassTests
+
+type Over () =
+    inherit A ()
+
+    override _.M1 (s: string) = ()
+        """
+        
+        app
+        |> withReferences [CSLib]
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
