@@ -306,9 +306,11 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                                   | None -> implVal.Range
                               if sigHasInlineIfLambda && not implHasInlineIfLambda then 
                                   errorR(Error (FSComp.SR.implMissingInlineIfLambda(), m))
-
+                              
+                              let _sigVal = sigVal
                               implArgInfo.Name <- sigArgInfo.Name
-                              implArgInfo.Attribs <- attribs))) && 
+                              implArgInfo.Attribs <- attribs
+                              implArgInfo.OtherRange <- None))) && 
 
                       checkAttribs aenv implRetInfo.Attribs sigRetInfo.Attribs (fun attribs -> 
                           implRetInfo.Name <- sigRetInfo.Name

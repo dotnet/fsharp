@@ -3367,6 +3367,9 @@ type ArgReprInfo =
 
         /// The name for the argument at this position, if any
         mutable Name: Syntax.Ident option
+
+        /// The range of the signature/implementation counterpart to this argument, if any
+        mutable OtherRange: range option
     }
 
     override ToString: unit -> string

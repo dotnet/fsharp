@@ -417,7 +417,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             writeType false ty
 
         // We should consider writing ItemKey for each of these
-        | Item.ArgName _ -> ()
+        | Item.OtherName _ -> ()
         | Item.FakeInterfaceCtor _ -> ()
         | Item.CustomOperation _ -> ()
         | Item.CustomBuilder _ -> ()

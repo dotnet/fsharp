@@ -583,7 +583,7 @@ type internal TypeCheckInfo
                 x
                 |> List.choose (fun (ParamData (_isParamArray, _isInArg, _isOutArg, _optArgInfo, _callerInfo, name, _, ty)) ->
                     match name with
-                    | Some id -> Some(Item.ArgName(Some id, ty, Some(ArgumentContainer.Method meth), id.idRange))
+                    | Some id -> Some(Item.OtherName(Some id, ty, None, Some(ArgumentContainer.Method meth), id.idRange))
                     | None -> None)
             | _ -> [])
 
@@ -876,7 +876,7 @@ type internal TypeCheckInfo
             | Item.NewDef _
             | Item.SetterArg _
             | Item.CustomBuilder _
-            | Item.ArgName _
+            | Item.OtherName _
             | Item.ActivePatternCase _ -> CompletionItemKind.Other
 
         let isUnresolved =

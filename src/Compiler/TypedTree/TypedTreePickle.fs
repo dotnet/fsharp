@@ -1750,7 +1750,7 @@ let u_ArgReprInfo st =
     let b = u_option u_ident st
     match a, b with
     | [], None -> ValReprInfo.unnamedTopArg1
-    | _ -> { Attribs = a; Name = b }
+    | _ -> { Attribs = a; Name = b; OtherRange = None }
 
 let u_TyparReprInfo st =
     let a = u_ident st

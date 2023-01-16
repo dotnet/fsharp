@@ -4597,8 +4597,8 @@ type ValReprInfo =
 /// Records the "extra information" for an argument compiled as a real
 /// method argument, specifically the argument name and attributes.
 [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
-type ArgReprInfo = 
-    { 
+type ArgReprInfo =
+    {
       /// The attributes for the argument
       // MUTABILITY: used when propagating signature attributes into the implementation.
       mutable Attribs: Attribs 
@@ -4606,6 +4606,10 @@ type ArgReprInfo =
       /// The name for the argument at this position, if any
       // MUTABILITY: used when propagating names of parameters from signature into the implementation.
       mutable Name: Ident option
+
+      /// The range of the signature/implementation counterpart to this argument, if any
+      // MUTABILITY: used when propagating ranges from signature into the implementation.
+      mutable OtherRange: range option
     }
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]

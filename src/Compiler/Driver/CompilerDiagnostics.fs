@@ -818,6 +818,7 @@ type Exception with
                         {
                             ArgReprInfo.Name = name |> Option.map (fun name -> Ident(name, range.Zero))
                             ArgReprInfo.Attribs = []
+                            ArgReprInfo.OtherRange = None
                         })
 
                 let argsL, retTyL, genParamTysL =

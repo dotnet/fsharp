@@ -919,7 +919,7 @@ let TranslateTopArgSynInfo isArg m tcAttributes (SynArgInfo(Attributes attrs, is
 
     // Call the attribute checking function
     let attribs = tcAttributes (optAttrs@attrs)
-    ({ Attribs = attribs; Name = nm } : ArgReprInfo)
+    ({ Attribs = attribs; Name = nm; OtherRange = None } : ArgReprInfo)
 
 /// Members have an arity inferred from their syntax. This "valSynData" is not quite the same as the arities
 /// used in the middle and backends of the compiler ("valReprInfo").
@@ -4044,7 +4044,7 @@ and TcPseudoMemberSpec cenv newOk env synTypes tpenv synMemberSig m =
                         else
                             warning(Error(FSComp.SR.tcTraitMayNotUseComplexThings(), m))
 
-            let item = Item.ArgName (Some id, memberConstraintTy, None, id.idRange)
+            let item = Item.OtherName (Some id, memberConstraintTy, None, None, id.idRange)
             CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.AccessRights)
 
             TTrait(tys, logicalCompiledName, memberFlags, argTys, returnTy, ref None), tpenv
@@ -4196,17 +4196,7 @@ and TcValSpec (cenv: cenv) env declKind newOk containerInfo memFlagsOpt thisTyOp
     | _ ->
         let valSynInfo = AdjustValSynInfoInSignature g declaredTy valSynInfo
         let prelimValReprInfo = TranslateSynValInfo id.idRange (TcAttributes cenv env) valSynInfo
-
-        let curriedArgTys, _retTy = stripFunTy g declaredTy
-
-        [ ValSpecResult(altActualParent, None, id, enclosingDeclaredTypars, declaredTypars, declaredTy, prelimValReprInfo, declKind)
-          for argTy, argInfo in valSynInfo.CurriedArgInfos |> Seq.collect (fun x -> x) |> Seq.zip curriedArgTys do
-            match argInfo.Ident with
-            | Some ident ->
-                ValSpecResult(ParentNone, None, ident, [], [], argTy, (PrelimValReprInfo ([], (argInfo |> TranslateTopArgSynInfo true ident.idRange (TcAttributes cenv env AttributeTargets.Parameter)))), ExpressionBinding)
-            | None -> ()
-
-        ], tpenv
+        [ ValSpecResult(altActualParent, None, id, enclosingDeclaredTypars, declaredTypars, declaredTy, prelimValReprInfo, declKind) ], tpenv
 
 //-------------------------------------------------------------------------
 // Bind types
@@ -4652,7 +4642,7 @@ and TcStaticConstantParameter (cenv: cenv) (env: TcEnv) tpenv kind (StripParenTy
     let record ttype =
         match idOpt with
         | Some id ->
-            let item = Item.ArgName (Some id, ttype, Some container, id.idRange)
+            let item = Item.OtherName (Some id, ttype, None, Some container, id.idRange)
             CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.AccessRights)
         | _ -> ()
 
@@ -8209,7 +8199,7 @@ and TcItemThen (cenv: cenv) (overallTy: OverallTy) env tpenv (tinstEnclosing, it
     // These items are not expected here - they are only used for reporting symbols from name resolution to language service
     | Item.ActivePatternCase _
     | Item.AnonRecdField _
-    | Item.ArgName _
+    | Item.OtherName _
     | Item.CustomBuilder _
     | Item.ModuleOrNamespaces _
     | Item.NewDef _
@@ -9094,7 +9084,7 @@ and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed
     | Item.NewDef _
     | Item.SetterArg _
     | Item.CustomBuilder _
-    | Item.ArgName _
+    | Item.OtherName _
     | Item.ActivePatternCase _ ->
         error (Error (FSComp.SR.tcSyntaxFormUsedOnlyWithRecordLabelsPropertiesAndFields(), mItem))
 
@@ -9706,7 +9696,7 @@ and TcMethodApplication
                 | Some id -> id.idRange
                 | None -> id.idRange
             let container = ArgumentContainer.Method finalCalledMethInfo
-            let item = Item.ArgName (idOpt, assignedArg.CalledArg.CalledArgumentType, Some container, m)
+            let item = Item.OtherName (idOpt, assignedArg.CalledArg.CalledArgumentType, None, Some container, m)
             CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, ad))
 
     /// STEP 6. Build the call expression, then adjust for byref-returns, out-parameters-as-tuples, post-hoc property assignments, methods-as-first-class-value,
@@ -12027,7 +12017,7 @@ let TcAndPublishValSpec (cenv: cenv, env, containerInfo: ContainerInfo, declKind
 
     (tpenv, valinfos) ||> List.mapFold (fun tpenv valSpecResult ->
 
-        let (ValSpecResult (altActualParent, memberInfoOpt, id, enclosingDeclaredTypars, declaredTypars, ty, prelimValReprInfo, declKind)) = valSpecResult
+        let (ValSpecResult (altActualParent, memberInfoOpt, ident, enclosingDeclaredTypars, declaredTypars, ty, prelimValReprInfo, declKind)) = valSpecResult
 
         let inlineFlag = ComputeInlineFlag (memberInfoOpt |> Option.map (fun (PrelimMemberInfo(memberInfo, _, _)) -> memberInfo.MemberFlags)) isInline mutableFlag g attrs m
 
@@ -12038,11 +12028,11 @@ let TcAndPublishValSpec (cenv: cenv, env, containerInfo: ContainerInfo, declKind
         let explicitTyparInfo = ExplicitTyparInfo(declaredTypars, declaredTypars, synCanInferTypars)
 
         let generalizedTypars =
-            GeneralizationHelpers.ComputeAndGeneralizeGenericTypars(cenv, denv, id.idRange,
+            GeneralizationHelpers.ComputeAndGeneralizeGenericTypars(cenv, denv, ident.idRange,
                 emptyFreeTypars, canInferTypars, CanGeneralizeConstrainedTypars, inlineFlag,
                 None, allDeclaredTypars, freeInType, ty, false)
 
-        let valscheme1 = PrelimVal1(id, explicitTyparInfo, ty, Some prelimValReprInfo, memberInfoOpt, mutableFlag, inlineFlag, NormalVal, noArgOrRetAttribs, vis, false)
+        let valscheme1 = PrelimVal1(ident, explicitTyparInfo, ty, Some prelimValReprInfo, memberInfoOpt, mutableFlag, inlineFlag, NormalVal, noArgOrRetAttribs, vis, false)
 
         let valscheme2 = GeneralizeVal cenv denv enclosingDeclaredTypars generalizedTypars valscheme1
 
@@ -12072,6 +12062,21 @@ let TcAndPublishValSpec (cenv: cenv, env, containerInfo: ContainerInfo, declKind
         let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs 
         let xmlDoc = xmlDoc.ToXmlDoc(checkXmlDocs, paramNames)
         let vspec = MakeAndPublishVal cenv env (altActualParent, true, declKind, ValNotInRecScope, valscheme, attrs, xmlDoc, literalValue, false)
+
+        let arities = arityOfVal vspec
+        let numEnclosingTypars = allDeclaredTypars.Length
+        let _tps, _witnessInfos, curriedArgInfos, _retTy, _ = GetValReprTypeInCompiledForm cenv.g arities numEnclosingTypars vspec.Type vspec.DefinitionRange
+
+        let synArgInfos = synValSig.SynInfo.CurriedArgInfos
+        let argData =
+            (synArgInfos, curriedArgInfos)
+            ||> List.zip
+            |> Seq.collect (fun x -> x ||> List.zip)
+            |> Seq.choose (fun (synArgInfo, argInfo) -> synArgInfo.Ident |> Option.map (pair argInfo))
+
+        for (argTy, argReprInfo), ident in argData do
+            let item = Item.OtherName (Some ident, argTy, Some argReprInfo, None, ident.idRange)
+            CallNameResolutionSink cenv.tcSink (ident.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Binding, env.AccessRights)
 
         assert(vspec.InlineInfo = inlineFlag)
 

@@ -1316,7 +1316,7 @@ let internal mkBoundValueTypedImpl tcGlobals m moduleName name ty =
     let v =
         Construct.NewVal
             (name, m, None, ty, ValMutability.Immutable,
-             false, Some(ValReprInfo([], [], { Attribs = []; Name = None })), vis, ValNotInRecScope, None, NormalVal, [], ValInline.Optional,
+             false, Some(ValReprInfo([], [], { Attribs = []; Name = None; OtherRange = None })), vis, ValNotInRecScope, None, NormalVal, [], ValInline.Optional,
              XmlDoc.Empty, true, false, false, false,
              false, false, None, Parent(TypedTreeBasics.ERefLocal entity))
     mty <- ModuleOrNamespaceType(ModuleOrNamespaceKind.ModuleOrType, QueueList.one v, QueueList.empty)
