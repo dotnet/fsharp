@@ -79,11 +79,7 @@ module DocumentExtensions =
 
         member this.SetFSharpProjectOptionsForTesting(projectOptions: FSharpProjectOptions) =
             let workspaceService = this.Project.Solution.GetFSharpWorkspaceService()
-            let parsingOptions, _ = 
-                workspaceService.FSharpProjectOptionsManager.TryGetOptionsForDocumentOrProject(this, CancellationToken.None, nameof(this.SetFSharpProjectOptionsForTesting))
-                |> Async.RunImmediateExceptOnUI
-                |> Option.get
-            ProjectCache.Projects.Add(this.Project, (workspaceService.Checker, workspaceService.FSharpProjectOptionsManager, parsingOptions, projectOptions))
+            ProjectCache.Projects.Add(this.Project, (workspaceService.Checker, workspaceService.FSharpProjectOptionsManager, FSharpParsingOptions.Default, projectOptions))
 
 type TestWorkspaceServiceMetadata(serviceType: string, layer: string) =
 
