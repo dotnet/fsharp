@@ -417,7 +417,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             writeType false ty
 
         // Named argument in a signature
-        | Item.OtherName (ident = Some(ident); argType = ty; argInfo = Some _) ->
+        | Item.OtherName (ident = Some (ident); argType = ty; argInfo = Some _) ->
             writeString ItemKeyTags.itemValue
             writeString ident.idText
             writeString ItemKeyTags.parameters
