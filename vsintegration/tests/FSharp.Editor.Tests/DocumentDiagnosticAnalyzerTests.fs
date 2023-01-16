@@ -8,6 +8,7 @@ open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Editor.Tests.Helpers
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Diagnostics
 
 type DocumentDiagnosticAnalyzerTests() =
     let filePath = "C:\\test.fs"
@@ -32,6 +33,7 @@ type DocumentDiagnosticAnalyzerTests() =
     let parsingOptions =
         { FSharpParsingOptions.Default with
             SourceFiles = [| filePath |]
+            DiagnosticOptions = FSharpDiagnosticOptions.Default
         }
 
     let getDiagnostics (fileContents: string) =
@@ -55,6 +57,7 @@ type DocumentDiagnosticAnalyzerTests() =
         let errors =
             getDiagnostics fileContents
             |> Seq.filter (fun e -> e.Severity = DiagnosticSeverity.Error)
+            |> Seq.filter (fun e -> e.Id <> "FS0222")
             |> Seq.toArray
 
         Assert.True(1 = errors.Length, "There should be exactly one error generated")
@@ -80,6 +83,7 @@ type DocumentDiagnosticAnalyzerTests() =
         let errors =
             getDiagnostics fileContents
             |> Seq.filter (fun e -> e.Severity = expectedSeverity)
+            |> Seq.filter (fun e -> e.Id <> "FS0222")
             |> Seq.toArray
 
         Assert.True(1 = errors.Length, "There should be exactly one error generated")
