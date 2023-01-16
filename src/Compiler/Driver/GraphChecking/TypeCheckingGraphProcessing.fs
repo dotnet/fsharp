@@ -18,7 +18,7 @@ open System.Threading
 /// <remarks>
 /// Similar to 'processFileGraph', this function is generic yet specific to the type-checking process.
 /// </remarks>
-let private combineResults
+let combineResults
     (emptyState: 'State)
     (deps: ProcessedNode<'Item, 'State * Finisher<'State, 'FinalFileResult>>[])
     (transitiveDeps: ProcessedNode<'Item, 'State * Finisher<'State, 'FinalFileResult>>[])

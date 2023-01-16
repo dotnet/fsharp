@@ -7,7 +7,7 @@ open Microsoft.FSharp.Collections
 let hs f = HashSet(Seq.singleton f)
 let emptyHS () = HashSet(Seq.empty)
 
-let private autoOpenShapes =
+let autoOpenShapes =
     set
         [|
             "FSharp.Core.AutoOpenAttribute"
@@ -19,7 +19,7 @@ let private autoOpenShapes =
         |]
 
 /// This isn't bullet proof but I wonder who would really alias this very core attribute.
-let private isAutoOpenAttribute (attribute: SynAttribute) =
+let isAutoOpenAttribute (attribute: SynAttribute) =
     match attribute.ArgExpr with
     | SynExpr.Const(constant = SynConst.Unit)
     | SynExpr.Const(constant = SynConst.String _)
@@ -32,13 +32,13 @@ let private isAutoOpenAttribute (attribute: SynAttribute) =
         autoOpenShapes.Contains attributeName
     | _ -> false
 
-let private isAnyAttributeAutoOpen (attributes: SynAttributes) =
+let isAnyAttributeAutoOpen (attributes: SynAttributes) =
     not attributes.IsEmpty
     && List.exists (fun (atl: SynAttributeList) -> List.exists isAutoOpenAttribute atl.Attributes) attributes
 
 /// Checks to see if the top level ModuleOrNamespace exposes content that could be inferred by any of the subsequent files.
 /// This can happen when a `namespace global` is used, or when a module (with a single ident name) has the `[<AutoOpen>]` attribute.
-let private doesFileExposeContentToTheRoot (ast: ParsedInput) : bool =
+let doesFileExposeContentToTheRoot (ast: ParsedInput) : bool =
     match ast with
     | ParsedInput.SigFile (ParsedSigFileInput (contents = contents)) ->
         contents
@@ -93,7 +93,7 @@ let mergeTrieNodes (defaultChildSize: int) (tries: TrieNode array) =
 
         root
 
-let private mkDictFromKeyValuePairs (items: KeyValuePair<'tkey, 'tvalue> seq) =
+let mkDictFromKeyValuePairs (items: KeyValuePair<'tkey, 'tvalue> seq) =
     let dict = Dictionary(Seq.length items)
 
     for KeyValue (k, v) in items do
@@ -101,7 +101,7 @@ let private mkDictFromKeyValuePairs (items: KeyValuePair<'tkey, 'tvalue> seq) =
 
     dict
 
-let private mkSingletonDict key value =
+let mkSingletonDict key value =
     let dict = Dictionary(1)
     dict.Add(key, value)
     dict

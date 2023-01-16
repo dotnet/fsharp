@@ -19,7 +19,7 @@ type IncrementableInt(value: int) =
         // Increment the value in a thread-safe manner and return the new value.
         member this.Increment() = Interlocked.Increment(&value)
 
-type private GraphNode<'Item, 'Result> =
+type GraphNode<'Item, 'Result> =
     {
         Info: NodeInfo<'Item>
         /// Used to determine when all dependencies of this node have been resolved.

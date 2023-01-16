@@ -1715,7 +1715,7 @@ let CheckMultipleInputsUsingGraphMode
                 [| mkPhysicalFile fileIdx, mapDependencies fileIdx deps |])
         |> Graph.make
 
-    // graph |> Graph.map (fun idx -> sourceFiles.[idx].File) |> Graph.print
+    // graph |> Graph.map (fun idx -> sourceFiles.[idx].FileName) |> Graph.print
 
     // let graphDumpPath =
     //     let graphDumpName =
@@ -1726,7 +1726,7 @@ let CheckMultipleInputsUsingGraphMode
     //     $"{graphDumpName}.deps.json"
     //
     // graph
-    // |> Graph.map (fun idx -> sourceFiles.[idx].File)
+    // |> Graph.map (fun idx -> sourceFiles.[idx].FileName)
     // |> Graph.serialiseToJson graphDumpPath
 
     let _ = ctok // TODO Use it
