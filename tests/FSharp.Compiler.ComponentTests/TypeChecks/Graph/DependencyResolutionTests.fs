@@ -9,7 +9,7 @@ let scenarios = codebases
 
 [<TestCaseSource(nameof scenarios)>]
 let ``Supported scenario`` (scenario: Scenario) =
-    let files = Array.map (fun f -> TestFileWithAST.Map f.FileWithAST) scenario.Files
+    let files = scenario.Files |> Array.map (fun f -> TestFileWithAST.Map f.FileWithAST) 
     let filePairs = FilePairMap(files)
     let graph = DependencyResolution.mkGraph false filePairs files
 

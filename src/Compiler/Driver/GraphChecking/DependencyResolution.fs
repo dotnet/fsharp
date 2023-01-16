@@ -174,17 +174,16 @@ let collectGhostDependencies (fileIndex: FileIndex) (trie: TrieNode) (queryTrie:
 let mkGraph (compilingFSharpCore: bool) (filePairs: FilePairMap) (files: FileInProject array) : Graph<FileIndex> =
     // Implementation files backed by signatures should be excluded to construct the trie.
     let trieInput =
-        Array.choose
-            (fun f ->
-                match f.ParsedInput with
-                | ParsedInput.SigFile _ -> Some f
-                | ParsedInput.ImplFile _ -> if filePairs.HasSignature f.Idx then None else Some f)
-            files
+        files
+        |> Array.choose (fun f ->
+            match f.ParsedInput with
+            | ParsedInput.SigFile _ -> Some f
+            | ParsedInput.ImplFile _ -> if filePairs.HasSignature f.Idx then None else Some f)
 
     let trie = TrieMapping.mkTrie trieInput
     let queryTrie: QueryTrie = queryTrieMemoized trie
 
-    let fileContents = Array.Parallel.map FileContentMapping.mkFileContent files
+    let fileContents = files |> Array.Parallel.map FileContentMapping.mkFileContent
 
     let findDependencies (file: FileInProject) : FileIndex * FileIndex array =
         let fileContent = fileContents[file.Idx]
@@ -194,7 +193,8 @@ let mkGraph (compilingFSharpCore: bool) (filePairs: FilePairMap) (files: FileInP
         // Process all entries of a file and query the trie when required to find the dependent files.
         let result =
             // Seq is faster than List in this case.
-            Seq.fold (processStateEntry queryTrie) (FileContentQueryState.Create file.Idx knownFiles filesFromRoot) fileContent
+            ((FileContentQueryState.Create file.Idx knownFiles filesFromRoot), fileContent)
+            ||> Seq.fold (processStateEntry queryTrie)
 
         // after processing the file we should verify if any of the open statements are found in the trie but do not yield any file link.
         let ghostDependencies = collectGhostDependencies file.Idx trie queryTrie result
@@ -229,4 +229,4 @@ let mkGraph (compilingFSharpCore: bool) (filePairs: FilePairMap) (files: FileInP
 
         file.Idx, allDependencies
 
-    Array.Parallel.map findDependencies files |> readOnlyDict
+    files |> Array.Parallel.map findDependencies |> readOnlyDict

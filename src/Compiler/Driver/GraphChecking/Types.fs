@@ -138,17 +138,16 @@ type internal QueryTrie = LongIdentifier -> QueryTrieNodeResult
 /// Helper class to help map signature files to implementation files and vice versa.
 type internal FilePairMap(files: FileInProject array) =
     let implToSig, sigToImpl =
-        Array.choose
-            (fun f ->
-                match f.ParsedInput with
-                | ParsedInput.SigFile _ ->
-                    files
-                    |> Array.skip (f.Idx + 1)
-                    |> Array.tryFind (fun (implFile: FileInProject) -> $"{implFile.FileName}i" = f.FileName)
-                    |> Option.map (fun (implFile: FileInProject) -> (implFile.Idx, f.Idx))
-                | ParsedInput.ImplFile _ -> None)
-            files
-        |> fun pairs -> Map.ofArray pairs, Map.ofArray (Array.map (fun (a, b) -> (b, a)) pairs)
+        files
+        |> Array.choose (fun f ->
+            match f.ParsedInput with
+            | ParsedInput.SigFile _ ->
+                files
+                |> Array.skip (f.Idx + 1)
+                |> Array.tryFind (fun (implFile: FileInProject) -> $"{implFile.FileName}i" = f.FileName)
+                |> Option.map (fun (implFile: FileInProject) -> (implFile.Idx, f.Idx))
+            | ParsedInput.ImplFile _ -> None)
+        |> fun pairs -> Map.ofArray pairs, Map.ofArray (pairs |> Array.map (fun (a, b) -> (b, a)))
 
     member x.GetSignatureIndex(implementationIndex: FileIndex) = Map.find implementationIndex implToSig
     member x.GetImplementationIndex(signatureIndex: FileIndex) = Map.find signatureIndex sigToImpl

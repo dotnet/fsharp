@@ -41,17 +41,16 @@ let private isAnyAttributeAutoOpen (attributes: SynAttributes) =
 let private doesFileExposeContentToTheRoot (ast: ParsedInput) : bool =
     match ast with
     | ParsedInput.SigFile (ParsedSigFileInput (contents = contents)) ->
-        List.exists
-            (fun (SynModuleOrNamespaceSig (attribs = attribs; longId = longId; kind = kind)) ->
-                (isAnyAttributeAutoOpen attribs && longId.Length < 2)
-                || kind = SynModuleOrNamespaceKind.GlobalNamespace)
-            contents
+        contents
+        |> List.exists (fun (SynModuleOrNamespaceSig (attribs = attribs; longId = longId; kind = kind)) ->
+            (isAnyAttributeAutoOpen attribs && longId.Length < 2)
+            || kind = SynModuleOrNamespaceKind.GlobalNamespace)
+
     | ParsedInput.ImplFile (ParsedImplFileInput (contents = contents)) ->
-        List.exists
-            (fun (SynModuleOrNamespace (attribs = attribs; longId = longId; kind = kind)) ->
-                (isAnyAttributeAutoOpen attribs && longId.Length < 2)
-                || kind = SynModuleOrNamespaceKind.GlobalNamespace)
-            contents
+        contents
+        |> List.exists (fun (SynModuleOrNamespace (attribs = attribs; longId = longId; kind = kind)) ->
+            (isAnyAttributeAutoOpen attribs && longId.Length < 2)
+            || kind = SynModuleOrNamespaceKind.GlobalNamespace)
 
 let mergeTrieNodes (defaultChildSize: int) (tries: TrieNode array) =
     let rec mergeTrieNodesAux (root: TrieNode) (KeyValue (k, v)) =
@@ -189,7 +188,7 @@ let processSynModuleOrNamespace<'Decl>
         if List.isEmpty name then
             // This can happen for a namespace global.
             // We collect the child nodes from the decls
-            List.choose (mkTrieForDeclaration idx) decls |> mkDictFromKeyValuePairs
+            decls |> List.choose (mkTrieForDeclaration idx) |> mkDictFromKeyValuePairs
         else
             visit id name
 
@@ -218,13 +217,12 @@ let rec mkTrieNodeFor (file: FileInProject) : TrieNode =
                                                decls = decls
                                                accessibility = _accessibility)) ->
                     let hasTypesOrAutoOpenNestedModules =
-                        List.exists
-                            (function
+                        decls
+                        |> List.exists (function
                             | SynModuleSigDecl.Types _ -> true
                             | SynModuleSigDecl.NestedModule(moduleInfo = SynComponentInfo (attributes = attributes)) ->
                                 isAnyAttributeAutoOpen attributes
                             | _ -> false)
-                            decls
 
                     processSynModuleOrNamespace mkTrieForSynModuleSigDecl idx longId attribs kind hasTypesOrAutoOpenNestedModules decls)
             |> List.toArray
@@ -252,7 +250,9 @@ and mkTrieForSynModuleDecl (fileIndex: FileIndex) (decl: SynModuleDecl) : KeyVal
         let name = nestedModuleIdent.idText
 
         let children =
-            List.choose (mkTrieForSynModuleDecl fileIndex) decls |> mkDictFromKeyValuePairs
+            decls
+            |> List.choose (mkTrieForSynModuleDecl fileIndex)
+            |> mkDictFromKeyValuePairs
 
         Some(
             KeyValuePair(
@@ -271,7 +271,8 @@ and mkTrieForSynModuleSigDecl (fileIndex: FileIndex) (decl: SynModuleSigDecl) : 
         let name = nestedModuleIdent.idText
 
         let children =
-            List.choose (mkTrieForSynModuleSigDecl fileIndex) decls
+            decls
+            |> List.choose (mkTrieForSynModuleSigDecl fileIndex)
             |> mkDictFromKeyValuePairs
 
         Some(
@@ -287,4 +288,4 @@ and mkTrieForSynModuleSigDecl (fileIndex: FileIndex) (decl: SynModuleSigDecl) : 
     | _ -> None
 
 let mkTrie (files: FileInProject array) : TrieNode =
-    mergeTrieNodes 0 (Array.Parallel.map mkTrieNodeFor files)
+    mergeTrieNodes 0 (files |> Array.Parallel.map mkTrieNodeFor)
