@@ -654,4 +654,4 @@ type PD() =
         |> withLangVersionPreview
         |> compile
         |> shouldFail
-        |> withSingleDiagnostic (Error 361, Line 19, Col 18, Line 19, Col 19, "The override 'M: int -> unit' implements more than one abstract slot, e.g. 'abstract PB.M: 'a -> unit' and 'abstract PA.M: int -> unit'")
+        |> withSingleDiagnostic (Error 361, Line 19, Col 19, Line 19, Col 20, "The override 'M: int -> unit' implements more than one abstract slot, e.g. 'abstract PB.M: 'a -> unit' and 'abstract PA.M: int -> unit'")
