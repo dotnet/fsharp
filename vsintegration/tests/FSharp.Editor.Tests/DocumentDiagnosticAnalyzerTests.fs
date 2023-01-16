@@ -8,7 +8,6 @@ open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Editor.Tests.Helpers
 open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.Diagnostics
 
 type DocumentDiagnosticAnalyzerTests() =
     let filePath = "C:\\test.fs"
@@ -33,7 +32,7 @@ type DocumentDiagnosticAnalyzerTests() =
     let parsingOptions =
         { FSharpParsingOptions.Default with
             SourceFiles = [| filePath |]
-            DiagnosticOptions = FSharpDiagnosticOptions.Default
+            IsExe = true
         }
 
     let getDiagnostics (fileContents: string) =
@@ -57,7 +56,6 @@ type DocumentDiagnosticAnalyzerTests() =
         let errors =
             getDiagnostics fileContents
             |> Seq.filter (fun e -> e.Severity = DiagnosticSeverity.Error)
-            |> Seq.filter (fun e -> e.Id <> "FS0222")
             |> Seq.toArray
 
         Assert.True(1 = errors.Length, "There should be exactly one error generated")
@@ -68,11 +66,9 @@ type DocumentDiagnosticAnalyzerTests() =
 
         Assert.Equal(DiagnosticSeverity.Error, actualError.Severity)
         let expectedStart = fileContents.IndexOf(expectedMarker)
-        let result = expectedStart = actualError.Location.SourceSpan.Start 
-        Assert.True(result, "Error start positions should match")
+        actualError.Location.SourceSpan.Start |> Assert.shouldBeEqualWith expectedStart "Error start positions should match"
         let expectedEnd = expectedStart + expectedMarker.Length
-        let result = expectedEnd = actualError.Location.SourceSpan.End 
-        Assert.True(result, "Error end positions should match")
+        actualError.Location.SourceSpan.End |> Assert.shouldBeEqualWith expectedEnd "Error end positions should match"
 
     member private this.VerifyDiagnosticBetweenMarkers
         (
@@ -83,20 +79,16 @@ type DocumentDiagnosticAnalyzerTests() =
         let errors =
             getDiagnostics fileContents
             |> Seq.filter (fun e -> e.Severity = expectedSeverity)
-            |> Seq.filter (fun e -> e.Id <> "FS0222")
             |> Seq.toArray
 
         Assert.True(1 = errors.Length, "There should be exactly one error generated")
         let actualError = errors.[0]
         Assert.Equal(expectedSeverity, actualError.Severity)
-        let result = expectedMessage = actualError.GetMessage()
-        Assert.True(result, "Error messages should match")
+        actualError.GetMessage() |> Assert.shouldBeEqualWith expectedMessage "Error messages should match"
         let expectedStart = fileContents.IndexOf(startMarker) + startMarker.Length
-        let result = expectedStart = actualError.Location.SourceSpan.Start
-        Assert.True(result, "Error start positions should match")
+        actualError.Location.SourceSpan.Start |> Assert.shouldBeEqualWith expectedStart "Error start positions should match"
         let expectedEnd = fileContents.IndexOf(endMarker)
-        let result = expectedEnd = actualError.Location.SourceSpan.End
-        Assert.True(result, "Error end positions should match")
+        actualError.Location.SourceSpan.End |> Assert.shouldBeEqualWith expectedEnd "Error end positions should match"
 
     member private this.VerifyErrorBetweenMarkers(fileContents: string, expectedMessage: string) =
         this.VerifyDiagnosticBetweenMarkers(fileContents, expectedMessage, DiagnosticSeverity.Error)
@@ -254,7 +246,7 @@ type Y() =
         )
 
     [<Fact>]
-    member public this.Waring_Construct_TypeMatchWithoutAnnotation() =
+    member public this.Warning_Construct_TypeMatchWithoutAnnotation() =
         this.VerifyWarningBetweenMarkers(
             fileContents =
                 """
