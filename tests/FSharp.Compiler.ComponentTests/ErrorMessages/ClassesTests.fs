@@ -626,3 +626,32 @@ type Over () =
         |> withLangVersionPreview
         |> compile
         |> shouldSucceed
+
+
+    [<Fact>]
+    let ``Disallow implementing more than one abstract slot`` () =
+        let app = FSharp """
+module ClassTests
+
+[<AbstractClass>]
+type PA() =
+    abstract M : int -> unit
+
+[<AbstractClass>]
+type PB<'a>() =
+    inherit PA()
+    abstract M : 'a -> unit
+[<AbstractClass>]
+type PC() =
+    inherit PB<int>()
+    // Here, PA.M and PB<int>.M have the same signature, so PA.M is unimplementable.
+    // REVIEW: in future we may give a friendly error at this point
+type PD() =
+    inherit PC()
+    override this.M(x: int) = ()
+        """
+        app
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withSingleDiagnostic (Error 361, Line 19, Col 18, Line 19, Col 19, "The override 'M: int -> unit' implements more than one abstract slot, e.g. 'abstract PB.M: 'a -> unit' and 'abstract PA.M: int -> unit'")
