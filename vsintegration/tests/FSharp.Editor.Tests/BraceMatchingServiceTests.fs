@@ -206,27 +206,27 @@ let main argv =
 
         this.VerifyBraceMatch(code, "(printfn", ")endBrace")
 
-    //[<Theory>]
-    //[<InlineData("let a1 = [ 0 .. 100 ]", [| 9; 20 |])>]
-    //[<InlineData("let a2 = [| 0 .. 100 |]", [| 9; 10; 22 |])>]
-    //[<InlineData("let a3 = <@ 0 @>", [| 9; 10; 15 |])>]
-    //[<InlineData("let a4 = <@@ 0 @@>", [| 9; 10; 11; 15; 16 |])>]
-    //[<InlineData("let a6 = (  ()  )", [| 9; 16 |])>]
-    //[<InlineData("[<ReflectedDefinition>]\nlet a7 = 70", [| 0; 1; 22 |])>]
-    //[<InlineData("let a8 = seq { yield() }", [| 13; 23 |])>]
-    //member this.DoNotMatchOnInnerSide(fileContents: string, matchingPositions: int[]) =
-    //    let sourceText = SourceText.From(fileContents)
-    //    let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
+    [<Theory>]
+    [<InlineData("let a1 = [ 0 .. 100 ]", 9, 20)>]
+    [<InlineData("let a2 = [| 0 .. 100 |]", 9, 10, 22)>]
+    [<InlineData("let a3 = <@ 0 @>", 9, 10, 15)>]
+    [<InlineData("let a4 = <@@ 0 @@>", 9, 10, 11, 15, 16)>]
+    [<InlineData("let a6 = (  ()  )", 9, 16)>]
+    [<InlineData("[<ReflectedDefinition>]\nlet a7 = 70", 0, 1, 22)>]
+    [<InlineData("let a8 = seq { yield() }", 13, 23)>]
+    member this.DoNotMatchOnInnerSide(fileContents: string, [<ParamArray>] matchingPositions: int[]) =
+        let sourceText = SourceText.From(fileContents)
+        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
 
-    //    for position in matchingPositions do
-    //        match
-    //            FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, fileName, parsingOptions, position, "UnitTest")
-    //            |> Async.RunSynchronously
-    //        with
-    //        | Some _ -> ()
-    //        | None ->
-    //            match position with
-    //            | 0 -> ""
-    //            | _ -> fileContents.[position - 1] |> sprintf " (previous character '%c')"
-    //            |> sprintf "Didn't find a matching brace at position '%d' %s" position
-    //            |> raise (new exn())
+        for position in matchingPositions do
+            match
+                FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, fileName, parsingOptions, position, "UnitTest")
+                |> Async.RunSynchronously
+            with
+            | Some _ -> ()
+            | None ->
+                match position with
+                | 0 -> ""
+                | _ -> fileContents.[position - 1] |> sprintf " (previous character '%c')"
+                |> sprintf "Didn't find a matching brace at position '%d' %s" position
+                |> raise (exn())
