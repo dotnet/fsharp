@@ -49,7 +49,7 @@ type HelpContextServiceTests() =
         let fileContents = fileContentsWithMarkers.Replace("$", "")
 
         let document, sourceText =
-            RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents, options = options)
+            RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents, projectOptions = options)
 
         let markers = getMarkers fileContentsWithMarkers
 

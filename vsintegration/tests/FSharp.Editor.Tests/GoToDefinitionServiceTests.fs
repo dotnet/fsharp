@@ -77,7 +77,7 @@ module GoToDefinitionServiceTests =
         let caretPosition = fileContents.IndexOf(caretMarker) + caretMarker.Length - 1 // inside the marker
 
         let document, sourceText =
-            RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents, options = options)
+            RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents, projectOptions = options)
 
         let actual =
             findDefinition (document, sourceText, caretPosition, [])

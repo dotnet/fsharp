@@ -2,20 +2,42 @@
 
 namespace FSharp.Editor.Tests
 
+open System
 open Xunit
 open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Editor.Tests.Helpers
+open FSharp.Compiler.CodeAnalysis
 
-type DocumenhtDiagnosticAnalyzerTests() =
+type DocumentDiagnosticAnalyzerTests() =
     let filePath = "C:\\test.fs"
     let startMarker = "(*start*)"
     let endMarker = "(*end*)"
 
+    let projectOptions: FSharpProjectOptions =
+        {
+            ProjectFileName = "C:\\test.fsproj"
+            ProjectId = None
+            SourceFiles = [| filePath |]
+            ReferencedProjects = [||]
+            OtherOptions = [||]
+            IsIncompleteTypeCheckEnvironment = true
+            UseScriptResolutionRules = false
+            LoadTime = DateTime.MaxValue
+            OriginalLoadReferences = []
+            UnresolvedReferences = None
+            Stamp = None
+        }
+
+    let parsingOptions =
+        { FSharpParsingOptions.Default with
+            SourceFiles = [| filePath |]
+        }
+
     let getDiagnostics (fileContents: string) =
         async {
             let document, _ =
-                RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents)
+                RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents, projectOptions, parsingOptions)
 
             let! syntacticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax)
             let! semanticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic)

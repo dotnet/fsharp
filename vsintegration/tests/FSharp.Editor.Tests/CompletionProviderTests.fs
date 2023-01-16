@@ -39,7 +39,7 @@ module CompletionProviderTests =
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
 
         let document, _ =
-            RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents, options = options)
+            RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents, projectOptions = options)
 
         let results =
             FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> []))
@@ -86,7 +86,7 @@ module CompletionProviderTests =
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
 
         let document, _ =
-            RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents, options = options)
+            RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents, projectOptions = options)
 
         let actual =
             FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> []))

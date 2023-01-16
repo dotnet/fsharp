@@ -59,7 +59,7 @@ module SignatureHelpProvider =
             let caretLineColumn = caretLinePos.Character
 
             let document =
-                RoslynTestHelpers.CreateSingleDocumentSolution(fileName, sourceText, options = project.Options)
+                RoslynTestHelpers.CreateSingleDocumentSolution(fileName, sourceText, projectOptions = project.Options)
 
             let parseResults, checkFileResults =
                 document.GetFSharpParseAndCheckResultsAsync("GetSignatureHelp")
@@ -125,7 +125,7 @@ module SignatureHelpProvider =
         let caretLineColumn = caretLinePos.Character
 
         let document =
-            RoslynTestHelpers.CreateSingleDocumentSolution(filePath, sourceText, options = projectOptions)
+            RoslynTestHelpers.CreateSingleDocumentSolution(filePath, sourceText, projectOptions = projectOptions)
 
         let parseResults, checkFileResults =
             document.GetFSharpParseAndCheckResultsAsync("assertSignatureHelpForMethodCalls")

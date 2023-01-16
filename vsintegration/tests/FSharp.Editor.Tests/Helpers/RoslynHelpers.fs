@@ -8,7 +8,6 @@ open System.Reflection
 open System.Linq
 open System.Collections.Generic
 open System.Collections.Immutable
-open System.Threading
 open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio.Composition
 open Microsoft.CodeAnalysis.Host
@@ -16,6 +15,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.CodeAnalysis.Host.Mef
 open FSharp.Compiler.CodeAnalysis
+open System.Threading
 
 [<AutoOpen>]
 module MefHelpers =
@@ -77,9 +77,14 @@ module DocumentExtensions =
 
     type Document with
 
-        member this.SetFSharpProjectOptionsForTesting(projectOptions: FSharpProjectOptions) =
+        member this.SetFSharpProjectOptionsForTesting(projectOptions: FSharpProjectOptions, parsingOptions: FSharpParsingOptions) =
             let workspaceService = this.Project.Solution.GetFSharpWorkspaceService()
-            ProjectCache.Projects.Add(this.Project, (workspaceService.Checker, workspaceService.FSharpProjectOptionsManager, FSharpParsingOptions.Default, projectOptions))
+            let parsingOptions, _ = 
+                workspaceService.FSharpProjectOptionsManager.TryGetOptionsForDocumentOrProject(this, CancellationToken.None, nameof(this.SetFSharpProjectOptionsForTesting))
+                |> Async.RunImmediateExceptOnUI
+                |> Option.defaultValue (parsingOptions, projectOptions)
+
+            ProjectCache.Projects.Add(this.Project, (workspaceService.Checker, workspaceService.FSharpProjectOptionsManager, parsingOptions, projectOptions))
 
 type TestWorkspaceServiceMetadata(serviceType: string, layer: string) =
 
@@ -213,7 +218,7 @@ type TestHostServices() =
 [<AbstractClass; Sealed>]
 type RoslynTestHelpers private () =
 
-    static member CreateSingleDocumentSolution(filePath, text: SourceText, ?options: FSharpProjectOptions) =
+    static member CreateSingleDocumentSolution(filePath, text: SourceText, ?projectOptions: FSharpProjectOptions, ?parsingOptions: FSharpParsingOptions) =
         let isScript =
             String.Equals(Path.GetExtension(filePath), ".fsx", StringComparison.OrdinalIgnoreCase)
 
@@ -256,7 +261,7 @@ type RoslynTestHelpers private () =
         let manager = FSharpProjectOptionsManager(checker, workspace)
         let document = solution.GetProject(projId).GetDocument(docId)
 
-        match options with
+        match projectOptions with
         | Some options ->
             let options =
                 { options with
@@ -269,7 +274,9 @@ type RoslynTestHelpers private () =
                 options.OtherOptions |> ImmutableArray.CreateRange
             )
 
-            document.SetFSharpProjectOptionsForTesting(options)
+            let parsingOptions = parsingOptions |> Option.defaultValue FSharpParsingOptions.Default
+
+            document.SetFSharpProjectOptionsForTesting(options, parsingOptions)
         | _ -> manager.SetCommandLineOptions(projId, [| filePath |], ImmutableArray.Empty)
 
         document
@@ -324,9 +331,9 @@ type RoslynTestHelpers private () =
         let document2 = solution.GetProject(projId).GetDocument(docId2)
         document1, document2
 
-    static member CreateSingleDocumentSolution(filePath, code: string, ?options) =
+    static member CreateSingleDocumentSolution(filePath, code: string, ?projectOptions, ?parsingOptions) =
         let text = SourceText.From(code)
-        RoslynTestHelpers.CreateSingleDocumentSolution(filePath, text, ?options = options), text
+        RoslynTestHelpers.CreateSingleDocumentSolution(filePath, text, ?projectOptions = projectOptions, ?parsingOptions = parsingOptions), text
 
     static member CreateTwoDocumentSolution(filePath1, code1: string, filePath2, code2: string) =
         let text1 = SourceText.From code1
