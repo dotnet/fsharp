@@ -7,31 +7,10 @@ open Xunit
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Editor.Tests.Helpers
-open FSharp.Compiler.CodeAnalysis
 
 type BreakpointResolutionServiceTests() =
 
     let fileName = "C:\\test.fs"
-
-    let projectOptions: FSharpProjectOptions =
-        {
-            ProjectFileName = "C:\\test.fsproj"
-            ProjectId = None
-            SourceFiles = [| fileName |]
-            ReferencedProjects = [||]
-            OtherOptions = [||]
-            IsIncompleteTypeCheckEnvironment = true
-            UseScriptResolutionRules = false
-            LoadTime = DateTime.MaxValue
-            OriginalLoadReferences = []
-            UnresolvedReferences = None
-            Stamp = None
-        }
-        
-    let parsingOptions =
-        { FSharpParsingOptions.Default with
-            SourceFiles = [| fileName |]
-        }
 
     let code =
         "

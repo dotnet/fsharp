@@ -10,26 +10,10 @@ module CompletionProviderTests =
     open Microsoft.CodeAnalysis.Completion
     open Microsoft.CodeAnalysis.Text
     open Microsoft.VisualStudio.FSharp.Editor
-    open FSharp.Compiler.CodeAnalysis
     open FSharp.Editor.Tests.Helpers
     open Xunit
 
     let filePath = "C:\\test.fs"
-
-    let internal projectOptions opts =
-        {
-            ProjectFileName = "C:\\test.fsproj"
-            ProjectId = None
-            SourceFiles = [| filePath |]
-            ReferencedProjects = [||]
-            OtherOptions = opts
-            IsIncompleteTypeCheckEnvironment = true
-            UseScriptResolutionRules = false
-            LoadTime = DateTime.MaxValue
-            OriginalLoadReferences = []
-            UnresolvedReferences = None
-            Stamp = None
-        }
 
     let formatCompletions (completions: string seq) =
         "\n\t" + String.Join("\n\t", completions)

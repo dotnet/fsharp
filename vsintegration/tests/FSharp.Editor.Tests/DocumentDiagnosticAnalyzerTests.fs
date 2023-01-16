@@ -2,12 +2,10 @@
 
 namespace FSharp.Editor.Tests
 
-open System
 open Xunit
 open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Editor.Tests.Helpers
-open FSharp.Compiler.CodeAnalysis
 
 type DocumentDiagnosticAnalyzerTests() =
     let filePath = "C:\\test.fs"

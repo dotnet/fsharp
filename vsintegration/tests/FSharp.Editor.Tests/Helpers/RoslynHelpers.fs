@@ -218,7 +218,7 @@ type TestHostServices() =
 [<AbstractClass; Sealed>]
 type RoslynTestHelpers private () =
 
-    static member private CreateSingleDocumentSolution(filePath, text: SourceText, projectOptions: FSharpProjectOptions, parsingOptions: FSharpParsingOptions) =
+    static member private CreateSingleDocumentSolution(filePath, text: SourceText, options: FSharpProjectOptions) =
         let isScript =
             String.Equals(Path.GetExtension(filePath), ".fsx", StringComparison.OrdinalIgnoreCase)
 
@@ -262,11 +262,14 @@ type RoslynTestHelpers private () =
 
         workspaceService.FSharpProjectOptionsManager.SetCommandLineOptions(
             projId,
-            projectOptions.SourceFiles,
-            projectOptions.OtherOptions |> ImmutableArray.CreateRange
+            options.SourceFiles,
+            options.OtherOptions |> ImmutableArray.CreateRange
         )
 
+        let projectOptions = options
+        let parsingOptions, _ = workspaceService.Checker.GetParsingOptionsFromProjectOptions options
         document.SetFSharpProjectOptionsForTesting(projectOptions, parsingOptions)
+        
         document
 
     static member CreateTwoDocumentSolution(filePath1, text1: SourceText, filePath2, text2: SourceText) =
@@ -336,17 +339,10 @@ type RoslynTestHelpers private () =
             Stamp = None
         }
 
-    static member DefaultParsingOptions : FSharpParsingOptions = 
-        { FSharpParsingOptions.Default with
-            SourceFiles = [| "C:\\test.fs" |]
-            IsExe = true
-        }
-
-    static member CreateSingleDocumentSolution(filePath, code: string, ?projectOptions, ?parsingOptions) =
+    static member CreateSingleDocumentSolution(filePath, code: string, ?options) =
         let text = SourceText.From(code)
-        let projectOptions = projectOptions |> Option.defaultValue RoslynTestHelpers.DefaultProjectOptions
-        let parsingOptions = parsingOptions |> Option.defaultValue RoslynTestHelpers.DefaultParsingOptions
-        RoslynTestHelpers.CreateSingleDocumentSolution(filePath, text, projectOptions, parsingOptions)
+        let options = options |> Option.defaultValue RoslynTestHelpers.DefaultProjectOptions
+        RoslynTestHelpers.CreateSingleDocumentSolution(filePath, text, options)
     
     static member CreateTwoDocumentSolution(filePath1, code1: string, filePath2, code2: string) =
         let text1 = SourceText.From code1

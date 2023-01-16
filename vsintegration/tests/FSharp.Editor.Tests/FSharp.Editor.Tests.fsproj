@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-	  <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

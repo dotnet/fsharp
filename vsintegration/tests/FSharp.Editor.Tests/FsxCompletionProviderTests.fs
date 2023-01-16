@@ -34,7 +34,7 @@ type Worker() =
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
 
         let document =
-            RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents, projectOptions = projectOptions)
+            RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents, options = projectOptions)
 
         let expected = expected |> Seq.toList
 

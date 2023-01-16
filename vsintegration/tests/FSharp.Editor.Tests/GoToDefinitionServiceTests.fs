@@ -78,7 +78,7 @@ module GoToDefinitionServiceTests =
 
         let sourceText = SourceText.From(fileContents)
         let document =
-            RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents, projectOptions = options)
+            RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents, options = options)
 
         let actual =
             findDefinition (document, sourceText, caretPosition, [])

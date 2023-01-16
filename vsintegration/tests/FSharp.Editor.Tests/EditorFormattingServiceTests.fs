@@ -2,31 +2,16 @@
 
 namespace FSharp.Editor.Tests
 
-open System
 open Xunit
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.CodeAnalysis
 open Microsoft.CodeAnalysis.Formatting
+open FSharp.Editor.Tests.Helpers
 
 type EditorFormattingServiceTests() =
     let filePath = "C:\\test.fs"
-
-    let projectOptions: FSharpProjectOptions =
-        {
-            ProjectFileName = "C:\\test.fsproj"
-            ProjectId = None
-            SourceFiles = [| filePath |]
-            ReferencedProjects = [||]
-            OtherOptions = [||]
-            IsIncompleteTypeCheckEnvironment = true
-            UseScriptResolutionRules = false
-            LoadTime = DateTime.MaxValue
-            OriginalLoadReferences = []
-            UnresolvedReferences = None
-            Stamp = None
-        }
 
     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
     let indentStyle = FormattingOptions.IndentStyle.Smart
@@ -80,7 +65,7 @@ marker4"""
         let lineNumber =
             sourceText.Lines |> Seq.findIndex (fun line -> line.Span.Contains position)
 
-        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
+        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
 
         let changesOpt =
             FSharpEditorFormattingService.GetFormattingChanges(
@@ -107,7 +92,7 @@ marker4"""
     [<InlineData(false, "")>]
     member this.TestPasteChanges_PastingOntoIndentedLine(enabled: bool, prefix: string) =
         let checker = FSharpChecker.Create()
-        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
+        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
 
         let clipboard =
             prefix
@@ -163,15 +148,14 @@ somethingElseHere
                 Assert.Equal(expected, changedText)
             | _ -> failwithf "Expected text changes, but got %+A" changesOpt
         else
-            let result = None = changesOpt
-            Assert.True(result, "Expected no changes as FormatOnPaste is disabled")
+            changesOpt |> Assert.shouldBeEqualWith None "Expected no changes as FormatOnPaste is disabled"
 
     [<Theory>]
     [<InlineData "">]
     [<InlineData "        ">]
     member this.TestPasteChanges_PastingOntoEmptyLine(prefix: string) =
         let checker = FSharpChecker.Create()
-        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
+        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
 
         let clipboard =
             prefix
@@ -229,7 +213,7 @@ somethingElseHere
     [<Fact>]
     member this.TestPasteChanges_PastingWithAutoIndentationInPasteSpan() =
         let checker = FSharpChecker.Create()
-        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
+        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
 
         let clipboard =
             """[<Class>]

@@ -6,30 +6,13 @@ open FSharp.Editor.Tests.Helpers
 
 module DocumentHighlightsServiceTests =
 
-    open System
     open Xunit
     open Microsoft.CodeAnalysis
     open Microsoft.CodeAnalysis.Text
     open Microsoft.VisualStudio.FSharp.Editor
-    open FSharp.Compiler.CodeAnalysis
     open FSharp.Compiler.Text
 
     let filePath = "C:\\test.fs"
-
-    let internal projectOptions =
-        {
-            ProjectFileName = "C:\\test.fsproj"
-            ProjectId = None
-            SourceFiles = [| filePath |]
-            ReferencedProjects = [||]
-            OtherOptions = [||]
-            IsIncompleteTypeCheckEnvironment = true
-            UseScriptResolutionRules = false
-            LoadTime = DateTime.MaxValue
-            UnresolvedReferences = None
-            OriginalLoadReferences = []
-            Stamp = None
-        }
 
     let private getSpans (fileContents: string) (caretPosition: int) =
         let document = RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents)
@@ -75,7 +58,7 @@ module DocumentHighlightsServiceTests =
 
         let sourceText = SourceText.From(fileContents)
         let caretPosition = fileContents.IndexOf("DateTime") + 1
-        let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+        let _ = DocumentId.CreateNewId(ProjectId.CreateNewId())
 
         let spans = getSpans fileContents caretPosition
 
@@ -88,7 +71,7 @@ module DocumentHighlightsServiceTests =
         Assert.Equal<FSharpHighlightSpan array>(expected, spans)
 
         let caretPosition = fileContents.IndexOf("Now") + 1
-        let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+        let _ = DocumentId.CreateNewId(ProjectId.CreateNewId())
         let spans = getSpans fileContents caretPosition
         let expected = [| span sourceText false (2, 28) (2, 31) |]
 
