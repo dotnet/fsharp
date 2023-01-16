@@ -9,6 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+	  <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Include="Helpers\Assert.fs" />
     <Compile Include="Helpers\RoslynHelpers.fs" />
     <Compile Include="Helpers\ProjectOptionsBuilder.fs" />
