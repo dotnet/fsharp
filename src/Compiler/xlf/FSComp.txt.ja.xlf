@@ -42,6 +42,11 @@
         <target state="translated">パラメーターが重複しています。パラメーター '{0}' は、このメソッドで 1 回以上使用されています。</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkExplicitFieldsDeclarationsOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Explicit field declarations are not allowed.</source>
+        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Explicit field declarations are not allowed.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
         <source>Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</source>
         <target state="translated">機能 '{0}' は F# {1} では使用できません。{2} 以上の言語バージョンをお使いください。</target>
