@@ -545,6 +545,62 @@ type C() =
         ]
 
     [<Fact>]
+    let ``Virtual members were found with multiple types in hierarchy with different overloads langversionPreview`` () =
+        let CSLib =
+            CSharp """
+public class A
+{
+    public virtual void M1(string s) { }
+}
+
+public class B : A
+{
+    public virtual void M1(int i) { }
+}
+        """ |> withName "CSLib"
+
+        let app =
+            FSharp """
+module ClassTests
+type C() =
+    inherit B ()
+    override _.M1 (i: string) = ()
+    override _.M1 (i: int) = ()
+        """ |> withReferences [CSLib]
+        app
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Virtual member was found with multiple types in hierarchy with different overloads langversionPreview`` () =
+        let CSLib =
+            CSharp """
+public class A
+{
+    public virtual void M1(string s) { }
+}
+
+public class B : A
+{
+    public void M1(int i) { }
+}
+        """ |> withName "CSLib"
+
+        let app =
+            FSharp """
+module ClassTests
+type C() =
+    inherit B ()
+    override _.M1 (i: string) = ()
+        """ |> withReferences [CSLib]
+        app
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+
+    [<Fact>]
     let ``Virtual member was found among virtual and non-virtual overloads with lang preview`` () =
         let CSLib =
             CSharp """
