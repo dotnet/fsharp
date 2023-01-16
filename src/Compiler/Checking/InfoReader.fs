@@ -564,12 +564,12 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     /// Filter the overrides of methods or properties, either keeping the overrides or keeping the dispatch slots.
     static let FilterOverrides findFlag (isVirt:'a->bool, isNewSlot, isDefiniteOverride, isFinal, equivSigs, nmf:'a->string) items = 
         let equivVirts x y = isVirt x && isVirt y && equivSigs x y
-        let filterDefiniteOverride = List.filter(not << isDefiniteOverride)
+        let filterDefiniteOverrides = List.filter(not << isDefiniteOverride)
 
         match findFlag with
         | DiscardOnFirstNonOverride ->
             items
-            |> List.map filterDefiniteOverride
+            |> List.map filterDefiniteOverrides
             |> ExcludeItemsInSuperTypesBasedOnEquivTestWithItemsInSubTypes nmf (fun newItem priorItem ->
                 equivSigs newItem priorItem &&
                 isVirt newItem && not (isVirt priorItem)
@@ -594,7 +594,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
             items
               // Remove any F#-declared overrides. These may occur in the same type as the abstract member (unlike with .NET metadata)
               // Include any 'newslot' declared methods.
-              |> List.map filterDefiniteOverride
+              |> List.map filterDefiniteOverrides
 
               // Remove any virtuals that are signature-equivalent to virtuals in subtypes, except for newslots
               // That is, keep if it's 
