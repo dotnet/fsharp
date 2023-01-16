@@ -8,6 +8,7 @@ open System.Reflection
 open System.Linq
 open System.Collections.Generic
 open System.Collections.Immutable
+open System.Threading
 open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio.Composition
 open Microsoft.CodeAnalysis.Host
@@ -70,6 +71,19 @@ module MefHelpers =
         let runtimeComposition = RuntimeComposition.CreateRuntimeComposition(configuration)
         let exportProviderFactory = runtimeComposition.CreateExportProviderFactory()
         exportProviderFactory.CreateExportProvider()
+
+[<AutoOpen>]
+module DocumentExtensions =
+
+    type Document with
+
+        member this.SetFSharpProjectOptionsForTesting(projectOptions: FSharpProjectOptions) =
+            let workspaceService = this.Project.Solution.GetFSharpWorkspaceService()
+            let parsingOptions, _ = 
+                workspaceService.FSharpProjectOptionsManager.TryGetOptionsForDocumentOrProject(this, CancellationToken.None, nameof(this.SetFSharpProjectOptionsForTesting))
+                |> Async.RunImmediateExceptOnUI
+                |> Option.get
+            ProjectCache.Projects.Add(this.Project, (workspaceService.Checker, workspaceService.FSharpProjectOptionsManager, parsingOptions, projectOptions))
 
 type TestWorkspaceServiceMetadata(serviceType: string, layer: string) =
 
