@@ -74,7 +74,7 @@ module QuickInfoProviderTests =
         elements |> List.map parseElement |> String.concat "\n" |> normalizeLineEnds
 
     let executeQuickInfoTest (programText: string) testCases =
-        let document, _ =
+        let document =
             RoslynTestHelpers.CreateSingleDocumentSolution(filePath, programText)
 
         for (symbol: string, expected: string option) in testCases do

@@ -7,33 +7,19 @@ open Xunit
 open Microsoft.CodeAnalysis.Text
 open FSharp.Compiler.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
+open FSharp.Editor.Tests.Helpers
 
 type BraceMatchingServiceTests() =
     let checker = FSharpChecker.Create()
 
     let fileName = "C:\\test.fs"
 
-    let projectOptions: FSharpProjectOptions =
-        {
-            ProjectFileName = "C:\\test.fsproj"
-            ProjectId = None
-            SourceFiles = [| fileName |]
-            ReferencedProjects = [||]
-            OtherOptions = [||]
-            IsIncompleteTypeCheckEnvironment = true
-            UseScriptResolutionRules = false
-            LoadTime = DateTime.MaxValue
-            OriginalLoadReferences = []
-            UnresolvedReferences = None
-            Stamp = None
-        }
-
     member private this.VerifyNoBraceMatch(fileContents: string, marker: string) =
         let sourceText = SourceText.From(fileContents)
         let position = fileContents.IndexOf(marker)
         Assert.True(position >= 0, $"Cannot find marker '{marker}' in file contents")
 
-        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
+        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
 
         match
             FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, fileName, parsingOptions, position, "UnitTest")
@@ -50,7 +36,7 @@ type BraceMatchingServiceTests() =
         Assert.True(startMarkerPosition >= 0, $"Cannot find start marker '{startMarkerPosition}' in file contents")
         Assert.True(endMarkerPosition >= 0, $"Cannot find end marker '{endMarkerPosition}' in file contents")
 
-        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
+        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
 
         match
             FSharpBraceMatchingService.GetBraceMatchingResult(
@@ -216,7 +202,7 @@ let main argv =
     [<InlineData("let a8 = seq { yield() }", 13, 23)>]
     member this.DoNotMatchOnInnerSide(fileContents: string, [<ParamArray>] matchingPositions: int[]) =
         let sourceText = SourceText.From(fileContents)
-        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
+        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
 
         for position in matchingPositions do
             match

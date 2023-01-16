@@ -14,31 +14,10 @@ type DocumentDiagnosticAnalyzerTests() =
     let startMarker = "(*start*)"
     let endMarker = "(*end*)"
 
-    let projectOptions: FSharpProjectOptions =
-        {
-            ProjectFileName = "C:\\test.fsproj"
-            ProjectId = None
-            SourceFiles = [| filePath |]
-            ReferencedProjects = [||]
-            OtherOptions = [||]
-            IsIncompleteTypeCheckEnvironment = true
-            UseScriptResolutionRules = false
-            LoadTime = DateTime.MaxValue
-            OriginalLoadReferences = []
-            UnresolvedReferences = None
-            Stamp = None
-        }
-
-    let parsingOptions =
-        { FSharpParsingOptions.Default with
-            SourceFiles = [| filePath |]
-            IsExe = true
-        }
-
     let getDiagnostics (fileContents: string) =
         async {
-            let document, _ =
-                RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents, projectOptions, parsingOptions)
+            let document =
+                RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents)
 
             let! syntacticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax)
             let! semanticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic)

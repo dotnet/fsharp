@@ -59,7 +59,7 @@ module SignatureHelpProvider =
             let caretLineColumn = caretLinePos.Character
 
             let document =
-                RoslynTestHelpers.CreateSingleDocumentSolution(fileName, sourceText, projectOptions = project.Options)
+                RoslynTestHelpers.CreateSingleDocumentSolution(fileName, fileContents)
 
             let parseResults, checkFileResults =
                 document.GetFSharpParseAndCheckResultsAsync("GetSignatureHelp")
@@ -125,7 +125,7 @@ module SignatureHelpProvider =
         let caretLineColumn = caretLinePos.Character
 
         let document =
-            RoslynTestHelpers.CreateSingleDocumentSolution(filePath, sourceText, projectOptions = projectOptions)
+            RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents)
 
         let parseResults, checkFileResults =
             document.GetFSharpParseAndCheckResultsAsync("assertSignatureHelpForMethodCalls")
@@ -168,7 +168,8 @@ module SignatureHelpProvider =
         =
         let caretPosition = fileContents.LastIndexOf(marker) + marker.Length
 
-        let document, sourceText =
+        let sourceText = SourceText.From(fileContents)
+        let document =
             RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents)
 
         let parseResults, checkFileResults =
@@ -506,7 +507,8 @@ M.f
         let marker = "id "
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
 
-        let document, sourceText =
+        let sourceText = SourceText.From(fileContents)
+        let document =
             RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents)
 
         let parseResults, checkFileResults =

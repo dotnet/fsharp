@@ -10,6 +10,7 @@ open FSharp.Compiler.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.IO
 open FSharp.Editor.Tests.Helpers
+open Microsoft.CodeAnalysis.Text
 
 type HelpContextServiceTests() =
     let PathRelativeToTestAssembly p =
@@ -48,7 +49,8 @@ type HelpContextServiceTests() =
         let fileContentsWithMarkers = String.Join("\r\n", lines)
         let fileContents = fileContentsWithMarkers.Replace("$", "")
 
-        let document, sourceText =
+        let sourceText = SourceText.From(fileContents)
+        let document =
             RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents, projectOptions = options)
 
         let markers = getMarkers fileContentsWithMarkers

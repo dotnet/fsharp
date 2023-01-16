@@ -12,7 +12,7 @@ module QuickInfo =
     let internal GetQuickInfo (project: FSharpProject) (fileName: string) (caretPosition: int) =
         async {
             let code = File.ReadAllText(fileName)
-            let document, _ = RoslynTestHelpers.CreateSingleDocumentSolution(fileName, code)
+            let document = RoslynTestHelpers.CreateSingleDocumentSolution(fileName, code)
             return! FSharpAsyncQuickInfoSource.ProvideQuickInfo(document, caretPosition)
         }
         |> Async.RunSynchronously

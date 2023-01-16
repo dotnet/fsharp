@@ -73,8 +73,8 @@ let main argv =
         let searchPosition = code.IndexOf(searchToken)
         Assert.True(searchPosition >= 0, $"SearchToken '{searchToken}' is not found in code")
 
-        let document, sourceText =
-            RoslynTestHelpers.CreateSingleDocumentSolution(fileName, code, projectOptions, parsingOptions)
+        let document =
+            RoslynTestHelpers.CreateSingleDocumentSolution(fileName, code)
 
         let searchSpan =
             TextSpan.FromBounds(searchPosition, searchPosition + searchToken.Length)
@@ -86,6 +86,7 @@ let main argv =
         match actualResolutionOption with
         | None -> Assert.True(expectedResolution.IsNone, "BreakpointResolutionService failed to resolve breakpoint position")
         | Some (actualResolutionRange) ->
+            let sourceText = SourceText.From(code)
             let actualResolution =
                 sourceText
                     .GetSubText(RoslynHelpers.FSharpRangeToTextSpan(sourceText, actualResolutionRange))

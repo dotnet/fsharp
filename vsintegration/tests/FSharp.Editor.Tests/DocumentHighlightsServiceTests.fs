@@ -31,8 +31,8 @@ module DocumentHighlightsServiceTests =
             Stamp = None
         }
 
-    let private getSpans (sourceText: SourceText) (caretPosition: int) =
-        let document = RoslynTestHelpers.CreateSingleDocumentSolution(filePath, sourceText)
+    let private getSpans (fileContents: string) (caretPosition: int) =
+        let document = RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents)
 
         FSharpDocumentHighlightsService.GetDocumentHighlights(document, caretPosition)
         |> Async.RunSynchronously
@@ -58,7 +58,7 @@ module DocumentHighlightsServiceTests =
 
         let sourceText = SourceText.From(fileContents)
         let caretPosition = fileContents.IndexOf("foo") + 1
-        let spans = getSpans sourceText caretPosition
+        let spans = getSpans fileContents caretPosition
 
         let expected =
             [| span sourceText true (2, 8) (2, 11); span sourceText false (4, 12) (4, 15) |]
@@ -77,7 +77,7 @@ module DocumentHighlightsServiceTests =
         let caretPosition = fileContents.IndexOf("DateTime") + 1
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
 
-        let spans = getSpans sourceText caretPosition
+        let spans = getSpans fileContents caretPosition
 
         let expected =
             [|
@@ -89,7 +89,7 @@ module DocumentHighlightsServiceTests =
 
         let caretPosition = fileContents.IndexOf("Now") + 1
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-        let spans = getSpans sourceText caretPosition
+        let spans = getSpans fileContents caretPosition
         let expected = [| span sourceText false (2, 28) (2, 31) |]
 
         Assert.Equal<FSharpHighlightSpan array>(expected, spans)

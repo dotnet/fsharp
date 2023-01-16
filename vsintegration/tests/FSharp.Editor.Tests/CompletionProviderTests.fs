@@ -35,11 +35,10 @@ module CompletionProviderTests =
         "\n\t" + String.Join("\n\t", completions)
 
     let VerifyCompletionListWithOptions (fileContents: string, marker: string, expected: string list, unexpected: string list, opts) =
-        let options = projectOptions opts
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
 
-        let document, _ =
-            RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents, projectOptions = options)
+        let document =
+            RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents)
 
         let results =
             FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> []))
@@ -82,11 +81,10 @@ module CompletionProviderTests =
         VerifyCompletionListWithOptions(fileContents, marker, expected, unexpected, [||])
 
     let VerifyCompletionListExactlyWithOptions (fileContents: string, marker: string, expected: string list, opts) =
-        let options = projectOptions opts
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
 
-        let document, _ =
-            RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents, projectOptions = options)
+        let document =
+            RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents)
 
         let actual =
             FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> []))
