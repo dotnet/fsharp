@@ -23,7 +23,7 @@ module CompletionProviderTests =
 
         let document =
             RoslynTestHelpers.CreateSolution(fileContents)
-            |> Seq.exactlyOne
+            |> RoslynTestHelpers.GetSingleDocument
 
         let results =
             FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> []))
@@ -70,7 +70,7 @@ module CompletionProviderTests =
 
         let document =
             RoslynTestHelpers.CreateSolution(fileContents)
-            |> Seq.exactlyOne
+            |> RoslynTestHelpers.GetSingleDocument
 
         let actual =
             FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> []))

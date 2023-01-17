@@ -5,7 +5,6 @@ namespace FSharp.Editor.Tests.Hints
 open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.Editor.Hints
-open Microsoft.CodeAnalysis.Text
 open Hints
 open FSharp.Editor.Tests.Helpers
 
@@ -33,10 +32,12 @@ module HintTestFramework =
         // I don't know, without this lib some symbols are just not loaded
         let options = { RoslynTestHelpers.DefaultProjectOptions with OtherOptions = [| "--targetprofile:netcore" |] }
         RoslynTestHelpers.CreateSolution(code, options = options)
-        |> Seq.exactlyOne
+        |> RoslynTestHelpers.GetSingleDocument
 
     let getFsiAndFsDocuments (fsiCode: string) (fsCode: string) =
-        RoslynTestHelpers.CreateSolution([|fsiCode; fsCode|])
+        let solution = RoslynTestHelpers.CreateSolution([|fsiCode; fsCode|])
+        let project = solution.Projects |> Seq.exactlyOne
+        project.Documents
 
     let getHints (document: Document) hintKinds =
         async {
@@ -55,5 +56,4 @@ module HintTestFramework =
 
     let getAllHints document =
         let hintKinds = Set.empty.Add(HintKind.TypeHint).Add(HintKind.ParameterNameHint)
-
         getHints document hintKinds

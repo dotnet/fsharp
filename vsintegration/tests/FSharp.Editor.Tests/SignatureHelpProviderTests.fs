@@ -61,7 +61,7 @@ module SignatureHelpProvider =
 
             let document = 
                 RoslynTestHelpers.CreateSolution(fileContents)
-                |> Seq.exactlyOne
+                |> RoslynTestHelpers.GetSingleDocument
 
             let parseResults, checkFileResults =
                 document.GetFSharpParseAndCheckResultsAsync("GetSignatureHelp")
@@ -125,7 +125,7 @@ module SignatureHelpProvider =
 
         let document =
             RoslynTestHelpers.CreateSolution(fileContents)
-            |> Seq.exactlyOne
+            |> RoslynTestHelpers.GetSingleDocument
 
         let parseResults, checkFileResults =
             document.GetFSharpParseAndCheckResultsAsync("assertSignatureHelpForMethodCalls")
@@ -171,7 +171,7 @@ module SignatureHelpProvider =
         let sourceText = SourceText.From(fileContents)
         let document =
             RoslynTestHelpers.CreateSolution(fileContents)
-            |> Seq.exactlyOne
+            |> RoslynTestHelpers.GetSingleDocument
 
         let parseResults, checkFileResults =
             document.GetFSharpParseAndCheckResultsAsync("assertSignatureHelpForFunctionApplication")
@@ -511,7 +511,7 @@ M.f
         let sourceText = SourceText.From(fileContents)
         let document =
             RoslynTestHelpers.CreateSolution(fileContents)
-            |> Seq.exactlyOne
+            |> RoslynTestHelpers.GetSingleDocument
 
         let parseResults, checkFileResults =
             document.GetFSharpParseAndCheckResultsAsync("function application in single pipeline with no additional args")

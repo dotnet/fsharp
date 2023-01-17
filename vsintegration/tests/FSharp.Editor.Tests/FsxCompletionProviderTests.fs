@@ -35,7 +35,7 @@ type Worker() =
 
         let document =
             RoslynTestHelpers.CreateSolution(filePath, fileContents, options = projectOptions)
-            |> Seq.exactlyOne
+            |> RoslynTestHelpers.GetSingleDocument
 
         let expected = expected |> Seq.toList
 

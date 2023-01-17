@@ -279,7 +279,7 @@ type RoslynTestHelpers private () =
         let parsingOptions, _ = workspaceService.Checker.GetParsingOptionsFromProjectOptions options
         
         documents |> Seq.iter (fun doc -> doc.SetFSharpProjectOptionsForTesting(projectOptions, parsingOptions))
-        documents
+        solution
 
     static member DefaultProjectOptions: FSharpProjectOptions =
         {
@@ -295,3 +295,8 @@ type RoslynTestHelpers private () =
             OriginalLoadReferences = []
             Stamp = None
         }
+
+    static member GetSingleDocument(solution: Solution) =
+        let project = solution.Projects |> Seq.exactlyOne
+        let document = project.Documents |> Seq.exactlyOne
+        document

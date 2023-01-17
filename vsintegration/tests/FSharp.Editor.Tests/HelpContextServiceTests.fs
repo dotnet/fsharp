@@ -52,7 +52,7 @@ type HelpContextServiceTests() =
         let sourceText = SourceText.From(fileContents)
         let document =
             RoslynTestHelpers.CreateSolution(fileContents, options = options)
-            |> Seq.exactlyOne
+            |> RoslynTestHelpers.GetSingleDocument
 
         let markers = getMarkers fileContentsWithMarkers
 

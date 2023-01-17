@@ -15,7 +15,7 @@ type DocumentDiagnosticAnalyzerTests() =
         async {
             let document =
                 RoslynTestHelpers.CreateSolution(fileContents)
-                |> Seq.exactlyOne
+                |> RoslynTestHelpers.GetSingleDocument
 
             let! syntacticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax)
             let! semanticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic)
