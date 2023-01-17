@@ -29,14 +29,14 @@ module HintTestFramework =
             Location = location
         }
 
-    let getFsDocument code =
+    let getFsDocument (code: string) =
         // I don't know, without this lib some symbols are just not loaded
         let options = { RoslynTestHelpers.DefaultProjectOptions with OtherOptions = [| "--targetprofile:netcore" |] }
-        let document = RoslynTestHelpers.CreateSingleDocumentSolution(code, options = options)
-        document
+        RoslynTestHelpers.CreateDocumentSolution(code, options = options)
+        |> Seq.exactlyOne
 
     let getFsiAndFsDocuments (fsiCode: string) (fsCode: string) =
-        RoslynTestHelpers.CreateTwoDocumentSolution("test0.fsi", fsiCode, "test0.fs", fsCode)
+        RoslynTestHelpers.CreateDocumentSolution([|fsiCode; fsCode|])
 
     let getHints (document: Document) hintKinds =
         async {

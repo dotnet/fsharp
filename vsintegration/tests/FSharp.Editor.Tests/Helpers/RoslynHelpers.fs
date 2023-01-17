@@ -253,11 +253,12 @@ type RoslynTestHelpers private () =
             documents = documents,
             filePath = filePath)
 
-    static member private CreateDocumentSolution sources (options: FSharpProjectOptions) =
+    static member CreateDocumentSolution ([<ParamArray>] sources: string[], ?options: FSharpProjectOptions) =
         let projId = ProjectId.CreateNewId()
 
         let docInfos = 
             sources
+            |> Seq.map SourceText.From
             |> Seq.mapi (fun i text -> RoslynTestHelpers.CreateDocumentInfo (DocumentId.CreateNewId(projId)) $"C:\\test{i}.fs" text)
 
         let projFilePath = "C:\\test0.fsproj"
@@ -266,6 +267,8 @@ type RoslynTestHelpers private () =
 
         let workspaceService = solution.Workspace.Services.GetService<IFSharpWorkspaceService>()
         let documents = solution.GetProject(projId).Documents
+
+        let options = options |> Option.defaultValue RoslynTestHelpers.DefaultProjectOptions
 
         workspaceService.FSharpProjectOptionsManager.SetCommandLineOptions(
             projId,
@@ -292,24 +295,3 @@ type RoslynTestHelpers private () =
             OriginalLoadReferences = []
             Stamp = None
         }
-
-    static member CreateSingleDocumentSolution(filePath, code: string, ?options) =
-        let text = SourceText.From(code)
-        let options = options |> Option.defaultValue RoslynTestHelpers.DefaultProjectOptions
-        
-        RoslynTestHelpers.CreateDocumentSolution [text] options
-        |> Seq.exactlyOne
-
-    static member CreateSingleDocumentSolution(code: string, ?options) =
-        let text = SourceText.From(code)
-        let options = options |> Option.defaultValue RoslynTestHelpers.DefaultProjectOptions
-        
-        RoslynTestHelpers.CreateDocumentSolution [text] options
-        |> Seq.exactlyOne
-
-    static member CreateTwoDocumentSolution(filePath1, code1: string, filePath2, code2: string) =
-        let text1 = SourceText.From code1
-        let text2 = SourceText.From code2
-
-        let docs = RoslynTestHelpers.CreateDocumentSolution [text1; text2] RoslynTestHelpers.DefaultProjectOptions
-        (docs |> Seq.head, docs |> Seq.last)

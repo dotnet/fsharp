@@ -8,14 +8,14 @@ open FSharp.Editor.Tests.Helpers
 
 module QuickInfo =
 
-    let internal GetQuickInfo code caretPosition =
+    let internal GetQuickInfo (code: string) caretPosition =
         async {
-            let document = RoslynTestHelpers.CreateSingleDocumentSolution(code)
+            let document = RoslynTestHelpers.CreateDocumentSolution(code) |> Seq.exactlyOne
             return! FSharpAsyncQuickInfoSource.ProvideQuickInfo(document, caretPosition)
         }
         |> Async.RunSynchronously
 
-    let GetQuickInfoText code caretPosition =
+    let GetQuickInfoText (code: string) caretPosition =
         let sigHelp = GetQuickInfo code caretPosition
 
         match sigHelp with

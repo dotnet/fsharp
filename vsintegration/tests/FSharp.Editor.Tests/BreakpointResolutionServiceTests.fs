@@ -51,7 +51,8 @@ let main argv =
         Assert.True(searchPosition >= 0, $"SearchToken '{searchToken}' is not found in code")
 
         let document =
-            RoslynTestHelpers.CreateSingleDocumentSolution(code)
+            RoslynTestHelpers.CreateDocumentSolution(code)
+            |> Seq.exactlyOne
 
         let searchSpan =
             TextSpan.FromBounds(searchPosition, searchPosition + searchToken.Length)

@@ -78,7 +78,8 @@ module GoToDefinitionServiceTests =
 
         let sourceText = SourceText.From(fileContents)
         let document =
-            RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents, options = options)
+            RoslynTestHelpers.CreateDocumentSolution(fileContents, options = options)
+            |> Seq.exactlyOne
 
         let actual =
             findDefinition (document, sourceText, caretPosition, [])

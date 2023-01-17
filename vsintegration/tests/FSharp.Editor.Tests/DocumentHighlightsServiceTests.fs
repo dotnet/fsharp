@@ -15,7 +15,9 @@ module DocumentHighlightsServiceTests =
     let filePath = "C:\\test0.fs"
 
     let private getSpans (fileContents: string) (caretPosition: int) =
-        let document = RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents)
+        let document = 
+            RoslynTestHelpers.CreateDocumentSolution(fileContents)
+            |> Seq.exactlyOne
 
         FSharpDocumentHighlightsService.GetDocumentHighlights(document, caretPosition)
         |> Async.RunSynchronously

@@ -71,7 +71,7 @@ module Test
 let numbers = [|42|]
 """
 
-        let fsiDocument, _ = getFsiAndFsDocuments fsiCode fsCode
+        let fsiDocument = getFsiAndFsDocuments fsiCode fsCode |> Seq.head
 
         let result = getTypeHints fsiDocument
 

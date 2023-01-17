@@ -10,6 +10,7 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
 open Microsoft.CodeAnalysis.Text
 open FSharp.Editor.Tests.Helpers
+open Microsoft.CodeAnalysis
 
 module SignatureHelpProvider =
     let private DefaultDocumentationProvider =
@@ -58,8 +59,9 @@ module SignatureHelpProvider =
             let caretLinePos = textLines.GetLinePosition(caretPosition)
             let caretLineColumn = caretLinePos.Character
 
-            let document =
-                RoslynTestHelpers.CreateSingleDocumentSolution(fileName, fileContents)
+            let document = 
+                RoslynTestHelpers.CreateDocumentSolution(fileContents)
+                |> Seq.exactlyOne
 
             let parseResults, checkFileResults =
                 document.GetFSharpParseAndCheckResultsAsync("GetSignatureHelp")
@@ -122,7 +124,8 @@ module SignatureHelpProvider =
         let caretLineColumn = caretLinePos.Character
 
         let document =
-            RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents)
+            RoslynTestHelpers.CreateDocumentSolution(fileContents)
+            |> Seq.exactlyOne
 
         let parseResults, checkFileResults =
             document.GetFSharpParseAndCheckResultsAsync("assertSignatureHelpForMethodCalls")
@@ -167,7 +170,8 @@ module SignatureHelpProvider =
 
         let sourceText = SourceText.From(fileContents)
         let document =
-            RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents)
+            RoslynTestHelpers.CreateDocumentSolution(fileContents)
+            |> Seq.exactlyOne
 
         let parseResults, checkFileResults =
             document.GetFSharpParseAndCheckResultsAsync("assertSignatureHelpForFunctionApplication")
@@ -506,7 +510,8 @@ M.f
 
         let sourceText = SourceText.From(fileContents)
         let document =
-            RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents)
+            RoslynTestHelpers.CreateDocumentSolution(fileContents)
+            |> Seq.exactlyOne
 
         let parseResults, checkFileResults =
             document.GetFSharpParseAndCheckResultsAsync("function application in single pipeline with no additional args")
