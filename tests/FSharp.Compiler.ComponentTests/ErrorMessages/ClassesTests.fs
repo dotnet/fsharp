@@ -655,3 +655,35 @@ type PD() =
         |> compile
         |> shouldFail
         |> withSingleDiagnostic (Error 361, Line 19, Col 19, Line 19, Col 20, "The override 'M: int -> unit' implements more than one abstract slot, e.g. 'abstract PB.M: 'a -> unit' and 'abstract PA.M: int -> unit'")
+
+    [<Fact>]
+    let ``Generic overrides work with preview version`` () =
+        let CSLib =
+            CSharp """
+public class C
+{
+    public virtual void M<T1, T2, T3>(T1? a, T2 b, T1? c, T3? d) {}
+}
+
+public class D : C
+{
+    public override void M<T1, T2, T3>(T1? a, T2 b, T1? c, T3? d)
+        where T1 : default
+        where T3 : default
+    {
+        base.M(a, b, c, d);
+    }
+}
+        """ |> withName "CSLib"
+
+        let app =
+            FSharp """
+module ClassTests
+type X =
+    inherit C
+    override this.M(a, b, c, d) = ()
+        """ |> withReferences [CSLib]
+        app
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
