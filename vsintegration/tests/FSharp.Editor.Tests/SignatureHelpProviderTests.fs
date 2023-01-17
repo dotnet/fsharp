@@ -60,7 +60,7 @@ module SignatureHelpProvider =
             let caretLineColumn = caretLinePos.Character
 
             let document = 
-                RoslynTestHelpers.CreateDocumentSolution(fileContents)
+                RoslynTestHelpers.CreateSolution(fileContents)
                 |> Seq.exactlyOne
 
             let parseResults, checkFileResults =
@@ -124,7 +124,7 @@ module SignatureHelpProvider =
         let caretLineColumn = caretLinePos.Character
 
         let document =
-            RoslynTestHelpers.CreateDocumentSolution(fileContents)
+            RoslynTestHelpers.CreateSolution(fileContents)
             |> Seq.exactlyOne
 
         let parseResults, checkFileResults =
@@ -170,7 +170,7 @@ module SignatureHelpProvider =
 
         let sourceText = SourceText.From(fileContents)
         let document =
-            RoslynTestHelpers.CreateDocumentSolution(fileContents)
+            RoslynTestHelpers.CreateSolution(fileContents)
             |> Seq.exactlyOne
 
         let parseResults, checkFileResults =
@@ -510,7 +510,7 @@ M.f
 
         let sourceText = SourceText.From(fileContents)
         let document =
-            RoslynTestHelpers.CreateDocumentSolution(fileContents)
+            RoslynTestHelpers.CreateSolution(fileContents)
             |> Seq.exactlyOne
 
         let parseResults, checkFileResults =

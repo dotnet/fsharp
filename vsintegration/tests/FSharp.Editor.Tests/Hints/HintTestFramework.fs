@@ -32,11 +32,11 @@ module HintTestFramework =
     let getFsDocument (code: string) =
         // I don't know, without this lib some symbols are just not loaded
         let options = { RoslynTestHelpers.DefaultProjectOptions with OtherOptions = [| "--targetprofile:netcore" |] }
-        RoslynTestHelpers.CreateDocumentSolution(code, options = options)
+        RoslynTestHelpers.CreateSolution(code, options = options)
         |> Seq.exactlyOne
 
     let getFsiAndFsDocuments (fsiCode: string) (fsCode: string) =
-        RoslynTestHelpers.CreateDocumentSolution([|fsiCode; fsCode|])
+        RoslynTestHelpers.CreateSolution([|fsiCode; fsCode|])
 
     let getHints (document: Document) hintKinds =
         async {

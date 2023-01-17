@@ -253,7 +253,7 @@ type RoslynTestHelpers private () =
             documents = documents,
             filePath = filePath)
 
-    static member CreateDocumentSolution ([<ParamArray>] sources: string[], ?options: FSharpProjectOptions) =
+    static member CreateSolution ([<ParamArray>] sources: string[], ?options: FSharpProjectOptions) =
         let projId = ProjectId.CreateNewId()
 
         let docInfos = 

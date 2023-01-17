@@ -75,7 +75,7 @@ module QuickInfoProviderTests =
 
     let executeQuickInfoTest (programText: string) testCases =
         let document =
-            RoslynTestHelpers.CreateDocumentSolution(programText)
+            RoslynTestHelpers.CreateSolution(programText)
             |> Seq.exactlyOne
 
         for (symbol: string, expected: string option) in testCases do

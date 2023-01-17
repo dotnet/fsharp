@@ -10,7 +10,7 @@ module QuickInfo =
 
     let internal GetQuickInfo (code: string) caretPosition =
         async {
-            let document = RoslynTestHelpers.CreateDocumentSolution(code) |> Seq.exactlyOne
+            let document = RoslynTestHelpers.CreateSolution(code) |> Seq.exactlyOne
             return! FSharpAsyncQuickInfoSource.ProvideQuickInfo(document, caretPosition)
         }
         |> Async.RunSynchronously

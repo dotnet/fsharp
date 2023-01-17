@@ -51,7 +51,7 @@ type HelpContextServiceTests() =
 
         let sourceText = SourceText.From(fileContents)
         let document =
-            RoslynTestHelpers.CreateDocumentSolution(fileContents, options = options)
+            RoslynTestHelpers.CreateSolution(fileContents, options = options)
             |> Seq.exactlyOne
 
         let markers = getMarkers fileContentsWithMarkers

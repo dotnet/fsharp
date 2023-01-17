@@ -16,7 +16,7 @@ module DocumentHighlightsServiceTests =
 
     let private getSpans (fileContents: string) (caretPosition: int) =
         let document = 
-            RoslynTestHelpers.CreateDocumentSolution(fileContents)
+            RoslynTestHelpers.CreateSolution(fileContents)
             |> Seq.exactlyOne
 
         FSharpDocumentHighlightsService.GetDocumentHighlights(document, caretPosition)

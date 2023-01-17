@@ -22,7 +22,7 @@ module CompletionProviderTests =
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
 
         let document =
-            RoslynTestHelpers.CreateDocumentSolution(fileContents)
+            RoslynTestHelpers.CreateSolution(fileContents)
             |> Seq.exactlyOne
 
         let results =
@@ -69,7 +69,7 @@ module CompletionProviderTests =
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
 
         let document =
-            RoslynTestHelpers.CreateDocumentSolution(fileContents)
+            RoslynTestHelpers.CreateSolution(fileContents)
             |> Seq.exactlyOne
 
         let actual =
