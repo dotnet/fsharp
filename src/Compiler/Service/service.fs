@@ -883,7 +883,6 @@ type BackgroundCompiler
                 if builder.ContainsFile fileName then
                     let! checkResults = builder.GetFullCheckResultsAfterFileInProject fileName
                     let! keyStoreOpt = checkResults.GetOrComputeItemKeyStoreIfEnabled()
-                    let _fileName = fileName
 
                     match keyStoreOpt with
                     | None -> return Seq.empty
