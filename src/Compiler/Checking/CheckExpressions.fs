@@ -11996,6 +11996,27 @@ and TcLetrecBindings overridesOK (cenv: cenv) env tpenv (binds, bindsm, scopem) 
 // Bind specifications of values
 //-------------------------------------------------------------------------
 
+let private PublishArguments (cenv: cenv) (env: TcEnv) vspec (synValSig: SynValSig) numEnclosingTypars =
+    let arities = arityOfVal vspec
+    let _tps, _witnessInfos, curriedArgInfos, _retTy, _ = GetValReprTypeInCompiledForm cenv.g arities numEnclosingTypars vspec.Type vspec.DefinitionRange
+
+    let argInfos =
+        // Drop "this" argument for instance methods
+        match vspec.IsInstanceMember, curriedArgInfos with
+        | true, _::args
+        | _, args -> args
+
+    let synArgInfos = synValSig.SynInfo.CurriedArgInfos
+    let argData =
+        (synArgInfos, argInfos)
+        ||> Seq.zip
+        |> Seq.collect (fun x -> x ||> Seq.zip)
+        |> Seq.choose (fun (synArgInfo, argInfo) -> synArgInfo.Ident |> Option.map (pair argInfo))
+
+    for (argTy, argReprInfo), ident in argData do
+        let item = Item.OtherName (Some ident, argTy, Some argReprInfo, None, ident.idRange)
+        CallNameResolutionSink cenv.tcSink (ident.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Binding, env.AccessRights)
+
 let TcAndPublishValSpec (cenv: cenv, env, containerInfo: ContainerInfo, declKind : DeclKind, memFlagsOpt, tpenv, synValSig) =
 
     let g = cenv.g
@@ -12017,7 +12038,7 @@ let TcAndPublishValSpec (cenv: cenv, env, containerInfo: ContainerInfo, declKind
 
     (tpenv, valinfos) ||> List.mapFold (fun tpenv valSpecResult ->
 
-        let (ValSpecResult (altActualParent, memberInfoOpt, ident, enclosingDeclaredTypars, declaredTypars, ty, prelimValReprInfo, declKind)) = valSpecResult
+        let (ValSpecResult (altActualParent, memberInfoOpt, id, enclosingDeclaredTypars, declaredTypars, ty, prelimValReprInfo, declKind)) = valSpecResult
 
         let inlineFlag = ComputeInlineFlag (memberInfoOpt |> Option.map (fun (PrelimMemberInfo(memberInfo, _, _)) -> memberInfo.MemberFlags)) isInline mutableFlag g attrs m
 
@@ -12028,11 +12049,11 @@ let TcAndPublishValSpec (cenv: cenv, env, containerInfo: ContainerInfo, declKind
         let explicitTyparInfo = ExplicitTyparInfo(declaredTypars, declaredTypars, synCanInferTypars)
 
         let generalizedTypars =
-            GeneralizationHelpers.ComputeAndGeneralizeGenericTypars(cenv, denv, ident.idRange,
+            GeneralizationHelpers.ComputeAndGeneralizeGenericTypars(cenv, denv, id.idRange,
                 emptyFreeTypars, canInferTypars, CanGeneralizeConstrainedTypars, inlineFlag,
                 None, allDeclaredTypars, freeInType, ty, false)
 
-        let valscheme1 = PrelimVal1(ident, explicitTyparInfo, ty, Some prelimValReprInfo, memberInfoOpt, mutableFlag, inlineFlag, NormalVal, noArgOrRetAttribs, vis, false)
+        let valscheme1 = PrelimVal1(id, explicitTyparInfo, ty, Some prelimValReprInfo, memberInfoOpt, mutableFlag, inlineFlag, NormalVal, noArgOrRetAttribs, vis, false)
 
         let valscheme2 = GeneralizeVal cenv denv enclosingDeclaredTypars generalizedTypars valscheme1
 
@@ -12063,26 +12084,7 @@ let TcAndPublishValSpec (cenv: cenv, env, containerInfo: ContainerInfo, declKind
         let xmlDoc = xmlDoc.ToXmlDoc(checkXmlDocs, paramNames)
         let vspec = MakeAndPublishVal cenv env (altActualParent, true, declKind, ValNotInRecScope, valscheme, attrs, xmlDoc, literalValue, false)
 
-        let arities = arityOfVal vspec
-        let numEnclosingTypars = allDeclaredTypars.Length
-        let _tps, _witnessInfos, curriedArgInfos, _retTy, _ = GetValReprTypeInCompiledForm cenv.g arities numEnclosingTypars vspec.Type vspec.DefinitionRange
-
-        let argInfos =
-            // Drop "this" argument for instance methods
-            match vspec.IsInstanceMember, curriedArgInfos with
-            | true, _::args
-            | _, args -> args
-
-        let synArgInfos = synValSig.SynInfo.CurriedArgInfos
-        let argData =
-            (synArgInfos, argInfos)
-            ||> Seq.zip
-            |> Seq.collect (fun x -> x ||> Seq.zip)
-            |> Seq.choose (fun (synArgInfo, argInfo) -> synArgInfo.Ident |> Option.map (pair argInfo))
-
-        for (argTy, argReprInfo), ident in argData do
-            let item = Item.OtherName (Some ident, argTy, Some argReprInfo, None, ident.idRange)
-            CallNameResolutionSink cenv.tcSink (ident.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Binding, env.AccessRights)
+        PublishArguments cenv env vspec synValSig allDeclaredTypars.Length
 
         assert(vspec.InlineInfo = inlineFlag)
 
