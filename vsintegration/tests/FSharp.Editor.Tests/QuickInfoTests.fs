@@ -6,19 +6,20 @@ open System.IO
 open Microsoft.VisualStudio.FSharp.Editor
 open Xunit
 open FSharp.Editor.Tests.Helpers
+open Microsoft.CodeAnalysis
+open System
 
 module QuickInfo =
 
-    let internal GetQuickInfo (project: FSharpProject) (fileName: string) (caretPosition: int) =
+    let internal GetQuickInfo (code: string) (fileName: string) (caretPosition: int) =
         async {
-            let code = File.ReadAllText(fileName)
             let document = RoslynTestHelpers.CreateSingleDocumentSolution(fileName, code)
             return! FSharpAsyncQuickInfoSource.ProvideQuickInfo(document, caretPosition)
         }
         |> Async.RunSynchronously
 
-    let GetQuickInfoText (project: FSharpProject) (fileName: string) (caretPosition: int) =
-        let sigHelp = GetQuickInfo project fileName caretPosition
+    let GetQuickInfoText (code: string) (fileName: string) (caretPosition: int) =
+        let sigHelp = GetQuickInfo code fileName caretPosition
 
         match sigHelp with
         | Some (quickInfo) ->
@@ -36,10 +37,27 @@ module QuickInfo =
             System.String.Join(System.String.Empty, (Seq.concat [ mainTextItems; docTextItems ]))
         | _ -> ""
 
+    /// Strips cursor information from each file and returns the name and cursor position of the last file to specify it.
+    let GetCaretPosition2 name (contents: string) =
+        let caretSentinel = "$$"
+        let mutable cursorInfo: (string * int * string) = (null, 0, null)
+
+        // find the '$$' sentinel that represents the cursor location
+        let caretPosition = contents.IndexOf(caretSentinel)
+
+        if caretPosition >= 0 then
+            let newContents =
+                contents.Substring(0, caretPosition)
+                + contents.Substring(caretPosition + caretSentinel.Length)
+
+            cursorInfo <- (name, caretPosition, newContents)
+
+        cursorInfo
+
     let GetQuickInfoTextFromCode (code: string) =
-        use project = SingleFileProject code
-        let fileName, caretPosition = project.GetCaretPosition()
-        GetQuickInfoText project fileName caretPosition
+        let fileName = "C:\\test.fs"
+        let fileName, caretPosition, newcode = GetCaretPosition2 fileName code
+        GetQuickInfoText newcode fileName caretPosition
 
     let expectedLines (lines: string list) = System.String.Join("\n", lines)
 
@@ -611,7 +629,7 @@ exception SomeError of ``thing wi$$th space``: string
             """
 type R = {| ``thing wi$$th space``: string |}
 """
-
+        
         let expected = "``thing with space``"
 
         let actual = GetQuickInfoTextFromCode code
