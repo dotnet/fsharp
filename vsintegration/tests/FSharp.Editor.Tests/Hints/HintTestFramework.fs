@@ -30,10 +30,9 @@ module HintTestFramework =
         }
 
     let getFsDocument code =
-        use project = SingleFileProject code
-        let fileName = fst project.Files.Head
+        let fileName = "C://test.fs"
         // I don't know, without this lib some symbols are just not loaded
-        let options = { project.Options with OtherOptions = [| "--targetprofile:netcore" |] }
+        let options = { RoslynTestHelpers.DefaultProjectOptions with OtherOptions = [| "--targetprofile:netcore" |] }
         let document = RoslynTestHelpers.CreateSingleDocumentSolution(fileName, code, options = options)
         document
 

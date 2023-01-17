@@ -101,14 +101,11 @@ module SignatureHelpProvider =
 
             completionTypeNames
 
-    let GetCompletionTypeNamesFromCursorPosition (project: FSharpProject) =
+    let GetCompletionTypeNamesFromXmlString (xml: string) =
+        use project = CreateProject xml
         let fileName, caretPosition = project.GetCaretPosition()
         let completionNames = GetCompletionTypeNames project fileName caretPosition
         completionNames
-
-    let GetCompletionTypeNamesFromXmlString (xml: string) =
-        use project = CreateProject xml
-        GetCompletionTypeNamesFromCursorPosition project
 
     let assertSignatureHelpForMethodCalls (fileContents: string) (marker: string) (expected: (string * int * int * string option) option) =
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
