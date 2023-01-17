@@ -11,11 +11,9 @@ open Microsoft.CodeAnalysis.Classification
 open FSharp.Editor.Tests.Helpers
 
 type SemanticClassificationServiceTests() =
-    let filePath = "C:\\test0.fs"
-
     let getRanges (source: string) : SemanticClassificationItem list =
         asyncMaybe {
-            let document = RoslynTestHelpers.CreateSingleDocumentSolution(filePath, source)
+            let document = RoslynTestHelpers.CreateSingleDocumentSolution(source)
 
             let! _, checkFileResults =
                 document.GetFSharpParseAndCheckResultsAsync("SemanticClassificationServiceTests")

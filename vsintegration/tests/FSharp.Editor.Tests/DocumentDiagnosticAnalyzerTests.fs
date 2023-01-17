@@ -8,14 +8,13 @@ open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Editor.Tests.Helpers
 
 type DocumentDiagnosticAnalyzerTests() =
-    let filePath = "C:\\test0.fs"
     let startMarker = "(*start*)"
     let endMarker = "(*end*)"
 
     let getDiagnostics (fileContents: string) =
         async {
             let document =
-                RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents)
+                RoslynTestHelpers.CreateSingleDocumentSolution(fileContents)
 
             let! syntacticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax)
             let! semanticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic)

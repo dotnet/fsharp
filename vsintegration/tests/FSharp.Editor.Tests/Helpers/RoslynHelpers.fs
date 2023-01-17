@@ -300,6 +300,13 @@ type RoslynTestHelpers private () =
         RoslynTestHelpers.CreateDocumentSolution [text] options
         |> Seq.exactlyOne
 
+    static member CreateSingleDocumentSolution(code: string, ?options) =
+        let text = SourceText.From(code)
+        let options = options |> Option.defaultValue RoslynTestHelpers.DefaultProjectOptions
+        
+        RoslynTestHelpers.CreateDocumentSolution [text] options
+        |> Seq.exactlyOne
+
     static member CreateTwoDocumentSolution(filePath1, code1: string, filePath2, code2: string) =
         let text1 = SourceText.From code1
         let text2 = SourceText.From code2

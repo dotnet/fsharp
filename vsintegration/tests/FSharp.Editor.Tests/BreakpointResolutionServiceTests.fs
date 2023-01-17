@@ -10,8 +10,6 @@ open FSharp.Editor.Tests.Helpers
 
 type BreakpointResolutionServiceTests() =
 
-    let fileName = "C:\\test0.fs"
-
     let code =
         "
 // This is a comment
@@ -53,7 +51,7 @@ let main argv =
         Assert.True(searchPosition >= 0, $"SearchToken '{searchToken}' is not found in code")
 
         let document =
-            RoslynTestHelpers.CreateSingleDocumentSolution(fileName, code)
+            RoslynTestHelpers.CreateSingleDocumentSolution(code)
 
         let searchSpan =
             TextSpan.FromBounds(searchPosition, searchPosition + searchToken.Length)
