@@ -194,13 +194,13 @@ type HelpContextServiceTests() =
 
         let keywords =
             [
-                Some "Test.escaped func"
-                Some "Test.escaped value"
-                Some "Test.x"
-                Some "Test.escaped func"
-                Some "Test.escaped value"
-                Some "Test.z"
-                Some "Test.z"
+                Some "Test0.escaped func"
+                Some "Test0.escaped value"
+                Some "Test0.x"
+                Some "Test0.escaped func"
+                Some "Test0.escaped value"
+                Some "Test0.z"
+                Some "Test0.z"
             ]
 
         TestF1Keywords(keywords, file)
@@ -437,5 +437,5 @@ type HelpContextServiceTests() =
                 "    'T.StaticProp$erty"
             ]
 
-        let keywords = [ Some "Test.IStaticProperty`1.StaticProperty" ]
+        let keywords = [ Some "Test0.IStaticProperty`1.StaticProperty" ]
         TestF1Keywords(keywords, file)
