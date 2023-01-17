@@ -16,11 +16,11 @@ type HelpContextServiceTests() =
     let PathRelativeToTestAssembly p =
         Path.Combine(Path.GetDirectoryName(Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).LocalPath), p)
 
-    let filePath = "C:\\test.fs"
+    let filePath = "C:\\test0.fs"
 
     let makeOptions args =
         {
-            ProjectFileName = "C:\\test.fsproj"
+            ProjectFileName = "C:\\test0.fsproj"
             ProjectId = None
             SourceFiles = [| filePath |]
             ReferencedProjects = [||]
@@ -63,7 +63,7 @@ type HelpContextServiceTests() =
                     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
 
                     let classifiedSpans =
-                        Tokenizer.getClassifiedSpans (documentId, sourceText, textLine.Span, Some "test.fs", [], CancellationToken.None)
+                        Tokenizer.getClassifiedSpans (documentId, sourceText, textLine.Span, Some "test0.fs", [], CancellationToken.None)
 
                     FSharpHelpContextService.GetHelpTerm(document, span, classifiedSpans)
                     |> Async.RunSynchronously

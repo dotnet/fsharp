@@ -16,9 +16,9 @@ type SyntacticClassificationServiceTests() =
 
         let fileName =
             if isScriptFile.IsSome && isScriptFile.Value then
-                "test.fsx"
+                "test0.fsx"
             else
-                "test.fs"
+                "test0.fs"
 
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
 

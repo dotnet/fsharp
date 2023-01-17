@@ -55,7 +55,7 @@ module GoToDefinitionServiceTests =
 
     let makeOptions filePath args =
         {
-            ProjectFileName = "C:\\test.fsproj"
+            ProjectFileName = "C:\\test0.fsproj"
             ProjectId = None
             SourceFiles = [| filePath |]
             ReferencedProjects = [||]

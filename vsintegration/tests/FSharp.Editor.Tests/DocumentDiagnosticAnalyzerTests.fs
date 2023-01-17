@@ -8,7 +8,7 @@ open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Editor.Tests.Helpers
 
 type DocumentDiagnosticAnalyzerTests() =
-    let filePath = "C:\\test.fs"
+    let filePath = "C:\\test0.fs"
     let startMarker = "(*start*)"
     let endMarker = "(*end*)"
 

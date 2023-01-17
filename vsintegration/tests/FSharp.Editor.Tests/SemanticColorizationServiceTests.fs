@@ -11,7 +11,7 @@ open Microsoft.CodeAnalysis.Classification
 open FSharp.Editor.Tests.Helpers
 
 type SemanticClassificationServiceTests() =
-    let filePath = "C:\\test.fs"
+    let filePath = "C:\\test0.fs"
 
     let getRanges (source: string) : SemanticClassificationItem list =
         asyncMaybe {

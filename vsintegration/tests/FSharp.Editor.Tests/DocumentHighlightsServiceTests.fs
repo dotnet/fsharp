@@ -12,7 +12,7 @@ module DocumentHighlightsServiceTests =
     open Microsoft.VisualStudio.FSharp.Editor
     open FSharp.Compiler.Text
 
-    let filePath = "C:\\test.fs"
+    let filePath = "C:\\test0.fs"
 
     let private getSpans (fileContents: string) (caretPosition: int) =
         let document = RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents)

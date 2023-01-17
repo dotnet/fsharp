@@ -10,7 +10,7 @@ open FSharp.Editor.Tests.Helpers
 
 type BreakpointResolutionServiceTests() =
 
-    let fileName = "C:\\test.fs"
+    let fileName = "C:\\test0.fs"
 
     let code =
         "

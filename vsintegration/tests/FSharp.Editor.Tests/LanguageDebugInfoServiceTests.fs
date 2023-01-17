@@ -11,7 +11,7 @@ open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.Text
 
 type LanguageDebugInfoServiceTests() =
-    let fileName = "C:\\test.fs"
+    let fileName = "C:\\test0.fs"
     let defines = []
 
     let code =

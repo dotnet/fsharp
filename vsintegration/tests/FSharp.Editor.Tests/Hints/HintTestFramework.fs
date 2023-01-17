@@ -30,14 +30,14 @@ module HintTestFramework =
         }
 
     let getFsDocument code =
-        let fileName = "C://test.fs"
+        let fileName = "C://test0.fs"
         // I don't know, without this lib some symbols are just not loaded
         let options = { RoslynTestHelpers.DefaultProjectOptions with OtherOptions = [| "--targetprofile:netcore" |] }
         let document = RoslynTestHelpers.CreateSingleDocumentSolution(fileName, code, options = options)
         document
 
     let getFsiAndFsDocuments (fsiCode: string) (fsCode: string) =
-        RoslynTestHelpers.CreateTwoDocumentSolution("test.fsi", SourceText.From fsiCode, "test.fs", SourceText.From fsCode)
+        RoslynTestHelpers.CreateTwoDocumentSolution("test0.fsi", fsiCode, "test0.fs", fsCode)
 
     let getHints (document: Document) hintKinds =
         async {

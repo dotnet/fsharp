@@ -218,117 +218,71 @@ type TestHostServices() =
 [<AbstractClass; Sealed>]
 type RoslynTestHelpers private () =
 
-    static member private CreateSingleDocumentSolution(filePath, text: SourceText, options: FSharpProjectOptions) =
-        let isScript =
-            String.Equals(Path.GetExtension(filePath), ".fsx", StringComparison.OrdinalIgnoreCase)
+    static member private GetSourceCodeKind filePath = 
+        let extension = Path.GetExtension(filePath)
+        match extension with
+        | ".fsx" -> SourceCodeKind.Script
+        | ".fs" -> SourceCodeKind.Regular
+        | _ -> failwith "not supported"
 
+    static member private CreateSolution projects =
         let workspace = new AdhocWorkspace(TestHostServices())
-
-        let projId = ProjectId.CreateNewId()
-        let docId = DocumentId.CreateNewId(projId)
-
-        let docInfo =
-            DocumentInfo.Create(
-                docId,
-                filePath,
-                loader = TextLoader.From(text.Container, VersionStamp.Create(DateTime.UtcNow)),
-                filePath = filePath,
-                sourceCodeKind =
-                    if isScript then
-                        SourceCodeKind.Script
-                    else
-                        SourceCodeKind.Regular
-            )
-
-        let projFilePath = "C:\\test.fsproj"
-
-        let projInfo =
-            ProjectInfo.Create(
-                projId,
-                VersionStamp.Create(DateTime.UtcNow),
-                projFilePath,
-                "test.dll",
-                LanguageNames.FSharp,
-                documents = [ docInfo ],
-                filePath = projFilePath
-            )
-
-        let solutionInfo =
-            SolutionInfo.Create(SolutionId.CreateNewId(), VersionStamp.Create(DateTime.UtcNow), "test.sln", [ projInfo ])
-
+        let id = SolutionId.CreateNewId()
+        let versionStamp = VersionStamp.Create(DateTime.UtcNow)
+        let slnPath = "test.sln"
+ 
+        let solutionInfo = SolutionInfo.Create(id, versionStamp, slnPath, projects)
         let solution = workspace.AddSolution(solutionInfo)
-        let workspaceService = workspace.Services.GetService<IFSharpWorkspaceService>()
-        let document = solution.GetProject(projId).GetDocument(docId)
+        solution
+
+    static member private CreateDocumentInfo docId filePath (text: SourceText) =
+        DocumentInfo.Create(
+            docId,
+            filePath,
+            loader = TextLoader.From(text.Container, VersionStamp.Create(DateTime.UtcNow)),
+            filePath = filePath,
+            sourceCodeKind = RoslynTestHelpers.GetSourceCodeKind filePath)
+
+    static member private CreateProjectInfo id filePath documents=
+        ProjectInfo.Create(
+            id,
+            VersionStamp.Create(DateTime.UtcNow),
+            filePath,
+            "test.dll",
+            LanguageNames.FSharp,
+            documents = documents,
+            filePath = filePath)
+
+    static member private CreateDocumentSolution sources (options: FSharpProjectOptions) =
+        let projId = ProjectId.CreateNewId()
+
+        let docInfos = 
+            sources
+            |> Seq.mapi (fun i text -> RoslynTestHelpers.CreateDocumentInfo (DocumentId.CreateNewId(projId)) $"C:\\test{i}.fs" text)
+
+        let projFilePath = "C:\\test0.fsproj"
+        let projInfo = RoslynTestHelpers.CreateProjectInfo projId projFilePath docInfos
+        let solution = RoslynTestHelpers.CreateSolution [projInfo]
+
+        let workspaceService = solution.Workspace.Services.GetService<IFSharpWorkspaceService>()
+        let documents = solution.GetProject(projId).Documents
 
         workspaceService.FSharpProjectOptionsManager.SetCommandLineOptions(
             projId,
             options.SourceFiles,
-            options.OtherOptions |> ImmutableArray.CreateRange
-        )
+            options.OtherOptions |> ImmutableArray.CreateRange)
 
         let projectOptions = options
         let parsingOptions, _ = workspaceService.Checker.GetParsingOptionsFromProjectOptions options
-        document.SetFSharpProjectOptionsForTesting(projectOptions, parsingOptions)
         
-        document
-
-    static member CreateTwoDocumentSolution(filePath1, text1: SourceText, filePath2, text2: SourceText) =
-        let workspace = new AdhocWorkspace(TestHostServices())
-
-        let projId = ProjectId.CreateNewId()
-        let docId1 = DocumentId.CreateNewId(projId)
-        let docId2 = DocumentId.CreateNewId(projId)
-
-        let docInfo1 =
-            DocumentInfo.Create(
-                docId1,
-                filePath1,
-                loader = TextLoader.From(text1.Container, VersionStamp.Create(DateTime.UtcNow)),
-                filePath = filePath1,
-                sourceCodeKind = SourceCodeKind.Regular
-            )
-
-        let docInfo2 =
-            DocumentInfo.Create(
-                docId2,
-                filePath2,
-                loader = TextLoader.From(text2.Container, VersionStamp.Create(DateTime.UtcNow)),
-                filePath = filePath2,
-                sourceCodeKind = SourceCodeKind.Regular
-            )
-
-        let projFilePath = "C:\\test.fsproj"
-
-        let projInfo =
-            ProjectInfo.Create(
-                projId,
-                VersionStamp.Create(DateTime.UtcNow),
-                projFilePath,
-                "test.dll",
-                LanguageNames.FSharp,
-                documents = [ docInfo1; docInfo2 ],
-                filePath = projFilePath
-            )
-
-        let solutionInfo =
-            SolutionInfo.Create(SolutionId.CreateNewId(), VersionStamp.Create(DateTime.UtcNow), "test.sln", [ projInfo ])
-
-        let solution = workspace.AddSolution(solutionInfo)
-
-        workspace
-            .Services
-            .GetService<IFSharpWorkspaceService>()
-            .FSharpProjectOptionsManager.SetCommandLineOptions(projId, [| filePath1; filePath2 |], ImmutableArray.Empty)
-
-        let document1 = solution.GetProject(projId).GetDocument(docId1)
-        let document2 = solution.GetProject(projId).GetDocument(docId2)
-        document1, document2
+        documents |> Seq.iter (fun doc -> doc.SetFSharpProjectOptionsForTesting(projectOptions, parsingOptions))
+        documents
 
     static member DefaultProjectOptions: FSharpProjectOptions =
         {
-            ProjectFileName = "C:\\test.fsproj"
+            ProjectFileName = "C:\\test0.fsproj"
             ProjectId = None
-            SourceFiles = [| "C:\\test.fs" |]
+            SourceFiles = [| "C:\\test0.fs" |]
             ReferencedProjects = [||]
             OtherOptions = [||]
             IsIncompleteTypeCheckEnvironment = true
@@ -342,9 +296,13 @@ type RoslynTestHelpers private () =
     static member CreateSingleDocumentSolution(filePath, code: string, ?options) =
         let text = SourceText.From(code)
         let options = options |> Option.defaultValue RoslynTestHelpers.DefaultProjectOptions
-        RoslynTestHelpers.CreateSingleDocumentSolution(filePath, text, options)
-    
+        
+        RoslynTestHelpers.CreateDocumentSolution [text] options
+        |> Seq.exactlyOne
+
     static member CreateTwoDocumentSolution(filePath1, code1: string, filePath2, code2: string) =
         let text1 = SourceText.From code1
         let text2 = SourceText.From code2
-        RoslynTestHelpers.CreateTwoDocumentSolution(filePath1, text1, filePath2, text2)
+
+        let docs = RoslynTestHelpers.CreateDocumentSolution [text1; text2] RoslynTestHelpers.DefaultProjectOptions
+        (docs |> Seq.head, docs |> Seq.last)

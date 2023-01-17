@@ -13,11 +13,11 @@ open FSharp.Editor.Tests.Helpers
 // AppDomain helper
 type Worker() =
 
-    let filePath = "C:\\test.fsx"
+    let filePath = "C:\\test0.fsx"
 
     let projectOptions =
         {
-            ProjectFileName = "C:\\test.fsproj"
+            ProjectFileName = "C:\\test0.fsproj"
             ProjectId = None
             SourceFiles = [| filePath |]
             ReferencedProjects = [||]

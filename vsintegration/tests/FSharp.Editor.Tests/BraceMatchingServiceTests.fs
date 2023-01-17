@@ -12,7 +12,7 @@ open FSharp.Editor.Tests.Helpers
 type BraceMatchingServiceTests() =
     let checker = FSharpChecker.Create()
 
-    let fileName = "C:\\test.fs"
+    let fileName = "C:\\test0.fs"
 
     member private this.VerifyNoBraceMatch(fileContents: string, marker: string) =
         let sourceText = SourceText.From(fileContents)

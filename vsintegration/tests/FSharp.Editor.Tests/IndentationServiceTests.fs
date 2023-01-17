@@ -13,11 +13,11 @@ open Microsoft.CodeAnalysis.Formatting
 type IndentationServiceTests() =
     let checker = FSharpChecker.Create()
 
-    let filePath = "C:\\test.fs"
+    let filePath = "C:\\test0.fs"
 
     let projectOptions: FSharpProjectOptions =
         {
-            ProjectFileName = "C:\\test.fsproj"
+            ProjectFileName = "C:\\test0.fsproj"
             ProjectId = None
             SourceFiles = [| filePath |]
             ReferencedProjects = [||]

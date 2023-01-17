@@ -10,7 +10,7 @@ module QuickInfo =
 
     let internal GetQuickInfo code caretPosition =
         async {
-            let fileName = "C:\\test.fs"
+            let fileName = "C:\\test0.fs"
             let document = RoslynTestHelpers.CreateSingleDocumentSolution(fileName, code)
             return! FSharpAsyncQuickInfoSource.ProvideQuickInfo(document, caretPosition)
         }
