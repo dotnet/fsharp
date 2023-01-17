@@ -76,7 +76,8 @@ type SyntheticProject =
       ProjectDir: string
       SourceFiles: SyntheticSourceFile list
       DependsOn: SyntheticProject list
-      RecursiveNamespace: bool }
+      RecursiveNamespace: bool
+      OtherOptions: string list }
 
     static member Create(?name: string) =
         let name = defaultArg name $"TestProject_{Guid.NewGuid().ToString()[..7]}"
@@ -86,7 +87,8 @@ type SyntheticProject =
           ProjectDir = dir ++ name
           SourceFiles = []
           DependsOn = []
-          RecursiveNamespace = false }
+          RecursiveNamespace = false
+          OtherOptions = [] }
 
     static member Create([<ParamArray>] sourceFiles: SyntheticSourceFile[]) =
         { SyntheticProject.Create() with SourceFiles = sourceFiles |> List.ofArray }
@@ -131,7 +133,8 @@ type SyntheticProject =
                 [| yield! baseOptions.OtherOptions
                    "--optimize+"
                    for p in this.DependsOn do
-                       $"-r:{p.OutputFilename}" |]
+                       $"-r:{p.OutputFilename}"
+                   yield! this.OtherOptions |]
             ReferencedProjects =
                 [| for p in this.DependsOn do
                        FSharpReferencedProject.CreateFSharp(p.OutputFilename, p.GetProjectOptions checker) |]
@@ -604,6 +607,21 @@ type ProjectWorkflowBuilder(initialProject: SyntheticProject, ?checker: FSharpCh
             return ctx
         }
 
+    [<CustomOperation "compileWithFSC">]
+    member this.Compile(workflow: Async<WorkflowContext>) =
+        async {
+            let! ctx = workflow
+            let projectOptions = ctx.Project.GetProjectOptions(checker)
+            let arguments =
+                [|
+                    yield "fsc.exe"
+                    yield! projectOptions.OtherOptions
+                    yield! projectOptions.SourceFiles
+                |]
+            let! _ = checker.Compile(arguments)
+            return ctx
+        }
+    
 /// Execute a set of operations on a given synthetic project.
 /// The project is saved to disk and type checked at the start.
 let projectWorkflow project = ProjectWorkflowBuilder project
