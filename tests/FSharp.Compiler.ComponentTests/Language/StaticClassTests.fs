@@ -157,6 +157,8 @@ type B =
          |> shouldFail
          |> withDiagnostics [
              (Error 3553, Line 6, Col 5, Line 6, Col 30, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Additional constructor is not allowed.")
+             (Error 3558, Line 4, Col 9, Line 4, Col 10, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Explicit field declarations are not allowed.")
+             (Error 3558, Line 5, Col 17, Line 5, Col 18, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Explicit field declarations are not allowed.")
          ]
 
     [<Theory>]
@@ -550,3 +552,138 @@ type ConsoleRetriever() =
          |> withLangVersionPreview
          |> compile
          |> shouldSucceed
+         
+    [<Fact>]
+    let ``Sealed and AbstractClass on a type with implicit constructor declaring static explicit field in Lang 70`` () =
+        Fsx """
+[<Sealed; AbstractClass>]
+type T =
+    [<DefaultValue>]
+    static val mutable private F : int
+    [<DefaultValue>]
+    static val mutable private G : int
+    
+    static member Inc() = T.F <- T.F + 1
+    
+    static member Get() = T.F
+        """
+         |> withLangVersion70
+         |> compile
+         |> shouldSucceed
+         
+    [<Fact>]
+    let ``Sealed and AbstractClass on a type with declaring static explicit field in Lang 70`` () =
+        Fsx """
+[<Sealed; AbstractClass>]
+type T() =
+    [<DefaultValue>]
+    static val mutable private F : int
+    [<DefaultValue>]
+    static val mutable private G : int
+    
+    static member Inc() = T.F <- T.F + 1
+    
+    static member Get() = T.F
+        """
+         |> withLangVersion70
+         |> compile
+         |> shouldSucceed
+         
+    [<Fact>]
+    let ``Sealed and AbstractClass on a type with implicit constructor declaring static explicit field in Lang preview`` () =
+        Fsx """
+[<Sealed; AbstractClass>]
+type T =
+    [<DefaultValue>]
+    static val mutable private F : int
+    [<DefaultValue>]
+    static val mutable private G : int
+    
+    static member Inc() = T.F <- T.F + 1
+    
+    static member Get() = T.F
+        """
+         |> withLangVersionPreview
+         |> compile
+         |> shouldSucceed
+         
+    [<Fact>]
+    let ``Sealed and AbstractClass on a type with declaring static explicit field in Lang preview`` () =
+        Fsx """
+[<Sealed; AbstractClass>]
+type T() =
+    [<DefaultValue>]
+    static val mutable private F : int
+    [<DefaultValue>]
+    static val mutable private G : int
+    
+    static member Inc() = T.F <- T.F + 1
+    
+    static member Get() = T.F
+        """
+         |> withLangVersionPreview
+         |> compile
+         |> shouldSucceed
+         
+    [<Fact>]
+    let ``When Sealed and AbstractClass on a type with non static explicit fields and implicit constructor in lang 70`` () =
+        Fsx """
+[<Sealed; AbstractClass>]
+type B =
+    val F : int
+    val mutable G : int
+        """
+         |> withLangVersion70
+         |> compile
+         |> shouldSucceed
+
+    [<Fact>]
+    let ``When Sealed and AbstractClass on a type with non static explicit fields and constructor in lang 70`` () =
+        Fsx """
+[<Sealed; AbstractClass>]
+type B() =
+    val F : int
+    val mutable G : int
+        """
+         |> withLangVersion70
+         |> compile
+         |> shouldFail
+         |> withDiagnostics [
+             (Error 880, Line 4, Col 9, Line 4, Col 16, "Uninitialized 'val' fields must be mutable and marked with the '[<DefaultValue>]' attribute. Consider using a 'let' binding instead of a 'val' field.")
+             (Error 880, Line 5, Col 17, Line 5, Col 24, "Uninitialized 'val' fields must be mutable and marked with the '[<DefaultValue>]' attribute. Consider using a 'let' binding instead of a 'val' field.")
+         ]
+
+    [<Fact>]
+    let ``When Sealed and AbstractClass on a type with non static explicit fields and implicit constructor in lang preview`` () =
+        Fsx """
+[<Sealed; AbstractClass>]
+type B =
+    val F : int
+    val mutable G : int
+        """
+         |> withLangVersionPreview
+         |> compile
+         |> shouldFail
+         |> withDiagnostics [
+             (Error 3558, Line 4, Col 9, Line 4, Col 10, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Explicit field declarations are not allowed.")
+             (Error 3558, Line 5, Col 17, Line 5, Col 18, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Explicit field declarations are not allowed.")
+         ]
+         
+    [<Fact>]
+    let ``When Sealed and AbstractClass on a type with non static explicit fields and constructor in lang preview`` () =
+        Fsx """
+[<Sealed; AbstractClass>]
+type B() =
+    val F : int
+    val mutable G : int
+        """
+         |> withLangVersionPreview
+         |> compile
+         |> shouldFail
+         |> withDiagnostics [
+             (Error 880, Line 4, Col 9, Line 4, Col 16, "Uninitialized 'val' fields must be mutable and marked with the '[<DefaultValue>]' attribute. Consider using a 'let' binding instead of a 'val' field.")
+             (Error 880, Line 5, Col 17, Line 5, Col 24, "Uninitialized 'val' fields must be mutable and marked with the '[<DefaultValue>]' attribute. Consider using a 'let' binding instead of a 'val' field.")
+             (Error 3558, Line 4, Col 9, Line 4, Col 10, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Explicit field declarations are not allowed.")
+             (Error 3558, Line 5, Col 17, Line 5, Col 18, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Explicit field declarations are not allowed.")
+         ]
+
