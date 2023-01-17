@@ -13,8 +13,6 @@ open FSharp.Compiler.AbstractIL.ILX.Types
 open FSharp.Compiler.AbstractIL.IL
 
 #if DEBUG
-let pretty () = true
-
 // --------------------------------------------------------------------
 // Pretty printing
 // --------------------------------------------------------------------
@@ -52,8 +50,6 @@ let mk_ppenv ilg =
         ppenvClassFormals = 0
         ppenvMethodFormals = 0
     }
-
-let debug_ppenv = mk_ppenv
 
 let ppenv_enter_modul env =
     { env with
@@ -135,14 +131,6 @@ let output_seq sep f os (a: seq<_>) =
             output_string os sep
             f os e.Current
 
-let output_array sep f os (a: _[]) =
-    if not (Array.isEmpty a) then
-        for i in 0 .. a.Length - 2 do
-            f os a[i]
-            output_string os sep
-
-        f os a[a.Length - 1]
-
 let output_parens f os a =
     output_string os "("
     f os a
@@ -153,18 +141,7 @@ let output_angled f os a =
     f os a
     output_string os ">"
 
-let output_bracks f os a =
-    output_string os "["
-    f os a
-    output_string os "]"
-
 let output_id os n = output_sqstring os n
-
-let output_label os n = output_string os n
-
-let output_lid os lid = output_seq "." output_string os lid
-
-let string_of_type_name (_, n) = n
 
 let output_byte os i =
     output_hex_digit os (i / 16)
@@ -293,16 +270,6 @@ and output_tyvar os d =
     output_u16 os d
     ()
 
-and goutput_ldtoken_info env os =
-    function
-    | ILToken.ILType x -> goutput_typ env os x
-    | ILToken.ILMethod x ->
-        output_string os "method "
-        goutput_mspec env os x
-    | ILToken.ILField x ->
-        output_string os "field "
-        goutput_fspec env os x
-
 and goutput_typ_with_shortened_class_syntax env os =
     function
     | ILType.Boxed tspec when tspec.GenericArgs = [] -> goutput_tref env os tspec.TypeRef
@@ -424,12 +391,6 @@ and goutput_dlocref env os (dref: ILType) =
         goutput_typ_with_shortened_class_syntax env os ty
         output_string os "::"
 
-and goutput_callsig env os (csig: ILCallingSignature) =
-    output_callconv os csig.CallingConv
-    output_string os " "
-    goutput_typ env os csig.ReturnType
-    output_parens (output_seq ", " (goutput_typ env)) os csig.ArgTypes
-
 and goutput_mref env os (mref: ILMethodRef) =
     output_callconv os mref.CallingConv
     output_string os " "
@@ -464,56 +425,6 @@ and goutput_mspec env os (mspec: ILMethodSpec) =
 
     goutput_gactuals env os mspec.GenericArgs
     output_parens (output_seq ", " (goutput_typ fenv)) os mspec.FormalArgTypes
-
-and goutput_vararg_mspec env os (mspec, varargs) =
-    match varargs with
-    | None -> goutput_mspec env os mspec
-    | Some varargs' ->
-        let fenv =
-            ppenv_enter_method mspec.GenericArity (ppenv_enter_tdef (mkILFormalTypars mspec.DeclaringType.GenericArgs) env)
-
-        output_callconv os mspec.CallingConv
-        output_string os " "
-        goutput_typ fenv os mspec.FormalReturnType
-        output_string os " "
-        goutput_dlocref env os mspec.DeclaringType
-        let name = mspec.Name
-
-        if name = ".ctor" || name = ".cctor" then
-            output_string os name
-        else
-            output_id os name
-
-        goutput_gactuals env os mspec.GenericArgs
-        output_string os "("
-        output_seq ", " (goutput_typ fenv) os mspec.FormalArgTypes
-        output_string os ", ..., "
-        output_seq ", " (goutput_typ fenv) os varargs'
-        output_string os ")"
-
-and goutput_vararg_sig env os (csig: ILCallingSignature, varargs: ILVarArgs) =
-    match varargs with
-    | None ->
-        goutput_callsig env os csig
-        ()
-    | Some varargs' ->
-        goutput_typ env os csig.ReturnType
-        output_string os " ("
-        let argTys = csig.ArgTypes
-
-        if argTys.Length <> 0 then
-            output_seq ", " (goutput_typ env) os argTys
-
-        output_string os ", ..., "
-        output_seq ", " (goutput_typ env) os varargs'
-        output_string os ")"
-
-and goutput_fspec env os (x: ILFieldSpec) =
-    let fenv = ppenv_enter_tdef (mkILFormalTypars x.DeclaringType.GenericArgs) env
-    goutput_typ fenv os x.FormalType
-    output_string os " "
-    goutput_dlocref env os x.DeclaringType
-    output_id os x.Name
 
 let output_member_access os access =
     output_string
@@ -592,41 +503,6 @@ let output_option f os =
     | None -> ()
     | Some x -> f os x
 
-let goutput_alternative_ref env os (alt: IlxUnionCase) =
-    output_id os alt.Name
-
-    alt.FieldDefs
-    |> output_parens (output_array ", " (fun os fdef -> goutput_typ env os fdef.Type)) os
-
-let goutput_curef env os (IlxUnionRef (_, tref, alts, _, _)) =
-    output_string os " .classunion import "
-    goutput_tref env os tref
-    output_parens (output_array ", " (goutput_alternative_ref env)) os alts
-
-let goutput_cuspec env os (IlxUnionSpec (IlxUnionRef (_, tref, _, _, _), i)) =
-    output_string os "class /* classunion */ "
-    goutput_tref env os tref
-    goutput_gactuals env os i
-
-let output_basic_type os x =
-    output_string
-        os
-        (match x with
-         | DT_I1 -> "i1"
-         | DT_U1 -> "u1"
-         | DT_I2 -> "i2"
-         | DT_U2 -> "u2"
-         | DT_I4 -> "i4"
-         | DT_U4 -> "u4"
-         | DT_I8 -> "i8"
-         | DT_U8 -> "u8"
-         | DT_R4 -> "r4"
-         | DT_R8 -> "r8"
-         | DT_R -> "r"
-         | DT_I -> "i"
-         | DT_U -> "u"
-         | DT_REF -> "ref")
-
 let output_custom_attr_data os data =
     output_string os " = "
     output_parens output_bytes os data
@@ -684,28 +560,6 @@ let goutput_fdef _tref env os (fd: ILFieldDef) =
     output_string os "\n"
     goutput_custom_attrs env os fd.CustomAttrs
 
-let output_alignment os =
-    function
-    | Aligned -> ()
-    | Unaligned1 -> output_string os "unaligned. 1 "
-    | Unaligned2 -> output_string os "unaligned. 2 "
-    | Unaligned4 -> output_string os "unaligned. 4 "
-
-let output_volatility os =
-    function
-    | Nonvolatile -> ()
-    | Volatile -> output_string os "volatile. "
-
-let output_tailness os =
-    function
-    | Tailcall -> output_string os "tail. "
-    | _ -> ()
-
-let output_after_tailcall os =
-    function
-    | Tailcall -> output_string os " ret "
-    | _ -> ()
-
 let rec goutput_apps env os =
     function
     | Apps_tyapp (actual, cs) ->
@@ -721,25 +575,6 @@ let rec goutput_apps env os =
     | Apps_done ty ->
         output_string os "--> "
         goutput_typ env os ty
-
-/// Print the short form of instructions
-let output_short_u16 os (x: uint16) =
-    if int x < 256 then
-        (output_string os ".s "
-         output_u16 os x)
-    else
-        output_string os " "
-        output_u16 os x
-
-let output_short_i32 os i32 =
-    if i32 < 256 && 0 >= i32 then
-        (output_string os ".s "
-         output_i32 os i32)
-    else
-        output_string os " "
-        output_i32 os i32
-
-let output_code_label os lab = output_string os (formatCodeLabel lab)
 
 let goutput_local env os (l: ILLocal) =
     goutput_typ env os l.Type
@@ -757,287 +592,6 @@ let goutput_param env os (l: ILParameter) =
 
 let goutput_params env os ps =
     output_parens (output_seq ", " (goutput_param env)) os ps
-
-let goutput_freevar env os l =
-    goutput_typ env os l.fvType
-    output_string os " "
-    output_sqstring os l.fvName
-
-let goutput_freevars env os ps =
-    output_parens (output_seq ", " (goutput_freevar env)) os ps
-
-let output_source os (s: ILDebugPoint) =
-    if s.Document.File <> "" then
-        output_string os " .line "
-        output_int os s.Line
-
-        if s.Column <> -1 then
-            output_string os " : "
-            output_int os s.Column
-
-        output_string os " /* - "
-        output_int os s.EndLine
-
-        if s.Column <> -1 then
-            output_string os " : "
-            output_int os s.EndColumn
-
-        output_string os "*/ "
-        output_sqstring os s.Document.File
-
-let rec goutput_instr env os inst =
-    match inst with
-    | si when isNoArgInstr si -> output_lid os (wordsOfNoArgInstr si)
-    | I_brcmp (cmp, tg1) ->
-        output_string
-            os
-            (match cmp with
-             | BI_beq -> "beq"
-             | BI_bgt -> "bgt"
-             | BI_bgt_un -> "bgt.un"
-             | BI_bge -> "bge"
-             | BI_bge_un -> "bge.un"
-             | BI_ble -> "ble"
-             | BI_ble_un -> "ble.un"
-             | BI_blt -> "blt"
-             | BI_blt_un -> "blt.un"
-             | BI_bne_un -> "bne.un"
-             | BI_brfalse -> "brfalse"
-             | BI_brtrue -> "brtrue")
-
-        output_string os " "
-        output_code_label os tg1
-    | I_br tg ->
-        output_string os "/* br "
-        output_code_label os tg
-        output_string os "*/"
-    | I_leave tg ->
-        output_string os "leave "
-        output_code_label os tg
-    | I_call (tl, mspec, varargs) ->
-        output_tailness os tl
-        output_string os "call "
-        goutput_vararg_mspec env os (mspec, varargs)
-        output_after_tailcall os tl
-    | I_calli (tl, mref, varargs) ->
-        output_tailness os tl
-        output_string os "calli "
-        goutput_vararg_sig env os (mref, varargs)
-        output_after_tailcall os tl
-    | I_ldarg u16 ->
-        output_string os "ldarg"
-        output_short_u16 os u16
-    | I_ldarga u16 ->
-        output_string os "ldarga "
-        output_u16 os u16
-    | AI_ldc (dt, ILConst.I4 x) ->
-        output_string os "ldc."
-        output_basic_type os dt
-        output_short_i32 os x
-    | AI_ldc (dt, ILConst.I8 x) ->
-        output_string os "ldc."
-        output_basic_type os dt
-        output_string os " "
-        output_i64 os x
-    | AI_ldc (dt, ILConst.R4 x) ->
-        output_string os "ldc."
-        output_basic_type os dt
-        output_string os " "
-        output_ieee32 os x
-    | AI_ldc (dt, ILConst.R8 x) ->
-        output_string os "ldc."
-        output_basic_type os dt
-        output_string os " "
-        output_ieee64 os x
-    | I_ldftn mspec ->
-        output_string os "ldftn "
-        goutput_mspec env os mspec
-    | I_ldvirtftn mspec ->
-        output_string os "ldvirtftn "
-        goutput_mspec env os mspec
-    | I_ldind (al, vol, dt) ->
-        output_alignment os al
-        output_volatility os vol
-        output_string os "ldind."
-        output_basic_type os dt
-    | I_cpblk (al, vol) ->
-        output_alignment os al
-        output_volatility os vol
-        output_string os "cpblk"
-    | I_initblk (al, vol) ->
-        output_alignment os al
-        output_volatility os vol
-        output_string os "initblk"
-    | I_ldloc u16 ->
-        output_string os "ldloc"
-        output_short_u16 os u16
-    | I_ldloca u16 ->
-        output_string os "ldloca "
-        output_u16 os u16
-    | I_starg u16 ->
-        output_string os "starg "
-        output_u16 os u16
-    | I_stind (al, vol, dt) ->
-        output_alignment os al
-        output_volatility os vol
-        output_string os "stind."
-        output_basic_type os dt
-    | I_stloc u16 ->
-        output_string os "stloc"
-        output_short_u16 os u16
-    | I_switch l ->
-        output_string os "switch "
-        output_parens (output_seq ", " output_code_label) os l
-    | I_callvirt (tl, mspec, varargs) ->
-        output_tailness os tl
-        output_string os "callvirt "
-        goutput_vararg_mspec env os (mspec, varargs)
-        output_after_tailcall os tl
-    | I_callconstraint (callvirt, tl, ty, mspec, varargs) ->
-        output_tailness os tl
-        output_string os "constraint. "
-        goutput_typ env os ty
-        output_string os (if callvirt then " callvirt " else " call ")
-        goutput_vararg_mspec env os (mspec, varargs)
-        output_after_tailcall os tl
-    | I_castclass ty ->
-        output_string os "castclass "
-        goutput_typ env os ty
-    | I_isinst ty ->
-        output_string os "isinst "
-        goutput_typ env os ty
-    | I_ldfld (al, vol, fspec) ->
-        output_alignment os al
-        output_volatility os vol
-        output_string os "ldfld "
-        goutput_fspec env os fspec
-    | I_ldflda fspec ->
-        output_string os "ldflda "
-        goutput_fspec env os fspec
-    | I_ldsfld (vol, fspec) ->
-        output_volatility os vol
-        output_string os "ldsfld "
-        goutput_fspec env os fspec
-    | I_ldsflda fspec ->
-        output_string os "ldsflda "
-        goutput_fspec env os fspec
-    | I_stfld (al, vol, fspec) ->
-        output_alignment os al
-        output_volatility os vol
-        output_string os "stfld "
-        goutput_fspec env os fspec
-    | I_stsfld (vol, fspec) ->
-        output_volatility os vol
-        output_string os "stsfld "
-        goutput_fspec env os fspec
-    | I_ldtoken tok ->
-        output_string os "ldtoken "
-        goutput_ldtoken_info env os tok
-    | I_refanyval ty ->
-        output_string os "refanyval "
-        goutput_typ env os ty
-    | I_refanytype -> output_string os "refanytype"
-    | I_mkrefany typ ->
-        output_string os "mkrefany "
-        goutput_typ env os typ
-    | I_ldstr s ->
-        output_string os "ldstr "
-        output_string os s
-    | I_newobj (mspec, varargs) ->
-        // newobj: IL has a special rule that the CC is always implicitly "instance" and need
-        // not be mentioned explicitly
-        output_string os "newobj "
-        goutput_vararg_mspec env os (mspec, varargs)
-    | I_stelem dt ->
-        output_string os "stelem."
-        output_basic_type os dt
-    | I_ldelem dt ->
-        output_string os "ldelem."
-        output_basic_type os dt
-
-    | I_newarr (shape, typ) ->
-        if shape = ILArrayShape.SingleDimensional then
-            output_string os "newarr "
-            goutput_typ_with_shortened_class_syntax env os typ
-        else
-            output_string os "newobj void "
-            goutput_dlocref env os (mkILArrTy (typ, shape))
-            output_string os ".ctor"
-            let rank = shape.Rank
-            output_parens (output_array ", " (goutput_typ env)) os (Array.create rank PrimaryAssemblyILGlobals.typ_Int32)
-    | I_stelem_any (shape, dt) ->
-        if shape = ILArrayShape.SingleDimensional then
-            output_string os "stelem.any "
-            goutput_typ env os dt
-        else
-            output_string os "call instance void "
-            goutput_dlocref env os (mkILArrTy (dt, shape))
-            output_string os "Set"
-            let rank = shape.Rank
-            let arr = Array.create (rank + 1) PrimaryAssemblyILGlobals.typ_Int32
-            arr[rank] <- dt
-            output_parens (output_array ", " (goutput_typ env)) os arr
-    | I_ldelem_any (shape, tok) ->
-        if shape = ILArrayShape.SingleDimensional then
-            output_string os "ldelem.any "
-            goutput_typ env os tok
-        else
-            output_string os "call instance "
-            goutput_typ env os tok
-            output_string os " "
-            goutput_dlocref env os (mkILArrTy (tok, shape))
-            output_string os "Get"
-            let rank = shape.Rank
-            output_parens (output_array ", " (goutput_typ env)) os (Array.create rank PrimaryAssemblyILGlobals.typ_Int32)
-    | I_ldelema (ro, _, shape, tok) ->
-        if ro = ReadonlyAddress then
-            output_string os "readonly. "
-
-        if shape = ILArrayShape.SingleDimensional then
-            output_string os "ldelema "
-            goutput_typ env os tok
-        else
-            output_string os "call instance "
-            goutput_typ env os (ILType.Byref tok)
-            output_string os " "
-            goutput_dlocref env os (mkILArrTy (tok, shape))
-            output_string os "Address"
-            let rank = shape.Rank
-            output_parens (output_array ", " (goutput_typ env)) os (Array.create rank PrimaryAssemblyILGlobals.typ_Int32)
-
-    | I_box tok ->
-        output_string os "box "
-        goutput_typ env os tok
-    | I_unbox tok ->
-        output_string os "unbox "
-        goutput_typ env os tok
-    | I_unbox_any tok ->
-        output_string os "unbox.any "
-        goutput_typ env os tok
-    | I_initobj tok ->
-        output_string os "initobj "
-        goutput_typ env os tok
-    | I_ldobj (al, vol, tok) ->
-        output_alignment os al
-        output_volatility os vol
-        output_string os "ldobj "
-        goutput_typ env os tok
-    | I_stobj (al, vol, tok) ->
-        output_alignment os al
-        output_volatility os vol
-        output_string os "stobj "
-        goutput_typ env os tok
-    | I_cpobj tok ->
-        output_string os "cpobj "
-        goutput_typ env os tok
-    | I_sizeof tok ->
-        output_string os "sizeof "
-        goutput_typ env os tok
-    | I_seqpoint s -> output_source os s
-    | EI_ilzero ty ->
-        output_string os "ilzero "
-        goutput_typ env os ty
-    | _ -> output_string os "<printing for this instruction is not implemented>"
 
 let goutput_ilmbody env os (il: ILMethodBody) =
     if il.IsZeroInit then
@@ -1198,11 +752,6 @@ let goutput_superclass env os =
         output_string os "extends "
         (goutput_typ_with_shortened_class_syntax env) os typ
 
-let goutput_superinterfaces env os imp =
-    if not (List.isEmpty imp) then
-        output_string os "implements "
-        output_seq ", " (goutput_typ_with_shortened_class_syntax env) os imp
-
 let goutput_implements env os (imp: ILTypes) =
     if not (List.isEmpty imp) then
         output_string os "implements "
@@ -1337,47 +886,9 @@ let output_locale os s =
     output_string os " .Locale "
     output_qstring os s
 
-let output_hash os x =
-    output_string os " .hash = "
-    output_parens output_bytes os x
-
-let output_publickeytoken os x =
-    output_string os " .publickeytoken = "
-    output_parens output_bytes os x
-
 let output_publickey os x =
     output_string os " .publickey = "
     output_parens output_bytes os x
-
-let output_publickeyinfo os =
-    function
-    | PublicKey k -> output_publickey os k
-    | PublicKeyToken k -> output_publickeytoken os k
-
-let output_assemblyRef os (aref: ILAssemblyRef) =
-    output_string os " .assembly extern "
-    output_sqstring os aref.Name
-
-    if aref.Retargetable then
-        output_string os " retargetable "
-
-    output_string os " { "
-    output_option output_hash os aref.Hash
-    output_option output_publickeyinfo os aref.PublicKey
-    output_option output_ver os aref.Version
-    output_option output_locale os aref.Locale
-    output_string os " } "
-
-let output_modref os (modref: ILModuleRef) =
-    output_string
-        os
-        (if modref.HasMetadata then
-             " .module extern "
-         else
-             " .file nometadata ")
-
-    output_sqstring os modref.Name
-    output_option output_hash os modref.Hash
 
 let goutput_resource env os r =
     output_string os " .mresource "

@@ -40,6 +40,7 @@ type public FSharpChecker =
     /// <param name="enablePartialTypeChecking">Indicates whether to perform partial type checking. Cannot be set to true if keepAssmeblyContents is true. If set to true, can cause duplicate type-checks when richer information on a file is needed, but can skip background type-checking entirely on implementation files with signature files.</param>
     /// <param name="enableParallelCheckingWithSignatureFiles">Type check implementation files that are backed by a signature file in parallel.</param>
     /// <param name="parallelReferenceResolution">Indicates whether to resolve references in parallel.</param>
+    /// <param name="captureIdentifiersWhenParsing">When set to true we create a set of all identifiers for each parsed file which can be used to speed up finding references.</param>
     /// <param name="documentSource">Default: FileSystem. You can use Custom source to provide a function that will return the source for a given file path instead of reading it from the file system. Note that with this option the FSharpChecker will also not monitor the file system for file changes. It will expect to be notified of changes via the NotifyFileChanged method.</param>
     static member Create:
         ?projectCacheSize: int *
@@ -53,6 +54,7 @@ type public FSharpChecker =
         ?enablePartialTypeChecking: bool *
         ?enableParallelCheckingWithSignatureFiles: bool *
         ?parallelReferenceResolution: bool *
+        ?captureIdentifiersWhenParsing: bool *
         [<Experimental "This parameter is experimental and likely to be removed in the future.">] ?documentSource: DocumentSource ->
             FSharpChecker
 
@@ -308,14 +310,14 @@ type public FSharpChecker =
     /// <param name="options">The options for the project or script, used to determine active --define conditionals and other options relevant to parsing.</param>
     /// <param name="symbol">The symbol to find all uses in the file.</param>
     /// <param name="canInvalidateProject">Default: true. If true, this call can invalidate the current state of project if the options have changed. If false, the current state of the project will be used.</param>
-    /// <param name="fastCheck">Default: false. Experimental feature that makes the operation faster.</param>
+    /// <param name="fastCheck">Default: false. Experimental feature that makes the operation faster. Requires FSharpChecker to be created with captureIdentifiersWhenParsing = true.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member FindBackgroundReferencesInFile:
         fileName: string *
         options: FSharpProjectOptions *
         symbol: FSharpSymbol *
         ?canInvalidateProject: bool *
-        ?fastCheck: bool *
+        [<Experimental("This FCS API is experimental and subject to change.")>] ?fastCheck: bool *
         ?userOpName: string ->
             Async<range seq>
 

@@ -456,6 +456,7 @@ type ProjectWorkflowBuilder
                 keepAllBackgroundSymbolUses = false,
                 enableBackgroundItemKeyStoreAndSemanticClassification = true,
                 enablePartialTypeChecking = true,
+                captureIdentifiersWhenParsing = true,
                 documentSource = (if useGetSource then DocumentSource.Custom getSource else DocumentSource.FileSystem)
             ))
 

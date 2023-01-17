@@ -136,6 +136,7 @@ type internal FSharpWorkspaceServiceFactory
                                     enablePartialTypeChecking = true,
                                     enableParallelCheckingWithSignatureFiles = enableParallelCheckingWithSignatureFiles,
                                     parallelReferenceResolution = enableParallelReferenceResolution,
+                                    captureIdentifiersWhenParsing = true,
                                     documentSource = (if enableLiveBuffers then DocumentSource.Custom getSource else DocumentSource.FileSystem))
 
                             if enableLiveBuffers then

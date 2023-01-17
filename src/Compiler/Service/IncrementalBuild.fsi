@@ -268,6 +268,7 @@ type internal IncrementalBuilder =
         enableParallelCheckingWithSignatureFiles: bool *
         dependencyProvider: DependencyProvider option *
         parallelReferenceResolution: ParallelReferenceResolution *
+        captureIdentifiersWhenParsing: bool *
         getSource: (string -> ISourceText option) option *
         useChangeNotifications: bool ->
             NodeCode<IncrementalBuilder option * FSharpDiagnostic[]>
