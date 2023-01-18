@@ -21,14 +21,14 @@ module SignatureHelpProvider =
 
     let checker = FSharpChecker.Create()
 
-    let filePath = "C:\\test0.fs"
+    let filePath = "C:\\test.fs"
 
     let PathRelativeToTestAssembly p =
         Path.Combine(Path.GetDirectoryName(Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).LocalPath), p)
 
     let internal projectOptions =
         {
-            ProjectFileName = "C:\\test0.fsproj"
+            ProjectFileName = "C:\\test.fsproj"
             ProjectId = None
             SourceFiles = [| filePath |]
             ReferencedProjects = [||]
@@ -627,7 +627,7 @@ let f (derp: int -> int -> int) x = derp x
 
       <Project Name=""TestLibrary.fsproj"">
         <Reference>HelperLibrary.fsproj</Reference>
-        <File Name=""test0.fs"">
+        <File Name=""test.fs"">
           <![CDATA[
     open Test
     Foo.Sum(12, $$
@@ -662,7 +662,7 @@ type public Foo() =
 
         let project1Id = ProjectId.CreateNewId()
         let project1FilePath = "C:\\TestLibrary.fsproj"
-        let doc1 = RoslynTestHelpers.CreateDocumentInfo project1Id "C:\\test0.fs" code1
+        let doc1 = RoslynTestHelpers.CreateDocumentInfo project1Id "C:\\test.fs" code1
         let projInfo1 = RoslynTestHelpers.CreateProjectInfo project1Id project1FilePath [doc1]
 
         let project2Id = ProjectId.CreateNewId()

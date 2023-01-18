@@ -5,7 +5,6 @@ namespace FSharp.Editor.Tests
 open System
 open System.Collections.Generic
 open Xunit
-open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Editor.Tests.Helpers
@@ -13,11 +12,11 @@ open FSharp.Editor.Tests.Helpers
 // AppDomain helper
 type Worker() =
 
-    let filePath = "C:\\test0.fsx"
+    let filePath = "C:\\test.fsx"
 
     let projectOptions =
         {
-            ProjectFileName = "C:\\test0.fsproj"
+            ProjectFileName = "C:\\test.fsproj"
             ProjectId = None
             SourceFiles = [| filePath |]
             ReferencedProjects = [||]
@@ -34,7 +33,7 @@ type Worker() =
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
 
         let document =
-            RoslynTestHelpers.CreateSolution(filePath, fileContents, options = projectOptions)
+            RoslynTestHelpers.CreateSolution(fileContents, options = projectOptions)
             |> RoslynTestHelpers.GetSingleDocument
 
         let expected = expected |> Seq.toList

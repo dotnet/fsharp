@@ -46,7 +46,7 @@ type HelpContextServiceTests() =
                     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
 
                     let classifiedSpans =
-                        Tokenizer.getClassifiedSpans (documentId, sourceText, textLine.Span, Some "test0.fs", [], CancellationToken.None)
+                        Tokenizer.getClassifiedSpans (documentId, sourceText, textLine.Span, Some "test.fs", [], CancellationToken.None)
 
                     FSharpHelpContextService.GetHelpTerm(document, span, classifiedSpans)
                     |> Async.RunSynchronously
@@ -176,13 +176,13 @@ type HelpContextServiceTests() =
 
         let keywords =
             [
-                Some "Test0.escaped func"
-                Some "Test0.escaped value"
-                Some "Test0.x"
-                Some "Test0.escaped func"
-                Some "Test0.escaped value"
-                Some "Test0.z"
-                Some "Test0.z"
+                Some "test.escaped func"
+                Some "test.escaped value"
+                Some "test.x"
+                Some "test.escaped func"
+                Some "test.escaped value"
+                Some "test.z"
+                Some "test.z"
             ]
 
         TestF1Keywords(keywords, file)
@@ -419,5 +419,5 @@ type HelpContextServiceTests() =
                 "    'T.StaticProp$erty"
             ]
 
-        let keywords = [ Some "Test0.IStaticProperty`1.StaticProperty" ]
+        let keywords = [ Some "test.IStaticProperty`1.StaticProperty" ]
         TestF1Keywords(keywords, file)

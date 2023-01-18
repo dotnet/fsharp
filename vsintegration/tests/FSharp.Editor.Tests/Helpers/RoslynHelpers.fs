@@ -206,9 +206,9 @@ type RoslynTestHelpers private () =
 
     static member DefaultProjectOptions: FSharpProjectOptions =
         {
-            ProjectFileName = "C:\\test0.fsproj"
+            ProjectFileName = "C:\\test.fsproj"
             ProjectId = None
-            SourceFiles = [| "C:\\test0.fs" |]
+            SourceFiles = [| "C:\\test.fs" |]
             ReferencedProjects = [||]
             OtherOptions = [||]
             IsIncompleteTypeCheckEnvironment = true
@@ -267,9 +267,9 @@ type RoslynTestHelpers private () =
     static member CreateSolution (source, ?options: FSharpProjectOptions) =
         let projId = ProjectId.CreateNewId()
 
-        let docInfo = RoslynTestHelpers.CreateDocumentInfo projId $"C:\\test0.fs" source
+        let docInfo = RoslynTestHelpers.CreateDocumentInfo projId $"C:\\test.fs" source
 
-        let projFilePath = "C:\\test0.fsproj"
+        let projFilePath = "C:\\test.fsproj"
         let projInfo = RoslynTestHelpers.CreateProjectInfo projId projFilePath [docInfo]
         let solution = RoslynTestHelpers.CreateSolution [projInfo]
 

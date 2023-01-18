@@ -35,7 +35,7 @@ module HintTestFramework =
         |> RoslynTestHelpers.GetSingleDocument
 
     let getFsiAndFsDocuments (fsiCode: string) (fsCode: string) =
-        let solution = RoslynTestHelpers.CreateSolution([|fsiCode; fsCode|])
+        let solution = RoslynTestHelpers.CreateSolution(fsiCode)
         let project = solution.Projects |> Seq.exactlyOne
         project.Documents
 

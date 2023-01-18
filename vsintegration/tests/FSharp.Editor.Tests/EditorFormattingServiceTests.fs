@@ -11,7 +11,7 @@ open Microsoft.CodeAnalysis.Formatting
 open FSharp.Editor.Tests.Helpers
 
 type EditorFormattingServiceTests() =
-    let filePath = "C:\\test0.fs"
+    let filePath = "C:\\test.fs"
 
     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
     let indentStyle = FormattingOptions.IndentStyle.Smart

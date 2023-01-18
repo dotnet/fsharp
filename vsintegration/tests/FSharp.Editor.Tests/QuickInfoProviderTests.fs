@@ -15,11 +15,11 @@ type public AssemblyResolverTestFixture() =
 
 module QuickInfoProviderTests =
 
-    let filePath = "C:\\test0.fs"
+    let filePath = "C:\\test.fs"
 
     let internal projectOptions =
         {
-            ProjectFileName = "C:\\test0.fsproj"
+            ProjectFileName = "C:\\test.fsproj"
             ProjectId = None
             SourceFiles = [| filePath |]
             ReferencedProjects = [||]

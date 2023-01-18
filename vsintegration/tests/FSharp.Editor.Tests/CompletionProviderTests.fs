@@ -13,7 +13,7 @@ module CompletionProviderTests =
     open FSharp.Editor.Tests.Helpers
     open Xunit
 
-    let filePath = "C:\\test0.fs"
+    let filePath = "C:\\test.fs"
 
     let formatCompletions (completions: string seq) =
         "\n\t" + String.Join("\n\t", completions)

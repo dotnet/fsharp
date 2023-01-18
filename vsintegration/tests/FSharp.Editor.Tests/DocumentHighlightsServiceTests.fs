@@ -12,7 +12,7 @@ module DocumentHighlightsServiceTests =
     open Microsoft.VisualStudio.FSharp.Editor
     open FSharp.Compiler.Text
 
-    let filePath = "C:\\test0.fs"
+    let filePath = "C:\\test.fs"
 
     let private getSpans (fileContents: string) (caretPosition: int) =
         let document = 
