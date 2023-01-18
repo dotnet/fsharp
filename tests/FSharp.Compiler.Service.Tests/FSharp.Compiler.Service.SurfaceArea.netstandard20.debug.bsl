@@ -4024,10 +4024,6 @@ FSharp.Compiler.EditorServices.XmlDocable: Int32 line
 FSharp.Compiler.EditorServices.XmlDocable: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_paramNames()
 FSharp.Compiler.EditorServices.XmlDocable: Microsoft.FSharp.Collections.FSharpList`1[System.String] paramNames
 FSharp.Compiler.EditorServices.XmlDocable: System.String ToString()
-FSharp.Compiler.GraphChecking.Finisher`2[State,Result]: System.IAsyncResult BeginInvoke(State, System.AsyncCallback, System.Object)
-FSharp.Compiler.GraphChecking.Finisher`2[State,Result]: System.Tuple`2[Result,State] EndInvoke(System.IAsyncResult)
-FSharp.Compiler.GraphChecking.Finisher`2[State,Result]: System.Tuple`2[Result,State] Invoke(State)
-FSharp.Compiler.GraphChecking.Finisher`2[State,Result]: Void .ctor(System.Object, IntPtr)
 FSharp.Compiler.IO.ByteMemory: Byte Item [Int32]
 FSharp.Compiler.IO.ByteMemory: Byte get_Item(Int32)
 FSharp.Compiler.IO.ByteMemory: Byte[] ReadAllBytes()
@@ -4065,6 +4061,7 @@ FSharp.Compiler.IO.DefaultFileSystem: System.DateTime GetCreationTimeShim(System
 FSharp.Compiler.IO.DefaultFileSystem: System.DateTime GetLastWriteTimeShim(System.String)
 FSharp.Compiler.IO.DefaultFileSystem: System.IO.Stream OpenFileForReadShim(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
 FSharp.Compiler.IO.DefaultFileSystem: System.IO.Stream OpenFileForWriteShim(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.IO.FileMode], Microsoft.FSharp.Core.FSharpOption`1[System.IO.FileAccess], Microsoft.FSharp.Core.FSharpOption`1[System.IO.FileShare])
+FSharp.Compiler.IO.DefaultFileSystem: System.String ChangeExtensionShim(System.String, System.String)
 FSharp.Compiler.IO.DefaultFileSystem: System.String DirectoryCreateShim(System.String)
 FSharp.Compiler.IO.DefaultFileSystem: System.String GetDirectoryNameShim(System.String)
 FSharp.Compiler.IO.DefaultFileSystem: System.String GetFullFilePathInDirectoryShim(System.String, System.String)
@@ -4093,6 +4090,7 @@ FSharp.Compiler.IO.IFileSystem: System.DateTime GetCreationTimeShim(System.Strin
 FSharp.Compiler.IO.IFileSystem: System.DateTime GetLastWriteTimeShim(System.String)
 FSharp.Compiler.IO.IFileSystem: System.IO.Stream OpenFileForReadShim(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
 FSharp.Compiler.IO.IFileSystem: System.IO.Stream OpenFileForWriteShim(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.IO.FileMode], Microsoft.FSharp.Core.FSharpOption`1[System.IO.FileAccess], Microsoft.FSharp.Core.FSharpOption`1[System.IO.FileShare])
+FSharp.Compiler.IO.IFileSystem: System.String ChangeExtensionShim(System.String, System.String)
 FSharp.Compiler.IO.IFileSystem: System.String DirectoryCreateShim(System.String)
 FSharp.Compiler.IO.IFileSystem: System.String GetDirectoryNameShim(System.String)
 FSharp.Compiler.IO.IFileSystem: System.String GetFullFilePathInDirectoryShim(System.String, System.String)
