@@ -263,14 +263,18 @@ type FSharpSymbolUse(denv: DisplayEnv, symbol: FSharpSymbol, inst: TyparInstanti
             match this.Symbol with
             | :? FSharpMemberOrFunctionOrValue as m when not m.IsModuleValueOrMember ->
 
-                // In case it's a parameter and there is a signature file, then it's not private
+                // In case it's a parameter and it's in a signature file, then it's not private
 
                 // TODO: Can it be anything else than a parameter?
 
-                // TODO: Is there a way to tell there is a signature file?
+                let signatureLocation =
+                    match m.Item with
+                    | Item.Value v -> v.Deref.ArgReprInfoForDisplay
+                    | _ -> None
+                    |> Option.bind (fun a -> a.OtherRange)
 
-                // Since we don't know any better, we have to assume it's not private
-                false
+                signatureLocation.IsNone || signatureLocation = Some (m.DeclarationLocation)
+
             | :? FSharpMemberOrFunctionOrValue as m ->
                 let fileSignatureLocation =
                     m.DeclaringEntity |> Option.bind (fun e -> e.SignatureLocation)

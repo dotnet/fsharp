@@ -2537,6 +2537,10 @@ type ValOptionalData =
       /// that may be compiled as closures (that is are not necessarily compiled as top-level methods).
       mutable val_repr_info_for_display: ValReprInfo option
 
+      /// Records the "extra information" for parameters in implementation files if we've been able to correlate
+      /// them with lambda arguments.
+      mutable arg_repr_info_for_display: ArgReprInfo option
+
       /// How visible is this? 
       /// MUTABILITY: for unpickle linkage
       mutable val_access: Accessibility 
@@ -2597,6 +2601,7 @@ type Val =
           val_defn = None
           val_repr_info = None
           val_repr_info_for_display = None
+          arg_repr_info_for_display = None
           val_access = TAccess []
           val_xmldoc = XmlDoc.Empty
           val_member_info = None
@@ -2664,6 +2669,11 @@ type Val =
     member x.ValReprInfoForDisplay: ValReprInfo option =
         match x.val_opt_data with
         | Some optData -> optData.val_repr_info_for_display
+        | _ -> None
+
+    member x.ArgReprInfoForDisplay: ArgReprInfo option =
+        match x.val_opt_data with
+        | Some optData -> optData.arg_repr_info_for_display
         | _ -> None
 
     member x.Id = ident(x.LogicalName, x.Range)
@@ -3053,6 +3063,11 @@ type Val =
         | Some optData -> optData.val_repr_info_for_display <- info
         | _ -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_repr_info_for_display = info }
 
+    member x.SetArgReprInfoForDisplay info =
+        match x.val_opt_data with
+        | Some optData -> optData.arg_repr_info_for_display <- info
+        | _ -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with arg_repr_info_for_display = info }
+
     member x.SetType ty = x.val_type <- ty
 
     member x.SetOtherRange m =
@@ -3111,6 +3126,7 @@ type Val =
                        val_const = tg.val_const
                        val_defn = tg.val_defn
                        val_repr_info_for_display = tg.val_repr_info_for_display
+                       arg_repr_info_for_display = tg.arg_repr_info_for_display
                        val_repr_info = tg.val_repr_info
                        val_access = tg.val_access
                        val_xmldoc = tg.val_xmldoc

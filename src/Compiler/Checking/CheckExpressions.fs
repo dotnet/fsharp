@@ -6138,6 +6138,7 @@ and TcIteratedLambdas (cenv: cenv) isFirst (env: TcEnv) overallTy takenNames tpe
             | infos :: rest -> 
                  if infos.Length = vspecs.Length then 
                     (vspecs, infos) ||> List.iter2 (fun v argInfo -> 
+                        v.SetArgReprInfoForDisplay (Some argInfo)
                         let inlineIfLambda = HasFSharpAttribute g g.attrib_InlineIfLambdaAttribute argInfo.Attribs
                         if inlineIfLambda then 
                             v.SetInlineIfLambda())

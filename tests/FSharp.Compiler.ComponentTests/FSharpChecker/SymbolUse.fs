@@ -50,7 +50,7 @@ val f: x: 'a -> TFirstV_1<'a>
                 Assert.True(symbolUse.IsPrivateToFile))
         }
 
-    // TODO: Fix this [<Fact>]
+    [<Fact>]
     let ``Function parameter, no signature file`` () =
         SyntheticProject.Create(sourceFile "First" []).Workflow {
             checkFile "First" (fun (typeCheckResult: FSharpCheckFileResults) ->

@@ -1809,6 +1809,10 @@ type ValOptionalData =
         /// that may be compiled as closures (that is are not necessarily compiled as top-level methods).
         mutable val_repr_info_for_display: ValReprInfo option
 
+        /// Records the "extra information" for parameters in implementation files if we've been able to correlate
+        /// them with lambda arguments.
+        mutable arg_repr_info_for_display: ArgReprInfo option
+
         /// How visible is this?
         /// MUTABILITY: for unpickle linkage
         mutable val_access: Accessibility
@@ -1919,6 +1923,8 @@ type Val =
     member SetValReprInfo: info: ValReprInfo option -> unit
 
     member SetValReprInfoForDisplay: info: ValReprInfo option -> unit
+
+    member SetArgReprInfoForDisplay: info: ArgReprInfo option -> unit
 
     override ToString: unit -> string
 
@@ -2177,6 +2183,10 @@ type Val =
     /// Records the "extra information" for display purposes for expression-level function definitions
     /// that may be compiled as closures (that is are not necessarily compiled as top-level methods).
     member ValReprInfoForDisplay: ValReprInfo option
+
+    /// Records the "extra information" for parameters in implementation files if we've been able to correlate
+    /// them with lambda arguments.
+    member ArgReprInfoForDisplay: ArgReprInfo option
 
     /// Get the declared documentation for the value
     member XmlDoc: XmlDoc
