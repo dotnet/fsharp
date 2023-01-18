@@ -3,7 +3,6 @@
 namespace FSharp.Editor.Tests
 
 open System
-open System.IO
 open Xunit
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.CodeAnalysis
@@ -22,33 +21,6 @@ module SignatureHelpProvider =
     let checker = FSharpChecker.Create()
 
     let filePath = "C:\\test.fs"
-
-    let PathRelativeToTestAssembly p =
-        Path.Combine(Path.GetDirectoryName(Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).LocalPath), p)
-
-    let internal projectOptions =
-        {
-            ProjectFileName = "C:\\test.fsproj"
-            ProjectId = None
-            SourceFiles = [| filePath |]
-            ReferencedProjects = [||]
-            OtherOptions =
-                [|
-                    "-r:"
-                    + PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")
-                |]
-            IsIncompleteTypeCheckEnvironment = true
-            UseScriptResolutionRules = false
-            LoadTime = DateTime.MaxValue
-            OriginalLoadReferences = []
-            UnresolvedReferences = None
-            Stamp = None
-        }
-
-    let internal parsingOptions =
-        { FSharpParsingOptions.Default with
-            SourceFiles = [| filePath |]
-        }
 
     let GetSignatureHelp (fileContents: string) (caretPosition: int) =
         async {
