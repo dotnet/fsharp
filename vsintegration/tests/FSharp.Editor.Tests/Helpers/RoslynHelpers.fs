@@ -260,7 +260,8 @@ type RoslynTestHelpers private () =
             .Workspace
             .Services
             .GetService<IFSharpWorkspaceService>()
-            .FSharpProjectOptionsManager.SetCommandLineOptions(
+            .FSharpProjectOptionsManager
+            .SetCommandLineOptions(
                 projId,
                 options.SourceFiles,
                 options.OtherOptions |> ImmutableArray.CreateRange)
