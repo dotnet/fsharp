@@ -122,7 +122,8 @@ type internal FSharpWorkspaceServiceFactory
                                     enableBackgroundItemKeyStoreAndSemanticClassification = true,
                                     enablePartialTypeChecking = true,
                                     enableParallelCheckingWithSignatureFiles = enableParallelCheckingWithSignatureFiles,
-                                    parallelReferenceResolution = enableParallelReferenceResolution)
+                                    parallelReferenceResolution = enableParallelReferenceResolution,
+                                    captureIdentifiersWhenParsing = true)
                             checker
                     checkerSingleton <- Some checker
             )
