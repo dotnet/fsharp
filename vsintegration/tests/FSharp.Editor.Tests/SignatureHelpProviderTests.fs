@@ -50,10 +50,9 @@ module SignatureHelpProvider =
             SourceFiles = [| filePath |]
         }
 
-    let GetSignatureHelp (project: FSharpProject) (fileName: string) (caretPosition: int) =
+    let GetSignatureHelp (fileContents: string) (caretPosition: int) =
         async {
             let triggerChar = None
-            let fileContents = File.ReadAllText(fileName)
             let sourceText = SourceText.From(fileContents)
             let textLines = sourceText.Lines
             let caretLinePos = textLines.GetLinePosition(caretPosition)
@@ -91,8 +90,8 @@ module SignatureHelpProvider =
         }
         |> Async.RunSynchronously
 
-    let GetCompletionTypeNames (project: FSharpProject) (fileName: string) (caretPosition: int) =
-        let sigHelp = GetSignatureHelp project fileName caretPosition
+    let GetCompletionTypeNames (fileContents: string) (caretPosition: int) =
+        let sigHelp = GetSignatureHelp fileContents caretPosition
 
         match sigHelp with
         | None -> [||]
@@ -102,12 +101,6 @@ module SignatureHelpProvider =
                 |> Array.map (fun r -> r.Parameters |> Array.map (fun p -> p.CanonicalTypeTextForSorting))
 
             completionTypeNames
-
-    let GetCompletionTypeNamesFromXmlString (xml: string) =
-        use project = CreateProject xml
-        let fileName, caretPosition = project.GetCaretPosition()
-        let completionNames = GetCompletionTypeNames project fileName caretPosition
-        completionNames
 
     let assertSignatureHelpForMethodCalls (fileContents: string) (marker: string) (expected: (string * int * int * string option) option) =
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
@@ -216,7 +209,7 @@ open SignatureHelpProvider
 module ``Gives signature help in method calls`` =
 
     [<Fact>]
-    let ``dot`` () : unit =
+    let ``dot`` () =
         let fileContents =
             """
 //1
@@ -227,7 +220,7 @@ System.Console.WriteLine(format="Hello, {0}",arg0="World")
         assertSignatureHelpForMethodCalls fileContents marker None
 
     [<Fact>]
-    let ``System`` () : unit =
+    let ``System`` () =
         let fileContents =
             """
 //1
@@ -238,7 +231,7 @@ System.Console.WriteLine(format="Hello, {0}",arg0="World")
         assertSignatureHelpForMethodCalls fileContents marker None
 
     [<Fact>]
-    let ``WriteLine`` () : unit =
+    let ``WriteLine`` () =
         let fileContents =
             """
 //1
@@ -249,7 +242,7 @@ System.Console.WriteLine(format="Hello, {0}",arg0="World")
         assertSignatureHelpForMethodCalls fileContents marker None
 
     [<Fact>]
-    let ``open paren`` () : unit =
+    let ``open paren`` () =
         let fileContents =
             """
 //1
@@ -260,7 +253,7 @@ System.Console.WriteLine(format="Hello, {0}",arg0="World")
         assertSignatureHelpForMethodCalls fileContents marker (Some("[7..64)", 0, 2, Some "format"))
 
     [<Fact>]
-    let ``named arg`` () : unit =
+    let ``named arg`` () =
         let fileContents =
             """
 //1
@@ -271,7 +264,7 @@ System.Console.WriteLine(format="Hello, {0}",arg0="World")
         assertSignatureHelpForMethodCalls fileContents marker (Some("[7..64)", 0, 2, Some "format"))
 
     [<Fact>]
-    let ``comma`` () : unit =
+    let ``comma`` () =
         let fileContents =
             """
 //1
@@ -282,7 +275,7 @@ System.Console.WriteLine(format="Hello, {0}",arg0="World")
         assertSignatureHelpForMethodCalls fileContents marker None
 
     [<Fact>]
-    let ``second comma`` () : unit =
+    let ``second comma`` () =
         let fileContents =
             """
 //1
@@ -292,7 +285,7 @@ System.Console.WriteLine(format="Hello, {0}",arg0="World")
         assertSignatureHelpForMethodCalls fileContents """",""" (Some("[7..64)", 1, 2, Some "arg0"))
 
     [<Fact>]
-    let ``second named arg`` () : unit =
+    let ``second named arg`` () =
         let fileContents =
             """
 //1
@@ -303,7 +296,7 @@ System.Console.WriteLine(format="Hello, {0}",arg0="World")
         assertSignatureHelpForMethodCalls fileContents marker (Some("[7..64)", 1, 2, Some "arg0"))
 
     [<Fact>]
-    let ``second named arg equals`` () : unit =
+    let ``second named arg equals`` () =
         let fileContents =
             """
 //1
@@ -314,7 +307,7 @@ System.Console.WriteLine(format="Hello, {0}",arg0="World")
         assertSignatureHelpForMethodCalls fileContents marker (Some("[7..64)", 1, 2, Some "arg0"))
 
     [<Fact>]
-    let ``World`` () : unit =
+    let ``World`` () =
         let fileContents =
             """
 //1
@@ -325,7 +318,7 @@ System.Console.WriteLine(format="Hello, {0}",arg0="World")
         assertSignatureHelpForMethodCalls fileContents marker (Some("[7..64)", 1, 2, Some "arg0"))
 
     [<Fact>]
-    let ``end paren`` () : unit =
+    let ``end paren`` () =
         let fileContents =
             """
 //1
@@ -337,7 +330,7 @@ System.Console.WriteLine(format="Hello, {0}",arg0="World")
 
 module ``Signature help with list literals, parens, etc`` =
     [<Fact>]
-    let ``Open paren`` () : unit =
+    let ``Open paren`` () =
         let fileContents =
             """
 //2
@@ -349,7 +342,7 @@ Console.WriteLine([(1,2)])
         assertSignatureHelpForMethodCalls fileContents marker (Some("[20..45)", 0, 0, None))
 
     [<Fact>]
-    let ``comma`` () : unit =
+    let ``comma`` () =
         let fileContents =
             """
 //2
@@ -361,7 +354,7 @@ Console.WriteLine([(1,2)])
         assertSignatureHelpForMethodCalls fileContents marker None
 
     [<Fact>]
-    let ``list and tuple bracket pair start`` () : unit =
+    let ``list and tuple bracket pair start`` () =
         let fileContents =
             """
 //2
@@ -374,7 +367,7 @@ Console.WriteLine([(1,2)])
 
 module ``Unfinished parentheses`` =
     [<Fact>]
-    let ``Unfinished parentheses`` () : unit =
+    let ``Unfinished parentheses`` () =
         let fileContents =
             """
 let _ = System.DateTime(
@@ -384,7 +377,7 @@ let _ = System.DateTime(
         assertSignatureHelpForMethodCalls fileContents marker (Some("[10..26)", 0, 0, None))
 
     [<Fact>]
-    let ``Unfinished parentheses with comma`` () : unit =
+    let ``Unfinished parentheses with comma`` () =
         let fileContents =
             """
 let _ = System.DateTime(1L,
@@ -398,7 +391,7 @@ let _ = System.DateTime(1L,
 #else
     [<Fact>]
 #endif
-    let ``type provider static parameter tests`` () : unit =
+    let ``type provider static parameter tests`` () =
         // This is old code and I'm too lazy to move it all out. - Phillip Carter
         let manyTestCases =
             [
@@ -466,7 +459,7 @@ module ``Function argument applications`` =
         }
 
     [<Fact>]
-    let ``single argument function application`` () : unit =
+    let ``single argument function application`` () =
         let fileContents =
             """
 sqrt 
@@ -476,7 +469,7 @@ sqrt
         assertSignatureHelpForFunctionApplication fileContents marker 1 0 "value"
 
     [<Fact>]
-    let ``multi-argument function application`` () : unit =
+    let ``multi-argument function application`` () =
         let fileContents =
             """
 let add2 x y = x + y
@@ -487,7 +480,7 @@ add2 1
         assertSignatureHelpForFunctionApplication fileContents marker 2 1 "y"
 
     [<Fact>]
-    let ``qualified function application`` () : unit =
+    let ``qualified function application`` () =
         let fileContents =
             """
 module M =
@@ -499,7 +492,7 @@ M.f
         assertSignatureHelpForFunctionApplication fileContents marker 1 0 "x"
 
     [<Fact>]
-    let ``function application in single pipeline with no additional args`` () : unit =
+    let ``function application in single pipeline with no additional args`` () =
         let fileContents =
             """
 [1..10] |> id 
@@ -545,7 +538,7 @@ M.f
         Assert.True(sigHelp.IsNone, "No signature help is expected because there are no additional args to apply.")
 
     [<Fact>]
-    let ``function application in single pipeline with an additional argument`` () : unit =
+    let ``function application in single pipeline with an additional argument`` () =
         let fileContents =
             """
 [1..10] |> List.map  
@@ -555,7 +548,7 @@ M.f
         assertSignatureHelpForFunctionApplication fileContents marker 1 0 "mapping"
 
     [<Fact>]
-    let ``function application in middle of pipeline with an additional argument`` () : unit =
+    let ``function application in middle of pipeline with an additional argument`` () =
         let fileContents =
             """
 [1..10]
@@ -567,7 +560,7 @@ M.f
         assertSignatureHelpForFunctionApplication fileContents marker 1 0 "mapping"
 
     [<Fact>]
-    let ``function application with function as parameter`` () : unit =
+    let ``function application with function as parameter`` () =
         let fileContents =
             """
 let derp (f: int -> int -> int) x = f x 1
@@ -578,7 +571,7 @@ derp
         assertSignatureHelpForFunctionApplication fileContents marker 2 0 "f"
 
     [<Fact>]
-    let ``function application with function as second parameter 1`` () : unit =
+    let ``function application with function as second parameter 1`` () =
         let fileContents =
             """
 let derp (f: int -> int -> int) x = f x 1
@@ -590,7 +583,7 @@ derp add
         assertSignatureHelpForFunctionApplication fileContents marker 2 1 "x"
 
     [<Fact>]
-    let ``function application with function as second parameter 2`` () : unit =
+    let ``function application with function as second parameter 2`` () =
         let fileContents =
             """
 let f (derp: int -> int) x = derp x
@@ -600,7 +593,7 @@ let f (derp: int -> int) x = derp x
         assertSignatureHelpForFunctionApplication fileContents marker 1 0 "arg0"
 
     [<Fact>]
-    let ``function application with curried function as parameter`` () : unit =
+    let ``function application with curried function as parameter`` () =
         let fileContents =
             """
 let f (derp: int -> int -> int) x = derp x 
@@ -609,11 +602,26 @@ let f (derp: int -> int -> int) x = derp x
         let marker = "derp x "
         assertSignatureHelpForFunctionApplication fileContents marker 2 1 "arg1"
 
+    let GetCaretPosition2 (codeWithCaret: string) =
+        let caretSentinel = "$$"
+        let mutable cursorInfo: (int * string) = (0, null)
+
+        // find the '$$' sentinel that represents the cursor location
+        let caretPosition = codeWithCaret.IndexOf(caretSentinel)
+
+        if caretPosition >= 0 then
+            let newContents =
+                codeWithCaret.Substring(0, caretPosition)
+                + codeWithCaret.Substring(caretPosition + caretSentinel.Length)
+
+            cursorInfo <- caretPosition, newContents
+
+        cursorInfo
+
     // migrated from legacy test
     [<Fact>]
-    let ``Multi.ReferenceToProjectLibrary`` () : unit =
-        let completionNames =
-            GetCompletionTypeNamesFromXmlString
+    let ``Multi.ReferenceToProjectLibrary`` () =
+        let xml =
                 @"
     <Projects>
 
@@ -640,6 +648,35 @@ let f (derp: int -> int -> int) x = derp x
 
     </Projects>
     "
+        let code1 = """
+open Test
+Foo.Sum(12, $$
+"""
+        
+        let code2 = """
+namespace Test
+
+type public Foo() =
+    static member Sum(x:int, y:int) = x + y
+"""
+
+        let project1Id = ProjectId.CreateNewId()
+        let project1FilePath = "C:\\TestLibrary.fsproj"
+        let doc1 = RoslynTestHelpers.CreateDocumentInfo project1Id "C:\\test0.fs" code1
+        let projInfo1 = RoslynTestHelpers.CreateProjectInfo project1Id project1FilePath [doc1]
+
+        let project2Id = ProjectId.CreateNewId()
+        let project2FilePath = "C:\\HelperLibrary.fsproj"
+        let doc2 = RoslynTestHelpers.CreateDocumentInfo project2Id "C:\\test1.fs" code2
+        let projInfo2 = RoslynTestHelpers.CreateProjectInfo project2Id project2FilePath [doc2]
+
+        let solution = RoslynTestHelpers.CreateSolution [projInfo1; projInfo2]
+
+        //use project = CreateProject xml
+        let caretPosition, code = GetCaretPosition2 code1
+        let project = solution.Projects |> Seq.head
+        let document = project.Documents |> Seq.head
+        let completionNames = GetCompletionTypeNames document.Name caretPosition
 
         let expected = [| [| "System.Int32"; "System.Int32" |] |]
         Assert.Equal<string array array>(expected, completionNames)
