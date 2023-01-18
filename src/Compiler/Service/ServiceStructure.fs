@@ -64,18 +64,6 @@ module Structure =
             |> List.map (fun (SynTyparDecl (_, typarg)) -> typarg.Range)
             |> List.reduce unionRanges
 
-    let rangeOfSynPatsElse other (synPats: SynSimplePat list) =
-        match synPats with
-        | [] -> other
-        | ls ->
-            ls
-            |> List.map (fun x ->
-                match x with
-                | SynSimplePat.Attrib (range = r)
-                | SynSimplePat.Id (range = r)
-                | SynSimplePat.Typed (range = r) -> r)
-            |> List.reduce unionRanges
-
     /// Collapse indicates the way a range/snapshot should be collapsed. `Same` is for a scope inside
     /// some kind of scope delimiter, e.g. `[| ... |]`, `[ ... ]`, `{ ... }`, etc.  `Below` is for expressions
     /// following a binding or the right hand side of a pattern, e.g. `let x = ...`

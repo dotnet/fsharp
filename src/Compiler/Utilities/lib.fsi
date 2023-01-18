@@ -15,7 +15,7 @@ val mutable progress: bool
 
 val mutable tracking: bool
 
-val condition: s: string -> bool
+val isEnvVarSet: s: string -> bool
 
 val GetEnvInteger: e: string -> dflt: int -> int
 
@@ -63,22 +63,6 @@ module NameMap =
     val domain: m: Map<string, 'a> -> Zset<string>
 
     val domainL: m: Map<string, 'a> -> string list
-
-module Check =
-    /// Throw <cref>System.InvalidOperationException</cref> if argument is <c>None</c>.
-    /// If there is a value (e.g. <c>Some(value)</c>) then value is returned.
-    val NotNone: argName: string -> arg: 'T option -> 'T
-
-    /// Throw <cref>System.ArgumentNullException</cref> if argument is <c>null</c>.
-    val ArgumentNotNull: arg: 'a -> argName: string -> unit
-
-    /// Throw <cref>System.ArgumentNullException</cref> if array argument is <c>null</c>.
-    /// Throw <cref>System.ArgumentOutOfRangeException</cref> is array argument is empty.
-    val ArrayArgumentNotNullOrEmpty: arr: 'T[] -> argName: string -> unit
-
-    /// Throw <cref>System.ArgumentNullException</cref> if string argument is <c>null</c>.
-    /// Throw <cref>System.ArgumentOutOfRangeException</cref> is string argument is empty.
-    val StringArgumentNotNullOrEmpty: s: string -> argName: string -> unit
 
 type IntMap<'T> = Zmap<int, 'T>
 
@@ -214,8 +198,6 @@ val mapQuadruple:
         a1: 'a * a2: 'c * a3: 'e * a4: 'g ->
             'b * 'd * 'f * 'h
 
-val fmap2Of2: f: ('a -> 'b -> 'c * 'd) -> z: 'a -> a1: 'e * a2: 'b -> 'c * ('e * 'd)
-
 module Zmap =
     val force: k: 'a -> mp: Zmap<'a, 'b> -> 'b
     val mapKey: key: 'a -> f: ('b option -> 'b option) -> mp: Zmap<'a, 'b> -> Zmap<'a, 'b>
@@ -223,8 +205,6 @@ module Zmap =
 module Zset =
     val ofList: order: IComparer<'a> -> xs: 'a list -> Zset<'a>
     val fixpoint: f: (Zset<'a> -> Zset<'a>) -> Zset<'a> -> Zset<'a>
-
-val equalOn: f: ('a -> 'b) -> x: 'a -> y: 'a -> bool when 'b: equality
 
 /// Buffer printing utility
 val buildString: f: (StringBuilder -> unit) -> string
@@ -266,25 +246,6 @@ val inline cacheOptByref: cache: byref<'T option> -> f: (unit -> 'T) -> 'T
 val inline cacheOptRef: cache: 'a option ref -> f: (unit -> 'a) -> 'a
 
 val inline tryGetCacheValue: cache: cache<'a> -> NonNullSlot<'a> voption
-
-module AsyncUtil =
-
-    /// Represents the reified result of an asynchronous computation.
-    [<NoEquality; NoComparison>]
-    type AsyncResult<'T> =
-        | AsyncOk of 'T
-        | AsyncException of exn
-        | AsyncCanceled of System.OperationCanceledException
-
-        static member Commit: res: AsyncResult<'T> -> Async<'T>
-
-    /// When using .NET 4.0 you can replace this type by <see cref="Task{T}"/>
-    [<Sealed>]
-    type AsyncResultCell<'T> =
-
-        new: unit -> AsyncResultCell<'T>
-        member RegisterResult: res: AsyncResult<'T> -> unit
-        member AsyncResult: Async<'T>
 
 module UnmanagedProcessExecutionOptions =
     val EnableHeapTerminationOnCorruption: unit -> unit
