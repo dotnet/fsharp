@@ -211,7 +211,9 @@ type TypeCheckingMode =
     | Graph
 
 [<RequireQualifiedAccess>]
-type TypeCheckingConfig = { Mode: TypeCheckingMode }
+type TypeCheckingConfig =
+    { Mode: TypeCheckingMode
+      DumpGraph: bool }
 
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =

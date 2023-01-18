@@ -1378,6 +1378,11 @@ let testFlag tcConfigB =
                     { tcConfigB.typeCheckingConfig with
                         Mode = TypeCheckingMode.Graph
                     }
+            | "DumpGraph" ->
+                tcConfigB.typeCheckingConfig <-
+                    { tcConfigB.typeCheckingConfig with
+                        DumpGraph = true
+                    }
 #if DEBUG
             | "ShowParserStackOnParseError" -> showParserStackOnParseError <- true
 #endif

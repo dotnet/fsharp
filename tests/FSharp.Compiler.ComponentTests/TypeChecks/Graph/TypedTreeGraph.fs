@@ -139,8 +139,8 @@ let ``Create Graph from typed tree`` (projectArgumentsFilePath: string) =
             let! files, graphFromTypedTree = graphFromTypedTree checker proj
 
             graphFromTypedTree
-            |> Graph.map (fun n -> files.[n].File)
-            |> Graph.serialiseToJson $"{fileName}.typed-tree.deps.json"
+            |> Graph.map (fun n -> n,files.[n].File)
+            |> Graph.serialiseToMermaid $"{fileName}.typed-tree.deps.md"
 
             let collectAllDeps (graph: Graph<int>) =
                 (Map.empty, [ 0 .. (sourceFiles.Length - 1) ])
@@ -161,8 +161,8 @@ let ``Create Graph from typed tree`` (projectArgumentsFilePath: string) =
                 files.Values |> Seq.map TestFileWithAST.Map |> Seq.toArray |> DependencyResolution.mkGraph isFSharpCore filePairs
 
             graphFromHeuristic
-            |> Graph.map (fun n -> files.[n].File)
-            |> Graph.serialiseToJson $"{fileName}.heuristic-tree.deps.json"
+            |> Graph.map (fun n -> n, files.[n].File)
+            |> Graph.serialiseToMermaid $"{fileName}.heuristic-tree.deps.md"
 
             let heuristicMap = collectAllDeps graphFromHeuristic
 
