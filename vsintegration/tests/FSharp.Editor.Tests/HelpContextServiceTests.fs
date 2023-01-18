@@ -12,9 +12,6 @@ open FSharp.Editor.Tests.Helpers
 open Microsoft.CodeAnalysis.Text
 
 type HelpContextServiceTests() =
-    let PathRelativeToTestAssembly p =
-        Path.Combine(Path.GetDirectoryName(Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).LocalPath), p)
-
     let getMarkers (source: string) =
         let mutable cnt = 0
 
@@ -25,15 +22,13 @@ type HelpContextServiceTests() =
                     cnt <- cnt + 1
         ]
 
-    let TestF1KeywordsWithOptions (expectedKeywords: string option list, lines: string list, opts: string[]) =
-        let options = RoslynTestHelpers.DefaultProjectOptions
-
+    let TestF1KeywordsWithOptions (expectedKeywords: string option list, lines: string list) =
         let fileContentsWithMarkers = String.Join("\r\n", lines)
         let fileContents = fileContentsWithMarkers.Replace("$", "")
 
         let sourceText = SourceText.From(fileContents)
         let document =
-            RoslynTestHelpers.CreateSolution(fileContents, options = options)
+            RoslynTestHelpers.CreateSolution(fileContents)
             |> RoslynTestHelpers.GetSingleDocument
 
         let markers = getMarkers fileContentsWithMarkers
@@ -59,7 +54,7 @@ type HelpContextServiceTests() =
             Assert.Equal(exp, res)
 
     let TestF1Keywords (expectedKeywords, lines) =
-        TestF1KeywordsWithOptions(expectedKeywords, lines, [||])
+        TestF1KeywordsWithOptions(expectedKeywords, lines)
 
 #if RELEASE
     [<Fact(Skip="Fails in some CI, reproduces locally in Release mode, needs investigation")>]
@@ -225,11 +220,7 @@ type HelpContextServiceTests() =
 
         TestF1KeywordsWithOptions(
             keywords,
-            file,
-            [|
-                "-r:"
-                + PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")
-            |]
+            file
         )
 
 #if RELEASE
@@ -250,11 +241,7 @@ type HelpContextServiceTests() =
 
         TestF1KeywordsWithOptions(
             keywords,
-            file,
-            [|
-                "-r:"
-                + PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")
-            |]
+            file
         )
 
     [<Fact>]

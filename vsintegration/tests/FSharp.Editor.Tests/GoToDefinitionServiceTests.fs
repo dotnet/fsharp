@@ -50,15 +50,13 @@ module GoToDefinitionServiceTests =
             | _ -> return! None
         }
 
-    let GoToDefinitionTest (fileContents: string, caretMarker: string, expected, opts) =
-
-        let options = RoslynTestHelpers.DefaultProjectOptions
+    let GoToDefinitionTest (fileContents: string, caretMarker: string, expected) =
 
         let caretPosition = fileContents.IndexOf(caretMarker) + caretMarker.Length - 1 // inside the marker
 
         let sourceText = SourceText.From(fileContents)
         let document =
-            RoslynTestHelpers.CreateSolution(fileContents, options = options)
+            RoslynTestHelpers.CreateSolution(fileContents)
             |> RoslynTestHelpers.GetSingleDocument
 
         let actual =
@@ -113,7 +111,7 @@ let _ = Module1.foo 1
             for caretMarker, expected in testCases do
 
                 printfn "Test case: caretMarker=<<<%s>>>" caretMarker
-                GoToDefinitionTest(fileContents, caretMarker, expected, [||])
+                GoToDefinitionTest(fileContents, caretMarker, expected)
 
     [<Fact>]
     let ``goto definition for string interpolation`` () =
@@ -126,7 +124,7 @@ let yyyy = $"{abc{xxxxx}def}" """
         let caretMarker = "xxxxx"
         let expected = Some(2, 2, 4, 9)
 
-        GoToDefinitionTest(fileContents, caretMarker, expected, [||])
+        GoToDefinitionTest(fileContents, caretMarker, expected)
 
     [<Fact>]
     let ``goto definition for static abstract method invocation`` () =
@@ -143,4 +141,4 @@ let f_IWSAM_flex_StaticProperty(x: #IStaticProperty<'T>) =
         let caretMarker = "'T.StaticProperty"
         let expected = Some(3, 3, 20, 34)
 
-        GoToDefinitionTest(fileContents, caretMarker, expected, [| "/langversion:preview" |])
+        GoToDefinitionTest(fileContents, caretMarker, expected)
