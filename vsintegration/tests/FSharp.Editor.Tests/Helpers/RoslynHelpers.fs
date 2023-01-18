@@ -264,15 +264,13 @@ type RoslynTestHelpers private () =
                 options.SourceFiles,
                 options.OtherOptions |> ImmutableArray.CreateRange)
 
-    static member CreateSolution ([<ParamArray>] sources: string[], ?options: FSharpProjectOptions) =
+    static member CreateSolution (source, ?options: FSharpProjectOptions) =
         let projId = ProjectId.CreateNewId()
 
-        let docInfos = 
-            sources
-            |> Seq.mapi (fun i -> RoslynTestHelpers.CreateDocumentInfo projId $"C:\\test{i}.fs")
+        let docInfo = RoslynTestHelpers.CreateDocumentInfo projId $"C:\\test0.fs" source
 
         let projFilePath = "C:\\test0.fsproj"
-        let projInfo = RoslynTestHelpers.CreateProjectInfo projId projFilePath docInfos
+        let projInfo = RoslynTestHelpers.CreateProjectInfo projId projFilePath [docInfo]
         let solution = RoslynTestHelpers.CreateSolution [projInfo]
 
         options 
