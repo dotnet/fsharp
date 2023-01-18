@@ -2,33 +2,18 @@
 
 namespace FSharp.Editor.Tests
 
-open System
 open Xunit
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.CodeAnalysis
 open Microsoft.CodeAnalysis.Formatting
+open FSharp.Editor.Tests.Helpers
 
 type IndentationServiceTests() =
     let checker = FSharpChecker.Create()
 
-    let filePath = "C:\\test0.fs"
-
-    let projectOptions: FSharpProjectOptions =
-        {
-            ProjectFileName = "C:\\test0.fsproj"
-            ProjectId = None
-            SourceFiles = [| filePath |]
-            ReferencedProjects = [||]
-            OtherOptions = [||]
-            IsIncompleteTypeCheckEnvironment = true
-            UseScriptResolutionRules = false
-            LoadTime = DateTime.MaxValue
-            OriginalLoadReferences = []
-            UnresolvedReferences = None
-            Stamp = None
-        }
+    let filePath = "C:\\test.fs"
 
     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
     let tabSize = 4
@@ -179,7 +164,7 @@ while true do
         for (expectedIndentation, lineNumber, template) in testCases do
             let sourceText = SourceText.From(template)
 
-            let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
+            let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
 
             let actualIndentation =
                 FSharpIndentationService.GetDesiredIndentation(
@@ -203,7 +188,7 @@ while true do
 
             let sourceText = SourceText.From(template)
 
-            let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
+            let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
 
             let actualIndentation =
                 FSharpIndentationService.GetDesiredIndentation(
