@@ -3,9 +3,8 @@
 namespace FSharp.Editor.Tests.Hints
 
 open Xunit
-open FluentAssertions
 open HintTestFramework
-open System.Collections
+open FSharp.Test
 
 module InlineTypeHintTests =
 

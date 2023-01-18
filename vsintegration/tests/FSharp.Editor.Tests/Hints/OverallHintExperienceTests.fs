@@ -4,6 +4,7 @@ namespace FSharp.Editor.Tests.Hints
 
 open Xunit
 open HintTestFramework
+open FSharp.Test
 
 // just some kind of higher level testing
 module OverallHintExperienceTests =

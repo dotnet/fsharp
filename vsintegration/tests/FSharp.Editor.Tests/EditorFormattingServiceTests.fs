@@ -9,6 +9,7 @@ open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.CodeAnalysis
 open Microsoft.CodeAnalysis.Formatting
 open FSharp.Editor.Tests.Helpers
+open FSharp.Test
 
 type EditorFormattingServiceTests() =
     let filePath = "C:\\test.fs"

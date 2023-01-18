@@ -6,6 +6,7 @@ open Xunit
 open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Editor.Tests.Helpers
+open FSharp.Test
 
 type DocumentDiagnosticAnalyzerTests() =
     let startMarker = "(*start*)"

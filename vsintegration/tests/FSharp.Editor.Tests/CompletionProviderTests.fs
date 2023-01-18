@@ -12,6 +12,7 @@ module CompletionProviderTests =
     open Microsoft.VisualStudio.FSharp.Editor
     open FSharp.Editor.Tests.Helpers
     open Xunit
+    open FSharp.Test
 
     let filePath = "C:\\test.fs"
 
