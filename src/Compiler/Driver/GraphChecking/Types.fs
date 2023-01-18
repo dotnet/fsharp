@@ -4,14 +4,14 @@ open System.Collections.Generic
 open FSharp.Compiler.Syntax
 
 /// The index of a file inside a project.
-type FileIndex = int
+type internal FileIndex = int
 
 /// File name capture by ParsedInput.FileName
 type internal FileName = string
 
 /// Represents the string value of a single identifier in the syntax tree.
 /// For example, `"Hello"` in `module Hello`.
-type Identifier = string
+type internal Identifier = string
 
 /// Represents one or more identifiers in the syntax tree.
 /// For example, `[ "X"; "Y"; "Z" ]` in `open X.Y.Z`
@@ -164,4 +164,4 @@ type internal FilePairMap(files: FileInProject array) =
     member x.IsSignature(index: FileIndex) = Map.containsKey index sigToImpl
 
 /// Callback that returns a previously calculated 'Result and updates 'State accordingly.
-type Finisher<'State, 'Result> = delegate of 'State -> 'Result * 'State
+type internal Finisher<'State, 'Result> = delegate of 'State -> 'Result * 'State
