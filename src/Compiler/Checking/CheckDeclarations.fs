@@ -3015,8 +3015,11 @@ module EstablishTypeDefinitionCores =
 
                     match ty with
                     | AppTy g (tcref, _) ->
-                        if tcref.CompiledRepresentationForNamedType.FullName = "Microsoft.FSharp.Core.AutoOpenAttribute" then
-                            warning(Error(FSComp.SR.chkAutoOpenAttributeInTypeAbbrev(), tycon.Id.idRange))
+                        match tcref.CompiledRepresentation with
+                        | CompiledTypeRepr.ILAsmOpen _ -> ()
+                        | CompiledTypeRepr.ILAsmNamed _ ->
+                            if tcref.CompiledRepresentationForNamedType.FullName = "Microsoft.FSharp.Core.AutoOpenAttribute" then
+                                warning(Error(FSComp.SR.chkAutoOpenAttributeInTypeAbbrev(), tycon.Id.idRange))
                     | _ -> ()
                     
                     if not firstPass then 
