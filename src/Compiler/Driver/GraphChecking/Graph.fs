@@ -6,6 +6,8 @@
 open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Linq
+open System.Text
+open FSharp.Compiler.IO
 
 /// <summary> Directed Acyclic Graph (DAG) of arbitrary nodes </summary>
 type internal Graph<'Node> = IReadOnlyDictionary<'Node, 'Node[]>
@@ -83,17 +85,23 @@ module internal Graph =
     let print (graph: Graph<'Node>) : unit =
         printCustom graph (fun node -> node.ToString())
 
-    let serialiseToJson (path: string) (graph: Graph<string>) : unit =
-        let escapeName (name: string) =
-            name.Replace("\\", "\\\\") |> sprintf "\"%s\""
+    let serialiseToMermaid path (graph: Graph<int * string>) =
+        let sb = StringBuilder()
+        let appendLine (line: string) = sb.AppendLine(line) |> ignore
 
-        let entries =
-            graph
-            |> Seq.map (fun (KeyValue (file, deps)) ->
-                let deps = deps |> Seq.map escapeName |> String.concat "," |> sprintf "[ %s ]"
+        appendLine "```mermaid"
+        appendLine "flowchart RL"
 
-                $"    {escapeName file}: {deps}")
-            |> String.concat ","
+        for KeyValue ((idx, fileName), _) in graph do
+            appendLine $"    %i{idx}[\"%s{fileName}\"]"
 
-        let json = $"{{\n{entries}\n}}"
-        System.IO.File.WriteAllText(path, json)
+        for KeyValue ((idx, _), deps) in graph do
+            for depIdx, _depFileName in deps do
+                appendLine $"    %i{idx} --> %i{depIdx}"
+
+        appendLine "```"
+
+        use out =
+            FileSystem.OpenFileForWriteShim(path, fileMode = System.IO.FileMode.Create)
+
+        out.WriteAllText(sb.ToString())

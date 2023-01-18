@@ -1715,19 +1715,22 @@ let CheckMultipleInputsUsingGraphMode
                 [| mkPhysicalFile fileIdx, mapDependencies fileIdx deps |])
         |> Graph.make
 
-    // graph |> Graph.map (fun idx -> sourceFiles.[idx].FileName) |> Graph.print
+    // Persist the graph to a Mermaid diagram if specified.
+    if tcConfig.typeCheckingConfig.DumpGraph then
+        tcConfig.outputFile
+        |> Option.iter (fun outputFile ->
+            let outputFile = FileSystem.GetFullPathShim(outputFile)
+            let graphFile = FileSystem.ChangeExtensionShim(outputFile, ".graph.md")
 
-    // let graphDumpPath =
-    //     let graphDumpName =
-    //         tcConfig.outputFile
-    //         |> Option.map Path.GetFileName
-    //         |> Option.defaultValue "project"
-    //
-    //     $"{graphDumpName}.deps.json"
-    //
-    // graph
-    // |> Graph.map (fun idx -> sourceFiles.[idx].FileName)
-    // |> Graph.serialiseToJson graphDumpPath
+            graph
+            |> Graph.map (fun idx ->
+                let friendlyFileName =
+                    sourceFiles.[idx]
+                        .FileName.Replace(tcConfig.implicitIncludeDir, "")
+                        .TrimStart([| '\\'; '/' |])
+
+                (idx, friendlyFileName))
+            |> Graph.serialiseToMermaid graphFile)
 
     let _ = ctok // TODO Use it
     let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger

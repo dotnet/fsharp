@@ -13,4 +13,4 @@ module internal Graph =
     /// Create a reverse of the graph
     val reverse<'Node when 'Node: equality> : originalGraph: Graph<'Node> -> Graph<'Node>
     val print: graph: Graph<'Node> -> unit
-    val serialiseToJson: path: string -> graph: Graph<string> -> unit
+    val serialiseToMermaid: path: string -> graph: Graph<int * string> -> unit
