@@ -512,7 +512,7 @@ module internal LexerStateEncoding =
     let ifdefstackNumBits = 24 // 0 means if, 1 means else
     let stringKindBits = 3
     let nestingBits = 12
-    let ndolBits = 3
+    let dlenBits = 3
 
     let _ =
         assert
@@ -523,7 +523,7 @@ module internal LexerStateEncoding =
              + ifdefstackNumBits
              + stringKindBits
              + nestingBits
-             + ndolBits
+             + dlenBits
              <= 64)
 
     let lexstateStart = 0
@@ -549,7 +549,7 @@ module internal LexerStateEncoding =
         + ifdefstackNumBits
         + stringKindBits
 
-    let ndolStart =
+    let dlenStart =
         lexstateNumBits
         + ncommentsNumBits
         + hardwhiteNumBits
@@ -565,7 +565,7 @@ module internal LexerStateEncoding =
     let ifdefstackMask = Bits.mask64 ifdefstackStart ifdefstackNumBits
     let stringKindMask = Bits.mask64 stringKindStart stringKindBits
     let nestingMask = Bits.mask64 nestingStart nestingBits
-    let ndolMask = Bits.mask64 ndolStart ndolBits
+    let dlenMask = Bits.mask64 dlenStart dlenBits
 
     let bitOfBool b = if b then 1 else 0
     let boolOfBit n = (n = 1L)
@@ -600,7 +600,7 @@ module internal LexerStateEncoding =
             light,
             stringKind: LexerStringKind,
             stringNest,
-            ndol : int
+            delimLen : int
         ) =
         let mutable ifdefStackCount = 0
         let mutable ifdefStackBits = 0
@@ -635,7 +635,7 @@ module internal LexerStateEncoding =
             ||| ((kind1 <<< 2) &&& 0b000000001100)
             ||| ((kind2 <<< 0) &&& 0b000000000011)
 
-        let ndol = min ndol (Bits.pown32 ndolBits)
+        let delimLen = min delimLen (Bits.pown32 dlenBits)
 
         let bits =
             lexStateOfColorState colorState
@@ -645,7 +645,7 @@ module internal LexerStateEncoding =
             ||| ((int64 ifdefStackBits <<< ifdefstackStart) &&& ifdefstackMask)
             ||| ((int64 stringKindValue <<< stringKindStart) &&& stringKindMask)
             ||| ((int64 nestingValue <<< nestingStart) &&& nestingMask)
-            ||| ((int64 ndol <<< ndolStart) &&& ndolMask)
+            ||| ((int64 delimLen <<< dlenStart) &&& dlenMask)
 
         {
             PosBits = b.Encoding
@@ -701,9 +701,9 @@ module internal LexerStateEncoding =
             ]
             nest
 
-        let ndol = int32 ((bits &&& ndolMask) >>> ndolStart)
+        let delimLen = int32 ((bits &&& dlenMask) >>> dlenStart)
 
-        (colorState, ncomments, pos, ifDefs, hardwhite, stringKind, stringNest, ndol)
+        (colorState, ncomments, pos, ifDefs, hardwhite, stringKind, stringNest, delimLen)
 
     let encodeLexInt indentationSyntaxStatus (lexcont: LexerContinuation) =
         match lexcont with
@@ -744,14 +744,14 @@ module internal LexerStateEncoding =
                     stringNest,
                     0
                 )
-        | LexCont.String (ifdefs, stringNest, style, kind, ndol, m) ->
+        | LexCont.String (ifdefs, stringNest, style, kind, delimLen, m) ->
             let state =
                 match style with
                 | LexerStringStyle.SingleQuote -> FSharpTokenizerColorState.String
                 | LexerStringStyle.Verbatim -> FSharpTokenizerColorState.VerbatimString
                 | LexerStringStyle.TripleQuote -> FSharpTokenizerColorState.TripleQuoteString
 
-            encodeLexCont (state, 0L, m.Start, ifdefs, indentationSyntaxStatus, kind, stringNest, ndol)
+            encodeLexCont (state, 0L, m.Start, ifdefs, indentationSyntaxStatus, kind, stringNest, delimLen)
         | LexCont.Comment (ifdefs, stringNest, n, m) ->
             encodeLexCont (
                 FSharpTokenizerColorState.Comment,
@@ -795,7 +795,7 @@ module internal LexerStateEncoding =
             )
 
     let decodeLexInt (state: FSharpTokenizerLexState) =
-        let tag, n1, p1, ifdefs, lightSyntaxStatusInitial, stringKind, stringNest, ndol =
+        let tag, n1, p1, ifdefs, lightSyntaxStatusInitial, stringKind, stringNest, delimLen =
             decodeLexCont state
 
         let lexcont =
@@ -816,7 +816,7 @@ module internal LexerStateEncoding =
             | FSharpTokenizerColorState.VerbatimString ->
                 LexCont.String(ifdefs, stringNest, LexerStringStyle.Verbatim, stringKind, 0, mkRange "file" p1 p1)
             | FSharpTokenizerColorState.TripleQuoteString ->
-                LexCont.String(ifdefs, stringNest, LexerStringStyle.TripleQuote, stringKind, ndol, mkRange "file" p1 p1)
+                LexCont.String(ifdefs, stringNest, LexerStringStyle.TripleQuote, stringKind, delimLen, mkRange "file" p1 p1)
             | FSharpTokenizerColorState.EndLineThenSkip ->
                 LexCont.EndLine(ifdefs, stringNest, LexerEndlineContinuation.Skip(n1, mkRange "file" p1 p1))
             | FSharpTokenizerColorState.EndLineThenToken -> LexCont.EndLine(ifdefs, stringNest, LexerEndlineContinuation.Token)
@@ -948,10 +948,10 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
             lexargs.stringNest <- stringNest
             Lexer.ifdefSkip n m lexargs skip lexbuf
 
-        | LexCont.String (ifdefs, stringNest, style, kind, numdol, m) ->
+        | LexCont.String (ifdefs, stringNest, style, kind, delimLen, m) ->
             lexargs.ifdefStack <- ifdefs
             lexargs.stringNest <- stringNest
-            lexargs.numDollars <- numdol
+            lexargs.delimLength <- delimLen
             use buf = ByteBuffer.Create Lexer.StringCapacity
             let args = (buf, LexerStringFinisher.Default, m, kind, lexargs)
 

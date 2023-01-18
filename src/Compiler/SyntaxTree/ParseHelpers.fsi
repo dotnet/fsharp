@@ -128,7 +128,7 @@ type LexerContinuation =
         nesting: LexerInterpolatedStringNesting *
         style: LexerStringStyle *
         kind: LexerStringKind *
-        numdol: int *
+        delimLen: int *
         range: range
     | Comment of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * int * range: range
     | SingleLineComment of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * int * range: range
