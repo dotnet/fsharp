@@ -223,6 +223,7 @@ type RoslynTestHelpers private () =
         let extension = Path.GetExtension(filePath)
         match extension with
         | ".fsx" -> SourceCodeKind.Script
+        | ".fsi" -> SourceCodeKind.Regular
         | ".fs" -> SourceCodeKind.Regular
         | _ -> failwith "not supported"
 
@@ -267,7 +268,7 @@ type RoslynTestHelpers private () =
     static member CreateSolution (source, ?options: FSharpProjectOptions) =
         let projId = ProjectId.CreateNewId()
 
-        let docInfo = RoslynTestHelpers.CreateDocumentInfo projId $"C:\\test.fs" source
+        let docInfo = RoslynTestHelpers.CreateDocumentInfo projId "C:\\test.fs" source
 
         let projFilePath = "C:\\test.fsproj"
         let projInfo = RoslynTestHelpers.CreateProjectInfo projId projFilePath [docInfo]
