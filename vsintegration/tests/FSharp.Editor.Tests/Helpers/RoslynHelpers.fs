@@ -254,6 +254,16 @@ type RoslynTestHelpers private () =
             documents = documents,
             filePath = filePath)
 
+    static member SetProjectOptions projId (solution: Solution) (options: FSharpProjectOptions)  = 
+        solution
+            .Workspace
+            .Services
+            .GetService<IFSharpWorkspaceService>()
+            .FSharpProjectOptionsManager.SetCommandLineOptions(
+                projId,
+                options.SourceFiles,
+                options.OtherOptions |> ImmutableArray.CreateRange)
+
     static member CreateSolution ([<ParamArray>] sources: string[], ?options: FSharpProjectOptions) =
         let projId = ProjectId.CreateNewId()
 
@@ -265,13 +275,9 @@ type RoslynTestHelpers private () =
         let projInfo = RoslynTestHelpers.CreateProjectInfo projId projFilePath docInfos
         let solution = RoslynTestHelpers.CreateSolution [projInfo]
 
-        let workspaceService = solution.Workspace.Services.GetService<IFSharpWorkspaceService>()
-
-        let options = options |> Option.defaultValue RoslynTestHelpers.DefaultProjectOptions
-        workspaceService.FSharpProjectOptionsManager.SetCommandLineOptions(
-            projId,
-            options.SourceFiles,
-            options.OtherOptions |> ImmutableArray.CreateRange)
+        options 
+        |> Option.defaultValue RoslynTestHelpers.DefaultProjectOptions
+        |> RoslynTestHelpers.SetProjectOptions projId solution
 
         solution
 
