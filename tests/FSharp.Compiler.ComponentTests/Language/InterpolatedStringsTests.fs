@@ -44,10 +44,45 @@ printf $"{a.Format}"
         |> withStdOutContains "{{hello}} world"
 
     [<Fact>]
+    let ``Interpolated string with 2 leading dollar characters uses double braces for delimiters`` () =
+        // let s = $$"""{{42 + 0}} = {41 + 1}"""
+        // printfn "%s" s
+        Fsx "let s = $$\"\"\"{{42 + 0}} = {41 + 1}\"\"\"\n\
+printfn \"%s\" s"
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContains "42 = {41 + 1}"
+
+    [<Fact>]
+    let ``Too many consecutive opening braces in interpolated string result in an error`` () =
+        // $$"""{{{{42 - 0}}"""
+        Fsx "$$\"\"\"{{{{42 - 0}}\"\"\""
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withSingleDiagnostic (Error 1248, Line 1, Col 1, Line 1, Col 10, "The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive opening braces as content.")
+
+    [<Fact>]
+    let ``Too many consecutive closing braces in interpolated string result in an error`` () =
+        // $$"""{{42 - 0}}}}"""
+        Fsx "$$\"\"\"{{42 - 0}}}}\"\"\""
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withSingleDiagnostic (Error 1249, Line 1, Col 15, Line 1, Col 21, "The interpolated string contains unmatched closing braces.")
+
+    [<Fact>]
     let ``Percent sign characters in interpolated strings`` () =
         Assert.Equal("%", $"%%")
         Assert.Equal("42%", $"{42}%%")
         Assert.Equal("% 42", $"%%%3d{42}")
+
+    [<Fact>]
+    let ``Percent sign characters in triple quote interpolated strings`` () =
+        Assert.Equal("%%", $$$"""%%""")
+        Assert.Equal("42%", $$"""{{42}}%""")
+        Assert.Equal("% 42", $$"""%%%3d{{42}}""")
 
     [<Fact>]
     let ``Percent signs separated by format specifier's flags`` () =
