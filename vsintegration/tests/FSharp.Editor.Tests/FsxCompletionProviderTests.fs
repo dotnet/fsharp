@@ -14,26 +14,12 @@ type Worker() =
 
     let filePath = "C:\\test.fsx"
 
-    let projectOptions =
-        {
-            ProjectFileName = "C:\\test.fsproj"
-            ProjectId = None
-            SourceFiles = [| filePath |]
-            ReferencedProjects = [||]
-            OtherOptions = [||]
-            IsIncompleteTypeCheckEnvironment = true
-            UseScriptResolutionRules = true
-            LoadTime = DateTime.MaxValue
-            OriginalLoadReferences = []
-            UnresolvedReferences = None
-            Stamp = None
-        }
-
     member _.VerifyCompletionListExactly(fileContents: string, marker: string, expected: List<string>) =
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
 
+        let options = { RoslynTestHelpers.DefaultProjectOptions with SourceFiles = [|filePath|] }
         let document =
-            RoslynTestHelpers.CreateSolution(fileContents, options = projectOptions)
+            RoslynTestHelpers.CreateSolution(fileContents, options = options)
             |> RoslynTestHelpers.GetSingleDocument
 
         let expected = expected |> Seq.toList
