@@ -2,13 +2,10 @@
 
 namespace FSharp.Editor.Tests
 
-open System
-open System.IO
 open Xunit
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
-open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 open FSharp.Editor.Tests.Helpers
@@ -53,24 +50,9 @@ module GoToDefinitionServiceTests =
             | _ -> return! None
         }
 
-    let makeOptions filePath args =
-        {
-            ProjectFileName = "C:\\test0.fsproj"
-            ProjectId = None
-            SourceFiles = [| filePath |]
-            ReferencedProjects = [||]
-            OtherOptions = args
-            IsIncompleteTypeCheckEnvironment = true
-            UseScriptResolutionRules = false
-            LoadTime = DateTime.MaxValue
-            OriginalLoadReferences = []
-            UnresolvedReferences = None
-            Stamp = None
-        }
-
     let GoToDefinitionTest (fileContents: string, caretMarker: string, expected, opts) =
 
-        let options = makeOptions "C:\\test0.fs" opts
+        let options = RoslynTestHelpers.DefaultProjectOptions
 
         let caretPosition = fileContents.IndexOf(caretMarker) + caretMarker.Length - 1 // inside the marker
 

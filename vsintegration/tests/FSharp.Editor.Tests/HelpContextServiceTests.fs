@@ -6,7 +6,6 @@ open System
 open System.Threading
 open Xunit
 open Microsoft.CodeAnalysis
-open FSharp.Compiler.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.IO
 open FSharp.Editor.Tests.Helpers
@@ -15,23 +14,6 @@ open Microsoft.CodeAnalysis.Text
 type HelpContextServiceTests() =
     let PathRelativeToTestAssembly p =
         Path.Combine(Path.GetDirectoryName(Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).LocalPath), p)
-
-    let filePath = "C:\\test0.fs"
-
-    let makeOptions args =
-        {
-            ProjectFileName = "C:\\test0.fsproj"
-            ProjectId = None
-            SourceFiles = [| filePath |]
-            ReferencedProjects = [||]
-            OtherOptions = args
-            IsIncompleteTypeCheckEnvironment = true
-            UseScriptResolutionRules = false
-            LoadTime = DateTime.MaxValue
-            OriginalLoadReferences = []
-            UnresolvedReferences = None
-            Stamp = None
-        }
 
     let getMarkers (source: string) =
         let mutable cnt = 0
@@ -44,7 +26,7 @@ type HelpContextServiceTests() =
         ]
 
     let TestF1KeywordsWithOptions (expectedKeywords: string option list, lines: string list, opts: string[]) =
-        let options = makeOptions opts
+        let options = RoslynTestHelpers.DefaultProjectOptions
 
         let fileContentsWithMarkers = String.Join("\r\n", lines)
         let fileContents = fileContentsWithMarkers.Replace("$", "")
