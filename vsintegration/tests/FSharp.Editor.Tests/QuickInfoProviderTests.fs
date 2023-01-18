@@ -8,6 +8,7 @@ open FSharp.Compiler.EditorServices
 open FSharp.Compiler.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Editor.Tests.Helpers
+open FSharp.Test
 
 type public AssemblyResolverTestFixture() =
 
@@ -93,8 +94,7 @@ module QuickInfoProviderTests =
             let actual =
                 quickInfo |> Option.map (fun qi -> tooltipTextToRawString qi.StructuredText)
 
-            let result = expected = actual
-            Assert.True(result, "Symbol: " + symbol)
+            actual |> Assert.shouldBeEqualWith expected $"Symbol: {symbol}"
 
     [<Fact>]
     let ShouldShowQuickInfoAtCorrectPositions () =
