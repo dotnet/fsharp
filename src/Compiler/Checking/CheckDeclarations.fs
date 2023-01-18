@@ -3014,7 +3014,7 @@ module EstablishTypeDefinitionCores =
                     let ty, _ = TcTypeOrMeasureAndRecover (Some kind) cenv NoNewTypars checkConstraints ItemOccurence.UseInType WarnOnIWSAM.No envinner tpenv rhsType
 
                     match ty with
-                    | AppTy g (tcref, _) ->
+                    | AppTy g (tcref, _) when not tcref.IsErased ->
                         match tcref.CompiledRepresentation with
                         | CompiledTypeRepr.ILAsmOpen _ -> ()
                         | CompiledTypeRepr.ILAsmNamed _ ->
