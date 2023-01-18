@@ -75,7 +75,7 @@ type internal FileContentQueryState =
     member OpenNamespaces: Set<LongIdentifier>
 
 /// The result type of querying a Trie Node.
-/// The requested node either did not exist, is part of the trie but but no expose data or was found and exposes data. 
+/// The requested node either did not exist, is part of the trie but but no expose data or was found and exposes data.
 [<RequireQualifiedAccess>]
 type internal QueryTrieNodeResult =
     /// No node was found for the path in the trie
