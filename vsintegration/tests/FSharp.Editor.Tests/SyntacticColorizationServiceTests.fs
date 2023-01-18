@@ -8,6 +8,7 @@ open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
+open FSharp.Test
 
 type SyntacticClassificationServiceTests() =
 
@@ -49,9 +50,9 @@ type SyntacticClassificationServiceTests() =
 
         match tokens |> Seq.tryFind (fun token -> token.TextSpan.Contains(markerPosition)) with
         | None -> failwith "Cannot find colorization data for start of marker"
-        | Some (classifiedSpan) ->
-            let result = classificationType = classifiedSpan.ClassificationType 
-            Assert.True(result, "Classification data doesn't match for start of marker")
+        | Some classifiedSpan ->
+            classifiedSpan.ClassificationType |> Assert.shouldBeEqualWith classificationType
+                "Classification data doesn't match for start of marker"
 
     member private this.VerifyColorizerAtEndOfMarker
         (
@@ -69,9 +70,9 @@ type SyntacticClassificationServiceTests() =
             |> Seq.tryFind (fun token -> token.TextSpan.Contains(markerPosition + marker.Length - 1))
         with
         | None -> failwith "Cannot find colorization data for end of marker"
-        | Some (classifiedSpan) ->
-            let result = classificationType = classifiedSpan.ClassificationType 
-            Assert.True(result, "Classification data doesn't match for end of marker")
+        | Some classifiedSpan ->
+            classifiedSpan.ClassificationType |> Assert.shouldBeEqualWith classificationType
+                "Classification data doesn't match for end of marker"
 
     [<Fact>]
     member this.Comment_SingleLine() =
