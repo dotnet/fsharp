@@ -8,6 +8,22 @@ open FSharp.Editor.Tests.Helpers
 
 module QuickInfo =
 
+    let private GetCaretPosition (codeWithCaret: string) =
+        let caretSentinel = "$$"
+        let mutable cursorInfo: (int * string) = (0, null)
+
+        // find the '$$' sentinel that represents the cursor location
+        let caretPosition = codeWithCaret.IndexOf(caretSentinel)
+
+        if caretPosition >= 0 then
+            let newContents =
+                codeWithCaret.Substring(0, caretPosition)
+                + codeWithCaret.Substring(caretPosition + caretSentinel.Length)
+
+            cursorInfo <- caretPosition, newContents
+
+        cursorInfo
+
     let internal GetQuickInfo (code: string) caretPosition =
         async {
             let document = RoslynTestHelpers.CreateSolution(code) |> RoslynTestHelpers.GetSingleDocument
@@ -15,7 +31,8 @@ module QuickInfo =
         }
         |> Async.RunSynchronously
 
-    let GetQuickInfoText (code: string) caretPosition =
+    let GetQuickInfoTextFromCode (codeWithCaret: string) =
+        let caretPosition, code = GetCaretPosition codeWithCaret
         let sigHelp = GetQuickInfo code caretPosition
 
         match sigHelp with
@@ -33,27 +50,6 @@ module QuickInfo =
             let docTextItems = docs |> Seq.map (fun x -> x.Text)
             System.String.Join(System.String.Empty, (Seq.concat [ mainTextItems; docTextItems ]))
         | _ -> ""
-
-    /// Strips cursor information from each file and returns the name and cursor position of the last file to specify it.
-    let GetCaretPosition2 (codeWithCaret: string) =
-        let caretSentinel = "$$"
-        let mutable cursorInfo: (int * string) = (0, null)
-
-        // find the '$$' sentinel that represents the cursor location
-        let caretPosition = codeWithCaret.IndexOf(caretSentinel)
-
-        if caretPosition >= 0 then
-            let newContents =
-                codeWithCaret.Substring(0, caretPosition)
-                + codeWithCaret.Substring(caretPosition + caretSentinel.Length)
-
-            cursorInfo <- caretPosition, newContents
-
-        cursorInfo
-
-    let GetQuickInfoTextFromCode (codeWithCaret: string) =
-        let caretPosition, code = GetCaretPosition2 codeWithCaret
-        GetQuickInfoText code caretPosition
 
     let expectedLines (lines: string list) = System.String.Join("\n", lines)
 

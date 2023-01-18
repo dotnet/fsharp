@@ -9,6 +9,7 @@ open FSharp.Compiler.Text
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Classification
 open FSharp.Editor.Tests.Helpers
+open FSharp.Test
 
 type SemanticClassificationServiceTests() =
     let getRanges (source: string) : SemanticClassificationItem list =
@@ -40,8 +41,8 @@ type SemanticClassificationServiceTests() =
         match ranges |> List.tryFind (fun item -> Range.rangeContainsPos item.Range markerPos) with
         | None -> failwith "Cannot find colorization data for end of marker"
         | Some item ->
-            let result = classificationType = FSharpClassificationTypes.getClassificationTypeName item.Type
-            Assert.True(result, "Classification data doesn't match for end of marker")
+            FSharpClassificationTypes.getClassificationTypeName item.Type |> Assert.shouldBeEqualWith classificationType
+                "Classification data doesn't match for end of marker"
 
     let verifyNoClassificationDataAtEndOfMarker (fileContents: string, marker: string, classificationType: string) =
         let text = SourceText.From(fileContents)
