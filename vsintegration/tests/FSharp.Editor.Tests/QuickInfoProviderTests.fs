@@ -18,21 +18,6 @@ module QuickInfoProviderTests =
 
     let filePath = "C:\\test.fs"
 
-    let internal projectOptions =
-        {
-            ProjectFileName = "C:\\test.fsproj"
-            ProjectId = None
-            SourceFiles = [| filePath |]
-            ReferencedProjects = [||]
-            OtherOptions = [||]
-            IsIncompleteTypeCheckEnvironment = true
-            UseScriptResolutionRules = false
-            LoadTime = DateTime.MaxValue
-            OriginalLoadReferences = []
-            UnresolvedReferences = None
-            Stamp = None
-        }
-
     let private normalizeLineEnds (s: string) =
         s.Replace("\r\n", "\n").Replace("\n\n", "\n")
 

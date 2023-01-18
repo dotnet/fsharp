@@ -22,72 +22,92 @@ module SignatureHelpProvider =
 
     let filePath = "C:\\test.fs"
 
-    let GetSignatureHelp (libraryCode: string) (helperCode: string) =
+    let GetCaretPosition (codeWithCaret: string) =
+        let caretSentinel = "$$"
+        let mutable cursorInfo: (int * string) = (0, null)
+
+        // find the '$$' sentinel that represents the cursor location
+        let caretPosition = codeWithCaret.IndexOf(caretSentinel)
+
+        if caretPosition >= 0 then
+            let newContents =
+                codeWithCaret.Substring(0, caretPosition)
+                + codeWithCaret.Substring(caretPosition + caretSentinel.Length)
+
+            cursorInfo <- caretPosition, newContents
+
+        cursorInfo
+
+    let GetSignatureHelp (libraryCodeWithCaret: string) (helperCode: string) =
         async {
-            failwith ""
-            //let project1Id = ProjectId.CreateNewId()
-            //let project1FilePath = "C:\\TestLibrary.fsproj"
-            //let doc1 = RoslynTestHelpers.CreateDocumentInfo project1Id "C:\\test.fs" libraryCode
-            //let projInfo1 = RoslynTestHelpers.CreateProjectInfo project1Id project1FilePath [doc1]
+            let caretPosition, libraryCode = GetCaretPosition libraryCodeWithCaret
 
-            //let project2Id = ProjectId.CreateNewId()
-            //let project2FilePath = "C:\\HelperLibrary.fsproj"
-            //let doc2 = RoslynTestHelpers.CreateDocumentInfo project2Id "C:\\test1.fs" helperCode
-            //let projInfo2 = RoslynTestHelpers.CreateProjectInfo project2Id project2FilePath [doc2]
+            let triggerChar = None
+            let sourceText = SourceText.From(libraryCode)
+            let textLines = sourceText.Lines
+            let caretLinePos = textLines.GetLinePosition(caretPosition)
+            let caretLineColumn = caretLinePos.Character
 
-            //let solution = RoslynTestHelpers.CreateSolution [projInfo1; projInfo2]
+            let project1Id = ProjectId.CreateNewId()
+            let project1FilePath = "C:\\TestLibrary.fsproj"
+            let doc1 = RoslynTestHelpers.CreateDocumentInfo project1Id "C:\\test.fs" libraryCode
+            let projInfo1 = RoslynTestHelpers.CreateProjectInfo project1Id project1FilePath [doc1]
+            let options1 = { RoslynTestHelpers.DefaultProjectOptions with ProjectFileName = project1FilePath }
 
+            let project2Id = ProjectId.CreateNewId()
+            let project2FilePath = "C:\\HelperLibrary.fsproj"
+            let doc2 = RoslynTestHelpers.CreateDocumentInfo project2Id "C:\\test.fs" helperCode
+            let projInfo2 = RoslynTestHelpers.CreateProjectInfo project2Id project2FilePath [doc2]
+            let options2 = { 
+                RoslynTestHelpers.DefaultProjectOptions with 
+                    ProjectFileName = project2FilePath
+                    ReferencedProjects = [||] }
 
-            //let triggerChar = None
-            //let sourceText = SourceText.From(fileContents)
-            //let textLines = sourceText.Lines
-            //let caretLinePos = textLines.GetLinePosition(caretPosition)
-            //let caretLineColumn = caretLinePos.Character
+            let solution = RoslynTestHelpers.CreateSolution [projInfo1; projInfo2]
+            RoslynTestHelpers.SetProjectOptions project1Id solution options1
+            RoslynTestHelpers.SetProjectOptions project2Id solution options2
 
-            //let document = 
-            //    RoslynTestHelpers.CreateSolution(fileContents)
-            //    |> RoslynTestHelpers.GetSingleDocument
+            let project = solution.GetProject(project1Id)
+            let document = project.GetDocument(doc1.Id)
+            let parseResults, checkFileResults =
+                document.GetFSharpParseAndCheckResultsAsync("GetSignatureHelp")
+                |> Async.RunSynchronously
 
-            //let parseResults, checkFileResults =
-            //    document.GetFSharpParseAndCheckResultsAsync("GetSignatureHelp")
-            //    |> Async.RunSynchronously
+            let paramInfoLocations =
+                parseResults
+                    .FindParameterLocations(
+                        Position.fromZ caretLinePos.Line caretLineColumn
+                    )
+                    .Value
 
-            //let paramInfoLocations =
-            //    parseResults
-            //        .FindParameterLocations(
-            //            Position.fromZ caretLinePos.Line caretLineColumn
-            //        )
-            //        .Value
+            let triggered =
+                FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(
+                    caretLinePos,
+                    caretLineColumn,
+                    paramInfoLocations,
+                    checkFileResults,
+                    DefaultDocumentationProvider,
+                    sourceText,
+                    caretPosition,
+                    triggerChar
+                )
+                |> Async.RunSynchronously
 
-            //let triggered =
-            //    FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(
-            //        caretLinePos,
-            //        caretLineColumn,
-            //        paramInfoLocations,
-            //        checkFileResults,
-            //        DefaultDocumentationProvider,
-            //        sourceText,
-            //        caretPosition,
-            //        triggerChar
-            //    )
-            //    |> Async.RunSynchronously
-
-            //return triggered
+            return triggered
         }
         |> Async.RunSynchronously
 
     let GetCompletionTypeNames libraryCode helperCode =
         let sigHelp = GetSignatureHelp libraryCode helperCode
 
-        failwith ""
-        //match sigHelp with
-        //| None -> [||]
-        //| Some data ->
-        //    let completionTypeNames =
-        //        data.SignatureHelpItems
-        //        |> Array.map (fun r -> r.Parameters |> Array.map (fun p -> p.CanonicalTypeTextForSorting))
+        match sigHelp with
+        | None -> [||]
+        | Some data ->
+            let completionTypeNames =
+                data.SignatureHelpItems
+                |> Array.map (fun r -> r.Parameters |> Array.map (fun p -> p.CanonicalTypeTextForSorting))
 
-        //    completionTypeNames
+            completionTypeNames
 
     let assertSignatureHelpForMethodCalls (fileContents: string) (marker: string) (expected: (string * int * int * string option) option) =
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
@@ -589,22 +609,6 @@ let f (derp: int -> int -> int) x = derp x
         let marker = "derp x "
         assertSignatureHelpForFunctionApplication fileContents marker 2 1 "arg1"
 
-    let GetCaretPosition2 (codeWithCaret: string) =
-        let caretSentinel = "$$"
-        let mutable cursorInfo: (int * string) = (0, null)
-
-        // find the '$$' sentinel that represents the cursor location
-        let caretPosition = codeWithCaret.IndexOf(caretSentinel)
-
-        if caretPosition >= 0 then
-            let newContents =
-                codeWithCaret.Substring(0, caretPosition)
-                + codeWithCaret.Substring(caretPosition + caretSentinel.Length)
-
-            cursorInfo <- caretPosition, newContents
-
-        cursorInfo
-
     // migrated from legacy test
     [<Fact>]
     let ``Multi.ReferenceToProjectLibrary`` () =
@@ -636,8 +640,13 @@ let f (derp: int -> int -> int) x = derp x
     </Projects>
     "
         let libraryCode = """
-open Test
-Foo.Sum(12, $$
+namespace Test
+
+type public Foo() =
+    static member Sum(x:int, y:int) = x + y
+
+module Blah =
+    let x = Foo.Sum(12, $$
 """
         
         let helperCode = """
@@ -647,22 +656,6 @@ type public Foo() =
     static member Sum(x:int, y:int) = x + y
 """
 
-        let project1Id = ProjectId.CreateNewId()
-        let project1FilePath = "C:\\TestLibrary.fsproj"
-        let doc1 = RoslynTestHelpers.CreateDocumentInfo project1Id "C:\\test.fs" libraryCode
-        let projInfo1 = RoslynTestHelpers.CreateProjectInfo project1Id project1FilePath [doc1]
-
-        let project2Id = ProjectId.CreateNewId()
-        let project2FilePath = "C:\\HelperLibrary.fsproj"
-        let doc2 = RoslynTestHelpers.CreateDocumentInfo project2Id "C:\\test1.fs" helperCode
-        let projInfo2 = RoslynTestHelpers.CreateProjectInfo project2Id project2FilePath [doc2]
-
-        let solution = RoslynTestHelpers.CreateSolution [projInfo1; projInfo2]
-
-        //use project = CreateProject xml
-        let caretPosition, code = GetCaretPosition2 libraryCode
-        let project = solution.Projects |> Seq.head
-        let document = project.Documents |> Seq.head
         let completionNames = GetCompletionTypeNames libraryCode helperCode
 
         let expected = [| [| "System.Int32"; "System.Int32" |] |]
