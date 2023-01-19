@@ -36,11 +36,11 @@ type DocumentDiagnosticAnalyzerTests() =
             |> Seq.filter (fun e -> e.Severity = DiagnosticSeverity.Error)
             |> Seq.toArray
 
-        Assert.True(1 = errors.Length, "There should be exactly one error generated")
+        errors.Length |> Assert.shouldBeEqualWith 1 "There should be exactly one error generated"
         let actualError = errors.[0]
 
         if expectedMessage.IsSome then
-            Assert.True(expectedMessage.Value = actualError.GetMessage(), "Error messages should match")
+            actualError.GetMessage() |> Assert.shouldBeEqualWith expectedMessage.Value "Error messages should match"
 
         Assert.Equal(DiagnosticSeverity.Error, actualError.Severity)
         let expectedStart = fileContents.IndexOf(expectedMarker)
@@ -59,7 +59,7 @@ type DocumentDiagnosticAnalyzerTests() =
             |> Seq.filter (fun e -> e.Severity = expectedSeverity)
             |> Seq.toArray
 
-        Assert.True(1 = errors.Length, "There should be exactly one error generated")
+        errors.Length |> Assert.shouldBeEqualWith 1 "There should be exactly one error generated"
         let actualError = errors.[0]
         Assert.Equal(expectedSeverity, actualError.Severity)
         actualError.GetMessage() |> Assert.shouldBeEqualWith expectedMessage "Error messages should match"
