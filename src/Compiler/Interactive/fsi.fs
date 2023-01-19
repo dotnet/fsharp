@@ -1485,7 +1485,7 @@ type internal FsiDynamicCompiler(
             | Some pdbBytes -> Assembly.Load(assemblyBytes, pdbBytes)
 
         // Force generated types to load
-        do [ for t in asm.GetTypes() -> t] |> ignore
+        for t in asm.GetTypes() do ignore t
 
         // remember this assembly
         dynamicAssemblies.Add(asm)
