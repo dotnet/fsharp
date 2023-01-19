@@ -273,7 +273,7 @@ type FSharpSymbolUse(denv: DisplayEnv, symbol: FSharpSymbol, inst: TyparInstanti
                     | _ -> None
                     |> Option.bind (fun a -> a.OtherRange)
 
-                signatureLocation.IsNone || signatureLocation = Some (m.DeclarationLocation)
+                signatureLocation.IsNone || signatureLocation = Some(m.DeclarationLocation)
 
             | :? FSharpMemberOrFunctionOrValue as m ->
                 let fileSignatureLocation =
