@@ -12,4 +12,6 @@ if ($LASTEXITCODE -eq 0)
         Package restore succeded for '${package}', expected to fail.
         This usually means that the package has been already published.
         Please, bump the version to fix this failure." -ErrorAction Stop
+} else {
+    exit 0
 }
