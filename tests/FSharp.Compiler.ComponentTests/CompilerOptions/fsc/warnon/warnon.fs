@@ -114,3 +114,31 @@ let _subtract a b = a - b
         |> compile
         |> withDiagnostics []
         |> ignore
+
+    [<Fact>]
+    let ``Type extensions are not included in this warnon check`` () =
+        let signatureFile: SourceCodeFileKind =
+            SourceCodeFileKind.Create(
+                "Library.fsi",
+                """
+module Foo
+    """     )
+
+        let implementationFile =
+            SourceCodeFileKind.Create(
+                "Library.fs",
+                """
+module Foo
+
+type System.Int32 with
+    member x.Bar () = x + 1
+    """         )
+
+        fsFromString signatureFile
+        |> FS
+        |> withAdditionalSourceFile implementationFile
+        |> withOptions ["--warnon:FS1182"]
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+        |> ignore
