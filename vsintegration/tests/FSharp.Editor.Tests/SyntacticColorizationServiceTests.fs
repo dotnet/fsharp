@@ -1203,3 +1203,58 @@ type SyntacticClassificationServiceTests() =
             defines = [],
             classificationType = ClassificationTypeNames.Keyword
         )
+
+    [<Fact>]
+    member public this.InterpolatedString_1Dollar() =
+        this.VerifyColorizerAtEndOfMarker(
+            fileContents = "$\"\"\"{{41+1}} = {42}\"\"\"",
+            marker = "42",
+            defines = [],
+            classificationType = ClassificationTypeNames.NumericLiteral
+        )
+
+        this.VerifyColorizerAtEndOfMarker(
+            fileContents = "$\"\"\"{{41+1}} = {42}\"\"\"",
+            marker = "41+1",
+            defines = [],
+            classificationType = ClassificationTypeNames.StringLiteral
+        )
+
+    [<Fact>]
+    member public this.InterpolatedString_2Dollars() =
+        this.VerifyColorizerAtEndOfMarker(
+            fileContents = "$$\"\"\"{{41+1}} = {42}\"\"\"",
+            marker = "42",
+            defines = [],
+            classificationType = ClassificationTypeNames.StringLiteral
+        )
+
+        this.VerifyColorizerAtEndOfMarker(
+            fileContents = "$$\"\"\"{{41+1}} = {42}\"\"\"",
+            marker = "41+1",
+            defines = [],
+            classificationType = ClassificationTypeNames.NumericLiteral
+        )
+
+    [<Fact>]
+    member public this.InterpolatedString_6Dollars() =
+        this.VerifyColorizerAtEndOfMarker(
+            fileContents = "$$$$$$\"\"\"{{41+1}} = {42} = {{{{{{40+2}}}}}}\"\"\"",
+            marker = "42",
+            defines = [],
+            classificationType = ClassificationTypeNames.StringLiteral
+        )
+
+        this.VerifyColorizerAtEndOfMarker(
+            fileContents = "$$$$$$\"\"\"{{41+1}} = {42} = {{{{{{40+2}}}}}}\"\"\"",
+            marker = "41+1",
+            defines = [],
+            classificationType = ClassificationTypeNames.StringLiteral
+        )
+
+        this.VerifyColorizerAtEndOfMarker(
+            fileContents = "$$$$$$\"\"\"{{41+1}} = {42} = {{{{{{40+2}}}}}}\"\"\"",
+            marker = "40+2",
+            defines = [],
+            classificationType = ClassificationTypeNames.NumericLiteral
+        )
