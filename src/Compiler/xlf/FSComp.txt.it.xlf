@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="buildDuplicateFile">
         <source>The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</source>
-        <target state="new">The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</target>
+        <target state="translated">Il file di origine '{0}' (nella posizione {1}/{2}) è già presente nell'elenco di compilazione (nella posizione {3}/{4}). Verificare che sia incluso solo una volta nel file di progetto.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidSourceFileExtensionML">
@@ -29,17 +29,22 @@
       </trans-unit>
       <trans-unit id="chkAdditionalConstructorOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Additional constructor is not allowed.</source>
-        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Additional constructor is not allowed.</target>
+        <target state="translated">Se un tipo usa entrambi gli attributi [&lt;Sealed&gt;] e [&lt;AbstractClass&gt;], significa che è statico. Non sono ammessi costruttori aggiuntivi.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkConstructorWithArgumentsOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Constructor with arguments is not allowed.</source>
-        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Constructor with arguments is not allowed.</target>
+        <target state="translated">Se un tipo usa entrambi gli attributi [&lt;Sealed&gt;] e [&lt;AbstractClass&gt;], significa che è statico. Costruttore con argomenti non consentito.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkDuplicatedMethodParameter">
         <source>Duplicate parameter. The parameter '{0}' has been used more that once in this method.</source>
         <target state="translated">Parametro duplicato. Il parametro '{0}' è stato utilizzato più volte in questo metodo.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkExplicitFieldsDeclarationsOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Explicit field declarations are not allowed.</source>
+        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Explicit field declarations are not allowed.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
@@ -89,7 +94,7 @@
       </trans-unit>
       <trans-unit id="chkInstanceMemberOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance members are not allowed.</source>
-        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance members are not allowed.</target>
+        <target state="translated">Se un tipo usa entrambi gli attributi [&lt;Sealed&gt;] e [&lt;AbstractClass&gt;], significa che è statico. Membri dell'istanza non consentiti.</target>
         <note />
       </trans-unit>
       <trans-unit id="containerDeprecated">
@@ -229,7 +234,7 @@
       </trans-unit>
       <trans-unit id="featureErrorReportingOnStaticClasses">
         <source>Error reporting on static classes</source>
-        <target state="new">Error reporting on static classes</target>
+        <target state="translated">Segnalazione errori nelle classi statiche</target>
         <note />
       </trans-unit>
       <trans-unit id="featureEscapeBracesInFormattableString">
@@ -379,7 +384,7 @@
       </trans-unit>
       <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
         <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
-        <target state="new">Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</target>
+        <target state="translated">Genera avvisi quando 'let inline ... =' viene usato insieme all'attributo [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;]. La funzione non viene resa inline.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">

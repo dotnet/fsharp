@@ -676,9 +676,6 @@ let CheckTypeNoInnerByrefs cenv env m ty = CheckType PermitByRefType.NoInnerByRe
 let CheckTypeInstNoByrefs cenv env m tyargs =
     tyargs |> List.iter (CheckTypeNoByrefs cenv env m)
 
-let CheckTypeInstPermitAllByrefs cenv env m tyargs =
-    tyargs |> List.iter (CheckTypePermitAllByrefs cenv env m)
-
 let CheckTypeInstNoInnerByrefs cenv env m tyargs =
     tyargs |> List.iter (CheckTypeNoInnerByrefs cenv env m)
 
@@ -1819,11 +1816,6 @@ and CheckExprsPermitByRefLike cenv env exprs : Limit =
     |> List.map (CheckExprPermitByRefLike cenv env)
     |> CombineLimits
 
-and CheckExprsPermitReturnableByRef cenv env exprs : Limit = 
-    exprs 
-    |> List.map (CheckExprPermitReturnableByRef cenv env)
-    |> CombineLimits
-
 and CheckExprPermitByRefLike cenv env expr : Limit = 
     CheckExpr cenv env expr PermitByRefExpr.Yes
 
@@ -2214,10 +2206,6 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
     end
 
     CheckBinding cenv { env with returnScope = 1 } true PermitByRefExpr.Yes bind |> ignore
-
-let CheckModuleBindings cenv env binds = 
-    for bind in binds do
-        CheckModuleBinding cenv env bind
 
 //--------------------------------------------------------------------------
 // check tycons

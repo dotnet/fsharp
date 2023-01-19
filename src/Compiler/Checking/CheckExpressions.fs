@@ -47,14 +47,6 @@ open FSharp.Compiler.TypeProviders
 #endif
 
 //-------------------------------------------------------------------------
-// Helpers that should be elsewhere
-//-------------------------------------------------------------------------
-
-let mkNilListPat (g: TcGlobals) m ty = TPat_unioncase(g.nil_ucref, [ty], [], m)
-
-let mkConsListPat (g: TcGlobals) ty ph pt = TPat_unioncase(g.cons_ucref, [ty], [ph;pt], unionRanges ph.Range pt.Range)
-
-//-------------------------------------------------------------------------
 // Errors.
 //-------------------------------------------------------------------------
 
@@ -173,8 +165,6 @@ let ExitFamilyRegion env =
             eFamilyType = eFamilyType }
 
 let AreWithinCtorShape env = match env.eCtorInfo with None -> false | Some ctorInfo -> ctorInfo.ctorShapeCounter > 0
-
-let AreWithinImplicitCtor env = match env.eCtorInfo with None -> false | Some ctorInfo -> ctorInfo.ctorIsImplicit
 
 let GetCtorShapeCounter env = match env.eCtorInfo with None -> 0 | Some ctorInfo -> ctorInfo.ctorShapeCounter
 
@@ -468,14 +458,6 @@ let UnifyOverallType (cenv: cenv) (env: TcEnv) m overallTy actualTy =
 let UnifyOverallTypeAndRecover (cenv: cenv) env m overallTy actualTy =
     try
         UnifyOverallType cenv env m overallTy actualTy
-    with exn ->
-        errorRecovery exn m
-
-// Calls UnifyTypes, but upon error only does the minimal error recovery
-// so that IntelliSense information can continue to be collected.
-let UnifyTypesAndRecover (cenv: cenv) env m expectedTy actualTy =
-    try
-        UnifyTypes cenv env m expectedTy actualTy
     with exn ->
         errorRecovery exn m
 
@@ -1889,10 +1871,6 @@ let rec ApplyUnionCaseOrExn (makerForUnionCase, makerForExnTag) m (cenv: cenv) e
 let ApplyUnionCaseOrExnTypes m (cenv: cenv) env overallTy c =
   ApplyUnionCaseOrExn ((fun (a, b) mArgs args -> mkUnionCaseExpr(a, b, args, unionRanges m mArgs)),
                        (fun a mArgs args -> mkExnExpr (a, args, unionRanges m mArgs))) m cenv env overallTy c
-
-let ApplyUnionCaseOrExnTypesForPat m (cenv: cenv) env overallTy c =
-  ApplyUnionCaseOrExn ((fun (a, b) mArgs args -> TPat_unioncase(a, b, args, unionRanges m mArgs)),
-                       (fun a mArgs args -> TPat_exnconstr(a, args, unionRanges m mArgs))) m cenv env overallTy c
 
 let UnionCaseOrExnCheck (env: TcEnv) numArgTys numArgs m =
   if numArgs <> numArgTys then error (UnionCaseWrongArguments(env.DisplayEnv, numArgTys, numArgs, m))
@@ -10719,9 +10697,6 @@ and TcAttributesMaybeFailEx canFail (cenv: cenv) env attrTgt attrEx synAttribs =
 
 and TcAttributesWithPossibleTargets canFail cenv env attrTgt synAttribs =
     TcAttributesWithPossibleTargetsEx canFail cenv env attrTgt (enum 0) synAttribs
-
-and TcAttribute canFail cenv (env: TcEnv) attrTgt (synAttr: SynAttribute) =
-    TcAttributeEx canFail cenv env attrTgt (enum 0) synAttr
 
 and TcAttributesMaybeFail canFail cenv env attrTgt synAttribs =
     TcAttributesMaybeFailEx canFail cenv env attrTgt (enum 0) synAttribs

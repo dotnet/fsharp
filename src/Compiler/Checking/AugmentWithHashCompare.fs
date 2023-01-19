@@ -144,10 +144,6 @@ let mkBindThatAddrIfNeeded m thataddrvOpt thatv expr =
         // let thataddrv = &thatv
         mkCompGenLet m thataddrv (mkValAddr m false (mkLocalValRef thatv))  expr
 
-let mkDerefThis g m (thisv: Val) thise =
-    if isByrefTy g thisv.Type then  mkAddrGet m (mkLocalValRef thisv)
-    else thise
-
 let mkCompareTestConjuncts g m exprs =
     match List.tryFrontAndBack exprs with 
     | None -> mkZero g m
