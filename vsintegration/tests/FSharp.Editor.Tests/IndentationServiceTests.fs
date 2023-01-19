@@ -9,6 +9,7 @@ open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.CodeAnalysis
 open Microsoft.CodeAnalysis.Formatting
 open FSharp.Editor.Tests.Helpers
+open FSharp.Test
 
 type IndentationServiceTests() =
     let checker = FSharpChecker.Create()
@@ -180,7 +181,7 @@ while true do
             match expectedIndentation with
             | None -> Assert.True(actualIndentation.IsNone, $"No indentation was expected at line {lineNumber}")
             | Some indentation ->
-                Assert.True(expectedIndentation.Value = actualIndentation.Value, $"Indentation on line {lineNumber} doesn't match")
+                actualIndentation.Value |> Assert.shouldBeEqualWith indentation  $"Indentation on line {lineNumber} doesn't match"
 
     [<Fact>]
     member this.TestAutoIndentation() =
@@ -204,4 +205,4 @@ while true do
             match expectedIndentation with
             | None -> Assert.True(actualIndentation.IsNone, $"No indentation was expected at line {lineNumber}")
             | Some indentation ->
-                Assert.True(expectedIndentation.Value = actualIndentation.Value, $"Indentation on line {lineNumber} doesn't match")
+                actualIndentation.Value |> Assert.shouldBeEqualWith indentation  $"Indentation on line {lineNumber} doesn't match"
