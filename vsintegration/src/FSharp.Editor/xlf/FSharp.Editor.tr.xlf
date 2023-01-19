@@ -33,9 +33,9 @@ Show structure guidelines for F# code;
 Outlining;
 Show outlining and collapsible nodes for F# code;
 Inline hints;
-Display inline type hints (experimental);
-Display inline parameter name hints (experimental);Beer</source>
-        <target state="translated">Blok Yapısı Kılavuzları;
+Display inline type hints (preview);
+Display inline parameter name hints (preview);Beer</source>
+        <target state="needs-review-translation">Blok Yapısı Kılavuzları;
 F# kodu için yapı yönergelerini göster;
 Anahat oluşturma;
 F# kodu için ana hattı ve daraltılabilir düğümleri göster;
