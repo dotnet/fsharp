@@ -564,7 +564,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     /// Filter the overrides of methods or properties, either keeping the overrides or keeping the dispatch slots.
     static let FilterOverrides findFlag (isVirt:'a->bool, isNewSlot, isDefiniteOverride, isFinal, equivSigs, nmf:'a->string) items = 
         let equivVirts x y = isVirt x && isVirt y && equivSigs x y
-        let filterDefiniteOverrides = List.filter(not << isDefiniteOverride)
+        let filterDefiniteOverrides = List.filter(isDefiniteOverride >> not)
 
         match findFlag with
         | DiscardOnFirstNonOverride ->
