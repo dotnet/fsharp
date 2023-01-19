@@ -265,7 +265,8 @@ type internal IncrementalBuilder =
         enablePartialTypeChecking: bool *
         enableParallelCheckingWithSignatureFiles: bool *
         dependencyProvider: DependencyProvider option *
-        parallelReferenceResolution: ParallelReferenceResolution ->
+        parallelReferenceResolution: ParallelReferenceResolution *
+        captureIdentifiersWhenParsing: bool ->
             NodeCode<IncrementalBuilder option * FSharpDiagnostic[]>
 
 /// Generalized Incremental Builder. This is exposed only for unit testing purposes.

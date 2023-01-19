@@ -81,8 +81,6 @@ and MatchClause =
     member c.Target = let (MatchClause(_, _, tg, _)) = c in tg
     member c.BoundVals = let (MatchClause(_p, _whenOpt, TTarget(vs, _, _), _m)) = c in vs
 
-let debug = false
-
 //---------------------------------------------------------------------------
 // Nasty stuff to permit obscure generic bindings such as
 //     let x, y = [], []
@@ -892,14 +890,6 @@ let rec layoutPat pat =
     | TPat_tuple (_, pats, _, _)
     | TPat_array (pats, _, _) -> Layout.bracketL (Layout.tupleL (List.map layoutPat pats))
     | _ -> Layout.wordL (TaggedText.tagText "?")
-
-let layoutPath _p = Layout.wordL (TaggedText.tagText "<path>")
-
-let layoutActive (Active (path, _subexpr, pat)) =
-    Layout.(--) (Layout.wordL (TaggedText.tagText "Active")) (Layout.tupleL [layoutPath path; layoutPat pat])
-
-let layoutFrontier (Frontier (i, actives, _)) =
-    Layout.(--) (Layout.wordL (TaggedText.tagText "Frontier ")) (Layout.tupleL [intL i; Layout.listL layoutActive actives])
 #endif
 
 let mkFrontiers investigations clauseNumber =
@@ -987,8 +977,6 @@ let rec isPatternDisjunctive inpPat =
 //---------------------------------------------------------------------------
 // The algorithm
 //---------------------------------------------------------------------------
-
-let getDiscrim (EdgeDiscrim(_, discrim, _)) = discrim
 
 let CompilePatternBasic
         (g: TcGlobals) denv amap tcVal infoReader mExpr mMatch
