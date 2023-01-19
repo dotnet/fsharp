@@ -46,8 +46,6 @@ open FSharp.Compiler.TypeProviders
 
 type cenv = TcFileState
 
-let TcClassRewriteStackGuardDepth = StackGuard.GetDepthOption "TcClassRewrite"
-
 //-------------------------------------------------------------------------
 // Mutually recursive shapes
 //------------------------------------------------------------------------- 
@@ -1665,7 +1663,15 @@ let private ReportErrorOnStaticClass (synMembers: SynMemberDefn list) =
         | SynMemberDefn.Member(SynBinding(valData = SynValData(memberFlags = Some memberFlags)), m) when memberFlags.MemberKind = SynMemberKind.Constructor ->
             errorR(Error(FSComp.SR.chkAdditionalConstructorOnStaticClasses(), m))
         | SynMemberDefn.Member(SynBinding(valData = SynValData(memberFlags = Some memberFlags)), m) when memberFlags.MemberKind = SynMemberKind.Member && memberFlags.IsInstance ->
-            errorR(Error(FSComp.SR.chkInstanceMemberOnStaticClasses(), m));
+            errorR(Error(FSComp.SR.chkInstanceMemberOnStaticClasses(), m))
+        | SynMemberDefn.LetBindings(isStatic = false; range = range) ->
+            errorR(Error(FSComp.SR.chkInstanceLetBindingOnStaticClasses(), range))
+        | SynMemberDefn.Interface(members= Some(synMemberDefs)) ->
+            for mem in synMemberDefs do
+                match mem with
+                | SynMemberDefn.Member(SynBinding(valData = SynValData(memberFlags = Some memberFlags)), m) when memberFlags.MemberKind = SynMemberKind.Member && memberFlags.IsInstance ->
+                    errorR(Error(FSComp.SR.chkImplementingInterfacesOnStaticClasses(), m))
+                | _ -> ()
         | _ -> ()
 
 /// Check and generalize the interface implementations, members, 'let' definitions in a mutually recursive group of definitions.
@@ -1774,6 +1780,15 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (env
               let isStaticClass = HasFSharpAttribute cenv.g cenv.g.attrib_SealedAttribute tcref.Attribs && HasFSharpAttribute cenv.g cenv.g.attrib_AbstractClassAttribute tcref.Attribs
               if isStaticClass && cenv.g.langVersion.SupportsFeature(LanguageFeature.ErrorReportingOnStaticClasses) then
                   ReportErrorOnStaticClass synMembers
+                  match tyconOpt with
+                  | Some tycon ->
+                        for slot in tycon.FSharpObjectModelTypeInfo.fsobjmodel_vslots do
+                            errorR(Error(FSComp.SR.chkAbstractMembersDeclarationsOnStaticClasses(), slot.Range))
+                            
+                        for fld in tycon.AllFieldsArray do
+                            if not fld.IsStatic then
+                                errorR(Error(FSComp.SR.chkExplicitFieldsDeclarationsOnStaticClasses(), fld.Range))
+                  | None -> ()
               
               let envForDecls = 
                 // This allows to implement protected interface methods if it's a DIM.

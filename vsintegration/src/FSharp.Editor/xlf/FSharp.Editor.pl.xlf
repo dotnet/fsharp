@@ -33,9 +33,9 @@ Show structure guidelines for F# code;
 Outlining;
 Show outlining and collapsible nodes for F# code;
 Inline hints;
-Display inline type hints (experimental);
-Display inline parameter name hints (experimental);Beer</source>
-        <target state="translated">Prowadnice struktury bloku;
+Display inline type hints (preview);
+Display inline parameter name hints (preview);Beer</source>
+        <target state="needs-review-translation">Prowadnice struktury bloku;
 Pokaż wytyczne dotyczące struktury dla kodu języka F#;
 Tworzenie konspektu;
 Pokaż konspekt i zwijane węzły dla kodu języka F#;

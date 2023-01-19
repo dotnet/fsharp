@@ -34,19 +34,6 @@ let DotNetFrameworkReferenceAssembliesRootDirectory =
 
     PF + @"\Reference Assemblies\Microsoft\Framework\.NETFramework"
 
-/// When targeting .NET 2.0-3.5 on Windows, we expand the {WindowsFramework} and {ReferenceAssemblies} paths manually
-let internal ReplaceVariablesForLegacyFxOnWindows (dirs: string list) =
-    let windowsFramework =
-        Environment.GetEnvironmentVariable("windir") + @"\Microsoft.NET\Framework"
-
-    let referenceAssemblies = DotNetFrameworkReferenceAssembliesRootDirectory
-
-    dirs
-    |> List.map (fun d ->
-        d
-            .Replace("{WindowsFramework}", windowsFramework)
-            .Replace("{ReferenceAssemblies}", referenceAssemblies))
-
 // ATTENTION!: the following code needs to be updated every time we are switching to the new MSBuild version because new .NET framework version was released
 // 1. List of frameworks
 // 2. DeriveTargetFrameworkDirectoriesFor45Plus
