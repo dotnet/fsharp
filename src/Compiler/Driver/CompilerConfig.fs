@@ -48,7 +48,7 @@ let FSharpScriptFileSuffixes = [ ".fsscript"; ".fsx" ]
 let FSharpIndentationAwareSyntaxFileSuffixes =
     [ ".fs"; ".fsscript"; ".fsx"; ".fsi" ]
 
-let FsharpExperimentalFeaturesEnabledAutomatically =
+let FSharpExperimentalFeaturesEnabledAutomatically =
     String.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("FSHARP_EXPERIMENTAL_FEATURES"))
     |> not
 
@@ -737,8 +737,8 @@ type TcConfigBuilder =
             emitTailcalls = true
             deterministic = false
             concurrentBuild = true
-            parallelCheckingWithSignatureFiles = FsharpExperimentalFeaturesEnabledAutomatically
-            parallelIlxGen = FsharpExperimentalFeaturesEnabledAutomatically
+            parallelCheckingWithSignatureFiles = FSharpExperimentalFeaturesEnabledAutomatically
+            parallelIlxGen = FSharpExperimentalFeaturesEnabledAutomatically
             emitMetadataAssembly = MetadataAssemblyGeneration.None
             preferredUiLang = None
             lcid = None

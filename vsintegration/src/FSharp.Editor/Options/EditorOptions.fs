@@ -72,7 +72,7 @@ type LanguageServicePerformanceOptions =
         TimeUntilStaleCompletion = 2000 // In ms, so this is 2 seconds
         EnableParallelCheckingWithSignatureFiles = false
         EnableParallelReferenceResolution = false
-        EnableFastFindReferences = false }
+        EnableFastFindReferences = FSharp.Compiler.CompilerConfig.FSharpExperimentalFeaturesEnabledAutomatically }
 
 [<CLIMutable>]
 type AdvancedOptions =
@@ -86,7 +86,7 @@ type AdvancedOptions =
         IsOutliningEnabled = true
         IsInlineTypeHintsEnabled = false 
         IsInlineParameterNameHintsEnabled = false
-        IsLiveBuffersEnabled = false }
+        IsLiveBuffersEnabled = FSharp.Compiler.CompilerConfig.FSharpExperimentalFeaturesEnabledAutomatically }
 
 [<CLIMutable>]
 type FormattingOptions =
