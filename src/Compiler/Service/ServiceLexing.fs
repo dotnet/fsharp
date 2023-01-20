@@ -600,7 +600,7 @@ module internal LexerStateEncoding =
             light,
             stringKind: LexerStringKind,
             stringNest,
-            delimLen : int
+            delimLen: int
         ) =
         let mutable ifdefStackCount = 0
         let mutable ifdefStackBits = 0
@@ -628,10 +628,10 @@ module internal LexerStateEncoding =
                 | [] -> false, 0, 0
                 | (i2, kind2, _, _) :: _ -> true, i2, encodeStringStyle kind2
 
-            (if tag1 then          0b100000000000 else 0)
-            ||| (if tag2 then      0b010000000000 else 0)
-            ||| ((i1 <<< 7) &&&    0b001110000000)
-            ||| ((i2 <<< 4) &&&    0b000001110000)
+            (if tag1 then 0b100000000000 else 0)
+            ||| (if tag2 then 0b010000000000 else 0)
+            ||| ((i1 <<< 7) &&& 0b001110000000)
+            ||| ((i2 <<< 4) &&& 0b000001110000)
             ||| ((kind1 <<< 2) &&& 0b000000001100)
             ||| ((kind2 <<< 0) &&& 0b000000000011)
 
@@ -686,19 +686,21 @@ module internal LexerStateEncoding =
         let nestingValue = int32 ((bits &&& nestingMask) >>> nestingStart)
 
         let stringNest: LexerInterpolatedStringNesting =
-            let tag1 = ((nestingValue &&&  0b100000000000) = 0b100000000000)
-            let tag2 = ((nestingValue &&&  0b010000000000) = 0b010000000000)
-            let i1 = ((nestingValue &&&    0b001110000000) >>> 7)
-            let i2 = ((nestingValue &&&    0b000001110000) >>> 4)
+            let tag1 = ((nestingValue &&& 0b100000000000) = 0b100000000000)
+            let tag2 = ((nestingValue &&& 0b010000000000) = 0b010000000000)
+            let i1 = ((nestingValue &&& 0b001110000000) >>> 7)
+            let i2 = ((nestingValue &&& 0b000001110000) >>> 4)
             let kind1 = ((nestingValue &&& 0b000000001100) >>> 2)
             let kind2 = ((nestingValue &&& 0b000000000011) >>> 0)
 
-            let nest = [
-                if tag1 then
-                    i1, decodeStringStyle kind1, 0, range0
-                if tag2 then
-                    i2, decodeStringStyle kind2, 0, range0
-            ]
+            let nest =
+                [
+                    if tag1 then
+                        i1, decodeStringStyle kind1, 0, range0
+                    if tag2 then
+                        i2, decodeStringStyle kind2, 0, range0
+                ]
+
             nest
 
         let delimLen = int32 ((bits &&& dlenMask) >>> dlenStart)
@@ -708,7 +710,16 @@ module internal LexerStateEncoding =
     let encodeLexInt indentationSyntaxStatus (lexcont: LexerContinuation) =
         match lexcont with
         | LexCont.Token (ifdefs, stringNest) ->
-            encodeLexCont (FSharpTokenizerColorState.Token, 0L, pos0, ifdefs, indentationSyntaxStatus, LexerStringKind.String, stringNest, 0)
+            encodeLexCont (
+                FSharpTokenizerColorState.Token,
+                0L,
+                pos0,
+                ifdefs,
+                indentationSyntaxStatus,
+                LexerStringKind.String,
+                stringNest,
+                0
+            )
         | LexCont.IfDefSkip (ifdefs, stringNest, n, m) ->
             encodeLexCont (
                 FSharpTokenizerColorState.IfDefSkip,

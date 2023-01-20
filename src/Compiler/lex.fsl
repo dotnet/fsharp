@@ -1196,13 +1196,13 @@ and singleQuoteString sargs skip = parse
  |  '"'
     { let (buf, fin, _m, kind, args) = sargs
       let cont = LexCont.Token(args.ifdefStack, args.stringNest)
-      fin.Finish buf kind (enum<LexerStringFinisherContext>(0)) cont
+      fin.Finish buf kind (LexerStringFinisherContext()) cont
     }
 
  |  '"''B'
     { let (buf, fin, _m, kind, args) = sargs
       let cont = LexCont.Token(args.ifdefStack, args.stringNest)
-      fin.Finish buf { kind with IsByteString = true } (enum<LexerStringFinisherContext>(0)) cont
+      fin.Finish buf { kind with IsByteString = true } (LexerStringFinisherContext()) cont
     }
 
  | ("{{" | "}}")
@@ -1316,7 +1316,7 @@ and verbatimString sargs skip = parse
           let m2 = lexbuf.LexemeRange
           args.stringNest <- (1, LexerStringStyle.Verbatim, args.delimLength, m2) :: args.stringNest
           let cont = LexCont.Token(args.ifdefStack, args.stringNest)
-          fin.Finish buf kind (enum<LexerStringFinisherContext>(3)) cont
+          fin.Finish buf kind (LexerStringFinisherContext.InterpolatedPart ||| LexerStringFinisherContext.Verbatim) cont
       else
           addUnicodeString buf (lexeme lexbuf)
           if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, kind, args.delimLength, m))
@@ -1370,7 +1370,7 @@ and tripleQuoteString sargs skip = parse
     { let (buf, fin, _m, kind, args) = sargs
       args.delimLength <- 0
       let cont = LexCont.Token(args.ifdefStack, args.stringNest)
-      fin.Finish buf kind (enum<LexerStringFinisherContext>(4)) cont }
+      fin.Finish buf kind LexerStringFinisherContext.TripleQuote cont }
 
  | newline
     { let (buf, _fin, m, kind, args) = sargs
@@ -1406,6 +1406,12 @@ and tripleQuoteString sargs skip = parse
           if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, args.delimLength, m))
           else tripleQuoteString sargs skip lexbuf
       if kind.IsInterpolated && args.delimLength > 1 then
+          // delimLength is number of $ chars prepended to opening quotes
+          // If number of consecutive % chars in content is equal to delimLength,
+          // then that sequence is treated as a format specifier,
+          // as in $"""%3d{42}""" or (equivalent) $$"""%%3d{{42}}""".
+          // Any extra % chars up to delimLength, are treated simply as regular string content.
+          // 2x delimLength or more % chars in a sequence will result in an error.
           let maxPercents = 2 * args.delimLength - 1
           if numPercents > maxPercents then
               let m2 = lexbuf.LexemeRange
@@ -1413,23 +1419,29 @@ and tripleQuoteString sargs skip = parse
               args.diagnosticsLogger.ErrorR(Error(FSComp.SR.lexTooManyPercentsInTripleQuote(), m2))
               rest
           else
-              let n = if numPercents < args.delimLength then
-                        2 * numPercents
-                      else
-                        2 * (numPercents - args.delimLength) + 1
-              let s = String.replicate n "%"
+              // Add two % chars for each % that is supposed to be treated as regular string content
+              // + 1 for a format specifier.
+              let percentsToEmit =
+                  if numPercents < args.delimLength then 2 * numPercents
+                  else 2 * (numPercents - args.delimLength) + 1
+              let s = String.replicate percentsToEmit "%"
               addUnicodeString buf s
               result()
       else
+          // For a non-interpolated string or an interpolated string with only single leading $
+          // we can leave it as is. For interpolated strings, % chars are dealt with in later stages,
+          // single % is treated as format specifier and %% as escaped % to be put in content.
           addUnicodeString buf (lexeme lexbuf)
           result() }
 
  | "{" +
     { let (buf, fin, m, kind, args) = sargs
       let numBraces = String.length (lexeme lexbuf)
-      if kind.IsInterpolated && args.delimLength = 1 then
-          for _ in 2..2..numBraces do
-              addUnicodeString buf "{"
+      // Regular interpolated string: $"""..."""
+      if kind.IsInterpolated && args.delimLength < 2 then
+          // For every 2 '{' emit 1. Then, if there's an odd '{', start an interpolation expression.
+          if numBraces > 1 then
+            String.replicate (numBraces/2) "{" |> addUnicodeString buf
           if numBraces % 2 = 0 then
               if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, args.delimLength, m))
               else tripleQuoteString sargs skip lexbuf
@@ -1437,28 +1449,38 @@ and tripleQuoteString sargs skip = parse
               let m2 = lexbuf.LexemeRange
               args.stringNest <- (1, LexerStringStyle.TripleQuote, args.delimLength, m2) :: args.stringNest
               let cont = LexCont.Token(args.ifdefStack, args.stringNest)
-              fin.Finish buf kind (enum<LexerStringFinisherContext>(5)) cont
+              fin.Finish buf kind (LexerStringFinisherContext.InterpolatedPart ||| LexerStringFinisherContext.TripleQuote) cont
+      // Interpolated string with 2+ `$`: $$"""...."""
       elif kind.IsInterpolated then
-          if args.delimLength < 1 then
-              fail args lexbuf (0, FSComp.SR.lexCharNotAllowedInOperatorNames("@")) () // XXX
+          // We are in an interpolated string with 2+ $ characters before the opening quotes.
+          // delimLength is total number of leading $s
+          // which is also the number of '{' needed to open interpolation expression.
           let maxBraces = 2 * args.delimLength - 1
           if numBraces > maxBraces then
+              // 2 * delimLength '{' in a row is dissallowed
               let m2 = lexbuf.LexemeRange
               args.stringNest <- (1, LexerStringStyle.TripleQuote, args.delimLength, m2) :: args.stringNest
               let cont = LexCont.Token(args.ifdefStack, args.stringNest)
-              fail args lexbuf (FSComp.SR.lexTooManyLBracesInTripleQuote()) (fin.Finish buf kind (enum<LexerStringFinisherContext>(5)) cont) // XXX
+              fail args lexbuf
+                  (FSComp.SR.lexTooManyLBracesInTripleQuote())
+                  (fin.Finish buf kind (LexerStringFinisherContext.InterpolatedPart ||| LexerStringFinisherContext.TripleQuote) cont)
           elif numBraces < args.delimLength then
+              // Less than delimLength means we treat '{' as normal content
               addUnicodeString buf (lexeme lexbuf)
               if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, args.delimLength, m))
               else tripleQuoteString sargs skip lexbuf
+          // numBraces in [delimLength; maxBraces)
           else
-              let s = lexeme lexbuf
-              addUnicodeString buf s[1..(numBraces - args.delimLength)] // XXX is it ok to addUnicode empty string? Also why start at 1?
+              // A sequence of delimLength * '{' starts interpolation expression.
+              // Any extra '{' are treated as normal string content.
+              if numBraces > args.delimLength then
+                  String.replicate (numBraces - args.delimLength) "{" |> addUnicodeString buf
               // get a new range for where the fill starts
               let m2 = lexbuf.LexemeRange
               args.stringNest <- (1, LexerStringStyle.TripleQuote, args.delimLength, m2) :: args.stringNest
               let cont = LexCont.Token(args.ifdefStack, args.stringNest)
-              fin.Finish buf kind (enum<LexerStringFinisherContext>(5)) cont
+              fin.Finish buf kind (LexerStringFinisherContext.InterpolatedPart ||| LexerStringFinisherContext.TripleQuote) cont
+      // Not an interpolated string: """..."""
       else
           addUnicodeString buf (lexeme lexbuf)
           if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, args.delimLength, m))
@@ -1471,31 +1493,25 @@ and tripleQuoteString sargs skip = parse
       let result() =
           if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, args.delimLength, m))
           else tripleQuoteString sargs skip lexbuf
-      if kind.IsInterpolated then
-          if args.delimLength = 1 then
-              if numBraces % 2 = 1 then
-                  fail args lexbuf (FSComp.SR.lexRBraceInInterpolatedString()) (result())
-              else
-                  for _ in 2..2..numBraces do
-                      addUnicodeString buf "}"
-                  (result())
-          elif args.delimLength > numBraces then
-              for _ in 1..numBraces do
-                  addUnicodeString buf "}"
+      // Regular interpolated string: $"""..."""
+      if kind.IsInterpolated && args.delimLength < 2 then
+          if numBraces % 2 = 1 then
+              fail args lexbuf (FSComp.SR.lexRBraceInInterpolatedString()) (result())
+          else
+              if numBraces > 1 then
+                  String.replicate (numBraces/2) "}" |> addUnicodeString buf
+              (result())
+      // Interpolated string with 2+ `$`: $$"""...."""
+      elif kind.IsInterpolated then
+          if args.delimLength > numBraces then
+              lexeme lexbuf |> addUnicodeString buf
               (result())
           else // numBraces >= args.delimLength
               fail args lexbuf (FSComp.SR.lexUnmatchedRBracesInTripleQuote()) (result())
+      // Not an interpolated string: """..."""
       else
           addUnicodeString buf (lexeme lexbuf)
           (result())
-      // let result() =
-      //     if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, m))
-      //     else tripleQuoteString sargs skip lexbuf
-      // if kind.IsInterpolated then
-      //     fail args lexbuf (FSComp.SR.lexRBraceInInterpolatedString()) (result())
-      // else
-      //     addUnicodeString buf (lexeme lexbuf)
-      //     (result())
     }
 
  | eof
