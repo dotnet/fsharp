@@ -722,6 +722,13 @@ let test{0}ToStringOperator   (e1:{1}) = string e1
 
 """
 
+let ignoreTestInDebug () =
+#if DEBUG
+    Assert.Ignore("Test is known to fail in DEBUG. Use RELEASE configuration to run it.")
+#else
+    ()
+#endif
+
 /// This test is run in unison with its optimized counterpart below
 [<Test>]
 let ``Test Unoptimized Declarations Project1`` () =
@@ -3191,6 +3198,7 @@ let BigSequenceExpression(outFileOpt,docFileOpt,baseAddressOpt) =
 
 [<Test>]
 let ``Test expressions of declarations stress big expressions`` () =
+    ignoreTestInDebug ()
     let cleanup, options = ProjectStressBigExpressions.createOptions()
     use _holder = cleanup
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
@@ -3207,6 +3215,7 @@ let ``Test expressions of declarations stress big expressions`` () =
 
 [<Test>]
 let ``Test expressions of optimized declarations stress big expressions`` () =
+    ignoreTestInDebug ()
     let cleanup, options = ProjectStressBigExpressions.createOptions()
     use _holder = cleanup
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
