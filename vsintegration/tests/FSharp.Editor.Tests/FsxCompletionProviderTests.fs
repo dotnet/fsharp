@@ -4,8 +4,7 @@ namespace FSharp.Editor.Tests
 
 open System
 open System.Collections.Generic
-open NUnit.Framework
-open Microsoft.CodeAnalysis.Text
+open Xunit
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Editor.Tests.Helpers
@@ -15,26 +14,13 @@ type Worker() =
 
     let filePath = "C:\\test.fsx"
 
-    let projectOptions =
-        {
-            ProjectFileName = "C:\\test.fsproj"
-            ProjectId = None
-            SourceFiles = [| filePath |]
-            ReferencedProjects = [||]
-            OtherOptions = [||]
-            IsIncompleteTypeCheckEnvironment = true
-            UseScriptResolutionRules = true
-            LoadTime = DateTime.MaxValue
-            OriginalLoadReferences = []
-            UnresolvedReferences = None
-            Stamp = None
-        }
-
     member _.VerifyCompletionListExactly(fileContents: string, marker: string, expected: List<string>) =
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
 
+        let options = { RoslynTestHelpers.DefaultProjectOptions with SourceFiles = [|filePath|] }
         let document =
-            RoslynTestHelpers.CreateSingleDocumentSolution(filePath, SourceText.From(fileContents), options = projectOptions)
+            RoslynTestHelpers.CreateSolution(fileContents, options = options)
+            |> RoslynTestHelpers.GetSingleDocument
 
         let expected = expected |> Seq.toList
 
@@ -52,21 +38,20 @@ type Worker() =
         let actualNames = actual |> List.map (fun x -> x.DisplayText)
 
         if actualNames <> expected then
-            Assert.Fail(
-                sprintf
-                    "Expected:\n%s,\nbut was:\n%s\nactual with sort text:\n%s"
-                    (String.Join("; ", expected |> List.map (sprintf "\"%s\"")))
-                    (String.Join("; ", actualNames |> List.map (sprintf "\"%s\"")))
-                    (String.Join("\n", actual |> List.map (fun x -> sprintf "%s => %s" x.DisplayText x.SortText)))
-            )
+            failwithf
+                "Expected:\n%s,\nbut was:\n%s\nactual with sort text:\n%s"
+                (String.Join("; ", expected |> List.map (sprintf "\"%s\"")))
+                (String.Join("; ", actualNames |> List.map (sprintf "\"%s\"")))
+                (String.Join("\n", actual |> List.map (fun x -> sprintf "%s => %s" x.DisplayText x.SortText)))
 
 module FsxCompletionProviderTests =
 
     let getWorker () = Worker()
 
-    [<Test>]
 #if RELEASE
-    [<Ignore "Fails in some CI, reproduces locally in Release mode, needs investigation">]
+    [<Fact(Skip="Fails in some CI, reproduces locally in Release mode, needs investigation")>]
+#else
+    [<Fact>]
 #endif
     let fsiShouldTriggerCompletionInFsxFile () =
         let fileContents =
