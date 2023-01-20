@@ -109,9 +109,6 @@ let rec processStateEntry (queryTrie: QueryTrie) (state: FileContentQueryState) 
             FoundDependencies = foundDependencies
         }
 
-let getFileNameBefore2 (files: FileInProject array) idx =
-    files[0 .. (idx - 1)] |> Array.map (fun f -> f.Idx) |> Set.ofArray
-
 /// Returns files contain in any node of the given Trie
 let indicesUnderNode (node: TrieNode) : Set<FileIndex> =
     let rec collect (node: TrieNode) (continuation: FileIndex list -> FileIndex list) : FileIndex list =

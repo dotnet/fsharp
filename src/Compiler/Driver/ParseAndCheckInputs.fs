@@ -1206,26 +1206,6 @@ let AddCheckResultsToTcState
 
     ccuSigForFile, tcState
 
-let AddDummyCheckResultsToTcState
-    (
-        tcGlobals,
-        amap,
-        qualName: QualifiedNameOfFile,
-        prefixPathOpt,
-        tcSink,
-        tcState: TcState,
-        tcStateForImplFile: TcState,
-        rootSig
-    ) =
-    let hadSig = true
-    let emptyImplFile = CreateEmptyDummyImplFile qualName rootSig
-    let tcEnvAtEnd = tcStateForImplFile.TcEnvFromImpls
-
-    let ccuSigForFile, tcState =
-        AddCheckResultsToTcState (tcGlobals, amap, hadSig, prefixPathOpt, tcSink, tcState.tcsTcImplEnv, qualName, rootSig) tcState
-
-    (tcEnvAtEnd, EmptyTopAttrs, Some emptyImplFile, ccuSigForFile), tcState
-
 type PartialResult = TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType
 
 type CheckArgs =
