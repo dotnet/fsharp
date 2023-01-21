@@ -47,14 +47,6 @@ open FSharp.Compiler.TypeProviders
 #endif
 
 //-------------------------------------------------------------------------
-// Helpers that should be elsewhere
-//-------------------------------------------------------------------------
-
-let mkNilListPat (g: TcGlobals) m ty = TPat_unioncase(g.nil_ucref, [ty], [], m)
-
-let mkConsListPat (g: TcGlobals) ty ph pt = TPat_unioncase(g.cons_ucref, [ty], [ph;pt], unionRanges ph.Range pt.Range)
-
-//-------------------------------------------------------------------------
 // Errors.
 //-------------------------------------------------------------------------
 
@@ -173,8 +165,6 @@ let ExitFamilyRegion env =
             eFamilyType = eFamilyType }
 
 let AreWithinCtorShape env = match env.eCtorInfo with None -> false | Some ctorInfo -> ctorInfo.ctorShapeCounter > 0
-
-let AreWithinImplicitCtor env = match env.eCtorInfo with None -> false | Some ctorInfo -> ctorInfo.ctorIsImplicit
 
 let GetCtorShapeCounter env = match env.eCtorInfo with None -> 0 | Some ctorInfo -> ctorInfo.ctorShapeCounter
 
@@ -468,14 +458,6 @@ let UnifyOverallType (cenv: cenv) (env: TcEnv) m overallTy actualTy =
 let UnifyOverallTypeAndRecover (cenv: cenv) env m overallTy actualTy =
     try
         UnifyOverallType cenv env m overallTy actualTy
-    with exn ->
-        errorRecovery exn m
-
-// Calls UnifyTypes, but upon error only does the minimal error recovery
-// so that IntelliSense information can continue to be collected.
-let UnifyTypesAndRecover (cenv: cenv) env m expectedTy actualTy =
-    try
-        UnifyTypes cenv env m expectedTy actualTy
     with exn ->
         errorRecovery exn m
 
@@ -1889,10 +1871,6 @@ let rec ApplyUnionCaseOrExn (makerForUnionCase, makerForExnTag) m (cenv: cenv) e
 let ApplyUnionCaseOrExnTypes m (cenv: cenv) env overallTy c =
   ApplyUnionCaseOrExn ((fun (a, b) mArgs args -> mkUnionCaseExpr(a, b, args, unionRanges m mArgs)),
                        (fun a mArgs args -> mkExnExpr (a, args, unionRanges m mArgs))) m cenv env overallTy c
-
-let ApplyUnionCaseOrExnTypesForPat m (cenv: cenv) env overallTy c =
-  ApplyUnionCaseOrExn ((fun (a, b) mArgs args -> TPat_unioncase(a, b, args, unionRanges m mArgs)),
-                       (fun a mArgs args -> TPat_exnconstr(a, args, unionRanges m mArgs))) m cenv env overallTy c
 
 let UnionCaseOrExnCheck (env: TcEnv) numArgTys numArgs m =
   if numArgs <> numArgTys then error (UnionCaseWrongArguments(env.DisplayEnv, numArgTys, numArgs, m))
@@ -10720,9 +10698,6 @@ and TcAttributesMaybeFailEx canFail (cenv: cenv) env attrTgt attrEx synAttribs =
 and TcAttributesWithPossibleTargets canFail cenv env attrTgt synAttribs =
     TcAttributesWithPossibleTargetsEx canFail cenv env attrTgt (enum 0) synAttribs
 
-and TcAttribute canFail cenv (env: TcEnv) attrTgt (synAttr: SynAttribute) =
-    TcAttributeEx canFail cenv env attrTgt (enum 0) synAttr
-
 and TcAttributesMaybeFail canFail cenv env attrTgt synAttribs =
     TcAttributesMaybeFailEx canFail cenv env attrTgt (enum 0) synAttribs
 
@@ -10947,7 +10922,7 @@ and ComputeIsComplete enclosingDeclaredTypars declaredTypars ty =
 /// Determine if a uniquely-identified-abstract-slot exists for an override member (or interface member implementation) based on the information available
 /// at the syntactic definition of the member (i.e. prior to type inference). If so, we know the expected signature of the override, and the full slotsig
 /// it implements. Apply the inferred slotsig.
-and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (baseValOpt: Val option) (argsAndRetTy, m, synTyparDecls, declaredTypars, memberId, tcrefObjTy, renaming, intfSlotTyOpt, valSynData, memberFlags: SynMemberFlags, attribs) =
+and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (_: Val option) (argsAndRetTy, m, synTyparDecls, declaredTypars, memberId, tcrefObjTy, renaming, intfSlotTyOpt, valSynData, memberFlags: SynMemberFlags, attribs) =
 
     let g = cenv.g
     let ad = envinner.eAccessRights
@@ -10976,7 +10951,10 @@ and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (baseValOpt: Val o
         match memberFlags.MemberKind with
         | SynMemberKind.Member ->
              let dispatchSlots, dispatchSlotsArityMatch =
-                 GetAbstractMethInfosForSynMethodDecl(cenv.infoReader, ad, memberId, m, typToSearchForAbstractMembers, valSynData, memberFlags)
+                if g.langVersion.SupportsFeature(LanguageFeature.ErrorForNonVirtualMembersOverrides) then
+                    GetAbstractMethInfosForSynMethodDecl(cenv.infoReader, ad, memberId, m, typToSearchForAbstractMembers, valSynData, memberFlags, DiscardOnFirstNonOverride)
+                else
+                    GetAbstractMethInfosForSynMethodDecl(cenv.infoReader, ad, memberId, m, typToSearchForAbstractMembers, valSynData, memberFlags,IgnoreOverrides)
 
              let uniqueAbstractMethSigs =
                  match dispatchSlots with
@@ -10993,22 +10971,6 @@ and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (baseValOpt: Val o
                          []
                      | _ -> [] // check that method to override is sealed is located at CheckOverridesAreAllUsedOnce (typrelns.fs)
                       // We hit this case when it is ambiguous which abstract method is being implemented.
-
-             if g.langVersion.SupportsFeature(LanguageFeature.ErrorForNonVirtualMembersOverrides) then
-                 // Checks if the declaring type inherits from a base class and is not FSharpObjModelTy
-                 // Raises an error if we try to override an non virtual member with the same name in both
-                 match baseValOpt with
-                 | Some ttype when not(isFSharpObjModelTy g ttype.Type) ->
-                    match stripTyEqns g ttype.Type with
-                    | TType_app(tyconRef, _, _) ->
-                        let ilMethods = tyconRef.ILTyconRawMetadata.Methods.AsList()
-                        let nameOpt = ilMethods |> List.tryFind(fun id -> id.Name = memberId.idText)
-                        match nameOpt with
-                        | Some name when not name.IsVirtual ->
-                            errorR(Error(FSComp.SR.tcNoMemberFoundForOverride(), memberId.idRange))
-                        | _ -> ()
-                    | _ -> ()
-                 | _ -> ()
 
              // If we determined a unique member then utilize the type information from the slotsig
              let declaredTypars =

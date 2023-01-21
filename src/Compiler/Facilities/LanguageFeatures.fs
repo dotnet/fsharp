@@ -60,7 +60,8 @@ type LanguageFeature =
     | WarningWhenInliningMethodImplNoInlineMarkedFunction
     | EscapeDotnetFormattableStrings
     | ArithmeticInLiterals
-
+    | ErrorReportingOnStaticClasses
+ 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
 
@@ -136,6 +137,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.WarningWhenInliningMethodImplNoInlineMarkedFunction, previewVersion
                 LanguageFeature.EscapeDotnetFormattableStrings, previewVersion
                 LanguageFeature.ArithmeticInLiterals, previewVersion
+                LanguageFeature.ErrorReportingOnStaticClasses, previewVersion
 
             ]
 
@@ -249,6 +251,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.WarningWhenInliningMethodImplNoInlineMarkedFunction -> FSComp.SR.featureWarningWhenInliningMethodImplNoInlineMarkedFunction ()
         | LanguageFeature.EscapeDotnetFormattableStrings -> FSComp.SR.featureEscapeBracesInFormattableString ()
         | LanguageFeature.ArithmeticInLiterals -> FSComp.SR.featureArithmeticInLiterals ()
+        | LanguageFeature.ErrorReportingOnStaticClasses -> FSComp.SR.featureErrorReportingOnStaticClasses ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

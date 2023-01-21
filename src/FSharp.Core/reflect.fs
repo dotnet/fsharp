@@ -758,70 +758,12 @@ module internal Impl =
             tyargs
 
     let orderTupleProperties (props: PropertyInfo[]) =
-        // The tuple properties are of the form:
-        //   Item1
-        //   ..
-        //   Item1, Item2, ..., Item<maxTuple-1>
-        //   Item1, Item2, ..., Item<maxTuple-1>, Rest
-        // The PropertyInfo may not come back in order, so ensure ordering here.
-#if !NETSTANDARD
-        assert (maxTuple < 10) // Alphasort will only works for upto 9 items: Item1, Item10, Item2, Item3, ..., Item9, Rest
-#endif
-        let props = props |> Array.sortBy (fun p -> p.Name) // they are not always in alphabetic order
-#if !NETSTANDARD
-        assert (props.Length <= maxTuple)
-
-        assert
-            (let haveNames = props |> Array.map (fun p -> p.Name)
-
-             let expectNames =
-                 Array.init props.Length (fun i ->
-                     let j = i + 1 // index j = 1, 2, .., props.Length <= maxTuple
-
-                     if j < maxTuple then
-                         "Item" + string j
-                     elif j = maxTuple then
-                         "Rest"
-                     else
-                         (assert false
-                          "")) // dead code under prior assert, props.Length <= maxTuple
-
-             haveNames = expectNames)
-#endif
-        props
+        // The PropertyInfo[] may not come back in order, so ensure ordering here.
+        props |> Array.sortBy (fun p -> p.Name) // alphabetic works because there is max. 8 of them
 
     let orderTupleFields (fields: FieldInfo[]) =
-        // The tuple fields are of the form:
-        //   Item1
-        //   ..
-        //   Item1, Item2, ..., Item<maxTuple-1>
-        //   Item1, Item2, ..., Item<maxTuple-1>, Rest
-        // The PropertyInfo may not come back in order, so ensure ordering here.
-#if !NETSTANDARD
-        assert (maxTuple < 10) // Alphasort will only works for upto 9 items: Item1, Item10, Item2, Item3, ..., Item9, Rest
-#endif
-        let fields = fields |> Array.sortBy (fun fi -> fi.Name) // they are not always in alphabetic order
-#if !NETSTANDARD
-        assert (fields.Length <= maxTuple)
-
-        assert
-            (let haveNames = fields |> Array.map (fun fi -> fi.Name)
-
-             let expectNames =
-                 Array.init fields.Length (fun i ->
-                     let j = i + 1 // index j = 1, 2, .., fields.Length <= maxTuple
-
-                     if j < maxTuple then
-                         "Item" + string j
-                     elif j = maxTuple then
-                         "Rest"
-                     else
-                         (assert false
-                          "")) // dead code under prior assert, props.Length <= maxTuple
-
-             haveNames = expectNames)
-#endif
-        fields
+        // The FieldInfo[] may not come back in order, so ensure ordering here.
+        fields |> Array.sortBy (fun fi -> fi.Name) // alphabetic works because there is max. 8 of them
 
     let getTupleConstructorMethod (typ: Type) =
         let ctor =

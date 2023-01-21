@@ -1276,6 +1276,8 @@ type Entity =
 
     /// Indicates if we have pre-determined that a type definition has a self-referential constructor using 'as x'
     member x.HasSelfReferentialConstructor = x.entity_flags.HasSelfReferentialConstructor
+    
+    member x.HasSignatureFile = x.SigRange <> x.DefinitionRange
 
     /// Set the custom attributes on an F# type definition.
     member x.SetAttribs attribs = x.entity_attribs <- attribs
@@ -2803,6 +2805,9 @@ type Val =
     //  Indicates if this value was declared to be a type function, e.g. "let f<'a> = typeof<'a>"
     member x.IsTypeFunction = x.val_flags.IsTypeFunction
 
+    member x.HasSignatureFile =
+        x.SigRange <> x.DefinitionRange
+    
     /// Get the inline declaration on the value
     member x.InlineInfo = x.val_flags.InlineInfo
 
