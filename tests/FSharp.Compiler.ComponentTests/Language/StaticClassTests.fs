@@ -55,7 +55,7 @@ type T(x: int) = class end
          |> compile
          |> shouldFail
          |> withDiagnostics [
-             (Error 3552, Line 3, Col 8, Line 3, Col 14, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Constructor with arguments is not allowed.")
+             (Warning 3552, Line 3, Col 8, Line 3, Col 14, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Constructor with arguments is not allowed.")
          ]
 
     [<Fact>]
@@ -79,7 +79,7 @@ type T =
          |> compile
          |> shouldFail
          |> withDiagnostics [
-             (Error 3553, Line 4, Col 5, Line 4, Col 16, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Additional constructor is not allowed.")
+             (Warning 3553, Line 4, Col 5, Line 4, Col 16, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Additional constructor is not allowed.")
          ]
 
     [<Fact>]
@@ -104,8 +104,8 @@ type T(x: int) =
          |> compile
          |> shouldFail
          |> withDiagnostics [
-             (Error 3552, Line 3, Col 8, Line 3, Col 14, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Constructor with arguments is not allowed.")
-             (Error 3553, Line 4, Col 5, Line 4, Col 19, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Additional constructor is not allowed.")
+             (Warning 3552, Line 3, Col 8, Line 3, Col 14, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Constructor with arguments is not allowed.")
+             (Warning 3553, Line 4, Col 5, Line 4, Col 19, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Additional constructor is not allowed.")
          ]
          
     [<Fact>]
@@ -140,7 +140,7 @@ type ListDebugView<'T>(l: 'T list) = class end
          |> compile
          |> shouldFail
          |> withDiagnostics [
-             (Error 3552, Line 3, Col 24, Line 3, Col 34, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Constructor with arguments is not allowed.")
+             (Warning 3552, Line 3, Col 24, Line 3, Col 34, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Constructor with arguments is not allowed.")
          ]
 
     [<Fact>]
@@ -156,9 +156,9 @@ type B =
          |> compile
          |> shouldFail
          |> withDiagnostics [
-             (Error 3553, Line 6, Col 5, Line 6, Col 30, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Additional constructor is not allowed.")
-             (Error 3558, Line 4, Col 9, Line 4, Col 10, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Explicit field declarations are not allowed.")
-             (Error 3558, Line 5, Col 17, Line 5, Col 18, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Explicit field declarations are not allowed.")
+             (Warning 3553, Line 6, Col 5, Line 6, Col 30, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Additional constructor is not allowed.")
+             (Warning 3558, Line 4, Col 9, Line 4, Col 10, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Explicit field declarations are not allowed.")
+             (Warning 3558, Line 5, Col 17, Line 5, Col 18, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Explicit field declarations are not allowed.")
          ]
 
     [<Theory>]
@@ -229,7 +229,7 @@ type T() =
          |> compile
          |> shouldFail
          |> withDiagnostics [
-             (Error 3554, Line 4, Col 5, Line 4, Col 25, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance members are not allowed.")
+             (Warning 3554, Line 4, Col 5, Line 4, Col 25, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance members are not allowed.")
          ]
          
     [<Fact>]
@@ -316,7 +316,7 @@ type C() =
          |> compile
          |> shouldFail
          |> withDiagnostics [
-             (Error 3555, Line 4, Col 5, Line 4, Col 14, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance let bindings are not allowed.")
+             (Warning 3555, Line 4, Col 5, Line 4, Col 14, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance let bindings are not allowed.")
          ]
          
     [<Fact>]
@@ -331,7 +331,7 @@ type C() =
          |> compile
          |> shouldFail
          |> withDiagnostics [
-             (Error 3555, Line 4, Col 5, Line 4, Col 18, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance let bindings are not allowed.")
+             (Warning 3555, Line 4, Col 5, Line 4, Col 18, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance let bindings are not allowed.")
          ]
 
     [<Fact>]
@@ -403,7 +403,7 @@ type C() =
          |> compile
          |> shouldFail
          |> withDiagnostics [
-            (Error 3556, Line 8, Col 9, Line 8, Col 29, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Implementing interfaces is not allowed.")
+            (Warning 3556, Line 8, Col 9, Line 8, Col 29, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Implementing interfaces is not allowed.")
          ]
          
     [<Fact>]
@@ -421,7 +421,7 @@ type C =
          |> compile
          |> shouldFail
          |> withDiagnostics [
-            (Error 3556, Line 8, Col 9, Line 8, Col 29, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Implementing interfaces is not allowed.")
+            (Warning 3556, Line 8, Col 9, Line 8, Col 29, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Implementing interfaces is not allowed.")
          ]
          
     [<Fact>]
@@ -464,8 +464,8 @@ type T =
          |> compile
          |> shouldFail
          |> withDiagnostics [
-             (Error 3557, Line 4, Col 14, Line 4, Col 15, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Abstract member declarations are not allowed.")
-             (Error 3557, Line 5, Col 14, Line 5, Col 15, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Abstract member declarations are not allowed.")
+             (Warning 3557, Line 4, Col 14, Line 4, Col 15, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Abstract member declarations are not allowed.")
+             (Warning 3557, Line 5, Col 14, Line 5, Col 15, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Abstract member declarations are not allowed.")
          ]
          
     [<Fact>]
@@ -480,8 +480,8 @@ type T() =
          |> compile
          |> shouldFail
          |> withDiagnostics [
-             (Error 3557, Line 4, Col 14, Line 4, Col 15, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Abstract member declarations are not allowed.")
-             (Error 3557, Line 5, Col 14, Line 5, Col 15, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Abstract member declarations are not allowed.")
+             (Warning 3557, Line 4, Col 14, Line 4, Col 15, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Abstract member declarations are not allowed.")
+             (Warning 3557, Line 5, Col 14, Line 5, Col 15, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Abstract member declarations are not allowed.")
          ]
 
     #if !NETCOREAPP
@@ -665,8 +665,8 @@ type B =
          |> compile
          |> shouldFail
          |> withDiagnostics [
-             (Error 3558, Line 4, Col 9, Line 4, Col 10, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Explicit field declarations are not allowed.")
-             (Error 3558, Line 5, Col 17, Line 5, Col 18, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Explicit field declarations are not allowed.")
+             (Warning 3558, Line 4, Col 9, Line 4, Col 10, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Explicit field declarations are not allowed.")
+             (Warning 3558, Line 5, Col 17, Line 5, Col 18, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Explicit field declarations are not allowed.")
          ]
          
     [<Fact>]
@@ -683,8 +683,8 @@ type B() =
          |> withDiagnostics [
              (Error 880, Line 4, Col 9, Line 4, Col 16, "Uninitialized 'val' fields must be mutable and marked with the '[<DefaultValue>]' attribute. Consider using a 'let' binding instead of a 'val' field.")
              (Error 880, Line 5, Col 17, Line 5, Col 24, "Uninitialized 'val' fields must be mutable and marked with the '[<DefaultValue>]' attribute. Consider using a 'let' binding instead of a 'val' field.")
-             (Error 3558, Line 4, Col 9, Line 4, Col 10, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Explicit field declarations are not allowed.")
-             (Error 3558, Line 5, Col 17, Line 5, Col 18, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Explicit field declarations are not allowed.")
+             (Warning 3558, Line 4, Col 9, Line 4, Col 10, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Explicit field declarations are not allowed.")
+             (Warning 3558, Line 5, Col 17, Line 5, Col 18, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Explicit field declarations are not allowed.")
          ]
     
     [<Fact>]
@@ -713,7 +713,7 @@ type T =
          |> compile
          |> shouldFail
          |> withDiagnostics [
-             (Error 3554, Line 4, Col 5, Line 4, Col 33, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance members are not allowed.")
-             (Error 3554, Line 5, Col 5, Line 5, Col 41, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance members are not allowed.")
-             (Error 3554, Line 6, Col 5, Line 6, Col 55, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance members are not allowed.")
+             (Warning 3554, Line 4, Col 5, Line 4, Col 33, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance members are not allowed.")
+             (Warning 3554, Line 5, Col 5, Line 5, Col 41, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance members are not allowed.")
+             (Warning 3554, Line 6, Col 5, Line 6, Col 55, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance members are not allowed.")
          ]
