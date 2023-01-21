@@ -686,4 +686,34 @@ type B() =
              (Error 3558, Line 4, Col 9, Line 4, Col 10, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Explicit field declarations are not allowed.")
              (Error 3558, Line 5, Col 17, Line 5, Col 18, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Explicit field declarations are not allowed.")
          ]
+    
+    [<Fact>]
+    let ``Sealed and AbstractClass on a types with instance member properties on lang version70`` () =
+        Fsx """ 
+[<Sealed; AbstractClass>]
+type T =
+    member _.Item with get i = 3
+    member _.Item1 with set i value = ()
+    member _.Item2 with get i = 3 and set i value = ()
+        """
+         |> withLangVersion70
+         |> compile
+         |> shouldSucceed
 
+    [<Fact>]
+    let ``Sealed and AbstractClass on a types with instance member properties on lang preview`` () =
+        Fsx """ 
+[<Sealed; AbstractClass>]
+type T =
+    member _.Item with get i = 3
+    member _.Item1 with set i value = ()
+    member _.Item2 with get i = 3 and set i value = ()
+        """
+         |> withLangVersionPreview
+         |> compile
+         |> shouldFail
+         |> withDiagnostics [
+             (Error 3554, Line 4, Col 5, Line 4, Col 33, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance members are not allowed.")
+             (Error 3554, Line 5, Col 5, Line 5, Col 41, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance members are not allowed.")
+             (Error 3554, Line 6, Col 5, Line 6, Col 55, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance members are not allowed.")
+         ]

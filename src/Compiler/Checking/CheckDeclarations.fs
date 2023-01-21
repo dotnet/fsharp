@@ -1659,11 +1659,14 @@ let private ReportErrorOnStaticClass (synMembers: SynMemberDefn list) =
         | SynMemberDefn.ImplicitCtor(ctorArgs = SynSimplePats.SimplePats(pats = pats)) when (not pats.IsEmpty) ->
             for pat in pats do
                 errorR(Error(FSComp.SR.chkConstructorWithArgumentsOnStaticClasses(), pat.Range))
-           
         | SynMemberDefn.Member(SynBinding(valData = SynValData(memberFlags = Some memberFlags)), m) when memberFlags.MemberKind = SynMemberKind.Constructor ->
             errorR(Error(FSComp.SR.chkAdditionalConstructorOnStaticClasses(), m))
-        | SynMemberDefn.Member(SynBinding(valData = SynValData(memberFlags = Some memberFlags)), m) when memberFlags.MemberKind = SynMemberKind.Member && memberFlags.IsInstance ->
-            errorR(Error(FSComp.SR.chkInstanceMemberOnStaticClasses(), m))
+        | SynMemberDefn.Member(SynBinding(valData = SynValData(memberFlags = Some memberFlags)), m) when memberFlags.IsInstance ->
+            match memberFlags.MemberKind with
+            | SynMemberKind.PropertyGet | SynMemberKind.PropertySet | SynMemberKind.PropertyGetSet 
+            | SynMemberKind.Member ->
+                errorR(Error(FSComp.SR.chkInstanceMemberOnStaticClasses(), m))
+            | _ -> ()
         | SynMemberDefn.LetBindings(isStatic = false; range = range) ->
             errorR(Error(FSComp.SR.chkInstanceLetBindingOnStaticClasses(), range))
         | SynMemberDefn.Interface(members= Some(synMemberDefs)) ->
