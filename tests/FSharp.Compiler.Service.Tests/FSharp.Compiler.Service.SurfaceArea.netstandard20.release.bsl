@@ -6067,9 +6067,9 @@ FSharp.Compiler.Syntax.SynConst: FSharp.Compiler.Text.Range Range(FSharp.Compile
 FSharp.Compiler.Syntax.SynConst: Int32 Tag
 FSharp.Compiler.Syntax.SynConst: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynConst: System.String ToString()
-FSharp.Compiler.Syntax.SynEnumCase: FSharp.Compiler.Syntax.SynConst get_value()
-FSharp.Compiler.Syntax.SynEnumCase: FSharp.Compiler.Syntax.SynConst value
-FSharp.Compiler.Syntax.SynEnumCase: FSharp.Compiler.Syntax.SynEnumCase NewSynEnumCase(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList], FSharp.Compiler.Syntax.SynIdent, FSharp.Compiler.Syntax.SynConst, FSharp.Compiler.Text.Range, FSharp.Compiler.Xml.PreXmlDoc, FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynEnumCaseTrivia)
+FSharp.Compiler.Syntax.SynEnumCase: FSharp.Compiler.Syntax.SynEnumCase NewSynEnumCase(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList], FSharp.Compiler.Syntax.SynIdent, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Xml.PreXmlDoc, FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynEnumCaseTrivia)
+FSharp.Compiler.Syntax.SynEnumCase: FSharp.Compiler.Syntax.SynExpr get_valueExpr()
+FSharp.Compiler.Syntax.SynEnumCase: FSharp.Compiler.Syntax.SynExpr valueExpr
 FSharp.Compiler.Syntax.SynEnumCase: FSharp.Compiler.Syntax.SynIdent get_ident()
 FSharp.Compiler.Syntax.SynEnumCase: FSharp.Compiler.Syntax.SynIdent ident
 FSharp.Compiler.Syntax.SynEnumCase: FSharp.Compiler.SyntaxTrivia.SynEnumCaseTrivia get_trivia()
@@ -6077,9 +6077,7 @@ FSharp.Compiler.Syntax.SynEnumCase: FSharp.Compiler.SyntaxTrivia.SynEnumCaseTriv
 FSharp.Compiler.Syntax.SynEnumCase: FSharp.Compiler.Text.Range Range
 FSharp.Compiler.Syntax.SynEnumCase: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.SynEnumCase: FSharp.Compiler.Text.Range get_range()
-FSharp.Compiler.Syntax.SynEnumCase: FSharp.Compiler.Text.Range get_valueRange()
 FSharp.Compiler.Syntax.SynEnumCase: FSharp.Compiler.Text.Range range
-FSharp.Compiler.Syntax.SynEnumCase: FSharp.Compiler.Text.Range valueRange
 FSharp.Compiler.Syntax.SynEnumCase: FSharp.Compiler.Xml.PreXmlDoc get_xmlDoc()
 FSharp.Compiler.Syntax.SynEnumCase: FSharp.Compiler.Xml.PreXmlDoc xmlDoc
 FSharp.Compiler.Syntax.SynEnumCase: Int32 Tag
