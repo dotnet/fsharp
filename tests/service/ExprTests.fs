@@ -722,9 +722,9 @@ let test{0}ToStringOperator   (e1:{1}) = string e1
 
 """
 
-let ignoreTestInDebug () =
-#if DEBUG
-    Assert.Ignore("Test is known to fail in DEBUG. Use RELEASE configuration to run it.")
+let ignoreTestIfStackOverflowExpected () =
+#if !NETFRAMEWORK && DEBUG
+    Assert.Ignore("Test is known to fail in DEBUG when not using NetFramework. Use RELEASE configuration or NetFramework to run it.")
 #else
     ()
 #endif
@@ -3198,7 +3198,7 @@ let BigSequenceExpression(outFileOpt,docFileOpt,baseAddressOpt) =
 
 [<Test>]
 let ``Test expressions of declarations stress big expressions`` () =
-    ignoreTestInDebug ()
+    ignoreTestIfStackOverflowExpected ()
     let cleanup, options = ProjectStressBigExpressions.createOptions()
     use _holder = cleanup
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
@@ -3215,7 +3215,7 @@ let ``Test expressions of declarations stress big expressions`` () =
 
 [<Test>]
 let ``Test expressions of optimized declarations stress big expressions`` () =
-    ignoreTestInDebug ()
+    ignoreTestIfStackOverflowExpected ()
     let cleanup, options = ProjectStressBigExpressions.createOptions()
     use _holder = cleanup
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
