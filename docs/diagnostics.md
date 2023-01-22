@@ -59,7 +59,7 @@ Diagnostics must often format types.
 ## Localization
 
 The file `FSComp.txt` contains the canonical listing of diagnostic messages, but there are also `.xlf` localization files for various languages.
-See [the DEVGUIDE](../DEVGUIDE.md#Updating-FSComp.fs,-FSComp.resx-and-XLF) for more details.
+See [the DEVGUIDE](../DEVGUIDE.md#updating-fscompfs-fscompresx-and-xlf) for more details.
 
 ## Enabling a warning or error by default
 
