@@ -132,7 +132,7 @@ let rec TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce ty2 =
 /// variables when compiling patterns at generalized bindings.
 ///     e.g. let ([], x) = ([], [])
 /// Here x gets a generalized type "list<'T>".
-let ChooseTyparSolutionAndRange (g: TcGlobals) amap (tp:Typar) =
+let ChooseTyparSolutionAndRange (g: TcGlobals) amap (tp:Typar) : TType * Text.range * bool =
     let m = tp.Range
     let (maxTy, isRefined), m =
          let initialTy =
@@ -178,18 +178,19 @@ let ChooseTyparSolutionAndRange (g: TcGlobals) amap (tp:Typar) =
                  (maxTy, haveRefined), m
              | TyparConstraint.DefaultsTo(_priority, _ty, m) ->
                  (maxTy, haveRefined), m)
-    match tp.Kind with
-    | TyparKind.Type ->
-        if not isRefined then
-            warning(Error(FSComp.SR.typrelNeverRefinedAwayFromTop(), m))
-    | _ -> ()
-    maxTy, m
+    let wasRefined =
+        isRefined ||
+        match tp.Kind with
+        | TyparKind.Type ->
+            true
+        | _ -> false
+    maxTy, m, wasRefined
 
-let ChooseTyparSolution g amap tp = 
-    let ty, _m = ChooseTyparSolutionAndRange g amap tp
+let ChooseTyparSolution g amap tp : TType * bool =
+    let ty, _m, wasRefined = ChooseTyparSolutionAndRange g amap tp
     if tp.Rigidity = TyparRigidity.Anon && typeEquiv g ty (TType_measure Measure.One) then
         warning(Error(FSComp.SR.csCodeLessGeneric(), tp.Range))
-    ty
+    ty, wasRefined
 
 // Solutions can, in theory, refer to each other
 // For example

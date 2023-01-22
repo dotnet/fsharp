@@ -42,10 +42,15 @@ module ObjInference =
                 Warning 3525, Line 1, Col 45, Line 1, Col 50, message
             ]
 
+    let inline add< ^T when ^T: (static member op_Add: ^T * ^T -> ^T)> (x : ^T) (y : ^T) : ^T =
+             //when ^T : ^T = ((^T or ^U): (static member (+) : ^T * ^U -> ^V) (x,y))
+        x + y
+
     let noWarningCases =
         [
             // TODO: this test is failing, it thinks `x` was inferred as obj even though it wasn't
             "let add x y = x + y" // inferred as int
+            "let add< ^T when ^T :  x y = x + y" // inferred as int
             "let f x = string x" // inferred as generic 'a -> string
             "let f() = ([] = ([] : obj list))" // obj is inferred, but is annotated
             "let f() = (([] : obj list) = [])" // obj is inferred, but is annotated
