@@ -12,6 +12,10 @@ module ObjInference =
             "let f() = ([] = [])", 1, 17, 1, 19
             """System.Object.ReferenceEquals(null, "hello") |> ignore""", 1, 31, 1, 35
             """System.Object.ReferenceEquals("hello", null) |> ignore""", 1, 40, 1, 44
+            "<@ [] = [] @> |> ignore", 1, 9, 1, 11
+            """let f<'b> (x : 'b) : int = failwith ""
+let deserialize<'v> (s : string) : 'v = failwith ""
+let x = deserialize "" |> f""", 3, 1, 3, 10 // TODO - fix this range when the test works
         ]
         |> List.map (fun (str, line1, col1, line2, col2) -> [| box str ; line1 ; col1 ; line2 ; col2 |])
 
@@ -44,7 +48,6 @@ module ObjInference =
 
     let noWarningCases =
         [
-            // TODO: this test is failing, it thinks `x` was inferred as obj even though it wasn't
             "let add x y = x + y" // inferred as int
             "let inline add x y = x + y" // inferred with SRTP
             "let inline add< ^T when ^T : (static member (+) : ^T * ^T -> ^T)> (x : ^T) (y : ^T) : ^T = x + y" // with SRTP
@@ -104,15 +107,6 @@ let f () = x = x |> ignore""" // measure is inferred as 1, but that's not covere
         |> withWarnOn 3559
         |> typecheck
         |> shouldSucceed
-
-    [<Fact>]
-    let ``Warn when the error appears inside a quotation``() =
-        "<@ [] = [] @> |> ignore"
-        |> FSharp
-        |> withWarnOn 3559
-        |> typecheck
-        |> shouldFail
-        |> withSingleDiagnostic (Warning 3559, Line 1, Col 9, Line 1, Col 11, message)
 
     [<Fact>]
     let ``Warning is off by default``() =
