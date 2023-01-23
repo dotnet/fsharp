@@ -1,21 +1,16 @@
-﻿namespace rec Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
+﻿namespace rec VisualFSharp.UnitTests.Editor
 
 open System
 open System.IO
 open System.Text
 open System.Reflection
 open System.Linq
-open System.Composition.Hosting
 open System.Collections.Generic
-open System.Collections.Immutable
 open Microsoft.VisualStudio.Composition
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Host
-open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.CodeAnalysis.Host.Mef
-open Microsoft.VisualStudio.LanguageServices
-open Microsoft.VisualStudio.Shell
 
 [<AutoOpen>]
 module MefHelpers =
@@ -225,54 +220,4 @@ type RoslynTestHelpers private () =
             documents = [docInfo],
             filePath = projFilePath
         )
-
-    static member CreateDocument (filePath, text: SourceText, ?options: FSharp.Compiler.CodeAnalysis.FSharpProjectOptions) =
-        let isScript = String.Equals(Path.GetExtension(filePath), ".fsx", StringComparison.OrdinalIgnoreCase)
-
-        let workspace = new AdhocWorkspace(TestHostServices())
-
-        let projId = ProjectId.CreateNewId()
-        let docId = DocumentId.CreateNewId(projId)
-
-        let docInfo =
-            DocumentInfo.Create(
-                docId,
-                filePath, 
-                loader=TextLoader.From(text.Container, VersionStamp.Create(DateTime.UtcNow)),
-                filePath=filePath,
-                sourceCodeKind= if isScript then SourceCodeKind.Script else SourceCodeKind.Regular)
-
-        let projFilePath = "C:\\test.fsproj"
-        let projInfo =
-            ProjectInfo.Create(
-                projId,
-                VersionStamp.Create(DateTime.UtcNow),
-                projFilePath, 
-                "test.dll", 
-                LanguageNames.FSharp,
-                documents = [docInfo],
-                filePath = projFilePath
-            )
-
-        let solutionInfo = SolutionInfo.Create(SolutionId.CreateNewId(), VersionStamp.Create(DateTime.UtcNow), "test.sln", [projInfo])
-
-        let solution = workspace.AddSolution(solutionInfo)
-
-        let workspaceService = workspace.Services.GetService<IFSharpWorkspaceService>()
-
-        let document = solution.GetProject(projId).GetDocument(docId)
-
-        match options with
-        | Some options ->
-            let options = { options with ProjectId = Some(Guid.NewGuid().ToString()) }
-            workspaceService.FSharpProjectOptionsManager.SetCommandLineOptions(projId, options.SourceFiles, options.OtherOptions |> ImmutableArray.CreateRange)
-            document.SetFSharpProjectOptionsForTesting(options)
-        | _ ->
-            workspaceService.FSharpProjectOptionsManager.SetCommandLineOptions(projId, [|filePath|], ImmutableArray.Empty)
-
-        document
-
-    static member CreateDocument (filePath, code: string) =
-        let text = SourceText.From(code)
-        RoslynTestHelpers.CreateDocument(filePath, text), text
 

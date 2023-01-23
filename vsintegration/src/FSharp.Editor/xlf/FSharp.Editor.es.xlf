@@ -27,6 +27,41 @@
         <target state="translated">Agregar una anotación de tipo</target>
         <note />
       </trans-unit>
+      <trans-unit id="AdvancedPageKeywords">
+        <source>Block Structure Guides;
+Show structure guidelines for F# code;
+Outlining;
+Show outlining and collapsible nodes for F# code;
+Inline hints;
+Display inline type hints (preview);
+Display inline parameter name hints (preview);Beer</source>
+        <target state="needs-review-translation">Guías de estructura de bloques;
+Mostrar instrucciones de estructura para el código de F#;
+Esquematización;
+Mostrar nodos esquematización y contraíbles para el código de F#;
+Sugerencias insertadas;
+Mostrar sugerencias de tipo insertadas (experimental);
+Mostrar sugerencias de nombre de parámetro insertado (experimental); Cerveza</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeFixesPageKeywords">
+        <source>Simplify names (remove unnecessary qualifiers);
+Always place open statements at the top level;
+Remove unused open statements;
+Analyze and suggest fixes for unused values;
+Suggest names for unresolved identifiers;</source>
+        <target state="translated">Simplificar nombres (quitar calificadores innecesarios);
+Colocar siempre las instrucciones abiertas en el nivel superior;
+Quitar instrucciones abiertas sin usar;
+Analizar y sugerir correcciones para valores no usados;
+Sugerir nombres para identificadores sin resolver;</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConvertCSharpUsingToFSharpOpen">
+        <source>Convert C# 'using' to F# 'open'</source>
+        <target state="translated">Convertir C# 'using' en F# 'open'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ConvertToAnonymousRecord">
         <source>Convert to Anonymous Record</source>
         <target state="translated">Convertir en registro anónimo</target>
@@ -67,6 +102,11 @@
         <target state="translated">Funciones de F#</target>
         <note />
       </trans-unit>
+      <trans-unit id="FormattingPageKeywords">
+        <source>Re-format indentation on paste (Experimental)</source>
+        <target state="translated">Volver a aplicar formato a la sangría al pegar (experimental)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ImplementInterface">
         <source>Implement interface</source>
         <target state="translated">Implementar interfaz</target>
@@ -75,6 +115,25 @@
       <trans-unit id="ImplementInterfaceWithoutTypeAnnotation">
         <source>Implement interface without type annotation</source>
         <target state="translated">Implementar interfaz sin anotación de tipos</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="IntelliSensePageKeywords">
+        <source>Completion Lists;
+Show completion list after a character is deleted;
+Show completion list after a character is typed;
+Show symbols in unopened namespaces;
+Enter key behavior;
+Never add new line on enter;
+Only add new line on enter after end of fully typed word;
+Always add new line on enter;</source>
+        <target state="translated">Listas de finalización;
+Mostrar lista de finalización después de eliminar un carácter;
+Mostrar lista de finalización después de escribir un carácter;
+Mostrar símbolos en espacios de nombres sin abrir;
+Escribir el comportamiento de la tecla;
+No agregar nunca una nueva línea al pulsar Intro;
+Agregar solo una nueva línea al pulsar Intro después del final de la palabra totalmente escrita;
+Agregar siempre una nueva línea al pulsar Intro;</target>
         <note />
       </trans-unit>
       <trans-unit id="MakeDeclarationMutable">
@@ -87,9 +146,43 @@
         <target state="translated">Convertir el elemento "{0}" en recursivo</target>
         <note />
       </trans-unit>
+      <trans-unit id="PerformancePageKeywords">
+        <source>F# Project and Caching Performance Options;
+Enable in-memory cross project references;
+IntelliSense Performance Options;
+Enable stale data for IntelliSense features;
+Time until stale results are used (in milliseconds);
+Parallelization (requires restart);
+Enable parallel type checking with signature files;
+Enable parallel reference resolution;
+Enable fast find references &amp; rename (experimental)</source>
+        <target state="translated">Opciones de rendimiento de almacenamiento en caché y proyecto de F#;
+Habilitar referencias entre proyectos en memoria;
+Opciones de rendimiento de IntelliSense;
+Habilitar datos obsoletos para características de IntelliSense;
+Tiempo hasta que se usan resultados obsoletos (en milisegundos);
+Paralelización (requiere reiniciar);
+Habilitar la comprobación de tipos paralelos con archivos de firma;
+Habilitar resolución de referencias paralelas;
+Habilitar referencias de búsqueda rápida y cambio de nombre (experimental)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
         <source>Prefix '{0}' with underscore</source>
         <target state="translated">Colocar un carácter de subrayado delante de "{0}"</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QuickInfoPageKeywords">
+        <source>Navigation links;
+Show navigation links as;
+Solid underline;
+Dot underline;
+Dash underline;</source>
+        <target state="translated">Vínculos de navegación;
+Mostrar vínculos de navegación como;
+Subrayado sólido;
+Subrayado de punto;
+Subrayado de guion;</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">
@@ -237,11 +330,6 @@
         <target state="translated">Opciones avanzadas</target>
         <note />
       </trans-unit>
-      <trans-unit id="6013">
-        <source>CodeLens</source>
-        <target state="translated">CodeLens</target>
-        <note />
-      </trans-unit>
       <trans-unit id="6014">
         <source>Formatting</source>
         <target state="translated">Formato</target>
@@ -264,7 +352,7 @@
       </trans-unit>
       <trans-unit id="UseTripleQuotedInterpolation">
         <source>Use triple quoted string interpolation.</source>
-        <target state="new">Use triple quoted string interpolation.</target>
+        <target state="translated">Use la interpolación de cadenas entre comillas triples.</target>
         <note />
       </trans-unit>
       <trans-unit id="UseUpcastKeyword">

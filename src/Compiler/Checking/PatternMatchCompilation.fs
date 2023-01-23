@@ -81,8 +81,6 @@ and MatchClause =
     member c.Target = let (MatchClause(_, _, tg, _)) = c in tg
     member c.BoundVals = let (MatchClause(_p, _whenOpt, TTarget(vs, _, _), _m)) = c in vs
 
-let debug = false
-
 //---------------------------------------------------------------------------
 // Nasty stuff to permit obscure generic bindings such as
 //     let x, y = [], []
@@ -143,7 +141,6 @@ let GetSubExprOfInput g (gtps, tyargs, tinst) (SubExpr(accessf, (ve2, v2))) =
 // The ints record which choices taken, e.g. tuple/record fields.
 type Path =
     | PathQuery of Path * Unique
-    | PathConj of Path * int
     | PathTuple of Path * TypeInst * int
     | PathRecd of Path * TyconRef * TypeInst * int
     | PathUnionConstr of Path * UnionCaseRef * TypeInst * int
@@ -154,7 +151,6 @@ type Path =
 let rec pathEq p1 p2 =
     match p1, p2 with
     | PathQuery(p1, n1), PathQuery(p2, n2) -> (n1 = n2) && pathEq p1 p2
-    | PathConj(p1, n1), PathConj(p2, n2) -> (n1 = n2) && pathEq p1 p2
     | PathTuple(p1, _, n1), PathTuple(p2, _, n2) -> (n1 = n2) && pathEq p1 p2
     | PathRecd(p1, _, _, n1), PathRecd(p2, _, _, n2) -> (n1 = n2) && pathEq p1 p2
     | PathUnionConstr(p1, _, _, n1), PathUnionConstr(p2, _, _, n2) -> (n1 = n2) && pathEq p1 p2
@@ -203,8 +199,6 @@ let RefuteDiscrimSet g m path discrims =
     let rec go path tm =
         match path with
         | PathQuery _ -> raise CannotRefute
-        | PathConj (p, _j) ->
-            go p tm
         | PathTuple (p, tys, j) ->
             let k, eCoversVals = mkOneKnown tm j tys
             go p (fun _ -> mkRefTupled g m k tys, eCoversVals)
@@ -391,8 +385,6 @@ type Frontier = Frontier of ClauseNumber * Actives * ValMap<Expr>
 type InvestigationPoint = Investigation of ClauseNumber * DecisionTreeTest * Path
 
 // Note: actives must be a SortedDictionary
-// REVIEW: improve these data structures, though surprisingly these functions don't tend to show up
-// on profiling runs
 let rec isMemOfActives p1 actives =
     match actives with
     | [] -> false
@@ -418,17 +410,17 @@ type Implication =
     /// Indicates nothing in particular
     | Nothing
 
-/// Work out what one successful type test implies about a null test
+/// Work out what a successful type test (against tgtTy1) implies about a null test for the same input value.
 ///
 /// Example:
 ///     match x with 
-///     | :? string -> ...
+///     | :? string when false -> ... // note: "when false" used so type test succeeds but proceed to next type test
 ///     | null -> ...
 /// For any inputs where ':? string' succeeds, 'null' will fail
 ///
 /// Example:
 ///     match x with 
-///     | :? (int option) -> ...
+///     | :? (int option) when false -> ... // note: "when false" used so type test succeeds but proceed to next type test
 ///     | null -> ...
 /// Nothing can be learned.  If ':? (int option)' succeeds, 'null' may still have to be run.
 let computeWhatSuccessfulTypeTestImpliesAboutNullTest g tgtTy1 =
@@ -437,7 +429,7 @@ let computeWhatSuccessfulTypeTestImpliesAboutNullTest g tgtTy1 =
     else
         Implication.Fails
 
-/// Work out what a failing type test implies about a null test.
+/// Work out what a failing type test (against tgtTy1) implies about a null test for the same input value.
 ///
 /// Example:
 ///     match x with 
@@ -450,17 +442,17 @@ let computeWhatFailingTypeTestImpliesAboutNullTest g tgtTy1 =
     else
         Implication.Nothing
 
-/// Work out what one successful null test implies about a type test.
+/// Work out what one successful null test implies about a type test (against tgtTy2) for the same input value.
 ///
 /// Example:
 ///     match x with 
-///     | null -> ...
+///     | null when false -> ...  // note: "when false" used so null test succeeds but proceed to next type test
 ///     | :? string -> ...
 /// For any inputs where 'null' succeeds, ':? string' will fail
 ///
 /// Example:
 ///     match x with 
-///     | null -> ...
+///     | null when false -> ... // note: "when false" used so null test succeeds but proceed to next type test
 ///     | :? (int option) -> ...
 /// For any inputs where 'null' succeeds, ':? (int option)' will succeed
 let computeWhatSuccessfulNullTestImpliesAboutTypeTest g tgtTy2 =
@@ -469,67 +461,79 @@ let computeWhatSuccessfulNullTestImpliesAboutTypeTest g tgtTy2 =
     else
         Implication.Fails
 
-/// Work out what a failing null test implies about a type test. The answer is "nothing" but it's included for symmetry.
+/// Work out what a failing null test implies about a type test (against tgtTy2) for the same
+/// input balue. The answer is "nothing" but it's included for symmetry.
 let computeWhatFailingNullTestImpliesAboutTypeTest _g _tgtTy2 =
     Implication.Nothing
 
-/// Work out what one successful type test implies about another type test
+/// Work out what one successful type test (against tgtTy1) implies about another type test (against tgtTy2)
+/// for the same input value.
 let computeWhatSuccessfulTypeTestImpliesAboutTypeTest g amap m tgtTy1 tgtTy2 =
     let tgtTy1 = stripTyEqnsWrtErasure EraseAll g tgtTy1
     let tgtTy2 = stripTyEqnsWrtErasure EraseAll g tgtTy2
 
-    //  A successful type test on any type implies all supertypes always succeed
+    // A successful type test of an input value against a type (tgtTy1)
+    // implies all type tests of the same input value on equivalent or
+    // supertypes (tgtTy2) always succeed.
     //
     // Example:
     //     match x with 
-    //     | :? string -> ...
+    //     | :? string when false -> ... // note: "when false" used so type test succeeds but proceed to next type test
     //     | :? IComparable -> ...
     //
     // Example:
     //     match x with 
-    //     | :? string -> ...
+    //     | :? string when false -> ... // note: "when false" used so type test succeeds but proceed to next type test
     //     | :? string -> ...
     //
     if TypeDefinitelySubsumesTypeNoCoercion 0 g amap m tgtTy2 tgtTy1 then
         Implication.Succeeds
 
-    //  A successful type test on a sealed type implies all non-related types fail
+    // A successful type test of an input value against a sealed target type (tgtTy1) implies all
+    // type tests of the same object against a unrelated target type (tgtTy2) fails.
     //
     // Example:
     //     match x with 
-    //     | :? int -> ...
+    //     | :? int when false -> ... // note: "when false" used so type test succeeds but proceed to next type test
     //     | :? string -> ...
     //
     // For any inputs where ':? int' succeeds, ':? string' will fail
     //
-    // This doesn't apply to related types:
+    //
+    // This only applies if tgtTy2 is not potetnially related to the sealed type tgtTy1:
     //     match x with 
-    //     | :? int -> ...
+    //     | :? int when false -> ... // note: "when false" used so type test succeeds but proceed to next type test
     //     | :? IComparable -> ...
     //
-    // Here IComparable neither fails nor is redundant
+    // Here IComparable is not known to fail (NOTE: indeed it is actually known to succeed,
+    // give ":? int" succeeded, however this is not utilised in the analysis, because it involves coercion).
     //
-    // This doesn't apply to unsealed types:
+    //
+    // This rule also doesn't apply to unsealed types:
     //     match x with 
-    //     | :? SomeClass -> ...
+    //     | :? SomeUnsealedClass when false -> ... // note: "when false" used so type test succeeds but proceed to next type test
     //     | :? SomeInterface -> ...
+    // because the input may be some subtype of SomeUnsealedClass and that type could implement SomeInterface even if
+    // SomeUnsealedClass doesnt.
     //
-    // This doesn't apply to types with null as true value:
+    //
+    // This rule also doesn't apply to types with null as true value:
     //     match x with 
-    //     | :? (int option) -> ...
+    //     | :? (int option) when false -> ... // "when false" means type test succeeds but proceed to next type test
     //     | :? (string option) -> ...
     //
     // Here on 'null' input the first pattern succeeds, and the second pattern will also succeed
     elif isSealedTy g tgtTy1 &&
          not (TypeNullIsTrueValue g tgtTy1) &&
-         not (TypeDefinitelySubsumesTypeNoCoercion 0 g amap m tgtTy2 tgtTy1) then
+         not (TypeFeasiblySubsumesType 0 g amap m tgtTy2 CanCoerce tgtTy1) then
         Implication.Fails
 
-    //  A successful type test on an unsealed class type implies type tests on unrelated non-interface types always fail
+    // A successful type test of an input value against an unsealed class type (tgtTy1) implies
+    // a type test of the same input value against an unrelated non-interface type (tgtTy2) always fails
     //
     // Example:
     //     match x with 
-    //     | :? SomeUnsealedClass -> ...
+    //     | :? SomeUnsealedClass when false -> ... // "when false" used so type test succeeds but proceed to next type test
     //     | :? SomeUnrelatedClass -> ...
     //
     // For any inputs where ':? SomeUnsealedClass' succeeds, ':? SomeUnrelatedClass' will fail
@@ -543,11 +547,13 @@ let computeWhatSuccessfulTypeTestImpliesAboutTypeTest g amap m tgtTy1 tgtTy2 =
          not (TypeFeasiblySubsumesType 0 g amap m tgtTy2 CanCoerce tgtTy1) then
         Implication.Fails
 
-    //  A successful type test on an interface type refutes sealed types that do not support that interface
+    // A successful type test of an input value against an interface type (tgtTy1) implies
+    // a type test of the same object against a sealed types (tgtTy2) that does not support that interface
+    // always fails.
     //
     // Example:
     //     match x with 
-    //     | :? IComparable -> ...
+    //     | :? IComparable when false -> ... // "when false" used so type test succeeds but proceed to next type test
     //     | :? SomeOtherSealedClass -> ...
     //
     // For any inputs where ':? IComparable' succeeds, ':? SomeOtherSealedClass' will fail
@@ -561,12 +567,13 @@ let computeWhatSuccessfulTypeTestImpliesAboutTypeTest g amap m tgtTy1 tgtTy2 =
     else
         Implication.Nothing
 
-/// Work out what one successful type test implies about another type test
+/// Work out what one failing type test (tgtTy1) implies about another type test (tgtTy2)
 let computeWhatFailingTypeTestImpliesAboutTypeTest g amap m tgtTy1 tgtTy2 =
     let tgtTy1 = stripTyEqnsWrtErasure EraseAll g tgtTy1
     let tgtTy2 = stripTyEqnsWrtErasure EraseAll g tgtTy2
 
-    //  A failing type test on any type implies all subtypes fail
+    // If testing an input value against a target type (tgtTy1) fails then
+    // testing the same input value against an equivalent or subtype type (tgtTy2) always fails.
     //
     // Example:
     //     match x with 
@@ -639,9 +646,9 @@ let isDiscrimSubsumedBy g amap m discrim taken =
     match taken, discrim with
     | DecisionTreeTest.IsInst (_, tgtTy1), DecisionTreeTest.IsInst (_, tgtTy2) ->
         computeWhatFailingTypeTestImpliesAboutTypeTest g amap m tgtTy1 tgtTy2 = Implication.Fails
-    | DecisionTreeTest.IsNull _, DecisionTreeTest.IsInst (_, tgtTy2) ->
+    | DecisionTreeTest.IsNull, DecisionTreeTest.IsInst (_, tgtTy2) ->
         computeWhatFailingNullTestImpliesAboutTypeTest g tgtTy2 = Implication.Fails
-    | DecisionTreeTest.IsInst (_, tgtTy1), DecisionTreeTest.IsNull _ ->
+    | DecisionTreeTest.IsInst (_, tgtTy1), DecisionTreeTest.IsNull ->
         computeWhatFailingTypeTestImpliesAboutNullTest g tgtTy1 = Implication.Fails
     | _ ->
         false
@@ -681,7 +688,7 @@ let discrimWithinSimultaneousClass g amap m discrim prev =
         // Check that each previous test in the set, if successful, gives some information about this test
         prev |> List.forall (fun edge -> 
             match edge with
-            | DecisionTreeTest.IsNull _ -> true
+            | DecisionTreeTest.IsNull -> true
             | DecisionTreeTest.IsInst (_, tgtTy1) -> computeWhatSuccessfulTypeTestImpliesAboutNullTest g tgtTy1 <> Implication.Nothing
             | _ -> false)
 
@@ -689,7 +696,7 @@ let discrimWithinSimultaneousClass g amap m discrim prev =
         // Check that each previous test in the set, if successful, gives some information about this test
         prev |> List.forall (fun edge -> 
             match edge with
-            | DecisionTreeTest.IsNull _ -> true
+            | DecisionTreeTest.IsNull -> true
             | DecisionTreeTest.IsInst (_, tgtTy1) -> computeWhatSuccessfulTypeTestImpliesAboutTypeTest g amap m tgtTy1 tgtTy2 <> Implication.Nothing
             | _ -> false)
 
@@ -883,14 +890,6 @@ let rec layoutPat pat =
     | TPat_tuple (_, pats, _, _)
     | TPat_array (pats, _, _) -> Layout.bracketL (Layout.tupleL (List.map layoutPat pats))
     | _ -> Layout.wordL (TaggedText.tagText "?")
-
-let layoutPath _p = Layout.wordL (TaggedText.tagText "<path>")
-
-let layoutActive (Active (path, _subexpr, pat)) =
-    Layout.(--) (Layout.wordL (TaggedText.tagText "Active")) (Layout.tupleL [layoutPath path; layoutPat pat])
-
-let layoutFrontier (Frontier (i, actives, _)) =
-    Layout.(--) (Layout.wordL (TaggedText.tagText "Frontier ")) (Layout.tupleL [intL i; Layout.listL layoutActive actives])
 #endif
 
 let mkFrontiers investigations clauseNumber =
@@ -979,8 +978,6 @@ let rec isPatternDisjunctive inpPat =
 // The algorithm
 //---------------------------------------------------------------------------
 
-let getDiscrim (EdgeDiscrim(_, discrim, _)) = discrim
-
 let CompilePatternBasic
         (g: TcGlobals) denv amap tcVal infoReader mExpr mMatch
         warnOnUnused
@@ -1063,11 +1060,11 @@ let CompilePatternBasic
                     | Some (ediCaptureMethInfo, ediThrowMethInfo) ->
                         let edi, _ =
                             BuildMethodCall tcVal g amap NeverMutates mMatch false
-                               ediCaptureMethInfo ValUseFlag.NormalValUse [] [] [ (exprForVal mMatch origInputVal) ]
+                               ediCaptureMethInfo ValUseFlag.NormalValUse [] [] [ (exprForVal mMatch origInputVal) ] None
 
                         let e, _ =
                             BuildMethodCall tcVal g amap NeverMutates mMatch false
-                                ediThrowMethInfo ValUseFlag.NormalValUse [] [edi] [ ]
+                                ediThrowMethInfo ValUseFlag.NormalValUse [] [edi] [ ] None
 
                         mkCompGenSequential mMatch e (mkDefault (mMatch, resultTy))
 
@@ -1219,7 +1216,7 @@ let CompilePatternBasic
 
              let v, vExpr = mkCompGenLocal m "typeTestResult" tgtTy
              if origInputVal.IsMemberOrModuleBinding then
-                 AdjustValToTopVal v origInputVal.DeclaringEntity ValReprInfo.emptyValData
+                 AdjustValToHaveValReprInfo v origInputVal.TryDeclaringEntity ValReprInfo.emptyValData
              let argExpr = GetSubExprOfInput subexpr
              let appExpr = mkIsInst tgtTy argExpr mMatch
              Some vExpr, Some(mkInvisibleBind v appExpr)
@@ -1239,7 +1236,7 @@ let CompilePatternBasic
              | None -> Some addrExp, None
              | Some (v, e) ->
                  if origInputVal.IsMemberOrModuleBinding then
-                     AdjustValToTopVal v origInputVal.DeclaringEntity ValReprInfo.emptyValData
+                     AdjustValToHaveValReprInfo v origInputVal.TryDeclaringEntity ValReprInfo.emptyValData
                  Some addrExp, Some (mkInvisibleBind v e)
 
 
@@ -1255,7 +1252,7 @@ let CompilePatternBasic
              let ucaseTy = (mkProvenUnionCaseTy g.cons_ucref tinst)
              let v, vExpr = mkCompGenLocal m "unionTestResult" ucaseTy
              if origInputVal.IsMemberOrModuleBinding then
-                 AdjustValToTopVal v origInputVal.DeclaringEntity ValReprInfo.emptyValData
+                 AdjustValToHaveValReprInfo v origInputVal.DeclaringEntity ValReprInfo.emptyValData
              let argExpr = GetSubExprOfInput subexpr
              let appExpr = mkIsInst ucaseTy argExpr mMatch
              Some vExpr, Some (mkInvisibleBind v appExpr)
@@ -1276,11 +1273,11 @@ let CompilePatternBasic
              | None -> 
                 let v, vExpr = mkCompGenLocal m ("activePatternResult" + string (newUnique())) resTy
                 if origInputVal.IsMemberOrModuleBinding then
-                    AdjustValToTopVal v origInputVal.DeclaringEntity ValReprInfo.emptyValData
+                    AdjustValToHaveValReprInfo v origInputVal.TryDeclaringEntity ValReprInfo.emptyValData
                 Some vExpr, Some(mkInvisibleBind v addrExp)
              | Some (v, e) ->
                  if origInputVal.IsMemberOrModuleBinding then
-                     AdjustValToTopVal v origInputVal.DeclaringEntity ValReprInfo.emptyValData
+                     AdjustValToHaveValReprInfo v origInputVal.TryDeclaringEntity ValReprInfo.emptyValData
                  Some addrExp, Some (mkInvisibleBind v e)
 
           | _ -> None, None
@@ -1328,7 +1325,7 @@ let CompilePatternBasic
                  let discrim' =
                      match discrim with
                      | DecisionTreeTest.ActivePatternCase(_pexp, resTys, isStructRetTy, _apatVrefOpt, idx, apinfo) ->
-                         let aparity = apinfo.Names.Length
+                         let aparity = apinfo.ActiveTags.Length
                          let total = apinfo.IsTotal
                          if not total && aparity > 1 then
                              error(Error(FSComp.SR.patcPartialActivePatternsGenerateOneResult(), m))
@@ -1410,7 +1407,7 @@ let CompilePatternBasic
                     // Total active patterns always return choice values
                     let hasParam = (match apatVrefOpt with None -> true | Some (vref, _) -> doesActivePatternHaveFreeTypars g vref)
                     if (hasParam && i = iInvestigated) || (discrimsEq g discrim (Option.get (getDiscrimOfPattern patAtActive))) then
-                        let aparity = apinfo.Names.Length
+                        let aparity = apinfo.ActiveTags.Length
                         let subAccess j tpinst _e' =
                             assert inpExprOpt.IsSome
                             if aparity <= 1 then
@@ -1492,7 +1489,7 @@ let CompilePatternBasic
                         // F# exception definitions are sealed.
                         []
 
-                | DecisionTreeTest.IsNull _ ->
+                | DecisionTreeTest.IsNull ->
                     match computeWhatSuccessfulNullTestImpliesAboutTypeTest g tgtTy1 with
                     | Implication.Succeeds -> [Frontier (i, newActives, valMap)]
                     | Implication.Fails -> []
@@ -1528,7 +1525,7 @@ let CompilePatternBasic
                     | Implication.Nothing ->
                         [frontier]
 
-                | DecisionTreeTest.IsNull _ ->
+                | DecisionTreeTest.IsNull ->
                     match computeWhatSuccessfulNullTestImpliesAboutTypeTest g tgtTy1 with
                     | Implication.Succeeds -> [Frontier (i, newActives, valMap)]
                     | Implication.Fails -> []
@@ -1609,7 +1606,7 @@ let CompilePatternBasic
             subPats |> List.collect (fun subPat -> BindProjectionPattern (Active(inpPath, inpExpr, subPat)) activeState)
 
         | TPat_conjs(subPats, _m) ->
-            let newActives = List.mapi (mkSubActive (fun path j -> PathConj(path, j)) (fun _j -> inpAccess)) subPats
+            let newActives = List.mapi (mkSubActive (fun path _j -> path) (fun _j -> inpAccess)) subPats
             BindProjectionPatterns newActives activeState
 
         | TPat_range (c1, c2, m) ->

@@ -11,6 +11,7 @@
 module internal Sample.FSharp.Compiler.Interactive.Main
 
 open System
+open System.Diagnostics
 open System.Globalization
 open System.IO
 open System.Reflection
@@ -22,6 +23,8 @@ open System.Windows.Forms
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
+open FSharp.Compiler.Interactive
+open FSharp.Compiler.Interactive.CtrlBreakHandlers
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Compiler.Interactive.Shell.Settings
 open FSharp.Compiler.CodeAnalysis
@@ -147,9 +150,9 @@ let internal TrySetUnhandledExceptionMode () =
 
 /// Starts the remoting server to handle interrupt reuests from a host tool.
 let StartServer (fsiSession: FsiEvaluationSession) (fsiServerName) =
-#if FSI_SERVER
     let server =
-        { new Server.Shared.FSharpInteractiveServer() with
+
+        { new CtrlBreakService(fsiServerName) with
             member _.Interrupt() =
                 //printf "FSI-SERVER: received CTRL-C request...\n"
                 try
@@ -160,10 +163,7 @@ let StartServer (fsiSession: FsiEvaluationSession) (fsiServerName) =
                     ()
         }
 
-    Server.Shared.FSharpInteractiveServer.StartServer(fsiServerName, server)
-#else
-    ignore (fsiSession, fsiServerName)
-#endif
+    server.Run()
 
 //----------------------------------------------------------------------------
 // GUI runCodeOnMainThread
@@ -211,12 +211,8 @@ let evaluateSession (argv: string[]) =
 
         //#if USE_FSharp_Compiler_Interactive_Settings
         let fsiObjOpt =
-            let defaultFSharpBinariesDir =
-#if FX_NO_APP_DOMAINS
-                System.AppContext.BaseDirectory
-#else
-                System.AppDomain.CurrentDomain.BaseDirectory
-#endif
+            let defaultFSharpBinariesDir = System.AppContext.BaseDirectory
+
             // We use LoadFrom to make sure we get the copy of this assembly from the right load context
             let fsiAssemblyPath =
                 Path.Combine(defaultFSharpBinariesDir, "FSharp.Compiler.Interactive.Settings.dll")
@@ -253,12 +249,8 @@ let evaluateSession (argv: string[]) =
                     None
 #endif
 
-        let legacyReferenceResolver =
-#if CROSS_PLATFORM_COMPILER
-            SimulatedMSBuildReferenceResolver.SimulatedMSBuildResolver
-#else
-            LegacyMSBuildReferenceResolver.getResolver ()
-#endif
+        let legacyReferenceResolver = LegacyMSBuildReferenceResolver.getResolver ()
+
         // Update the configuration to include 'StartServer', WinFormsEventLoop and 'GetOptionalConsoleReadLine()'
         let rec fsiConfig =
             { new FsiEvaluationSessionHostConfig() with
@@ -381,7 +373,6 @@ let MainMain argv =
                     ()
         }
 
-#if !FX_NO_APP_DOMAINS
     let timesFlag = argv |> Array.exists (fun x -> x = "/times" || x = "--times")
 
     if timesFlag then
@@ -395,7 +386,6 @@ let MainMain argv =
                 stats.memoryMapFileClosedCount
                 stats.rawMemoryFileCount
                 stats.weakByteFileCount)
-#endif
 
 #if FSI_SHADOW_COPY_REFERENCES
     let isShadowCopy x =
@@ -404,16 +394,23 @@ let MainMain argv =
          || x = "/shadowcopyreferences+"
          || x = "--shadowcopyreferences+")
 
-    if
+    let executeFsi shadowCopyFiles =
+        if shadowCopyFiles then
+            let setupInformation = AppDomain.CurrentDomain.SetupInformation
+            setupInformation.ShadowCopyFiles <- "true"
+            let helper = AppDomain.CreateDomain("FSI_Domain", null, setupInformation)
+            helper.ExecuteAssemblyByName(Assembly.GetExecutingAssembly().GetName())
+        else
+            evaluateSession (argv)
+
+    let tryShadowCopy =
         AppDomain.CurrentDomain.IsDefaultAppDomain()
         && argv |> Array.exists isShadowCopy
-    then
-        let setupInformation = AppDomain.CurrentDomain.SetupInformation
-        setupInformation.ShadowCopyFiles <- "true"
-        let helper = AppDomain.CreateDomain("FSI_Domain", null, setupInformation)
-        helper.ExecuteAssemblyByName(Assembly.GetExecutingAssembly().GetName())
-    else
-        evaluateSession (argv)
+
+    try
+        executeFsi tryShadowCopy
+    with :? FileLoadException ->
+        executeFsi false
 #else
     evaluateSession (argv)
 #endif

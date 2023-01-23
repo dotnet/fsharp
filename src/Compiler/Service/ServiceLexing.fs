@@ -27,7 +27,6 @@ module FSharpTokenTag =
     let String = tagOfToken (STRING("a", SynStringKind.Regular, LexCont.Default))
 
     let IDENT = tagOfToken (IDENT "a")
-    let HASH_IDENT = tagOfToken (HASH_IDENT "a")
     let STRING = String
 
     let INTERP_STRING_BEGIN_END =
@@ -205,13 +204,9 @@ module internal TokenClassifications =
             // (this isn't entirely correct, but it'll work for now - see bug 3727)
             (FSharpTokenColorKind.Number, FSharpTokenCharKind.Operator, FSharpTokenTriggerClass.None)
 
-        | INFIX_STAR_DIV_MOD_OP ("mod"
-        | "land"
-        | "lor"
-        | "lxor")
-        | INFIX_STAR_STAR_OP ("lsl"
-        | "lsr"
-        | "asr") -> (FSharpTokenColorKind.Keyword, FSharpTokenCharKind.Keyword, FSharpTokenTriggerClass.None)
+        | INFIX_STAR_DIV_MOD_OP ("mod" | "land" | "lor" | "lxor")
+        | INFIX_STAR_STAR_OP ("lsl" | "lsr" | "asr") ->
+            (FSharpTokenColorKind.Keyword, FSharpTokenCharKind.Keyword, FSharpTokenTriggerClass.None)
 
         | LPAREN_STAR_RPAREN
         | DOLLAR
@@ -1049,8 +1044,8 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
     // Scan a token starting with the given lexer state
     member x.ScanToken(lexState: FSharpTokenizerLexState) : FSharpTokenInfo option * FSharpTokenizerLexState =
 
-        use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
-        use unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> DiscardErrorsLogger)
+        use _ = UseBuildPhase BuildPhase.Parse
+        use _ = UseDiagnosticsLogger DiscardErrorsLogger
 
         let indentationSyntaxStatus, lexcont = LexerStateEncoding.decodeLexInt lexState
 
@@ -1130,6 +1125,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
                     | true, "savedll"
                     | true, "nosavedll"
 #endif
+                    | true, "interactiveprompt"
                     | true, "silentCd"
                     | true, "q"
                     | true, "quit"
@@ -1211,16 +1207,18 @@ type FSharpSourceTokenizer(conditionalDefines: string list, fileName: string opt
 
 module FSharpKeywords =
 
-    let DoesIdentifierNeedBackticks s =
-        PrettyNaming.DoesIdentifierNeedBackticks s
-
-    let AddBackticksToIdentifierIfNeeded s =
-        PrettyNaming.AddBackticksToIdentifierIfNeeded s
-
     let NormalizeIdentifierBackticks s =
         PrettyNaming.NormalizeIdentifierBackticks s
 
     let KeywordsWithDescription = PrettyNaming.keywordsWithDescription
+
+    let internal KeywordsDescriptionLookup =
+        let d = KeywordsWithDescription |> dict
+
+        fun kw ->
+            match d.TryGetValue kw with
+            | false, _ -> None
+            | true, desc -> Some desc
 
     let KeywordNames = Lexhelp.Keywords.keywordNames
 
@@ -1841,8 +1839,8 @@ module FSharpLexerImpl =
             else
                 lexer
 
-        use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
-        use _unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> DiscardErrorsLogger)
+        use _ = UseBuildPhase BuildPhase.Parse
+        use _ = UseDiagnosticsLogger DiscardErrorsLogger
 
         resetLexbufPos "" lexbuf
 

@@ -51,33 +51,37 @@ let ValRefForIntrinsic (IntrinsicValRef(mvr, _, _, _, key))  = mkNonLocalValRef 
 [<AutoOpen>]
 module FSharpLib =
 
-    let CoreOperatorsCheckedName = FSharpLib.Root + ".Core.Operators.Checked"
-    let ControlName              = FSharpLib.Root + ".Control"
-    let LinqName                 = FSharpLib.Root + ".Linq"
-    let CollectionsName          = FSharpLib.Root + ".Collections"
-    let LanguagePrimitivesName   = FSharpLib.Root + ".Core.LanguagePrimitives"
-    let CompilerServicesName     = FSharpLib.Root + ".Core.CompilerServices"
-    let LinqRuntimeHelpersName   = FSharpLib.Root + ".Linq.RuntimeHelpers"
-    let RuntimeHelpersName       = FSharpLib.Root + ".Core.CompilerServices.RuntimeHelpers"
-    let ExtraTopLevelOperatorsName = FSharpLib.Root + ".Core.ExtraTopLevelOperators"
-    let NativeInteropName                 = FSharpLib.Root + ".NativeInterop"
+    let Root                       = "Microsoft.FSharp"
+    let RootPath                   = splitNamespace Root
+    let Core                       = Root + ".Core"
+    let CorePath                   = splitNamespace Core
+    let CoreOperatorsCheckedName   = Root + ".Core.Operators.Checked"
+    let ControlName                = Root + ".Control"
+    let LinqName                   = Root + ".Linq"
+    let CollectionsName            = Root + ".Collections"
+    let LanguagePrimitivesName     = Root + ".Core.LanguagePrimitives"
+    let CompilerServicesName       = Root + ".Core.CompilerServices"
+    let LinqRuntimeHelpersName     = Root + ".Linq.RuntimeHelpers"
+    let RuntimeHelpersName         = Root + ".Core.CompilerServices.RuntimeHelpers"
+    let ExtraTopLevelOperatorsName = Root + ".Core.ExtraTopLevelOperators"
+    let NativeInteropName          = Root + ".NativeInterop"
 
-    let QuotationsName             = FSharpLib.Root + ".Quotations"
+    let QuotationsName             = Root + ".Quotations"
 
-    let ControlPath                 = splitNamespace ControlName
-    let LinqPath                    = splitNamespace LinqName
-    let CollectionsPath             = splitNamespace CollectionsName
-    let NativeInteropPath           = splitNamespace NativeInteropName |> Array.ofList
-    let CompilerServicesPath        = splitNamespace CompilerServicesName |> Array.ofList
-    let LinqRuntimeHelpersPath      = splitNamespace LinqRuntimeHelpersName |> Array.ofList
-    let RuntimeHelpersPath          = splitNamespace RuntimeHelpersName |> Array.ofList
-    let QuotationsPath              = splitNamespace QuotationsName |> Array.ofList
+    let ControlPath                = splitNamespace ControlName
+    let LinqPath                   = splitNamespace LinqName
+    let CollectionsPath            = splitNamespace CollectionsName
+    let NativeInteropPath          = splitNamespace NativeInteropName |> Array.ofList
+    let CompilerServicesPath       = splitNamespace CompilerServicesName |> Array.ofList
+    let LinqRuntimeHelpersPath     = splitNamespace LinqRuntimeHelpersName |> Array.ofList
+    let RuntimeHelpersPath         = splitNamespace RuntimeHelpersName |> Array.ofList
+    let QuotationsPath             = splitNamespace QuotationsName |> Array.ofList
 
-    let RootPathArray                    = FSharpLib.RootPath |> Array.ofList
-    let CorePathArray                    = FSharpLib.CorePath |> Array.ofList
-    let LinqPathArray                    = LinqPath |> Array.ofList
-    let ControlPathArray                 = ControlPath |> Array.ofList
-    let CollectionsPathArray             = CollectionsPath |> Array.ofList
+    let RootPathArray              = RootPath |> Array.ofList
+    let CorePathArray              = CorePath |> Array.ofList
+    let LinqPathArray              = LinqPath |> Array.ofList
+    let ControlPathArray           = ControlPath |> Array.ofList
+    let CollectionsPathArray       = CollectionsPath |> Array.ofList
 
 //-------------------------------------------------------------------------
 // Access the initial environment: helpers to build references
@@ -90,13 +94,13 @@ let private mkNonGenericTy tcref = TType_app(tcref, [], v_knownWithoutNull)
 
 let mkNonLocalTyconRef2 ccu path n = mkNonLocalTyconRef (mkNonLocalEntityRef ccu path) n
 
-let mk_MFCore_tcref             ccu n = mkNonLocalTyconRef2 ccu FSharpLib.CorePathArray n
-let mk_MFQuotations_tcref       ccu n = mkNonLocalTyconRef2 ccu FSharpLib.QuotationsPath n
+let mk_MFCore_tcref             ccu n = mkNonLocalTyconRef2 ccu CorePathArray n
+let mk_MFQuotations_tcref       ccu n = mkNonLocalTyconRef2 ccu QuotationsPath n
 let mk_MFLinq_tcref             ccu n = mkNonLocalTyconRef2 ccu LinqPathArray n
-let mk_MFCollections_tcref      ccu n = mkNonLocalTyconRef2 ccu FSharpLib.CollectionsPathArray n
-let mk_MFCompilerServices_tcref ccu n = mkNonLocalTyconRef2 ccu FSharpLib.CompilerServicesPath n
-let mk_MFRuntimeHelpers_tcref   ccu n = mkNonLocalTyconRef2 ccu FSharpLib.RuntimeHelpersPath n
-let mk_MFControl_tcref          ccu n = mkNonLocalTyconRef2 ccu FSharpLib.ControlPathArray n
+let mk_MFCollections_tcref      ccu n = mkNonLocalTyconRef2 ccu CollectionsPathArray n
+let mk_MFCompilerServices_tcref ccu n = mkNonLocalTyconRef2 ccu CompilerServicesPath n
+let mk_MFRuntimeHelpers_tcref   ccu n = mkNonLocalTyconRef2 ccu RuntimeHelpersPath n
+let mk_MFControl_tcref          ccu n = mkNonLocalTyconRef2 ccu ControlPathArray n
 
 
 type
@@ -191,6 +195,7 @@ type TcGlobals(
     directoryToResolveRelativePaths,
     mlCompatibility: bool,
     isInteractive: bool,
+    useReflectionFreeCodeGen: bool,
     // The helper to find system types amongst referenced DLLs
     tryFindSysTypeCcu,
     emitDebugInfoInQuotations: bool,
@@ -455,14 +460,14 @@ type TcGlobals(
 
   let v_nil_ucref  = mkUnionCaseRef v_list_tcr_canon "op_Nil"
 
-  let fslib_MF_nleref                   = mkNonLocalEntityRef fslibCcu FSharpLib.RootPathArray
-  let fslib_MFCore_nleref               = mkNonLocalEntityRef fslibCcu FSharpLib.CorePathArray
-  let fslib_MFLinq_nleref               = mkNonLocalEntityRef fslibCcu FSharpLib.LinqPathArray
-  let fslib_MFCollections_nleref        = mkNonLocalEntityRef fslibCcu FSharpLib.CollectionsPathArray
-  let fslib_MFCompilerServices_nleref   = mkNonLocalEntityRef fslibCcu FSharpLib.CompilerServicesPath
-  let fslib_MFLinqRuntimeHelpers_nleref = mkNonLocalEntityRef fslibCcu FSharpLib.LinqRuntimeHelpersPath
-  let fslib_MFControl_nleref            = mkNonLocalEntityRef fslibCcu FSharpLib.ControlPathArray
-  let fslib_MFNativeInterop_nleref      = mkNonLocalEntityRef fslibCcu FSharpLib.NativeInteropPath
+  let fslib_MF_nleref                   = mkNonLocalEntityRef fslibCcu RootPathArray
+  let fslib_MFCore_nleref               = mkNonLocalEntityRef fslibCcu CorePathArray
+  let fslib_MFLinq_nleref               = mkNonLocalEntityRef fslibCcu LinqPathArray
+  let fslib_MFCollections_nleref        = mkNonLocalEntityRef fslibCcu CollectionsPathArray
+  let fslib_MFCompilerServices_nleref   = mkNonLocalEntityRef fslibCcu CompilerServicesPath
+  let fslib_MFLinqRuntimeHelpers_nleref = mkNonLocalEntityRef fslibCcu LinqRuntimeHelpersPath
+  let fslib_MFControl_nleref            = mkNonLocalEntityRef fslibCcu ControlPathArray
+  let fslib_MFNativeInterop_nleref      = mkNonLocalEntityRef fslibCcu NativeInteropPath
 
   let fslib_MFLanguagePrimitives_nleref        = mkNestedNonLocalEntityRef fslib_MFCore_nleref "LanguagePrimitives"
   let fslib_MFIntrinsicOperators_nleref        = mkNestedNonLocalEntityRef fslib_MFLanguagePrimitives_nleref "IntrinsicOperators"
@@ -586,10 +591,10 @@ type TcGlobals(
       | None -> TType_app(tcref, l, v_knownWithoutNull)
 
   let mk_MFCore_attrib nm : BuiltinAttribInfo =
-      AttribInfo(mkILTyRef(ilg.fsharpCoreAssemblyScopeRef, FSharpLib.Core + "." + nm), mk_MFCore_tcref fslibCcu nm)
+      AttribInfo(mkILTyRef(ilg.fsharpCoreAssemblyScopeRef, Core + "." + nm), mk_MFCore_tcref fslibCcu nm)
 
   let mk_MFCompilerServices_attrib nm : BuiltinAttribInfo =
-      AttribInfo(mkILTyRef(ilg.fsharpCoreAssemblyScopeRef, FSharpLib.Core + "." + nm), mk_MFCompilerServices_tcref fslibCcu nm)
+      AttribInfo(mkILTyRef(ilg.fsharpCoreAssemblyScopeRef, Core + "." + nm), mk_MFCompilerServices_tcref fslibCcu nm)
 
   let mkSourceDoc fileName = ILSourceDocument.Create(language=None, vendor=None, documentType=None, file=fileName)
 
@@ -1003,6 +1008,8 @@ type TcGlobals(
   member _.knownFSharpCoreModules = v_knownFSharpCoreModules
 
   member _.compilingFSharpCore = compilingFSharpCore
+
+  member _.useReflectionFreeCodeGen = useReflectionFreeCodeGen
 
   member _.mlCompatibility = mlCompatibility
 
@@ -1424,6 +1431,7 @@ type TcGlobals(
   member val attrib_MeasureAttribute                       = mk_MFCore_attrib "MeasureAttribute"
   member val attrib_MeasureableAttribute                   = mk_MFCore_attrib "MeasureAnnotatedAbbreviationAttribute"
   member val attrib_NoDynamicInvocationAttribute           = mk_MFCore_attrib "NoDynamicInvocationAttribute"
+  member val attrib_NoCompilerInliningAttribute            = mk_MFCore_attrib "NoCompilerInliningAttribute"
   member val attrib_SecurityAttribute                      = tryFindSysAttrib "System.Security.Permissions.SecurityAttribute"
   member val attrib_SecurityCriticalAttribute              = findSysAttrib "System.Security.SecurityCriticalAttribute"
   member val attrib_SecuritySafeCriticalAttribute          = findSysAttrib "System.Security.SecuritySafeCriticalAttribute"
@@ -1477,6 +1485,8 @@ type TcGlobals(
   member val unchecked_unary_not_vref = ValRefForIntrinsic v_unchecked_unary_not_info
   member val unchecked_subtraction_vref = ValRefForIntrinsic v_unchecked_subtraction_info
   member val unchecked_multiply_vref    = ValRefForIntrinsic v_unchecked_multiply_info
+  member val unchecked_division_vref    = ValRefForIntrinsic v_unchecked_division_info
+  member val unchecked_modulus_vref     = ValRefForIntrinsic v_unchecked_modulus_info
   member val unchecked_defaultof_vref    = ValRefForIntrinsic v_unchecked_defaultof_info
   member val refcell_deref_vref = ValRefForIntrinsic v_refcell_deref_info
   member val refcell_assign_vref = ValRefForIntrinsic v_refcell_assign_info
@@ -1715,6 +1725,9 @@ type TcGlobals(
   /// Indicates if we can use System.Array.Empty when emitting IL for empty array literals
   member val isArrayEmptyAvailable = v_Array_tcref.ILTyconRawMetadata.Methods.FindByName "Empty" |> List.isEmpty |> not
 
+  /// Indicates if we can emit the System.Runtime.CompilerServices.IsReadOnlyAttribute
+  member val isSystem_Runtime_CompilerServices_IsReadOnlyAttributeAvailable = tryFindSysTypeCcu sysCompilerServices "IsReadOnlyAttribute" |> Option.isSome
+
   member _.FindSysTyconRef path nm = findSysTyconRef path nm
 
   member _.TryFindSysTyconRef path nm = tryFindSysTyconRef path nm
@@ -1773,15 +1786,16 @@ type TcGlobals(
   /// AdditionDynamic for op_Addition.  Also work out the type instantiation of the dynamic function.
   member _.MakeBuiltInWitnessInfo (t: TraitConstraintInfo) =
       let memberName =
-          let nm = t.MemberName
+          let nm = t.MemberLogicalName
           let coreName =
               if nm.StartsWith "op_" then nm[3..]
               elif nm = "get_Zero" then "GenericZero"
               elif nm = "get_One" then "GenericOne"
               else nm
           coreName + "Dynamic"
+
       let gtps, argTys, retTy, tinst =
-          match memberName, t.ArgumentTypes, t.ReturnType with
+          match memberName, t.CompiledObjectAndArgumentTypes, t.CompiledReturnType with
           | ("AdditionDynamic" | "MultiplyDynamic" | "SubtractionDynamic"| "DivisionDynamic" | "ModulusDynamic" | "CheckedAdditionDynamic" | "CheckedMultiplyDynamic" | "CheckedSubtractionDynamic" | "LeftShiftDynamic" | "RightShiftDynamic" | "BitwiseAndDynamic" | "BitwiseOrDynamic" | "ExclusiveOrDynamic" | "LessThanDynamic" | "GreaterThanDynamic" | "LessThanOrEqualDynamic" | "GreaterThanOrEqualDynamic" | "EqualityDynamic" | "InequalityDynamic"),
             [ arg0Ty; arg1Ty ],
             Some retTy ->
@@ -1795,13 +1809,14 @@ type TcGlobals(
           | ("GenericZeroDynamic" | "GenericOneDynamic"), [], Some retTy ->
                [vara], [ ], varaTy, [ retTy ]
           | _ -> failwithf "unknown builtin witness '%s'" memberName
+
       let vref = makeOtherIntrinsicValRef (fslib_MFLanguagePrimitives_nleref, memberName, None, None, gtps, (List.map List.singleton argTys, retTy))
       vref, tinst
 
   /// Find an FSharp.Core operator that corresponds to a trait witness
   member g.TryMakeOperatorAsBuiltInWitnessInfo isStringTy isArrayTy (t: TraitConstraintInfo) argExprs =
 
-    match t.MemberName, t.ArgumentTypes, t.ReturnType, argExprs with
+    match t.MemberLogicalName, t.CompiledObjectAndArgumentTypes, t.CompiledReturnType, argExprs with
     | "get_Sign", [aty], _, objExpr :: _ ->
         // Call Operators.sign
         let info = makeOtherIntrinsicValRef (fslib_MFOperators_nleref, "sign", None, Some "Sign", [vara], ([[varaTy]], v_int32_ty))
@@ -1822,19 +1837,19 @@ type TcGlobals(
         let info = makeOtherIntrinsicValRef (fslib_MFOperators_nleref, "atan2", None, Some "Atan2", [vara; varb], ([[varaTy]; [varaTy]], varbTy))
         let tyargs = [aty;bty]
         Some (info, tyargs, argExprs)
-    | "get_Zero", _, Some aty, [_] ->
+    | "get_Zero", _, Some aty, ([] | [_]) ->
         // Call LanguagePrimitives.GenericZero
         let info = makeOtherIntrinsicValRef (fslib_MFLanguagePrimitives_nleref, "GenericZero", None, None, [vara], ([], varaTy))
         let tyargs = [aty]
         Some (info, tyargs, [])
-    | "get_One", _, Some aty, [_] ->
+    | "get_One", _, Some aty,  ([] | [_])  ->
         // Call LanguagePrimitives.GenericOne
         let info = makeOtherIntrinsicValRef (fslib_MFLanguagePrimitives_nleref, "GenericOne", None, None, [vara], ([], varaTy))
         let tyargs = [aty]
         Some (info, tyargs, [])
     | ("Abs" | "Sin" | "Cos" | "Tan" | "Sinh" | "Cosh" | "Tanh" | "Atan" | "Acos" | "Asin" | "Exp" | "Ceiling" | "Floor" | "Round" | "Truncate" | "Log10"| "Log"), [aty], _, [_] ->
         // Call corresponding Operators.*
-        let nm = t.MemberName
+        let nm = t.MemberLogicalName
         let lower = if nm = "Ceiling" then "ceil" else nm.ToLowerInvariant()
         let info = makeOtherIntrinsicValRef (fslib_MFOperators_nleref, lower, None, Some nm, [vara], ([[varaTy]], varaTy))
         let tyargs = [aty]

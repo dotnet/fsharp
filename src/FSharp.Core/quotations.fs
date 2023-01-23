@@ -489,14 +489,8 @@ module Patterns =
     let EA (t, attribs) =
         new Expr(t, attribs)
 
-    let ES ts =
-        List.map E ts
-
     let (|E|) (e: Expr) =
         e.Tree
-
-    let (|ES|) (es: Expr list) =
-        es |> List.map (fun e -> e.Tree)
 
     let (|FrontAndBack|_|) es =
         let rec loop acc xs =
@@ -514,9 +508,6 @@ module Patterns =
 
     let removeVoid a =
         if a = voidTy then unitTy else a
-
-    let addVoid a =
-        if a = unitTy then voidTy else a
 
     let mkFunTy a b =
         let (a, b) = removeVoid a, removeVoid b
@@ -942,14 +933,8 @@ module Patterns =
             | VarSetOp, _
             | AddressSetOp, _ -> typeof<Unit>
             | AddressOfOp, [ expr ] -> (typeOf expr).MakeByRefType()
-            | (AddressOfOp
-              | QuoteOp _
-              | SequentialOp
-              | TryWithOp
-              | TryFinallyOp
-              | IfThenElseOp
-              | AppOp),
-              _ -> failwith "unreachable"
+            | (AddressOfOp | QuoteOp _ | SequentialOp | TryWithOp | TryFinallyOp | IfThenElseOp | AppOp), _ ->
+                failwith "unreachable"
 
     //--------------------------------------------------------------------------
     // Constructors for building Raw quotations
@@ -969,9 +954,6 @@ module Patterns =
 
     let mkFE3 op (x, y, z) =
         E(CombTerm(op, [ (x :> Expr); (y :> Expr); (z :> Expr) ]))
-
-    let mkOp v () =
-        v
 
     //--------------------------------------------------------------------------
     // Type-checked constructors for building Raw quotations
@@ -999,10 +981,6 @@ module Patterns =
             (paramInfos |> Array.toList)
             args
     // todo: shouldn't this be "strong" type check? sometimes?
-
-    let checkAssignableFrom ty1 ty2 =
-        if not (assignableFrom ty1 ty2) then
-            invalidArg "ty2" (SR.GetString(SR.QincorrectType))
 
     let checkObj (membInfo: MemberInfo) (obj: Expr) =
         // The MemberInfo may be a property associated with a union
@@ -1035,14 +1013,6 @@ module Patterns =
         | [| a; _ |] -> checkTypesSR vty a "f" (SR.GetString(SR.QtmmFunctionArgTypeMismatch))
         | _ -> invalidArg "f" (SR.GetString(SR.QinvalidFuncType))
 
-    // Returns option (by name) of a NewUnionCase type
-    let getUnionCaseFields ty str =
-        let cases = FSharpType.GetUnionCases(ty, publicOrPrivateBindingFlags)
-
-        match cases |> Array.tryFind (fun ucase -> ucase.Name = str) with
-        | Some case -> case.GetFields()
-        | _ -> invalidArg "ty" (String.Format(SR.GetString(SR.notAUnionType), ty.FullName))
-
     let checkBind (v: Var, e) =
         let ety = typeOf e
         checkTypesSR v.Type ety "let" (SR.GetString(SR.QtmmVarTypeNotMatchRHS))
@@ -1062,9 +1032,6 @@ module Patterns =
 
     let mkValueWithDefn (v, ty, defn) =
         mkFE1 (WithValueOp(v, ty)) defn
-
-    let mkValueG (v: 'T) =
-        mkValue (box v, typeof<'T>)
 
     let mkLiftedValueOpG (v, ty: System.Type) =
         let obj =
@@ -1104,9 +1071,6 @@ module Patterns =
 
     let mkCoerce (ty, x) =
         mkFE1 (CoerceOp ty) x
-
-    let mkNull (ty) =
-        mkFE0 (ValueOp(null, ty, None))
 
     let mkApplication v =
         checkAppliedLambda v
@@ -1409,7 +1373,7 @@ module Patterns =
         | Ambiguous of 'R
 
     let typeEquals (ty1: Type) (ty2: Type) =
-        ty1.Equals ty2
+        Type.op_Equality (ty1, ty2)
 
     let typesEqual (tys1: Type list) (tys2: Type list) =
         (tys1.Length = tys2.Length) && List.forall2 typeEquals tys1 tys2
@@ -1624,40 +1588,6 @@ module Patterns =
 
     let inst (tyargs: Type list) (i: Instantiable<'T>) =
         i (fun idx -> tyargs.[idx]) // Note, O n looks, but #tyargs is always small
-
-    let bindPropBySearchIfCandidateIsNull (ty: Type) propName retType argTypes candidate =
-        match candidate with
-        | null ->
-            let props =
-                ty.GetProperties staticOrInstanceBindingFlags
-                |> Array.filter (fun pi ->
-                    let paramTypes = getTypesFromParamInfos (pi.GetIndexParameters())
-
-                    pi.Name = propName
-                    && pi.PropertyType = retType
-                    && Array.length argTypes = paramTypes.Length
-                    && Array.forall2 (=) argTypes paramTypes)
-
-            match props with
-            | [| pi |] -> pi
-            | _ -> null
-        | pi -> pi
-
-    let bindCtorBySearchIfCandidateIsNull (ty: Type) argTypes candidate =
-        match candidate with
-        | null ->
-            let ctors =
-                ty.GetConstructors instanceBindingFlags
-                |> Array.filter (fun ci ->
-                    let paramTypes = getTypesFromParamInfos (ci.GetParameters())
-
-                    Array.length argTypes = paramTypes.Length
-                    && Array.forall2 (=) argTypes paramTypes)
-
-            match ctors with
-            | [| ctor |] -> ctor
-            | _ -> null
-        | ctor -> ctor
 
     let bindProp (genericType, propName, retType, argTypes, tyargs) =
         // We search in the instantiated type, rather than searching the generic type.
@@ -2353,21 +2283,6 @@ module Patterns =
     and freeInExpr e =
         freeInExprAcc Set.empty Set.empty e
 
-    // utility for folding
-    let foldWhile f st (ie: seq<'T>) =
-        use e = ie.GetEnumerator()
-        let mutable res = Some st
-
-        while (res.IsSome && e.MoveNext()) do
-            res <-
-                f
-                    (match res with
-                     | Some a -> a
-                     | _ -> failwith "internal error")
-                    e.Current
-
-        res
-
     [<NoEquality; NoComparison>]
     exception Clash of Var
 
@@ -2933,8 +2848,7 @@ module DerivedPatterns =
     let (|SpecificCall|_|) templateParameter =
         // Note: precomputation
         match templateParameter with
-        | (Lambdas (_, Call (_, minfo1, _))
-        | Call (_, minfo1, _)) ->
+        | (Lambdas (_, Call (_, minfo1, _)) | Call (_, minfo1, _)) ->
             let isg1 = minfo1.IsGenericMethod
 
             let gmd =

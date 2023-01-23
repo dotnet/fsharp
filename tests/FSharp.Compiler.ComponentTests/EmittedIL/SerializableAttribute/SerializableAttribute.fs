@@ -29,14 +29,14 @@ module SerializableAttribute =
         compilation
         |> verifyCompilation
 
-    // SOURCE=ToplevelModule.fs    SCFLAGS="-a -g --langversion:preview --out:TopLevelModule-preview.dll --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd ToplevelModule-preview.dll"		# ToplevelModule.fs - Desktop preview
+    // SOURCE=ToplevelModule.fs    SCFLAGS="-a -g --langversion:6.0 --out:TopLevelModule-preview.dll --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd ToplevelModule-preview.dll"		# ToplevelModule.fs - Desktop preview
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ToplevelModule60.fs"|])>]
     let ``ToplevelModule_LangVersion60_fs`` compilation =
         compilation
         |> withLangVersion60
         |> verifyCompilation
 
-    // SOURCE=ToplevelNamespace.fs SCFLAGS="-a -g --langversion:preview --out:ToplevelNamespace-preview.dll --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd ToplevelNamespace-preview.dll"		# ToplevelNamespace.fs - Desktop preview
+    // SOURCE=ToplevelNamespace.fs SCFLAGS="-a -g --langversion:6.0 --out:ToplevelNamespace-preview.dll --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd ToplevelNamespace-preview.dll"		# ToplevelNamespace.fs - Desktop preview
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ToplevelNamespace60.fs"|])>]
     let ``ToplevelNamespace_LangVersion60_fs`` compilation =
         compilation

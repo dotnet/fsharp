@@ -85,9 +85,6 @@ type env =
       /// "module remap info", i.e. hiding information down the signature chain, used to compute what's hidden by a signature
       sigToImplRemapInfo: (Remap * SignatureHidingInfo) list 
 
-      /// Constructor limited - are we in the prelude of a constructor, prior to object initialization
-      ctorLimitedZone: bool
-
       /// Are we in a quotation?
       quote : bool 
 
@@ -305,12 +302,24 @@ let BindVal cenv env (v: Val) =
     //printfn "binding %s..." v.DisplayName
     let alreadyDone = cenv.boundVals.ContainsKey v.Stamp
     cenv.boundVals[v.Stamp] <- 1
+    
+    let topLevelBindingHiddenBySignatureFile () =
+        let parentHasSignatureFile () =
+            match v.TryDeclaringEntity with
+            | ParentNone -> false
+            | Parent p ->
+                match p.TryDeref with
+                | ValueNone -> false
+                | ValueSome e -> e.HasSignatureFile
+
+        v.IsModuleBinding && not v.HasSignatureFile && parentHasSignatureFile ()
+    
     if not env.external &&
        not alreadyDone &&
        cenv.reportErrors && 
        not v.HasBeenReferenced && 
-       not v.IsCompiledAsTopLevel && 
-       not (v.DisplayName.StartsWithOrdinal("_")) && 
+       (not v.IsCompiledAsTopLevel || topLevelBindingHiddenBySignatureFile ()) &&
+       not (v.DisplayName.StartsWithOrdinal("_")) &&
        not v.IsCompilerGenerated then 
 
         if v.IsCtorThisVal then
@@ -651,7 +660,7 @@ let CheckTypeAux permitByRefLike (cenv: cenv) env m ty onInnerByrefError =
 
         let visitTraitSolution info = 
             match info with 
-            | FSMethSln(_, vref, _) -> 
+            | FSMethSln(_, vref, _, _) -> 
                //printfn "considering %s..." vref.DisplayName
                if valRefInThisAssembly cenv.g.compilingFSharpCore vref && not (cenv.boundVals.ContainsKey(vref.Stamp)) then 
                    //printfn "recording %s..." vref.DisplayName
@@ -679,16 +688,13 @@ let CheckTypeNoInnerByrefs cenv env m ty = CheckType PermitByRefType.NoInnerByRe
 let CheckTypeInstNoByrefs cenv env m tyargs =
     tyargs |> List.iter (CheckTypeNoByrefs cenv env m)
 
-let CheckTypeInstPermitAllByrefs cenv env m tyargs =
-    tyargs |> List.iter (CheckTypePermitAllByrefs cenv env m)
-
 let CheckTypeInstNoInnerByrefs cenv env m tyargs =
     tyargs |> List.iter (CheckTypeNoInnerByrefs cenv env m)
 
 /// Applied functions get wrapped in coerce nodes for subsumption coercions
 let (|OptionalCoerce|) expr =  
     match stripDebugPoints expr with
-    | Expr.Op (TOp.Coerce _, _, [DebugPoints(Expr.App (f, _, _, [], _), _)], _) -> f 
+    | Expr.Op (TOp.Coerce, _, [DebugPoints(Expr.App (f, _, _, [], _), _)], _) -> f 
     | _ -> expr
 
 /// Check an expression doesn't contain a 'reraise'
@@ -807,7 +813,7 @@ and CheckValUse (cenv: cenv) (env: env) (vref: ValRef, vFlags, m) (ctxt: PermitB
         let isCallOfConstructorOfAbstractType = 
             (match vFlags with NormalValUse -> true | _ -> false) && 
             vref.IsConstructor && 
-            (match vref.DeclaringEntity with Parent tcref -> isAbstractTycon tcref.Deref | _ -> false)
+            (match vref.TryDeclaringEntity with Parent tcref -> isAbstractTycon tcref.Deref | _ -> false)
 
         if isCallOfConstructorOfAbstractType then 
             errorR(Error(FSComp.SR.tcAbstractTypeCannotBeInstantiated(), m))
@@ -1143,7 +1149,7 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (ctxt: PermitByRefExpr) : Limit =
 
     | Expr.Sequential (e1, e2, ThenDoSeq, _) -> 
         CheckExprNoByrefs cenv env e1
-        CheckExprNoByrefs cenv {env with ctorLimitedZone=false} e2
+        CheckExprNoByrefs cenv env e2
         NoLimit
 
     | Expr.Const (_, m, ty) -> 
@@ -1425,9 +1431,6 @@ and CheckNoResumableStmtConstructs cenv _env expr =
 and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
     let g = cenv.g
 
-    let ctorLimitedZoneCheck() = 
-        if env.ctorLimitedZone then errorR(Error(FSComp.SR.chkObjCtorsCantUseExceptionHandling(), m))
-
     // Ensure anonymous record type requirements are recorded
     match op with
     | TOp.AnonRecdGet (anonInfo, _) 
@@ -1444,7 +1447,6 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
 
     | TOp.TryFinally _, [_], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], e2, _, _)] ->
         CheckTypeInstNoInnerByrefs cenv env m tyargs  // result of a try/finally can be a byref 
-        ctorLimitedZoneCheck()
         let limit = CheckExpr cenv env e1 ctxt   // result of a try/finally can be a byref if in a position where the overall expression is can be a byref
         CheckExprNoByrefs cenv env e2
         limit
@@ -1455,7 +1457,6 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
 
     | TOp.TryWith _, [_], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], _e2, _, _); Expr.Lambda (_, _, _, [_], e3, _, _)] ->
         CheckTypeInstNoInnerByrefs cenv env m tyargs  // result of a try/catch can be a byref 
-        ctorLimitedZoneCheck()
         let limit1 = CheckExpr cenv env e1 ctxt // result of a try/catch can be a byref if in a position where the overall expression is can be a byref
         // [(* e2; -- don't check filter body - duplicates logic in 'catch' body *) e3]
         let limit2 = CheckExpr cenv env e3 ctxt // result of a try/catch can be a byref if in a position where the overall expression is can be a byref
@@ -1547,7 +1548,7 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
         else
             { scope = 1; flags = LimitFlags.None }
 
-    | TOp.LValueOp (LSet _, vref), _, [arg] -> 
+    | TOp.LValueOp (LSet, vref), _, [arg] -> 
         let isVrefLimited = not (HasLimitFlag LimitFlags.StackReferringSpanLike (GetLimitVal cenv env m vref.Deref))
         let isArgLimited = HasLimitFlag LimitFlags.StackReferringSpanLike (CheckExprPermitByRefLike cenv env arg)
         if isVrefLimited && isArgLimited then 
@@ -1715,7 +1716,7 @@ and CheckLambdas isTop (memberVal: Val option) cenv env inlined valReprInfo alwa
 
     | Expr.Lambda (_, _, _, _, _, m, _)  
     | Expr.TyLambda (_, _, _, m, _) ->
-        let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy = destTopLambda g cenv.amap valReprInfo (expr, ety)
+        let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy = destLambdaWithValReprInfo g cenv.amap valReprInfo (expr, ety)
         let env = BindTypars g env tps 
         let thisAndBase = Option.toList ctorThisValOpt @ Option.toList baseValOpt
         let restArgs = List.concat vsl
@@ -1827,11 +1828,6 @@ and CheckExprsPermitByRefLike cenv env exprs : Limit =
     |> List.map (CheckExprPermitByRefLike cenv env)
     |> CombineLimits
 
-and CheckExprsPermitReturnableByRef cenv env exprs : Limit = 
-    exprs 
-    |> List.map (CheckExprPermitReturnableByRef cenv env)
-    |> CombineLimits
-
 and CheckExprPermitByRefLike cenv env expr : Limit = 
     CheckExpr cenv env expr PermitByRefExpr.Yes
 
@@ -1909,7 +1905,7 @@ and CheckAttribArgExpr cenv env expr =
         | Const.Double _
         | Const.Single _
         | Const.Char _
-        | Const.Zero _
+        | Const.Zero
         | Const.String _  -> ()
         | _ -> 
             if cenv.reportErrors then 
@@ -2007,11 +2003,9 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
 
     // Check accessibility
     if (v.IsMemberOrModuleBinding || v.IsMember) && not v.IsIncrClassGeneratedMember then 
-        let access =  AdjustAccess (IsHiddenVal env.sigToImplRemapInfo v) (fun () -> v.TopValDeclaringEntity.CompilationPath) v.Accessibility
+        let access =  AdjustAccess (IsHiddenVal env.sigToImplRemapInfo v) (fun () -> v.DeclaringEntity.CompilationPath) v.Accessibility
         CheckTypeForAccess cenv env (fun () -> NicePrint.stringOfQualifiedValOrMember cenv.denv cenv.infoReader vref) access v.Range v.Type
     
-    let env = if v.IsConstructor && not v.IsIncrClassConstructor then { env with ctorLimitedZone=true } else env
-
     if cenv.reportErrors  then 
 
         // Check top-level let-bound values
@@ -2035,7 +2029,7 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
                // Also check the enclosing type for members - for historical reasons, in the TAST member values 
                // are stored in the entity that encloses the type, hence we will not have noticed the ReflectedDefinition
                // on the enclosing type at this point.
-               HasFSharpAttribute g g.attrib_ReflectedDefinitionAttribute v.TopValDeclaringEntity.Attribs) then 
+               HasFSharpAttribute g g.attrib_ReflectedDefinitionAttribute v.DeclaringEntity.Attribs) then 
 
                 if v.IsInstanceMember && v.MemberApparentEntity.IsStructOrEnumTycon then
                     errorR(Error(FSComp.SR.chkNoReflectedDefinitionOnStructMember(), v.Range))
@@ -2132,10 +2126,10 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
           // Skip explicit implementations of interface methods
           if ValIsExplicitImpl g v then () else
           
-          match v.DeclaringEntity with 
+          match v.TryDeclaringEntity with 
           | ParentNone -> () // this case can happen after error recovery from earlier error
           | Parent _ -> 
-            let tcref = v.TopValDeclaringEntity 
+            let tcref = v.DeclaringEntity 
             let hasDefaultAugmentation = 
                 tcref.IsUnionTycon &&
                 match TryFindFSharpAttribute g g.attrib_DefaultAugmentationAttribute tcref.Attribs with
@@ -2224,10 +2218,6 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
     end
 
     CheckBinding cenv { env with returnScope = 1 } true PermitByRefExpr.Yes bind |> ignore
-
-let CheckModuleBindings cenv env binds = 
-    for bind in binds do
-        CheckModuleBinding cenv env bind
 
 //--------------------------------------------------------------------------
 // check tycons
@@ -2483,7 +2473,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
     for vref in abstractSlotValsOfTycons [tycon] do 
         match vref.ValReprInfo with 
         | Some valReprInfo -> 
-            let tps, argTysl, retTy, _ = GetTopValTypeInFSharpForm g valReprInfo vref.Type m
+            let tps, argTysl, retTy, _ = GetValReprTypeInFSharpForm g valReprInfo vref.Type m
             let env = BindTypars g env tps
             for argTys in argTysl do 
                 for argTy, _ in argTys do 
@@ -2615,7 +2605,7 @@ let CheckImplFile (g, amap, reportErrors, infoReader, internalsVisibleToPaths, v
           reportErrors = reportErrors 
           boundVals = Dictionary<_, _>(100, HashIdentity.Structural) 
           limitVals = Dictionary<_, _>(100, HashIdentity.Structural) 
-          stackGuard = StackGuard(PostInferenceChecksStackGuardDepth)
+          stackGuard = StackGuard(PostInferenceChecksStackGuardDepth, "CheckImplFile")
           potentialUnboundUsesOfVals = Map.empty 
           anonRecdTypes = StampMap.Empty
           usesQuotations = false 
@@ -2643,7 +2633,6 @@ let CheckImplFile (g, amap, reportErrors, infoReader, internalsVisibleToPaths, v
     let env = 
         { sigToImplRemapInfo=[]
           quote=false
-          ctorLimitedZone=false 
           boundTyparNames=[]
           argVals = ValMap.Empty
           boundTypars= TyparMap.Empty

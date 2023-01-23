@@ -73,6 +73,7 @@ val FilterMostSpecificMethInfoSets:
 /// Used to collect sets of virtual methods, protected methods, protected
 /// properties etc.
 type HierarchyItem =
+    | TraitItem of TraitConstraintInfo list
     | MethodItem of MethInfo list list
     | PropertyItem of PropInfo list list
     | RecdFieldItem of RecdFieldInfo
@@ -87,6 +88,10 @@ type FindMemberFlag =
 
     /// Get overrides instead of abstract slots when measuring whether a class/interface implements all its required slots.
     | PreferOverrides
+
+    /// Similar to "IgnoreOverrides", but filters the items bottom-to-top,
+    /// and discards all when finds first non-virtual member which hides one above it in hirearchy.
+    | DiscardOnFirstNonOverride
 
 /// An InfoReader is an object to help us read and cache infos.
 /// We create one of these for each file we typecheck.
@@ -150,7 +155,10 @@ type InfoReader =
         ty: TType ->
             MethInfo list list
 
-    /// Get the sets intrinsic properties in the hierarchy (not including extension properties)
+    /// Get the trait infos for a type variable (empty for everything else)
+    member GetTraitInfosInType: optFilter: string option -> ty: TType -> TraitConstraintInfo list
+
+    /// Get the sets of intrinsic properties in the hierarchy (not including extension properties)
     member GetIntrinsicPropInfoSetsOfType:
         optFilter: string option ->
         ad: AccessorDomain ->
@@ -182,19 +190,21 @@ type InfoReader =
 
     /// Perform type-directed name resolution of a particular named member in an F# type
     member TryFindIntrinsicNamedItemOfType:
-        nm: string * ad: AccessorDomain -> findFlag: FindMemberFlag -> m: range -> ty: TType -> HierarchyItem option
+        nm: string * ad: AccessorDomain * includeConstraints: bool ->
+            findFlag: FindMemberFlag ->
+            m: range ->
+            ty: TType ->
+                HierarchyItem option
 
     /// Find the op_Implicit for a type
     member FindImplicitConversions: m: range -> ad: AccessorDomain -> ty: TType -> MethInfo list
 
-val checkLanguageFeatureRuntimeError:
-    infoReader: InfoReader -> langFeature: Features.LanguageFeature -> m: range -> unit
+    /// Determine if a type has a static abstract method with the given name somewhere in its hierarchy
+    member IsInterfaceTypeWithMatchingStaticAbstractMember:
+        m: range -> nm: string -> ad: AccessorDomain -> ty: TType -> bool
 
-val checkLanguageFeatureRuntimeErrorRecover:
+val checkLanguageFeatureRuntimeAndRecover:
     infoReader: InfoReader -> langFeature: Features.LanguageFeature -> m: range -> unit
-
-val tryLanguageFeatureRuntimeErrorRecover:
-    infoReader: InfoReader -> langFeature: Features.LanguageFeature -> m: range -> bool
 
 /// Get the declared constructors of any F# type
 val GetIntrinsicConstructorInfosOfType: infoReader: InfoReader -> m: range -> ty: TType -> MethInfo list
@@ -252,7 +262,7 @@ val GetIntrinsicPropInfosOfType:
 /// Perform type-directed name resolution of a particular named member in an F# type
 val TryFindIntrinsicNamedItemOfType:
     infoReader: InfoReader ->
-    nm: string * ad: AccessorDomain ->
+    nm: string * ad: AccessorDomain * includeConstraints: bool ->
         findFlag: FindMemberFlag ->
         m: range ->
         ty: TType ->

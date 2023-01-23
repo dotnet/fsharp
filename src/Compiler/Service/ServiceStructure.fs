@@ -5,6 +5,7 @@ namespace FSharp.Compiler.EditorServices
 open Internal.Utilities.Library
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
@@ -62,18 +63,6 @@ module Structure =
         | ls ->
             ls
             |> List.map (fun (SynTyparDecl (_, typarg)) -> typarg.Range)
-            |> List.reduce unionRanges
-
-    let rangeOfSynPatsElse other (synPats: SynSimplePat list) =
-        match synPats with
-        | [] -> other
-        | ls ->
-            ls
-            |> List.map (fun x ->
-                match x with
-                | SynSimplePat.Attrib (range = r)
-                | SynSimplePat.Id (range = r)
-                | SynSimplePat.Typed (range = r) -> r)
             |> List.reduce unionRanges
 
     /// Collapse indicates the way a range/snapshot should be collapsed. `Same` is for a scope inside
@@ -493,9 +482,21 @@ module Structure =
                 | x -> x
 
             let synPat = getLastPat synPat
-            // Collapse the scope starting with `->`
-            let collapse = Range.endToEnd synPat.Range clause.Range
-            rcheck Scope.MatchClause Collapse.Same e.Range collapse
+            let synPatRange = synPat.Range
+            let resultExprRange = e.Range
+
+            // Avoid rcheck because we want to be able to collapse resultExpr even if it spans a single line
+            // but is not on the same one as the pattern
+            if synPatRange.EndLine <> resultExprRange.EndLine then
+                acc.Add
+                    {
+                        Scope = Scope.MatchClause
+                        Collapse = Collapse.Same
+                        Range = resultExprRange
+                        // Collapse the scope starting with `->`
+                        CollapseRange = Range.endToEnd synPatRange clause.Range
+                    }
+
             parseExpr e
 
         and parseAttributes (Attributes attrs) =
@@ -611,7 +612,7 @@ module Structure =
 
             | SynMemberDefn.NestedType (td, _, _) -> parseTypeDefn td
 
-            | SynMemberDefn.AbstractSlot (SynValSig (synType = synt), _, r) ->
+            | SynMemberDefn.AbstractSlot (slotSig = SynValSig (synType = synt); range = r) ->
                 rcheck Scope.Member Collapse.Below d.Range (Range.startToEnd synt.Range r)
 
             | SynMemberDefn.AutoProperty (synExpr = e; range = r) ->
@@ -639,7 +640,7 @@ module Structure =
             | SynTypeDefnSimpleRepr.Record (_, fields, rr) ->
                 rcheck Scope.RecordDefn Collapse.Same rr rr
 
-                for SynField (attrs, _, _, _, _, _, _, fr) in fields do
+                for SynField (attributes = attrs; range = fr) in fields do
                     rcheck Scope.RecordField Collapse.Below fr fr
                     parseAttributes attrs
 
@@ -740,6 +741,64 @@ module Structure =
                     let prefixLength = "#".Length + directive.Length + " ".Length
                     Some(mkRange "" (mkPos r.StartLine prefixLength) r.End)
                 | _ -> None)
+
+        let collectConditionalDirectives directives sourceLines =
+            let rec group directives stack (sourceLines: string array) =
+                match directives with
+                | [] -> ()
+                | ConditionalDirectiveTrivia.If _ as ifDirective :: directives -> group directives (ifDirective :: stack) sourceLines
+                | ConditionalDirectiveTrivia.Else elseRange as elseDirective :: directives ->
+                    match stack with
+                    | ConditionalDirectiveTrivia.If (_, ifRange) :: stack ->
+                        let startLineIndex = elseRange.StartLine - 2
+
+                        if startLineIndex >= 0 then
+                            // start of #if until the end of the line directly above #else
+                            let range =
+                                mkFileIndexRange
+                                    ifRange.FileIndex
+                                    ifRange.Start
+                                    (mkPos (elseRange.StartLine - 1) sourceLines[startLineIndex].Length)
+
+                            {
+                                Scope = Scope.HashDirective
+                                Collapse = Collapse.Same
+                                Range = range
+                                CollapseRange = range
+                            }
+                            |> acc.Add
+
+                        group directives (elseDirective :: stack) sourceLines
+                    | _ -> group directives stack sourceLines
+                | ConditionalDirectiveTrivia.EndIf endIfRange :: directives ->
+                    match stack with
+                    | ConditionalDirectiveTrivia.If (_, ifRange) :: stack ->
+                        let range = Range.startToEnd ifRange endIfRange
+
+                        {
+                            Scope = Scope.HashDirective
+                            Collapse = Collapse.Same
+                            Range = range
+                            CollapseRange = range
+                        }
+                        |> acc.Add
+
+                        group directives stack sourceLines
+                    | ConditionalDirectiveTrivia.Else elseRange :: stack ->
+                        let range = Range.startToEnd elseRange endIfRange
+
+                        {
+                            Scope = Scope.HashDirective
+                            Collapse = Collapse.Same
+                            Range = range
+                            CollapseRange = range
+                        }
+                        |> acc.Add
+
+                        group directives stack sourceLines
+                    | _ -> group directives stack sourceLines
+
+            group directives [] sourceLines
 
         let rec parseDeclaration (decl: SynModuleDecl) =
             match decl with
@@ -890,10 +949,10 @@ module Structure =
 
         let rec parseSynMemberDefnSig inp =
             match inp with
-            | SynMemberSig.Member (valSigs, _, r) ->
+            | SynMemberSig.Member (memberSig = valSigs; range = r) ->
                 let collapse = Range.endToEnd valSigs.RangeOfId r
                 rcheck Scope.Member Collapse.Below r collapse
-            | SynMemberSig.ValField (SynField (attrs, _, _, _, _, _, _, fr), mFull) ->
+            | SynMemberSig.ValField (SynField (attributes = attrs; range = fr), mFull) ->
                 let collapse = Range.endToEnd fr mFull
                 rcheck Scope.Val Collapse.Below mFull collapse
                 parseAttributes attrs
@@ -1045,11 +1104,13 @@ module Structure =
             List.iter parseModuleSigDeclaration decls
 
         match parsedInput with
-        | ParsedInput.ImplFile (ParsedImplFileInput (modules = modules)) ->
-            modules |> List.iter parseModuleOrNamespace
+        | ParsedInput.ImplFile file ->
+            file.Contents |> List.iter parseModuleOrNamespace
+            collectConditionalDirectives file.Trivia.ConditionalDirectives sourceLines
             getCommentRanges sourceLines
-        | ParsedInput.SigFile (ParsedSigFileInput (modules = moduleSigs)) ->
-            List.iter parseModuleOrNamespaceSigs moduleSigs
+        | ParsedInput.SigFile file ->
+            file.Contents |> List.iter parseModuleOrNamespaceSigs
+            collectConditionalDirectives file.Trivia.ConditionalDirectives sourceLines
             getCommentRanges sourceLines
 
         acc :> seq<_>

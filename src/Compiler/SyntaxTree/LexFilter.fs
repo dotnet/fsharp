@@ -149,11 +149,6 @@ let isInfix token =
     | QMARK_QMARK -> true
     | _ -> false
 
-let isNonAssocInfixToken token = 
-    match token with 
-    | EQUALS -> true
-    | _ -> false
-
 let infixTokenLength token = 
     match token with 
     | COMMA -> 1
@@ -391,16 +386,6 @@ let rec isWithAugmentBlockContinuator token =
     //                          end 
     | END -> true    
     | ODUMMY token -> isWithAugmentBlockContinuator token
-    | _ -> false
-
-let isLongIdentifier token =
-    match token with
-    | IDENT _ | DOT -> true
-    | _ -> false
-
-let isLongIdentifierOrGlobal token =
-    match token with
-    | GLOBAL | IDENT _ | DOT -> true
     | _ -> false
 
 let isAtomicExprEndToken token = 
@@ -699,6 +684,8 @@ type LexFilterImpl (
     let mutable prevWasAtomicEnd = false
     
     let peekInitial() =
+        // Forget the lexbuf state we might have saved from previous input
+        haveLexbufState <- false
         let initialLookaheadTokenTup = popNextTokenTup()
         if debug then dprintf "first token: initialLookaheadTokenLexbufState = %a\n" outputPos (startPosOfTokenTup initialLookaheadTokenTup)
         
@@ -1023,7 +1010,11 @@ type LexFilterImpl (
     let peekAdjacentTypars indentation (tokenTup: TokenTup) =
         let lookaheadTokenTup = peekNextTokenTup()
         match lookaheadTokenTup.Token with 
-        | INFIX_COMPARE_OP "</" | LESS _ -> 
+        | INFIX_COMPARE_OP "</"
+        | INFIX_COMPARE_OP "<^"
+        // NOTE: this is "<@"
+        | LQUOTE ("<@ @>", false)
+        | LESS _ -> 
             let tokenEndPos = tokenTup.LexbufState.EndPos 
             if isAdjacent tokenTup lookaheadTokenTup then 
                 let mutable stack = []
@@ -1070,7 +1061,14 @@ type LexFilterImpl (
                                 let dotTokenTup = peekNextTokenTup()
                                 stack <- (pool.UseLocation(dotTokenTup, HIGH_PRECEDENCE_PAREN_APP), false) :: stack
                             true
-                    | LPAREN | LESS _ | LBRACK | LBRACK_LESS | INFIX_COMPARE_OP "</" -> 
+                    | LPAREN
+                    | LESS _
+                    | LBRACK
+                    | LBRACK_LESS
+                    | INFIX_COMPARE_OP "</"
+                    | INFIX_COMPARE_OP "<^" 
+                    // NOTE: this is "<@"
+                    | LQUOTE ("<@ @>", false) -> 
                         scanAhead (nParen+1)
                         
                     // These tokens CAN occur in non-parenthesized positions in the grammar of types or type parameter definitions 
@@ -1119,11 +1117,20 @@ type LexFilterImpl (
  
                 let res = scanAhead 0
                 // Put the tokens back on and smash them up if needed
-                stack |> List.iter (fun (tokenTup, smash) ->
+                for (tokenTup, smash) in stack do
                     if smash then 
                         match tokenTup.Token with 
                         | INFIX_COMPARE_OP "</" ->
                             delayToken (pool.UseShiftedLocation(tokenTup, INFIX_STAR_DIV_MOD_OP "/", 1, 0))
+                            delayToken (pool.UseShiftedLocation(tokenTup, LESS res, 0, -1))
+                            pool.Return tokenTup
+                        | INFIX_COMPARE_OP "<^" ->
+                            delayToken (pool.UseShiftedLocation(tokenTup, INFIX_AT_HAT_OP "^", 1, 0))
+                            delayToken (pool.UseShiftedLocation(tokenTup, LESS res, 0, -1))
+                            pool.Return tokenTup
+                        // NOTE: this is "<@"
+                        | LQUOTE ("<@ @>", false) ->
+                            delayToken (pool.UseShiftedLocation(tokenTup, INFIX_AT_HAT_OP "@", 1, 0))
                             delayToken (pool.UseShiftedLocation(tokenTup, LESS res, 0, -1))
                             pool.Return tokenTup
                         | GREATER_BAR_RBRACK -> 
@@ -1146,7 +1153,7 @@ type LexFilterImpl (
                             pool.Return tokenTup
                         | _ -> delayToken tokenTup
                     else
-                        delayToken tokenTup)
+                        delayToken tokenTup
                 res
             else 
                 false

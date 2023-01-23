@@ -7,7 +7,7 @@ open FsUnit
 
 let private getBindingExpressionValue (parseResults: ParsedInput) =
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = modules)) ->
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = modules)) ->
         modules |> List.tryPick (fun (SynModuleOrNamespace (decls = decls)) ->
             decls |> List.tryPick (fun decl ->
                 match decl with

@@ -97,7 +97,7 @@ let mkLexargs
 
 /// Register the lexbuf and call the given function
 let reusingLexbufForParsing lexbuf f =
-    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
+    use _ = UseBuildPhase BuildPhase.Parse
     LexbufLocalXmlDocStore.ClearXmlDoc lexbuf
     LexbufCommentStore.ClearComments lexbuf
 
@@ -428,8 +428,6 @@ module Keywords =
             tab.Add(keyword, token)
 
         tab
-
-    let KeywordToken s = keywordTable[s]
 
     let IdentifierToken args (lexbuf: Lexbuf) (s: string) =
         if IsCompilerGeneratedName s then

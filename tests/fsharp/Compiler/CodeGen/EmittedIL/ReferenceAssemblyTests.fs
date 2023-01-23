@@ -394,44 +394,6 @@ let test() =
         ]
 
     [<Test>]
-    let ``Can't use both --refonly and --staticlink``() =
-        let src =
-            """
-module ReferenceAssembly
-
-open System
-
-let test() =
-    Console.WriteLine("Hello World!")
-            """
-
-        FSharp src
-        |> withOptions ["--staticlink:foo"; "--refonly"]
-        |> compile
-        |> shouldFail
-        |> withSingleDiagnostic (Error 2030, Line 0, Col 1, Line 0, Col 1, "Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.")
-        |> ignore
-
-    [<Test>]
-    let ``Can't use both --refoout and --staticlink``() =
-        let src =
-            """
-module ReferenceAssembly
-
-open System
-
-let test() =
-    Console.WriteLine("Hello World!")
-            """
-
-        FSharp src
-        |> withOptions ["--staticlink:foo"; "--refout:foo"]
-        |> compile
-        |> shouldFail
-        |> withSingleDiagnostic (Error 2030, Line 0, Col 1, Line 0, Col 1, "Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.")
-        |> ignore
-
-    [<Test>]
     let ``Internal DU type doesn't generate any properties/methods without IVT`` () =
         FSharp """
 module ReferenceAssembly
@@ -502,6 +464,115 @@ extends [runtime]System.Object
   }"""]
 
     [<Test>]
+    let ``Properties are emitted for CliMutable records`` () = 
+        FSharp """
+namespace ReferenceAssembly
+type [<CLIMutable;NoComparison;NoEquality>] MyRecord = { MyId: int }"""
+        |> withOptions ["--refonly"]
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+            referenceAssemblyAttributeExpectedIL
+            "      .property instance int32 MyId()"]
+
+    [<Test>] 
+    let ``Properties are emitted even for CliMutable records which are not last in a file`` () = 
+        FSharp """
+namespace ReferenceAssembly
+type [<CLIMutable;NoComparison;NoEquality>] MyRecord = { MyId: int }
+type [<CLIMutable;NoComparison;NoEquality>] MySecondRecord = { MySecondId: string }
+"""
+        |> withOptions ["--refonly"]
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+            referenceAssemblyAttributeExpectedIL
+            "      .property instance int32 MyId()"
+            "      .property instance string MySecondId()"]
+
+    [<Test>] // Regression https://github.com/dotnet/fsharp/issues/14088 .
+    // Generated IL was assigning properties to the last record in file instead of where they are supposed to be
+    let ``Properties are emitted for equal records in the same file`` () = 
+        FSharp """
+namespace Net7FSharpSnafu.Library
+
+open System
+
+type [<CLIMutable;NoComparison;NoEquality>] MyRecord = 
+  {  Name: string }
+
+type [<CLIMutable;NoComparison;NoEquality>] MySecondRecord = { Name: string }
+"""
+        |> withOptions ["--refonly"]
+        |> compile
+        |> shouldSucceed
+        |> verifyIL ["""    .class public auto ansi serializable sealed Net7FSharpSnafu.Library.MyRecord
+           extends [runtime]System.Object
+    {
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CLIMutableAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoComparisonAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoEqualityAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 02 00 00 00 00 00 ) 
+      .method public hidebysig specialname instance string 
+              get_Name() cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  8
+        IL_0000:  ldnull
+        IL_0001:  throw
+      } 
+    
+      .method public hidebysig specialname instance void 
+              set_Name(string 'value') cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  8
+        IL_0000:  ldnull
+        IL_0001:  throw
+      } 
+    
+      .method public specialname rtspecialname 
+              instance void  .ctor(string name) cil managed
+      {
+        
+        .maxstack  8
+        IL_0000:  ldnull
+        IL_0001:  throw
+      } 
+    
+      .method public specialname rtspecialname 
+              instance void  .ctor() cil managed
+      {
+        
+        .maxstack  8
+        IL_0000:  ldnull
+        IL_0001:  throw
+      } 
+    
+      .method public strict virtual instance string 
+          ToString() cil managed
+  {
+    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    
+    .maxstack  8
+    IL_0000:  ldnull
+    IL_0001:  throw
+  } 
+
+      .property instance string Name()
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
+                                                                                                int32) = ( 01 00 04 00 00 00 00 00 00 00 00 00 ) 
+    .set instance void Net7FSharpSnafu.Library.MyRecord::set_Name(string)
+    .get instance string Net7FSharpSnafu.Library.MyRecord::get_Name()
+  } 
+}  """]
+
+    [<Test>]
     let ``Properties, getters, setters are emitted for internal properties`` () =
         FSharp """
 module ReferenceAssembly
@@ -558,6 +629,11 @@ type MySecondaryAttribute() =
       IL_0001:  throw
     } 
 
+    .property instance int32 Prop1()
+    {
+      .set instance void ReferenceAssembly/MyAttribute::set_Prop1(int32)
+      .get instance int32 ReferenceAssembly/MyAttribute::get_Prop1()
+    } 
   } 
 
   .class auto ansi serializable nested public MySecondaryAttribute
@@ -597,11 +673,6 @@ type MySecondaryAttribute() =
       IL_0001:  throw
     } 
 
-    .property instance int32 Prop1()
-    {
-      .set instance void ReferenceAssembly/MyAttribute::set_Prop1(int32)
-      .get instance int32 ReferenceAssembly/MyAttribute::get_Prop1()
-    } 
     .property instance int32 Prop1()
     {
       .set instance void ReferenceAssembly/MySecondaryAttribute::set_Prop1(int32)
@@ -805,6 +876,10 @@ type Person(name : string, age : int) =
       IL_0001:  throw
     }
 
+    .property instance bool Something()
+    {
+      .get instance bool ReferenceAssembly/CustomAttribute::get_Something()
+    }
   }
 
   .class auto ansi serializable nested public Person
@@ -865,10 +940,6 @@ type Person(name : string, age : int) =
       IL_0001:  throw
     }
 
-    .property instance bool Something()
-    {
-      .get instance bool ReferenceAssembly/CustomAttribute::get_Something()
-    }
     .property instance string Name()
     {
       .custom instance void ReferenceAssembly/CustomAttribute::.ctor(bool) = ( 01 00 01 00 00 )
@@ -883,4 +954,134 @@ type Person(name : string, age : int) =
     }
   }"""
         ]
+
+    [<Test>]
+    let ``Internal constructor is emitted for attribute (with fsi)`` () =
+        let fsSig =
+            Fsi """
+namespace Microsoft.FSharp.Core
+    open System
+    [<AttributeUsage (AttributeTargets.Method ||| AttributeTargets.Property,AllowMultiple=false)>]  
+    [<Sealed>]
+    type NoDynamicInvocationAttribute =
+        inherit Attribute
+        new: unit -> NoDynamicInvocationAttribute
+        internal new: isLegacy: bool -> NoDynamicInvocationAttribute
+
+    module Operators = 
+        [<CompiledName("GetId")>]
+        val inline id: value: 'T -> 'T
+            """
+
+        let fsSource =
+            FsSource """
+namespace Microsoft.FSharp.Core
+    open System
+    [<AttributeUsage(AttributeTargets.Method ||| AttributeTargets.Property, AllowMultiple=false)>]
+    [<Sealed>]
+    type NoDynamicInvocationAttribute(isLegacy: bool) =
+        inherit Attribute()
+        new () = NoDynamicInvocationAttribute(false)
+        member _.IsLegacy = isLegacy
+
+    module Operators =
+        [<NoDynamicInvocation(isLegacy=true)>]
+        [<CompiledName("GetId")>]
+        let inline id (value: 'T) = value
+            """
+        fsSig
+        |> withOptions ["--refonly"]
+        |> withAdditionalSourceFile fsSource
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+            referenceAssemblyAttributeExpectedIL
+            """
+.class public auto ansi serializable sealed Microsoft.FSharp.Core.NoDynamicInvocationAttribute
+extends [runtime]System.Attribute
+{
+  .custom instance void [runtime]System.AttributeUsageAttribute::.ctor(valuetype [runtime]System.AttributeTargets) = ( 01 00 C0 00 00 00 01 00 54 02 0D 41 6C 6C 6F 77   
+                                                                                                                              4D 75 6C 74 69 70 6C 65 00 )                      
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.SealedAttribute::.ctor() = ( 01 00 00 00 ) 
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+  .field assembly bool isLegacy
+  .method assembly specialname rtspecialname 
+   instance void  .ctor(bool isLegacy) cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldnull
+    IL_0001:  throw
+  } 
+
+  .method public specialname rtspecialname 
+   instance void  .ctor() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldnull
+    IL_0001:  throw
+  } 
+
+  .method assembly hidebysig specialname 
+   instance bool  get_IsLegacy() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldnull
+    IL_0001:  throw
+  } 
+
+  .property instance bool IsLegacy()
+  {
+    .get instance bool Microsoft.FSharp.Core.NoDynamicInvocationAttribute::get_IsLegacy()
+  } 
+} 
+
+.class public abstract auto ansi sealed Microsoft.FSharp.Core.Operators
+extends [runtime]System.Object
+{
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+  .method public static !!T  GetId<T>(!!T 'value') cil managed
+  {
+    .custom instance void Microsoft.FSharp.Core.NoDynamicInvocationAttribute::.ctor(bool) = ( 01 00 01 00 00 ) 
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationSourceNameAttribute::.ctor(string) = ( 01 00 02 69 64 00 00 )                            
+    
+    .maxstack  8
+    IL_0000:  ldnull
+    IL_0001:  throw
+  } 
+
+} """ ]
+
+    [<Test>]
+    let ``Build .exe with --refonly ensure it produces a main in the ref assembly`` () =
+        FSharp """module ReferenceAssembly
+open System
+
+Console.WriteLine("Hello World!")"""
+        |> withOptions ["--refonly"]
+        |> withName "HasMainCheck"
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+            referenceAssemblyAttributeExpectedIL
+            """.class private abstract auto ansi sealed '<StartupCode$HasMainCheck>'.$ReferenceAssembly
+       extends [mscorlib]System.Object
+{
+  .method public static void  main@() cil managed
+  {
+    .entrypoint
+    // Code size       2 (0x2)
+    .maxstack  8
+    IL_0000:  ldnull
+    IL_0001:  throw
+  } // end of method $ReferenceAssembly::main@
+
+} // end of class '<StartupCode$HasMainCheck>'.$ReferenceAssembly
+"""
+        ]
+        |> ignore
+
     // TODO: Add tests for internal functions, types, interfaces, abstract types (with and without IVTs), (private, internal, public) fields, properties (+ different visibility for getters and setters), events.

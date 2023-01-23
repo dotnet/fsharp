@@ -171,6 +171,9 @@ type public FSharpSymbolUse =
     /// Indicates if the reference is in open statement
     member IsFromOpenStatement: bool
 
+    /// Indicates if the reference is used for example at a call site
+    member IsFromUse: bool
+
     /// The file name the reference occurs in
     member FileName: string
 
@@ -313,6 +316,11 @@ type public FSharpCheckFileResults =
         ?getAllEntities: (unit -> AssemblySymbol list) ->
             FSharpSymbolUse list list
 
+    /// <summary>Compute a formatted tooltip for the given keywords</summary>
+    ///
+    /// <param name="names">The keywords at the location where the information is being requested.</param>
+    member GetKeywordTooltip: names: string list -> ToolTipText
+
     /// <summary>Compute a formatted tooltip for the given location</summary>
     ///
     /// <param name="line">The line number where the information is being requested.</param>
@@ -410,7 +418,7 @@ type public FSharpCheckFileResults =
     member OpenDeclarations: FSharpOpenDeclaration[]
 
     /// Lays out and returns the formatted signature for the typechecked file as source text.
-    member GenerateSignature: unit -> ISourceText option
+    member GenerateSignature: ?pageWidth: int -> ISourceText option
 
     /// Internal constructor
     static member internal MakeEmpty:
@@ -522,7 +530,8 @@ module internal ParseAndCheckFile =
         fileName: string *
         options: FSharpParsingOptions *
         userOpName: string *
-        suggestNamesForErrors: bool ->
+        suggestNamesForErrors: bool *
+        identCapture: bool ->
             FSharpDiagnostic[] * ParsedInput * bool
 
     val matchBraces:

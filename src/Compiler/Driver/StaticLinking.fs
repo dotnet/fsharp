@@ -98,7 +98,7 @@ type TypeForwarding(tcImports: TcImports) =
 
     member _.TypeForwardILTypeRef tref = typeForwardILTypeRef tref
 
-let debugStaticLinking = condition "FSHARP_DEBUG_STATIC_LINKING"
+let debugStaticLinking = isEnvVarSet "FSHARP_DEBUG_STATIC_LINKING"
 
 let StaticLinkILModules
     (
@@ -514,10 +514,6 @@ let StaticLink (ctok, tcConfig: TcConfig, tcImports: TcImports, ilGlobals: ILGlo
         id
     else
         (fun ilxMainModule ->
-            match tcConfig.emitMetadataAssembly with
-            | MetadataAssemblyGeneration.None -> ()
-            | _ -> error (Error(FSComp.SR.optsInvalidRefAssembly (), rangeCmdArgs))
-
             ReportTime tcConfig "Find assembly references"
 
             let dependentILModules =

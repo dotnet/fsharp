@@ -2,6 +2,7 @@ module FSharp.Compiler.Service.Tests.SyntaxTreeTests.SignatureTypeTests
 
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTrivia
 open NUnit.Framework
 
 [<Test>]
@@ -18,7 +19,7 @@ type Meh =
 // foo"""
 
     match parseResults with
-    | ParsedInput.SigFile (ParsedSigFileInput (modules = [
+    | ParsedInput.SigFile (ParsedSigFileInput (contents = [
         SynModuleOrNamespaceSig(decls = [SynModuleSigDecl.Types(range = r)]) ])) ->
         assertRange (3, 0) (5,11) r
     | _ -> Assert.Fail "Could not get valid AST"
@@ -33,7 +34,7 @@ type MyRecord =
     member Score : unit -> int"""
 
     match parseResults with
-    | ParsedInput.SigFile (ParsedSigFileInput (modules = [
+    | ParsedInput.SigFile (ParsedSigFileInput (contents = [
         SynModuleOrNamespaceSig(decls = [SynModuleSigDecl.Types([SynTypeDefnSig.SynTypeDefnSig(range=mSynTypeDefnSig)], mTypes)]) ])) ->
         assertRange (2, 0) (4, 30) mTypes
         assertRange (2, 5) (4, 30) mSynTypeDefnSig
@@ -50,7 +51,7 @@ type MyRecord =
     member Score : unit -> int"""
 
     match parseResults with
-    | ParsedInput.SigFile (ParsedSigFileInput (modules = [
+    | ParsedInput.SigFile (ParsedSigFileInput (contents = [
         SynModuleOrNamespaceSig(decls = [SynModuleSigDecl.Types([SynTypeDefnSig.SynTypeDefnSig(range=mSynTypeDefnSig)], mTypes)]) ])) ->
         assertRange (2, 0) (5, 30) mTypes
         assertRange (2, 5) (5, 30) mSynTypeDefnSig
@@ -65,7 +66,7 @@ type MyFunction =
     delegate of int -> string"""
 
     match parseResults with
-    | ParsedInput.SigFile (ParsedSigFileInput (modules = [
+    | ParsedInput.SigFile (ParsedSigFileInput (contents = [
         SynModuleOrNamespaceSig(decls = [SynModuleSigDecl.Types([SynTypeDefnSig.SynTypeDefnSig(range=mSynTypeDefnSig)], mTypes) ]) ])) ->
         assertRange (2, 0) (3, 29) mTypes
         assertRange (2, 5) (3, 29) mSynTypeDefnSig
@@ -81,7 +82,7 @@ type SomeCollection with
     val SomeThingElse : int -> string"""
 
     match parseResults with
-    | ParsedInput.SigFile (ParsedSigFileInput (modules = [
+    | ParsedInput.SigFile (ParsedSigFileInput (contents = [
         SynModuleOrNamespaceSig(decls = [SynModuleSigDecl.Types([SynTypeDefnSig.SynTypeDefnSig(range=mSynTypeDefnSig)], mTypes)]) ])) ->
         assertRange (2, 0) (4, 37) mTypes
         assertRange (2, 5) (4, 37) mSynTypeDefnSig
@@ -101,7 +102,7 @@ type MyType =
 """
 
     match parseResults with
-    | ParsedInput.SigFile (ParsedSigFileInput (modules = [
+    | ParsedInput.SigFile (ParsedSigFileInput (contents = [
         SynModuleOrNamespaceSig(decls = [SynModuleSigDecl.Types(types = [SynTypeDefnSig.SynTypeDefnSig(range = r)]) as t]) ])) ->
         assertRange (4, 0) (7, 7) r
         assertRange (4, 0) (7, 7) t.Range
@@ -126,7 +127,7 @@ and [<CustomEquality>] Bang =
 """
 
     match parseResults with
-    | ParsedInput.SigFile (ParsedSigFileInput (modules = [
+    | ParsedInput.SigFile (ParsedSigFileInput (contents = [
         SynModuleOrNamespaceSig(decls = [SynModuleSigDecl.Types([
             SynTypeDefnSig.SynTypeDefnSig(range = r1)
             SynTypeDefnSig.SynTypeDefnSig(range = r2)
@@ -149,7 +150,7 @@ type FooType =
 """
 
     match parseResults with
-    | ParsedInput.SigFile (ParsedSigFileInput (modules = [
+    | ParsedInput.SigFile (ParsedSigFileInput (contents = [
         SynModuleOrNamespaceSig(decls =
             [ SynModuleSigDecl.Types(types = [
                 SynTypeDefnSig.SynTypeDefnSig(typeRepr =
@@ -171,7 +172,7 @@ type X = delegate of string -> string
 """
 
     match parseResults with
-    | ParsedInput.SigFile (ParsedSigFileInput (modules = [ SynModuleOrNamespaceSig(decls = [
+    | ParsedInput.SigFile (ParsedSigFileInput (contents = [ SynModuleOrNamespaceSig(decls = [
         SynModuleSigDecl.Types(
             types = [ SynTypeDefnSig(trivia = { EqualsRange = Some mEquals }
                                      typeRepr = SynTypeDefnSigRepr.ObjectModel(kind = SynTypeDefnKind.Delegate _)) ]
@@ -193,7 +194,7 @@ type Foobar =
 """
 
     match parseResults with
-    | ParsedInput.SigFile (ParsedSigFileInput (modules = [ SynModuleOrNamespaceSig(decls = [
+    | ParsedInput.SigFile (ParsedSigFileInput (contents = [ SynModuleOrNamespaceSig(decls = [
         SynModuleSigDecl.Types(
             types = [ SynTypeDefnSig(trivia = { EqualsRange = Some mEquals }
                                      typeRepr = SynTypeDefnSigRepr.ObjectModel(kind = SynTypeDefnKind.Class)) ]
@@ -215,7 +216,7 @@ type Bear =
 """
 
     match parseResults with
-    | ParsedInput.SigFile (ParsedSigFileInput (modules = [ SynModuleOrNamespaceSig(decls = [
+    | ParsedInput.SigFile (ParsedSigFileInput (contents = [ SynModuleOrNamespaceSig(decls = [
         SynModuleSigDecl.Types(
             types = [ SynTypeDefnSig(trivia = { EqualsRange = Some mEquals }
                                      typeRepr = SynTypeDefnSigRepr.Simple(repr =
@@ -243,7 +244,7 @@ type Shape =
 """
 
     match parseResults with
-    | ParsedInput.SigFile (ParsedSigFileInput (modules = [ SynModuleOrNamespaceSig(decls = [
+    | ParsedInput.SigFile (ParsedSigFileInput (contents = [ SynModuleOrNamespaceSig(decls = [
         SynModuleSigDecl.Types(
             types = [ SynTypeDefnSig(trivia = { EqualsRange = Some mEquals }
                                      typeRepr = SynTypeDefnSigRepr.Simple(repr = SynTypeDefnSimpleRepr.Union _)) ]
@@ -264,7 +265,7 @@ member Meh : unit -> unit
 """
 
     match parseResults with
-    | ParsedInput.SigFile (ParsedSigFileInput (modules =[ SynModuleOrNamespaceSig(decls =[
+    | ParsedInput.SigFile (ParsedSigFileInput (contents =[ SynModuleOrNamespaceSig(decls =[
         SynModuleSigDecl.Types(
             types=[ SynTypeDefnSig(typeRepr=SynTypeDefnSigRepr.Simple _
                                    trivia = { WithKeyword = Some mWithKeyword }) ]
@@ -285,7 +286,7 @@ member Meh : unit -> unit
 """
 
     match parseResults with
-    | ParsedInput.SigFile (ParsedSigFileInput (modules = [ SynModuleOrNamespaceSig(decls = [
+    | ParsedInput.SigFile (ParsedSigFileInput (contents = [ SynModuleOrNamespaceSig(decls = [
         SynModuleSigDecl.Exception(
             exnSig=SynExceptionSig(withKeyword = Some mWithKeyword)
         )
@@ -305,7 +306,7 @@ type Foo =
 """
 
     match parseResults with
-    | ParsedInput.SigFile (ParsedSigFileInput (modules = [ SynModuleOrNamespaceSig(decls = [
+    | ParsedInput.SigFile (ParsedSigFileInput (contents = [ SynModuleOrNamespaceSig(decls = [
         SynModuleSigDecl.Types(
             types=[ SynTypeDefnSig(typeRepr=SynTypeDefnSigRepr.ObjectModel(memberSigs=[SynMemberSig.Member(memberSig=SynValSig(trivia = { WithKeyword = Some mWithKeyword }))])) ]
         )
@@ -328,7 +329,7 @@ exception SyntaxError of obj * range: range
 """
 
     match parseResults with
-    | ParsedInput.SigFile (ParsedSigFileInput (modules=[
+    | ParsedInput.SigFile (ParsedSigFileInput (contents=[
         SynModuleOrNamespaceSig(decls=[
             SynModuleSigDecl.Exception(
                 SynExceptionSig(exnRepr=SynExceptionDefnRepr(range=mSynExceptionDefnRepr); range=mSynExceptionSig), mException)
@@ -352,7 +353,7 @@ open Foo
 """
 
     match parseResults with
-    | ParsedInput.SigFile (ParsedSigFileInput (modules=[
+    | ParsedInput.SigFile (ParsedSigFileInput (contents=[
         SynModuleOrNamespaceSig(decls=[
             SynModuleSigDecl.Exception(
                 SynExceptionSig(exnRepr=SynExceptionDefnRepr(range=mSynExceptionDefnRepr); range=mSynExceptionSig), mException)
@@ -376,9 +377,9 @@ val a : int
 """
 
     match parseResults with
-    | ParsedInput.SigFile (ParsedSigFileInput (modules=[
+    | ParsedInput.SigFile (ParsedSigFileInput (contents=[
         SynModuleOrNamespaceSig(decls=[
-            SynModuleSigDecl.Val(valSig = SynValSig(trivia = { ValKeyword = Some mVal }))
+            SynModuleSigDecl.Val(valSig = SynValSig(trivia = { LeadingKeyword = SynLeadingKeyword.Val mVal }))
         ] ) ])) ->
         assertRange (6, 0) (6, 3) mVal
     | _ -> Assert.Fail "Could not get valid AST"
@@ -394,7 +395,7 @@ val a : int = 9
 """
 
     match parseResults with
-    | ParsedInput.SigFile (ParsedSigFileInput (modules=[
+    | ParsedInput.SigFile (ParsedSigFileInput (contents=[
         SynModuleOrNamespaceSig(decls=[
             SynModuleSigDecl.Val(valSig = SynValSig(trivia = { EqualsRange = Some mEquals }); range = mVal)
         ] ) ])) ->
@@ -414,7 +415,7 @@ type X =
 """
 
     match parseResults with
-    | ParsedInput.SigFile (ParsedSigFileInput (modules=[
+    | ParsedInput.SigFile (ParsedSigFileInput (contents=[
         SynModuleOrNamespaceSig(decls=[
             SynModuleSigDecl.Types(types = [
                 SynTypeDefnSig(typeRepr = SynTypeDefnSigRepr.ObjectModel(memberSigs = [
@@ -448,18 +449,18 @@ type Z with
 """
 
     match parseResults with
-    | ParsedInput.SigFile (ParsedSigFileInput (modules=[
+    | ParsedInput.SigFile (ParsedSigFileInput (contents=[
         SynModuleOrNamespaceSig(decls=[
             SynModuleSigDecl.Types(types = [
-                SynTypeDefnSig(trivia = { TypeKeyword = Some mType1
+                SynTypeDefnSig(trivia = { LeadingKeyword = SynTypeDefnLeadingKeyword.Type mType1
                                           EqualsRange = Some mEq1
                                           WithKeyword = None }) ])
             SynModuleSigDecl.Types(types = [
-                SynTypeDefnSig(trivia = { TypeKeyword = Some mType2
+                SynTypeDefnSig(trivia = { LeadingKeyword = SynTypeDefnLeadingKeyword.Type mType2
                                           EqualsRange = Some mEq2
                                           WithKeyword = None  }) ])
             SynModuleSigDecl.Types(types = [
-                SynTypeDefnSig(trivia = { TypeKeyword = Some mType3
+                SynTypeDefnSig(trivia = { LeadingKeyword = SynTypeDefnLeadingKeyword.Type mType3
                                           EqualsRange = None
                                           WithKeyword = Some mWith3 }) ])
         ] ) ])) ->
@@ -470,4 +471,96 @@ type Z with
         assertRange (11, 7) (11, 8) mEq2
         assertRange (14, 0) (14, 4) mType3
         assertRange (14, 7) (14, 11) mWith3
+    | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
+
+[<Test>]
+let ``SynValSig contains parameter names`` () =
+    let parseResults = 
+        getParseResultsOfSignatureFile
+            """
+module Meh
+val InferSynValData:
+    memberFlagsOpt: SynMemberFlags option * pat: SynPat option * SynReturnInfo option * origRhsExpr: SynExpr ->
+        x: string ->
+            SynValData2
+"""
+
+    match parseResults with
+    | ParsedInput.SigFile (ParsedSigFileInput (contents=[
+        SynModuleOrNamespaceSig(decls=[
+            SynModuleSigDecl.Val(valSig = SynValSig(synType =
+                    SynType.Fun(
+                        argType =
+                            SynType.Tuple(path = [
+                                SynTupleTypeSegment.Type(SynType.SignatureParameter(id = Some memberFlagsOpt))
+                                SynTupleTypeSegment.Star _
+                                SynTupleTypeSegment.Type(SynType.SignatureParameter(id = Some pat))
+                                SynTupleTypeSegment.Star _
+                                SynTupleTypeSegment.Type(SynType.App _)
+                                SynTupleTypeSegment.Star _
+                                SynTupleTypeSegment.Type(SynType.SignatureParameter(id = Some origRhsExpr))
+                            ])
+                        returnType =
+                            SynType.Fun(
+                                argType = SynType.SignatureParameter(id = Some x)
+                                returnType = SynType.LongIdent _
+                            )
+                    )
+                ))
+        ] ) ])) ->
+        Assert.AreEqual("memberFlagsOpt", memberFlagsOpt.idText)
+        Assert.AreEqual("pat", pat.idText)
+        Assert.AreEqual("origRhsExpr", origRhsExpr.idText)
+        Assert.AreEqual("x", x.idText)
+    | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
+
+[<Test>]
+let ``Leading keyword in recursive types`` () =
+    let parseResults =
+        getParseResultsOfSignatureFile
+             """
+type A = obj
+and B = int
+ """
+
+    match parseResults with
+    | ParsedInput.SigFile (ParsedSigFileInput(contents = [
+        SynModuleOrNamespaceSig(decls = [
+            SynModuleSigDecl.Types(types = [
+                SynTypeDefnSig(trivia = { LeadingKeyword = SynTypeDefnLeadingKeyword.Type mType })
+                SynTypeDefnSig(trivia = { LeadingKeyword = SynTypeDefnLeadingKeyword.And mAnd })
+            ])
+        ])
+    ])) ->
+        assertRange (2, 0) (2, 4) mType
+        assertRange (3, 0) (3, 3) mAnd
+    | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
+
+
+[<Test>]
+let ``Nested type has static type as leading keyword`` () =
+    let parseResults =
+        getParseResultsOfSignatureFile
+             """
+type A =
+    static type B =
+                    class
+                    end
+ """
+
+    match parseResults with
+    | ParsedInput.SigFile (ParsedSigFileInput(contents = [
+        SynModuleOrNamespaceSig(decls = [
+            SynModuleSigDecl.Types(types = [
+                SynTypeDefnSig(typeRepr = SynTypeDefnSigRepr.ObjectModel(
+                    memberSigs = [
+                        SynMemberSig.NestedType(nestedType =
+                            SynTypeDefnSig(trivia = { LeadingKeyword = SynTypeDefnLeadingKeyword.StaticType(mStatic, mType) }))
+                    ]
+                ))
+            ])
+        ])
+    ])) ->
+        assertRange (3, 4) (3, 10) mStatic
+        assertRange (3, 11) (3, 15) mType
     | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"

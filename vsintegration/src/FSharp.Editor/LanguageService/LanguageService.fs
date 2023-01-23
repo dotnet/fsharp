@@ -93,20 +93,40 @@ type internal FSharpWorkspaceServiceFactory
                 match checkerSingleton with
                 | Some _ -> ()
                 | _ ->
-                    let checker = 
+                    let checker =
                         lazy
-                            let checker = 
+                            let editorOptions =
+                                let editorOptions = workspace.Services.GetService<EditorOptions>()
+
+                                match box editorOptions with
+                                | null -> None
+                                | _ -> Some editorOptions
+
+                            let enableParallelCheckingWithSignatureFiles =
+                                editorOptions
+                                |> Option.map (fun options -> options.LanguageServicePerformance.EnableParallelCheckingWithSignatureFiles)
+                                |> Option.defaultValue false
+
+                            let enableParallelReferenceResolution =
+                                editorOptions
+                                |> Option.map (fun options -> options.LanguageServicePerformance.EnableParallelReferenceResolution)
+                                |> Option.defaultValue false
+
+                            let checker =
                                 FSharpChecker.Create(
-                                    projectCacheSize = 5000, // We do not care how big the cache is. VS will actually tell FCS to clear caches, so this is fine. 
+                                    projectCacheSize = 5000, // We do not care how big the cache is. VS will actually tell FCS to clear caches, so this is fine.
                                     keepAllBackgroundResolutions = false,
                                     legacyReferenceResolver=LegacyMSBuildReferenceResolver.getResolver(),
                                     tryGetMetadataSnapshot = tryGetMetadataSnapshot,
                                     keepAllBackgroundSymbolUses = false,
                                     enableBackgroundItemKeyStoreAndSemanticClassification = true,
-                                    enablePartialTypeChecking = true)
-                            checker    
-                    checkerSingleton <- Some checker                   
-            )          
+                                    enablePartialTypeChecking = true,
+                                    enableParallelCheckingWithSignatureFiles = enableParallelCheckingWithSignatureFiles,
+                                    parallelReferenceResolution = enableParallelReferenceResolution,
+                                    captureIdentifiersWhenParsing = true)
+                            checker
+                    checkerSingleton <- Some checker
+            )
 
             let optionsManager = 
                 lazy
@@ -174,13 +194,12 @@ type internal FSharpSettingsFactory
                     Width = 360,
                     Height = 120,
                     Window="34E76E81-EE4A-11D0-AE2E-00A0C90FFFC3")>]
-[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.IntelliSenseOptionPage>, "F#", null, "IntelliSense", "6008")>]
-[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.QuickInfoOptionPage>, "F#", null, "QuickInfo", "6009")>]
-[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.CodeFixesOptionPage>, "F#", null, "Code Fixes", "6010")>]
-[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.LanguageServicePerformanceOptionPage>, "F#", null, "Performance", "6011")>]
-[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.AdvancedSettingsOptionPage>, "F#", null, "Advanced", "6012")>]
-[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.CodeLensOptionPage>, "F#", null, "CodeLens", "6013")>]
-[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.FormattingOptionPage>, "F#", null, "Formatting", "6014")>]
+[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.IntelliSenseOptionPage>, "F#", null, "IntelliSense", "6008", "IntelliSensePageKeywords")>]
+[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.QuickInfoOptionPage>, "F#", null, "QuickInfo", "6009", "QuickInfoPageKeywords")>]
+[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.CodeFixesOptionPage>, "F#", null, "Code Fixes", "6010", "CodeFixesPageKeywords")>]
+[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.LanguageServicePerformanceOptionPage>, "F#", null, "Performance", "6011", "PerformancePageKeywords")>]
+[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.AdvancedSettingsOptionPage>, "F#", null, "Advanced", "6012", "AdvancedPageKeywords")>]
+[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.FormattingOptionPage>, "F#", null, "Formatting", "6014", "FormattingPageKeywords")>]
 [<ProvideFSharpVersionRegistration(FSharpConstants.projectPackageGuidString, "Microsoft Visual F#")>]
 // 64 represents a hex number. It needs to be greater than 37 so the TextMate editor will not be chosen as higher priority.
 [<ProvideEditorExtension(typeof<FSharpEditorFactory>, ".fs", 64)>]

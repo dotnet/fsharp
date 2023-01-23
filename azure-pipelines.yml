@@ -68,6 +68,8 @@ variables:
   - ${{ if and(eq(variables['System.TeamProject'], 'public'), eq(variables['Build.Reason'], 'PullRequest')) }}:
     - name: RunningAsPullRequest
       value: true
+  # Pick up pool provider name behavior from shared yaml template
+  - template: /eng/common/templates/variables/pool-providers.yml
 
 # Variables defined in yml cannot be overridden at queue time; instead overridable variables must be defined in the web UI.
 # Commenting out until something like this is supported: https://github.com/Microsoft/azure-pipelines-yaml/pull/129
@@ -84,11 +86,11 @@ stages:
   #                                                  Signed build                                                     #
   #-------------------------------------------------------------------------------------------------------------------#
   - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
-    - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/dev17.3') }}:
+    - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/dev17.5') }}:
       - template: /eng/common/templates/job/onelocbuild.yml
         parameters:
           MirrorRepo: fsharp
-          MirrorBranch: release/dev17.3
+          MirrorBranch: release/dev17.5
           LclSource: lclFilesfromPackage
           LclPackageId: 'LCL-JUNO-PROD-FSHARP'
     - template: /eng/common/templates/jobs/jobs.yml
@@ -104,8 +106,8 @@ stages:
         jobs:
         - job: Full_Signed
           pool:
-            name: NetCore1ESPool-Svc-Internal
-            demands: ImageOverride -equals Build.Windows.Amd64.VS2022
+            name: $(DncEngInternalBuildPool)
+            demands: ImageOverride -equals windows.vs2022.amd64
           timeoutInMinutes: 300
           variables:
           - group: DotNet-Blob-Feed
@@ -118,6 +120,7 @@ stages:
           steps:
           - checkout: self
             clean: true
+          - template: /eng/restore-internal-tools.yml
           - script: eng\CIBuild.cmd
                     -configuration $(_BuildConfig)
                     -prepareMachine
@@ -138,6 +141,7 @@ stages:
                     /p:OfficialBuildId=$(BUILD.BUILDNUMBER)
                     /p:PublishToSymbolServer=true
                     /p:VisualStudioDropName=$(VisualStudioDropName)
+                    /p:GenerateSbom=true
           - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c $(_BuildConfig)
             displayName: End to end build tests
           - task: PublishTestResults@2
@@ -210,9 +214,16 @@ stages:
           - name: _SignType
             value: Test
           pool:
-            name: NetCore1ESPool-Public
+            name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(WindowsMachineQueueName)
           timeoutInMinutes: 90
+          strategy:
+            maxParallel: 2
+            matrix:
+              regular:
+                _experimental_flag: null
+              experimental_features:
+                _experimental_flag: 1
           steps:
           - checkout: self
             clean: true
@@ -225,6 +236,8 @@ stages:
               workingDirectory: $(Build.SourcesDirectory)
               installationPath: $(Build.SourcesDirectory)/.dotnet
           - script: .\eng\test-determinism.cmd -configuration Debug
+            env:
+              FSHARP_EXPERIMENTAL_FEATURES: $(_experimental_flag)
             displayName: Determinism tests with Debug configuration
           - task: PublishPipelineArtifact@1
             displayName: Publish Determinism Logs
@@ -276,14 +289,14 @@ stages:
         helixRepo: dotnet/fsharp
         jobs:
 
-        # Windows
-        - job: Windows
+        # Windows With Compressed Metadata
+        - job: WindowsCompressedMetadata
           pool:
             # The PR build definition sets this variable:
             #   WindowsMachineQueueName=Windows.vs2022.amd64.open
             # and there is an alternate build definition that sets this to a queue that is always scouting the
             # next preview of Visual Studio.
-            name: NetCore1ESPool-Public
+            name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(WindowsMachineQueueName)
           timeoutInMinutes: 120
           strategy:
@@ -304,7 +317,7 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - script: eng\CIBuild.cmd -configuration $(_configuration) -$(_testKind)
+          - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
             displayName: Build / Test
           - task: PublishTestResults@2
             displayName: Publish Test Results
@@ -337,7 +350,7 @@ stages:
         # Mock official build
         - job: MockOfficial
           pool:
-            name: NetCore1ESPool-Public
+            name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(WindowsMachineQueueName)
           steps:
           - checkout: self
@@ -388,7 +401,7 @@ stages:
         # MacOS
         - job: MacOS
           pool:
-            vmImage: $(MacOSMachineQueueName)
+            vmImage: macos-11
           variables:
           - name: _SignType
             value: Test
@@ -428,13 +441,24 @@ stages:
         # End to end build
         - job: EndToEndBuildTests
           pool:
-            name: NetCore1ESPool-Public
+            name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(WindowsMachineQueueName)
+          strategy:
+            maxParallel: 2
+            matrix:
+              regular:
+                _experimental_flag: null
+              experimental_features:
+                _experimental_flag: 1
           steps:
           - checkout: self
             clean: true
           - script: .\Build.cmd -c Release -pack
+            env:
+              FSHARP_EXPERIMENTAL_FEATURES: $(_experimental_flag)
           - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c Release
+            env:
+              FSHARP_EXPERIMENTAL_FEATURES: $(_experimental_flag)
             displayName: End to end build tests
 
         # Up-to-date - disabled due to it being flaky
@@ -450,10 +474,13 @@ stages:
         #      filePath: eng\tests\UpToDate.ps1
         #      arguments: -configuration $(_BuildConfig) -ci -binaryLog
 
+        # Run Build with Fsharp Experimental Features
+        # Possible change: --times:$(Build.SourcesDirectory)/artifacts/log/Release/compiler_timing.csv
+
         # Plain build Windows
         - job: Plain_Build_Windows
           pool:
-            name: NetCore1ESPool-Public
+            name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(WindowsMachineQueueName)
           variables:
           - name: _BuildConfig
@@ -518,7 +545,7 @@ stages:
         # Plain build Mac
         - job: Plain_Build_MacOS
           pool:
-            vmImage: $(MacOSMachineQueueName)
+            vmImage: macos-11
           variables:
           - name: _BuildConfig
             value: Debug
@@ -546,6 +573,50 @@ stages:
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Regular rebuild of FSharp.Compiler.Service.sln
+
+        # Test trimming on Windows
+        - job: Build_And_Test_Trimming_Windows
+          pool:
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
+          strategy:
+            maxParallel: 2
+            matrix:
+              compressed_metadata:
+                _kind: "-compressAllMetadata"
+              classic_metadata:
+                _kind: ""
+          variables:
+          - name: _BuildConfig
+            value: Release
+          steps:
+          - checkout: self
+            clean: true
+          - task: UseDotNet@2
+            displayName: install SDK
+            inputs:
+              packageType: sdk
+              useGlobalJson: true
+              includePreviewVersions: true
+              workingDirectory: $(Build.SourcesDirectory)
+              installationPath: $(Agent.ToolsDirectory)/dotnet
+          - script: dotnet --list-sdks
+            displayName: Report dotnet SDK versions
+          - script: .\Build.cmd $(_kind) -pack -c $(_BuildConfig)
+            displayName: Initial build and prepare packages.
+          - script:  dotnet publish -c $(_BuildConfig)  -bl:\"./bin/$(_BuildConfig)/net7.0/win-x64/publish/Trimming.binlog\"
+            displayName: Build and publish a trim test package.
+            workingDirectory: $(Build.SourcesDirectory)/tests/projects/SelfContained_Trimming_Test
+          - script: .\check.cmd
+            displayName: Check the state of the trimmed app.
+            workingDirectory: $(Build.SourcesDirectory)/tests/projects/SelfContained_Trimming_Test
+          - task: PublishPipelineArtifact@1
+            displayName: Publish Trim Tests Logs
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/tests/projects/SelfContained_Trimming_Test/bin/$(_BuildConfig)/net7.0/win-x64/publish'
+              artifactName: 'Trim Test Logs Attempt $(System.JobAttempt) Logs $(_kind)'
+            continueOnError: true
+            condition: always()
 
     # Arcade-powered source build
     # turned off until https://github.com/dotnet/source-build/issues/1795 is fixed
@@ -595,8 +666,8 @@ stages:
 - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
   - template: eng/release/insert-into-vs.yml
     parameters:
-      componentBranchName: refs/heads/release/dev17.2
-      insertTargetBranch: rel/d17.2
+      componentBranchName: refs/heads/release/dev17.5
+      insertTargetBranch: rel/d17.5
       insertTeamEmail: fsharpteam@microsoft.com
       insertTeamName: 'F#'
       completeInsertion: 'auto'

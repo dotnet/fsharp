@@ -15,3 +15,5 @@ match y with
 | _ -> ()
 
 let (Case1(V4 = z)) = y
+
+let z a = Some ("", "", a = "")

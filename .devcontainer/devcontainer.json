@@ -6,7 +6,7 @@
         "args": {
             // Update 'VARIANT' to pick a .NET Core version: 3.1, 5.0, 6.0, 7.0
             // Append -bullseye(-slim), -focal, or -jammy to pin to an OS version.
-            "VARIANT": "7.0-bullseye-slim"
+            "VARIANT": "7.0.102-bullseye-slim-amd64"
         }
     },
     "hostRequirements": {

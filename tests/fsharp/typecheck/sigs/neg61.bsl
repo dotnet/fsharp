@@ -45,7 +45,7 @@ neg61.fs(56,16,56,19): typecheck error FS0039: The value or constructor 'zip' is
 
 neg61.fs(60,13,60,21): typecheck error FS3145: This is not a known query operator. Query operators are identifiers such as 'select', 'where', 'sortBy', 'thenBy', 'groupBy', 'groupValBy', 'join', 'groupJoin', 'sumBy' and 'averageBy', defined using corresponding methods on the 'QueryBuilder' type.
 
-neg61.fs(60,13,60,21): typecheck error FS0193: This expression is a function value, i.e. is missing arguments. Its type is  ^a ->  ^a.
+neg61.fs(60,13,60,21): typecheck error FS0193: This expression is a function value, i.e. is missing arguments. Its type is ^a -> ^a.
 
 neg61.fs(64,13,64,20): typecheck error FS3145: This is not a known query operator. Query operators are identifiers such as 'select', 'where', 'sortBy', 'thenBy', 'groupBy', 'groupValBy', 'join', 'groupJoin', 'sumBy' and 'averageBy', defined using corresponding methods on the 'QueryBuilder' type.
 

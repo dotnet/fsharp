@@ -131,7 +131,7 @@
         <target state="translated">Los archivos y las carpetas no pueden:
 - Ser cadenas vacías 
 - Ser nombres reservados del sistema, como "CON", "AUX", "PRN", "COM1" o "LPT2" 
-- Contener "."
+- Contener solo "."
 - Tener cualquiera de los siguientes caracteres: / ? : &amp;  \ * " &lt; &gt; | # %</target>
         <note />
       </trans-unit>
@@ -672,7 +672,7 @@
       </trans-unit>
       <trans-unit id="NoZeroImpactProjects">
         <source>Microsoft Visual F# does not support zero-impact projects. To create an F# project from this project template, either go to the Visual Studio menu 'Tools, Options..., Projects and Solutions, General' and check the box marked 'Save new projects when created', or specify &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt; in the &lt;TemplateData&gt; section of this project template's .vstemplate file, and then retry this operation.</source>
-        <target state="translated">Microsoft Visual F# no admite proyectos con impacto cero. Para crear un proyecto de F# a partir de esta plantilla de proyecto, en Visual Studio vaya a 'Herramientas, Opciones, Proyectos y soluciones, General' y active la casilla 'Guardar nuevos proyectos al crearlos', o bien especifique &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt; en la sección &lt;TemplateData&gt; del archivo .vstemplate de esta plantilla de proyecto e intente de nuevo esta operación.</target>
+        <target state="translated">Microsoft Visual F# no admite proyectos con impacto cero. Para crear un proyecto de F# a partir de esta plantilla de proyecto, en Visual Studio vaya a "Herramientas, Opciones, Proyectos y soluciones, General" y active la casilla "Guardar nuevos proyectos al crearlos", o bien especifique &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt; en la sección &lt;TemplateData&gt; del archivo .vstemplate de esta plantilla de proyecto e intente de nuevo esta operación.</target>
         <note />
       </trans-unit>
       <trans-unit id="NoWildcardsInProject">

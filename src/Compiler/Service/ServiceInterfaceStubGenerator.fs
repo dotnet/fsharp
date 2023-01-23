@@ -144,7 +144,6 @@ type InterfaceData =
                 | SynType.AnonRecd (_, ts, _) -> Some(ts |> Seq.choose (snd >> (|TypeIdent|_|)) |> String.concat "; ")
                 | SynType.Array (dimension, TypeIdent typeName, _) -> Some(sprintf "%s [%s]" typeName (String(',', dimension - 1)))
                 | SynType.MeasurePower (TypeIdent typeName, RationalConst power, _) -> Some(sprintf "%s^%s" typeName power)
-                | SynType.MeasureDivide (TypeIdent numerator, TypeIdent denominator, _) -> Some(sprintf "%s/%s" numerator denominator)
                 | SynType.Paren (TypeIdent typeName, _) -> Some typeName
                 | _ -> None
 
@@ -523,21 +522,6 @@ module InterfaceStubGenerator =
         | Some ty -> Some ty
         | None -> None
 
-    let internal (|EventFunctionType|_|) (ty: FSharpType) =
-        match ty with
-        | MemberFunctionType ty ->
-            if ty.IsFunctionType && ty.GenericArguments.Count = 2 then
-                let retType = ty.GenericArguments[0]
-                let argType = ty.GenericArguments[1]
-
-                if argType.GenericArguments.Count = 2 then
-                    Some(argType.GenericArguments[0], retType)
-                else
-                    None
-            else
-                None
-        | _ -> None
-
     let internal removeWhitespace (str: string) = str.Replace(" ", "")
 
     /// Filter out duplicated interfaces in inheritance chain
@@ -780,8 +764,8 @@ module InterfaceStubGenerator =
 
     /// Find corresponding interface declaration at a given position
     let TryFindInterfaceDeclaration (pos: pos) (parsedInput: ParsedInput) =
-        let rec walkImplFileInput (ParsedImplFileInput (modules = moduleOrNamespaceList)) =
-            List.tryPick walkSynModuleOrNamespace moduleOrNamespaceList
+        let rec walkImplFileInput (file: ParsedImplFileInput) =
+            List.tryPick walkSynModuleOrNamespace file.Contents
 
         and walkSynModuleOrNamespace (SynModuleOrNamespace (decls = decls; range = range)) =
             if not <| rangeContainsPos range pos then
@@ -826,7 +810,7 @@ module InterfaceStubGenerator =
                 None
             else
                 match memberDefn with
-                | SynMemberDefn.AbstractSlot (_synValSig, _memberFlags, _range) -> None
+                | SynMemberDefn.AbstractSlot _ -> None
                 | SynMemberDefn.AutoProperty (synExpr = expr) -> walkExpr expr
                 | SynMemberDefn.Interface (interfaceType = interfaceType; members = members) ->
                     if rangeContainsPos interfaceType.Range pos then
@@ -841,7 +825,7 @@ module InterfaceStubGenerator =
                     | None, Some binding -> walkBinding binding
                     | Some getBinding, Some setBinding -> walkBinding getBinding |> Option.orElseWith (fun () -> walkBinding setBinding)
                 | SynMemberDefn.NestedType (typeDef, _access, _range) -> walkSynTypeDefn typeDef
-                | SynMemberDefn.ValField (_field, _range) -> None
+                | SynMemberDefn.ValField _ -> None
                 | SynMemberDefn.LetBindings (bindings, _isStatic, _isRec, _range) -> List.tryPick walkBinding bindings
                 | SynMemberDefn.Open _
                 | SynMemberDefn.ImplicitCtor _

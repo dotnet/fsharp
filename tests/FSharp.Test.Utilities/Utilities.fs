@@ -7,14 +7,32 @@ open System.IO
 open System.Reflection
 open System.Collections.Immutable
 open System.Diagnostics
+open System.Threading
 open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
 open TestFramework
 open NUnit.Framework
 
-// This file mimics how Roslyn handles their compilation references for compilation testing
+type TheoryForNETCOREAPPAttribute() = 
+    inherit Xunit.TheoryAttribute()
+    #if !NETCOREAPP    
+        do base.Skip <- "Only NETCOREAPP is supported runtime for this kind of test."
+    #endif
 
+type FactForNETCOREAPPAttribute() =
+    inherit Xunit.FactAttribute()
+    #if !NETCOREAPP    
+        do base.Skip <- "Only NETCOREAPP is supported runtime for this kind of test."
+    #endif
+
+type FactForDESKTOPAttribute() =
+    inherit Xunit.FactAttribute()
+    #if NETCOREAPP
+        do base.Skip <- "NETCOREAPP is not supported runtime for this kind of test, it is intended for DESKTOP only"
+    #endif
+
+// This file mimics how Roslyn handles their compilation references for compilation testing
 module Utilities =
 
     type Async with
@@ -179,7 +197,7 @@ let main argv = 0"""
                     let directoryBuildTargetsFileName = Path.Combine(projectDirectory, "Directory.Build.targets")
                     let frameworkReferencesFileName = Path.Combine(projectDirectory, "FrameworkReferences.txt")
 #if NETCOREAPP
-                    File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "net6.0").Replace("$FSHARPCORELOCATION", pathToFSharpCore))
+                    File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "net7.0").Replace("$FSHARPCORELOCATION", pathToFSharpCore))
 #else
                     File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "net472").Replace("$FSHARPCORELOCATION", pathToFSharpCore))
 #endif

@@ -210,6 +210,7 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
     interface ICollection<KeyValuePair<'Key, 'Value>>
     interface IEnumerable<KeyValuePair<'Key, 'Value>>
     interface System.IComparable
+    interface System.Collections.IStructuralEquatable
     interface System.Collections.IEnumerable
     interface IReadOnlyCollection<KeyValuePair<'Key, 'Value>>
     interface IReadOnlyDictionary<'Key, 'Value>
@@ -256,8 +257,7 @@ module Map =
     ///     match x with
     ///     | Some s -> Some (s + "z")
     ///     | None -> None
-    /// )
-    /// evaluates to map [(1, "az"); (2, "b")]
+    /// ) // evaluates to map [(1, "az"); (2, "b")]
     /// </code>
     /// </example>
     [<CompiledName("Change")>]

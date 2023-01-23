@@ -56,7 +56,7 @@ module internal SymbolHelpers =
 
     val IsExplicitlySuppressed: TcGlobals -> Item -> bool
 
-    val FlattenItems: TcGlobals -> range -> ItemWithInst -> ItemWithInst list
+    val SelectMethodGroupItems2: TcGlobals -> range -> ItemWithInst -> ItemWithInst list
 
 #if !NO_TYPEPROVIDERS
     val (|ItemIsProvidedType|_|): TcGlobals -> Item -> TyconRef option

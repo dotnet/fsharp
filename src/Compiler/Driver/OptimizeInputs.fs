@@ -251,9 +251,11 @@ let GenerateIlxCode
             mainMethodInfo = mainMethodInfo
             ilxBackend = ilxBackend
             fsiMultiAssemblyEmit = tcConfig.fsiMultiAssemblyEmit
+            useReflectionFreeCodeGen = tcConfig.useReflectionFreeCodeGen
             isInteractive = tcConfig.isInteractive
             isInteractiveItExpr = isInteractiveItExpr
             alwaysCallVirt = tcConfig.alwaysCallVirt
+            parallelIlxGenEnabled = tcConfig.parallelIlxGen && not (tcConfig.deterministic)
         }
 
     ilxGenerator.GenerateCode(ilxGenOpts, optimizedImpls, topAttrs.assemblyAttrs, topAttrs.netModuleAttrs)

@@ -13,7 +13,7 @@ let ``operator as function`` () =
                     |> getParseResults
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Expr (expr = SynExpr.App(funcExpr = SynExpr.App(funcExpr =
                 SynExpr.LongIdent(longDotId = SynLongIdent([ident], _, [Some (IdentTrivia.OriginalNotationWithParen(lpr, "+", rpr))])))))
@@ -33,7 +33,7 @@ let ``active pattern as function `` () =
                     |> getParseResults
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Expr (expr = SynExpr.App(funcExpr =
                 SynExpr.LongIdent(false, SynLongIdent([ ident ], _, [ Some(IdentTrivia.HasParenthesis(lpr, rpr)) ]), None, pr)))
@@ -54,7 +54,7 @@ let ``partial active pattern as function `` () =
                     |> getParseResults
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Expr (expr = SynExpr.App(funcExpr =
                 SynExpr.LongIdent(false, SynLongIdent([ ident ], _, [ Some(IdentTrivia.HasParenthesis(lpr, rpr)) ]), None, pr)))
@@ -75,7 +75,7 @@ let (+) a b = a + b
                     |> getParseResults
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Let(bindings = [SynBinding(headPat=
                 SynPat.LongIdent(longDotId = SynLongIdent([ ident ],_, [ Some (IdentTrivia.OriginalNotationWithParen(lpr, "+", rpr)) ])))
@@ -95,7 +95,7 @@ let (|Odd|Even|) (a: int) = if a % 2 = 0 then Even else Odd
                     |> getParseResults
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Let(bindings = [SynBinding(headPat=
                 SynPat.LongIdent(longDotId = SynLongIdent([ident], _, [Some (IdentTrivia.HasParenthesis(lpr, rpr))])))
@@ -115,7 +115,7 @@ let (|Int32Const|_|) (a: SynConst) = match a with SynConst.Int32 _ -> Some a | _
                     |> getParseResults
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Let(bindings = [SynBinding(headPat=
                 SynPat.LongIdent(longDotId = SynLongIdent([ident], _, [Some (IdentTrivia.HasParenthesis(lpr, rpr))])))
@@ -135,7 +135,7 @@ let (|Boolean|_|) = Boolean.parse
                     |> getParseResults
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Let(bindings = [SynBinding(headPat=
                 SynPat.Named(ident = SynIdent(ident, Some (IdentTrivia.HasParenthesis(lpr, rpr)))))
@@ -157,7 +157,7 @@ val (&): e1: bool -> e2: bool -> bool
                     |> getParseResultsOfSignatureFile
 
     match ast with
-    | ParsedInput.SigFile(ParsedSigFileInput(modules = [
+    | ParsedInput.SigFile(ParsedSigFileInput(contents = [
         SynModuleOrNamespaceSig(decls = [
             SynModuleSigDecl.Val(valSig = SynValSig(ident = SynIdent(ident, Some (IdentTrivia.OriginalNotationWithParen(lpr, "&", rpr)))
             ))])
@@ -186,7 +186,7 @@ let ``operator name in val constraint`` () =
 """
 
     match ast with
-    | ParsedInput.SigFile(ParsedSigFileInput(modules = [
+    | ParsedInput.SigFile(ParsedSigFileInput(contents = [
         SynModuleOrNamespaceSig(decls = [
             SynModuleSigDecl.Val(valSig = SynValSig(synType=SynType.WithGlobalConstraints(constraints=[
                 SynTypeConstraint.WhereTyparSupportsMember(memberSig=SynMemberSig.Member(memberSig=SynValSig(ident =
@@ -208,7 +208,7 @@ f(x=4)
 """
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Expr(expr = SynExpr.App(argExpr = SynExpr.Paren(expr = SynExpr.App(funcExpr=
                 SynExpr.App(funcExpr= SynExpr.LongIdent(longDotId = SynLongIdent([ident], _, [Some (IdentTrivia.OriginalNotation "=")])))))))
@@ -226,7 +226,7 @@ let ``infix operation`` () =
 """
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Expr(expr =
                 SynExpr.App(funcExpr = SynExpr.App(isInfix = true
@@ -247,7 +247,7 @@ let ``prefix operation`` () =
 """
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Expr(expr =
                 SynExpr.App(isInfix = false
@@ -267,7 +267,7 @@ let ``prefix operation with two characters`` () =
 """
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Expr(expr =
                 SynExpr.App(isInfix = false
@@ -289,7 +289,7 @@ op_Addition a b
 """
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Expr(expr =
                 SynExpr.App(funcExpr = SynExpr.App(isInfix = false
@@ -324,7 +324,7 @@ type X with
 """
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Types(typeDefns = [
                 SynTypeDefn(members = [
@@ -350,7 +350,7 @@ nameof(+)
 """
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Expr(expr =
                                 SynExpr.App(isInfix = false
@@ -375,7 +375,7 @@ f(?x = 7)
 """
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Expr(expr =
                                 SynExpr.App(isInfix = false
@@ -408,7 +408,7 @@ type X() =
 """
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Types(typeDefns = [
                 SynTypeDefn.SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members =[
@@ -437,7 +437,7 @@ let PowByte (x:byte) n = Checked.( * ) x
 """
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Let(bindings = [
                 SynBinding(expr = SynExpr.App(funcExpr =
@@ -465,7 +465,7 @@ type A() =
 """
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Types(typeDefns = [
                 SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [

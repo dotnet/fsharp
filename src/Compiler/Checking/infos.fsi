@@ -136,6 +136,18 @@ type ParamData =
         reflArgInfo: ReflectedArgInfo *
         ttype: TType
 
+// Adhoc information - could be unified with ParamData
+type ParamAttribs =
+    | ParamAttribs of
+        isParamArrayArg: bool *
+        isInArg: bool *
+        isOutArg: bool *
+        optArgInfo: OptionalArgInfo *
+        callerInfo: CallerInfo *
+        reflArgInfo: ReflectedArgInfo
+
+val CrackParamAttribsInfo: TcGlobals -> ty: TType * argInfo: ArgReprInfo -> ParamAttribs
+
 /// Describes an F# use of an IL type, including the type instantiation associated with the type at a particular usage point.
 [<NoComparison; NoEquality>]
 type ILTypeInfo =
@@ -500,8 +512,7 @@ type MethInfo =
     member GetCustomAttrs: unit -> ILAttributes
 
     /// Get the parameter attributes of a method info, which get combined with the parameter names and types
-    member GetParamAttribs:
-        amap: ImportMap * m: range -> (bool * bool * bool * OptionalArgInfo * CallerInfo * ReflectedArgInfo) list list
+    member GetParamAttribs: amap: ImportMap * m: range -> ParamAttribs list list
 
     /// Get the ParamData objects for the parameters of a MethInfo
     member GetParamDatas: amap: ImportMap * m: range * minst: TType list -> ParamData list list
@@ -551,6 +562,9 @@ type ILFieldInfo =
 
     /// Get the name of the field
     member FieldName: string
+
+    /// Get the core of the display name for the field. This is the same as the logical name.
+    member DisplayNameCore: string
 
     /// Get an (uninstantiated) reference to the field as an Abstract IL ILFieldRef
     member ILFieldRef: ILFieldRef
@@ -648,14 +662,14 @@ type UnionCaseInfo =
     ///
     /// Backticks and parens are not added for non-identifiers.
     ///
-    /// Note logical names op_Nil and op_ConsCons become [] and :: respectively.
+    /// Note logical names op_Nil and op_ColonColon become [] and :: respectively.
     member DisplayNameCore: string
 
     /// Get the display name of the union case
     ///
     /// Backticks and parens are added implicitly for non-identifiers.
     ///
-    /// Note logical names op_Nil and op_ConsCons become ([]) and (::) respectively.
+    /// Note logical names op_Nil and op_ColonColon become ([]) and (::) respectively.
     member DisplayName: string
 
     /// Get the F# metadata for the declaring union type
@@ -838,6 +852,14 @@ type PropInfo =
     /// Get the logical name of the property.
     member PropertyName: string
 
+    /// Get the display name of the property.
+    ///
+    /// Backticks and parens are added implicitly for non-identifiers.
+    member DisplayName: string
+
+    /// Get the property name in core DisplayName form (no backticks or parens added)
+    member DisplayNameCore: string
+
     /// Get a MethInfo for the 'setter' method associated with the property
     member SetterMethod: MethInfo
 
@@ -942,6 +964,14 @@ type EventInfo =
     /// Get the logical name of the event.
     member EventName: string
 
+    /// Get the display name of the event.
+    ///
+    /// Backticks and parens are added implicitly for non-identifiers.
+    member DisplayName: string
+
+    /// Get the event name in core DisplayName form (no backticks or parens added)
+    member DisplayNameCore: string
+
     /// Indicates if this event has an associated XML comment authored in this assembly.
     member HasDirectXmlComment: bool
 
@@ -978,6 +1008,9 @@ type EventInfo =
 
     /// Get the delegate type associated with the event.
     member GetDelegateType: amap: ImportMap * m: range -> TType
+
+    /// Get custom attributes for events (only applicable for IL events)
+    member GetCustomAttrs: unit -> ILAttributes
 
 /// An exception type used to raise an error using the old error system.
 ///

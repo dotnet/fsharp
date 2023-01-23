@@ -1161,6 +1161,22 @@ type Basics() =
         require (result = 8) "something weird happened"
 
     [<Fact>]
+    member _.testAsyncsMixedWithTasks_ShouldNotSwitchContext() =
+        let t = task {
+            let a = Thread.CurrentThread.ManagedThreadId
+            let! b = async {
+                return Thread.CurrentThread.ManagedThreadId
+            }
+            let c = Thread.CurrentThread.ManagedThreadId
+            return $"Before: {a}, in async: {b}, after async: {c}"
+        }
+        let d = Thread.CurrentThread.ManagedThreadId
+        let actual = $"{t.Result}, after task: {d}"
+
+        require (actual = $"Before: {d}, in async: {d}, after async: {d}, after task: {d}") actual
+        
+
+    [<Fact>]
     // no need to call this, we just want to check that it compiles w/o warnings
     member _.testDefaultInferenceForReturnFrom() =
         let t = task { return Some "x" }
@@ -1259,6 +1275,75 @@ type BasicsNotInParallel() =
                     require ran "never ran")
             taskOuter.Wait()
                  
+    [<Fact; >]
+    member _.testGenericBackgroundTasks() =
+        printfn "Running testBackgroundTask..."
+        for i in 1 .. 5 do 
+            let mutable ran = false
+            let mutable posted = false
+            let oldSyncContext = SynchronizationContext.Current
+            let syncContext = { new SynchronizationContext()  with member _.Post(d,state) = posted <- true; d.Invoke(state) }
+            try 
+                SynchronizationContext.SetSynchronizationContext syncContext
+                let f (result: 'T ref) (x: 'T) =
+                    backgroundTask {
+                        require (System.Threading.Thread.CurrentThread.IsThreadPoolThread) "expect to be on background thread"
+                        ran <- true
+                        result.Value <- x
+                    }
+                let t = f (ref "") "hello"
+                t.Wait()
+                let t2 = f (ref 1) 1
+                t2.Wait()
+                require ran "never ran"
+                require (not posted) "did not expect post to sync context"
+            finally
+                SynchronizationContext.SetSynchronizationContext oldSyncContext
+                 
+
+/// https://github.com/dotnet/fsharp/issues/12761
+module Test12761A =
+
+    type Dto = {
+        DtoValue : string
+        Key : string
+    }
+
+    type MyGenericType<'Key,'Value> = {
+        Value : 'Value
+        Key : 'Key
+    }
+
+    type ProblematicType<'Key, 'Value, 'Dto, 'E>( fromDto : 'Dto -> Result<MyGenericType<'Key,'Value>,'E> ) =
+        let myTask = 
+            backgroundTask {
+                    let dto =  """{"DtoValue":"1","Key":"key1"}""" |> box |> unbox<'Dto>
+                return fromDto dto |> printfn "%A"
+            }
+        member __.ContainsKey = fun (key: 'Key) -> true
+
+
+    type MyType = MyGenericType<string,int>
+
+    module MyType =
+        let fromDto (dto: Dto)  =
+            try
+                {
+                    Value = int dto.DtoValue
+                    Key = dto.Key
+                } 
+                |> Ok
+            with | e -> Error e
+
+
+/// https://github.com/dotnet/fsharp/issues/12761
+module Test12761B =
+    let TestFunction<'Dto>() =
+            backgroundTask {
+                let dto = Unchecked.defaultof<'Dto>
+                System.Console.WriteLine(dto)
+            }
+
 type Issue12184() =
     member this.TaskMethod() =
         task {
@@ -1322,4 +1407,3 @@ module Issue12184f =
             let! result = t
             return result
         }
-

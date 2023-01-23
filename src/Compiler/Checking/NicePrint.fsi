@@ -113,6 +113,8 @@ val stringOfTy: denv: DisplayEnv -> x: TType -> string
 
 val prettyLayoutOfType: denv: DisplayEnv -> x: TType -> Layout
 
+val prettyLayoutOfTrait: denv: DisplayEnv -> x: TraitConstraintInfo -> Layout
+
 val prettyLayoutOfTypeNoCx: denv: DisplayEnv -> x: TType -> Layout
 
 val prettyLayoutOfTypar: denv: DisplayEnv -> x: Typar -> Layout

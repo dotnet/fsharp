@@ -132,7 +132,7 @@ let rec TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce ty2 =
 /// variables when compiling patterns at generalized bindings.
 ///     e.g. let ([], x) = ([], [])
 /// Here x gets a generalized type "list<'T>".
-let ChooseTyparSolutionAndRange (g: TcGlobals) amap (tp:Typar) : TType * Text.range * bool =
+let ChooseTyparSolutionAndRange (g: TcGlobals) amap (tp:Typar) : TType * Text.range =
     let m = tp.Range
     let (maxTy, isRefined), m =
          let initialTy =
@@ -178,19 +178,19 @@ let ChooseTyparSolutionAndRange (g: TcGlobals) amap (tp:Typar) : TType * Text.ra
                  (maxTy, haveRefined), m
              | TyparConstraint.DefaultsTo(_priority, _ty, m) ->
                  (maxTy, haveRefined), m)
-    let wasRefined =
+    let _wasRefined =
         isRefined ||
         match tp.Kind with
         | TyparKind.Type ->
             true
         | _ -> false
-    maxTy, m, wasRefined
+    maxTy, m
 
-let ChooseTyparSolution g amap tp : TType * bool =
-    let ty, _m, wasRefined = ChooseTyparSolutionAndRange g amap tp
+let ChooseTyparSolution g amap tp : TType =
+    let ty, _m = ChooseTyparSolutionAndRange g amap tp
     if tp.Rigidity = TyparRigidity.Anon && typeEquiv g ty (TType_measure Measure.One) then
         warning(Error(FSComp.SR.csCodeLessGeneric(), tp.Range))
-    ty, wasRefined
+    ty
 
 // Solutions can, in theory, refer to each other
 // For example
@@ -200,7 +200,7 @@ let ChooseTyparSolution g amap tp : TType * bool =
 //   'a = Expr<int>
 //   'b = int
 // We ground out the solutions by repeatedly instantiating
-let IterativelySubstituteTyparSolutions g tps solutions = 
+let IterativelySubstituteTyparSolutions g tps solutions =
     let tpenv = mkTyparInst tps solutions
     let rec loop n curr = 
         let curr' = curr |> instTypes tpenv 
@@ -234,9 +234,11 @@ let ChooseTyparSolutionsForFreeChoiceTypars g amap e =
 
     | _ -> e
 
-/// Break apart lambdas. Needs ChooseTyparSolutionsForFreeChoiceTypars because it's used in
+/// Break apart lambdas according to a given expected ValReprInfo that the lambda implements.
+/// Needs ChooseTyparSolutionsForFreeChoiceTypars because it's used in
 /// PostTypeCheckSemanticChecks before we've eliminated these nodes.
-let tryDestTopLambda g amap (ValReprInfo (tpNames, _, _) as tvd) (e, ty) =
+let tryDestLambdaWithValReprInfo g amap valReprInfo (lambdaExpr, ty) =
+    let (ValReprInfo (tpNames, _, _)) = valReprInfo
     let rec stripLambdaUpto n (e, ty) = 
         match stripDebugPoints e with 
         | Expr.Lambda (_, None, None, v, b, _, retTy) when n > 0 -> 
@@ -255,20 +257,23 @@ let tryDestTopLambda g amap (ValReprInfo (tpNames, _, _) as tvd) (e, ty) =
         | _ -> 
             (None, None, [], e, ty)
 
-    let n = tvd.NumCurriedArgs
+    let n = valReprInfo.NumCurriedArgs
+
     let tps, bodyExpr, bodyTy = 
-        match stripDebugPoints e with 
+        match stripDebugPoints lambdaExpr with 
         | Expr.TyLambda (_, tps, b, _, retTy) when not (isNil tpNames) -> tps, b, retTy 
-        | _ -> [], e, ty
+        | _ -> [], lambdaExpr, ty
+
     let ctorThisValOpt, baseValOpt, vsl, body, retTy = startStripLambdaUpto n (bodyExpr, bodyTy)
+
     if vsl.Length <> n then 
         None 
     else
         Some (tps, ctorThisValOpt, baseValOpt, vsl, body, retTy)
 
-let destTopLambda g amap valReprInfo (e, ty) = 
-    match tryDestTopLambda g amap valReprInfo (e, ty) with 
-    | None -> error(Error(FSComp.SR.typrelInvalidValue(), e.Range))
+let destLambdaWithValReprInfo g amap valReprInfo (lambdaExpr, ty) = 
+    match tryDestLambdaWithValReprInfo g amap valReprInfo (lambdaExpr, ty) with 
+    | None -> error(Error(FSComp.SR.typrelInvalidValue(), lambdaExpr.Range))
     | Some res -> res
     
 let IteratedAdjustArityOfLambdaBody g arities vsl body  =
@@ -276,16 +281,22 @@ let IteratedAdjustArityOfLambdaBody g arities vsl body  =
           let vs, body = AdjustArityOfLambdaBody g arities vs body
           vs :: allvs, body)
 
-/// Do AdjustArityOfLambdaBody for a series of  
-/// iterated lambdas, producing one method.  
+/// Do IteratedAdjustArityOfLambdaBody for a series of iterated lambdas, producing one method.  
 /// The required iterated function arity (List.length valReprInfo) must be identical 
 /// to the iterated function arity of the input lambda (List.length vsl) 
-let IteratedAdjustArityOfLambda g amap valReprInfo e =
-    let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy = destTopLambda g amap valReprInfo (e, tyOfExpr g e)
+let IteratedAdjustLambdaToMatchValReprInfo g amap valReprInfo lambdaExpr =
+
+    let lambdaExprTy = tyOfExpr g lambdaExpr
+
+    let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy = destLambdaWithValReprInfo g amap valReprInfo (lambdaExpr, lambdaExprTy)
+
     let arities = valReprInfo.AritiesOfArgs
+
     if arities.Length <> vsl.Length then 
-        errorR(InternalError(sprintf "IteratedAdjustArityOfLambda, List.length arities = %d, List.length vsl = %d" arities.Length vsl.Length, body.Range))
+        errorR(InternalError(sprintf "IteratedAdjustLambdaToMatchValReprInfo, #arities = %d, #vsl = %d" arities.Length vsl.Length, body.Range))
+
     let vsl, body = IteratedAdjustArityOfLambdaBody g arities vsl body
+
     tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy
 
 /// "Single Feasible Type" inference
@@ -293,5 +304,3 @@ let IteratedAdjustArityOfLambda g amap valReprInfo e =
 let FindUniqueFeasibleSupertype g amap m ty1 ty2 =  
     let supertypes = Option.toList (GetSuperTypeOfType g amap m ty2) @ (GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty2)
     supertypes |> List.tryFind (TypeFeasiblySubsumesType 0 g amap m ty1 NoCoerce) 
-    
-

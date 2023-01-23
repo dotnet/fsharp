@@ -3,8 +3,8 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net472;net6.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net6.0</TargetFrameworks>
+    <TargetFrameworks>net472;net7.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net7.0</TargetFrameworks>
     <!-- Workaround to get rid of:
         error NU1505: Duplicate 'PackageDownload' items found.
         Remove the duplicate items or use the Update functionality to ensure a consistent restore behavior.
@@ -20,9 +20,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\fsharp\TestHelpers.fs" Link="TestHelpers.fs" />
-    <Compile Include="LibraryTestFx.fs" />
-    <Compile Include="SurfaceArea.netstandard.fs" />
+    <Content Include="expected-help-output.bsl">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Content>
+    <Compile Include="SurfaceArea.fs" Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp'"/>
     <Compile Include="..\service\FsUnit.fs">
       <Link>FsUnit.fs</Link>
     </Compile>
@@ -38,6 +39,9 @@
     <Compile Include="..\service\Symbols.fs">
       <Link>Symbols.fs</Link>
     </Compile>
+    <Compile Include="TestDoubles.fs" />
+    <Compile Include="ConsoleOnlyOptionsTests.fs" />
+    <Compile Include="VisualStudioVersusConsoleContextTests.fs" />
     <Compile Include="..\service\SyntaxTreeTests\TypeTests.fs">
       <Link>SyntaxTree\TypeTests.fs</Link>
     </Compile>
@@ -95,6 +99,9 @@
     <Compile Include="..\service\SyntaxTreeTests\MemberFlagTests.fs">
       <Link>SyntaxTree\MemberFlagTests.fs</Link>
     </Compile>
+    <Compile Include="..\service\SyntaxTreeTests\MemberTests.fs">
+      <Link>SyntaxTree\MemberTests.fs</Link>
+    </Compile>
     <Compile Include="..\service\SyntaxTreeTests\ComputationExpressionTests.fs">
       <Link>SyntaxTree\ComputationExpressionTests.fs</Link>
     </Compile>
@@ -106,6 +113,24 @@
     </Compile>
     <Compile Include="..\service\SyntaxTreeTests\OperatorNameTests.fs">
       <Link>SyntaxTree\OperatorNameTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\SyntaxTreeTests\SynIdentTests.fs">
+      <Link>SyntaxTree\SynIdentTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\SyntaxTreeTests\SynTypeTests.fs">
+      <Link>SyntaxTree\SynTypeTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\SyntaxTreeTests\AttributeTests.fs">
+      <Link>SyntaxTree\AttributeTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\SyntaxTreeTests\ExternTests.fs">
+      <Link>SyntaxTree\ExternTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\SyntaxTreeTests\LeadingKeywordTests.fs">
+      <Link>SyntaxTree\LeadingKeywordTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\SyntaxTreeTests\ValTests.fs">
+      <Link>SyntaxTree\ValTests.fs</Link>
     </Compile>
     <Compile Include="..\service\FileSystemTests.fs">
       <Link>FileSystemTests.fs</Link>
@@ -168,6 +193,8 @@
 
   <ItemGroup>
     <PackageReference Include="Dotnet.ProjInfo" Version="0.37.0" />
+    <!-- Force a newer Newtonsoft.Json version to avoid conflicts. -->
+    <PackageReference Include="Newtonsoft.Json" Version="$(NewtonsoftJsonVersion)" />
     <ProjectReference Include="..\..\src\Compiler\FSharp.Compiler.Service.fsproj" />
     <ProjectReference Include="..\..\tests\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
     <ProjectReference Include="..\service\data\CSharp_Analysis\CSharp_Analysis.csproj" />
