@@ -3473,8 +3473,8 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     let resolveAssemblyRef (aref: ILAssemblyRef) =
         // Explanation: This callback is invoked during compilation to resolve assembly references
         // We don't yet propagate the ctok through these calls (though it looks plausible to do so).
-        let ctok = AssumeCompilationThreadWithoutEvidence ()
 #if !NO_TYPEPROVIDERS
+        let ctok = AssumeCompilationThreadWithoutEvidence ()
         match tcImports.TryFindProviderGeneratedAssemblyByName (ctok, aref.Name) with
         | Some assembly -> Some (Choice2Of2 assembly)
         | None ->

@@ -951,7 +951,7 @@ module internal DescriptionListsImpl =
 
 
     /// Select the items that participate in a MethodGroup.
-    let SelectMethodGroupItems g m item =
+    let SelectMethodGroupItems g _ item =
         match item with 
         | Item.CtorGroup(nm, cinfos) -> List.map (fun minfo -> Item.CtorGroup(nm, [minfo])) cinfos 
         | Item.Trait traitInfo ->
