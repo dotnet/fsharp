@@ -81,7 +81,6 @@
     <InternalsVisibleTo Include="FSharp.Compiler.Benchmarks" />
     <InternalsVisibleTo Include="HistoricalBenchmark" />
     <InternalsVisibleTo Include="FSharp.Test.Utilities" />
-    <InternalsVisibleTo Include="FSharp.Editor" />
   </ItemGroup>
 
   <ItemGroup>
