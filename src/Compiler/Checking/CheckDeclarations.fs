@@ -1670,19 +1670,22 @@ let private ReportErrorOnStaticClass (synMembers: SynMemberDefn list) =
         match mem with
         | SynMemberDefn.ImplicitCtor(ctorArgs = SynSimplePats.SimplePats(pats = pats)) when (not pats.IsEmpty) ->
             for pat in pats do
-                errorR(Error(FSComp.SR.chkConstructorWithArgumentsOnStaticClasses(), pat.Range))
-           
+                warning(Error(FSComp.SR.chkConstructorWithArgumentsOnStaticClasses(), pat.Range))
         | SynMemberDefn.Member(SynBinding(valData = SynValData(memberFlags = Some memberFlags)), m) when memberFlags.MemberKind = SynMemberKind.Constructor ->
-            errorR(Error(FSComp.SR.chkAdditionalConstructorOnStaticClasses(), m))
-        | SynMemberDefn.Member(SynBinding(valData = SynValData(memberFlags = Some memberFlags)), m) when memberFlags.MemberKind = SynMemberKind.Member && memberFlags.IsInstance ->
-            errorR(Error(FSComp.SR.chkInstanceMemberOnStaticClasses(), m))
+            warning(Error(FSComp.SR.chkAdditionalConstructorOnStaticClasses(), m))
+        | SynMemberDefn.Member(SynBinding(valData = SynValData(memberFlags = Some memberFlags)), m) when memberFlags.IsInstance ->
+            match memberFlags.MemberKind with
+            | SynMemberKind.PropertyGet | SynMemberKind.PropertySet | SynMemberKind.PropertyGetSet 
+            | SynMemberKind.Member ->
+                warning(Error(FSComp.SR.chkInstanceMemberOnStaticClasses(), m))
+            | _ -> ()
         | SynMemberDefn.LetBindings(isStatic = false; range = range) ->
-            errorR(Error(FSComp.SR.chkInstanceLetBindingOnStaticClasses(), range))
+            warning(Error(FSComp.SR.chkInstanceLetBindingOnStaticClasses(), range))
         | SynMemberDefn.Interface(members= Some(synMemberDefs)) ->
             for mem in synMemberDefs do
                 match mem with
                 | SynMemberDefn.Member(SynBinding(valData = SynValData(memberFlags = Some memberFlags)), m) when memberFlags.MemberKind = SynMemberKind.Member && memberFlags.IsInstance ->
-                    errorR(Error(FSComp.SR.chkImplementingInterfacesOnStaticClasses(), m))
+                    warning(Error(FSComp.SR.chkImplementingInterfacesOnStaticClasses(), m))
                 | _ -> ()
         | _ -> ()
 
@@ -1795,11 +1798,11 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (env
                   match tyconOpt with
                   | Some tycon ->
                         for slot in tycon.FSharpObjectModelTypeInfo.fsobjmodel_vslots do
-                            errorR(Error(FSComp.SR.chkAbstractMembersDeclarationsOnStaticClasses(), slot.Range))
+                            warning(Error(FSComp.SR.chkAbstractMembersDeclarationsOnStaticClasses(), slot.Range))
                             
                         for fld in tycon.AllFieldsArray do
                             if not fld.IsStatic then
-                                errorR(Error(FSComp.SR.chkExplicitFieldsDeclarationsOnStaticClasses(), fld.Range))
+                                warning(Error(FSComp.SR.chkExplicitFieldsDeclarationsOnStaticClasses(), fld.Range))
                   | None -> ()
               
               let envForDecls = 

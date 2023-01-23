@@ -26,8 +26,11 @@ open Microsoft.VisualStudio.Text.Outlining
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 open Microsoft.CodeAnalysis.Host
 open Microsoft.CodeAnalysis.Host.Mef
+open Microsoft.VisualStudio.FSharp.Editor.WorkspaceExtensions
+open System.Threading.Tasks
 
 #nowarn "9" // NativePtr.toNativeInt
+#nowarn "57" // Experimental stuff
 
 type internal RoamingProfileStorageLocation(keyName: string) =
     inherit OptionStorageLocation()
@@ -89,6 +92,12 @@ type internal FSharpWorkspaceServiceFactory
                 | _ ->
                     None
 
+            let getSource filename =
+                workspace.CurrentSolution.TryGetDocumentFromPath(filename)
+                |> Option.map(fun document ->
+                    let text = document.GetTextAsync().Result
+                    text.ToFSharpSourceText())
+
             lock gate (fun () ->
                 match checkerSingleton with
                 | Some _ -> ()
@@ -102,15 +111,19 @@ type internal FSharpWorkspaceServiceFactory
                                 | null -> None
                                 | _ -> Some editorOptions
 
-                            let enableParallelCheckingWithSignatureFiles =
+                            let getOption f defaultValue =
                                 editorOptions
-                                |> Option.map (fun options -> options.LanguageServicePerformance.EnableParallelCheckingWithSignatureFiles)
-                                |> Option.defaultValue false
+                                |> Option.map f
+                                |> Option.defaultValue defaultValue
+
+                            let enableParallelCheckingWithSignatureFiles =
+                                getOption (fun options -> options.LanguageServicePerformance.EnableParallelCheckingWithSignatureFiles) false
 
                             let enableParallelReferenceResolution =
-                                editorOptions
-                                |> Option.map (fun options -> options.LanguageServicePerformance.EnableParallelReferenceResolution)
-                                |> Option.defaultValue false
+                                getOption (fun options -> options.LanguageServicePerformance.EnableParallelReferenceResolution) false
+
+                            let enableLiveBuffers =
+                                getOption (fun options -> options.Advanced.IsLiveBuffersEnabled) false
 
                             let checker =
                                 FSharpChecker.Create(
@@ -123,7 +136,18 @@ type internal FSharpWorkspaceServiceFactory
                                     enablePartialTypeChecking = true,
                                     enableParallelCheckingWithSignatureFiles = enableParallelCheckingWithSignatureFiles,
                                     parallelReferenceResolution = enableParallelReferenceResolution,
-                                    captureIdentifiersWhenParsing = true)
+                                    captureIdentifiersWhenParsing = true,
+                                    documentSource = (if enableLiveBuffers then DocumentSource.Custom getSource else DocumentSource.FileSystem))
+
+                            if enableLiveBuffers then
+                                workspace.WorkspaceChanged.Add(fun args ->
+                                    if args.DocumentId <> null then
+                                        backgroundTask {
+                                            let document = args.NewSolution.GetDocument(args.DocumentId)
+                                            let! _, _, _, options = document.GetFSharpCompilationOptionsAsync(nameof(workspace.WorkspaceChanged))
+                                            do! checker.NotifyFileChanged(document.FilePath, options)
+                                        } |> ignore)
+
                             checker
                     checkerSingleton <- Some checker
             )
