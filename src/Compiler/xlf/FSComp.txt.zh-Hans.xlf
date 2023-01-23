@@ -1137,6 +1137,11 @@
         <target state="translated">你无法实现具有两个实例化“{1}”和“{2}”的接口“{0}”，因为它们可能会统一。</target>
         <note />
       </trans-unit>
+      <trans-unit id="typrelNeverRefinedAwayFromTop">
+        <source>A type inference variable has been implicitly inferred to have type `obj`. Consider adding explicit type annotations. This warning is off by default and has been explicitly enabled for this project. You may suppress this warning by using #nowarn \"3525\".</source>
+        <target state="new">A type inference variable has been implicitly inferred to have type `obj`. Consider adding explicit type annotations. This warning is off by default and has been explicitly enabled for this project. You may suppress this warning by using #nowarn \"3525\".</target>
+        <note />
+      </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
         <source>The type '{0}' does not define the field, constructor or member '{1}'.</source>
         <target state="translated">类型“{0}”未定义字段、构造函数或成员“{1}”。</target>

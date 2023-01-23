@@ -1137,6 +1137,11 @@
         <target state="translated">Sie können die Schnittstelle "{0}" mit den beiden Instanziierungen "{1}" und "{2}" nicht implementieren, weil sie möglicherweise zusammengeführt werden.</target>
         <note />
       </trans-unit>
+      <trans-unit id="typrelNeverRefinedAwayFromTop">
+        <source>A type inference variable has been implicitly inferred to have type `obj`. Consider adding explicit type annotations. This warning is off by default and has been explicitly enabled for this project. You may suppress this warning by using #nowarn \"3525\".</source>
+        <target state="new">A type inference variable has been implicitly inferred to have type `obj`. Consider adding explicit type annotations. This warning is off by default and has been explicitly enabled for this project. You may suppress this warning by using #nowarn \"3525\".</target>
+        <note />
+      </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
         <source>The type '{0}' does not define the field, constructor or member '{1}'.</source>
         <target state="translated">Der Typ "{0}" definiert nicht das Feld, den Konstruktor oder den Member "{1}".</target>

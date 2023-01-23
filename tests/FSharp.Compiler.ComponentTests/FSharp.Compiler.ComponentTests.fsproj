@@ -181,6 +181,7 @@
     <Compile Include="Language\StaticClassTests.fs" />
     <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="ConstraintSolver\MemberConstraints.fs" />
+    <Compile Include="ConstraintSolver\ObjInference.fs" />
     <Compile Include="Interop\DeeplyNestedCSharpClasses.fs" />
     <Compile Include="Interop\SimpleInteropTests.fs" />
     <Compile Include="Interop\RequiredAndInitOnlyProperties.fs" />
