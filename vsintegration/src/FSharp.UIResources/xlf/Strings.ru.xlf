@@ -83,13 +83,13 @@
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Parameter_Name_Hints">
-        <source>Display inline parameter name hints (experimental)</source>
-        <target state="translated">Отображать подсказки для имен встроенных параметров (экспериментальная версия)</target>
+        <source>Display inline parameter name hints (preview)</source>
+        <target state="needs-review-translation">Отображать подсказки для имен встроенных параметров (экспериментальная версия)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Type_Hints">
-        <source>Display inline type hints (experimental)</source>
-        <target state="translated">Отображать подсказки для встроенных типов (экспериментальная версия)</target>
+        <source>Display inline type hints (preview)</source>
+        <target state="needs-review-translation">Отображать подсказки для встроенных типов (экспериментальная версия)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_all_symbols">
