@@ -86,6 +86,7 @@
     <Compile Include="Navigation\NavigationBarItemService.fs" />
     <Compile Include="Navigation\NavigateToSearchService.fs" />
     <Compile Include="Navigation\FindUsagesService.fs" />
+    <Compile Include="Navigation\FindDefinitionService.fs" />
     <Compile Include="QuickInfo\NavigableTextRun.fs" />
     <Compile Include="QuickInfo\WpfNagivableTextRunViewElementFactory.fs" />
     <Compile Include="QuickInfo\Views.fs" />
