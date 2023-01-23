@@ -15,8 +15,6 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeHierarchy
 
-let LowerComputedCollectionsStackGuardDepth = StackGuard.GetDepthOption "LowerComputedCollections"
-
 /// Build the 'test and dispose' part of a 'use' statement
 let BuildDisposableCleanup tcVal (g: TcGlobals) infoReader m (v: Val) =
     let disposeMethod = 

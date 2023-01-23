@@ -63,11 +63,7 @@ module ``Static Methods In Interfaces`` =
         }
         """  |> withCSharpLanguageVersion CSharpLanguageVersion.Preview |> withName "csOpLib"
 
-    #if !NETCOREAPP
-    [<Fact(Skip = "NET472 is unsupported runtime for this kind of test.")>]
-#else
-    [<Fact>]
-#endif
+    [<FactForNETCOREAPP>]
     let ``F# can use operators declared in C#`` () =
 
         let fsharpSource =
@@ -111,11 +107,7 @@ let main _ =
         |> compileAndRun
         |> shouldSucceed
 
-#if !NETCOREAPP
-    [<Fact(Skip = "NET472 is unsupported runtime for this kind of test.")>]
-#else
-    [<Fact>]
-#endif
+    [<FactForNETCOREAPP>]
     let ``F# can call static methods declared in interfaces from C#`` () =
 
         let csharpLib = csharpBaseClass 
@@ -170,11 +162,7 @@ let main _ =
             ...
         }
     *)
-    #if !NETCOREAPP
-    [<Fact(Skip = "NET472 is unsupported runtime for this kind of test.")>]
-    #else
-    [<Fact>]
-    #endif
+    [<FactForNETCOREAPP>]
     let ``F# generates valid IL for abstract static interface methods`` () =
 
         let csharpLib = csharpBaseClass 
@@ -268,11 +256,7 @@ Next(class StaticsTesting/MyRepeatSequence2 other) cil managed
     }
         """]
     
-#if !NETCOREAPP
-    [<Fact(Skip = "NET472 is unsupported runtime for this kind of test.")>]
-#else
-    [<Fact>]
-#endif
+    [<FactForNETCOREAPP>]
     let ``F# can implement static methods declared in interfaces from C#`` () =
 
         let csharpLib = csharpBaseClass 
@@ -317,11 +301,7 @@ let main _ =
         |> compileAndRun
         |> shouldSucceed
 
-#if !NETCOREAPP
-    [<Fact(Skip = "NET472 is unsupported runtime for this kind of test.")>]
-#else
-    [<Fact>]
-#endif
+    [<FactForNETCOREAPP>]
     let ``F# can implement interfaces with static abstract methods`` () =
 
         let fsharpSource =
@@ -343,11 +323,7 @@ let main _ = 0
         |> compileAndRun
         |> shouldSucceed
 
-#if !NETCOREAPP
-    [<Fact(Skip = "NET472 is unsupported runtime for this kind of test.")>]
-#else
-    [<Fact>]
-#endif
+    [<FactForNETCOREAPP>]
     let ``F# supports inference for types of arguments when implementing interfaces`` () =
 
         let fsharpSource =
@@ -369,11 +345,7 @@ let main _ = 0
         |> compileAndRun
         |> shouldSucceed
 
-#if !NETCOREAPP
-    [<Fact(Skip = "NET472 is unsupported runtime for this kind of test.")>]
-#else
-    [<Fact>]
-#endif
+    [<FactForNETCOREAPP>]
     let ``F# can call interface with static abstract method`` () =
         FSharp
             """
@@ -639,11 +611,7 @@ module Test =
 #endif
         ]
 
-#if !NETCOREAPP
-    [<Fact(Skip = "NET472 is unsupported runtime for this kind of test.")>]
-#else
-    [<Fact>]
-#endif
+    [<FactForNETCOREAPP>]
     let ``C# can call constrained method defined in F#`` () =
         let FSharpLib =
             FSharp """

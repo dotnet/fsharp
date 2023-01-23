@@ -369,9 +369,6 @@ let mkTypeOfExpr cenv m ilTy =
         m
     )
 
-let mkGetNameExpr cenv (ilt: ILType) m =
-    mkAsmExpr ([ I_ldstr ilt.BasicQualifiedName ], [], [], [ cenv.g.string_ty ], m)
-
 let useCallVirt (cenv: cenv) boxity (mspec: ILMethodSpec) isBaseCall =
     cenv.options.alwaysCallVirt
     && (boxity = AsObject)
@@ -485,12 +482,6 @@ let TypeNameForPrivateImplementationDetails cloc =
 let CompLocForInitClass cloc =
     { cloc with
         Enclosing = [ TypeNameForInitClass cloc ]
-        Namespace = None
-    }
-
-let CompLocForImplicitMainMethod cloc =
-    { cloc with
-        Enclosing = [ TypeNameForImplicitMainMethod cloc ]
         Namespace = None
     }
 
@@ -849,9 +840,6 @@ and GenParamTypes cenv m tyenv isSlotSig tys =
     tys |> List.map (GenParamType cenv m tyenv isSlotSig)
 
 and GenTypeArgs cenv m tyenv tyargs = GenTypeArgsAux cenv m tyenv tyargs
-
-and GenTypePermitVoidAux cenv m tyenv ty =
-    GenTypeAux cenv m tyenv VoidOK PtrTypesNotOK ty
 
 // Static fields generally go in a private InitializationCodeAndBackingFields section. This is to ensure all static
 // fields are initialized only in their class constructors (we generate one primary
@@ -1278,16 +1266,6 @@ let AddSignatureRemapInfo _msg (rpi, mhi) eenv =
     { eenv with
         sigToImplRemapInfo = (mkRepackageRemapping rpi, mhi) :: eenv.sigToImplRemapInfo
     }
-
-let OutputStorage (pps: TextWriter) s =
-    match s with
-    | StaticPropertyWithField _ -> pps.Write "(top)"
-    | StaticProperty _ -> pps.Write "(top)"
-    | Method _ -> pps.Write "(top)"
-    | Local _ -> pps.Write "(local)"
-    | Arg _ -> pps.Write "(arg)"
-    | Env _ -> pps.Write "(env)"
-    | Null -> pps.Write "(null)"
 
 //--------------------------------------------------------------------------
 // Augment eenv with values
@@ -2840,7 +2818,6 @@ let LocalScope nm cgbuf (f: Mark * Mark -> 'a) : 'a =
     res
 
 let compileSequenceExpressions = true // try (System.Environment.GetEnvironmentVariable("FSHARP_COMPILED_SEQ") <> null) with _ -> false
-let compileStateMachineExpressions = true // try (System.Environment.GetEnvironmentVariable("FSHARP_COMPILED_STATEMACHINES") <> null) with _ -> false
 
 //-------------------------------------------------------------------------
 // Sequence Point Logic
@@ -8214,19 +8191,6 @@ and GenDebugPointForBind cenv cgbuf bind =
 and GenBinding cenv cgbuf eenv (bind: Binding) (isStateVar: bool) =
     GenDebugPointForBind cenv cgbuf bind
     GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar None
-
-and ComputeMemberAccessRestrictedBySig eenv vspec =
-    let isHidden =
-        // Anything hidden by a signature gets assembly visibility
-        IsHiddenVal eenv.sigToImplRemapInfo vspec
-        ||
-        // Anything that's not a module or member binding gets assembly visibility
-        not vspec.IsMemberOrModuleBinding
-        ||
-        // Compiler generated members for class function 'let' bindings get assembly visibility
-        vspec.IsIncrClassGeneratedMember
-
-    ComputeMemberAccess isHidden
 
 and ComputeMethodAccessRestrictedBySig eenv vspec =
     let isHidden =

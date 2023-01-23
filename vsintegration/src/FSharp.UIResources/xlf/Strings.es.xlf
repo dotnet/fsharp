@@ -12,6 +12,11 @@
         <target state="translated">Habilitar referencias de búsqueda rápida y cambio de nombre (experimental)</target>
         <note />
       </trans-unit>
+      <trans-unit id="Enable_Live_Buffers">
+        <source>Use live (unsaved) buffers for checking (restart required)</source>
+        <target state="new">Use live (unsaved) buffers for checking (restart required)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Find_References_Performance">
         <source>Find References Performance Options</source>
         <target state="translated">Buscar opciones de rendimiento de referencias</target>
@@ -60,6 +65,11 @@
       <trans-unit id="Dot_underline">
         <source>D_ot underline</source>
         <target state="translated">S_ubrayado punto</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="LiveBuffers">
+        <source>Live Buffers (experimental)</source>
+        <target state="new">Live Buffers (experimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="Navigation_links">

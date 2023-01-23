@@ -12,6 +12,11 @@
         <target state="translated">빠른 찾기 참조 및 이름 바꾸기 사용(실험적)</target>
         <note />
       </trans-unit>
+      <trans-unit id="Enable_Live_Buffers">
+        <source>Use live (unsaved) buffers for checking (restart required)</source>
+        <target state="new">Use live (unsaved) buffers for checking (restart required)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Find_References_Performance">
         <source>Find References Performance Options</source>
         <target state="translated">참조 성능 옵션 찾기</target>
@@ -60,6 +65,11 @@
       <trans-unit id="Dot_underline">
         <source>D_ot underline</source>
         <target state="translated">점 밑줄(_O)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="LiveBuffers">
+        <source>Live Buffers (experimental)</source>
+        <target state="new">Live Buffers (experimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="Navigation_links">

@@ -5,7 +5,6 @@ namespace FSharp.Editor.Tests.Hints
 open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.Editor.Hints
-open Microsoft.CodeAnalysis.Text
 open Hints
 open FSharp.Editor.Tests.Helpers
 
@@ -30,15 +29,22 @@ module HintTestFramework =
         }
 
     let getFsDocument code =
-        use project = SingleFileProject code
-        let fileName = fst project.Files.Head
         // I don't know, without this lib some symbols are just not loaded
-        let options = { project.Options with OtherOptions = [| "--targetprofile:netcore" |] }
-        let document, _ = RoslynTestHelpers.CreateSingleDocumentSolution(fileName, code, options)
-        document
+        let options = { RoslynTestHelpers.DefaultProjectOptions with OtherOptions = [| "--targetprofile:netcore" |] }
+        RoslynTestHelpers.CreateSolution(code, options = options)
+        |> RoslynTestHelpers.GetSingleDocument
 
     let getFsiAndFsDocuments (fsiCode: string) (fsCode: string) =
-        RoslynTestHelpers.CreateTwoDocumentSolution("test.fsi", SourceText.From fsiCode, "test.fs", SourceText.From fsCode)
+        let projectId = ProjectId.CreateNewId()
+        let projFilePath = "C:\\test.fsproj"
+
+        let fsiDocInfo = RoslynTestHelpers.CreateDocumentInfo projectId "C:\\test.fsi" fsiCode
+        let fsDocInfo = RoslynTestHelpers.CreateDocumentInfo projectId "C:\\test.fs" fsCode
+
+        let projInfo = RoslynTestHelpers.CreateProjectInfo projectId projFilePath [fsiDocInfo; fsDocInfo]
+        let solution = RoslynTestHelpers.CreateSolution [projInfo]
+        let project = solution.Projects |> Seq.exactlyOne
+        project.Documents
 
     let getHints (document: Document) hintKinds =
         async {
@@ -57,5 +63,4 @@ module HintTestFramework =
 
     let getAllHints document =
         let hintKinds = Set.empty.Add(HintKind.TypeHint).Add(HintKind.ParameterNameHint)
-
         getHints document hintKinds
