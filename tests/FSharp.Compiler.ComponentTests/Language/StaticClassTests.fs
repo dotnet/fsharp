@@ -719,7 +719,7 @@ type T =
          ]
          
     [<Fact>]
-    let ``Sealed and AbstractClass on a types with non static members lang version70`` () =
+    let ``Sealed and AbstractClass on types with non static members lang version70`` () =
         Fsx """ 
 [<Sealed; AbstractClass>]
 type T =
