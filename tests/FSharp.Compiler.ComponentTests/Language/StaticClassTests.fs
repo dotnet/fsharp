@@ -717,3 +717,64 @@ type T =
              (Warning 3554, Line 5, Col 5, Line 5, Col 41, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance members are not allowed.")
              (Warning 3554, Line 6, Col 5, Line 6, Col 55, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance members are not allowed.")
          ]
+         
+    [<Fact>]
+    let ``Sealed and AbstractClass on a types with non static members lang version70`` () =
+        Fsx """ 
+[<Sealed; AbstractClass>]
+type T =
+    abstract A : int
+    abstract B : int with get, set
+    abstract C : i:int -> int
+    abstract D : i:int -> int
+    default _.D i = i + 3
+    member _.E = 3
+    val F : int
+    val mutable G : int
+    member _.H (i, j) = i + j
+    member _.Item with get i = 3 and set i value = ()
+    override _.ToString () = "🙃"
+    new () = { F = 3; G = 3 }
+    new (x, y) = { F = x; G = y }
+        """
+         |> withLangVersion70
+         |> compile
+         |> shouldSucceed
+         
+    [<Fact>]
+    let ``Sealed and AbstractClass on a types with non static members in lang version preview`` () =
+        Fsx """ 
+[<Sealed; AbstractClass>]
+type T =
+    abstract A : int
+    abstract B : int with get, set
+    abstract C : i:int -> int
+    abstract D : i:int -> int
+    default _.D i = i + 3
+    member _.E = 3
+    val F : int
+    val mutable G : int
+    member _.H (i, j) = i + j
+    member _.Item with get i = 3 and set i value = ()
+    override _.ToString () = "🙃"
+    new () = { F = 3; G = 3 }
+    new (x, y) = { F = x; G = y }
+        """
+         |> withLangVersionPreview
+         |> compile
+         |> shouldFail
+         |> withDiagnostics [
+             (Warning 3554, Line 8, Col 5, Line 8, Col 26, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance members are not allowed.")
+             (Warning 3554, Line 9, Col 5, Line 9, Col 19, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance members are not allowed.")
+             (Warning 3554, Line 12, Col 5, Line 12, Col 30, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance members are not allowed.")
+             (Warning 3554, Line 13, Col 5, Line 13, Col 54, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance members are not allowed.")
+             (Warning 3554, Line 14, Col 5, Line 14, Col 34, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance members are not allowed.")
+             (Warning 3553, Line 15, Col 5, Line 15, Col 30, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Additional constructor is not allowed.")
+             (Warning 3553, Line 16, Col 5, Line 16, Col 34, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Additional constructor is not allowed.")
+             (Warning 3557, Line 4, Col 14, Line 4, Col 15, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Abstract member declarations are not allowed.")
+             (Warning 3557, Line 5, Col 14, Line 5, Col 15, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Abstract member declarations are not allowed.")
+             (Warning 3557, Line 6, Col 14, Line 6, Col 15, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Abstract member declarations are not allowed.")
+             (Warning 3557, Line 7, Col 14, Line 7, Col 15, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Abstract member declarations are not allowed.")
+             (Warning 3558, Line 10, Col 9, Line 10, Col 10, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Explicit field declarations are not allowed.")
+             (Warning 3558, Line 11, Col 17, Line 11, Col 18, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Explicit field declarations are not allowed.")
+         ]
