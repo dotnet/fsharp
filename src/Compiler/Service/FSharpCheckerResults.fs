@@ -284,9 +284,7 @@ type FSharpSymbolUse(denv: DisplayEnv, symbol: FSharpSymbol, inst: TyparInstanti
 
                 let fileHasSignatureFile = fileSignatureLocation <> fileDeclarationLocation
 
-                let symbolIsNotInSignatureFile = m.SignatureLocation = Some m.DeclarationLocation
-
-                fileHasSignatureFile && symbolIsNotInSignatureFile || m.Accessibility.IsPrivate
+                fileHasSignatureFile && not m.HasSignatureFile || m.Accessibility.IsPrivate
             | :? FSharpEntity as m -> m.Accessibility.IsPrivate
             | :? FSharpGenericParameter -> true
             | :? FSharpUnionCase as m -> m.Accessibility.IsPrivate

@@ -1826,6 +1826,14 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | P _ -> true
         | _ -> false
 
+    member x.HasSignatureFile =
+        match fsharpInfo() with
+        | None -> false
+        | Some vref ->
+            match vref.TryDeref with
+            | ValueNone -> false
+            | ValueSome v -> v.HasSignatureFile
+    
     member _.IsEvent = 
         match d with 
         | E _ -> true

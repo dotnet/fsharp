@@ -3868,7 +3868,8 @@ let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameRes
                 match findFlag, item with
                 | FindMemberFlag.PreferOverrides, _
                 | _, NonOverridable() -> item, itemRange, false
-                | FindMemberFlag.IgnoreOverrides, _ ->
+                | FindMemberFlag.IgnoreOverrides, _
+                | FindMemberFlag.DiscardOnFirstNonOverride, _ ->
                     let _, item, _, itemRange = resolveExpr FindMemberFlag.PreferOverrides
                     item, itemRange, true
 

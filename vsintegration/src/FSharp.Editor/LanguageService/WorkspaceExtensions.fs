@@ -206,15 +206,6 @@ type Document with
             return Tokenizer.getSymbolAtPosition(this.Id, sourceText, position, this.FilePath, defines, lookupKind, wholeActivePattern, allowStringToken)
         }
 
-    /// This is only used for testing purposes. It sets the ProjectCache.Projects with the given FSharpProjectOptions and F# document's project.
-    member this.SetFSharpProjectOptionsForTesting(projectOptions: FSharpProjectOptions) =
-        let workspaceService = this.Project.Solution.GetFSharpWorkspaceService()
-        let parsingOptions, _ = 
-            workspaceService.FSharpProjectOptionsManager.TryGetOptionsForDocumentOrProject(this, CancellationToken.None, nameof(this.SetFSharpProjectOptionsForTesting))
-            |> Async.RunImmediateExceptOnUI
-            |> Option.get
-        ProjectCache.Projects.Add(this.Project, (workspaceService.Checker, workspaceService.FSharpProjectOptionsManager, parsingOptions, projectOptions))
-
 type Project with
 
     /// Find F# references in the given project.
