@@ -1096,9 +1096,8 @@ and [<Sealed>] TcImports
         initialResolutions: TcAssemblyResolutions,
         importsBase: TcImports option,
         dependencyProviderOpt: DependencyProvider option
-    )
+    ) as this
 #if !NO_TYPEPROVIDERS
-     as this
 #endif
  =
 
