@@ -902,3 +902,6 @@ val FSharpScriptFileSuffixes: string list
 val FSharpIndentationAwareSyntaxFileSuffixes: string list
 
 val FSharpMLCompatFileSuffixes: string list
+
+/// Indicates whether experimental features should be enabled automatically
+val FSharpExperimentalFeaturesEnabledAutomatically: bool

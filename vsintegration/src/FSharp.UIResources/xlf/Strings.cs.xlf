@@ -12,6 +12,11 @@
         <target state="translated">Povolit odkazy rychlého hledání a přejmenování (experimentální)</target>
         <note />
       </trans-unit>
+      <trans-unit id="Enable_Live_Buffers">
+        <source>Use live (unsaved) buffers for checking (restart required)</source>
+        <target state="new">Use live (unsaved) buffers for checking (restart required)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Find_References_Performance">
         <source>Find References Performance Options</source>
         <target state="translated">Najít možnosti výkonu odkazů</target>
@@ -60,6 +65,11 @@
       <trans-unit id="Dot_underline">
         <source>D_ot underline</source>
         <target state="translated">_Tečkované podtržení</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="LiveBuffers">
+        <source>Live Buffers (experimental)</source>
+        <target state="new">Live Buffers (experimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="Navigation_links">
