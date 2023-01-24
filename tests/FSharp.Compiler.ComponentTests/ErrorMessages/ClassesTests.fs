@@ -543,3 +543,147 @@ type C() =
             (Error 855, Line 7, Col 19, Line 7, Col 21, "No abstract or interface member was found that corresponds to this override")
             (Error 855, Line 9, Col 19, Line 9, Col 21, "No abstract or interface member was found that corresponds to this override")
         ]
+
+    [<Fact>]
+    let ``Virtual members were found with multiple types in hierarchy with different overloads langversionPreview`` () =
+        let CSLib =
+            CSharp """
+public class A
+{
+    public virtual void M1(string s) { }
+}
+
+public class B : A
+{
+    public virtual void M1(int i) { }
+}
+        """ |> withName "CSLib"
+
+        let app =
+            FSharp """
+module ClassTests
+type C() =
+    inherit B ()
+    override _.M1 (i: string) = ()
+    override _.M1 (i: int) = ()
+        """ |> withReferences [CSLib]
+        app
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Virtual member was found with multiple types in hierarchy with different overloads langversionPreview`` () =
+        let CSLib =
+            CSharp """
+public class A
+{
+    public virtual void M1(string s) { }
+}
+
+public class B : A
+{
+    public void M1(int i) { }
+}
+        """ |> withName "CSLib"
+
+        let app =
+            FSharp """
+module ClassTests
+type C() =
+    inherit B ()
+    override _.M1 (i: string) = ()
+        """ |> withReferences [CSLib]
+        app
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+
+    [<Fact>]
+    let ``Virtual member was found among virtual and non-virtual overloads with lang preview`` () =
+        let CSLib =
+            CSharp """
+public class A
+{
+    public void M1(int i) { }
+    public virtual void M1(string s) { }
+}
+        """ |> withName "CSLib"
+
+        let app =
+            FSharp """
+module ClassTests
+
+type Over () =
+    inherit A ()
+
+    override _.M1 (s: string) = ()
+        """
+        
+        app
+        |> withReferences [CSLib]
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+
+    [<Fact>]
+    let ``Disallow implementing more than one abstract slot`` () =
+        let app = FSharp """
+module ClassTests
+
+[<AbstractClass>]
+type PA() =
+    abstract M : int -> unit
+
+[<AbstractClass>]
+type PB<'a>() =
+    inherit PA()
+    abstract M : 'a -> unit
+[<AbstractClass>]
+type PC() =
+    inherit PB<int>()
+    // Here, PA.M and PB<int>.M have the same signature, so PA.M is unimplementable.
+    // REVIEW: in future we may give a friendly error at this point
+type PD() =
+    inherit PC()
+    override this.M(x: int) = ()
+        """
+        app
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withSingleDiagnostic (Error 361, Line 19, Col 19, Line 19, Col 20, "The override 'M: int -> unit' implements more than one abstract slot, e.g. 'abstract PB.M: 'a -> unit' and 'abstract PA.M: int -> unit'")
+
+    [<Fact>]
+    let ``Generic overrides work with preview version`` () =
+        let CSLib =
+            CSharp """
+public class C
+{
+    public virtual void M<T1, T2, T3>(T1? a, T2 b, T1? c, T3? d) {}
+}
+
+public class D : C
+{
+    public override void M<T1, T2, T3>(T1? a, T2 b, T1? c, T3? d)
+        where T1 : default
+        where T3 : default
+    {
+        base.M(a, b, c, d);
+    }
+}
+        """ |> withName "CSLib"
+
+        let app =
+            FSharp """
+module ClassTests
+type X =
+    inherit C
+    override this.M(a, b, c, d) = ()
+        """ |> withReferences [CSLib]
+        app
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed

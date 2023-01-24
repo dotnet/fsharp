@@ -142,6 +142,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Use live (unsaved) buffers for checking (restart required).
+        /// </summary>
+        public static string Enable_Live_Buffers {
+            get {
+                return ResourceManager.GetString("Enable_Live_Buffers", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Enable parallel type checking with signature files.
         /// </summary>
         public static string Enable_Parallel_Checking_With_Signature_Files {
@@ -246,6 +255,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Language_Service_Performance {
             get {
                 return ResourceManager.GetString("Language_Service_Performance", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Live Buffers (experimental).
+        /// </summary>
+        public static string LiveBuffers {
+            get {
+                return ResourceManager.GetString("LiveBuffers", resourceCulture);
             }
         }
         

@@ -270,9 +270,7 @@ type FSharpSymbolUse(denv: DisplayEnv, symbol: FSharpSymbol, inst: TyparInstanti
 
                 let fileHasSignatureFile = fileSignatureLocation <> fileDeclarationLocation
 
-                let symbolIsNotInSignatureFile = m.SignatureLocation = Some m.DeclarationLocation
-
-                fileHasSignatureFile && symbolIsNotInSignatureFile
+                fileHasSignatureFile && not m.HasSignatureFile
                 || not m.IsModuleValueOrMember
                 || m.Accessibility.IsPrivate
             | :? FSharpEntity as m -> m.Accessibility.IsPrivate
