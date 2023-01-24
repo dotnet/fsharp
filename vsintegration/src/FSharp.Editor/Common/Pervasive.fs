@@ -201,3 +201,7 @@ module Async =
                     replyCh.Reply res 
             }
         async { return! agent.PostAndAsyncReply id }
+
+let FSharpExperimentalFeaturesEnabledAutomatically =
+    String.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("FSHARP_EXPERIMENTAL_FEATURES"))
+    |> not

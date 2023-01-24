@@ -561,26 +561,38 @@ module TcRecdUnionAndEnumDeclarations =
         let unionCasesR = unionCases |> List.map (TcUnionCaseDecl cenv env parent thisTy thisTyInst tpenv hasRQAAttribute) 
         unionCasesR |> CheckDuplicates (fun uc -> uc.Id) "union case" 
 
-    let TcEnumDecl cenv env parent thisTy fieldTy (SynEnumCase(attributes=Attributes synAttrs; ident= SynIdent(id,_); value=v; xmlDoc=xmldoc; range=m)) =
+    let MakeEnumCaseSpec cenv env parent attrs thisTy caseRange (caseIdent: Ident) (xmldoc: PreXmlDoc) value =
+        let vis, _ = ComputeAccessAndCompPath env None caseRange None None parent
+        let vis = CombineReprAccess parent vis
+        if caseIdent.idText = "value__" then errorR(Error(FSComp.SR.tcNotValidEnumCaseName(), caseIdent.idRange))
+        let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
+        let xmlDoc = xmldoc.ToXmlDoc(checkXmlDocs, Some [])
+        Construct.NewRecdField true (Some value) caseIdent false thisTy false false [] attrs xmlDoc vis false
+
+    let TcEnumDecl cenv env tpenv parent thisTy fieldTy (SynEnumCase (attributes = Attributes synAttrs; ident = SynIdent (id, _); valueExpr = valueExpr; xmlDoc = xmldoc; range = caseRange)) =
         let attrs = TcAttributes cenv env AttributeTargets.Field synAttrs
-        
-        match v with 
-        | SynConst.Bytes _
-        | SynConst.UInt16s _
-        | SynConst.UserNum _ -> error(Error(FSComp.SR.tcInvalidEnumerationLiteral(), m))
-        | _ -> 
-            let v = TcConst cenv fieldTy m env v
-            let vis, _ = ComputeAccessAndCompPath env None m None None parent
-            let vis = CombineReprAccess parent vis
-            if id.idText = "value__" then errorR(Error(FSComp.SR.tcNotValidEnumCaseName(), id.idRange))
-            let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
-            let xmlDoc = xmldoc.ToXmlDoc(checkXmlDocs, Some [])
-            Construct.NewRecdField true (Some v) id false thisTy false false [] attrs xmlDoc vis false
-      
-    let TcEnumDecls (cenv: cenv) env parent thisTy enumCases =
+        let valueRange = valueExpr.Range
+
+        match valueExpr with
+        | SynExpr.Const (constant = SynConst.Bytes _ | SynConst.UInt16s _ | SynConst.UserNum _) ->
+            error(Error(FSComp.SR.tcInvalidEnumerationLiteral(), valueRange))
+        | SynExpr.Const (synConst, _) -> 
+            let konst = TcConst cenv fieldTy valueRange env synConst
+            MakeEnumCaseSpec cenv env parent attrs thisTy caseRange id xmldoc konst
+        | _ when cenv.g.langVersion.SupportsFeature LanguageFeature.ArithmeticInLiterals ->
+            let expr, actualTy, _ = TcExprOfUnknownType cenv env tpenv valueExpr
+            UnifyTypes cenv env valueRange fieldTy actualTy
+            
+            match EvalLiteralExprOrAttribArg cenv.g expr with
+            | Expr.Const (konst, _, _) -> MakeEnumCaseSpec cenv env parent attrs thisTy caseRange id xmldoc konst
+            | _ -> error(Error(FSComp.SR.tcInvalidEnumerationLiteral(), valueRange))
+        | _ ->
+            error(Error(FSComp.SR.tcInvalidEnumerationLiteral(), valueRange))
+
+    let TcEnumDecls (cenv: cenv) env tpenv parent thisTy enumCases =
         let g = cenv.g
         let fieldTy = NewInferenceType g
-        let enumCases' = enumCases |> List.map (TcEnumDecl cenv env parent thisTy fieldTy) |> CheckDuplicates (fun f -> f.Id) "enum element"
+        let enumCases' = enumCases |> List.map (TcEnumDecl cenv env tpenv parent thisTy fieldTy) |> CheckDuplicates (fun f -> f.Id) "enum element"
         fieldTy, enumCases'
 
 //-------------------------------------------------------------------------
@@ -1658,19 +1670,22 @@ let private ReportErrorOnStaticClass (synMembers: SynMemberDefn list) =
         match mem with
         | SynMemberDefn.ImplicitCtor(ctorArgs = SynSimplePats.SimplePats(pats = pats)) when (not pats.IsEmpty) ->
             for pat in pats do
-                errorR(Error(FSComp.SR.chkConstructorWithArgumentsOnStaticClasses(), pat.Range))
-           
+                warning(Error(FSComp.SR.chkConstructorWithArgumentsOnStaticClasses(), pat.Range))
         | SynMemberDefn.Member(SynBinding(valData = SynValData(memberFlags = Some memberFlags)), m) when memberFlags.MemberKind = SynMemberKind.Constructor ->
-            errorR(Error(FSComp.SR.chkAdditionalConstructorOnStaticClasses(), m))
-        | SynMemberDefn.Member(SynBinding(valData = SynValData(memberFlags = Some memberFlags)), m) when memberFlags.MemberKind = SynMemberKind.Member && memberFlags.IsInstance ->
-            errorR(Error(FSComp.SR.chkInstanceMemberOnStaticClasses(), m))
+            warning(Error(FSComp.SR.chkAdditionalConstructorOnStaticClasses(), m))
+        | SynMemberDefn.Member(SynBinding(valData = SynValData(memberFlags = Some memberFlags)), m) when memberFlags.IsInstance ->
+            match memberFlags.MemberKind with
+            | SynMemberKind.PropertyGet | SynMemberKind.PropertySet | SynMemberKind.PropertyGetSet 
+            | SynMemberKind.Member ->
+                warning(Error(FSComp.SR.chkInstanceMemberOnStaticClasses(), m))
+            | _ -> ()
         | SynMemberDefn.LetBindings(isStatic = false; range = range) ->
-            errorR(Error(FSComp.SR.chkInstanceLetBindingOnStaticClasses(), range))
+            warning(Error(FSComp.SR.chkInstanceLetBindingOnStaticClasses(), range))
         | SynMemberDefn.Interface(members= Some(synMemberDefs)) ->
             for mem in synMemberDefs do
                 match mem with
                 | SynMemberDefn.Member(SynBinding(valData = SynValData(memberFlags = Some memberFlags)), m) when memberFlags.MemberKind = SynMemberKind.Member && memberFlags.IsInstance ->
-                    errorR(Error(FSComp.SR.chkImplementingInterfacesOnStaticClasses(), m))
+                    warning(Error(FSComp.SR.chkImplementingInterfacesOnStaticClasses(), m))
                 | _ -> ()
         | _ -> ()
 
@@ -1783,11 +1798,11 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (env
                   match tyconOpt with
                   | Some tycon ->
                         for slot in tycon.FSharpObjectModelTypeInfo.fsobjmodel_vslots do
-                            errorR(Error(FSComp.SR.chkAbstractMembersDeclarationsOnStaticClasses(), slot.Range))
+                            warning(Error(FSComp.SR.chkAbstractMembersDeclarationsOnStaticClasses(), slot.Range))
                             
                         for fld in tycon.AllFieldsArray do
                             if not fld.IsStatic then
-                                errorR(Error(FSComp.SR.chkExplicitFieldsDeclarationsOnStaticClasses(), fld.Range))
+                                warning(Error(FSComp.SR.chkExplicitFieldsDeclarationsOnStaticClasses(), fld.Range))
                   | None -> ()
               
               let envForDecls = 
@@ -3492,7 +3507,7 @@ module EstablishTypeDefinitionCores =
                         repr, baseValOpt, safeInitInfo
 
                 | SynTypeDefnSimpleRepr.Enum (decls, m) -> 
-                    let fieldTy, fields' = TcRecdUnionAndEnumDeclarations.TcEnumDecls cenv envinner innerParent thisTy decls
+                    let fieldTy, fields' = TcRecdUnionAndEnumDeclarations.TcEnumDecls cenv envinner tpenv innerParent thisTy decls
                     let kind = TFSharpEnum
                     structLayoutAttributeCheck false
                     noCLIMutableAttributeCheck()
@@ -3501,7 +3516,7 @@ module EstablishTypeDefinitionCores =
                     let vid = ident("value__", m)
                     let vfld = Construct.NewRecdField false None vid false fieldTy false false [] [] XmlDoc.Empty taccessPublic true
                     
-                    let legitEnumTypes = [ g.int32_ty; g.int16_ty; g.sbyte_ty; g.int64_ty; g.char_ty; g.bool_ty; g.uint32_ty; g.uint16_ty; g.byte_ty; g.uint64_ty ]
+                    let legitEnumTypes = [ g.int32_ty; g.int16_ty; g.sbyte_ty; g.int64_ty; g.char_ty; g.uint32_ty; g.uint16_ty; g.byte_ty; g.uint64_ty ]
                     if not (ListSet.contains (typeEquiv g) fieldTy legitEnumTypes) then 
                         errorR(Error(FSComp.SR.tcInvalidTypeForLiteralEnumeration(), m))
 
