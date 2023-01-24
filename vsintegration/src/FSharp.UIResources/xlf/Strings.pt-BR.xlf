@@ -83,13 +83,13 @@
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Parameter_Name_Hints">
-        <source>Display inline parameter name hints (experimental)</source>
-        <target state="translated">Exibir dicas de nome de parâmetro embutidas (experimental)</target>
+        <source>Display inline parameter name hints (preview)</source>
+        <target state="needs-review-translation">Exibir dicas de nome de parâmetro embutidas (experimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Type_Hints">
-        <source>Display inline type hints (experimental)</source>
-        <target state="translated">Exibir as dicas de tipo embutido (experimental)</target>
+        <source>Display inline type hints (preview)</source>
+        <target state="needs-review-translation">Exibir as dicas de tipo embutido (experimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_all_symbols">

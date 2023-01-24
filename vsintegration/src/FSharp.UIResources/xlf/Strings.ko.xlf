@@ -83,13 +83,13 @@
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Parameter_Name_Hints">
-        <source>Display inline parameter name hints (experimental)</source>
-        <target state="translated">인라인 매개 변수 이름 힌트 표시(실험적)</target>
+        <source>Display inline parameter name hints (preview)</source>
+        <target state="needs-review-translation">인라인 매개 변수 이름 힌트 표시(실험적)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Type_Hints">
-        <source>Display inline type hints (experimental)</source>
-        <target state="translated">인라인 유형 힌트 표시(실험적)</target>
+        <source>Display inline type hints (preview)</source>
+        <target state="needs-review-translation">인라인 유형 힌트 표시(실험적)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_all_symbols">
