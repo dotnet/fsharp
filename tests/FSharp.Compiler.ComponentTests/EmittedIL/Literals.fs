@@ -4,6 +4,7 @@ namespace FSharp.Compiler.ComponentTests.EmittedIL
 
 open Xunit
 open FSharp.Test.Compiler
+open FSharp.Test.Compiler.Assertions.ExactResultAsserts
 
 module ``Literals`` =
 

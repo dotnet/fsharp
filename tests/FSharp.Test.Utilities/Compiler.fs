@@ -144,6 +144,7 @@ module rec Compiler =
     type ErrorInfo =
         { Error:   ErrorType
           Range:   Range
+          NativeRange : FSharp.Compiler.Text.range
           Message: string }
 
     type ExecutionOutput =
@@ -229,6 +230,7 @@ module rec Compiler =
 
             e.FileName |> Path.GetFileName,
             { Error   = error
+              NativeRange = e.Range
               Range   =
                   { StartLine   = e.StartLine
                     StartColumn = e.StartColumn
@@ -605,6 +607,7 @@ module rec Compiler =
               StartColumn = span.Start.Character
               EndLine = span.End.Line
               EndColumn = span.End.Character }
+          NativeRange = Unchecked.defaultof<_>
           Message = d.GetMessage() }
 
     let private compileCSharpCompilation (compilation: CSharpCompilation) csSource (filePath : string) dependencies : CompilationResult =
@@ -1231,11 +1234,11 @@ module rec Compiler =
                 assertErrors what r.Adjust (selector r) expected
             result
 
-        let withResults (expectedResults: ErrorInfo list) result : CompilationResult =
+        let private withResultsIgnoreNativeRange (expectedResults: ErrorInfo list) result : CompilationResult =
             assertResultsCategory "Results" (fun r -> r.Diagnostics) expectedResults result
 
-        let withResult (expectedResult: ErrorInfo ) (result: CompilationResult) : CompilationResult =
-            withResults [expectedResult] result
+        let private withResultIgnoreNativeRange (expectedResult: ErrorInfo ) (result: CompilationResult) : CompilationResult =
+            withResultsIgnoreNativeRange [expectedResult] result
 
         let withDiagnostics (expected: (ErrorType * Line * Col * Line * Col * string) list) (result: CompilationResult) : CompilationResult =
             let expectedResults: ErrorInfo list =
@@ -1247,8 +1250,9 @@ module rec Compiler =
                               StartColumn = startCol
                               EndLine     = endLine
                               EndColumn   = endCol }
+                        NativeRange = Unchecked.defaultof<_>
                         Message     = message } ]
-            withResults expectedResults result
+            withResultsIgnoreNativeRange expectedResults result
 
         let withSingleDiagnostic (expected: (ErrorType * Line * Col * Line * Col * string)) (result: CompilationResult) : CompilationResult =
             withDiagnostics [expected] result
@@ -1258,6 +1262,19 @@ module rec Compiler =
 
         let withError (expectedError: ErrorInfo) (result: CompilationResult) : CompilationResult =
             withErrors [expectedError] result
+
+        module ExactResultAsserts = 
+            type SimpleErrorInfo =    
+                { Error:   ErrorType
+                  Range:   Range        
+                  Message: string }
+
+            let withResults (expectedResults: SimpleErrorInfo list) result : CompilationResult =
+                let mappedResults = expectedResults |> List.map (fun s -> { Error = s.Error;Range = s.Range;  Message = s.Message; NativeRange = Unchecked.defaultof<_>})
+                Compiler.Assertions.withResultsIgnoreNativeRange mappedResults result
+
+            let withResult (expectedResult: SimpleErrorInfo ) (result: CompilationResult) : CompilationResult =
+                withResults [expectedResult] result
 
         let checkCodes (expected: int list) (selector: CompilationOutput -> ErrorInfo list) (result: CompilationResult) : CompilationResult =
             match result with

@@ -55,15 +55,18 @@ module DiagnosticsComparison =
 
     let renderToString (cr:CompilationResult) = 
         [ for (file,err) in cr.Output.PerFileErrors do
-            let m = err.Range
+            let m = err.NativeRange
             let file = file.Replace("/", "\\")
 
-            let msg,no = messageAndNumber err.Error
+            let severity,no = messageAndNumber err.Error
 
-            if  (equals m range0) || (equals m rangeStartup) || (equals m rangeCmdArgs) then
-                ""
-            else 
-                sprintf "%s(%d,%d,%d,%d): " file m.StartLine m.StartColumn m.EndLine m.EndColumn
+            let location = 
+                if  (equals m range0) || (equals m rangeStartup) || (equals m rangeCmdArgs) then
+                    ""
+                else 
+                    sprintf "%s(%d,%d,%d,%d): " file m.StartLine m.StartColumn m.EndLine m.EndColumn
+
+            $"{location} typecheck {severity} FS%04d{no}: {err.Message}"
 
         ]
 
@@ -86,8 +89,10 @@ module TestFrameworkAdapter =
         let expectedFiles = Directory.GetFiles(absFolder, testName + ".*")
         for f in expectedFiles do
             match Path.GetExtension(f) with
-            | "bsl" -> cr |> typecheck
-            | "vsbsl" -> cr |> withOptions ["--test:ContinueAfterParseFailure"]
+            | "bsl" -> cr  |> typecheck |> shouldFail |> ignore
+            | "vsbsl" -> cr |> withOptions ["--test:ContinueAfterParseFailure"]  |> typecheck |> shouldFail |> ignore
+            | _ -> ()
+            
 
     let adjustVersion version bonusArgs = 
         match version with 
@@ -133,7 +138,7 @@ module TestFrameworkAdapter =
             | FSC_OPTIMIZED -> cu |> withOptimize |> withNoDebug |> ScriptRunner.runScriptFile langVersion |> shouldSucceed 
             | FSI -> cu |> ScriptRunner.runScriptFile langVersion |> shouldSucceed 
             | COMPILED_EXE_APP -> cu |> withDefines ("TESTS_AS_APP" :: ScriptRunner.defaultDefines) |> compileExeAndRun |> shouldSucceed 
-            | NEG_TEST_BUILD testName -> cu |> typecheck |> shouldFail
+            | NEG_TEST_BUILD _testName -> cu |> typecheck |> shouldFail
         
         |> ignore<CompilationResult>
     
