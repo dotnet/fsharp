@@ -2425,7 +2425,7 @@ module EstablishTypeDefinitionCores =
 
     let private (|TyconCoreAbbrevThatIsReallyAUnion|_|) (hasMeasureAttr, envinner: TcEnv, id: Ident) synTyconRepr =
         match synTyconRepr with 
-        | SynTypeDefnSimpleRepr.TypeAbbrev(_, StripParenTypes (SynType.LongIdent(SynLongIdent([unionCaseName], _, _))), m) 
+        | SynTypeDefnSimpleRepr.TypeAbbrev(_, StripParenTypes (SynType.LongIdent(SynLongIdent([unionCaseName], _, _), _)), m) 
                               when 
                                 (not hasMeasureAttr && 
                                  (isNil (LookupTypeNameInEnvNoArity OpenQualified unionCaseName.idText envinner.NameEnv) || 
@@ -2785,9 +2785,9 @@ module EstablishTypeDefinitionCores =
     /// Get the items on the r.h.s. of a 'type X = ABC<...>' definition
     let private TcTyconDefnCore_GetGenerateDeclaration_Rhs (StripParenTypes rhsType) =
         match rhsType with 
-        | SynType.App (StripParenTypes (SynType.LongIdent(SynLongIdent(tc, _, _))), _, args, _commas, _, _postfix, m) -> Some(tc, args, m)
-        | SynType.LongIdent (SynLongIdent(tc, _, _) as lidwd) -> Some(tc, [], lidwd.Range)
-        | SynType.LongIdentApp (StripParenTypes (SynType.LongIdent (SynLongIdent(tc, _, _))), SynLongIdent(longId, _, _), _, args, _commas, _, m) -> Some(tc@longId, args, m)
+        | SynType.App (StripParenTypes (SynType.LongIdent(SynLongIdent(tc, _, _), _)), _, args, _commas, _, _postfix, m) -> Some(tc, args, m)
+        | SynType.LongIdent (SynLongIdent(tc, _, _) as lidwd, _) -> Some(tc, [], lidwd.Range)
+        | SynType.LongIdentApp (StripParenTypes (SynType.LongIdent (SynLongIdent(tc, _, _), _)), SynLongIdent(longId, _, _), _, args, _commas, _, m) -> Some(tc@longId, args, m)
         | _ -> None
 
     /// Check whether 'type X = ABC<...>' is a generative provided type definition
@@ -4403,7 +4403,7 @@ module TcDeclarations =
                         memberFlags.MemberKind=SynMemberKind.Constructor && 
                         // REVIEW: This is a syntactic approximation
                         (match synValSig.SynType, synValSig.SynInfo.CurriedArgInfos with 
-                         | StripParenTypes (SynType.Fun (argType = StripParenTypes (SynType.LongIdent (SynLongIdent([id], _, _))))), [[_]] when id.idText = "unit" -> true
+                         | StripParenTypes (SynType.Fun (argType = StripParenTypes (SynType.LongIdent (SynLongIdent([id], _, _), _)))), [[_]] when id.idText = "unit" -> true
                          | _ -> false) 
                     | _ -> false) 
 

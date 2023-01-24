@@ -121,7 +121,13 @@ type InterfaceData =
                     match req with
                     | TyparStaticReq.None -> Some("'" + s.idText)
                     | TyparStaticReq.HeadType -> Some("^" + s.idText)
-                | SynType.LongIdent (SynLongIdent (xs, _, _)) -> xs |> Seq.map (fun x -> x.idText) |> String.concat "." |> Some
+                | SynType.LongIdent (SynLongIdent (xs, _, _), isModule) ->
+                    let ident = xs |> Seq.map (fun x -> x.idText) |> String.concat "."
+
+                    if isModule then
+                        Some (sprintf "module %s" ident)
+                    else
+                        Some ident
                 | SynType.App (t, _, ts, _, _, isPostfix, _) ->
                     match t, ts with
                     | TypeIdent typeName, [] -> Some typeName

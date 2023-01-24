@@ -654,7 +654,7 @@ module ParsedInput =
 
         and walkType ty =
             match ty with
-            | SynType.LongIdent ident ->
+            | SynType.LongIdent (ident, _) ->
                 // we protect it with try..with because System.Exception : rangeOfLidwd may raise
                 // at FSharp.Compiler.Syntax.LongIdentWithDots.get_Range() in D:\j\workspace\release_ci_pa---3f142ccc\src\ast.fs: line 156
                 try
@@ -1111,11 +1111,11 @@ module ParsedInput =
 
     let (|NewObjectOrMethodCall|_|) e =
         match e with
-        | SynExpr.New (_, SynType.LongIdent typeName, arg, _) ->
+        | SynExpr.New (_, SynType.LongIdent (typeName, _), arg, _) ->
             // new A()
             Some(endOfLastIdent typeName, findSetters arg)
 
-        | SynExpr.New (_, SynType.App (StripParenTypes (SynType.LongIdent typeName), _, _, _, mGreaterThan, _, _), arg, _) ->
+        | SynExpr.New (_, SynType.App (StripParenTypes (SynType.LongIdent (typeName, _)), _, _, _, mGreaterThan, _, _), arg, _) ->
             // new A<_>()
             Some(endOfClosingTokenOrLastIdent mGreaterThan typeName, findSetters arg)
 
@@ -1344,7 +1344,7 @@ module ParsedInput =
 
                     member _.VisitInheritSynMemberDefn(_, componentInfo, typeDefnKind, synType, _, _) =
                         match synType with
-                        | SynType.LongIdent lidwd ->
+                        | SynType.LongIdent (lidwd, _) ->
                             match parseLid pos lidwd with
                             | Some completionPath -> GetCompletionContextForInheritSynMember(componentInfo, typeDefnKind, completionPath)
                             | None -> Some CompletionContext.Invalid // A $ .B -> no completion list
@@ -1678,7 +1678,7 @@ module ParsedInput =
             | SynType.Or (t1, t2, _, _) ->
                 walkType t1
                 walkType t2
-            | SynType.LongIdent ident -> addLongIdentWithDots ident
+            | SynType.LongIdent (ident, _) -> addLongIdentWithDots ident
             | SynType.App (ty, _, types, _, _, _, _) ->
                 walkType ty
                 List.iter walkType types

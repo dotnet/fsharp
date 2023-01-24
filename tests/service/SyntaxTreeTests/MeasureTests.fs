@@ -50,7 +50,7 @@ let ``SynMeasure.Paren has correct range`` () =
 
 let private (|TypeName|_|) t =
     match t with
-    | SynType.LongIdent(SynLongIdent([ident], _, _)) -> Some ident.idText
+    | SynType.LongIdent(SynLongIdent([ident], _, _), _) -> Some ident.idText
     | _ -> None
 
 [<Test>]

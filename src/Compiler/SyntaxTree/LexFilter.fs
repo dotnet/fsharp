@@ -1084,6 +1084,7 @@ type LexFilterImpl (
                     //      f<{| C : int |}>x
                     //      f<x # x>x
                     //      f<x ' x>x
+                    //      f<module M>x
                     | DEFAULT | COLON | COLON_GREATER | STRUCT | NULL | DELEGATE | AND | WHEN 
                     | DOT_DOT
                     | NEW
@@ -1094,6 +1095,7 @@ type LexFilterImpl (
                     | INFIX_AT_HAT_OP "^-" 
                     | INFIX_STAR_DIV_MOD_OP "/" 
                     | MINUS 
+                    | MODULE
                     | GLOBAL 
                     | CONST
                     | KEYWORD_STRING _
