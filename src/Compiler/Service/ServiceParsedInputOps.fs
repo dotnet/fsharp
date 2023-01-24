@@ -891,7 +891,7 @@ module ParsedInput =
                 | None, Some binding -> walkBinding binding
                 | Some getBinding, Some setBinding -> walkBinding getBinding |> Option.orElseWith (fun () -> walkBinding setBinding)
 
-            | SynMemberDefn.ImplicitCtor (_, Attributes attrs, SynSimplePats.SimplePats (simplePats, _), _, _, _) ->
+            | SynMemberDefn.ImplicitCtor (attributes = Attributes attrs; ctorArgs = SynSimplePats.SimplePats (simplePats, _)) ->
                 List.tryPick walkAttribute attrs
                 |> Option.orElseWith (fun () -> List.tryPick walkSimplePat simplePats)
 
@@ -1893,7 +1893,7 @@ module ParsedInput =
             | SynMemberDefn.GetSetMember (getBinding, setBinding, _, _) ->
                 Option.iter walkBinding getBinding
                 Option.iter walkBinding setBinding
-            | SynMemberDefn.ImplicitCtor (_, Attributes attrs, SynSimplePats.SimplePats (simplePats, _), _, _, _) ->
+            | SynMemberDefn.ImplicitCtor (attributes = Attributes attrs; ctorArgs = SynSimplePats.SimplePats (simplePats, _)) ->
                 List.iter walkAttribute attrs
                 List.iter walkSimplePat simplePats
             | SynMemberDefn.ImplicitInherit (t, e, _, _) ->
