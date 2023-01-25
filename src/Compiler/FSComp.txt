@@ -1,6 +1,7 @@
 # -------------------------------------------------------------------------------
 # use a completely new error number and keep messages in their surrounding groups
 # -------------------------------------------------------------------------------
+undefinedNameModule,"The module '%s' is not defined."
 undefinedNameNamespace,"The namespace '%s' is not defined."
 undefinedNameNamespaceOrModule,"The namespace or module '%s' is not defined."
 undefinedNameFieldConstructorOrMember,"The field, constructor or member '%s' is not defined."

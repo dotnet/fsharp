@@ -1142,6 +1142,11 @@
         <target state="translated">Typ {0} nedefinuje pole, konstruktor ani člen {1}.</target>
         <note />
       </trans-unit>
+      <trans-unit id="undefinedNameModule">
+        <source>The module '{0}' is not defined.</source>
+        <target state="new">The module '{0}' is not defined.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="undefinedNameNamespace">
         <source>The namespace '{0}' is not defined.</source>
         <target state="translated">Není definovaný obor názvů {0}.</target>

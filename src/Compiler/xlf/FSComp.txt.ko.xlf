@@ -1142,6 +1142,11 @@
         <target state="translated">'{0}' 형식은 '{1}' 필드, 생성자 또는 멤버를 정의하지 않습니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="undefinedNameModule">
+        <source>The module '{0}' is not defined.</source>
+        <target state="new">The module '{0}' is not defined.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="undefinedNameNamespace">
         <source>The namespace '{0}' is not defined.</source>
         <target state="translated">'{0}' 네임스페이스가 정의되지 않았습니다.</target>

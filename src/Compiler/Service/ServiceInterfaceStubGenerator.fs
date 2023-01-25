@@ -125,7 +125,7 @@ type InterfaceData =
                     let ident = xs |> Seq.map (fun x -> x.idText) |> String.concat "."
 
                     if isModule then
-                        Some (sprintf "module %s" ident)
+                        Some(sprintf "module %s" ident)
                     else
                         Some ident
                 | SynType.App (t, _, ts, _, _, isPostfix, _) ->

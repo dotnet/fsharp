@@ -1142,6 +1142,11 @@
         <target state="translated">类型“{0}”未定义字段、构造函数或成员“{1}”。</target>
         <note />
       </trans-unit>
+      <trans-unit id="undefinedNameModule">
+        <source>The module '{0}' is not defined.</source>
+        <target state="new">The module '{0}' is not defined.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="undefinedNameNamespace">
         <source>The namespace '{0}' is not defined.</source>
         <target state="translated">未定义命名空间“{0}”。</target>

@@ -675,6 +675,19 @@ val internal ResolveLongIdentAsModuleOrNamespace:
     isOpenDecl: bool ->
         ResultOrException<(int * ModuleOrNamespaceRef * ModuleOrNamespaceType) list>
 
+/// Resolve a long identifier to a module.
+val internal ResolveLongIdentAsModule:
+    sink: TcResultsSink ->
+    amap: ImportMap ->
+    m: range ->
+    first: bool ->
+    fullyQualified: FullyQualifiedFlag ->
+    nenv: NameResolutionEnv ->
+    ad: AccessorDomain ->
+    id: Ident ->
+    rest: Ident list ->
+        ResultOrException<(int * ModuleOrNamespaceRef * ModuleOrNamespaceType) list>
+
 /// Resolve a long identifier to an object constructor.
 val internal ResolveObjectConstructor:
     ncenv: NameResolver -> denv: DisplayEnv -> m: range -> ad: AccessorDomain -> ty: TType -> ResultOrException<Item>

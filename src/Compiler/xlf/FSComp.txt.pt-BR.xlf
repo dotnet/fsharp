@@ -1142,6 +1142,11 @@
         <target state="translated">O tipo '{0}' não define o campo, o construtor ou o membro '{1}'.</target>
         <note />
       </trans-unit>
+      <trans-unit id="undefinedNameModule">
+        <source>The module '{0}' is not defined.</source>
+        <target state="new">The module '{0}' is not defined.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="undefinedNameNamespace">
         <source>The namespace '{0}' is not defined.</source>
         <target state="translated">O namespace '{0}' não está definido.</target>

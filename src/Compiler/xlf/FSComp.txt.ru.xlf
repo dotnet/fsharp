@@ -1142,6 +1142,11 @@
         <target state="translated">Тип "{0}" не определяет поле, конструктор или член "{1}".</target>
         <note />
       </trans-unit>
+      <trans-unit id="undefinedNameModule">
+        <source>The module '{0}' is not defined.</source>
+        <target state="new">The module '{0}' is not defined.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="undefinedNameNamespace">
         <source>The namespace '{0}' is not defined.</source>
         <target state="translated">Пространство имен "{0}" не определено.</target>

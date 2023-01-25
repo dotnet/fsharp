@@ -779,7 +779,7 @@ type LexFilterImpl (
             // 'fun ->' places no limit until we hit a CtxtLetDecl etc... (Recursive) 
             | _, CtxtFun _ :: rest
                       -> undentationLimit false rest
-                      
+            
             // 'let ... = f ... begin'  limited by 'let' (given RelaxWhitespace2)
             // 'let ('  (pattern match) limited by 'let' (given RelaxWhitespace2)
             // 'let ['  (pattern match) limited by 'let' (given RelaxWhitespace2)
@@ -1352,7 +1352,7 @@ type LexFilterImpl (
             | CtxtDo _        
             | CtxtLetDecl (true, _) -> 
                 Some ODECLEND
-                             
+                         
             | CtxtSeqBlock(_, _, AddBlockEnd) ->  
                 Some OBLOCKEND 
 
@@ -1926,7 +1926,7 @@ type LexFilterImpl (
             returnToken tokenLexbufState token
                 
         //  module ... ~~~> CtxtModuleHead 
-        | MODULE, _ :: _ -> 
+        | MODULE, _ :: _ when offsideStack |> List.forall (fun x -> match x with CtxtParen (LESS _, _) -> false | _ -> true) -> 
             insertComingSoonTokens("MODULE", MODULE_COMING_SOON, MODULE_IS_HERE)
             if debug then dprintf "MODULE: entering CtxtModuleHead, awaiting EQUALS to go to CtxtSeqBlock (%a)\n" outputPos tokenStartPos
             pushCtxt tokenTup (CtxtModuleHead (tokenStartPos, token, NotLexingModuleAttributes))
@@ -2385,7 +2385,7 @@ type LexFilterImpl (
             returnToken tokenLexbufState token  
                 
         | _ -> 
-            returnToken tokenLexbufState token  
+            returnToken tokenLexbufState token
 
     and insertHighPrecedenceApp (tokenTup: TokenTup) = 
         let dotTokenTup = peekNextTokenTup()

@@ -2455,6 +2455,81 @@ let rec ResolveLongIdentAsModuleOrNamespace sink (atMostOne: ResultCollectionSet
         else
             raze (namespaceNotFound.Force())
 
+/// Perform name resolution for an identifier which must resolve to be a module.
+let rec ResolveLongIdentAsModule sink amap m first fullyQualified (nenv: NameResolutionEnv) ad (id: Ident) rest =
+    if first && id.idText = MangledGlobalName then
+        match rest with
+        | [] ->
+            error (Error(FSComp.SR.nrGlobalUsedOnlyAsFirstName(), id.idRange))
+        | id2 :: rest2 ->
+            ResolveLongIdentAsModule sink amap m false FullyQualified nenv ad id2 rest2
+    else
+        let notFoundAux (id: Ident) depth error (tcrefs: TyconRef seq) =
+            let suggestNames (addToBuffer: string -> unit) =
+                for tcref in tcrefs do
+                    if IsEntityAccessible amap m ad tcref then
+                        addToBuffer tcref.DisplayName
+
+            UndefinedName(depth, error, id, suggestNames)
+
+        let moduleOrNamespaces = nenv.ModulesAndNamespaces fullyQualified
+        let namespaceOrModuleNotFound =
+            lazy
+                seq { for kv in moduleOrNamespaces do
+                        for modref in kv.Value do
+                            modref }
+                |> notFoundAux id 0 FSComp.SR.undefinedNameNamespaceOrModule
+
+        // Avoid generating the same error and name suggestion thunk twice It's not clear this is necessary
+        // since it's just saving an allocation.
+        let mutable moduleNotFoundErrorCache = None
+        let moduleNotFound (modref: ModuleOrNamespaceRef) (mty: ModuleOrNamespaceType) (id: Ident) depth =
+            match moduleNotFoundErrorCache with
+            | Some (oldId, error) when equals oldId id.idRange -> error
+            | _ ->
+                let error =
+                    seq { for kv in mty.ModulesAndNamespacesByDemangledName do
+                            if kv.Value.IsModule then
+                                modref.NestedTyconRef kv.Value
+                    }
+                    |> notFoundAux id depth FSComp.SR.undefinedNameModule
+                    |> raze
+                moduleNotFoundErrorCache <- Some(id.idRange, error)
+                error
+
+        let notifyNameResolution (modref: ModuleOrNamespaceRef) m =
+            let item = Item.ModuleOrNamespaces [modref]
+            CallNameResolutionSink sink (m, nenv, item, emptyTyparInst, ItemOccurence.Use, ad)
+
+        match moduleOrNamespaces.TryGetValue id.idText with
+        | true, modrefs ->
+            /// Look through the sub-namespaces and/or modules
+            let rec look depth (modref: ModuleOrNamespaceRef) (lid: Ident list) =
+                let mty = modref.ModuleOrNamespaceType
+                match lid with
+                | [] when modref.IsModule -> success [ (depth, modref, mty) ]
+                | [] -> moduleNotFound modref mty id depth
+                | id :: rest ->
+                    match mty.ModulesAndNamespacesByDemangledName.TryGetValue id.idText with
+                    | true, res ->
+                        let subref = modref.NestedTyconRef res
+                        if IsEntityAccessible amap m ad subref then
+                            notifyNameResolution subref id.idRange
+                            look (depth + 1) subref rest
+                        else
+                            moduleNotFound modref mty id depth
+                    | _ -> moduleNotFound modref mty id depth
+
+            modrefs
+            |> List.map (fun modref ->
+                if IsEntityAccessible amap m ad modref then
+                    notifyNameResolution modref id.idRange
+                    look 1 modref rest
+                else
+                    raze (namespaceOrModuleNotFound.Force()))
+            |> List.reduce AddResults
+        | _ -> raze (namespaceOrModuleNotFound.Force())
+
 // Note - 'rest' is annotated due to a bug currently in Unity (see: https://github.com/dotnet/fsharp/pull/7427)
 let ResolveLongIdentAsModuleOrNamespaceThen sink atMostOne amap m fullyQualified (nenv: NameResolutionEnv) ad id (rest: Ident list) isOpenDecl f =
     match ResolveLongIdentAsModuleOrNamespace sink ResultCollectionSettings.AllResults amap m true fullyQualified nenv ad id [] isOpenDecl with

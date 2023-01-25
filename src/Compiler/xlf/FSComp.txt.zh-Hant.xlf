@@ -1142,6 +1142,11 @@
         <target state="translated">類型 '{0}' 未定義欄位、建構函式或成員 '{1}'。</target>
         <note />
       </trans-unit>
+      <trans-unit id="undefinedNameModule">
+        <source>The module '{0}' is not defined.</source>
+        <target state="new">The module '{0}' is not defined.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="undefinedNameNamespace">
         <source>The namespace '{0}' is not defined.</source>
         <target state="translated">未定義命名空間 '{0}'。</target>
