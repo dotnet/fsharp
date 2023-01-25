@@ -1,4 +1,4 @@
-/// Parallel processing of graph of work items with dependencies
+/// Parallel processing of a type-checking file graph.
 module internal FSharp.Compiler.GraphChecking.TypeCheckingGraphProcessing
 
 open System.Threading

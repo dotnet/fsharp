@@ -5,7 +5,6 @@
 
 open System.Collections.Concurrent
 open System.Collections.Generic
-open System.Linq
 open System.Text
 open FSharp.Compiler.IO
 
@@ -33,34 +32,35 @@ module internal Graph =
         |> Seq.toArray
 
     let addIfMissing<'Node when 'Node: equality> (nodes: 'Node seq) (graph: Graph<'Node>) : Graph<'Node> =
-        nodes
-        |> Seq.except (graph.Keys |> Seq.toArray)
-        |> fun missing ->
-            let toAdd = missing |> Seq.map (fun n -> KeyValuePair(n, [||])) |> Seq.toArray
-            let x: KeyValuePair<'Node, 'Node[]>[] = Array.append (graph |> Seq.toArray) toAdd
-            x.ToDictionary((fun (KeyValue (x, _)) -> x), (fun (KeyValue (_, v)) -> v)) :> IReadOnlyDictionary<_, _>
+        let missingNodes = nodes |> Seq.except graph.Keys |> Seq.toArray
 
-    /// Create entries for nodes that don't have any dependencies but are mentioned as dependencies themselves
-    let fillEmptyNodes<'Node when 'Node: equality> (graph: Graph<'Node>) : Graph<'Node> =
-        let missingNodes =
-            graph.Values |> Seq.toArray |> Array.concat |> Array.except graph.Keys
+        let entriesToAdd =
+            missingNodes |> Seq.map (fun n -> KeyValuePair(n, [||])) |> Seq.toArray
 
-        addIfMissing missingNodes graph
+        graph
+        |> Seq.toArray
+        |> Array.append entriesToAdd
+        |> Array.map (fun (KeyValue (k, v)) -> k, v)
+        |> readOnlyDict
 
-    /// Create a transitive closure of the graph
     let transitive<'Node when 'Node: equality> (graph: Graph<'Node>) : Graph<'Node> =
-        let go (node: 'Node) =
+        /// Find transitive dependencies of a single node.
+        let transitiveDeps (node: 'Node) =
             let visited = HashSet<'Node>()
 
             let rec dfs (node: 'Node) =
-                graph[node] |> Array.filter visited.Add |> Array.iter dfs
+                graph[node]
+                // Add direct dependencies.
+                // Use HashSet.Add return value semantics to filter out those that were added previously.
+                |> Array.filter visited.Add
+                |> Array.iter dfs
 
             dfs node
             visited |> Seq.toArray
 
         graph.Keys
         |> Seq.toArray
-        |> Array.Parallel.map (fun node -> node, go node)
+        |> Array.Parallel.map (fun node -> node, transitiveDeps node)
         |> readOnlyDict
 
     /// Create a reverse of the graph
@@ -75,17 +75,17 @@ module internal Graph =
         |> readOnlyDict
         |> addIfMissing originalGraph.Keys
 
-    let printCustom (graph: Graph<'Node>) (printer: 'Node -> string) : unit =
+    let printCustom (graph: Graph<'Node>) (nodePrinter: 'Node -> string) : unit =
         printfn "Graph:"
         let join (xs: string[]) = System.String.Join(", ", xs)
 
         graph
-        |> Seq.iter (fun (KeyValue (file, deps)) -> printfn $"{file} -> {deps |> Array.map printer |> join}")
+        |> Seq.iter (fun (KeyValue (file, deps)) -> printfn $"{file} -> {deps |> Array.map nodePrinter |> join}")
 
     let print (graph: Graph<'Node>) : unit =
         printCustom graph (fun node -> node.ToString())
 
-    let serialiseToMermaid path (graph: Graph<int * string>) =
+    let serialiseToMermaid path (graph: Graph<FileIndex * string>) =
         let sb = StringBuilder()
         let appendLine (line: string) = sb.AppendLine(line) |> ignore
 

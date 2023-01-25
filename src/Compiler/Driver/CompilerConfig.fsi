@@ -203,17 +203,23 @@ type ParallelReferenceResolution =
     | On
     | Off
 
+/// Determines the algorithm used for type-checking.
 [<RequireQualifiedAccess>]
 type TypeCheckingMode =
     /// Default mode where all source files are processed sequentially in compilation order.
     | Sequential
-    /// Parallel type-checking that uses automated file-to-file dependency detection to construct a highly-parallelisable file graph.
+    /// Parallel type-checking that uses automated file-to-file dependency detection to construct a file graph processed in parallel.
     | Graph
 
+/// Some of the information dedicated to type-checking.
 [<RequireQualifiedAccess>]
 type TypeCheckingConfig =
-    { Mode: TypeCheckingMode
-      DumpGraph: bool }
+    {
+        Mode: TypeCheckingMode
+        /// When using TypeCheckingMode.Graph, this flag determines whether the
+        /// resolved file graph should be serialised as a Mermaid diagram into a file next to the output dll.
+        DumpGraph: bool
+    }
 
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
@@ -914,3 +920,6 @@ val FSharpScriptFileSuffixes: string list
 val FSharpIndentationAwareSyntaxFileSuffixes: string list
 
 val FSharpMLCompatFileSuffixes: string list
+
+/// Indicates whether experimental features should be enabled automatically
+val FSharpExperimentalFeaturesEnabledAutomatically: bool

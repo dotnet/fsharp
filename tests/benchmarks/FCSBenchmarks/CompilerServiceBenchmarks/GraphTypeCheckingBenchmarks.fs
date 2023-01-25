@@ -17,14 +17,14 @@ type GraphTypeCheckingBenchmarks() =
     let somethingToCompile =
         File.ReadAllText(__SOURCE_DIRECTORY__ ++ "SomethingToCompile.fs")
 
-    member val Benchmark = Unchecked.defaultof<ProjectBenchmarkBuilder> with get, set
+    member val Benchmark = Unchecked.defaultof<_> with get, set
 
     [<ParamsAllValues>]
     member val GraphTypeChecking = true with get, set
 
     member this.setup(project) =
         let checker = FSharpChecker.Create()
-        this.Benchmark <- ProjectBenchmarkBuilder.Create(project, checker) |> Async.RunSynchronously
+        this.Benchmark <- ProjectWorkflowBuilder(project, checker = checker).CreateBenchmarkBuilder()
         saveProject project false checker |> Async.RunSynchronously
 
     // Each file depends on the previous one

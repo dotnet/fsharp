@@ -16,6 +16,12 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
 
+[<Experimental "This type is experimental and likely to be removed in the future.">]
+[<RequireQualifiedAccess>]
+type DocumentSource =
+    | FileSystem
+    | Custom of (string -> ISourceText option)
+
 /// Used to parse and check F# source code.
 [<Sealed; AutoSerializable(false)>]
 type public FSharpChecker =
@@ -34,6 +40,7 @@ type public FSharpChecker =
     /// <param name="enablePartialTypeChecking">Indicates whether to perform partial type checking. Cannot be set to true if keepAssmeblyContents is true. If set to true, can cause duplicate type-checks when richer information on a file is needed, but can skip background type-checking entirely on implementation files with signature files.</param>
     /// <param name="parallelReferenceResolution">Indicates whether to resolve references in parallel.</param>
     /// <param name="captureIdentifiersWhenParsing">When set to true we create a set of all identifiers for each parsed file which can be used to speed up finding references.</param>
+    /// <param name="documentSource">Default: FileSystem. You can use Custom source to provide a function that will return the source for a given file path instead of reading it from the file system. Note that with this option the FSharpChecker will also not monitor the file system for file changes. It will expect to be notified of changes via the NotifyFileChanged method.</param>
     static member Create:
         ?projectCacheSize: int *
         ?keepAssemblyContents: bool *
@@ -45,7 +52,8 @@ type public FSharpChecker =
         ?enableBackgroundItemKeyStoreAndSemanticClassification: bool *
         ?enablePartialTypeChecking: bool *
         ?parallelReferenceResolution: bool *
-        ?captureIdentifiersWhenParsing: bool ->
+        ?captureIdentifiersWhenParsing: bool *
+        [<Experimental "This parameter is experimental and likely to be removed in the future.">] ?documentSource: DocumentSource ->
             FSharpChecker
 
     /// <summary>
@@ -373,6 +381,11 @@ type public FSharpChecker =
 
     /// Flush all caches and garbage collect
     member ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients: unit -> unit
+
+    /// Notify the checker that given file has changed. This needs to be used when checker is created with documentSource = Custom.
+    /// Although it is not mandatory when the changed file is the next thing requested to be checked.
+    [<Experimental "This FCS API is experimental and likely to be removed in the future.">]
+    member NotifyFileChanged: fileName: string * options: FSharpProjectOptions * ?userOpName: string -> Async<unit>
 
     /// <summary>
     /// This function is called when a project has been cleaned/rebuilt, and thus any live type providers should be refreshed.

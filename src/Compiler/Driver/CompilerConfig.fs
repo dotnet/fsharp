@@ -48,7 +48,7 @@ let FSharpScriptFileSuffixes = [ ".fsscript"; ".fsx" ]
 let FSharpIndentationAwareSyntaxFileSuffixes =
     [ ".fs"; ".fsscript"; ".fsx"; ".fsi" ]
 
-let FsharpExperimentalFeaturesEnabledAutomatically =
+let FSharpExperimentalFeaturesEnabledAutomatically =
     String.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("FSHARP_EXPERIMENTAL_FEATURES"))
     |> not
 
@@ -228,12 +228,7 @@ type TimeStampCache(defaultTimeStamp: DateTime) =
         if ok then
             v
         else
-            let v =
-                try
-                    FileSystem.GetLastWriteTimeShim fileName
-                with :? FileNotFoundException ->
-                    defaultTimeStamp
-
+            let v = FileSystem.GetLastWriteTimeShim fileName
             files[fileName] <- v
             v
 
@@ -755,7 +750,7 @@ type TcConfigBuilder =
             emitTailcalls = true
             deterministic = false
             concurrentBuild = true
-            parallelIlxGen = FsharpExperimentalFeaturesEnabledAutomatically
+            parallelIlxGen = FSharpExperimentalFeaturesEnabledAutomatically
             emitMetadataAssembly = MetadataAssemblyGeneration.None
             preferredUiLang = None
             lcid = None
@@ -802,7 +797,7 @@ type TcConfigBuilder =
             typeCheckingConfig =
                 {
                     TypeCheckingConfig.Mode =
-                        if FsharpExperimentalFeaturesEnabledAutomatically then
+                        if FSharpExperimentalFeaturesEnabledAutomatically then
                             TypeCheckingMode.Graph
                         else
                             TypeCheckingMode.Sequential
