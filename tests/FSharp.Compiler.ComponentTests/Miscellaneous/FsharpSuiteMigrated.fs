@@ -87,11 +87,12 @@ module TestFrameworkAdapter =
 
     let diffNegativeBaseline (cr:CompilationUnit) absFolder testName  =
         let expectedFiles = Directory.GetFiles(absFolder, testName + ".*")
-        for f in expectedFiles do
+        [ for f in expectedFiles do
             match Path.GetExtension(f) with
-            | "bsl" -> cr  |> typecheck |> shouldFail |> ignore
-            | "vsbsl" -> cr |> withOptions ["--test:ContinueAfterParseFailure"]  |> typecheck |> shouldFail |> ignore
-            | _ -> ()
+            | "bsl" -> cr  |> typecheck |> shouldFail
+            | "vsbsl" -> cr |> withOptions ["--test:ContinueAfterParseFailure"]  |> typecheck |> shouldFail
+            | _ -> () ]
+        |> List.head
             
 
     let adjustVersion version bonusArgs = 
@@ -130,16 +131,37 @@ module TestFrameworkAdapter =
         |> fun cu -> 
             match mode with
             | FSC_DEBUG | FSC_OPTIMIZED | FSI | COMPILED_EXE_APP -> 
-                cu |> ignoreWarnings |> withOptions (["--nowarn:0988;3370"] @ bonusArgs) 
-            | NEG_TEST_BUILD _ -> cu |> withOptions (["--vserrors";"--maxerrors:10000"] @ bonusArgs) 
+                cu 
+                |> ignoreWarnings 
+                |> withOptions (["--nowarn:0988;3370"] @ bonusArgs) 
+            | NEG_TEST_BUILD _ -> 
+                cu |> 
+                withOptions (["--vserrors";"--maxerrors:10000"] @ bonusArgs) 
         |> fun cu -> 
             match mode with
-            | FSC_DEBUG -> cu |> withDebug |> withNoOptimize  |> ScriptRunner.runScriptFile langVersion |> shouldSucceed 
-            | FSC_OPTIMIZED -> cu |> withOptimize |> withNoDebug |> ScriptRunner.runScriptFile langVersion |> shouldSucceed 
-            | FSI -> cu |> ScriptRunner.runScriptFile langVersion |> shouldSucceed 
-            | COMPILED_EXE_APP -> cu |> withDefines ("TESTS_AS_APP" :: ScriptRunner.defaultDefines) |> compileExeAndRun |> shouldSucceed 
-            | NEG_TEST_BUILD _testName -> cu |> typecheck |> shouldFail
-        
+            | FSC_DEBUG -> 
+                cu 
+                |> withDebug 
+                |> withNoOptimize  
+                |> ScriptRunner.runScriptFile langVersion 
+                |> shouldSucceed 
+            | FSC_OPTIMIZED -> 
+                cu 
+                |> withOptimize 
+                |> withNoDebug 
+                |> ScriptRunner.runScriptFile langVersion 
+                |> shouldSucceed 
+            | FSI -> 
+                cu 
+                |> ScriptRunner.runScriptFile langVersion 
+                |> shouldSucceed 
+            | COMPILED_EXE_APP -> 
+                cu 
+                |> withDefines ("TESTS_AS_APP" :: ScriptRunner.defaultDefines) 
+                |> compileExeAndRun 
+                |> shouldSucceed 
+            | NEG_TEST_BUILD testName -> diffNegativeBaseline cu absFolder testName
+            
         |> ignore<CompilationResult>
     
 
@@ -147,7 +169,8 @@ module TestFrameworkAdapter =
     let singleTestBuildAndRunVersion folder mode version = singleTestBuildAndRunAuxVersion folder [] mode version
     let singleTestBuildAndRun folder mode = singleTestBuildAndRunVersion folder mode LangVersion.Latest
 
-    let singleVersionedNegTestAux (_folder:string) _bonusArgs (_version:LangVersion) (_testName:string) = ()
+    let singleVersionedNegTestAux folder bonusArgs version testName =
+        singleTestBuildAndRunAuxVersion folder bonusArgs  (NEG_TEST_BUILD testName) version
     let singleVersionedNegTest (folder:string)  (version:LangVersion) (testName:string) = 
         singleVersionedNegTestAux folder [] version testName
 
@@ -228,12 +251,12 @@ module CoreTests =
     [<Fact>]
     let ``auto-widen-version-preview-warns-on``() = 
         let cfg = testConfig "core/auto-widen/preview"   
-        singleVersionedNegTestAux cfg " --warnon:3388 --warnon:3389 --warnon:3395 --warnaserror+ --define:NEGATIVE" LangVersion.Preview "test"
+        singleVersionedNegTestAux cfg ["--warnon:3388";"--warnon:3389";"--warnon:3395";"--warnaserror+";"--define:NEGATIVE"] LangVersion.Preview "test"
 
     [<Fact>]
     let ``auto-widen-version-preview-default-warns``() = 
         let cfg = testConfig "core/auto-widen/preview-default-warns"  
-        singleVersionedNegTestAux cfg " --warnon:3388 --warnon:3389 --warnon:3395 --warnaserror+ --define:NEGATIVE" LangVersion.Preview "test"
+        singleVersionedNegTestAux cfg ["--warnon:3388";"--warnon:3389";"--warnon:3395";"--warnaserror+";"--define:NEGATIVE"] LangVersion.Preview "test"
 
     [<Fact>]
     let ``comprehensions-FSC_DEBUG`` () = singleTestBuildAndRun "core/comprehensions" FSC_DEBUG
