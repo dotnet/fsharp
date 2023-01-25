@@ -2,10 +2,9 @@
 
 namespace FSharp.Editor.Tests.Hints
 
-open System.Threading
+open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.Editor.Hints
-open Microsoft.CodeAnalysis.Text
 open Hints
 open FSharp.Editor.Tests.Helpers
 
@@ -30,17 +29,28 @@ module HintTestFramework =
         }
 
     let getFsDocument code =
-        use project = SingleFileProject code
-        let fileName = fst project.Files.Head
-        let document, _ = RoslynTestHelpers.CreateSingleDocumentSolution(fileName, code)
-        document
+        // I don't know, without this lib some symbols are just not loaded
+        let options = { RoslynTestHelpers.DefaultProjectOptions with OtherOptions = [| "--targetprofile:netcore" |] }
+        RoslynTestHelpers.CreateSolution(code, options = options)
+        |> RoslynTestHelpers.GetSingleDocument
 
     let getFsiAndFsDocuments (fsiCode: string) (fsCode: string) =
-        RoslynTestHelpers.CreateTwoDocumentSolution("test.fsi", SourceText.From fsiCode, "test.fs", SourceText.From fsCode)
+        let projectId = ProjectId.CreateNewId()
+        let projFilePath = "C:\\test.fsproj"
 
-    let getHints document hintKinds =
+        let fsiDocInfo = RoslynTestHelpers.CreateDocumentInfo projectId "C:\\test.fsi" fsiCode
+        let fsDocInfo = RoslynTestHelpers.CreateDocumentInfo projectId "C:\\test.fs" fsCode
+
+        let projInfo = RoslynTestHelpers.CreateProjectInfo projectId projFilePath [fsiDocInfo; fsDocInfo]
+        let solution = RoslynTestHelpers.CreateSolution [projInfo]
+        let project = solution.Projects |> Seq.exactlyOne
+        project.Documents
+
+    let getHints (document: Document) hintKinds =
         async {
-            let! hints = HintService.getHintsForDocument document hintKinds "test" CancellationToken.None
+            let! ct = Async.CancellationToken
+            let! sourceText = document.GetTextAsync ct |> Async.AwaitTask
+            let! hints = HintService.getHintsForDocument sourceText document hintKinds "test" ct
             return hints |> Seq.map convert
         }
         |> Async.RunSynchronously
@@ -53,5 +63,4 @@ module HintTestFramework =
 
     let getAllHints document =
         let hintKinds = Set.empty.Add(HintKind.TypeHint).Add(HintKind.ParameterNameHint)
-
         getHints document hintKinds

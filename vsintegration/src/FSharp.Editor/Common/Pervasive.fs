@@ -224,3 +224,7 @@ let rec private interleave' result seqs =
 /// Combines sequences of varying lengths into one by interleaving the elements
 /// E.g. aaaaa bb ccc -> abcabcacaa
 let interleave seqs = seqs |> Seq.toList |> interleave' Seq.empty
+
+let FSharpExperimentalFeaturesEnabledAutomatically =
+    String.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("FSHARP_EXPERIMENTAL_FEATURES"))
+    |> not

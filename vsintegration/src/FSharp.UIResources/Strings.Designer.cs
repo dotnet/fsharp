@@ -142,6 +142,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Use live (unsaved) buffers for checking (restart required).
+        /// </summary>
+        public static string Enable_Live_Buffers {
+            get {
+                return ResourceManager.GetString("Enable_Live_Buffers", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Enable parallel type checking with signature files.
         /// </summary>
         public static string Enable_Parallel_Checking_With_Signature_Files {
@@ -250,6 +259,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Live Buffers (experimental).
+        /// </summary>
+        public static string LiveBuffers {
+            get {
+                return ResourceManager.GetString("LiveBuffers", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Navigation links.
         /// </summary>
         public static string Navigation_links {
@@ -322,7 +340,7 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Display inline parameter name hints (experimental).
+        ///   Looks up a localized string similar to Display inline parameter name hints (preview).
         /// </summary>
         public static string Show_Inline_Parameter_Name_Hints {
             get {
@@ -331,7 +349,7 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Display inline type hints (experimental).
+        ///   Looks up a localized string similar to Display inline type hints (preview).
         /// </summary>
         public static string Show_Inline_Type_Hints {
             get {

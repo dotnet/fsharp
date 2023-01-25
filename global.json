@@ -1,13 +1,13 @@
 {
   "sdk": {
-    "version": "7.0.100",
+    "version": "7.0.102",
     "allowPrerelease": true,
     "rollForward": "latestPatch"
   },
   "tools": {
-    "dotnet": "7.0.100",
+    "dotnet": "7.0.102",
     "vs": {
-      "version": "17.2",
+      "version": "17.4",
       "components": [
         "Microsoft.VisualStudio.Component.FSharp"
       ]
@@ -18,7 +18,7 @@
     "perl": "5.32.1.1"
   },
   "msbuild-sdks": {
-    "Microsoft.DotNet.Arcade.Sdk": "8.0.0-beta.22578.1",
-    "Microsoft.DotNet.Helix.Sdk": "8.0.0-beta.22578.1"
+    "Microsoft.DotNet.Arcade.Sdk": "8.0.0-beta.22554.2",
+    "Microsoft.DotNet.Helix.Sdk": "8.0.0-beta.22554.2"
   }
 }

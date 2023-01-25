@@ -41,6 +41,7 @@ open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerGlobalState
+open FSharp.Compiler.CreateILModule
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditorServices
@@ -938,31 +939,22 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
       ]
 
     /// These options follow the FsiCoreCompilerOptions in the help blocks
-    let fsiUsageSuffix tcConfigB =
-      [PublicOptions(FSComp.SR.optsHelpBannerInputFiles(),
-        [CompilerOption("--","", OptionRest recordExplicitArg, None,
-                                 Some (FSIstrings.SR.fsiRemaining()));
-        ]);
-       PublicOptions(FSComp.SR.optsHelpBannerMisc(),
-        [   CompilerOption("help", tagNone,
-                                 OptionConsoleOnly (displayHelpFsi tcConfigB), None, Some (FSIstrings.SR.fsiHelp()))
-        ]);
-       PrivateOptions(
-        [   CompilerOption("?", tagNone, OptionConsoleOnly (displayHelpFsi tcConfigB), None, None); // "Short form of --help");
+    let fsiUsageSuffix tcConfigB = [
+        PublicOptions(FSComp.SR.optsHelpBannerInputFiles(), [CompilerOption("--","", OptionRest recordExplicitArg, None, Some (FSIstrings.SR.fsiRemaining())); ]);
+        PublicOptions(FSComp.SR.optsHelpBannerMisc(), [ CompilerOption("help", tagNone, OptionConsoleOnly (displayHelpFsi tcConfigB), None, Some (FSIstrings.SR.fsiHelp())) ]);
+        PrivateOptions([
+            CompilerOption("?", tagNone, OptionConsoleOnly (displayHelpFsi tcConfigB), None, None); // "Short form of --help");
             CompilerOption("help", tagNone, OptionConsoleOnly (displayHelpFsi tcConfigB), None, None); // "Short form of --help");
             CompilerOption("full-help", tagNone, OptionConsoleOnly (displayHelpFsi tcConfigB), None, None); // "Short form of --help");
         ]);
-       PublicOptions(FSComp.SR.optsHelpBannerAdvanced(),
-        [CompilerOption("exec",                 "", OptionUnit (fun () -> interact <- false), None, Some (FSIstrings.SR.fsiExec()))
-         CompilerOption("gui",                  tagNone, OptionSwitch(fun flag -> gui <- (flag = OptionSwitch.On)),None,Some (FSIstrings.SR.fsiGui()))
-         CompilerOption("quiet",                "", OptionUnit (fun () -> tcConfigB.noFeedback <- true), None,Some (FSIstrings.SR.fsiQuiet()));
-         CompilerOption("readline",             tagNone, OptionSwitch(fun flag -> enableConsoleKeyProcessing <- (flag = OptionSwitch.On)),           None, Some(FSIstrings.SR.fsiReadline()))
-         CompilerOption("quotations-debug",     tagNone, OptionSwitch(fun switch -> tcConfigB.emitDebugInfoInQuotations <- switch = OptionSwitch.On),None, Some(FSIstrings.SR.fsiEmitDebugInfoInQuotations()))
-         CompilerOption("shadowcopyreferences", tagNone, OptionSwitch(fun flag -> tcConfigB.shadowCopyReferences <- flag = OptionSwitch.On),         None, Some(FSIstrings.SR.shadowCopyReferences()))
-         if FSharpEnvironment.isRunningOnCoreClr then
-             CompilerOption("multiemit", tagNone, OptionSwitch(fun flag -> tcConfigB.fsiMultiAssemblyEmit <- flag = OptionSwitch.On),         None, Some(FSIstrings.SR.fsiMultiAssemblyEmitOption()))
-         else
-            CompilerOption("multiemit", tagNone, OptionSwitch(fun flag -> tcConfigB.fsiMultiAssemblyEmit <- flag = OptionSwitch.On),         None, Some(FSIstrings.SR.fsiMultiAssemblyEmitOptionOffByDefault()))
+        PublicOptions(FSComp.SR.optsHelpBannerAdvanced(), [
+            CompilerOption("exec",                 "", OptionUnit (fun () -> interact <- false), None, Some (FSIstrings.SR.fsiExec()))
+            CompilerOption("gui",                  tagNone, OptionSwitch(fun flag -> gui <- (flag = OptionSwitch.On)),None,Some (FSIstrings.SR.fsiGui()))
+            CompilerOption("quiet",                "", OptionUnit (fun () -> tcConfigB.noFeedback <- true), None,Some (FSIstrings.SR.fsiQuiet()));
+            CompilerOption("readline",             tagNone, OptionSwitch(fun flag -> enableConsoleKeyProcessing <- (flag = OptionSwitch.On)),           None, Some(FSIstrings.SR.fsiReadline()))
+            CompilerOption("quotations-debug",     tagNone, OptionSwitch(fun switch -> tcConfigB.emitDebugInfoInQuotations <- switch = OptionSwitch.On),None, Some(FSIstrings.SR.fsiEmitDebugInfoInQuotations()))
+            CompilerOption("shadowcopyreferences", tagNone, OptionSwitch(fun flag -> tcConfigB.shadowCopyReferences <- flag = OptionSwitch.On),         None, Some(FSIstrings.SR.shadowCopyReferences()))
+            CompilerOption("multiemit", tagNone, OptionSwitch(fun flag -> tcConfigB.fsiMultiAssemblyEmit <- flag = OptionSwitch.On),                    None, Some(FSIstrings.SR.fsiMultiAssemblyEmitOption()))
         ]);
       ]
 
@@ -1127,15 +1119,38 @@ type internal FsiConsolePrompt(fsiOptions: FsiCommandLineOptions, fsiConsoleOutp
     // A prompt gets "printed ahead" at start up. Tells users to start type while initialisation completes.
     // A prompt can be skipped by "silent directives", e.g. ones sent to FSI by VS.
     let mutable dropPrompt = 0
+    let mutable showPrompt = true
+
     // NOTE: SERVER-PROMPT is not user displayed, rather it's a prefix that code elsewhere
     // uses to identify the prompt, see service\FsPkgs\FSharp.VS.FSI\fsiSessionToolWindow.fs
-    let prompt = if fsiOptions.UseServerPrompt then "SERVER-PROMPT>\n" else "> "
 
-    member _.Print()      = if dropPrompt = 0 then fsiConsoleOutput.uprintf "%s" prompt else dropPrompt <- dropPrompt - 1
+    let prompt =
+        if fsiOptions.UseServerPrompt then
+            "SERVER-PROMPT>" + Environment.NewLine
+        else
+            "> "
 
-    member _.PrintAhead() = dropPrompt <- dropPrompt + 1; fsiConsoleOutput.uprintf "%s" prompt
+    member _.Print() =
+        if showPrompt then
+            if dropPrompt = 0 then
+                fsiConsoleOutput.uprintf "%s" prompt
+            else
+                dropPrompt <- dropPrompt - 1
 
-    member _.SkipNext()   = dropPrompt <- dropPrompt + 1
+    member _.PrintAhead() =
+        if showPrompt then
+            dropPrompt <- dropPrompt + 1
+            fsiConsoleOutput.uprintf "%s" prompt
+
+    // Can be turned off when executing blocks of code using:
+    // # silentPrompt
+    member _.ShowPrompt
+        with get () = showPrompt
+        and set (value) = showPrompt <- value
+
+    member _.SkipNext() =
+        if showPrompt then
+            dropPrompt <- dropPrompt + 1
 
     member _.FsiOptions = fsiOptions
 
@@ -1337,14 +1352,12 @@ type internal FsiDynamicCompiler(
 
     let dynamicCcuName = "FSI-ASSEMBLY"
 
-    let maxInternalsVisibleTo = 30 // In multi-assembly emit, how many future interactions can access internals with a warning
-
     let valueBoundEvent = Control.Event<_>()
 
     let mutable fragmentId = 0
-
     static let mutable dynamicAssemblyId = 0
-    
+    static let maxVersion = int Int16.MaxValue
+
     let mutable prevIt : ValRef option = None
 
     let dynamicAssemblies = ResizeArray<Assembly>()
@@ -1367,8 +1380,6 @@ type internal FsiDynamicCompiler(
 
     let rangeStdin0 = rangeN stdinMockFileName 0
 
-    //let _writer = moduleBuilder.GetSymWriter()
-
     let infoReader = InfoReader(tcGlobals,tcImports.GetImportMap())
 
     let reportedAssemblies = Dictionary<string, DateTime>()
@@ -1383,43 +1394,28 @@ type internal FsiDynamicCompiler(
                  Some { man with  CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs codegenResults.ilAssemAttrs) }) }
 
     /// Generate one assembly using multi-assembly emit
-    let EmitInMemoryAssembly (tcConfig: TcConfig, emEnv: ILMultiInMemoryAssemblyEmitEnv, ilxMainModule: ILModuleDef, m) =
-        
-        // The name of the assembly is "FSI-ASSEMBLY1" etc
-        dynamicAssemblyId <- dynamicAssemblyId + 1
-
-        let multiAssemblyName = ilxMainModule.ManifestOfAssembly.Name + string dynamicAssemblyId
+    let EmitInMemoryAssembly (tcConfig: TcConfig, emEnv: ILMultiInMemoryAssemblyEmitEnv, ilxMainModule: ILModuleDef) =
+        let multiAssemblyName = ilxMainModule.ManifestOfAssembly.Name
 
         // Adjust the assembly name of this fragment, and add InternalsVisibleTo attributes to 
-        // allow internals access by multiple future assemblies
+        // allow internals access by all future assemblies with the same name (and only differing in version)
         let manifest =
             let manifest = ilxMainModule.Manifest.Value
-            let attrs =
-                [ for i in 1..maxInternalsVisibleTo do
-                    let fwdAssemblyName = ilxMainModule.ManifestOfAssembly.Name + string (dynamicAssemblyId + i)
-                    tcGlobals.MakeInternalsVisibleToAttribute(fwdAssemblyName)
-                    yield! manifest.CustomAttrs.AsList() ]
+            let attrs = [
+                tcGlobals.MakeInternalsVisibleToAttribute(ilxMainModule.ManifestOfAssembly.Name)
+                yield! manifest.CustomAttrs.AsList()
+                ]
             { manifest with 
-                Name = multiAssemblyName 
+                Name = multiAssemblyName
+                // Because the coreclr loader will not load a higher assembly make versions go downwards
+                Version = Some (parseILVersion $"0.0.0.{maxVersion - dynamicAssemblyId}")
                 CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs attrs)
             }
 
+        // The name of the assembly is "FSI-ASSEMBLY" for all submissions. This number is used for the Version 
+        dynamicAssemblyId <- (dynamicAssemblyId + 1) % maxVersion
+
         let ilxMainModule = { ilxMainModule with Manifest = Some manifest }
-
-        // Check access of internals across fragments and give warning
-        let refs = computeILRefs ilGlobals ilxMainModule
-
-        for tref in refs.TypeReferences do
-            if emEnv.IsLocalInternalType(tref) then
-                warning(Error((FSIstrings.SR.fsiInternalAccess(tref.FullName)), m))
-
-        for mref in refs.MethodReferences do
-            if emEnv.IsLocalInternalMethod(mref) then
-                warning(Error((FSIstrings.SR.fsiInternalAccess(mref.Name)), m))
-
-        for fref in refs.FieldReferences do
-            if emEnv.IsLocalInternalField(fref) then
-                warning(Error((FSIstrings.SR.fsiInternalAccess(fref.Name)), m))
 
         // Rewrite references to local types to their respective dynamic assemblies
         let ilxMainModule =
@@ -1434,8 +1430,7 @@ type internal FsiDynamicCompiler(
               // but needs to be set for some logic of ilwrite to function.
               pdbfile = (if tcConfig.debuginfo then Some (multiAssemblyName + ".pdb") else None)
               emitTailcalls = tcConfig.emitTailcalls
-              deterministic = tcConfig.deterministic
-              showTimes = tcConfig.showTimes
+              deterministic = tcConfig.deterministic           
               // we always use portable for F# Interactive debug emit
               portablePDB = true
               // we don't use embedded for F# Interactive debug emit
@@ -1460,7 +1455,6 @@ type internal FsiDynamicCompiler(
             match pdbBytes with
             | None -> Assembly.Load(assemblyBytes)
             | Some pdbBytes -> Assembly.Load(assemblyBytes, pdbBytes)
-
         dynamicAssemblies.Add(asm)
 
         let loadedTypes = [ for t in asm.GetTypes() -> t]
@@ -1478,18 +1472,18 @@ type internal FsiDynamicCompiler(
                     yield! loop (enc@[tdef]) ntdef  ]
             [ for tdef in ilxMainModule.TypeDefs do yield! loop [] tdef ]
                                 
-        // Make the 'exec' functions for the entry point initializations
-        let execs = 
+        let execs =
             [ for edef in entries do
                 if edef.ArgCount = 0 then
-                    yield
-                      (fun () -> 
+                    yield (fun () -> 
                         let typ = asm.GetType(edef.DeclaringTypeRef.BasicQualifiedName)
                         try
                             ignore (typ.InvokeMember (edef.Name, BindingFlags.InvokeMethod ||| BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Static, null, null, [| |], Globalization.CultureInfo.InvariantCulture))
                             None
-                        with :? TargetInvocationException as e ->
-                            Some e.InnerException) ]
+                        with
+                            | :? TargetInvocationException as e ->
+                                Some e.InnerException)
+            ]
 
         emEnv.AddModuleDef asm ilScopeRef ilxMainModule
 
@@ -1540,7 +1534,7 @@ type internal FsiDynamicCompiler(
 
             | MultipleInMemoryAssemblies emEnv ->
 
-                let execs  = EmitInMemoryAssembly (tcConfig, emEnv, ilxMainModule, m)
+                let execs  = EmitInMemoryAssembly (tcConfig, emEnv, ilxMainModule)
 
                 MultipleInMemoryAssemblies emEnv, execs
 
@@ -1709,11 +1703,10 @@ type internal FsiDynamicCompiler(
 
     let nextFragmentId() =
         fragmentId <- fragmentId + 1
-        fragmentId
+        $"%04d{fragmentId}"
 
-    let mkFragmentPath m i =
-        // NOTE: this text shows in exn traces and type names. Make it clear and fixed width
-        [mkSynId m (FsiDynamicModulePrefix + sprintf "%04d" i)]
+    let mkFragmentPath m fragmentId =
+        [mkSynId m (FsiDynamicModulePrefix + fragmentId())]
 
     let processContents istate declaredImpls =
         let tcState = istate.tcState
@@ -1828,12 +1821,17 @@ type internal FsiDynamicCompiler(
 
     member _.DynamicAssemblies = dynamicAssemblies.ToArray()
 
-    member _.FindDynamicAssembly(simpleAssemName) =
-        dynamicAssemblies |> ResizeArray.tryFind (fun asm -> asm.GetName().Name = simpleAssemName)
+    member _.FindDynamicAssembly (name, useFullName: bool) =
+        let getName (assemblyName: AssemblyName) =
+            if useFullName then
+                assemblyName.FullName
+            else
+                assemblyName.Name
+
+        dynamicAssemblies |> ResizeArray.tryFind (fun asm -> getName (asm.GetName()) = name)
 
     member _.EvalParsedSourceFiles (ctok, diagnosticsLogger, istate, inputs, m) =
-        let i = nextFragmentId()
-        let prefix = mkFragmentPath m i
+        let prefix = mkFragmentPath m nextFragmentId
         // Ensure the path includes the qualifying name
         let inputs = inputs |> List.map (PrependPathToInput prefix)
         let isIncrementalFragment = false
@@ -1843,9 +1841,8 @@ type internal FsiDynamicCompiler(
     /// Evaluate the given definitions and produce a new interactive state.
     member _.EvalParsedDefinitions (ctok, diagnosticsLogger: DiagnosticsLogger, istate, showTypes, isInteractiveItExpr, defs: SynModuleDecl list) =
         let fileName = stdinMockFileName
-        let i = nextFragmentId()
         let m = match defs with [] -> rangeStdin0 | _ -> List.reduce unionRanges [for d in defs -> d.Range] 
-        let prefix = mkFragmentPath m i
+        let prefix = mkFragmentPath m nextFragmentId
         let prefixPath = pathOfLid prefix
         let impl = SynModuleOrNamespace(prefix,false, SynModuleOrNamespaceKind.NamedModule,defs,PreXmlDoc.Empty,[],None,m, { LeadingKeyword = SynModuleOrNamespaceLeadingKeyword.None })
         let isLastCompiland = true
@@ -2199,9 +2196,8 @@ type internal FsiDynamicCompiler(
             let ty = List.head tys
             let amap = istate.tcImports.GetImportMap()
 
-            let i = nextFragmentId()
             let m = rangeStdin0
-            let prefix = mkFragmentPath m i
+            let prefix = mkFragmentPath m nextFragmentId
             let prefixPath = pathOfLid prefix
             let qualifiedName = ComputeQualifiedNameOfFileFromUniquePath (m,prefixPath)
 
@@ -2446,9 +2442,15 @@ type internal MagicAssemblyResolution () =
             if simpleAssemName.EndsWith(".XmlSerializers", StringComparison.OrdinalIgnoreCase) ||
                simpleAssemName = "UIAutomationWinforms" then null
             else
-                match fsiDynamicCompiler.FindDynamicAssembly(simpleAssemName) with
+                // Check dynamic assemblies by exact version
+                match fsiDynamicCompiler.FindDynamicAssembly(fullAssemName, true) with
                 | Some asm -> asm
                 | None ->
+                // Check dynamic assemblies by simple name
+                match fsiDynamicCompiler.FindDynamicAssembly(simpleAssemName, false) with
+                | Some asm -> asm
+                | None ->
+                
 
                 // Otherwise continue
                 let assemblyReferenceTextDll = (simpleAssemName + ".dll")
@@ -2772,6 +2774,15 @@ type FsiInteractionProcessor
             fsiConsolePrompt.SkipNext() (* "silent" directive *)
             istate, Completed None
 
+        | ParsedHashDirective("interactiveprompt", ParsedHashDirectiveArguments ["show" | "hide" | "skip" as showPrompt], m) ->
+            match showPrompt with
+            | "show" -> fsiConsolePrompt.ShowPrompt <- true
+            | "hide" -> fsiConsolePrompt.ShowPrompt <- false
+            | "skip" -> fsiConsolePrompt.SkipNext()
+            | _ -> error(Error((FSComp.SR.fsiInvalidDirective("prompt", String.concat " " [showPrompt])), m))
+
+            istate, Completed None
+
         | ParsedHashDirective("dbgbreak", [], _) ->
             let istate = {istate with debugBreak = true}
             istate, Completed None
@@ -3072,7 +3083,7 @@ type FsiInteractionProcessor
 
                 // After we've unblocked and got something to run we switch
                 // over to the run-thread (e.g. the GUI thread)
-                let res = istate  |> runCodeOnMainThread (fun ctok istate -> ExecuteParsedInteractionOnMainThread (ctok, diagnosticsLogger, action, istate, cancellationToken))
+                let res = istate |> runCodeOnMainThread (fun ctok istate -> ExecuteParsedInteractionOnMainThread (ctok, diagnosticsLogger, action, istate, cancellationToken))
 
                 if progress then fprintfn fsiConsoleOutput.Out "Just called runCodeOnMainThread, res = %O..." res
                 res)
@@ -3368,26 +3379,19 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     do tcConfigB.useFsiAuxLib <- fsi.UseFsiAuxLib
     do tcConfigB.conditionalDefines <- "INTERACTIVE" :: tcConfigB.conditionalDefines
 
-#if NETSTANDARD
+
     do tcConfigB.SetUseSdkRefs true
     do tcConfigB.useSimpleResolution <- true
     do if isRunningOnCoreClr then SetTargetProfile tcConfigB "netcore" // always assume System.Runtime codegen
-#endif
-
-    // Preset: --multiemit- on .NET Framework and Mono
-    do if not isRunningOnCoreClr then
-        tcConfigB.fsiMultiAssemblyEmit <- false
 
     // Preset: --optimize+ -g --tailcalls+ (see 4505)
     do SetOptimizeSwitch tcConfigB OptionSwitch.On
     do SetDebugSwitch    tcConfigB (Some "pdbonly") OptionSwitch.On
     do SetTailcallSwitch tcConfigB OptionSwitch.On
 
-#if NETSTANDARD
     // set platform depending on whether the current process is a 64-bit process.
     // BUG 429882 : FsiAnyCPU.exe issues warnings (x64 v MSIL) when referencing 64-bit assemblies
     do tcConfigB.platform <- if IntPtr.Size = 8 then Some AMD64 else Some X86
-#endif
 
     let fsiStdinSyphon = FsiStdinSyphon(errorWriter)
     let fsiConsoleOutput = FsiConsoleOutput(tcConfigB, outWriter, errorWriter)
@@ -3722,7 +3726,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     /// A background thread is started by this thread to read from the inReader and/or console reader.
 
     member x.Run() =
-        progress <- condition "FSHARP_INTERACTIVE_PROGRESS"
+        progress <- isEnvVarSet "FSHARP_INTERACTIVE_PROGRESS"
 
         // Explanation: When Run is called we do a bunch of processing. For fsi.exe
         // and fsiAnyCpu.exe there are no other active threads at this point, so we can assume this is the
