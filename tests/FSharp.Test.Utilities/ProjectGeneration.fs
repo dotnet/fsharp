@@ -618,7 +618,9 @@ type ProjectWorkflowBuilder(initialProject: SyntheticProject, ?checker: FSharpCh
                     yield! projectOptions.OtherOptions
                     yield! projectOptions.SourceFiles
                 |]
-            let! _ = checker.Compile(arguments)
+            let! _diagnostics, exitCode = checker.Compile(arguments)
+            if exitCode <> 0 then
+                exn $"Compilation failed with exit code {exitCode}" |> raise
             return ctx
         }
     

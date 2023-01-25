@@ -3018,7 +3018,7 @@ module EstablishTypeDefinitionCores =
                         match tcref.CompiledRepresentation with
                         | CompiledTypeRepr.ILAsmOpen _ -> ()
                         | CompiledTypeRepr.ILAsmNamed _ ->
-                            if tcref.CompiledRepresentationForNamedType.FullName = "Microsoft.FSharp.Core.AutoOpenAttribute" then
+                            if tcref.CompiledRepresentationForNamedType.FullName = g.attrib_AutoOpenAttribute.TypeRef.FullName then
                                 warning(Error(FSComp.SR.chkAutoOpenAttributeInTypeAbbrev(), tycon.Id.idRange))
                     | _ -> ()
                     

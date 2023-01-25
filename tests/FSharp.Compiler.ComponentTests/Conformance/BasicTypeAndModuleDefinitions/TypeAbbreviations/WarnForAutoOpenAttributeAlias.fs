@@ -9,7 +9,7 @@ module WarnForAutoOpenAttributeAlias =
     [<Fact>]
     let ``Warn user when aliasing FSharp.Core.AutoOpenAttribute`` () =
         Fsx """
-type ByItsOwnNatureUnBottledAttribute = FSharp.Core.AutoOpenAttribute
+type ByItsOwnNatureUnBottledAttribute = Microsoft.FSharp.Core.AutoOpenAttribute
 
 [<ByItsOwnNatureUnBottled>]
 module Foo =
