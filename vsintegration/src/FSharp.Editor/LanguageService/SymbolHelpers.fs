@@ -47,9 +47,8 @@ module internal SymbolHelpers =
                     |> Seq.map (fun project () -> project.FindFSharpReferencesTasks(symbol, onFound, "getSymbolUsesInProjects", ct))
                     |> RoslynHelpers.ParallelBackgroundTasks ct
 
-                // maximum parallelism between projects
                 do! projectTasks
-                    |> interleave
+                    |> Seq.collect id
                     |> RoslynHelpers.ParallelProcessAsyncs ct
                     |> taskMap ignore
             }

@@ -208,23 +208,6 @@ let taskMap f t =
         return f result
     }
 
-let rec private interleave' result seqs =
-    match seqs with
-    | [] -> result
-    | _ ->
-        let items, newSeqs =
-            [ for s in seqs do
-                match s |> Seq.tryHead with
-                | Some item -> item, Seq.tail s
-                | None -> () ]
-            |> List.unzip
-
-        interleave' (Seq.append result items) newSeqs
-
-/// Combines sequences of varying lengths into one by interleaving the elements
-/// E.g. aaaaa bb ccc -> abcabcacaa
-let interleave seqs = seqs |> Seq.toList |> interleave' Seq.empty
-
 let FSharpExperimentalFeaturesEnabledAutomatically =
     String.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("FSHARP_EXPERIMENTAL_FEATURES"))
     |> not

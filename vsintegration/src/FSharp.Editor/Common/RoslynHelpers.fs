@@ -197,18 +197,18 @@ module internal RoslynHelpers =
 
         use semaphore = new SemaphoreSlim(Environment.ProcessorCount)
 
-        let releaseTasks = ResizeArray()
-        let tasks = ResizeArray()
+        let runningTasks = ResizeArray()
 
         for job in jobs do
             if not ct.IsCancellationRequested then
                 do! semaphore.WaitAsync ct
-                let task = Task.Run<'a>(job, ct)
-                tasks.Add task
-                releaseTasks.Add(task.ContinueWith(fun (_: Task<'a>) -> semaphore.Release() |> ignore))
+                runningTasks.Add(
+                    Task.Run<'a>(job, ct)
+                        .ContinueWith(fun (t: Task<'a>) ->
+                            semaphore.Release() |> ignore
+                            t.Result))
 
-        do! Task.WhenAll releaseTasks
-        return! Task.WhenAll tasks
+        return! Task.WhenAll runningTasks
     }
 
     /// Execute given asyncs on a background thread, running at most Environment.ProcessorCount at the same time
