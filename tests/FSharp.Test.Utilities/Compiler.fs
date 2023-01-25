@@ -225,8 +225,12 @@ module rec Compiler =
         let toErrorInfo (e: FSharpDiagnostic) : SourceCodeFileName * ErrorInfo =
             let errorNumber = e.ErrorNumber
             let severity = e.Severity
-
-            let error = if severity = FSharpDiagnosticSeverity.Warning then Warning errorNumber else Error errorNumber
+            let error = 
+                match severity with
+                | FSharpDiagnosticSeverity.Warning -> Warning errorNumber
+                | FSharpDiagnosticSeverity.Error -> Error errorNumber
+                | FSharpDiagnosticSeverity.Info -> Information errorNumber
+                | FSharpDiagnosticSeverity.Hidden -> Hidden errorNumber            
 
             e.FileName |> Path.GetFileName,
             { Error   = error
@@ -1263,7 +1267,7 @@ module rec Compiler =
         let withError (expectedError: ErrorInfo) (result: CompilationResult) : CompilationResult =
             withErrors [expectedError] result
 
-        module ExactResultAsserts = 
+        module StructuredResultsAsserts = 
             type SimpleErrorInfo =    
                 { Error:   ErrorType
                   Range:   Range        
@@ -1275,6 +1279,41 @@ module rec Compiler =
 
             let withResult (expectedResult: SimpleErrorInfo ) (result: CompilationResult) : CompilationResult =
                 withResults [expectedResult] result
+
+
+
+        module TextBasedDiagnosticAsserts = 
+            open FSharp.Compiler.Text.Range
+
+            let private messageAndNumber erroryType = 
+                match erroryType with
+                | ErrorType.Error n -> "error",n
+                | ErrorType.Warning n-> "warning",n
+                | ErrorType.Hidden n
+                | ErrorType.Information n-> "info",n
+
+            let private renderToString (cr:CompilationResult) = 
+                [ for (file,err) in cr.Output.PerFileErrors do
+                    let m = err.NativeRange
+                    let file = file.Replace("/", "\\")
+                    let severity,no = messageAndNumber err.Error
+                    let adjustedMessage = err.Message.Replace("\r\n","\n").Replace("\n","\r\n")
+                    let location = 
+                        if  (equals m range0) || (equals m rangeStartup) || (equals m rangeCmdArgs) then
+                            ""
+                        else 
+                            // The baseline .bsl files use 1-based notation for columns, hence the +1's
+                            sprintf "%s(%d,%d,%d,%d):" file m.StartLine (m.StartColumn+1) m.EndLine (m.EndColumn+1)
+                    Environment.NewLine + $"{location} typecheck {severity} FS%04d{no}: {adjustedMessage}" + Environment.NewLine
+                ]
+                |> String.Concat
+
+            let withResultsMatchingFile (path:string) (result:CompilationResult) = 
+                let expectedContent = File.ReadAllText(path)
+                let actualErrors = renderToString result
+                Assert.That(actualErrors, Is.EqualTo(expectedContent).NoClip)
+                result
+
 
         let checkCodes (expected: int list) (selector: CompilationOutput -> ErrorInfo list) (result: CompilationResult) : CompilationResult =
             match result with

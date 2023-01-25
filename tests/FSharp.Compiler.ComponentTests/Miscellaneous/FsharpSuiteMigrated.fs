@@ -17,8 +17,6 @@ module ScriptRunner =
         scriptingEnv.Eval """let exit (code:int) = if code=0 then () else failwith $"Script called function 'exit' with code={code}" """ |> ignore
         scriptingEnv
 
-    //let private getOrCreateEngine = createEngine//Tables.memoize createEngine
-
     let defaultDefines = 
         [ 
 #if NETCOREAPP
@@ -43,38 +41,11 @@ module ScriptRunner =
 
         | _ -> failwith $"Compilation unit other than fsharp is not supported, cannot process %A{cu}"
 
-module DiagnosticsComparison = 
-    open FSharp.Compiler.Text.Range
-
-    let messageAndNumber erroryType = 
-        match erroryType with
-        | ErrorType.Error n -> "error",n
-        | ErrorType.Warning n-> "warning",n
-        | ErrorType.Hidden n
-        | ErrorType.Information n-> "info",n
-
-    let renderToString (cr:CompilationResult) = 
-        [ for (file,err) in cr.Output.PerFileErrors do
-            let m = err.NativeRange
-            let file = file.Replace("/", "\\")
-
-            let severity,no = messageAndNumber err.Error
-
-            let location = 
-                if  (equals m range0) || (equals m rangeStartup) || (equals m rangeCmdArgs) then
-                    ""
-                else 
-                    sprintf "%s(%d,%d,%d,%d): " file m.StartLine m.StartColumn m.EndLine m.EndColumn
-
-            $"{location} typecheck {severity} FS%04d{no}: {err.Message}"
-
-        ]
-
-
-
 /// This test file was created by porting over (slower) FsharpSuite.Tests
 /// In order to minimize human error, the test definitions have been copy-pasted and this adapter provides implementations of the test functions
 module TestFrameworkAdapter = 
+    open FSharp.Test.Compiler.Assertions.TextBasedDiagnosticAsserts
+
     type ExecutionMode = 
         | FSC_DEBUG 
         | FSC_OPTIMIZED 
@@ -85,13 +56,19 @@ module TestFrameworkAdapter =
     let baseFolder = Path.Combine(__SOURCE_DIRECTORY__,"..","..","fsharp") |> Path.GetFullPath
     let inline testConfig (relativeFolder:string) = relativeFolder    
 
-    let diffNegativeBaseline (cr:CompilationUnit) absFolder testName  =
+    let diffNegativeBaseline (cr:CompilationUnit) absFolder testName version  =
         let expectedFiles = Directory.GetFiles(absFolder, testName + ".*")
-        [ for f in expectedFiles do
-            match Path.GetExtension(f) with
-            | "bsl" -> cr  |> typecheck |> shouldFail
-            | "vsbsl" -> cr |> withOptions ["--test:ContinueAfterParseFailure"]  |> typecheck |> shouldFail
-            | _ -> () ]
+        let baselines = 
+            [ for f in expectedFiles do
+                match Path.GetExtension(f) with
+                | ".bsl" -> cr, f
+                | ".vsbsl" -> cr |> withOptions ["--test:ContinueAfterParseFailure"], f
+                | _ -> () ]
+        [ for compilationUnit,baseline in baselines do
+            compilationUnit
+            |> withOptions ["--warnaserror+"]
+            |> ScriptRunner.runScriptFile version
+            |> withResultsMatchingFile baseline ]
         |> List.head
             
 
@@ -107,6 +84,10 @@ module TestFrameworkAdapter =
 
     let singleTestBuildAndRunAuxVersion (folder:string) bonusArgs mode langVersion = 
         let absFolder = Path.Combine(baseFolder,folder)
+        let supportedNames = 
+            match mode with 
+            | NEG_TEST_BUILD testName -> supportedNames.Add(testName+".fsx") 
+            | _ -> supportedNames
      
         let files = Directory.GetFiles(absFolder,"test*.fs*")
         let mainFile,otherFiles = 
@@ -160,7 +141,7 @@ module TestFrameworkAdapter =
                 |> withDefines ("TESTS_AS_APP" :: ScriptRunner.defaultDefines) 
                 |> compileExeAndRun 
                 |> shouldSucceed 
-            | NEG_TEST_BUILD testName -> diffNegativeBaseline cu absFolder testName
+            | NEG_TEST_BUILD testName -> diffNegativeBaseline cu absFolder testName langVersion
             
         |> ignore<CompilationResult>
     
@@ -256,7 +237,7 @@ module CoreTests =
     [<Fact>]
     let ``auto-widen-version-preview-default-warns``() = 
         let cfg = testConfig "core/auto-widen/preview-default-warns"  
-        singleVersionedNegTestAux cfg ["--warnon:3388";"--warnon:3389";"--warnon:3395";"--warnaserror+";"--define:NEGATIVE"] LangVersion.Preview "test"
+        singleVersionedNegTestAux cfg ["--warnaserror+";"--define:NEGATIVE"] LangVersion.Preview "test"
 
     [<Fact>]
     let ``comprehensions-FSC_DEBUG`` () = singleTestBuildAndRun "core/comprehensions" FSC_DEBUG
