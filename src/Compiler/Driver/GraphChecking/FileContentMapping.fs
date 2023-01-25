@@ -5,9 +5,7 @@ open FSharp.Compiler.SyntaxTreeOps
 
 type Continuations = ((FileContentEntry list -> FileContentEntry list) -> FileContentEntry list) list
 
-/// Option.toList >> (List.collect f)
 let cfo f a = lc f (Option.toList a)
-/// List.collect
 let lc = List.collect
 
 let longIdentToPath (skipLast: bool) (longId: LongIdent) : LongIdentifier =
@@ -57,10 +55,7 @@ let visitSynModuleDecl (decl: SynModuleDecl) : FileContentEntry list =
     | SynModuleDecl.Let (bindings = bindings) -> lc visitBinding bindings
     | SynModuleDecl.Types (typeDefns = typeDefns) -> lc visitSynTypeDefn typeDefns
     | SynModuleDecl.HashDirective _ -> []
-    | SynModuleDecl.ModuleAbbrev (longId = longId) ->
-        // I believe this is enough
-        // A module abbreviation doesn't appear to be exposed as part of the current module/namespace
-        visitLongIdentForModuleAbbrev longId
+    | SynModuleDecl.ModuleAbbrev (longId = longId) -> visitLongIdentForModuleAbbrev longId
     | SynModuleDecl.NamespaceFragment _ -> []
     | SynModuleDecl.Exception(exnDefn = SynExceptionDefn (exnRepr = SynExceptionDefnRepr (attributes = attributes
                                                                                           caseName = caseName

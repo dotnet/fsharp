@@ -1378,7 +1378,7 @@ let testFlag tcConfigB =
                     { tcConfigB.typeCheckingConfig with
                         Mode = TypeCheckingMode.Graph
                     }
-            | "DumpGraph" ->
+            | "DumpCheckingGraph" ->
                 tcConfigB.typeCheckingConfig <-
                     { tcConfigB.typeCheckingConfig with
                         DumpGraph = true

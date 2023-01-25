@@ -1465,11 +1465,11 @@ type FinalFileResult = TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNam
 type NodeToTypeCheck =
     /// A real physical file in the current project.
     /// This can be either an implementation or a signature file.
-    | PhysicalFile of fileIndex: int
+    | PhysicalFile of fileIndex: FileIndex
     /// An artificial node that will add the earlier processed signature information to the TcEnvFromImpls.
     /// Dependants on this type of node will perceive that a file is known in both TcEnvFromSignatures and TcEnvFromImpls.
     /// Even though the actual implementation file was not type-checked.
-    | ArtificialImplFile of signatureFileIndex: int
+    | ArtificialImplFile of signatureFileIndex: FileIndex
 
 let folder (state: State) (finisher: Finisher<State, FinalFileResult>) : FinalFileResult * State = finisher.Invoke(state)
 
@@ -1662,8 +1662,8 @@ let CheckMultipleInputsUsingGraphMode
         let mkArtificialImplFile n = NodeToTypeCheck.ArtificialImplFile n
         let mkPhysicalFile n = NodeToTypeCheck.PhysicalFile n
 
-        // Map any signature dependencies to the ArtificialImplFile counterparts.
-        // Unless, the signature dependency is the backing file of the current (implementation) file.
+        /// Map any signature dependencies to the ArtificialImplFile counterparts,
+        /// unless the signature dependency is the backing file of the current (implementation) file.
         let mapDependencies idx deps =
             Array.map
                 (fun dep ->
@@ -1671,8 +1671,8 @@ let CheckMultipleInputsUsingGraphMode
                         let implIdx = filePairs.GetImplementationIndex dep
 
                         if implIdx = idx then
-                            // This is the matching signature for the implementation
-                            // Keep using the physical file
+                            // This is the matching signature for the implementation.
+                            // Retain the direct dependency onto the signature file.
                             mkPhysicalFile dep
                         else
                             mkArtificialImplFile dep
@@ -1705,7 +1705,7 @@ let CheckMultipleInputsUsingGraphMode
             graph
             |> Graph.map (fun idx ->
                 let friendlyFileName =
-                    sourceFiles.[idx]
+                    sourceFiles[idx]
                         .FileName.Replace(tcConfig.implicitIncludeDir, "")
                         .TrimStart([| '\\'; '/' |])
 
