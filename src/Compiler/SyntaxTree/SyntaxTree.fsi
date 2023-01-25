@@ -443,7 +443,10 @@ type SynTupleTypeSegment =
 type SynType =
 
     /// F# syntax: A.B.C
-    | LongIdent of longDotId: SynLongIdent * isModule: bool
+    | LongIdent of longDotId: SynLongIdent
+
+    /// F# syntax: typeof<module A.B.C>
+    | LongIdentModule of longDotId: SynLongIdent
 
     /// F# syntax: type<type, ..., type> or type type or (type, ..., type) type
     ///   isPostfix: indicates a postfix type application e.g. "int list" or "(int, string) dict"

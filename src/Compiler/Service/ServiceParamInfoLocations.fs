@@ -89,8 +89,8 @@ module internal ParameterLocationsImpl =
 
     let digOutIdentFromStaticArg (StripParenTypes synType) =
         match synType with
-        | SynType.StaticConstantNamed (SynType.LongIdent (SynLongIdent ([ id ], _, _), _), _, _) -> Some id.idText
-        | SynType.LongIdent (SynLongIdent ([ id ], _, _), _) -> Some id.idText // NOTE: again, not a static constant, but may be a prefix of a Named in incomplete code
+        | SynType.StaticConstantNamed (SynType.LongIdent (SynLongIdent ([ id ], _, _)), _, _) -> Some id.idText
+        | SynType.LongIdent (SynLongIdent ([ id ], _, _)) -> Some id.idText // NOTE: again, not a static constant, but may be a prefix of a Named in incomplete code
         | _ -> None
 
     let getNamedParamName e =
@@ -119,7 +119,7 @@ module internal ParameterLocationsImpl =
 
     let getTypeName synType =
         match synType with
-        | SynType.LongIdent (SynLongIdent (ids, _, _), _) -> ids |> pathOfLid
+        | SynType.LongIdent (SynLongIdent (ids, _, _)) -> ids |> pathOfLid
         | _ -> [ "" ] // TODO type name for other cases, see also unit test named "ParameterInfo.LocationOfParams.AfterQuicklyTyping.CallConstructorViaLongId.Bug94333"
 
     let handleSingleArg traverseSynExpr (pos, synExpr, parenRange, rpRangeOpt: _ option) =
@@ -212,7 +212,7 @@ module internal ParameterLocationsImpl =
 
     let (|StaticParameters|_|) pos (StripParenTypes synType) =
         match synType with
-        | SynType.App (StripParenTypes (SynType.LongIdent (SynLongIdent (lid, _, _) as lidwd, _)),
+        | SynType.App (StripParenTypes (SynType.LongIdent (SynLongIdent (lid, _, _) as lidwd)),
                        Some mLess,
                        args,
                        commas,

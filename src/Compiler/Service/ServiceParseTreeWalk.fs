@@ -826,6 +826,7 @@ module SyntaxTraversal =
                 | SynType.Anon _
                 | SynType.AnonRecd _
                 | SynType.LongIdent _
+                | SynType.LongIdentModule _
                 | SynType.Var _
                 | SynType.StaticConstant _ -> None
 

@@ -8373,6 +8373,8 @@ FSharp.Compiler.Syntax.SynType+HashConstraint: FSharp.Compiler.Text.Range get_ra
 FSharp.Compiler.Syntax.SynType+HashConstraint: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynType+LongIdent: FSharp.Compiler.Syntax.SynLongIdent get_longDotId()
 FSharp.Compiler.Syntax.SynType+LongIdent: FSharp.Compiler.Syntax.SynLongIdent longDotId
+FSharp.Compiler.Syntax.SynType+LongIdentModule: FSharp.Compiler.Syntax.SynLongIdent get_longDotId()
+FSharp.Compiler.Syntax.SynType+LongIdentModule: FSharp.Compiler.Syntax.SynLongIdent longDotId
 FSharp.Compiler.Syntax.SynType+LongIdentApp: FSharp.Compiler.Syntax.SynLongIdent get_longDotId()
 FSharp.Compiler.Syntax.SynType+LongIdentApp: FSharp.Compiler.Syntax.SynLongIdent longDotId
 FSharp.Compiler.Syntax.SynType+LongIdentApp: FSharp.Compiler.Syntax.SynType get_typeName()

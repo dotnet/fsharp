@@ -118,7 +118,7 @@ extern void setCallbridgeSupportTarget(IntPtr newTarget)
                 SynModuleDecl.Let(false, [ SynBinding(returnInfo =
                     Some (SynBindingReturnInfo(typeName =
                         SynType.App(typeName =
-                            SynType.LongIdent(SynLongIdent([unitIdent], [], [Some (IdentTrivia.OriginalNotation "void")]), false))))) ] , _)
+                            SynType.LongIdent(SynLongIdent([unitIdent], [], [Some (IdentTrivia.OriginalNotation "void")])))))) ] , _)
                 ])
             ])) ->
             Assert.AreEqual("unit", unitIdent.idText)
@@ -139,7 +139,7 @@ extern int AccessibleChildren(int* x)
                     SynPat.LongIdent(argPats = SynArgPats.Pats [
                         SynPat.Tuple(_, [
                             SynPat.Attrib(pat = SynPat.Typed(targetType = SynType.App(typeName = SynType.LongIdent(
-                                SynLongIdent([nativeptrIdent], [], [Some (IdentTrivia.OriginalNotation "*")]), false
+                                SynLongIdent([nativeptrIdent], [], [Some (IdentTrivia.OriginalNotation "*")])
                                 ))))
                         ], _)
                     ])) ], _)
@@ -163,7 +163,7 @@ extern int AccessibleChildren(obj& x)
                     SynPat.LongIdent(argPats = SynArgPats.Pats [
                         SynPat.Tuple(_, [
                             SynPat.Attrib(pat = SynPat.Typed(targetType = SynType.App(typeName = SynType.LongIdent(
-                                SynLongIdent([byrefIdent], [], [Some (IdentTrivia.OriginalNotation "&")]), false
+                                SynLongIdent([byrefIdent], [], [Some (IdentTrivia.OriginalNotation "&")])
                                 ))))
                         ], _)
                     ])) ], _)
@@ -187,7 +187,7 @@ extern int AccessibleChildren(void* x)
                     SynPat.LongIdent(argPats = SynArgPats.Pats [
                         SynPat.Tuple(_, [
                             SynPat.Attrib(pat = SynPat.Typed(targetType = SynType.App(typeName = SynType.LongIdent(
-                                SynLongIdent([nativeintIdent], [], [Some (IdentTrivia.OriginalNotation "void*")]), false
+                                SynLongIdent([nativeintIdent], [], [Some (IdentTrivia.OriginalNotation "void*")])
                                 ))))
                         ], _)
                     ])) ], _)

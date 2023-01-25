@@ -4291,20 +4291,20 @@ and TcTypeOrMeasure kindOpt (cenv: cenv) newOk checkConstraints occ (iwsam: Warn
     let g = cenv.g
 
     match synTy with
-    | SynType.LongIdent(SynLongIdent([], _, _), _) ->
+    | SynType.LongIdent(SynLongIdent([], _, _)) ->
         // special case when type name is absent - i.e. empty inherit part in type declaration
         g.obj_ty, tpenv
 
-    | SynType.LongIdent (synLongId, false) ->
+    | SynType.LongIdent synLongId ->
         TcLongIdentType kindOpt cenv newOk checkConstraints occ iwsam env tpenv synLongId
 
-    | SynType.LongIdent (synLongId, true) ->
+    | SynType.LongIdentModule synLongId ->
         TcLongIdentModule cenv checkConstraints occ env tpenv synLongId
 
     | MultiDimensionArrayType (rank, elemTy, m) ->
         TcElementType cenv newOk checkConstraints occ env tpenv rank elemTy m
     
-    | SynType.App (StripParenTypes (SynType.LongIdent (longId, _)), _, args, _, _, postfix, m) ->
+    | SynType.App (StripParenTypes (SynType.LongIdent longId), _, args, _, _, postfix, m) ->
         TcLongIdentAppType kindOpt cenv newOk checkConstraints occ iwsam env tpenv longId postfix args m
 
     | SynType.LongIdentApp (synLeftTy, synLongId, _, args, _commas, _, m) ->
@@ -4715,7 +4715,7 @@ and TcStaticConstantParameter (cenv: cenv) (env: TcEnv) tpenv kind (StripParenTy
             | _ -> error(Error(FSComp.SR.tcInvalidConstantExpression(), v.Range))
         v, tpenv'
 
-    | SynType.LongIdent (synLongId, _) ->
+    | SynType.LongIdent synLongId ->
         let m = synLongId.Range
         TcStaticConstantParameter cenv env tpenv kind (SynType.StaticConstantExpr(SynExpr.LongIdent (false, synLongId, None, m), m)) idOpt container
 
@@ -4725,7 +4725,7 @@ and TcStaticConstantParameter (cenv: cenv) (env: TcEnv) tpenv kind (StripParenTy
 and CrackStaticConstantArgs (cenv: cenv) env tpenv (staticParameters: Tainted<ProvidedParameterInfo>[], args: SynType list, container, containerName, m) =
     let args =
         args |> List.map (function
-            | StripParenTypes (SynType.StaticConstantNamed(StripParenTypes (SynType.LongIdent(SynLongIdent([id], _, _), _)), v, _)) -> Some id, v
+            | StripParenTypes (SynType.StaticConstantNamed(StripParenTypes (SynType.LongIdent(SynLongIdent([id], _, _))), v, _)) -> Some id, v
             | v -> None, v)
 
     let unnamedArgs = args |> Seq.takeWhile (fst >> Option.isNone) |> Seq.toArray |> Array.map snd
@@ -7256,7 +7256,7 @@ and TcConstExpr cenv (overallTy: OverallTy) env m tpenv c =
                 else
                     match ccuOfTyconRef mref with
                     | Some ccu when ccuEq ccu g.fslibCcu ->
-                        SynExpr.Typed (expr, SynType.LongIdent(SynLongIdent(pathToSynLid m ["System";"Numerics";"BigInteger"], [], [None;None;None]), false), m)
+                        SynExpr.Typed (expr, SynType.LongIdent(SynLongIdent(pathToSynLid m ["System";"Numerics";"BigInteger"], [], [None;None;None])), m)
                     | _ ->
                         expr
 
@@ -10540,7 +10540,7 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
             let ad = env.eAccessRights
             match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInAttribute OpenQualified env.eNameResEnv ad tycon TypeNameResolutionStaticArgsInfo.DefiniteEmpty PermitDirectReferenceToGeneratedType.No with
             | Exception err -> raze err
-            | _ -> success(TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurence.UseInAttribute WarnOnIWSAM.Yes env tpenv (SynType.App(SynType.LongIdent(SynLongIdent(tycon, [], List.replicate tycon.Length None), false), None, [], [], None, false, mAttr)) )
+            | _ -> success(TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurence.UseInAttribute WarnOnIWSAM.Yes env tpenv (SynType.App(SynType.LongIdent(SynLongIdent(tycon, [], List.replicate tycon.Length None)), None, [], [], None, false, mAttr)) )
         ForceRaise ((try1 (tyid.idText + "Attribute")) |> otherwise (fun () -> (try1 tyid.idText)))
 
     let ad = env.eAccessRights

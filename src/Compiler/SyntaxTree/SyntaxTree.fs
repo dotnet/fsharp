@@ -391,7 +391,9 @@ type SynTupleTypeSegment =
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynType =
 
-    | LongIdent of longDotId: SynLongIdent * isModule: bool
+    | LongIdent of longDotId: SynLongIdent
+
+    | LongIdentModule of longDotId: SynLongIdent
 
     | App of
         typeName: SynType *
@@ -460,7 +462,8 @@ type SynType =
         | SynType.Paren (range = m)
         | SynType.SignatureParameter (range = m)
         | SynType.Or (range = m) -> m
-        | SynType.LongIdent (lidwd, _) -> lidwd.Range
+        | SynType.LongIdent lidwd -> lidwd.Range
+        | SynType.LongIdentModule lidwd -> lidwd.Range
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynExpr =
