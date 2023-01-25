@@ -12,6 +12,11 @@
         <target state="translated">Başvuruları hızlı bulma ve yeniden adlandırmayı etkinleştir (deneysel)</target>
         <note />
       </trans-unit>
+      <trans-unit id="Enable_Live_Buffers">
+        <source>Use live (unsaved) buffers for checking (restart required)</source>
+        <target state="new">Use live (unsaved) buffers for checking (restart required)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Find_References_Performance">
         <source>Find References Performance Options</source>
         <target state="translated">Başvuruları Bul Performans Seçenekleri</target>
@@ -62,6 +67,11 @@
         <target state="translated">N_okta alt çizgi</target>
         <note />
       </trans-unit>
+      <trans-unit id="LiveBuffers">
+        <source>Live Buffers (experimental)</source>
+        <target state="new">Live Buffers (experimental)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Navigation_links">
         <source>Navigation links</source>
         <target state="translated">Gezinti bağlantıları</target>
@@ -73,13 +83,13 @@
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Parameter_Name_Hints">
-        <source>Display inline parameter name hints (experimental)</source>
-        <target state="translated">Satır içi parametre adı ipuçlarını göster (deneysel)</target>
+        <source>Display inline parameter name hints (preview)</source>
+        <target state="needs-review-translation">Satır içi parametre adı ipuçlarını göster (deneysel)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Type_Hints">
-        <source>Display inline type hints (experimental)</source>
-        <target state="translated">Satır içi tür ipuçlarını göster (deneysel)</target>
+        <source>Display inline type hints (preview)</source>
+        <target state="needs-review-translation">Satır içi tür ipuçlarını göster (deneysel)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_all_symbols">

@@ -72,19 +72,21 @@ type LanguageServicePerformanceOptions =
         TimeUntilStaleCompletion = 2000 // In ms, so this is 2 seconds
         EnableParallelCheckingWithSignatureFiles = false
         EnableParallelReferenceResolution = false
-        EnableFastFindReferences = false }
+        EnableFastFindReferences = FSharpExperimentalFeaturesEnabledAutomatically }
 
 [<CLIMutable>]
 type AdvancedOptions =
     { IsBlockStructureEnabled: bool
       IsOutliningEnabled: bool
       IsInlineTypeHintsEnabled: bool
-      IsInlineParameterNameHintsEnabled: bool }
+      IsInlineParameterNameHintsEnabled: bool
+      IsLiveBuffersEnabled: bool }
     static member Default =
       { IsBlockStructureEnabled = true
         IsOutliningEnabled = true
         IsInlineTypeHintsEnabled = false 
-        IsInlineParameterNameHintsEnabled = false }
+        IsInlineParameterNameHintsEnabled = false
+        IsLiveBuffersEnabled = FSharpExperimentalFeaturesEnabledAutomatically }
 
 [<CLIMutable>]
 type FormattingOptions =
