@@ -55,7 +55,7 @@ let GetInitialOptimizationEnv (tcImports: TcImports, tcGlobals: TcGlobals) =
 
 type private OptimizeDuringCodeGen = bool -> Expr -> Expr
 
-type PhaseRes =
+type PhaseContext =
     {
         OptEnvFirstLoop: Optimizer.IncrementalOptimizationEnv
         OptInfo: Optimizer.ImplFileOptimizationInfo
@@ -65,7 +65,7 @@ type PhaseRes =
         OptDuringCodeGen: OptimizeDuringCodeGen
     }
 
-type PhaseRess = CheckedImplFile * PhaseRes
+type PhaseRes = CheckedImplFile * PhaseContext
 
 type PhaseIdx = int
 type F<'In, 'Out> = 'In -> 'Out
@@ -75,12 +75,12 @@ type PhaseInputs =
         File: CheckedImplFile
         FileIdx: int
         // State returned by processing the previous phase for the current file.
-        PrevPhase: PhaseRes
+        PrevPhase: PhaseContext
         // State returned by processing the current phase for the previous file.
-        PrevFile: PhaseRes
+        PrevFile: PhaseContext
     }
 
-type PhaseFunc = PhaseInputs -> CheckedImplFile * PhaseRes
+type PhaseFunc = PhaseInputs -> CheckedImplFile * PhaseContext
 
 /// <summary>
 /// Each file's optimization can be split into three different phases, executed one after another.
@@ -115,7 +115,7 @@ module private ParallelOptimization =
 
     /// Final processing of file results to produce output needed for further compilation steps.
     let private collectFinalResults
-        (fileResults: PhaseRess[])
+        (fileResults: PhaseRes[])
         : (CheckedImplFileAfterOptimization * ImplFileOptimizationInfo)[] * IncrementalOptimizationEnv =
         let finalFileResults =
             fileResults
@@ -156,9 +156,9 @@ module private ParallelOptimization =
 
         // Functions for accessing a set of node jobs and their results
         let getTask, setTask =
-            let tasks: Task<PhaseRess>[,] = Array2D.zeroCreate files.Length phases.Length
+            let tasks: Task<PhaseRes>[,] = Array2D.zeroCreate files.Length phases.Length
             let getTask (node: Node) = tasks[node.FileIdx, node.Phase]
-            let setTask (node: Node) (task: Task<PhaseRess>) = tasks[node.FileIdx, node.Phase] <- task
+            let setTask (node: Node) (task: Task<PhaseRes>) = tasks[node.FileIdx, node.Phase] <- task
             getTask, setTask
 
         let getNodeInputs (node: Node) =
@@ -262,7 +262,7 @@ let optimizeFilesSequentially optEnv (phases: PhaseInfos) implFiles =
                         OptDuringCodeGen = fun _ expr -> expr
                     }
 
-                let runPhase (file: CheckedImplFile, state: PhaseRes) (phase: PhaseInfo) =
+                let runPhase (file: CheckedImplFile, state: PhaseContext) (phase: PhaseInfo) =
                     // In the sequential mode we always process all phases of the previous file before processing the current file.
                     // This is why the state returned by the previous phase of the current file contains all changes made in the previous file,
                     // and we can use it in both places.
@@ -378,7 +378,7 @@ let ApplyAllOptimizations
              PrevPhase = prevPhase
              PrevFile = prevFile
          }: PhaseInputs)
-        : PhaseRess =
+        : PhaseRes =
         let (env, file, optInfo, hidingInfo), optDuringCodeGen =
             Optimizer.OptimizeImplFile(
                 phase1Settings,
@@ -410,7 +410,7 @@ let ApplyAllOptimizations
              PrevPhase = prevPhase
              PrevFile = _prevFile
          }: PhaseInputs)
-        : PhaseRess =
+        : PhaseRes =
         let file = LowerLocalMutables.TransformImplFile tcGlobals importMap file
         file, prevPhase
 
@@ -422,7 +422,7 @@ let ApplyAllOptimizations
              PrevPhase = prevPhase
              PrevFile = prevFile
          }: PhaseInputs)
-        : PhaseRess =
+        : PhaseRes =
         let (optEnvExtraLoop, file, _, _), _ =
             Optimizer.OptimizeImplFile(
                 phase2And3Settings,
@@ -452,7 +452,7 @@ let ApplyAllOptimizations
              PrevPhase = prevPhase
              PrevFile = _prevFile
          }: PhaseInputs)
-        : PhaseRess =
+        : PhaseRes =
         let file = file |> Detuple.DetupleImplFile ccu tcGlobals
         file, prevPhase
 
@@ -465,7 +465,7 @@ let ApplyAllOptimizations
              PrevPhase = prevPhase
              PrevFile = _prevFile
          }: PhaseInputs)
-        : PhaseRess =
+        : PhaseRes =
         let file =
             file
             |> InnerLambdasToTopLevelFuncs.MakeTopLevelRepresentationDecisions ccu tcGlobals
@@ -481,7 +481,7 @@ let ApplyAllOptimizations
              PrevPhase = prevPhase
              PrevFile = _prevFile
          }: PhaseInputs)
-        : PhaseRess =
+        : PhaseRes =
         let file = LowerCalls.LowerImplFile tcGlobals file
         file, prevPhase
 
@@ -493,7 +493,7 @@ let ApplyAllOptimizations
              PrevPhase = prevPhase
              PrevFile = prevFile
          }: PhaseInputs)
-        : PhaseRess =
+        : PhaseRes =
         let (optEnvFinalSimplify, file, _, _), _ =
             Optimizer.OptimizeImplFile(
                 phase2And3Settings,
