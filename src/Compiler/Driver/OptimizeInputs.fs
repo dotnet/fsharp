@@ -74,19 +74,15 @@ type PhaseInputs =
     {
         File: CheckedImplFile
         FileIdx: int
-        // State returned by processing the previous phase for the current file.
+        // State returned by processing the previous phase for the current file, or initial state.
         PrevPhase: PhaseContext
-        // State returned by processing the current phase for the previous file.
+        // State returned by processing the current phase for the previous file, or initial state.
         PrevFile: PhaseContext
     }
 
 type PhaseFunc = PhaseInputs -> CheckedImplFile * PhaseContext
 
-/// <summary>
-/// Each file's optimization can be split into three different phases, executed one after another.
-/// Each phase calls 'Optimizer.OptimizeImplFile' and performs some other tasks.
-/// Each phase uses outputs of the previous phase and outputs of previous file's optimization for the same phase.
-/// </summary>
+/// Each file's optimization can be split into up to seven different phases, executed one after another.
 type Phase =
     {
         Idx: PhaseIdx
@@ -133,15 +129,14 @@ module private ParallelOptimization =
 
         finalFileResults, lastFileFirstLoopEnv
 
-    let private raiseNoResultsExn (node: Node) =
-        raise (exn $"Unexpected lack of results for {node}")
-
-    let optimizeFilesInParallel2
+    let optimizeFilesInParallel
         (env0: IncrementalOptimizationEnv)
         (phases: PhaseInfos)
         (files: CheckedImplFile list)
         : (CheckedImplFileAfterOptimization * ImplFileOptimizationInfo)[] * IncrementalOptimizationEnv =
 
+        let files = files |> List.toArray
+        
         /// Initial state for processing the current file.
         let initialState =
             {
@@ -330,24 +325,8 @@ let ApplyAllOptimizations
             reportingPhase = false
         }
 
-    let measurements = ConcurrentDictionary<string, int64>()
-
-    let measure (name: string) =
-        let sw = Stopwatch.StartNew()
-
-        { new System.IDisposable with
-            member this.Dispose() =
-                lock measurements (fun () ->
-                    if measurements.ContainsKey name = false then
-                        measurements[name] <- 0L
-
-                    measurements[name] <- measurements[name] + sw.ElapsedMilliseconds)
-        }
-
     let wrapPhaseFunc (f: PhaseFunc) (info: Phase) =
         fun (inputs: PhaseInputs) ->
-            use _ = measure info.Name
-
             use _ =
                 let tags =
                     [|
@@ -523,13 +502,10 @@ let ApplyAllOptimizations
         match tcConfig.optSettings.processingMode with
         | Optimizer.OptimizationProcessingMode.Parallel ->
             let results, optEnvFirstPhase =
-                ParallelOptimization.optimizeFilesInParallel2 optEnv phases implFiles
+                ParallelOptimization.optimizeFilesInParallel optEnv phases implFiles
 
             results |> Array.toList, optEnvFirstPhase
         | Optimizer.OptimizationProcessingMode.Sequential -> optimizeFilesSequentially optEnv phases implFiles
-
-    for kvp in measurements do
-        printfn $"[{kvp.Key}] = {kvp.Value}"
 
 #if DEBUG
     if tcConfig.showOptimizationData then
