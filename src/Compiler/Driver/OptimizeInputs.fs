@@ -521,7 +521,7 @@ let ApplyAllOptimizations
 
     let results, optEnvFirstLoop =
         match tcConfig.optSettings.processingMode with
-        | Optimizer.OptimizationProcessingMode.PartiallyParallel ->
+        | Optimizer.OptimizationProcessingMode.Parallel ->
             let results, optEnvFirstPhase =
                 ParallelOptimization.optimizeFilesInParallel2 optEnv phases implFiles
 

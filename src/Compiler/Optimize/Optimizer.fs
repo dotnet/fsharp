@@ -292,11 +292,8 @@ let [<Literal>] debugPointsForPipeRightDefault = true
 
 [<RequireQualifiedAccess>]
 type OptimizationProcessingMode =
-    /// Process files sequentially, on a single thread, doing all three optimization phases for each file next to each other.
     | Sequential
-    /// Use multiple threads.
-    /// As soon as a given phase for a file has finished, start processing the next phase of the current file and the same phase of the next file.
-    | PartiallyParallel
+    | Parallel
 
 type OptimizationSettings = 
     { 
