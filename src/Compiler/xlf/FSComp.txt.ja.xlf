@@ -1138,8 +1138,8 @@
         <note />
       </trans-unit>
       <trans-unit id="typrelNeverRefinedAwayFromTop">
-        <source>A type inference variable has been implicitly inferred to have type `obj`. Consider adding explicit type annotations, disabling the warning, or suppressing it locally with `#nowarn \"3559\"`.</source>
-        <target state="new">A type inference variable has been implicitly inferred to have type `obj`. Consider adding explicit type annotations, disabling the warning, or suppressing it locally with `#nowarn \"3559\"`.</target>
+        <source>A type has been implicitly inferred as `obj`, which may be unintended. Consider adding explicit type annotations, disabling the warning, or suppressing it locally with `#nowarn \"3559\"`.</source>
+        <target state="new">A type has been implicitly inferred as `obj`, which may be unintended. Consider adding explicit type annotations, disabling the warning, or suppressing it locally with `#nowarn \"3559\"`.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
