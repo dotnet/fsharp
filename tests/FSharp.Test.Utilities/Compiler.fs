@@ -1310,10 +1310,17 @@ module rec Compiler =
 
             let withResultsMatchingFile (path:string) (result:CompilationResult) = 
                 let expectedContent = File.ReadAllText(path)
-                let actualErrors = renderToString result
-                Assert.That(actualErrors, Is.EqualTo(expectedContent).NoClip)
-                result
+                let actualErrors = renderToString result                
 
+                match Environment.GetEnvironmentVariable("TEST_UPDATE_BSL") with
+                | null -> ()
+                | _ -> File.WriteAllText(path, actualErrors)
+
+                match Assert.shouldBeSameMultilineStringSets expectedContent actualErrors with
+                | None -> Assert.That(actualErrors, Is.EqualTo(expectedContent).NoClip)
+                | Some diff -> Assert.That(diff, Is.Empty)
+                
+                result
 
         let checkCodes (expected: int list) (selector: CompilationOutput -> ErrorInfo list) (result: CompilationResult) : CompilationResult =
             match result with
