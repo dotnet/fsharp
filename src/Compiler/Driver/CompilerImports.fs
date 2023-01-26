@@ -106,15 +106,6 @@ let GetResourceNameAndOptimizationDataFunc (r: ILResource) =
 let IsReflectedDefinitionsResource (r: ILResource) =
     r.Name.StartsWithOrdinal(QuotationPickler.SerializedReflectedDefinitionsResourceNameBase)
 
-let MakeILResource rName bytes =
-    {
-        Name = rName
-        Location = ILResourceLocation.Local(ByteStorage.FromByteArray(bytes))
-        Access = ILResourceAccess.Public
-        CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
-        MetadataIndex = NoMetadataIdx
-    }
-
 let PickleToResource inMem file (g: TcGlobals) compress scope rName p x =
     let file = PathMap.apply g.pathMap file
 

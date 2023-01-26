@@ -1669,3 +1669,7 @@ featureEscapeBracesInFormattableString,"Escapes curly braces before calling Form
 3552,chkConstructorWithArgumentsOnStaticClasses,"If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Constructor with arguments is not allowed."
 3553,chkAdditionalConstructorOnStaticClasses,"If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Additional constructor is not allowed."
 3554,chkInstanceMemberOnStaticClasses,"If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance members are not allowed."
+3555,chkInstanceLetBindingOnStaticClasses,"If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance let bindings are not allowed."
+3556,chkImplementingInterfacesOnStaticClasses,"If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Implementing interfaces is not allowed."
+3557,chkAbstractMembersDeclarationsOnStaticClasses,"If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Abstract member declarations are not allowed."
+3558,chkExplicitFieldsDeclarationsOnStaticClasses,"If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Explicit field declarations are not allowed."

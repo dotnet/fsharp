@@ -3,13 +3,13 @@
 namespace FSharp.Editor.Tests
 
 open System.Threading
-open NUnit.Framework
+open Xunit
 open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
+open FSharp.Test
 
-[<TestFixture>]
 type SyntacticClassificationServiceTests() =
 
     member private this.ExtractMarkerData(fileContents: string, marker: string, defines: string list, isScriptFile: Option<bool>) =
@@ -34,7 +34,7 @@ type SyntacticClassificationServiceTests() =
             )
 
         let markerPosition = fileContents.IndexOf(marker)
-        Assert.IsTrue(markerPosition >= 0, "Cannot find marker '{0}' in file contents", marker)
+        Assert.True(markerPosition >= 0, $"Cannot find marker '{marker}' in file contents")
         (tokens, markerPosition)
 
     member private this.VerifyColorizerAtStartOfMarker
@@ -49,9 +49,10 @@ type SyntacticClassificationServiceTests() =
             this.ExtractMarkerData(fileContents, marker, defines, isScriptFile)
 
         match tokens |> Seq.tryFind (fun token -> token.TextSpan.Contains(markerPosition)) with
-        | None -> Assert.Fail("Cannot find colorization data for start of marker")
-        | Some (classifiedSpan) ->
-            Assert.AreEqual(classificationType, classifiedSpan.ClassificationType, "Classification data doesn't match for start of marker")
+        | None -> failwith "Cannot find colorization data for start of marker"
+        | Some classifiedSpan ->
+            classifiedSpan.ClassificationType |> Assert.shouldBeEqualWith classificationType
+                "Classification data doesn't match for start of marker"
 
     member private this.VerifyColorizerAtEndOfMarker
         (
@@ -68,11 +69,12 @@ type SyntacticClassificationServiceTests() =
             tokens
             |> Seq.tryFind (fun token -> token.TextSpan.Contains(markerPosition + marker.Length - 1))
         with
-        | None -> Assert.Fail("Cannot find colorization data for end of marker")
-        | Some (classifiedSpan) ->
-            Assert.AreEqual(classificationType, classifiedSpan.ClassificationType, "Classification data doesn't match for end of marker")
+        | None -> failwith "Cannot find colorization data for end of marker"
+        | Some classifiedSpan ->
+            classifiedSpan.ClassificationType |> Assert.shouldBeEqualWith classificationType
+                "Classification data doesn't match for end of marker"
 
-    [<Test>]
+    [<Fact>]
     member this.Comment_SingleLine() =
         this.VerifyColorizerAtEndOfMarker(
             fileContents =
@@ -83,7 +85,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.Comment
         )
 
-    [<Test>]
+    [<Fact>]
     member this.Conment_SingleLine_MultiConments() =
         this.VerifyColorizerAtEndOfMarker(
             fileContents =
@@ -94,7 +96,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.Comment
         )
 
-    [<Test>]
+    [<Fact>]
     member this.Comment_MultiLine_AfterAnExpression() =
         this.VerifyColorizerAtEndOfMarker(
             fileContents =
@@ -107,7 +109,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.Comment
         )
 
-    [<Test>]
+    [<Fact>]
     member this.Comment_MultiLine_WithLineBreakAndATab() =
         this.VerifyColorizerAtEndOfMarker(
             fileContents =
@@ -121,7 +123,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.Comment
         )
 
-    [<Test>]
+    [<Fact>]
     member this.Comment_MultiLine_WithLineBreakAfterQuotExp() =
         this.VerifyColorizerAtEndOfMarker(
             fileContents =
@@ -135,7 +137,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.Comment
         )
 
-    [<Test>]
+    [<Fact>]
     member this.Comment_MultiLine_AfterANumber() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -149,7 +151,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.NumericLiteral
         )
 
-    [<Test>]
+    [<Fact>]
     member this.Comment_Nested_Nested01() =
         this.VerifyColorizerAtEndOfMarker(
             fileContents =
@@ -170,7 +172,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.Comment
         )
 
-    [<Test>]
+    [<Fact>]
     member this.Comment_Nested_Nested02() =
         this.VerifyColorizerAtEndOfMarker(
             fileContents =
@@ -191,7 +193,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.Comment
         )
 
-    [<Test>]
+    [<Fact>]
     member this.Comment_Nested_Nested03() =
         this.VerifyColorizerAtEndOfMarker(
             fileContents =
@@ -212,7 +214,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.Comment
         )
 
-    [<Test>]
+    [<Fact>]
     member this.Comment_Nested_IdentAfterNestedComments() =
         this.VerifyColorizerAtEndOfMarker(
             fileContents =
@@ -233,7 +235,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.Identifier
         )
 
-    [<Test>]
+    [<Fact>]
     member this.Comment_CommentInString() =
         this.VerifyColorizerAtEndOfMarker(
             fileContents =
@@ -245,7 +247,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.StringLiteral
         )
 
-    [<Test>]
+    [<Fact>]
     member this.Comment_StringInComment() =
         this.VerifyColorizerAtEndOfMarker(
             fileContents =
@@ -258,7 +260,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.Comment
         )
 
-    [<Test>]
+    [<Fact>]
     member this.Comment_Unterminated_KeywordBeforeComment() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -273,7 +275,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.Keyword
         )
 
-    [<Test>]
+    [<Fact>]
     member this.Comment_Unterminated_KeywordInComment() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -295,7 +297,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.Comment
         )
 
-    [<Test>]
+    [<Fact>]
     member this.Comment_Unterminated_NestedComments() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -319,7 +321,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.Comment
         )
 
-    [<Test>]
+    [<Fact>]
     member this.String_AtEnd() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -330,7 +332,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.StringLiteral
         )
 
-    [<Test>]
+    [<Fact>]
     member this.String_MultiLines() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -342,7 +344,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.StringLiteral
         )
 
-    [<Test>]
+    [<Fact>]
     member this.String_MultiLines_LineBreak() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -354,7 +356,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.StringLiteral
         )
 
-    [<Test>]
+    [<Fact>]
     member this.String_Literal() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -365,7 +367,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.StringLiteral
         )
 
-    [<Test>]
+    [<Fact>]
     member this.ByteString_AtEnd() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -376,7 +378,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.StringLiteral
         )
 
-    [<Test>]
+    [<Fact>]
     member this.ByteString_MultiLines() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -388,7 +390,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.StringLiteral
         )
 
-    [<Test>]
+    [<Fact>]
     member this.ByteString_Literal() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -399,7 +401,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.StringLiteral
         )
 
-    [<Test>]
+    [<Fact>]
     member this.EscapedIdentifier_word() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """let ``this is an escaped identifier 123ASDF@#$"`` = 4""",
@@ -408,7 +410,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.Identifier
         )
 
-    [<Test>]
+    [<Fact>]
     member this.EscapedIdentifier_SpecialChar() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """let ``this is an escaped identifier 123ASDF@#$"`` = 4""",
@@ -417,7 +419,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.Identifier
         )
 
-    [<Test>]
+    [<Fact>]
     member this.EscapedIdentifier_EscapeChar() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """let ``this is an escaped identifier 123ASDF@#$"`` = 4""",
@@ -427,7 +429,7 @@ type SyntacticClassificationServiceTests() =
         )
 
     /// Regression for 3609 - Colorizer: __SOURCE__ and others colorized as a string
-    [<Test>]
+    [<Fact>]
     member this.PredefinedIdentifier_SOURCE_DIRECTORY() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -438,7 +440,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.Keyword
         )
 
-    [<Test>]
+    [<Fact>]
     member this.PredefinedIdentifier_SOURCE_FILE() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -449,7 +451,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.Keyword
         )
 
-    [<Test>]
+    [<Fact>]
     member this.PredefinedIdentifier_LINE() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -461,7 +463,7 @@ type SyntacticClassificationServiceTests() =
         )
 
     // Regression Test for FSB 3566, F# colorizer does not respect numbers
-    [<Test>]
+    [<Fact>]
     member this.Number_InAnExpression() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """let f x = x + 9""",
@@ -471,7 +473,7 @@ type SyntacticClassificationServiceTests() =
         )
 
     // Regression Test for FSB 1778 - Colorization seems to be confused after parsing a comment that contains a verbatim string that contains a \
-    [<Test>]
+    [<Fact>]
     member this.Number_AfterCommentWithBackSlash() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents = """let f (* @"\\" *)x = x + 19(*Marker1*)""",
@@ -481,7 +483,7 @@ type SyntacticClassificationServiceTests() =
         )
 
     // Regression Test for FSharp1.0:2539 -- lexing @"" strings inside (* *) comments?
-    [<Test>]
+    [<Fact>]
     member this.Keyword_AfterCommentWithLexingStrings() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -498,7 +500,7 @@ type SyntacticClassificationServiceTests() =
         )
 
     // Regression Test for FSB 1380 - Language Service colorizes anything followed by a bang as a keyword
-    [<Test>]
+    [<Fact>]
     member this.Keyword_LetBang() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -514,7 +516,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.Keyword
         )
 
-    [<Test>]
+    [<Fact>]
     member this.Keyword_Yield() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -530,7 +532,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.Keyword
         )
 
-    [<Test>]
+    [<Fact>]
     member this.Keyword_Do() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -546,7 +548,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.Keyword
         )
 
-    [<Test>]
+    [<Fact>]
     member this.Keyword_Invalid_Bang() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -560,7 +562,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.Identifier
         )
 
-    [<Test>]
+    [<Fact>]
     //This test case Verify that the color of const is the keyword color
     member this.TypeProvider_StaticParameters_Keyword_const() =
         this.VerifyColorizerAtStartOfMarker(
@@ -573,7 +575,7 @@ type SyntacticClassificationServiceTests() =
         )
 
     // Regression test for FSB 3696 - Colorization doesn't treat #if/else/endif correctly when embedded in a string literal
-    [<Test>]
+    [<Fact>]
     member this.PreProcessor_InStringLiteral01() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -590,7 +592,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.ExcludedCode
         )
 
-    [<Test>]
+    [<Fact>]
     member this.PreProcessor_InStringLiteral02() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -607,7 +609,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.ExcludedCode
         )
 
-    [<Test>]
+    [<Fact>]
     member this.PreProcessor_ElseKeyword() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -624,7 +626,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.PreprocessorKeyword
         )
 
-    [<Test>]
+    [<Fact>]
     member this.PreProcessor_InStringLiteral03() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -641,7 +643,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.StringLiteral
         )
 
-    [<Test>]
+    [<Fact>]
     member this.PreProcessor_InStringLiteral04() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -659,7 +661,7 @@ type SyntacticClassificationServiceTests() =
         )
 
     // Regression test for FSHARP1.0:4279
-    [<Test>]
+    [<Fact>]
     member this.Keyword_OCaml_asr() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -673,7 +675,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.Keyword
         )
 
-    [<Test>]
+    [<Fact>]
     member this.Keyword_OCaml_land() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -687,7 +689,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.Keyword
         )
 
-    [<Test>]
+    [<Fact>]
     member this.Keyword_OCaml_lor() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -701,7 +703,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.Keyword
         )
 
-    [<Test>]
+    [<Fact>]
     member this.Keyword_OCaml_lsl() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -715,7 +717,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.Keyword
         )
 
-    [<Test>]
+    [<Fact>]
     member this.Keyword_OCaml_lsr() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -729,7 +731,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.Keyword
         )
 
-    [<Test>]
+    [<Fact>]
     member this.Keyword_OCaml_lxor() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -743,7 +745,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.Keyword
         )
 
-    [<Test>]
+    [<Fact>]
     member this.Keyword_OCaml_mod() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -757,7 +759,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.Keyword
         )
 
-    [<Test>]
+    [<Fact>]
     member this.Keyword_OCaml_sig() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -771,20 +773,21 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.Keyword
         )
 
-    [<TestCase("Active Code1*)le", ClassificationTypeNames.Keyword)>]
-    [<TestCase("Active Code2*)le", ClassificationTypeNames.Keyword)>]
-    [<TestCase("Active Code3*)le", ClassificationTypeNames.Keyword)>]
-    [<TestCase("Active Code4*)le", ClassificationTypeNames.Keyword)>]
-    [<TestCase("Active Code5*)le", ClassificationTypeNames.Keyword)>]
-    [<TestCase("Active Code6*)le", ClassificationTypeNames.Keyword)>]
-    [<TestCase("Active Code7*)le", ClassificationTypeNames.Keyword)>]
-    [<TestCase("Inactive Code1*)le", ClassificationTypeNames.ExcludedCode)>]
-    [<TestCase("Inactive Code2*)le", ClassificationTypeNames.ExcludedCode)>]
-    [<TestCase("Inactive Code3*)le", ClassificationTypeNames.ExcludedCode)>]
-    [<TestCase("Inactive Code4*)le", ClassificationTypeNames.ExcludedCode)>]
-    [<TestCase("Inactive Code5*)le", ClassificationTypeNames.ExcludedCode)>]
-    [<TestCase("Inactive Code6*)le", ClassificationTypeNames.ExcludedCode)>]
-    [<TestCase("Inactive Code7*)le", ClassificationTypeNames.ExcludedCode)>]
+    [<Theory>]
+    [<InlineData("Active Code1*)le", ClassificationTypeNames.Keyword)>]
+    [<InlineData("Active Code2*)le", ClassificationTypeNames.Keyword)>]
+    [<InlineData("Active Code3*)le", ClassificationTypeNames.Keyword)>]
+    [<InlineData("Active Code4*)le", ClassificationTypeNames.Keyword)>]
+    [<InlineData("Active Code5*)le", ClassificationTypeNames.Keyword)>]
+    [<InlineData("Active Code6*)le", ClassificationTypeNames.Keyword)>]
+    [<InlineData("Active Code7*)le", ClassificationTypeNames.Keyword)>]
+    [<InlineData("Inactive Code1*)le", ClassificationTypeNames.ExcludedCode)>]
+    [<InlineData("Inactive Code2*)le", ClassificationTypeNames.ExcludedCode)>]
+    [<InlineData("Inactive Code3*)le", ClassificationTypeNames.ExcludedCode)>]
+    [<InlineData("Inactive Code4*)le", ClassificationTypeNames.ExcludedCode)>]
+    [<InlineData("Inactive Code5*)le", ClassificationTypeNames.ExcludedCode)>]
+    [<InlineData("Inactive Code6*)le", ClassificationTypeNames.ExcludedCode)>]
+    [<InlineData("Inactive Code7*)le", ClassificationTypeNames.ExcludedCode)>]
     member this.InactiveCode(marker: string, classificationType: string) =
         let fileContents =
             """
@@ -829,7 +832,7 @@ type SyntacticClassificationServiceTests() =
 
         this.VerifyColorizerAtEndOfMarker(fileContents, marker, [ "DEFINED" ], classificationType)
 
-    [<Test>]
+    [<Fact>]
     member public this.Colorizer_AtString() =
         this.VerifyColorizerAtEndOfMarker(
             "let s = @\"Bob\"",
@@ -838,9 +841,10 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.StringLiteral
         )
 
-    [<TestCase("__(*Test1*)", ClassificationTypeNames.Keyword)>]
-    [<TestCase("__(*Test2*)", ClassificationTypeNames.Keyword)>]
-    [<TestCase("__(*Test3*)", ClassificationTypeNames.Keyword)>]
+    [<Theory>]
+    [<InlineData("__(*Test1*)", ClassificationTypeNames.Keyword)>]
+    [<InlineData("__(*Test2*)", ClassificationTypeNames.Keyword)>]
+    [<InlineData("__(*Test3*)", ClassificationTypeNames.Keyword)>]
     member public this.Regression_Bug4860(marker: string, classificationType: string) =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -853,30 +857,31 @@ type SyntacticClassificationServiceTests() =
             classificationType = classificationType
         )
 
-    [<TestCase("let n = 1", ClassificationTypeNames.NumericLiteral)>]
-    [<TestCase("let l = [1", ClassificationTypeNames.NumericLiteral)>]
-    [<TestCase("let l = [12..1", ClassificationTypeNames.NumericLiteral)>]
-    [<TestCase("let l2 = [1", ClassificationTypeNames.NumericLiteral)>]
-    [<TestCase("let l2 = [12 .. 1", ClassificationTypeNames.NumericLiteral)>]
-    [<TestCase("let l3 = [ 1", ClassificationTypeNames.NumericLiteral)>]
-    [<TestCase("let l3 = [ 12 .. 1", ClassificationTypeNames.NumericLiteral)>]
-    [<TestCase("0x4", ClassificationTypeNames.NumericLiteral)>]
-    [<TestCase("0b0100", ClassificationTypeNames.NumericLiteral)>]
-    [<TestCase("4L", ClassificationTypeNames.NumericLiteral)>]
-    [<TestCase("4UL", ClassificationTypeNames.NumericLiteral)>]
-    [<TestCase("4u", ClassificationTypeNames.NumericLiteral)>]
-    [<TestCase("4s", ClassificationTypeNames.NumericLiteral)>]
-    [<TestCase("4us", ClassificationTypeNames.NumericLiteral)>]
-    [<TestCase("4y", ClassificationTypeNames.NumericLiteral)>]
-    [<TestCase("4uy", ClassificationTypeNames.NumericLiteral)>]
-    [<TestCase("4.0", ClassificationTypeNames.NumericLiteral)>]
-    [<TestCase("4.0f", ClassificationTypeNames.NumericLiteral)>]
-    [<TestCase("4N", ClassificationTypeNames.NumericLiteral)>]
-    [<TestCase("4I", ClassificationTypeNames.NumericLiteral)>]
-    [<TestCase("1M", ClassificationTypeNames.NumericLiteral)>]
-    [<TestCase("123", ClassificationTypeNames.NumericLiteral)>]
-    [<TestCase("// comment1: 12", ClassificationTypeNames.Comment)>]
-    [<TestCase("(* comment2: 12", ClassificationTypeNames.Comment)>]
+    [<Theory>]
+    [<InlineData("let n = 1", ClassificationTypeNames.NumericLiteral)>]
+    [<InlineData("let l = [1", ClassificationTypeNames.NumericLiteral)>]
+    [<InlineData("let l = [12..1", ClassificationTypeNames.NumericLiteral)>]
+    [<InlineData("let l2 = [1", ClassificationTypeNames.NumericLiteral)>]
+    [<InlineData("let l2 = [12 .. 1", ClassificationTypeNames.NumericLiteral)>]
+    [<InlineData("let l3 = [ 1", ClassificationTypeNames.NumericLiteral)>]
+    [<InlineData("let l3 = [ 12 .. 1", ClassificationTypeNames.NumericLiteral)>]
+    [<InlineData("0x4", ClassificationTypeNames.NumericLiteral)>]
+    [<InlineData("0b0100", ClassificationTypeNames.NumericLiteral)>]
+    [<InlineData("4L", ClassificationTypeNames.NumericLiteral)>]
+    [<InlineData("4UL", ClassificationTypeNames.NumericLiteral)>]
+    [<InlineData("4u", ClassificationTypeNames.NumericLiteral)>]
+    [<InlineData("4s", ClassificationTypeNames.NumericLiteral)>]
+    [<InlineData("4us", ClassificationTypeNames.NumericLiteral)>]
+    [<InlineData("4y", ClassificationTypeNames.NumericLiteral)>]
+    [<InlineData("4uy", ClassificationTypeNames.NumericLiteral)>]
+    [<InlineData("4.0", ClassificationTypeNames.NumericLiteral)>]
+    [<InlineData("4.0f", ClassificationTypeNames.NumericLiteral)>]
+    [<InlineData("4N", ClassificationTypeNames.NumericLiteral)>]
+    [<InlineData("4I", ClassificationTypeNames.NumericLiteral)>]
+    [<InlineData("1M", ClassificationTypeNames.NumericLiteral)>]
+    [<InlineData("123", ClassificationTypeNames.NumericLiteral)>]
+    [<InlineData("// comment1: 12", ClassificationTypeNames.Comment)>]
+    [<InlineData("(* comment2: 12", ClassificationTypeNames.Comment)>]
     member public this.Number_Regression_Bug3566(marker: string, classificationType: string) =
         this.VerifyColorizerAtEndOfMarker(
             fileContents =
@@ -893,7 +898,8 @@ type SyntacticClassificationServiceTests() =
         )
 
     /// FEATURE: Hash commands in .fsx files are colorized in PreprocessorKeyword color
-    [<TestCase("I <--hash I", ClassificationTypeNames.PreprocessorKeyword)>]
+    [<Theory>]
+    [<InlineData("I <--hash I", ClassificationTypeNames.PreprocessorKeyword)>]
     member public this.Preprocessor_InFsxFile_StartOfMarker(marker: string, classificationType: string) =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -908,9 +914,10 @@ type SyntacticClassificationServiceTests() =
         )
 
     /// FEATURE: Hash commands in .fsx files are colorized in PreprocessorKeyword color
-    [<TestCase("#ref", ClassificationTypeNames.PreprocessorKeyword)>]
-    [<TestCase("#loa", ClassificationTypeNames.PreprocessorKeyword)>]
-    [<TestCase("#ti", ClassificationTypeNames.PreprocessorKeyword)>]
+    [<Theory>]
+    [<InlineData("#ref", ClassificationTypeNames.PreprocessorKeyword)>]
+    [<InlineData("#loa", ClassificationTypeNames.PreprocessorKeyword)>]
+    [<InlineData("#ti", ClassificationTypeNames.PreprocessorKeyword)>]
     member public this.Preprocessor_InFsxFile_EndOfMarker(marker: string, classificationType: string) =
         this.VerifyColorizerAtEndOfMarker(
             fileContents =
@@ -925,7 +932,8 @@ type SyntacticClassificationServiceTests() =
         )
 
     /// FEATURE: Script-specific hash commands do not show up in blue in .fs files.
-    [<TestCase(" <--hash I", ClassificationTypeNames.Text)>]
+    [<Theory>]
+    [<InlineData(" <--hash I", ClassificationTypeNames.Text)>]
     member public this.Preprocessor_InFsFile_StartOfMarker(marker: string, classificationType: string) =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -939,9 +947,10 @@ type SyntacticClassificationServiceTests() =
         )
 
     /// FEATURE: Script-specific hash commands do not show up in blue in .fs files.
-    [<TestCase("#ref", ClassificationTypeNames.Text)>]
-    [<TestCase("#loa", ClassificationTypeNames.Text)>]
-    [<TestCase("#ti", ClassificationTypeNames.Text)>]
+    [<Theory>]
+    [<InlineData("#ref", ClassificationTypeNames.Text)>]
+    [<InlineData("#loa", ClassificationTypeNames.Text)>]
+    [<InlineData("#ti", ClassificationTypeNames.Text)>]
     member public this.Preprocessor_InFsFile_EndOfMarker(marker: string, classificationType: string) =
         this.VerifyColorizerAtEndOfMarker(
             fileContents =
@@ -955,9 +964,10 @@ type SyntacticClassificationServiceTests() =
         )
 
     /// FEATURE: Nested (* *) comments are allowed and will be colorized with CommentColor. Only the final *) causes the comment to close.
-    [<TestCase("(*Bob*)t", ClassificationTypeNames.Keyword)>]
-    [<TestCase("(*Alice*)t", ClassificationTypeNames.Comment)>]
-    [<TestCase("(*Charles*)t", ClassificationTypeNames.Keyword)>]
+    [<Theory>]
+    [<InlineData("(*Bob*)t", ClassificationTypeNames.Keyword)>]
+    [<InlineData("(*Alice*)t", ClassificationTypeNames.Comment)>]
+    [<InlineData("(*Charles*)t", ClassificationTypeNames.Keyword)>]
     member public this.Comment_AfterCommentBlock(marker: string, classificationType: string) =
         this.VerifyColorizerAtEndOfMarker(
             fileContents =
@@ -974,7 +984,7 @@ type SyntacticClassificationServiceTests() =
         )
 
     /// BUG: The comment used to be colored in black.
-    [<Test>]
+    [<Fact>]
     member public this.Regression_Bug1596() =
         this.VerifyColorizerAtEndOfMarker(
             fileContents = " let 2d (* Identifiers cannot start with numbers *)",
@@ -984,12 +994,13 @@ type SyntacticClassificationServiceTests() =
         )
 
     /// FEATURE: Code inside #if\#else\#endif blocks is colored with InactiveCodeColor depending on defines. This works for nested #if blocks as well.
-    [<TestCase("(*Bob*)t", ClassificationTypeNames.Keyword)>]
-    [<TestCase("(*Alice*)t", ClassificationTypeNames.ExcludedCode)>]
-    [<TestCase("(*Tom*)t", ClassificationTypeNames.ExcludedCode)>]
-    [<TestCase("(*Maurice*)t", ClassificationTypeNames.ExcludedCode)>]
-    [<TestCase("(*Larry*)t", ClassificationTypeNames.Keyword)>]
-    [<TestCase("(*Charles*)t", ClassificationTypeNames.Keyword)>]
+    [<Theory>]
+    [<InlineData("(*Bob*)t", ClassificationTypeNames.Keyword)>]
+    [<InlineData("(*Alice*)t", ClassificationTypeNames.ExcludedCode)>]
+    [<InlineData("(*Tom*)t", ClassificationTypeNames.ExcludedCode)>]
+    [<InlineData("(*Maurice*)t", ClassificationTypeNames.ExcludedCode)>]
+    [<InlineData("(*Larry*)t", ClassificationTypeNames.Keyword)>]
+    [<InlineData("(*Charles*)t", ClassificationTypeNames.Keyword)>]
     member public this.Preprocessor_AfterPreprocessorBlock(marker: string, classificationType: string) =
         this.VerifyColorizerAtEndOfMarker(
             fileContents =
@@ -1014,8 +1025,9 @@ type SyntacticClassificationServiceTests() =
         )
 
     // Wrong "#else" in "#if" should be ignored
-    [<TestCase("(*Alice*)t", ClassificationTypeNames.ExcludedCode)>]
-    [<TestCase("(*Larry*)t", ClassificationTypeNames.ExcludedCode)>]
+    [<Theory>]
+    [<InlineData("(*Alice*)t", ClassificationTypeNames.ExcludedCode)>]
+    [<InlineData("(*Larry*)t", ClassificationTypeNames.ExcludedCode)>]
     member public this.Preprocessor_InvalidElseDirectiveIgnored(marker: string, classificationType: string) =
         this.VerifyColorizerAtEndOfMarker(
             fileContents =
@@ -1030,12 +1042,13 @@ type SyntacticClassificationServiceTests() =
         )
 
     /// FEATURE: Code inside #if\#else\#endif blocks is colored with InactiveCodeColor depending on defines. This works for nested #if blocks as well.
-    [<TestCase("(*Bob*)t", ClassificationTypeNames.Keyword)>]
-    [<TestCase("(*Alice*)t", ClassificationTypeNames.ExcludedCode)>]
-    [<TestCase("(*Tom*)t", ClassificationTypeNames.ExcludedCode)>]
-    [<TestCase("(*Maurice*)t", ClassificationTypeNames.ExcludedCode)>]
-    [<TestCase("(*Larry*)t", ClassificationTypeNames.Keyword)>]
-    [<TestCase("(*Charles*)t", ClassificationTypeNames.Keyword)>]
+    [<Theory>]
+    [<InlineData("(*Bob*)t", ClassificationTypeNames.Keyword)>]
+    [<InlineData("(*Alice*)t", ClassificationTypeNames.ExcludedCode)>]
+    [<InlineData("(*Tom*)t", ClassificationTypeNames.ExcludedCode)>]
+    [<InlineData("(*Maurice*)t", ClassificationTypeNames.ExcludedCode)>]
+    [<InlineData("(*Larry*)t", ClassificationTypeNames.Keyword)>]
+    [<InlineData("(*Charles*)t", ClassificationTypeNames.Keyword)>]
     member public this.Preprocessor_AfterPreprocessorBlockWithDefines(marker: string, classificationType: string) =
         this.VerifyColorizerAtEndOfMarker(
             fileContents =
@@ -1061,16 +1074,17 @@ type SyntacticClassificationServiceTests() =
 
     /// FEATURE: Preprocessor keywords #light\#if\#else\#endif are colored with the PreprocessorKeyword color.
     /// FEATURE: All code in the inactive side of #if\#else\#endif is colored with with InactiveCode color.
-    [<TestCase("light (*Light*)", ClassificationTypeNames.PreprocessorKeyword)>]
-    [<TestCase("(*Inactive*)", ClassificationTypeNames.ExcludedCode)>]
-    [<TestCase("if UNDEFINED //(*If*)", ClassificationTypeNames.PreprocessorKeyword)>]
-    [<TestCase("FINED //(*If*)", ClassificationTypeNames.Identifier)>]
-    [<TestCase("(*If*)", ClassificationTypeNames.Comment)>]
-    [<TestCase("else //(*Else*)", ClassificationTypeNames.PreprocessorKeyword)>]
-    [<TestCase("t(*Active*)", ClassificationTypeNames.Keyword)>]
-    [<TestCase("endif //(*Endif*)", ClassificationTypeNames.PreprocessorKeyword)>]
-    [<TestCase("(*Else*)", ClassificationTypeNames.Comment)>]
-    [<TestCase("(*Endif*)", ClassificationTypeNames.Comment)>]
+    [<Theory>]
+    [<InlineData("light (*Light*)", ClassificationTypeNames.PreprocessorKeyword)>]
+    [<InlineData("(*Inactive*)", ClassificationTypeNames.ExcludedCode)>]
+    [<InlineData("if UNDEFINED //(*If*)", ClassificationTypeNames.PreprocessorKeyword)>]
+    [<InlineData("FINED //(*If*)", ClassificationTypeNames.Identifier)>]
+    [<InlineData("(*If*)", ClassificationTypeNames.Comment)>]
+    [<InlineData("else //(*Else*)", ClassificationTypeNames.PreprocessorKeyword)>]
+    [<InlineData("t(*Active*)", ClassificationTypeNames.Keyword)>]
+    [<InlineData("endif //(*Endif*)", ClassificationTypeNames.PreprocessorKeyword)>]
+    [<InlineData("(*Else*)", ClassificationTypeNames.Comment)>]
+    [<InlineData("(*Endif*)", ClassificationTypeNames.Comment)>]
     member public this.Preprocessor_Keywords(marker: string, classificationType: string) =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -1087,7 +1101,7 @@ type SyntacticClassificationServiceTests() =
 
     /// FEATURE: Preprocessor extended grammar basic check.
     /// FEATURE:  More extensive grammar test is done in compiler unit tests
-    [<Test>]
+    [<Fact>]
     member public this.Preprocesso_ExtendedIfGrammar_Basic01() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -1103,7 +1117,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.StringLiteral
         )
 
-    [<Test>]
+    [<Fact>]
     member public this.Preprocessor_ExtendedIfGrammar_Basic02() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -1120,7 +1134,7 @@ type SyntacticClassificationServiceTests() =
         )
 
     /// #else / #endif in multiline strings is ignored
-    [<Test>]
+    [<Fact>]
     member public this.Preprocessor_DirectivesInString() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -1138,9 +1152,10 @@ type SyntacticClassificationServiceTests() =
         )
 
     /// Bug 2076 - String literals were causing the endif stack information to be discarded
-    [<TestCase("if UNDEFINED //(*If*)", ClassificationTypeNames.PreprocessorKeyword)>]
-    [<TestCase("else //(*Else*)", ClassificationTypeNames.PreprocessorKeyword)>]
-    [<TestCase("endif //(*Endif*)", ClassificationTypeNames.PreprocessorKeyword)>]
+    [<Theory>]
+    [<InlineData("if UNDEFINED //(*If*)", ClassificationTypeNames.PreprocessorKeyword)>]
+    [<InlineData("else //(*Else*)", ClassificationTypeNames.PreprocessorKeyword)>]
+    [<InlineData("endif //(*Endif*)", ClassificationTypeNames.PreprocessorKeyword)>]
     member public this.Preprocessor_KeywordsWithStrings(marker: string, classificationType: string) =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -1157,7 +1172,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = classificationType
         )
 
-    [<Test>]
+    [<Fact>]
     member public this.Comment_VerbatimStringInComment_Bug1778() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -1168,7 +1183,7 @@ type SyntacticClassificationServiceTests() =
             classificationType = ClassificationTypeNames.Keyword
         )
 
-    [<Test>]
+    [<Fact>]
     member public this.Preprocessor_KeywordsWrongIf_Bug1577() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
@@ -1180,7 +1195,7 @@ type SyntacticClassificationServiceTests() =
         )
 
     // This was an off-by-one bug in the replacement Colorizer
-    [<Test>]
+    [<Fact>]
     member public this.Keyword_LastCharacterOfKeyword() =
         this.VerifyColorizerAtEndOfMarker(
             fileContents = "(*Bob*)type Bob() = int",

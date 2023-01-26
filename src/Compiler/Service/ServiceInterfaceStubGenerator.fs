@@ -522,21 +522,6 @@ module InterfaceStubGenerator =
         | Some ty -> Some ty
         | None -> None
 
-    let internal (|EventFunctionType|_|) (ty: FSharpType) =
-        match ty with
-        | MemberFunctionType ty ->
-            if ty.IsFunctionType && ty.GenericArguments.Count = 2 then
-                let retType = ty.GenericArguments[0]
-                let argType = ty.GenericArguments[1]
-
-                if argType.GenericArguments.Count = 2 then
-                    Some(argType.GenericArguments[0], retType)
-                else
-                    None
-            else
-                None
-        | _ -> None
-
     let internal removeWhitespace (str: string) = str.Replace(" ", "")
 
     /// Filter out duplicated interfaces in inheritance chain
