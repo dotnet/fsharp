@@ -6,12 +6,14 @@ open System
 open System.Diagnostics
 open Internal.Utilities.Library
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices.ParsedInput
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Tokenization
+
 
 [<AutoOpen>]
 module internal CodeGenerationUtils =
@@ -46,13 +48,6 @@ module internal CodeGenerationUtils =
             member _.Dispose() =
                 stringWriter.Dispose()
                 indentWriter.Dispose()
-
-    /// An recursive pattern that collect all sequential expressions to avoid StackOverflowException
-    let rec (|Sequentials|_|) =
-        function
-        | SynExpr.Sequential (_, _, e, Sequentials es, _) -> Some(e :: es)
-        | SynExpr.Sequential (_, _, e1, e2, _) -> Some [ e1; e2 ]
-        | _ -> None
 
     /// Represent environment where a captured identifier should be renamed
     type NamesWithIndices = Map<string, Set<int>>

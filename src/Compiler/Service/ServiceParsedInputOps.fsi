@@ -120,6 +120,9 @@ type public InsertionContextEntity =
 
 /// Operations querying the entire syntax tree
 module public ParsedInput =
+    /// An pattern that collects all sequential expressions to avoid StackOverflowException
+    val (|Sequentials|_|): SynExpr -> SynExpr list option
+
     val TryFindExpressionASTLeftOfDotLeftOfCursor: pos: pos * parsedInput: ParsedInput -> (pos * bool) option
 
     val GetRangeOfExprLeftOfDot: pos: pos * parsedInput: ParsedInput -> range option
