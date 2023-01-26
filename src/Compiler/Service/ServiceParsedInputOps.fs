@@ -244,7 +244,7 @@ module ParsedInput =
 
         match collect expr [] with
         | [] -> None
-        | exprs -> Some (List.rev exprs)
+        | exprs -> Some(List.rev exprs)
 
     let emptyStringSet = HashSet<string>()
 

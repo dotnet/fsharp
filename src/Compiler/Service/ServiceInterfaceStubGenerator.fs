@@ -14,7 +14,6 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Tokenization
 
-
 [<AutoOpen>]
 module internal CodeGenerationUtils =
     open System.IO
