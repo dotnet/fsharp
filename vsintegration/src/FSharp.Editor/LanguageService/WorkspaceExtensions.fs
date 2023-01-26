@@ -91,7 +91,7 @@ module private CheckerExtensions =
             }
 
 [<RequireQualifiedAccess>]
-module private ProjectCache =
+module internal ProjectCache =
 
     /// This is a cache to maintain FSharpParsingOptions and FSharpProjectOptions per Roslyn Project.
     /// The Roslyn Project is held weakly meaning when it is cleaned up by the GC, the FSharParsingOptions and FSharpProjectOptions will be cleaned up by the GC.
@@ -99,9 +99,8 @@ module private ProjectCache =
     let Projects = ConditionalWeakTable<Project, FSharpChecker * FSharpProjectOptionsManager * FSharpParsingOptions * FSharpProjectOptions>()    
 
 type Solution with
-
     /// Get the instance of IFSharpWorkspaceService.
-    member private this.GetFSharpWorkspaceService() =
+    member internal this.GetFSharpWorkspaceService() =
         this.Workspace.Services.GetRequiredService<IFSharpWorkspaceService>()
 
 type Document with
@@ -207,15 +206,6 @@ type Document with
             return Tokenizer.getSymbolAtPosition(this.Id, sourceText, position, this.FilePath, defines, lookupKind, wholeActivePattern, allowStringToken)
         }
 
-    /// This is only used for testing purposes. It sets the ProjectCache.Projects with the given FSharpProjectOptions and F# document's project.
-    member this.SetFSharpProjectOptionsForTesting(projectOptions: FSharpProjectOptions) =
-        let workspaceService = this.Project.Solution.GetFSharpWorkspaceService()
-        let parsingOptions, _ = 
-            workspaceService.FSharpProjectOptionsManager.TryGetOptionsForDocumentOrProject(this, CancellationToken.None, nameof(this.SetFSharpProjectOptionsForTesting))
-            |> Async.RunImmediateExceptOnUI
-            |> Option.get
-        ProjectCache.Projects.Add(this.Project, (workspaceService.Checker, workspaceService.FSharpProjectOptionsManager, parsingOptions, projectOptions))
-
 type Project with
 
     /// Find F# references in the given project.
@@ -247,3 +237,20 @@ type Project with
                 do! doc.FindFSharpReferencesAsync(symbol, (fun textSpan range -> onFound doc textSpan range), userOpName)
                     |> RoslynHelpers.StartAsyncAsTask ct
     }
+    
+    member this.GetFSharpCompilationOptionsAsync(ct: CancellationToken) =
+        backgroundTask {
+            if this.IsFSharp then
+                match ProjectCache.Projects.TryGetValue(this) with
+                | true, result -> return result
+                | _ ->
+                    let service = this.Solution.GetFSharpWorkspaceService()
+                    let projectOptionsManager = service.FSharpProjectOptionsManager
+                    match! projectOptionsManager.TryGetOptionsByProject(this, ct) with
+                    | None -> return raise(OperationCanceledException("FSharp project options not found."))
+                    | Some(parsingOptions, projectOptions) ->
+                        let result = (service.Checker, projectOptionsManager, parsingOptions, projectOptions)
+                        return ProjectCache.Projects.GetValue(this, ConditionalWeakTable<_,_>.CreateValueCallback(fun _ -> result))
+            else
+                return raise(OperationCanceledException("Project is not a FSharp project."))
+        }
