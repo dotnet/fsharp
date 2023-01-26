@@ -3028,7 +3028,7 @@ module EstablishTypeDefinitionCores =
                     let kind = if hasMeasureAttr then TyparKind.Measure else TyparKind.Type
                     let ty, _ = TcTypeOrMeasureAndRecover (Some kind) cenv NoNewTypars checkConstraints ItemOccurence.UseInType WarnOnIWSAM.No envinner tpenv rhsType
 
-                    match ty with
+                    match stripTyEqns g ty with
                     | AppTy g (tcref, _) when not tcref.IsErased ->
                         match tcref.CompiledRepresentation with
                         | CompiledTypeRepr.ILAsmOpen _ -> ()
