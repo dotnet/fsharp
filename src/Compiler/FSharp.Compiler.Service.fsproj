@@ -135,7 +135,6 @@
     <Compile Include="Utilities\RidHelpers.fs" />
     <Compile Include="Utilities\range.fsi" />
     <Compile Include="Utilities\range.fs" />
-    <Compile Include="Utilities\ParallelProcessing.fs" />
     <EmbeddedText Include="Facilities\UtilsStrings.txt" />
     <Compile Include="Facilities\LanguageFeatures.fsi" />
     <Compile Include="Facilities\LanguageFeatures.fs" />

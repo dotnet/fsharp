@@ -136,7 +136,7 @@ module private ParallelOptimization =
         : (CheckedImplFileAfterOptimization * ImplFileOptimizationInfo)[] * IncrementalOptimizationEnv =
 
         let files = files |> List.toArray
-        
+
         /// Initial state for processing the current file.
         let initialState =
             {
