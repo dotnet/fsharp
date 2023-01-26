@@ -142,7 +142,7 @@ but here has type
 test.fsx(68,22,68,25): typecheck error FS0001: This expression was expected to have type
     'int64'    
 but here has type
-    'int'      
+    'int'    
 
 test.fsx(69,26,69,29): typecheck error FS0001: This expression was expected to have type
     'int64'    
@@ -549,11 +549,6 @@ but here has type
     'ICloneable'    
 
 test.fsx(290,21,290,23): typecheck error FS0001: This expression was expected to have type
-    'obj'    
-but here has type
-    'string'    
-
-test.fsx(291,21,291,30): typecheck error FS0001: This expression was expected to have type
     'obj'    
 but here has type
     'string'    

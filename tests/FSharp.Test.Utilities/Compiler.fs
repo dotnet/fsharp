@@ -1314,6 +1314,7 @@ module rec Compiler =
 
                 match Environment.GetEnvironmentVariable("TEST_UPDATE_BSL") with
                 | null -> ()
+                | _ when expectedContent = actualErrors -> ()
                 | _ -> File.WriteAllText(path, actualErrors)
 
                 match Assert.shouldBeSameMultilineStringSets expectedContent actualErrors with
