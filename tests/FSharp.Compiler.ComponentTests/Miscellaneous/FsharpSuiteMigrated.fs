@@ -9,12 +9,22 @@ open FSharp.Test
 open FSharp.Test.Compiler
 open FSharp.Test.ScriptHelpers 
 
+
+
 module ScriptRunner = 
     open Internal.Utilities.Library
     
     let private createEngine(args,version) = 
         let scriptingEnv = getSessionForEval args version
-        scriptingEnv.Eval """let exit (code:int) = if code=0 then () else failwith $"Script called function 'exit' with code={code}" """ |> ignore
+        scriptingEnv.Eval """
+let errorStringWriter = new System.IO.StringWriter()        
+let oldConsoleError = System.Console.Error
+System.Console.SetError(errorStringWriter)
+let exit (code:int) = 
+    System.Console.SetError(oldConsoleError)
+    if code=0 then 
+        () 
+    else failwith $"Script called function 'exit' with code={code} and collected in stderr: {errorStringWriter.ToString()}" """ |> ignore
         scriptingEnv
 
     let defaultDefines = 
@@ -500,17 +510,15 @@ module CoreTests =
     [<Fact>]
     let ``test int32-FSI`` () = singleTestBuildAndRun "core/int32" FSI
 
-    // This test stays in FsharpSuite for a later migration phases, it uses hardcoded #r to a C# compiled cslib.dll inside
-#if NETCOREAPP
-    [<Fact>]
+    // This test stays in FsharpSuite for desktop framework for a later migration phases, it uses hardcoded #r to a C# compiled cslib.dll inside
+    [<FactForNETCOREAPP>]
     let ``quotes-FSC-FSC_DEBUG`` () = singleTestBuildAndRun "core/quotes" FSC_DEBUG
 
-    [<Fact>]
+    [<FactForNETCOREAPP>]
     let ``quotes-FSC-BASIC`` () = singleTestBuildAndRun "core/quotes" FSC_OPTIMIZED
 
-    [<Fact>]
+    [<FactForNETCOREAPP>]
     let ``quotes-FSI-BASIC`` () = singleTestBuildAndRun "core/quotes" FSI
-#endif
 
     [<Fact>]
     let ``recordResolution-FSC_DEBUG`` () = singleTestBuildAndRun "core/recordResolution" FSC_DEBUG
@@ -521,20 +529,18 @@ module CoreTests =
     [<Fact>]
     let ``recordResolution-FSI`` () = singleTestBuildAndRun "core/recordResolution" FSI
 
-#if NETCOREAPP
 // This test has hardcoded expectations about current synchronization context
-// Will be moved out of FsharpSuite.Tests in a later phase
-    [<Fact>]
+// Will be moved out of FsharpSuite.Tests in a later phase for desktop framework
+    [<FactForNETCOREAPP>]
     let ``control-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/control" FSC_OPTIMIZED
 
-    [<Fact>]
+    [<FactForNETCOREAPP>]
     let ``control-FSI`` () = singleTestBuildAndRun "core/control" FSI
 
-    [<Fact>]
+    [<FactForNETCOREAPP>]
     let ``control --tailcalls`` () =
         let cfg = testConfig "core/control"
         singleTestBuildAndRunAux cfg  ["--tailcalls"] FSC_OPTIMIZED
-#endif
 
     [<Fact>]
     let ``controlChamenos-FSC_OPTIMIZED`` () =
@@ -585,10 +591,8 @@ module CoreTests =
     let ``patterns-FSC_OPTIMIZED`` () = singleTestBuildAndRunVersion "core/patterns" FSC_OPTIMIZED LangVersion.Preview
 
 // This requires --multiemit on by default, which is not the case for .NET Framework
-#if NETCOREAPP
-    [<Fact>]
+    [<FactForNETCOREAPP>]
     let ``patterns-FSI`` () = singleTestBuildAndRun "core/patterns" FSI
-#endif
 
     [<Fact>]
     let ``fsi_load-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/fsi-load" FSC_OPTIMIZED
