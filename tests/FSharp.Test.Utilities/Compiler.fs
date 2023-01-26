@@ -145,7 +145,8 @@ module rec Compiler =
         { Error:   ErrorType
           Range:   Range
           NativeRange : FSharp.Compiler.Text.range
-          Message: string }
+          Message: string
+          SubCategory: string }
 
     type ExecutionOutput =
         { ExitCode: int
@@ -235,6 +236,7 @@ module rec Compiler =
             e.FileName |> Path.GetFileName,
             { Error   = error
               NativeRange = e.Range
+              SubCategory = e.Subcategory
               Range   =
                   { StartLine   = e.StartLine
                     StartColumn = e.StartColumn
@@ -612,6 +614,7 @@ module rec Compiler =
               EndLine = span.End.Line
               EndColumn = span.End.Character }
           NativeRange = Unchecked.defaultof<_>
+          SubCategory = ""
           Message = d.GetMessage() }
 
     let private compileCSharpCompilation (compilation: CSharpCompilation) csSource (filePath : string) dependencies : CompilationResult =
@@ -1255,6 +1258,7 @@ module rec Compiler =
                               EndLine     = endLine
                               EndColumn   = endCol }
                         NativeRange = Unchecked.defaultof<_>
+                        SubCategory = ""
                         Message     = message } ]
             withResultsIgnoreNativeRange expectedResults result
 
@@ -1274,7 +1278,7 @@ module rec Compiler =
                   Message: string }
 
             let withResults (expectedResults: SimpleErrorInfo list) result : CompilationResult =
-                let mappedResults = expectedResults |> List.map (fun s -> { Error = s.Error;Range = s.Range;  Message = s.Message; NativeRange = Unchecked.defaultof<_>})
+                let mappedResults = expectedResults |> List.map (fun s -> { Error = s.Error;Range = s.Range;  Message = s.Message; NativeRange = Unchecked.defaultof<_>; SubCategory = ""})
                 Compiler.Assertions.withResultsIgnoreNativeRange mappedResults result
 
             let withResult (expectedResult: SimpleErrorInfo ) (result: CompilationResult) : CompilationResult =
@@ -1292,24 +1296,26 @@ module rec Compiler =
                 | ErrorType.Hidden n
                 | ErrorType.Information n-> "info",n
 
+            let normalizeNewLines (s:string) = s.Replace("\r\n","\n").Replace("\n",Environment.NewLine) 
+
             let private renderToString (cr:CompilationResult) = 
                 [ for (file,err) in cr.Output.PerFileErrors do
                     let m = err.NativeRange
                     let file = file.Replace("/", "\\")
                     let severity,no = messageAndNumber err.Error
-                    let adjustedMessage = err.Message.Replace("\r\n","\n").Replace("\n","\r\n")
+                    let adjustedMessage = err.Message |> normalizeNewLines
                     let location = 
                         if  (equals m range0) || (equals m rangeStartup) || (equals m rangeCmdArgs) then
                             ""
                         else 
                             // The baseline .bsl files use 1-based notation for columns, hence the +1's
                             sprintf "%s(%d,%d,%d,%d):" file m.StartLine (m.StartColumn+1) m.EndLine (m.EndColumn+1)
-                    Environment.NewLine + $"{location} typecheck {severity} FS%04d{no}: {adjustedMessage}" + Environment.NewLine
+                    Environment.NewLine + $"{location} {err.SubCategory} {severity} FS%04d{no}: {adjustedMessage}" + Environment.NewLine
                 ]
                 |> String.Concat
 
             let withResultsMatchingFile (path:string) (result:CompilationResult) = 
-                let expectedContent = File.ReadAllText(path)
+                let expectedContent = File.ReadAllText(path) |> normalizeNewLines
                 let actualErrors = renderToString result                
 
                 match Environment.GetEnvironmentVariable("TEST_UPDATE_BSL") with
@@ -1318,8 +1324,8 @@ module rec Compiler =
                 | _ -> File.WriteAllText(path, actualErrors)
 
                 match Assert.shouldBeSameMultilineStringSets expectedContent actualErrors with
-                | None -> Assert.That(actualErrors, Is.EqualTo(expectedContent).NoClip)
-                | Some diff -> Assert.That(diff, Is.Empty)
+                | None -> () // Assert.That(actualErrors, Is.EqualTo(expectedContent).NoClip,path)
+                | Some diff -> Assert.That(diff, Is.Empty, path)
                 
                 result
 

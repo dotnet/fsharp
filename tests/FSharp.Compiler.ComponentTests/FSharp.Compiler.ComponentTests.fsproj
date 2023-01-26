@@ -211,6 +211,9 @@
     <Compile Include="Miscellaneous\SemanticClassificationKeyBuilder.fs" />
     <Compile Include="Miscellaneous\XmlDoc.fs" />
     <Compile Include="Miscellaneous\FsharpSuiteMigrated.fs" />
+    <Compile Include="Miscellaneous\MigratedCoreTests.fs" />
+    <Compile Include="Miscellaneous\MigratedOverloadTests.fs" />
+    <Compile Include="Miscellaneous\MigratedTypeCheckTests.fs" />
     <Compile Include="Signatures\TestHelpers.fs" />
     <Compile Include="Signatures\ModuleOrNamespaceTests.fs" />
     <Compile Include="Signatures\RecordTests.fs" />
