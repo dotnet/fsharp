@@ -1395,7 +1395,7 @@ let testFlag tcConfigB =
             | "ContinueAfterParseFailure" -> tcConfigB.continueAfterParseFailure <- true
             | "ParallelOff" -> tcConfigB.concurrentBuild <- false
             | "ParallelCheckingWithSignatureFilesOn" -> tcConfigB.parallelCheckingWithSignatureFiles <- true
-            | "PartiallyParallelOptimization" ->
+            | "ParallelOptimization" ->
                 tcConfigB.optSettings <-
                     { tcConfigB.optSettings with
                         processingMode = OptimizationProcessingMode.PartiallyParallel
