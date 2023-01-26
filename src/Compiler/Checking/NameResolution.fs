@@ -2368,13 +2368,13 @@ let CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities
 //-------------------------------------------------------------------------
 
 /// Perform name resolution for an identifier which must resolve to be a module or namespace.
-let rec ResolveLongIdentAsModuleOrNamespace sink (atMostOne: ResultCollectionSettings) (amap: Import.ImportMap) m first fullyQualified (nenv: NameResolutionEnv) ad (id:Ident) (rest: Ident list) isOpenDecl =
+let rec ResolveLongIdentAsModuleOrNamespace sink (amap: Import.ImportMap) m first fullyQualified (nenv: NameResolutionEnv) ad (id:Ident) (rest: Ident list) isOpenDecl =
     if first && id.idText = MangledGlobalName then
         match rest with
         | [] ->
             error (Error(FSComp.SR.nrGlobalUsedOnlyAsFirstName(), id.idRange))
         | id2 :: rest2 ->
-            ResolveLongIdentAsModuleOrNamespace sink atMostOne amap m false FullyQualified nenv ad id2 rest2 isOpenDecl
+            ResolveLongIdentAsModuleOrNamespace sink amap m false FullyQualified nenv ad id2 rest2 isOpenDecl
     else
         let notFoundAux (id: Ident) depth error (tcrefs: TyconRef seq) =
             let suggestNames (addToBuffer: string -> unit) =
@@ -2444,7 +2444,7 @@ let rec ResolveLongIdentAsModuleOrNamespace sink (atMostOne: ResultCollectionSet
 
 // Note - 'rest' is annotated due to a bug currently in Unity (see: https://github.com/dotnet/fsharp/pull/7427)
 let ResolveLongIdentAsModuleOrNamespaceThen sink atMostOne amap m fullyQualified (nenv: NameResolutionEnv) ad id (rest: Ident list) isOpenDecl f =
-    match ResolveLongIdentAsModuleOrNamespace sink ResultCollectionSettings.AllResults amap m true fullyQualified nenv ad id [] isOpenDecl with
+    match ResolveLongIdentAsModuleOrNamespace sink amap m true fullyQualified nenv ad id [] isOpenDecl with
     | Result modrefs ->
         match rest with
         | [] -> error(Error(FSComp.SR.nrUnexpectedEmptyLongId(), id.idRange))

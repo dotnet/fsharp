@@ -663,7 +663,6 @@ val FreshenRecdFieldRef: NameResolver -> range -> RecdFieldRef -> RecdFieldInfo
 /// Resolve a long identifier to a namespace, module.
 val internal ResolveLongIdentAsModuleOrNamespace:
     sink: TcResultsSink ->
-    atMostOne: ResultCollectionSettings ->
     amap: ImportMap ->
     m: range ->
     first: bool ->

@@ -7218,7 +7218,7 @@ and TcConstExpr cenv (overallTy: OverallTy) env m tpenv c =
         let expr =
             let modName = "NumericLiteral" + suffix
             let ad = env.eAccessRights
-            match ResolveLongIdentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AtMostOneResult cenv.amap m true OpenQualified env.eNameResEnv ad (ident (modName, m)) [] false with
+            match ResolveLongIdentAsModuleOrNamespace cenv.tcSink cenv.amap m true OpenQualified env.eNameResEnv ad (ident (modName, m)) [] false with
             | Result []
             | Exception _ -> error(Error(FSComp.SR.tcNumericLiteralRequiresModule modName, m))
             | Result ((_, mref, _) :: _) ->
@@ -7958,7 +7958,7 @@ and TcNameOfExpr (cenv: cenv) env tpenv (synArg: SynExpr) =
             let resolvedToModuleOrNamespaceName =
                 if delayed.IsEmpty then
                     let id,rest = List.headAndTail longId
-                    match ResolveLongIdentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m true OpenQualified env.eNameResEnv ad id rest true with
+                    match ResolveLongIdentAsModuleOrNamespace cenv.tcSink cenv.amap m true OpenQualified env.eNameResEnv ad id rest true with
                     | Result modref when delayed.IsEmpty && modref |> List.exists (p23 >> IsEntityAccessible cenv.amap m ad) ->
                         true // resolved to a module or namespace, done with checks
                     | _ ->
