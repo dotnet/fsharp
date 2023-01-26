@@ -233,7 +233,7 @@ module Entity =
 
 module ParsedInput =
 
-    /// An pattern that collects all sequential expressions to avoid StackOverflowException
+    /// A pattern that collects all sequential expressions to avoid StackOverflowException
     let internal (|Sequentials|_|) expr =
 
         let rec collect expr acc =
