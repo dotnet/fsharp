@@ -3386,7 +3386,7 @@ namespace CST.RI.Anshun
 
 #if !NETCOREAPP
 [<NonParallelizable>]
-module OverloadResolution =
+module OverloadResolution__MigratedAlready_FeelFreeToDelete =
     module ``fsharpqa migrated tests`` =
         let [<Test>] ``Conformance\Expressions\SyntacticSugar (E_Slices01_fs)`` () = singleNegTest (testConfig "conformance/expressions/syntacticsugar") "E_Slices01"
         let [<Test>] ``Conformance\Expressions\Type-relatedExpressions (E_RigidTypeAnnotation03_fsx)`` () = singleNegTest (testConfig "conformance/expressions/type-relatedexpressions") "E_RigidTypeAnnotation03"

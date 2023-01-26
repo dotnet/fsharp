@@ -63,8 +63,7 @@ module TestFrameworkAdapter =
         | COMPILED_EXE_APP
         | NEG_TEST_BUILD of testName:string
 
-    let baseFolder = Path.Combine(__SOURCE_DIRECTORY__,"..","..","fsharp") |> Path.GetFullPath
-    let inline testConfig (relativeFolder:string) = relativeFolder    
+    let baseFolder = Path.Combine(__SOURCE_DIRECTORY__,"..","..","fsharp") |> Path.GetFullPath      
 
     let diffNegativeBaseline (cr:CompilationUnit) absFolder testName version  =
         let expectedFiles = Directory.GetFiles(absFolder, testName + ".*")
@@ -94,12 +93,14 @@ module TestFrameworkAdapter =
 
     let singleTestBuildAndRunAuxVersion (folder:string) bonusArgs mode langVersion = 
         let absFolder = Path.Combine(baseFolder,folder)
-        let supportedNames = 
+        let supportedNames, files = 
             match mode with 
-            | NEG_TEST_BUILD testName -> supportedNames.Add(testName+".fsx") 
-            | _ -> supportedNames
+            | NEG_TEST_BUILD testName -> 
+                let nameSet = supportedNames.Add(testName+".fsx")
+                let files = Directory.GetFiles(absFolder,"*.fs*") |> Array.filter(fun n -> nameSet.Contains(Path.GetFileName(n)))
+                nameSet, files
+            | _ -> supportedNames, Directory.GetFiles(absFolder,"test*.fs*")
      
-        let files = Directory.GetFiles(absFolder,"test*.fs*")
         let mainFile,otherFiles = 
             match files.Length with
             | 0 -> Directory.GetFiles(absFolder,"*.ml") |> Array.exactlyOne, [||]
@@ -164,6 +165,7 @@ module TestFrameworkAdapter =
         singleTestBuildAndRunAuxVersion folder bonusArgs  (NEG_TEST_BUILD testName) version
     let singleVersionedNegTest (folder:string)  (version:LangVersion) (testName:string) = 
         singleVersionedNegTestAux folder [] version testName
+    let singleNegTest folder testName = singleVersionedNegTest folder LangVersion.Latest testName
 
 
 
@@ -212,24 +214,20 @@ module CoreTests =
     let ``array-no-dot-FSI`` () = singleTestBuildAndRunVersion "core/array-no-dot" FSI LangVersion.Preview
 
     [<Fact>]
-    let ``array-no-dot-warnings-langversion-default`` () =
-        let cfg = testConfig "core/array-no-dot-warnings"
-        singleVersionedNegTest cfg LangVersion.Latest "test-langversion-default"
+    let ``array-no-dot-warnings-langversion-default`` () =     
+        singleVersionedNegTest "core/array-no-dot-warnings" LangVersion.Latest "test-langversion-default"
 
     [<Fact>]
-    let ``array-no-dot-warnings-langversion-5_0`` () =
-        let cfg = testConfig "core/array-no-dot-warnings"
-        singleVersionedNegTest cfg LangVersion.V50 "test-langversion-5.0"
+    let ``array-no-dot-warnings-langversion-5_0`` () =       
+        singleVersionedNegTest "core/array-no-dot-warnings" LangVersion.V50 "test-langversion-5.0"
 
     [<Fact>]
     let ``ref-ops-deprecation-langversion-preview`` () =
-        let cfg = testConfig "core/ref-ops-deprecation"
-        singleVersionedNegTest cfg LangVersion.Preview "test-langversion-preview"
+        singleVersionedNegTest "core/ref-ops-deprecation" LangVersion.Preview "test-langversion-preview"
 
     [<Fact>]
     let ``auto-widen-version-5_0``() = 
-        let cfg = testConfig "core/auto-widen/5.0"
-        singleVersionedNegTest cfg LangVersion.V50 "test"
+        singleVersionedNegTest "core/auto-widen/5.0" LangVersion.V50 "test"
 
     [<Fact>]
     let ``auto-widen-version-FSC_DEBUG-preview``() =
@@ -241,13 +239,11 @@ module CoreTests =
 
     [<Fact>]
     let ``auto-widen-version-preview-warns-on``() = 
-        let cfg = testConfig "core/auto-widen/preview"   
-        singleVersionedNegTestAux cfg ["--warnon:3388";"--warnon:3389";"--warnon:3395";"--warnaserror+";"--define:NEGATIVE"] LangVersion.Preview "test"
+        singleVersionedNegTestAux "core/auto-widen/preview" ["--warnon:3388";"--warnon:3389";"--warnon:3395";"--warnaserror+";"--define:NEGATIVE"] LangVersion.Preview "test"
 
     [<Fact>]
     let ``auto-widen-version-preview-default-warns``() = 
-        let cfg = testConfig "core/auto-widen/preview-default-warns"  
-        singleVersionedNegTestAux cfg ["--warnaserror+";"--define:NEGATIVE"] LangVersion.Preview "test"
+        singleVersionedNegTestAux "core/auto-widen/preview-default-warns" ["--warnaserror+";"--define:NEGATIVE"] LangVersion.Preview "test"
 
     [<Fact>]
     let ``comprehensions-FSC_DEBUG`` () = singleTestBuildAndRun "core/comprehensions" FSC_DEBUG
@@ -539,17 +535,17 @@ module CoreTests =
 
     [<FactForNETCOREAPP>]
     let ``control --tailcalls`` () =
-        let cfg = testConfig "core/control"
+        let cfg =  "core/control"
         singleTestBuildAndRunAux cfg  ["--tailcalls"] FSC_OPTIMIZED
 
     [<Fact>]
     let ``controlChamenos-FSC_OPTIMIZED`` () =
-        let cfg = testConfig "core/controlChamenos"
+        let cfg =  "core/controlChamenos"
         singleTestBuildAndRunAux cfg  ["--tailcalls"] FSC_OPTIMIZED
 
     [<Fact>]
     let ``controlChamenos-FSI`` () =
-        let cfg = testConfig "core/controlChamenos"
+        let cfg =  "core/controlChamenos"
         singleTestBuildAndRunAux cfg  ["--tailcalls"] FSI
 
     [<Fact>]
@@ -560,7 +556,7 @@ module CoreTests =
 
     [<Fact>]
     let ``controlMailbox --tailcalls`` () =
-        let cfg = testConfig "core/controlMailbox"
+        let cfg =  "core/controlMailbox"
         singleTestBuildAndRunAux cfg  ["--tailcalls"] FSC_OPTIMIZED
 
     [<Fact>]
@@ -619,3 +615,38 @@ module CoreTests =
         let ``pinvoke-FSI`` () =
             if isWindows then
                 singleTestBuildAndRun "core/pinvoke" FSI
+
+
+module OverloadResolution =
+    open TestFrameworkAdapter
+    module ``fsharpqa migrated tests`` =
+        let [<FactForDESKTOP>] ``Conformance\Expressions\SyntacticSugar (E_Slices01_fs)`` () = singleNegTest ( "conformance/expressions/syntacticsugar") "E_Slices01"
+        let [<FactForDESKTOP>] ``Conformance\Expressions\Type-relatedExpressions (E_RigidTypeAnnotation03_fsx)`` () = singleNegTest ( "conformance/expressions/type-relatedexpressions") "E_RigidTypeAnnotation03"
+        let [<FactForDESKTOP>] ``Conformance\Inference (E_OneTypeVariable03_fs)`` () = singleNegTest ( "conformance/inference") "E_OneTypeVariable03"
+        let [<FactForDESKTOP>] ``Conformance\Inference (E_OneTypeVariable03rec_fs)`` () = singleNegTest ( "conformance/inference") "E_OneTypeVariable03rec"
+        let [<FactForDESKTOP>] ``Conformance\Inference (E_TwoDifferentTypeVariablesGen00_fs)`` () = singleNegTest ( "conformance/inference") "E_TwoDifferentTypeVariablesGen00"
+        let [<FactForDESKTOP>] ``Conformance\Inference (E_TwoDifferentTypeVariables01_fs)`` () = singleNegTest ( "conformance/inference") "E_TwoDifferentTypeVariables01"
+        let [<FactForDESKTOP>] ``Conformance\Inference (E_TwoDifferentTypeVariables01rec_fs)`` () = singleNegTest ( "conformance/inference") "E_TwoDifferentTypeVariables01rec"
+        let [<FactForDESKTOP>] ``Conformance\Inference (E_TwoDifferentTypeVariablesGen00rec_fs)`` () = singleNegTest ( "conformance/inference") "E_TwoDifferentTypeVariablesGen00rec"
+        let [<FactForDESKTOP>] ``Conformance\Inference (E_TwoEqualTypeVariables02_fs)`` () = singleNegTest ( "conformance/inference") "E_TwoEqualTypeVariables02"
+        let [<FactForDESKTOP>] ``Conformance\Inference (E_TwoEqualYypeVariables02rec_fs)`` () = singleNegTest ( "conformance/inference") "E_TwoEqualYypeVariables02rec"
+        let [<FactForDESKTOP>] ``Conformance\Inference (E_LeftToRightOverloadResolution01_fs)`` () = singleNegTest ( "conformance/inference") "E_LeftToRightOverloadResolution01"
+        let [<FactForDESKTOP>] ``Conformance\WellFormedness (E_Clashing_Values_in_AbstractClass01_fs)`` () = singleNegTest ( "conformance/wellformedness") "E_Clashing_Values_in_AbstractClass01"
+        let [<FactForDESKTOP>] ``Conformance\WellFormedness (E_Clashing_Values_in_AbstractClass03_fs)`` () = singleNegTest ( "conformance/wellformedness") "E_Clashing_Values_in_AbstractClass03"
+        let [<FactForDESKTOP>] ``Conformance\WellFormedness (E_Clashing_Values_in_AbstractClass04_fs)`` () = singleNegTest ( "conformance/wellformedness") "E_Clashing_Values_in_AbstractClass04"
+        // note: this test still exist in fsharpqa to assert the compiler doesn't crash
+        // the part of the code generating a flaky error due to https://github.com/dotnet/fsharp/issues/6725
+        // is elided here to focus on overload resolution error messages
+        let [<FactForDESKTOP>] ``Conformance\LexicalAnalysis\SymbolicOperators (E_LessThanDotOpenParen001_fs)`` () = singleNegTest ( "conformance/lexicalanalysis") "E_LessThanDotOpenParen001"
+
+    module ``error messages using BCL``=
+        let [<FactForDESKTOP>] ``neg_System_Convert_ToString_OverloadList``() = singleNegTest ( "typecheck/overloads") "neg_System.Convert.ToString.OverloadList"
+        let [<FactForDESKTOP>] ``neg_System_Threading_Tasks_Task_Run_OverloadList``() = singleNegTest ( "typecheck/overloads") "neg_System.Threading.Tasks.Task.Run.OverloadList"
+        let [<FactForDESKTOP>] ``neg_System_Drawing_Graphics_DrawRectangleOverloadList_fsx``() = singleNegTest ( "typecheck/overloads") "neg_System.Drawing.Graphics.DrawRectangleOverloadList"
+
+    module ``ad hoc code overload error messages``=
+        let [<FactForDESKTOP>] ``neg_many_many_overloads`` () = singleNegTest ( "typecheck/overloads") "neg_many_many_overloads"
+        let [<FactForDESKTOP>] ``neg_interface_generics`` () = singleNegTest ( "typecheck/overloads") "neg_interface_generics"
+        let [<FactForDESKTOP>] ``neg_known_return_type_and_known_type_arguments`` () = singleNegTest ( "typecheck/overloads") "neg_known_return_type_and_known_type_arguments"
+        let [<FactForDESKTOP>] ``neg_generic_known_argument_types`` () = singleNegTest ( "typecheck/overloads") "neg_generic_known_argument_types"
+        let [<FactForDESKTOP>] ``neg_tupled_arguments`` () = singleNegTest ( "typecheck/overloads") "neg_tupled_arguments"
