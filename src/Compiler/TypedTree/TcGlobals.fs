@@ -1055,6 +1055,8 @@ type TcGlobals(
 
   member _.format_tcr = v_format_tcr
 
+  member _.format4_tcr = v_format4_tcr
+
   member _.expr_tcr = v_expr_tcr
 
   member _.raw_expr_tcr = v_raw_expr_tcr

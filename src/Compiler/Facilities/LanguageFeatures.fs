@@ -61,6 +61,7 @@ type LanguageFeature =
     | EscapeDotnetFormattableStrings
     | ArithmeticInLiterals
     | ErrorReportingOnStaticClasses
+    | NonInlineLiteralsAsPrintfFormat
  
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -138,6 +139,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.EscapeDotnetFormattableStrings, previewVersion
                 LanguageFeature.ArithmeticInLiterals, previewVersion
                 LanguageFeature.ErrorReportingOnStaticClasses, previewVersion
+                LanguageFeature.NonInlineLiteralsAsPrintfFormat, previewVersion
 
             ]
 
@@ -252,6 +254,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.EscapeDotnetFormattableStrings -> FSComp.SR.featureEscapeBracesInFormattableString ()
         | LanguageFeature.ArithmeticInLiterals -> FSComp.SR.featureArithmeticInLiterals ()
         | LanguageFeature.ErrorReportingOnStaticClasses -> FSComp.SR.featureErrorReportingOnStaticClasses ()
+        | LanguageFeature.NonInlineLiteralsAsPrintfFormat -> FSComp.SR.featureNonInlineLiteralsAsPrintfFormat ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

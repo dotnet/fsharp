@@ -51,6 +51,7 @@ type LanguageFeature =
     | EscapeDotnetFormattableStrings
     | ArithmeticInLiterals
     | ErrorReportingOnStaticClasses
+    | NonInlineLiteralsAsPrintfFormat
 
 /// LanguageVersion management
 type LanguageVersion =

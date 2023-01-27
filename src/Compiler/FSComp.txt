@@ -1561,6 +1561,7 @@ featureErrorForNonVirtualMembersOverrides,"Raises errors for non-virtual members
 featureWarningWhenInliningMethodImplNoInlineMarkedFunction,"Raises warnings when 'let inline ... =' is used together with [<MethodImpl(MethodImplOptions.NoInlining)>] attribute. Function is not getting inlined."
 featureArithmeticInLiterals,"Allow arithmetic and logical operations in literals"
 featureErrorReportingOnStaticClasses,"Error reporting on static classes"
+featureNonInlineLiteralsAsPrintfFormat,"Allow IL constants and string literals that are not defined inline to be used as printf format"
 3353,fsiInvalidDirective,"Invalid directive '#%s %s'"
 3354,tcNotAFunctionButIndexerNamedIndexingNotYetEnabled,"This value supports indexing, e.g. '%s.[index]'. The syntax '%s[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation."
 3354,tcNotAFunctionButIndexerIndexingNotYetEnabled,"This expression supports indexing, e.g. 'expr.[index]'. The syntax 'expr[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation."

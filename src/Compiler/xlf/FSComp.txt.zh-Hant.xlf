@@ -302,6 +302,11 @@
         <target state="translated">nameof</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureNonInlineLiteralsAsPrintfFormat">
+        <source>Allow IL constants and string literals that are not defined inline to be used as printf format</source>
+        <target state="new">Allow IL constants and string literals that are not defined inline to be used as printf format</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureNonVariablePatternsToRightOfAsPatterns">
         <source>non-variable patterns to the right of 'as' patterns</source>
         <target state="translated">'as' 模式右邊的非變數模式</target>

@@ -5449,7 +5449,7 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
     | SynExpr.Const (SynConst.String (s, _, m), _) ->
         TcNonControlFlowExpr env <| fun env ->
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.AccessRights)
-        TcConstStringExpr cenv overallTy env m tpenv s
+        TcConstStringExpr cenv overallTy env m tpenv s true
 
     | SynExpr.InterpolatedString (parts, _, m) ->
         TcNonControlFlowExpr env <| fun env ->
@@ -6956,16 +6956,27 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
 //-------------------------------------------------------------------------
 
 /// Check a constant string expression. It might be a 'printf' format string
-and TcConstStringExpr cenv (overallTy: OverallTy) env m tpenv (s: string) =
+and TcConstStringExpr cenv (overallTy: OverallTy) env m tpenv (s: string) isInlineLiteral =
+    let rec isFormat g typ =
+        match stripTyEqns g typ with
+        | TType_app (tcref, _, _) -> tyconRefEq g tcref g.format4_tcr || tyconRefEq g tcref g.format_tcr
+        | TType_var (typar, _) ->
+            typar.Constraints
+            |> List.exists (fun c ->
+                match c with
+                | TyparConstraint.CoercesTo (typ, _) -> isFormat g typ
+                | _ -> false)
+        | _ -> false
 
-    let g = cenv.g
-
-    if AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy.Commit g.string_ty then
-        mkString g m s, tpenv
+    if isFormat cenv.g overallTy.Commit then
+        TcFormatStringExpr cenv overallTy env m tpenv s isInlineLiteral
     else
-        TcFormatStringExpr cenv overallTy env m tpenv s
+        if isInlineLiteral && not (isObjTy cenv.g overallTy.Commit) then
+            AddCxTypeEqualsType env.eContextInfo env.DisplayEnv cenv.css m overallTy.Commit cenv.g.string_ty
 
-and TcFormatStringExpr cenv (overallTy: OverallTy) env m tpenv (fmtString: string) =
+        mkString cenv.g m s, tpenv
+
+and TcFormatStringExpr cenv (overallTy: OverallTy) env m tpenv (fmtString: string) useFormatStringCheckContext =
     let g = cenv.g
     let aty = NewInferenceType g
     let bty = NewInferenceType g
@@ -6979,7 +6990,11 @@ and TcFormatStringExpr cenv (overallTy: OverallTy) env m tpenv (fmtString: strin
 
     if ok then
         // Parse the format string to work out the phantom types
-        let formatStringCheckContext = match cenv.tcSink.CurrentSink with None -> None | Some sink -> sink.FormatStringCheckContext
+        let formatStringCheckContext =
+            match cenv.tcSink.CurrentSink with
+            | Some sink when useFormatStringCheckContext -> sink.FormatStringCheckContext
+            | _ -> None
+
         let normalizedString = (fmtString.Replace("\r\n", "\n").Replace("\r", "\n"))
 
         let _argTys, atyRequired, etyRequired, _percentATys, specifierLocations, _dotnetFormatString =
@@ -8758,7 +8773,14 @@ and TcValueItemThen cenv overallTy env vref tpenv mItem afterResolution delayed 
     // Value get
     | _ ->
         let _, vExpr, isSpecial, _, _, tpenv = TcVal true cenv env tpenv vref None (Some afterResolution) mItem
-        let vexpFlex = (if isSpecial then MakeApplicableExprNoFlex cenv vExpr else MakeApplicableExprWithFlex cenv env vExpr)
+
+        let vExpr, tpenv =
+            match vExpr with
+            | Expr.Const (Const.String value, _, _) when g.langVersion.SupportsFeature LanguageFeature.NonInlineLiteralsAsPrintfFormat -> TcConstStringExpr cenv overallTy env mItem tpenv value false
+            | _ -> vExpr, tpenv
+
+        let vexpFlex = if isSpecial then MakeApplicableExprNoFlex cenv vExpr else MakeApplicableExprWithFlex cenv env vExpr
+
         PropagateThenTcDelayed cenv overallTy env tpenv mItem vexpFlex vexpFlex.Type ExprAtomicFlag.Atomic delayed
 
 and TcPropertyItemThen cenv overallTy env nm pinfos tpenv mItem afterResolution staticTyOpt delayed =
@@ -8829,10 +8851,12 @@ and TcILFieldItemThen cenv overallTy env finfo tpenv mItem delayed =
 
     | _ ->
         // Get static IL field
-        let expr =
+        let (expr, tpenv), isSpecial =
             match finfo.LiteralValue with
+            | Some (ILFieldInit.String value) when g.langVersion.SupportsFeature LanguageFeature.NonInlineLiteralsAsPrintfFormat && typeEquiv g exprTy g.string_ty ->
+                TcConstStringExpr cenv overallTy env mItem tpenv value false, true
             | Some lit ->
-                Expr.Const (TcFieldInit mItem lit, mItem, exprTy)
+                (Expr.Const (TcFieldInit mItem lit, mItem, exprTy), tpenv), false
             | None ->
                 let isStruct = finfo.IsValueType
                 let boxity = if isStruct then AsValue else AsObject
@@ -8847,9 +8871,16 @@ and TcILFieldItemThen cenv overallTy env finfo tpenv mItem delayed =
                       // Add an I_nop if this is an initonly field to make sure we never recognize it as an lvalue. See mkExprAddrOfExpr.
                       if finfo.IsInitOnly then AI_nop ]
 
-                mkAsmExpr (ilInstrs, finfo.TypeInst, [], [exprTy], mItem)
+                (mkAsmExpr (ilInstrs, finfo.TypeInst, [], [exprTy], mItem), tpenv), false
 
-        PropagateThenTcDelayed cenv overallTy env tpenv mItem (MakeApplicableExprWithFlex cenv env expr) exprTy ExprAtomicFlag.Atomic delayed
+        let exprTy, exprFlex =
+            if isSpecial then
+                let exprFlex = MakeApplicableExprNoFlex cenv expr
+                exprFlex.Type, exprFlex
+            else
+                exprTy, MakeApplicableExprWithFlex cenv env expr
+
+        PropagateThenTcDelayed cenv overallTy env tpenv mItem exprFlex exprTy ExprAtomicFlag.Atomic delayed
 
 and TcRecdFieldItemThen cenv overallTy env rfinfo tpenv mItem delayed =
     let g = cenv.g
