@@ -158,16 +158,25 @@ module private ParallelOptimization =
 
         let getNodeInputs (node: Node) =
             task {
+                let prevPhaseNode = { node with Phase = node.Phase - 1 }
+                let prevFileNode = { node with FileIdx = node.FileIdx - 1 }
+
                 let prevPhaseTask =
                     if node.Phase > 0 then
-                        getTask { node with Phase = node.Phase - 1 }
+                        task {
+                            do! Task.Yield()
+                            return! getTask prevPhaseNode
+                        }
                     else
                         // First phase uses input file without modifications
                         (files[node.FileIdx], initialState) |> Task.FromResult
 
                 let prevFileTask =
                     if node.FileIdx > 0 then
-                        getTask { node with FileIdx = node.FileIdx - 1 }
+                        task {
+                            do! Task.Yield()
+                            return! getTask prevFileNode
+                        }
                     else
                         // We don't use the file result in this case, but we need something, so just take the first input file as a placeholder.
                         (files[0], initialState) |> Task.FromResult
@@ -188,18 +197,12 @@ module private ParallelOptimization =
             }
 
         let startNodeTask (phase: PhaseInfo) (node: Node) =
-            // A workaround to make sure that the initial part of each task is scheduled asynchronously
-            async {
-                let nodeTask =
-                    task {
-                        let! inputs = getNodeInputs node
-                        let res = phase.Func inputs
-                        return res
-                    }
-
-                return! nodeTask |> Async.AwaitTask
+            task {
+                do! Task.Yield()
+                let! inputs = getNodeInputs node
+                let res = phase.Func inputs
+                return res
             }
-            |> Async.StartAsTask
 
         let fileIndices = [| 0 .. files.Length - 1 |]
 
