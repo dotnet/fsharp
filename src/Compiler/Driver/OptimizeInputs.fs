@@ -2,11 +2,8 @@
 
 module internal FSharp.Compiler.OptimizeInputs
 
-open System.Collections.Concurrent
 open System.Collections.Generic
-open System.Diagnostics
 open System.IO
-open System.Threading
 open System.Threading.Tasks
 open Internal.Utilities.Library
 open FSharp.Compiler
@@ -53,8 +50,7 @@ let GetInitialOptimizationEnv (tcImports: TcImports, tcGlobals: TcGlobals) =
     let optEnv = List.fold (AddExternalCcuToOptimizationEnv tcGlobals) optEnv ccuinfos
     optEnv
 
-type private OptimizeDuringCodeGen = bool -> Expr -> Expr
-
+/// All the state optimization phases can produce (except 'CheckedImplFile') and most of what they require as input.
 type PhaseContext =
     {
         OptEnvFirstLoop: Optimizer.IncrementalOptimizationEnv
@@ -62,14 +58,16 @@ type PhaseContext =
         OptEnvExtraLoop: Optimizer.IncrementalOptimizationEnv
         OptEnvFinalSimplify: Optimizer.IncrementalOptimizationEnv
         HidingInfo: SignatureHidingInfo
-        OptDuringCodeGen: OptimizeDuringCodeGen
+        OptDuringCodeGen: bool -> Expr -> Expr
     }
 
+/// The result of running a single Optimization Phase.
 type PhaseRes = CheckedImplFile * PhaseContext
 
+/// 0-based index of an Optimization Phase.
 type PhaseIdx = int
-type F<'In, 'Out> = 'In -> 'Out
 
+/// All inputs required to evaluate each Optimization Phase.
 type PhaseInputs =
     {
         File: CheckedImplFile
@@ -80,6 +78,7 @@ type PhaseInputs =
         PrevFile: PhaseContext
     }
 
+/// Signature of each optimization phase.
 type PhaseFunc = PhaseInputs -> CheckedImplFile * PhaseContext
 
 /// Each file's optimization can be split into up to seven different phases, executed one after another.
@@ -92,8 +91,6 @@ type Phase =
     override this.ToString() = $"{this.Idx}-{this.Name}"
 
 type PhaseInfo = { Phase: Phase; Func: PhaseFunc }
-
-type PhaseInfos = PhaseInfo[]
 
 [<RequireQualifiedAccess>]
 module private ParallelOptimization =
@@ -131,7 +128,7 @@ module private ParallelOptimization =
 
     let optimizeFilesInParallel
         (env0: IncrementalOptimizationEnv)
-        (phases: PhaseInfos)
+        (phases: PhaseInfo[])
         (files: CheckedImplFile list)
         : (CheckedImplFileAfterOptimization * ImplFileOptimizationInfo)[] * IncrementalOptimizationEnv =
 
@@ -156,6 +153,7 @@ module private ParallelOptimization =
             let setTask (node: Node) (task: Task<PhaseRes>) = tasks[node.FileIdx, node.Phase] <- task
             getTask, setTask
 
+        /// Asynchronously wait for dependencies of a node
         let getNodeInputs (node: Node) =
             task {
                 let prevPhaseNode = { node with Phase = node.Phase - 1 }
@@ -238,7 +236,7 @@ module private ParallelOptimization =
 
         collectFinalResults lastPhaseResults
 
-let optimizeFilesSequentially optEnv (phases: PhaseInfos) implFiles =
+let optimizeFilesSequentially optEnv (phases: PhaseInfo[]) implFiles =
     let results, (optEnvFirstLoop, _, _, _) =
         let implFiles = implFiles |> List.mapi (fun i file -> i, file)
 
@@ -314,7 +312,7 @@ let ApplyAllOptimizations
 
     ReportTime tcConfig "Optimizations"
 
-    let phase1Settings =
+    let firstLoopSettings =
         { tcConfig.optSettings with
             // Only do abstractBigTargets in the first phase, and only when TLR is on.
             abstractBigTargets = tcConfig.doTLR
@@ -323,12 +321,12 @@ let ApplyAllOptimizations
 
     // Only do these two steps in the first phase.
     let phase2And3Settings =
-        { phase1Settings with
+        { firstLoopSettings with
             abstractBigTargets = false
             reportingPhase = false
         }
 
-    let wrapPhaseFunc (f: PhaseFunc) (info: Phase) =
+    let addPhaseDiagnostics (f: PhaseFunc) (info: Phase) =
         fun (inputs: PhaseInputs) ->
             use _ =
                 let tags =
@@ -349,7 +347,7 @@ let ApplyAllOptimizations
         let phaseInfo =
             {
                 Phase = phase
-                Func = wrapPhaseFunc phaseFunc phase
+                Func = addPhaseDiagnostics phaseFunc phase
             }
 
         phases.Add(phaseInfo)
@@ -363,7 +361,7 @@ let ApplyAllOptimizations
         : PhaseRes =
         let (env, file, optInfo, hidingInfo), optDuringCodeGen =
             Optimizer.OptimizeImplFile(
-                phase1Settings,
+                firstLoopSettings,
                 ccu,
                 tcGlobals,
                 tcVal,
@@ -505,9 +503,7 @@ let ApplyAllOptimizations
         match tcConfig.optSettings.processingMode with
         // Parallel optimization breaks determinism - turn it off in deterministic builds.
         | Optimizer.OptimizationProcessingMode.Parallel when (not tcConfig.deterministic) ->
-            let results, optEnvFirstPhase =
-                ParallelOptimization.optimizeFilesInParallel optEnv phases implFiles
-
+            let results, optEnvFirstPhase = ParallelOptimization.optimizeFilesInParallel optEnv phases implFiles
             results |> Array.toList, optEnvFirstPhase
         | Optimizer.OptimizationProcessingMode.Parallel
         | Optimizer.OptimizationProcessingMode.Sequential -> optimizeFilesSequentially optEnv phases implFiles
