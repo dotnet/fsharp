@@ -108,9 +108,15 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
 
     member _.Fsi = fsi
 
-    member _.Eval(code: string, ?cancellationToken: CancellationToken) =
+    member _.Eval(code: string, ?cancellationToken: CancellationToken, ?desiredCulture: Globalization.CultureInfo) =
+        let originalCulture = Thread.CurrentThread.CurrentCulture
+        Thread.CurrentThread.CurrentCulture <- Option.defaultValue Globalization.CultureInfo.InvariantCulture desiredCulture
+
         let cancellationToken = defaultArg cancellationToken CancellationToken.None
         let ch, errors = fsi.EvalInteractionNonThrowing(code, cancellationToken)
+
+        Thread.CurrentThread.CurrentCulture <- originalCulture
+
         match ch with
         | Choice1Of2 v -> Ok(v), errors
         | Choice2Of2 ex -> Error(ex), errors
