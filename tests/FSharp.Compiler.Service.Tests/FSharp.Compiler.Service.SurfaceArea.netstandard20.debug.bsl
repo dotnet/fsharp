@@ -8439,6 +8439,7 @@ FSharp.Compiler.Syntax.SynType+Tags: Int32 Fun
 FSharp.Compiler.Syntax.SynType+Tags: Int32 HashConstraint
 FSharp.Compiler.Syntax.SynType+Tags: Int32 LongIdent
 FSharp.Compiler.Syntax.SynType+Tags: Int32 LongIdentApp
+FSharp.Compiler.Syntax.SynType+Tags: Int32 LongIdentModule
 FSharp.Compiler.Syntax.SynType+Tags: Int32 MeasurePower
 FSharp.Compiler.Syntax.SynType+Tags: Int32 Or
 FSharp.Compiler.Syntax.SynType+Tags: Int32 Paren
@@ -8473,6 +8474,7 @@ FSharp.Compiler.Syntax.SynType: Boolean IsFun
 FSharp.Compiler.Syntax.SynType: Boolean IsHashConstraint
 FSharp.Compiler.Syntax.SynType: Boolean IsLongIdent
 FSharp.Compiler.Syntax.SynType: Boolean IsLongIdentApp
+FSharp.Compiler.Syntax.SynType: Boolean IsLongIdentModule
 FSharp.Compiler.Syntax.SynType: Boolean IsMeasurePower
 FSharp.Compiler.Syntax.SynType: Boolean IsOr
 FSharp.Compiler.Syntax.SynType: Boolean IsParen
@@ -8491,6 +8493,7 @@ FSharp.Compiler.Syntax.SynType: Boolean get_IsFun()
 FSharp.Compiler.Syntax.SynType: Boolean get_IsHashConstraint()
 FSharp.Compiler.Syntax.SynType: Boolean get_IsLongIdent()
 FSharp.Compiler.Syntax.SynType: Boolean get_IsLongIdentApp()
+FSharp.Compiler.Syntax.SynType: Boolean get_IsLongIdentModule()
 FSharp.Compiler.Syntax.SynType: Boolean get_IsMeasurePower()
 FSharp.Compiler.Syntax.SynType: Boolean get_IsOr()
 FSharp.Compiler.Syntax.SynType: Boolean get_IsParen()
@@ -8509,6 +8512,7 @@ FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewFun(FSharp.Com
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewHashConstraint(FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewLongIdent(FSharp.Compiler.Syntax.SynLongIdent)
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewLongIdentApp(FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Syntax.SynLongIdent, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynType], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewLongIdentModule(FSharp.Compiler.Syntax.SynLongIdent)
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewMeasurePower(FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Syntax.SynRationalConst, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewOr(FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynTypeOrTrivia)
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewParen(FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Text.Range)
@@ -8527,6 +8531,7 @@ FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType+Fun
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType+HashConstraint
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType+LongIdent
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType+LongIdentApp
+FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType+LongIdentModule
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType+MeasurePower
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType+Or
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType+Paren
