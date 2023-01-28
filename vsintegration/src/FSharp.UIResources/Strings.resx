@@ -181,7 +181,7 @@
     <value>Inline Hints</value>
   </data>
   <data name="Show_Inline_Type_Hints" xml:space="preserve">
-    <value>Display inline type hints (experimental)</value>
+    <value>Display inline type hints (preview)</value>
   </data>
   <data name="Time_until_stale_completion" xml:space="preserve">
     <value>Time until stale results are used (in milliseconds)</value>
@@ -232,7 +232,7 @@
     <value>Enable parallel reference resolution</value>
   </data>
   <data name="Show_Inline_Parameter_Name_Hints" xml:space="preserve">
-    <value>Display inline parameter name hints (experimental)</value>
+    <value>Display inline parameter name hints (preview)</value>
   </data>
   <data name="Enable_Fast_Find_References" xml:space="preserve">
     <value>Enable fast find references &amp; rename (experimental)</value>

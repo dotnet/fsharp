@@ -340,7 +340,7 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Display inline parameter name hints (experimental).
+        ///   Looks up a localized string similar to Display inline parameter name hints (preview).
         /// </summary>
         public static string Show_Inline_Parameter_Name_Hints {
             get {
@@ -349,7 +349,7 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Display inline type hints (experimental).
+        ///   Looks up a localized string similar to Display inline type hints (preview).
         /// </summary>
         public static string Show_Inline_Type_Hints {
             get {
