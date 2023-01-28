@@ -53,6 +53,9 @@ type public CompletionContext =
     /// or a single case union without a bar (type SomeUnion = Abc|)
     | TypeAbbreviationOrSingleCaseUnion
 
+    /// Completing module in generic type application (e.g. typeof<module M|>)
+    | ModuleAsType
+
 type public ModuleKind =
     { IsAutoOpen: bool
       HasModuleSuffix: bool }

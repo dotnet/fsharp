@@ -1329,7 +1329,13 @@ type internal TypeCheckInfo
                     denv,
                     m)
 
-            | Some (CompletionContext.OpenDeclaration isOpenType) ->
+            | Some CompletionContext.ModuleAsType
+            | Some (CompletionContext.OpenDeclaration _) ->
+                let isOpenType =
+                    match completionContext with
+                    | Some (CompletionContext.OpenDeclaration true) -> true
+                    | _ -> false
+
                 GetDeclaredItems(
                     parseResultsOpt,
                     lineStr,

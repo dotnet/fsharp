@@ -80,6 +80,9 @@ type CompletionContext =
     /// or a single case union without a bar (type SomeUnion = Abc|)
     | TypeAbbreviationOrSingleCaseUnion
 
+    /// Completing module in generic type application (e.g. typeof<module M|>)
+    | ModuleAsType
+
 type ShortIdent = string
 
 type ShortIdents = ShortIdent[]
@@ -1307,7 +1310,16 @@ module ParsedInput =
                             | SynExpr.Record (None, None, [], _) -> Some(CompletionContext.RecordField RecordContext.Empty)
 
                             // Unchecked.defaultof<str$>
-                            | SynExpr.TypeApp (typeArgsRange = range) when rangeContainsPos range pos -> Some CompletionContext.PatternType
+                            // typeof<module M$>
+                            | SynExpr.TypeApp (typeArgs = typeArgs; typeArgsRange = range) when rangeContainsPos range pos ->
+                                typeArgs
+                                |> List.tryPick (fun arg ->
+                                    match arg with
+                                    | SynType.LongIdent lid when rangeContainsPos lid.Range pos -> Some CompletionContext.PatternType
+                                    | SynType.LongIdentModule lid when rangeContainsPos lid.Range pos -> Some CompletionContext.ModuleAsType
+                                    | _ -> None)
+                                |> Option.orElse (Some CompletionContext.PatternType)
+
                             | _ -> defaultTraverse expr
 
                     member _.VisitRecordField(path, copyOpt, field) =

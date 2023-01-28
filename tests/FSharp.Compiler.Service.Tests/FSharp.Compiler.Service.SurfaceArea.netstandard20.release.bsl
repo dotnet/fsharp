@@ -2497,6 +2497,7 @@ FSharp.Compiler.EditorServices.CompletionContext+RecordField: FSharp.Compiler.Ed
 FSharp.Compiler.EditorServices.CompletionContext+Tags: Int32 AttributeApplication
 FSharp.Compiler.EditorServices.CompletionContext+Tags: Int32 Inherit
 FSharp.Compiler.EditorServices.CompletionContext+Tags: Int32 Invalid
+FSharp.Compiler.EditorServices.CompletionContext+Tags: Int32 ModuleAsType
 FSharp.Compiler.EditorServices.CompletionContext+Tags: Int32 OpenDeclaration
 FSharp.Compiler.EditorServices.CompletionContext+Tags: Int32 ParameterList
 FSharp.Compiler.EditorServices.CompletionContext+Tags: Int32 PatternType
@@ -2510,6 +2511,7 @@ FSharp.Compiler.EditorServices.CompletionContext: Boolean Equals(System.Object, 
 FSharp.Compiler.EditorServices.CompletionContext: Boolean IsAttributeApplication
 FSharp.Compiler.EditorServices.CompletionContext: Boolean IsInherit
 FSharp.Compiler.EditorServices.CompletionContext: Boolean IsInvalid
+FSharp.Compiler.EditorServices.CompletionContext: Boolean IsModuleAsType
 FSharp.Compiler.EditorServices.CompletionContext: Boolean IsOpenDeclaration
 FSharp.Compiler.EditorServices.CompletionContext: Boolean IsParameterList
 FSharp.Compiler.EditorServices.CompletionContext: Boolean IsPatternType
@@ -2520,6 +2522,7 @@ FSharp.Compiler.EditorServices.CompletionContext: Boolean IsUnionCaseFieldsDecla
 FSharp.Compiler.EditorServices.CompletionContext: Boolean get_IsAttributeApplication()
 FSharp.Compiler.EditorServices.CompletionContext: Boolean get_IsInherit()
 FSharp.Compiler.EditorServices.CompletionContext: Boolean get_IsInvalid()
+FSharp.Compiler.EditorServices.CompletionContext: Boolean get_IsModuleAsType()
 FSharp.Compiler.EditorServices.CompletionContext: Boolean get_IsOpenDeclaration()
 FSharp.Compiler.EditorServices.CompletionContext: Boolean get_IsParameterList()
 FSharp.Compiler.EditorServices.CompletionContext: Boolean get_IsPatternType()
@@ -2529,6 +2532,7 @@ FSharp.Compiler.EditorServices.CompletionContext: Boolean get_IsTypeAbbreviation
 FSharp.Compiler.EditorServices.CompletionContext: Boolean get_IsUnionCaseFieldsDeclaration()
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext AttributeApplication
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext Invalid
+FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext ModuleAsType
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext NewInherit(FSharp.Compiler.EditorServices.InheritanceContext, System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[System.String],Microsoft.FSharp.Core.FSharpOption`1[System.String]])
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext NewOpenDeclaration(Boolean)
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext NewParameterList(FSharp.Compiler.Text.Position, System.Collections.Generic.HashSet`1[System.String])
@@ -2539,6 +2543,7 @@ FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext UnionCaseFieldsDeclaration
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext get_AttributeApplication()
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext get_Invalid()
+FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext get_ModuleAsType()
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext get_PatternType()
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext get_RangeOperator()
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext get_TypeAbbreviationOrSingleCaseUnion()
@@ -8389,6 +8394,8 @@ FSharp.Compiler.Syntax.SynType+LongIdentApp: Microsoft.FSharp.Core.FSharpOption`
 FSharp.Compiler.Syntax.SynType+LongIdentApp: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_lessRange()
 FSharp.Compiler.Syntax.SynType+LongIdentApp: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] greaterRange
 FSharp.Compiler.Syntax.SynType+LongIdentApp: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] lessRange
+FSharp.Compiler.Syntax.SynType+LongIdentModule: FSharp.Compiler.Syntax.SynLongIdent get_longDotId()
+FSharp.Compiler.Syntax.SynType+LongIdentModule: FSharp.Compiler.Syntax.SynLongIdent longDotId
 FSharp.Compiler.Syntax.SynType+MeasurePower: FSharp.Compiler.Syntax.SynRationalConst exponent
 FSharp.Compiler.Syntax.SynType+MeasurePower: FSharp.Compiler.Syntax.SynRationalConst get_exponent()
 FSharp.Compiler.Syntax.SynType+MeasurePower: FSharp.Compiler.Syntax.SynType baseMeasure

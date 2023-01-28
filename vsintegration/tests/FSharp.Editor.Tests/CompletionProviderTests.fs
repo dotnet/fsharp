@@ -1218,6 +1218,19 @@ let emptyMap<'keyType, 'lValueType> () =
 """
 
         VerifyCompletionList(fileContents, ", l", [ "LanguagePrimitives"; "List"; "lValueType" ], [ "let"; "log" ])
+    
+    [<Fact>]
+    let ``Completion list in type application of a module only contains modules and namespaces`` () =
+        let fileContents =
+            """
+open System
+
+let emptyMap<'lValueType> () =
+    Map.empty<l, module L>
+"""
+
+        VerifyCompletionList(fileContents, "module L", [ "LanguagePrimitives"; "Linq" ], [ "let"; "log"; "lValueType"; "Lazy" ])
+        VerifyCompletionList(fileContents, "<l", [ "LanguagePrimitives"; "List"; "Linq"; "lValueType" ], [ "let"; "log" ])
 
     [<Fact>]
     let ``Completion list for interface with static abstract method type invocation contains static property with residue`` () =
