@@ -179,6 +179,7 @@
     <Compile Include="Language\NameofTests.fs" />
     <Compile Include="Language\ExtensionMethodTests.fs" />
     <Compile Include="Language\StaticClassTests.fs" />
+    <Compile Include="Language\ModuleAsTypeTests.fs" />
     <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="ConstraintSolver\MemberConstraints.fs" />
     <Compile Include="Interop\DeeplyNestedCSharpClasses.fs" />
@@ -236,6 +237,7 @@
   <ItemGroup>
     <Content Include="resources\**" CopyToOutputDirectory="Never" CopyToPublishDirectory="PreserveNewest" />
     <EmbeddedResource Remove="Properties\**" />
+    <None Remove="Language\ModuleAsTypeTests.fs" />
     <None Remove="Signatures\SigGenerationRoundTripTests.fs" />
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

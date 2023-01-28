@@ -129,3 +129,16 @@ if not((getData b) = re2.Data) then
         |> compileAndRun
         |> shouldSucceed
 
+    [<Fact>]
+    let ``nameof works for modules`` () =
+        let source = """
+let actual = nameof(FSharp.Core.LanguagePrimitives)
+let expected = "LanguagePrimitives"
+if actual <> expected then failwith $"Expected type to be '{expected}', but got '{actual}'"
+        """
+        Fsx source
+        |> asExe
+        |> withLangVersionPreview
+        |> ignoreWarnings
+        |> compileAndRun
+        |> shouldSucceed
