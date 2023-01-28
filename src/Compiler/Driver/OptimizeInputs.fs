@@ -50,15 +50,21 @@ let GetInitialOptimizationEnv (tcImports: TcImports, tcGlobals: TcGlobals) =
     let optEnv = List.fold (AddExternalCcuToOptimizationEnv tcGlobals) optEnv ccuinfos
     optEnv
 
+/// Result of the 'FirstLoop' phase
+type FirstLoopRes =
+    {
+        OptEnv: Optimizer.IncrementalOptimizationEnv
+        OptInfo: Optimizer.ImplFileOptimizationInfo
+        HidingInfo: SignatureHidingInfo
+        OptDuringCodeGen: bool -> Expr -> Expr
+    }
+
 /// All the state optimization phases can produce (except 'CheckedImplFile') and most of what they require as input.
 type PhaseContext =
     {
-        OptEnvFirstLoop: Optimizer.IncrementalOptimizationEnv
-        OptInfo: Optimizer.ImplFileOptimizationInfo
-        OptEnvExtraLoop: Optimizer.IncrementalOptimizationEnv
-        OptEnvFinalSimplify: Optimizer.IncrementalOptimizationEnv
-        HidingInfo: SignatureHidingInfo
-        OptDuringCodeGen: bool -> Expr -> Expr
+        FirstLoopRes : FirstLoopRes
+        OptEnvExtraLoop : Optimizer.IncrementalOptimizationEnv
+        OptEnvFinalSimplify : Optimizer.IncrementalOptimizationEnv
     }
 
 /// The result of running a single Optimization Phase.
@@ -72,9 +78,9 @@ type PhaseInputs =
     {
         File: CheckedImplFile
         FileIdx: int
-        // State returned by processing the previous phase for the current file, or initial state.
+        /// State returned by processing the previous phase for the current file, or initial state.
         PrevPhase: PhaseContext
-        // State returned by processing the current phase for the previous file, or initial state.
+        /// State returned by processing the current phase for the previous file, or initial state.
         PrevFile: PhaseContext
     }
 
@@ -116,13 +122,13 @@ module private ParallelOptimization =
                 let implFile =
                     {
                         ImplFile = file
-                        OptimizeDuringCodeGen = res.OptDuringCodeGen
+                        OptimizeDuringCodeGen = res.FirstLoopRes.OptDuringCodeGen
                     }
 
-                implFile, res.OptInfo)
+                implFile, res.FirstLoopRes.OptInfo)
 
         let lastFileFirstLoopEnv =
-            fileResults |> Array.last |> (fun (_file, res) -> res.OptEnvFirstLoop)
+            fileResults |> Array.last |> (fun (_file, res) -> res.FirstLoopRes.OptEnv)
 
         finalFileResults, lastFileFirstLoopEnv
 
@@ -137,13 +143,16 @@ module private ParallelOptimization =
         /// Initial state for processing the current file.
         let initialState =
             {
-                OptEnvFirstLoop = env0
-                OptInfo = lazy failwith "This dummy value wrapped in a Lazy was not expected to be evaluated before being replaced."
+                FirstLoopRes =
+                    {
+                        OptEnv = env0
+                        OptInfo = lazy failwith "This dummy value wrapped in a Lazy was not expected to be evaluated before being replaced."
+                        HidingInfo = SignatureHidingInfo.Empty
+                        // A no-op optimizer
+                        OptDuringCodeGen = fun _ expr -> expr
+                    }
                 OptEnvExtraLoop = env0
                 OptEnvFinalSimplify = env0
-                HidingInfo = SignatureHidingInfo.Empty
-                // A no-op optimizer
-                OptDuringCodeGen = fun _ expr -> expr
             }
 
         // Functions for accessing a set of node jobs and their results
@@ -249,13 +258,16 @@ let optimizeFilesSequentially optEnv (phases: PhaseInfo[]) implFiles =
                 let state =
                     implFile,
                     {
-                        OptEnvFirstLoop = optEnvFirstLoop
-                        OptInfo = lazy failwith "This dummy value wrapped in a Lazy was not expected to be evaluated before being replaced."
+                        FirstLoopRes =
+                            {
+                                OptEnv = optEnvFirstLoop
+                                OptInfo = lazy failwith "This dummy value wrapped in a Lazy was not expected to be evaluated before being replaced."
+                                HidingInfo = hidden
+                                // A no-op optimizer
+                                OptDuringCodeGen = fun _ expr -> expr
+                            }
                         OptEnvExtraLoop = optEnvExtraLoop
                         OptEnvFinalSimplify = optEnvFinalSimplify
-                        HidingInfo = hidden
-                        // A no-op optimizer
-                        OptDuringCodeGen = fun _ expr -> expr
                     }
 
                 let runPhase (file: CheckedImplFile, state: PhaseContext) (phase: PhaseInfo) =
@@ -277,10 +289,10 @@ let optimizeFilesSequentially optEnv (phases: PhaseInfo[]) implFiles =
                 let file =
                     {
                         ImplFile = implFile
-                        OptimizeDuringCodeGen = state.OptDuringCodeGen
+                        OptimizeDuringCodeGen = state.FirstLoopRes.OptDuringCodeGen
                     }
 
-                (file, state.OptInfo), (state.OptEnvFirstLoop, state.OptEnvExtraLoop, state.OptEnvFinalSimplify, state.HidingInfo))
+                (file, state.FirstLoopRes.OptInfo), (state.FirstLoopRes.OptEnv, state.OptEnvExtraLoop, state.OptEnvFinalSimplify, state.FirstLoopRes.HidingInfo))
 
     results, optEnvFirstLoop
 
@@ -366,20 +378,23 @@ let ApplyAllOptimizations
                 tcGlobals,
                 tcVal,
                 importMap,
-                prevFile.OptEnvFirstLoop,
+                prevFile.FirstLoopRes.OptEnv,
                 isIncrementalFragment,
                 tcConfig.fsiMultiAssemblyEmit,
                 tcConfig.emitTailcalls,
-                prevFile.HidingInfo,
+                prevFile.FirstLoopRes.HidingInfo,
                 file
             )
 
         file,
         { prevPhase with
-            OptEnvFirstLoop = env
-            OptInfo = optInfo
-            HidingInfo = hidingInfo
-            OptDuringCodeGen = optDuringCodeGen
+            FirstLoopRes =
+                {
+                    OptEnv = env
+                    OptInfo = optInfo
+                    HidingInfo = hidingInfo
+                    OptDuringCodeGen = optDuringCodeGen
+                }
         }
 
     addPhase "firstLoop" firstLoop
@@ -414,7 +429,7 @@ let ApplyAllOptimizations
                 isIncrementalFragment,
                 tcConfig.fsiMultiAssemblyEmit,
                 tcConfig.emitTailcalls,
-                prevPhase.HidingInfo,
+                prevPhase.FirstLoopRes.HidingInfo,
                 file
             )
 
@@ -485,7 +500,7 @@ let ApplyAllOptimizations
                 isIncrementalFragment,
                 tcConfig.fsiMultiAssemblyEmit,
                 tcConfig.emitTailcalls,
-                prevPhase.HidingInfo,
+                prevPhase.FirstLoopRes.HidingInfo,
                 file
             )
 
@@ -574,7 +589,7 @@ let GenerateIlxCode
             isInteractive = tcConfig.isInteractive
             isInteractiveItExpr = isInteractiveItExpr
             alwaysCallVirt = tcConfig.alwaysCallVirt
-            parallelIlxGenEnabled = tcConfig.parallelIlxGen && not (tcConfig.deterministic)
+            parallelIlxGenEnabled = tcConfig.parallelIlxGen && not tcConfig.deterministic
         }
 
     ilxGenerator.GenerateCode(ilxGenOpts, optimizedImpls, topAttrs.assemblyAttrs, topAttrs.netModuleAttrs)
