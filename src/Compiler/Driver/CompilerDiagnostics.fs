@@ -380,7 +380,6 @@ type PhasedDiagnostic with
         | 3389 -> false // tcBuiltInImplicitConversionUsed - off by default
         | 3390 -> false // xmlDocBadlyFormed - off by default
         | 3395 -> false // tcImplicitConversionUsedForMethodArg - off by default
-        | 3560 -> false // tcCopyAndUpdateRecordChangesAllFields - off by default
         | _ ->
             (severity = FSharpDiagnosticSeverity.Info)
             || (severity = FSharpDiagnosticSeverity.Warning && level >= x.WarningLevel)

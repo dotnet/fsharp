@@ -16,6 +16,7 @@ type R = { F1: int; F2: string }
 let updateOk r = { r with F1 = 1 }
 let updateWarn r = { r with F1 = 1; F2 = "" }
     """
+    |> withLangVersionPreview
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
