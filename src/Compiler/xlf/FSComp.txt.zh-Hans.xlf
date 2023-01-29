@@ -872,6 +872,11 @@
         <target state="translated">属性不可应用于类型扩展。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">
+        <source>This copy-and-update record expression changes all fields of record type '{0}'. Consider using the record construction syntax instead.</source>
+        <target state="new">This copy-and-update record expression changes all fields of record type '{0}'. Consider using the record construction syntax instead.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
         <source>The syntax 'expr1[expr2]' is used for indexing. Consider adding a type annotation to enable indexing, or if calling a function add a space, e.g. 'expr1 [expr2]'.</source>
         <target state="translated">语法“expr1[expr2]”用于索引。考虑添加类型批注来启用索引，或者在调用函数添加空格，例如“expr1 [expr2]”。</target>

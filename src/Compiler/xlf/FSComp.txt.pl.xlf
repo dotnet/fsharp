@@ -872,6 +872,11 @@
         <target state="translated">Atrybutów nie można stosować do rozszerzeń typu.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">
+        <source>This copy-and-update record expression changes all fields of record type '{0}'. Consider using the record construction syntax instead.</source>
+        <target state="new">This copy-and-update record expression changes all fields of record type '{0}'. Consider using the record construction syntax instead.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
         <source>The syntax 'expr1[expr2]' is used for indexing. Consider adding a type annotation to enable indexing, or if calling a function add a space, e.g. 'expr1 [expr2]'.</source>
         <target state="translated">Do indeksowania używana jest składnia „expr1[expr2]”. Rozważ dodanie adnotacji typu, aby umożliwić indeksowanie, lub jeśli wywołujesz funkcję dodaj spację, np. „expr1 [expr2]”.</target>

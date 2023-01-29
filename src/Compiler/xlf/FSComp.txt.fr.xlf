@@ -872,6 +872,11 @@
         <target state="translated">Impossible d'appliquer des attributs aux extensions de type.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">
+        <source>This copy-and-update record expression changes all fields of record type '{0}'. Consider using the record construction syntax instead.</source>
+        <target state="new">This copy-and-update record expression changes all fields of record type '{0}'. Consider using the record construction syntax instead.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
         <source>The syntax 'expr1[expr2]' is used for indexing. Consider adding a type annotation to enable indexing, or if calling a function add a space, e.g. 'expr1 [expr2]'.</source>
         <target state="translated">La syntaxe « expr1[expr2] » est utilisée pour l’indexation. Envisagez d’ajouter une annotation de type pour activer l’indexation, ou si vous appelez une fonction, ajoutez un espace, par exemple « expr1 [expr2] ».</target>
