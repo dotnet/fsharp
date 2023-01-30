@@ -71,15 +71,15 @@ type internal FSharpFindUsagesService
             let originationParts = ImmutableArray.Create(Microsoft.CodeAnalysis.TaggedText(TextTags.Assembly, symbolUse.Symbol.Assembly.SimpleName))
             let externalDefinitionItem = FSharpDefinitionItem.CreateNonNavigableItem(tags, displayParts, originationParts)
             let definitionItems =
-                    declarationSpans
-                    |> List.map (fun span -> FSharpDefinitionItem.Create(tags, displayParts, span), span.Document.Id)
-            
+                declarationSpans
+                |> List.map (fun span -> FSharpDefinitionItem.Create(tags, displayParts, span), span.Document.Project.Id)
+
             for definitionItem, _ in definitionItems do
                 do! context.OnDefinitionFoundAsync(definitionItem) |> Async.AwaitTask |> liftAsync
 
             if isExternal then
                 do! context.OnDefinitionFoundAsync(externalDefinitionItem) |> Async.AwaitTask |> liftAsync
-            
+
             let onFound =
                 fun (doc: Document) (textSpan: TextSpan) (symbolUse: range) ->
                     async {
@@ -92,7 +92,7 @@ type internal FSharpFindUsagesService
                                         externalDefinitionItem
                                     else
                                         definitionItems
-                                        |> List.tryFind (fun (_, docId) -> doc.Id = docId)
+                                        |> List.tryFind (fun (_, projectId) -> doc.Project.Id = projectId)
                                         |> Option.map (fun (definitionItem, _) -> definitionItem)
                                         |> Option.defaultValue externalDefinitionItem
 
