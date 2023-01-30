@@ -23,6 +23,7 @@ let rec f () = seq {
         yield! f()
 }
     """
+    |> withLangVersionPreview
     |> compile
     |> verifyIL ["
       .class auto ansi serializable sealed nested assembly beforefieldinit 'f@3-1'
@@ -350,6 +351,7 @@ let typedSeq =
             |_ when x = 0 -> %s{valInWith2}
     }}
     """
+    |> withLangVersionPreview
     |> typecheck
     |> shouldSucceed
 
@@ -368,6 +370,7 @@ let typedSeq =
             |_ when x = 0 -> %s{valInWith2}
     }}
     """
+    |> withLangVersionPreview
     |> typecheck
     |> shouldSucceed
 
@@ -386,6 +389,7 @@ let typedSeq =
             |_ when x = 0 -> %s{valInWith2}
     }}
     """
+    |> withLangVersionPreview
     |> typecheck
     |> shouldFail    
     |> withDiagnosticMessageMatches "This expression returns a value of type 'int' but is implicitly discarded."
@@ -407,6 +411,7 @@ let typedSeq =
             |_ when x = 0 -> %s{valInWith2}
     }}
     """
+    |> withLangVersionPreview
     |> typecheck
     |> shouldFail
     |> withErrorCode 193
@@ -431,6 +436,7 @@ let typedSeq =
             |_ when x = 0 -> %s{valInWith2}
     }}
     """
+    |> withLangVersionPreview
     |> typecheck
     |> shouldFail
     |> withErrorCode 30
