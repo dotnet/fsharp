@@ -297,6 +297,11 @@
         <target state="translated">Odrzucenie dopasowania wzorca jest niedozwolone w przypadku unii, która nie pobiera żadnych danych.</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureModulesInTypeApplication">
+        <source>Allow modules to be used in type application</source>
+        <target state="new">Allow modules to be used in type application</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureNameOf">
         <source>nameof</source>
         <target state="translated">nameof</target>

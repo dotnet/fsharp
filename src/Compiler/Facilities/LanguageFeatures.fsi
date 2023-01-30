@@ -51,6 +51,7 @@ type LanguageFeature =
     | EscapeDotnetFormattableStrings
     | ArithmeticInLiterals
     | ErrorReportingOnStaticClasses
+    | ModulesInTypeApplication
 
 /// LanguageVersion management
 type LanguageVersion =

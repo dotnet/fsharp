@@ -16,6 +16,18 @@ if actual <> expected then failwith $"Expected '{{expected}}', but got '{{actual
     |> shouldSucceed
 
 [<Fact>]
+let ``Module cannot be used in typeof in lang version70`` () =
+    Fsx """
+let actual = typeof<module FSharp.Core.LanguagePrimitives>
+    """
+    |> withLangVersion70
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [
+        (Error 3350, Line 2, Col 21, Line 2, Col 27, "Feature 'Allow modules to be used in type application' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.")
+    ]
+
+[<Fact>]
 let ``Module can be used as generic type argument in lang preview`` () =
     Fsx """
 let actual = ResizeArray<module LanguagePrimitives>().GetType().FullName
@@ -47,7 +59,7 @@ let _ = typeof<module Ns.A.B.value>
 let _ = typeof<module R>
     """
     |> withLangVersionPreview
-    |> compile
+    |> typecheck
     |> shouldFail
     |> withDiagnostics [
         (Error 39, Line 9, Col 23, Line 9, Col 25, "The module 'Ns' is not defined.")

@@ -297,6 +297,11 @@
         <target state="translated">L’abandon des correspondances de modèle n’est pas autorisé pour un cas d’union qui n’accepte aucune donnée.</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureModulesInTypeApplication">
+        <source>Allow modules to be used in type application</source>
+        <target state="new">Allow modules to be used in type application</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureNameOf">
         <source>nameof</source>
         <target state="translated">nameof</target>
