@@ -362,3 +362,26 @@ type X =
         assertRange (4, 13) (4, 19) mInlineGet
         assertRange (5, 12) (5, 18) mInlineSet
     | ast -> Assert.Fail $"Could not get valid AST, got {ast}"
+
+[<Test>]
+let ``ImplicitCtor with as keyword`` () =
+    let parseResults = 
+        getParseResults
+            """
+type internal CompilerStateCache(readAllBytes: string -> byte[], projectOptions: FSharpProjectOptions)
+//#if !NO_TYPEPROVIDERS
+    as this =
+//#else
+//     =
+// #endif
+    class end
+"""
+
+    match parseResults with
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+        SynModuleDecl.Types(
+            typeDefns = [ SynTypeDefn(implicitConstructor = Some (SynMemberDefn.ImplicitCtor(trivia = { AsKeyword = Some mAs }))) ]
+        )
+    ]) ])) ->
+        assertRange (4, 4) (4, 6) mAs
+    | ast -> Assert.Fail $"Could not get valid AST, got {ast}"
