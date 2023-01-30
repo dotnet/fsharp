@@ -1673,4 +1673,4 @@ featureEscapeBracesInFormattableString,"Escapes curly braces before calling Form
 3556,chkImplementingInterfacesOnStaticClasses,"If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Implementing interfaces is not allowed."
 3557,chkAbstractMembersDeclarationsOnStaticClasses,"If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Abstract member declarations are not allowed."
 3558,chkExplicitFieldsDeclarationsOnStaticClasses,"If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Explicit field declarations are not allowed."
-3559,typrelNeverRefinedAwayFromTop,"A type has been implicitly inferred as `obj`, which may be unintended. Consider adding explicit type annotations, disabling the warning, or suppressing it locally with `#nowarn \"3559\"`."
+3559,typrelNeverRefinedAwayFromTop,"A type has been implicitly inferred as 'obj', which may be unintended. Consider adding explicit type annotations. You can disable this warning by using '#nowarn \"3559\"' or '--nowarn:3559'."
