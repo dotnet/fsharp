@@ -1,7 +1,7 @@
 <Project>
 
-  <Import Project="Sdk.props" Sdk="Microsoft.DotNet.Arcade.Sdk" />
-  <Import Project="eng\targets\Settings.props" />
+  <Import Project="Sdk.props" Sdk="Microsoft.DotNet.Arcade.Sdk" Condition="'$(DISABLE_ARCADE)' != 'true'"/>
+  <Import Project="eng\targets\Settings.props" Condition="'$(DISABLE_ARCADE)' != 'true'"/>
 
   <PropertyGroup>
     <BUILD_IN_FSHARP_REPOSITORY>true</BUILD_IN_FSHARP_REPOSITORY>
@@ -11,6 +11,10 @@
 
   <PropertyGroup Condition="'$(OS)' != 'Unix' and '$(DisableAutoSetFscCompilerPath)' != 'true' and '$(Configuration)' != 'Proto' and '$(DOTNET_HOST_PATH)' != ''">
     <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(BUILDING_FCS_SOLUTION)' == 'true'">
+    <DisableAutoSetFscCompilerPath>false</DisableAutoSetFscCompilerPath>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Proto'">
