@@ -1705,6 +1705,9 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                 let bindCall = mkSynCall bindName bindRange (bindArgs @ [consumeExpr])
                 translatedCtxt (bindCall |> addBindDebugPoint))
 
+    /// This function is for desugaring into .Bind{N}Return calls if possible
+    /// The outer option indicates if .BindReturn is possible. When it returns None, .BindReturn cannot be used
+    /// The inner option indicates if a custom operation is involved inside
     and convertSimpleReturnToExpr varSpace innerComp =
         match innerComp with 
         | SynExpr.YieldOrReturn ((false, _), returnExpr, m) ->
@@ -1730,7 +1733,8 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
             | Some (thenExpr, None) ->
             let elseExprOptOpt  = 
                 match elseCompOpt with 
-                | None -> Some None 
+                // When we are missing an 'else' part alltogether in case of 'if cond then return exp', we fallback from BindReturn into regular Bind+Return
+                | None -> None 
                 | Some elseComp -> 
                     match convertSimpleReturnToExpr varSpace elseComp with
                     | None -> None // failure

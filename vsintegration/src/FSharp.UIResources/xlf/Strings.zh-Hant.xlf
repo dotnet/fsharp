@@ -9,17 +9,22 @@
       </trans-unit>
       <trans-unit id="Enable_Fast_Find_References">
         <source>Enable fast find references &amp; rename (experimental)</source>
-        <target state="new">Enable fast find references &amp; rename (experimental)</target>
+        <target state="translated">啟用快速尋找參考和重新命名 (實驗性)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enable_Live_Buffers">
+        <source>Use live (unsaved) buffers for checking (restart required)</source>
+        <target state="new">Use live (unsaved) buffers for checking (restart required)</target>
         <note />
       </trans-unit>
       <trans-unit id="Find_References_Performance">
         <source>Find References Performance Options</source>
-        <target state="new">Find References Performance Options</target>
+        <target state="translated">尋找參考效能選項</target>
         <note />
       </trans-unit>
       <trans-unit id="Inline_Hints">
         <source>Inline Hints</source>
-        <target state="new">Inline Hints</target>
+        <target state="translated">內嵌提示</target>
         <note />
       </trans-unit>
       <trans-unit id="Code_Fixes">
@@ -39,12 +44,12 @@
       </trans-unit>
       <trans-unit id="Enable_Parallel_Checking_With_Signature_Files">
         <source>Enable parallel type checking with signature files</source>
-        <target state="new">Enable parallel type checking with signature files</target>
+        <target state="translated">啟用簽章檔案的平行類型檢查</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_Parallel_Reference_Resolution">
         <source>Enable parallel reference resolution</source>
-        <target state="new">Enable parallel reference resolution</target>
+        <target state="translated">啟用平行參考解析</target>
         <note />
       </trans-unit>
       <trans-unit id="Language_Service_Performance">
@@ -62,6 +67,11 @@
         <target state="translated">點線底線(_O)</target>
         <note />
       </trans-unit>
+      <trans-unit id="LiveBuffers">
+        <source>Live Buffers (experimental)</source>
+        <target state="new">Live Buffers (experimental)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Navigation_links">
         <source>Navigation links</source>
         <target state="translated">導覽連結</target>
@@ -69,17 +79,17 @@
       </trans-unit>
       <trans-unit id="Parallelization">
         <source>Parallelization (requires restart)</source>
-        <target state="new">Parallelization (requires restart)</target>
+        <target state="translated">平行處理 (需要重新開機)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Parameter_Name_Hints">
-        <source>Display inline parameter name hints (experimental)</source>
-        <target state="new">Display inline parameter name hints (experimental)</target>
+        <source>Display inline parameter name hints (preview)</source>
+        <target state="needs-review-translation">顯示內嵌參數名稱提示 (實驗性)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Type_Hints">
-        <source>Display inline type hints (experimental)</source>
-        <target state="new">Display inline type hints (experimental)</target>
+        <source>Display inline type hints (preview)</source>
+        <target state="needs-review-translation">顯示內嵌類型提示 (實驗性)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_all_symbols">

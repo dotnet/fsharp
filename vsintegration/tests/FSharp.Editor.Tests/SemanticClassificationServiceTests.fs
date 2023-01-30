@@ -2,21 +2,21 @@
 
 namespace FSharp.Editor.Tests
 
-open NUnit.Framework
+open Xunit
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Classification
 open FSharp.Editor.Tests.Helpers
+open FSharp.Test
 
-[<TestFixture>]
 type SemanticClassificationServiceTests() =
-    let filePath = "C:\\test.fs"
-
     let getRanges (source: string) : SemanticClassificationItem list =
         asyncMaybe {
-            let document, _ = RoslynTestHelpers.CreateSingleDocumentSolution(filePath, source)
+            let document = 
+                RoslynTestHelpers.CreateSolution(source)
+                |> RoslynTestHelpers.GetSingleDocument
 
             let! _, checkFileResults =
                 document.GetFSharpParseAndCheckResultsAsync("SemanticClassificationServiceTests")
@@ -39,13 +39,10 @@ type SemanticClassificationServiceTests() =
             Position.mkPos (Line.fromZ line.Line) (line.Character + marker.Length - 1)
 
         match ranges |> List.tryFind (fun item -> Range.rangeContainsPos item.Range markerPos) with
-        | None -> Assert.Fail("Cannot find colorization data for end of marker")
+        | None -> failwith "Cannot find colorization data for end of marker"
         | Some item ->
-            Assert.AreEqual(
-                classificationType,
-                FSharpClassificationTypes.getClassificationTypeName item.Type,
+            FSharpClassificationTypes.getClassificationTypeName item.Type |> Assert.shouldBeEqualWith classificationType
                 "Classification data doesn't match for end of marker"
-            )
 
     let verifyNoClassificationDataAtEndOfMarker (fileContents: string, marker: string, classificationType: string) =
         let text = SourceText.From(fileContents)
@@ -65,13 +62,14 @@ type SemanticClassificationServiceTests() =
 
         Assert.False(anyData, "Classification data was found when it wasn't expected.")
 
-    [<TestCase("(*1*)", ClassificationTypeNames.StructName)>]
-    [<TestCase("(*2*)", ClassificationTypeNames.ClassName)>]
-    [<TestCase("(*3*)", ClassificationTypeNames.StructName)>]
-    [<TestCase("(*4*)", ClassificationTypeNames.ClassName)>]
-    [<TestCase("(*5*)", ClassificationTypeNames.StructName)>]
-    [<TestCase("(*6*)", ClassificationTypeNames.StructName)>]
-    [<TestCase("(*7*)", ClassificationTypeNames.ClassName)>]
+    [<Theory>]
+    [<InlineData("(*1*)", ClassificationTypeNames.StructName)>]
+    [<InlineData("(*2*)", ClassificationTypeNames.ClassName)>]
+    [<InlineData("(*3*)", ClassificationTypeNames.StructName)>]
+    [<InlineData("(*4*)", ClassificationTypeNames.ClassName)>]
+    [<InlineData("(*5*)", ClassificationTypeNames.StructName)>]
+    [<InlineData("(*6*)", ClassificationTypeNames.StructName)>]
+    [<InlineData("(*7*)", ClassificationTypeNames.ClassName)>]
     member _.Measured_Types(marker: string, classificationType: string) =
         verifyClassificationAtEndOfMarker (
             """#light (*Light*)
@@ -95,18 +93,19 @@ type SemanticClassificationServiceTests() =
             classificationType
         )
 
-    [<TestCase("(*1*)", FSharpClassificationTypes.MutableVar)>]
-    [<TestCase("(*2*)", FSharpClassificationTypes.MutableVar)>]
-    [<TestCase("(*3*)", FSharpClassificationTypes.MutableVar)>]
-    [<TestCase("(*4*)", FSharpClassificationTypes.MutableVar)>]
-    [<TestCase("(*5*)", FSharpClassificationTypes.MutableVar)>]
-    [<TestCase("(*6*)", FSharpClassificationTypes.MutableVar)>]
-    [<TestCase("(*7*)", FSharpClassificationTypes.MutableVar)>]
-    [<TestCase("(*8*)", FSharpClassificationTypes.MutableVar)>]
-    [<TestCase("(*9*)", FSharpClassificationTypes.MutableVar)>]
-    [<TestCase("(*10*)", FSharpClassificationTypes.MutableVar)>]
-    [<TestCase("(*11*)", FSharpClassificationTypes.MutableVar)>]
-    [<TestCase("(*12*)", FSharpClassificationTypes.MutableVar)>]
+    [<Theory>]
+    [<InlineData("(*1*)", FSharpClassificationTypes.MutableVar)>]
+    [<InlineData("(*2*)", FSharpClassificationTypes.MutableVar)>]
+    [<InlineData("(*3*)", FSharpClassificationTypes.MutableVar)>]
+    [<InlineData("(*4*)", FSharpClassificationTypes.MutableVar)>]
+    [<InlineData("(*5*)", FSharpClassificationTypes.MutableVar)>]
+    [<InlineData("(*6*)", FSharpClassificationTypes.MutableVar)>]
+    [<InlineData("(*7*)", FSharpClassificationTypes.MutableVar)>]
+    [<InlineData("(*8*)", FSharpClassificationTypes.MutableVar)>]
+    [<InlineData("(*9*)", FSharpClassificationTypes.MutableVar)>]
+    [<InlineData("(*10*)", FSharpClassificationTypes.MutableVar)>]
+    [<InlineData("(*11*)", FSharpClassificationTypes.MutableVar)>]
+    [<InlineData("(*12*)", FSharpClassificationTypes.MutableVar)>]
     member _.MutableValues(marker: string, classificationType: string) =
         let sourceText =
             """
@@ -133,13 +132,14 @@ r.MutableField := 3
 
         verifyClassificationAtEndOfMarker (sourceText, marker, classificationType)
 
-    [<TestCase("(*1*)", FSharpClassificationTypes.DisposableType)>]
-    [<TestCase("(*2*)", FSharpClassificationTypes.DisposableTopLevelValue)>]
-    [<TestCase("(*3*)", FSharpClassificationTypes.DisposableType)>]
-    [<TestCase("(*4*)", FSharpClassificationTypes.DisposableTopLevelValue)>]
-    [<TestCase("(*5*)", FSharpClassificationTypes.DisposableLocalValue)>]
-    [<TestCase("(*6*)", FSharpClassificationTypes.DisposableType)>]
-    [<TestCase("(*7*)", FSharpClassificationTypes.DisposableLocalValue)>]
+    [<Theory>]
+    [<InlineData("(*1*)", FSharpClassificationTypes.DisposableType)>]
+    [<InlineData("(*2*)", FSharpClassificationTypes.DisposableTopLevelValue)>]
+    [<InlineData("(*3*)", FSharpClassificationTypes.DisposableType)>]
+    [<InlineData("(*4*)", FSharpClassificationTypes.DisposableTopLevelValue)>]
+    [<InlineData("(*5*)", FSharpClassificationTypes.DisposableLocalValue)>]
+    [<InlineData("(*6*)", FSharpClassificationTypes.DisposableType)>]
+    [<InlineData("(*7*)", FSharpClassificationTypes.DisposableLocalValue)>]
     member _.Disposables(marker: string, classificationType: string) =
         let sourceText =
             """
@@ -160,12 +160,13 @@ let f() =
 
         verifyClassificationAtEndOfMarker (sourceText, marker, classificationType)
 
-    [<TestCase("(*1*)", FSharpClassificationTypes.MutableVar)>]
-    [<TestCase("(*2*)", FSharpClassificationTypes.MutableVar)>]
-    [<TestCase("(*3*)", FSharpClassificationTypes.MutableVar)>]
-    [<TestCase("(*4*)", FSharpClassificationTypes.MutableVar)>]
-    [<TestCase("(*5*)", FSharpClassificationTypes.MutableVar)>]
-    [<TestCase("(*6*)", FSharpClassificationTypes.MutableVar)>]
+    [<Theory>]
+    [<InlineData("(*1*)", FSharpClassificationTypes.MutableVar)>]
+    [<InlineData("(*2*)", FSharpClassificationTypes.MutableVar)>]
+    [<InlineData("(*3*)", FSharpClassificationTypes.MutableVar)>]
+    [<InlineData("(*4*)", FSharpClassificationTypes.MutableVar)>]
+    [<InlineData("(*5*)", FSharpClassificationTypes.MutableVar)>]
+    [<InlineData("(*6*)", FSharpClassificationTypes.MutableVar)>]
     member _.NoInrefsExpected(marker: string, classificationType: string) =
         let sourceText =
             """

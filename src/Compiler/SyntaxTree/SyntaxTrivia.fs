@@ -229,12 +229,14 @@ type SynLeadingKeyword =
 type SynBindingTrivia =
     {
         LeadingKeyword: SynLeadingKeyword
+        InlineKeyword: range option
         EqualsRange: range option
     }
 
     static member Zero: SynBindingTrivia =
         {
             LeadingKeyword = SynLeadingKeyword.Synthetic
+            InlineKeyword = None
             EqualsRange = None
         }
 
@@ -293,6 +295,7 @@ type SynModuleOrNamespaceSigTrivia =
 type SynValSigTrivia =
     {
         LeadingKeyword: SynLeadingKeyword
+        InlineKeyword: range option
         WithKeyword: range option
         EqualsRange: range option
     }
@@ -300,6 +303,7 @@ type SynValSigTrivia =
     static member Zero: SynValSigTrivia =
         {
             LeadingKeyword = SynLeadingKeyword.Synthetic
+            InlineKeyword = None
             WithKeyword = None
             EqualsRange = None
         }
@@ -310,6 +314,7 @@ type SynTypeFunTrivia = { ArrowRange: range }
 [<NoEquality; NoComparison>]
 type SynMemberGetSetTrivia =
     {
+        InlineKeyword: range option
         WithKeyword: range
         GetKeyword: range option
         AndKeyword: range option

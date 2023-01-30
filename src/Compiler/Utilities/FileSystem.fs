@@ -35,8 +35,6 @@ module internal Bytes =
 
     let zeroCreate n : byte[] = Array.zeroCreate n
 
-    let sub (b: byte[]) s l = Array.sub b s l
-
     let blit (a: byte[]) b c d e = Array.blit a b c d e
 
     let ofInt32Array (arr: int[]) =

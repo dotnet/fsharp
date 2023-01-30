@@ -2,12 +2,12 @@
 
 namespace FSharp.Editor.Tests.Hints
 
-open NUnit.Framework
+open Xunit
 open HintTestFramework
 
 module InlineParameterNameHintTests =
 
-    [<Test>]
+    [<Fact>]
     let ``Hint is shown for a let binding`` () =
         let code =
             """
@@ -27,9 +27,9 @@ let greeting = greet "darkness"
 
         let actual = getParameterNameHints document
 
-        Assert.AreEqual(expected, actual)
+        Assert.Equal(expected, actual)
 
-    [<Test>]
+    [<Fact>]
     let ``Hints are shown for multiple function calls`` () =
         let code =
             """
@@ -54,9 +54,9 @@ let greeting2 = greet "Liam"
 
         let actual = getParameterNameHints document
 
-        Assert.AreEqual(expected, actual)
+        Assert.Equal(expected, actual)
 
-    [<Test>]
+    [<Fact>]
     let ``Hints are shown for multiple parameters`` () =
         let code =
             """
@@ -80,9 +80,9 @@ let greeting = greet "Liam" "Noel"
 
         let actual = getParameterNameHints document
 
-        Assert.AreEqual(expected, actual)
+        Assert.Equal(expected, actual)
 
-    [<Test>]
+    [<Fact>]
     let ``Hints are shown for tuple items`` () =
         let code =
             """
@@ -106,9 +106,9 @@ let greeting = greet ("Liam", "Noel")
 
         let actual = getParameterNameHints document
 
-        Assert.AreEqual(expected, actual)
+        Assert.Equal(expected, actual)
 
-    [<Test>]
+    [<Fact>]
     let ``Hints are shown for active patterns`` () =
         let code =
             """
@@ -141,9 +141,9 @@ let odd = evenOrOdd 41
 
         let actual = getParameterNameHints document
 
-        Assert.AreEqual(expected, actual)
+        Assert.Equal(expected, actual)
 
-    [<Test>] // here we don't want an empty hint before "x"
+    [<Fact>] // here we don't want an empty hint before "x"
     let ``Hints are not shown for nameless parameters`` () =
         let code =
             """
@@ -157,9 +157,9 @@ let exists predicate option =
 
         let result = getParameterNameHints document
 
-        Assert.IsEmpty(result)
+        Assert.Empty(result)
 
-    [<Test>] // here we don't want a useless (?) hint "value = "
+    [<Fact>] // here we don't want a useless (?) hint "value = "
     let ``Hints are not shown for parameters of built-in operators`` () =
         let code =
             """
@@ -170,9 +170,9 @@ let postTrue = not true
 
         let result = getParameterNameHints document
 
-        Assert.IsEmpty(result)
+        Assert.Empty(result)
 
-    [<Test>]
+    [<Fact>]
     let ``Hints are not shown for parameters of custom operators`` () =
         let code =
             """
@@ -185,9 +185,9 @@ let c = "javascript" === "javascript"
 
         let result = getParameterNameHints document
 
-        Assert.IsEmpty(result)
+        Assert.Empty(result)
 
-    [<Test>]
+    [<Fact>]
     let ``Hints are shown for method parameters`` () =
         let code =
             """
@@ -206,9 +206,9 @@ let theAnswer = System.Console.WriteLine 42
 
         let actual = getParameterNameHints document
 
-        Assert.AreEqual(expected, actual)
+        Assert.Equal(expected, actual)
 
-    [<Test>]
+    [<Fact>]
     let ``Hints are shown for parameters of overloaded and curried methods`` () =
         let code =
             """
@@ -253,9 +253,9 @@ let a = c.Normal "hmm"
 
         let actual = getParameterNameHints document
 
-        Assert.AreEqual(expected, actual)
+        Assert.Equal(expected, actual)
 
-    [<Test>]
+    [<Fact>]
     let ``Hints are shown for constructor parameters`` () =
         let code =
             """
@@ -285,9 +285,9 @@ let a = C (1, "")
 
         let actual = getParameterNameHints document
 
-        Assert.AreEqual(expected, actual)
+        Assert.Equal(expected, actual)
 
-    [<Test>]
+    [<Fact>]
     let ``Hints are shown for discriminated union case fields with explicit names`` () =
         let code =
             """
@@ -319,9 +319,9 @@ let b = Rectangle (1, 2)
 
         let actual = getParameterNameHints document
 
-        Assert.AreEqual(expected, actual)
+        Assert.Equal(expected, actual)
 
-    [<Test>]
+    [<Fact>]
     let ``Hints for discriminated union case fields are not shown when names are generated`` () =
         let code =
             """
@@ -349,9 +349,9 @@ let d = Circle 1
 
         let actual = getParameterNameHints document
 
-        Assert.AreEqual(expected, actual)
+        Assert.Equal(expected, actual)
 
-    [<Test>]
+    [<Fact>]
     let ``Hints for discriminated union case fields are not shown when provided arguments don't match the expected count`` () =
         let code =
             """
@@ -366,9 +366,9 @@ let c = Triangle (1, 2)
 
         let actual = getParameterNameHints document
 
-        Assert.IsEmpty(actual)
+        Assert.Empty(actual)
 
-    [<Test>]
+    [<Fact>]
     let ``Hints for discriminated union case fields are not shown for Cons`` () =
         let code =
             """
@@ -380,9 +380,9 @@ type X =
 
         let actual = getParameterNameHints document
 
-        Assert.IsEmpty(actual)
+        Assert.Empty(actual)
 
-    [<Test>]
+    [<Fact>]
     let ``Hints are not shown in front of indexes`` () =
         let code =
             """
@@ -405,4 +405,115 @@ let x = "test".Split("").[0].Split("");
 
         let actual = getParameterNameHints document
 
-        Assert.AreEqual(expected, actual)
+        Assert.Equal(expected, actual)
+
+    [<Fact>]
+    let ``Hints are not shown for optional parameters with specified names`` () =
+        let code =
+            """
+type MyType() =
+
+    member _.MyMethod(?beep: int, ?bap: int, ?boop: int) = ()
+
+    member this.Foo = this.MyMethod(3, boop = 4)
+"""
+
+        let document = getFsDocument code
+
+        let expected =
+            [
+                {
+                    Content = "beep = "
+                    Location = (5, 37)
+                }
+            ]
+
+        let actual = getParameterNameHints document
+
+        Assert.Equal(expected, actual)
+
+    [<Fact>]
+    let ``Hints are not shown when all optional parameters are named`` () =
+        let code =
+            """
+type MyType() =
+
+    member _.MyMethod(?beep: int, ?bap : int, ?boop : int) = ()
+
+    member this.Foo = this.MyMethod(bap = 3, beep = 4)
+"""
+
+        let document = getFsDocument code
+
+        let actual = getParameterNameHints document
+
+        Assert.Empty(actual)
+        
+    [<Fact>]
+    let ``Hints are shown correctly for inner bindings`` () =
+        let code =
+            """
+let test sequences = 
+    sequences
+    |> Seq.map (fun sequence -> sequence |> Seq.map (fun sequence' -> sequence' |> Seq.map (fun item -> item)))
+"""
+
+        let document = getFsDocument code
+
+        let expected =
+            [
+                {
+                    Content = "mapping = "
+                    Location = (3, 16)
+                }
+                {
+                    Content = "mapping = "
+                    Location = (3, 53)
+                }
+                {
+                    Content = "mapping = "
+                    Location = (3, 92)
+                }
+            ]
+
+        let actual = getParameterNameHints document
+
+        Assert.Equal(expected, actual)
+
+    [<Fact>]
+    let ``Hints are not shown when CustomOperation attribute is detected`` () =
+        let code =
+            """
+let q = query { for x in { 1 .. 10 } do select x }
+"""
+
+        let document = getFsDocument code
+
+        let actual = getParameterNameHints document
+
+        Assert.Empty actual
+
+    [<Fact>]
+    let ``Hints are not shown when parameter names coinside with variable names`` () =
+        let code =
+            """
+let getFullName name surname = $"{name} {surname}"
+
+let name = "Robert"
+let lastName = "Smith"
+let fullName = getFullName name lastName
+"""
+
+        let document = getFsDocument code
+
+        let expected =
+            [
+                {
+                    Content = "surname = "
+                    Location = (5, 33)
+                }
+            ]
+
+        let actual = getParameterNameHints document
+
+        Assert.Equal(expected, actual)
