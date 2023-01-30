@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <RepoRoot Condition="'$(RepoRoot)' == ''">$(MSBuildThisFileDirectory)</RepoRoot>
-    <ArtifactsDir Condition="'$(ArtifactsDir)' == ''">$(MSBuildThisFileDirectory)artifacts</ArtifactsDir>
   </PropertyGroup>
   <!--
    When developers load the FSharp.Compiler.Service solution we set FSHARPCORE_USE_PACKAGE to true if it hasn't already been set to a value.
@@ -10,12 +9,13 @@
    FSharp.Core project.
    -->
   <!-- Disable arcade when we build FCS solution -->
-  <PropertyGroup Condition="'$(SolutionName)' == 'FSharp.Compiler.Service'">
+  <PropertyGroup Condition="'$(SolutionName)' == 'FSharp.Compiler.Service' and '$(BUILDING_FCS_SOLUTION)' != 'false'">
     <BUILDING_FCS_SOLUTION Condition="'$(BUILDING_FCS_SOLUTION)' == ''">true</BUILDING_FCS_SOLUTION>
     <FSHARPCORE_USE_PACKAGE Condition="'$(FSHARPCORE_USE_PACKAGE)' == ''">true</FSHARPCORE_USE_PACKAGE>
     <DISABLE_ARCADE Condition="'$(DISABLE_ARCADE)' == ''">true</DISABLE_ARCADE>
-    <FsLexPath>$(RepoRoot)buildtools\fslex\bin\$(Configuration)\net7.0\fslex.dll</FsLexPath>
-    <FsYaccPath>$(RepoRoot)buildtools\fsyacc\bin\$(Configuration)\net7.0\fsyacc.dll</FsYaccPath>
+    <ArtifactsDir Condition="'$(ArtifactsDir)' == ''">$(MSBuildThisFileDirectory)artifacts/</ArtifactsDir>
+    <FsLexPath Condition="'$(FsLexPath)' == ''">$(RepoRoot)buildtools\fslex\bin\$(Configuration)\net7.0\fslex.dll</FsLexPath>
+    <FsYaccPath Condition="'$(FsYaccPath)' == ''">$(RepoRoot)buildtools\fsyacc\bin\$(Configuration)\net7.0\fsyacc.dll</FsYaccPath>
   </PropertyGroup>
 
   <Import Project="FSharpBuild.Directory.Build.props" Condition = " '$(FSharpTestCompilerVersion)' == '' "/>
