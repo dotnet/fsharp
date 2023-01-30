@@ -320,7 +320,7 @@ type FindAllReferences_MultiProject () =
     [<ParamsAllValues>]
     member val Scheduling = TaskScheduling.SemaphoreA with get, set
 
-    //[<ParamsAllValues>]
+    [<ParamsAllValues>]
     member val EmptyCache = false with get, set
 
     [<ParamsAllValues>]

@@ -227,7 +227,6 @@ type Project with
 
             let documents = this.Documents |> Seq.filter (fun document -> not (canSkipDocuments.Contains document.FilePath))
 
-
             return seq {
                 for doc in documents ->
                     doc.FindFSharpReferencesAsync(symbol, (fun textSpan range -> onFound doc textSpan range), userOpName) }

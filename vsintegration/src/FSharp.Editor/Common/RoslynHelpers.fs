@@ -193,23 +193,23 @@ module internal RoslynHelpers =
         Async.Start (computation, cancellationToken)
 
     /// Execute given tasks on a background thread, running at most Environment.ProcessorCount at the same time
-    let ParallelBackgroundTasks (ct: CancellationToken) (jobs: (unit -> Task<'a>) seq) = backgroundTask {
+    let ParallelBackgroundTasks (ct: CancellationToken) (jobs: (unit -> Task<'a>) seq) =
+        backgroundTask {
+            use semaphore = new SemaphoreSlim(Environment.ProcessorCount)
 
-        use semaphore = new SemaphoreSlim(Environment.ProcessorCount)
+            let runningTasks = ResizeArray()
 
-        let runningTasks = ResizeArray()
+            for job in jobs do
+                if not ct.IsCancellationRequested then
+                    do! semaphore.WaitAsync ct
+                    runningTasks.Add(
+                        Task.Run<'a>(job, ct)
+                            .ContinueWith(fun (t: Task<'a>) ->
+                                semaphore.Release() |> ignore
+                                t.Result))
 
-        for job in jobs do
-            if not ct.IsCancellationRequested then
-                do! semaphore.WaitAsync ct
-                runningTasks.Add(
-                    Task.Run<'a>(job, ct)
-                        .ContinueWith(fun (t: Task<'a>) ->
-                            semaphore.Release() |> ignore
-                            t.Result))
-
-        return! Task.WhenAll runningTasks
-    }
+            return! Task.WhenAll runningTasks
+        }
 
     /// Execute given asyncs on a background thread, running at most Environment.ProcessorCount at the same time
     let ParallelProcessAsyncs ct =
