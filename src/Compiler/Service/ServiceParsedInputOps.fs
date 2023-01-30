@@ -233,6 +233,19 @@ module Entity =
 
 module ParsedInput =
 
+    /// A pattern that collects all sequential expressions to avoid StackOverflowException
+    let internal (|Sequentials|_|) expr =
+
+        let rec collect expr acc =
+            match expr with
+            | SynExpr.Sequential (_, _, e1, (SynExpr.Sequential _ as e2), _) -> collect e2 (e1 :: acc)
+            | SynExpr.Sequential (_, _, e1, e2, _) -> e2 :: e1 :: acc
+            | _ -> acc
+
+        match collect expr [] with
+        | [] -> None
+        | exprs -> Some(List.rev exprs)
+
     let emptyStringSet = HashSet<string>()
 
     let GetRangeOfExprLeftOfDot (pos: pos, parsedInput) =
@@ -557,13 +570,6 @@ module ParsedInput =
             match pats with
             | SynArgPats.Pats ps -> ps
             | SynArgPats.NamePatPairs (pats = xs) -> List.map (fun (_, _, pat) -> pat) xs
-
-        /// A recursive pattern that collect all sequential expressions to avoid StackOverflowException
-        let rec (|Sequentials|_|) expr =
-            match expr with
-            | SynExpr.Sequential (_, _, e, Sequentials es, _) -> Some(e :: es)
-            | SynExpr.Sequential (_, _, e1, e2, _) -> Some [ e1; e2 ]
-            | _ -> None
 
         let inline isPosInRange range = rangeContainsPos range pos
 
@@ -891,7 +897,7 @@ module ParsedInput =
                 | None, Some binding -> walkBinding binding
                 | Some getBinding, Some setBinding -> walkBinding getBinding |> Option.orElseWith (fun () -> walkBinding setBinding)
 
-            | SynMemberDefn.ImplicitCtor (_, Attributes attrs, SynSimplePats.SimplePats (simplePats, _), _, _, _) ->
+            | SynMemberDefn.ImplicitCtor (attributes = Attributes attrs; ctorArgs = SynSimplePats.SimplePats (simplePats, _)) ->
                 List.tryPick walkAttribute attrs
                 |> Option.orElseWith (fun () -> List.tryPick walkSimplePat simplePats)
 
@@ -1557,13 +1563,6 @@ module ParsedInput =
         SyntaxTraversal.Traverse(pos, parsedInput, visitor) |> ignore
         path |> List.map (fun x -> x.idText) |> List.toArray
 
-    /// An recursive pattern that collect all sequential expressions to avoid StackOverflowException
-    let rec (|Sequentials|_|) expr =
-        match expr with
-        | SynExpr.Sequential (_, _, e, Sequentials es, _) -> Some(e :: es)
-        | SynExpr.Sequential (_, _, e1, e2, _) -> Some [ e1; e2 ]
-        | _ -> None
-
     let (|ConstructorPats|) pats =
         match pats with
         | SynArgPats.Pats ps -> ps
@@ -1893,7 +1892,7 @@ module ParsedInput =
             | SynMemberDefn.GetSetMember (getBinding, setBinding, _, _) ->
                 Option.iter walkBinding getBinding
                 Option.iter walkBinding setBinding
-            | SynMemberDefn.ImplicitCtor (_, Attributes attrs, SynSimplePats.SimplePats (simplePats, _), _, _, _) ->
+            | SynMemberDefn.ImplicitCtor (attributes = Attributes attrs; ctorArgs = SynSimplePats.SimplePats (simplePats, _)) ->
                 List.iter walkAttribute attrs
                 List.iter walkSimplePat simplePats
             | SynMemberDefn.ImplicitInherit (t, e, _, _) ->
