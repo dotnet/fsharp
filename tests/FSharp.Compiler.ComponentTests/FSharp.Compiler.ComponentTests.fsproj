@@ -101,6 +101,7 @@
     <Compile Include="Conformance\UnitsOfMeasure\TypeChecker.fs" />
     <Compile Include="EmittedIL\CompilerGeneratedAttributeOnAccessors.fs" />
     <Compile Include="EmittedIL\EmptyArray.fs" />
+    <Compile Include="EmittedIL\Enums.fs" />
     <Compile Include="EmittedIL\Literals.fs" />
     <Compile Include="EmittedIL\NoCompilerInlining.fs" />
     <Compile Include="EmittedIL\SkipLocalsInit.fs" />
@@ -178,6 +179,7 @@
     <Compile Include="Language\NameofTests.fs" />
     <Compile Include="Language\ExtensionMethodTests.fs" />
     <Compile Include="Language\SequenceExpressionTests.fs" />
+    <Compile Include="Language\StaticClassTests.fs" />
     <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="ConstraintSolver\MemberConstraints.fs" />
     <Compile Include="Interop\DeeplyNestedCSharpClasses.fs" />

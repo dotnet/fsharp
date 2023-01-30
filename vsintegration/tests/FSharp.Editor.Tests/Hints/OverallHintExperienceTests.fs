@@ -2,13 +2,14 @@
 
 namespace FSharp.Editor.Tests.Hints
 
-open NUnit.Framework
+open Xunit
 open HintTestFramework
+open FSharp.Test
 
 // just some kind of higher level testing
 module OverallHintExperienceTests =
 
-    [<Test>]
+    [<Fact>]
     let ``Current baseline hints`` () =
         let code =
             """
@@ -84,4 +85,4 @@ let cc = a.Normal "hmm"
 
         let actual = getAllHints document
 
-        CollectionAssert.AreEquivalent(expected, actual)
+        actual |> Assert.shouldBeEquivalentTo expected

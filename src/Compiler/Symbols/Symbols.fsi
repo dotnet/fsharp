@@ -816,6 +816,9 @@ type FSharpMemberOrFunctionOrValue =
     /// Indicates if this is a method member
     member IsMethod: bool
 
+    /// Indicates if the value has a signature file counterpart
+    member HasSignatureFile: bool
+
     /// Indicates if this is a property and there exists an associated getter method
     member HasGetterMethod: bool
 

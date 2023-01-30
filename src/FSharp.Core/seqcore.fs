@@ -210,9 +210,6 @@ module RuntimeHelpers =
     let Generate openf compute closef =
         mkSeq (fun () -> new IEnumerator.GeneratedEnumerable<_,_>(openf, compute, closef) :> IEnumerator<'T>)
 
-    let GenerateUsing (openf : unit -> ('U :> System.IDisposable)) compute =
-        Generate openf compute (fun (s:'U) -> s.Dispose())
-
     let EnumerateFromFunctions create moveNext current =
         Generate
             create
