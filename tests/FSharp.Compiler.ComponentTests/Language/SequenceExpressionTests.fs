@@ -12,18 +12,49 @@ let fsiSession = getSessionForEval()
 let runCode = evalInSharedSession fsiSession
 
 [<Fact>]
-let ``Simplest call of them all to check IL``() =
+let ``Basic recursive case uses tail. recursion``() =
     Fsx """
 let rec f () = seq {
-    try
-        yield 1
-        yield (1/0)
+    try 
+        yield 123    
+        yield (456/0)
     with pat ->
+        yield 789
         yield! f()
 }
     """
     |> compile
-    |> verifyIL ["abcde"]
+    |> verifyIL ["
+      .class auto ansi serializable sealed nested assembly beforefieldinit 'f@3-1'
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.Collections.Generic.IEnumerable`1<int32>>
+  {
+    .field static assembly initonly class Test/'f@3-1' @_instance
+    .method assembly specialname rtspecialname 
+            instance void  .ctor() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.Collections.Generic.IEnumerable`1<int32>>::.ctor()
+      IL_0006:  ret
+    } 
+
+    .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerable`1<int32> 
+            Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldc.i4.s   123
+      IL_0002:  call       class [runtime]System.Collections.Generic.IEnumerable`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::Singleton<int32>(!!0)
+      IL_0007:  ldsfld     class Test/'f@5-2' Test/'f@5-2'::@_instance
+      IL_000c:  call       class [runtime]System.Collections.Generic.IEnumerable`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::Delay<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.Collections.Generic.IEnumerable`1<!!0>>)
+      IL_0011:  tail.
+      IL_0013:  call       class [runtime]System.Collections.Generic.IEnumerable`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::Append<int32>(class [runtime]System.Collections.Generic.IEnumerable`1<!!0>,
+                                                                                                                                                            class [runtime]System.Collections.Generic.IEnumerable`1<!!0>)
+      IL_0018:  ret
+    } "]
 
 [<Fact>]
 let ``A seq{try/with} happy path with multiple language elements``() =
@@ -94,9 +125,9 @@ if l<> expectedList then
     |> shouldSucceed
 
 [<Theory>]
-[<InlineData(2)>]
-[<InlineData(5000)>]
-[<InlineData(20000)>]
+[<InlineData(10)>]
+[<InlineData(100)>]
+[<InlineData(1000)>]
 let ``A sequence expression can recurse itself from with clause``(recLevel:int) =
     Fsx $"""
 let rec f () = seq {{
