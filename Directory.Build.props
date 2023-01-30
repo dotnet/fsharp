@@ -7,15 +7,17 @@
    When developers load the FSharp.Compiler.Service solution we set FSHARPCORE_USE_PACKAGE to true if it hasn't already been set to a value.
    This option ensures that building and testing uses the specified FSharp.Core nuget package instead of the local
    FSharp.Core project.
-   -->
-  <!-- Disable arcade when we build FCS solution -->
+   We also disable arcade and reset certain artifacts and compiler paths to use default ones
+   All settings below can be overriden via CLI switches if needed. -->
   <PropertyGroup Condition="'$(SolutionName)' == 'FSharp.Compiler.Service' and '$(BUILDING_FCS_SOLUTION)' != 'false'">
+    <DisableAutoSetFscCompilerPath>false</DisableAutoSetFscCompilerPath>
     <BUILDING_FCS_SOLUTION Condition="'$(BUILDING_FCS_SOLUTION)' == ''">true</BUILDING_FCS_SOLUTION>
     <FSHARPCORE_USE_PACKAGE Condition="'$(FSHARPCORE_USE_PACKAGE)' == ''">true</FSHARPCORE_USE_PACKAGE>
     <DISABLE_ARCADE Condition="'$(DISABLE_ARCADE)' == ''">true</DISABLE_ARCADE>
     <ArtifactsDir Condition="'$(ArtifactsDir)' == ''">$(MSBuildThisFileDirectory)artifacts/</ArtifactsDir>
     <FsLexPath Condition="'$(FsLexPath)' == ''">$(RepoRoot)buildtools\fslex\bin\$(Configuration)\net7.0\fslex.dll</FsLexPath>
     <FsYaccPath Condition="'$(FsYaccPath)' == ''">$(RepoRoot)buildtools\fsyacc\bin\$(Configuration)\net7.0\fsyacc.dll</FsYaccPath>
+    <OtherFlags>$(OtherFlags) --test:ParallelCheckingWithSignatureFilesOn</OtherFlags>
   </PropertyGroup>
 
   <Import Project="FSharpBuild.Directory.Build.props" Condition = " '$(FSharpTestCompilerVersion)' == '' "/>
