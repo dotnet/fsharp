@@ -382,6 +382,11 @@
         <target state="translated">reprezentacja struktury aktywnych wzorców</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureTryWithInSeqExpressions">
+        <source>Support for try-with in sequence expressions</source>
+        <target state="new">Support for try-with in sequence expressions</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
         <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
         <target state="translated">Zgłasza ostrzeżenia, gdy element „let inline ... =” jest używany razem z atrybutem [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;]. Funkcja nie jest wstawiana.</target>

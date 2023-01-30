@@ -2087,6 +2087,9 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
             Some(mkLet spMatch inputExprMark matchv inputExpr matchExpr, tpenv)
 
         | SynExpr.TryWith (innerTry,withList,mTryToWith,_spTry,_spWith,trivia) ->
+            if not(g.langVersion.SupportsFeature(LanguageFeature.TryWithInSeqExpression)) then
+                 error(Error(FSComp.SR.tcTryIllegalInSequenceExpression(), mTryToWith))
+
             let env = { env with eIsControlFlow = true }
             let tryExpr, tpenv = 
                 let inner,tpenv = tcSequenceExprBody env genOuterTy tpenv innerTry
