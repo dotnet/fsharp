@@ -1543,7 +1543,7 @@ tyconDefn:
        let mEquals = rhs parseState 7
        // Gets the XML doc comments prior to the implicit constructor
        let xmlDoc = grabXmlDoc(parseState, $2, 2)
-       let memberCtorPattern = SynMemberDefn.ImplicitCtor (vis, $2, spats, az, xmlDoc, rangeOfLid lid)
+       let memberCtorPattern = SynMemberDefn.ImplicitCtor (vis, $2, spats, Option.map snd az, xmlDoc, rangeOfLid lid, { AsKeyword = Option.map fst az })
        let tcDefRepr = 
          match tcDefRepr with
          | SynTypeDefnRepr.ObjectModel (k, cspec, m) -> SynTypeDefnRepr.ObjectModel (k, memberCtorPattern :: cspec, m)
@@ -1865,7 +1865,7 @@ classDefnMember:
         let m = unionRanges mWholeBindLhs $7.Range |> unionRangeWithXmlDoc xmlDoc
         let mEquals = rhs parseState 6
         let expr = $7
-        let valSynData = SynValData (Some CtorMemberFlags, SynValInfo([SynInfo.InferSynArgInfoFromPat $4], SynInfo.unnamedRetVal), $5) 
+        let valSynData = SynValData (Some CtorMemberFlags, SynValInfo([SynInfo.InferSynArgInfoFromPat $4], SynInfo.unnamedRetVal), Option.map snd $5)
         let vis = $2 
         let declPat = SynPat.LongIdent (SynLongIdent([mkSynId (rhs parseState 3) "new"], [], [None]), None, Some noInferredTypars, SynArgPats.Pats [$4], vis, rhs parseState 3)
         // Check that 'SynPatForConstructorDecl' matches this correctly
@@ -2021,7 +2021,7 @@ optAsSpec:
 
 asSpec: 
   | AS ident
-     { $2 } 
+     { rhs parseState 1, $2 } 
 
 optBaseSpec: 
   | baseSpec
