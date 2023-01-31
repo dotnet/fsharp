@@ -3028,6 +3028,8 @@ module EstablishTypeDefinitionCores =
                     let kind = if hasMeasureAttr then TyparKind.Measure else TyparKind.Type
                     let ty, _ = TcTypeOrMeasureAndRecover (Some kind) cenv NoNewTypars checkConstraints ItemOccurence.UseInType WarnOnIWSAM.No envinner tpenv rhsType
 
+                    // Give a warning if `AutoOpenAttribute` is being aliased.
+                    // If the user were to alias the `Microsoft.FSharp.Core.AutoOpenAttribute` type, it would not be detected by the project graph dependency resolution algorithm.
                     match stripTyEqns g ty with
                     | AppTy g (tcref, _) when not tcref.IsErased ->
                         match tcref.CompiledRepresentation with
