@@ -93,7 +93,7 @@ let mergeTrieNodes (defaultChildSize: int) (tries: TrieNode array) =
 
         root
 
-let mkDictFromKeyValuePairs (items: KeyValuePair<'tkey, 'tvalue> seq) =
+let mkDictFromKeyValuePairs (items: KeyValuePair<'TKey, 'TValue> seq) =
     let dict = Dictionary(Seq.length items)
 
     for KeyValue (k, v) in items do
