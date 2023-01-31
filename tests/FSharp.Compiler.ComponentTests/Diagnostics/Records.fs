@@ -22,3 +22,33 @@ let updateWarn r = { r with F1 = 1; F2 = "" }
     |> withDiagnostics [
         (Warning 3560, Line 7, Col 20, Line 7, Col 46, "This copy-and-update record expression changes all fields of record type 'Records.R'. Consider using the record construction syntax instead.")
     ]
+
+[<Fact>]
+let ``Warning not emitted when record update syntax changes all fields in lang70``() =
+    Fsx """
+module Records
+
+type R = { F1: int; F2: string }
+
+let updateWarn r = { r with F1 = 1; F2 = "" }
+    """
+    |> withLangVersion70
+    |> typecheck
+    |> shouldSucceed
+
+[<Fact>]
+let ``Warning emitted when record update syntax changes all fields when enabled manually in lang70``() =
+    Fsx """
+module Records
+
+type R = { F1: int; F2: string }
+
+let updateWarn r = { r with F1 = 1; F2 = "" }
+    """
+    |> withLangVersion70
+    |> withOptions ["--warnon:FS3560"]
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [
+        (Warning 3560, Line 6, Col 20, Line 6, Col 46, "This copy-and-update record expression changes all fields of record type 'Records.R'. Consider using the record construction syntax instead.")
+    ]
