@@ -835,8 +835,8 @@ module rec Compiler =
             |> List.map (fun x -> x.GetSourceFileName)
             |> List.map (sprintf " @\"%s\"")
             |> String.Concat
-        let scripTask = async { return script.Eval("#load" + fileNames ) } |> Async.StartAsTask
-        scripTask.GetAwaiter().GetResult() |> (processScriptResults fs) 
+    
+        script.Eval("#load" + fileNames ) |> (processScriptResults fs) 
 
     let eval (cUnit: CompilationUnit) : CompilationResult =
         match cUnit with
