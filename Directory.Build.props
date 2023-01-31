@@ -20,10 +20,10 @@
     <OtherFlags>$(OtherFlags) --test:ParallelCheckingWithSignatureFilesOn</OtherFlags>
   </PropertyGroup>
 
+  <Import Project="$(MSBuildThisFileDirectory)/eng/Versions.props" Condition="'$(DISABLE_ARCADE)' == 'true'"/>
+
   <Import Project="FSharpBuild.Directory.Build.props" Condition = " '$(FSharpTestCompilerVersion)' == '' "/>
   <Import Project="FSharpTests.Directory.Build.props" Condition = " '$(FSharpTestCompilerVersion)' != '' "/>
-
-  <Import Project="$(MSBuildThisFileDirectory)/eng/Versions.props" Condition="'$(DISABLE_ARCADE)' == 'true'"/>
 
   <ItemGroup>
     <!-- If there is a README.md next to a project file, include it (for easier access in the IDE) -->
