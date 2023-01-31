@@ -134,7 +134,7 @@ module TestFrameworkAdapter =
                 |> withOptions (["--nowarn:0988;3370"] @ bonusArgs) 
             | NEG_TEST_BUILD _ -> 
                 cu |> 
-                withOptions (["--vserrors";"--maxerrors:10000";"--warnaserror";"--warn:3";"--nowarn:20;1178;52"] @ bonusArgs) 
+                withOptions (["--vserrors";"--maxerrors:10000";"--warnaserror";"--warn:3";"--nowarn:20;21;1178;52"] @ bonusArgs) 
         |> fun cu -> 
             match mode with
             | FSC_DEBUG -> 
