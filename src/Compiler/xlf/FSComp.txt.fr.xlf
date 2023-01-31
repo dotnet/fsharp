@@ -1142,6 +1142,11 @@
         <target state="translated">Vous ne pouvez pas implémenter l'interface '{0}' avec les deux instanciations '{1}' et '{2}', car elles peuvent s'unifier.</target>
         <note />
       </trans-unit>
+      <trans-unit id="typrelNeverRefinedAwayFromTop">
+        <source>A type has been implicitly inferred as 'obj', which may be unintended. Consider adding explicit type annotations. You can disable this warning by using '#nowarn \"3559\"' or '--nowarn:3559'.</source>
+        <target state="new">A type has been implicitly inferred as 'obj', which may be unintended. Consider adding explicit type annotations. You can disable this warning by using '#nowarn \"3559\"' or '--nowarn:3559'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
         <source>The type '{0}' does not define the field, constructor or member '{1}'.</source>
         <target state="translated">Le type '{0}' ne définit pas le champ, le constructeur ou le membre '{1}'.</target>

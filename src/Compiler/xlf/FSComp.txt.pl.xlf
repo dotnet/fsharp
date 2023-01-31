@@ -1142,6 +1142,11 @@
         <target state="translated">Nie możesz zaimplementować interfejsu „{0}” przy użyciu dwóch wystąpień „{1}” i „{2}”, ponieważ mogą one się ujednolicić.</target>
         <note />
       </trans-unit>
+      <trans-unit id="typrelNeverRefinedAwayFromTop">
+        <source>A type has been implicitly inferred as 'obj', which may be unintended. Consider adding explicit type annotations. You can disable this warning by using '#nowarn \"3559\"' or '--nowarn:3559'.</source>
+        <target state="new">A type has been implicitly inferred as 'obj', which may be unintended. Consider adding explicit type annotations. You can disable this warning by using '#nowarn \"3559\"' or '--nowarn:3559'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
         <source>The type '{0}' does not define the field, constructor or member '{1}'.</source>
         <target state="translated">Typ „{0}” nie definiuje pola, konstruktora lub składowej „{1}”.</target>
