@@ -446,7 +446,7 @@ type SynType =
     | LongIdent of longDotId: SynLongIdent
 
     /// F# syntax: typeof<module A.B.C>
-    | LongIdentModule of longDotId: SynLongIdent
+    | LongIdentModule of longDotId: SynLongIdent * range: range
 
     /// F# syntax: type<type, ..., type> or type type or (type, ..., type) type
     ///   isPostfix: indicates a postfix type application e.g. "int list" or "(int, string) dict"

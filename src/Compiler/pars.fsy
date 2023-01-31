@@ -5137,8 +5137,10 @@ tupleOrQuotTypeElements:
 
 appTypeCon:
   | moduleKeyword path %prec prec_atomtyp_path 
-    { parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.ModulesInTypeApplication (rhs parseState 1)
-      SynType.LongIdentModule($2) }
+    { let mModule = rhs parseState 1
+      parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.ModulesInTypeApplication mModule
+      let mAll = unionRanges mModule $2.Range
+      SynType.LongIdentModule($2, mAll) }
 
   | path %prec prec_atomtyp_path 
     { SynType.LongIdent($1) }

@@ -116,7 +116,7 @@ type InterfaceData =
                     | TyparStaticReq.None -> Some("'" + s.idText)
                     | TyparStaticReq.HeadType -> Some("^" + s.idText)
                 | SynType.LongIdent (SynLongIdent (xs, _, _)) -> xs |> Seq.map (fun x -> x.idText) |> String.concat "." |> Some
-                | SynType.LongIdentModule (SynLongIdent (xs, _, _)) ->
+                | SynType.LongIdentModule (SynLongIdent (xs, _, _), _) ->
                     let ident = xs |> Seq.map (fun x -> x.idText) |> String.concat "."
                     Some(sprintf "module %s" ident)
                 | SynType.App (t, _, ts, _, _, isPostfix, _) ->

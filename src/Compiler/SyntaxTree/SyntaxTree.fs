@@ -393,7 +393,7 @@ type SynType =
 
     | LongIdent of longDotId: SynLongIdent
 
-    | LongIdentModule of longDotId: SynLongIdent
+    | LongIdentModule of longDotId: SynLongIdent * range: range
 
     | App of
         typeName: SynType *
@@ -463,7 +463,7 @@ type SynType =
         | SynType.SignatureParameter (range = m)
         | SynType.Or (range = m) -> m
         | SynType.LongIdent lidwd -> lidwd.Range
-        | SynType.LongIdentModule lidwd -> lidwd.Range
+        | SynType.LongIdentModule (range = m) -> m
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynExpr =

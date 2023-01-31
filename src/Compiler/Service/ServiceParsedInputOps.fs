@@ -664,7 +664,7 @@ module ParsedInput =
         and walkType ty =
             match ty with
             | SynType.LongIdent ident
-            | SynType.LongIdentModule ident ->
+            | SynType.LongIdentModule (ident, _) ->
                 // we protect it with try..with because System.Exception : rangeOfLidwd may raise
                 // at FSharp.Compiler.Syntax.LongIdentWithDots.get_Range() in D:\j\workspace\release_ci_pa---3f142ccc\src\ast.fs: line 156
                 try
@@ -1316,7 +1316,7 @@ module ParsedInput =
                                 |> List.tryPick (fun arg ->
                                     match arg with
                                     | SynType.LongIdent lid when rangeContainsPos lid.Range pos -> Some CompletionContext.PatternType
-                                    | SynType.LongIdentModule lid when rangeContainsPos lid.Range pos -> Some CompletionContext.ModuleAsType
+                                    | SynType.LongIdentModule (lid, _) when rangeContainsPos lid.Range pos -> Some CompletionContext.ModuleAsType
                                     | _ -> None)
                                 |> Option.orElse (Some CompletionContext.PatternType)
 
@@ -1691,7 +1691,7 @@ module ParsedInput =
                 walkType t1
                 walkType t2
             | SynType.LongIdent ident
-            | SynType.LongIdentModule ident -> addLongIdentWithDots ident
+            | SynType.LongIdentModule (ident, _) -> addLongIdentWithDots ident
             | SynType.App (ty, _, types, _, _, _, _) ->
                 walkType ty
                 List.iter walkType types

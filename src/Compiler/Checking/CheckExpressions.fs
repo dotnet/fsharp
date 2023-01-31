@@ -4298,8 +4298,8 @@ and TcTypeOrMeasure kindOpt (cenv: cenv) newOk checkConstraints occ (iwsam: Warn
     | SynType.LongIdent synLongId ->
         TcLongIdentType kindOpt cenv newOk checkConstraints occ iwsam env tpenv synLongId
 
-    | SynType.LongIdentModule synLongId ->
-        TcLongIdentModule cenv checkConstraints occ env tpenv synLongId
+    | SynType.LongIdentModule (synLongId, m) ->
+        TcLongIdentModule cenv checkConstraints occ env tpenv synLongId m
 
     | MultiDimensionArrayType (rank, elemTy, m) ->
         TcElementType cenv newOk checkConstraints occ env tpenv rank elemTy m
@@ -4369,18 +4369,18 @@ and CheckIWSAM (cenv: cenv) (env: TcEnv) checkConstraints iwsam m tcref =
         if meths |> List.exists (fun meth -> not meth.IsInstance && meth.IsDispatchSlot && not meth.IsExtensionMember) then
             warning(Error(FSComp.SR.tcUsingInterfaceWithStaticAbstractMethodAsType(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
 
-and TcLongIdentModule (cenv: cenv) checkConstraints occ (env: TcEnv) tpenv synLongId =
+and TcLongIdentModule (cenv: cenv) checkConstraints occ (env: TcEnv) tpenv synLongId mAll =
     let (SynLongIdent (tc, _, _)) = synLongId
-    let m = synLongId.Range
     let id, rest = List.headAndTail tc
+    let mIdent = synLongId.Range
 
     let results =
-        ResolveLongIdentAsModule cenv.tcSink cenv.amap m true OpenQualified env.NameEnv env.eAccessRights id rest
+        ResolveLongIdentAsModule cenv.tcSink cenv.amap mIdent true OpenQualified env.NameEnv env.eAccessRights id rest
         |> ForceRaise 
 
     match results with
     | [] -> failwith "unreachable" // handled in ResolveLongIdentAsModule above
-    | (_, tcref, _) :: _ -> TcTypeApp cenv NoNewTypars checkConstraints occ env tpenv m tcref [] []
+    | (_, tcref, _) :: _ -> TcTypeApp cenv NoNewTypars checkConstraints occ env tpenv mAll tcref [] []
 
 and TcLongIdentType kindOpt (cenv: cenv) newOk checkConstraints occ iwsam env tpenv synLongId =
     let (SynLongIdent(tc, _, _)) = synLongId
