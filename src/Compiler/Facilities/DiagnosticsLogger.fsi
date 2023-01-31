@@ -45,7 +45,11 @@ val StopProcessing<'T> : exn
 exception DiagnosticWithText of number: int * message: string * range: range
 
 /// A diagnostic that is raised when enabled manually, or by default with a language feature
-exception DiagnosticEnabledWithLanguageFeature of number: int * message: string * range: range * enabledByLangFeature: bool
+exception DiagnosticEnabledWithLanguageFeature of
+    number: int *
+    message: string *
+    range: range *
+    enabledByLangFeature: bool
 
 /// Creates a diagnostic exeption whose text comes via SR.*
 val Error: (int * string) * range -> exn
