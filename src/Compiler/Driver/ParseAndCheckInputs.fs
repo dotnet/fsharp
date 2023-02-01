@@ -1208,9 +1208,6 @@ let AddCheckResultsToTcState
 
 type PartialResult = TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType
 
-type CheckArgs =
-    CompilationThreadToken * (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcState * (PhasedDiagnostic -> PhasedDiagnostic) * ParsedInput list
-
 /// Typecheck a single file (or interactive entry into F# Interactive)
 let CheckOneInputAux
     (
