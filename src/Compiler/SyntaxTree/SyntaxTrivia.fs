@@ -317,6 +317,9 @@ type SynMemberGetSetTrivia =
     }
 
 [<NoEquality; NoComparison>]
+type SynMemberDefnImplicitCtorTrivia = { AsKeyword: range option }
+
+[<NoEquality; NoComparison>]
 type SynArgPatsNamePatPairsTrivia = { ParenRange: range }
 
 [<NoEquality; NoComparison>]
