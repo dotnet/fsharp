@@ -465,7 +465,8 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
                 [
                     yield! List.concat nodes
                     yield! visitPat pat
-                    yield! List.collect (fun (SynExprAndBang (pat = pat)) -> visitPat pat) andBangs
+                    for SynExprAndBang (pat = pat) in andBangs do
+                        yield! visitPat pat
                 ]
                 |> continuation
 
@@ -569,7 +570,13 @@ let visitPat (p: SynPat) : FileContentEntry list =
             Continuation.sequence continuations finalContinuation
         | SynPat.Record (fieldPats, _) ->
             let pats = List.map (fun (_, _, p) -> p) fieldPats
-            let lids = List.collect (fun ((l, _), _, _) -> visitLongIdent l) fieldPats
+
+            let lids =
+                [
+                    for (l, _), _, _ in fieldPats do
+                        yield! visitLongIdent l
+                ]
+
             let continuations = List.map visit pats
 
             let finalContinuation nodes =
@@ -589,7 +596,11 @@ let visitPat (p: SynPat) : FileContentEntry list =
 let visitSynArgPats (argPat: SynArgPats) =
     match argPat with
     | SynArgPats.Pats args -> List.collect visitPat args
-    | SynArgPats.NamePatPairs (pats = pats) -> List.collect (fun (_, _, p) -> visitPat p) pats
+    | SynArgPats.NamePatPairs (pats = pats) ->
+        [
+            for _, _, p in pats do
+                yield! visitPat p
+        ]
 
 let visitSynSimplePat (pat: SynSimplePat) =
     match pat with
@@ -631,12 +642,12 @@ let visitSynMemberSig (ms: SynMemberSig) : FileContentEntry list =
     | SynMemberSig.NestedType _ -> []
 
 let mkFileContent (f: FileInProject) : FileContentEntry list =
-    match f.ParsedInput with
-    | ParsedInput.SigFile (ParsedSigFileInput (contents = contents)) ->
-        contents
-        |> List.collect (fun (SynModuleOrNamespaceSig (longId = longId; kind = kind; decls = decls; attribs = attribs)) ->
-            [
+    [
+        match f.ParsedInput with
+        | ParsedInput.SigFile (ParsedSigFileInput (contents = contents)) ->
+            for SynModuleOrNamespaceSig (longId = longId; kind = kind; decls = decls; attribs = attribs) in contents do
                 yield! List.collect visitSynAttributeList attribs
+
                 match kind with
                 | SynModuleOrNamespaceKind.GlobalNamespace
                 | SynModuleOrNamespaceKind.AnonModule -> yield! List.collect visitSynModuleSigDecl decls
@@ -646,13 +657,10 @@ let mkFileContent (f: FileInProject) : FileContentEntry list =
                 | SynModuleOrNamespaceKind.NamedModule ->
                     let path = longIdentToPath true longId
                     yield FileContentEntry.TopLevelNamespace(path, List.collect visitSynModuleSigDecl decls)
-            ])
-
-    | ParsedInput.ImplFile (ParsedImplFileInput (contents = contents)) ->
-        contents
-        |> List.collect (fun (SynModuleOrNamespace (longId = longId; attribs = attribs; kind = kind; decls = decls)) ->
-            [
+        | ParsedInput.ImplFile (ParsedImplFileInput (contents = contents)) ->
+            for SynModuleOrNamespace (longId = longId; attribs = attribs; kind = kind; decls = decls) in contents do
                 yield! List.collect visitSynAttributeList attribs
+
                 match kind with
                 | SynModuleOrNamespaceKind.GlobalNamespace
                 | SynModuleOrNamespaceKind.AnonModule -> yield! List.collect visitSynModuleDecl decls
@@ -662,4 +670,4 @@ let mkFileContent (f: FileInProject) : FileContentEntry list =
                 | SynModuleOrNamespaceKind.NamedModule ->
                     let path = longIdentToPath true longId
                     yield FileContentEntry.TopLevelNamespace(path, List.collect visitSynModuleDecl decls)
-            ])
+    ]
