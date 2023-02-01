@@ -2,7 +2,6 @@
 
 open System.Collections.Generic
 open FSharp.Compiler.Syntax
-open Microsoft.FSharp.Collections
 
 [<RequireQualifiedAccess>]
 module private HashSet =
