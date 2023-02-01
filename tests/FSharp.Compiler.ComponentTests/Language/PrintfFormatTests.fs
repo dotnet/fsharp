@@ -35,7 +35,7 @@ let Format = "%d"
 let test = sprintf Format Format.Length
     """
     |> withLangVersionPreview
-    |> compile
+    |> typecheck
     |> shouldSucceed
 
 [<Fact>]
@@ -49,7 +49,7 @@ let Format = "%s"
 let test = sprintf Format 42
     """
     |> withLangVersionPreview
-    |> compile
+    |> typecheck
     |> shouldFail
     |> withResult {
         Error = Error 1
