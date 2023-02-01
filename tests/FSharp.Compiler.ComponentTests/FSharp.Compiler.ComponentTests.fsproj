@@ -196,7 +196,7 @@
     <Compile Include="TypeChecks\Graph\Scenarios.fs" />
     <Compile Include="TypeChecks\Graph\DependencyResolutionTests.fs" />
     <Compile Include="TypeChecks\Graph\CompilationTests.fs" />
-    <None Include="TypeChecks\Graph\scrape.fsx" />
+    <Content Include="TypeChecks\Graph\scrape.fsx" CopyToOutputDirectory="Never" />
     <Compile Include="TypeChecks\Graph\CompilationFromCmdlineArgsTests.fs" />
     <Compile Include="TypeChecks\Graph\TypedTreeGraph.fs" />
     <Compile Include="CompilerOptions\fsc\checked\checked.fs" />
