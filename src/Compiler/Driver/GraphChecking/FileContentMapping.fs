@@ -41,68 +41,64 @@ let visitSynAttributes (attributes: SynAttributes) : FileContentEntry list =
     List.collect visitSynAttributeList attributes
 
 let visitSynModuleDecl (decl: SynModuleDecl) : FileContentEntry list =
-    match decl with
-    | SynModuleDecl.Open(target = SynOpenDeclTarget.ModuleOrNamespace (longId, _)) ->
-        [ FileContentEntry.OpenStatement(synLongIdentToPath false longId) ]
-    | SynModuleDecl.Open(target = SynOpenDeclTarget.Type (typeName, _)) -> visitSynType typeName
-    | SynModuleDecl.Attributes (attributes, _) -> List.collect visitSynAttributeList attributes
-    | SynModuleDecl.Expr (expr, _) -> visitSynExpr expr
-    | SynModuleDecl.NestedModule (moduleInfo = SynComponentInfo (longId = [ ident ]; attributes = attributes); decls = decls) ->
-        [
+    [
+        match decl with
+        | SynModuleDecl.Open(target = SynOpenDeclTarget.ModuleOrNamespace (longId, _)) ->
+            yield FileContentEntry.OpenStatement(synLongIdentToPath false longId)
+        | SynModuleDecl.Open(target = SynOpenDeclTarget.Type (typeName, _)) -> yield! visitSynType typeName
+        | SynModuleDecl.Attributes (attributes, _) -> yield! List.collect visitSynAttributeList attributes
+        | SynModuleDecl.Expr (expr, _) -> yield! visitSynExpr expr
+        | SynModuleDecl.NestedModule (moduleInfo = SynComponentInfo (longId = [ ident ]; attributes = attributes); decls = decls) ->
             yield! visitSynAttributes attributes
             yield FileContentEntry.NestedModule(ident.idText, List.collect visitSynModuleDecl decls)
-        ]
-    | SynModuleDecl.NestedModule _ -> failwith "A nested module cannot have multiple identifiers"
-    | SynModuleDecl.Let (bindings = bindings) -> List.collect visitBinding bindings
-    | SynModuleDecl.Types (typeDefns = typeDefns) -> List.collect visitSynTypeDefn typeDefns
-    | SynModuleDecl.HashDirective _ -> []
-    | SynModuleDecl.ModuleAbbrev (longId = longId) -> visitLongIdentForModuleAbbrev longId
-    | SynModuleDecl.NamespaceFragment _ -> []
-    | SynModuleDecl.Exception(exnDefn = SynExceptionDefn (exnRepr = SynExceptionDefnRepr (attributes = attributes
-                                                                                          caseName = caseName
-                                                                                          longId = longId)
-                                                          members = members)) ->
-        [
+        | SynModuleDecl.NestedModule _ -> failwith "A nested module cannot have multiple identifiers"
+        | SynModuleDecl.Let (bindings = bindings) -> yield! List.collect visitBinding bindings
+        | SynModuleDecl.Types (typeDefns = typeDefns) -> yield! List.collect visitSynTypeDefn typeDefns
+        | SynModuleDecl.HashDirective _ -> ()
+        | SynModuleDecl.ModuleAbbrev (longId = longId) -> yield! visitLongIdentForModuleAbbrev longId
+        | SynModuleDecl.NamespaceFragment _ -> ()
+        | SynModuleDecl.Exception(exnDefn = SynExceptionDefn (exnRepr = SynExceptionDefnRepr (attributes = attributes
+                                                                                              caseName = caseName
+                                                                                              longId = longId)
+                                                              members = members)) ->
             yield! visitSynAttributes attributes
             yield! visitSynUnionCase caseName
             yield! collectFromOption visitLongIdent longId
             yield! List.collect visitSynMemberDefn members
-        ]
+    ]
 
 let visitSynModuleSigDecl (md: SynModuleSigDecl) =
-    match md with
-    | SynModuleSigDecl.Open(target = SynOpenDeclTarget.ModuleOrNamespace (longId, _)) ->
-        [ FileContentEntry.OpenStatement(synLongIdentToPath false longId) ]
-    | SynModuleSigDecl.Open(target = SynOpenDeclTarget.Type (typeName, _)) -> visitSynType typeName
-    | SynModuleSigDecl.NestedModule (moduleInfo = SynComponentInfo (longId = [ ident ]; attributes = attributes); moduleDecls = decls) ->
-        [
+    [
+        match md with
+        | SynModuleSigDecl.Open(target = SynOpenDeclTarget.ModuleOrNamespace (longId, _)) ->
+            yield FileContentEntry.OpenStatement(synLongIdentToPath false longId)
+        | SynModuleSigDecl.Open(target = SynOpenDeclTarget.Type (typeName, _)) -> yield! visitSynType typeName
+        | SynModuleSigDecl.NestedModule (moduleInfo = SynComponentInfo (longId = [ ident ]; attributes = attributes); moduleDecls = decls) ->
             yield! visitSynAttributes attributes
             yield FileContentEntry.NestedModule(ident.idText, List.collect visitSynModuleSigDecl decls)
-        ]
-    | SynModuleSigDecl.NestedModule _ -> failwith "A nested module cannot have multiple identifiers"
-    | SynModuleSigDecl.ModuleAbbrev (longId = longId) -> visitLongIdentForModuleAbbrev longId
-    | SynModuleSigDecl.Val (valSig, _) -> visitSynValSig valSig
-    | SynModuleSigDecl.Types (types = types) -> List.collect visitSynTypeDefnSig types
-    | SynModuleSigDecl.Exception(exnSig = SynExceptionSig (exnRepr = SynExceptionDefnRepr (attributes = attributes
-                                                                                           caseName = caseName
-                                                                                           longId = longId)
-                                                           members = members)) ->
-        [
+        | SynModuleSigDecl.NestedModule _ -> failwith "A nested module cannot have multiple identifiers"
+        | SynModuleSigDecl.ModuleAbbrev (longId = longId) -> yield! visitLongIdentForModuleAbbrev longId
+        | SynModuleSigDecl.Val (valSig, _) -> yield! visitSynValSig valSig
+        | SynModuleSigDecl.Types (types = types) -> yield! List.collect visitSynTypeDefnSig types
+        | SynModuleSigDecl.Exception(exnSig = SynExceptionSig (exnRepr = SynExceptionDefnRepr (attributes = attributes
+                                                                                               caseName = caseName
+                                                                                               longId = longId)
+                                                               members = members)) ->
             yield! visitSynAttributes attributes
             yield! visitSynUnionCase caseName
             yield! collectFromOption visitLongIdent longId
             yield! List.collect visitSynMemberSig members
-        ]
-    | SynModuleSigDecl.HashDirective _ -> []
-    | SynModuleSigDecl.NamespaceFragment _ -> []
+        | SynModuleSigDecl.HashDirective _
+        | SynModuleSigDecl.NamespaceFragment _ -> ()
+    ]
 
 let visitSynUnionCase (SynUnionCase (attributes = attributes; caseType = caseType)) =
-    let caseEntries =
+    [
+        yield! visitSynAttributes attributes
         match caseType with
-        | SynUnionCaseKind.Fields cases -> List.collect visitSynField cases
-        | SynUnionCaseKind.FullType (fullType = fullType) -> visitSynType fullType
-
-    [ yield! visitSynAttributes attributes; yield! caseEntries ]
+        | SynUnionCaseKind.Fields cases -> yield! List.collect visitSynField cases
+        | SynUnionCaseKind.FullType (fullType = fullType) -> yield! visitSynType fullType
+    ]
 
 let visitSynEnumCase (SynEnumCase (attributes = attributes)) = visitSynAttributes attributes
 
@@ -111,40 +107,35 @@ let visitSynTypeDefn
                   typeRepr = typeRepr
                   members = members))
     : FileContentEntry list =
-    let reprEntries =
-        match typeRepr with
-        | SynTypeDefnRepr.Simple (simpleRepr, _) ->
-            match simpleRepr with
-            | SynTypeDefnSimpleRepr.Union (unionCases = unionCases) -> List.collect visitSynUnionCase unionCases
-            | SynTypeDefnSimpleRepr.Enum (cases = cases) -> List.collect visitSynEnumCase cases
-            | SynTypeDefnSimpleRepr.Record (recordFields = recordFields) -> List.collect visitSynField recordFields
-            // This is only used in the typed tree
-            // The parser doesn't construct this
-            | SynTypeDefnSimpleRepr.General _ -> []
-            | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly _ -> []
-            | SynTypeDefnSimpleRepr.TypeAbbrev (rhsType = rhsType) -> visitSynType rhsType
-            | SynTypeDefnSimpleRepr.None _ -> []
-            // This is only used in the typed tree
-            // The parser doesn't construct this
-            | SynTypeDefnSimpleRepr.Exception _ -> []
-        | SynTypeDefnRepr.ObjectModel (kind, members, _) ->
-            match kind with
-            | SynTypeDefnKind.Delegate (signature, _) ->
-                [
-                    yield! visitSynType signature
-                    yield! List.collect visitSynMemberDefn members
-                ]
-            | _ -> List.collect visitSynMemberDefn members
-        | SynTypeDefnRepr.Exception _ ->
-            // This is only used in the typed tree
-            // The parser doesn't construct this
-            []
-
     [
         yield! visitSynAttributes attributes
         yield! collectFromOption visitSynTyparDecls typeParams
         yield! List.collect visitSynTypeConstraint constraints
-        yield! reprEntries
+        match typeRepr with
+        | SynTypeDefnRepr.Simple (simpleRepr, _) ->
+            match simpleRepr with
+            | SynTypeDefnSimpleRepr.Union (unionCases = unionCases) -> yield! List.collect visitSynUnionCase unionCases
+            | SynTypeDefnSimpleRepr.Enum (cases = cases) -> yield! List.collect visitSynEnumCase cases
+            | SynTypeDefnSimpleRepr.Record (recordFields = recordFields) -> yield! List.collect visitSynField recordFields
+            // This is only used in the typed tree
+            // The parser doesn't construct this
+            | SynTypeDefnSimpleRepr.General _
+            | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly _ -> ()
+            | SynTypeDefnSimpleRepr.TypeAbbrev (rhsType = rhsType) -> yield! visitSynType rhsType
+            | SynTypeDefnSimpleRepr.None _
+            // This is only used in the typed tree
+            // The parser doesn't construct this
+            | SynTypeDefnSimpleRepr.Exception _ -> ()
+        | SynTypeDefnRepr.ObjectModel (kind, members, _) ->
+            match kind with
+            | SynTypeDefnKind.Delegate (signature, _) ->
+                yield! visitSynType signature
+                yield! List.collect visitSynMemberDefn members
+            | _ -> yield! List.collect visitSynMemberDefn members
+        | SynTypeDefnRepr.Exception _ ->
+            // This is only used in the typed tree
+            // The parser doesn't construct this
+            ()
         yield! List.collect visitSynMemberDefn members
     ]
 
@@ -153,36 +144,35 @@ let visitSynTypeDefnSig
                      typeRepr = typeRepr
                      members = members))
     =
-    let reprEntries =
-        match typeRepr with
-        | SynTypeDefnSigRepr.Simple (simpleRepr, _) ->
-            match simpleRepr with
-            | SynTypeDefnSimpleRepr.Union (unionCases = unionCases) -> List.collect visitSynUnionCase unionCases
-            | SynTypeDefnSimpleRepr.Enum (cases = cases) -> List.collect visitSynEnumCase cases
-            | SynTypeDefnSimpleRepr.Record (recordFields = recordFields) -> List.collect visitSynField recordFields
-            // This is only used in the typed tree
-            // The parser doesn't construct this
-            | SynTypeDefnSimpleRepr.General _ -> []
-            | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly _ -> []
-            | SynTypeDefnSimpleRepr.TypeAbbrev (rhsType = rhsType) -> visitSynType rhsType
-            | SynTypeDefnSimpleRepr.None _ -> []
-            // This is only used in the typed tree
-            // The parser doesn't construct this
-            | SynTypeDefnSimpleRepr.Exception _ -> []
-        | SynTypeDefnSigRepr.ObjectModel (kind, members, _) ->
-            match kind with
-            | SynTypeDefnKind.Delegate (signature, _) -> [ yield! visitSynType signature; yield! List.collect visitSynMemberSig members ]
-            | _ -> List.collect visitSynMemberSig members
-        | SynTypeDefnSigRepr.Exception _ ->
-            // This is only used in the typed tree
-            // The parser doesn't construct this
-            []
-
     [
         yield! visitSynAttributes attributes
         yield! collectFromOption visitSynTyparDecls typeParams
         yield! List.collect visitSynTypeConstraint constraints
-        yield! reprEntries
+        match typeRepr with
+        | SynTypeDefnSigRepr.Simple (simpleRepr, _) ->
+            match simpleRepr with
+            | SynTypeDefnSimpleRepr.Union (unionCases = unionCases) -> yield! List.collect visitSynUnionCase unionCases
+            | SynTypeDefnSimpleRepr.Enum (cases = cases) -> yield! List.collect visitSynEnumCase cases
+            | SynTypeDefnSimpleRepr.Record (recordFields = recordFields) -> yield! List.collect visitSynField recordFields
+            // This is only used in the typed tree
+            // The parser doesn't construct this
+            | SynTypeDefnSimpleRepr.General _
+            | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly _ -> ()
+            | SynTypeDefnSimpleRepr.TypeAbbrev (rhsType = rhsType) -> yield! visitSynType rhsType
+            | SynTypeDefnSimpleRepr.None _
+            // This is only used in the typed tree
+            // The parser doesn't construct this
+            | SynTypeDefnSimpleRepr.Exception _ -> ()
+        | SynTypeDefnSigRepr.ObjectModel (kind, members, _) ->
+            match kind with
+            | SynTypeDefnKind.Delegate (signature, _) ->
+                yield! visitSynType signature
+                yield! List.collect visitSynMemberSig members
+            | _ -> yield! List.collect visitSynMemberSig members
+        | SynTypeDefnSigRepr.Exception _ ->
+            // This is only used in the typed tree
+            // The parser doesn't construct this
+            ()
         yield! List.collect visitSynMemberSig members
     ]
 
@@ -197,32 +187,30 @@ let visitSynField (SynField (attributes = attributes; fieldType = fieldType)) =
     [ yield! visitSynAttributes attributes; yield! visitSynType fieldType ]
 
 let visitSynMemberDefn (md: SynMemberDefn) : FileContentEntry list =
-    match md with
-    | SynMemberDefn.Member (memberDefn = binding) -> visitBinding binding
-    | SynMemberDefn.Open _ -> []
-    | SynMemberDefn.GetSetMember (memberDefnForGet, memberDefnForSet, _, _) ->
-        [
+    [
+        match md with
+        | SynMemberDefn.Member (memberDefn = binding) -> yield! visitBinding binding
+        | SynMemberDefn.Open _ -> ()
+        | SynMemberDefn.GetSetMember (memberDefnForGet, memberDefnForSet, _, _) ->
             yield! collectFromOption visitBinding memberDefnForGet
             yield! collectFromOption visitBinding memberDefnForSet
-        ]
-    | SynMemberDefn.ImplicitCtor (ctorArgs = ctorArgs) -> visitSynSimplePats ctorArgs
-    | SynMemberDefn.ImplicitInherit (inheritType, inheritArgs, _, _) -> [ yield! visitSynType inheritType; yield! visitSynExpr inheritArgs ]
-    | SynMemberDefn.LetBindings (bindings = bindings) -> List.collect visitBinding bindings
-    | SynMemberDefn.AbstractSlot (slotSig = slotSig) -> visitSynValSig slotSig
-    | SynMemberDefn.Interface (interfaceType, _, members, _) ->
-        [
+        | SynMemberDefn.ImplicitCtor (ctorArgs = ctorArgs) -> yield! visitSynSimplePats ctorArgs
+        | SynMemberDefn.ImplicitInherit (inheritType, inheritArgs, _, _) ->
+            yield! visitSynType inheritType
+            yield! visitSynExpr inheritArgs
+        | SynMemberDefn.LetBindings (bindings = bindings) -> yield! List.collect visitBinding bindings
+        | SynMemberDefn.AbstractSlot (slotSig = slotSig) -> yield! visitSynValSig slotSig
+        | SynMemberDefn.Interface (interfaceType, _, members, _) ->
             yield! visitSynType interfaceType
             yield! collectFromOption (List.collect visitSynMemberDefn) members
-        ]
-    | SynMemberDefn.Inherit (baseType, _, _) -> visitSynType baseType
-    | SynMemberDefn.ValField (fieldInfo, _) -> visitSynField fieldInfo
-    | SynMemberDefn.NestedType _ -> []
-    | SynMemberDefn.AutoProperty (attributes = attributes; typeOpt = typeOpt; synExpr = synExpr) ->
-        [
+        | SynMemberDefn.Inherit (baseType, _, _) -> yield! visitSynType baseType
+        | SynMemberDefn.ValField (fieldInfo, _) -> yield! visitSynField fieldInfo
+        | SynMemberDefn.NestedType _ -> ()
+        | SynMemberDefn.AutoProperty (attributes = attributes; typeOpt = typeOpt; synExpr = synExpr) ->
             yield! visitSynAttributes attributes
             yield! collectFromOption visitSynType typeOpt
             yield! visitSynExpr synExpr
-        ]
+    ]
 
 let visitSynInterfaceImpl (SynInterfaceImpl (interfaceTy = t; bindings = bindings; members = members)) =
     [
@@ -297,20 +285,23 @@ let visitSynTyparDecls (td: SynTyparDecls) : FileContentEntry list =
 let visitSynTyparDecl (SynTyparDecl (attributes = attributes)) = visitSynAttributes attributes
 
 let visitSynTypeConstraint (tc: SynTypeConstraint) : FileContentEntry list =
-    match tc with
-    | SynTypeConstraint.WhereSelfConstrained _ -> []
-    | SynTypeConstraint.WhereTyparIsValueType _ -> []
-    | SynTypeConstraint.WhereTyparIsReferenceType _ -> []
-    | SynTypeConstraint.WhereTyparIsUnmanaged _ -> []
-    | SynTypeConstraint.WhereTyparSupportsNull _ -> []
-    | SynTypeConstraint.WhereTyparIsComparable _ -> []
-    | SynTypeConstraint.WhereTyparIsEquatable _ -> []
-    | SynTypeConstraint.WhereTyparDefaultsToType (typeName = typeName) -> visitSynType typeName
-    | SynTypeConstraint.WhereTyparSubtypeOfType (typeName = typeName) -> visitSynType typeName
-    | SynTypeConstraint.WhereTyparSupportsMember (typars, memberSig, _) ->
-        [ yield! visitSynType typars; yield! visitSynMemberSig memberSig ]
-    | SynTypeConstraint.WhereTyparIsEnum (typeArgs = typeArgs) -> List.collect visitSynType typeArgs
-    | SynTypeConstraint.WhereTyparIsDelegate (typeArgs = typeArgs) -> List.collect visitSynType typeArgs
+    [
+        match tc with
+        | SynTypeConstraint.WhereSelfConstrained _
+        | SynTypeConstraint.WhereTyparIsValueType _
+        | SynTypeConstraint.WhereTyparIsReferenceType _
+        | SynTypeConstraint.WhereTyparIsUnmanaged _
+        | SynTypeConstraint.WhereTyparSupportsNull _
+        | SynTypeConstraint.WhereTyparIsComparable _
+        | SynTypeConstraint.WhereTyparIsEquatable _ -> ()
+        | SynTypeConstraint.WhereTyparDefaultsToType (typeName = typeName) -> yield! visitSynType typeName
+        | SynTypeConstraint.WhereTyparSubtypeOfType (typeName = typeName) -> yield! visitSynType typeName
+        | SynTypeConstraint.WhereTyparSupportsMember (typars, memberSig, _) ->
+            yield! visitSynType typars
+            yield! visitSynMemberSig memberSig
+        | SynTypeConstraint.WhereTyparIsEnum (typeArgs = typeArgs) -> yield! List.collect visitSynType typeArgs
+        | SynTypeConstraint.WhereTyparIsDelegate (typeArgs = typeArgs) -> yield! List.collect visitSynType typeArgs
+    ]
 
 let visitSynExpr (e: SynExpr) : FileContentEntry list =
     let rec visit (e: SynExpr) (continuation: FileContentEntry list -> FileContentEntry list) : FileContentEntry list =
@@ -340,9 +331,11 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
             Continuation.sequence continuations finalContinuation
         | SynExpr.Record (baseInfo = baseInfo; copyInfo = copyInfo; recordFields = recordFields) ->
             let fieldNodes =
-                recordFields
-                |> List.collect (fun (SynExprRecordField (fieldName = (si, _); expr = expr)) ->
-                    [ yield! visitSynLongIdent si; yield! collectFromOption visitSynExpr expr ])
+                [
+                    for SynExprRecordField (fieldName = (si, _); expr = expr) in recordFields do
+                        yield! visitSynLongIdent si
+                        yield! collectFromOption visitSynExpr expr
+                ]
 
             match baseInfo, copyInfo with
             | Some (t, e, _, _, _), None ->
@@ -617,14 +610,11 @@ let visitSynMatchClause (SynMatchClause (pat = pat; whenExpr = whenExpr; resultE
     ]
 
 let visitBinding (SynBinding (attributes = attributes; headPat = headPat; returnInfo = returnInfo; expr = expr)) : FileContentEntry list =
-    let pattern =
-        match headPat with
-        | SynPat.LongIdent(argPats = SynArgPats.Pats pats) -> List.collect visitPat pats
-        | _ -> visitPat headPat
-
     [
         yield! visitSynAttributes attributes
-        yield! pattern
+        match headPat with
+        | SynPat.LongIdent(argPats = SynArgPats.Pats pats) -> yield! List.collect visitPat pats
+        | _ -> yield! visitPat headPat
         yield! collectFromOption visitSynBindingReturnInfo returnInfo
         yield! visitSynExpr expr
     ]
@@ -643,51 +633,33 @@ let visitSynMemberSig (ms: SynMemberSig) : FileContentEntry list =
 let mkFileContent (f: FileInProject) : FileContentEntry list =
     match f.ParsedInput with
     | ParsedInput.SigFile (ParsedSigFileInput (contents = contents)) ->
-        List.collect
-            (fun (SynModuleOrNamespaceSig (longId = longId; kind = kind; decls = decls; attribs = attribs)) ->
-                let attributes = List.collect visitSynAttributeList attribs
-
-                let contentEntries =
-                    match kind with
-                    | SynModuleOrNamespaceKind.GlobalNamespace
-                    | SynModuleOrNamespaceKind.AnonModule -> List.collect visitSynModuleSigDecl decls
-                    | SynModuleOrNamespaceKind.DeclaredNamespace ->
-                        let path = longIdentToPath false longId
-
-                        [
-                            FileContentEntry.TopLevelNamespace(path, List.collect visitSynModuleSigDecl decls)
-                        ]
-                    | SynModuleOrNamespaceKind.NamedModule ->
-                        let path = longIdentToPath true longId
-
-                        [
-                            FileContentEntry.TopLevelNamespace(path, List.collect visitSynModuleSigDecl decls)
-                        ]
-
-                [ yield! attributes; yield! contentEntries ])
-            contents
+        contents
+        |> List.collect (fun (SynModuleOrNamespaceSig (longId = longId; kind = kind; decls = decls; attribs = attribs)) ->
+            [
+                yield! List.collect visitSynAttributeList attribs
+                match kind with
+                | SynModuleOrNamespaceKind.GlobalNamespace
+                | SynModuleOrNamespaceKind.AnonModule -> yield! List.collect visitSynModuleSigDecl decls
+                | SynModuleOrNamespaceKind.DeclaredNamespace ->
+                    let path = longIdentToPath false longId
+                    yield FileContentEntry.TopLevelNamespace(path, List.collect visitSynModuleSigDecl decls)
+                | SynModuleOrNamespaceKind.NamedModule ->
+                    let path = longIdentToPath true longId
+                    yield FileContentEntry.TopLevelNamespace(path, List.collect visitSynModuleSigDecl decls)
+            ])
 
     | ParsedInput.ImplFile (ParsedImplFileInput (contents = contents)) ->
-        List.collect
-            (fun (SynModuleOrNamespace (longId = longId; attribs = attribs; kind = kind; decls = decls)) ->
-                let attributes = List.collect visitSynAttributeList attribs
-
-                let contentEntries =
-                    match kind with
-                    | SynModuleOrNamespaceKind.GlobalNamespace
-                    | SynModuleOrNamespaceKind.AnonModule -> List.collect visitSynModuleDecl decls
-                    | SynModuleOrNamespaceKind.DeclaredNamespace ->
-                        let path = longIdentToPath false longId
-
-                        [
-                            FileContentEntry.TopLevelNamespace(path, List.collect visitSynModuleDecl decls)
-                        ]
-                    | SynModuleOrNamespaceKind.NamedModule ->
-                        let path = longIdentToPath true longId
-
-                        [
-                            FileContentEntry.TopLevelNamespace(path, List.collect visitSynModuleDecl decls)
-                        ]
-
-                [ yield! attributes; yield! contentEntries ])
-            contents
+        contents
+        |> List.collect (fun (SynModuleOrNamespace (longId = longId; attribs = attribs; kind = kind; decls = decls)) ->
+            [
+                yield! List.collect visitSynAttributeList attribs
+                match kind with
+                | SynModuleOrNamespaceKind.GlobalNamespace
+                | SynModuleOrNamespaceKind.AnonModule -> yield! List.collect visitSynModuleDecl decls
+                | SynModuleOrNamespaceKind.DeclaredNamespace ->
+                    let path = longIdentToPath false longId
+                    yield FileContentEntry.TopLevelNamespace(path, List.collect visitSynModuleDecl decls)
+                | SynModuleOrNamespaceKind.NamedModule ->
+                    let path = longIdentToPath true longId
+                    yield FileContentEntry.TopLevelNamespace(path, List.collect visitSynModuleDecl decls)
+            ])
