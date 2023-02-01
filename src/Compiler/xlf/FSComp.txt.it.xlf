@@ -382,11 +382,19 @@
         <target state="translated">rappresentazione struct per criteri attivi</target>
         <note />
       </trans-unit>
+      
       <trans-unit id="featureTryWithInSeqExpressions">
         <source>Support for try-with in sequence expressions</source>
         <target state="new">Support for try-with in sequence expressions</target>
         <note />
       </trans-unit>
+
+      <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
+        <source>Raises warnings when an copy-and-update record expression changes all fields of a record.</source>
+        <target state="new">Raises warnings when an copy-and-update record expression changes all fields of a record.</target>
+        <note />
+      </trans-unit>
+      
       <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
         <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
         <target state="translated">Genera avvisi quando 'let inline ... =' viene usato insieme all'attributo [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;]. La funzione non viene resa inline.</target>
@@ -877,6 +885,11 @@
         <target state="translated">Gli attributi non possono essere applicati a estensioni di tipo.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">
+        <source>This copy-and-update record expression changes all fields of record type '{0}'. Consider using the record construction syntax instead.</source>
+        <target state="new">This copy-and-update record expression changes all fields of record type '{0}'. Consider using the record construction syntax instead.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
         <source>The syntax 'expr1[expr2]' is used for indexing. Consider adding a type annotation to enable indexing, or if calling a function add a space, e.g. 'expr1 [expr2]'.</source>
         <target state="translated">La sintassi 'expr1[expr2]' viene usata per l'indicizzazione. Provare ad aggiungere un'annotazione di tipo per abilitare l'indicizzazione oppure se la chiamata a una funzione aggiunge uno spazio, ad esempio 'expr1 [expr2]'.</target>
@@ -1140,6 +1153,11 @@
       <trans-unit id="typrelInterfaceWithConcreteAndVariableObjectExpression">
         <source>You cannot implement the interface '{0}' with the two instantiations '{1}' and '{2}' because they may unify.</source>
         <target state="translated">Non è possibile implementare l'interfaccia '{0}' con le due creazioni di istanze '{1}' e '{2}' perché possono essere unificate.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="typrelNeverRefinedAwayFromTop">
+        <source>A type has been implicitly inferred as 'obj', which may be unintended. Consider adding explicit type annotations. You can disable this warning by using '#nowarn \"3559\"' or '--nowarn:3559'.</source>
+        <target state="new">A type has been implicitly inferred as 'obj', which may be unintended. Consider adding explicit type annotations. You can disable this warning by using '#nowarn \"3559\"' or '--nowarn:3559'.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">

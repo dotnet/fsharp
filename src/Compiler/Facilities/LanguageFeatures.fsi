@@ -52,6 +52,7 @@ type LanguageFeature =
     | ArithmeticInLiterals
     | ErrorReportingOnStaticClasses
     | TryWithInSeqExpression
+    | WarningWhenCopyAndUpdateRecordChangesAllFields
 
 /// LanguageVersion management
 type LanguageVersion =

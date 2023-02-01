@@ -206,6 +206,7 @@
     <Compile Include="Debugger\PortablePdbs.fs" />
     <Compile Include="Diagnostics\async.fs" />
     <Compile Include="Diagnostics\General.fs" />
+    <Compile Include="Diagnostics\Records.fs" />
     <Compile Include="Globalization\GlobalizationTestCases.fs" />
     <Compile Include="OCamlCompat\OCamlCompat.fs" />
     <Compile Include="Miscellaneous\ListLiterals.fs" />
