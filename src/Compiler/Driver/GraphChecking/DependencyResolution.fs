@@ -161,22 +161,19 @@ let collectGhostDependencies (fileIndex: FileIndex) (trie: TrieNode) (queryTrie:
             let dependenciesDefiningNamespace =
                 Set.intersect result.FoundDependencies filesDefiningNamespace
 
-            if Set.isEmpty dependenciesDefiningNamespace then
-                // There is no existing dependency defining the namespace,
-                // so we need to add one.
-                if Set.isEmpty filesDefiningNamespace then
-                    // No file defines inferrable symbols for this namespace, but the namespace might exist.
-                    // Because we don't track what files define a namespace without any relevant content,
-                    // the only way to ensure the namespace is in scope is to add a link to every preceeding file.
-                    // The alternative would be
-                    [| 0 .. (fileIndex - 1) |]
-                else
-                    // At least one file defines the namespace - add a dependency to the first (top) one.
-                    [| Seq.head filesDefiningNamespace |]
-            else
-                // The namespace is already defined in one of existing dependencies.
-                // No need to add anything.
-                Array.empty)
+            [|
+                if Set.isEmpty dependenciesDefiningNamespace then
+                    // There is no existing dependency defining the namespace,
+                    // so we need to add one.
+                    if Set.isEmpty filesDefiningNamespace then
+                        // No file defines inferrable symbols for this namespace, but the namespace might exist.
+                        // Because we don't track what files define a namespace without any relevant content,
+                        // the only way to ensure the namespace is in scope is to add a link to every preceding file.
+                        yield! [| 0 .. (fileIndex - 1) |]
+                    else
+                        // At least one file defines the namespace - add a dependency to the first (top) one.
+                        yield Seq.head filesDefiningNamespace
+            |])
 
 let mkGraph (compilingFSharpCore: bool) (filePairs: FilePairMap) (files: FileInProject array) : Graph<FileIndex> =
     // We know that implementation files backed by signatures cannot be depended upon.
