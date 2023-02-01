@@ -391,7 +391,7 @@ module RuntimeHelpers =
     let EnumerateTryWith (source : seq<'T>) (exceptionFilter:exn -> int) (exceptionHandler:exn -> seq<'T>) =
         let originalSource = lazy(source.GetEnumerator())
         let mutable shouldDisposeOriginalAtTheEnd = true
-        let mutable exceptionalSource : option<IEnumerator<'T>> = None     
+        let mutable exceptionalSource : IEnumerator<'T> option = None     
 
         let current() =
             match exceptionalSource with
