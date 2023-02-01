@@ -1588,7 +1588,8 @@ type SynMemberDefn =
         ctorArgs: SynSimplePats *
         selfIdentifier: Ident option *
         xmlDoc: PreXmlDoc *
-        range: range
+        range: range *
+        trivia: SynMemberDefnImplicitCtorTrivia
 
     /// An implicit inherit definition, 'inherit <typ>(args...) as base'
     | ImplicitInherit of inheritType: SynType * inheritArgs: SynExpr * inheritAlias: Ident option * range: range
