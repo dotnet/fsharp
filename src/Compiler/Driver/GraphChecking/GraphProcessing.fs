@@ -13,10 +13,9 @@ type NodeInfo<'Item> =
 
 type IncrementableInt(value: int) =
     let mutable value = value
-    with
-        member this.Value = value
-        // Increment the value in a thread-safe manner and return the new value.
-        member this.Increment() = Interlocked.Increment(&value)
+    member this.Value = value
+    // Increment the value in a thread-safe manner and return the new value.
+    member this.Increment() = Interlocked.Increment(&value)
 
 type GraphNode<'Item, 'Result> =
     {
