@@ -17,7 +17,7 @@ type C() =
 let c = C()
         """
         |> ignoreWarnings
-        |> compile
+        |> typecheck
         |> shouldSucceed
         
     [<Fact>]
@@ -30,7 +30,7 @@ type C() =
 
 let c = C()
         """
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Warning 44, Line 7, Col 9, Line 7, Col 10, "This construct is deprecated. Use B instead")
@@ -46,7 +46,7 @@ type C() =
 
 let c = C()
         """
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 7, Col 9, Line 7, Col 10, "This construct is deprecated. Use B instead")
@@ -65,7 +65,7 @@ let c = C()
 c.Update()
         """
         |> ignoreWarnings
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 9, Col 1, Line 9, Col 9, "This construct is deprecated. Use B instead")
@@ -84,7 +84,7 @@ let c = C()
 c.Update()
         """
         |> ignoreWarnings
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 8, Col 9, Line 8, Col 10, "This construct is deprecated. Use B instead");
@@ -105,7 +105,7 @@ let c = C()
 c.Update()
         """
         |> ignoreWarnings
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 9, Col 9, Line 9, Col 10, "This construct is deprecated. Use B instead");
@@ -125,7 +125,7 @@ type C =
 let c = C()
         """
         |> ignoreWarnings
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 9, Col 9, Line 9, Col 10, "This construct is deprecated. Use B instead")
@@ -145,7 +145,7 @@ let c = C()
 c.Update()
         """
         |> ignoreWarnings
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 10, Col 1, Line 10, Col 9, "This construct is deprecated. Use B instead")
@@ -162,7 +162,7 @@ type C =
 let c = { X = 0 }
         """
         |> ignoreWarnings
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 7, Col 11, Line 7, Col 12, "This construct is deprecated. Use B instead")
@@ -182,7 +182,7 @@ type C =
 C.Update()
         """
         |> ignoreWarnings
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 10, Col 1, Line 10, Col 2, "This construct is deprecated. Use B instead")
@@ -201,7 +201,7 @@ type C =
 C.Update()
         """
         |> ignoreWarnings
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 9, Col 1, Line 9, Col 9, "This construct is deprecated. Use B instead")
@@ -220,7 +220,7 @@ type Color =
 let c = Color.Red
         """
         |> ignoreWarnings
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 9, Col 9, Line 9, Col 14, "This construct is deprecated. Use B instead")
@@ -238,7 +238,7 @@ type Color =
 let c = Color.Red
         """
         |> ignoreWarnings
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 8, Col 9, Line 8, Col 14, "This construct is deprecated. Use B instead")
@@ -255,7 +255,7 @@ type Color =
 let c = Color.Red
         """
         |> ignoreWarnings
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 7, Col 9, Line 7, Col 18, "This construct is deprecated. Use B instead")
@@ -271,7 +271,7 @@ type Color =
     
 let c = Color.Red
         """
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Warning 44, Line 7, Col 9, Line 7, Col 18, "This construct is deprecated. Use B instead")
@@ -289,7 +289,7 @@ type Color =
     
 let c = Color.Red
         """
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 9, Col 9, Line 9, Col 14, "This construct is deprecated. Use B instead")
@@ -306,7 +306,7 @@ type Color =
     
 let c = Color.Red
         """
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 8, Col 9, Line 8, Col 18, "This construct is deprecated. Use B instead")
@@ -323,7 +323,7 @@ type Color =
     
 let c = Color.Red
         """
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Warning 44, Line 8, Col 9, Line 8, Col 18, "This construct is deprecated. Use B instead")
@@ -347,7 +347,7 @@ type ButtonExtensions =
         { this with Text = text }
         """
         |> ignoreWarnings
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 13, Col 37, Line 13, Col 43, "This construct is deprecated. Use B instead")
@@ -370,7 +370,7 @@ type ButtonExtensions =
         { this with Text = text }
         """
         |> ignoreWarnings
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 13, Col 21, Line 13, Col 25, "This construct is deprecated. Use B instead")
@@ -393,7 +393,7 @@ type ButtonExtensions =
         { this with Text = text }
         """
         |> ignoreWarnings
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 12, Col 37, Line 12, Col 43, "This construct is deprecated. Use B instead");
@@ -413,7 +413,7 @@ module Button =
     let set text = { Text = text  }
         """
         |> ignoreWarnings
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 9, Col 22, Line 9, Col 26, "This construct is deprecated. Use B instead")
@@ -434,7 +434,7 @@ module Button =
     let set text = { Text = text  }
         """
         |> ignoreWarnings
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 10, Col 22, Line 10, Col 26, "This construct is deprecated. Use B instead")
@@ -459,7 +459,7 @@ type ButtonExtensions =
         Button.set text
         """
         |> ignoreWarnings
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 9, Col 22, Line 9, Col 26, "This construct is deprecated. Use B instead")
@@ -486,7 +486,7 @@ type ButtonExtensions =
         Button.set text
         """
         |> ignoreWarnings
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 17, Col 9, Line 17, Col 15, "This construct is deprecated. Use B instead")
@@ -514,7 +514,7 @@ type ButtonExtensions =
         Button.set text
         """
         |> ignoreWarnings
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 18, Col 9, Line 18, Col 15, "This construct is deprecated. Use B instead")
@@ -541,7 +541,7 @@ type ButtonExtensions =
         Button.set text
         """
         |> ignoreWarnings
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 17, Col 9, Line 17, Col 19, "This construct is deprecated. Use B instead")
@@ -567,7 +567,7 @@ let b = { Text = "Hello" }
 b.text("Hello 2") |> ignore
         """
         |> ignoreWarnings
-        |> compile
+        |> typecheck
         |> shouldSucceed
 
     [<Fact>]
@@ -590,7 +590,7 @@ let b = { Text = "Hello" }
 b.text("Hello 2") |> ignore
         """
         |> ignoreWarnings
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 16, Col 1, Line 16, Col 7, "This construct is deprecated. Use B instead")
@@ -604,7 +604,7 @@ type MyType = { [<Obsolete("Deprecated Field", true)>] DeprecatedField: string ;
 let a = { DeprecatedField= "23" ; JustField = "" } 
         """
         |> ignoreWarnings
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 4, Col 11, Line 4, Col 26, "This construct is deprecated. Deprecated Field")
@@ -617,7 +617,7 @@ open System
 type MyType = { [<Obsolete("Deprecated Field")>] DeprecatedField: string ; JustField: string }
 let a = { DeprecatedField= "23" ; JustField = "" } 
         """
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Warning 44, Line 4, Col 11, Line 4, Col 26, "This construct is deprecated. Deprecated Field")
@@ -635,7 +635,7 @@ let class1 = new Class1()
 let value1 = class1.A
 let value2 = class1.A <- 12
         """
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Warning 44, Line 9, Col 14, Line 9, Col 22, "This construct is deprecated. member A is deprecated");
@@ -654,7 +654,7 @@ let class1 = new Class1()
 let value1 = class1.A
 let value2 = class1.A <- 12
         """
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 9, Col 14, Line 9, Col 22, "This construct is deprecated. member A is deprecated")
@@ -672,7 +672,7 @@ let class1 = new Class1()
 let value1 = class1.A
 let value2 = class1.A <- 12
         """
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
            (Warning 44, Line 8, Col 14, Line 8, Col 22, "This construct is deprecated. member A is deprecated");
@@ -691,7 +691,7 @@ let class1 = new Class1()
 let value1 = class1.A
 let value2 = class1.A <- 12
         """
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 8, Col 14, Line 8, Col 22, "This construct is deprecated. member A is deprecated")
@@ -710,7 +710,7 @@ open MyModule
 
 testFun ()
         """
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Warning 44, Line 7, Col 6, Line 7, Col 14, "This construct is deprecated. This is obsolete")
@@ -729,7 +729,7 @@ open MyModule
 testFun ()
         """
         |> ignoreWarnings
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 7, Col 6, Line 7, Col 14, "This construct is deprecated. This is obsolete")
@@ -1042,7 +1042,7 @@ type MyType =
         Field2 = null }
 let x = { MyType.Empty with Field1 = "field1" }
         """
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Warning 44, Line 9, Col 9, Line 9, Col 15, "This construct is deprecated. Use Field2 instead")
@@ -1060,7 +1060,7 @@ let field1 = { Field1 = "field1" ; Field2 = "Field2" }
 let field2 = { field1 with Field1 = "Field1" }
 let field3 = { field1 with Field2 = "Field2" }
         """
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Warning 44, Line 7, Col 36, Line 7, Col 42, "This construct is deprecated. Use Field2 instead")
@@ -1081,7 +1081,7 @@ type MyType =
 let x = { MyType.Empty with Field1 = "field1" }
         """
         |> ignoreWarnings
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 9, Col 9, Line 9, Col 15, "This construct is deprecated. Use Field2 instead")
@@ -1102,7 +1102,7 @@ let x = { MyType2.Empty with Field1 = "" }
 let y = { x with Field2 = { X = "X" } }
         """
         |> ignoreWarnings
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Warning 44, Line 9, Col 20, Line 9, Col 21, "This construct is deprecated. Use Y instead")
@@ -1122,7 +1122,7 @@ type MyType =
 let x = { MyType.Empty with Field1 = "field1" }
         """
         |> ignoreWarnings
-        |> compile
+        |> typecheck
         |> shouldSucceed
 
     [<Fact>]
@@ -1138,9 +1138,24 @@ let field2 = { field1 with Field1 = "Field1" }
 let field3 = { field1 with Field2 = "Field2" }
         """
         |> ignoreWarnings
-        |> compile
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 7, Col 36, Line 7, Col 42, "This construct is deprecated. Use Field2 instead")
             (Error 101, Line 9, Col 28, Line 9, Col 34, "This construct is deprecated. Use Field2 instead")
         ]
+
+
+    [<Fact>]
+    let ``CI issue repro`` () =
+        Fsx """
+type InnerType = {ccont:int}
+type OuterType = { Name : string; Ctx : InnerType}
+
+let myInner = {ccont = 5}
+let myOuter = { Name = "Hi"; Ctx = myInner}
+let modified = { myOuter with Ctx = { myOuter.Ctx with ccont = 5 } }
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldSucceed
