@@ -1098,7 +1098,7 @@ and [<Sealed>] TcImports
         dependencyProviderOpt: DependencyProvider option
     ) as this =
 
-#if !NO_TYPEPROVIDERS
+#if NO_TYPEPROVIDERS
     ignore this
 #endif
 
