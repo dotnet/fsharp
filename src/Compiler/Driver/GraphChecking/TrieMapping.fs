@@ -4,8 +4,12 @@ open System.Collections.Generic
 open FSharp.Compiler.Syntax
 open Microsoft.FSharp.Collections
 
-let hs f = HashSet(Seq.singleton f)
-let emptyHS () = HashSet(Seq.empty)
+[<RequireQualifiedAccess>]
+module private HashSet =
+    /// Create a new HashSet<'T> with a single element.
+    let singleton value = HashSet(Seq.singleton value)
+    /// Create new new HashSet<'T> with zero elements.
+    let empty () = HashSet(Seq.empty)
 
 let autoOpenShapes =
     set
@@ -18,7 +22,7 @@ let autoOpenShapes =
             "AutoOpen"
         |]
 
-/// This isn't bullet proof but I wonder who would really alias this very core attribute.
+/// This isn't bullet proof, we do prompt a warning when the user is aliasing the AutoOpenAttribute.
 let isAutoOpenAttribute (attribute: SynAttribute) =
     match attribute.ArgExpr with
     | SynExpr.Const(constant = SynConst.Unit)
@@ -72,7 +76,7 @@ let mergeTrieNodes (defaultChildSize: int) (tries: TrieNode array) =
     match Array.tryExactlyOne tries with
     | Some ({ Current = TrieNodeInfo.Root _ } as singleTrie) -> singleTrie
     | _ ->
-        let rootFiles = emptyHS ()
+        let rootFiles = HashSet.empty ()
 
         let root =
             {
@@ -141,9 +145,9 @@ let processSynModuleOrNamespace<'Decl>
                         TrieNodeInfo.Namespace(
                             name,
                             (if hasTypesOrAutoOpenNestedModules then
-                                 hs idx
+                                 HashSet.singleton idx
                              else
-                                 emptyHS ())
+                                 HashSet.empty ())
                         )
                     else
                         TrieNodeInfo.Module(name, idx)
@@ -175,10 +179,10 @@ let processSynModuleOrNamespace<'Decl>
                                 let topLevelModuleOrNamespaceHasAutoOpen = isAnyAttributeAutoOpen attributes
 
                                 if topLevelModuleOrNamespaceHasAutoOpen && not isNamespace then
-                                    hs idx
+                                    HashSet.singleton idx
                                 else
-                                    emptyHS ()
-                            | _ -> emptyHS ()
+                                    HashSet.empty ()
+                            | _ -> HashSet.empty ()
 
                         let current = TrieNodeInfo.Namespace(name, files)
 
@@ -193,7 +197,7 @@ let processSynModuleOrNamespace<'Decl>
             visit id name
 
     {
-        Current = Root(emptyHS ())
+        Current = Root(HashSet.empty ())
         Children = children
     }
 
@@ -203,7 +207,7 @@ let rec mkTrieNodeFor (file: FileInProject) : TrieNode =
     if doesFileExposeContentToTheRoot file.ParsedInput then
         // If a file exposes content which does not need an open statement to access, we consider the file to be part of the root.
         {
-            Current = Root(hs idx)
+            Current = Root(HashSet.singleton idx)
             Children = Dictionary(0)
         }
     else
