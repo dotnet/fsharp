@@ -5,8 +5,8 @@ open FSharp.Compiler.SyntaxTreeOps
 
 type Continuations = ((FileContentEntry list -> FileContentEntry list) -> FileContentEntry list) list
 
-let cfo f a = lc f (Option.toList a)
-let lc = List.collect
+/// Collect a list of 'U from option 'T via a mapping function.
+let collectFromOption (mapping: 'T -> 'U list) (t: 'T option) : 'U list = List.collect mapping (Option.toList t)
 
 let longIdentToPath (skipLast: bool) (longId: LongIdent) : LongIdentifier =
     if skipLast then
@@ -35,25 +35,26 @@ let visitSynAttribute (a: SynAttribute) : FileContentEntry list =
     [ yield! visitSynLongIdent a.TypeName; yield! visitSynExpr a.ArgExpr ]
 
 let visitSynAttributeList (attributes: SynAttributeList) : FileContentEntry list =
-    lc visitSynAttribute attributes.Attributes
+    List.collect visitSynAttribute attributes.Attributes
 
-let visitSynAttributes (attributes: SynAttributes) : FileContentEntry list = lc visitSynAttributeList attributes
+let visitSynAttributes (attributes: SynAttributes) : FileContentEntry list =
+    List.collect visitSynAttributeList attributes
 
 let visitSynModuleDecl (decl: SynModuleDecl) : FileContentEntry list =
     match decl with
     | SynModuleDecl.Open(target = SynOpenDeclTarget.ModuleOrNamespace (longId, _)) ->
         [ FileContentEntry.OpenStatement(synLongIdentToPath false longId) ]
     | SynModuleDecl.Open(target = SynOpenDeclTarget.Type (typeName, _)) -> visitSynType typeName
-    | SynModuleDecl.Attributes (attributes, _) -> lc visitSynAttributeList attributes
+    | SynModuleDecl.Attributes (attributes, _) -> List.collect visitSynAttributeList attributes
     | SynModuleDecl.Expr (expr, _) -> visitSynExpr expr
     | SynModuleDecl.NestedModule (moduleInfo = SynComponentInfo (longId = [ ident ]; attributes = attributes); decls = decls) ->
         [
             yield! visitSynAttributes attributes
-            yield FileContentEntry.NestedModule(ident.idText, lc visitSynModuleDecl decls)
+            yield FileContentEntry.NestedModule(ident.idText, List.collect visitSynModuleDecl decls)
         ]
     | SynModuleDecl.NestedModule _ -> failwith "A nested module cannot have multiple identifiers"
-    | SynModuleDecl.Let (bindings = bindings) -> lc visitBinding bindings
-    | SynModuleDecl.Types (typeDefns = typeDefns) -> lc visitSynTypeDefn typeDefns
+    | SynModuleDecl.Let (bindings = bindings) -> List.collect visitBinding bindings
+    | SynModuleDecl.Types (typeDefns = typeDefns) -> List.collect visitSynTypeDefn typeDefns
     | SynModuleDecl.HashDirective _ -> []
     | SynModuleDecl.ModuleAbbrev (longId = longId) -> visitLongIdentForModuleAbbrev longId
     | SynModuleDecl.NamespaceFragment _ -> []
@@ -64,8 +65,8 @@ let visitSynModuleDecl (decl: SynModuleDecl) : FileContentEntry list =
         [
             yield! visitSynAttributes attributes
             yield! visitSynUnionCase caseName
-            yield! cfo visitLongIdent longId
-            yield! lc visitSynMemberDefn members
+            yield! collectFromOption visitLongIdent longId
+            yield! List.collect visitSynMemberDefn members
         ]
 
 let visitSynModuleSigDecl (md: SynModuleSigDecl) =
@@ -76,12 +77,12 @@ let visitSynModuleSigDecl (md: SynModuleSigDecl) =
     | SynModuleSigDecl.NestedModule (moduleInfo = SynComponentInfo (longId = [ ident ]; attributes = attributes); moduleDecls = decls) ->
         [
             yield! visitSynAttributes attributes
-            yield FileContentEntry.NestedModule(ident.idText, lc visitSynModuleSigDecl decls)
+            yield FileContentEntry.NestedModule(ident.idText, List.collect visitSynModuleSigDecl decls)
         ]
     | SynModuleSigDecl.NestedModule _ -> failwith "A nested module cannot have multiple identifiers"
     | SynModuleSigDecl.ModuleAbbrev (longId = longId) -> visitLongIdentForModuleAbbrev longId
     | SynModuleSigDecl.Val (valSig, _) -> visitSynValSig valSig
-    | SynModuleSigDecl.Types (types = types) -> lc visitSynTypeDefnSig types
+    | SynModuleSigDecl.Types (types = types) -> List.collect visitSynTypeDefnSig types
     | SynModuleSigDecl.Exception(exnSig = SynExceptionSig (exnRepr = SynExceptionDefnRepr (attributes = attributes
                                                                                            caseName = caseName
                                                                                            longId = longId)
@@ -89,8 +90,8 @@ let visitSynModuleSigDecl (md: SynModuleSigDecl) =
         [
             yield! visitSynAttributes attributes
             yield! visitSynUnionCase caseName
-            yield! cfo visitLongIdent longId
-            yield! lc visitSynMemberSig members
+            yield! collectFromOption visitLongIdent longId
+            yield! List.collect visitSynMemberSig members
         ]
     | SynModuleSigDecl.HashDirective _ -> []
     | SynModuleSigDecl.NamespaceFragment _ -> []
@@ -98,7 +99,7 @@ let visitSynModuleSigDecl (md: SynModuleSigDecl) =
 let visitSynUnionCase (SynUnionCase (attributes = attributes; caseType = caseType)) =
     let caseEntries =
         match caseType with
-        | SynUnionCaseKind.Fields cases -> lc visitSynField cases
+        | SynUnionCaseKind.Fields cases -> List.collect visitSynField cases
         | SynUnionCaseKind.FullType (fullType = fullType) -> visitSynType fullType
 
     [ yield! visitSynAttributes attributes; yield! caseEntries ]
@@ -114,9 +115,9 @@ let visitSynTypeDefn
         match typeRepr with
         | SynTypeDefnRepr.Simple (simpleRepr, _) ->
             match simpleRepr with
-            | SynTypeDefnSimpleRepr.Union (unionCases = unionCases) -> lc visitSynUnionCase unionCases
-            | SynTypeDefnSimpleRepr.Enum (cases = cases) -> lc visitSynEnumCase cases
-            | SynTypeDefnSimpleRepr.Record (recordFields = recordFields) -> lc visitSynField recordFields
+            | SynTypeDefnSimpleRepr.Union (unionCases = unionCases) -> List.collect visitSynUnionCase unionCases
+            | SynTypeDefnSimpleRepr.Enum (cases = cases) -> List.collect visitSynEnumCase cases
+            | SynTypeDefnSimpleRepr.Record (recordFields = recordFields) -> List.collect visitSynField recordFields
             // This is only used in the typed tree
             // The parser doesn't construct this
             | SynTypeDefnSimpleRepr.General _ -> []
@@ -128,8 +129,12 @@ let visitSynTypeDefn
             | SynTypeDefnSimpleRepr.Exception _ -> []
         | SynTypeDefnRepr.ObjectModel (kind, members, _) ->
             match kind with
-            | SynTypeDefnKind.Delegate (signature, _) -> [ yield! visitSynType signature; yield! lc visitSynMemberDefn members ]
-            | _ -> lc visitSynMemberDefn members
+            | SynTypeDefnKind.Delegate (signature, _) ->
+                [
+                    yield! visitSynType signature
+                    yield! List.collect visitSynMemberDefn members
+                ]
+            | _ -> List.collect visitSynMemberDefn members
         | SynTypeDefnRepr.Exception _ ->
             // This is only used in the typed tree
             // The parser doesn't construct this
@@ -137,10 +142,10 @@ let visitSynTypeDefn
 
     [
         yield! visitSynAttributes attributes
-        yield! cfo visitSynTyparDecls typeParams
-        yield! lc visitSynTypeConstraint constraints
+        yield! collectFromOption visitSynTyparDecls typeParams
+        yield! List.collect visitSynTypeConstraint constraints
         yield! reprEntries
-        yield! lc visitSynMemberDefn members
+        yield! List.collect visitSynMemberDefn members
     ]
 
 let visitSynTypeDefnSig
@@ -152,9 +157,9 @@ let visitSynTypeDefnSig
         match typeRepr with
         | SynTypeDefnSigRepr.Simple (simpleRepr, _) ->
             match simpleRepr with
-            | SynTypeDefnSimpleRepr.Union (unionCases = unionCases) -> lc visitSynUnionCase unionCases
-            | SynTypeDefnSimpleRepr.Enum (cases = cases) -> lc visitSynEnumCase cases
-            | SynTypeDefnSimpleRepr.Record (recordFields = recordFields) -> lc visitSynField recordFields
+            | SynTypeDefnSimpleRepr.Union (unionCases = unionCases) -> List.collect visitSynUnionCase unionCases
+            | SynTypeDefnSimpleRepr.Enum (cases = cases) -> List.collect visitSynEnumCase cases
+            | SynTypeDefnSimpleRepr.Record (recordFields = recordFields) -> List.collect visitSynField recordFields
             // This is only used in the typed tree
             // The parser doesn't construct this
             | SynTypeDefnSimpleRepr.General _ -> []
@@ -166,8 +171,8 @@ let visitSynTypeDefnSig
             | SynTypeDefnSimpleRepr.Exception _ -> []
         | SynTypeDefnSigRepr.ObjectModel (kind, members, _) ->
             match kind with
-            | SynTypeDefnKind.Delegate (signature, _) -> [ yield! visitSynType signature; yield! lc visitSynMemberSig members ]
-            | _ -> lc visitSynMemberSig members
+            | SynTypeDefnKind.Delegate (signature, _) -> [ yield! visitSynType signature; yield! List.collect visitSynMemberSig members ]
+            | _ -> List.collect visitSynMemberSig members
         | SynTypeDefnSigRepr.Exception _ ->
             // This is only used in the typed tree
             // The parser doesn't construct this
@@ -175,17 +180,17 @@ let visitSynTypeDefnSig
 
     [
         yield! visitSynAttributes attributes
-        yield! cfo visitSynTyparDecls typeParams
-        yield! lc visitSynTypeConstraint constraints
+        yield! collectFromOption visitSynTyparDecls typeParams
+        yield! List.collect visitSynTypeConstraint constraints
         yield! reprEntries
-        yield! lc visitSynMemberSig members
+        yield! List.collect visitSynMemberSig members
     ]
 
 let visitSynValSig (SynValSig (attributes = attributes; synType = synType; synExpr = synExpr)) =
     [
         yield! visitSynAttributes attributes
         yield! visitSynType synType
-        yield! cfo visitSynExpr synExpr
+        yield! collectFromOption visitSynExpr synExpr
     ]
 
 let visitSynField (SynField (attributes = attributes; fieldType = fieldType)) =
@@ -197,17 +202,17 @@ let visitSynMemberDefn (md: SynMemberDefn) : FileContentEntry list =
     | SynMemberDefn.Open _ -> []
     | SynMemberDefn.GetSetMember (memberDefnForGet, memberDefnForSet, _, _) ->
         [
-            yield! cfo visitBinding memberDefnForGet
-            yield! cfo visitBinding memberDefnForSet
+            yield! collectFromOption visitBinding memberDefnForGet
+            yield! collectFromOption visitBinding memberDefnForSet
         ]
     | SynMemberDefn.ImplicitCtor (ctorArgs = ctorArgs) -> visitSynSimplePats ctorArgs
     | SynMemberDefn.ImplicitInherit (inheritType, inheritArgs, _, _) -> [ yield! visitSynType inheritType; yield! visitSynExpr inheritArgs ]
-    | SynMemberDefn.LetBindings (bindings = bindings) -> lc visitBinding bindings
+    | SynMemberDefn.LetBindings (bindings = bindings) -> List.collect visitBinding bindings
     | SynMemberDefn.AbstractSlot (slotSig = slotSig) -> visitSynValSig slotSig
     | SynMemberDefn.Interface (interfaceType, _, members, _) ->
         [
             yield! visitSynType interfaceType
-            yield! cfo (lc visitSynMemberDefn) members
+            yield! collectFromOption (List.collect visitSynMemberDefn) members
         ]
     | SynMemberDefn.Inherit (baseType, _, _) -> visitSynType baseType
     | SynMemberDefn.ValField (fieldInfo, _) -> visitSynField fieldInfo
@@ -215,15 +220,15 @@ let visitSynMemberDefn (md: SynMemberDefn) : FileContentEntry list =
     | SynMemberDefn.AutoProperty (attributes = attributes; typeOpt = typeOpt; synExpr = synExpr) ->
         [
             yield! visitSynAttributes attributes
-            yield! cfo visitSynType typeOpt
+            yield! collectFromOption visitSynType typeOpt
             yield! visitSynExpr synExpr
         ]
 
 let visitSynInterfaceImpl (SynInterfaceImpl (interfaceTy = t; bindings = bindings; members = members)) =
     [
         yield! visitSynType t
-        yield! lc visitBinding bindings
-        yield! lc visitSynMemberDefn members
+        yield! List.collect visitBinding bindings
+        yield! List.collect visitSynMemberDefn members
     ]
 
 let visitSynType (t: SynType) : FileContentEntry list =
@@ -232,60 +237,61 @@ let visitSynType (t: SynType) : FileContentEntry list =
         | SynType.LongIdent lid -> continuation (visitSynLongIdent lid)
         | SynType.App (typeName = typeName; typeArgs = typeArgs) ->
             let continuations = List.map visit (typeName :: typeArgs)
-            let finalContinuation = lc id >> continuation
+            let finalContinuation = List.collect id >> continuation
             Continuation.sequence continuations finalContinuation
         | SynType.LongIdentApp (typeName = typeName; longDotId = longDotId; typeArgs = typeArgs) ->
             let continuations = List.map visit (typeName :: typeArgs)
 
             let finalContinuation nodes =
-                visitSynLongIdent longDotId @ lc id nodes |> continuation
+                visitSynLongIdent longDotId @ List.collect id nodes |> continuation
 
             Continuation.sequence continuations finalContinuation
         | SynType.Tuple (path = path) ->
             let continuations = List.map visit (getTypeFromTuplePath path)
-            let finalContinuation = lc id >> continuation
+            let finalContinuation = List.collect id >> continuation
             Continuation.sequence continuations finalContinuation
         | SynType.AnonRecd (fields = fields) ->
             let continuations = List.map (snd >> visit) fields
-            let finalContinuation = lc id >> continuation
+            let finalContinuation = List.collect id >> continuation
             Continuation.sequence continuations finalContinuation
         | SynType.Array (elementType = elementType) -> visit elementType continuation
         | SynType.Fun (argType, returnType, _, _) ->
             let continuations = List.map visit [ argType; returnType ]
-            let finalContinuation = lc id >> continuation
+            let finalContinuation = List.collect id >> continuation
             Continuation.sequence continuations finalContinuation
         | SynType.Var _ -> continuation []
         | SynType.Anon _ -> continuation []
         | SynType.WithGlobalConstraints (typeName, constraints, _) ->
-            visit typeName (fun nodes -> nodes @ lc visitSynTypeConstraint constraints |> continuation)
+            visit typeName (fun nodes -> nodes @ List.collect visitSynTypeConstraint constraints |> continuation)
         | SynType.HashConstraint (innerType, _) -> visit innerType continuation
         | SynType.MeasurePower (baseMeasure = baseMeasure) -> visit baseMeasure continuation
         | SynType.StaticConstant _ -> continuation []
         | SynType.StaticConstantExpr (expr, _) -> continuation (visitSynExpr expr)
         | SynType.StaticConstantNamed (ident, value, _) ->
             let continuations = List.map visit [ ident; value ]
-            let finalContinuation = lc id >> continuation
+            let finalContinuation = List.collect id >> continuation
             Continuation.sequence continuations finalContinuation
         | SynType.Paren (innerType, _) -> visit innerType continuation
         | SynType.SignatureParameter (attributes = attributes; usedType = usedType) ->
             visit usedType (fun nodes -> [ yield! visitSynAttributes attributes; yield! nodes ] |> continuation)
         | SynType.Or (lhsType, rhsType, _, _) ->
             let continuations = List.map visit [ lhsType; rhsType ]
-            let finalContinuation = lc id >> continuation
+            let finalContinuation = List.collect id >> continuation
             Continuation.sequence continuations finalContinuation
 
     visit t id
 
-let visitSynValTyparDecls (SynValTyparDecls (typars = typars)) = cfo visitSynTyparDecls typars
+let visitSynValTyparDecls (SynValTyparDecls (typars = typars)) =
+    collectFromOption visitSynTyparDecls typars
 
 let visitSynTyparDecls (td: SynTyparDecls) : FileContentEntry list =
     match td with
     | SynTyparDecls.PostfixList (decls, constraints, _) ->
         [
-            yield! lc visitSynTyparDecl decls
-            yield! lc visitSynTypeConstraint constraints
+            yield! List.collect visitSynTyparDecl decls
+            yield! List.collect visitSynTypeConstraint constraints
         ]
-    | SynTyparDecls.PrefixList (decls = decls) -> lc visitSynTyparDecl decls
+    | SynTyparDecls.PrefixList (decls = decls) -> List.collect visitSynTyparDecl decls
     | SynTyparDecls.SinglePrefix (decl = decl) -> visitSynTyparDecl decl
 
 let visitSynTyparDecl (SynTyparDecl (attributes = attributes)) = visitSynAttributes attributes
@@ -303,8 +309,8 @@ let visitSynTypeConstraint (tc: SynTypeConstraint) : FileContentEntry list =
     | SynTypeConstraint.WhereTyparSubtypeOfType (typeName = typeName) -> visitSynType typeName
     | SynTypeConstraint.WhereTyparSupportsMember (typars, memberSig, _) ->
         [ yield! visitSynType typars; yield! visitSynMemberSig memberSig ]
-    | SynTypeConstraint.WhereTyparIsEnum (typeArgs = typeArgs) -> lc visitSynType typeArgs
-    | SynTypeConstraint.WhereTyparIsDelegate (typeArgs = typeArgs) -> lc visitSynType typeArgs
+    | SynTypeConstraint.WhereTyparIsEnum (typeArgs = typeArgs) -> List.collect visitSynType typeArgs
+    | SynTypeConstraint.WhereTyparIsDelegate (typeArgs = typeArgs) -> List.collect visitSynType typeArgs
 
 let visitSynExpr (e: SynExpr) : FileContentEntry list =
     let rec visit (e: SynExpr) (continuation: FileContentEntry list -> FileContentEntry list) : FileContentEntry list =
@@ -318,7 +324,7 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
             let continuations: ((FileContentEntry list -> FileContentEntry list) -> FileContentEntry list) list =
                 List.map visit exprs
 
-            let finalContinuation = lc id >> continuation
+            let finalContinuation = List.collect id >> continuation
             Continuation.sequence continuations finalContinuation
         | SynExpr.AnonRecd (copyInfo = copyInfo; recordFields = recordFields) ->
             let continuations =
@@ -326,17 +332,17 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
                 | None -> List.map (fun (_, _, e) -> visit e) recordFields
                 | Some (cp, _) -> visit cp :: List.map (fun (_, _, e) -> visit e) recordFields
 
-            let finalContinuation = lc id >> continuation
+            let finalContinuation = List.collect id >> continuation
             Continuation.sequence continuations finalContinuation
         | SynExpr.ArrayOrList (exprs = exprs) ->
             let continuations = List.map visit exprs
-            let finalContinuation = lc id >> continuation
+            let finalContinuation = List.collect id >> continuation
             Continuation.sequence continuations finalContinuation
         | SynExpr.Record (baseInfo = baseInfo; copyInfo = copyInfo; recordFields = recordFields) ->
             let fieldNodes =
                 recordFields
-                |> lc (fun (SynExprRecordField (fieldName = (si, _); expr = expr)) ->
-                    [ yield! visitSynLongIdent si; yield! cfo visitSynExpr expr ])
+                |> List.collect (fun (SynExprRecordField (fieldName = (si, _); expr = expr)) ->
+                    [ yield! visitSynLongIdent si; yield! collectFromOption visitSynExpr expr ])
 
             match baseInfo, copyInfo with
             | Some (t, e, _, _, _), None ->
@@ -347,17 +353,17 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
         | SynExpr.ObjExpr (objType, argOptions, _, bindings, members, extraImpls, _, _) ->
             [
                 yield! visitSynType objType
-                yield! cfo (fst >> visitSynExpr) argOptions
-                yield! lc visitBinding bindings
-                yield! lc visitSynMemberDefn members
-                yield! lc visitSynInterfaceImpl extraImpls
+                yield! collectFromOption (fst >> visitSynExpr) argOptions
+                yield! List.collect visitBinding bindings
+                yield! List.collect visitSynMemberDefn members
+                yield! List.collect visitSynInterfaceImpl extraImpls
             ]
             |> continuation
         | SynExpr.While (whileExpr = whileExpr; doExpr = doExpr) ->
             visit whileExpr (fun whileNodes -> visit doExpr (fun doNodes -> whileNodes @ doNodes |> continuation))
         | SynExpr.For (identBody = identBody; toBody = toBody; doBody = doBody) ->
             let continuations = List.map visit [ identBody; toBody; doBody ]
-            let finalContinuation = lc id >> continuation
+            let finalContinuation = List.collect id >> continuation
             Continuation.sequence continuations finalContinuation
         | SynExpr.ForEach (pat = pat; enumExpr = enumExpr; bodyExpr = bodyExpr) ->
             visit enumExpr (fun enumNodes ->
@@ -372,18 +378,21 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
         | SynExpr.IndexFromEnd (expr, _) -> visit expr continuation
         | SynExpr.ComputationExpr (expr = expr) -> visit expr continuation
         | SynExpr.Lambda (args = args; body = body) -> visit body (fun bodyNodes -> visitSynSimplePats args @ bodyNodes |> continuation)
-        | SynExpr.MatchLambda (matchClauses = clauses) -> lc visitSynMatchClause clauses |> continuation
+        | SynExpr.MatchLambda (matchClauses = clauses) -> List.collect visitSynMatchClause clauses |> continuation
         | SynExpr.Match (expr = expr; clauses = clauses) ->
-            visit expr (fun exprNodes -> [ yield! exprNodes; yield! lc visitSynMatchClause clauses ] |> continuation)
+            visit expr (fun exprNodes ->
+                [ yield! exprNodes; yield! List.collect visitSynMatchClause clauses ]
+                |> continuation)
         | SynExpr.Do (expr, _) -> visit expr continuation
         | SynExpr.Assert (expr, _) -> visit expr continuation
         | SynExpr.App (funcExpr = funcExpr; argExpr = argExpr) ->
             visit funcExpr (fun funcNodes -> visit argExpr (fun argNodes -> funcNodes @ argNodes |> continuation))
         | SynExpr.TypeApp (expr = expr; typeArgs = typeArgs) ->
-            visit expr (fun exprNodes -> exprNodes @ lc visitSynType typeArgs |> continuation)
-        | SynExpr.LetOrUse (bindings = bindings; body = body) -> visit body (fun nodes -> lc visitBinding bindings @ nodes |> continuation)
+            visit expr (fun exprNodes -> exprNodes @ List.collect visitSynType typeArgs |> continuation)
+        | SynExpr.LetOrUse (bindings = bindings; body = body) ->
+            visit body (fun nodes -> List.collect visitBinding bindings @ nodes |> continuation)
         | SynExpr.TryWith (tryExpr = tryExpr; withCases = withCases) ->
-            visit tryExpr (fun nodes -> nodes @ lc visitSynMatchClause withCases |> continuation)
+            visit tryExpr (fun nodes -> nodes @ List.collect visitSynMatchClause withCases |> continuation)
         | SynExpr.TryFinally (tryExpr = tryExpr; finallyExpr = finallyExpr) ->
             visit tryExpr (fun tNodes -> visit finallyExpr (fun fNodes -> tNodes @ fNodes |> continuation))
         | SynExpr.Lazy (expr, _) -> visit expr continuation
@@ -391,7 +400,7 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
             visit expr1 (fun nodes1 -> visit expr2 (fun nodes2 -> nodes1 @ nodes2 |> continuation))
         | SynExpr.IfThenElse (ifExpr = ifExpr; thenExpr = thenExpr; elseExpr = elseExpr) ->
             let continuations = List.map visit (ifExpr :: thenExpr :: Option.toList elseExpr)
-            let finalContinuation = lc id >> continuation
+            let finalContinuation = List.collect id >> continuation
             Continuation.sequence continuations finalContinuation
         | SynExpr.Typar _ -> continuation []
         | SynExpr.Ident _ -> continuation []
@@ -406,15 +415,15 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
                     |> continuation))
         | SynExpr.Set (targetExpr, rhsExpr, _) ->
             let continuations = List.map visit [ targetExpr; rhsExpr ]
-            let finalContinuation = lc id >> continuation
+            let finalContinuation = List.collect id >> continuation
             Continuation.sequence continuations finalContinuation
         | SynExpr.DotIndexedGet (objectExpr, indexArgs, _, _) ->
             let continuations = List.map visit [ objectExpr; indexArgs ]
-            let finalContinuation = lc id >> continuation
+            let finalContinuation = List.collect id >> continuation
             Continuation.sequence continuations finalContinuation
         | SynExpr.DotIndexedSet (objectExpr, indexArgs, valueExpr, _, _, _) ->
             let continuations = List.map visit [ objectExpr; indexArgs; valueExpr ]
-            let finalContinuation = lc id >> continuation
+            let finalContinuation = List.collect id >> continuation
             Continuation.sequence continuations finalContinuation
         | SynExpr.NamedIndexedPropertySet (longDotId, expr1, expr2, _) ->
             visit expr1 (fun nodes1 ->
@@ -425,7 +434,7 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
             let continuations = List.map visit [ targetExpr; argExpr; rhsExpr ]
 
             let finalContinuation nodes =
-                visitSynLongIdent longDotId @ lc id nodes |> continuation
+                visitSynLongIdent longDotId @ List.collect id nodes |> continuation
 
             Continuation.sequence continuations finalContinuation
         | SynExpr.TypeTest (expr, targetType, _) -> visit expr (fun nodes -> nodes @ visitSynType targetType |> continuation)
@@ -445,12 +454,12 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
                 |> continuation)
         | SynExpr.JoinIn (lhsExpr, _, rhsExpr, _) ->
             let continuations = List.map visit [ lhsExpr; rhsExpr ]
-            let finalContinuation = lc id >> continuation
+            let finalContinuation = List.collect id >> continuation
             Continuation.sequence continuations finalContinuation
         | SynExpr.ImplicitZero _ -> continuation []
         | SynExpr.SequentialOrImplicitYield (_, expr1, expr2, _, _) ->
             let continuations = List.map visit [ expr1; expr2 ]
-            let finalContinuation = lc id >> continuation
+            let finalContinuation = List.collect id >> continuation
             Continuation.sequence continuations finalContinuation
         | SynExpr.YieldOrReturn (expr = expr) -> visit expr continuation
         | SynExpr.YieldOrReturnFrom (expr = expr) -> visit expr continuation
@@ -461,20 +470,25 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
 
             let finalContinuation nodes =
                 [
-                    yield! lc id nodes
+                    yield! List.collect id nodes
                     yield! visitPat pat
-                    yield! lc (fun (SynExprAndBang (pat = pat)) -> visitPat pat) andBangs
+                    yield! List.collect (fun (SynExprAndBang (pat = pat)) -> visitPat pat) andBangs
                 ]
                 |> continuation
 
             Continuation.sequence continuations finalContinuation
         | SynExpr.MatchBang (expr = expr; clauses = clauses) ->
-            visit expr (fun exprNodes -> [ yield! exprNodes; yield! lc visitSynMatchClause clauses ] |> continuation)
+            visit expr (fun exprNodes ->
+                [ yield! exprNodes; yield! List.collect visitSynMatchClause clauses ]
+                |> continuation)
         | SynExpr.DoBang (expr, _) -> visit expr continuation
         | SynExpr.LibraryOnlyILAssembly (typeArgs = typeArgs; args = args; retTy = retTy) ->
-            let typeNodes = lc visitSynType (typeArgs @ retTy)
+            let typeNodes = List.collect visitSynType (typeArgs @ retTy)
             let continuations = List.map visit args
-            let finalContinuation nodes = lc id nodes @ typeNodes |> continuation
+
+            let finalContinuation nodes =
+                List.collect id nodes @ typeNodes |> continuation
+
             Continuation.sequence continuations finalContinuation
         | SynExpr.LibraryOnlyStaticOptimization (constraints, expr, optimizedExpr, _) ->
             let constraintTypes =
@@ -485,7 +499,11 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
 
             visit expr (fun eNodes ->
                 visit optimizedExpr (fun oNodes ->
-                    [ yield! lc visitSynType constraintTypes; yield! eNodes; yield! oNodes ]
+                    [
+                        yield! List.collect visitSynType constraintTypes
+                        yield! eNodes
+                        yield! oNodes
+                    ]
                     |> continuation))
         | SynExpr.LibraryOnlyUnionCaseFieldGet (expr, longId, _, _) ->
             visit expr (fun eNodes -> visitLongIdent longId @ eNodes |> continuation)
@@ -506,12 +524,12 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
                         | SynInterpolatedStringPart.String _ -> None)
                         contents)
 
-            let finalContinuation = lc id >> continuation
+            let finalContinuation = List.collect id >> continuation
             Continuation.sequence continuations finalContinuation
         | SynExpr.DebugPoint _ -> continuation []
         | SynExpr.Dynamic (funcExpr, _, argExpr, _) ->
             let continuations = List.map visit [ funcExpr; argExpr ]
-            let finalContinuation = lc id >> continuation
+            let finalContinuation = List.collect id >> continuation
             Continuation.sequence continuations finalContinuation
 
     visit e id
@@ -527,42 +545,42 @@ let visitPat (p: SynPat) : FileContentEntry list =
         | SynPat.Attrib (pat, attributes, _) -> visit pat (fun nodes -> visitSynAttributes attributes @ nodes |> continuation)
         | SynPat.Or (lhsPat, rhsPat, _, _) ->
             let continuations = List.map visit [ lhsPat; rhsPat ]
-            let finalContinuation = lc id >> continuation
+            let finalContinuation = List.collect id >> continuation
             Continuation.sequence continuations finalContinuation
         | SynPat.ListCons (lhsPat, rhsPat, _, _) ->
             let continuations = List.map visit [ lhsPat; rhsPat ]
-            let finalContinuation = lc id >> continuation
+            let finalContinuation = List.collect id >> continuation
             Continuation.sequence continuations finalContinuation
         | SynPat.Ands (pats, _) ->
             let continuations = List.map visit pats
-            let finalContinuation = lc id >> continuation
+            let finalContinuation = List.collect id >> continuation
             Continuation.sequence continuations finalContinuation
         | SynPat.As (lhsPat, rhsPat, _) ->
             let continuations = List.map visit [ lhsPat; rhsPat ]
-            let finalContinuation = lc id >> continuation
+            let finalContinuation = List.collect id >> continuation
             Continuation.sequence continuations finalContinuation
         | SynPat.LongIdent (longDotId = longDotId; typarDecls = typarDecls; argPats = argPats) ->
             continuation
                 [
                     yield! visitSynLongIdent longDotId
-                    yield! cfo visitSynValTyparDecls typarDecls
+                    yield! collectFromOption visitSynValTyparDecls typarDecls
                     yield! visitSynArgPats argPats
                 ]
         | SynPat.Tuple (_, elementPats, _) ->
             let continuations = List.map visit elementPats
-            let finalContinuation = lc id >> continuation
+            let finalContinuation = List.collect id >> continuation
             Continuation.sequence continuations finalContinuation
         | SynPat.ArrayOrList (_, elementPats, _) ->
             let continuations = List.map visit elementPats
-            let finalContinuation = lc id >> continuation
+            let finalContinuation = List.collect id >> continuation
             Continuation.sequence continuations finalContinuation
         | SynPat.Record (fieldPats, _) ->
             let pats = List.map (fun (_, _, p) -> p) fieldPats
-            let lids = lc (fun ((l, _), _, _) -> visitLongIdent l) fieldPats
+            let lids = List.collect (fun ((l, _), _, _) -> visitLongIdent l) fieldPats
             let continuations = List.map visit pats
 
             let finalContinuation nodes =
-                [ yield! lc id nodes; yield! lids ] |> continuation
+                [ yield! List.collect id nodes; yield! lids ] |> continuation
 
             Continuation.sequence continuations finalContinuation
         | SynPat.Null _ -> continuation []
@@ -577,8 +595,8 @@ let visitPat (p: SynPat) : FileContentEntry list =
 
 let visitSynArgPats (argPat: SynArgPats) =
     match argPat with
-    | SynArgPats.Pats args -> lc visitPat args
-    | SynArgPats.NamePatPairs (pats = pats) -> lc (fun (_, _, p) -> visitPat p) pats
+    | SynArgPats.Pats args -> List.collect visitPat args
+    | SynArgPats.NamePatPairs (pats = pats) -> List.collect (fun (_, _, p) -> visitPat p) pats
 
 let visitSynSimplePat (pat: SynSimplePat) =
     match pat with
@@ -588,26 +606,26 @@ let visitSynSimplePat (pat: SynSimplePat) =
 
 let visitSynSimplePats (pats: SynSimplePats) =
     match pats with
-    | SynSimplePats.SimplePats (pats = pats) -> lc visitSynSimplePat pats
+    | SynSimplePats.SimplePats (pats = pats) -> List.collect visitSynSimplePat pats
     | SynSimplePats.Typed (pats, t, _) -> [ yield! visitSynSimplePats pats; yield! visitSynType t ]
 
 let visitSynMatchClause (SynMatchClause (pat = pat; whenExpr = whenExpr; resultExpr = resultExpr)) =
     [
         yield! visitPat pat
-        yield! cfo visitSynExpr whenExpr
+        yield! collectFromOption visitSynExpr whenExpr
         yield! visitSynExpr resultExpr
     ]
 
 let visitBinding (SynBinding (attributes = attributes; headPat = headPat; returnInfo = returnInfo; expr = expr)) : FileContentEntry list =
     let pattern =
         match headPat with
-        | SynPat.LongIdent(argPats = SynArgPats.Pats pats) -> lc visitPat pats
+        | SynPat.LongIdent(argPats = SynArgPats.Pats pats) -> List.collect visitPat pats
         | _ -> visitPat headPat
 
     [
         yield! visitSynAttributes attributes
         yield! pattern
-        yield! cfo visitSynBindingReturnInfo returnInfo
+        yield! collectFromOption visitSynBindingReturnInfo returnInfo
         yield! visitSynExpr expr
     ]
 
@@ -625,43 +643,51 @@ let visitSynMemberSig (ms: SynMemberSig) : FileContentEntry list =
 let mkFileContent (f: FileInProject) : FileContentEntry list =
     match f.ParsedInput with
     | ParsedInput.SigFile (ParsedSigFileInput (contents = contents)) ->
-        lc
+        List.collect
             (fun (SynModuleOrNamespaceSig (longId = longId; kind = kind; decls = decls; attribs = attribs)) ->
-                let attributes = lc visitSynAttributeList attribs
+                let attributes = List.collect visitSynAttributeList attribs
 
                 let contentEntries =
                     match kind with
                     | SynModuleOrNamespaceKind.GlobalNamespace
-                    | SynModuleOrNamespaceKind.AnonModule -> lc visitSynModuleSigDecl decls
+                    | SynModuleOrNamespaceKind.AnonModule -> List.collect visitSynModuleSigDecl decls
                     | SynModuleOrNamespaceKind.DeclaredNamespace ->
                         let path = longIdentToPath false longId
 
-                        [ FileContentEntry.TopLevelNamespace(path, lc visitSynModuleSigDecl decls) ]
+                        [
+                            FileContentEntry.TopLevelNamespace(path, List.collect visitSynModuleSigDecl decls)
+                        ]
                     | SynModuleOrNamespaceKind.NamedModule ->
                         let path = longIdentToPath true longId
 
-                        [ FileContentEntry.TopLevelNamespace(path, lc visitSynModuleSigDecl decls) ]
+                        [
+                            FileContentEntry.TopLevelNamespace(path, List.collect visitSynModuleSigDecl decls)
+                        ]
 
                 [ yield! attributes; yield! contentEntries ])
             contents
 
     | ParsedInput.ImplFile (ParsedImplFileInput (contents = contents)) ->
-        lc
+        List.collect
             (fun (SynModuleOrNamespace (longId = longId; attribs = attribs; kind = kind; decls = decls)) ->
-                let attributes = lc visitSynAttributeList attribs
+                let attributes = List.collect visitSynAttributeList attribs
 
                 let contentEntries =
                     match kind with
                     | SynModuleOrNamespaceKind.GlobalNamespace
-                    | SynModuleOrNamespaceKind.AnonModule -> lc visitSynModuleDecl decls
+                    | SynModuleOrNamespaceKind.AnonModule -> List.collect visitSynModuleDecl decls
                     | SynModuleOrNamespaceKind.DeclaredNamespace ->
                         let path = longIdentToPath false longId
 
-                        [ FileContentEntry.TopLevelNamespace(path, lc visitSynModuleDecl decls) ]
+                        [
+                            FileContentEntry.TopLevelNamespace(path, List.collect visitSynModuleDecl decls)
+                        ]
                     | SynModuleOrNamespaceKind.NamedModule ->
                         let path = longIdentToPath true longId
 
-                        [ FileContentEntry.TopLevelNamespace(path, lc visitSynModuleDecl decls) ]
+                        [
+                            FileContentEntry.TopLevelNamespace(path, List.collect visitSynModuleDecl decls)
+                        ]
 
                 [ yield! attributes; yield! contentEntries ])
             contents
