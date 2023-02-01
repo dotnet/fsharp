@@ -42,6 +42,11 @@
         <target state="translated">参数重复。此方法中多次使用了参数“{0}”。</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkExplicitFieldsDeclarationsOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Explicit field declarations are not allowed.</source>
+        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Explicit field declarations are not allowed.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
         <source>Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</source>
         <target state="translated">功能“{0}”在 F# {1} 中不可用。请使用 {2} 或更高的语言版本。</target>
@@ -1130,6 +1135,11 @@
       <trans-unit id="typrelInterfaceWithConcreteAndVariableObjectExpression">
         <source>You cannot implement the interface '{0}' with the two instantiations '{1}' and '{2}' because they may unify.</source>
         <target state="translated">你无法实现具有两个实例化“{1}”和“{2}”的接口“{0}”，因为它们可能会统一。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="typrelNeverRefinedAwayFromTop">
+        <source>A type has been implicitly inferred as 'obj', which may be unintended. Consider adding explicit type annotations. You can disable this warning by using '#nowarn \"3559\"' or '--nowarn:3559'.</source>
+        <target state="new">A type has been implicitly inferred as 'obj', which may be unintended. Consider adding explicit type annotations. You can disable this warning by using '#nowarn \"3559\"' or '--nowarn:3559'.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">

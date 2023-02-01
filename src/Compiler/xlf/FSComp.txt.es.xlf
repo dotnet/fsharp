@@ -42,6 +42,11 @@
         <target state="translated">Parámetro duplicado. El parámetro '{0}' se ha usado más una vez en este método.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkExplicitFieldsDeclarationsOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Explicit field declarations are not allowed.</source>
+        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Explicit field declarations are not allowed.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
         <source>Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</source>
         <target state="translated">La característica "{0}" no está disponible en F# {1}. Use la versión {2} del lenguaje o una posterior.</target>
@@ -1130,6 +1135,11 @@
       <trans-unit id="typrelInterfaceWithConcreteAndVariableObjectExpression">
         <source>You cannot implement the interface '{0}' with the two instantiations '{1}' and '{2}' because they may unify.</source>
         <target state="translated">No se puede implementar la interfaz "{0}" con ambas creaciones de instancias, "{1}" y "{2}", porque pueden unificarse.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="typrelNeverRefinedAwayFromTop">
+        <source>A type has been implicitly inferred as 'obj', which may be unintended. Consider adding explicit type annotations. You can disable this warning by using '#nowarn \"3559\"' or '--nowarn:3559'.</source>
+        <target state="new">A type has been implicitly inferred as 'obj', which may be unintended. Consider adding explicit type annotations. You can disable this warning by using '#nowarn \"3559\"' or '--nowarn:3559'.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">

@@ -699,7 +699,6 @@ type internal FSharpNavigation
             | FSharpGoToDefinitionResult.NavigableItem(navItem) -> Some navItem
             | _ -> None
         )
-        |> Task.FromResult
 
     member _.TryGoToDefinition(position, cancellationToken) =
         let gtd = GoToDefinition(metadataAsSource)
