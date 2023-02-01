@@ -6,6 +6,9 @@ open System.IO
 open Xunit
 
 open FSharp.Test.ProjectGeneration
+open FSharp.Test.ProjectGeneration.Internal
+open FSharp.Compiler.Text
+open FSharp.Compiler.CodeAnalysis
 
 let makeTestProject () =
     SyntheticProject.Create(
@@ -88,4 +91,44 @@ let ``Changes in a referenced project`` () =
         updateFile "Library" updatePublicSurface
         saveFile "Library"
         checkFile "Last" expectSignatureChanged
+    }
+
+[<Fact>]
+let ``Language service works if the same file is listed twice`` () = 
+    let file = sourceFile "First" []
+    let project =  SyntheticProject.Create(file)
+    project.Workflow {
+        checkFile "First" expectOk
+        addFileAbove "First" file
+        checkFile "First" (expectSingleWarningAndNoErrors "Please verify that it is included only once in the project file.")
+    }
+
+[<Fact>]
+let ``Using getSource and notifications instead of filesystem`` () =
+
+    let size = 20
+
+    let project =
+        { SyntheticProject.Create() with
+            SourceFiles = [
+                sourceFile $"File%03d{0}" []
+                for i in 1..size do
+                    sourceFile $"File%03d{i}" [$"File%03d{i-1}"]
+            ]
+        }
+
+    let first = "File001"
+    let middle = $"File%03d{size / 2}"
+    let last = $"File%03d{size}"
+
+    ProjectWorkflowBuilder(project, useGetSource = true, useChangeNotifications = true) {
+        updateFile first updatePublicSurface
+        checkFile first expectSignatureChanged
+        checkFile last expectSignatureChanged
+        updateFile middle updatePublicSurface
+        checkFile last expectSignatureChanged
+        addFileAbove middle (sourceFile "addedFile" [first])
+        updateFile middle (addDependency "addedFile")
+        checkFile middle expectSignatureChanged
+        checkFile last expectSignatureChanged
     }

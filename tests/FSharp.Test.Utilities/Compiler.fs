@@ -193,7 +193,7 @@ module rec Compiler =
     // Load the source file from the path
     let loadSourceFromFile path = getSource(TestType.Path path)
 
-    let private fsFromString (source: SourceCodeFileKind): FSharpCompilationSource =
+    let fsFromString (source: SourceCodeFileKind): FSharpCompilationSource =
         {
             Source            = source
             AdditionalSources = []
@@ -321,6 +321,7 @@ module rec Compiler =
 
     let asFs (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
+        | FS { Source = SourceCodeFileKind.Fsi _} -> cUnit
         | FS src -> FS {src with Source=SourceCodeFileKind.Fs({FileName=src.Source.GetSourceFileName; SourceText=src.Source.GetSourceText})}
         | _ -> failwith "Only F# compilation can be of type Fs."
 
@@ -396,14 +397,14 @@ module rec Compiler =
 
     let withLangVersionPreview (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:preview" ] "withLangVersionPreview is only supported on F#" cUnit
-        
+
     let withLangVersion (version: string) (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ $"--langversion:{version}" ] "withLangVersion is only supported on F#" cUnit
 
     let withAssemblyVersion (version:string) (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ $"--version:{version}" ] "withAssemblyVersion is only supported on F#" cUnit
 
-    let withWarnOn  (cUnit: CompilationUnit) warning : CompilationUnit =
+    let withWarnOn (warning : int) (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ $"--warnon:{warning}" ] "withWarnOn is only supported for F#" cUnit
 
     let withNoWarn warning (cUnit: CompilationUnit) : CompilationUnit =
@@ -1087,7 +1088,7 @@ module rec Compiler =
                     failwith $"PDB file does not exists: {pdbPath}"
             | _ -> failwith "Output path is not set, please make sure compilation was successfull."
         match result with
-        | CompilationResult.Success r -> verifyPdbExists r 
+        | CompilationResult.Success r -> verifyPdbExists r
         | _ -> failwith "Result should be \"Success\" in order to verify PDB."
 
     let verifyNoPdb (result: CompilationResult): unit =
@@ -1099,7 +1100,7 @@ module rec Compiler =
                     failwith $"PDB file exists: {pdbPath}"
             | _ -> failwith "Output path is not set, please make sure compilation was successfull."
         match result with
-        | CompilationResult.Success r -> verifyPdbNotExists r 
+        | CompilationResult.Success r -> verifyPdbNotExists r
         | _ -> failwith "Result should be \"Success\" in order to verify PDB."
 
     [<AutoOpen>]
@@ -1368,6 +1369,6 @@ module rec Compiler =
             s.Replace("\r", "").Split('\n')
             |> Array.map (fun line -> line.TrimEnd())
             |> String.concat "\n"
-    
+
     let printSignatures cUnit = printSignaturesImpl None cUnit
     let printSignaturesWith pageWidth cUnit = printSignaturesImpl (Some pageWidth) cUnit

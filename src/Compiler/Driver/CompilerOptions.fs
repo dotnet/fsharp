@@ -69,7 +69,7 @@ and CompilerOption =
         name: string *
         argumentDescriptionString: string *
         actionSpec: OptionSpec *
-        deprecationError: Option<exn> *
+        deprecationError: exn option *
         helpText: string option
 
 and CompilerOptionBlock =
@@ -508,7 +508,6 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
 // Compiler options
 //--------------------------------------------------------------------------
 
-let lexFilterVerbose = false
 let mutable enableConsoleColoring = true // global state
 
 let setFlag r n =
@@ -709,11 +708,9 @@ let tagModule = "module"
 let tagFile = "<file>"
 let tagFileList = "<file;...>"
 let tagDirList = "<dir;...>"
-let tagPathList = "<path;...>"
 let tagResInfo = "<resinfo>"
 let tagFullPDBOnlyPortable = "{full|pdbonly|portable|embedded}"
 let tagWarnList = "<warn;...>"
-let tagSymbolList = "<symbol;...>"
 let tagAddress = "<address>"
 let tagAlgorithm = "{SHA1|SHA256}"
 let tagInt = "<n>"
@@ -768,24 +765,6 @@ let inputFileFlagsBoth (tcConfigB: TcConfigBuilder) =
             Some(FSComp.SR.optsCompilerTool ())
         )
     ]
-
-let referenceFlagAbbrev (tcConfigB: TcConfigBuilder) =
-    CompilerOption(
-        "r",
-        tagFile,
-        OptionString(fun s -> tcConfigB.AddReferencedAssemblyByPath(rangeStartup, s)),
-        None,
-        Some(FSComp.SR.optsShortFormOf ("--reference"))
-    )
-
-let compilerToolFlagAbbrev (tcConfigB: TcConfigBuilder) =
-    CompilerOption(
-        "t",
-        tagFile,
-        OptionString(fun s -> tcConfigB.AddCompilerToolsByPath s),
-        None,
-        Some(FSComp.SR.optsShortFormOf ("--compilertool"))
-    )
 
 let inputFileFlagsFsc tcConfigB = inputFileFlagsBoth tcConfigB
 
@@ -1394,6 +1373,7 @@ let testFlag tcConfigB =
             | "ContinueAfterParseFailure" -> tcConfigB.continueAfterParseFailure <- true
             | "ParallelOff" -> tcConfigB.concurrentBuild <- false
             | "ParallelCheckingWithSignatureFilesOn" -> tcConfigB.parallelCheckingWithSignatureFiles <- true
+            | "ParallelIlxGen" -> tcConfigB.parallelIlxGen <- true
 #if DEBUG
             | "ShowParserStackOnParseError" -> showParserStackOnParseError <- true
 #endif
@@ -2304,6 +2284,23 @@ let GetCoreFsiCompilerOptions (tcConfigB: TcConfigBuilder) =
         )
     ]
 
+let CheckAndReportSourceFileDuplicates (sourceFiles: ResizeArray<string>) =
+    let visited = Dictionary.newWithSize (sourceFiles.Count * 2)
+    let count = sourceFiles.Count
+
+    [
+        for i = 0 to (count - 1) do
+            let source = sourceFiles[i]
+
+            match visited.TryGetValue source with
+            | true, duplicatePosition ->
+
+                warning (Error(FSComp.SR.buildDuplicateFile (source, i + 1, count, duplicatePosition + 1, count), range0))
+            | false, _ ->
+                visited.Add(source, i)
+                yield source
+    ]
+
 let ApplyCommandLineArgs (tcConfigB: TcConfigBuilder, sourceFiles: string list, argv) =
     try
         let sourceFilesAcc = ResizeArray sourceFiles
@@ -2313,40 +2310,14 @@ let ApplyCommandLineArgs (tcConfigB: TcConfigBuilder, sourceFiles: string list, 
                 sourceFilesAcc.Add name
 
         ParseCompilerOptions(collect, GetCoreServiceCompilerOptions tcConfigB, argv)
-        ResizeArray.toList sourceFilesAcc
+        sourceFilesAcc |> CheckAndReportSourceFileDuplicates
     with e ->
         errorRecovery e range0
         sourceFiles
 
 //----------------------------------------------------------------------------
-// PrintWholeAssemblyImplementation
-//----------------------------------------------------------------------------
-
-let mutable showTermFileCount = 0
-
-let PrintWholeAssemblyImplementation (tcConfig: TcConfig) outfile header expr =
-    if tcConfig.showTerms then
-        if tcConfig.writeTermsToFiles then
-            let fileName = outfile + ".terms"
-
-            use f =
-                FileSystem
-                    .OpenFileForWriteShim(fileName + "-" + string showTermFileCount + "-" + header, FileMode.Create)
-                    .GetWriter()
-
-            showTermFileCount <- showTermFileCount + 1
-            LayoutRender.outL f (Display.squashTo 192 (DebugPrint.implFilesL expr))
-        else
-            dprintf "\n------------------\nshowTerm: %s:\n" header
-            LayoutRender.outL stderr (Display.squashTo 192 (DebugPrint.implFilesL expr))
-            dprintf "\n------------------\n"
-
-//----------------------------------------------------------------------------
 // ReportTime
 //----------------------------------------------------------------------------
-
-let mutable tPrev: (DateTime * DateTime * float * int[]) option = None
-let mutable nPrev: (string * IDisposable) option = None
 
 let private SimulateException simulateConfig =
     match simulateConfig with
@@ -2371,79 +2342,24 @@ let private SimulateException simulateConfig =
     | Some ("fsc-fail") -> failwith "simulated"
     | _ -> ()
 
-let ReportTime (tcConfig: TcConfig) descr =
-    match nPrev with
-    | None -> ()
-    | Some (prevDescr, _) ->
-        if tcConfig.pause then
-            dprintf "[done '%s', entering '%s'] press <enter> to continue... " prevDescr descr
-            Console.ReadLine() |> ignore
-        // Intentionally putting this right after the pause so a debugger can be attached.
-        SimulateException tcConfig.simulateException
+let ReportTime =
+    let mutable nPrev = None
 
-    if (tcConfig.showTimes || verbose || tcConfig.writeTimesToFile.IsSome) then
-        // Note that timing calls are relatively expensive on the startup path so we don't
-        // make this call unless showTimes has been turned on.
-        let p = Process.GetCurrentProcess()
-        let utNow = p.UserProcessorTime.TotalSeconds
-        let tNow = DateTime.Now
-        let maxGen = GC.MaxGeneration
-        let gcNow = [| for i in 0..maxGen -> GC.CollectionCount i |]
-        let wsNow = p.WorkingSet64 / 1000000L
+    fun (tcConfig: TcConfig) descr ->
+        nPrev
+        |> Option.iter (fun (prevDescr, prevAct) ->
+            use _ = prevAct
 
-        let tStart =
-            match tPrev, nPrev with
-            | Some (tStart, tPrev, utPrev, gcPrev), Some (prevDescr, prevActivity) ->
-                let spanGC = [| for i in 0..maxGen -> GC.CollectionCount i - gcPrev[i] |]
-                let t = tNow - tStart
-                let tDelta = tNow - tPrev
-                let utDelta = utNow - utPrev
+            if tcConfig.pause then
+                dprintf "[done '%s', entering '%s'] press <enter> to continue... " prevDescr descr
+                Console.ReadLine() |> ignore
+            // Intentionally putting this right after the pause so a debugger can be attached.
+            SimulateException tcConfig.simulateException)
 
-                match prevActivity with
-                | :? System.Diagnostics.Activity as a when isNotNull a ->
-                    // Yes, there is duplicity of code between the console reporting and Activity collection right now.
-                    // If current --times behaviour can be changed (=breaking change to the layout etc.), the GC and CPU time collecting logic can move to Activity
-                    // (if a special Tag is set for an activity, the listener itself could evaluate CPU and GC info and set it
-                    a.AddTag(Activity.Tags.gc0, spanGC[Operators.min 0 maxGen]) |> ignore
-                    a.AddTag(Activity.Tags.gc1, spanGC[Operators.min 1 maxGen]) |> ignore
-                    a.AddTag(Activity.Tags.gc2, spanGC[Operators.min 2 maxGen]) |> ignore
-
-                    a.AddTag(Activity.Tags.outputDllFile, tcConfig.outputFile |> Option.defaultValue String.Empty)
-                    |> ignore
-
-                    a.AddTag(Activity.Tags.cpuDelta, utDelta.ToString("000.000")) |> ignore
-
-                    a.AddTag(Activity.Tags.realDelta, tDelta.TotalSeconds.ToString("000.000"))
-                    |> ignore
-                | _ -> ()
-
-                printf
-                    "Real: %4.1f Realdelta: %4.1f Cpu: %4.1f Cpudelta: %4.1f Mem: %3d"
-                    t.TotalSeconds
-                    tDelta.TotalSeconds
-                    utNow
-                    utDelta
-                    wsNow
-
-                printfn
-                    " G0: %3d G1: %2d G2: %2d [%s]"
-                    spanGC[Operators.min 0 maxGen]
-                    spanGC[Operators.min 1 maxGen]
-                    spanGC[Operators.min 2 maxGen]
-                    prevDescr
-
-                tStart
-
-            | _ -> DateTime.Now
-
-        tPrev <- Some(tStart, tNow, utNow, gcNow)
-
-    nPrev
-    |> Option.iter (fun (_, act) ->
-        if isNotNull act then
-            act.Dispose())
-
-    nPrev <- Some(descr, Activity.startNoTags descr)
+        if descr <> "Exiting" then
+            nPrev <- Some(descr, Activity.Profiling.startAndMeasureEnvironmentStats descr)
+        else
+            nPrev <- None
 
 let ignoreFailureOnMono1_1_16 f =
     try

@@ -315,3 +315,73 @@ type X =
         assertRange (7, 20) (7, 24) mWith
         assertRange (8, 32) (8, 35) mGet
     | _ -> Assert.Fail "Could not get valid AST"
+
+[<Test>]
+let ``Member with inline keyword`` () =
+    let parseResults = 
+        getParseResults
+            """
+type X =
+    member inline x.Y () = ()
+"""
+
+    match parseResults with
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+        SynModuleDecl.Types(
+            typeDefns = [ SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [
+                SynMemberDefn.Member(memberDefn = SynBinding(trivia = { InlineKeyword = Some mInline }))
+            ])) ]
+        )
+    ]) ])) ->
+        assertRange (3, 11) (3, 17) mInline
+    | ast -> Assert.Fail $"Could not get valid AST, got {ast}"
+
+[<Test>]
+let ``Get/Set member with inline keyword`` () =
+    let parseResults = 
+        getParseResults
+            """
+type X =
+    member inline x.Y 
+        with inline get () = 4
+        and inline set y = ()
+"""
+
+    match parseResults with
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+        SynModuleDecl.Types(
+            typeDefns = [ SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [
+                SynMemberDefn.GetSetMember(Some (SynBinding(trivia = { InlineKeyword = Some mInlineGet })),
+                                           Some (SynBinding(trivia = { InlineKeyword = Some mInlineSet })),
+                                           _,
+                                           { InlineKeyword = Some mInlineGetSetMember })
+            ])) ]
+        )
+    ]) ])) ->
+        assertRange (3, 11) (3, 17) mInlineGetSetMember
+        assertRange (4, 13) (4, 19) mInlineGet
+        assertRange (5, 12) (5, 18) mInlineSet
+    | ast -> Assert.Fail $"Could not get valid AST, got {ast}"
+
+[<Test>]
+let ``ImplicitCtor with as keyword`` () =
+    let parseResults = 
+        getParseResults
+            """
+type internal CompilerStateCache(readAllBytes: string -> byte[], projectOptions: FSharpProjectOptions)
+//#if !NO_TYPEPROVIDERS
+    as this =
+//#else
+//     =
+// #endif
+    class end
+"""
+
+    match parseResults with
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+        SynModuleDecl.Types(
+            typeDefns = [ SynTypeDefn(implicitConstructor = Some (SynMemberDefn.ImplicitCtor(trivia = { AsKeyword = Some mAs }))) ]
+        )
+    ]) ])) ->
+        assertRange (4, 4) (4, 6) mAs
+    | ast -> Assert.Fail $"Could not get valid AST, got {ast}"

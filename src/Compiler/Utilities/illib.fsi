@@ -48,7 +48,7 @@ module internal PervasiveAutoOpens =
     /// We set the limit to be 80k to account for larger pointer sizes for when F# is running 64-bit.
     val LOH_SIZE_THRESHOLD_BYTES: int
 
-    val reportTime: (bool -> string -> unit)
+    val reportTime: (string -> unit)
 
     /// Get an initialization hole
     val getHole: r: 'a option ref -> 'a
@@ -437,6 +437,17 @@ type internal MemoizationTable<'T, 'U> =
         compute: ('T -> 'U) * keyComparer: IEqualityComparer<'T> * ?canMemoize: ('T -> bool) -> MemoizationTable<'T, 'U>
 
     member Apply: x: 'T -> 'U
+
+/// A thread-safe lookup table which is assigning an auto-increment stamp with each insert
+type internal StampedDictionary<'T, 'U> =
+
+    new: keyComparer: IEqualityComparer<'T> -> StampedDictionary<'T, 'U>
+
+    member Add: key: 'T * value: 'U -> unit
+
+    member UpdateIfExists: key: 'T * valueReplaceFunc: ('U -> 'U option) -> unit
+
+    member GetAll: unit -> seq<'T * (int * 'U)>
 
 exception internal UndefinedException
 
