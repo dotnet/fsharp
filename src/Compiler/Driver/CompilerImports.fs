@@ -1096,11 +1096,11 @@ and [<Sealed>] TcImports
         initialResolutions: TcAssemblyResolutions,
         importsBase: TcImports option,
         dependencyProviderOpt: DependencyProvider option
-    ) as this
+    ) as this =
+
 #if !NO_TYPEPROVIDERS
     ignore this
 #endif
- =
 
     let tciLock = TcImportsLock()
 
