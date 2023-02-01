@@ -237,27 +237,27 @@ let visitSynType (t: SynType) : FileContentEntry list =
         | SynType.LongIdent lid -> continuation (visitSynLongIdent lid)
         | SynType.App (typeName = typeName; typeArgs = typeArgs) ->
             let continuations = List.map visit (typeName :: typeArgs)
-            let finalContinuation = List.collect id >> continuation
+            let finalContinuation = List.concat >> continuation
             Continuation.sequence continuations finalContinuation
         | SynType.LongIdentApp (typeName = typeName; longDotId = longDotId; typeArgs = typeArgs) ->
             let continuations = List.map visit (typeName :: typeArgs)
 
             let finalContinuation nodes =
-                visitSynLongIdent longDotId @ List.collect id nodes |> continuation
+                visitSynLongIdent longDotId @ List.concat nodes |> continuation
 
             Continuation.sequence continuations finalContinuation
         | SynType.Tuple (path = path) ->
             let continuations = List.map visit (getTypeFromTuplePath path)
-            let finalContinuation = List.collect id >> continuation
+            let finalContinuation = List.concat >> continuation
             Continuation.sequence continuations finalContinuation
         | SynType.AnonRecd (fields = fields) ->
             let continuations = List.map (snd >> visit) fields
-            let finalContinuation = List.collect id >> continuation
+            let finalContinuation = List.concat >> continuation
             Continuation.sequence continuations finalContinuation
         | SynType.Array (elementType = elementType) -> visit elementType continuation
         | SynType.Fun (argType, returnType, _, _) ->
             let continuations = List.map visit [ argType; returnType ]
-            let finalContinuation = List.collect id >> continuation
+            let finalContinuation = List.concat >> continuation
             Continuation.sequence continuations finalContinuation
         | SynType.Var _ -> continuation []
         | SynType.Anon _ -> continuation []
@@ -269,14 +269,14 @@ let visitSynType (t: SynType) : FileContentEntry list =
         | SynType.StaticConstantExpr (expr, _) -> continuation (visitSynExpr expr)
         | SynType.StaticConstantNamed (ident, value, _) ->
             let continuations = List.map visit [ ident; value ]
-            let finalContinuation = List.collect id >> continuation
+            let finalContinuation = List.concat >> continuation
             Continuation.sequence continuations finalContinuation
         | SynType.Paren (innerType, _) -> visit innerType continuation
         | SynType.SignatureParameter (attributes = attributes; usedType = usedType) ->
             visit usedType (fun nodes -> [ yield! visitSynAttributes attributes; yield! nodes ] |> continuation)
         | SynType.Or (lhsType, rhsType, _, _) ->
             let continuations = List.map visit [ lhsType; rhsType ]
-            let finalContinuation = List.collect id >> continuation
+            let finalContinuation = List.concat >> continuation
             Continuation.sequence continuations finalContinuation
 
     visit t id
@@ -324,7 +324,7 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
             let continuations: ((FileContentEntry list -> FileContentEntry list) -> FileContentEntry list) list =
                 List.map visit exprs
 
-            let finalContinuation = List.collect id >> continuation
+            let finalContinuation = List.concat >> continuation
             Continuation.sequence continuations finalContinuation
         | SynExpr.AnonRecd (copyInfo = copyInfo; recordFields = recordFields) ->
             let continuations =
@@ -332,11 +332,11 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
                 | None -> List.map (fun (_, _, e) -> visit e) recordFields
                 | Some (cp, _) -> visit cp :: List.map (fun (_, _, e) -> visit e) recordFields
 
-            let finalContinuation = List.collect id >> continuation
+            let finalContinuation = List.concat >> continuation
             Continuation.sequence continuations finalContinuation
         | SynExpr.ArrayOrList (exprs = exprs) ->
             let continuations = List.map visit exprs
-            let finalContinuation = List.collect id >> continuation
+            let finalContinuation = List.concat >> continuation
             Continuation.sequence continuations finalContinuation
         | SynExpr.Record (baseInfo = baseInfo; copyInfo = copyInfo; recordFields = recordFields) ->
             let fieldNodes =
@@ -363,7 +363,7 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
             visit whileExpr (fun whileNodes -> visit doExpr (fun doNodes -> whileNodes @ doNodes |> continuation))
         | SynExpr.For (identBody = identBody; toBody = toBody; doBody = doBody) ->
             let continuations = List.map visit [ identBody; toBody; doBody ]
-            let finalContinuation = List.collect id >> continuation
+            let finalContinuation = List.concat >> continuation
             Continuation.sequence continuations finalContinuation
         | SynExpr.ForEach (pat = pat; enumExpr = enumExpr; bodyExpr = bodyExpr) ->
             visit enumExpr (fun enumNodes ->
@@ -400,7 +400,7 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
             visit expr1 (fun nodes1 -> visit expr2 (fun nodes2 -> nodes1 @ nodes2 |> continuation))
         | SynExpr.IfThenElse (ifExpr = ifExpr; thenExpr = thenExpr; elseExpr = elseExpr) ->
             let continuations = List.map visit (ifExpr :: thenExpr :: Option.toList elseExpr)
-            let finalContinuation = List.collect id >> continuation
+            let finalContinuation = List.concat >> continuation
             Continuation.sequence continuations finalContinuation
         | SynExpr.Typar _ -> continuation []
         | SynExpr.Ident _ -> continuation []
@@ -415,15 +415,15 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
                     |> continuation))
         | SynExpr.Set (targetExpr, rhsExpr, _) ->
             let continuations = List.map visit [ targetExpr; rhsExpr ]
-            let finalContinuation = List.collect id >> continuation
+            let finalContinuation = List.concat >> continuation
             Continuation.sequence continuations finalContinuation
         | SynExpr.DotIndexedGet (objectExpr, indexArgs, _, _) ->
             let continuations = List.map visit [ objectExpr; indexArgs ]
-            let finalContinuation = List.collect id >> continuation
+            let finalContinuation = List.concat >> continuation
             Continuation.sequence continuations finalContinuation
         | SynExpr.DotIndexedSet (objectExpr, indexArgs, valueExpr, _, _, _) ->
             let continuations = List.map visit [ objectExpr; indexArgs; valueExpr ]
-            let finalContinuation = List.collect id >> continuation
+            let finalContinuation = List.concat >> continuation
             Continuation.sequence continuations finalContinuation
         | SynExpr.NamedIndexedPropertySet (longDotId, expr1, expr2, _) ->
             visit expr1 (fun nodes1 ->
@@ -434,7 +434,7 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
             let continuations = List.map visit [ targetExpr; argExpr; rhsExpr ]
 
             let finalContinuation nodes =
-                visitSynLongIdent longDotId @ List.collect id nodes |> continuation
+                visitSynLongIdent longDotId @ List.concat nodes |> continuation
 
             Continuation.sequence continuations finalContinuation
         | SynExpr.TypeTest (expr, targetType, _) -> visit expr (fun nodes -> nodes @ visitSynType targetType |> continuation)
@@ -454,12 +454,12 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
                 |> continuation)
         | SynExpr.JoinIn (lhsExpr, _, rhsExpr, _) ->
             let continuations = List.map visit [ lhsExpr; rhsExpr ]
-            let finalContinuation = List.collect id >> continuation
+            let finalContinuation = List.concat >> continuation
             Continuation.sequence continuations finalContinuation
         | SynExpr.ImplicitZero _ -> continuation []
         | SynExpr.SequentialOrImplicitYield (_, expr1, expr2, _, _) ->
             let continuations = List.map visit [ expr1; expr2 ]
-            let finalContinuation = List.collect id >> continuation
+            let finalContinuation = List.concat >> continuation
             Continuation.sequence continuations finalContinuation
         | SynExpr.YieldOrReturn (expr = expr) -> visit expr continuation
         | SynExpr.YieldOrReturnFrom (expr = expr) -> visit expr continuation
@@ -470,7 +470,7 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
 
             let finalContinuation nodes =
                 [
-                    yield! List.collect id nodes
+                    yield! List.concat nodes
                     yield! visitPat pat
                     yield! List.collect (fun (SynExprAndBang (pat = pat)) -> visitPat pat) andBangs
                 ]
@@ -487,7 +487,7 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
             let continuations = List.map visit args
 
             let finalContinuation nodes =
-                List.collect id nodes @ typeNodes |> continuation
+                List.concat nodes @ typeNodes |> continuation
 
             Continuation.sequence continuations finalContinuation
         | SynExpr.LibraryOnlyStaticOptimization (constraints, expr, optimizedExpr, _) ->
@@ -524,12 +524,12 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
                         | SynInterpolatedStringPart.String _ -> None)
                         contents)
 
-            let finalContinuation = List.collect id >> continuation
+            let finalContinuation = List.concat >> continuation
             Continuation.sequence continuations finalContinuation
         | SynExpr.DebugPoint _ -> continuation []
         | SynExpr.Dynamic (funcExpr, _, argExpr, _) ->
             let continuations = List.map visit [ funcExpr; argExpr ]
-            let finalContinuation = List.collect id >> continuation
+            let finalContinuation = List.concat >> continuation
             Continuation.sequence continuations finalContinuation
 
     visit e id
@@ -545,19 +545,19 @@ let visitPat (p: SynPat) : FileContentEntry list =
         | SynPat.Attrib (pat, attributes, _) -> visit pat (fun nodes -> visitSynAttributes attributes @ nodes |> continuation)
         | SynPat.Or (lhsPat, rhsPat, _, _) ->
             let continuations = List.map visit [ lhsPat; rhsPat ]
-            let finalContinuation = List.collect id >> continuation
+            let finalContinuation = List.concat >> continuation
             Continuation.sequence continuations finalContinuation
         | SynPat.ListCons (lhsPat, rhsPat, _, _) ->
             let continuations = List.map visit [ lhsPat; rhsPat ]
-            let finalContinuation = List.collect id >> continuation
+            let finalContinuation = List.concat >> continuation
             Continuation.sequence continuations finalContinuation
         | SynPat.Ands (pats, _) ->
             let continuations = List.map visit pats
-            let finalContinuation = List.collect id >> continuation
+            let finalContinuation = List.concat >> continuation
             Continuation.sequence continuations finalContinuation
         | SynPat.As (lhsPat, rhsPat, _) ->
             let continuations = List.map visit [ lhsPat; rhsPat ]
-            let finalContinuation = List.collect id >> continuation
+            let finalContinuation = List.concat >> continuation
             Continuation.sequence continuations finalContinuation
         | SynPat.LongIdent (longDotId = longDotId; typarDecls = typarDecls; argPats = argPats) ->
             continuation
@@ -568,11 +568,11 @@ let visitPat (p: SynPat) : FileContentEntry list =
                 ]
         | SynPat.Tuple (_, elementPats, _) ->
             let continuations = List.map visit elementPats
-            let finalContinuation = List.collect id >> continuation
+            let finalContinuation = List.concat >> continuation
             Continuation.sequence continuations finalContinuation
         | SynPat.ArrayOrList (_, elementPats, _) ->
             let continuations = List.map visit elementPats
-            let finalContinuation = List.collect id >> continuation
+            let finalContinuation = List.concat >> continuation
             Continuation.sequence continuations finalContinuation
         | SynPat.Record (fieldPats, _) ->
             let pats = List.map (fun (_, _, p) -> p) fieldPats
@@ -580,7 +580,7 @@ let visitPat (p: SynPat) : FileContentEntry list =
             let continuations = List.map visit pats
 
             let finalContinuation nodes =
-                [ yield! List.collect id nodes; yield! lids ] |> continuation
+                [ yield! List.concat nodes; yield! lids ] |> continuation
 
             Continuation.sequence continuations finalContinuation
         | SynPat.Null _ -> continuation []
