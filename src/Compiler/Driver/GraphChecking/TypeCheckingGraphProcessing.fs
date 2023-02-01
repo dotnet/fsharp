@@ -89,15 +89,14 @@ let processTypeCheckingGraph<'Item, 'ChosenItem, 'State, 'FinalFileResult when '
     let results = processGraph graph workWrapper ct
 
     let finalFileResults, state: ('ChosenItem * 'FinalFileResult) list * 'State =
-        results
-        |> Array.choose (fun (item, res) ->
-            match finalStateChooser item with
-            | Some item -> Some(item, res)
-            | None -> None)
-        |> Array.fold
-            (fun (fileResults, state) (item, (_, itemRes)) ->
-                let fileResult, state = folder state itemRes
-                (item, fileResult) :: fileResults, state)
-            ([], emptyState)
+        (([], emptyState),
+         results
+         |> Array.choose (fun (item, res) ->
+             match finalStateChooser item with
+             | Some item -> Some(item, res)
+             | None -> None))
+        ||> Array.fold (fun (fileResults, state) (item, (_, itemRes)) ->
+            let fileResult, state = folder state itemRes
+            (item, fileResult) :: fileResults, state)
 
     finalFileResults, state
