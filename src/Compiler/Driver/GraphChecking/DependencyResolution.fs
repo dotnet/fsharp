@@ -117,7 +117,7 @@ let filesInTrie (node: TrieNode) : Set<FileIndex> =
             ]
 
         let finalContinuation indexes =
-            continuation [ yield! node.Files; yield! List.collect id indexes ]
+            continuation [ yield! node.Files; yield! List.concat indexes ]
 
         Continuation.sequence continuations finalContinuation
 
