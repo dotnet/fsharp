@@ -901,7 +901,7 @@ module SyntaxTraversal =
                     traverseSynBinding path getBinding
                     |> Option.orElseWith (fun () -> traverseSynBinding path setBinding)
 
-            | SynMemberDefn.ImplicitCtor (_synAccessOption, _synAttributes, simplePats, _identOption, _doc, _range) ->
+            | SynMemberDefn.ImplicitCtor (ctorArgs = simplePats) ->
                 match simplePats with
                 | SynSimplePats.SimplePats (simplePats, _) -> visitor.VisitSimplePats(path, simplePats)
                 | _ -> None
