@@ -85,7 +85,7 @@ let rec processStateEntry (queryTrie: QueryTrie) (state: FileContentQueryState) 
             // should not be possible though
             state
         | _ ->
-            // path could consist out of multiple segments
+            // path could consist of multiple segments
             (state, [| 1 .. path.Length |])
             ||> Array.fold (fun state takeParts ->
                 let path = List.take takeParts path
@@ -220,26 +220,22 @@ let mkGraph (compilingFSharpCore: bool) (filePairs: FilePairMap) (files: FileInP
 
         // Files in FSharp.Core have an implicit dependency on `prim-types-prelude.fsi` - add it.
         let fsharpCoreImplicitDependencies =
-            if not compilingFSharpCore then
-                Array.empty
-            else
-                let filename = "prim-types-prelude.fsi"
+            let filename = "prim-types-prelude.fsi"
 
-                let implicitDepIdx =
-                    files
-                    |> Array.tryFindIndex (fun f -> System.IO.Path.GetFileName(f.FileName) = filename)
+            let implicitDepIdx =
+                files
+                |> Array.tryFindIndex (fun f -> System.IO.Path.GetFileName(f.FileName) = filename)
 
-                match implicitDepIdx with
-                | Some idx ->
-                    let idx = idx
-
-                    [|
+            [|
+                if compilingFSharpCore then
+                    match implicitDepIdx with
+                    | Some idx ->
                         if file.Idx > idx then
                             yield idx
-                    |]
-                | None ->
-                    exn $"Expected to find file '{filename}' during compilation of FSharp.Core, but it was not found."
-                    |> raise
+                    | None ->
+                        exn $"Expected to find file '{filename}' during compilation of FSharp.Core, but it was not found."
+                        |> raise
+            |]
 
         let allDependencies =
             [|
