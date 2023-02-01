@@ -29,7 +29,7 @@ type internal FSharpGoToDefinitionService
         /// Invoked with Peek Definition.
         member _.FindDefinitionsAsync (document: Document, position: int, cancellationToken: CancellationToken) =
             let navigation = FSharpNavigation(statusBar, metadataAsSource, document, rangeStartup)
-            navigation.FindDefinitions(position, cancellationToken)
+            navigation.FindDefinitions(position, cancellationToken) |> Task.FromResult
 
         /// Invoked with Go to Definition.
         /// Try to navigate to the definiton of the symbol at the symbolRange in the originDocument
