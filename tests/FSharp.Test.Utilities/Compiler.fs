@@ -244,7 +244,7 @@ module rec Compiler =
     let private getWarnings diagnostics = diagnostics |> List.filter (fun e -> match e.Error with Warning _ -> true | _ -> false)
 
     let private adjustRange (range: Range) (adjust: int) : Range =
-        { range with
+        {
                 StartLine   = range.StartLine   - adjust
                 StartColumn = range.StartColumn + 1
                 EndLine     = range.EndLine     - adjust

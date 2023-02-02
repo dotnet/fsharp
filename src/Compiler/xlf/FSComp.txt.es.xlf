@@ -387,6 +387,11 @@
         <target state="translated">representación de struct para modelos activos</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
+        <source>Raises warnings when an copy-and-update record expression changes all fields of a record.</source>
+        <target state="new">Raises warnings when an copy-and-update record expression changes all fields of a record.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
         <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
         <target state="translated">Genera advertencias cuando se usa "let inline ... =" junto con el atributo [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;]. La función no se está insertando.</target>
@@ -875,6 +880,11 @@
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
         <target state="translated">Los atributos no se pueden aplicar a las extensiones de tipo.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">
+        <source>This copy-and-update record expression changes all fields of record type '{0}'. Consider using the record construction syntax instead.</source>
+        <target state="new">This copy-and-update record expression changes all fields of record type '{0}'. Consider using the record construction syntax instead.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">

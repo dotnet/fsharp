@@ -19,5 +19,5 @@ module Foo =
          |> compile
          |> shouldFail
          |> withDiagnostics [
-             (Warning 3560, Line 2, Col 6, Line 2, Col 38, "FSharp.Core.AutoOpenAttribute should not be aliased.");
+             (Warning 3561, Line 2, Col 6, Line 2, Col 38, "FSharp.Core.AutoOpenAttribute should not be aliased.");
          ]

@@ -725,7 +725,7 @@ module LeafExpressionConverter =
 
         | Patterns.NewDelegate(delegateTy, vs, b) ->
             let vsP = List.map ConvVarToLinq vs
-            let env = {env with varEnv = List.foldBack2 (fun (v:Var) vP -> Map.add v (vP |> asExpr)) vs vsP env.varEnv }
+            let env = { varEnv = List.foldBack2 (fun (v:Var) vP -> Map.add v (vP |> asExpr)) vs vsP env.varEnv }
             let bodyP = ConvExprToLinqInContext env b
             Expression.Lambda(delegateTy, bodyP, vsP) |> asExpr
 
@@ -768,7 +768,7 @@ module LeafExpressionConverter =
 
         | Patterns.Let (v, e, b) ->
             let vP = ConvVarToLinq v
-            let envinner = { env with varEnv = Map.add v (vP |> asExpr) env.varEnv }
+            let envinner = { varEnv = Map.add v (vP |> asExpr) env.varEnv }
             let bodyP = ConvExprToLinqInContext envinner b
             let eP = ConvExprToLinqInContext env e
             let ty = Expression.GetFuncType [| v.Type; b.Type |]
@@ -777,7 +777,7 @@ module LeafExpressionConverter =
 
         | Patterns.Lambda(v, body) ->
             let vP = ConvVarToLinq v
-            let env = { env with varEnv = Map.add v (vP |> asExpr) env.varEnv }
+            let env = { varEnv = Map.add v (vP |> asExpr) env.varEnv }
             let bodyP = ConvExprToLinqInContext env body
             let lambdaTy, tyargs =
                 if bodyP.Type = typeof<System.Void> then
