@@ -7,12 +7,12 @@
 .assembly extern System.Runtime
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 6:0:0:0
+  .ver 7:0:0:0
 }
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 6:0:0:0
+  .ver 7:0:0:0
 }
 .assembly Match01
 {
@@ -21,29 +21,29 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [System.Runtime]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 00 00 00 00 00 ) 
+  //  .custom instance void [System.Runtime]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 01 00 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.Match01
 {
-  // Offset: 0x00000000 Length: 0x00000737
+  // Offset: 0x00000000 Length: 0x00000724
   // WARNING: managed resource file FSharpSignatureData.Match01 created
 }
 .mresource public FSharpOptimizationData.Match01
 {
-  // Offset: 0x00000740 Length: 0x000003C3
+  // Offset: 0x00000728 Length: 0x000003C3
   // WARNING: managed resource file FSharpOptimizationData.Match01 created
 }
 .module Match01.exe
-// MVID: {628FBBC7-8C69-BAB4-A745-0383C7BB8F62}
+// MVID: {63DBF1DE-EAE4-B340-A745-0383DEF1DB63}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x000002362B810000
+// Image base: 0x000001C990360000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -628,7 +628,6 @@
             instance int32  CompareTo(class Match01/Test1 obj) cil managed
     {
       .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       24 (0x18)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -662,7 +661,6 @@
             instance int32  CompareTo(object obj) cil managed
     {
       .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       13 (0xd)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -677,7 +675,6 @@
                                       class [System.Runtime]System.Collections.IComparer comp) cil managed
     {
       .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       32 (0x20)
       .maxstack  6
       .locals init (class Match01/Test1 V_0)
@@ -712,7 +709,6 @@
             instance int32  GetHashCode(class [System.Runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       167 (0xa7)
       .maxstack  7
       .locals init (int32 V_0,
@@ -824,7 +820,6 @@
             instance int32  GetHashCode() cil managed
     {
       .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       12 (0xc)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -838,7 +833,6 @@
                                   class [System.Runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       209 (0xd1)
       .maxstack  4
       .locals init (class Match01/Test1 V_0,
@@ -948,7 +942,6 @@
             instance bool  Equals(class Match01/Test1 obj) cil managed
     {
       .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       200 (0xc8)
       .maxstack  4
       .locals init (int32 V_0,
@@ -1054,7 +1047,6 @@
             instance bool  Equals(object obj) cil managed
     {
       .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       20 (0x14)
       .maxstack  4
       .locals init (class Match01/Test1 V_0)
@@ -1110,12 +1102,47 @@
     } // end of property Test1::IsX14
   } // end of class Test1
 
+  .method public static int32  select1(class Match01/Test1 x) cil managed
+  {
+    // Code size       46 (0x2e)
+    .maxstack  8
+    IL_0000:  nop
+    IL_0001:  ldarg.0
+    IL_0002:  call       instance int32 Match01/Test1::get_Tag()
+    IL_0007:  switch     ( 
+                          IL_001c,
+                          IL_0028,
+                          IL_002a,
+                          IL_002c)
+    IL_001c:  ldarg.0
+    IL_001d:  castclass  Match01/Test1/X11
+    IL_0022:  ldfld      int32 Match01/Test1/X11::item
+    IL_0027:  ret
+
+    IL_0028:  ldc.i4.2
+    IL_0029:  ret
+
+    IL_002a:  ldc.i4.3
+    IL_002b:  ret
+
+    IL_002c:  ldc.i4.4
+    IL_002d:  ret
+  } // end of method Match01::select1
+
+  .method public static int32  fm(class Match01/Test1 y) cil managed
+  {
+    // Code size       7 (0x7)
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  call       int32 Match01::select1(class Match01/Test1)
+    IL_0006:  ret
+  } // end of method Match01::fm
+
   .method assembly static int32  CompareTo$cont@4(class Match01/Test1 this,
                                                   class Match01/Test1 obj,
                                                   class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
   {
     .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
     // Code size       268 (0x10c)
     .maxstack  5
     .locals init (int32 V_0,
@@ -1252,7 +1279,6 @@
                                                       class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
   {
     .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
     // Code size       253 (0xfd)
     .maxstack  5
     .locals init (int32 V_0,
@@ -1381,42 +1407,6 @@
     IL_00fc:  ret
   } // end of method Match01::'CompareTo$cont@4-1'
 
-  .method public static int32  select1(class Match01/Test1 x) cil managed
-  {
-    // Code size       46 (0x2e)
-    .maxstack  8
-    IL_0000:  nop
-    IL_0001:  ldarg.0
-    IL_0002:  call       instance int32 Match01/Test1::get_Tag()
-    IL_0007:  switch     ( 
-                          IL_001c,
-                          IL_0028,
-                          IL_002a,
-                          IL_002c)
-    IL_001c:  ldarg.0
-    IL_001d:  castclass  Match01/Test1/X11
-    IL_0022:  ldfld      int32 Match01/Test1/X11::item
-    IL_0027:  ret
-
-    IL_0028:  ldc.i4.2
-    IL_0029:  ret
-
-    IL_002a:  ldc.i4.3
-    IL_002b:  ret
-
-    IL_002c:  ldc.i4.4
-    IL_002d:  ret
-  } // end of method Match01::select1
-
-  .method public static int32  fm(class Match01/Test1 y) cil managed
-  {
-    // Code size       7 (0x7)
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  call       int32 Match01::select1(class Match01/Test1)
-    IL_0006:  ret
-  } // end of method Match01::fm
-
 } // end of class Match01
 
 .class private abstract auto ansi sealed '<StartupCode$Match01>'.$Match01
@@ -1436,4 +1426,4 @@
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
-// WARNING: Created Win32 resource file C:\Users\vzari\code\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Release\net6.0\tests\EmittedIL\Inlining\Match01_fs\Match01.res
+// WARNING: Created Win32 resource file D:\code\FS\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Release\net7.0\tests\EmittedIL\Inlining\Match01_fs\Match01.res

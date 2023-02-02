@@ -7,12 +7,12 @@
 .assembly extern System.Runtime
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 6:0:0:0
+  .ver 7:0:0:0
 }
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 6:0:0:0
+  .ver 7:0:0:0
 }
 .assembly Verify13043
 {
@@ -21,29 +21,29 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [System.Runtime]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 01 00 00 00 00 ) 
+  //  .custom instance void [System.Runtime]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 01 01 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.Verify13043
 {
-  // Offset: 0x00000000 Length: 0x00000374
+  // Offset: 0x00000000 Length: 0x0000036A
   // WARNING: managed resource file FSharpSignatureData.Verify13043 created
 }
 .mresource public FSharpOptimizationData.Verify13043
 {
-  // Offset: 0x00000378 Length: 0x000000F1
+  // Offset: 0x00000370 Length: 0x000000F1
   // WARNING: managed resource file FSharpOptimizationData.Verify13043 created
 }
 .module Verify13043.exe
-// MVID: {626FF6A4-9119-C695-A745-0383A4F66F62}
+// MVID: {63DBF1DE-776B-082B-A745-0383DEF1DB63}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00BF0000
+// Image base: 0x000001C8DD240000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -52,6 +52,82 @@
        extends [System.Runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+  .class auto ansi serializable sealed nested assembly beforefieldinit matchResult@38
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>
+  {
+    .field static assembly initonly class Verify13043/matchResult@38 @_instance
+    .method assembly specialname rtspecialname 
+            instance void  .ctor() cil managed
+    {
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      // Code size       7 (0x7)
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>::.ctor()
+      IL_0006:  ret
+    } // end of method matchResult@38::.ctor
+
+    .method public strict virtual instance bool 
+            Invoke(int32 n) cil managed
+    {
+      // Code size       7 (0x7)
+      .maxstack  8
+      IL_0000:  ldarg.1
+      IL_0001:  call       bool Verify13043::condition(int32)
+      IL_0006:  ret
+    } // end of method matchResult@38::Invoke
+
+    .method private specialname rtspecialname static 
+            void  .cctor() cil managed
+    {
+      // Code size       11 (0xb)
+      .maxstack  10
+      IL_0000:  newobj     instance void Verify13043/matchResult@38::.ctor()
+      IL_0005:  stsfld     class Verify13043/matchResult@38 Verify13043/matchResult@38::@_instance
+      IL_000a:  ret
+    } // end of method matchResult@38::.cctor
+
+  } // end of class matchResult@38
+
+  .class auto ansi serializable sealed nested assembly beforefieldinit functionResult@43
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>
+  {
+    .field static assembly initonly class Verify13043/functionResult@43 @_instance
+    .method assembly specialname rtspecialname 
+            instance void  .ctor() cil managed
+    {
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      // Code size       7 (0x7)
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>::.ctor()
+      IL_0006:  ret
+    } // end of method functionResult@43::.ctor
+
+    .method public strict virtual instance bool 
+            Invoke(int32 n) cil managed
+    {
+      // Code size       7 (0x7)
+      .maxstack  8
+      IL_0000:  ldarg.1
+      IL_0001:  call       bool Verify13043::condition(int32)
+      IL_0006:  ret
+    } // end of method functionResult@43::Invoke
+
+    .method private specialname rtspecialname static 
+            void  .cctor() cil managed
+    {
+      // Code size       11 (0xb)
+      .maxstack  10
+      IL_0000:  newobj     instance void Verify13043/functionResult@43::.ctor()
+      IL_0005:  stsfld     class Verify13043/functionResult@43 Verify13043/functionResult@43::@_instance
+      IL_000a:  ret
+    } // end of method functionResult@43::.cctor
+
+  } // end of class functionResult@43
+
   .class auto ansi serializable sealed nested assembly beforefieldinit f@8
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>>
   {
@@ -185,82 +261,6 @@
     } // end of method 'f@27-1'::Invoke
 
   } // end of class 'f@27-1'
-
-  .class auto ansi serializable sealed nested assembly beforefieldinit matchResult@38
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>
-  {
-    .field static assembly initonly class Verify13043/matchResult@38 @_instance
-    .method assembly specialname rtspecialname 
-            instance void  .ctor() cil managed
-    {
-      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       7 (0x7)
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>::.ctor()
-      IL_0006:  ret
-    } // end of method matchResult@38::.ctor
-
-    .method public strict virtual instance bool 
-            Invoke(int32 n) cil managed
-    {
-      // Code size       7 (0x7)
-      .maxstack  8
-      IL_0000:  ldarg.1
-      IL_0001:  call       bool Verify13043::condition(int32)
-      IL_0006:  ret
-    } // end of method matchResult@38::Invoke
-
-    .method private specialname rtspecialname static 
-            void  .cctor() cil managed
-    {
-      // Code size       11 (0xb)
-      .maxstack  10
-      IL_0000:  newobj     instance void Verify13043/matchResult@38::.ctor()
-      IL_0005:  stsfld     class Verify13043/matchResult@38 Verify13043/matchResult@38::@_instance
-      IL_000a:  ret
-    } // end of method matchResult@38::.cctor
-
-  } // end of class matchResult@38
-
-  .class auto ansi serializable sealed nested assembly beforefieldinit functionResult@43
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>
-  {
-    .field static assembly initonly class Verify13043/functionResult@43 @_instance
-    .method assembly specialname rtspecialname 
-            instance void  .ctor() cil managed
-    {
-      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       7 (0x7)
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>::.ctor()
-      IL_0006:  ret
-    } // end of method functionResult@43::.ctor
-
-    .method public strict virtual instance bool 
-            Invoke(int32 n) cil managed
-    {
-      // Code size       7 (0x7)
-      .maxstack  8
-      IL_0000:  ldarg.1
-      IL_0001:  call       bool Verify13043::condition(int32)
-      IL_0006:  ret
-    } // end of method functionResult@43::Invoke
-
-    .method private specialname rtspecialname static 
-            void  .cctor() cil managed
-    {
-      // Code size       11 (0xb)
-      .maxstack  10
-      IL_0000:  newobj     instance void Verify13043/functionResult@43::.ctor()
-      IL_0005:  stsfld     class Verify13043/functionResult@43 Verify13043/functionResult@43::@_instance
-      IL_000a:  ret
-    } // end of method functionResult@43::.cctor
-
-  } // end of class functionResult@43
 
   .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 
           get_list() cil managed
@@ -424,4 +424,4 @@
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
-// WARNING: Created Win32 resource file C:\GitHub\dsyme\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Release\net6.0\tests\EmittedIL\TestFunctions\Verify13043_il\Verify13043.res
+// WARNING: Created Win32 resource file D:\code\FS\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Release\net7.0\tests\EmittedIL\TestFunctions\Verify13043_il\Verify13043.res
