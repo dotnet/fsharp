@@ -51,6 +51,7 @@ type LanguageFeature =
     | EscapeDotnetFormattableStrings
     | ArithmeticInLiterals
     | ErrorReportingOnStaticClasses
+    | WarningWhenCopyAndUpdateRecordChangesAllFields
 
 /// LanguageVersion management
 type LanguageVersion =
