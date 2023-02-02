@@ -387,11 +387,19 @@
         <target state="translated">現用模式的結構表示法</target>
         <note />
       </trans-unit>
+      
+      <trans-unit id="featureTryWithInSeqExpressions">
+        <source>Support for try-with in sequence expressions</source>
+        <target state="new">Support for try-with in sequence expressions</target>
+        <note />
+      </trans-unit>
+
       <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
         <source>Raises warnings when an copy-and-update record expression changes all fields of a record.</source>
         <target state="new">Raises warnings when an copy-and-update record expression changes all fields of a record.</target>
         <note />
       </trans-unit>
+      
       <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
         <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
         <target state="translated">當 'let inline ... =' 與 [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] 屬性一起使用時引發警告。函數未內嵌。</target>

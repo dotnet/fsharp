@@ -788,11 +788,8 @@ module rec Compiler =
 
     let compileExeAndRun = asExe >> compileAndRun
 
-    let private evalFSharp (fs: FSharpCompilationSource) : CompilationResult =
+    let private evalFSharp (fs: FSharpCompilationSource) (script:FSharpScript) : CompilationResult =
         let source = fs.Source.GetSourceText |> Option.defaultValue ""
-        let options = fs.Options |> Array.ofList
-
-        use script = new FSharpScript(additionalArgs=options)
         let (evalResult: Result<FsiValue option, exn>), (err: FSharpDiagnostic[]) = script.Eval(source)
         let diagnostics = err |> fromFSharpDiagnostic
         let result =
@@ -812,7 +809,17 @@ module rec Compiler =
 
     let eval (cUnit: CompilationUnit) : CompilationResult =
         match cUnit with
-        | FS fs -> evalFSharp fs
+        | FS fs -> 
+            let options = fs.Options |> Array.ofList
+            use script = new FSharpScript(additionalArgs=options)
+            evalFSharp fs script
+        | _ -> failwith "Script evaluation is only supported for F#."
+
+    let getSessionForEval () = new FSharpScript()
+
+    let evalInSharedSession (script:FSharpScript) (cUnit: CompilationUnit)  : CompilationResult =
+        match cUnit with
+        | FS fs -> evalFSharp fs script
         | _ -> failwith "Script evaluation is only supported for F#."
 
     let runFsi (cUnit: CompilationUnit) : CompilationResult =
@@ -1176,6 +1183,10 @@ module rec Compiler =
                       match r.Output with
                       | Some (ExecutionOutput output) ->
                           sprintf "----output-----\n%s\n----error-------\n%s\n----------" output.StdOut output.StdErr
+                      | Some (EvalOutput (Result.Error exn) ) -> 
+                          sprintf "----script error-----\n%s\n----------" (exn.ToString())
+                      | Some (EvalOutput (Result.Ok fsiVal) ) -> 
+                          sprintf "----script output-----\n%A\n----------" (fsiVal)                   
                       | _ -> () ]
                     |> String.concat "\n"
                 failwith message
