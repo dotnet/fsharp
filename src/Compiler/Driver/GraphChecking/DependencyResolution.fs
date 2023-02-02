@@ -1,5 +1,6 @@
 ﻿module internal FSharp.Compiler.GraphChecking.DependencyResolution
 
+open FSharp.Compiler.IO
 open FSharp.Compiler.Syntax
 
 /// <summary>Find a path in the Trie.</summary>
@@ -221,7 +222,7 @@ let mkGraph (compilingFSharpCore: bool) (filePairs: FilePairMap) (files: FileInP
 
             let implicitDepIdx =
                 files
-                |> Array.tryFindIndex (fun f -> System.IO.Path.GetFileName(f.FileName) = filename)
+                |> Array.tryFindIndex (fun f -> FileSystemUtils.fileNameOfPath f.FileName = filename)
 
             [|
                 if compilingFSharpCore then
