@@ -11,7 +11,7 @@ open FSharp.Compiler.IO
 type internal Graph<'Node> = IReadOnlyDictionary<'Node, 'Node[]>
 
 module internal Graph =
-    let make (nodeDeps: ('Node * 'Node[]) seq) = nodeDeps |> readOnlyDict
+    let make (nodeDeps: ('Node * 'Node array) seq) = nodeDeps |> readOnlyDict
 
     let map (f: 'T -> 'U) (graph: Graph<'T>) : Graph<'U> =
         graph
