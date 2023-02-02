@@ -313,169 +313,175 @@ let parseFormatStringInternal
     and parseSpecifier acc (i, fragLine, fragCol) fragments =
         let startFragCol = fragCol
         let fragCol = fragCol+1
-        let i = i+1
-        if i >= len then failwith (FSComp.SR.forMissingFormatSpecifier())
-        let info = newInfo()
-
-        let oldI = i
-        let posi, i = Parsing.position fmt i
-        let fragCol = fragCol + i - oldI
-
-        let oldI = i
-        let i = Parsing.flags info fmt i
-        let fragCol = fragCol + i - oldI
-
-        let oldI = i
-        let widthArg,(widthValue, (precisionArg,i)) = Parsing.widthAndPrecision info fmt i
-        let fragCol = fragCol + i - oldI
-
-        if i >= len then failwith (FSComp.SR.forBadPrecision())
-
-        let acc = if precisionArg then (Option.map ((+)1) posi, g.int_ty) :: acc else acc
-
-        let acc = if widthArg then (Option.map ((+)1) posi, g.int_ty) :: acc else acc
-
-        let checkOtherFlags c =
-            if info.precision then failwith (FSComp.SR.forFormatDoesntSupportPrecision(c.ToString()))
-            if info.addZeros then failwith (FSComp.SR.forDoesNotSupportZeroFlag(c.ToString()))
-            match info.numPrefixIfPos with
-            | Some n -> failwith (FSComp.SR.forDoesNotSupportPrefixFlag(c.ToString(), n.ToString()))
-            | None -> ()
-
-        let skipPossibleInterpolationHole pos = Parsing.skipPossibleInterpolationHole isInterpolated isFormattableString fmt pos
-
-        // Implicitly typed holes in interpolated strings are translated to '... %P(...)...' in the
-        // type checker.  They should always have '(...)' after for format string.
-        let requireAndSkipInterpolationHoleFormat i =
-            if i < len && fmt[i] = '(' then
-                let i2 = fmt.IndexOf(")", i+1)
-                if i2 = -1 then
-                    failwith (FSComp.SR.forFormatInvalidForInterpolated3())
-                else
-                    let dotnetAlignment = match widthValue with None -> "" | Some w -> "," + (if info.leftJustify then "-" else "") + string w
-                    let dotnetNumberFormat = match fmt[i+1..i2-1] with "" -> "" | s -> ":" + s
-                    appendToDotnetFormatString ("{" + string dotnetFormatStringInterpolationHoleCount + dotnetAlignment  + dotnetNumberFormat + "}")
-                    dotnetFormatStringInterpolationHoleCount <- dotnetFormatStringInterpolationHoleCount + 1
-                    i2+1
-            else
-                failwith (FSComp.SR.forFormatInvalidForInterpolated3())
-
-        let collectSpecifierLocation fragLine fragCol numStdArgs =
+        if fmt[i..(i+1)] = "%%" then
             match context with
             | Some _ ->
-                let numArgsForSpecifier =
-                    numStdArgs + (if widthArg then 1 else 0) + (if precisionArg then 1 else 0)
                 specifierLocations.Add(
                     (Range.mkFileIndexRange m.FileIndex
                         (Position.mkPos fragLine startFragCol)
-                        (Position.mkPos fragLine (fragCol + 1))), numArgsForSpecifier)
+                        (Position.mkPos fragLine (fragCol + 1))), 0)
             | None -> ()
-
-        let ch = fmt[i]
-        match ch with
-        | '%' ->
-            collectSpecifierLocation fragLine fragCol 0
             appendToDotnetFormatString "%"
-            parseLoop acc (i+1, fragLine, fragCol+1) fragments
-
-        | 'd' | 'i' | 'u' | 'B' | 'o' | 'x' | 'X' ->
-            if ch = 'B' then DiagnosticsLogger.checkLanguageFeatureError g.langVersion Features.LanguageFeature.PrintfBinaryFormat m
-            if info.precision then failwith (FSComp.SR.forFormatDoesntSupportPrecision(ch.ToString()))
-            collectSpecifierLocation fragLine fragCol 1
-            let i = skipPossibleInterpolationHole (i+1)
-            parseLoop ((posi, mkFlexibleIntFormatTypar g m) :: acc) (i, fragLine, fragCol+1) fragments
-
-        | 'l' | 'L' ->
-            if info.precision then failwith (FSComp.SR.forFormatDoesntSupportPrecision(ch.ToString()))
-            let fragCol = fragCol+1
+            parseLoop acc (i+2, fragLine, fragCol+1) fragments
+        else
             let i = i+1
+            if i >= len then failwith (FSComp.SR.forMissingFormatSpecifier())
+            let info = newInfo()
 
-            // "bad format specifier ... In F# code you can use %d, %x, %o or %u instead ..."
-            if i >= len then
-                failwith (FSComp.SR.forBadFormatSpecifier())
-            // Always error for %l and %Lx
-            failwith (FSComp.SR.forLIsUnnecessary())
-            match fmt[i] with
-            | 'd' | 'i' | 'o' | 'u' | 'x' | 'X' ->
+            let oldI = i
+            let posi, i = Parsing.position fmt i
+            let fragCol = fragCol + i - oldI
+
+            let oldI = i
+            let i = Parsing.flags info fmt i
+            let fragCol = fragCol + i - oldI
+
+            let oldI = i
+            let widthArg,(widthValue, (precisionArg,i)) = Parsing.widthAndPrecision info fmt i
+            let fragCol = fragCol + i - oldI
+
+            if i >= len then failwith (FSComp.SR.forBadPrecision())
+
+            let acc = if precisionArg then (Option.map ((+)1) posi, g.int_ty) :: acc else acc
+
+            let acc = if widthArg then (Option.map ((+)1) posi, g.int_ty) :: acc else acc
+
+            let checkOtherFlags c =
+                if info.precision then failwith (FSComp.SR.forFormatDoesntSupportPrecision(c.ToString()))
+                if info.addZeros then failwith (FSComp.SR.forDoesNotSupportZeroFlag(c.ToString()))
+                match info.numPrefixIfPos with
+                | Some n -> failwith (FSComp.SR.forDoesNotSupportPrefixFlag(c.ToString(), n.ToString()))
+                | None -> ()
+
+            let skipPossibleInterpolationHole pos = Parsing.skipPossibleInterpolationHole isInterpolated isFormattableString fmt pos
+
+            // Implicitly typed holes in interpolated strings are translated to '... %P(...)...' in the
+            // type checker.  They should always have '(...)' after for format string.
+            let requireAndSkipInterpolationHoleFormat i =
+                if i < len && fmt[i] = '(' then
+                    let i2 = fmt.IndexOf(")", i+1)
+                    if i2 = -1 then
+                        failwith (FSComp.SR.forFormatInvalidForInterpolated3())
+                    else
+                        let dotnetAlignment = match widthValue with None -> "" | Some w -> "," + (if info.leftJustify then "-" else "") + string w
+                        let dotnetNumberFormat = match fmt[i+1..i2-1] with "" -> "" | s -> ":" + s
+                        appendToDotnetFormatString ("{" + string dotnetFormatStringInterpolationHoleCount + dotnetAlignment  + dotnetNumberFormat + "}")
+                        dotnetFormatStringInterpolationHoleCount <- dotnetFormatStringInterpolationHoleCount + 1
+                        i2+1
+                else
+                    failwith (FSComp.SR.forFormatInvalidForInterpolated3())
+
+            let collectSpecifierLocation fragLine fragCol numStdArgs =
+                match context with
+                | Some _ ->
+                    let numArgsForSpecifier =
+                        numStdArgs + (if widthArg then 1 else 0) + (if precisionArg then 1 else 0)
+                    specifierLocations.Add(
+                        (Range.mkFileIndexRange m.FileIndex
+                            (Position.mkPos fragLine startFragCol)
+                            (Position.mkPos fragLine (fragCol + 1))), numArgsForSpecifier)
+                | None -> ()
+
+            let ch = fmt[i]
+            match ch with
+            | 'd' | 'i' | 'u' | 'B' | 'o' | 'x' | 'X' ->
+                if ch = 'B' then DiagnosticsLogger.checkLanguageFeatureError g.langVersion Features.LanguageFeature.PrintfBinaryFormat m
+                if info.precision then failwith (FSComp.SR.forFormatDoesntSupportPrecision(ch.ToString()))
                 collectSpecifierLocation fragLine fragCol 1
                 let i = skipPossibleInterpolationHole (i+1)
-                parseLoop ((posi, mkFlexibleIntFormatTypar g m) :: acc)  (i, fragLine, fragCol+1) fragments
-            | _ -> failwith (FSComp.SR.forBadFormatSpecifier())
+                parseLoop ((posi, mkFlexibleIntFormatTypar g m) :: acc) (i, fragLine, fragCol+1) fragments
 
-        | 'h' | 'H' ->
-            failwith (FSComp.SR.forHIsUnnecessary())
+            | 'l' | 'L' ->
+                if info.precision then failwith (FSComp.SR.forFormatDoesntSupportPrecision(ch.ToString()))
+                let fragCol = fragCol+1
+                let i = i+1
 
-        | 'M' ->
-            collectSpecifierLocation fragLine fragCol 1
-            let i = skipPossibleInterpolationHole (i+1)
-            parseLoop ((posi, mkFlexibleDecimalFormatTypar g m) :: acc) (i, fragLine, fragCol+1) fragments
+                // "bad format specifier ... In F# code you can use %d, %x, %o or %u instead ..."
+                if i >= len then
+                    failwith (FSComp.SR.forBadFormatSpecifier())
+                // Always error for %l and %Lx
+                failwith (FSComp.SR.forLIsUnnecessary())
+                match fmt[i] with
+                | 'd' | 'i' | 'o' | 'u' | 'x' | 'X' ->
+                    collectSpecifierLocation fragLine fragCol 1
+                    let i = skipPossibleInterpolationHole (i+1)
+                    parseLoop ((posi, mkFlexibleIntFormatTypar g m) :: acc)  (i, fragLine, fragCol+1) fragments
+                | _ -> failwith (FSComp.SR.forBadFormatSpecifier())
 
-        | 'f' | 'F' | 'e' | 'E' | 'g' | 'G' ->
-            collectSpecifierLocation fragLine fragCol 1
-            let i = skipPossibleInterpolationHole (i+1)
-            parseLoop ((posi, mkFlexibleFloatFormatTypar g m) :: acc) (i, fragLine, fragCol+1) fragments
+            | 'h' | 'H' ->
+                failwith (FSComp.SR.forHIsUnnecessary())
 
-        | 'b' ->
-            checkOtherFlags ch
-            collectSpecifierLocation fragLine fragCol 1
-            let i = skipPossibleInterpolationHole (i+1)
-            parseLoop ((posi, g.bool_ty)  :: acc) (i, fragLine, fragCol+1) fragments
-
-        | 'c' ->
-            checkOtherFlags ch
-            collectSpecifierLocation fragLine fragCol 1
-            let i = skipPossibleInterpolationHole (i+1)
-            parseLoop ((posi, g.char_ty)  :: acc) (i, fragLine, fragCol+1) fragments
-
-        | 's' ->
-            checkOtherFlags ch
-            collectSpecifierLocation fragLine fragCol 1
-            let i = skipPossibleInterpolationHole (i+1)
-            parseLoop ((posi, g.string_ty)  :: acc) (i, fragLine, fragCol+1) fragments
-
-        | 'O' ->
-            checkOtherFlags ch
-            collectSpecifierLocation fragLine fragCol 1
-            let i = skipPossibleInterpolationHole (i+1)
-            parseLoop ((posi, NewInferenceType g) :: acc) (i, fragLine, fragCol+1) fragments
-
-        // residue of hole "...{n}..." in interpolated strings become %P(...)
-        | 'P' when isInterpolated ->
-            checkOtherFlags ch
-            let i = requireAndSkipInterpolationHoleFormat (i+1)
-            // Note, the fragCol doesn't advance at all as these are magically inserted.
-            parseLoop ((posi, NewInferenceType g) :: acc) (i, fragLine, startFragCol) fragments
-
-        | 'A' ->
-            if g.useReflectionFreeCodeGen then
-                failwith (FSComp.SR.forPercentAInReflectionFreeCode())
-
-            match info.numPrefixIfPos with
-            | None     // %A has BindingFlags=Public, %+A has BindingFlags=Public | NonPublic
-            | Some '+' ->
+            | 'M' ->
                 collectSpecifierLocation fragLine fragCol 1
                 let i = skipPossibleInterpolationHole (i+1)
+                parseLoop ((posi, mkFlexibleDecimalFormatTypar g m) :: acc) (i, fragLine, fragCol+1) fragments
+
+            | 'f' | 'F' | 'e' | 'E' | 'g' | 'G' ->
+                collectSpecifierLocation fragLine fragCol 1
+                let i = skipPossibleInterpolationHole (i+1)
+                parseLoop ((posi, mkFlexibleFloatFormatTypar g m) :: acc) (i, fragLine, fragCol+1) fragments
+
+            | 'b' ->
+                checkOtherFlags ch
+                collectSpecifierLocation fragLine fragCol 1
+                let i = skipPossibleInterpolationHole (i+1)
+                parseLoop ((posi, g.bool_ty)  :: acc) (i, fragLine, fragCol+1) fragments
+
+            | 'c' ->
+                checkOtherFlags ch
+                collectSpecifierLocation fragLine fragCol 1
+                let i = skipPossibleInterpolationHole (i+1)
+                parseLoop ((posi, g.char_ty)  :: acc) (i, fragLine, fragCol+1) fragments
+
+            | 's' ->
+                checkOtherFlags ch
+                collectSpecifierLocation fragLine fragCol 1
+                let i = skipPossibleInterpolationHole (i+1)
+                parseLoop ((posi, g.string_ty)  :: acc) (i, fragLine, fragCol+1) fragments
+
+            | 'O' ->
+                checkOtherFlags ch
+                collectSpecifierLocation fragLine fragCol 1
+                let i = skipPossibleInterpolationHole (i+1)
+                parseLoop ((posi, NewInferenceType g) :: acc) (i, fragLine, fragCol+1) fragments
+
+            // residue of hole "...{n}..." in interpolated strings become %P(...)
+            | 'P' when isInterpolated ->
+                checkOtherFlags ch
+                let i = requireAndSkipInterpolationHoleFormat (i+1)
+                // Note, the fragCol doesn't advance at all as these are magically inserted.
+                parseLoop ((posi, NewInferenceType g) :: acc) (i, fragLine, startFragCol) fragments
+
+            | 'A' ->
+                if g.useReflectionFreeCodeGen then
+                    failwith (FSComp.SR.forPercentAInReflectionFreeCode())
+
+                match info.numPrefixIfPos with
+                | None     // %A has BindingFlags=Public, %+A has BindingFlags=Public | NonPublic
+                | Some '+' ->
+                    collectSpecifierLocation fragLine fragCol 1
+                    let i = skipPossibleInterpolationHole (i+1)
+                    let aTy = NewInferenceType g
+                    percentATys.Add(aTy)
+                    parseLoop ((posi, aTy) :: acc)  (i, fragLine, fragCol+1) fragments
+                | Some n ->
+                    failwith (FSComp.SR.forDoesNotSupportPrefixFlag(ch.ToString(), n.ToString()))
+
+            | 'a' ->
+                checkOtherFlags ch
                 let aTy = NewInferenceType g
-                percentATys.Add(aTy)
-                parseLoop ((posi, aTy) :: acc)  (i, fragLine, fragCol+1) fragments
-            | Some n ->
-                failwith (FSComp.SR.forDoesNotSupportPrefixFlag(ch.ToString(), n.ToString()))
+                let fTy = mkFunTy g printerArgTy (mkFunTy g aTy printerResidueTy)
+                collectSpecifierLocation fragLine fragCol 2
+                let i = skipPossibleInterpolationHole (i+1)
+                parseLoop ((Option.map ((+)1) posi, aTy) ::  (posi, fTy) :: acc) (i, fragLine, fragCol+1) fragments
 
-        | 'a' ->
-            checkOtherFlags ch
-            let aTy = NewInferenceType g
-            let fTy = mkFunTy g printerArgTy (mkFunTy g aTy printerResidueTy)
-            collectSpecifierLocation fragLine fragCol 2
-            let i = skipPossibleInterpolationHole (i+1)
-            parseLoop ((Option.map ((+)1) posi, aTy) ::  (posi, fTy) :: acc) (i, fragLine, fragCol+1) fragments
+            | 't' ->
+                checkOtherFlags ch
+                collectSpecifierLocation fragLine fragCol 1
+                let i = skipPossibleInterpolationHole (i+1)
+                parseLoop ((posi, mkFunTy g printerArgTy printerResidueTy) :: acc)  (i, fragLine, fragCol+1) fragments
 
-        | 't' ->
-            checkOtherFlags ch
-            collectSpecifierLocation fragLine fragCol 1
-            let i = skipPossibleInterpolationHole (i+1)
-            parseLoop ((posi, mkFunTy g printerArgTy printerResidueTy) :: acc)  (i, fragLine, fragCol+1) fragments
-
-        | c -> failwith (FSComp.SR.forBadFormatSpecifierGeneral(String.make 1 c))
+            | c -> failwith (FSComp.SR.forBadFormatSpecifierGeneral(String.make 1 c))
 
     let results = parseLoop [] (0, 0, m.StartColumn) fragments
     results, Seq.toList specifierLocations, dotnetFormatString.ToString(), percentATys.ToArray()
