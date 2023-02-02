@@ -407,6 +407,14 @@ type SynMemberGetSetTrivia =
         SetKeyword: range option
     }
 
+/// Represents additional information for SynMemberDefn.ImplicitCtor
+[<NoEquality; NoComparison>]
+type SynMemberDefnImplicitCtorTrivia =
+    {
+        /// The syntax range of the `as` keyword
+        AsKeyword: range option
+    }
+
 /// Represents additional information for SynArgPats.NamePatPairs
 [<NoEquality; NoComparison>]
 type SynArgPatsNamePatPairsTrivia =

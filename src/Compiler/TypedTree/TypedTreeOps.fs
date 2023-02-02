@@ -5983,14 +5983,14 @@ and remapUnionCases ctxt tmenv (x: TyconUnionData) =
     x.UnionCasesAsList |> List.map (remapUnionCase ctxt tmenv) |> Construct.MakeUnionCases 
 
 and remapFsObjData ctxt tmenv x = 
-    { x with 
-          fsobjmodel_kind = 
-             (match x.fsobjmodel_kind with 
-              | TFSharpDelegate slotsig -> TFSharpDelegate (remapSlotSig (remapAttribs ctxt tmenv) tmenv slotsig)
-              | TFSharpClass | TFSharpInterface | TFSharpStruct | TFSharpEnum -> x.fsobjmodel_kind)
-          fsobjmodel_vslots = x.fsobjmodel_vslots |> List.map (remapValRef tmenv)
-          fsobjmodel_rfields = x.fsobjmodel_rfields |> remapRecdFields ctxt tmenv } 
-
+    { 
+        fsobjmodel_kind = 
+            match x.fsobjmodel_kind with 
+            | TFSharpDelegate slotsig -> TFSharpDelegate (remapSlotSig (remapAttribs ctxt tmenv) tmenv slotsig)
+            | TFSharpClass | TFSharpInterface | TFSharpStruct | TFSharpEnum -> x.fsobjmodel_kind
+        fsobjmodel_vslots = x.fsobjmodel_vslots |> List.map (remapValRef tmenv)
+        fsobjmodel_rfields = x.fsobjmodel_rfields |> remapRecdFields ctxt tmenv
+    } 
 
 and remapTyconRepr ctxt tmenv repr = 
     match repr with 
@@ -7749,6 +7749,9 @@ let mkCallSeqGenerated g m elemTy arg1 arg2 =
                        
 let mkCallSeqFinally g m elemTy arg1 arg2 = 
     mkApps g (typedExprForIntrinsic g m g.seq_finally_info, [[elemTy]], [ arg1; arg2 ], m) 
+
+let mkCallSeqTryWith g m elemTy origSeq exnFilter exnHandler = 
+    mkApps g (typedExprForIntrinsic g m g.seq_trywith_info, [[elemTy]], [ origSeq; exnFilter; exnHandler ], m) 
                        
 let mkCallSeqOfFunctions g m ty1 ty2 arg1 arg2 arg3 = 
     mkApps g (typedExprForIntrinsic g m g.seq_of_functions_info, [[ty1;ty2]], [ arg1; arg2; arg3 ], m) 

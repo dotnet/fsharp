@@ -6564,8 +6564,14 @@ and TcRecordConstruction (cenv: cenv) (overallTy: TType) env tpenv withExprInfoO
     let ns1 = NameSet.ofList (List.map fst fldsList)
     let ns2 = NameSet.ofList (List.map (fun x -> x.rfield_id.idText) fspecs)
 
-    if withExprInfoOpt.IsNone && not (Zset.subset ns2 ns1) then
-        error (MissingFields(Zset.elements (Zset.diff ns2 ns1), m))
+    match withExprInfoOpt with
+    | None ->
+        if not (Zset.subset ns2 ns1) then
+            error(MissingFields(Zset.elements (Zset.diff ns2 ns1), m))
+    | _ ->
+        if oldFldsList.IsEmpty then
+            let enabledByLangFeature = g.langVersion.SupportsFeature LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields
+            warning(ErrorEnabledWithLanguageFeature(FSComp.SR.tcCopyAndUpdateRecordChangesAllFields(fullDisplayTextOfTyconRef tcref), m, enabledByLangFeature))
 
     if not (Zset.subset ns1 ns2) then
         error (Error(FSComp.SR.tcExtraneousFieldsGivenValues(), m))
