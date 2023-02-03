@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 using Microsoft.CodeAnalysis.Testing;
+using Microsoft.VisualStudio.Extensibility.Testing;
 using Microsoft.VisualStudio.Shell.Interop;
 using Xunit;
 using Task = System.Threading.Tasks.Task;
@@ -11,8 +12,8 @@ namespace FSharp.Editor.IntegrationTests
 {
     public class CreateProjectTests : AbstractIntegrationTest
     {
-        // This is just starting up a basic F# lib:
-        
+        // This is starting up a basic F# lib:
+        //
         // namespace Library
         //
         // module Say =
@@ -21,28 +22,52 @@ namespace FSharp.Editor.IntegrationTests
         [IdeFact]
         public async Task BasicFSharpLibraryCompilesAsync()
         {
-            await TestServices.SolutionExplorer.CreateSolutionAsync(
-                nameof(CreateProjectTests),
-                HangMitigatingCancellationToken);
+            var token = HangMitigatingCancellationToken;
+            var solutionExplorer = TestServices.SolutionExplorer;
+            var errorList = TestServices.ErrorList;
 
-            await TestServices.SolutionExplorer.AddProjectAsync(
+            await solutionExplorer.CreateSolutionAsync(nameof(CreateProjectTests), token);
+            await solutionExplorer.AddProjectAsync(
                 "Library",
                 "Microsoft.FSharp.NETCore.ClassLibrary",
-                HangMitigatingCancellationToken);
+                token);
 
-            await TestServices.SolutionExplorer.RestoreNuGetPackagesAsync(HangMitigatingCancellationToken);
+            await solutionExplorer.RestoreNuGetPackagesAsync(token);
 
-            var buildSummary = await TestServices.SolutionExplorer.BuildSolutionAsync(
-                true,
-                HangMitigatingCancellationToken);
-            Assert.Contains(
-                "========== Build: 1 succeeded, 0 failed, 0 up-to-date, 0 skipped ==========",
-                buildSummary);
+            var expectedBuildSummary = "========== Build: 1 succeeded, 0 failed, 0 up-to-date, 0 skipped ==========";
+            var actualBuildSummary = await solutionExplorer.BuildSolutionAsync(true, token);
+            Assert.Contains(expectedBuildSummary, actualBuildSummary);
 
-            await TestServices.ErrorList.ShowBuildErrorsAsync(HangMitigatingCancellationToken);
-            var errorCount = await TestServices.ErrorList.GetErrorCountAsync(
-                __VSERRORCATEGORY.EC_ERROR,
-                HangMitigatingCancellationToken);
+            await errorList.ShowBuildErrorsAsync(token);
+            var errorCount = await errorList.GetErrorCountAsync(__VSERRORCATEGORY.EC_ERROR, token);
+            Assert.Equal(0, errorCount);
+        }
+
+        // This is starting up a basic F# console app:
+        //
+        // // For more information see https://aka.ms/fsharp-console-apps
+        // printfn "Hello from F#"
+        [IdeFact]
+        public async Task BasicFSharpConsoleAppCompilesAsync()
+        {
+            var token = HangMitigatingCancellationToken;
+            var solutionExplorer = TestServices.SolutionExplorer;
+            var errorList = TestServices.ErrorList;
+
+            await solutionExplorer.CreateSolutionAsync(nameof(CreateProjectTests), token);
+            await solutionExplorer.AddProjectAsync(
+                "ConsoleApp",
+                "Microsoft.FSharp.NETCore.ConsoleApplication",
+                token);
+
+            await solutionExplorer.RestoreNuGetPackagesAsync(token);
+
+            var expectedBuildSummary = "========== Build: 1 succeeded, 0 failed, 0 up-to-date, 0 skipped ==========";
+            var actualBuildSummary = await solutionExplorer.BuildSolutionAsync(true, token);
+            Assert.Contains(expectedBuildSummary, actualBuildSummary);
+
+            await errorList.ShowBuildErrorsAsync(token);
+            var errorCount = await errorList.GetErrorCountAsync(__VSERRORCATEGORY.EC_ERROR, token);
             Assert.Equal(0, errorCount);
         }
     }
