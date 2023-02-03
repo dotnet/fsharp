@@ -1243,7 +1243,6 @@
                                                       class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
   {
     .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
     // Code size       253 (0xfd)
     .maxstack  5
     .locals init (int32 V_0,
