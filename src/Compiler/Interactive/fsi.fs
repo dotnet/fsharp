@@ -3628,17 +3628,23 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     member _.FormatValue(reflectionValue:obj, reflectionType) =
         fsiDynamicCompiler.FormatValue(reflectionValue, reflectionType)
 
-    member _.EvalExpression(code) =
+    member this.EvalExpression(code) =
+        this.EvalExpression(code, dummyScriptFileName)
+
+    member _.EvalExpression(code, scriptFileName) =
 
         // Explanation: When the user of the FsiInteractiveSession object calls this method, the
         // code is parsed, checked and evaluated on the calling thread. This means EvalExpression
         // is not safe to call concurrently.
         let ctok = AssumeCompilationThreadWithoutEvidence()
 
-        fsiInteractionProcessor.EvalExpression(ctok, code, dummyScriptFileName, diagnosticsLogger)
+        fsiInteractionProcessor.EvalExpression(ctok, code, scriptFileName, diagnosticsLogger)
         |> commitResult
 
-    member _.EvalExpressionNonThrowing(code) =
+    member this.EvalExpressionNonThrowing(code) =
+        this.EvalExpressionNonThrowing(code, dummyScriptFileName)
+
+    member _.EvalExpressionNonThrowing(code, scriptFileName) =
         // Explanation: When the user of the FsiInteractiveSession object calls this method, the
         // code is parsed, checked and evaluated on the calling thread. This means EvalExpression
         // is not safe to call concurrently.
@@ -3646,20 +3652,28 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
         let errorOptions = TcConfig.Create(tcConfigB,validate = false).diagnosticsOptions
         let diagnosticsLogger = CompilationDiagnosticLogger("EvalInteraction", errorOptions, eagerFormat)
-        fsiInteractionProcessor.EvalExpression(ctok, code, dummyScriptFileName, diagnosticsLogger)
-        |> commitResultNonThrowing errorOptions dummyScriptFileName diagnosticsLogger
+        fsiInteractionProcessor.EvalExpression(ctok, code, scriptFileName, diagnosticsLogger)
+        |> commitResultNonThrowing errorOptions scriptFileName diagnosticsLogger
 
-    member _.EvalInteraction(code, ?cancellationToken) : unit =
+    member this.EvalInteraction(code, ?cancellationToken) : unit =
+        let cancellationToken = defaultArg cancellationToken CancellationToken.None
+        this.EvalInteraction(code, dummyScriptFileName, cancellationToken)
+
+    member _.EvalInteraction(code, scriptFileName, ?cancellationToken) : unit =
         // Explanation: When the user of the FsiInteractiveSession object calls this method, the
         // code is parsed, checked and evaluated on the calling thread. This means EvalExpression
         // is not safe to call concurrently.
         let ctok = AssumeCompilationThreadWithoutEvidence()
         let cancellationToken = defaultArg cancellationToken CancellationToken.None
-        fsiInteractionProcessor.EvalInteraction(ctok, code, dummyScriptFileName, diagnosticsLogger, cancellationToken)
+        fsiInteractionProcessor.EvalInteraction(ctok, code, scriptFileName, diagnosticsLogger, cancellationToken)
         |> commitResult
         |> ignore
 
-    member _.EvalInteractionNonThrowing(code, ?cancellationToken) =
+    member this.EvalInteractionNonThrowing(code, ?cancellationToken) =
+        let cancellationToken = defaultArg cancellationToken CancellationToken.None
+        this.EvalInteractionNonThrowing(code, dummyScriptFileName, cancellationToken)
+        
+    member this.EvalInteractionNonThrowing(code, scriptFileName, ?cancellationToken) =
         // Explanation: When the user of the FsiInteractiveSession object calls this method, the
         // code is parsed, checked and evaluated on the calling thread. This means EvalExpression
         // is not safe to call concurrently.
@@ -3668,8 +3682,8 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
         let errorOptions = TcConfig.Create(tcConfigB,validate = false).diagnosticsOptions
         let diagnosticsLogger = CompilationDiagnosticLogger("EvalInteraction", errorOptions, eagerFormat)
-        fsiInteractionProcessor.EvalInteraction(ctok, code, dummyScriptFileName, diagnosticsLogger, cancellationToken)
-        |> commitResultNonThrowing errorOptions "input.fsx" diagnosticsLogger
+        fsiInteractionProcessor.EvalInteraction(ctok, code, scriptFileName, diagnosticsLogger, cancellationToken)
+        |> commitResultNonThrowing errorOptions scriptFileName diagnosticsLogger
 
     member _.EvalScript(filePath) : unit =
         // Explanation: When the user of the FsiInteractiveSession object calls this method, the
