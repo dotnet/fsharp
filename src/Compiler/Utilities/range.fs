@@ -285,11 +285,10 @@ type Range(code1: int64, code2: int64) =
 
     member _.EndColumn = int32 (uint64 (code1 &&& endColumnMask) >>> endColumnShift)
 
-    member _.IsSynthetic =
-        int32 (uint64 (code2 &&& isSyntheticMask) >>> isSyntheticShift) <> 0
+    member _.IsSynthetic = int32 (uint64 (code2 &&& isSyntheticMask) >>> isSyntheticShift) <> 0
 
     member _.NotedSourceConstruct =
-        match int32 ((code2 &&& debugPointKindMask) >>> debugPointKindShift) with
+        match int32 (uint64 (code2 &&& debugPointKindMask) >>> debugPointKindShift) with
         | 1 -> NotedSourceConstruct.While
         | 2 -> NotedSourceConstruct.For
         | 3 -> NotedSourceConstruct.Try
