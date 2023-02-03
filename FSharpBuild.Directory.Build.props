@@ -30,6 +30,10 @@
     <OtherFlags Condition="$(AdditionalFscCmdFlags) != ''">$(OtherFlags) $(AdditionalFscCmdFlags)</OtherFlags>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)' == 'Proto'">
+    <OtherFlags>$(OtherFlags) --define:NO_TYPEPROVIDERS</OtherFlags>
+  </PropertyGroup>
+
   <!-- nuget -->
   <PropertyGroup>
     <PackageIconFullPath>$(MSBuildThisFileDirectory)icon.png</PackageIconFullPath>
