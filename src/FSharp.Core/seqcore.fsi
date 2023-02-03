@@ -84,6 +84,17 @@ module RuntimeHelpers =
     /// <returns>The result sequence.</returns>
     val EnumerateThenFinally: source: seq<'T> -> compensation: (unit -> unit) -> seq<'T>
 
+    /// <summary>The F# compiler emits calls to this function to
+    /// implement the <c>try/with</c> operator for F# sequence expressions.</summary>
+    ///
+    /// <param name="source">The input sequence.</param>
+    /// <param name="exceptionFilter">Pattern matches after 'when' converted to return 1</param>
+    /// <param name="exceptionHandler">Pattern matches after 'when' with their actual execution code</param>
+    ///
+    /// <returns>The result sequence.</returns>
+    val EnumerateTryWith:
+        source: seq<'T> -> exceptionFilter: (exn -> int) -> exceptionHandler: (exn -> seq<'T>) -> seq<'T>
+
     /// <summary>The F# compiler emits calls to this function to implement the compiler-intrinsic
     /// conversions from untyped IEnumerable sequences to typed sequences.</summary>
     ///
