@@ -180,6 +180,7 @@
     <Compile Include="Language\ExtensionMethodTests.fs" />
     <Compile Include="Language\SequenceExpressionTests.fs" />
     <Compile Include="Language\StaticClassTests.fs" />
+    <Compile Include="Language\InterfaceTests.fs" />
     <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="ConstraintSolver\MemberConstraints.fs" />
     <Compile Include="Interop\DeeplyNestedCSharpClasses.fs" />
