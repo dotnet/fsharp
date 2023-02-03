@@ -72,6 +72,9 @@ let f () = x = x |> ignore""" // measure is inferred as 1, but that's not covere
         [
             """System.Object.ReferenceEquals("hello", (null: string))"""
             """System.Object.ReferenceEquals((null: string), "hello")"""
+            // TODO: can we actually get this working?
+            // https://github.com/dotnet/fsharp/pull/13298#issuecomment-1414491640
+            """System.Object.ReferenceEquals("hello", null)"""
         ]
         |> List.map Array.singleton
 
