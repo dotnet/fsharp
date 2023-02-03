@@ -11,6 +11,13 @@ namespace FSharp.Editor.IntegrationTests
 {
     public class CreateProjectTests : AbstractIntegrationTest
     {
+        // This is just starting up a basic F# lib:
+        
+        // namespace Library
+        //
+        // module Say =
+        //    let hello name =
+        //        printfn "Hello %s" name
         [IdeFact]
         public async Task BasicFSharpLibraryCompilesAsync()
         {
