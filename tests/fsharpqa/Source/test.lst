@@ -36,53 +36,12 @@ CompilerOptions01,NoMT				CompilerOptions\fsi\langversion
 CompilerOptions01,NoMT				CompilerOptions\fsi\nologo
 CompilerOptions01,NoMT				CompilerOptions\fsi\subsystemversion
 
-Conformance01			Conformance\BasicGrammarElements\Constants
-Conformance01			Conformance\BasicGrammarElements\OperatorNames
-Conformance01			Conformance\BasicGrammarElements\PrecedenceAndOperators
-Conformance01			Conformance\BasicTypeAndModuleDefinitions\ExceptionDefinitions
-Conformance01			Conformance\BasicTypeAndModuleDefinitions\GeneratedEqualityHashingComparison\Attributes\Diags
-Conformance01			Conformance\BasicTypeAndModuleDefinitions\GeneratedEqualityHashingComparison\Attributes\Legacy
-Conformance01			Conformance\BasicTypeAndModuleDefinitions\GeneratedEqualityHashingComparison\Attributes\New
-Conformance01			Conformance\BasicTypeAndModuleDefinitions\GeneratedEqualityHashingComparison\Basic
-Conformance01			Conformance\BasicTypeAndModuleDefinitions\GeneratedEqualityHashingComparison\IComparison
-Conformance01			Conformance\BasicTypeAndModuleDefinitions\ModuleDefinitions
-Conformance01			Conformance\BasicTypeAndModuleDefinitions\NamespaceDeclGroups
-Conformance01			Conformance\BasicTypeAndModuleDefinitions\NullRepresentations
-Conformance01			Conformance\BasicTypeAndModuleDefinitions\RecordTypes
-Conformance01			Conformance\BasicTypeAndModuleDefinitions\TypeAbbreviations
-Conformance01			Conformance\BasicTypeAndModuleDefinitions\UnionTypes
-Conformance01			Conformance\DeclarationElements\AccessibilityAnnotations\Basic
-Conformance01			Conformance\DeclarationElements\AccessibilityAnnotations\OnOverridesAndIFaceImpl
-Conformance01			Conformance\DeclarationElements\AccessibilityAnnotations\OnTypeMembers
-Conformance01			Conformance\DeclarationElements\AccessibilityAnnotations\PermittedLocations
-Conformance01			Conformance\DeclarationElements\CustomAttributes\ArgumentsOfAllTypes
-Conformance01			Conformance\DeclarationElements\CustomAttributes\AttributeInheritance
-
-Conformance02			Conformance\DeclarationElements\CustomAttributes\AttributeUsage
-Conformance02			Conformance\DeclarationElements\CustomAttributes\Basic
-Conformance02			Conformance\DeclarationElements\CustomAttributes\ImportedAttributes
-Conformance02			Conformance\DeclarationElements\Events\basic
-Conformance02			Conformance\DeclarationElements\FieldMembers
-Conformance02			Conformance\DeclarationElements\ImportDeclarations
-Conformance02			Conformance\DeclarationElements\InterfaceSpecificationsAndImplementations
-Conformance02			Conformance\DeclarationElements\LetBindings\ActivePatternBindings
-Conformance02			Conformance\DeclarationElements\LetBindings\Basic
-Conformance02			Conformance\DeclarationElements\LetBindings\ExplicitTypeParameters
-Conformance02			Conformance\DeclarationElements\LetBindings\TypeFunctions
-Conformance02			Conformance\DeclarationElements\MemberDefinitions\ImplementingDispatchSlots
-Conformance02			Conformance\DeclarationElements\MemberDefinitions\MethodsAndProperties
-Conformance02			Conformance\DeclarationElements\MemberDefinitions\NamedArguments
-Conformance02			Conformance\DeclarationElements\MemberDefinitions\OptionalArguments
-Conformance02			Conformance\DeclarationElements\MemberDefinitions\OptionalDefaultParameterValueArguments
-Conformance02			Conformance\DeclarationElements\MemberDefinitions\OverloadingMembers
-Conformance02			Conformance\DeclarationElements\ModuleAbbreviations
 Conformance02			Conformance\DeclarationElements\ObjectConstructors
 Conformance02			Conformance\DeclarationElements\P-invokeDeclarations
 
 Conformance03			Conformance\Expressions\ApplicationExpressions\Assertion
 Conformance03			Conformance\Expressions\ApplicationExpressions\BasicApplication
 Conformance03			Conformance\Expressions\ApplicationExpressions\ObjectConstruction
-Conformance03			Conformance\Expressions\BindingExpressions\Binding
 Conformance03			Conformance\Expressions\ConstantExpressions
 Conformance03			Conformance\Expressions\ControlFlowExpressions\Assertion
 Conformance03			Conformance\Expressions\ControlFlowExpressions\Conditional
@@ -96,10 +55,10 @@ Conformance03			Conformance\Expressions\ControlFlowExpressions\TryFinally
 Conformance03			Conformance\Expressions\ControlFlowExpressions\While
 Conformance03			Conformance\Expressions\DataExpressions\AddressOf
 Conformance03			Conformance\Expressions\DataExpressions\ComputationExpressions
+Conformance03			Conformance\Expressions\DataExpressions\NameOf
 Conformance03			Conformance\Expressions\DataExpressions\ObjectExpressions
 Conformance03			Conformance\Expressions\DataExpressions\QueryExpressions
 Conformance03			Conformance\Expressions\DataExpressions\RangeExpressions
-
 Conformance04			Conformance\Expressions\DataExpressions\SequenceExpressions
 Conformance04			Conformance\Expressions\DataExpressions\TupleExpressions
 Conformance04			Conformance\Expressions\ElaborationAndElaboratedExpressions
@@ -111,15 +70,16 @@ Conformance04			Conformance\Expressions\SomeCheckingAndInferenceTerminology
 Conformance04			Conformance\Expressions\SyntacticSugar
 Conformance04			Conformance\Expressions\SyntacticSugarAndAmbiguities
 Conformance04			Conformance\Expressions\Type-relatedExpressions
+
 Conformance04			Conformance\ImplementationFilesAndSignatureFiles\CheckingOfImplementationFiles
 Conformance04			Conformance\ImplementationFilesAndSignatureFiles\InitializationSemanticsForImplementationFiles
 Conformance04			Conformance\ImplementationFilesAndSignatureFiles\NamespacesFragmentsAndImplementationFiles\basic
 Conformance04			Conformance\ImplementationFilesAndSignatureFiles\NamespacesFragmentsAndImplementationFiles\global
 Conformance04			Conformance\ImplementationFilesAndSignatureFiles\SignatureFiles
+
 Conformance04			Conformance\InferenceProcedures\ByrefSafetyAnalysis
 Conformance04			Conformance\InferenceProcedures\ConstraintSolving
 Conformance04			Conformance\InferenceProcedures\DispatchSlotChecking
-
 Conformance05			Conformance\InferenceProcedures\DispatchSlotInference
 Conformance05			Conformance\InferenceProcedures\FunctionApplicationResolution
 Conformance05			Conformance\InferenceProcedures\Generalization
@@ -131,6 +91,7 @@ Conformance05			Conformance\InferenceProcedures\RecursiveSafetyAnalysis
 Conformance05			Conformance\InferenceProcedures\ResolvingApplicationExpressions
 Conformance05			Conformance\InferenceProcedures\TypeInference
 Conformance05			Conformance\InferenceProcedures\WellFormednessChecking
+
 Conformance05			Conformance\LexicalAnalysis\Comments
 Conformance05			Conformance\LexicalAnalysis\ConditionalCompilation
 Conformance05			Conformance\LexicalAnalysis\Directives
@@ -140,16 +101,17 @@ Conformance05			Conformance\LexicalAnalysis\IdentifiersAndKeywords
 Conformance05			Conformance\LexicalAnalysis\LineDirectives
 Conformance05			Conformance\LexicalAnalysis\NumericLiterals
 Conformance05			Conformance\LexicalAnalysis\Shift\Generics
-
 Conformance06			Conformance\LexicalAnalysis\StringsAndCharacters
 Conformance06			Conformance\LexicalAnalysis\SymbolicKeywords
 Conformance06			Conformance\LexicalAnalysis\SymbolicOperators
 Conformance06			Conformance\LexicalAnalysis\Whitespace
+
 Conformance06			Conformance\LexicalFiltering\Basic\ByExample
 Conformance06			Conformance\LexicalFiltering\Basic\OffsideExceptions
 Conformance06			Conformance\LexicalFiltering\HashLight
 Conformance06			Conformance\LexicalFiltering\HighPrecedenceApplication
 Conformance06			Conformance\LexicalFiltering\LexicalAnalysisOfTypeApplications
+
 Conformance06			Conformance\ObjectOrientedTypeDefinitions\AbstractMembers
 Conformance06			Conformance\ObjectOrientedTypeDefinitions\ClassTypes\AsDeclarations
 Conformance06			Conformance\ObjectOrientedTypeDefinitions\ClassTypes\AutoProperties
@@ -161,7 +123,6 @@ Conformance06			Conformance\ObjectOrientedTypeDefinitions\ClassTypes\LetDoDeclar
 Conformance06			Conformance\ObjectOrientedTypeDefinitions\ClassTypes\MemberDeclarations
 Conformance06			Conformance\ObjectOrientedTypeDefinitions\ClassTypes\Misc
 Conformance06			Conformance\ObjectOrientedTypeDefinitions\ClassTypes\StaticLetDoDeclarations
-
 Conformance07			Conformance\ObjectOrientedTypeDefinitions\ClassTypes\ValueRestriction
 Conformance07			Conformance\ObjectOrientedTypeDefinitions\DelegateTypes
 Conformance07			Conformance\ObjectOrientedTypeDefinitions\EnumTypes
@@ -171,6 +132,7 @@ Conformance07			Conformance\ObjectOrientedTypeDefinitions\TypeExtensions\basic
 Conformance07			Conformance\ObjectOrientedTypeDefinitions\TypeExtensions\intrinsic
 Conformance07			Conformance\ObjectOrientedTypeDefinitions\TypeExtensions\optional
 Conformance07			Conformance\ObjectOrientedTypeDefinitions\TypeKindInference
+
 Conformance07			Conformance\PatternMatching\And
 Conformance07			Conformance\PatternMatching\Array
 Conformance07			Conformance\PatternMatching\As
@@ -182,21 +144,25 @@ Conformance07			Conformance\PatternMatching\Null
 Conformance07			Conformance\PatternMatching\Record
 Conformance07			Conformance\PatternMatching\Simple
 Conformance07			Conformance\PatternMatching\SimpleConstant
-
 Conformance08			Conformance\PatternMatching\Tuple
 Conformance08			Conformance\PatternMatching\TypeAnnotated
 Conformance08			Conformance\PatternMatching\TypeConstraint
 Conformance08			Conformance\PatternMatching\Union
 Conformance08			Conformance\PatternMatching\Wildcard
+
 Conformance08			Conformance\Signatures\SignatureConformance
 Conformance08			Conformance\Signatures\SignatureTypes
+
 Conformance08			Conformance\SpecialAttributesAndTypes\Imported\System.ThreadStatic
 Conformance08			Conformance\SpecialAttributesAndTypes\Imported\CallerInfo
+
 Conformance08			Conformance\StructFieldEqualityComparison
+
 Conformance08			Conformance\TypesAndTypeConstraints\CheckingSyntacticTypes
 Conformance08			Conformance\TypesAndTypeConstraints\LogicalPropertiesOfTypes
 Conformance08			Conformance\TypesAndTypeConstraints\TypeConstraints
 Conformance08			Conformance\TypesAndTypeConstraints\TypeParameterDefinitions
+
 Conformance08			Conformance\UnitsOfMeasure\Basic
 Conformance08			Conformance\UnitsOfMeasure\Bounds
 Conformance08			Conformance\UnitsOfMeasure\Constants
@@ -206,17 +172,21 @@ Conformance08			Conformance\UnitsOfMeasure\Parenthesis
 Conformance08			Conformance\UnitsOfMeasure\Parsing
 Conformance08			Conformance\UnitsOfMeasure\TypeChecker
 Conformance08			Conformance\UnitsOfMeasure\WithOOP
-Conformance08			Conformance\Expressions\DataExpressions\NameOf
 
 Misc01			Diagnostics\async
 Misc01,Diagnostics			Diagnostics\General
 Misc01			Diagnostics\NONTERM
 Misc01			Diagnostics\ParsingAtEOF
+
 Misc01			EntryPoint
+
 Misc01,NoMT		Import
+
 Misc01,NoMT		..\..\..\testsprivate\fsharpqa\Source\InteractiveSession\AssemblyLoading
+
 Misc01,NoMT		InteractiveSession\Misc
 Misc01,NoMT		InteractiveSession\Misc\GenericConstraintWoes\issue2411
+
 Misc01			Libraries\Control
 Misc01			Libraries\Core\collections
 Misc01			Libraries\Core\ExtraTopLevelOperators
@@ -225,16 +195,14 @@ Misc01			Libraries\Core\NativeInterop\stackalloc
 Misc01			Libraries\Core\Operators
 Misc01			Libraries\Core\Reflection
 Misc01			Libraries\Core\Unchecked
-Misc01			Warnings
-
 Misc02			Libraries\Portable
+
 Misc02			Misc
+
 Misc02			MultiTargeting
-Misc02,NoMT		Printing
+
 Misc02			..\..\..\testsprivate\fsharpqa\Source\RealWorld\UnitsOfMeasure
 Misc02			..\..\..\testsprivate\fsharpqa\Source\RealWorld\Agents
 Misc02,NoMT		..\..\..\testsprivate\fsharpqa\Source\Setup
+
 Misc02			Stress
-Misc02			XmlDoc\Basic
-Misc02			XmlDoc\OCamlDoc
-Misc02			XmlDoc\UnitOfMeasure
