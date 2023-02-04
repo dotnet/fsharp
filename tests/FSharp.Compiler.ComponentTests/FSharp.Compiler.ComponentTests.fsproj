@@ -91,6 +91,7 @@
     <Compile Include="Conformance\RecordTypes\AnonymousRecords.fs" />
     <Compile Include="Conformance\RecordTypes\RecordTypes.fs" />
     <Compile Include="Conformance\StructTypes\StructTypes.fs" />
+    <Compile Include="Conformance\StructTypes\StructActivePatterns.fs" />	  
     <Compile Include="Conformance\TypesAndTypeConstraints\CheckingSyntacticTypes\CheckingSyntacticTypes.fs" />
     <Compile Include="Conformance\TypesAndTypeConstraints\LogicalPropertiesOfTypes\LogicalPropertiesOfTypes.fs" />
     <Compile Include="Conformance\TypesAndTypeConstraints\IWSAMsAndSRTPs\IWSAMsAndSRTPsTests.fs" />

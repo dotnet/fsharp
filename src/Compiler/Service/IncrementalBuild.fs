@@ -759,8 +759,11 @@ module IncrementalBuilderHelpers =
         enableBackgroundItemKeyStoreAndSemanticClassification,
         defaultPartialTypeChecking,
         beforeFileChecked,
-        fileChecked,
-        importsInvalidatedByTypeProvider: Event<unit>) : NodeCode<BoundModel> =
+        fileChecked
+#if !NO_TYPEPROVIDERS
+        ,importsInvalidatedByTypeProvider: Event<unit>
+#endif
+        ) : NodeCode<BoundModel> =
 
       node {
         let diagnosticsLogger = CompilationDiagnosticLogger("CombineImportedAssembliesTask", tcConfig.diagnosticsOptions)
@@ -1662,8 +1665,10 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                     enableBackgroundItemKeyStoreAndSemanticClassification,
                     enablePartialTypeChecking,
                     beforeFileChecked,
-                    fileChecked,
-                    importsInvalidatedByTypeProvider
+                    fileChecked
+#if !NO_TYPEPROVIDERS
+                    ,importsInvalidatedByTypeProvider
+#endif
                 )
 
             let getFSharpSource fileName =
