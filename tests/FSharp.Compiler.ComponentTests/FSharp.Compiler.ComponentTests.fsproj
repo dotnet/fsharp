@@ -240,7 +240,6 @@
   <ItemGroup>
     <Content Include="resources\**" CopyToOutputDirectory="Never" CopyToPublishDirectory="PreserveNewest" />
     <EmbeddedResource Remove="Properties\**" />
-    <None Remove="Language\ModuleAsTypeTests.fs" />
     <None Remove="Signatures\SigGenerationRoundTripTests.fs" />
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

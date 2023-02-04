@@ -3,10 +3,12 @@
 open Xunit
 open FSharp.Test.Compiler
 
-[<Fact>]
-let ``Module can be used in typeof in lang preview`` () =
-    Fsx """
-let actual = typeof<module FSharp.Core.LanguagePrimitives>.Name
+[<Theory>]
+[<InlineData("typeof")>]
+[<InlineData("typedefof")>]
+let ``Module can be used in typeof in lang preview`` (typeofKeyword: string) =
+    Fsx $"""
+let actual = {typeofKeyword}<module FSharp.Core.LanguagePrimitives>.Name
 let expected = "LanguagePrimitives"
 if actual <> expected then failwith $"Expected '{{expected}}', but got '{{actual}}'"
     """
