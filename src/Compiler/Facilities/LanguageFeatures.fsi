@@ -51,6 +51,8 @@ type LanguageFeature =
     | EscapeDotnetFormattableStrings
     | ArithmeticInLiterals
     | ErrorReportingOnStaticClasses
+    | TryWithInSeqExpression
+    | WarningWhenCopyAndUpdateRecordChangesAllFields
     | ModulesInTypeApplication
 
 /// LanguageVersion management
