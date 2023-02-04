@@ -30,6 +30,18 @@ let actual = typeof<module FSharp.Core.LanguagePrimitives>
     ]
 
 [<Fact>]
+let ``Module cannot be used in type annotation in lang preview`` () =
+    Fsx """
+let actual: module LanguagePrimitives = Unchecked.defaultof<_>
+    """
+    |> withLangVersionPreview
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [
+        (Error 3561, Line 2, Col 13, Line 2, Col 38, "Module references are intended to be used in 'typeof'.")
+    ]
+
+[<Fact>]
 let ``Module can be used as generic type argument in lang preview`` () =
     Fsx """
 let actual = ResizeArray<module LanguagePrimitives>().GetType().FullName

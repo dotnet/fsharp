@@ -1717,8 +1717,10 @@ type ItemOccurence =
     | Binding
     /// This is a usage of the item
     | Use
-    /// This is a usage of a type name in a type
+    /// This is a usage of a type name in a type, other than an annotation
     | UseInType
+    /// This is a usage of a type name in a type annotation
+    | UseInTypeAnnotation
     /// This is a usage of a type name in an attribute
     | UseInAttribute
     /// Inside pattern matching

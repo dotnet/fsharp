@@ -148,6 +148,7 @@ module TcResolutionsExtensions =
                     let (|LegitTypeOccurence|_|) occ =
                         match occ with
                         | ItemOccurence.UseInType
+                        | ItemOccurence.UseInTypeAnnotation
                         | ItemOccurence.UseInAttribute
                         | ItemOccurence.Use
                         | ItemOccurence.Binding

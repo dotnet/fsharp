@@ -1925,8 +1925,8 @@ type LexFilterImpl (
             pushCtxt tokenTup (CtxtNamespaceHead (tokenStartPos, token))
             returnToken tokenLexbufState token
                 
-        //  module ... ~~~> CtxtModuleHead 
-        | MODULE, _ :: _ when offsideStack |> List.forall (fun x -> match x with CtxtParen (LESS _, _) -> false | _ -> true) -> 
+        //  module ... ~~~> CtxtModuleHead, unless we're in a type application 
+        | MODULE, _ :: stack when stack |> List.forall (fun x -> match x with CtxtParen (LESS _, _) -> false | _ -> true) -> 
             insertComingSoonTokens("MODULE", MODULE_COMING_SOON, MODULE_IS_HERE)
             if debug then dprintf "MODULE: entering CtxtModuleHead, awaiting EQUALS to go to CtxtSeqBlock (%a)\n" outputPos tokenStartPos
             pushCtxt tokenTup (CtxtModuleHead (tokenStartPos, token, NotLexingModuleAttributes))

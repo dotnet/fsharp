@@ -4370,6 +4370,9 @@ and CheckIWSAM (cenv: cenv) (env: TcEnv) checkConstraints iwsam m tcref =
             warning(Error(FSComp.SR.tcUsingInterfaceWithStaticAbstractMethodAsType(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
 
 and TcLongIdentModule (cenv: cenv) checkConstraints occ (env: TcEnv) tpenv synLongId mAll =
+    if occ = ItemOccurence.UseInTypeAnnotation then
+        error(Error(FSComp.SR.tcModuleUsedInTypeAnnotation(), mAll))
+
     let (SynLongIdent (tc, _, _)) = synLongId
     let id, rest = List.headAndTail tc
     let mIdent = synLongId.Range
@@ -5738,7 +5741,7 @@ and TcExprMatchLambda (cenv: cenv) overallTy env tpenv (isExnMatch, mArg, clause
     overallExpr, tpenv
 
 and TcExprTypeAnnotated (cenv: cenv) overallTy env tpenv (synBodyExpr, synType, m) =
-    let tgtTy, tpenv = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv synType
+    let tgtTy, tpenv = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurence.UseInTypeAnnotation WarnOnIWSAM.Yes env tpenv synType
     UnifyOverallType cenv env m overallTy tgtTy
     let bodyExpr, tpenv = TcExpr cenv (MustConvertTo (false, tgtTy)) env tpenv synBodyExpr
     let bodyExpr2 = TcAdjustExprForTypeDirectedConversions cenv overallTy tgtTy env m bodyExpr
@@ -8008,7 +8011,7 @@ and TcNameOfExpr (cenv: cenv) env tpenv (synArg: SynExpr) =
 
         // expr : type" allowed with no subsequent qualifications
         | SynExpr.Typed (synBodyExpr, synType, _) when delayed.IsEmpty && overallTyOpt.IsNone ->
-            let tgtTy, _tpenv = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv synType
+            let tgtTy, _tpenv = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurence.UseInTypeAnnotation WarnOnIWSAM.Yes env tpenv synType
             check (Some (MustEqual tgtTy)) resultOpt synBodyExpr delayed
 
         | _ ->
@@ -11335,7 +11338,7 @@ and AnalyzeRecursiveDecl
         match pat with
         | SynPat.FromParseError(innerPat, _) -> analyzeRecursiveDeclPat tpenv innerPat
         | SynPat.Typed(innerPat, tgtTy, _) ->
-            let tgtTyR, tpenv = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes envinner tpenv tgtTy
+            let tgtTyR, tpenv = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurence.UseInTypeAnnotation WarnOnIWSAM.Yes envinner tpenv tgtTy
             UnifyTypes cenv envinner mBinding ty tgtTyR
             analyzeRecursiveDeclPat tpenv innerPat
         | SynPat.Attrib(_innerPat, _attribs, m) ->

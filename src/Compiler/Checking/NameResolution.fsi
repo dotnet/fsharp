@@ -368,6 +368,7 @@ type internal ItemOccurence =
     | Binding
     | Use
     | UseInType
+    | UseInTypeAnnotation
     | UseInAttribute
     | Pattern
     | Implemented

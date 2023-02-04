@@ -236,7 +236,11 @@ type FSharpSymbolUse(denv: DisplayEnv, symbol: FSharpSymbol, inst: TyparInstanti
 
     member _.IsFromPattern = itemOcc = ItemOccurence.Pattern
 
-    member _.IsFromType = itemOcc = ItemOccurence.UseInType
+    member _.IsFromType =
+        match itemOcc with
+        | ItemOccurence.UseInType
+        | ItemOccurence.UseInTypeAnnotation -> true
+        | _ -> false
 
     member _.IsFromAttribute = itemOcc = ItemOccurence.UseInAttribute
 
