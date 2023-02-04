@@ -19,8 +19,8 @@ CompilerOptions01,NoMT				CompilerOptions\fsc\noframework
 CompilerOptions01,NoMT				CompilerOptions\fsc\nologo
 CompilerOptions01,NoMT				CompilerOptions\fsc\optimize
 CompilerOptions01,NoMT				CompilerOptions\fsc\out
-CompilerOptions01,NoMT				CompilerOptions\fsc\platform
 CompilerOptions01,NoMT,pdbs			CompilerOptions\fsc\pdb
+CompilerOptions01,NoMT				CompilerOptions\fsc\platform
 CompilerOptions01,NoMT				CompilerOptions\fsc\Removed
 CompilerOptions01,NoMT				CompilerOptions\fsc\responsefile
 CompilerOptions01,NoMT				CompilerOptions\fsc\standalone
