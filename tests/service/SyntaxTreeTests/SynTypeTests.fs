@@ -205,3 +205,22 @@ let inline f (x: 'T) = ((^T or int) : (static member A: int) ())
         assertRange (2,25) (2, 34) mOrType
         assertRange (2,24) (2, 35) mParen
     | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
+
+[<Test>]
+let ``SynType.LongIdentModule includes the module keyword in its range`` () =
+    let parseResults =
+        getParseResults
+             """
+let t = typeof<module LanguagePrimitives>
+ """
+
+    match parseResults with
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+        SynModuleDecl.Let(bindings = [
+            SynBinding(expr =
+                SynExpr.TypeApp(typeArgs = [ SynType.LongIdentModule(synLongIdent, fullRange) ])
+            )
+        ]) ]) ])) ->
+        assertRange (2, 15) (2, 40) fullRange
+        assertRange (2, 22) (2, 40) synLongIdent.Range
+    | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
