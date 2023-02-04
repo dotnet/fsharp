@@ -780,9 +780,17 @@ tyconSpfn:
                 | Some mWithKwd -> unionRanges range mWithKwd
             | decls ->
                 (range, decls) ||> unionRangeWithListBy (fun (s: SynMemberSig) -> s.Range)
+
+        let repr =
+            match mWithKwd with
+            | None ->
+                SynTypeDefnSigRepr.Simple (SynTypeDefnSimpleRepr.None m, m)
+            | Some mWithKwd ->
+                SynTypeDefnSigRepr.ObjectModel (SynTypeDefnKind.Augmentation mWithKwd, members, m)
+
         fun leadingKeyword ->
             let trivia: SynTypeDefnSigTrivia = { LeadingKeyword = leadingKeyword; EqualsRange = None; WithKeyword = mWithKwd }
-            SynTypeDefnSig($1, SynTypeDefnSigRepr.Simple (SynTypeDefnSimpleRepr.None m, m), members, m, trivia) }
+            SynTypeDefnSig($1, repr, members, m, trivia) }
 
 
 /* The right-hand-side of a type definition in a signature */
