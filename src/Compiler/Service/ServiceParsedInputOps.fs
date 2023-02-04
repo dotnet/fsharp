@@ -1316,7 +1316,8 @@ module ParsedInput =
                                 |> List.tryPick (fun arg ->
                                     match arg with
                                     | SynType.LongIdent lid when rangeContainsPos lid.Range pos -> Some CompletionContext.PatternType
-                                    | SynType.LongIdentModule (lid, _) when rangeContainsPos lid.Range pos -> Some CompletionContext.ModuleAsType
+                                    | SynType.LongIdentModule (lid, _) when rangeContainsPos lid.Range pos ->
+                                        Some CompletionContext.ModuleAsType
                                     | _ -> None)
                                 |> Option.orElse (Some CompletionContext.PatternType)
 
