@@ -1262,6 +1262,8 @@ type internal TypeCheckInfo
             // No completion at '...: string'
             | Some (CompletionContext.RecordField (RecordContext.Declaration true)) -> None
 
+            // Completion at ' [<SomeAttribute( ... )>] ' with named arguments
+            | Some (CompletionContext.AttributeApplicationParameterList (endPos, fields))
             // Completion at ' SomeMethod( ... ) ' with named arguments
             | Some (CompletionContext.ParameterList (endPos, fields)) ->
                 let results = GetNamedParametersAndSettableFields endPos

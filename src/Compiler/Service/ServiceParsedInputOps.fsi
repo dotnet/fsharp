@@ -41,6 +41,10 @@ type public CompletionContext =
 
     | AttributeApplication
 
+    /// The same as as 'ParameterList', except within the context of attribute application,
+    /// which is more restrictive
+    | AttributeApplicationParameterList of pos * HashSet<string>
+
     | OpenDeclaration of isOpenType: bool
 
     /// Completing pattern type (e.g. foo (x: |))
