@@ -5,7 +5,6 @@
 # ReqNOCov	-- skip this test/suite if we are doing a code coverage run
 # ReqENU	-- skip this test/suite if we are running on non-ENU (useful to exclude hard-to-localize tests)
 
-CompilerOptions01,NoMT				CompilerOptions\fsc\codepage
 CompilerOptions01,NoMT				CompilerOptions\fsc\crossoptimize
 CompilerOptions01,NoMT,Determinism  CompilerOptions\fsc\determinism
 CompilerOptions01,NoMT				CompilerOptions\fsc\dumpAllCommandLineOptions

@@ -354,6 +354,9 @@ module rec Compiler =
         | FS fs -> FS { fs with Options = fs.Options @ options }
         | _ -> failwith message
 
+    let withCodepage (codepage:string) (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ $"--codepage:{codepage}" ] "codepage is only supported on F#" cUnit
+
     let withDebug (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--debug+" ] "debug+ is only supported on F#" cUnit
 
