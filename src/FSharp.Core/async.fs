@@ -316,7 +316,7 @@ type AsyncActivation<'T>(contents: AsyncActivationContents<'T>) =
     /// Produce a new execution context for a composite async
     member ctxt.WithContinuations(cont, econt, ccont) =
         AsyncActivation<'T>
-            { contents with
+            {
                 cont = cont
                 aux =
                     { ctxt.aux with
