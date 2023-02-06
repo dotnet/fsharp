@@ -215,6 +215,7 @@
     <Compile Include="CompilerOptions\fsc\reflectionfree.fs" />
     <Compile Include="CompilerOptions\fsc\refonlyrefout.fs" />
 	<Compile Include="CompilerOptions\fsc\sourceFiles.fs" />
+    <Compile Include="CompilerService\RangeModule.fs" />
     <Compile Include="Debugger\PortablePdbs.fs" />
     <Compile Include="Diagnostics\async.fs" />
     <Compile Include="Diagnostics\General.fs" />
