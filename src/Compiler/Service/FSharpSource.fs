@@ -66,7 +66,9 @@ type private FSharpSourceCustom(filePath: string, getTimeStamp, getSourceText) =
     override _.TimeStamp = getTimeStamp ()
 
     override _.GetTextContainer() =
-        TextContainer.SourceText(getSourceText ())
+        getSourceText ()
+        |> Option.map TextContainer.SourceText
+        |> Option.defaultValue TextContainer.OnDisk
 
 type FSharpSource with
 

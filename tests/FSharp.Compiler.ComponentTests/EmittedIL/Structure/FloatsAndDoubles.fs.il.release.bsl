@@ -4,15 +4,15 @@
 
 
 // Metadata version: v4.0.30319
-.assembly extern mscorlib
+.assembly extern System.Runtime
 {
-  .publickeytoken = (B7 7A 5C 56 19 34 E0 89 )                         // .z\V.4..
-  .ver 4:0:0:0
+  .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
+  .ver 7:0:0:0
 }
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 6:0:0:0
+  .ver 7:0:0:0
 }
 .assembly FloatsAndDoubles
 {
@@ -21,53 +21,53 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 01 00 00 00 00 ) 
+  //  .custom instance void [System.Runtime]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 01 01 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.FloatsAndDoubles
 {
-  // Offset: 0x00000000 Length: 0x00000C68
+  // Offset: 0x00000000 Length: 0x00000C66
   // WARNING: managed resource file FSharpSignatureData.FloatsAndDoubles created
 }
 .mresource public FSharpOptimizationData.FloatsAndDoubles
 {
-  // Offset: 0x00000C70 Length: 0x00000348
+  // Offset: 0x00000C70 Length: 0x0000034E
   // WARNING: managed resource file FSharpOptimizationData.FloatsAndDoubles created
 }
 .module FloatsAndDoubles.exe
-// MVID: {62505C08-906B-9AD0-A745-0383085C5062}
+// MVID: {63DBF1DE-5559-9AC8-A745-0383DEF1DB63}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x035F0000
+// Image base: 0x000001AD44060000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
 
 .class public abstract auto ansi sealed floatsanddoubles
-       extends [mscorlib]System.Object
+       extends [System.Runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
   .class sequential ansi serializable sealed nested public Float
-         extends [mscorlib]System.ValueType
-         implements class [mscorlib]System.IEquatable`1<valuetype floatsanddoubles/Float>,
-                    [mscorlib]System.Collections.IStructuralEquatable,
-                    class [mscorlib]System.IComparable`1<valuetype floatsanddoubles/Float>,
-                    [mscorlib]System.IComparable,
-                    [mscorlib]System.Collections.IStructuralComparable
+         extends [System.Runtime]System.ValueType
+         implements class [System.Runtime]System.IEquatable`1<valuetype floatsanddoubles/Float>,
+                    [System.Runtime]System.Collections.IStructuralEquatable,
+                    class [System.Runtime]System.IComparable`1<valuetype floatsanddoubles/Float>,
+                    [System.Runtime]System.IComparable,
+                    [System.Runtime]System.Collections.IStructuralComparable
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
     .field assembly float64 F@
     .method public hidebysig specialname 
             instance float64  get_F() cil managed
     {
-      .custom instance void [runtime]System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 )
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -78,17 +78,16 @@
     .method public hidebysig virtual final 
             instance int32  CompareTo(valuetype floatsanddoubles/Float obj) cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       58 (0x3a)
       .maxstack  5
       .locals init (valuetype floatsanddoubles/Float& V_0,
-               class [mscorlib]System.Collections.IComparer V_1,
+               class [System.Runtime]System.Collections.IComparer V_1,
                float64 V_2,
                float64 V_3)
       IL_0000:  ldarga.s   obj
       IL_0002:  stloc.0
-      IL_0003:  call       class [mscorlib]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
+      IL_0003:  call       class [System.Runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
       IL_0008:  stloc.1
       IL_0009:  ldarg.0
       IL_000a:  ldfld      float64 floatsanddoubles/Float::F@
@@ -124,7 +123,7 @@
       IL_0030:  ldloc.2
       IL_0031:  ldloc.3
       IL_0032:  tail.
-      IL_0034:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericComparisonWithComparerIntrinsic<float64>(class [mscorlib]System.Collections.IComparer,
+      IL_0034:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericComparisonWithComparerIntrinsic<float64>(class [System.Runtime]System.Collections.IComparer,
                                                                                                                                                     !!0,
                                                                                                                                                     !!0)
       IL_0039:  ret
@@ -133,8 +132,7 @@
     .method public hidebysig virtual final 
             instance int32  CompareTo(object obj) cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       13 (0xd)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -146,15 +144,14 @@
 
     .method public hidebysig virtual final 
             instance int32  CompareTo(object obj,
-                                      class [mscorlib]System.Collections.IComparer comp) cil managed
+                                      class [System.Runtime]System.Collections.IComparer comp) cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       66 (0x42)
       .maxstack  5
       .locals init (valuetype floatsanddoubles/Float V_0,
                valuetype floatsanddoubles/Float& V_1,
-               class [mscorlib]System.Collections.IComparer V_2,
+               class [System.Runtime]System.Collections.IComparer V_2,
                float64 V_3,
                float64 V_4)
       IL_0000:  ldarg.1
@@ -198,17 +195,16 @@
       IL_0037:  ldloc.3
       IL_0038:  ldloc.s    V_4
       IL_003a:  tail.
-      IL_003c:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericComparisonWithComparerIntrinsic<float64>(class [mscorlib]System.Collections.IComparer,
+      IL_003c:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericComparisonWithComparerIntrinsic<float64>(class [System.Runtime]System.Collections.IComparer,
                                                                                                                                                     !!0,
                                                                                                                                                     !!0)
       IL_0041:  ret
     } // end of method Float::CompareTo
 
     .method public hidebysig virtual final 
-            instance int32  GetHashCode(class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
+            instance int32  GetHashCode(class [System.Runtime]System.Collections.IEqualityComparer comp) cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       31 (0x1f)
       .maxstack  7
       .locals init (int32 V_0)
@@ -218,7 +214,7 @@
       IL_0007:  ldarg.1
       IL_0008:  ldarg.0
       IL_0009:  ldfld      float64 floatsanddoubles/Float::F@
-      IL_000e:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericHashWithComparerIntrinsic<float64>(class [mscorlib]System.Collections.IEqualityComparer,
+      IL_000e:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericHashWithComparerIntrinsic<float64>(class [System.Runtime]System.Collections.IEqualityComparer,
                                                                                                                                               !!0)
       IL_0013:  ldloc.0
       IL_0014:  ldc.i4.6
@@ -237,28 +233,26 @@
     .method public hidebysig virtual final 
             instance int32  GetHashCode() cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       12 (0xc)
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
-      IL_0006:  call       instance int32 floatsanddoubles/Float::GetHashCode(class [mscorlib]System.Collections.IEqualityComparer)
+      IL_0001:  call       class [System.Runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
+      IL_0006:  call       instance int32 floatsanddoubles/Float::GetHashCode(class [System.Runtime]System.Collections.IEqualityComparer)
       IL_000b:  ret
     } // end of method Float::GetHashCode
 
     .method public hidebysig virtual final 
             instance bool  Equals(object obj,
-                                  class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
+                                  class [System.Runtime]System.Collections.IEqualityComparer comp) cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       42 (0x2a)
       .maxstack  4
       .locals init (object V_0,
                valuetype floatsanddoubles/Float V_1,
                valuetype floatsanddoubles/Float& V_2,
-               class [mscorlib]System.Collections.IEqualityComparer V_3)
+               class [System.Runtime]System.Collections.IEqualityComparer V_3)
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
       IL_0002:  ldloc.0
@@ -299,8 +293,7 @@
     .method public hidebysig virtual final 
             instance bool  Equals(valuetype floatsanddoubles/Float obj) cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       39 (0x27)
       .maxstack  4
       .locals init (valuetype floatsanddoubles/Float& V_0,
@@ -340,8 +333,7 @@
     .method public hidebysig virtual final 
             instance bool  Equals(object obj) cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       30 (0x1e)
       .maxstack  4
       .locals init (object V_0,
@@ -375,21 +367,21 @@
   } // end of class Float
 
   .class sequential ansi serializable sealed nested public Double
-         extends [mscorlib]System.ValueType
-         implements class [mscorlib]System.IEquatable`1<valuetype floatsanddoubles/Double>,
-                    [mscorlib]System.Collections.IStructuralEquatable,
-                    class [mscorlib]System.IComparable`1<valuetype floatsanddoubles/Double>,
-                    [mscorlib]System.IComparable,
-                    [mscorlib]System.Collections.IStructuralComparable
+         extends [System.Runtime]System.ValueType
+         implements class [System.Runtime]System.IEquatable`1<valuetype floatsanddoubles/Double>,
+                    [System.Runtime]System.Collections.IStructuralEquatable,
+                    class [System.Runtime]System.IComparable`1<valuetype floatsanddoubles/Double>,
+                    [System.Runtime]System.IComparable,
+                    [System.Runtime]System.Collections.IStructuralComparable
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
     .field assembly float64 D@
     .method public hidebysig specialname 
             instance float64  get_D() cil managed
     {
-      .custom instance void [runtime]System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 )
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -400,17 +392,16 @@
     .method public hidebysig virtual final 
             instance int32  CompareTo(valuetype floatsanddoubles/Double obj) cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       58 (0x3a)
       .maxstack  5
       .locals init (valuetype floatsanddoubles/Double& V_0,
-               class [mscorlib]System.Collections.IComparer V_1,
+               class [System.Runtime]System.Collections.IComparer V_1,
                float64 V_2,
                float64 V_3)
       IL_0000:  ldarga.s   obj
       IL_0002:  stloc.0
-      IL_0003:  call       class [mscorlib]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
+      IL_0003:  call       class [System.Runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
       IL_0008:  stloc.1
       IL_0009:  ldarg.0
       IL_000a:  ldfld      float64 floatsanddoubles/Double::D@
@@ -446,7 +437,7 @@
       IL_0030:  ldloc.2
       IL_0031:  ldloc.3
       IL_0032:  tail.
-      IL_0034:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericComparisonWithComparerIntrinsic<float64>(class [mscorlib]System.Collections.IComparer,
+      IL_0034:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericComparisonWithComparerIntrinsic<float64>(class [System.Runtime]System.Collections.IComparer,
                                                                                                                                                     !!0,
                                                                                                                                                     !!0)
       IL_0039:  ret
@@ -455,8 +446,7 @@
     .method public hidebysig virtual final 
             instance int32  CompareTo(object obj) cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       13 (0xd)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -468,15 +458,14 @@
 
     .method public hidebysig virtual final 
             instance int32  CompareTo(object obj,
-                                      class [mscorlib]System.Collections.IComparer comp) cil managed
+                                      class [System.Runtime]System.Collections.IComparer comp) cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       66 (0x42)
       .maxstack  5
       .locals init (valuetype floatsanddoubles/Double V_0,
                valuetype floatsanddoubles/Double& V_1,
-               class [mscorlib]System.Collections.IComparer V_2,
+               class [System.Runtime]System.Collections.IComparer V_2,
                float64 V_3,
                float64 V_4)
       IL_0000:  ldarg.1
@@ -520,17 +509,16 @@
       IL_0037:  ldloc.3
       IL_0038:  ldloc.s    V_4
       IL_003a:  tail.
-      IL_003c:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericComparisonWithComparerIntrinsic<float64>(class [mscorlib]System.Collections.IComparer,
+      IL_003c:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericComparisonWithComparerIntrinsic<float64>(class [System.Runtime]System.Collections.IComparer,
                                                                                                                                                     !!0,
                                                                                                                                                     !!0)
       IL_0041:  ret
     } // end of method Double::CompareTo
 
     .method public hidebysig virtual final 
-            instance int32  GetHashCode(class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
+            instance int32  GetHashCode(class [System.Runtime]System.Collections.IEqualityComparer comp) cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       31 (0x1f)
       .maxstack  7
       .locals init (int32 V_0)
@@ -540,7 +528,7 @@
       IL_0007:  ldarg.1
       IL_0008:  ldarg.0
       IL_0009:  ldfld      float64 floatsanddoubles/Double::D@
-      IL_000e:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericHashWithComparerIntrinsic<float64>(class [mscorlib]System.Collections.IEqualityComparer,
+      IL_000e:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericHashWithComparerIntrinsic<float64>(class [System.Runtime]System.Collections.IEqualityComparer,
                                                                                                                                               !!0)
       IL_0013:  ldloc.0
       IL_0014:  ldc.i4.6
@@ -559,28 +547,26 @@
     .method public hidebysig virtual final 
             instance int32  GetHashCode() cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       12 (0xc)
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
-      IL_0006:  call       instance int32 floatsanddoubles/Double::GetHashCode(class [mscorlib]System.Collections.IEqualityComparer)
+      IL_0001:  call       class [System.Runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
+      IL_0006:  call       instance int32 floatsanddoubles/Double::GetHashCode(class [System.Runtime]System.Collections.IEqualityComparer)
       IL_000b:  ret
     } // end of method Double::GetHashCode
 
     .method public hidebysig virtual final 
             instance bool  Equals(object obj,
-                                  class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
+                                  class [System.Runtime]System.Collections.IEqualityComparer comp) cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       42 (0x2a)
       .maxstack  4
       .locals init (object V_0,
                valuetype floatsanddoubles/Double V_1,
                valuetype floatsanddoubles/Double& V_2,
-               class [mscorlib]System.Collections.IEqualityComparer V_3)
+               class [System.Runtime]System.Collections.IEqualityComparer V_3)
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
       IL_0002:  ldloc.0
@@ -621,8 +607,7 @@
     .method public hidebysig virtual final 
             instance bool  Equals(valuetype floatsanddoubles/Double obj) cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       39 (0x27)
       .maxstack  4
       .locals init (valuetype floatsanddoubles/Double& V_0,
@@ -662,8 +647,7 @@
     .method public hidebysig virtual final 
             instance bool  Equals(object obj) cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       30 (0x1e)
       .maxstack  4
       .locals init (object V_0,
@@ -700,14 +684,14 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit> clo5
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
     .method assembly specialname rtspecialname 
             instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit> clo5) cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -737,14 +721,14 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>> clo4
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
     .method assembly specialname rtspecialname 
             instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>> clo4) cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -777,14 +761,14 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<bool,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<bool,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>> clo3
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
     .method assembly specialname rtspecialname 
             instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<bool,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>> clo3) cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -817,14 +801,14 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<bool,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<bool,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>>> clo2
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
     .method assembly specialname rtspecialname 
             instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<bool,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>>> clo2) cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -857,14 +841,14 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<bool,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>>>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<bool,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>>>> clo1
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
     .method assembly specialname rtspecialname 
             instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<bool,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>>>> clo1) cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -897,14 +881,14 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit> clo5
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
     .method assembly specialname rtspecialname 
             instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit> clo5) cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -934,14 +918,14 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>> clo4
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
     .method assembly specialname rtspecialname 
             instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>> clo4) cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -974,14 +958,14 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<bool,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<bool,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>> clo3
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
     .method assembly specialname rtspecialname 
             instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<bool,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>> clo3) cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -1014,14 +998,14 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<bool,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<bool,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>>> clo2
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
     .method assembly specialname rtspecialname 
             instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<bool,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>>> clo2) cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -1054,14 +1038,14 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<bool,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>>>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<bool,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>>>> clo1
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
     .method assembly specialname rtspecialname 
             instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<bool,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>>>> clo1) cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -1142,17 +1126,17 @@
     IL_0015:  br.s       IL_0093
 
     IL_0017:  ldstr      "Doubles:   %-17s = %-17s  is:  %-5b   Values %f = %f"
-    IL_001c:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<bool,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>>>>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.Tuple`5<string,string,bool,float64,float64>>::.ctor(string)
-    IL_0021:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<bool,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>>>>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+    IL_001c:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<bool,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>>>>,class [System.Runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [System.Runtime]System.Tuple`5<string,string,bool,float64,float64>>::.ctor(string)
+    IL_0021:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<bool,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>>>>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [System.Runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
     IL_0026:  stloc.2
     IL_0027:  ldloc.2
     IL_0028:  newobj     instance void floatsanddoubles/main@31::.ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<bool,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>>>>)
     IL_002d:  call       string[] floatsanddoubles::get_names()
     IL_0032:  ldloc.0
-    IL_0033:  ldelem     [mscorlib]System.String
+    IL_0033:  ldelem     [System.Runtime]System.String
     IL_0038:  call       string[] floatsanddoubles::get_names()
     IL_003d:  ldloc.1
-    IL_003e:  ldelem     [mscorlib]System.String
+    IL_003e:  ldelem     [System.Runtime]System.String
     IL_0043:  call       valuetype floatsanddoubles/Double[] floatsanddoubles::get_doubles()
     IL_0048:  ldloc.0
     IL_0049:  ldelema    floatsanddoubles/Double
@@ -1161,7 +1145,7 @@
     IL_0054:  ldelem     floatsanddoubles/Double
     IL_0059:  box        floatsanddoubles/Double
     IL_005e:  constrained. floatsanddoubles/Double
-    IL_0064:  callvirt   instance bool [mscorlib]System.Object::Equals(object)
+    IL_0064:  callvirt   instance bool [System.Runtime]System.Object::Equals(object)
     IL_0069:  call       valuetype floatsanddoubles/Double[] floatsanddoubles::get_doubles()
     IL_006e:  ldloc.0
     IL_006f:  ldelema    floatsanddoubles/Double
@@ -1188,8 +1172,8 @@
     IL_009b:  blt        IL_0017
 
     IL_00a0:  ldstr      ""
-    IL_00a5:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-    IL_00aa:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+    IL_00a5:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [System.Runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+    IL_00aa:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [System.Runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
     IL_00af:  pop
     IL_00b0:  ldloc.0
     IL_00b1:  ldc.i4.1
@@ -1210,17 +1194,17 @@
     IL_00cb:  br         IL_0153
 
     IL_00d0:  ldstr      "Floats:    %-17s = %-17s  is:  %-5b   Values %f = %f"
-    IL_00d5:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<bool,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>>>>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.Tuple`5<string,string,bool,float64,float64>>::.ctor(string)
-    IL_00da:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<bool,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>>>>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+    IL_00d5:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<bool,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>>>>,class [System.Runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [System.Runtime]System.Tuple`5<string,string,bool,float64,float64>>::.ctor(string)
+    IL_00da:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<bool,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>>>>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [System.Runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
     IL_00df:  stloc.s    V_5
     IL_00e1:  ldloc.s    V_5
     IL_00e3:  newobj     instance void floatsanddoubles/'main@36-5'::.ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<bool,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>>>>)
     IL_00e8:  call       string[] floatsanddoubles::get_names()
     IL_00ed:  ldloc.3
-    IL_00ee:  ldelem     [mscorlib]System.String
+    IL_00ee:  ldelem     [System.Runtime]System.String
     IL_00f3:  call       string[] floatsanddoubles::get_names()
     IL_00f8:  ldloc.s    V_4
-    IL_00fa:  ldelem     [mscorlib]System.String
+    IL_00fa:  ldelem     [System.Runtime]System.String
     IL_00ff:  call       valuetype floatsanddoubles/Float[] floatsanddoubles::get_floats()
     IL_0104:  ldloc.3
     IL_0105:  ldelema    floatsanddoubles/Float
@@ -1229,7 +1213,7 @@
     IL_0111:  ldelem     floatsanddoubles/Float
     IL_0116:  box        floatsanddoubles/Float
     IL_011b:  constrained. floatsanddoubles/Float
-    IL_0121:  callvirt   instance bool [mscorlib]System.Object::Equals(object)
+    IL_0121:  callvirt   instance bool [System.Runtime]System.Object::Equals(object)
     IL_0126:  call       valuetype floatsanddoubles/Float[] floatsanddoubles::get_floats()
     IL_012b:  ldloc.3
     IL_012c:  ldelema    floatsanddoubles/Float
@@ -1256,8 +1240,8 @@
     IL_015c:  blt        IL_00d0
 
     IL_0161:  ldstr      ""
-    IL_0166:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-    IL_016b:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+    IL_0166:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [System.Runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+    IL_016b:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [System.Runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
     IL_0170:  pop
     IL_0171:  ldloc.3
     IL_0172:  ldc.i4.1
@@ -1293,18 +1277,18 @@
 } // end of class floatsanddoubles
 
 .class private abstract auto ansi sealed '<StartupCode$FloatsAndDoubles>'.$floatsanddoubles
-       extends [mscorlib]System.Object
+       extends [System.Runtime]System.Object
 {
   .field static assembly initonly valuetype floatsanddoubles/Float[] floats@22
-  .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly initonly valuetype floatsanddoubles/Double[] doubles@23
-  .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly initonly string[] names@24
-  .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly int32 init@
-  .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-  .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+  .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+  .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
   .method private specialname rtspecialname static 
           void  .cctor() cil managed
   {
@@ -1394,35 +1378,35 @@
     IL_013a:  stsfld     valuetype floatsanddoubles/Double[] '<StartupCode$FloatsAndDoubles>'.$floatsanddoubles::doubles@23
     IL_013f:  stloc.1
     IL_0140:  ldc.i4.7
-    IL_0141:  newarr     [mscorlib]System.String
+    IL_0141:  newarr     [System.Runtime]System.String
     IL_0146:  dup
     IL_0147:  ldc.i4.0
     IL_0148:  ldstr      "Epsilon"
-    IL_014d:  stelem     [mscorlib]System.String
+    IL_014d:  stelem     [System.Runtime]System.String
     IL_0152:  dup
     IL_0153:  ldc.i4.1
     IL_0154:  ldstr      "MinValue"
-    IL_0159:  stelem     [mscorlib]System.String
+    IL_0159:  stelem     [System.Runtime]System.String
     IL_015e:  dup
     IL_015f:  ldc.i4.2
     IL_0160:  ldstr      "MaxValue"
-    IL_0165:  stelem     [mscorlib]System.String
+    IL_0165:  stelem     [System.Runtime]System.String
     IL_016a:  dup
     IL_016b:  ldc.i4.3
     IL_016c:  ldstr      "NegativeInfinity"
-    IL_0171:  stelem     [mscorlib]System.String
+    IL_0171:  stelem     [System.Runtime]System.String
     IL_0176:  dup
     IL_0177:  ldc.i4.4
     IL_0178:  ldstr      "PositiveInfinity"
-    IL_017d:  stelem     [mscorlib]System.String
+    IL_017d:  stelem     [System.Runtime]System.String
     IL_0182:  dup
     IL_0183:  ldc.i4.5
     IL_0184:  ldstr      "NaN"
-    IL_0189:  stelem     [mscorlib]System.String
+    IL_0189:  stelem     [System.Runtime]System.String
     IL_018e:  dup
     IL_018f:  ldc.i4.6
     IL_0190:  ldstr      "Number"
-    IL_0195:  stelem     [mscorlib]System.String
+    IL_0195:  stelem     [System.Runtime]System.String
     IL_019a:  dup
     IL_019b:  stsfld     string[] '<StartupCode$FloatsAndDoubles>'.$floatsanddoubles::names@24
     IL_01a0:  stloc.2
@@ -1435,4 +1419,4 @@
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
-// WARNING: Created Win32 resource file C:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\release\net472\tests\EmittedIL\Structure\FloatsAndDoubles_fs\FloatsAndDoubles.res
+// WARNING: Created Win32 resource file D:\code\FS\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Release\net7.0\tests\EmittedIL\Structure\FloatsAndDoubles_fs\FloatsAndDoubles.res

@@ -7,12 +7,12 @@
 .assembly extern System.Runtime
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 6:0:0:0
+  .ver 7:0:0:0
 }
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 6:0:0:0
+  .ver 7:0:0:0
 }
 .assembly EqualsOnUnions01
 {
@@ -21,29 +21,29 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [System.Runtime]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 01 00 00 00 00 ) 
+  //  .custom instance void [System.Runtime]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 01 01 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.EqualsOnUnions01
 {
-  // Offset: 0x00000000 Length: 0x00000691
+  // Offset: 0x00000000 Length: 0x0000067F
   // WARNING: managed resource file FSharpSignatureData.EqualsOnUnions01 created
 }
 .mresource public FSharpOptimizationData.EqualsOnUnions01
 {
-  // Offset: 0x00000698 Length: 0x000001CD
+  // Offset: 0x00000688 Length: 0x000001CD
   // WARNING: managed resource file FSharpOptimizationData.EqualsOnUnions01 created
 }
 .module EqualsOnUnions01.exe
-// MVID: {628FBBC7-134D-7F80-A745-0383C7BB8F62}
+// MVID: {63DBF1DE-A86A-1778-A745-0383DEF1DB63}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x000001B02C300000
+// Image base: 0x0000020EBF290000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -340,7 +340,6 @@
             instance int32  CompareTo(class EqualsOnUnions01/U obj) cil managed
     {
       .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       121 (0x79)
       .maxstack  5
       .locals init (int32 V_0,
@@ -436,7 +435,6 @@
             instance int32  CompareTo(object obj) cil managed
     {
       .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       13 (0xd)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -451,7 +449,6 @@
                                       class [System.Runtime]System.Collections.IComparer comp) cil managed
     {
       .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       136 (0x88)
       .maxstack  5
       .locals init (class EqualsOnUnions01/U V_0,
@@ -553,7 +550,6 @@
             instance int32  GetHashCode(class [System.Runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       64 (0x40)
       .maxstack  7
       .locals init (int32 V_0,
@@ -612,7 +608,6 @@
             instance int32  GetHashCode() cil managed
     {
       .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       12 (0xc)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -626,7 +621,6 @@
                                   class [System.Runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       111 (0x6f)
       .maxstack  4
       .locals init (class EqualsOnUnions01/U V_0,
@@ -715,7 +709,6 @@
             instance bool  Equals(class EqualsOnUnions01/U obj) cil managed
     {
       .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       95 (0x5f)
       .maxstack  4
       .locals init (int32 V_0,
@@ -794,7 +787,6 @@
             instance bool  Equals(object obj) cil managed
     {
       .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       20 (0x14)
       .maxstack  4
       .locals init (class EqualsOnUnions01/U V_0)
@@ -862,4 +854,4 @@
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
-// WARNING: Created Win32 resource file C:\Users\vzari\code\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Release\net6.0\tests\EmittedIL\Misc\EqualsOnUnions01_fs\EqualsOnUnions01.res
+// WARNING: Created Win32 resource file D:\code\FS\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Release\net7.0\tests\EmittedIL\Misc\EqualsOnUnions01_fs\EqualsOnUnions01.res

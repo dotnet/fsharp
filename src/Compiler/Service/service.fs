@@ -49,6 +49,11 @@ module EnvMisc =
 // BackgroundCompiler
 //
 
+[<RequireQualifiedAccess>]
+type DocumentSource =
+    | FileSystem
+    | Custom of (string -> ISourceText option)
+
 /// Callback that indicates whether a requested result has become obsolete.
 [<NoComparison; NoEquality>]
 type IsResultObsolete = IsResultObsolete of (unit -> bool)
@@ -189,7 +194,9 @@ type BackgroundCompiler
         enablePartialTypeChecking,
         enableParallelCheckingWithSignatureFiles,
         parallelReferenceResolution,
-        captureIdentifiersWhenParsing
+        captureIdentifiersWhenParsing,
+        getSource: (string -> ISourceText option) option,
+        useChangeNotifications
     ) as self =
 
     let beforeFileChecked = Event<string * FSharpProjectOptions>()
@@ -322,7 +329,9 @@ type BackgroundCompiler
                     enableParallelCheckingWithSignatureFiles,
                     dependencyProvider,
                     parallelReferenceResolution,
-                    captureIdentifiersWhenParsing
+                    captureIdentifiersWhenParsing,
+                    getSource,
+                    useChangeNotifications
                 )
 
             match builderOpt with
@@ -629,6 +638,9 @@ type BackgroundCompiler
         ) =
 
         node {
+            if useChangeNotifications then
+                do! builder.NotifyFileChanged(fileName, DateTime.UtcNow)
+
             match! bc.GetCachedCheckFileResult(builder, fileName, sourceText, options) with
             | Some (_, results) -> return FSharpCheckFileAnswer.Succeeded results
             | _ ->
@@ -768,6 +780,24 @@ type BackgroundCompiler
                         bc.CheckOneFileImpl(parseResults, sourceText, fileName, options, fileVersion, builder, tcPrior, tcInfo, creationDiags)
 
                     return (parseResults, checkResults)
+        }
+
+    member _.NotifyFileChanged(fileName, options, userOpName) =
+        node {
+            use _ =
+                Activity.start
+                    "BackgroundCompiler.NotifyFileChanged"
+                    [|
+                        Activity.Tags.project, options.ProjectFileName
+                        Activity.Tags.fileName, fileName
+                        Activity.Tags.userOpName, userOpName
+                    |]
+
+            let! builderOpt, _ = getOrCreateBuilder (options, userOpName)
+
+            match builderOpt with
+            | None -> return ()
+            | Some builder -> do! builder.NotifyFileChanged(fileName, DateTime.UtcNow)
         }
 
     /// Fetch the check information from the background compiler (which checks w.r.t. the FileSystem API)
@@ -1234,7 +1264,9 @@ type FSharpChecker
         enablePartialTypeChecking,
         enableParallelCheckingWithSignatureFiles,
         parallelReferenceResolution,
-        captureIdentifiersWhenParsing
+        captureIdentifiersWhenParsing,
+        getSource,
+        useChangeNotifications
     ) =
 
     let backgroundCompiler =
@@ -1250,7 +1282,9 @@ type FSharpChecker
             enablePartialTypeChecking,
             enableParallelCheckingWithSignatureFiles,
             parallelReferenceResolution,
-            captureIdentifiersWhenParsing
+            captureIdentifiersWhenParsing,
+            getSource,
+            useChangeNotifications
         )
 
     static let globalInstance = lazy FSharpChecker.Create()
@@ -1294,7 +1328,8 @@ type FSharpChecker
             ?enablePartialTypeChecking,
             ?enableParallelCheckingWithSignatureFiles,
             ?parallelReferenceResolution: bool,
-            ?captureIdentifiersWhenParsing: bool
+            ?captureIdentifiersWhenParsing: bool,
+            ?documentSource: DocumentSource
         ) =
 
         use _ = Activity.startNoTags "FSharpChecker.Create"
@@ -1318,6 +1353,11 @@ type FSharpChecker
         let enableParallelCheckingWithSignatureFiles = defaultArg enableParallelCheckingWithSignatureFiles false
         let captureIdentifiersWhenParsing = defaultArg captureIdentifiersWhenParsing false
 
+        let useChangeNotifications =
+            match documentSource with
+            | Some (DocumentSource.Custom _) -> true
+            | _ -> false
+
         if keepAssemblyContents && enablePartialTypeChecking then
             invalidArg "enablePartialTypeChecking" "'keepAssemblyContents' and 'enablePartialTypeChecking' cannot be both enabled."
 
@@ -1335,7 +1375,11 @@ type FSharpChecker
             enablePartialTypeChecking,
             enableParallelCheckingWithSignatureFiles,
             parallelReferenceResolution,
-            captureIdentifiersWhenParsing
+            captureIdentifiersWhenParsing,
+            (match documentSource with
+             | Some (DocumentSource.Custom f) -> Some f
+             | _ -> None),
+            useChangeNotifications
         )
 
     member _.ReferenceResolver = legacyReferenceResolver
@@ -1439,6 +1483,12 @@ type FSharpChecker
     member _.NotifyProjectCleaned(options: FSharpProjectOptions, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
         backgroundCompiler.NotifyProjectCleaned(options, userOpName)
+
+    member _.NotifyFileChanged(fileName: string, options: FSharpProjectOptions, ?userOpName: string) =
+        let userOpName = defaultArg userOpName "Unknown"
+
+        backgroundCompiler.NotifyFileChanged(fileName, options, userOpName)
+        |> Async.AwaitNodeCode
 
     /// Typecheck a source code file, returning a handle to the results of the
     /// parse including the reconstructed types in the file.
