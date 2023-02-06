@@ -1288,8 +1288,8 @@ module rec Compiler =
         module TextBasedDiagnosticAsserts = 
             open FSharp.Compiler.Text.Range
 
-            let private messageAndNumber erroryType = 
-                match erroryType with
+            let private messageAndNumber errorType= 
+                match errorType with
                 | ErrorType.Error n -> "error",n
                 | ErrorType.Warning n-> "warning",n
                 | ErrorType.Hidden n
@@ -1323,7 +1323,7 @@ module rec Compiler =
                 | _ -> File.WriteAllText(path, actualErrors)
 
                 match Assert.shouldBeSameMultilineStringSets expectedContent actualErrors with
-                | None -> () // Assert.That(actualErrors, Is.EqualTo(expectedContent).NoClip,path)
+                | None -> () 
                 | Some diff -> Assert.That(diff, Is.Empty, path)
                 
                 result
