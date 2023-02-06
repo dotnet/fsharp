@@ -287,7 +287,7 @@ module SyntaxTraversal =
                 | SynModuleDecl.NestedModule (decls = synModuleDecls; moduleInfo = SynComponentInfo (attributes = attributes)) ->
                     synModuleDecls
                     |> List.map (fun x -> dive x x.Range (traverseSynModuleDecl path))
-                    |> List.append (traverseAttributeApplication path attributes)
+                    |> List.append (attributeApplicationDives path attributes)
                     |> pick decl
                 | SynModuleDecl.Let (isRecursive, synBindingList, range) ->
                     match visitor.VisitLetOrUse(path, isRecursive, traverseSynBinding path, synBindingList, range) with
@@ -303,7 +303,7 @@ module SyntaxTraversal =
                     |> pick decl
                 | SynModuleDecl.Exception (_synExceptionDefn, _range) -> None
                 | SynModuleDecl.Open (_target, _range) -> None
-                | SynModuleDecl.Attributes (attributes, _) -> traverseAttributeApplication path attributes |> pick decl
+                | SynModuleDecl.Attributes (attributes, _) -> attributeApplicationDives path attributes |> pick decl
                 | SynModuleDecl.HashDirective (parsedHashDirective, range) -> visitor.VisitHashDirective(path, parsedHashDirective, range)
                 | SynModuleDecl.NamespaceFragment (synModuleOrNamespace) -> traverseSynModuleOrNamespace path synModuleOrNamespace
 
@@ -801,7 +801,7 @@ module SyntaxTraversal =
                 | SynPat.ArrayOrList (_, ps, _) -> ps |> List.tryPick (traversePat path)
                 | SynPat.Attrib (p, attributes, m) ->
                     match traversePat path p with
-                    | None -> traverseAttributeApplication path attributes |> pick m attributes
+                    | None -> attributeApplicationDives path attributes |> pick m attributes
                     | x -> x
                 | SynPat.LongIdent (argPats = args) ->
                     match args with
@@ -822,7 +822,7 @@ module SyntaxTraversal =
                 |> List.tryPick (fun pat ->
                     match pat with
                     | SynSimplePat.Attrib (attributes = attributes; range = m) ->
-                        traverseAttributeApplication origPath attributes |> pick m attributes
+                        attributeApplicationDives origPath attributes |> pick m attributes
                     | _ -> None)
             | x -> x
 
@@ -878,7 +878,7 @@ module SyntaxTraversal =
                 match synComponentInfo with
                 | SynComponentInfo (attributes = attributes) ->
                     [
-                        yield! traverseAttributeApplication path attributes
+                        yield! attributeApplicationDives path attributes
 
                         match synTypeDefnRepr with
                         | SynTypeDefnRepr.Exception _ ->
@@ -912,25 +912,25 @@ module SyntaxTraversal =
 
         and traverseRecordDefn path fields m =
             fields
-            |> List.tryPick (fun (SynField (attributes = attributes)) -> traverseAttributeApplication path attributes |> pick m attributes)
+            |> List.tryPick (fun (SynField (attributes = attributes)) -> attributeApplicationDives path attributes |> pick m attributes)
             |> Option.orElseWith (fun () -> visitor.VisitRecordDefn(path, fields, m))
 
         and traverseEnumDefn path cases m =
             cases
             |> List.tryPick (fun (SynEnumCase (attributes = attributes)) ->
-                traverseAttributeApplication path attributes |> pick m attributes)
+                attributeApplicationDives path attributes |> pick m attributes)
             |> Option.orElseWith (fun () -> visitor.VisitEnumDefn(path, cases, m))
 
         and traverseUnionDefn path cases m =
             cases
             |> List.tryPick (fun (SynUnionCase (attributes = attributes; caseType = caseType)) ->
-                match traverseAttributeApplication path attributes |> pick m attributes with
+                match attributeApplicationDives path attributes |> pick m attributes with
                 | None ->
                     match caseType with
                     | SynUnionCaseKind.Fields fields ->
                         fields
                         |> List.tryPick (fun (SynField (attributes = attributes)) ->
-                            traverseAttributeApplication path attributes |> pick m attributes)
+                            attributeApplicationDives path attributes |> pick m attributes)
                     | _ -> None
                 | x -> x)
             |> Option.orElseWith (fun () -> visitor.VisitUnionDefn(path, cases, m))
@@ -966,7 +966,7 @@ module SyntaxTraversal =
                 |> pick m
             | SynMemberDefn.AutoProperty (synExpr = synExpr; attributes = attributes) ->
                 match traverseSynExpr path synExpr with
-                | None -> traverseAttributeApplication path attributes |> pick attributes
+                | None -> attributeApplicationDives path attributes |> pick attributes
                 | x -> x
             | SynMemberDefn.LetBindings (synBindingList, isRecursive, _, range) ->
                 match visitor.VisitLetOrUse(path, isRecursive, traverseSynBinding path, synBindingList, range) with
@@ -977,7 +977,7 @@ module SyntaxTraversal =
                 | x -> x
             | SynMemberDefn.AbstractSlot(slotSig = SynValSig (synType = synType; attributes = attributes)) ->
                 match traverseSynType path synType with
-                | None -> traverseAttributeApplication path attributes |> pick attributes
+                | None -> attributeApplicationDives path attributes |> pick attributes
                 | x -> x
             | SynMemberDefn.Interface (interfaceType = synType; members = synMemberDefnsOption) ->
                 match visitor.VisitInterfaceSynMemberDefnType(path, synType) with
@@ -1021,7 +1021,7 @@ module SyntaxTraversal =
                 match b with
                 | SynBinding (headPat = synPat; expr = synExpr; attributes = attributes; range = m) ->
                     [
-                        yield! traverseAttributeApplication path attributes
+                        yield! attributeApplicationDives path attributes
                         dive synPat synPat.Range (traversePat path)
                         dive synExpr synExpr.Range (traverseSynExpr path)
                     ]
@@ -1029,12 +1029,8 @@ module SyntaxTraversal =
 
             visitor.VisitBinding(origPath, defaultTraverse, b)
 
-        and traverseAttributeApplication origPath attributes =
-            match attributes with
-            | [] -> []
-            | _ ->
-                attributes
-                |> List.map (fun attributes -> dive () attributes.Range (fun () -> visitor.VisitAttributeApplication(origPath, attributes)))
+        and attributeApplicationDives origPath attributes =
+            attributes |> List.map (fun attributes -> dive () attributes.Range (fun () -> visitor.VisitAttributeApplication(origPath, attributes)))
 
         match parseTree with
         | ParsedInput.ImplFile file ->
