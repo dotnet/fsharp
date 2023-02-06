@@ -62,15 +62,12 @@ type CompletionContext =
 
     | RangeOperator
 
-    /// Completing named parameters\setters in parameter list of constructor\method calls
+    /// Completing named parameters\setters in parameter list of attributes\constructor\method calls
     /// end of name ast node * list of properties\parameters that were already set
     | ParameterList of pos * HashSet<string>
 
+    /// Completing an attribute name, outside of the constructor
     | AttributeApplication
-
-    /// The same as as 'ParameterList', except within the context of attribute application,
-    /// which is more restrictive
-    | AttributeApplicationParameterList of pos * HashSet<string>
 
     | OpenDeclaration of isOpenType: bool
 
@@ -1534,7 +1531,7 @@ module ParsedInput =
                             Some CompletionContext.AttributeApplication
                         // [<Att(M| = )>]
                         elif rangeContainsPos att.ArgExpr.Range pos then
-                            Some(CompletionContext.AttributeApplicationParameterList(att.TypeName.Range.End, findSetters att.ArgExpr))
+                            Some(CompletionContext.ParameterList(att.TypeName.Range.End, findSetters att.ArgExpr))
                         else
                             None)
             }

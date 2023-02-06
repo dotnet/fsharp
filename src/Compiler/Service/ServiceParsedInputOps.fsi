@@ -35,15 +35,12 @@ type public CompletionContext =
 
     | RangeOperator
 
-    /// Completing named parameters\setters in parameter list of constructor\method calls
+    /// Completing named parameters\setters in parameter list of attributes\constructor\method calls
     /// end of name ast node * list of properties\parameters that were already set
     | ParameterList of pos * HashSet<string>
 
+    /// Completing an attribute name, outside of the constructor
     | AttributeApplication
-
-    /// The same as as 'ParameterList', except within the context of attribute application,
-    /// which is more restrictive
-    | AttributeApplicationParameterList of pos * HashSet<string>
 
     | OpenDeclaration of isOpenType: bool
 
