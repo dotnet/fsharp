@@ -14,7 +14,7 @@ if (-not ($output -eq $expected))
 }
 
 # Checking that FSharp.Core binary is of expected size (needs adjustments if test is updated).
-$expected_len = 248320 # In bytes
+$expected_len = 247808 # In bytes
 $file = Get-Item .\bin\Release\net7.0\win-x64\publish\FSharp.Core.dll
 $file_len = $file.Length
 if (-not ($file_len -eq $expected_len))
