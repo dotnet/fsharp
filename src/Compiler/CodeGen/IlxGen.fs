@@ -614,7 +614,8 @@ let GenReadOnlyAttribute (g: TcGlobals) =
 
 let GenReadOnlyAttributeIfNecessary (g: TcGlobals) ty =
     let add =
-        g.isSystem_Runtime_CompilerServices_IsReadOnlyAttributeAvailable
+        false
+        && g.isSystem_Runtime_CompilerServices_IsReadOnlyAttributeAvailable
         && isInByrefTy g ty
         && g.attrib_IsReadOnlyAttribute.TyconRef.CanDeref
 
@@ -2088,7 +2089,11 @@ type AnonTypeGenerationTable() =
                 [
                     for propName, fldName, fldTy in flds ->
                         let attrs =
-                            if g.isSystem_Runtime_CompilerServices_IsReadOnlyAttributeAvailable && isStruct then
+                            if
+                                false
+                                && g.isSystem_Runtime_CompilerServices_IsReadOnlyAttributeAvailable
+                                && isStruct
+                            then
                                 [ GenReadOnlyAttribute g ]
                             else
                                 []
@@ -10893,7 +10898,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
 
                             let attrs =
                                 if
-                                    g.isSystem_Runtime_CompilerServices_IsReadOnlyAttributeAvailable
+                                    false
+                                    && g.isSystem_Runtime_CompilerServices_IsReadOnlyAttributeAvailable
                                     && isStruct
                                     && not isStatic
                                 then
