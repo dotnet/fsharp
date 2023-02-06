@@ -48,6 +48,21 @@ if I<int>.Echo 42 <> 42 || I<int>.Prop <> 0 || not (isNull I<string>.Prop) then
     |> shouldSucceed
 
 [<Fact>]
+let ``Concrete static members are not allowed in interfaces in lang version70``() =
+    FSharp $"""
+[<Interface>]
+type I<'T> =
+    static member Echo (x: 'T) = x
+    static member Prop = Unchecked.defaultof<'T>
+    """
+    |> withLangVersion70
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [
+        (Error 868, Line 4, Col 19, Line 4, Col 23, "Interfaces cannot contain definitions of concrete members. You may need to define a constructor on your type to indicate that the type is a class.")
+    ]
+
+[<Fact>]
 let ``Interface with concrete static members can be implemented in lang preview``() =
     FSharp $"""
 [<Interface>]
