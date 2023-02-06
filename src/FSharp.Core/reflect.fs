@@ -628,27 +628,6 @@ module internal Impl =
 
     //-----------------------------------------------------------------
     // TUPLE DECOMPILATION
-    let tupleNames =
-        [|
-            "System.Tuple`1"
-            "System.Tuple`2"
-            "System.Tuple`3"
-            "System.Tuple`4"
-            "System.Tuple`5"
-            "System.Tuple`6"
-            "System.Tuple`7"
-            "System.Tuple`8"
-            "System.Tuple"
-            "System.ValueTuple`1"
-            "System.ValueTuple`2"
-            "System.ValueTuple`3"
-            "System.ValueTuple`4"
-            "System.ValueTuple`5"
-            "System.ValueTuple`6"
-            "System.ValueTuple`7"
-            "System.ValueTuple`8"
-            "System.ValueTuple"
-        |]
 
     let simpleTupleNames =
         [|
@@ -679,69 +658,137 @@ module internal Impl =
         // used in F# type providers.
         typ.IsGenericType
         && typ.Namespace = "System"
-        && simpleTupleNames |> Seq.exists typ.Name.StartsWith
+        && simpleTupleNames |> Array.exists typ.Name.StartsWith
 
     let maxTuple = 8
     // Which field holds the nested tuple?
     let tupleEncField = maxTuple - 1
 
-    let dictionaryLock = obj ()
-    let refTupleTypes = Dictionary<Assembly, Type[]>()
-    let valueTupleTypes = Dictionary<Assembly, Type[]>()
+    module internal TupleFromSpecifiedAssembly =
+        let private tupleNames =
+            [|
+                "System.Tuple`1"
+                "System.Tuple`2"
+                "System.Tuple`3"
+                "System.Tuple`4"
+                "System.Tuple`5"
+                "System.Tuple`6"
+                "System.Tuple`7"
+                "System.Tuple`8"
+                "System.Tuple"
+                "System.ValueTuple`1"
+                "System.ValueTuple`2"
+                "System.ValueTuple`3"
+                "System.ValueTuple`4"
+                "System.ValueTuple`5"
+                "System.ValueTuple`6"
+                "System.ValueTuple`7"
+                "System.ValueTuple`8"
+                "System.ValueTuple"
+            |]
 
-    let rec mkTupleType isStruct (asm: Assembly) (tys: Type[]) =
-        let table =
-            let makeIt n =
-                let tupleFullName n =
-                    let structOffset = if isStruct then 9 else 0
-                    let index = n - 1 + structOffset
-                    tupleNames.[index]
+        let private dictionaryLock = obj ()
+        let private refTupleTypes = Dictionary<Assembly, Type[]>()
+        let private valueTupleTypes = Dictionary<Assembly, Type[]>()
 
-                match n with
-                | 1 -> asm.GetType(tupleFullName 1)
-                | 2 -> asm.GetType(tupleFullName 2)
-                | 3 -> asm.GetType(tupleFullName 3)
-                | 4 -> asm.GetType(tupleFullName 4)
-                | 5 -> asm.GetType(tupleFullName 5)
-                | 6 -> asm.GetType(tupleFullName 6)
-                | 7 -> asm.GetType(tupleFullName 7)
-                | 8 -> asm.GetType(tupleFullName 8)
-                | _ -> invalidArg "tys" (SR.GetString(SR.invalidTupleTypes))
+        let rec mkTupleType isStruct (asm: Assembly) (tys: Type[]) =
+            let table =
+                let makeIt n =
+                    let tupleFullName n =
+                        let structOffset = if isStruct then 9 else 0
+                        let index = n - 1 + structOffset
+                        tupleNames.[index]
 
-            let tables =
-                if isStruct then
-                    valueTupleTypes
-                else
-                    refTupleTypes
+                    match n with
+                    | 1 -> asm.GetType(tupleFullName 1)
+                    | 2 -> asm.GetType(tupleFullName 2)
+                    | 3 -> asm.GetType(tupleFullName 3)
+                    | 4 -> asm.GetType(tupleFullName 4)
+                    | 5 -> asm.GetType(tupleFullName 5)
+                    | 6 -> asm.GetType(tupleFullName 6)
+                    | 7 -> asm.GetType(tupleFullName 7)
+                    | 8 -> asm.GetType(tupleFullName 8)
+                    | _ -> invalidArg "tys" (SR.GetString(SR.invalidTupleTypes))
 
-            match lock dictionaryLock (fun () -> tables.TryGetValue asm) with
-            | false, _ ->
-                // the Dictionary<>s here could be ConcurrentDictionary<>'s, but then
-                // that would lock while initializing the Type array (maybe not an issue)
-                let mutable a = Array.init<Type> 8 (fun i -> makeIt (i + 1))
+                let tables =
+                    if isStruct then
+                        valueTupleTypes
+                    else
+                        refTupleTypes
 
-                lock dictionaryLock (fun () ->
-                    match tables.TryGetValue asm with
-                    | true, t -> a <- t
-                    | false, _ -> tables.Add(asm, a))
+                match lock dictionaryLock (fun () -> tables.TryGetValue asm) with
+                | false, _ ->
+                    // the Dictionary<>s here could be ConcurrentDictionary<>'s, but then
+                    // that would lock while initializing the Type array (maybe not an issue)
+                    let mutable a = Array.init<Type> 8 (fun i -> makeIt (i + 1))
 
-                a
-            | true, t -> t
+                    lock dictionaryLock (fun () ->
+                        match tables.TryGetValue asm with
+                        | true, t -> a <- t
+                        | false, _ -> tables.Add(asm, a))
 
-        match tys.Length with
-        | 1 -> table.[0].MakeGenericType tys
-        | 2 -> table.[1].MakeGenericType tys
-        | 3 -> table.[2].MakeGenericType tys
-        | 4 -> table.[3].MakeGenericType tys
-        | 5 -> table.[4].MakeGenericType tys
-        | 6 -> table.[5].MakeGenericType tys
-        | 7 -> table.[6].MakeGenericType tys
-        | n when n >= maxTuple ->
-            let tysA = tys.[0 .. tupleEncField - 1]
-            let tysB = tys.[maxTuple - 1 ..]
-            let tyB = mkTupleType isStruct asm tysB
-            table.[7].MakeGenericType(Array.append tysA [| tyB |])
-        | _ -> invalidArg "tys" (SR.GetString(SR.invalidTupleTypes))
+                    a
+                | true, t -> t
+
+            match tys.Length with
+            | 1 -> table.[0].MakeGenericType tys
+            | 2 -> table.[1].MakeGenericType tys
+            | 3 -> table.[2].MakeGenericType tys
+            | 4 -> table.[3].MakeGenericType tys
+            | 5 -> table.[4].MakeGenericType tys
+            | 6 -> table.[5].MakeGenericType tys
+            | 7 -> table.[6].MakeGenericType tys
+            | n when n >= maxTuple ->
+                let tysA = tys.[0 .. tupleEncField - 1]
+                let tysB = tys.[maxTuple - 1 ..]
+                let tyB = mkTupleType isStruct asm tysB
+                table.[7].MakeGenericType(Array.append tysA [| tyB |])
+            | _ -> invalidArg "tys" (SR.GetString(SR.invalidTupleTypes))
+
+    let refTupleTypesNetStandard =
+        [|
+            typedefof<System.Tuple<_>>
+            typedefof<System.Tuple<_, _>>
+            typedefof<System.Tuple<_, _, _>>
+            typedefof<System.Tuple<_, _, _, _>>
+            typedefof<System.Tuple<_, _, _, _, _>>
+            typedefof<System.Tuple<_, _, _, _, _, _>>
+            typedefof<System.Tuple<_, _, _, _, _, _, _>>
+            typedefof<System.Tuple<_, _, _, _, _, _, _, _>>
+        |]
+
+    let structTupleTypesNetStandard =
+        [|
+            typedefof<System.ValueTuple<_>>
+            typedefof<System.ValueTuple<_, _>>
+            typedefof<System.ValueTuple<_, _, _>>
+            typedefof<System.ValueTuple<_, _, _, _>>
+            typedefof<System.ValueTuple<_, _, _, _, _>>
+            typedefof<System.ValueTuple<_, _, _, _, _, _>>
+            typedefof<System.ValueTuple<_, _, _, _, _, _, _>>
+            typedefof<System.ValueTuple<_, _, _, _, _, _, _, _>>
+        |]
+
+    /// Index of the recursively-nested Tuple type within the table of types
+    [<Literal>]
+    let nestedTupIndex = 7
+
+    /// Index of the last regular (non-nested) tuple type within the table of types
+    [<Literal>]
+    let lastRegularTupIndex = 6 //nestedTupIndex - 1 (wait for arithmetic in constants)
+
+    let rec mkTupleTypeNetStandard (tupTyTbl: Type[]) (tys: Type[]) =
+        let tblIdx = tys.Length - 1
+        assert (tblIdx >= 0)
+        assert (nestedTupIndex = tupTyTbl.Length - 1)
+
+        match tblIdx with
+        | idx when idx < nestedTupIndex -> tupTyTbl[ idx ].MakeGenericType tys
+        | _ ->
+            let tysA = tys.[0..lastRegularTupIndex]
+            let tysB = tys.[nestedTupIndex..]
+            let tyB = mkTupleTypeNetStandard tupTyTbl tysB
+            tupTyTbl.[nestedTupIndex].MakeGenericType([| yield! tysA; yield tyB |])
 
     let rec getTupleTypeInfo (typ: Type) =
         if not (isTupleType typ) then
@@ -1111,18 +1158,13 @@ type FSharpType =
     static member MakeTupleType(types: Type[]) =
         checkNonNull "types" types
 
-        // No assembly passed therefore just get framework local version of Tuple
-        let asm = typeof<System.Tuple>.Assembly
+        if types.Length = 0 then
+            invalidArg "types" (SR.GetString(SR.invalidTupleTypes))
 
-        if
-            types
-            |> Array.exists (function
-                | null -> true
-                | _ -> false)
-        then
+        if types |> Array.exists isNull then
             invalidArg "types" (SR.GetString(SR.nullsNotAllowedInArray))
 
-        mkTupleType false asm types
+        mkTupleTypeNetStandard refTupleTypesNetStandard types
 
     static member MakeTupleType(asm: Assembly, types: Type[]) =
         checkNonNull "types" types
@@ -1135,7 +1177,7 @@ type FSharpType =
         then
             invalidArg "types" (SR.GetString(SR.nullsNotAllowedInArray))
 
-        mkTupleType false asm types
+        TupleFromSpecifiedAssembly.mkTupleType false asm types
 
     static member MakeStructTupleType(asm: Assembly, types: Type[]) =
         checkNonNull "types" types
@@ -1148,7 +1190,18 @@ type FSharpType =
         then
             invalidArg "types" (SR.GetString(SR.nullsNotAllowedInArray))
 
-        mkTupleType true asm types
+        TupleFromSpecifiedAssembly.mkTupleType true asm types
+
+    static member MakeStructTupleType(types: Type[]) =
+        checkNonNull "types" types
+
+        if types.Length = 0 then
+            invalidArg "types" (SR.GetString(SR.invalidTupleTypes))
+
+        if types |> Array.exists isNull then
+            invalidArg "types" (SR.GetString(SR.nullsNotAllowedInArray))
+
+        mkTupleTypeNetStandard structTupleTypesNetStandard types
 
     static member GetTupleElements(tupleType: Type) =
         checkTupleType ("tupleType", tupleType)

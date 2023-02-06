@@ -7,17 +7,17 @@
 .assembly extern System.Runtime
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 6:0:0:0
+  .ver 7:0:0:0
 }
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 6:0:0:0
+  .ver 7:0:0:0
 }
 .assembly extern System.Console
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 6:0:0:0
+  .ver 7:0:0:0
 }
 .assembly TestFunction23
 {
@@ -26,14 +26,14 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [System.Runtime]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 01 00 00 00 00 ) 
+  //  .custom instance void [System.Runtime]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 01 01 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.TestFunction23
 {
-  // Offset: 0x00000000 Length: 0x00000371
+  // Offset: 0x00000000 Length: 0x0000036D
   // WARNING: managed resource file FSharpSignatureData.TestFunction23 created
 }
 .mresource public FSharpOptimizationData.TestFunction23
@@ -42,13 +42,13 @@
   // WARNING: managed resource file FSharpOptimizationData.TestFunction23 created
 }
 .module TestFunction23.exe
-// MVID: {624E2EB1-1D54-3448-A745-0383B12E4E62}
+// MVID: {63DBF1DE-AD20-130E-A745-0383DEF1DB63}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00000199E9000000
+// Image base: 0x000001C071960000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -102,7 +102,6 @@
             g() cil managed
     {
       .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -194,4 +193,4 @@
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
-// WARNING: Created Win32 resource file C:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Debug\net6.0\tests\EmittedIL\TestFunctions\TestFunction23_fs\TestFunction23.res
+// WARNING: Created Win32 resource file D:\code\FS\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Release\net7.0\tests\EmittedIL\TestFunctions\TestFunction23_fs\TestFunction23.res

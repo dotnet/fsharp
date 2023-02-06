@@ -7,12 +7,12 @@
 .assembly extern System.Runtime
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 6:0:0:0
+  .ver 7:0:0:0
 }
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 6:0:0:0
+  .ver 7:0:0:0
 }
 .assembly Equals05
 {
@@ -21,29 +21,29 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [System.Runtime]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 00 00 00 00 00 ) 
+  //  .custom instance void [System.Runtime]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 01 00 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.Equals05
 {
-  // Offset: 0x00000000 Length: 0x000006F7
+  // Offset: 0x00000000 Length: 0x00000703
   // WARNING: managed resource file FSharpSignatureData.Equals05 created
 }
 .mresource public FSharpOptimizationData.Equals05
 {
-  // Offset: 0x00000700 Length: 0x000003C5
+  // Offset: 0x00000708 Length: 0x000003C5
   // WARNING: managed resource file FSharpOptimizationData.Equals05 created
 }
 .module Equals05.exe
-// MVID: {628F4C90-28FA-85D1-A745-0383904C8F62}
+// MVID: {63DBF1DE-02DA-614A-A745-0383DEF1DB63}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x000001B974410000
+// Image base: 0x000002B17B390000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -74,8 +74,8 @@
       .method public hidebysig specialname 
               instance int32  get_key1() cil managed
       {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
+        .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       7 (0x7)
         .maxstack  8
         IL_0000:  ldarg.0
@@ -86,8 +86,8 @@
       .method public hidebysig specialname 
               instance int32  get_key2() cil managed
       {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
+        .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       7 (0x7)
         .maxstack  8
         IL_0000:  ldarg.0
@@ -130,7 +130,6 @@
               instance int32  CompareTo(class Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR obj) cil managed
       {
         .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
         // Code size       87 (0x57)
         .maxstack  5
         .locals init (int32 V_0,
@@ -207,7 +206,6 @@
               instance int32  CompareTo(object obj) cil managed
       {
         .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
         // Code size       13 (0xd)
         .maxstack  8
         IL_0000:  ldarg.0
@@ -222,7 +220,6 @@
                                         class [System.Runtime]System.Collections.IComparer comp) cil managed
       {
         .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
         // Code size       92 (0x5c)
         .maxstack  5
         .locals init (class Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR V_0,
@@ -300,7 +297,6 @@
               instance int32  GetHashCode(class [System.Runtime]System.Collections.IEqualityComparer comp) cil managed
       {
         .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
         // Code size       51 (0x33)
         .maxstack  7
         .locals init (int32 V_0)
@@ -346,7 +342,6 @@
               instance int32  GetHashCode() cil managed
       {
         .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
         // Code size       12 (0xc)
         .maxstack  8
         IL_0000:  ldarg.0
@@ -360,7 +355,6 @@
                                     class [System.Runtime]System.Collections.IEqualityComparer comp) cil managed
       {
         .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
         // Code size       54 (0x36)
         .maxstack  4
         .locals init (class Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR V_0)
@@ -404,7 +398,6 @@
               instance bool  Equals(class Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR obj) cil managed
       {
         .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
         // Code size       47 (0x2f)
         .maxstack  8
         IL_0000:  ldarg.0
@@ -444,7 +437,6 @@
               instance bool  Equals(object obj) cil managed
       {
         .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
         // Code size       20 (0x14)
         .maxstack  4
         .locals init (class Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR V_0)
@@ -539,4 +531,4 @@
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
-// WARNING: Created Win32 resource file C:\dev\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Debug\net6.0\tests\EmittedIL\GenericComparison\Equals05_fsx\Equals05.res
+// WARNING: Created Win32 resource file D:\code\FS\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Release\net7.0\tests\EmittedIL\GenericComparison\Equals05_fsx\Equals05.res
