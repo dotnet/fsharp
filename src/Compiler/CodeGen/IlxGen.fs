@@ -613,7 +613,7 @@ let GenReadOnlyAttribute (g: TcGlobals) =
     mkILCustomAttribute (g.attrib_IsReadOnlyAttribute.TypeRef, [], [], [])
 
 let GenReadOnlyAttributeIfNecessary (g: TcGlobals) ty =
-    let add = 
+    let add =
         false
         && g.isSystem_Runtime_CompilerServices_IsReadOnlyAttributeAvailable
         && isInByrefTy g ty
@@ -2089,7 +2089,11 @@ type AnonTypeGenerationTable() =
                 [
                     for propName, fldName, fldTy in flds ->
                         let attrs =
-                            if false && g.isSystem_Runtime_CompilerServices_IsReadOnlyAttributeAvailable && isStruct then
+                            if
+                                false
+                                && g.isSystem_Runtime_CompilerServices_IsReadOnlyAttributeAvailable
+                                && isStruct
+                            then
                                 [ GenReadOnlyAttribute g ]
                             else
                                 []
