@@ -917,8 +917,7 @@ module SyntaxTraversal =
 
         and traverseEnumDefn path cases m =
             cases
-            |> List.tryPick (fun (SynEnumCase (attributes = attributes)) ->
-                attributeApplicationDives path attributes |> pick m attributes)
+            |> List.tryPick (fun (SynEnumCase (attributes = attributes)) -> attributeApplicationDives path attributes |> pick m attributes)
             |> Option.orElseWith (fun () -> visitor.VisitEnumDefn(path, cases, m))
 
         and traverseUnionDefn path cases m =
@@ -1030,7 +1029,8 @@ module SyntaxTraversal =
             visitor.VisitBinding(origPath, defaultTraverse, b)
 
         and attributeApplicationDives origPath attributes =
-            attributes |> List.map (fun attributes -> dive () attributes.Range (fun () -> visitor.VisitAttributeApplication(origPath, attributes)))
+            attributes
+            |> List.map (fun attributes -> dive () attributes.Range (fun () -> visitor.VisitAttributeApplication(origPath, attributes)))
 
         match parseTree with
         | ParsedInput.ImplFile file ->
