@@ -9109,10 +9109,12 @@ and GenMethodForBinding
 
     // Do not push the attributes to the method for events and properties
     let ilAttrsCompilerGenerated =
-        if v.IsCompilerGenerated || v.GetterOrSetterIsCompilerGenerated then
-            [ g.CompilerGeneratedAttribute; g.DebuggerNonUserCodeAttribute ]
-        else
-            []
+        [
+            if v.IsCompilerGenerated || v.GetterOrSetterIsCompilerGenerated then
+                g.CompilerGeneratedAttribute
+            if v.GetterOrSetterIsCompilerGenerated then
+                g.DebuggerNonUserCodeAttribute
+        ]
 
     let ilAttrsThatGoOnPrimaryItem =
         [
