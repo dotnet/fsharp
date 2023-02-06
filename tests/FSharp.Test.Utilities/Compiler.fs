@@ -331,6 +331,12 @@ module rec Compiler =
         | CS src -> CS { src with Name = Some name }
         | IL _ -> failwith "IL Compilation cannot be named."
 
+    let withReferenceFSharpCompilerService (cUnit: CompilationUnit) : CompilationUnit =
+        // Compute the location of the FSharp.Compiler.Service dll that matches the target framework used to build this test assembly
+        let compilerServiceAssemblyLocation =
+            typeof<FSharp.Compiler.Text.Range>.Assembly.Location
+        withOptionsHelper [ $"-r:{compilerServiceAssemblyLocation}" ] "withReferenceFSharpCompilerService is only supported for F#" cUnit
+
     let withReferences (references: CompilationUnit list) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
         | FS fs -> FS { fs with References = fs.References @ references }
@@ -353,6 +359,9 @@ module rec Compiler =
         match cUnit with
         | FS fs -> FS { fs with Options = fs.Options @ options }
         | _ -> failwith message
+
+    let withCodepage (codepage:string) (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ $"--codepage:{codepage}" ] "codepage is only supported on F#" cUnit
 
     let withDebug (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--debug+" ] "debug+ is only supported on F#" cUnit

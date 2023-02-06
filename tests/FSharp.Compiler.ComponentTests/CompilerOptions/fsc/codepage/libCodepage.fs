@@ -3,7 +3,7 @@
 
 namespace N
 
-module M =
+module M = 
     type á = class
                static member M() = 11
              end
