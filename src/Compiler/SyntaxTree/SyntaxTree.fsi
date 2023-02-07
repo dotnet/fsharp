@@ -1154,6 +1154,18 @@ type SynAttribute =
 
         /// The syntax range of the attribute
         Range: range
+
+        /// The syntax range of the LESS symbol
+        LessRange: range option
+
+        /// Type arguments
+        TypeArgs: SynType list
+
+        /// Ranges of the commas between type arguments
+        CommaRanges: range list
+
+        /// The syntax range of the GREATER symbol
+        GreaterRange: range option
     }
 
 /// List of attributes enclosed in [< ... >].

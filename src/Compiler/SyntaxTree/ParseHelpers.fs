@@ -1084,3 +1084,37 @@ let appendValToLeadingKeyword mVal leadingKeyword =
     | SynLeadingKeyword.Override mOverride -> SynLeadingKeyword.OverrideVal(mOverride, mVal)
     | SynLeadingKeyword.Default (mDefault) -> SynLeadingKeyword.DefaultVal(mDefault, mVal)
     | _ -> leadingKeyword
+
+let mkAttribute langVersion target (typeName: SynLongIdent) typeArgs argExpr =
+    let arg =
+        match argExpr with
+        | None -> mkSynUnit typeName.Range
+        | Some e -> e
+
+    let startRange =
+        match target with
+        | Some (ident: Ident) -> ident.idRange
+        | None -> typeName.Range
+
+    let lessRange, typeArgs, commaRanges, greaterRange, mTypeArgsRange =
+        match typeArgs with
+        | Some (lessRange, greaterRange, _: bool, typeArgs, commaRanges, mTypeArgsRange) ->
+            Some lessRange, typeArgs, commaRanges, greaterRange, Some mTypeArgsRange
+        | None -> None, [], [], None, None
+
+    let m = unionRanges startRange (Option.defaultValue arg.Range mTypeArgsRange)
+
+    if not typeArgs.IsEmpty then
+        checkLanguageFeatureAndRecover langVersion LanguageFeature.GenericAttributes m
+
+    {
+        TypeName = typeName
+        ArgExpr = arg
+        Target = target
+        AppliesToGetterAndSetter = false
+        Range = m
+        LessRange = lessRange
+        TypeArgs = typeArgs
+        CommaRanges = commaRanges
+        GreaterRange = greaterRange
+    }: SynAttribute

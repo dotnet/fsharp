@@ -1015,6 +1015,14 @@ type SynAttribute =
         AppliesToGetterAndSetter: bool
 
         Range: range
+
+        LessRange: range option
+
+        TypeArgs: SynType list
+
+        CommaRanges: range list
+
+        GreaterRange: range option
     }
 
 [<RequireQualifiedAccess>]

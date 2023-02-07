@@ -716,6 +716,8 @@ val tryDestAnyTupleTy: TcGlobals -> TType -> TupInfo * TType list
 
 val tryDestRefTupleTy: TcGlobals -> TType -> TType list
 
+val typeContainsTypars: TcGlobals -> TType -> bool
+
 //-------------------------------------------------------------------------
 // Compute actual types of union cases and fields given an instantiation
 // of the generic type parameters of the enclosing type.

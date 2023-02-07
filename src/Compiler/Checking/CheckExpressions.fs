@@ -903,11 +903,18 @@ let TranslateTopArgSynInfo isArg m tcAttributes (SynArgInfo(Attributes attrs, is
     // Synthesize an artificial "OptionalArgument" attribute for the parameter
     let optAttrs =
         if isOpt then
-            [ ( { TypeName=SynLongIdent(pathToSynLid m ["Microsoft";"FSharp";"Core";"OptionalArgument"], [], [None;None;None;None])
-                  ArgExpr=mkSynUnit m
-                  Target=None
-                  AppliesToGetterAndSetter=false
-                  Range=m} : SynAttribute) ]
+            [
+             ({ TypeName = SynLongIdent(pathToSynLid m [ "Microsoft"; "FSharp"; "Core"; "OptionalArgument" ], [], [ None; None; None; None ])
+                ArgExpr = mkSynUnit m
+                Target = None
+                AppliesToGetterAndSetter = false
+                Range = m
+                LessRange = None
+                TypeArgs = []
+                CommaRanges = []
+                GreaterRange = None
+                } : SynAttribute)
+            ]
          else
             []
 
@@ -10530,12 +10537,15 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
             let ad = env.eAccessRights
             match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInAttribute OpenQualified env.eNameResEnv ad tycon TypeNameResolutionStaticArgsInfo.DefiniteEmpty PermitDirectReferenceToGeneratedType.No with
             | Exception err -> raze err
-            | _ -> success(TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurence.UseInAttribute WarnOnIWSAM.Yes env tpenv (SynType.App(SynType.LongIdent(SynLongIdent(tycon, [], List.replicate tycon.Length None)), None, [], [], None, false, mAttr)) )
+            | _ -> success(TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurence.UseInAttribute WarnOnIWSAM.Yes env tpenv (SynType.App(SynType.LongIdent(SynLongIdent(tycon, [], List.replicate tycon.Length None)), synAttr.LessRange, synAttr.TypeArgs, synAttr.CommaRanges, synAttr.GreaterRange, false, mAttr)) )
         ForceRaise ((try1 (tyid.idText + "Attribute")) |> otherwise (fun () -> (try1 tyid.idText)))
 
     let ad = env.eAccessRights
 
     if not (IsTypeAccessible g cenv.amap mAttr ad ty) then errorR(Error(FSComp.SR.tcTypeIsInaccessible(), mAttr))
+
+    if typeContainsTypars g ty then
+        errorR(Error(FSComp.SR.tcAttributeTypeArgumentUsesTypeParameters(), mAttr))
 
     let tcref = tcrefOfAppTy g ty
 
@@ -10608,7 +10618,7 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
 
         let item = ForceRaise res
 
-        if not (ExistsHeadTypeInEntireHierarchy g cenv.amap mAttr ty g.tcref_System_Attribute) then
+        if not (ExistsHeadTypeInEntireHierarchy g cenv.amap mAttr ty g.tcref_System_Attribute) && not (isObjTy g ty) then
             warning(Error(FSComp.SR.tcTypeDoesNotInheritAttribute(), mAttr))
 
         let attrib =

@@ -257,6 +257,11 @@
         <target state="translated">끝에서부터 조각화</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureGenericAttributes">
+        <source>Allow generic attributes</source>
+        <target state="new">Allow generic attributes</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureImplicitYield">
         <source>implicit yield</source>
         <target state="translated">암시적 yield</target>
@@ -382,19 +387,16 @@
         <target state="translated">활성 패턴에 대한 구조체 표현</target>
         <note />
       </trans-unit>
-      
       <trans-unit id="featureTryWithInSeqExpressions">
         <source>Support for try-with in sequence expressions</source>
         <target state="new">Support for try-with in sequence expressions</target>
         <note />
       </trans-unit>
-
       <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
         <source>Raises warnings when an copy-and-update record expression changes all fields of a record.</source>
         <target state="new">Raises warnings when an copy-and-update record expression changes all fields of a record.</target>
         <note />
       </trans-unit>
-      
       <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
         <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
         <target state="translated">'let inline ... ='을(를) [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] 특성과 함께 사용하는 경우 경고를 발생합니다. 함수가 인라인되지 않습니다.</target>
@@ -878,6 +880,11 @@
       <trans-unit id="tcAnonRecdTypeDuplicateFieldId">
         <source>The field '{0}' appears multiple times in this anonymous record type.</source>
         <target state="translated">'{0}' 필드가 이 익명 레코드 형식에서 여러 번 나타납니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAttributeTypeArgumentUsesTypeParameters">
+        <source>An attribute type argument cannot use type parameters.</source>
+        <target state="new">An attribute type argument cannot use type parameters.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">

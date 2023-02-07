@@ -873,6 +873,18 @@ let (|RefTupleTy|_|) g ty = ty |> stripTyEqns g |> (function TType_tuple(tupInfo
 
 let (|FunTy|_|) g ty = ty |> stripTyEqns g |> (function TType_fun(domainTy, rangeTy, _) -> Some (domainTy, rangeTy) | _ -> None)
 
+let rec typeContainsTypars g ty =
+    match stripTyEqns g ty with
+    | TType_forall _
+    | TType_var _
+    | TType_measure (Measure.Var _) -> true
+    | TType_app (_, tys, _)
+    | TType_tuple (_, tys)
+    | TType_ucase (_, tys)
+    | TType_anon (_, tys) -> tys |> List.exists (typeContainsTypars g)
+    | TType_fun (domainTy, rangeTy, _) -> typeContainsTypars g domainTy && typeContainsTypars g rangeTy
+    | TType_measure _ -> false
+
 let tryNiceEntityRefOfTy ty = 
     let ty = stripTyparEqnsAux false ty 
     match ty with

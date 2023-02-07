@@ -236,3 +236,11 @@ val checkForMultipleAugmentations: m: range -> a1: 'a list -> a2: 'a list -> 'a 
 val rangeOfLongIdent: lid: LongIdent -> range
 
 val appendValToLeadingKeyword: mVal: range -> leadingKeyword: SynLeadingKeyword -> SynLeadingKeyword
+
+val mkAttribute:
+    langVersion: LanguageVersion ->
+    target: Ident option ->
+    typeName: SynLongIdent ->
+    typeArgs: (range * range option * bool * SynType list * range list * range) option ->
+    argExpr: SynExpr option ->
+        SynAttribute

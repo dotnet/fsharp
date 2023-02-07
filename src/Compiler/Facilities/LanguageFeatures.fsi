@@ -53,6 +53,7 @@ type LanguageFeature =
     | ErrorReportingOnStaticClasses
     | TryWithInSeqExpression
     | WarningWhenCopyAndUpdateRecordChangesAllFields
+    | GenericAttributes
 
 /// LanguageVersion management
 type LanguageVersion =

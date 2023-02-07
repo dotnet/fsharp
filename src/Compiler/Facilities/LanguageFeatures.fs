@@ -63,6 +63,7 @@ type LanguageFeature =
     | ErrorReportingOnStaticClasses
     | TryWithInSeqExpression
     | WarningWhenCopyAndUpdateRecordChangesAllFields
+    | GenericAttributes
  
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -142,6 +143,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.ErrorReportingOnStaticClasses, previewVersion
                 LanguageFeature.TryWithInSeqExpression, previewVersion
                 LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields, previewVersion
+                LanguageFeature.GenericAttributes, previewVersion
 
             ]
 
@@ -258,6 +260,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.ErrorReportingOnStaticClasses -> FSComp.SR.featureErrorReportingOnStaticClasses ()
         | LanguageFeature.TryWithInSeqExpression -> FSComp.SR.featureTryWithInSeqExpressions ()
         | LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields -> FSComp.SR.featureWarningWhenCopyAndUpdateRecordChangesAllFields ()
+        | LanguageFeature.GenericAttributes -> FSComp.SR.featureGenericAttributes ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =
