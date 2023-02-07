@@ -12,15 +12,8 @@ namespace FSharp.Editor.IntegrationTests
 {
     public class CreateProjectTests : AbstractIntegrationTest
     {
-        // This is starting up a basic F# lib:
-        //
-        // namespace Library
-        //
-        // module Say =
-        //    let hello name =
-        //        printfn "Hello %s" name
         [IdeFact]
-        public async Task BasicFSharpLibraryCompilesAsync()
+        public async Task ClassLibrary_Async()
         {
             var token = HangMitigatingCancellationToken;
             var solutionExplorer = TestServices.SolutionExplorer;
@@ -29,7 +22,7 @@ namespace FSharp.Editor.IntegrationTests
             await solutionExplorer.CreateSolutionAsync(nameof(CreateProjectTests), token);
             await solutionExplorer.AddProjectAsync(
                 "Library",
-                "Microsoft.FSharp.NETCore.ClassLibrary",
+                WellKnownProjectTemplates.FSharpNetCoreClassLibrary,
                 token);
 
             await solutionExplorer.RestoreNuGetPackagesAsync(token);
@@ -43,12 +36,8 @@ namespace FSharp.Editor.IntegrationTests
             Assert.Equal(0, errorCount);
         }
 
-        // This is starting up a basic F# console app:
-        //
-        // // For more information see https://aka.ms/fsharp-console-apps
-        // printfn "Hello from F#"
         [IdeFact]
-        public async Task BasicFSharpConsoleAppCompilesAsync()
+        public async Task ConsoleApp_Async()
         {
             var token = HangMitigatingCancellationToken;
             var solutionExplorer = TestServices.SolutionExplorer;
@@ -57,7 +46,31 @@ namespace FSharp.Editor.IntegrationTests
             await solutionExplorer.CreateSolutionAsync(nameof(CreateProjectTests), token);
             await solutionExplorer.AddProjectAsync(
                 "ConsoleApp",
-                "Microsoft.FSharp.NETCore.ConsoleApplication",
+                WellKnownProjectTemplates.FSharpNetCoreConsoleApplication,
+                token);
+
+            await solutionExplorer.RestoreNuGetPackagesAsync(token);
+
+            var expectedBuildSummary = "========== Build: 1 succeeded, 0 failed, 0 up-to-date, 0 skipped ==========";
+            var actualBuildSummary = await solutionExplorer.BuildSolutionAsync(true, token);
+            Assert.Contains(expectedBuildSummary, actualBuildSummary);
+
+            await errorList.ShowBuildErrorsAsync(token);
+            var errorCount = await errorList.GetErrorCountAsync(__VSERRORCATEGORY.EC_ERROR, token);
+            Assert.Equal(0, errorCount);
+        }
+
+        [IdeFact]
+        public async Task XUnitTestProject_Async()
+        {
+            var token = HangMitigatingCancellationToken;
+            var solutionExplorer = TestServices.SolutionExplorer;
+            var errorList = TestServices.ErrorList;
+
+            await solutionExplorer.CreateSolutionAsync(nameof(CreateProjectTests), token);
+            await solutionExplorer.AddProjectAsync(
+                "ConsoleApp",
+                WellKnownProjectTemplates.FSharpNetCoreXUnitTest,
                 token);
 
             await solutionExplorer.RestoreNuGetPackagesAsync(token);
