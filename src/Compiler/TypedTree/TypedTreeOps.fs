@@ -5636,7 +5636,7 @@ and remapPossibleForallTyImpl ctxt tmenv ty =
     remapTypeFull (remapAttribs ctxt tmenv) tmenv ty
 
 and remapArgData ctxt tmenv (argInfo: ArgReprInfo) : ArgReprInfo =
-    { Attribs = remapAttribs ctxt tmenv argInfo.Attribs; Name = argInfo.Name; OtherRange = None }
+    { Attribs = remapAttribs ctxt tmenv argInfo.Attribs; Name = argInfo.Name; OtherRange = argInfo.OtherRange }
 
 and remapValReprInfo ctxt tmenv (ValReprInfo(tpNames, arginfosl, retInfo)) =
     ValReprInfo(tpNames, List.mapSquared (remapArgData ctxt tmenv) arginfosl, remapArgData ctxt tmenv retInfo)

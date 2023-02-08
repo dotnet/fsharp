@@ -194,8 +194,9 @@ val myFunc2: param: int -> int
         SyntheticProject.Create("TupleParameterTest",
             { sourceFile "Source" [] with
                 ExtraSource = source
-                SignatureFile = Custom $"module TupleParameterTest.ModuleFirst\n{signature}" })
+                SignatureFile = Custom signature })
             .Workflow {
+                checkFile "Source" expectOk
                 placeCursor "Source" 7 17 "let myFunc1 param = param + 1" ["param"]
                 findAllReferences (expectToFind [
                     "FileSource.fsi", 3, 13, 18

@@ -35,7 +35,6 @@ module IsPrivateToFile =
     let ``Function definition not in signature file`` () =
         let projectName = "IsPrivateToFileTest1"
         let signature = $"""
-module {projectName}.ModuleFirst
 type TFirstV_1<'a> = | TFirst of 'a
 val f: x: 'a -> TFirstV_1<'a>
 // no f2 here

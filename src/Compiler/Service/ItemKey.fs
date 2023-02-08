@@ -294,6 +294,10 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             writeString ItemKeyTags.parameters
             writeType false vref.Type
 
+            match vref.Deref.ArgReprInfoForDisplay with
+            | Some ({ OtherRange = Some (r)}) -> writeRange r
+            | _ -> ()
+
             match vref.TryDeclaringEntity with
             | ParentNone -> writeChar '%'
             | Parent eref -> writeEntityRef eref
@@ -422,6 +426,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             writeString ident.idText
             writeString ItemKeyTags.parameters
             writeType false ty
+            writeRange ident.idRange
             writeChar '%'
 
         // We should consider writing ItemKey for each of these

@@ -175,13 +175,18 @@ type SyntheticProject =
 
 module Internal =
 
-    let renderSourceFile (project: SyntheticProject) (f: SyntheticSourceFile) =
+    let renderNamespaceModule (project: SyntheticProject) (f: SyntheticSourceFile) =
         seq {
             if project.RecursiveNamespace then
                 $"namespace rec {project.Name}"
                 $"module {f.ModuleName}"
             else
                 $"module %s{project.Name}.{f.ModuleName}"
+        } |> String.concat Environment.NewLine
+
+    let renderSourceFile (project: SyntheticProject) (f: SyntheticSourceFile) =
+        seq {
+            renderNamespaceModule project f
 
             for p in project.DependsOn do
                 $"open {p.Name}"
@@ -396,7 +401,9 @@ module ProjectOperations =
                     let! results = checkFile file.Id project checker
                     let signature = getSignature results
                     writeFileIfChanged signatureFileName signature
-                | Custom signature -> writeFileIfChanged signatureFileName signature
+                | Custom signature ->
+                    let signatureContent = $"{renderNamespaceModule p file}\n{signature}"
+                    writeFileIfChanged signatureFileName signatureContent
                 | _ -> ()
 
             writeFileIfChanged (p.ProjectDir ++ $"{p.Name}.fsproj") (renderFsProj p)
