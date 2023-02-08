@@ -4,84 +4,85 @@
 
 using Microsoft.CodeAnalysis.Testing;
 using Microsoft.VisualStudio.Extensibility.Testing;
-using Microsoft.VisualStudio.Shell.Interop;
+using System.Threading.Tasks;
 using Xunit;
-using Task = System.Threading.Tasks.Task;
 
-namespace FSharp.Editor.IntegrationTests
+namespace FSharp.Editor.IntegrationTests;
+
+public class CreateProjectTests : AbstractIntegrationTest
 {
-    public class CreateProjectTests : AbstractIntegrationTest
+    [IdeFact]
+    public async Task ClassLibrary_Async()
     {
-        [IdeFact]
-        public async Task ClassLibrary_Async()
-        {
-            var token = HangMitigatingCancellationToken;
-            var solutionExplorer = TestServices.SolutionExplorer;
-            var errorList = TestServices.ErrorList;
+        var token = HangMitigatingCancellationToken;
+        var template = WellKnownProjectTemplates.FSharpNetCoreClassLibrary;
+        var solutionExplorer = TestServices.SolutionExplorer;
+        var editor = TestServices.Editor;
 
-            await solutionExplorer.CreateSolutionAsync(nameof(CreateProjectTests), token);
-            await solutionExplorer.AddProjectAsync(
-                "Library",
-                WellKnownProjectTemplates.FSharpNetCoreClassLibrary,
-                token);
+        var expectedCode = """
+namespace Library
 
-            await solutionExplorer.RestoreNuGetPackagesAsync(token);
+module Say =
+    let hello name =
+        printfn "Hello %s" name
 
-            var expectedBuildSummary = "========== Build: 1 succeeded, 0 failed, 0 up-to-date, 0 skipped ==========";
-            var actualBuildSummary = await solutionExplorer.BuildSolutionAsync(true, token);
-            Assert.Contains(expectedBuildSummary, actualBuildSummary);
+""";
 
-            await errorList.ShowBuildErrorsAsync(token);
-            var errorCount = await errorList.GetErrorCountAsync(__VSERRORCATEGORY.EC_ERROR, token);
-            Assert.Equal(0, errorCount);
-        }
+        await solutionExplorer.CreateSolutionAsync(nameof(CreateProjectTests), token);
+        await solutionExplorer.AddProjectAsync("Library", template, token);
 
-        [IdeFact]
-        public async Task ConsoleApp_Async()
-        {
-            var token = HangMitigatingCancellationToken;
-            var solutionExplorer = TestServices.SolutionExplorer;
-            var errorList = TestServices.ErrorList;
+        var actualCode = await editor.GetTextAsync(token);
 
-            await solutionExplorer.CreateSolutionAsync(nameof(CreateProjectTests), token);
-            await solutionExplorer.AddProjectAsync(
-                "ConsoleApp",
-                WellKnownProjectTemplates.FSharpNetCoreConsoleApplication,
-                token);
+        Assert.Equal(expectedCode, actualCode);
+    }
 
-            await solutionExplorer.RestoreNuGetPackagesAsync(token);
+    [IdeFact]
+    public async Task ConsoleApp_Async()
+    {
+        var token = HangMitigatingCancellationToken;
+        var template = WellKnownProjectTemplates.FSharpNetCoreConsoleApplication;
+        var solutionExplorer = TestServices.SolutionExplorer;
+        var editor = TestServices.Editor;
 
-            var expectedBuildSummary = "========== Build: 1 succeeded, 0 failed, 0 up-to-date, 0 skipped ==========";
-            var actualBuildSummary = await solutionExplorer.BuildSolutionAsync(true, token);
-            Assert.Contains(expectedBuildSummary, actualBuildSummary);
+        var expectedCode = """
+// For more information see https://aka.ms/fsharp-console-apps
+printfn "Hello from F#"
 
-            await errorList.ShowBuildErrorsAsync(token);
-            var errorCount = await errorList.GetErrorCountAsync(__VSERRORCATEGORY.EC_ERROR, token);
-            Assert.Equal(0, errorCount);
-        }
+""";
 
-        [IdeFact]
-        public async Task XUnitTestProject_Async()
-        {
-            var token = HangMitigatingCancellationToken;
-            var solutionExplorer = TestServices.SolutionExplorer;
-            var errorList = TestServices.ErrorList;
+        await solutionExplorer.CreateSolutionAsync(nameof(CreateProjectTests), token);
+        await solutionExplorer.AddProjectAsync("ConsoleApp", template, token);
 
-            await solutionExplorer.CreateSolutionAsync(nameof(CreateProjectTests), token);
-            await solutionExplorer.AddProjectAsync(
-                "ConsoleApp",
-                WellKnownProjectTemplates.FSharpNetCoreXUnitTest,
-                token);
+        var actualCode = await editor.GetTextAsync(token);
 
-            await solutionExplorer.RestoreNuGetPackagesAsync(token);
+        Assert.Equal(expectedCode, actualCode);
+    }
 
-            var expectedBuildSummary = "========== Build: 1 succeeded, 0 failed, 0 up-to-date, 0 skipped ==========";
-            var actualBuildSummary = await solutionExplorer.BuildSolutionAsync(true, token);
-            Assert.Contains(expectedBuildSummary, actualBuildSummary);
+    [IdeFact]
+    public async Task XUnitTestProject_Async()
+    {
+        var token = HangMitigatingCancellationToken;
+        var template = WellKnownProjectTemplates.FSharpNetCoreXUnitTest;
+        var solutionExplorer = TestServices.SolutionExplorer;
+        var editor = TestServices.Editor;
 
-            await errorList.ShowBuildErrorsAsync(token);
-            var errorCount = await errorList.GetErrorCountAsync(__VSERRORCATEGORY.EC_ERROR, token);
-            Assert.Equal(0, errorCount);
-        }
+        var expectedCode = """
+module Tests
+
+open System
+open Xunit
+
+[<Fact>]
+let ``My test`` () =
+    Assert.True(true)
+
+""";
+
+        await solutionExplorer.CreateSolutionAsync(nameof(CreateProjectTests), token);
+        await solutionExplorer.AddProjectAsync("ConsoleApp", template, token);
+
+        var actualCode = await editor.GetTextAsync(token);
+
+        Assert.Equal(expectedCode, actualCode);
     }
 }
