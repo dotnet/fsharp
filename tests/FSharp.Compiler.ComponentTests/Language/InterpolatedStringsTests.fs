@@ -56,4 +56,4 @@ let s = $"...%-%...{0}"
         """
         |> compile
         |> shouldFail
-        |> withSingleDiagnostic (Error 3376, Line 2, Col 9, Line 2, Col 24, "Invalid interpolated string. Bad format specifier: '%'")
+        |> withSingleDiagnostic (Warning 3376, Line 2, Col 9, Line 2, Col 24, "Bad format specifier: '%'")

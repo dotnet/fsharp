@@ -6,6 +6,7 @@ open System.Text
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler.ConstraintSolver
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
@@ -481,6 +482,13 @@ let parseFormatStringInternal
                 let i = skipPossibleInterpolationHole (i+1)
                 parseLoop ((posi, mkFunTy g printerArgTy printerResidueTy) :: acc)  (i, fragLine, fragCol+1) fragments
 
+            | '%' ->
+                // This allows for things like `printf "%-4.2%"` to compile and print just a `%`
+                // For now we are adding a warning, but keeping this behavior.
+                warning(DiagnosticWithText(3376, FSComp.SR.forBadFormatSpecifierGeneral("%"), m))
+                collectSpecifierLocation fragLine fragCol 0
+                appendToDotnetFormatString "%"
+                parseLoop acc (i+1, fragLine, fragCol+1) fragments
             | c -> failwith (FSComp.SR.forBadFormatSpecifierGeneral(String.make 1 c))
 
     let results = parseLoop [] (0, 0, m.StartColumn) fragments
