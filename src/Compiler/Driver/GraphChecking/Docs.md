@@ -154,21 +154,26 @@ As noted in https://github.com/dotnet/fsharp/discussions/11634 , scanning the AS
 This is the approach used in this solution.
 
 The dependency detection algorithm can be summarised as follows:
-1. For each parsed file in parallel, use its parsed AST to extract the following:
-	1. Top-level definitions (modules and namespaces). Consider `AutoOpens`.
-	2. Opens, partial module/namespace references. Consider module abbreviations, partial opens etc.
-2. Build a single [Trie](https://en.wikipedia.org/wiki/Trie) by adding all top-level items extracted in 1.1. Edges in the Trie represent module/namespace _segments_ (eg. `FSharp, Compiler, Service in FSharp.Compiler.Service`).
-Nodes represent module/namespace prefixes (eg. `FSharp.Compiler`).
-For each node, keep track of any files that define the prefix it represents.
+1. Build a single [Trie](https://en.wikipedia.org/wiki/Trie) composed of all the found namespaces and (nested) modules.
+   For each parsed file in parallel, create the found Trie nodes. Afterwards merge them into a single Trie.
+   Note that we if a file is backed by a signature, only the signature will contribute nodes to the Trie.
+   Inside each node, we keep track of what file indexes contributed to its existence. 
+   Note that each `Trie` has a special `Root` node. This node can be populated by top level `AutoModule` modules or `global` namespaces.
+2. For each parsed file in parallel, use its parsed AST to extract the following:
+    1. Top-level modules and namespaces. Consider `AutoOpens`.
+    2. Opens, partial module/namespace references. Consider module abbreviations, partial opens etc.
+    3. Prefixed identifiers (for example, `System.Console` in `System.Console.Write(""")`).
+    4. Nested modules.
 3. For each file, in parallel:
-	1. Process all partial module references found in this file in 1.2. one-by-one, in order of appearance in the AST.
-	2. For each reference, identify what nodes in the Trie can be located using it.
-	3. Collect all nodes reached this way and all files with any items located in those nodes.
-	4. Return those files as dependencies.
+   1. Process all file content entries found in 2. For each file content entry, we will query the Trie to see if we found a match.
+      If a match is found, we assume the link between the files when the result file index is lower than the current file index.
+   2. A given file will always depend on all the file indexes lower than its own index found in the `Root` node.
+   3. When a file is backed by a signature, we automatically link the signature file.
 
 ### Edge-case 1. - `[<AutoOpen>]`
 
-Modules with `[<AutoOpen>]` are in a way 'transparent', meaning that all the types/nested modules inside them are surfaced as if they were on a level above 
+Modules with `[<AutoOpen>]` are in a way 'transparent', meaning that all the types/nested modules inside them are surfaced as if they were on a level above.
+If a top level module contains the `[<AutoOpen>]` attribute, we assume the file to contribute to the `Root` node.
 
 The main problem with that is that `System.AutoOpenAttribute` could be aliased and hide behind a different name.
 Therefore it's not easy to see whether the attribute is being used based only on the AST.
@@ -176,9 +181,23 @@ Therefore it's not easy to see whether the attribute is being used based only on
 There are ways to evaluate this, which involve scanning all module abbreviations in the project and in any referenced dlls.
 However, currently the algorithm uses a shortcut: it checks whether the attribute type name is on a hardcoded list of "suspicious" names. This is not fully reliable, as an arbitrary type alias, eg. `type X = System.AutoOpenAttribute` will not be recognised correctly.
 
-The alternatives are:
-- Consider any module with any attribute to be an `AutoOpen` module
-- Identify any type aliases in any referenced code to be able to fully reliably determine whether a given attribute is in fact the `AutoOpenAttribute`
+To overcome this limitation, we are raising a warning when a user is aliasing the `AutoOpenAttribute` type.
+
+Note that we do not process nested `[<AutoOpen>]` modules indefinitely, because we establish a link when you reference any module.
+
+```fsharp
+namespace A
+
+module B =
+
+module C =
+
+// The link is established as soon as module B is hit.
+// Whether the content of D is pushed to C in the Trie is no longer relevant.
+[<AutoOpen>]
+module D =
+    ()
+```
 
 ### Edge-case 2. - module abbreviations
 
@@ -196,6 +215,75 @@ module D = B
 ```
 Here, the line `module D = B` generates the `F2.fs -> F1.fs` link, so no special code is needed to add it.
 
+### Edge-case 3. - ghost namespaces
+
+Not every node in the Trie contains file indexes.
+A namespace node in the Trie, does not expose the file index when there are no types defined.  
+Consider:
+
+`A.fs`
+```fsharp
+module Foo.Bar.A
+
+let a = 0
+```
+
+`B.fs`
+```fsharp
+module Foo.Bar.B
+
+let b = 1
+```
+
+leads to the following Trie:
+
+```mermaid
+graph TB
+R("Root: []")
+Foo("namespace Foo: []")
+Bar("namespace Bar: []")
+A("module A: [ A.fs ]")
+B("module B: [ B.fs ]")
+R --- Foo
+Foo --- Bar
+Bar --- A
+Bar --- B
+```
+
+We do not want to link files `A.fs` and `B.fs` because they share a namespace.
+For that reason, the namespace nodes `Foo` and `Bar` don't contain any files in the Trie.
+
+We avoid links introducing unnecessary links by this.  
+However, this can lead to following situation:
+
+`X.fs`
+```fsharp
+namespace X
+```
+
+`Y.fs`
+```fsharp
+namespace Y
+
+open X // This open statement is unnecessary, however it is valid F# code.
+```
+
+leads to the following Trie:
+
+```mermaid
+graph TB
+R("Root: []")
+X("namespace X: []")
+Y("namespace Y: []")
+R --- X
+R --- Y
+```
+
+When processing `open X` in `Y.fs` a matching node will be found, however not containing any actual files.
+We still need to link some file that contains `namespace X` as a dependency of `Y.fs`, this is what we consider a ghost dependency.
+
+A link that must found to ensure type-checking succeeds. We either pick the smallest file index of the child nodes of `X` or add all files that came before it as a last resort.
+
 ### Performance
 There are two main factors w.r.t. performance of the graph-based type-checking:
 1. The level of parallelisation allowed by the resolved dependency graph.
@@ -208,7 +296,23 @@ Projects that were tested included:
 - `Fantomas.Core`
 - `FSharp.Compiler.ComponentTests`
 
-TODO: Provide detailed timings
+Some initial results:
+
+```
+BenchmarkDotNet=v0.13.2, OS=Windows 11 (10.0.22621.1105)
+12th Gen Intel Core i7-12700K, 1 CPU, 20 logical and 12 physical cores
+.NET SDK=7.0.102
+  [Host]     : .NET 7.0.2 (7.0.222.60605), X64 RyuJIT AVX2 DEBUG
+  DefaultJob : .NET 7.0.2 (7.0.222.60605), X64 RyuJIT AVX2
+
+
+|                Method | GraphTypeChecking |    Mean |   Error |  StdDev |        Gen0 |       Gen1 |      Gen2 | Allocated |
+|---------------------- |------------------ |--------:|--------:|--------:|------------:|-----------:|----------:|----------:|
+|            FSharpPlus |             False | 32.22 s | 0.615 s | 0.708 s | 202000.0000 | 10000.0000 | 4000.0000 |  51.38 GB |
+| FSharpCompilerService |             False | 18.59 s | 0.192 s | 0.180 s |  10000.0000 |  4000.0000 | 2000.0000 |  21.03 GB |
+|            FSharpPlus |              True | 30.86 s | 0.352 s | 0.275 s | 196000.0000 | 10000.0000 | 3000.0000 |   51.4 GB |
+| FSharpCompilerService |              True | 10.88 s | 0.154 s | 0.144 s |  10000.0000 |  4000.0000 | 2000.0000 |  21.32 GB |
+```
 
 ## The problem of maintaining multiple instances of type-checking information
 
