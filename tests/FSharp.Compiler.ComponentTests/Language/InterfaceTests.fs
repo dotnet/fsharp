@@ -14,7 +14,7 @@ type I =
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
-        (Error 3561, Line 4, Col 14, Line 4, Col 15, "Interfaces cannot contain definitions of concrete instance members. You may need to define a constructor on your type to indicate that the type is a class.")
+        (Error 868, Line 4, Col 14, Line 4, Col 15, "Interfaces cannot contain definitions of concrete instance members. You may need to define a constructor on your type to indicate that the type is a class.")
     ]
 
 [<Fact>]
@@ -28,7 +28,7 @@ type I =
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
-        (Error 3561, Line 4, Col 14, Line 4, Col 18, "Interfaces cannot contain definitions of concrete instance members. You may need to define a constructor on your type to indicate that the type is a class.")
+        (Error 868, Line 4, Col 14, Line 4, Col 18, "Interfaces cannot contain definitions of concrete instance members. You may need to define a constructor on your type to indicate that the type is a class.")
     ]
 
 [<Fact>]
@@ -59,7 +59,7 @@ type I<'T> =
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
-        (Error 868, Line 4, Col 19, Line 4, Col 23, "Interfaces cannot contain definitions of concrete members. You may need to define a constructor on your type to indicate that the type is a class.")
+        (Error 3350, Line 4, Col 19, Line 4, Col 23, "Feature 'Static members in interfaces' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.")
     ]
 
 [<Fact>]

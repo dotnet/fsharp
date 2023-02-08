@@ -373,8 +373,8 @@
         <note />
       </trans-unit>
       <trans-unit id="featureStaticMembersInInterfaces">
-        <source>Allow static members in interfaces</source>
-        <target state="new">Allow static members in interfaces</target>
+        <source>Static members in interfaces</source>
+        <target state="new">Static members in interfaces</target>
         <note />
       </trans-unit>
       <trans-unit id="featureStringInterpolation">
@@ -885,11 +885,6 @@
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
         <target state="translated">屬性無法套用到類型延伸模組。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcConcreteInstanceMembersIllegalInInterface">
-        <source>Interfaces cannot contain definitions of concrete instance members. You may need to define a constructor on your type to indicate that the type is a class.</source>
-        <target state="new">Interfaces cannot contain definitions of concrete instance members. You may need to define a constructor on your type to indicate that the type is a class.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">
@@ -4633,8 +4628,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcConcreteMembersIllegalInInterface">
-        <source>Interfaces cannot contain definitions of concrete members. You may need to define a constructor on your type to indicate that the type is a class.</source>
-        <target state="translated">介面不能包含具象成員的定義。您必須在類型上定義建構函式，以指示類型是類別。</target>
+        <source>Interfaces cannot contain definitions of concrete instance members. You may need to define a constructor on your type to indicate that the type is a class.</source>
+        <target state="needs-review-translation">介面不能包含具象成員的定義。您必須在類型上定義建構函式，以指示類型是類別。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcConstructorsDisallowedInExceptionAugmentation">

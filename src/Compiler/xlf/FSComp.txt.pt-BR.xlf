@@ -373,8 +373,8 @@
         <note />
       </trans-unit>
       <trans-unit id="featureStaticMembersInInterfaces">
-        <source>Allow static members in interfaces</source>
-        <target state="new">Allow static members in interfaces</target>
+        <source>Static members in interfaces</source>
+        <target state="new">Static members in interfaces</target>
         <note />
       </trans-unit>
       <trans-unit id="featureStringInterpolation">
@@ -885,11 +885,6 @@
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
         <target state="translated">Os atributos não podem ser aplicados às extensões de tipo.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcConcreteInstanceMembersIllegalInInterface">
-        <source>Interfaces cannot contain definitions of concrete instance members. You may need to define a constructor on your type to indicate that the type is a class.</source>
-        <target state="new">Interfaces cannot contain definitions of concrete instance members. You may need to define a constructor on your type to indicate that the type is a class.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">
@@ -4633,8 +4628,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcConcreteMembersIllegalInInterface">
-        <source>Interfaces cannot contain definitions of concrete members. You may need to define a constructor on your type to indicate that the type is a class.</source>
-        <target state="translated">Interfaces não podem conter definições de membros concretos. Talvez seja necessário definir um construtor no seu tipo para indicar que o tipo é uma classe.</target>
+        <source>Interfaces cannot contain definitions of concrete instance members. You may need to define a constructor on your type to indicate that the type is a class.</source>
+        <target state="needs-review-translation">Interfaces não podem conter definições de membros concretos. Talvez seja necessário definir um construtor no seu tipo para indicar que o tipo é uma classe.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcConstructorsDisallowedInExceptionAugmentation">

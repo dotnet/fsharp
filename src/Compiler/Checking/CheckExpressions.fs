@@ -11090,10 +11090,10 @@ and CheckForNonAbstractInterface (g: TcGlobals) declKind tcref (memberFlags: Syn
         elif memberFlags.IsOverrideOrExplicitImpl then
             error(Error(FSComp.SR.tcMemberOverridesIllegalInInterface(), m))
         elif not (declKind = ExtrinsicExtensionBinding || memberFlags.IsDispatchSlot) then
-            match isMemberStatic, g.langVersion.SupportsFeature LanguageFeature.StaticMembersInInterfaces with
-            | true, true -> ()
-            | false, true -> error(Error(FSComp.SR.tcConcreteInstanceMembersIllegalInInterface(), m))
-            | _ -> error(Error(FSComp.SR.tcConcreteMembersIllegalInInterface(), m))
+            if not isMemberStatic then
+                error(Error(FSComp.SR.tcConcreteMembersIllegalInInterface(), m))
+            else
+                checkLanguageFeatureError g.langVersion LanguageFeature.StaticMembersInInterfaces m
 
 //-------------------------------------------------------------------------
 // TcLetrecBindings - AnalyzeAndMakeAndPublishRecursiveValue s
