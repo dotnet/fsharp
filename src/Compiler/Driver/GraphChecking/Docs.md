@@ -24,7 +24,7 @@ This instance is incrementally built on as more and more files have been process
 
 ### Recent addition - "Parallel type checking for impl files with backing sig files"
 
-A recent [change](https://github.com/dotnet/fsharp/pull/13737) introduced in the compiler added a level of parallelism in type-checking (behind an experimental feature flag).
+A recent [change](https://github.com/dotnet/fsharp/pull/13737) introduced in the compiler (not language service) added a level of parallelism in type-checking (behind an experimental feature flag).
 It allows for parallel type-checking of implementation files backed by signature files.
 Such files by definition cannot be depended upon by any other files w.r.t. type-checking, since all the necessary information is exposed by the corresponding `.fsi` files.
 
@@ -61,15 +61,15 @@ For more details see https://github.com/dotnet/fsharp/pull/13521
 
 ## Parallel type-checking of independent files
 
-The main idea is quite simple:
-- process files in a graph order instead of sequential order
-- quickly reduce the dependency graph used for type-checking, increasing parallelism possible
+The main idea we would like to present here for speeding up type-checking is quite simple:
+- process files using a dependency graph instead of doing so in a sequential order 
+- based on AST information, quickly detect what files definitely do not depend on each other, trim the dependency graph and increase parallelisation possible
 - implement delta-based type-checking that allows building a 'fresh' TcState copy from a list of delta-based results.
 
 Below is some quasi-theoretical background on type-checking in general.
 
 ### Background
-Files in an F# project are ordered and processed from the top (first) and the bottom (last) file.
+Files in an F# project are ordered and processed from the top (first) to the bottom (last) file.
 The compiler ensures that no information, including type information, flows upwards.
 
 Consider the following list of files in a project:
@@ -79,12 +79,12 @@ B.fs
 C.fs
 D.fs
 ```
-By default, they are type-checked in the order of appearance: `[A.fs, B.fs, C.fs, D.fs]`
+By default, during compilation they are type-checked in the order of appearance: `[A.fs, B.fs, C.fs, D.fs]`
 
 Let's define `allowed dependency` as follows:
-> If the contents of 'B.fs' _can_, based on its position in the project hierarchy, influence the type-checking process of 'A.fs', then 'A.fs' -> 'B.fs' is an _allowed dependency_ 
+> If the contents of 'X.fs' _can_, based on its position in the project hierarchy, influence the type-checking process of 'Y.fs', then 'X.fs' -> 'Y.fs' is an _allowed dependency_ 
 
-The _allowed dependencies graph_ looks as follows:
+The _allowed dependencies graph_ for our sample project looks as follows:
 ```
 A.fs -> []
 B.fs -> [A.fs]
@@ -92,12 +92,12 @@ C.fs -> [B.fs; A.fs]
 D.fs -> [C.fs; B.fs; A.fs]
 ```
 
-Sequential type-checking of files in the appearance order guarantees that when processing a given file, any files it _might_ need w.r.t. type-checking have already been type-checked and their type information is available.
+Sequential type-checking of files in the appearance order guarantees that when processing a given file, all of its `allowed dependencies`  w.r.t. type-checking have already been type-checked and their type information is available.
 
 ### Necessary dependencies
 
 Let's define a `necessary dependency` too:
-> File 'A.fs' _necessarily depends_ on file B for type-checking purposes, if the lack of type-checking information from 'B.fs' would influence the results of type-checking 'A.fs'
+> File 'X.fs' _necessarily depends_ on file `Y.fs` for type-checking purposes, if the lack of type-checking information from 'Y.fs' would influence the results of type-checking 'X.fs'
 
 And finally a `dependency graph` as follows:
 > A _dependency graph_ is any graph that is a subset of the `allowed dependencies` graph and a superset of the `necessary dependencies` graph
@@ -105,11 +105,11 @@ And finally a `dependency graph` as follows:
 A few slightly imprecise/vague statements about all the graphs:
 1. Any dependency graph is a directed, acycling graph (DAG).
 1. The _Necessary dependencies_ graph is a subgraph of the _allowed dependencies_ graph.
-2. If there is no path between 'B.fs' and 'C.fs' in the _necessary dependencies_ graph, they can be type-checked in parallel (as long as there is a way to maintain more than one instance of type-checking information).
+2. If there is no path between 'B.fs' and 'C.fs' in the _necessary dependencies_ graph, they can in principle be type-checked in parallel (as long as there is a way to maintain more than one instance of type-checking information).
 3. Type-checking _must_ process files in an order that is compatible with the topological order in the _necessary dependencies_ graph.
 4. If using a dependency graph as an ordering mechanism for (parallel) type-checking, the closer it is to the _necessary dependencies_ graph, the higher parallelism is possible.
 5. Type-checking files in appearance order is equivalent to using the `allowed dependencies` graph for ordering.
-6. Removing an edge from the _dependency_ graph used _can_ increase (but not decrease) the level of parallelism possible and improve wall-clock time.
+6. Removing an edge from the _dependency_ graph used _can_ increase (but not decrease) the level of parallelism possible and improve wall-clock time of parallel type-checking.
 
 Let's look at point `6.` in more detail.
 
@@ -129,7 +129,7 @@ D(G) = max(D(f)), for any file 'f'
 
 and
 
-D(f) = max(D(n)) + T(f) for n = any necessary dependency of 'f'
+D(f) = max(D(n) + T(f)) for n = any necessary dependency of 'f'
 ```
 In other words wall-clock time for type-checking using a given dependency graph is equal to the "longest" path in the graph.
 
@@ -137,7 +137,7 @@ For the _allowed dependencies graph_ the following holds:
 ```
 D(f) = T(f) + sum(T(g)), for all files 'g' above file 'f'
 ```
-In other words, the longest path's length = the sum of times to type-check all files.
+In other words, the longest path's length = the sum of times to type-check all individual files.
 
 Therefore the change that parallel type-checking brings is the replacement of the _allowed dependencies_ graph as currently used with a reduced graph that is:
 - much more similar to the _necessary dependencies_ graph,
@@ -149,59 +149,63 @@ For all practical purposes the only way to calculate the _necessary dependencies
 
 However, there exist cheaper solutions that reduce the initial graph significantly with low computational cost, providing a good trade-off.
 
-As noted in https://github.com/dotnet/fsharp/discussions/11634 , scanning the ASTs can provide a lot information that helps narrow down the set of types, modules/namespaces and files that a given file _might_ depend on.
+As noted in https://github.com/dotnet/fsharp/discussions/11634 , scanning the ASTs can provide a lot of information that helps narrow down the set of types, modules/namespaces and files that a given file _might_ depend on.
 
 This is the approach used in this solution.
 
 The dependency detection algorithm can be summarised as follows:
-1. Build a single [Trie](https://en.wikipedia.org/wiki/Trie) composed of all the found namespaces and (nested) modules.
-   For each parsed file in parallel, create the found Trie nodes. Afterwards merge them into a single Trie.
-   Note that we if a file is backed by a signature, only the signature will contribute nodes to the Trie.
-   Inside each node, we keep track of what file indexes contributed to its existence. 
-   Note that each `Trie` has a special `Root` node. This node can be populated by top level `AutoModule` modules or `global` namespaces.
-2. For each parsed file in parallel, use its parsed AST to extract the following:
+1. Process each file's AST in parallel and extract the following information:
     1. Top-level modules and namespaces. Consider `AutoOpens`.
     2. Opens, partial module/namespace references. Consider module abbreviations, partial opens etc.
     3. Prefixed identifiers (for example, `System.Console` in `System.Console.Write(""")`).
     4. Nested modules.
+2. Build a single [Trie](https://en.wikipedia.org/wiki/Trie) composed of all the found namespaces and (nested) modules.
+   Inside each node, we keep track of what file indices contributed to its existence.
+   Note that a `Trie` has a special `Root` node. This node can be populated by top level `AutoModule` modules or `global` namespaces.
+   Note that we if a file is backed by a signature, only the signature will contribute nodes to the Trie.
 3. For each file, in parallel:
-   1. Process all file content entries found in 2. For each file content entry, we will query the Trie to see if we found a match.
-      If a match is found, we assume the link between the files when the result file index is lower than the current file index.
-   2. A given file will always depend on all the file indexes lower than its own index found in the `Root` node.
-   3. When a file is backed by a signature, we automatically link the signature file.
+   1. Process all file content entries found in 2. For each file content entry, query the global Trie to see if the reference points to any file.
+      Given a list of files found in the Trie nodes, add links to those of them that precede the current file.
+      - Files found in the `Root` node are always considered a match, as they represent top-level, always available symbols.
+      - When a file is backed by a signature, automatically add a link to its the signature file.
 
 ### Edge-case 1. - `[<AutoOpen>]`
 
 Modules with `[<AutoOpen>]` are in a way 'transparent', meaning that all the types/nested modules inside them are surfaced as if they were on a level above.
-If a top level module contains the `[<AutoOpen>]` attribute, we assume the file to contribute to the `Root` node.
+
+The dependency algorithm takes this into account.
+If a top level module (eg. `module Utilities`) contains an `[<AutoOpen>]` attribute, its contents is automatically available.
+To take that into account, any file containing top-level AutoOpens is added to the `Root` node.
 
 The main problem with that is that `System.AutoOpenAttribute` could be aliased and hide behind a different name.
-Therefore it's not easy to see whether the attribute is being used based only on the AST.
+Therefore it's not easy to see whether the attribute is being used based purely on its AST.
 
 There are ways to evaluate this, which involve scanning all module abbreviations in the project and in any referenced dlls.
 However, currently the algorithm uses a shortcut: it checks whether the attribute type name is on a hardcoded list of "suspicious" names. This is not fully reliable, as an arbitrary type alias, eg. `type X = System.AutoOpenAttribute` will not be recognised correctly.
 
-To overcome this limitation, we are raising a warning when a user is aliasing the `AutoOpenAttribute` type.
+To overcome this limitation, we decided to discourage users from creating such aliases.
+We now emit a warning when an alias for `AutoOpenAttribute` is found.
 
-Note that we do not process nested `[<AutoOpen>]` modules indefinitely, because we establish a link when you reference any module.
-
+Note that we do not process nested `[<AutoOpen>]` modules - this is because as soon as the top-level module is considered 'potentially used', the whole file is marked as a dependency.
+An example explaining this:
 ```fsharp
 namespace A
 
+// If the algorithm determines module A.B is 'potentially used' in another file, there is no need to inspect its contents.
 module B =
 
-module C =
-
-// The link is established as soon as module B is hit.
-// Whether the content of D is pushed to C in the Trie is no longer relevant.
-[<AutoOpen>]
-module D =
-    ()
+    module C =
+        
+        // In particular there is no need to check this AutoOpen attribute
+        [<AutoOpen>]
+        module D =
+            ()
 ```
 
 ### Edge-case 2. - module abbreviations
+Initially there was some concern about the impact of module abbreviations for dependency tracking algorithm.
+However module abbreviations do not actually require any special handling in the current algorithm.
 
-Module abbreviations do not require any special handling in the current algorithm.
 Consider the following example:
 ```
 // F1.fs
@@ -213,13 +217,18 @@ module C
 open A
 module D = B
 ```
-Here, the line `module D = B` generates the `F2.fs -> F1.fs` link, so no special code is needed to add it.
+Here, the line `module D = B` generates the following link: `F2.fs -> F1.fs`.
+Any files that might make use of the abbreviation require a dependency onto `F2.fs`, which in turn creates an indirect dependency onto `F1.fs`.
+Therefore no special handling is required for this scenario.
 
-### Edge-case 3. - ghost namespaces
+### Optimising the graph for files with shared namespaces
+One common namespace setup in an F# project involves sharing a namespace across multiple files.
+The problem this creates is that normally every `open` statement against that namespace would create a link to all the files defining it.
 
-Not every node in the Trie contains file indexes.
-A namespace node in the Trie, does not expose the file index when there are no types defined.  
-Consider:
+To help reduce the dependency graph, we detect scenarios in which the namespace itself does not contain any type definitions.
+In such cases, the Trie node referring to that namespace does not link to any files directly (but its subnodes might).
+
+Consider the following:
 
 `A.fs`
 ```fsharp
@@ -235,7 +244,7 @@ module Foo.Bar.B
 let b = 1
 ```
 
-leads to the following Trie:
+Such a setup creates the following Trie contents:
 
 ```mermaid
 graph TB
@@ -249,12 +258,10 @@ Foo --- Bar
 Bar --- A
 Bar --- B
 ```
+Note that the `Foo` and `Bar` namespaces do not link to any files.
 
-We do not want to link files `A.fs` and `B.fs` because they share a namespace.
-For that reason, the namespace nodes `Foo` and `Bar` don't contain any files in the Trie.
-
-We avoid links introducing unnecessary links by this.  
-However, this can lead to following situation:
+However, this can lead to type-checking errors.
+Consider the following:
 
 `X.fs`
 ```fsharp
@@ -268,7 +275,7 @@ namespace Y
 open X // This open statement is unnecessary, however it is valid F# code.
 ```
 
-leads to the following Trie:
+which leads to the following Trie:
 
 ```mermaid
 graph TB
@@ -279,16 +286,14 @@ R --- X
 R --- Y
 ```
 
-When processing `open X` in `Y.fs` a matching node will be found, however not containing any actual files.
-We still need to link some file that contains `namespace X` as a dependency of `Y.fs`, this is what we consider a ghost dependency.
-
-A link that must found to ensure type-checking succeeds. We either pick the smallest file index of the child nodes of `X` or add all files that came before it as a last resort.
+To satisfy the type-checker when unused `open` statements are used, we need to make sure that at least one defining `namespace X` is a dependency of `Y.fs`. 
+We call such dependencies added outside of the main dependency resolution algorithm `ghost dependencies`.
 
 ### Performance
 There are two main factors w.r.t. performance of the graph-based type-checking:
 1. The level of parallelisation allowed by the resolved dependency graph.
 2. The overhead of creating the dependency graph and graph-based processing of the graph.
-At minimum, to make this feature useful, any overhead (2.) cost should in the vast majority of usecases be significantly lower than the speedup generated by 1.
+At minimum, to make this feature useful, any overhead (2.) cost should in the vast majority of use cases be significantly lower than the speedup generated by 1.
 
 Initial timings showed that the graph-based type-checking was significantly faster than sequential type-checking and faster than the two-phase type-checking feature.
 Projects that were tested included:
@@ -296,7 +301,7 @@ Projects that were tested included:
 - `Fantomas.Core`
 - `FSharp.Compiler.ComponentTests`
 
-Some initial results:
+Below are initial results for an early version of the algorithm:
 
 ```
 BenchmarkDotNet=v0.13.2, OS=Windows 11 (10.0.22621.1105)
