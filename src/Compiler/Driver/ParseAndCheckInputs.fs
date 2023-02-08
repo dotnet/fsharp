@@ -1148,16 +1148,10 @@ let GetInitialTcState (m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcI
 let CreateEmptyDummyImplFile qualNameOfFile sigTy =
     CheckedImplFile(qualNameOfFile, [], sigTy, ModuleOrNamespaceContents.TMDefs [], false, false, StampMap [], Map.empty)
 
-let mutable total = TimeSpan.Zero
-let mutable singles = 0
-
 let AddCheckResultsToTcState
     (tcGlobals, amap, hadSig, prefixPathOpt, tcSink, tcImplEnv, qualNameOfFile, implFileSigType)
     (tcState: TcState)
     =
-
-    let sw = Stopwatch.StartNew()
-
     let rootImpls = Zset.add qualNameOfFile tcState.tcsRootImpls
 
     // Only add it to the environment if it didn't have a signature
@@ -1197,12 +1191,6 @@ let AddCheckResultsToTcState
             tcsCcuSig = ccuSigForFile
             tcsImplicitOpenDeclarations = tcState.tcsImplicitOpenDeclarations @ openDecls
         }
-
-    sw.Stop()
-    singles <- singles + 1
-    // TODO Thread-safety
-    total <- total + sw.Elapsed
-    // printfn $"[{Threading.Thread.CurrentThread.ManagedThreadId}] [{singles}] single add took {sw.ElapsedMilliseconds}ms, total so far: {total.TotalMilliseconds}ms"
 
     ccuSigForFile, tcState
 
@@ -1498,7 +1486,6 @@ let CheckOneInputWithCallback
 
             match inp with
             | ParsedInput.SigFile file ->
-                // printfn $"Processing Sig {file.FileName}"
                 let qualNameOfFile = file.QualifiedName
 
                 // Check if we've seen this top module signature before.
@@ -1531,11 +1518,8 @@ let CheckOneInputWithCallback
                         let m = qualNameOfFile.Range
                         TcOpenModuleOrNamespaceDecl tcSink tcGlobals amap m tcEnv (prefixPath, m)
 
-                // printfn $"Finished Processing Sig {file.FileName}"
                 return
                     Finisher(fun tcState ->
-                        // printfn $"Applying Sig {file.FileName}"
-
                         let rootSigs = Zmap.add qualNameOfFile sigFileType tcState.tcsRootSigs
 
                         let tcSigEnv =
@@ -1556,14 +1540,12 @@ let CheckOneInputWithCallback
                         partialResult, tcState)
 
             | ParsedInput.ImplFile file ->
-                // printfn $"Processing Impl {file.FileName}"
                 let qualNameOfFile = file.QualifiedName
 
                 // Check if we've got an interface for this fragment
                 let rootSigOpt = tcState.tcsRootSigs.TryFind qualNameOfFile
 
-                // Typecheck the implementation file not backed by a signature file
-
+                // Typecheck the implementation file
                 let! topAttrs, implFile, tcEnvAtEnd, createsGeneratedProvidedTypes =
                     CheckOneImplFile(
                         tcGlobals,
@@ -1580,21 +1562,16 @@ let CheckOneInputWithCallback
                         tcConfig.diagnosticsOptions
                     )
 
-                // printfn $"Finished Processing Impl {file.FileName}"
                 return
                     Finisher(fun tcState ->
                         // Check if we've already seen an implementation for this fragment
                         if Zset.contains qualNameOfFile tcState.tcsRootImpls then
                             errorR (Error(FSComp.SR.buildImplementationAlreadyGiven (qualNameOfFile.Text), m))
 
-                        // printfn $"Applying Impl Backed={backed} {file.FileName}"
                         let ccuSigForFile, fsTcState =
                             AddCheckResultsToTcState
                                 (tcGlobals, amap, false, prefixPathOpt, tcSink, tcState.tcsTcImplEnv, qualNameOfFile, implFile.Signature)
                                 tcState
-
-                        // backed impl files must not add results as there are already results from .fsi files
-                        //let fsTcState = if backed then tcState else fsTcState
 
                         let partialResult = tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile
 
@@ -1604,7 +1581,6 @@ let CheckOneInputWithCallback
                                     fsTcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
                             }
 
-                        // printfn $"Finished applying Impl {file.FileName}"
                         partialResult, tcState)
 
         with e ->
@@ -1716,8 +1692,6 @@ let CheckMultipleInputsUsingGraphMode
     // somewhere in the files processed prior to each one, or in the processing of this particular file.
     let priorErrors = checkForErrors ()
 
-    let mutable cnt = 1
-
     let processArtificialImplFile (input: ParsedInput) ((currentTcState, _currentPriorErrors): State) : Finisher<State, PartialResult> =
         Finisher(fun (state: State) ->
             let tcState, currentPriorErrors = state
@@ -1735,45 +1709,21 @@ let CheckMultipleInputsUsingGraphMode
         ((input, logger): ParsedInput * DiagnosticsLogger)
         ((currentTcState, _currentPriorErrors): State)
         : Finisher<State, PartialResult> =
-        cancellable {
-            use _ = UseDiagnosticsLogger logger
-            // TODO Is it OK that we don't update 'priorErrors' after processing batches?
-            let checkForErrors2 () = priorErrors || (logger.ErrorCount > 0)
+        use _ = UseDiagnosticsLogger logger
+        let checkForErrors2 () = priorErrors || (logger.ErrorCount > 0)
+        let tcSink = TcResultsSink.NoSink
 
-            let tcSink = TcResultsSink.NoSink
-            cnt <- cnt + 1
+        let finisher =
+            CheckOneInputWithCallback(checkForErrors2, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, currentTcState, input, false)
+            |> Cancellable.runWithoutCancellation
 
-            // printfn $"#{c} [thread {Thread.CurrentThread.ManagedThreadId}] Type-checking {input.FileName}"
-
-            let! f =
-                CheckOneInputWithCallback(
-                    checkForErrors2,
-                    tcConfig,
-                    tcImports,
-                    tcGlobals,
-                    prefixPathOpt,
-                    tcSink,
-                    currentTcState,
-                    input,
-                    false
-                )
-
-            // printfn $"Finished Processing AST {file.ToString()}"
-            return
-                Finisher(fun (state: State) ->
-
-                    // printfn $"Applying {file.ToString()}"
-                    let tcState, priorErrors = state
-                    let (partialResult: PartialResult, tcState) = f.Invoke(tcState)
-
-                    let hasErrors = logger.ErrorCount > 0
-                    // TODO Should we use local _priorErrors or global priorErrors?
-                    let priorOrCurrentErrors = priorErrors || hasErrors
-                    let state: State = tcState, priorOrCurrentErrors
-                    // printfn $"Finished applying {file.ToString()}"
-                    partialResult, state)
-        }
-        |> Cancellable.runWithoutCancellation
+        Finisher(fun (state: State) ->
+            let tcState, priorErrors = state
+            let (partialResult: PartialResult, tcState) = finisher.Invoke(tcState)
+            let hasErrors = logger.ErrorCount > 0
+            let priorOrCurrentErrors = priorErrors || hasErrors
+            let state: State = tcState, priorOrCurrentErrors
+            partialResult, state)
 
     UseMultipleDiagnosticLoggers (inputs, diagnosticsLogger, Some eagerFormat) (fun inputsWithLoggers ->
         // Equip loggers to locally filter w.r.t. scope pragmas in each input

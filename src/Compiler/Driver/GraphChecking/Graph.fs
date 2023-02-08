@@ -1,14 +1,11 @@
 ﻿namespace FSharp.Compiler.GraphChecking
 
-#nowarn "1182"
-#nowarn "40"
-
 open System.Collections.Generic
 open System.Text
 open FSharp.Compiler.IO
 
 /// <summary> Directed Acyclic Graph (DAG) of arbitrary nodes </summary>
-type internal Graph<'Node> = IReadOnlyDictionary<'Node, 'Node[]>
+type internal Graph<'Node> = IReadOnlyDictionary<'Node, 'Node array>
 
 module internal Graph =
     let make (nodeDeps: ('Node * 'Node array) seq) = nodeDeps |> readOnlyDict
@@ -17,13 +14,6 @@ module internal Graph =
         graph
         |> Seq.map (fun (KeyValue (node, deps)) -> f node, deps |> Array.map f)
         |> make
-
-    let collectEdges<'Node when 'Node: equality> (graph: Graph<'Node>) : ('Node * 'Node)[] =
-        let graph: IReadOnlyDictionary<'Node, 'Node[]> = graph
-
-        graph
-        |> Seq.collect (fun (KeyValue (node, deps)) -> deps |> Array.map (fun dep -> node, dep))
-        |> Seq.toArray
 
     let addIfMissing<'Node when 'Node: equality> (nodes: 'Node seq) (graph: Graph<'Node>) : Graph<'Node> =
         let missingNodes = nodes |> Seq.except graph.Keys |> Seq.toArray

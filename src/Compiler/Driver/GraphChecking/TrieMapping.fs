@@ -36,8 +36,8 @@ let isAutoOpenAttribute (attribute: SynAttribute) =
     | _ -> false
 
 let isAnyAttributeAutoOpen (attributes: SynAttributes) =
-    not attributes.IsEmpty
-    && List.exists (fun (atl: SynAttributeList) -> List.exists isAutoOpenAttribute atl.Attributes) attributes
+    attributes
+    |> List.exists (fun (atl: SynAttributeList) -> List.exists isAutoOpenAttribute atl.Attributes)
 
 /// Checks to see if the top level ModuleOrNamespace exposes content that could be inferred by any of the subsequent files.
 /// This can happen when a `namespace global` is used, or when a module (with a single ident name) has the `[<AutoOpen>]` attribute.
@@ -96,7 +96,7 @@ let mergeTrieNodes (defaultChildSize: int) (tries: TrieNode array) =
 
         root
 
-let mkDictFromKeyValuePairs (items: KeyValuePair<'TKey, 'TValue> seq) =
+let mkDictFromKeyValuePairs (items: KeyValuePair<'TKey, 'TValue> list) =
     let dict = Dictionary(Seq.length items)
 
     for KeyValue (k, v) in items do
