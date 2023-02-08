@@ -295,7 +295,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             writeType false vref.Type
 
             match vref.Deref.ArgReprInfoForDisplay with
-            | Some ({ OtherRange = Some (r)}) -> writeRange r
+            | Some ({ OtherRange = Some (r) }) -> writeRange r
             | _ -> ()
 
             match vref.TryDeclaringEntity with
