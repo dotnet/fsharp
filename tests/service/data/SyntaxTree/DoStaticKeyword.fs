@@ -1,0 +1,2 @@
+type X =
+    static do ()

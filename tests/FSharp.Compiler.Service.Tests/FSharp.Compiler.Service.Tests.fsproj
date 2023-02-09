@@ -42,6 +42,7 @@
     <Compile Include="TestDoubles.fs" />
     <Compile Include="ConsoleOnlyOptionsTests.fs" />
     <Compile Include="VisualStudioVersusConsoleContextTests.fs" />
+    <Compile Include="..\service\SyntaxTreeTests.fs" />
     <Compile Include="..\service\SyntaxTreeTests\TypeTests.fs">
       <Link>SyntaxTree\TypeTests.fs</Link>
     </Compile>

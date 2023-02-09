@@ -1,0 +1,2 @@
+[<MyAttribute(foo ="bar")>]
+do ()

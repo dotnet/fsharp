@@ -1,0 +1,3 @@
+type Tiger =
+    [<Foo>]
+    new () = ()
