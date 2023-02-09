@@ -382,19 +382,16 @@
         <target state="translated">활성 패턴에 대한 구조체 표현</target>
         <note />
       </trans-unit>
-      
       <trans-unit id="featureTryWithInSeqExpressions">
         <source>Support for try-with in sequence expressions</source>
         <target state="new">Support for try-with in sequence expressions</target>
         <note />
       </trans-unit>
-
       <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
         <source>Raises warnings when an copy-and-update record expression changes all fields of a record.</source>
         <target state="new">Raises warnings when an copy-and-update record expression changes all fields of a record.</target>
         <note />
       </trans-unit>
-      
       <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
         <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
         <target state="translated">'let inline ... ='을(를) [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] 특성과 함께 사용하는 경우 경고를 발생합니다. 함수가 인라인되지 않습니다.</target>
@@ -733,6 +730,11 @@
       <trans-unit id="parsExpectingPatternInTuple">
         <source>Expecting pattern</source>
         <target state="translated">예상되는 패턴</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsIncompleteNestedModule">
+        <source>Local module declarations must include the '=' sign, and their contents are indented. If this is supposed to be a top-level module instead, it must appear as the first declaration in a file.</source>
+        <target state="new">Local module declarations must include the '=' sign, and their contents are indented. If this is supposed to be a top-level module instead, it must appear as the first declaration in a file.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr1">
