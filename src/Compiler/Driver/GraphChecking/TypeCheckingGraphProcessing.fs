@@ -27,7 +27,7 @@ let combineResults
     | [||] -> emptyState
     | _ ->
         // Instead of starting with empty state,
-        // reuse state produced by the the dependency with the biggest number of transitive dependencies.
+        // reuse state produced by the dependency with the biggest number of transitive dependencies.
         // This is to reduce the number of folds required to achieve the final state.
         let biggestDependency =
             let sizeMetric (node: ProcessedNode<_, _>) = node.Info.TransitiveDeps.Length
@@ -39,9 +39,11 @@ let combineResults
         // Note: Ordering is not preserved due to reusing results of the biggest child
         // rather than starting with empty state
         let itemsPresent =
-            let set = HashSet(biggestDependency.Info.TransitiveDeps)
-            set.Add biggestDependency.Info.Item |> ignore
             set
+                [|
+                    yield! biggestDependency.Info.TransitiveDeps
+                    yield biggestDependency.Info.Item
+                |]
 
         let resultsToAdd =
             transitiveDeps
