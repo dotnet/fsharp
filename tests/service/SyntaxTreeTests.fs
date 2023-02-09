@@ -47,7 +47,12 @@ let ParseFile fileName =
     let contents = File.ReadAllText fullPath
     let ast = parseSourceCode (fileName, contents)
 
-    let normalize (s: string) = s.Replace("\r", "")
+    let normalize (s: string) =
+        s
+            .Replace("\r", "")
+            // __SOURCE_DIRECTORY__ could evaluate to C:\root on Windows.
+            .Replace(@"C:\root\", "/root/")
+
     let actual = sprintf "%A" ast |> normalize |> sprintf "%s\n"
     let bslPath = $"{fullPath}.bsl"
 

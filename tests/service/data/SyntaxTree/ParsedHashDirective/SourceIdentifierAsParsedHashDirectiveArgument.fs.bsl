@@ -9,7 +9,7 @@ ImplFile
              (ParsedHashDirective
                 ("I",
                  [SourceIdentifier
-                    ("__SOURCE_DIRECTORY__", "C:\root\ParsedHashDirective",
+                    ("__SOURCE_DIRECTORY__", "/root/ParsedHashDirective",
                      /root/ParsedHashDirective/SourceIdentifierAsParsedHashDirectiveArgument.fs (2,3--2,23))],
                  /root/ParsedHashDirective/SourceIdentifierAsParsedHashDirectiveArgument.fs (2,0--2,23)),
               /root/ParsedHashDirective/SourceIdentifierAsParsedHashDirectiveArgument.fs (2,0--2,23))],

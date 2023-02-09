@@ -7,7 +7,7 @@ ImplFile
           [Expr
              (Const
                 (SourceIdentifier
-                   ("__SOURCE_DIRECTORY__", "C:\root\SourceIdentifier",
+                   ("__SOURCE_DIRECTORY__", "/root/SourceIdentifier",
                     /root/SourceIdentifier/_SOURCEDIRECTORY_.fs (2,0--2,20)),
                  /root/SourceIdentifier/_SOURCEDIRECTORY_.fs (2,0--2,20)),
               /root/SourceIdentifier/_SOURCEDIRECTORY_.fs (2,0--2,20))],
