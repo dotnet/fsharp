@@ -10,8 +10,8 @@ ImplFile
                 ("I",
                  [SourceIdentifier
                     ("__SOURCE_DIRECTORY__", "/root/ParsedHashDirective",
-                     /root/ParsedHashDirective/SourceIdentifierAsParsedHashDirectiveArgument.fs (2,3--2,23))],
-                 /root/ParsedHashDirective/SourceIdentifierAsParsedHashDirectiveArgument.fs (2,0--2,23)),
+                     /root/ParsedHashDirective/SourceIdentifierAsParsedHashDirectiveArgument.fs (0,0--0,0))],
+                 /root/ParsedHashDirective/SourceIdentifierAsParsedHashDirectiveArgument.fs (0,0--0,0)),
               /root/ParsedHashDirective/SourceIdentifierAsParsedHashDirectiveArgument.fs (2,0--2,23))],
           PreXmlDocEmpty, [], None,
           /root/ParsedHashDirective/SourceIdentifierAsParsedHashDirectiveArgument.fs (2,0--2,23),

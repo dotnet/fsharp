@@ -3,6 +3,7 @@ module Tests.Service.SyntaxTree
 open System.IO
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Service.Tests.Common
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open NUnit.Framework
 
@@ -19,6 +20,109 @@ let allTestCases =
 [<Literal>]
 let RootDirectory = @"/root"
 
+/// <summary>
+/// Everytime `__SOURCE_DIRECTORY__` was used in the code, the ast will contain an invalid value and range for it.
+/// This should be cleaned up when the test runs during CI/CD.
+/// </summary>
+/// <remarks>
+/// This function is incomplete and does not clean up the entire ParsedInput.
+/// A shortcut was made to only support the existing use-cases.
+/// </remarks>
+let private sanitizeAST (sourceDirectoryValue: string) (ast: ParsedInput) : ParsedInput =
+    let isZero (m: range) =
+        m.StartLine = 0 && m.StartColumn = 0 && m.EndLine = 0 && m.EndColumn = 0
+
+    // __SOURCE_DIRECTORY__ will contain the evaluated value, so we want to replace it with a stable value instead.
+    let mapParsedHashDirective (ParsedHashDirective(ident, args, _) as phd) =
+        match args with
+        | [ ParsedHashDirectiveArgument.SourceIdentifier("__SOURCE_DIRECTORY__", _, mSourceDirectory) ] ->
+            let mZero =
+                Range.mkRange mSourceDirectory.FileName (Position.mkPos 0 0) (Position.mkPos 0 0)
+
+            ParsedHashDirective(
+                ident,
+                [ ParsedHashDirectiveArgument.SourceIdentifier("__SOURCE_DIRECTORY__", sourceDirectoryValue, mZero) ],
+                mZero
+            )
+        | _ -> phd
+
+    let (|SourceDirectoryConstant|_|) (constant: SynConst) =
+        match constant with
+        | SynConst.SourceIdentifier("__SOURCE_DIRECTORY__", _, mSourceDirectory) ->
+            let mZero =
+                Range.mkRange mSourceDirectory.FileName (Position.mkPos 0 0) (Position.mkPos 0 0)
+
+            Some(SynConst.SourceIdentifier("__SOURCE_DIRECTORY__", sourceDirectoryValue, mZero), mZero)
+        | _ -> None
+
+    let (|SourceDirectoryConstantExpr|_|) (expr: SynExpr) =
+        match expr with
+        | SynExpr.Const(SourceDirectoryConstant(constant, mZero), _) -> Some(SynExpr.Const(constant, mZero))
+        | _ -> None
+
+    let rec mapSynModuleDecl (mdl: SynModuleDecl) =
+        match mdl with
+        | SynModuleDecl.HashDirective(ParsedHashDirective(range = mZero) as hd, m) ->
+            let hd = mapParsedHashDirective hd
+            // Only update the range of SynModuleSigDecl.HashDirective if the value was updated.
+            let m = if isZero mZero then mZero else m
+            SynModuleDecl.HashDirective(hd, m)
+        | SynModuleDecl.NestedModule(moduleInfo, isRecursive, decls, isContinuing, range, trivia) ->
+            SynModuleDecl.NestedModule(moduleInfo, isRecursive, List.map mapSynModuleDecl decls, isContinuing, range, trivia)
+        | SynModuleDecl.Expr(SourceDirectoryConstantExpr(expr), _) -> SynModuleDecl.Expr(expr, expr.Range)
+        | _ -> mdl
+
+    let mapSynModuleOrNamespace (SynModuleOrNamespace(longId, isRecursive, kind, decls, xmlDoc, attribs, ao, range, trivia)) =
+        SynModuleOrNamespace(longId, isRecursive, kind, List.map mapSynModuleDecl decls, xmlDoc, attribs, ao, range, trivia)
+
+    let rec mapSynModuleDeclSig (msdl: SynModuleSigDecl) =
+        match msdl with
+        | SynModuleSigDecl.HashDirective(ParsedHashDirective(range = mZero) as hd, m) ->
+            let hd = mapParsedHashDirective hd
+            // Only update the range of SynModuleSigDecl.HashDirective if the value was updated.
+            let m = if isZero mZero then mZero else m
+            SynModuleSigDecl.HashDirective(hd, m)
+        | SynModuleSigDecl.NestedModule(moduleInfo, isRecursive, decls, range, trivia) ->
+            SynModuleSigDecl.NestedModule(moduleInfo, isRecursive, List.map mapSynModuleDeclSig decls, range, trivia)
+        | _ -> msdl
+
+    let mapSynModuleOrNamespaceSig (SynModuleOrNamespaceSig(longId, isRecursive, kind, decls, xmlDoc, attribs, ao, range, trivia)) =
+        SynModuleOrNamespaceSig(longId, isRecursive, kind, List.map mapSynModuleDeclSig decls, xmlDoc, attribs, ao, range, trivia)
+
+    match ast with
+    | ParsedInput.ImplFile(ParsedImplFileInput(fileName,
+                                               isScript,
+                                               qualifiedNameOfFile,
+                                               scopedPragmas,
+                                               hashDirectives,
+                                               contents,
+                                               flags,
+                                               trivia,
+                                               identifiers)) ->
+        ParsedImplFileInput(
+            fileName,
+            isScript,
+            qualifiedNameOfFile,
+            scopedPragmas,
+            List.map mapParsedHashDirective hashDirectives,
+            List.map mapSynModuleOrNamespace contents,
+            flags,
+            trivia,
+            identifiers
+        )
+        |> ParsedInput.ImplFile
+    | ParsedInput.SigFile(ParsedSigFileInput(fileName, qualifiedNameOfFile, scopedPragmas, hashDirectives, contents, trivia, identifiers)) ->
+        ParsedSigFileInput(
+            fileName,
+            qualifiedNameOfFile,
+            scopedPragmas,
+            List.map mapParsedHashDirective hashDirectives,
+            List.map mapSynModuleOrNamespaceSig contents,
+            trivia,
+            identifiers
+        )
+        |> ParsedInput.SigFile
+
 let parseSourceCode (name: string, code: string) =
     let location = Path.Combine(RootDirectory, name).Replace("\\", "/")
 
@@ -31,7 +135,9 @@ let parseSourceCode (name: string, code: string) =
         )
         |> Async.RunImmediate
 
-    parseResults.ParseTree
+    let tree = parseResults.ParseTree
+    let sourceDirectoryValue = $"{RootDirectory}/{FileInfo(location).Directory.Name}"
+    sanitizeAST sourceDirectoryValue tree
 
 /// Asserts the parsed untyped tree matches the expected baseline.
 ///
@@ -46,13 +152,7 @@ let ParseFile fileName =
     let fullPath = Path.Combine(testCasesDir, fileName)
     let contents = File.ReadAllText fullPath
     let ast = parseSourceCode (fileName, contents)
-
-    let normalize (s: string) =
-        s
-            .Replace("\r", "")
-            // __SOURCE_DIRECTORY__ could evaluate to C:\root on Windows.
-            .Replace(@"C:\root\", "/root/")
-
+    let normalize (s: string) = s.Replace("\r", "")
     let actual = sprintf "%A" ast |> normalize |> sprintf "%s\n"
     let bslPath = $"{fullPath}.bsl"
 
