@@ -351,7 +351,7 @@ module SyntaxTraversal =
                 | SynExpr.ArrayOrList (_, synExprList, _range) ->
                     synExprList |> List.map (fun x -> dive x x.Range traverseSynExpr) |> pick expr
 
-                | SynExpr.AnonRecd (_isStruct, copyOpt, synExprList, _range) ->
+                | SynExpr.AnonRecd (copyInfo = copyOpt; recordFields = synExprList) ->
                     [
                         match copyOpt with
                         | Some (expr, (withRange, _)) ->

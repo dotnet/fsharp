@@ -28,7 +28,9 @@ ImplFile
                    Const
                      (Int32 7,
                       /root/Expression/SynExprAnonRecordContainsTheRangeOfTheEqualsSignInTheFields.fs (4,14--4,15)))],
-                 /root/Expression/SynExprAnonRecordContainsTheRangeOfTheEqualsSignInTheFields.fs (2,0--4,18)),
+                 /root/Expression/SynExprAnonRecordContainsTheRangeOfTheEqualsSignInTheFields.fs (2,0--4,18),
+                 { OpeningBraceRange =
+                    /root/Expression/SynExprAnonRecordContainsTheRangeOfTheEqualsSignInTheFields.fs (2,0--2,2) }),
               /root/Expression/SynExprAnonRecordContainsTheRangeOfTheEqualsSignInTheFields.fs (2,0--4,18))],
           PreXmlDocEmpty, [], None,
           /root/Expression/SynExprAnonRecordContainsTheRangeOfTheEqualsSignInTheFields.fs (2,0--4,18),
