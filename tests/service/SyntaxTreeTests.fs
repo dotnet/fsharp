@@ -7,13 +7,12 @@ open FSharp.Compiler.Text
 open NUnit.Framework
 
 let testCasesDir = Path.Combine(__SOURCE_DIRECTORY__, "data", "SyntaxTree")
-let fsharpFiles = set [| ".fs"; ".fsi"; ".fsx" |]
 
 let allTestCases =
-    Directory.EnumerateFiles(testCasesDir)
-    |> Seq.filter (fun file -> FileInfo(file).Extension |> fsharpFiles.Contains)
+    Directory.EnumerateFiles(testCasesDir, "*.fs?", SearchOption.AllDirectories)
     |> Seq.map (fun f ->
-        let fileName = Path.GetFileName f
+        let fileInfo = FileInfo(f)
+        let fileName = Path.Combine(fileInfo.Directory.Name, fileInfo.Name)
         [| fileName :> obj |])
     |> Seq.toArray
 
