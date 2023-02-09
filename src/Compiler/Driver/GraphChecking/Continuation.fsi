@@ -16,3 +16,8 @@ module internal Continuation
 /// it constructs and invokes closures representing intermediate stages of the sequenced computation on the heap, rather than consuming space on the (more constrained) stack.
 val sequence<'T, 'TReturn> :
     recursions: (('T -> 'TReturn) -> 'TReturn) list -> finalContinuation: ('T list -> 'TReturn) -> 'TReturn
+
+/// Auxiliary function for `Continuation.sequence` that assumes the recursions return a 'T list.
+/// In the final continuation the `'T list list` will first be concatenated into one list, before being passed to the (final) `continuation`.
+val concatenate<'T, 'TReturn> :
+    recursions: (('T list -> 'TReturn) -> 'TReturn) list -> finalContinuation: ('T list -> 'TReturn) -> 'TReturn
