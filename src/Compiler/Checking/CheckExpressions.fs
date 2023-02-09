@@ -6007,45 +6007,26 @@ and TcExprStaticOptimization (cenv: cenv) overallTy env tpenv (constraints, synE
 /// synExpr1.longId <- synExpr2
 and TcExprDotSet (cenv: cenv) overallTy env tpenv (synExpr1, synLongId, synExpr2, mStmt) =
     let (SynLongIdent(longId, _, _)) = synLongId
-  
-    if synLongId.ThereIsAnExtraDotAtTheEnd then
-        // just drop rhs on the floor
-        let mExprAndDotLookup = unionRanges synExpr1.Range (rangeOfLid longId)
-        TcExprThen cenv overallTy env tpenv false synExpr1 [DelayedDotLookup(longId, mExprAndDotLookup)]
-    else
-        let mExprAndDotLookup = unionRanges synExpr1.Range (rangeOfLid longId)
-        TcExprThen cenv overallTy env tpenv false synExpr1 [DelayedDotLookup(longId, mExprAndDotLookup); MakeDelayedSet(synExpr2, mStmt)]
+    let mExprAndDotLookup = unionRanges synExpr1.Range (rangeOfLid longId)
+    TcExprThen cenv overallTy env tpenv false synExpr1 [DelayedDotLookup(longId, mExprAndDotLookup); MakeDelayedSet(synExpr2, mStmt)]
 
 /// synExpr1.longId(synExpr2) <- expr3, very rarely used named property setters
 and TcExprDotNamedIndexedPropertySet (cenv: cenv) overallTy env tpenv (synExpr1, synLongId, synExpr2, expr3, mStmt) =
     let (SynLongIdent(longId, _, _)) = synLongId
-    if synLongId.ThereIsAnExtraDotAtTheEnd then
-        // just drop rhs on the floor
-        let mExprAndDotLookup = unionRanges synExpr1.Range (rangeOfLid longId)
-        TcExprThen cenv overallTy env tpenv false synExpr1 [DelayedDotLookup(longId, mExprAndDotLookup)]
-    else
-        let mExprAndDotLookup = unionRanges synExpr1.Range (rangeOfLid longId)
-        TcExprThen cenv overallTy env tpenv false synExpr1 
-            [ DelayedDotLookup(longId, mExprAndDotLookup); 
-              DelayedApp(ExprAtomicFlag.Atomic, false, None, synExpr2, mStmt)
-              MakeDelayedSet(expr3, mStmt)]
+    let mExprAndDotLookup = unionRanges synExpr1.Range (rangeOfLid longId)
+    TcExprThen cenv overallTy env tpenv false synExpr1 
+        [ DelayedDotLookup(longId, mExprAndDotLookup); 
+          DelayedApp(ExprAtomicFlag.Atomic, false, None, synExpr2, mStmt)
+          MakeDelayedSet(expr3, mStmt)]
 
 and TcExprLongIdentSet (cenv: cenv) overallTy env tpenv (synLongId, synExpr2, m) =
-    if synLongId.ThereIsAnExtraDotAtTheEnd then
-        // just drop rhs on the floor
-        TcLongIdentThen cenv overallTy env tpenv synLongId [ ]
-    else
-        TcLongIdentThen cenv overallTy env tpenv synLongId [ MakeDelayedSet(synExpr2, m) ]
+    TcLongIdentThen cenv overallTy env tpenv synLongId [ MakeDelayedSet(synExpr2, m) ]
 
 // Type.Items(synExpr1) <- synExpr2
 and TcExprNamedIndexPropertySet (cenv: cenv) overallTy env tpenv (synLongId, synExpr1, synExpr2, mStmt) =
-    if synLongId.ThereIsAnExtraDotAtTheEnd then
-        // just drop rhs on the floor
-        TcLongIdentThen cenv overallTy env tpenv synLongId [ ]
-    else
-        TcLongIdentThen cenv overallTy env tpenv synLongId 
-            [ DelayedApp(ExprAtomicFlag.Atomic, false, None, synExpr1, mStmt)
-              MakeDelayedSet(synExpr2, mStmt) ]
+    TcLongIdentThen cenv overallTy env tpenv synLongId 
+        [ DelayedApp(ExprAtomicFlag.Atomic, false, None, synExpr1, mStmt)
+          MakeDelayedSet(synExpr2, mStmt) ]
 
 and TcExprTraitCall (cenv: cenv) overallTy env tpenv (synTypes, synMemberSig, arg, m) =
     let g = cenv.g
