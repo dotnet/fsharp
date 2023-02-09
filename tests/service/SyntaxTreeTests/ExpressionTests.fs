@@ -494,3 +494,25 @@ type CFoo() =
         assertRange (7,4) (7, 67) m
     | _ -> Assert.Fail $"Could not get valid AST, got {ast}"
 
+[<Test>]
+let ``SynExpr.AnonRecd with struct keyword`` () =
+    let ast =
+        getParseResults """
+struct 
+    {| Foo =
+    //  meh
+    someValue |}
+
+struct {| |}
+"""
+
+    match ast with
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
+                SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                    SynModuleDecl.Expr(expr = SynExpr.AnonRecd(range = m1))
+                    SynModuleDecl.Expr(expr = SynExpr.AnonRecd(range = m2))
+                ])
+            ])) ->
+        assertRange (2,0) (5, 16) m1
+        assertRange (7, 0) (7, 12) m2
+    | _ -> Assert.Fail $"Could not get valid AST, got {ast}"
