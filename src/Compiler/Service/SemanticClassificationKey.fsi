@@ -20,13 +20,12 @@ type internal SemanticClassificationKeyStore =
     /// Get a read only view on the semantic classification key store
     member GetView: unit -> SemanticClassificationView
 
-
 /// A builder that will build an semantic classification key store based on the written Item and its associated range.
 [<Sealed>]
 type internal SemanticClassificationKeyStoreBuilder =
 
     new: unit -> SemanticClassificationKeyStoreBuilder
 
-    member WriteAll: SemanticClassificationItem [] -> unit
+    member WriteAll: SemanticClassificationItem[] -> unit
 
     member TryBuildAndReset: unit -> SemanticClassificationKeyStore option

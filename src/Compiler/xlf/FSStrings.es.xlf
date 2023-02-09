@@ -2,9 +2,19 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="es" original="../FSStrings.resx">
     <body>
+      <trans-unit id="ErrorFromAddingTypeEquationTuples">
+        <source>Type mismatch. Expecting a tuple of length {0} of type\n    {1}    \nbut given a tuple of length {2} of type\n    {3}    {4}\n</source>
+        <target state="translated">Error de coincidencia de tipos. Se espera una tupla de longitud {0} de tipo\n    {1}    \nperero se ha proporcionado una tupla de longitud {2} de tipo\n    {3}{4}\n</target>
+        <note />
+      </trans-unit>
       <trans-unit id="HashLoadedSourceHasIssues0">
         <source>One or more informational messages in loaded file.\n</source>
         <target state="translated">Uno o más mensajes informativos en el archivo cargado.\n</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NotUpperCaseConstructorWithoutRQA">
+        <source>Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute</source>
+        <target state="translated">Los casos de unión discriminada en minúsculas solo se permiten cuando se usa el atributo RequireQualifiedAccess</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
@@ -1369,7 +1379,7 @@
       </trans-unit>
       <trans-unit id="SelfRefObjCtor2">
         <source>Recursive references to the object being defined will be checked for initialization soundness at runtime through the use of a delayed reference. Consider placing self-references within 'do' statements after the last 'let' binding in the construction sequence.</source>
-        <target state="translated">Las referencias recursivas al objeto que se va a definir se comprobarán para ver si tienen inicialización silenciosa en tiempo de ejecución mediante el uso de una referencia retardada. Considere poner autorreferencias en instrucciones 'do' después del último enlace 'let' en la secuencia de construcción.</target>
+        <target state="translated">Las referencias recursivas al objeto que se va a definir se comprobarán para ver si tienen inicialización silenciosa en tiempo de ejecución mediante el uso de una referencia retardada. Considere poner autorreferencias en instrucciones "do" después del último enlace "let" en la secuencia de construcción.</target>
         <note />
       </trans-unit>
       <trans-unit id="VirtualAugmentationOnNullValuedType">
@@ -1553,8 +1563,8 @@
         <note />
       </trans-unit>
       <trans-unit id="IntfImplInIntrinsicAugmentation">
-        <source>Interface implementations in augmentations are now deprecated. Interface implementations should be given on the initial declaration of a type.</source>
-        <target state="translated">Las implementaciones de interfaz en aumentos están en desuso. Las implementaciones de interfaz deben proporcionarse en la declaración inicial de un tipo.</target>
+        <source>Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using #nowarn "69" if you have checked this is not the case.</source>
+        <target state="translated">Normalmente, las implementaciones de interfaz deben proporcionarse en la declaración inicial de un tipo. Las implementaciones de interfaz en aumentos pueden dar lugar al acceso a enlaces estáticos antes de inicializarse, aunque solo si la implementación de interfaz se invoca durante la inicialización de los datos estáticos y, a su vez, obtiene acceso a los datos estáticos. Puede quitar esta advertencia con #nowarn "69" si ha comprobado que este no es el caso.</target>
         <note />
       </trans-unit>
       <trans-unit id="IntfImplInExtrinsicAugmentation">

@@ -18,15 +18,14 @@ type IlxUnionCaseField =
 /// Union alternative
 type IlxUnionCase =
     { altName: string
-      altFields: IlxUnionCaseField []
+      altFields: IlxUnionCaseField[]
       altCustomAttrs: ILAttributes }
 
-    member FieldDefs: IlxUnionCaseField []
+    member FieldDefs: IlxUnionCaseField[]
     member FieldDef: int -> IlxUnionCaseField
     member Name: string
     member IsNullary: bool
-    member FieldTypes: ILType []
-
+    member FieldTypes: ILType[]
 
 type IlxUnionHasHelpers =
     | NoHelpers
@@ -39,8 +38,8 @@ type IlxUnionRef =
     | IlxUnionRef of
         boxity: ILBoxity *
         ILTypeRef *
-        IlxUnionCase [] *
-        bool (* IsNullPermitted *)  *
+        IlxUnionCase[] *
+        bool (* IsNullPermitted *) *
         IlxUnionHasHelpers (* HasHelpers *)
 
 type IlxUnionSpec =
@@ -52,7 +51,7 @@ type IlxUnionSpec =
 
     member Alternatives: IlxUnionCase list
 
-    member AlternativesArray: IlxUnionCase []
+    member AlternativesArray: IlxUnionCase[]
 
     member Boxity: ILBoxity
 
@@ -80,7 +79,7 @@ type IlxClosureFreeVar =
       fvCompilerGenerated: bool
       fvType: ILType }
 
-type IlxClosureRef = IlxClosureRef of ILTypeRef * IlxClosureLambdas * IlxClosureFreeVar []
+type IlxClosureRef = IlxClosureRef of ILTypeRef * IlxClosureLambdas * IlxClosureFreeVar[]
 
 /// Represents a usage of a closure
 type IlxClosureSpec =
@@ -94,7 +93,7 @@ type IlxClosureSpec =
 
     member FormalLambdas: IlxClosureLambdas
 
-    member FormalFreeVars: IlxClosureFreeVar []
+    member FormalFreeVars: IlxClosureFreeVar[]
 
     member GenericArgs: ILGenericArgs
 
@@ -109,7 +108,6 @@ type IlxClosureSpec =
     /// Indicates if a static field being used to store an instance of this closure (because it has no free variables)
     member UseStaticField: bool
 
-
 /// IlxClosureApps - i.e. types being applied at a callsite.
 type IlxClosureApps =
     | Apps_tyapp of ILType * IlxClosureApps
@@ -119,34 +117,36 @@ type IlxClosureApps =
 /// Represents a closure prior to erasure
 type IlxClosureInfo =
     { cloStructure: IlxClosureLambdas
-      cloFreeVars: IlxClosureFreeVar []
+      cloFreeVars: IlxClosureFreeVar[]
       cloCode: Lazy<ILMethodBody>
       cloUseStaticField: bool }
 
 /// Represents a discriminated union type prior to erasure
 type IlxUnionInfo =
-    { /// Is the representation public?
-      UnionCasesAccessibility: ILMemberAccess
+    {
+        /// Is the representation public?
+        UnionCasesAccessibility: ILMemberAccess
 
-      /// Are the representation helpers public?
-      HelpersAccessibility: ILMemberAccess
+        /// Are the representation helpers public?
+        HelpersAccessibility: ILMemberAccess
 
-      /// Generate the helpers?
-      HasHelpers: IlxUnionHasHelpers
+        /// Generate the helpers?
+        HasHelpers: IlxUnionHasHelpers
 
-      GenerateDebugProxies: bool
+        GenerateDebugProxies: bool
 
-      DebugDisplayAttributes: ILAttribute list
+        DebugDisplayAttributes: ILAttribute list
 
-      UnionCases: IlxUnionCase []
+        UnionCases: IlxUnionCase[]
 
-      IsNullPermitted: bool
+        IsNullPermitted: bool
 
-      /// Debug info for generated code for classunions.
-      DebugPoint: ILDebugPoint option
+        /// Debug info for generated code for classunions.
+        DebugPoint: ILDebugPoint option
 
-      /// Debug info for generated code for classunions
-      DebugImports: ILDebugImports option }
+        /// Debug info for generated code for classunions
+        DebugImports: ILDebugImports option
+    }
 
 // --------------------------------------------------------------------
 // MS-ILX constructs: Closures, thunks, classunions

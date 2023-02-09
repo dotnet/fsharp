@@ -29,6 +29,8 @@ module ValReprInfo =
 
     val emptyValData: ValReprInfo
 
+    val IsEmpty: ValReprInfo -> bool
+
     val InferTyparInfo: tps: Typar list -> TyparReprInfo list
 
     val InferArgReprInfo: v: Val -> ArgReprInfo
@@ -45,6 +47,8 @@ val nameOfVal: v: Val -> string
 
 val arityOfVal: v: Val -> ValReprInfo
 
+val arityOfValForDisplay: v: Val -> ValReprInfo
+
 val tupInfoRef: TupInfo
 
 val tupInfoStruct: TupInfo
@@ -57,30 +61,19 @@ val mkRawRefTupleTy: tys: TTypes -> TType
 
 val mkRawStructTupleTy: tys: TTypes -> TType
 
-val mapTImplFile:
-    f: (ModuleOrNamespaceContentsWithSig -> ModuleOrNamespaceContentsWithSig) -> TypedImplFile -> TypedImplFile
-
-val mapAccImplFile:
-    f: ('a -> ModuleOrNamespaceContentsWithSig -> ModuleOrNamespaceContentsWithSig * 'b) ->
-    z: 'a ->
-    TypedImplFile ->
-        TypedImplFile * 'b
-
-val foldTImplFile: f: ('a -> ModuleOrNamespaceContentsWithSig -> 'b) -> z: 'a -> TypedImplFile -> 'b
-
-val typarEq: lv1: Typar -> lv2: Typar -> bool
+val typarEq: tp1: Typar -> tp2: Typar -> bool
 
 /// Equality on type variables, implemented as reference equality. This should be equivalent to using typarEq.
 val typarRefEq: tp1: Typar -> tp2: Typar -> bool
 
 /// Equality on value specs, implemented as reference equality
-val valEq: lv1: Val -> lv2: Val -> bool
+val valEq: v1: Val -> v2: Val -> bool
 
 /// Equality on CCU references, implemented as reference equality except when unresolved
-val ccuEq: mv1: CcuThunk -> mv2: CcuThunk -> bool
+val ccuEq: ccu1: CcuThunk -> ccu2: CcuThunk -> bool
 
 /// For dereferencing in the middle of a pattern
-val (|ValDeref|): vr: ValRef -> Val
+val (|ValDeref|): vref: ValRef -> Val
 
 val mkRecdFieldRef: tcref: TyconRef -> f: string -> RecdFieldRef
 
@@ -96,7 +89,7 @@ val (|ERefLocal|ERefNonLocal|): x: EntityRef -> Choice<NonNullSlot<Entity>, NonL
 
 val mkLocalTyconRef: x: NonNullSlot<Entity> -> EntityRef
 
-val mkNonLocalEntityRef: ccu: CcuThunk -> mp: string [] -> NonLocalEntityRef
+val mkNonLocalEntityRef: ccu: CcuThunk -> mp: string[] -> NonLocalEntityRef
 
 val mkNestedNonLocalEntityRef: nleref: NonLocalEntityRef -> id: string -> NonLocalEntityRef
 
@@ -129,9 +122,7 @@ val ccuOfTyconRef: eref: EntityRef -> CcuThunk option
 
 val mkTyparTy: tp: Typar -> TType
 
-val copyTypar: tp: Typar -> Typar
-
-val copyTypars: tps: Typar list -> Typar list
+val copyTypars: clearStaticReq: bool -> tps: Typar list -> Typar list
 
 val tryShortcutSolvedUnitPar: canShortcut: bool -> r: Typar -> Measure
 
@@ -142,6 +133,9 @@ val stripTyparEqnsAux: canShortcut: bool -> ty: TType -> TType
 val stripTyparEqns: ty: TType -> TType
 
 val stripUnitEqns: unt: Measure -> Measure
+
+/// Detect a use of a nominal type, including type abbreviations.
+val (|AbbrevOrAppTy|_|): ty: TType -> TyconRef option
 
 val mkLocalValRef: v: Val -> ValRef
 
@@ -165,7 +159,7 @@ val tyconRefUsesLocalXmlDoc: compilingFSharpCore: bool -> x: TyconRef -> bool
 
 val entityRefInThisAssembly: compilingFSharpCore: bool -> x: EntityRef -> bool
 
-val arrayPathEq: y1: string [] -> y2: string [] -> bool
+val arrayPathEq: y1: string[] -> y2: string[] -> bool
 
 val nonLocalRefEq: NonLocalEntityRef -> NonLocalEntityRef -> bool
 

@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <!-- Workaround to get rid of:
+        error NU1505: Duplicate 'PackageDownload' items found.
+        Remove the duplicate items or use the Update functionality to ensure a consistent restore behavior.
+        The duplicate 'PackageDownload' items are:
+          Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2].
+    -->
+    <NoWarn>$(NoWarn);NU1505</NoWarn>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <!-- Turn off "This function is for use by compiled F# code and should not be used directly" -->
+    <OtherFlags>$(OtherFlags) --nowarn:1204</OtherFlags>
+    <!-- Turn off "Experimental" -->
+    <OtherFlags>$(OtherFlags) --nowarn:57</OtherFlags>
+    <OtherFlags>$(OtherFlags) --langversion:preview</OtherFlags>
+    <OtherFlags>$(OtherFlags) --define:PREVIEW</OtherFlags>
+    <!-- By default this project will compile with the proto compiler -->
+    <!-- Uncommenting this will build with a previous installed compiler  -->
+    <!--
+    <FscToolPath>C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\CommonExtensions\Microsoft\FSharp</FscToolPath>
+    <FscToolExe>fsc.exe</FscToolExe>
+    <DotnetFscCompilerPath></DotnetFscCompilerPath>
+    -->
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Async.fs" />
+    <Compile Include="Conditions.fs" />
+    <Compile Include="Collections.fs" />
+    <Compile Include="Benchmarks.fs" />
+    <ProjectReference Include="..\..\..\..\src\FSharp.Core\FSharp.Core.fsproj" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.12.1" />
+    <PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.12.1" />
+  </ItemGroup>
+</Project>

@@ -11,7 +11,7 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 
 /// Perform the checks on the TAST for a file after type inference is complete.
-val CheckTopImpl:
+val CheckImplFile:
     g: TcGlobals *
     amap: ImportMap *
     reportErrors: bool *
@@ -20,7 +20,8 @@ val CheckTopImpl:
     viewCcu: CcuThunk *
     tcValF: ConstraintSolver.TcValF *
     denv: DisplayEnv *
-    mexpr: ModuleOrNamespaceContentsWithSig *
+    implFileTy: ModuleOrNamespaceType *
+    implFileContents: ModuleOrNamespaceContents *
     extraAttribs: Attribs *
     (bool * bool) *
     isInternalTestSpanStackReferring: bool ->

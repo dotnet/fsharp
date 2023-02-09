@@ -130,9 +130,9 @@
 - have any of the following characters: / ? : &amp;  \ * " &lt; &gt; | # %</source>
         <target state="translated">文件和文件夹不能:
 - 为空字符串
-- 为系统保留的名称，包括“CON”、“AUX”、“PRN”、“COM1”或“LPT2”
-- 仅包含“.”
-- 具有以下任一字符: / ? : &amp; \ * " &lt; &gt; | # %</target>
+- 为系统保留的名称，包括 "CON"、"AUX"、"PRN"、"COM1" 或 "LPT2"
+- 仅包含 "."
+- 具有以下任一字符: / ? : &amp;  \ * " &lt; &gt; | # %</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorInvalidProjectName">
@@ -672,7 +672,7 @@
       </trans-unit>
       <trans-unit id="NoZeroImpactProjects">
         <source>Microsoft Visual F# does not support zero-impact projects. To create an F# project from this project template, either go to the Visual Studio menu 'Tools, Options..., Projects and Solutions, General' and check the box marked 'Save new projects when created', or specify &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt; in the &lt;TemplateData&gt; section of this project template's .vstemplate file, and then retry this operation.</source>
-        <target state="translated">Microsoft Visual F# 不支持零影响项目。若要从此项目模板创建 F# 项目，可以依次转到 Visual Studio 菜单“工具”、“选项...”、“项目和解决方案”和“常规”，并选中标记为“创建时保存新项目”的框，或者在此项目模板的 .vstemplate 文件的 &lt;TemplateData&gt; 部分中指定 &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt;，然后重试此操作。</target>
+        <target state="translated">Microsoft Visual F# 不支持零影响项目。若要从此项目模板创建 F# 项目，可以依次转到 Visual Studio 菜单“工具”、“选项...”、“项目和解决方案”、“常规”，并选中标记为“创建时保存新项目”的框，或者在此项目模板的 .vstemplate 文件的 &lt;TemplateData&gt; 部分中指定 &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt;，然后重试此操作。</target>
         <note />
       </trans-unit>
       <trans-unit id="NoWildcardsInProject">

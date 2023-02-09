@@ -4,28 +4,30 @@ namespace FSharp.Compiler.CodeAnalysis
 
 open System
 
-exception internal LegacyResolutionFailure
+exception LegacyResolutionFailure
 
 [<RequireQualifiedAccess>]
-type internal LegacyResolutionEnvironment =
+type LegacyResolutionEnvironment =
     /// Indicates a script or source being edited or compiled. Uses reference assemblies (not implementation assemblies).
     | EditingOrCompilation of isEditing: bool
 
     /// Indicates a script or source being dynamically compiled and executed. Uses implementation assemblies.
     | CompilationAndEvaluation
 
-type internal LegacyResolvedFile =
-    { /// Item specification.
-      itemSpec: string
+type LegacyResolvedFile =
+    {
+        /// Item specification.
+        itemSpec: string
 
-      /// Prepare textual information about where the assembly was resolved from, used for tooltip output
-      prepareToolTip: string * string -> string
+        /// Prepare textual information about where the assembly was resolved from, used for tooltip output
+        prepareToolTip: string * string -> string
 
-      /// Round-tripped baggage
-      baggage: string }
+        /// Round-tripped baggage
+        baggage: string
+    }
 
 [<AllowNullLiteral>]
-type internal ILegacyReferenceResolver =
+type ILegacyReferenceResolver =
     /// Get the "v4.5.1"-style moniker for the highest installed .NET Framework version.
     /// This is the value passed back to Resolve if no explicit "mscorlib" has been given.
     ///
@@ -37,7 +39,7 @@ type internal ILegacyReferenceResolver =
     /// Perform assembly resolution on the given references under the given conditions
     abstract Resolve:
         resolutionEnvironment: LegacyResolutionEnvironment *
-        references: (string * string) [] *
+        references: (string * string)[] *
         targetFrameworkVersion: string *
         targetFrameworkDirectories: string list *
         targetProcessorArchitecture: string *
@@ -46,7 +48,7 @@ type internal ILegacyReferenceResolver =
         implicitIncludeDir: string *
         logMessage: (string -> unit) *
         logDiagnostic: (bool -> string -> string -> unit) ->
-            LegacyResolvedFile []
+            LegacyResolvedFile[]
 
     /// Get the Reference Assemblies directory for the .NET Framework (on Windows)
     /// This is added to the default resolution path for
@@ -57,5 +59,5 @@ type internal ILegacyReferenceResolver =
 // outside FSharp.Compiler.Service
 [<Class; AllowNullLiteral; Obsolete("This API is obsolete and not for external use")>]
 type LegacyReferenceResolver =
-    internal new: impl: ILegacyReferenceResolver -> LegacyReferenceResolver
+    new: impl: ILegacyReferenceResolver -> LegacyReferenceResolver
     member internal Impl: ILegacyReferenceResolver

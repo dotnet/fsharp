@@ -31,7 +31,6 @@ type public FSharpXmlDoc =
     /// Indicates that the XML for the documentation can be found in a .xml documentation file for the given DLL, using the given signature key
     | FromXmlFile of dllName: string * xmlSig: string
 
-
 // Implementation details used by other code in the compiler
 module internal SymbolHelpers =
 
@@ -57,16 +56,16 @@ module internal SymbolHelpers =
 
     val IsExplicitlySuppressed: TcGlobals -> Item -> bool
 
-    val FlattenItems: TcGlobals -> range -> ItemWithInst -> ItemWithInst list
+    val SelectMethodGroupItems2: TcGlobals -> range -> ItemWithInst -> ItemWithInst list
 
 #if !NO_TYPEPROVIDERS
     val (|ItemIsProvidedType|_|): TcGlobals -> Item -> TyconRef option
 
     val (|ItemIsWithStaticArguments|_|):
-        range -> TcGlobals -> Item -> Tainted<TypeProviders.ProvidedParameterInfo> [] option
+        range -> TcGlobals -> Item -> Tainted<TypeProviders.ProvidedParameterInfo>[] option
 
     val (|ItemIsProvidedTypeWithStaticArguments|_|):
-        range -> TcGlobals -> Item -> Tainted<TypeProviders.ProvidedParameterInfo> [] option
+        range -> TcGlobals -> Item -> Tainted<TypeProviders.ProvidedParameterInfo>[] option
 #endif
 
     val SimplerDisplayEnv: DisplayEnv -> DisplayEnv
@@ -75,4 +74,4 @@ module internal SymbolHelpers =
 
     val GetXmlCommentForMethInfoItem: infoReader: InfoReader -> m: range -> d: Item -> minfo: MethInfo -> FSharpXmlDoc
 
-    val FormatTyparMapping: denv: DisplayEnv -> prettyTyparInst: TyparInst -> Layout list
+    val FormatTyparMapping: denv: DisplayEnv -> prettyTyparInst: TyparInstantiation -> Layout list

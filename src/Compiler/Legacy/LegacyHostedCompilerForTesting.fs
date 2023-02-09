@@ -24,24 +24,21 @@ type internal InProcDiagnosticsLoggerProvider() =
     let warnings = ResizeArray()
 
     member _.Provider =
-        { new DiagnosticsLoggerProvider() with
+        { new IDiagnosticsLoggerProvider with
 
-            member _.CreateDiagnosticsLoggerUpToMaxErrors(tcConfigBuilder, exiter) =
+            member _.CreateLogger(tcConfigB, exiter) =
 
-                { new DiagnosticsLoggerUpToMaxErrors(tcConfigBuilder, exiter, "InProcCompilerDiagnosticsLoggerUpToMaxErrors") with
+                { new DiagnosticsLoggerUpToMaxErrors(tcConfigB, exiter, "InProcCompilerDiagnosticsLoggerUpToMaxErrors") with
 
                     member _.HandleTooManyErrors text =
                         warnings.Add(FormattedDiagnostic.Short(FSharpDiagnosticSeverity.Warning, text))
 
-                    member _.HandleIssue(tcConfigBuilder, err, severity) =
+                    member _.HandleIssue(tcConfig, err, severity) =
                         // 'true' is passed for "suggestNames", since we want to suggest names with fsc.exe runs and this doesn't affect IDE perf
-                        let diagnostics =
-                            CollectFormattedDiagnostics
-                                (tcConfigBuilder.implicitIncludeDir, tcConfigBuilder.showFullPaths,
-                                 tcConfigBuilder.flatErrors, tcConfigBuilder.diagnosticStyle, severity, err, true)
+                        let diagnostics = CollectFormattedDiagnostics (tcConfig, severity, err, true)
                         match severity with
                         | FSharpDiagnosticSeverity.Error ->
-                           errors.AddRange(diagnostics)
+                            errors.AddRange(diagnostics)
                         | FSharpDiagnosticSeverity.Warning ->
                             warnings.AddRange(diagnostics)
                         | _ -> ()}
@@ -96,10 +93,7 @@ type internal InProcCompiler(legacyReferenceResolver) =
         let ctok = AssumeCompilationThreadWithoutEvidence ()
 
         let loggerProvider = InProcDiagnosticsLoggerProvider()
-        let mutable exitCode = 0
-        let exiter = 
-            { new Exiter with
-                 member _.Exit n = exitCode <- n; raise StopProcessing }
+        let exiter = StopProcessingExiter()
         try 
             CompileFromCommandLineArguments (
                 ctok, argv, legacyReferenceResolver,
@@ -111,14 +105,14 @@ type internal InProcCompiler(legacyReferenceResolver) =
             | StopProcessing -> ()
             | ReportedError _ 
             | WrappedError(ReportedError _,_)  ->
-                exitCode <- 1
+                exiter.ExitCode <- 1
                 ()
 
         let output: CompilationOutput =
             { Warnings = loggerProvider.CapturedWarnings
               Errors = loggerProvider.CapturedErrors }
 
-        exitCode = 0, output
+        (exiter.ExitCode = 0), output
 
 /// in-proc version of fsc.exe
 type internal FscCompiler(legacyReferenceResolver) =

@@ -108,7 +108,6 @@ type HasFieldMarshalTag =
 val hfm_FieldDef: HasFieldMarshalTag
 val hfm_ParamDef: HasFieldMarshalTag
 
-
 [<Struct>]
 type HasDeclSecurityTag =
     member Tag: int32
@@ -116,7 +115,6 @@ type HasDeclSecurityTag =
 val hds_TypeDef: HasDeclSecurityTag
 val hds_MethodDef: HasDeclSecurityTag
 val hds_Assembly: HasDeclSecurityTag
-
 
 [<Struct>]
 type MemberRefParentTag =
@@ -127,14 +125,12 @@ val mrp_ModuleRef: MemberRefParentTag
 val mrp_MethodDef: MemberRefParentTag
 val mrp_TypeSpec: MemberRefParentTag
 
-
 [<Struct>]
 type HasSemanticsTag =
     member Tag: int32
 
 val hs_Event: HasSemanticsTag
 val hs_Property: HasSemanticsTag
-
 
 [<Struct>]
 type MethodDefOrRefTag =
@@ -143,14 +139,12 @@ type MethodDefOrRefTag =
 val mdor_MethodDef: MethodDefOrRefTag
 val mdor_MemberRef: MethodDefOrRefTag
 
-
 [<Struct>]
 type MemberForwardedTag =
     member Tag: int32
 
 val mf_FieldDef: MemberForwardedTag
 val mf_MethodDef: MemberForwardedTag
-
 
 [<Struct>]
 type ImplementationTag =

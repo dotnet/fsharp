@@ -12,7 +12,7 @@ module UseBindings =
     let ``UseBindings - UseBindingDiscard01_fs - Current LangVersion`` compilation =
         compilation
         |> asFsx
-        |> withOptions ["--langversion:preview"]
+        |> withLangVersion60
         |> compile
         |> shouldSucceed
         |> ignore
@@ -57,6 +57,6 @@ if ctorCalls <> 1 then
 
         """
         |> asExe
-        |> withLangVersionPreview
+        |> withLangVersion60
         |> compileAndRun
         |> shouldSucceed

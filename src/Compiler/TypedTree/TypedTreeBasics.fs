@@ -26,7 +26,7 @@ let getNameOfScopeRef sref =
     | ILScopeRef.Assembly aref -> aref.Name
     | ILScopeRef.PrimaryAssembly -> "<primary>"
 
-/// Metadata on values (names of arguments etc. 
+/// Metadata on values (names of arguments etc.) 
 module ValReprInfo = 
 
     let unnamedTopArg1: ArgReprInfo = { Attribs=[]; Name=None }
@@ -40,6 +40,11 @@ module ValReprInfo =
     let selfMetadata = unnamedTopArg
 
     let emptyValData = ValReprInfo([], [], unnamedRetVal)
+
+    let IsEmpty info =
+        match info with
+        | ValReprInfo([], [], { Attribs = []; Name=None }) -> true
+        | _ -> false
 
     let InferTyparInfo (tps: Typar list) = tps |> List.map (fun tp -> TyparReprInfo(tp.Id, tp.Kind))
 
@@ -59,7 +64,18 @@ let typesOfVals (v: Val list) = v |> List.map (fun v -> v.Type)
 
 let nameOfVal (v: Val) = v.LogicalName
 
-let arityOfVal (v: Val) = (match v.ValReprInfo with None -> ValReprInfo.emptyValData | Some arities -> arities)
+let arityOfVal (v: Val) =
+    match v.ValReprInfo with
+    | None -> ValReprInfo.emptyValData
+    | Some info -> info
+
+let arityOfValForDisplay (v: Val) =
+    match v.ValReprInfoForDisplay with
+    | Some info -> info
+    | None ->
+         match v.ValReprInfo with
+         | None -> ValReprInfo.emptyValData
+         | Some info -> info
 
 let tupInfoRef = TupInfo.Const false
 
@@ -74,41 +90,27 @@ let mkRawRefTupleTy tys = TType_tuple (tupInfoRef, tys)
 let mkRawStructTupleTy tys = TType_tuple (tupInfoStruct, tys)
 
 //---------------------------------------------------------------------------
-// Aggregate operations to help transform the components that 
-// make up the entire compilation unit
-//---------------------------------------------------------------------------
-
-let mapTImplFile f (TImplFile (fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)) =
-    TImplFile (fragName, pragmas, f moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
-
-let mapAccImplFile f z (TImplFile (fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)) =
-    let moduleExpr, z = f z moduleExpr
-    TImplFile (fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode), z
-
-let foldTImplFile f z (TImplFile (implExprWithSig= moduleExpr)) = f z moduleExpr
-
-//---------------------------------------------------------------------------
 // Equality relations on locally defined things 
 //---------------------------------------------------------------------------
 
-let typarEq (lv1: Typar) (lv2: Typar) = (lv1.Stamp = lv2.Stamp)
+let typarEq (tp1: Typar) (tp2: Typar) = (tp1.Stamp = tp2.Stamp)
 
 /// Equality on type variables, implemented as reference equality. This should be equivalent to using typarEq.
 let typarRefEq (tp1: Typar) (tp2: Typar) = (tp1 === tp2)
 
 /// Equality on value specs, implemented as reference equality
-let valEq (lv1: Val) (lv2: Val) = (lv1 === lv2)
+let valEq (v1: Val) (v2: Val) = (v1 === v2)
 
 /// Equality on CCU references, implemented as reference equality except when unresolved
-let ccuEq (mv1: CcuThunk) (mv2: CcuThunk) = 
-    (mv1 === mv2) || 
-    (if mv1.IsUnresolvedReference || mv2.IsUnresolvedReference then 
-        mv1.AssemblyName = mv2.AssemblyName
+let ccuEq (ccu1: CcuThunk) (ccu2: CcuThunk) = 
+    (ccu1 === ccu2) || 
+    (if ccu1.IsUnresolvedReference || ccu2.IsUnresolvedReference then 
+        ccu1.AssemblyName = ccu2.AssemblyName
      else 
-        mv1.Contents === mv2.Contents)
+        ccu1.Contents === ccu2.Contents)
 
 /// For dereferencing in the middle of a pattern
-let (|ValDeref|) (vr: ValRef) = vr.Deref
+let (|ValDeref|) (vref: ValRef) = vref.Deref
 
 //--------------------------------------------------------------------------
 // Make references to TAST items
@@ -192,17 +194,20 @@ let mkTyparTy (tp: Typar) =
     | TyparKind.Type -> tp.AsType 
     | TyparKind.Measure -> TType_measure (Measure.Var tp)
 
-let copyTypar (tp: Typar) = 
+// For fresh type variables clear the StaticReq when copying because the requirement will be re-established through the
+// process of type inference.
+let copyTypar clearStaticReq (tp: Typar) = 
     let optData = tp.typar_opt_data |> Option.map (fun tg -> { typar_il_name = tg.typar_il_name; typar_xmldoc = tg.typar_xmldoc; typar_constraints = tg.typar_constraints; typar_attribs = tg.typar_attribs })
+    let flags = if clearStaticReq then tp.typar_flags.WithStaticReq(TyparStaticReq.None) else tp.typar_flags
     Typar.New { typar_id = tp.typar_id
-                typar_flags = tp.typar_flags
+                typar_flags = flags
                 typar_stamp = newStamp()
                 typar_solution = tp.typar_solution
                 typar_astype = Unchecked.defaultof<_>
                 // Be careful to clone the mutable optional data too
                 typar_opt_data = optData } 
 
-let copyTypars tps = List.map copyTypar tps
+let copyTypars clearStaticReq tps = List.map (copyTypar clearStaticReq) tps
 
 //--------------------------------------------------------------------------
 // Inference variables
@@ -256,6 +261,12 @@ let rec stripTyparEqnsAux canShortcut ty =
 let stripTyparEqns ty = stripTyparEqnsAux false ty
 
 let stripUnitEqns unt = stripUnitEqnsAux false unt
+
+/// Detect a use of a nominal type, including type abbreviations.
+let (|AbbrevOrAppTy|_|) (ty: TType) =
+    match stripTyparEqns ty with
+    | TType_app (tcref, _, _) -> Some tcref
+    | _ -> None
 
 //---------------------------------------------------------------------------
 // These make local/non-local references to values according to whether

@@ -244,6 +244,7 @@ module ModuleDefinitions =
     let ``Production_OCamlCompat_fsx`` compilation =
         compilation
         |> withOcamlCompat
+        |> withLangVersion50
         |> verifyCompileAndRun
         |> shouldSucceed
 
@@ -271,13 +272,13 @@ module ModuleDefinitions =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 62, Line 14, Col 13, Line 14, Col 19, "This construct is for ML compatibility. The syntax 'module ... = struct .. end' is not used in F# code. Consider using 'module ... = begin .. end'. You can disable this warning by using '--mlcompatibility' or '--nowarn:62'.")
-            (Warning 62, Line 18, Col 13, Line 18, Col 19, "This construct is for ML compatibility. The syntax 'module ... = struct .. end' is not used in F# code. Consider using 'module ... = begin .. end'. You can disable this warning by using '--mlcompatibility' or '--nowarn:62'.")
-            (Warning 62, Line 22, Col 13, Line 22, Col 19, "This construct is for ML compatibility. The syntax 'module ... = struct .. end' is not used in F# code. Consider using 'module ... = begin .. end'. You can disable this warning by using '--mlcompatibility' or '--nowarn:62'.")
-            (Warning 62, Line 26, Col 13, Line 26, Col 19, "This construct is for ML compatibility. The syntax 'module ... = struct .. end' is not used in F# code. Consider using 'module ... = begin .. end'. You can disable this warning by using '--mlcompatibility' or '--nowarn:62'.")
-            (Warning 62, Line 30, Col 13, Line 30, Col 19, "This construct is for ML compatibility. The syntax 'module ... = struct .. end' is not used in F# code. Consider using 'module ... = begin .. end'. You can disable this warning by using '--mlcompatibility' or '--nowarn:62'.")
-            (Warning 62, Line 35, Col 13, Line 35, Col 19, "This construct is for ML compatibility. The syntax 'module ... = struct .. end' is not used in F# code. Consider using 'module ... = begin .. end'. You can disable this warning by using '--mlcompatibility' or '--nowarn:62'.")
-            (Warning 62, Line 39, Col 13, Line 39, Col 19, "This construct is for ML compatibility. The syntax 'module ... = struct .. end' is not used in F# code. Consider using 'module ... = begin .. end'. You can disable this warning by using '--mlcompatibility' or '--nowarn:62'.")
+            (Error 62, Line 14, Col 13, Line 14, Col 19, "This construct is deprecated. The use of 'module M = struct ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'struct' and 'end' and use indentation instead. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.")
+            (Error 62, Line 18, Col 13, Line 18, Col 19, "This construct is deprecated. The use of 'module M = struct ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'struct' and 'end' and use indentation instead. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.")
+            (Error 62, Line 22, Col 13, Line 22, Col 19, "This construct is deprecated. The use of 'module M = struct ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'struct' and 'end' and use indentation instead. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.")
+            (Error 62, Line 26, Col 13, Line 26, Col 19, "This construct is deprecated. The use of 'module M = struct ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'struct' and 'end' and use indentation instead. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.")
+            (Error 62, Line 30, Col 13, Line 30, Col 19, "This construct is deprecated. The use of 'module M = struct ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'struct' and 'end' and use indentation instead. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.")
+            (Error 62, Line 35, Col 13, Line 35, Col 19, "This construct is deprecated. The use of 'module M = struct ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'struct' and 'end' and use indentation instead. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.")
+            (Error 62, Line 39, Col 13, Line 39, Col 19, "This construct is deprecated. The use of 'module M = struct ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'struct' and 'end' and use indentation instead. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.")
         ]
 
     // 
@@ -317,4 +318,37 @@ module ModuleDefinitions =
         compilation
         |> withReferences [libFoo2; libFoo1]
         |> verifyCompileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Regression: compilation error with private types in namespace used in a different file`` () =
+        let types =
+            """
+            namespace FsErrorRepro
+
+            type private Blah = { Number: int }
+            """
+        let example =
+            """
+            [<RequireQualifiedAccess>]
+            module FsErrorRepro.Example
+
+            let dummy (blahNum: int) =
+                let blah : Blah = { Number = blahNum }
+                printf $"%i{blah.Number}"
+            """
+        let program =
+            """
+            module FsErrorRepro.Main
+
+            [<EntryPoint>]
+            let main _ = 
+                Example.dummy 15
+                0
+            """
+
+        FSharp types
+        |> withAdditionalSourceFiles [SourceCodeFileKind.Create("example.fs", example)
+                                      SourceCodeFileKind.Create("program.fs", program)]
+        |> compile
         |> shouldSucceed

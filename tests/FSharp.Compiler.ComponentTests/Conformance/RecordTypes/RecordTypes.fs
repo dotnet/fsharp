@@ -118,7 +118,7 @@ module RecordTypes =
         |> verifyTypeCheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 1, Line 7, Col 17, Line 7, Col 47, "This expression was expected to have type\n    'int[]'    \nbut here has type\n    'RecType'    ")
+            (Error 1, Line 7, Col 17, Line 7, Col 47, "This expression was expected to have type\n    'int array'    \nbut here has type\n    'RecType'    ")
         ]
 
     // SOURCE=E_RecordsNotNull01.fs                                                             # E_RecordsNotNull01.fs

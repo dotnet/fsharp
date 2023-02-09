@@ -16,3 +16,5 @@ cd.tmp
 *.err
 *.vserr
 *.pdb
+*.stderr.txt
+*.stdout.txt

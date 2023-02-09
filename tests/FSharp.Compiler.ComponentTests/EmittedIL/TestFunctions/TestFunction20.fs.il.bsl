@@ -4,15 +4,15 @@
 
 
 // Metadata version: v4.0.30319
-.assembly extern mscorlib
+.assembly extern System.Runtime
 {
-  .publickeytoken = (B7 7A 5C 56 19 34 E0 89 )                         // .z\V.4..
-  .ver 4:0:0:0
+  .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
+  .ver 7:0:0:0
 }
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 6:0:0:0
+  .ver 7:0:0:0
 }
 .assembly TestFunction20
 {
@@ -21,39 +21,39 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 01 00 00 00 00 ) 
+  //  .custom instance void [System.Runtime]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 01 01 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.TestFunction20
 {
-  // Offset: 0x00000000 Length: 0x000003C6
+  // Offset: 0x00000000 Length: 0x000003C2
   // WARNING: managed resource file FSharpSignatureData.TestFunction20 created
 }
 .mresource public FSharpOptimizationData.TestFunction20
 {
-  // Offset: 0x000003D0 Length: 0x00000100
+  // Offset: 0x000003C8 Length: 0x00000100
   // WARNING: managed resource file FSharpOptimizationData.TestFunction20 created
 }
 .module TestFunction20.exe
-// MVID: {624E2CBA-A643-44FB-A745-0383BA2C4E62}
+// MVID: {63DBF1DE-DAA5-3761-A745-0383DEF1DB63}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x038A0000
+// Image base: 0x0000018D1AAF0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
 
 .class public abstract auto ansi sealed TestFunction20
-       extends [mscorlib]System.Object
+       extends [System.Runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
   .class auto ansi serializable nested public D
-         extends [mscorlib]System.Object
+         extends [System.Runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
     .field assembly int32 y
@@ -67,7 +67,7 @@
       .locals init (int32 V_0,
                int32 V_1)
       IL_0000:  ldarg.0
-      IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
+      IL_0001:  callvirt   instance void [System.Runtime]System.Object::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  pop
       IL_0008:  ldarg.0
@@ -114,7 +114,7 @@
     .method assembly hidebysig instance int32 
             f(int32 a) cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       9 (0x9)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -138,14 +138,14 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction20/D,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction20/D,class [FSharp.Core]Microsoft.FSharp.Core.Unit> clo2
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
     .method assembly specialname rtspecialname 
             instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction20/D,class [FSharp.Core]Microsoft.FSharp.Core.Unit> clo2) cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -175,14 +175,14 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction20/D,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction20/D,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction20/D,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction20/D,class [FSharp.Core]Microsoft.FSharp.Core.Unit>> clo1
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
     .method assembly specialname rtspecialname 
             instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction20/D,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction20/D,class [FSharp.Core]Microsoft.FSharp.Core.Unit>> clo1) cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -229,8 +229,8 @@
                                                                int32)
     IL_000f:  stloc.1
     IL_0010:  ldstr      "d1 = %A, d2 = %A"
-    IL_0015:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction20/D,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction20/D,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.Tuple`2<class TestFunction20/D,class TestFunction20/D>>::.ctor(string)
-    IL_001a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction20/D,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction20/D,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+    IL_0015:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction20/D,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction20/D,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>,class [System.Runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [System.Runtime]System.Tuple`2<class TestFunction20/D,class TestFunction20/D>>::.ctor(string)
+    IL_001a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction20/D,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction20/D,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [System.Runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
     IL_001f:  stloc.2
     IL_0020:  ldloc.2
     IL_0021:  newobj     instance void TestFunction20/TestFunction20@14::.ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction20/D,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction20/D,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>)
@@ -246,7 +246,7 @@
 } // end of class TestFunction20
 
 .class private abstract auto ansi sealed '<StartupCode$TestFunction20>'.$TestFunction20
-       extends [mscorlib]System.Object
+       extends [System.Runtime]System.Object
 {
   .method public static void  main@() cil managed
   {
@@ -262,4 +262,4 @@
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
-// WARNING: Created Win32 resource file C:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Debug\net472\tests\EmittedIL\TestFunctions\TestFunction20_fs\TestFunction20.res
+// WARNING: Created Win32 resource file D:\code\FS\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Release\net7.0\tests\EmittedIL\TestFunctions\TestFunction20_fs\TestFunction20.res

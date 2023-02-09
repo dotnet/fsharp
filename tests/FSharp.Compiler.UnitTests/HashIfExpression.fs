@@ -50,20 +50,21 @@ type public HashIfExpression() =
         let errors = ResizeArray<PhasedDiagnostic>()
         let warnings = ResizeArray<PhasedDiagnostic>()
 
-        let errorLogger =
+        let diagnosticsLogger =
             {
                 new DiagnosticsLogger("TestDiagnosticsLogger") with
                     member _.DiagnosticSink(e, sev) = if sev = FSharpDiagnosticSeverity.Error then errors.Add e else warnings.Add e
                     member _.ErrorCount = errors.Count
             }
 
-        let lightSyntax = IndentationAwareSyntaxStatus(true, false)
+        let indentationSyntaxStatus = IndentationAwareSyntaxStatus(true, false)
         let resourceManager = LexResourceManager ()
-        let defines= []
+        let defines = []
+        let applyLineDirectives = true
         let startPos = Position.Empty
-        let args = mkLexargs (defines, lightSyntax, resourceManager, [], errorLogger, PathMap.empty)
+        let args = mkLexargs (defines, indentationSyntaxStatus, resourceManager, [], diagnosticsLogger, PathMap.empty, applyLineDirectives)
 
-        CompileThreadStatic.DiagnosticsLogger <- errorLogger
+        DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
 
         let parser (s : string) =
             let lexbuf = LexBuffer<char>.FromChars (true, LanguageVersion.Default, s.ToCharArray ())
@@ -76,11 +77,11 @@ type public HashIfExpression() =
         errors, warnings, parser
 
     do // Setup
-        CompileThreadStatic.BuildPhase <- BuildPhase.Compile
+        DiagnosticsThreadStatics.BuildPhase <- BuildPhase.Compile
     interface IDisposable with // Teardown
         member _.Dispose() =
-            CompileThreadStatic.BuildPhase <- BuildPhase.DefaultPhase
-            CompileThreadStatic.DiagnosticsLogger <- CompileThreadStatic.DiagnosticsLogger
+            DiagnosticsThreadStatics.BuildPhase <- BuildPhase.DefaultPhase
+            DiagnosticsThreadStatics.DiagnosticsLogger <- DiagnosticsThreadStatics.DiagnosticsLogger
 
     [<Fact>]
     member _.PositiveParserTestCases()=

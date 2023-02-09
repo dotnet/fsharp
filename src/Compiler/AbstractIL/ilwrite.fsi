@@ -16,12 +16,12 @@ type options =
       embeddedPDB: bool
       embedAllSource: bool
       embedSourceList: string list
+      allGivenSources: ILSourceDocument list
       sourceLink: string
       checksumAlgorithm: HashAlgorithm
       signer: ILStrongNameSigner option
       emitTailcalls: bool
       deterministic: bool
-      showTimes: bool
       dumpDebugInfo: bool
       referenceAssemblyOnly: bool
       referenceAssemblyAttribOpt: ILAttribute option
@@ -32,4 +32,4 @@ val WriteILBinaryFile: options: options * inputModule: ILModuleDef * (ILAssembly
 
 /// Write a binary to an array of bytes auitable for dynamic loading.
 val WriteILBinaryInMemory:
-    options: options * inputModule: ILModuleDef * (ILAssemblyRef -> ILAssemblyRef) -> byte [] * byte [] option
+    options: options * inputModule: ILModuleDef * (ILAssemblyRef -> ILAssemblyRef) -> byte[] * byte[] option

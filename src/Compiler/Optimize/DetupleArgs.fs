@@ -321,9 +321,9 @@ module GlobalUsageAnalysis =
 
 let internalError str = raise(Failure(str))
 
-let mkLocalVal m name ty topValInfo =
+let mkLocalVal m name ty valReprInfo =
     let compgen = false
-    Construct.NewVal(name, m, None, ty, Immutable, compgen, topValInfo, taccessPublic, ValNotInRecScope, None, NormalVal, [], ValInline.Optional, XmlDoc.Empty, false, false, false, false, false, false, None, ParentNone) 
+    Construct.NewVal(name, m, None, ty, Immutable, compgen, valReprInfo, taccessPublic, ValNotInRecScope, None, NormalVal, [], ValInline.Optional, XmlDoc.Empty, false, false, false, false, false, false, None, ParentNone) 
 
 /// Represents inferred information about a tuple value
 type TupleStructure = 
@@ -388,9 +388,7 @@ let rebuildTS g m ts vs =
 /// - the definition formal projection info suggests a CallPattern
 type CallPattern = TupleStructure list 
       
-let callPatternOrder = (compare : CallPattern -> CallPattern -> int)
 let argsCP exprs = List.map exprTS exprs
-let noArgsCP = []
 let inline isTrivialCP xs = isNil xs
 
 let rec minimalCallPattern callPattern =
@@ -467,7 +465,7 @@ let mkTransform g (f: Val) m tps x1Ntys retTy (callPattern, tyfringes: (TType li
        
     // Create transformedVal replacement for f 
     // Mark the arity of the value 
-    let topValInfo = 
+    let valReprInfo = 
         match f.ValReprInfo with 
         | None -> None 
         | _ -> Some(ValReprInfo (ValReprInfo.InferTyparInfo tps, List.collect ValReprInfoForTS callPattern, ValReprInfo.unnamedRetVal))
@@ -479,7 +477,7 @@ let mkTransform g (f: Val) m tps x1Ntys retTy (callPattern, tyfringes: (TType li
     let transformedVal =
         // Ensure that we have an g.CompilerGlobalState
         assert(g.CompilerGlobalState |> Option.isSome)
-        mkLocalVal f.Range (g.CompilerGlobalState.Value.NiceNameGenerator.FreshCompilerGeneratedName (f.LogicalName, f.Range)) fCty topValInfo
+        mkLocalVal f.Range (g.CompilerGlobalState.Value.NiceNameGenerator.FreshCompilerGeneratedName (f.LogicalName, f.Range)) fCty valReprInfo
     { transformCallPattern = callPattern
       transformedFormals = transformedFormals
       transformedVal = transformedVal }
@@ -826,25 +824,6 @@ let passBinds penv binds = binds |> List.map (passBind penv)
 //   3. run pass over following code.
 //-------------------------------------------------------------------------
 
-let passBindRhs conv (TBind (v, repr, letSeqPtOpt)) = TBind(v, conv repr, letSeqPtOpt)
-
-let preInterceptExpr (penv: penv) conv expr =
-  match expr with
-  | Expr.LetRec (binds, e, m, _) ->
-     let binds = List.map (passBindRhs conv) binds
-     let binds = passBinds penv binds
-     Some (mkLetRecBinds m binds (conv e))
-  | Expr.Let (bind, e, m, _) ->  
-     let bind = passBindRhs conv bind
-     let bind = passBind penv bind
-     Some (mkLetBind m bind (conv e))
-  | TyappAndApp(f, fty, tys, args, m) ->
-     // match app, and fixup if needed 
-     let args = List.map conv args
-     let f = conv f
-     Some (fixupApp penv (f, fty, tys, args, m) )
-  | _ -> None
-  
 let postTransformExpr (penv: penv) expr =
     match expr with
     | Expr.LetRec (binds, e, m, _) ->
@@ -864,7 +843,7 @@ let passImplFile penv assembly =
           PreInterceptBinding = None
           PostTransform = postTransformExpr penv
           RewriteQuotations = false
-          StackGuard = StackGuard(DetupleRewriteStackGuardDepth) } 
+          StackGuard = StackGuard(DetupleRewriteStackGuardDepth, "RewriteImplFile") } 
     assembly |> RewriteImplFile rwenv
 
 //-------------------------------------------------------------------------

@@ -7,6 +7,7 @@ open System.IO
 open System.Text
 
 open System.Collections.Concurrent
+open System.Diagnostics
 open System.Globalization
 open System.Reflection
 
@@ -16,8 +17,11 @@ open Microsoft.FSharp.Collections
 
 open LanguagePrimitives.IntrinsicOperators
 
-type PrintfFormat<'Printer, 'State, 'Residue, 'Result>(value:string, captures: obj[], captureTys: Type[]) =
+type PrintfFormat<'Printer, 'State, 'Residue, 'Result>
+        [<DebuggerStepThrough>]
+        (value:string, captures: obj[], captureTys: Type[]) =
         
+    [<DebuggerStepThrough>]
     new (value) = new PrintfFormat<'Printer, 'State, 'Residue, 'Result>(value, null, null) 
 
     member _.Value = value
@@ -28,10 +32,13 @@ type PrintfFormat<'Printer, 'State, 'Residue, 'Result>(value:string, captures: o
 
     override _.ToString() = value
     
-type PrintfFormat<'Printer, 'State, 'Residue, 'Result, 'Tuple>(value:string, captures, captureTys: Type[]) = 
+type PrintfFormat<'Printer, 'State, 'Residue, 'Result, 'Tuple>
+         [<DebuggerStepThrough>]
+         (value:string, captures, captureTys: Type[]) = 
 
     inherit PrintfFormat<'Printer, 'State, 'Residue, 'Result>(value, captures, captureTys)
 
+    [<DebuggerStepThrough>]
     new (value) = new PrintfFormat<'Printer, 'State, 'Residue, 'Result, 'Tuple>(value, null, null)
 
 type Format<'Printer, 'State, 'Residue, 'Result> = PrintfFormat<'Printer, 'State, 'Residue, 'Result>
@@ -1396,6 +1403,8 @@ module Printf =
     let ksprintf continuation (format: StringFormat<'T, 'Result>) : 'T = 
         gprintf (fun stringCount -> LargeStringPrintfEnv(continuation, stringCount)) format
 
+    // Note: this compiled name is wrong - it should be PrintFormatToString
+    // however for binary compat we do not change this.
     [<CompiledName("PrintFormatToStringThen")>]
     let sprintf (format: StringFormat<'T>) =
         // We inline gprintf by hand here to be sure to remove a few allocations

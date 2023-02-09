@@ -26,7 +26,7 @@ type internal NoResult = NoResult
 
 module internal LayoutRender =
 
-    val internal toArray: Layout -> TaggedText []
+    val internal toArray: Layout -> TaggedText[]
 
     val internal emitL: (TaggedText -> unit) -> Layout -> unit
 
@@ -84,6 +84,8 @@ module internal WordL =
     val keywordFalse: Layout
     val bar: Layout
     val keywordStruct: Layout
+    val keywordClass: Layout
+    val keywordInterface: Layout
     val keywordInherit: Layout
     val keywordBegin: Layout
     val keywordEnd: Layout

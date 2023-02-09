@@ -24,7 +24,7 @@ type BadSealedInterface =
 type BadSealedAbbreviatedType = System.Object 
 
 [<Sealed>]
-type UnnecessarilySealedDelegate() = delegate of int -> int
+type UnnecessarilySealedDelegate = delegate of int -> int
         
 type BadExtensionOfSealedType() = 
     class

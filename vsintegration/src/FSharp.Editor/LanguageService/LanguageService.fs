@@ -26,8 +26,11 @@ open Microsoft.VisualStudio.Text.Outlining
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 open Microsoft.CodeAnalysis.Host
 open Microsoft.CodeAnalysis.Host.Mef
+open Microsoft.VisualStudio.FSharp.Editor.WorkspaceExtensions
+open System.Threading.Tasks
 
 #nowarn "9" // NativePtr.toNativeInt
+#nowarn "57" // Experimental stuff
 
 type internal RoamingProfileStorageLocation(keyName: string) =
     inherit OptionStorageLocation()
@@ -89,24 +92,65 @@ type internal FSharpWorkspaceServiceFactory
                 | _ ->
                     None
 
+            let getSource filename =
+                workspace.CurrentSolution.TryGetDocumentFromPath(filename)
+                |> Option.map(fun document ->
+                    let text = document.GetTextAsync().Result
+                    text.ToFSharpSourceText())
+
             lock gate (fun () ->
                 match checkerSingleton with
                 | Some _ -> ()
                 | _ ->
-                    let checker = 
+                    let checker =
                         lazy
-                            let checker = 
+                            let editorOptions =
+                                let editorOptions = workspace.Services.GetService<EditorOptions>()
+
+                                match box editorOptions with
+                                | null -> None
+                                | _ -> Some editorOptions
+
+                            let getOption f defaultValue =
+                                editorOptions
+                                |> Option.map f
+                                |> Option.defaultValue defaultValue
+
+                            let enableParallelCheckingWithSignatureFiles =
+                                getOption (fun options -> options.LanguageServicePerformance.EnableParallelCheckingWithSignatureFiles) false
+
+                            let enableParallelReferenceResolution =
+                                getOption (fun options -> options.LanguageServicePerformance.EnableParallelReferenceResolution) false
+
+                            let enableLiveBuffers =
+                                getOption (fun options -> options.Advanced.IsLiveBuffersEnabled) false
+
+                            let checker =
                                 FSharpChecker.Create(
-                                    projectCacheSize = 5000, // We do not care how big the cache is. VS will actually tell FCS to clear caches, so this is fine. 
+                                    projectCacheSize = 5000, // We do not care how big the cache is. VS will actually tell FCS to clear caches, so this is fine.
                                     keepAllBackgroundResolutions = false,
                                     legacyReferenceResolver=LegacyMSBuildReferenceResolver.getResolver(),
                                     tryGetMetadataSnapshot = tryGetMetadataSnapshot,
                                     keepAllBackgroundSymbolUses = false,
                                     enableBackgroundItemKeyStoreAndSemanticClassification = true,
-                                    enablePartialTypeChecking = true)
-                            checker    
-                    checkerSingleton <- Some checker                   
-            )          
+                                    enablePartialTypeChecking = true,
+                                    enableParallelCheckingWithSignatureFiles = enableParallelCheckingWithSignatureFiles,
+                                    parallelReferenceResolution = enableParallelReferenceResolution,
+                                    captureIdentifiersWhenParsing = true,
+                                    documentSource = (if enableLiveBuffers then DocumentSource.Custom getSource else DocumentSource.FileSystem))
+
+                            if enableLiveBuffers then
+                                workspace.WorkspaceChanged.Add(fun args ->
+                                    if args.DocumentId <> null then
+                                        backgroundTask {
+                                            let document = args.NewSolution.GetDocument(args.DocumentId)
+                                            let! _, _, _, options = document.GetFSharpCompilationOptionsAsync(nameof(workspace.WorkspaceChanged))
+                                            do! checker.NotifyFileChanged(document.FilePath, options)
+                                        } |> ignore)
+
+                            checker
+                    checkerSingleton <- Some checker
+            )
 
             let optionsManager = 
                 lazy
@@ -174,13 +218,12 @@ type internal FSharpSettingsFactory
                     Width = 360,
                     Height = 120,
                     Window="34E76E81-EE4A-11D0-AE2E-00A0C90FFFC3")>]
-[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.IntelliSenseOptionPage>, "F#", null, "IntelliSense", "6008")>]
-[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.QuickInfoOptionPage>, "F#", null, "QuickInfo", "6009")>]
-[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.CodeFixesOptionPage>, "F#", null, "Code Fixes", "6010")>]
-[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.LanguageServicePerformanceOptionPage>, "F#", null, "Performance", "6011")>]
-[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.AdvancedSettingsOptionPage>, "F#", null, "Advanced", "6012")>]
-[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.CodeLensOptionPage>, "F#", null, "CodeLens", "6013")>]
-[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.FormattingOptionPage>, "F#", null, "Formatting", "6014")>]
+[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.IntelliSenseOptionPage>, "F#", null, "IntelliSense", "6008", "IntelliSensePageKeywords")>]
+[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.QuickInfoOptionPage>, "F#", null, "QuickInfo", "6009", "QuickInfoPageKeywords")>]
+[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.CodeFixesOptionPage>, "F#", null, "Code Fixes", "6010", "CodeFixesPageKeywords")>]
+[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.LanguageServicePerformanceOptionPage>, "F#", null, "Performance", "6011", "PerformancePageKeywords")>]
+[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.AdvancedSettingsOptionPage>, "F#", null, "Advanced", "6012", "AdvancedPageKeywords")>]
+[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.FormattingOptionPage>, "F#", null, "Formatting", "6014", "FormattingPageKeywords")>]
 [<ProvideFSharpVersionRegistration(FSharpConstants.projectPackageGuidString, "Microsoft Visual F#")>]
 // 64 represents a hex number. It needs to be greater than 37 so the TextMate editor will not be chosen as higher priority.
 [<ProvideEditorExtension(typeof<FSharpEditorFactory>, ".fs", 64)>]
@@ -259,14 +302,14 @@ type internal FSharpPackage() as this =
                     solutionEventsOpt <- Some(solutionEvents)
                     solution.AdviseSolutionEvents(solutionEvents) |> ignore
                     
-                    let projectContextFactory = this.ComponentModel.GetService<IWorkspaceProjectContextFactory>()
+                    let projectContextFactory = this.ComponentModel.GetService<FSharpWorkspaceProjectContextFactory>()
                     let miscFilesWorkspace = this.ComponentModel.GetService<MiscellaneousFilesWorkspace>()
                     let _singleFileWorkspaceMap = 
                         new SingleFileWorkspaceMap(
                             FSharpMiscellaneousFileService(
                                 workspace,
                                 miscFilesWorkspace,
-                                FSharpWorkspaceProjectContextFactory(projectContextFactory)
+                                projectContextFactory
                             ),
                             rdt)
                     let _legacyProjectWorkspaceMap = new LegacyProjectWorkspaceMap(solution, optionsManager, projectContextFactory)
@@ -300,7 +343,9 @@ type internal FSharpLanguageService(package : FSharpPackage) =
     override this.Initialize() = 
         base.Initialize()
 
-        this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Shared.Options.FSharpServiceFeatureOnOffOptions.ClosedFileDiagnostic, FSharpConstants.FSharpLanguageName, Nullable false)
+        let globalOptions = package.ComponentModel.DefaultExportProvider.GetExport<FSharpGlobalOptions>().Value
+        globalOptions.BlockForCompletionItems <- false
+        globalOptions.SetBackgroundAnalysisScope(openFilesOnly=true)
 
         let globalOptions = package.ComponentModel.DefaultExportProvider.GetExport<FSharpGlobalOptions>().Value
         globalOptions.BlockForCompletionItems <- false
@@ -344,7 +389,7 @@ type internal HackCpsCommandLineChanges
     /// This handles commandline change notifications from the Dotnet Project-system
     /// Prior to VS 15.7 path contained path to project file, post 15.7 contains target binpath
     /// binpath is more accurate because a project file can have multiple in memory projects based on configuration
-    member _.HandleCommandLineChanges(path:string, sources:ImmutableArray<CommandLineSourceFile>, _references:ImmutableArray<CommandLineReference>, options:ImmutableArray<string>) =
+    member _.HandleCommandLineChanges(path:string, sources:ImmutableArray<CommandLineSourceFile>, references:ImmutableArray<CommandLineReference>, options:ImmutableArray<string>) =
         use _logBlock = Logger.LogBlock(LogEditorFunctionId.LanguageService_HandleCommandLineArgs)
 
         let projectId =
@@ -361,5 +406,11 @@ type internal HackCpsCommandLineChanges
 
         let sourcePaths = sources |> Seq.map(fun s -> getFullPath s.Path) |> Seq.toArray
 
-        let workspaceService = workspace.Services.GetRequiredService<IFSharpWorkspaceService>()
-        workspaceService.FSharpProjectOptionsManager.SetCommandLineOptions(projectId, sourcePaths, options)
+        /// Due to an issue in project system, when we close and reopen solution, it sends the CommandLineChanges twice for every project.
+        /// First time it sends a correct path, sources, references and options.
+        /// Second time it sends a correct path, empty sources, empty references and empty options, and we rewrite our cache, and fail to colourize the document later.
+        /// As a workaround, until we have a fix from PS or will move to Roslyn as a source of truth, we will not overwrite the cache in case of empty lists.
+
+        if not (sources.IsEmpty && references.IsEmpty && options.IsEmpty) then
+            let workspaceService = workspace.Services.GetRequiredService<IFSharpWorkspaceService>()
+            workspaceService.FSharpProjectOptionsManager.SetCommandLineOptions(projectId, sourcePaths, options)

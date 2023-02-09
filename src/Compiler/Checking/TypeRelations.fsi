@@ -51,30 +51,28 @@ val IterativelySubstituteTyparSolutions: g: TcGlobals -> tps: Typars -> solution
 
 val ChooseTyparSolutionsForFreeChoiceTypars: g: TcGlobals -> amap: ImportMap -> e: Expr -> Expr
 
-/// Break apart lambdas. Needs ChooseTyparSolutionsForFreeChoiceTypars because it's used in
-/// PostTypeCheckSemanticChecks before we've eliminated these nodes.
-val tryDestTopLambda:
+/// Break apart lambdas according to a given expected ValReprInfo that the lambda implements.
+val tryDestLambdaWithValReprInfo:
     g: TcGlobals ->
     amap: ImportMap ->
-    ValReprInfo ->
-    e: Expr * ty: TType ->
+    valReprInfo: ValReprInfo ->
+    lambdaExpr: Expr * ty: TType ->
         (Typars * Val option * Val option * Val list list * Expr * TType) option
 
-val destTopLambda:
+/// Break apart lambdas according to a given expected ValReprInfo that the lambda implements.
+val destLambdaWithValReprInfo:
     g: TcGlobals ->
     amap: ImportMap ->
-    topValInfo: ValReprInfo ->
-    e: Expr * ty: TType ->
+    valReprInfo: ValReprInfo ->
+    lambdaExpr: Expr * ty: TType ->
         Typars * Val option * Val option * Val list list * Expr * TType
 
-/// Do AdjustArityOfLambdaBody for a series of iterated lambdas, producing one method.
-/// The required iterated function arity (List.length topValInfo) must be identical
-/// to the iterated function arity of the input lambda (List.length vsl)
-val IteratedAdjustArityOfLambda:
+/// Adjust a lambda expression to match the argument counts expected in the ValReprInfo
+val IteratedAdjustLambdaToMatchValReprInfo:
     g: TcGlobals ->
     amap: ImportMap ->
-    topValInfo: ValReprInfo ->
-    e: Expr ->
+    valReprInfo: ValReprInfo ->
+    lambdaExpr: Expr ->
         Typars * Val option * Val option * Val list list * Expr * TType
 
 /// "Single Feasible Type" inference

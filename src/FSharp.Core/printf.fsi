@@ -30,14 +30,16 @@ type PrintfFormat<'Printer, 'State, 'Residue, 'Result> =
     /// <param name="captures">The captured expressions in an interpolated string.</param>
     /// <param name="captureTys">The types of expressions for %A holes in interpolated string.</param>
     /// <returns>The PrintfFormat containing the formatted result.</returns>
-    new: value: string * captures: obj [] * captureTys: Type [] -> PrintfFormat<'Printer, 'State, 'Residue, 'Result>
+    new: value: string * captures: obj[] * captureTys: Type[] -> PrintfFormat<'Printer, 'State, 'Residue, 'Result>
 
     /// <summary>The raw text of the format string.</summary>
     member Value: string
 
-    member Captures: obj []
+    /// <summary>The captures associated with an interpolated string.</summary>
+    member Captures: obj[]
 
-    member CaptureTypes: System.Type []
+    /// <summary>The capture types associated with an interpolated string.</summary>
+    member CaptureTypes: System.Type[]
 
 /// <summary>Type of a formatting expression.</summary>
 ///
@@ -67,7 +69,7 @@ type PrintfFormat<'Printer, 'State, 'Residue, 'Result, 'Tuple> =
     ///
     /// <returns>The created format string.</returns>
     new:
-        value: string * captures: obj [] * captureTys: Type [] ->
+        value: string * captures: obj[] * captureTys: Type[] ->
             PrintfFormat<'Printer, 'State, 'Residue, 'Result, 'Tuple>
 
 /// <summary>Type of a formatting expression.</summary>

@@ -22,7 +22,7 @@ type public FSharpParseFileResults =
     member FindNoteworthyParamInfoLocations: pos: pos -> FSharpNoteworthyParamInfoLocations option
 
     /// Gets the ranges of all arguments, if they can be found, for a function application at the given position.
-    member GetAllArgumentsForFunctionApplicationAtPostion: pos: pos -> range list option
+    member GetAllArgumentsForFunctionApplicationAtPosition: pos: pos -> range list option
 
     /// Determines if the expression or pattern at the given position has a type annotation
     member IsTypeAnnotationGivenAtPosition: pos -> bool
@@ -40,16 +40,16 @@ type public FSharpParseFileResults =
     member ValidateBreakpointLocation: pos: pos -> range option
 
     /// When these files change then the build is invalid
-    member DependencyFiles: string []
+    member DependencyFiles: string[]
 
     /// Get the errors and warnings for the parse
-    member Errors: FSharpErrorInfo []
+    member Errors: FSharpErrorInfo[]
 
     /// Indicates if any errors occurred during the parse
     member ParseHadErrors: bool
 
     internal new:
-        errors: FSharpErrorInfo [] * input: ParsedInput option * parseHadErrors: bool * dependencyFiles: string [] ->
+        errors: FSharpErrorInfo[] * input: ParsedInput option * parseHadErrors: bool * dependencyFiles: string[] ->
             FSharpParseFileResults
 
 /// Information about F# source file names
@@ -123,7 +123,7 @@ module public UntypedParseImpl =
 
     val GetEntityKind: pos * ParsedInput -> EntityKind option
 
-    val GetFullNameOfSmallestModuleOrNamespaceAtPoint: ParsedInput * pos -> string []
+    val GetFullNameOfSmallestModuleOrNamespaceAtPoint: ParsedInput * pos -> string[]
 
 // implementation details used by other code in the compiler
 module internal SourceFileImpl =

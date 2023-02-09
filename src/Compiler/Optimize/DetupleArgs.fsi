@@ -6,7 +6,7 @@ open Internal.Utilities.Collections
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 
-val DetupleImplFile: CcuThunk -> TcGlobals -> TypedImplFile -> TypedImplFile
+val DetupleImplFile: CcuThunk -> TcGlobals -> CheckedImplFile -> CheckedImplFile
 
 module GlobalUsageAnalysis =
     val GetValsBoundInExpr: Expr -> Zset<Val>
@@ -14,22 +14,24 @@ module GlobalUsageAnalysis =
     type accessor
 
     type Results =
-        { /// v -> context / APP inst args
-          Uses: Zmap<Val, (accessor list * TType list * Expr list) list>
+        {
+            /// v -> context / APP inst args
+            Uses: Zmap<Val, (accessor list * TType list * Expr list) list>
 
-          /// v -> binding repr
-          Defns: Zmap<Val, Expr>
+            /// v -> binding repr
+            Defns: Zmap<Val, Expr>
 
-          /// bound in a decision tree?
-          DecisionTreeBindings: Zset<Val>
+            /// bound in a decision tree?
+            DecisionTreeBindings: Zset<Val>
 
-          /// v -> recursive? * v list   -- the others in the mutual binding
-          RecursiveBindings: Zmap<Val, bool * Vals>
+            /// v -> recursive? * v list   -- the others in the mutual binding
+            RecursiveBindings: Zmap<Val, bool * Vals>
 
-          /// val not defined under lambdas
-          TopLevelBindings: Zset<Val>
+            /// val not defined under lambdas
+            TopLevelBindings: Zset<Val>
 
-          /// top of expr toplevel? (true)
-          IterationIsAtTopLevel: bool }
+            /// top of expr toplevel? (true)
+            IterationIsAtTopLevel: bool
+        }
 
-    val GetUsageInfoOfImplFile: TcGlobals -> TypedImplFile -> Results
+    val GetUsageInfoOfImplFile: TcGlobals -> CheckedImplFile -> Results

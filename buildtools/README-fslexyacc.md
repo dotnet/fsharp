@@ -35,7 +35,7 @@ However long ago we decided to duplicate and ingest the _runtime_ files for FsLe
 
 This means you can improve some aspects of the _runtime_ for FsLex and FsYacc by making direct changes to `prim-lexing.fs` and `prim-parsing.fs`.
 
-For example, the _actual_ `LexBuffer` type being used in the F# compiler (for all three lexers and grammars) is this one: https://github.com/Microsoft/visualfsharp/blob/master/src/utils/prim-lexing.fsi#L50.  (That version of the Lex/Yacc runtime has added some things: `BufferLocalStore` for example, which we use for the `XmlDoc` accumulator as we strip those out. It's also dropped any mention of async lexing, and any mention of `byte`. The use
+For example, the _actual_ `LexBuffer` type being used in the F# compiler (for all three lexers and grammars) is this one: https://github.com/dotnet/fsharp/blob/bdb64624f0ca220ca4433c83d02dd5822fe767a5/src/Compiler/Facilities/prim-lexing.fsi#L102 .  (That version of the Lex/Yacc runtime has added some things: `BufferLocalStore` for example, which we use for the `XmlDoc` accumulator as we strip those out. It's also dropped any mention of async lexing, and any mention of `byte`. The use
 of generics for `LexBuffer<'Char>` is also superfluous because `'Char` is always `char` but is needed because the FsLex/FsYacc generated code expects this type to be generic.)
 
 ## What if I want to eridicate our use of FsLex and FsYacc?

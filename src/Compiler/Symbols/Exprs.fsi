@@ -16,7 +16,7 @@ type public FSharpAssemblyContents =
         thisCcu: CcuThunk *
         thisCcuType: ModuleOrNamespaceType option *
         tcImports: TcImports *
-        mimpls: TypedImplFile list ->
+        mimpls: CheckedImplFile list ->
             FSharpAssemblyContents
 
     /// The contents of the implementation files in the assembly
@@ -24,7 +24,7 @@ type public FSharpAssemblyContents =
 
 /// Represents the definitional contents of a single file or fragment in an assembly, as seen by the F# language
 type public FSharpImplementationFileContents =
-    internal new: cenv: SymbolEnv * mimpl: TypedImplFile -> FSharpImplementationFileContents
+    internal new: cenv: SymbolEnv * mimpl: CheckedImplFile -> FSharpImplementationFileContents
 
     /// The qualified name acts to fully-qualify module specifications and implementations
     member QualifiedName: string

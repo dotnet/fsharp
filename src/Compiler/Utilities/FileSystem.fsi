@@ -13,19 +13,19 @@ exception internal IllegalFileNameChar of string * char
 
 module internal Bytes =
     /// returned int will be 0 <= x <= 255
-    val get: byte [] -> int -> int
+    val get: byte[] -> int -> int
 
-    val zeroCreate: int -> byte []
+    val zeroCreate: int -> byte[]
 
     /// each int must be 0 <= x <= 255
-    val ofInt32Array: int [] -> byte []
+    val ofInt32Array: int[] -> byte[]
 
     /// each int will be 0 <= x <= 255
-    val blit: byte [] -> int -> byte [] -> int -> int -> unit
+    val blit: byte[] -> int -> byte[] -> int -> int -> unit
 
-    val stringAsUnicodeNullTerminated: string -> byte []
+    val stringAsUnicodeNullTerminated: string -> byte[]
 
-    val stringAsUtf8NullTerminated: string -> byte []
+    val stringAsUtf8NullTerminated: string -> byte[]
 
 /// A view over bytes.
 /// May be backed by managed or unmanaged memory, or memory mapped file.
@@ -36,9 +36,9 @@ type public ByteMemory =
 
     abstract Length: int
 
-    abstract ReadAllBytes: unit -> byte []
+    abstract ReadAllBytes: unit -> byte[]
 
-    abstract ReadBytes: pos: int * count: int -> byte []
+    abstract ReadBytes: pos: int * count: int -> byte[]
 
     abstract ReadInt32: pos: int -> int
 
@@ -50,9 +50,9 @@ type public ByteMemory =
 
     abstract CopyTo: Stream -> unit
 
-    abstract Copy: srcOffset: int * dest: byte [] * destOffset: int * count: int -> unit
+    abstract Copy: srcOffset: int * dest: byte[] * destOffset: int * count: int -> unit
 
-    abstract ToArray: unit -> byte []
+    abstract ToArray: unit -> byte[]
 
     /// Get a stream representation of the backing memory.
     /// Disposing this will not free up any of the backing memory.
@@ -72,9 +72,9 @@ type internal ReadOnlyByteMemory =
 
     member Length: int
 
-    member ReadAllBytes: unit -> byte []
+    member ReadAllBytes: unit -> byte[]
 
-    member ReadBytes: pos: int * count: int -> byte []
+    member ReadBytes: pos: int * count: int -> byte[]
 
     member ReadInt32: pos: int -> int
 
@@ -86,9 +86,9 @@ type internal ReadOnlyByteMemory =
 
     member CopyTo: Stream -> unit
 
-    member Copy: srcOffset: int * dest: byte [] * destOffset: int * count: int -> unit
+    member Copy: srcOffset: int * dest: byte[] * destOffset: int * count: int -> unit
 
-    member ToArray: unit -> byte []
+    member ToArray: unit -> byte[]
 
     member AsStream: unit -> Stream
 
@@ -215,7 +215,6 @@ type public IFileSystem =
     /// Used to determine if a file will not be subject to deletion during the lifetime of a typical client process.
     abstract IsStableFileHeuristic: fileName: string -> bool
 
-
 /// Represents a default (memory-mapped) implementation of the file system
 type DefaultFileSystem =
     /// Create a default implementation of the file system
@@ -296,8 +295,8 @@ module public StreamExtensions =
         member WriteAllLines: contents: string seq * ?encoding: Encoding -> unit
         member Write<'a> : data: 'a -> unit
         member GetReader: codePage: int option * ?retryLocked: bool -> StreamReader
-        member ReadBytes: start: int * len: int -> byte []
-        member ReadAllBytes: unit -> byte []
+        member ReadBytes: start: int * len: int -> byte[]
+        member ReadAllBytes: unit -> byte[]
         member ReadAllText: ?encoding: Encoding -> string
         member ReadLines: ?encoding: Encoding -> string seq
         member ReadAllLines: ?encoding: Encoding -> string array
@@ -324,10 +323,10 @@ type internal ByteMemory with
     static member FromUnsafePointer: addr: nativeint * length: int * holder: obj -> ByteMemory
 
     /// Creates a ByteMemory object that is backed by a byte array with the specified offset and length.
-    static member FromArray: bytes: byte [] * offset: int * length: int -> ByteMemory
+    static member FromArray: bytes: byte[] * offset: int * length: int -> ByteMemory
 
     /// Creates a ByteMemory object that is backed by a byte array.
-    static member FromArray: bytes: byte [] -> ByteMemory
+    static member FromArray: bytes: byte[] -> ByteMemory
 
 [<Sealed>]
 type internal ByteStream =
@@ -355,13 +354,13 @@ type internal ByteBuffer =
     member EmitIntAsByte: int -> unit
 
     [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
-    member EmitIntsAsBytes: int [] -> unit
+    member EmitIntsAsBytes: int[] -> unit
 
     [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member EmitByte: byte -> unit
 
     [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
-    member EmitBytes: byte [] -> unit
+    member EmitBytes: byte[] -> unit
 
     [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member EmitMemory: ReadOnlyMemory<byte> -> unit
@@ -399,7 +398,7 @@ type internal ByteStorage =
     static member FromByteMemory: ReadOnlyByteMemory -> ByteStorage
 
     /// Creates a ByteStorage whose backing bytes are the given byte array. Does not make a copy.
-    static member FromByteArray: byte [] -> ByteStorage
+    static member FromByteArray: byte[] -> ByteStorage
 
     /// Creates a ByteStorage that has a copy of the given ByteMemory.
     static member FromByteMemoryAndCopy: ReadOnlyByteMemory * useBackingMemoryMappedFile: bool -> ByteStorage
@@ -408,4 +407,4 @@ type internal ByteStorage =
     static member FromMemoryAndCopy: ReadOnlyMemory<byte> * useBackingMemoryMappedFile: bool -> ByteStorage
 
     /// Creates a ByteStorage that has a copy of the given byte array.
-    static member FromByteArrayAndCopy: byte [] * useBackingMemoryMappedFile: bool -> ByteStorage
+    static member FromByteArrayAndCopy: byte[] * useBackingMemoryMappedFile: bool -> ByteStorage

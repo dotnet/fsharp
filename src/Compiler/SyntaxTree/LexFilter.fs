@@ -14,6 +14,7 @@ open FSharp.Compiler.Features
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.Parser
+open FSharp.Compiler.UnicodeLexing
 
 let debug = false
 
@@ -146,11 +147,6 @@ let isInfix token =
     | INFIX_STAR_DIV_MOD_OP _
     | INFIX_STAR_STAR_OP _ 
     | QMARK_QMARK -> true
-    | _ -> false
-
-let isNonAssocInfixToken token = 
-    match token with 
-    | EQUALS -> true
     | _ -> false
 
 let infixTokenLength token = 
@@ -392,16 +388,6 @@ let rec isWithAugmentBlockContinuator token =
     | ODUMMY token -> isWithAugmentBlockContinuator token
     | _ -> false
 
-let isLongIdentifier token =
-    match token with
-    | IDENT _ | DOT -> true
-    | _ -> false
-
-let isLongIdentifierOrGlobal token =
-    match token with
-    | GLOBAL | IDENT _ | DOT -> true
-    | _ -> false
-
 let isAtomicExprEndToken token = 
     match token with
     | IDENT _ 
@@ -575,7 +561,12 @@ type PositionWithColumn =
 //----------------------------------------------------------------------------
 // build a LexFilter
 //--------------------------------------------------------------------------*)
-type LexFilterImpl (lightStatus: IndentationAwareSyntaxStatus, compilingFsLib, lexer, lexbuf: UnicodeLexing.Lexbuf) = 
+type LexFilterImpl (
+    indentationSyntaxStatus: IndentationAwareSyntaxStatus,
+    compilingFSharpCore,
+    lexer: (Lexbuf -> token),
+    lexbuf: Lexbuf
+) = 
 
     //----------------------------------------------------------------------------
     // Part I. Building a new lex stream from an old
@@ -693,6 +684,8 @@ type LexFilterImpl (lightStatus: IndentationAwareSyntaxStatus, compilingFsLib, l
     let mutable prevWasAtomicEnd = false
     
     let peekInitial() =
+        // Forget the lexbuf state we might have saved from previous input
+        haveLexbufState <- false
         let initialLookaheadTokenTup = popNextTokenTup()
         if debug then dprintf "first token: initialLookaheadTokenLexbufState = %a\n" outputPos (startPosOfTokenTup initialLookaheadTokenTup)
         
@@ -1017,7 +1010,11 @@ type LexFilterImpl (lightStatus: IndentationAwareSyntaxStatus, compilingFsLib, l
     let peekAdjacentTypars indentation (tokenTup: TokenTup) =
         let lookaheadTokenTup = peekNextTokenTup()
         match lookaheadTokenTup.Token with 
-        | INFIX_COMPARE_OP "</" | LESS _ -> 
+        | INFIX_COMPARE_OP "</"
+        | INFIX_COMPARE_OP "<^"
+        // NOTE: this is "<@"
+        | LQUOTE ("<@ @>", false)
+        | LESS _ -> 
             let tokenEndPos = tokenTup.LexbufState.EndPos 
             if isAdjacent tokenTup lookaheadTokenTup then 
                 let mutable stack = []
@@ -1064,7 +1061,14 @@ type LexFilterImpl (lightStatus: IndentationAwareSyntaxStatus, compilingFsLib, l
                                 let dotTokenTup = peekNextTokenTup()
                                 stack <- (pool.UseLocation(dotTokenTup, HIGH_PRECEDENCE_PAREN_APP), false) :: stack
                             true
-                    | LPAREN | LESS _ | LBRACK | LBRACK_LESS | INFIX_COMPARE_OP "</" -> 
+                    | LPAREN
+                    | LESS _
+                    | LBRACK
+                    | LBRACK_LESS
+                    | INFIX_COMPARE_OP "</"
+                    | INFIX_COMPARE_OP "<^" 
+                    // NOTE: this is "<@"
+                    | LQUOTE ("<@ @>", false) -> 
                         scanAhead (nParen+1)
                         
                     // These tokens CAN occur in non-parenthesized positions in the grammar of types or type parameter definitions 
@@ -1113,11 +1117,20 @@ type LexFilterImpl (lightStatus: IndentationAwareSyntaxStatus, compilingFsLib, l
  
                 let res = scanAhead 0
                 // Put the tokens back on and smash them up if needed
-                stack |> List.iter (fun (tokenTup, smash) ->
+                for (tokenTup, smash) in stack do
                     if smash then 
                         match tokenTup.Token with 
                         | INFIX_COMPARE_OP "</" ->
                             delayToken (pool.UseShiftedLocation(tokenTup, INFIX_STAR_DIV_MOD_OP "/", 1, 0))
+                            delayToken (pool.UseShiftedLocation(tokenTup, LESS res, 0, -1))
+                            pool.Return tokenTup
+                        | INFIX_COMPARE_OP "<^" ->
+                            delayToken (pool.UseShiftedLocation(tokenTup, INFIX_AT_HAT_OP "^", 1, 0))
+                            delayToken (pool.UseShiftedLocation(tokenTup, LESS res, 0, -1))
+                            pool.Return tokenTup
+                        // NOTE: this is "<@"
+                        | LQUOTE ("<@ @>", false) ->
+                            delayToken (pool.UseShiftedLocation(tokenTup, INFIX_AT_HAT_OP "@", 1, 0))
                             delayToken (pool.UseShiftedLocation(tokenTup, LESS res, 0, -1))
                             pool.Return tokenTup
                         | GREATER_BAR_RBRACK -> 
@@ -1140,7 +1153,7 @@ type LexFilterImpl (lightStatus: IndentationAwareSyntaxStatus, compilingFsLib, l
                             pool.Return tokenTup
                         | _ -> delayToken tokenTup
                     else
-                        delayToken tokenTup)
+                        delayToken tokenTup
                 res
             else 
                 false
@@ -1381,7 +1394,7 @@ type LexFilterImpl (lightStatus: IndentationAwareSyntaxStatus, compilingFsLib, l
             //     (# "unbox.any !0" type ('T) x : 'T #)
             // where the type keyword is used inside an expression, so we must exempt FSharp.Core from some extra failed-parse-diagnostics-recovery-processing of the 'type' keyword
             let mutable effectsToDo = []
-            if not compilingFsLib then
+            if not compilingFSharpCore then
                 // ... <<< code with unmatched ( or [ or { or [| >>> ... "type" ...
                 // We want a TYPE or MODULE keyword to close any currently-open "expression" contexts, as though there were close delimiters in the file, so:
                 let rec nextOuterMostInterestingContextIsNamespaceOrModule offsideStack =
@@ -1738,7 +1751,7 @@ type LexFilterImpl (lightStatus: IndentationAwareSyntaxStatus, compilingFsLib, l
         // ), 2 // This is a 'unit * int', so for backwards compatibility, do not treat ')' as a continuator, don't apply relaxWhitespace2OffsideRule
         // Test here: Tests/FSharp.Compiler.ComponentTests/Conformance/LexicalFiltering/Basic/OffsideExceptions.fs, RelaxWhitespace2_AllowedBefore9
         | _, CtxtDo offsidePos :: _
-                when isSemiSemi || (if (*relaxWhitespace2OffsideRule ||*) isDoContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
+                when isSemiSemi || (if isDoContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
             if debug then dprintf "token at column %d is offside from DO(offsidePos=%a)! delaying token, returning ODECLEND\n" tokenStartCol outputPos offsidePos
             popCtxt()
             insertToken ODECLEND
@@ -1790,7 +1803,7 @@ type LexFilterImpl (lightStatus: IndentationAwareSyntaxStatus, compilingFsLib, l
         //         1 // This is not offside for backcompat, don't apply relaxWhitespace2OffsideRule
         //     ]
         // Test here: Tests/FSharp.Compiler.ComponentTests/Conformance/LexicalFiltering/Basic/OffsideExceptions.fs, RelaxWhitespace2_AllowedBefore9
-        | _, CtxtMemberBody offsidePos :: _ when isSemiSemi || (if (*relaxWhitespace2OffsideRule*)false then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
+        | _, CtxtMemberBody offsidePos :: _ when isSemiSemi || (if false then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
             if debug then dprintf "token at column %d is offside from MEMBER/OVERRIDE head with offsidePos %a!\n" tokenStartCol outputPos offsidePos
             popCtxt()
             insertToken ODECLEND
@@ -2532,15 +2545,15 @@ type LexFilterImpl (lightStatus: IndentationAwareSyntaxStatus, compilingFsLib, l
             let _firstTokenTup = peekInitial()
             ()
 
-        if lightStatus.Status
+        if indentationSyntaxStatus.Status
         then hwTokenFetch true  
         else swTokenFetch()
   
 // LexFilterImpl does the majority of the work for offsides rules and other magic.
 // LexFilter just wraps it with light post-processing that introduces a few more 'coming soon' symbols, to
 // make it easier for the parser to 'look ahead' and safely shift tokens in a number of recovery scenarios.
-type LexFilter (lightStatus: IndentationAwareSyntaxStatus, compilingFsLib, lexer, lexbuf: UnicodeLexing.Lexbuf) = 
-    let inner = LexFilterImpl(lightStatus, compilingFsLib, lexer, lexbuf)
+type LexFilter (indentationSyntaxStatus: IndentationAwareSyntaxStatus, compilingFSharpCore, lexer, lexbuf: UnicodeLexing.Lexbuf) = 
+    let inner = LexFilterImpl(indentationSyntaxStatus, compilingFSharpCore, lexer, lexbuf)
 
     // We don't interact with lexbuf state at all, any inserted tokens have same state/location as the real one read, so
     // we don't have to do any of the wrapped lexbuf magic that you see in LexFilterImpl.

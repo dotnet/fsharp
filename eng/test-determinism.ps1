@@ -39,7 +39,7 @@ function Run-Build([string]$rootDir, [string]$logFileName) {
   $stopWatch.Stop()
   Write-Host "Cleaning took $($stopWatch.Elapsed)"
 
-  $solution = Join-Path $rootDir (Join-Path "service" "FSharp.Compiler.Service.sln")
+  $solution = Join-Path $rootDir "FSharp.Compiler.Service.sln"
 
   if ($logFileName -eq "") {
     $logFileName = [IO.Path]::GetFileNameWithoutExtension($projectFilePath)
@@ -379,7 +379,7 @@ try {
   $script:bootstrapTfm = "net472"
 
   if ($script:msbuildEngine -eq "dotnet") {
-    $script.bootstrapTfm = "net6.0"
+    $script.bootstrapTfm = "net7.0"
   }
 
   $bootstrapDir = Make-BootstrapBuild

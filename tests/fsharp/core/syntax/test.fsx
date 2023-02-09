@@ -89,7 +89,7 @@ module MoreDynamicOpTests  =
         static member ($) (x:int   , M) = 0
         static member ($) (x:float , M) = 0.0
 
-     let inline empty< ^R, ^M when (^R or ^M) : (static member ($) : ^R * M ->  ^R) and ^M :> M> =
+     let inline empty< ^R, ^M when (^R or ^M) : (static member ($) : ^R * M -> ^R) and ^M :> M> =
         let m = M()
         ((^R or ^M) : (static member ($): ^R * M -> ^R ) (Unchecked.defaultof<'R>, m))
 
@@ -102,7 +102,7 @@ module MoreDynamicOpTests  =
         static member ($) (x:int   , M) = 0
         static member ($) (x:float , M) = 0.0
 
-     let inline empty< ^R when ( ^R or  M) : (static member ( $ ) :  ^R *  M ->  ^R)> =        
+     let inline empty< ^R when ( ^R or  M) : (static member ( $ ) :  ^R * M -> ^R)> =        
         let m = M()
         Unchecked.defaultof< ^R> $ m: ^R
 

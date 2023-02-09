@@ -7,7 +7,6 @@ open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Syntax
-open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Xml
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
@@ -145,16 +144,10 @@ let mkBindThatAddrIfNeeded m thataddrvOpt thatv expr =
         // let thataddrv = &thatv
         mkCompGenLet m thataddrv (mkValAddr m false (mkLocalValRef thatv))  expr
 
-let mkDerefThis g m (thisv: Val) thise =
-    if isByrefTy g thisv.Type then  mkAddrGet m (mkLocalValRef thisv)
-    else thise
-
 let mkCompareTestConjuncts g m exprs =
-    match exprs with 
-    | [] -> mkZero g m
-    | [h] -> h
-    | l -> 
-        let a, b = List.frontAndBack l 
+    match List.tryFrontAndBack exprs with 
+    | None -> mkZero g m
+    | Some (a,b) -> 
         (a, b) ||> List.foldBack (fun e acc -> 
             let nv, ne = mkCompGenLocal m "n" g.int_ty
             mkCompGenLet m nv e
@@ -167,11 +160,9 @@ let mkCompareTestConjuncts g m exprs =
                     acc)))
 
 let mkEqualsTestConjuncts g m exprs =
-    match exprs with 
-    | [] -> mkOne g m
-    | [h] -> h
-    | l -> 
-        let a, b = List.frontAndBack l 
+    match List.tryFrontAndBack exprs with 
+    | None -> mkOne g m
+    | Some (a,b) ->
         List.foldBack (fun e acc -> mkCond DebugPointAtBinding.NoneAtSticky m g.bool_ty e acc (mkFalse g m)) a b
 
 let mkMinimalTy (g: TcGlobals) (tcref: TyconRef) = 
@@ -859,8 +850,8 @@ let slotImplMethod (final, c, slotsig) : ValMemberInfo =
           IsDispatchSlot=false
           IsFinal=final
           IsOverrideOrExplicitImpl=true
-          MemberKind=SynMemberKind.Member
-          Trivia=SynMemberFlagsTrivia.Zero}
+          GetterOrSetterIsCompilerGenerated=false
+          MemberKind=SynMemberKind.Member }
     IsImplemented=false
     ApparentEnclosingEntity=c} 
 
@@ -870,8 +861,8 @@ let nonVirtualMethod c : ValMemberInfo =
                   IsDispatchSlot=false
                   IsFinal=false
                   IsOverrideOrExplicitImpl=false
-                  MemberKind=SynMemberKind.Member
-                  Trivia=SynMemberFlagsTrivia.Zero}
+                  GetterOrSetterIsCompilerGenerated=false
+                  MemberKind=SynMemberKind.Member }
     IsImplemented=false
     ApparentEnclosingEntity=c} 
 
@@ -892,8 +883,8 @@ let mkValSpec g (tcref: TyconRef) ty vis slotsig methn valTy argData =
             slotImplMethod(final, tcref, slotsig)
     let inl = ValInline.Optional
     let args = ValReprInfo.unnamedTopArg :: argData
-    let topValInfo = Some (ValReprInfo (ValReprInfo.InferTyparInfo tps, args, ValReprInfo.unnamedRetVal)) 
-    Construct.NewVal (methn, m, None, valTy, Immutable, true, topValInfo, vis, ValNotInRecScope, Some membInfo, NormalVal, [], inl, XmlDoc.Empty, true, false, false, false, false, false, None, Parent tcref) 
+    let valReprInfo = Some (ValReprInfo (ValReprInfo.InferTyparInfo tps, args, ValReprInfo.unnamedRetVal)) 
+    Construct.NewVal (methn, m, None, valTy, Immutable, true, valReprInfo, vis, ValNotInRecScope, Some membInfo, NormalVal, [], inl, XmlDoc.Empty, true, false, false, false, false, false, None, Parent tcref) 
 
 let MakeValsForCompareAugmentation g (tcref: TyconRef) = 
     let m = tcref.Range
@@ -1001,7 +992,16 @@ let MakeBindingsForEqualityWithComparerAugmentation (g: TcGlobals) (tycon: Tycon
             // build the hash rhs
             let withcGetHashCodeExpr =
                 let compv, compe = mkCompGenLocal m "comp" g.IEqualityComparer_ty
-                let thisv, hashe = hashf g tcref tycon compe
+
+                // Special case List<T> type to avoid StackOverflow exception , call custom hash code instead
+                let thisv,hashe = 
+                    if tyconRefEq g tcref g.list_tcr_canon && tycon.HasMember g "CustomHashCode" [g.IEqualityComparer_ty] then
+                        let customCodeVal = (tycon.TryGetMember g "CustomHashCode" [g.IEqualityComparer_ty]).Value                  
+                        let tinst, ty = mkMinimalTy g tcref
+                        let thisv, thise = mkThisVar g m ty   
+                        thisv,mkApps g ((exprForValRef m customCodeVal, customCodeVal.Type), (if isNil tinst then [] else [tinst]), [thise; compe], m)
+                    else                     
+                        hashf g tcref tycon compe
                 mkLambdas g m tps [thisv; compv] (hashe, g.int_ty)
                 
             // build the equals rhs

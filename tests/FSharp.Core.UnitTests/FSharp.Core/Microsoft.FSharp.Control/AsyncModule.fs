@@ -453,15 +453,6 @@ type AsyncModule() =
     member _.``RaceBetweenCancellationAndError.Sleep``() =
         testErrorAndCancelRace "RaceBetweenCancellationAndError.Sleep" (Async.Sleep (-5))
 
-#if EXPENSIVE
-#if NET46
-    [<Test; Category("Expensive"); Explicit>] // takes 3 minutes!
-    member _.``Async.Choice specification test``() =
-        ThreadPool.SetMinThreads(100,100) |> ignore
-        Check.One ({Config.QuickThrowOnFailure with EndSize = 20}, normalize >> runChoice)
-#endif
-#endif
-
     [<Fact>]
     member _.``dispose should not throw when called on null``() =
         let result = async { use x = null in return () } |> Async.RunSynchronously
@@ -764,3 +755,15 @@ type AsyncModule() =
                 lock gate <| fun () -> printfn "Unhandled exception: %s" exn.Message
                 lock gate <| fun () -> printfn "Semaphore count available: %i" semaphore.CurrentCount
             Assert.AreEqual(acquiredCount, releaseCount)
+
+    [<Fact>]
+    member _.``Async.Parallel blows stack when cancelling many`` () =
+        let gen (i : int) = async {
+            if i <> 0 then do! Async.Sleep i
+            else return failwith "OK"}
+        let count = 3600
+        let comps = Seq.init count gen
+        let result = Async.Parallel(comps, 16) |> Async.Catch |> Async.RunSynchronously
+        match result with
+        | Choice2Of2 e -> Assert.AreEqual("OK", e.Message)
+        | x -> failwithf "unexpected %A" x

@@ -25,44 +25,48 @@ type public AssemblyPath = string
 /// Represents type, module, member, function or value in a compiled assembly.
 [<NoComparison; NoEquality>]
 type public AssemblySymbol =
-    { /// Full entity name as it's seen in compiled code (raw FSharpEntity.FullName, FSharpValueOrFunction.FullName).
-      FullName: string
+    {
+        /// Full entity name as it's seen in compiled code (raw FSharpEntity.FullName, FSharpValueOrFunction.FullName).
+        FullName: string
 
-      /// Entity name parts with removed module suffixes (Ns.M1Module.M2Module.M3.entity -> Ns.M1.M2.M3.entity)
-      /// and replaced compiled names with display names (FSharpEntity.DisplayName, FSharpValueOrFunction.DisplayName).
-      /// Note: *all* parts are cleaned, not the last one.
-      CleanedIdents: ShortIdents
+        /// Entity name parts with removed module suffixes (Ns.M1Module.M2Module.M3.entity -> Ns.M1.M2.M3.entity)
+        /// and replaced compiled names with display names (FSharpEntity.DisplayName, FSharpValueOrFunction.DisplayName).
+        /// Note: *all* parts are cleaned, not the last one.
+        CleanedIdents: ShortIdents
 
-      /// `FSharpEntity.Namespace`.
-      Namespace: ShortIdents option
+        /// `FSharpEntity.Namespace`.
+        Namespace: ShortIdents option
 
-      /// The most narrative parent module that has `RequireQualifiedAccess` attribute.
-      NearestRequireQualifiedAccessParent: ShortIdents option
+        /// The most narrative parent module that has `RequireQualifiedAccess` attribute.
+        NearestRequireQualifiedAccessParent: ShortIdents option
 
-      /// Parent module that has the largest scope and has `RequireQualifiedAccess` attribute.
-      TopRequireQualifiedAccessParent: ShortIdents option
+        /// Parent module that has the largest scope and has `RequireQualifiedAccess` attribute.
+        TopRequireQualifiedAccessParent: ShortIdents option
 
-      /// Parent module that has `AutoOpen` attribute.
-      AutoOpenParent: ShortIdents option
+        /// Parent module that has `AutoOpen` attribute.
+        AutoOpenParent: ShortIdents option
 
-      Symbol: FSharpSymbol
+        Symbol: FSharpSymbol
 
-      /// Function that returns `EntityKind` based of given `LookupKind`.
-      Kind: LookupType -> EntityKind
+        /// Function that returns `EntityKind` based of given `LookupKind`.
+        Kind: LookupType -> EntityKind
 
-      /// Cache display name and namespace, used for completion.
-      UnresolvedSymbol: UnresolvedSymbol }
+        /// Cache display name and namespace, used for completion.
+        UnresolvedSymbol: UnresolvedSymbol
+    }
 
 /// `RawEntity` list retrieved from an assembly.
 type internal AssemblyContentCacheEntry =
-    { /// Assembly file last write time.
-      FileWriteTime: DateTime
+    {
+        /// Assembly file last write time.
+        FileWriteTime: DateTime
 
-      /// Content type used to get assembly content.
-      ContentType: AssemblyContentType
+        /// Content type used to get assembly content.
+        ContentType: AssemblyContentType
 
-      /// Assembly content.
-      Symbols: AssemblySymbol list }
+        /// Assembly content.
+        Symbols: AssemblySymbol list
+    }
 
 /// Assembly content cache.
 [<NoComparison; NoEquality>]

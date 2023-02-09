@@ -10,20 +10,23 @@ open Internal.Utilities
 
 [<assembly: System.Runtime.InteropServices.ComVisible(false)>]
 [<assembly: System.CLSCompliant(true)>]
-do()
+do ()
 
 // Shim to match nullness checking library support in preview
 [<AutoOpen>]
-module Utils = 
+module Utils =
 
     /// Match on the nullness of an argument.
-    let inline (|Null|NonNull|) (x: 'T) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
+    let inline (|Null|NonNull|) (x: 'T) : Choice<unit, 'T> =
+        match x with
+        | null -> Null
+        | v -> NonNull v
 
     /// Indicates that a type may be null. 'MaybeNull<string>' used internally in the F# compiler as unchecked
     /// replacement for 'string?' for example for future FS-1060.
-    type 'T MaybeNull when 'T : null and 'T: not struct = 'T
+    type 'T MaybeNull when 'T: null and 'T: not struct = 'T
 
-type FSharpCommandLineBuilder () =
+type FSharpCommandLineBuilder() =
 
     // In addition to generating a command-line that will be handed to cmd.exe, we also generate
     // an array of individual arguments.  The former needs to be quoted (and cmd.exe will strip the
@@ -31,8 +34,8 @@ type FSharpCommandLineBuilder () =
     // class gets us out of the business of unparsing-then-reparsing arguments.
 
     let builder = new CommandLineBuilder()
-    let mutable args = []  // in reverse order
-    let mutable srcs = []  // in reverse order
+    let mutable args = [] // in reverse order
+    let mutable srcs = [] // in reverse order
 
     /// Return a list of the arguments (with no quoting for the cmd.exe shell)
     member _.CapturedArguments() = List.rev args
@@ -48,8 +51,9 @@ type FSharpCommandLineBuilder () =
         // do not update "args", not used
         for item in filenames do
             let tmp = new CommandLineBuilder()
-            tmp.AppendSwitchUnquotedIfNotNull("", item.ItemSpec)  // we don't want to quote the file name, this is a way to get that
+            tmp.AppendSwitchUnquotedIfNotNull("", item.ItemSpec) // we don't want to quote the file name, this is a way to get that
             let s = tmp.ToString()
+
             if s <> String.Empty then
                 srcs <- tmp.ToString() :: srcs
 
@@ -58,6 +62,7 @@ type FSharpCommandLineBuilder () =
         let tmp = new CommandLineBuilder()
         tmp.AppendSwitchUnquotedIfNotNull(switch, values, sep)
         let s = tmp.ToString()
+
         if s <> String.Empty then
             args <- s :: args
 
@@ -66,43 +71,57 @@ type FSharpCommandLineBuilder () =
         builder.AppendSwitchIfNotNull(switch, value)
         let tmp = new CommandLineBuilder()
         tmp.AppendSwitchUnquotedIfNotNull(switch, value)
+
         let providedMetaData =
-            metadataNames
-            |> Array.filter (String.IsNullOrWhiteSpace >> not)
+            metadataNames |> Array.filter (String.IsNullOrWhiteSpace >> not)
+
         if providedMetaData.Length > 0 then
             tmp.AppendTextUnquoted ","
-            tmp.AppendTextUnquoted (providedMetaData|> String.concat ",")
+            tmp.AppendTextUnquoted(providedMetaData |> String.concat ",")
+
         let s = tmp.ToString()
+
         if s <> String.Empty then
             args <- s :: args
 
     member _.AppendSwitchUnquotedIfNotNull(switch: string, value: string MaybeNull) =
-        assert(switch = "")  // we only call this method for "OtherFlags"
+        assert (switch = "") // we only call this method for "OtherFlags"
         // Unfortunately we still need to mimic what cmd.exe does, but only for "OtherFlags".
-        let ParseCommandLineArgs(commandLine: string) = // returns list in reverse order
+        let ParseCommandLineArgs (commandLine: string) = // returns list in reverse order
             let mutable args = []
             let mutable i = 0 // index into commandLine
             let len = commandLine.Length
+
             while i < len do
                 // skip whitespace
                 while i < len && System.Char.IsWhiteSpace(commandLine, i) do
                     i <- i + 1
+
                 if i < len then
                     // parse an argument
                     let sb = new StringBuilder()
                     let mutable finished = false
                     let mutable insideQuote = false
+
                     while i < len && not finished do
                         match commandLine.[i] with
-                        | '"' -> insideQuote <- not insideQuote; i <- i + 1
+                        | '"' ->
+                            insideQuote <- not insideQuote
+                            i <- i + 1
                         | c when not insideQuote && System.Char.IsWhiteSpace(c) -> finished <- true
-                        | c -> sb.Append(c) |> ignore; i <- i + 1
+                        | c ->
+                            sb.Append(c) |> ignore
+                            i <- i + 1
+
                     args <- sb.ToString() :: args
+
             args
+
         builder.AppendSwitchUnquotedIfNotNull(switch, value)
         let tmp = new CommandLineBuilder()
         tmp.AppendSwitchUnquotedIfNotNull(switch, value)
         let s = tmp.ToString()
+
         if s <> String.Empty then
             args <- ParseCommandLineArgs(s) @ args
 
@@ -110,8 +129,5 @@ type FSharpCommandLineBuilder () =
         builder.AppendSwitch(switch)
         args <- switch :: args
 
-    member internal x.GetCapturedArguments() = 
-        [|
-            yield! x.CapturedArguments()
-            yield! x.CapturedFilenames()
-        |]
+    member internal x.GetCapturedArguments() =
+        [| yield! x.CapturedArguments(); yield! x.CapturedFilenames() |]

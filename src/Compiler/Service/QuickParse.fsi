@@ -7,17 +7,19 @@ open Internal.Utilities.Library
 
 /// Qualified long name.
 type public PartialLongName =
-    { /// Qualifying idents, prior to the last dot, not including the last part.
-      QualifyingIdents: string list
+    {
+        /// Qualifying idents, prior to the last dot, not including the last part.
+        QualifyingIdents: string list
 
-      /// Last part of long ident.
-      PartialIdent: string
+        /// Last part of long ident.
+        PartialIdent: string
 
-      /// The column number at the end of full partial name.
-      EndColumn: int
+        /// The column number at the end of full partial name.
+        EndColumn: int
 
-      /// Position of the last dot.
-      LastDotPos: int option }
+        /// Position of the last dot.
+        LastDotPos: int option
+    }
 
     /// Empty partial long name.
     static member Empty: endColumn: int -> PartialLongName
@@ -81,4 +83,4 @@ module public QuickParse =
     val GetPartialLongNameEx: lineStr: string MaybeNull * index: int -> PartialLongName
 
     /// Tests whether the user is typing something like "member x." or "override (*comment*) x."
-    val TestMemberOrOverrideDeclaration: tokens: FSharpTokenInfo [] -> bool
+    val TestMemberOrOverrideDeclaration: tokens: FSharpTokenInfo[] -> bool

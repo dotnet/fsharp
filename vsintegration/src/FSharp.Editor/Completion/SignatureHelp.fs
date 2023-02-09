@@ -281,7 +281,7 @@ type internal FSharpSignatureHelpProvider
                     let numDefinedArgs = definedArgs.Length
 
                     let curriedArgsInSource =
-                        parseResults.GetAllArgumentsForFunctionApplicationAtPostion symbolUse.Range.Start
+                        parseResults.GetAllArgumentsForFunctionApplicationAtPosition symbolUse.Range.Start
                         |> Option.defaultValue []
                         |> Array.ofList
 
@@ -363,10 +363,11 @@ type internal FSharpSignatureHelpProvider
                             taggedText |> Seq.iter (RoslynHelpers.CollectTaggedText tt)
                             
                             let name =
-                                if String.IsNullOrWhiteSpace(argument.DisplayName) then
+                                let displayName = argument.DisplayName
+                                if String.IsNullOrWhiteSpace displayName then
                                     "arg" + string index
                                 else
-                                    argument.DisplayName
+                                    displayName
 
                             let display =
                                 [|

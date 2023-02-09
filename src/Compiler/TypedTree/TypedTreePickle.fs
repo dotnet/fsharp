@@ -21,7 +21,6 @@ open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Syntax
-open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Xml
@@ -241,8 +240,6 @@ let bits_of_float32 (x: float32) = System.BitConverter.ToInt32(System.BitConvert
 let bits_of_float (x: float) = System.BitConverter.DoubleToInt64Bits x
 
 let p_single i st = p_int32 (bits_of_float32 i) st
-let p_double i st = p_int64 (bits_of_float i) st
-let p_ieee64 i st = p_int64 (bits_of_float i) st
 let p_char i st = p_uint16 (uint16 (int32 i)) st
 
 let inline p_tup2 p1 p2 (a, b) (st: WriterState) =
@@ -260,17 +257,8 @@ let inline  p_tup5 p1 p2 p3 p4 p5 (a, b, c, d, e) (st: WriterState) =
 let inline  p_tup6 p1 p2 p3 p4 p5 p6 (a, b, c, d, e, f) (st: WriterState) =
     (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit)
 
-let inline  p_tup7 p1 p2 p3 p4 p5 p6 p7 (a, b, c, d, e, f, x7) (st: WriterState) =
-    (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 x7 st : unit)
-
-let inline  p_tup8 p1 p2 p3 p4 p5 p6 p7 p8 (a, b, c, d, e, f, x7, x8) (st: WriterState) =
-    (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 x7 st : unit); (p8 x8 st : unit)
-
 let inline  p_tup9 p1 p2 p3 p4 p5 p6 p7 p8 p9 (a, b, c, d, e, f, x7, x8, x9) (st: WriterState) =
     (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 x7 st : unit); (p8 x8 st : unit); (p9 x9 st : unit)
-
-let inline  p_tup10 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 (a, b, c, d, e, f, x7, x8, x9, x10) (st: WriterState) =
-    (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 x7 st : unit); (p8 x8 st : unit); (p9 x9 st : unit); (p10 x10 st : unit)
 
 let inline  p_tup11 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 (a, b, c, d, e, f, x7, x8, x9, x10, x11) (st: WriterState) =
     (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 x7 st : unit); (p8 x8 st : unit); (p9 x9 st : unit); (p10 x10 st : unit); (p11 x11 st : unit)
@@ -328,10 +316,6 @@ let float32_of_bits (x: int32) = System.BitConverter.ToSingle(System.BitConverte
 let float_of_bits (x: int64) = System.BitConverter.Int64BitsToDouble x
 
 let u_single st = float32_of_bits (u_int32 st)
-let u_double st = float_of_bits (u_int64 st)
-
-let u_ieee64 st = float_of_bits (u_int64 st)
-
 let u_char st = char (int32 (u_uint16 st))
 let u_space n st =
     for i = 0 to n - 1 do
@@ -371,56 +355,17 @@ let inline u_tup5 p1 p2 p3 p4 p5 (st: ReaderState) =
 let inline u_tup6 p1 p2 p3 p4 p5 p6 (st: ReaderState) =
   let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in let e = p5 st in let f = p6 st in (a, b, c, d, e, f)
 
-let inline u_tup7 p1 p2 p3 p4 p5 p6 p7 (st: ReaderState) =
-  let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in let e = p5 st in let f = p6 st in let x7 = p7 st in (a, b, c, d, e, f, x7)
-
 let inline u_tup8 p1 p2 p3 p4 p5 p6 p7 p8 (st: ReaderState) =
   let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in let e = p5 st in let f = p6 st in let x7 = p7 st in let x8 = p8 st in  (a, b, c, d, e, f, x7, x8)
 
 let inline u_tup9 p1 p2 p3 p4 p5 p6 p7 p8 p9 (st: ReaderState) =
   let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in let e = p5 st in let f = p6 st in let x7 = p7 st in let x8 = p8 st in let x9 = p9 st in (a, b, c, d, e, f, x7, x8, x9)
 
-let inline u_tup10 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 (st: ReaderState) =
-  let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in
-  let e = p5 st in let f = p6 st in let x7 = p7 st in let x8 = p8 st in
-  let x9 = p9 st in let x10 = p10 st in (a, b, c, d, e, f, x7, x8, x9, x10)
-
-let inline u_tup11 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 (st: ReaderState) =
-  let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in
-  let e = p5 st in let f = p6 st in let x7 = p7 st in let x8 = p8 st in
-  let x9 = p9 st in let x10 = p10 st in let x11 = p11 st in (a, b, c, d, e, f, x7, x8, x9, x10, x11)
-
-let inline u_tup12 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 (st: ReaderState) =
-  let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in
-  let e = p5 st in let f = p6 st in let x7 = p7 st in let x8 = p8 st in
-  let x9 = p9 st in let x10 = p10 st in let x11 = p11 st in let x12 = p12 st in
-  (a, b, c, d, e, f, x7, x8, x9, x10, x11, x12)
-
 let inline u_tup13 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 (st: ReaderState) =
   let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in
   let e = p5 st in let f = p6 st in let x7 = p7 st in let x8 = p8 st in
   let x9 = p9 st in let x10 = p10 st in let x11 = p11 st in let x12 = p12 st in let x13 = p13 st in
   (a, b, c, d, e, f, x7, x8, x9, x10, x11, x12, x13)
-
-let inline u_tup14 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 (st: ReaderState) =
-  let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in
-  let e = p5 st in let f = p6 st in let x7 = p7 st in let x8 = p8 st in
-  let x9 = p9 st in let x10 = p10 st in let x11 = p11 st in let x12 = p12 st in let x13 = p13 st in
-  let x14 = p14 st in
-  (a, b, c, d, e, f, x7, x8, x9, x10, x11, x12, x13, x14)
-let inline u_tup15 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 (st: ReaderState) =
-  let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in
-  let e = p5 st in let f = p6 st in let x7 = p7 st in let x8 = p8 st in
-  let x9 = p9 st in let x10 = p10 st in let x11 = p11 st in let x12 = p12 st in let x13 = p13 st in
-  let x14 = p14 st in let x15 = p15 st in
-  (a, b, c, d, e, f, x7, x8, x9, x10, x11, x12, x13, x14, x15)
-
-let inline u_tup16 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 (st: ReaderState) =
-  let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in
-  let e = p5 st in let f = p6 st in let x7 = p7 st in let x8 = p8 st in
-  let x9 = p9 st in let x10 = p10 st in let x11 = p11 st in let x12 = p12 st in let x13 = p13 st in
-  let x14 = p14 st in let x15 = p15 st in let x16 = p16 st in
-  (a, b, c, d, e, f, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16)
 
 let inline u_tup17 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 (st: ReaderState) =
   let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in
@@ -488,17 +433,6 @@ let p_array_core f (x: 'T[]) st =
 
 let p_array f (x: 'T[]) st =
     p_int x.Length st
-    p_array_core f x st
-
-// Optionally encode an extra item using a marker bit.
-// When extraf is None, the marker bit is not set, and this is identical to p_array.
-let p_array_ext extraf f (x: 'T[]) st =
-    let n = x.Length
-    let n = if Option.isSome extraf then n ||| 0x80000000 else n
-    p_int n st
-    match extraf with
-    | None -> ()
-    | Some f -> f st
     p_array_core f x st
 
 let p_list_core f (xs: 'T list) st =
@@ -588,18 +522,6 @@ let u_array f st =
     let n = u_int st
     u_array_core f n st
 
-// Optionally decode an extra item if a marker bit is present.
-// When the marker bit is not set this is identical to u_array, and extraf is not called
-let u_array_ext extraf f st =
-    let n = u_int st
-    let extraItem =
-        if n &&& 0x80000000 = 0x80000000 then
-            Some (extraf st)
-        else
-            None
-    let arr = u_array_core f (n &&& 0x7FFFFFFF) st
-    extraItem, arr
-
 let u_list_core f n st =
     List.init n (fun _ -> f st)
 
@@ -628,13 +550,6 @@ let u_List f st = List(u_array f st)
 //#else
 let u_List f st = u_array f st
 #endif
-
-let u_array_revi f st =
-    let n = u_int st
-    let res = Array.zeroCreate n
-    for i = 0 to n-1 do
-        res[i] <- f st (n-1-i)
-    res
 
 // Mark up default constraints with a priority in reverse order: last gets 0 etc. See comment on TyparConstraint.DefaultsTo
 let u_list_revi f st =
@@ -707,18 +622,13 @@ let lookup_string st stringTab x = lookup_uniq st stringTab x
 let u_encoded_string = u_prim_string
 let u_string st   = lookup_uniq st st.istrings (u_int st)
 let u_strings = u_list u_string
-let u_ints = u_list u_int
-
-
 let p_encoded_string = p_prim_string
 let p_string s st = p_int (encode_string st.ostrings s) st
 let p_strings = p_list p_string
-let p_ints = p_list p_int
 
 // CCU References
 // A huge number of these occur in pickled F# data, so make them unique
 let encode_ccuref ccuTab (x: CcuThunk) = encode_uniq ccuTab x.AssemblyName
-let decode_ccuref x = x
 let lookup_ccuref st ccuTab x = lookup_uniq st ccuTab x
 let u_encoded_ccuref st =
     match u_byte st with
@@ -735,7 +645,6 @@ let p_ccuref s st = p_int (encode_ccuref st.occus s) st
 // References to public items in this module
 // A huge number of these occur in pickled F# data, so make them unique
 let decode_pubpath st stringTab a = PubPath(Array.map (lookup_string st stringTab) a)
-let lookup_pubpath st pubpathTab x = lookup_uniq st pubpathTab x
 let u_encoded_pubpath = u_array u_int
 let u_pubpath st = lookup_uniq st st.ipubpaths (u_int st)
 
@@ -772,13 +681,10 @@ let p_nleref x st = p_int (encode_nleref st.occus st.ostrings st.onlerefs st.osc
 // Simple types are types like "int", represented as TType(Ref_nonlocal(..., "int"), []).
 // A huge number of these occur in pickled F# data, so make them unique.
 let decode_simpletyp st _ccuTab _stringTab nlerefTab a = TType_app(ERefNonLocal (lookup_nleref st nlerefTab a), [], 0uy)
-let lookup_simpletyp st simpleTyTab x = lookup_uniq st simpleTyTab x
 let u_encoded_simpletyp st = u_int  st
-let u_encoded_anoninfo st = u_int  st
 let u_simpletyp st = lookup_uniq st st.isimpletys (u_int st)
 let encode_simpletyp ccuTab stringTab nlerefTab simpleTyTab thisCcu a = encode_uniq simpleTyTab (encode_nleref ccuTab stringTab nlerefTab thisCcu a)
 let p_encoded_simpletyp x st = p_int x st
-let p_encoded_anoninfo x st = p_int x st
 let p_simpletyp x st = p_int (encode_simpletyp st.occus st.ostrings st.onlerefs st.osimpletys st.oscope x) st
 
 /// Arbitrary value
@@ -1153,7 +1059,6 @@ let [<Literal>] itag_shr_un        = 17
 let [<Literal>] itag_neg           = 18
 let [<Literal>] itag_not           = 19
 let [<Literal>] itag_conv          = 20
-let [<Literal>] itag_conv_un       = 21
 let [<Literal>] itag_conv_ovf      = 22
 let [<Literal>] itag_conv_ovf_un   = 23
 let [<Literal>] itag_callvirt      = 24
@@ -1499,8 +1404,8 @@ let u_MemberFlags st : SynMemberFlags=
       IsDispatchSlot=x4
       IsOverrideOrExplicitImpl=x5
       IsFinal=x6
-      MemberKind=x7
-      Trivia = SynMemberFlagsTrivia.Zero }
+      GetterOrSetterIsCompilerGenerated=false
+      MemberKind=x7 }
 
 let fill_u_Expr_hole, u_expr_fwd = u_hole()
 let fill_p_Expr_hole, p_expr_fwd = p_hole()
@@ -1513,9 +1418,9 @@ let p_anonInfo x st =
 
 let p_trait_sln sln st =
     match sln with
-    | ILMethSln(a, b, c, d) ->
+    | ILMethSln(a, b, c, d, None) ->
          p_byte 0 st; p_tup4 p_ty (p_option p_ILTypeRef) p_ILMethodRef p_tys (a, b, c, d) st
-    | FSMethSln(a, b, c) ->
+    | FSMethSln(a, b, c, None) ->
          p_byte 1 st; p_tup3 p_ty (p_vref "trait") p_tys (a, b, c) st
     | BuiltInSln ->
          p_byte 2 st
@@ -1525,6 +1430,10 @@ let p_trait_sln sln st =
          p_byte 4 st; p_tup3 p_tys p_rfref p_bool (a, b, c) st
     | FSAnonRecdFieldSln(a, b, c) ->
          p_byte 5 st; p_tup3 p_anonInfo p_tys p_int (a, b, c) st
+    | ILMethSln(a, b, c, d, Some e) ->
+         p_byte 6 st; p_tup5 p_ty (p_option p_ILTypeRef) p_ILMethodRef p_tys p_ty (a, b, c, d, e) st
+    | FSMethSln(a, b, c, Some d) ->
+         p_byte 7 st; p_tup4 p_ty (p_vref "trait") p_tys p_ty (a, b, c, d) st
 
 
 let p_trait (TTrait(a, b, c, d, e, f)) st  =
@@ -1543,10 +1452,10 @@ let u_trait_sln st =
     match tag with
     | 0 ->
         let a, b, c, d = u_tup4 u_ty (u_option u_ILTypeRef) u_ILMethodRef u_tys st
-        ILMethSln(a, b, c, d)
+        ILMethSln(a, b, c, d, None)
     | 1 ->
         let a, b, c = u_tup3 u_ty u_vref u_tys st
-        FSMethSln(a, b, c)
+        FSMethSln(a, b, c, None)
     | 2 ->
         BuiltInSln
     | 3 ->
@@ -1557,6 +1466,12 @@ let u_trait_sln st =
     | 5 ->
          let a, b, c = u_tup3 u_anonInfo u_tys u_int st
          FSAnonRecdFieldSln(a, b, c)
+    | 6 ->
+        let a, b, c, d, e = u_tup5 u_ty (u_option u_ILTypeRef) u_ILMethodRef u_tys u_ty st
+        ILMethSln(a, b, c, d, Some e)
+    | 7 ->
+        let a, b, c, d = u_tup4 u_ty u_vref u_tys u_ty st
+        FSMethSln(a, b, c, Some d)
     | _ -> ufailwith st "u_trait_sln"
 
 let u_trait st =
@@ -1575,7 +1490,7 @@ let p_measure_one = p_byte 4
 // Pickle a unit-of-measure variable or constructor
 let p_measure_varcon unt st =
      match unt with
-     | Measure.Con tcref   -> p_measure_con tcref st
+     | Measure.Const tcref   -> p_measure_con tcref st
      | Measure.Var v       -> p_measure_var v st
      | _                  -> pfailwith st "p_measure_varcon: expected measure variable or constructor"
 
@@ -1604,7 +1519,7 @@ let rec p_measure_power unt q st =
 let rec p_normalized_measure unt st =
      let unt = stripUnitEqnsAux false unt
      match unt with
-     | Measure.Con tcref   -> p_measure_con tcref st
+     | Measure.Const tcref   -> p_measure_con tcref st
      | Measure.Inv x       -> p_byte 1 st; p_normalized_measure x st
      | Measure.Prod(x1, x2) -> p_byte 2 st; p_normalized_measure x1 st; p_normalized_measure x2 st
      | Measure.Var v       -> p_measure_var v st
@@ -1625,7 +1540,7 @@ let u_rational st =
 let rec u_measure_expr st =
     let tag = u_byte st
     match tag with
-    | 0 -> let a = u_tcref st in Measure.Con a
+    | 0 -> let a = u_tcref st in Measure.Const a
     | 1 -> let a = u_measure_expr st in Measure.Inv a
     | 2 -> let a, b = u_tup2 u_measure_expr u_measure_expr st in Measure.Prod (a, b)
     | 3 -> let a = u_tpref st in Measure.Var a
@@ -1855,7 +1770,7 @@ let p_istype x st =
     match x with
     | FSharpModuleWithSuffix -> p_byte 0 st
     | ModuleOrType           -> p_byte 1 st
-    | Namespace              -> p_byte 2 st
+    | Namespace _            -> p_byte 2 st
 
 let p_cpath (CompPath(a, b)) st =
     p_tup2 p_ILScopeRef (p_list (p_tup2 p_string p_istype)) (a, b) st
@@ -1867,19 +1782,17 @@ let u_istype st =
     match tag with
     | 0 -> FSharpModuleWithSuffix
     | 1 -> ModuleOrType
-    | 2 -> Namespace
+    | 2 -> Namespace true
     | _ -> ufailwith st "u_istype"
 
 let u_cpath  st = let a, b = u_tup2 u_ILScopeRef (u_list (u_tup2 u_string u_istype)) st in (CompPath(a, b))
 
-
-let rec dummy x = x
-and p_tycon_repr x st =
+let rec p_tycon_repr x st =
     // The leading "p_byte 1" and "p_byte 0" come from the F# 2.0 format, which used an option value at this point.
     match x with
     | TFSharpRecdRepr fs         -> p_byte 1 st; p_byte 0 st; p_rfield_table fs st; false
     | TFSharpUnionRepr x         -> p_byte 1 st; p_byte 1 st; p_array p_unioncase_spec x.CasesTable.CasesByIndex st; false
-    | TAsmRepr ilty        -> p_byte 1 st; p_byte 2 st; p_ILType ilty st; false
+    | TAsmRepr ilTy        -> p_byte 1 st; p_byte 2 st; p_ILType ilTy st; false
     | TFSharpObjectRepr r  -> p_byte 1 st; p_byte 3 st; p_tycon_objmodel_data r st; false
     | TMeasureableRepr ty  -> p_byte 1 st; p_byte 4 st; p_ty ty st; false
     | TNoRepr              -> p_byte 0 st; false
@@ -1913,16 +1826,12 @@ and p_unioncase_spec x st =
     p_string x.XmlDocSig st
     p_access x.Accessibility st
 
-and p_exnc_spec_data x st = p_entity_spec_data x st
-
 and p_exnc_repr x st =
     match x with
     | TExnAbbrevRepr x -> p_byte 0 st; (p_tcref "exn abbrev") x st
     | TExnAsmRepr x    -> p_byte 1 st; p_ILTypeRef x st
     | TExnFresh x      -> p_byte 2 st; p_rfield_table x st
     | TExnNone         -> p_byte 3 st
-
-and p_exnc_spec x st = p_entity_spec x st
 
 and p_access (TAccess n) st = p_list p_cpath n st
 
@@ -1958,7 +1867,7 @@ and p_entity_spec_data (x: Entity) st =
     p_kind x.TypeOrMeasureKind st
     p_int64 (x.entity_flags.PickledBits ||| (if flagBit then EntityFlags.ReservedBitForPickleFormatTyconReprFlag else 0L)) st
     p_option p_cpath x.entity_cpath st
-    p_maybe_lazy p_modul_typ x.entity_modul_contents st
+    p_maybe_lazy p_modul_typ x.entity_modul_type st
     p_exnc_repr x.ExceptionInfo st
     if st.oInMem then
         p_used_space1 (p_xmldoc x.XmlDoc) st
@@ -2050,7 +1959,7 @@ and p_ValData x st =
     p_option p_ValReprInfo x.ValReprInfo st
     p_string x.XmlDocSig st
     p_access x.Accessibility st
-    p_parentref x.DeclaringEntity st
+    p_parentref x.TryDeclaringEntity st
     p_option p_const x.LiteralValue st
     if st.oInMem then
         p_used_space1 (p_xmldoc x.XmlDoc) st
@@ -2140,8 +2049,6 @@ and u_unioncase_spec st =
       Accessibility=i
       OtherRangeOpt=None }
 
-and u_exnc_spec_data st = u_entity_spec_data st
-
 and u_exnc_repr st =
     let tag = u_byte st
     match tag with
@@ -2150,8 +2057,6 @@ and u_exnc_repr st =
     | 2 -> u_rfield_table st |> TExnFresh
     | 3 -> TExnNone
     | _ -> ufailwith st "u_exnc_repr"
-
-and u_exnc_spec st = u_entity_spec st
 
 and u_access st =
     match u_list u_cpath st with
@@ -2183,7 +2088,7 @@ and u_recdfield_spec st =
       rfield_xmldoc= defaultArg xmldoc XmlDoc.Empty
       rfield_xmldocsig=f
       rfield_access=g
-      rfield_name_generated = false
+      rfield_name_generated = d.idRange.IsSynthetic
       rfield_other_range = None }
 
 and u_rfield_table st = Construct.MakeRecdFieldsTable (u_list u_recdfield_spec st)
@@ -2223,7 +2128,7 @@ and u_entity_spec_data st : Entity =
       entity_tycon_tcaug=x9
       entity_flags=EntityFlags x11
       entity_cpath=x12
-      entity_modul_contents=MaybeLazy.Lazy x13
+      entity_modul_type=MaybeLazy.Lazy x13
       entity_il_repr_cache=newCache()
       entity_opt_data=
         match x2b, x10b, x15, x8, x4a, x4b, x14 with
@@ -2353,9 +2258,11 @@ and u_ValData st =
                      val_other_range      = (match x1a with None -> None | Some(_, b) -> Some(b, true))
                      val_defn             = None
                      val_repr_info        = x10
+                     val_repr_info_for_display = None
                      val_const            = x14
                      val_access           = x13
                      val_xmldoc           = defaultArg x15 XmlDoc.Empty
+                     val_other_xmldoc     = None
                      val_member_info      = x8
                      val_declaring_entity = x13b
                      val_xmldocsig        = x12
@@ -2436,7 +2343,7 @@ and p_dtree_discrim x st =
     | DecisionTreeTest.UnionCase (ucref, tinst) -> p_byte 0 st; p_tup2 p_ucref p_tys (ucref, tinst) st
     | DecisionTreeTest.Const c                   -> p_byte 1 st; p_const c st
     | DecisionTreeTest.IsNull                    -> p_byte 2 st
-    | DecisionTreeTest.IsInst (srcty, tgty)       -> p_byte 3 st; p_ty srcty st; p_ty tgty st
+    | DecisionTreeTest.IsInst (srcTy, tgtTy)       -> p_byte 3 st; p_ty srcTy st; p_ty tgtTy st
     | DecisionTreeTest.ArrayLength (n, ty)       -> p_byte 4 st; p_tup2 p_int p_ty (n, ty) st
     | DecisionTreeTest.ActivePatternCase _ -> pfailwith st "DecisionTreeTest.ActivePatternCase: only used during pattern match compilation"
     | DecisionTreeTest.Error _ -> pfailwith st "DecisionTreeTest.Error: only used during pattern match compilation"

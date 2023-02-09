@@ -61,7 +61,7 @@ let lexemeTrimLeft   lexbuf n = lexemeTrimBoth lexbuf n 0
 /// Throw a lexing error with a message
 let fail args (lexbuf:UnicodeLexing.Lexbuf) msg dflt =
      let m = lexbuf.LexemeRange
-     args.errorLogger.ErrorR(Error(msg,m))
+     args.diagnosticsLogger.ErrorR(Error(msg,m))
      dflt
 
 //--------------------------
@@ -601,7 +601,9 @@ rule token args skip = parse
        // Single quote in triple quote ok, others disallowed
        match args.stringNest with
        | (_, LexerStringStyle.TripleQuote, _) :: _ -> ()
-       | _ :: _ -> errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
+       | _ :: rest ->
+           args.stringNest <- rest
+           errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
        | [] -> ()
 
        if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, LexerStringKind.String, m))
@@ -612,7 +614,9 @@ rule token args skip = parse
 
        // Single quote in triple quote ok, others disallowed
        match args.stringNest with
-       | _ :: _ -> errorR(Error(FSComp.SR.lexTripleQuoteInTripleQuote(), m))
+       | _ :: rest ->
+           args.stringNest <- rest
+           errorR(Error(FSComp.SR.lexTripleQuoteInTripleQuote(), m))
        | [] -> ()
 
        if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, LexerStringKind.InterpolatedStringFirst, m))
@@ -624,7 +628,9 @@ rule token args skip = parse
        // Single quote in triple quote ok, others disallowed
        match args.stringNest with
        | (_, LexerStringStyle.TripleQuote, _) :: _ -> ()
-       | _ :: _ -> errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
+       | _ :: rest ->
+           args.stringNest <- rest
+           errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
        | _ -> ()
 
        if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, LexerStringKind.InterpolatedStringFirst, m))
@@ -635,7 +641,9 @@ rule token args skip = parse
 
        // Single quote in triple quote ok, others disallowed
        match args.stringNest with
-       | _ :: _ -> errorR(Error(FSComp.SR.lexTripleQuoteInTripleQuote(), m))
+       | _ :: rest ->
+           args.stringNest <- rest
+           errorR(Error(FSComp.SR.lexTripleQuoteInTripleQuote(), m))
        | _ -> ()
 
        if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, LexerStringKind.String, m))
@@ -647,7 +655,9 @@ rule token args skip = parse
        // Single quote in triple quote ok, others disallowed
        match args.stringNest with
        | (_, LexerStringStyle.TripleQuote, _) :: _ -> ()
-       | _ :: _ -> errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
+       | _ :: rest ->
+           args.stringNest <- rest
+           errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
        | _ -> ()
 
        if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, LexerStringKind.String, m))
@@ -659,7 +669,9 @@ rule token args skip = parse
        // Single quote in triple quote ok, others disallowed
        match args.stringNest with
        | (_, LexerStringStyle.TripleQuote, _) :: _ -> ()
-       | _ :: _ -> errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
+       | _ :: rest ->
+           args.stringNest <- rest
+           errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
        | _ -> ()
 
        if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, LexerStringKind.InterpolatedStringFirst, m))
@@ -670,7 +682,7 @@ rule token args skip = parse
        else WHITESPACE (LexCont.Token(args.ifdefStack, args.stringNest)) }
 
  | offwhite+
-     { if args.lightStatus.Status then errorR(Error(FSComp.SR.lexTabsNotAllowed(), lexbuf.LexemeRange))
+     { if args.indentationSyntaxStatus.Status then errorR(Error(FSComp.SR.lexTabsNotAllowed(), lexbuf.LexemeRange))
        if not skip then WHITESPACE (LexCont.Token(args.ifdefStack, args.stringNest))
        else token args skip lexbuf }
 
@@ -929,17 +941,17 @@ rule token args skip = parse
 
  | "#light" anywhite*
  | ("#indent" | "#light") anywhite+ "\"on\""
-   { if args.lightStatus.ExplicitlySet && args.lightStatus.WarnOnMultipleTokens then
+   { if args.indentationSyntaxStatus.ExplicitlySet && args.indentationSyntaxStatus.WarnOnMultipleTokens then
          let s = lexeme lexbuf
          warning(Error((0, sprintf "%s should only be set once in an F# source file." s), lexbuf.LexemeRange))
          // TODO: where should this go? (abelb)
          //warning(Error((0,"#light should only occur as the first non-comment text in an F# source file."), lexbuf.LexemeRange))
-     args.lightStatus.Status <- true
+     args.indentationSyntaxStatus.Status <- true
      if not skip then HASH_LIGHT (LexCont.Token(args.ifdefStack, args.stringNest))
      else token args skip lexbuf }
 
  | ("#indent" | "#light") anywhite+ "\"off\""
-   { args.lightStatus.Status <- false
+   { args.indentationSyntaxStatus.Status <- false
      if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
          mlCompatError (FSComp.SR.mlCompatLightOffNoLongerSupported()) lexbuf.LexemeRange
      else

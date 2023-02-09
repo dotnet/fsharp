@@ -10,7 +10,7 @@ open FSharp.Compiler.Parser
 
 /// Match the close of '>' of a set of type parameters.
 /// This is done for tokens such as '>>' by smashing the token
-val (|TyparsCloseOp|_|): txt: string -> ((bool -> token) [] * token option) option
+val (|TyparsCloseOp|_|): txt: string -> ((bool -> token)[] * token option) option
 
 /// A stateful filter over the token stream that adjusts it for indentation-aware syntax rules
 /// Process the token stream prior to parsing. Implements the offside rule and other lexical transformations.
@@ -18,8 +18,8 @@ type LexFilter =
 
     /// Create a lex filter
     new:
-        lightStatus: IndentationAwareSyntaxStatus *
-        compilingFsLib: bool *
+        indentationSyntaxStatus: IndentationAwareSyntaxStatus *
+        compilingFSharpCore: bool *
         lexer: (LexBuffer<char> -> token) *
         lexbuf: LexBuffer<char> ->
             LexFilter

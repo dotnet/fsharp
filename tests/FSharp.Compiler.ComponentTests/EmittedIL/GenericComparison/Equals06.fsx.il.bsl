@@ -4,15 +4,15 @@
 
 
 // Metadata version: v4.0.30319
-.assembly extern mscorlib
+.assembly extern System.Runtime
 {
-  .publickeytoken = (B7 7A 5C 56 19 34 E0 89 )                         // .z\V.4..
-  .ver 4:0:0:0
+  .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
+  .ver 7:0:0:0
 }
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 6:0:0:0
+  .ver 7:0:0:0
 }
 .assembly Equals06
 {
@@ -21,60 +21,60 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 00 00 00 00 00 ) 
+  //  .custom instance void [System.Runtime]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 01 00 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.Equals06
 {
-  // Offset: 0x00000000 Length: 0x000008BC
+  // Offset: 0x00000000 Length: 0x000008BE
   // WARNING: managed resource file FSharpSignatureData.Equals06 created
 }
 .mresource public FSharpOptimizationData.Equals06
 {
-  // Offset: 0x000008C0 Length: 0x000006BB
+  // Offset: 0x000008C8 Length: 0x000006C5
   // WARNING: managed resource file FSharpOptimizationData.Equals06 created
 }
 .module Equals06.exe
-// MVID: {624F9D3B-EB3D-4C9A-A745-03833B9D4F62}
+// MVID: {63DBF1DE-FCDE-C6DD-A745-0383DEF1DB63}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x03050000
+// Image base: 0x0000016E64610000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
 
 .class public abstract auto ansi sealed Equals06
-       extends [mscorlib]System.Object
+       extends [System.Runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
   .class abstract auto ansi sealed nested public EqualsMicroPerfAndCodeGenerationTests
-         extends [mscorlib]System.Object
+         extends [System.Runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
     .class auto autochar serializable sealed nested public beforefieldinit GenericKey`1<a>
-           extends [mscorlib]System.Object
-           implements class [mscorlib]System.IEquatable`1<class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!a>>,
-                      [mscorlib]System.Collections.IStructuralEquatable,
-                      class [mscorlib]System.IComparable`1<class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!a>>,
-                      [mscorlib]System.IComparable,
-                      [mscorlib]System.Collections.IStructuralComparable
+           extends [System.Runtime]System.Object
+           implements class [System.Runtime]System.IEquatable`1<class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!a>>,
+                      [System.Runtime]System.Collections.IStructuralEquatable,
+                      class [System.Runtime]System.IComparable`1<class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!a>>,
+                      [System.Runtime]System.IComparable,
+                      [System.Runtime]System.Collections.IStructuralComparable
     {
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerDisplayAttribute::.ctor(string) = ( 01 00 15 7B 5F 5F 44 65 62 75 67 44 69 73 70 6C   // ...{__DebugDispl
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerDisplayAttribute::.ctor(string) = ( 01 00 15 7B 5F 5F 44 65 62 75 67 44 69 73 70 6C   // ...{__DebugDispl
                                                                                                      61 79 28 29 2C 6E 71 7D 00 00 )                   // ay(),nq}..
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 01 00 00 00 00 00 ) 
       .field assembly initonly !a item1
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       .field assembly initonly !a item2
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       .method public static class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!a> 
               NewGenericKey(!a item1,
                             !a item2) cil managed
@@ -94,12 +94,12 @@
               instance void  .ctor(!a item1,
                                    !a item2) cil managed
       {
-        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       21 (0x15)
         .maxstack  8
         IL_0000:  ldarg.0
-        IL_0001:  call       instance void [mscorlib]System.Object::.ctor()
+        IL_0001:  call       instance void [System.Runtime]System.Object::.ctor()
         IL_0006:  ldarg.0
         IL_0007:  ldarg.1
         IL_0008:  stfld      !0 class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item1
@@ -112,8 +112,8 @@
       .method public hidebysig instance !a 
               get_Item1() cil managed
       {
-        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       7 (0x7)
         .maxstack  8
         IL_0000:  ldarg.0
@@ -124,8 +124,8 @@
       .method public hidebysig instance !a 
               get_Item2() cil managed
       {
-        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       7 (0x7)
         .maxstack  8
         IL_0000:  ldarg.0
@@ -136,8 +136,8 @@
       .method public hidebysig instance int32 
               get_Tag() cil managed
       {
-        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       4 (0x4)
         .maxstack  8
         IL_0000:  ldarg.0
@@ -149,8 +149,8 @@
       .method assembly hidebysig specialname 
               instance object  __DebugDisplay() cil managed
       {
-        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       22 (0x16)
         .maxstack  8
         IL_0000:  ldstr      "%+0.8A"
@@ -164,7 +164,7 @@
       .method public strict virtual instance string 
               ToString() cil managed
       {
-        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       22 (0x16)
         .maxstack  8
         IL_0000:  ldstr      "%+A"
@@ -178,13 +178,13 @@
       .method public hidebysig virtual final 
               instance int32  CompareTo(class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!a> obj) cil managed
       {
-        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       101 (0x65)
         .maxstack  5
         .locals init (class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_0,
                  class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_1,
                  int32 V_2,
-                 class [mscorlib]System.Collections.IComparer V_3,
+                 class [System.Runtime]System.Collections.IComparer V_3,
                  !a V_4,
                  !a V_5)
         IL_0000:  ldarg.0
@@ -199,7 +199,7 @@
         IL_0009:  stloc.0
         IL_000a:  ldarg.1
         IL_000b:  stloc.1
-        IL_000c:  call       class [mscorlib]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
+        IL_000c:  call       class [System.Runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
         IL_0011:  stloc.3
         IL_0012:  ldloc.0
         IL_0013:  ldfld      !0 class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item1
@@ -210,7 +210,7 @@
         IL_0022:  ldloc.3
         IL_0023:  ldloc.s    V_4
         IL_0025:  ldloc.s    V_5
-        IL_0027:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericComparisonWithComparerIntrinsic<!a>(class [mscorlib]System.Collections.IComparer,
+        IL_0027:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericComparisonWithComparerIntrinsic<!a>(class [System.Runtime]System.Collections.IComparer,
                                                                                                                                                  !!0,
                                                                                                                                                  !!0)
         IL_002c:  stloc.2
@@ -228,7 +228,7 @@
         IL_0037:  ldloc.2
         IL_0038:  ret
 
-        IL_0039:  call       class [mscorlib]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
+        IL_0039:  call       class [System.Runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
         IL_003e:  stloc.3
         IL_003f:  ldloc.0
         IL_0040:  ldfld      !0 class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item2
@@ -240,7 +240,7 @@
         IL_0050:  ldloc.s    V_4
         IL_0052:  ldloc.s    V_5
         IL_0054:  tail.
-        IL_0056:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericComparisonWithComparerIntrinsic<!a>(class [mscorlib]System.Collections.IComparer,
+        IL_0056:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericComparisonWithComparerIntrinsic<!a>(class [System.Runtime]System.Collections.IComparer,
                                                                                                                                                  !!0,
                                                                                                                                                  !!0)
         IL_005b:  ret
@@ -261,7 +261,7 @@
       .method public hidebysig virtual final 
               instance int32  CompareTo(object obj) cil managed
       {
-        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       15 (0xf)
         .maxstack  8
         IL_0000:  ldarg.0
@@ -274,9 +274,9 @@
 
       .method public hidebysig virtual final 
               instance int32  CompareTo(object obj,
-                                        class [mscorlib]System.Collections.IComparer comp) cil managed
+                                        class [System.Runtime]System.Collections.IComparer comp) cil managed
       {
-        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       106 (0x6a)
         .maxstack  5
         .locals init (class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_0,
@@ -310,7 +310,7 @@
         IL_0028:  ldarg.2
         IL_0029:  ldloc.s    V_4
         IL_002b:  ldloc.s    V_5
-        IL_002d:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericComparisonWithComparerIntrinsic<!a>(class [mscorlib]System.Collections.IComparer,
+        IL_002d:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericComparisonWithComparerIntrinsic<!a>(class [System.Runtime]System.Collections.IComparer,
                                                                                                                                                  !!0,
                                                                                                                                                  !!0)
         IL_0032:  stloc.3
@@ -338,7 +338,7 @@
         IL_0050:  ldloc.s    V_4
         IL_0052:  ldloc.s    V_5
         IL_0054:  tail.
-        IL_0056:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericComparisonWithComparerIntrinsic<!a>(class [mscorlib]System.Collections.IComparer,
+        IL_0056:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericComparisonWithComparerIntrinsic<!a>(class [System.Runtime]System.Collections.IComparer,
                                                                                                                                                  !!0,
                                                                                                                                                  !!0)
         IL_005b:  ret
@@ -358,9 +358,9 @@
       } // end of method GenericKey`1::CompareTo
 
       .method public hidebysig virtual final 
-              instance int32  GetHashCode(class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
+              instance int32  GetHashCode(class [System.Runtime]System.Collections.IEqualityComparer comp) cil managed
       {
-        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       73 (0x49)
         .maxstack  7
         .locals init (int32 V_0,
@@ -383,7 +383,7 @@
         IL_0016:  stloc.2
         IL_0017:  ldarg.1
         IL_0018:  ldloc.2
-        IL_0019:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericHashWithComparerIntrinsic<!a>(class [mscorlib]System.Collections.IEqualityComparer,
+        IL_0019:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericHashWithComparerIntrinsic<!a>(class [System.Runtime]System.Collections.IEqualityComparer,
                                                                                                                                            !!0)
         IL_001e:  ldloc.0
         IL_001f:  ldc.i4.6
@@ -401,7 +401,7 @@
         IL_0033:  stloc.2
         IL_0034:  ldarg.1
         IL_0035:  ldloc.2
-        IL_0036:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericHashWithComparerIntrinsic<!a>(class [mscorlib]System.Collections.IEqualityComparer,
+        IL_0036:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericHashWithComparerIntrinsic<!a>(class [System.Runtime]System.Collections.IEqualityComparer,
                                                                                                                                            !!0)
         IL_003b:  ldloc.0
         IL_003c:  ldc.i4.6
@@ -423,20 +423,20 @@
       .method public hidebysig virtual final 
               instance int32  GetHashCode() cil managed
       {
-        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       12 (0xc)
         .maxstack  8
         IL_0000:  ldarg.0
-        IL_0001:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
-        IL_0006:  callvirt   instance int32 class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::GetHashCode(class [mscorlib]System.Collections.IEqualityComparer)
+        IL_0001:  call       class [System.Runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
+        IL_0006:  callvirt   instance int32 class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::GetHashCode(class [System.Runtime]System.Collections.IEqualityComparer)
         IL_000b:  ret
       } // end of method GenericKey`1::GetHashCode
 
       .method public hidebysig virtual final 
               instance bool  Equals(object obj,
-                                    class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
+                                    class [System.Runtime]System.Collections.IEqualityComparer comp) cil managed
       {
-        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       84 (0x54)
         .maxstack  5
         .locals init (class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_0,
@@ -468,7 +468,7 @@
         IL_0022:  ldarg.2
         IL_0023:  ldloc.3
         IL_0024:  ldloc.s    V_4
-        IL_0026:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericEqualityWithComparerIntrinsic<!a>(class [mscorlib]System.Collections.IEqualityComparer,
+        IL_0026:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericEqualityWithComparerIntrinsic<!a>(class [System.Runtime]System.Collections.IEqualityComparer,
                                                                                                                                               !!0,
                                                                                                                                               !!0)
         IL_002b:  brfalse.s  IL_0048
@@ -483,7 +483,7 @@
         IL_003d:  ldloc.3
         IL_003e:  ldloc.s    V_4
         IL_0040:  tail.
-        IL_0042:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericEqualityWithComparerIntrinsic<!a>(class [mscorlib]System.Collections.IEqualityComparer,
+        IL_0042:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericEqualityWithComparerIntrinsic<!a>(class [System.Runtime]System.Collections.IEqualityComparer,
                                                                                                                                               !!0,
                                                                                                                                               !!0)
         IL_0047:  ret
@@ -505,7 +505,7 @@
       .method public hidebysig virtual final 
               instance bool  Equals(class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!a> obj) cil managed
       {
-        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       71 (0x47)
         .maxstack  4
         .locals init (class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_0,
@@ -566,7 +566,7 @@
       .method public hidebysig virtual final 
               instance bool  Equals(object obj) cil managed
       {
-        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       22 (0x16)
         .maxstack  4
         .locals init (class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_0)
@@ -588,9 +588,9 @@
 
       .property instance int32 Tag()
       {
-        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+        .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
         .get instance int32 Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1::get_Tag()
       } // end of property GenericKey`1::Tag
       .property instance !a Item1()
@@ -598,8 +598,8 @@
         .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
                                                                                                     int32,
                                                                                                     int32) = ( 01 00 04 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
-        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         .get instance !a Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1::get_Item1()
       } // end of property GenericKey`1::Item1
       .property instance !a Item2()
@@ -607,8 +607,8 @@
         .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
                                                                                                     int32,
                                                                                                     int32) = ( 01 00 04 00 00 00 00 00 00 00 01 00 00 00 00 00 ) 
-        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         .get instance !a Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1::get_Item2()
       } // end of property GenericKey`1::Item2
     } // end of class GenericKey`1
@@ -639,9 +639,9 @@
 
       IL_0016:  ldloc.1
       IL_0017:  ldloc.2
-      IL_0018:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
+      IL_0018:  call       class [System.Runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
       IL_001d:  callvirt   instance bool class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<int32>::Equals(object,
-                                                                                                                          class [mscorlib]System.Collections.IEqualityComparer)
+                                                                                                                          class [System.Runtime]System.Collections.IEqualityComparer)
       IL_0022:  stloc.0
       IL_0023:  ldloc.3
       IL_0024:  ldc.i4.1
@@ -660,7 +660,7 @@
 } // end of class Equals06
 
 .class private abstract auto ansi sealed '<StartupCode$Equals06>'.$Equals06$fsx
-       extends [mscorlib]System.Object
+       extends [System.Runtime]System.Object
 {
   .method public static void  main@() cil managed
   {
@@ -676,4 +676,4 @@
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
-// WARNING: Created Win32 resource file c:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Debug\net472\tests\EmittedIL\GenericComparison\Equals06_fsx\Equals06.res
+// WARNING: Created Win32 resource file D:\code\FS\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Release\net7.0\tests\EmittedIL\GenericComparison\Equals06_fsx\Equals06.res

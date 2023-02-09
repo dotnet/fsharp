@@ -42,7 +42,7 @@ module Array2D =
     /// Evaluates to <c>1</c>.
     /// </example>
     [<CompiledName("Base1")>]
-    val base1: array: 'T [,] -> int
+    val base1: array: 'T[,] -> int
 
     /// <summary>Fetches the base-index for the second dimension of the array.</summary>
     ///
@@ -61,7 +61,7 @@ module Array2D =
     /// Evaluates to <c>1</c>.
     /// </example>
     [<CompiledName("Base2")>]
-    val base2: array: 'T [,] -> int
+    val base2: array: 'T[,] -> int
 
     /// <summary>Builds a new array whose elements are the same as the input array.</summary>
     ///
@@ -83,7 +83,7 @@ module Array2D =
     /// Evaluates to a new copy of the 10x10 array.
     /// </example>
     [<CompiledName("Copy")>]
-    val copy: array: 'T [,] -> 'T [,]
+    val copy: array: 'T[,] -> 'T[,]
 
     /// <summary>Reads a range of elements from the first array and write them into the second.</summary>
     ///
@@ -118,10 +118,10 @@ module Array2D =
     /// </example>
     [<CompiledName("CopyTo")>]
     val blit:
-        source: 'T [,] ->
+        source: 'T[,] ->
         sourceIndex1: int ->
         sourceIndex2: int ->
-        target: 'T [,] ->
+        target: 'T[,] ->
         targetIndex1: int ->
         targetIndex2: int ->
         length1: int ->
@@ -145,7 +145,7 @@ module Array2D =
     /// </example>
     ///
     [<CompiledName("Initialize")>]
-    val init: length1: int -> length2: int -> initializer: (int -> int -> 'T) -> 'T [,]
+    val init: length1: int -> length2: int -> initializer: (int -> int -> 'T) -> 'T[,]
 
     /// <summary>Creates an array whose elements are all initially the given value.</summary>
     ///
@@ -164,7 +164,7 @@ module Array2D =
     /// </example>
     ///
     [<CompiledName("Create")>]
-    val create: length1: int -> length2: int -> value: 'T -> 'T [,]
+    val create: length1: int -> length2: int -> value: 'T -> 'T[,]
 
     /// <summary>Creates an array where the entries are initially Unchecked.defaultof&lt;'T&gt;.</summary>
     ///
@@ -182,7 +182,7 @@ module Array2D =
     /// </example>
     ///
     [<CompiledName("ZeroCreate")>]
-    val zeroCreate: length1: int -> length2: int -> 'T [,]
+    val zeroCreate: length1: int -> length2: int -> 'T[,]
 
     /// <summary>Creates a based array given the dimensions and a generator function to compute the elements.</summary>
     ///
@@ -203,7 +203,7 @@ module Array2D =
     /// </example>
     ///
     [<CompiledName("InitializeBased")>]
-    val initBased: base1: int -> base2: int -> length1: int -> length2: int -> initializer: (int -> int -> 'T) -> 'T [,]
+    val initBased: base1: int -> base2: int -> length1: int -> length2: int -> initializer: (int -> int -> 'T) -> 'T[,]
 
     /// <summary>Creates a based array whose elements are all initially the given value.</summary>
     ///
@@ -224,7 +224,7 @@ module Array2D =
     /// </example>
     ///
     [<CompiledName("CreateBased")>]
-    val createBased: base1: int -> base2: int -> length1: int -> length2: int -> initial: 'T -> 'T [,]
+    val createBased: base1: int -> base2: int -> length1: int -> length2: int -> initial: 'T -> 'T[,]
 
     /// <summary>Creates a based array where the entries are initially Unchecked.defaultof&lt;'T&gt;.</summary>
     ///
@@ -244,7 +244,7 @@ module Array2D =
     /// </example>
     ///
     [<CompiledName("ZeroCreateBased")>]
-    val zeroCreateBased: base1: int -> base2: int -> length1: int -> length2: int -> 'T [,]
+    val zeroCreateBased: base1: int -> base2: int -> length1: int -> length2: int -> 'T[,]
 
     /// <summary>Applies the given function to each element of the array.</summary>
     ///
@@ -267,7 +267,7 @@ module Array2D =
     /// in the console.
     /// </example>
     [<CompiledName("Iterate")>]
-    val iter: action: ('T -> unit) -> array: 'T [,] -> unit
+    val iter: action: ('T -> unit) -> array: 'T[,] -> unit
 
     /// <summary>Applies the given function to each element of the array.  The integer indices passed to the
     /// function indicates the index of element.</summary>
@@ -291,7 +291,7 @@ module Array2D =
     /// in the console.
     /// </example>
     [<CompiledName("IterateIndexed")>]
-    val iteri: action: (int -> int -> 'T -> unit) -> array: 'T [,] -> unit
+    val iteri: action: (int -> int -> 'T -> unit) -> array: 'T[,] -> unit
 
     /// <summary>Returns the length of an array in the first dimension.</summary>
     ///
@@ -308,7 +308,7 @@ module Array2D =
     /// Evaluates to <c>2</c>.
     /// </example>
     [<CompiledName("Length1")>]
-    val length1: array: 'T [,] -> int
+    val length1: array: 'T[,] -> int
 
     /// <summary>Returns the length of an array in the second dimension.</summary>
     ///
@@ -325,7 +325,7 @@ module Array2D =
     /// Evaluates to <c>3</c>.
     /// </example>
     [<CompiledName("Length2")>]
-    val length2: array: 'T [,] -> int
+    val length2: array: 'T[,] -> int
 
     /// <summary>Builds a new array whose elements are the results of applying the given function
     /// to each of the elements of the array.</summary>
@@ -347,7 +347,7 @@ module Array2D =
     /// Evaluates to a 2x2 array with contents <c>[[6; 8;]; [26; 28]]</c>
     /// </example>
     [<CompiledName("Map")>]
-    val map: mapping: ('T -> 'U) -> array: 'T [,] -> 'U [,]
+    val map: mapping: ('T -> 'U) -> array: 'T[,] -> 'U[,]
 
     /// <summary>Builds a new array whose elements are the results of applying the given function
     /// to each of the elements of the array. The integer indices passed to the
@@ -371,7 +371,7 @@ module Array2D =
     /// Evaluates to a 2x2 array with contents <c>[[3; 5;]; [14; 16]]</c>
     /// </example>
     [<CompiledName("MapIndexed")>]
-    val mapi: mapping: (int -> int -> 'T -> 'U) -> array: 'T [,] -> 'U [,]
+    val mapi: mapping: (int -> int -> 'T -> 'U) -> array: 'T[,] -> 'U[,]
 
     /// <summary>Builds a new array whose elements are the same as the input array but
     /// where a non-zero-based input array generates a corresponding zero-based
@@ -390,7 +390,7 @@ module Array2D =
     /// Evaluates to a 2x2 zero-based array with contents <c>[[1; 1]; [1; 1]]</c>
     /// </example>
     [<CompiledName("Rebase")>]
-    val rebase: array: 'T [,] -> 'T [,]
+    val rebase: array: 'T[,] -> 'T[,]
 
     /// <summary>Sets the value of an element in an array. You can also use the syntax <c>array.[index1,index2] &lt;- value</c>.</summary>
     ///
@@ -419,7 +419,7 @@ module Array2D =
     /// After evaluation <c>array</c> is a 2x2 array with contents <c>[[0.0; 4.0]; [0.0; 0.0]]</c>
     /// </example>
     [<CompiledName("Set")>]
-    val set: array: 'T [,] -> index1: int -> index2: int -> value: 'T -> unit
+    val set: array: 'T[,] -> index1: int -> index2: int -> value: 'T -> unit
 
     /// <summary>Fetches an element from a 2D array. You can also use the syntax <c>array.[index1,index2]</c>.</summary>
     ///
@@ -449,4 +449,4 @@ module Array2D =
     /// Evaluates to <c>2.0</c>.
     /// </example>
     [<CompiledName("Get")>]
-    val get: array: 'T [,] -> index1: int -> index2: int -> 'T
+    val get: array: 'T[,] -> index1: int -> index2: int -> 'T

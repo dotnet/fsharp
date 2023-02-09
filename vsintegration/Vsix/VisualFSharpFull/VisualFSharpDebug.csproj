@@ -41,6 +41,16 @@
         <IncludeInVSIX>true</IncludeInVSIX>
       </Content>
 
+      <Content Include="$(ArtifactsBinDir)/fscArm64/$(Configuration)/net472/**/%(_XlfLanguages.Identity)/*">
+        <VSixSubPath>Tools/%(_XlfLanguages.Identity)</VSixSubPath>
+        <IncludeInVSIX>true</IncludeInVSIX>
+      </Content>
+
+      <Content Include="$(ArtifactsBinDir)/fsiArm64/$(Configuration)/net472/**/%(_XlfLanguages.Identity)/*">
+        <VSixSubPath>Tools/%(_XlfLanguages.Identity)</VSixSubPath>
+        <IncludeInVSIX>true</IncludeInVSIX>
+      </Content>
+
       <Content Include="$(ArtifactsBinDir)/fsc/$(Configuration)/net472/*">
         <VSixSubPath>Tools</VSixSubPath>
         <IncludeInVSIX>true</IncludeInVSIX>
@@ -51,12 +61,22 @@
         <IncludeInVSIX>true</IncludeInVSIX>
       </Content>
 
+      <Content Include="$(ArtifactsBinDir)/fscArm64/$(Configuration)/net472/*">
+        <VSixSubPath>Tools</VSixSubPath>
+        <IncludeInVSIX>true</IncludeInVSIX>
+      </Content>
+
       <Content Include="$(ArtifactsBinDir)/fsi/$(Configuration)/net472/*">
         <VSixSubPath>Tools</VSixSubPath>
         <IncludeInVSIX>true</IncludeInVSIX>
       </Content>
 
       <Content Include="$(ArtifactsBinDir)/fsiAnyCPU/$(Configuration)/net472/*">
+        <VSixSubPath>Tools</VSixSubPath>
+        <IncludeInVSIX>true</IncludeInVSIX>
+      </Content>
+
+      <Content Include="$(ArtifactsBinDir)/fsiArm64/$(Configuration)/net472/*">
         <VSixSubPath>Tools</VSixSubPath>
         <IncludeInVSIX>true</IncludeInVSIX>
       </Content>

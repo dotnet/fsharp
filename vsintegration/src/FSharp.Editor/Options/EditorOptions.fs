@@ -59,36 +59,34 @@ type CodeFixesOptions =
         SuggestNamesForErrors = true }
 
 [<CLIMutable>]
-type LanguageServicePerformanceOptions = 
+type LanguageServicePerformanceOptions =
     { EnableInMemoryCrossProjectReferences: bool
       AllowStaleCompletionResults: bool
       TimeUntilStaleCompletion: int
-      ProjectCheckCacheSize: int }
+      EnableParallelCheckingWithSignatureFiles: bool
+      EnableParallelReferenceResolution: bool
+      EnableFastFindReferences: bool }
     static member Default =
       { EnableInMemoryCrossProjectReferences = true
         AllowStaleCompletionResults = true
         TimeUntilStaleCompletion = 2000 // In ms, so this is 2 seconds
-        ProjectCheckCacheSize = 200 }
-
-[<CLIMutable>]
-type CodeLensOptions =
-  { Enabled : bool
-    ReplaceWithLineLens: bool
-    UseColors: bool
-    Prefix : string }
-    static member Default =
-      { Enabled = false
-        UseColors = false
-        ReplaceWithLineLens = true
-        Prefix = "// " }
+        EnableParallelCheckingWithSignatureFiles = false
+        EnableParallelReferenceResolution = false
+        EnableFastFindReferences = FSharpExperimentalFeaturesEnabledAutomatically }
 
 [<CLIMutable>]
 type AdvancedOptions =
     { IsBlockStructureEnabled: bool
-      IsOutliningEnabled: bool }
+      IsOutliningEnabled: bool
+      IsInlineTypeHintsEnabled: bool
+      IsInlineParameterNameHintsEnabled: bool
+      IsLiveBuffersEnabled: bool }
     static member Default =
       { IsBlockStructureEnabled = true
-        IsOutliningEnabled = true }
+        IsOutliningEnabled = true
+        IsInlineTypeHintsEnabled = false 
+        IsInlineParameterNameHintsEnabled = false
+        IsLiveBuffersEnabled = FSharpExperimentalFeaturesEnabledAutomatically }
 
 [<CLIMutable>]
 type FormattingOptions =
@@ -112,7 +110,6 @@ type EditorOptions
         store.Register LanguageServicePerformanceOptions.Default
         store.Register AdvancedOptions.Default
         store.Register IntelliSenseOptions.Default
-        store.Register CodeLensOptions.Default
         store.Register FormattingOptions.Default
 
     member _.IntelliSense : IntelliSenseOptions = store.Get()
@@ -120,7 +117,6 @@ type EditorOptions
     member _.CodeFixes : CodeFixesOptions = store.Get()
     member _.LanguageServicePerformance : LanguageServicePerformanceOptions = store.Get()
     member _.Advanced: AdvancedOptions = store.Get()
-    member _.CodeLens: CodeLensOptions = store.Get()
     member _.Formatting : FormattingOptions = store.Get()
 
     interface Microsoft.CodeAnalysis.Host.IWorkspaceService
@@ -171,12 +167,6 @@ module internal OptionsUI =
         override this.CreateView() =
             upcast LanguageServicePerformanceOptionControl()
 
-    [<Guid(Guids.codeLensOptionPageIdString)>]
-    type internal CodeLensOptionPage() =
-        inherit AbstractOptionPage<CodeLensOptions>()
-        override this.CreateView() =
-            upcast CodeLensOptionControl()
-
     [<Guid(Guids.advancedSettingsPageIdSring)>]
     type internal AdvancedSettingsOptionPage() =
         inherit AbstractOptionPage<AdvancedOptions>()
@@ -194,50 +184,36 @@ module EditorOptionsExtensions =
 
     type Project with
 
-        member this.AreFSharpInMemoryCrossProjectReferencesEnabled =
+        member private this.GetEditorOptions f fallback =
             let editorOptions = this.Solution.Workspace.Services.GetService<EditorOptions>()
+
             match box editorOptions with
-            | null -> true
-            | _ -> editorOptions.LanguageServicePerformance.EnableInMemoryCrossProjectReferences
+            | null -> fallback
+            | _ -> f editorOptions
+
+        member this.AreFSharpInMemoryCrossProjectReferencesEnabled =
+            this.GetEditorOptions (fun o -> o.LanguageServicePerformance.EnableInMemoryCrossProjectReferences) true
 
         member this.IsFSharpCodeFixesAlwaysPlaceOpensAtTopLevelEnabled =
-            let editorOptions = this.Solution.Workspace.Services.GetService<EditorOptions>()
-            match box editorOptions with
-            | null -> false
-            | _ -> editorOptions.CodeFixes.AlwaysPlaceOpensAtTopLevel
+            this.GetEditorOptions (fun o -> o.CodeFixes.AlwaysPlaceOpensAtTopLevel) false
 
         member this.IsFSharpCodeFixesUnusedDeclarationsEnabled =
-            let editorOptions = this.Solution.Workspace.Services.GetService<EditorOptions>()
-            match box editorOptions with
-            | null -> false
-            | _ -> editorOptions.CodeFixes.UnusedDeclarations
+            this.GetEditorOptions (fun o -> o.CodeFixes.UnusedDeclarations) false
 
         member this.IsFSharpStaleCompletionResultsEnabled =
-            let editorOptions = this.Solution.Workspace.Services.GetService<EditorOptions>()
-            match box editorOptions with
-            | null -> false
-            | _ -> editorOptions.LanguageServicePerformance.AllowStaleCompletionResults
+            this.GetEditorOptions (fun o -> o.LanguageServicePerformance.AllowStaleCompletionResults) false
 
         member this.FSharpTimeUntilStaleCompletion =
-            let editorOptions = this.Solution.Workspace.Services.GetService<EditorOptions>()
-            match box editorOptions with
-            | null -> 0
-            | _ -> editorOptions.LanguageServicePerformance.TimeUntilStaleCompletion
+            this.GetEditorOptions (fun o -> o.LanguageServicePerformance.TimeUntilStaleCompletion) 0
 
         member this.IsFSharpCodeFixesSimplifyNameEnabled =
-            let editorOptions = this.Solution.Workspace.Services.GetService<EditorOptions>()
-            match box editorOptions with
-            | null -> false
-            | _ -> editorOptions.CodeFixes.SimplifyName
+            this.GetEditorOptions (fun o -> o.CodeFixes.SimplifyName) false
 
         member this.IsFSharpCodeFixesUnusedOpensEnabled =
-            let editorOptions = this.Solution.Workspace.Services.GetService<EditorOptions>()
-            match box editorOptions with
-            | null -> false
-            | _ -> editorOptions.CodeFixes.UnusedOpens
+            this.GetEditorOptions (fun o -> o.CodeFixes.UnusedOpens) false
 
         member this.IsFSharpBlockStructureEnabled =
-            let editorOptions = this.Solution.Workspace.Services.GetService<EditorOptions>()
-            match box editorOptions with
-            | null -> false
-            | _ -> editorOptions.Advanced.IsBlockStructureEnabled
+            this.GetEditorOptions (fun o -> o.Advanced.IsBlockStructureEnabled) false
+
+        member this.IsFastFindReferencesEnabled =
+            this.GetEditorOptions (fun o -> o.LanguageServicePerformance.EnableFastFindReferences) false

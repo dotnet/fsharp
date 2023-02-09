@@ -12,7 +12,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 6:0:0:0
+  .ver 7:0:0:0
 }
 .assembly extern netstandard
 {
@@ -26,29 +26,29 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 01 00 00 00 00 ) 
+  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 01 01 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.StaticInit_Struct01
 {
-  // Offset: 0x00000000 Length: 0x000007E4
+  // Offset: 0x00000000 Length: 0x000007DC
   // WARNING: managed resource file FSharpSignatureData.StaticInit_Struct01 created
 }
 .mresource public FSharpOptimizationData.StaticInit_Struct01
 {
-  // Offset: 0x000007E8 Length: 0x0000021F
+  // Offset: 0x000007E0 Length: 0x0000021F
   // WARNING: managed resource file FSharpOptimizationData.StaticInit_Struct01 created
 }
 .module StaticInit_Struct01.exe
-// MVID: {624CD11E-1F68-8E9A-A745-03831ED14C62}
+// MVID: {63DBF6B5-3DFD-FC11-A745-0383B5F6DB63}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x034B0000
+// Image base: 0x000001BFC9CE0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -332,4 +332,4 @@
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
-// WARNING: Created Win32 resource file c:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Release\net472\tests\EmittedIL\StaticInit\StaticInit_Struct01_fs\StaticInit_Struct01.res
+// WARNING: Created Win32 resource file D:\code\FS\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Release\net472\tests\EmittedIL\StaticInit\StaticInit_Struct01_fs\StaticInit_Struct01.res

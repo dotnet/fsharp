@@ -2,8 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0</TargetFramework>
-    <DefineConstants>INTERNALIZED_FSLEXYACC_RUNTIME;$(DefineConstants)</DefineConstants>
+    <TargetFramework>net7.0</TargetFramework>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <UseAppHost Condition="'$(DotNetBuildFromSource)' == 'true'">false</UseAppHost>
   </PropertyGroup>
@@ -18,6 +17,7 @@
     <Compile Include="fsyaccast.fs" />
     <Compile Include="fsyaccpars.fs" />
     <Compile Include="fsyacclex.fs" />
+    <Compile Include="fsyaccdriver.fs" />
     <Compile Include="fsyacc.fs" />
   </ItemGroup>
 

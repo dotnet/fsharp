@@ -29,8 +29,6 @@ module FSharpSymbolPatterns =
                     res)))
             |> Option.isSome
 
-    let UnnamedUnionFieldRegex = Regex("^Item(\d+)?$", RegexOptions.Compiled)
-    
     let (|AbbreviatedType|_|) (entity: FSharpEntity) =
         if entity.IsFSharpAbbreviation then Some entity.AbbreviatedType
         else None
@@ -43,7 +41,7 @@ module FSharpSymbolPatterns =
         if entity.IsFSharpAbbreviation then
             match entity.AbbreviatedType with
             | TypeWithDefinition def -> getEntityAbbreviatedType def
-            | abbreviatedType -> entity, Some abbreviatedType
+            | abbreviatedTy -> entity, Some abbreviatedTy
         else entity, None
 
     let (|Attribute|_|) (entity: FSharpEntity) =
@@ -151,12 +149,12 @@ module FSharpSymbolPatterns =
             | _ -> false
         if isMutable then Some() else None
 
-    /// Entity (originalEntity, abbreviatedEntity, abbreviatedType)
+    /// Entity (originalEntity, abbreviatedEntity, abbreviatedTy)
     let (|FSharpEntity|_|) (symbol: FSharpSymbol) =
         match symbol with
         | :? FSharpEntity as entity -> 
-            let abbreviatedEntity, abbreviatedType = getEntityAbbreviatedType entity
-            Some (entity, abbreviatedEntity, abbreviatedType)
+            let abbreviatedEntity, abbreviatedTy = getEntityAbbreviatedType entity
+            Some (entity, abbreviatedEntity, abbreviatedTy)
         | _ -> None
 
     let (|Parameter|_|) (symbol: FSharpSymbol) = 

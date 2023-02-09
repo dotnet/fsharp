@@ -106,6 +106,8 @@ type FSharpSymbol =
     member DisplayNameCore: string
 
     /// Gets the display name for the symbol. Double backticks are added if the name is not a valid identifier.
+    ///
+    /// For FSharpParameter symbols without a name for the paramater, this returns "````"
     member DisplayName: string
 
     /// Get the implementation location for the symbol if it was declared in a signature that has an implementation
@@ -214,6 +216,9 @@ type FSharpEntity =
 
     /// Get the fully qualified name of the type or module
     member QualifiedName: string
+
+    /// The fully qualified name of the type or module without strong assembly name.
+    member BasicQualifiedName: string
 
     /// Get the full name of the type or module
     member FullName: string
@@ -343,6 +348,9 @@ type FSharpEntity =
 
     /// Get the type abbreviated by an F# type abbreviation
     member AbbreviatedType: FSharpType
+
+    /// Instantiates FSharpType
+    member AsType: unit -> FSharpType
 
     /// Get the cases of a union type
     member UnionCases: IList<FSharpUnionCase>
@@ -487,7 +495,7 @@ type FSharpAnonRecordTypeDetails =
     member CompiledName: string
 
     /// The sorted labels of the anonymous type
-    member SortedFieldNames: string []
+    member SortedFieldNames: string[]
 
 /// A subtype of FSharpSymbol that represents a record or union case field as seen by the F# language
 [<Class>]
@@ -504,7 +512,7 @@ type FSharpField =
     member IsAnonRecordField: bool
 
     /// If the field is from an anonymous record type then get the details of the field including the index in the sorted array of fields
-    member AnonRecordFieldDetails: FSharpAnonRecordTypeDetails * FSharpType [] * int
+    member AnonRecordFieldDetails: FSharpAnonRecordTypeDetails * FSharpType[] * int
 
     /// Indicates if the field is declared in a union case
     member IsUnionCaseField: bool
@@ -635,6 +643,8 @@ type FSharpStaticParameter =
 /// Represents further information about a member constraint on a generic type parameter
 [<Class; NoEquality; NoComparison>]
 type FSharpGenericParameterMemberConstraint =
+
+    inherit FSharpSymbol
 
     /// Get the types that may be used to satisfy the constraint
     member MemberSources: IList<FSharpType>
@@ -806,6 +816,9 @@ type FSharpMemberOrFunctionOrValue =
     /// Indicates if this is a method member
     member IsMethod: bool
 
+    /// Indicates if the value has a signature file counterpart
+    member HasSignatureFile: bool
+
     /// Indicates if this is a property and there exists an associated getter method
     member HasGetterMethod: bool
 
@@ -929,8 +942,8 @@ type FSharpMemberOrFunctionOrValue =
     /// Indicated if this is a value compiled to a method
     member IsValCompiledAsMethod: bool
 
-    /// Indicates if this is a function
-    member IsFunction: bool
+    /// Indicates if this is a ref cell
+    member IsRefCell: bool
 
     /// Indicated if this is a value
     member IsValue: bool
@@ -942,10 +955,10 @@ type FSharpMemberOrFunctionOrValue =
     member IsConstructor: bool
 
     /// Format the type using the rules of the given display context
-    member FormatLayout: displayContext: FSharpDisplayContext -> TaggedText []
+    member FormatLayout: displayContext: FSharpDisplayContext -> TaggedText[]
 
     /// Format the type using the rules of the given display context
-    member GetReturnTypeLayout: displayContext: FSharpDisplayContext -> TaggedText [] option
+    member GetReturnTypeLayout: displayContext: FSharpDisplayContext -> TaggedText[] option
 
     /// Check if this method has an entrpoint that accepts witness arguments and if so return
     /// the name of that entrypoint and information about the additional witness arguments
@@ -958,7 +971,7 @@ type FSharpMemberOrFunctionOrValue =
     member TryGetFullDisplayName: unit -> string option
 
     /// Full operator compiled name.
-    member TryGetFullCompiledOperatorNameIdents: unit -> string [] option
+    member TryGetFullCompiledOperatorNameIdents: unit -> string[] option
 
 /// A subtype of FSharpSymbol that represents a parameter
 [<Class>]
@@ -989,7 +1002,6 @@ type FSharpParameter =
 
     /// Indicate this is an optional argument
     member IsOptionalArg: bool
-
 
 /// A subtype of FSharpSymbol that represents a single case within an active pattern
 [<Class>]
@@ -1089,10 +1101,10 @@ type FSharpType =
     member FormatWithConstraints: context: FSharpDisplayContext -> string
 
     /// Format the type using the rules of the given display context
-    member FormatLayout: context: FSharpDisplayContext -> TaggedText []
+    member FormatLayout: context: FSharpDisplayContext -> TaggedText[]
 
     /// Format the type - with constraints - using the rules of the given display context
-    member FormatLayoutWithConstraints: context: FSharpDisplayContext -> TaggedText []
+    member FormatLayoutWithConstraints: context: FSharpDisplayContext -> TaggedText[]
 
     /// Instantiate generic type parameters in a type
     member Instantiate: (FSharpGenericParameter * FSharpType) list -> FSharpType
@@ -1104,6 +1116,12 @@ type FSharpType =
     /// Get the base type, if any, taking into account the instantiation of this type
     /// if it is an instantiation of a generic type.
     member BaseType: FSharpType option
+
+    /// Canonical form of the type with abbreviations, measures, and F# tuples and functions erased.
+    member ErasedType: FSharpType
+
+    /// The fully qualified name of the type or module without strong assembly name.
+    member BasicQualifiedName: string
 
     /// Adjust the type by removing any occurrences of type inference variables, replacing them
     /// systematically with lower-case type inference variables such as <c>'a</c>.

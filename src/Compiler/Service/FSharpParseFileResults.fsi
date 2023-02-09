@@ -40,7 +40,7 @@ type public FSharpParseFileResults =
     member TryRangeOfFunctionOrMethodBeingApplied: pos: pos -> range option
 
     /// Gets the ranges of all arguments, if they can be found, for a function application at the given position.
-    member GetAllArgumentsForFunctionApplicationAtPostion: pos: pos -> range list option
+    member GetAllArgumentsForFunctionApplicationAtPosition: pos: pos -> range list option
 
     /// <summary>
     /// Given the position of an expression, attempts to find the range of the
@@ -74,14 +74,14 @@ type public FSharpParseFileResults =
     member ValidateBreakpointLocation: pos: pos -> range option
 
     /// When these files change then the build is invalid
-    member DependencyFiles: string []
+    member DependencyFiles: string[]
 
     /// Get the errors and warnings for the parse
-    member Diagnostics: FSharpDiagnostic []
+    member Diagnostics: FSharpDiagnostic[]
 
     /// Indicates if any errors occurred during the parse
     member ParseHadErrors: bool
 
     internal new:
-        diagnostics: FSharpDiagnostic [] * input: ParsedInput * parseHadErrors: bool * dependencyFiles: string [] ->
+        diagnostics: FSharpDiagnostic[] * input: ParsedInput * parseHadErrors: bool * dependencyFiles: string[] ->
             FSharpParseFileResults

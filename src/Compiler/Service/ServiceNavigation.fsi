@@ -37,7 +37,7 @@ type public NavigationEntityKind =
 /// Represents an item to be displayed in the navigation bar
 [<Sealed>]
 type public NavigationItem =
-    member Name: string
+    member LogicalName: string
 
     member UniqueName: string
 
@@ -62,14 +62,14 @@ type public NavigationItem =
 [<NoEquality; NoComparison>]
 type public NavigationTopLevelDeclaration =
     { Declaration: NavigationItem
-      Nested: NavigationItem [] }
+      Nested: NavigationItem[] }
 
 /// Represents result of 'GetNavigationItems' operation - this contains
 /// all the members and currently selected indices. First level correspond to
 /// types & modules and second level are methods etc.
 [<Sealed>]
 type public NavigationItems =
-    member Declarations: NavigationTopLevelDeclaration []
+    member Declarations: NavigationTopLevelDeclaration[]
 
 // Functionality to access navigable F# items.
 module public Navigation =
@@ -99,15 +99,21 @@ type NavigableContainerType =
     | Exception
 
 type NavigableContainer =
-    { Type: NavigableContainerType
-      Name: string }
+    {
+        /// The kind of container.
+        Type: NavigableContainerType
+
+        /// If Type = File, this is the name of the file
+        /// In other cases it is the logical name of the entity.
+        LogicalName: string
+    }
 
 type NavigableItem =
-    { Name: string
+    { LogicalName: string
       Range: range
       IsSignature: bool
       Kind: NavigableItemKind
       Container: NavigableContainer }
 
 module public NavigateTo =
-    val GetNavigableItems: ParsedInput -> NavigableItem []
+    val GetNavigableItems: ParsedInput -> NavigableItem[]

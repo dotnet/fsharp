@@ -128,10 +128,10 @@ module internal ResizeArray =
     val sortBy: ('T -> 'Key) -> ResizeArray<'T> -> unit when 'Key: comparison
 
     /// Return a fixed-length array containing the elements of the input <c>ResizeArray</c>.
-    val toArray: ResizeArray<'T> -> 'T []
+    val toArray: ResizeArray<'T> -> 'T[]
 
     /// Build a <c>ResizeArray</c> from the given elements.
-    val ofArray: 'T [] -> ResizeArray<'T>
+    val ofArray: 'T[] -> ResizeArray<'T>
 
     /// Return a view of the array as an enumerable object.
     val toSeq: ResizeArray<'T> -> seq<'T>

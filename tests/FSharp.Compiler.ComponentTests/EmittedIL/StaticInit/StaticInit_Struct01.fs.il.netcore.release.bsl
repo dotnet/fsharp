@@ -7,12 +7,12 @@
 .assembly extern System.Runtime
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 6:0:0:0
+  .ver 7:0:0:0
 }
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 6:0:0:0
+  .ver 7:0:0:0
 }
 .assembly extern netstandard
 {
@@ -26,29 +26,29 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [System.Runtime]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 01 00 00 00 00 ) 
+  //  .custom instance void [System.Runtime]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 01 01 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.StaticInit_Struct01
 {
-  // Offset: 0x00000000 Length: 0x000007EA
+  // Offset: 0x00000000 Length: 0x000007E2
   // WARNING: managed resource file FSharpSignatureData.StaticInit_Struct01 created
 }
 .mresource public FSharpOptimizationData.StaticInit_Struct01
 {
-  // Offset: 0x000007F0 Length: 0x00000225
+  // Offset: 0x000007E8 Length: 0x00000225
   // WARNING: managed resource file FSharpOptimizationData.StaticInit_Struct01 created
 }
 .module StaticInit_Struct01.exe
-// MVID: {624CCD3E-86F5-930A-A745-03833ECD4C62}
+// MVID: {63DBF1DE-96CA-184C-A745-0383DEF1DB63}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00000190B37A0000
+// Image base: 0x000001A367510000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -72,7 +72,7 @@
     .method public hidebysig virtual final 
             instance int32  CompareTo(valuetype StaticInit_Struct01/C obj) cil managed
     {
-      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       27 (0x1b)
       .maxstack  4
       .locals init (valuetype StaticInit_Struct01/C& V_0,
@@ -93,7 +93,7 @@
     .method public hidebysig virtual final 
             instance int32  CompareTo(object obj) cil managed
     {
-      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       13 (0xd)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -107,7 +107,7 @@
             instance int32  CompareTo(object obj,
                                       class [System.Runtime]System.Collections.IComparer comp) cil managed
     {
-      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       30 (0x1e)
       .maxstack  4
       .locals init (valuetype StaticInit_Struct01/C V_0,
@@ -132,7 +132,7 @@
     .method public hidebysig virtual final 
             instance int32  GetHashCode(class [System.Runtime]System.Collections.IEqualityComparer comp) cil managed
     {
-      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       31 (0x1f)
       .maxstack  7
       .locals init (int32 V_0)
@@ -161,7 +161,7 @@
     .method public hidebysig virtual final 
             instance int32  GetHashCode() cil managed
     {
-      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       12 (0xc)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -174,7 +174,7 @@
             instance bool  Equals(object obj,
                                   class [System.Runtime]System.Collections.IEqualityComparer comp) cil managed
     {
-      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       45 (0x2d)
       .maxstack  4
       .locals init (object V_0,
@@ -221,7 +221,7 @@
 
     .method assembly static int32  f() cil managed
     {
-      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       38 (0x26)
       .maxstack  8
       IL_0000:  nop
@@ -246,7 +246,7 @@
     .method public hidebysig virtual final 
             instance bool  Equals(valuetype StaticInit_Struct01/C obj) cil managed
     {
-      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       21 (0x15)
       .maxstack  4
       .locals init (valuetype StaticInit_Struct01/C& V_0)
@@ -264,7 +264,7 @@
     .method public hidebysig virtual final 
             instance bool  Equals(object obj) cil managed
     {
-      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       30 (0x1e)
       .maxstack  4
       .locals init (object V_0,
@@ -332,4 +332,4 @@
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
-// WARNING: Created Win32 resource file c:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Release\net6.0\tests\EmittedIL\StaticInit\StaticInit_Struct01_fs\StaticInit_Struct01.res
+// WARNING: Created Win32 resource file D:\code\FS\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Release\net7.0\tests\EmittedIL\StaticInit\StaticInit_Struct01_fs\StaticInit_Struct01.res

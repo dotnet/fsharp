@@ -87,7 +87,7 @@ type public FsiEvaluationSessionHostConfig =
 
     /// The evaluation session calls this to report the preferred view of the command line arguments after
     /// stripping things like "/use:file.fsx", "-r:Foo.dll" etc.
-    abstract ReportUserCommandLineArgs: string [] -> unit
+    abstract ReportUserCommandLineArgs: string[] -> unit
 
     /// Hook for listening for evaluation bindings
     member OnEvaluation: IEvent<EvaluationEventArgs>
@@ -132,8 +132,8 @@ type public FsiEvaluationSessionHostConfig =
 [<Class>]
 type FsiCompilationException =
     inherit Exception
-    new: string * FSharpDiagnostic [] option -> FsiCompilationException
-    member ErrorInfos: FSharpDiagnostic [] option
+    new: string * FSharpDiagnostic[] option -> FsiCompilationException
+    member ErrorInfos: FSharpDiagnostic[] option
 
 /// Represents an F# Interactive evaluation session.
 [<Class>]
@@ -152,7 +152,7 @@ type FsiEvaluationSession =
     /// <param name="legacyReferenceResolver">An optional resolver for legacy MSBuild references</param>
     static member Create:
         fsiConfig: FsiEvaluationSessionHostConfig *
-        argv: string [] *
+        argv: string[] *
         inReader: TextReader *
         outWriter: TextWriter *
         errorWriter: TextWriter *
@@ -180,13 +180,35 @@ type FsiEvaluationSession =
 
     /// Execute the code as if it had been entered as one or more interactions, with an
     /// implicit termination at the end of the input. Stop on first error, discarding the rest
+    /// of the input. Errors are sent to the output writer, a 'true' return value indicates there
+    /// were no errors overall. Execution is performed on the 'Run()' thread.
+    ///
+    /// Due to a current limitation, it is not fully thread-safe to run this operation concurrently with evaluation triggered
+    /// by input from 'stdin'.
+    /// The scriptFileName parameter is used to report errors including this file name.
+    member EvalInteraction: code: string * scriptFileName: string * ?cancellationToken: CancellationToken -> unit
+
+    /// Execute the code as if it had been entered as one or more interactions, with an
+    /// implicit termination at the end of the input. Stop on first error, discarding the rest
     /// of the input. Errors and warnings are collected apart from any exception arising from execution
     /// which is returned via a Choice. Execution is performed on the 'Run()' thread.
     ///
     /// Due to a current limitation, it is not fully thread-safe to run this operation concurrently with evaluation triggered
     /// by input from 'stdin'.
     member EvalInteractionNonThrowing:
-        code: string * ?cancellationToken: CancellationToken -> Choice<FsiValue option, exn> * FSharpDiagnostic []
+        code: string * ?cancellationToken: CancellationToken -> Choice<FsiValue option, exn> * FSharpDiagnostic[]
+
+    /// Execute the code as if it had been entered as one or more interactions, with an
+    /// implicit termination at the end of the input. Stop on first error, discarding the rest
+    /// of the input. Errors and warnings are collected apart from any exception arising from execution
+    /// which is returned via a Choice. Execution is performed on the 'Run()' thread.
+    ///
+    /// Due to a current limitation, it is not fully thread-safe to run this operation concurrently with evaluation triggered
+    /// by input from 'stdin'.
+    /// The scriptFileName parameter is used to report errors including this file name.
+    member EvalInteractionNonThrowing:
+        code: string * scriptFileName: string * ?cancellationToken: CancellationToken ->
+            Choice<FsiValue option, exn> * FSharpDiagnostic[]
 
     /// Execute the given script. Stop on first error, discarding the rest
     /// of the script. Errors are sent to the output writer, a 'true' return value indicates there
@@ -202,7 +224,7 @@ type FsiEvaluationSession =
     ///
     /// Due to a current limitation, it is not fully thread-safe to run this operation concurrently with evaluation triggered
     /// by input from 'stdin'.
-    member EvalScriptNonThrowing: filePath: string -> Choice<unit, exn> * FSharpDiagnostic []
+    member EvalScriptNonThrowing: filePath: string -> Choice<unit, exn> * FSharpDiagnostic[]
 
     /// Execute the code as if it had been entered as one or more interactions, with an
     /// implicit termination at the end of the input. Stop on first error, discarding the rest
@@ -215,13 +237,35 @@ type FsiEvaluationSession =
 
     /// Execute the code as if it had been entered as one or more interactions, with an
     /// implicit termination at the end of the input. Stop on first error, discarding the rest
+    /// of the input. Errors are sent to the output writer. Parsing is performed on the current thread, and execution is performed
+    /// synchronously on the 'main' thread.
+    ///
+    /// Due to a current limitation, it is not fully thread-safe to run this operation concurrently with evaluation triggered
+    /// by input from 'stdin'.
+    /// The scriptFileName parameter is used to report errors including this file name.
+    member EvalExpression: code: string * scriptFileName: string -> FsiValue option
+
+    /// Execute the code as if it had been entered as one or more interactions, with an
+    /// implicit termination at the end of the input. Stop on first error, discarding the rest
     /// of the input. Errors and warnings are collected apart from any exception arising from execution
     /// which is returned via a Choice. Parsing is performed on the current thread, and execution is performed
     /// synchronously on the 'main' thread.
     ///
     /// Due to a current limitation, it is not fully thread-safe to run this operation concurrently with evaluation triggered
     /// by input from 'stdin'.
-    member EvalExpressionNonThrowing: code: string -> Choice<FsiValue option, exn> * FSharpDiagnostic []
+    member EvalExpressionNonThrowing: code: string -> Choice<FsiValue option, exn> * FSharpDiagnostic[]
+
+    /// Execute the code as if it had been entered as one or more interactions, with an
+    /// implicit termination at the end of the input. Stop on first error, discarding the rest
+    /// of the input. Errors and warnings are collected apart from any exception arising from execution
+    /// which is returned via a Choice. Parsing is performed on the current thread, and execution is performed
+    /// synchronously on the 'main' thread.
+    ///
+    /// Due to a current limitation, it is not fully thread-safe to run this operation concurrently with evaluation triggered
+    /// by input from 'stdin'.
+    /// The scriptFileName parameter is used to report errors including this file name.
+    member EvalExpressionNonThrowing:
+        code: string * scriptFileName: string -> Choice<FsiValue option, exn> * FSharpDiagnostic[]
 
     /// Format a value to a string using the current PrintDepth, PrintLength etc settings provided by the active fsi configuration object
     member FormatValue: reflectionValue: obj * reflectionType: Type -> string
@@ -251,7 +295,7 @@ type FsiEvaluationSession =
     member CurrentPartialAssemblySignature: FSharpAssemblySignature
 
     /// Get all the dynamically generated assemblies
-    member DynamicAssemblies: System.Reflection.Assembly []
+    member DynamicAssemblies: System.Reflection.Assembly[]
 
     /// A host calls this to determine if the --gui parameter is active
     member IsGui: bool
@@ -316,7 +360,7 @@ module Settings =
         /// <summary>Schedule a restart for the event loop.</summary>
         abstract ScheduleRestart: unit -> unit
 
-    /// <summary>Operations supported by the currently executing F# Interactive session.</summary>
+    /// Operations supported by the currently executing F# Interactive session.
     [<Sealed>]
     type InteractiveSettings =
         /// <summary>Get or set the floating point format used in the output of the interactive session.</summary>
@@ -354,13 +398,12 @@ module Settings =
 
         member internal AddedPrinters: Choice<Type * (obj -> string), Type * (obj -> obj)> list
 
-
         /// <summary>The command line arguments after ignoring the arguments relevant to the interactive
         /// environment and replacing the first argument with the name of the last script file,
         /// if any. Thus 'fsi.exe test1.fs test2.fs -- hello goodbye' will give arguments
         /// 'test2.fs', 'hello', 'goodbye'.  This value will normally be different to those
         /// returned by System.Environment.GetCommandLineArgs.</summary>
-        member CommandLineArgs: string [] with get, set
+        member CommandLineArgs: string[] with get, set
 
         /// <summary>Gets or sets a the current event loop being used to process interactions.</summary>
         member EventLoop: IEventLoop with get, set
