@@ -48,7 +48,7 @@ let ParseFile fileName =
     let ast = parseSourceCode (fileName, contents)
 
     let normalize (s: string) = s.Replace("\r", "")
-    let actual = sprintf "%A" ast |> normalize
+    let actual = sprintf "%A" ast |> normalize |> sprintf "%s\n"
     let bslPath = $"{fullPath}.bsl"
 
     let expected =
