@@ -132,21 +132,21 @@ let ErrorWithSuggestions ((n, message), m, id, suggestions) =
 let ErrorEnabledWithLanguageFeature ((n, message), m, enabledByLangFeature) =
     DiagnosticEnabledWithLanguageFeature (n, message, m, enabledByLangFeature)
 
-let inline protectAssemblyExploration dflt ([<InlineIfLambda>] f) =
+let inline protectAssemblyExploration dflt f =
     try
         f ()
     with
     | UnresolvedPathReferenceNoRange _ -> dflt
     | _ -> reraise ()
 
-let inline protectAssemblyExplorationF dflt ([<InlineIfLambda>] f) =
+let inline protectAssemblyExplorationF dflt f =
     try
         f ()
     with
     | UnresolvedPathReferenceNoRange (asmName, path) -> dflt (asmName, path)
     | _ -> reraise ()
 
-let inline protectAssemblyExplorationNoReraise dflt1 dflt2 ([<InlineIfLambda>] f) =
+let inline protectAssemblyExplorationNoReraise dflt1 dflt2 f =
     try
         f ()
     with
