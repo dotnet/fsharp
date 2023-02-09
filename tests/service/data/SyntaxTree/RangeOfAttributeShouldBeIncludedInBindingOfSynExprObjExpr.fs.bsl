@@ -12,15 +12,15 @@ ImplFile
                 (LongIdent
                    (SynLongIdent
                       ([System; Object],
-                       [/root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (1,12--1,13)],
+                       [/root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (2,12--2,13)],
                        [None; None])),
                  Some
                    (Const
                       (Unit,
-                       /root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (1,19--1,21)),
+                       /root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (2,19--2,21)),
                     None),
                  Some
-                   /root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (1,22--1,26),
+                   /root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (2,22--2,26),
                  [],
                  [Member
                     (SynBinding
@@ -30,14 +30,14 @@ ImplFile
                                ArgExpr =
                                 Const
                                   (Unit,
-                                   /root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (2,6--2,9))
+                                   /root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (3,6--3,9))
                                Target = None
                                AppliesToGetterAndSetter = false
                                Range =
-                                /root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (2,6--2,9) }]
+                                /root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (3,6--3,9) }]
                            Range =
-                            /root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (2,4--2,11) }],
-                        PreXmlDoc ((2,4), FSharp.Compiler.Xml.XmlDocCollector),
+                            /root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (3,4--3,11) }],
+                        PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),
                         SynValData
                           (Some { IsInstance = true
                                   IsDispatchSlot = false
@@ -51,38 +51,38 @@ ImplFile
                         LongIdent
                           (SynLongIdent
                              ([x; ToString],
-                              [/root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (3,12--3,13)],
+                              [/root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (4,12--4,13)],
                               [None; None]), None, None,
                            Pats
                              [Paren
                                 (Const
                                    (Unit,
-                                    /root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (3,21--3,23)),
-                                 /root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (3,21--3,23))],
+                                    /root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (4,21--4,23)),
+                                 /root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (4,21--4,23))],
                            None,
-                           /root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (3,11--3,23)),
+                           /root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (4,11--4,23)),
                         None,
                         Const
                           (String
                              ("F#", Regular,
-                              /root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (3,26--3,30)),
-                           /root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (3,26--3,30)),
-                        /root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (2,4--3,23),
+                              /root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (4,26--4,30)),
+                           /root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (4,26--4,30)),
+                        /root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (3,4--4,23),
                         NoneAtInvisible,
                         { LeadingKeyword =
                            Member
-                             /root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (3,4--3,10)
+                             /root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (4,4--4,10)
                           InlineKeyword = None
                           EqualsRange =
                            Some
-                             /root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (3,24--3,25) }),
-                     /root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (2,4--3,30))],
+                             /root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (4,24--4,25) }),
+                     /root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (3,4--4,30))],
                  [],
-                 /root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (1,2--1,21),
-                 /root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (1,0--3,32)),
-              /root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (1,0--3,32))],
+                 /root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (2,2--2,21),
+                 /root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (2,0--4,32)),
+              /root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (2,0--4,32))],
           PreXmlDocEmpty, [], None,
-          /root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (1,0--3,32),
+          /root/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs (2,0--4,32),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

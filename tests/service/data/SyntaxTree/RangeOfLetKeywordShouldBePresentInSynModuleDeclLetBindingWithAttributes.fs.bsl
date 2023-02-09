@@ -17,39 +17,39 @@ ImplFile
                          ArgExpr =
                           Const
                             (Unit,
-                             /root/RangeOfLetKeywordShouldBePresentInSynModuleDeclLetBindingWithAttributes.fs (2,2--2,15))
+                             /root/RangeOfLetKeywordShouldBePresentInSynModuleDeclLetBindingWithAttributes.fs (3,2--3,15))
                          Target = None
                          AppliesToGetterAndSetter = false
                          Range =
-                          /root/RangeOfLetKeywordShouldBePresentInSynModuleDeclLetBindingWithAttributes.fs (2,2--2,15) }]
+                          /root/RangeOfLetKeywordShouldBePresentInSynModuleDeclLetBindingWithAttributes.fs (3,2--3,15) }]
                      Range =
-                      /root/RangeOfLetKeywordShouldBePresentInSynModuleDeclLetBindingWithAttributes.fs (2,0--2,17) }],
-                  PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
+                      /root/RangeOfLetKeywordShouldBePresentInSynModuleDeclLetBindingWithAttributes.fs (3,0--3,17) }],
+                  PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
                     (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
                   Named
                     (SynIdent (v, None), false, None,
-                     /root/RangeOfLetKeywordShouldBePresentInSynModuleDeclLetBindingWithAttributes.fs (4,4--4,5)),
+                     /root/RangeOfLetKeywordShouldBePresentInSynModuleDeclLetBindingWithAttributes.fs (5,4--5,5)),
                   None,
                   Const
                     (Int32 12,
-                     /root/RangeOfLetKeywordShouldBePresentInSynModuleDeclLetBindingWithAttributes.fs (4,8--4,10)),
-                  /root/RangeOfLetKeywordShouldBePresentInSynModuleDeclLetBindingWithAttributes.fs (1,0--4,5),
+                     /root/RangeOfLetKeywordShouldBePresentInSynModuleDeclLetBindingWithAttributes.fs (5,8--5,10)),
+                  /root/RangeOfLetKeywordShouldBePresentInSynModuleDeclLetBindingWithAttributes.fs (2,0--5,5),
                   Yes
-                    /root/RangeOfLetKeywordShouldBePresentInSynModuleDeclLetBindingWithAttributes.fs (2,0--4,10),
+                    /root/RangeOfLetKeywordShouldBePresentInSynModuleDeclLetBindingWithAttributes.fs (3,0--5,10),
                   { LeadingKeyword =
                      Let
-                       /root/RangeOfLetKeywordShouldBePresentInSynModuleDeclLetBindingWithAttributes.fs (4,0--4,3)
+                       /root/RangeOfLetKeywordShouldBePresentInSynModuleDeclLetBindingWithAttributes.fs (5,0--5,3)
                     InlineKeyword = None
                     EqualsRange =
                      Some
-                       /root/RangeOfLetKeywordShouldBePresentInSynModuleDeclLetBindingWithAttributes.fs (4,6--4,7) })],
-              /root/RangeOfLetKeywordShouldBePresentInSynModuleDeclLetBindingWithAttributes.fs (1,0--4,10))],
+                       /root/RangeOfLetKeywordShouldBePresentInSynModuleDeclLetBindingWithAttributes.fs (5,6--5,7) })],
+              /root/RangeOfLetKeywordShouldBePresentInSynModuleDeclLetBindingWithAttributes.fs (2,0--5,10))],
           PreXmlDocEmpty, [], None,
-          /root/RangeOfLetKeywordShouldBePresentInSynModuleDeclLetBindingWithAttributes.fs (2,0--4,10),
+          /root/RangeOfLetKeywordShouldBePresentInSynModuleDeclLetBindingWithAttributes.fs (3,0--6,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments =
          [LineComment
-            /root/RangeOfLetKeywordShouldBePresentInSynModuleDeclLetBindingWithAttributes.fs (3,0--3,15)] },
+            /root/RangeOfLetKeywordShouldBePresentInSynModuleDeclLetBindingWithAttributes.fs (4,0--4,15)] },
       set []))

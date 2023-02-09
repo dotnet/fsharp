@@ -1,3 +1,4 @@
+
 [<AbstractClass>]
 type CFoo() =
     abstract AbstractClassPropertySet: string with set

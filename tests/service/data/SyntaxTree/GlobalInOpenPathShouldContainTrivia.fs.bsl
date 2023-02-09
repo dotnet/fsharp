@@ -8,13 +8,13 @@ ImplFile
              (ModuleOrNamespace
                 (SynLongIdent
                    ([`global`; Node],
-                    [/root/GlobalInOpenPathShouldContainTrivia.fs (3,11--3,12)],
+                    [/root/GlobalInOpenPathShouldContainTrivia.fs (4,11--4,12)],
                     [Some (OriginalNotation "global"); None]),
-                 /root/GlobalInOpenPathShouldContainTrivia.fs (3,5--3,16)),
-              /root/GlobalInOpenPathShouldContainTrivia.fs (3,0--3,16))],
+                 /root/GlobalInOpenPathShouldContainTrivia.fs (4,5--4,16)),
+              /root/GlobalInOpenPathShouldContainTrivia.fs (4,0--4,16))],
           PreXmlDocEmpty, [], None,
-          /root/GlobalInOpenPathShouldContainTrivia.fs (1,0--3,16),
+          /root/GlobalInOpenPathShouldContainTrivia.fs (2,0--4,16),
           { LeadingKeyword =
-             Namespace /root/GlobalInOpenPathShouldContainTrivia.fs (1,0--1,9) })],
+             Namespace /root/GlobalInOpenPathShouldContainTrivia.fs (2,0--2,9) })],
       (true, false), { ConditionalDirectives = []
                        CodeComments = [] }, set []))

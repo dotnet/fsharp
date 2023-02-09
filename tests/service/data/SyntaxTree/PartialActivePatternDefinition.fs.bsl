@@ -8,7 +8,7 @@ ImplFile
              (false,
               [SynBinding
                  (None, Normal, false, false, [],
-                  PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
+                  PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
                     (None,
                      SynValInfo
@@ -19,70 +19,70 @@ ImplFile
                        ([|Int32Const|_|], [],
                         [Some
                            (HasParenthesis
-                              (/root/PartialActivePatternDefinition.fs (1,4--1,5),
-                               /root/PartialActivePatternDefinition.fs (1,19--1,20)))]),
+                              (/root/PartialActivePatternDefinition.fs (2,4--2,5),
+                               /root/PartialActivePatternDefinition.fs (2,19--2,20)))]),
                      None, None,
                      Pats
                        [Paren
                           (Typed
                              (Named
                                 (SynIdent (a, None), false, None,
-                                 /root/PartialActivePatternDefinition.fs (1,22--1,23)),
+                                 /root/PartialActivePatternDefinition.fs (2,22--2,23)),
                               LongIdent (SynLongIdent ([SynConst], [], [None])),
-                              /root/PartialActivePatternDefinition.fs (1,22--1,33)),
-                           /root/PartialActivePatternDefinition.fs (1,21--1,34))],
-                     None, /root/PartialActivePatternDefinition.fs (1,4--1,34)),
+                              /root/PartialActivePatternDefinition.fs (2,22--2,33)),
+                           /root/PartialActivePatternDefinition.fs (2,21--2,34))],
+                     None, /root/PartialActivePatternDefinition.fs (2,4--2,34)),
                   None,
                   Match
-                    (Yes /root/PartialActivePatternDefinition.fs (1,37--1,49),
+                    (Yes /root/PartialActivePatternDefinition.fs (2,37--2,49),
                      Ident a,
                      [SynMatchClause
                         (LongIdent
                            (SynLongIdent
                               ([SynConst; Int32],
-                               [/root/PartialActivePatternDefinition.fs (1,58--1,59)],
+                               [/root/PartialActivePatternDefinition.fs (2,58--2,59)],
                                [None; None]), None, None,
                             Pats
                               [Wild
-                                 /root/PartialActivePatternDefinition.fs (1,65--1,66)],
+                                 /root/PartialActivePatternDefinition.fs (2,65--2,66)],
                             None,
-                            /root/PartialActivePatternDefinition.fs (1,50--1,66)),
+                            /root/PartialActivePatternDefinition.fs (2,50--2,66)),
                          None,
                          App
                            (NonAtomic, false, Ident Some, Ident a,
-                            /root/PartialActivePatternDefinition.fs (1,70--1,76)),
-                         /root/PartialActivePatternDefinition.fs (1,50--1,76),
+                            /root/PartialActivePatternDefinition.fs (2,70--2,76)),
+                         /root/PartialActivePatternDefinition.fs (2,50--2,76),
                          Yes,
                          { ArrowRange =
                             Some
-                              /root/PartialActivePatternDefinition.fs (1,67--1,69)
+                              /root/PartialActivePatternDefinition.fs (2,67--2,69)
                            BarRange = None });
                       SynMatchClause
                         (Wild
-                           /root/PartialActivePatternDefinition.fs (1,79--1,80),
+                           /root/PartialActivePatternDefinition.fs (2,79--2,80),
                          None, Ident None,
-                         /root/PartialActivePatternDefinition.fs (1,79--1,88),
+                         /root/PartialActivePatternDefinition.fs (2,79--2,88),
                          Yes,
                          { ArrowRange =
                             Some
-                              /root/PartialActivePatternDefinition.fs (1,81--1,83)
+                              /root/PartialActivePatternDefinition.fs (2,81--2,83)
                            BarRange =
                             Some
-                              /root/PartialActivePatternDefinition.fs (1,77--1,78) })],
-                     /root/PartialActivePatternDefinition.fs (1,37--1,88),
+                              /root/PartialActivePatternDefinition.fs (2,77--2,78) })],
+                     /root/PartialActivePatternDefinition.fs (2,37--2,88),
                      { MatchKeyword =
-                        /root/PartialActivePatternDefinition.fs (1,37--1,42)
+                        /root/PartialActivePatternDefinition.fs (2,37--2,42)
                        WithKeyword =
-                        /root/PartialActivePatternDefinition.fs (1,45--1,49) }),
-                  /root/PartialActivePatternDefinition.fs (1,4--1,34), NoneAtLet,
+                        /root/PartialActivePatternDefinition.fs (2,45--2,49) }),
+                  /root/PartialActivePatternDefinition.fs (2,4--2,34), NoneAtLet,
                   { LeadingKeyword =
-                     Let /root/PartialActivePatternDefinition.fs (1,0--1,3)
+                     Let /root/PartialActivePatternDefinition.fs (2,0--2,3)
                     InlineKeyword = None
                     EqualsRange =
-                     Some /root/PartialActivePatternDefinition.fs (1,35--1,36) })],
-              /root/PartialActivePatternDefinition.fs (1,0--1,88))],
+                     Some /root/PartialActivePatternDefinition.fs (2,35--2,36) })],
+              /root/PartialActivePatternDefinition.fs (2,0--2,88))],
           PreXmlDocEmpty, [], None,
-          /root/PartialActivePatternDefinition.fs (1,0--1,88),
+          /root/PartialActivePatternDefinition.fs (2,0--3,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

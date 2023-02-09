@@ -9,49 +9,49 @@ SigFile
           [Open
              (ModuleOrNamespace
                 (SynLongIdent ([System], [], [None]),
-                 /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (3,5--3,11)),
-              /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (3,0--3,11));
+                 /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (4,5--4,11)),
+              /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (4,0--4,11));
            Open
              (ModuleOrNamespace
                 (SynLongIdent
                    ([System; Collections; Generic],
-                    [/root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (4,11--4,12);
-                     /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (4,23--4,24)],
+                    [/root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (5,11--5,12);
+                     /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (5,23--5,24)],
                     [None; None; None]),
-                 /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (4,5--4,31)),
-              /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (4,0--4,31));
+                 /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (5,5--5,31)),
+              /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (5,0--5,31));
            Open
              (ModuleOrNamespace
                 (SynLongIdent
                    ([Microsoft; FSharp; Core],
-                    [/root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (5,14--5,15);
-                     /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (5,21--5,22)],
+                    [/root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (6,14--6,15);
+                     /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (6,21--6,22)],
                     [None; None; None]),
-                 /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (5,5--5,26)),
-              /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (5,0--5,26));
+                 /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (6,5--6,26)),
+              /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (6,0--6,26));
            Open
              (ModuleOrNamespace
                 (SynLongIdent
                    ([Microsoft; FSharp; Collections],
-                    [/root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (6,14--6,15);
-                     /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (6,21--6,22)],
+                    [/root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (7,14--7,15);
+                     /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (7,21--7,22)],
                     [None; None; None]),
-                 /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (6,5--6,33)),
-              /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (6,0--6,33));
+                 /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (7,5--7,33)),
+              /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (7,0--7,33));
            Open
              (ModuleOrNamespace
                 (SynLongIdent
                    ([System; Collections],
-                    [/root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (7,11--7,12)],
+                    [/root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (8,11--8,12)],
                     [None; None]),
-                 /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (7,5--7,23)),
-              /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (7,0--7,23));
+                 /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (8,5--8,23)),
+              /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (8,0--8,23));
            NestedModule
              (SynComponentInfo
                 ([], None, [], [Tuple],
-                 PreXmlDoc ((10,0), FSharp.Compiler.Xml.XmlDocCollector), false,
+                 PreXmlDoc ((11,0), FSharp.Compiler.Xml.XmlDocCollector), false,
                  None,
-                 /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (10,0--10,12)),
+                 /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (11,0--11,12)),
               false,
               [Types
                  ([SynTypeDefnSig
@@ -64,27 +64,27 @@ SigFile
                                 SynTyparDecl ([], SynTypar (T3, None, false));
                                 SynTyparDecl ([], SynTypar (T4, None, false))],
                                [],
-                               /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (12,14--12,31))),
+                               /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (13,14--13,31))),
                          [], [Tuple],
-                         PreXmlDoc ((12,4), FSharp.Compiler.Xml.XmlDocCollector),
+                         PreXmlDoc ((13,4), FSharp.Compiler.Xml.XmlDocCollector),
                          true, None,
-                         /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (12,9--12,14)),
+                         /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (13,9--13,14)),
                       ObjectModel
                         (Unspecified,
                          [Interface
                             (LongIdent
                                (SynLongIdent
                                   ([IStructuralEquatable], [], [None])),
-                             /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (13,8--13,38));
+                             /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (14,8--14,38));
                           Interface
                             (LongIdent
                                (SynLongIdent
                                   ([IStructuralComparable], [], [None])),
-                             /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (14,8--14,39));
+                             /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (15,8--15,39));
                           Interface
                             (LongIdent
                                (SynLongIdent ([IComparable], [], [None])),
-                             /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (15,8--15,29));
+                             /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (16,8--16,29));
                           Member
                             (SynValSig
                                ([], SynIdent (new, None),
@@ -95,65 +95,65 @@ SigFile
                                       [Type
                                          (Var
                                             (SynTypar (T1, None, false),
-                                             /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (16,14--16,17)));
+                                             /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (17,14--17,17)));
                                        Star
-                                         /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (16,18--16,19);
+                                         /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (17,18--17,19);
                                        Type
                                          (Var
                                             (SynTypar (T2, None, false),
-                                             /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (16,20--16,23)));
+                                             /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (17,20--17,23)));
                                        Star
-                                         /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (16,24--16,25);
+                                         /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (17,24--17,25);
                                        Type
                                          (Var
                                             (SynTypar (T3, None, false),
-                                             /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (16,26--16,29)));
+                                             /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (17,26--17,29)));
                                        Star
-                                         /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (16,30--16,31);
+                                         /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (17,30--17,31);
                                        Type
                                          (Var
                                             (SynTypar (T4, None, false),
-                                             /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (16,32--16,35)))],
-                                      /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (16,14--16,35)),
+                                             /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (17,32--17,35)))],
+                                      /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (17,14--17,35)),
                                    App
                                      (LongIdent
                                         (SynLongIdent ([Tuple], [], [None])),
                                       Some
-                                        /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (16,44--16,45),
+                                        /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (17,44--17,45),
                                       [Var
                                          (SynTypar (T1, None, false),
-                                          /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (16,45--16,48));
+                                          /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (17,45--17,48));
                                        Var
                                          (SynTypar (T2, None, false),
-                                          /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (16,49--16,52));
+                                          /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (17,49--17,52));
                                        Var
                                          (SynTypar (T3, None, false),
-                                          /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (16,53--16,56));
+                                          /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (17,53--17,56));
                                        Var
                                          (SynTypar (T4, None, false),
-                                          /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (16,57--16,60))],
-                                      [/root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (16,48--16,49);
-                                       /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (16,52--16,53);
-                                       /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (16,56--16,57)],
+                                          /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (17,57--17,60))],
+                                      [/root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (17,48--17,49);
+                                       /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (17,52--17,53);
+                                       /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (17,56--17,57)],
                                       Some
-                                        /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (16,60--16,61),
+                                        /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (17,60--17,61),
                                       false,
-                                      /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (16,39--16,61)),
-                                   /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (16,14--16,61),
+                                      /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (17,39--17,61)),
+                                   /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (17,14--17,61),
                                    { ArrowRange =
-                                      /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (16,36--16,38) }),
+                                      /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (17,36--17,38) }),
                                 SynValInfo
                                   ([[SynArgInfo ([], false, None);
                                      SynArgInfo ([], false, None);
                                      SynArgInfo ([], false, None);
                                      SynArgInfo ([], false, None)]],
                                    SynArgInfo ([], false, None)), false, false,
-                                PreXmlDoc ((16,8), FSharp.Compiler.Xml.XmlDocCollector),
+                                PreXmlDoc ((17,8), FSharp.Compiler.Xml.XmlDocCollector),
                                 None, None,
-                                /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (16,8--16,61),
+                                /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (17,8--17,61),
                                 { LeadingKeyword =
                                    New
-                                     /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (16,8--16,11)
+                                     /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (17,8--17,11)
                                   InlineKeyword = None
                                   WithKeyword = None
                                   EqualsRange = None }),
@@ -163,7 +163,7 @@ SigFile
                                IsFinal = false
                                GetterOrSetterIsCompilerGenerated = false
                                MemberKind = Constructor },
-                             /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (16,8--16,61),
+                             /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (17,8--17,61),
                              { GetSetKeywords = None });
                           Member
                             (SynValSig
@@ -171,37 +171,6 @@ SigFile
                                 SynValTyparDecls (None, true),
                                 Var
                                   (SynTypar (T1, None, false),
-                                   /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (17,23--17,26)),
-                                SynValInfo ([], SynArgInfo ([], false, None)),
-                                false, false,
-                                PreXmlDoc ((17,8), FSharp.Compiler.Xml.XmlDocCollector),
-                                None, None,
-                                /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (17,8--17,35),
-                                { LeadingKeyword =
-                                   Member
-                                     /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (17,8--17,14)
-                                  InlineKeyword = None
-                                  WithKeyword =
-                                   Some
-                                     /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (17,27--17,31)
-                                  EqualsRange = None }),
-                             { IsInstance = true
-                               IsDispatchSlot = false
-                               IsOverrideOrExplicitImpl = false
-                               IsFinal = false
-                               GetterOrSetterIsCompilerGenerated = false
-                               MemberKind = PropertyGet },
-                             /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (17,8--17,35),
-                             { GetSetKeywords =
-                                Some
-                                  (Get
-                                     /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (17,32--17,35)) });
-                          Member
-                            (SynValSig
-                               ([], SynIdent (Item2, None),
-                                SynValTyparDecls (None, true),
-                                Var
-                                  (SynTypar (T2, None, false),
                                    /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (18,23--18,26)),
                                 SynValInfo ([], SynArgInfo ([], false, None)),
                                 false, false,
@@ -229,10 +198,10 @@ SigFile
                                      /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (18,32--18,35)) });
                           Member
                             (SynValSig
-                               ([], SynIdent (Item3, None),
+                               ([], SynIdent (Item2, None),
                                 SynValTyparDecls (None, true),
                                 Var
-                                  (SynTypar (T3, None, false),
+                                  (SynTypar (T2, None, false),
                                    /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (19,23--19,26)),
                                 SynValInfo ([], SynArgInfo ([], false, None)),
                                 false, false,
@@ -260,10 +229,10 @@ SigFile
                                      /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (19,32--19,35)) });
                           Member
                             (SynValSig
-                               ([], SynIdent (Item4, None),
+                               ([], SynIdent (Item3, None),
                                 SynValTyparDecls (None, true),
                                 Var
-                                  (SynTypar (T4, None, false),
+                                  (SynTypar (T3, None, false),
                                    /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (20,23--20,26)),
                                 SynValInfo ([], SynArgInfo ([], false, None)),
                                 false, false,
@@ -288,31 +257,62 @@ SigFile
                              { GetSetKeywords =
                                 Some
                                   (Get
-                                     /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (20,32--20,35)) })],
-                         /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (13,8--20,35)),
+                                     /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (20,32--20,35)) });
+                          Member
+                            (SynValSig
+                               ([], SynIdent (Item4, None),
+                                SynValTyparDecls (None, true),
+                                Var
+                                  (SynTypar (T4, None, false),
+                                   /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (21,23--21,26)),
+                                SynValInfo ([], SynArgInfo ([], false, None)),
+                                false, false,
+                                PreXmlDoc ((21,8), FSharp.Compiler.Xml.XmlDocCollector),
+                                None, None,
+                                /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (21,8--21,35),
+                                { LeadingKeyword =
+                                   Member
+                                     /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (21,8--21,14)
+                                  InlineKeyword = None
+                                  WithKeyword =
+                                   Some
+                                     /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (21,27--21,31)
+                                  EqualsRange = None }),
+                             { IsInstance = true
+                               IsDispatchSlot = false
+                               IsOverrideOrExplicitImpl = false
+                               IsFinal = false
+                               GetterOrSetterIsCompilerGenerated = false
+                               MemberKind = PropertyGet },
+                             /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (21,8--21,35),
+                             { GetSetKeywords =
+                                Some
+                                  (Get
+                                     /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (21,32--21,35)) })],
+                         /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (14,8--21,35)),
                       [],
-                      /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (12,9--20,35),
+                      /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (13,9--21,35),
                       { LeadingKeyword =
                          Type
-                           /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (12,4--12,8)
+                           /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (13,4--13,8)
                         EqualsRange =
                          Some
-                           /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (12,32--12,33)
+                           /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (13,32--13,33)
                         WithKeyword = None })],
-                  /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (12,4--20,35))],
-              /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (10,0--20,35),
+                  /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (13,4--21,35))],
+              /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (11,0--21,35),
               { ModuleKeyword =
                  Some
-                   /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (10,0--10,6)
+                   /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (11,0--11,6)
                 EqualsRange =
                  Some
-                   /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (10,13--10,14) });
+                   /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (11,13--11,14) });
            NestedModule
              (SynComponentInfo
                 ([], None, [], [Choice],
-                 PreXmlDoc ((23,0), FSharp.Compiler.Xml.XmlDocCollector), false,
+                 PreXmlDoc ((24,0), FSharp.Compiler.Xml.XmlDocCollector), false,
                  None,
-                 /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (23,0--23,13)),
+                 /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (24,0--24,13)),
               false,
               [Types
                  ([SynTypeDefnSig
@@ -323,24 +323,24 @@ SigFile
                                 ArgExpr =
                                  Const
                                    (Unit,
-                                    /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (26,6--26,24))
+                                    /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (27,6--27,24))
                                 Target = None
                                 AppliesToGetterAndSetter = false
                                 Range =
-                                 /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (26,6--26,24) };
+                                 /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (27,6--27,24) };
                               { TypeName =
                                  SynLongIdent
                                    ([StructuralComparison], [], [None])
                                 ArgExpr =
                                  Const
                                    (Unit,
-                                    /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (26,26--26,46))
+                                    /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (27,26--27,46))
                                 Target = None
                                 AppliesToGetterAndSetter = false
                                 Range =
-                                 /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (26,26--26,46) }]
+                                 /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (27,26--27,46) }]
                             Range =
-                             /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (26,4--26,48) };
+                             /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (27,4--27,48) };
                           { Attributes =
                              [{ TypeName =
                                  SynLongIdent ([CompiledName], [], [None])
@@ -349,18 +349,18 @@ SigFile
                                    (Const
                                       (String
                                          ("FSharpChoice`6", Regular,
-                                          /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (27,19--27,35)),
-                                       /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (27,19--27,35)),
-                                    /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (27,18--27,19),
+                                          /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (28,19--28,35)),
+                                       /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (28,19--28,35)),
+                                    /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (28,18--28,19),
                                     Some
-                                      /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (27,35--27,36),
-                                    /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (27,18--27,36))
+                                      /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (28,35--28,36),
+                                    /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (28,18--28,36))
                                 Target = None
                                 AppliesToGetterAndSetter = false
                                 Range =
-                                 /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (27,6--27,36) }]
+                                 /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (28,6--28,36) }]
                             Range =
-                             /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (27,4--27,38) }],
+                             /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (28,4--28,38) }],
                          Some
                            (PostfixList
                               ([SynTyparDecl ([], SynTypar (T1, None, false));
@@ -370,11 +370,11 @@ SigFile
                                 SynTyparDecl ([], SynTypar (T5, None, false));
                                 SynTyparDecl ([], SynTypar (T6, None, false))],
                                [],
-                               /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (28,15--28,40))),
+                               /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (29,15--29,40))),
                          [], [Choice],
-                         PreXmlDoc ((26,4), FSharp.Compiler.Xml.XmlDocCollector),
+                         PreXmlDoc ((27,4), FSharp.Compiler.Xml.XmlDocCollector),
                          true, None,
-                         /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (28,9--28,15)),
+                         /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (29,9--29,15)),
                       Simple
                         (Union
                            (None,
@@ -385,18 +385,18 @@ SigFile
                                      ([], false, None,
                                       Var
                                         (SynTypar (T1, None, false),
-                                         /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (30,22--30,25)),
+                                         /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (31,22--31,25)),
                                       false,
-                                      PreXmlDoc ((30,22), FSharp.Compiler.Xml.XmlDocCollector),
+                                      PreXmlDoc ((31,22), FSharp.Compiler.Xml.XmlDocCollector),
                                       None,
-                                      /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (30,22--30,25),
+                                      /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (31,22--31,25),
                                       { LeadingKeyword = None })],
-                                PreXmlDoc ((30,6), FSharp.Compiler.Xml.XmlDocCollector),
+                                PreXmlDoc ((31,6), FSharp.Compiler.Xml.XmlDocCollector),
                                 None,
-                                /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (29,6--30,25),
+                                /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (30,6--31,25),
                                 { BarRange =
                                    Some
-                                     /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (30,6--30,7) });
+                                     /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (31,6--31,7) });
                              SynUnionCase
                                ([], SynIdent (Choice2Of6, None),
                                 Fields
@@ -404,18 +404,18 @@ SigFile
                                      ([], false, None,
                                       Var
                                         (SynTypar (T2, None, false),
-                                         /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (32,22--32,25)),
+                                         /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (33,22--33,25)),
                                       false,
-                                      PreXmlDoc ((32,22), FSharp.Compiler.Xml.XmlDocCollector),
+                                      PreXmlDoc ((33,22), FSharp.Compiler.Xml.XmlDocCollector),
                                       None,
-                                      /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (32,22--32,25),
+                                      /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (33,22--33,25),
                                       { LeadingKeyword = None })],
-                                PreXmlDoc ((32,6), FSharp.Compiler.Xml.XmlDocCollector),
+                                PreXmlDoc ((33,6), FSharp.Compiler.Xml.XmlDocCollector),
                                 None,
-                                /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (31,6--32,25),
+                                /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (32,6--33,25),
                                 { BarRange =
                                    Some
-                                     /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (32,6--32,7) });
+                                     /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (33,6--33,7) });
                              SynUnionCase
                                ([], SynIdent (Choice3Of6, None),
                                 Fields
@@ -423,18 +423,18 @@ SigFile
                                      ([], false, None,
                                       Var
                                         (SynTypar (T3, None, false),
-                                         /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (34,22--34,25)),
+                                         /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (35,22--35,25)),
                                       false,
-                                      PreXmlDoc ((34,22), FSharp.Compiler.Xml.XmlDocCollector),
+                                      PreXmlDoc ((35,22), FSharp.Compiler.Xml.XmlDocCollector),
                                       None,
-                                      /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (34,22--34,25),
+                                      /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (35,22--35,25),
                                       { LeadingKeyword = None })],
-                                PreXmlDoc ((34,6), FSharp.Compiler.Xml.XmlDocCollector),
+                                PreXmlDoc ((35,6), FSharp.Compiler.Xml.XmlDocCollector),
                                 None,
-                                /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (33,6--34,25),
+                                /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (34,6--35,25),
                                 { BarRange =
                                    Some
-                                     /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (34,6--34,7) });
+                                     /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (35,6--35,7) });
                              SynUnionCase
                                ([], SynIdent (Choice4Of6, None),
                                 Fields
@@ -442,18 +442,18 @@ SigFile
                                      ([], false, None,
                                       Var
                                         (SynTypar (T4, None, false),
-                                         /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (36,22--36,25)),
+                                         /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (37,22--37,25)),
                                       false,
-                                      PreXmlDoc ((36,22), FSharp.Compiler.Xml.XmlDocCollector),
+                                      PreXmlDoc ((37,22), FSharp.Compiler.Xml.XmlDocCollector),
                                       None,
-                                      /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (36,22--36,25),
+                                      /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (37,22--37,25),
                                       { LeadingKeyword = None })],
-                                PreXmlDoc ((36,6), FSharp.Compiler.Xml.XmlDocCollector),
+                                PreXmlDoc ((37,6), FSharp.Compiler.Xml.XmlDocCollector),
                                 None,
-                                /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (35,6--36,25),
+                                /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (36,6--37,25),
                                 { BarRange =
                                    Some
-                                     /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (36,6--36,7) });
+                                     /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (37,6--37,7) });
                              SynUnionCase
                                ([], SynIdent (Choice5Of6, None),
                                 Fields
@@ -461,18 +461,18 @@ SigFile
                                      ([], false, None,
                                       Var
                                         (SynTypar (T5, None, false),
-                                         /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (38,22--38,25)),
+                                         /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (39,22--39,25)),
                                       false,
-                                      PreXmlDoc ((38,22), FSharp.Compiler.Xml.XmlDocCollector),
+                                      PreXmlDoc ((39,22), FSharp.Compiler.Xml.XmlDocCollector),
                                       None,
-                                      /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (38,22--38,25),
+                                      /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (39,22--39,25),
                                       { LeadingKeyword = None })],
-                                PreXmlDoc ((38,6), FSharp.Compiler.Xml.XmlDocCollector),
+                                PreXmlDoc ((39,6), FSharp.Compiler.Xml.XmlDocCollector),
                                 None,
-                                /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (37,6--38,25),
+                                /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (38,6--39,25),
                                 { BarRange =
                                    Some
-                                     /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (38,6--38,7) });
+                                     /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (39,6--39,7) });
                              SynUnionCase
                                ([], SynIdent (Choice6Of6, None),
                                 Fields
@@ -480,37 +480,37 @@ SigFile
                                      ([], false, None,
                                       Var
                                         (SynTypar (T6, None, false),
-                                         /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (40,22--40,25)),
+                                         /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (41,22--41,25)),
                                       false,
-                                      PreXmlDoc ((40,22), FSharp.Compiler.Xml.XmlDocCollector),
+                                      PreXmlDoc ((41,22), FSharp.Compiler.Xml.XmlDocCollector),
                                       None,
-                                      /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (40,22--40,25),
+                                      /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (41,22--41,25),
                                       { LeadingKeyword = None })],
-                                PreXmlDoc ((40,6), FSharp.Compiler.Xml.XmlDocCollector),
+                                PreXmlDoc ((41,6), FSharp.Compiler.Xml.XmlDocCollector),
                                 None,
-                                /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (39,6--40,25),
+                                /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (40,6--41,25),
                                 { BarRange =
                                    Some
-                                     /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (40,6--40,7) })],
-                            /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (29,6--40,25)),
-                         /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (29,6--40,25)),
+                                     /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (41,6--41,7) })],
+                            /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (30,6--41,25)),
+                         /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (30,6--41,25)),
                       [],
-                      /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (25,4--40,25),
+                      /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (26,4--41,25),
                       { LeadingKeyword =
                          Type
-                           /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (28,4--28,8)
+                           /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (29,4--29,8)
                         EqualsRange =
                          Some
-                           /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (28,41--28,42)
+                           /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (29,41--29,42)
                         WithKeyword = None })],
-                  /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (25,4--40,25))],
-              /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (23,0--40,25),
+                  /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (26,4--41,25))],
+              /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (24,0--41,25),
               { ModuleKeyword =
                  Some
-                   /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (23,0--23,6)
+                   /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (24,0--24,6)
                 EqualsRange =
                  Some
-                   /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (23,14--23,15) });
+                   /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (24,14--24,15) });
            NestedModule
              (SynComponentInfo
                 ([{ Attributes =
@@ -518,17 +518,17 @@ SigFile
                         ArgExpr =
                          Const
                            (Unit,
-                            /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (45,2--45,10))
+                            /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (46,2--46,10))
                         Target = None
                         AppliesToGetterAndSetter = false
                         Range =
-                         /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (45,2--45,10) }]
+                         /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (46,2--46,10) }]
                     Range =
-                     /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (45,0--45,12) }],
+                     /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (46,0--46,12) }],
                  None, [], [Operators],
-                 PreXmlDoc ((45,0), FSharp.Compiler.Xml.XmlDocCollector), false,
+                 PreXmlDoc ((46,0), FSharp.Compiler.Xml.XmlDocCollector), false,
                  None,
-                 /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (46,0--46,16)),
+                 /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (47,0--47,16)),
               false,
               [Types
                  ([SynTypeDefnSig
@@ -538,15 +538,15 @@ SigFile
                            (PostfixList
                               ([SynTyparDecl ([], SynTypar (T, None, false))],
                                [],
-                               /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (48,16--48,20))),
+                               /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (49,16--49,20))),
                          [], [[,]],
-                         PreXmlDoc ((48,4), FSharp.Compiler.Xml.XmlDocCollector),
+                         PreXmlDoc ((49,4), FSharp.Compiler.Xml.XmlDocCollector),
                          true, None,
-                         /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (48,9--48,16)),
+                         /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (49,9--49,16)),
                       Simple
                         (None
-                           /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (48,9--60,26),
-                         /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (48,9--60,26)),
+                           /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (49,9--61,26),
+                         /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (49,9--61,26)),
                       [Member
                          (SynValSig
                             ([{ Attributes =
@@ -557,29 +557,29 @@ SigFile
                                        (Const
                                           (String
                                              ("Length1", Regular,
-                                              /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (49,23--49,32)),
-                                           /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (49,23--49,32)),
-                                        /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (49,22--49,23),
+                                              /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (50,23--50,32)),
+                                           /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (50,23--50,32)),
+                                        /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (50,22--50,23),
                                         Some
-                                          /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (49,32--49,33),
-                                        /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (49,22--49,33))
+                                          /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (50,32--50,33),
+                                        /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (50,22--50,33))
                                     Target = None
                                     AppliesToGetterAndSetter = false
                                     Range =
-                                     /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (49,10--49,33) }]
+                                     /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (50,10--50,33) }]
                                 Range =
-                                 /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (49,8--49,35) }],
+                                 /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (50,8--50,35) }],
                              SynIdent (Length1, None),
                              SynValTyparDecls (None, true),
                              LongIdent (SynLongIdent ([int], [], [None])),
                              SynValInfo ([], SynArgInfo ([], false, None)),
                              false, false,
-                             PreXmlDoc ((49,8), FSharp.Compiler.Xml.XmlDocCollector),
+                             PreXmlDoc ((50,8), FSharp.Compiler.Xml.XmlDocCollector),
                              None, None,
-                             /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (49,8--51,28),
+                             /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (50,8--52,28),
                              { LeadingKeyword =
                                 Member
-                                  /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (51,8--51,14)
+                                  /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (52,8--52,14)
                                InlineKeyword = None
                                WithKeyword = None
                                EqualsRange = None }),
@@ -589,7 +589,7 @@ SigFile
                             IsFinal = false
                             GetterOrSetterIsCompilerGenerated = false
                             MemberKind = PropertyGet },
-                          /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (49,8--51,28),
+                          /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (50,8--52,28),
                           { GetSetKeywords = None });
                        Member
                          (SynValSig
@@ -601,29 +601,29 @@ SigFile
                                        (Const
                                           (String
                                              ("Length2", Regular,
-                                              /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (52,23--52,32)),
-                                           /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (52,23--52,32)),
-                                        /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (52,22--52,23),
+                                              /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (53,23--53,32)),
+                                           /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (53,23--53,32)),
+                                        /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (53,22--53,23),
                                         Some
-                                          /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (52,32--52,33),
-                                        /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (52,22--52,33))
+                                          /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (53,32--53,33),
+                                        /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (53,22--53,33))
                                     Target = None
                                     AppliesToGetterAndSetter = false
                                     Range =
-                                     /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (52,10--52,33) }]
+                                     /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (53,10--53,33) }]
                                 Range =
-                                 /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (52,8--52,35) }],
+                                 /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (53,8--53,35) }],
                              SynIdent (Length2, None),
                              SynValTyparDecls (None, true),
                              LongIdent (SynLongIdent ([int], [], [None])),
                              SynValInfo ([], SynArgInfo ([], false, None)),
                              false, false,
-                             PreXmlDoc ((52,8), FSharp.Compiler.Xml.XmlDocCollector),
+                             PreXmlDoc ((53,8), FSharp.Compiler.Xml.XmlDocCollector),
                              None, None,
-                             /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (52,8--54,28),
+                             /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (53,8--55,28),
                              { LeadingKeyword =
                                 Member
-                                  /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (54,8--54,14)
+                                  /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (55,8--55,14)
                                InlineKeyword = None
                                WithKeyword = None
                                EqualsRange = None }),
@@ -633,7 +633,7 @@ SigFile
                             IsFinal = false
                             GetterOrSetterIsCompilerGenerated = false
                             MemberKind = PropertyGet },
-                          /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (52,8--54,28),
+                          /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (53,8--55,28),
                           { GetSetKeywords = None });
                        Member
                          (SynValSig
@@ -645,29 +645,29 @@ SigFile
                                        (Const
                                           (String
                                              ("Base1", Regular,
-                                              /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (55,23--55,30)),
-                                           /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (55,23--55,30)),
-                                        /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (55,22--55,23),
+                                              /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (56,23--56,30)),
+                                           /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (56,23--56,30)),
+                                        /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (56,22--56,23),
                                         Some
-                                          /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (55,30--55,31),
-                                        /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (55,22--55,31))
+                                          /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (56,30--56,31),
+                                        /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (56,22--56,31))
                                     Target = None
                                     AppliesToGetterAndSetter = false
                                     Range =
-                                     /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (55,10--55,31) }]
+                                     /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (56,10--56,31) }]
                                 Range =
-                                 /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (55,8--55,33) }],
+                                 /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (56,8--56,33) }],
                              SynIdent (Base1, None),
                              SynValTyparDecls (None, true),
                              LongIdent (SynLongIdent ([int], [], [None])),
                              SynValInfo ([], SynArgInfo ([], false, None)),
                              false, false,
-                             PreXmlDoc ((55,8), FSharp.Compiler.Xml.XmlDocCollector),
+                             PreXmlDoc ((56,8), FSharp.Compiler.Xml.XmlDocCollector),
                              None, None,
-                             /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (55,8--57,26),
+                             /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (56,8--58,26),
                              { LeadingKeyword =
                                 Member
-                                  /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (57,8--57,14)
+                                  /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (58,8--58,14)
                                InlineKeyword = None
                                WithKeyword = None
                                EqualsRange = None }),
@@ -677,7 +677,7 @@ SigFile
                             IsFinal = false
                             GetterOrSetterIsCompilerGenerated = false
                             MemberKind = PropertyGet },
-                          /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (55,8--57,26),
+                          /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (56,8--58,26),
                           { GetSetKeywords = None });
                        Member
                          (SynValSig
@@ -689,29 +689,29 @@ SigFile
                                        (Const
                                           (String
                                              ("Base2", Regular,
-                                              /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (58,23--58,30)),
-                                           /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (58,23--58,30)),
-                                        /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (58,22--58,23),
+                                              /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (59,23--59,30)),
+                                           /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (59,23--59,30)),
+                                        /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (59,22--59,23),
                                         Some
-                                          /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (58,30--58,31),
-                                        /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (58,22--58,31))
+                                          /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (59,30--59,31),
+                                        /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (59,22--59,31))
                                     Target = None
                                     AppliesToGetterAndSetter = false
                                     Range =
-                                     /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (58,10--58,31) }]
+                                     /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (59,10--59,31) }]
                                 Range =
-                                 /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (58,8--58,33) }],
+                                 /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (59,8--59,33) }],
                              SynIdent (Base2, None),
                              SynValTyparDecls (None, true),
                              LongIdent (SynLongIdent ([int], [], [None])),
                              SynValInfo ([], SynArgInfo ([], false, None)),
                              false, false,
-                             PreXmlDoc ((58,8), FSharp.Compiler.Xml.XmlDocCollector),
+                             PreXmlDoc ((59,8), FSharp.Compiler.Xml.XmlDocCollector),
                              None, None,
-                             /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (58,8--60,26),
+                             /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (59,8--61,26),
                              { LeadingKeyword =
                                 Member
-                                  /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (60,8--60,14)
+                                  /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (61,8--61,14)
                                InlineKeyword = None
                                WithKeyword = None
                                EqualsRange = None }),
@@ -721,37 +721,37 @@ SigFile
                             IsFinal = false
                             GetterOrSetterIsCompilerGenerated = false
                             MemberKind = PropertyGet },
-                          /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (58,8--60,26),
+                          /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (59,8--61,26),
                           { GetSetKeywords = None })],
-                      /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (48,9--60,26),
+                      /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (49,9--61,26),
                       { LeadingKeyword =
                          Type
-                           /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (48,4--48,8)
+                           /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (49,4--49,8)
                         EqualsRange = None
                         WithKeyword =
                          Some
-                           /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (48,21--48,25) })],
-                  /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (48,4--60,26))],
-              /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (44,0--60,26),
+                           /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (49,21--49,25) })],
+                  /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (49,4--61,26))],
+              /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (45,0--61,26),
               { ModuleKeyword =
                  Some
-                   /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (46,0--46,6)
+                   /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (47,0--47,6)
                 EqualsRange =
                  Some
-                   /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (46,17--46,18) })],
+                   /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (47,17--47,18) })],
           PreXmlDocEmpty, [], None,
-          /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (1,0--60,26),
+          /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (2,0--61,26),
           { LeadingKeyword =
              Namespace
-               /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (1,0--1,9) })],
+               /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (2,0--2,9) })],
       { ConditionalDirectives = []
         CodeComments =
          [LineComment
-            /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (50,8--50,82);
+            /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (51,8--51,82);
           LineComment
-            /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (53,8--53,84);
+            /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (54,8--54,84);
           LineComment
-            /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (56,8--56,88);
+            /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (57,8--57,88);
           LineComment
-            /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (59,8--59,89)] },
+            /root/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi (60,8--60,89)] },
       set []))

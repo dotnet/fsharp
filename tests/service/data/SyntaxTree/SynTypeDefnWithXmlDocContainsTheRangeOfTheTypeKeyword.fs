@@ -1,3 +1,4 @@
+
 /// Doc
 // noDoc
 type A = B

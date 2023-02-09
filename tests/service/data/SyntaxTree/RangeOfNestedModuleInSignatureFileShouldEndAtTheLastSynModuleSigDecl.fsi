@@ -1,3 +1,4 @@
+
 namespace Microsoft.FSharp.Core
 
 open System

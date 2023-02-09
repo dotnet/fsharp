@@ -8,48 +8,48 @@ ImplFile
              (false,
               [SynBinding
                  (None, Normal, false, false, [],
-                  PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
+                  PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
                     (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
                   Paren
                     (ListCons
                        (Named
                           (SynIdent (head, None), false, None,
-                           /root/OperatorInSynPatLongIdent.fs (1,5--1,9)),
+                           /root/OperatorInSynPatLongIdent.fs (2,5--2,9)),
                         Named
                           (SynIdent (tail, None), false, None,
-                           /root/OperatorInSynPatLongIdent.fs (1,11--1,15)),
-                        /root/OperatorInSynPatLongIdent.fs (1,5--1,15),
+                           /root/OperatorInSynPatLongIdent.fs (2,11--2,15)),
+                        /root/OperatorInSynPatLongIdent.fs (2,5--2,15),
                         { ColonColonRange =
-                           /root/OperatorInSynPatLongIdent.fs (1,9--1,11) }),
-                     /root/OperatorInSynPatLongIdent.fs (1,4--1,16)), None,
+                           /root/OperatorInSynPatLongIdent.fs (2,9--2,11) }),
+                     /root/OperatorInSynPatLongIdent.fs (2,4--2,16)), None,
                   ArrayOrListComputed
                     (false,
                      Sequential
                        (SuppressNeither, true,
                         Const
                           (Int32 1,
-                           /root/OperatorInSynPatLongIdent.fs (1,22--1,23)),
+                           /root/OperatorInSynPatLongIdent.fs (2,22--2,23)),
                         Sequential
                           (SuppressNeither, true,
                            Const
                              (Int32 2,
-                              /root/OperatorInSynPatLongIdent.fs (1,24--1,25)),
+                              /root/OperatorInSynPatLongIdent.fs (2,24--2,25)),
                            Const
                              (Int32 4,
-                              /root/OperatorInSynPatLongIdent.fs (1,26--1,27)),
-                           /root/OperatorInSynPatLongIdent.fs (1,24--1,27)),
-                        /root/OperatorInSynPatLongIdent.fs (1,22--1,27)),
-                     /root/OperatorInSynPatLongIdent.fs (1,20--1,28)),
-                  /root/OperatorInSynPatLongIdent.fs (1,4--1,16),
-                  Yes /root/OperatorInSynPatLongIdent.fs (1,0--1,28),
+                              /root/OperatorInSynPatLongIdent.fs (2,26--2,27)),
+                           /root/OperatorInSynPatLongIdent.fs (2,24--2,27)),
+                        /root/OperatorInSynPatLongIdent.fs (2,22--2,27)),
+                     /root/OperatorInSynPatLongIdent.fs (2,20--2,28)),
+                  /root/OperatorInSynPatLongIdent.fs (2,4--2,16),
+                  Yes /root/OperatorInSynPatLongIdent.fs (2,0--2,28),
                   { LeadingKeyword =
-                     Let /root/OperatorInSynPatLongIdent.fs (1,0--1,3)
+                     Let /root/OperatorInSynPatLongIdent.fs (2,0--2,3)
                     InlineKeyword = None
                     EqualsRange =
-                     Some /root/OperatorInSynPatLongIdent.fs (1,17--1,18) })],
-              /root/OperatorInSynPatLongIdent.fs (1,0--1,28))], PreXmlDocEmpty,
-          [], None, /root/OperatorInSynPatLongIdent.fs (1,0--1,28),
+                     Some /root/OperatorInSynPatLongIdent.fs (2,17--2,18) })],
+              /root/OperatorInSynPatLongIdent.fs (2,0--2,28))], PreXmlDocEmpty,
+          [], None, /root/OperatorInSynPatLongIdent.fs (2,0--3,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

@@ -8,8 +8,8 @@ ImplFile
              ([SynTypeDefn
                  (SynComponentInfo
                     ([], None, [], [X],
-                     PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, /root/AbstractMemberKeyword.fs (1,5--1,6)),
+                     PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
+                     false, None, /root/AbstractMemberKeyword.fs (2,5--2,6)),
                   ObjectModel
                     (Unspecified,
                      [AbstractSlot
@@ -19,13 +19,13 @@ ImplFile
                             LongIdent (SynLongIdent ([int], [], [None])),
                             SynValInfo ([], SynArgInfo ([], false, None)), false,
                             false,
-                            PreXmlDoc ((2,4), FSharp.Compiler.Xml.XmlDocCollector),
+                            PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),
                             None, None,
-                            /root/AbstractMemberKeyword.fs (2,4--2,27),
+                            /root/AbstractMemberKeyword.fs (3,4--3,27),
                             { LeadingKeyword =
                                AbstractMember
-                                 (/root/AbstractMemberKeyword.fs (2,4--2,12),
-                                  /root/AbstractMemberKeyword.fs (2,13--2,19))
+                                 (/root/AbstractMemberKeyword.fs (3,4--3,12),
+                                  /root/AbstractMemberKeyword.fs (3,13--3,19))
                               InlineKeyword = None
                               WithKeyword = None
                               EqualsRange = None }),
@@ -35,16 +35,16 @@ ImplFile
                            IsFinal = false
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = PropertyGet },
-                         /root/AbstractMemberKeyword.fs (2,4--2,27),
+                         /root/AbstractMemberKeyword.fs (3,4--3,27),
                          { GetSetKeywords = None })],
-                     /root/AbstractMemberKeyword.fs (2,4--2,27)), [], None,
-                  /root/AbstractMemberKeyword.fs (1,5--2,27),
+                     /root/AbstractMemberKeyword.fs (3,4--3,27)), [], None,
+                  /root/AbstractMemberKeyword.fs (2,5--3,27),
                   { LeadingKeyword =
-                     Type /root/AbstractMemberKeyword.fs (1,0--1,4)
-                    EqualsRange = Some /root/AbstractMemberKeyword.fs (1,7--1,8)
+                     Type /root/AbstractMemberKeyword.fs (2,0--2,4)
+                    EqualsRange = Some /root/AbstractMemberKeyword.fs (2,7--2,8)
                     WithKeyword = None })],
-              /root/AbstractMemberKeyword.fs (1,0--2,27))], PreXmlDocEmpty, [],
-          None, /root/AbstractMemberKeyword.fs (1,0--2,27),
+              /root/AbstractMemberKeyword.fs (2,0--3,27))], PreXmlDocEmpty, [],
+          None, /root/AbstractMemberKeyword.fs (2,0--4,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

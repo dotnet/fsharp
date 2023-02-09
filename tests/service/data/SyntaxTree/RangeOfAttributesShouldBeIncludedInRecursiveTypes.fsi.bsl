@@ -9,30 +9,30 @@ SigFile
              ([SynTypeDefnSig
                  (SynComponentInfo
                     ([], None, [], [Foo],
-                     PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
+                     PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None,
-                     /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (3,5--3,8)),
+                     /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (4,5--4,8)),
                   Simple
                     (Union
                        (None,
                         [SynUnionCase
                            ([], SynIdent (Bar, None), Fields [],
-                            PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector),
+                            PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
                             None,
-                            /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (4,6--4,9),
+                            /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (5,6--5,9),
                             { BarRange =
                                Some
-                                 /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (4,4--4,5) })],
-                        /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (4,4--4,9)),
-                     /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (4,4--4,9)),
+                                 /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (5,4--5,5) })],
+                        /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (5,4--5,9)),
+                     /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (5,4--5,9)),
                   [],
-                  /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (3,5--4,9),
+                  /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (4,5--5,9),
                   { LeadingKeyword =
                      Type
-                       /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (3,0--3,4)
+                       /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (4,0--4,4)
                     EqualsRange =
                      Some
-                       /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (3,9--3,10)
+                       /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (4,9--4,10)
                     WithKeyword = None });
                SynTypeDefnSig
                  (SynComponentInfo
@@ -42,31 +42,31 @@ SigFile
                             ArgExpr =
                              Const
                                (Unit,
-                                /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (6,6--6,20))
+                                /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (7,6--7,20))
                             Target = None
                             AppliesToGetterAndSetter = false
                             Range =
-                             /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (6,6--6,20) }]
+                             /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (7,6--7,20) }]
                         Range =
-                         /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (6,4--6,22) }],
+                         /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (7,4--7,22) }],
                      None, [], [Bang],
-                     PreXmlDoc ((6,4), FSharp.Compiler.Xml.XmlDocCollector),
+                     PreXmlDoc ((7,4), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None,
-                     /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (6,23--6,27)),
+                     /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (7,23--7,27)),
                   Simple
                     (Record
                        (Some
                           (Internal
-                             /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (7,4--7,12)),
+                             /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (8,4--8,12)),
                         [SynField
                            ([], false, Some LongNameBarBarBarBarBarBarBar,
                             LongIdent (SynLongIdent ([int], [], [None])), false,
-                            PreXmlDoc ((9,12), FSharp.Compiler.Xml.XmlDocCollector),
+                            PreXmlDoc ((10,12), FSharp.Compiler.Xml.XmlDocCollector),
                             None,
-                            /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (9,12--9,46),
+                            /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (10,12--10,46),
                             { LeadingKeyword = None })],
-                        /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (7,4--10,9)),
-                     /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (7,4--10,9)),
+                        /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (8,4--11,9)),
+                     /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (8,4--11,9)),
                   [Member
                      (SynValSig
                         ([], SynIdent (GetHashCode, None),
@@ -74,18 +74,18 @@ SigFile
                          Fun
                            (LongIdent (SynLongIdent ([unit], [], [None])),
                             LongIdent (SynLongIdent ([int], [], [None])),
-                            /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (11,31--11,42),
+                            /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (12,31--12,42),
                             { ArrowRange =
-                               /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (11,36--11,38) }),
+                               /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (12,36--12,38) }),
                          SynValInfo
                            ([[SynArgInfo ([], false, None)]],
                             SynArgInfo ([], false, None)), false, false,
-                         PreXmlDoc ((11,8), FSharp.Compiler.Xml.XmlDocCollector),
+                         PreXmlDoc ((12,8), FSharp.Compiler.Xml.XmlDocCollector),
                          None, None,
-                         /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (11,8--11,42),
+                         /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (12,8--12,42),
                          { LeadingKeyword =
                             Override
-                              /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (11,8--11,16)
+                              /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (12,8--12,16)
                            InlineKeyword = None
                            WithKeyword = None
                            EqualsRange = None }),
@@ -95,21 +95,21 @@ SigFile
                         IsFinal = false
                         GetterOrSetterIsCompilerGenerated = false
                         MemberKind = Member },
-                      /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (11,8--11,42),
+                      /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (12,8--12,42),
                       { GetSetKeywords = None })],
-                  /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (6,4--11,42),
+                  /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (7,4--12,42),
                   { LeadingKeyword =
                      And
-                       /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (6,0--6,3)
+                       /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (7,0--7,3)
                     EqualsRange =
                      Some
-                       /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (6,28--6,29)
+                       /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (7,28--7,29)
                     WithKeyword = None })],
-              /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (3,0--11,42))],
+              /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (4,0--12,42))],
           PreXmlDocEmpty, [], None,
-          /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (1,0--11,42),
+          /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (2,0--12,42),
           { LeadingKeyword =
              Namespace
-               /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (1,0--1,9) })],
+               /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi (2,0--2,9) })],
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

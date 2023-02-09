@@ -13,15 +13,15 @@ ImplFile
                  [SynExprRecordField
                     ((SynLongIdent ([V], [], [None]), true),
                      Some
-                       /root/SynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs (1,4--1,5),
+                       /root/SynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs (2,4--2,5),
                      Some (Ident v),
                      Some
-                       (/root/SynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs (1,8--2,2),
+                       (/root/SynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs (2,8--3,2),
                         None));
                   SynExprRecordField
                     ((SynLongIdent ([X], [], [None]), true),
                      Some
-                       /root/SynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs (2,9--2,10),
+                       /root/SynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs (3,9--3,10),
                      Some
                        (App
                           (NonAtomic, false,
@@ -30,19 +30,19 @@ ImplFile
                               App
                                 (NonAtomic, false, Ident someLongFunctionCall,
                                  Ident a,
-                                 /root/SynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs (3,16--4,21)),
+                                 /root/SynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs (4,16--5,21)),
                               Ident b,
-                              /root/SynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs (3,16--5,21)),
+                              /root/SynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs (4,16--6,21)),
                            Ident c,
-                           /root/SynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs (3,16--6,21))),
+                           /root/SynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs (4,16--7,21))),
                      None)],
-                 /root/SynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs (1,0--6,23)),
-              /root/SynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs (1,0--6,23))],
+                 /root/SynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs (2,0--7,23)),
+              /root/SynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs (2,0--7,23))],
           PreXmlDocEmpty, [], None,
-          /root/SynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs (1,0--6,23),
+          /root/SynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs (2,0--7,23),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments =
          [LineComment
-            /root/SynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs (2,13--2,28)] },
+            /root/SynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs (3,13--3,28)] },
       set []))

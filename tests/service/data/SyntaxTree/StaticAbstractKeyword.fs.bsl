@@ -8,8 +8,8 @@ ImplFile
              ([SynTypeDefn
                  (SynComponentInfo
                     ([], None, [], [X],
-                     PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, /root/StaticAbstractKeyword.fs (1,5--1,6)),
+                     PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
+                     false, None, /root/StaticAbstractKeyword.fs (2,5--2,6)),
                   ObjectModel
                     (Unspecified,
                      [AbstractSlot
@@ -19,19 +19,19 @@ ImplFile
                             Fun
                               (LongIdent (SynLongIdent ([int], [], [None])),
                                LongIdent (SynLongIdent ([int], [], [None])),
-                               /root/StaticAbstractKeyword.fs (2,24--2,34),
+                               /root/StaticAbstractKeyword.fs (3,24--3,34),
                                { ArrowRange =
-                                  /root/StaticAbstractKeyword.fs (2,28--2,30) }),
+                                  /root/StaticAbstractKeyword.fs (3,28--3,30) }),
                             SynValInfo
                               ([[SynArgInfo ([], false, None)]],
                                SynArgInfo ([], false, None)), false, false,
-                            PreXmlDoc ((2,4), FSharp.Compiler.Xml.XmlDocCollector),
+                            PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),
                             None, None,
-                            /root/StaticAbstractKeyword.fs (2,4--2,34),
+                            /root/StaticAbstractKeyword.fs (3,4--3,34),
                             { LeadingKeyword =
                                StaticAbstract
-                                 (/root/StaticAbstractKeyword.fs (2,4--2,10),
-                                  /root/StaticAbstractKeyword.fs (2,11--2,19))
+                                 (/root/StaticAbstractKeyword.fs (3,4--3,10),
+                                  /root/StaticAbstractKeyword.fs (3,11--3,19))
                               InlineKeyword = None
                               WithKeyword = None
                               EqualsRange = None }),
@@ -41,16 +41,16 @@ ImplFile
                            IsFinal = false
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = Member },
-                         /root/StaticAbstractKeyword.fs (2,4--2,34),
+                         /root/StaticAbstractKeyword.fs (3,4--3,34),
                          { GetSetKeywords = None })],
-                     /root/StaticAbstractKeyword.fs (2,4--2,34)), [], None,
-                  /root/StaticAbstractKeyword.fs (1,5--2,34),
+                     /root/StaticAbstractKeyword.fs (3,4--3,34)), [], None,
+                  /root/StaticAbstractKeyword.fs (2,5--3,34),
                   { LeadingKeyword =
-                     Type /root/StaticAbstractKeyword.fs (1,0--1,4)
-                    EqualsRange = Some /root/StaticAbstractKeyword.fs (1,7--1,8)
+                     Type /root/StaticAbstractKeyword.fs (2,0--2,4)
+                    EqualsRange = Some /root/StaticAbstractKeyword.fs (2,7--2,8)
                     WithKeyword = None })],
-              /root/StaticAbstractKeyword.fs (1,0--2,34))], PreXmlDocEmpty, [],
-          None, /root/StaticAbstractKeyword.fs (1,0--2,34),
+              /root/StaticAbstractKeyword.fs (2,0--3,34))], PreXmlDocEmpty, [],
+          None, /root/StaticAbstractKeyword.fs (2,0--4,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

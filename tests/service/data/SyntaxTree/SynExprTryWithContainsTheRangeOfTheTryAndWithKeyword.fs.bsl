@@ -12,32 +12,32 @@ ImplFile
                  [SynMatchClause
                     (Named
                        (SynIdent (ex, None), false, None,
-                        /root/SynExprTryWithContainsTheRangeOfTheTryAndWithKeyword.fs (4,2--4,4)),
+                        /root/SynExprTryWithContainsTheRangeOfTheTryAndWithKeyword.fs (5,2--5,4)),
                      None, Ident y,
-                     /root/SynExprTryWithContainsTheRangeOfTheTryAndWithKeyword.fs (4,2--4,9),
+                     /root/SynExprTryWithContainsTheRangeOfTheTryAndWithKeyword.fs (5,2--5,9),
                      Yes,
                      { ArrowRange =
                         Some
-                          /root/SynExprTryWithContainsTheRangeOfTheTryAndWithKeyword.fs (4,5--4,7)
+                          /root/SynExprTryWithContainsTheRangeOfTheTryAndWithKeyword.fs (5,5--5,7)
                        BarRange =
                         Some
-                          /root/SynExprTryWithContainsTheRangeOfTheTryAndWithKeyword.fs (4,0--4,1) })],
-                 /root/SynExprTryWithContainsTheRangeOfTheTryAndWithKeyword.fs (1,0--4,9),
+                          /root/SynExprTryWithContainsTheRangeOfTheTryAndWithKeyword.fs (5,0--5,1) })],
+                 /root/SynExprTryWithContainsTheRangeOfTheTryAndWithKeyword.fs (2,0--5,9),
                  Yes
-                   /root/SynExprTryWithContainsTheRangeOfTheTryAndWithKeyword.fs (1,0--1,3),
+                   /root/SynExprTryWithContainsTheRangeOfTheTryAndWithKeyword.fs (2,0--2,3),
                  Yes
-                   /root/SynExprTryWithContainsTheRangeOfTheTryAndWithKeyword.fs (3,0--3,4),
+                   /root/SynExprTryWithContainsTheRangeOfTheTryAndWithKeyword.fs (4,0--4,4),
                  { TryKeyword =
-                    /root/SynExprTryWithContainsTheRangeOfTheTryAndWithKeyword.fs (1,0--1,3)
+                    /root/SynExprTryWithContainsTheRangeOfTheTryAndWithKeyword.fs (2,0--2,3)
                    TryToWithRange =
-                    /root/SynExprTryWithContainsTheRangeOfTheTryAndWithKeyword.fs (1,0--3,4)
+                    /root/SynExprTryWithContainsTheRangeOfTheTryAndWithKeyword.fs (2,0--4,4)
                    WithKeyword =
-                    /root/SynExprTryWithContainsTheRangeOfTheTryAndWithKeyword.fs (3,0--3,4)
+                    /root/SynExprTryWithContainsTheRangeOfTheTryAndWithKeyword.fs (4,0--4,4)
                    WithToEndRange =
-                    /root/SynExprTryWithContainsTheRangeOfTheTryAndWithKeyword.fs (3,0--4,9) }),
-              /root/SynExprTryWithContainsTheRangeOfTheTryAndWithKeyword.fs (1,0--4,9))],
+                    /root/SynExprTryWithContainsTheRangeOfTheTryAndWithKeyword.fs (4,0--5,9) }),
+              /root/SynExprTryWithContainsTheRangeOfTheTryAndWithKeyword.fs (2,0--5,9))],
           PreXmlDocEmpty, [], None,
-          /root/SynExprTryWithContainsTheRangeOfTheTryAndWithKeyword.fs (1,0--4,9),
+          /root/SynExprTryWithContainsTheRangeOfTheTryAndWithKeyword.fs (2,0--6,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

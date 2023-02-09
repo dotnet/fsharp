@@ -8,9 +8,9 @@ SigFile
              ([SynTypeDefnSig
                  (SynComponentInfo
                     ([], None, [], [Bar],
-                     PreXmlDoc ((5,0), FSharp.Compiler.Xml.XmlDocCollector),
+                     PreXmlDoc ((6,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None,
-                     /root/GlobalNamespaceShouldStartAtNamespaceKeyword.fsi (5,5--5,8)),
+                     /root/GlobalNamespaceShouldStartAtNamespaceKeyword.fsi (6,5--6,8)),
                   Simple
                     (Union
                        (None,
@@ -21,45 +21,45 @@ SigFile
                                  ([], false, None,
                                   LongIdent
                                     (SynLongIdent ([string], [], [None])), false,
-                                  PreXmlDoc ((5,20), FSharp.Compiler.Xml.XmlDocCollector),
+                                  PreXmlDoc ((6,20), FSharp.Compiler.Xml.XmlDocCollector),
                                   None,
-                                  /root/GlobalNamespaceShouldStartAtNamespaceKeyword.fsi (5,20--5,26),
+                                  /root/GlobalNamespaceShouldStartAtNamespaceKeyword.fsi (6,20--6,26),
                                   { LeadingKeyword = None });
                                SynField
                                  ([], false, None,
                                   LongIdent (SynLongIdent ([int], [], [None])),
                                   false,
-                                  PreXmlDoc ((5,29), FSharp.Compiler.Xml.XmlDocCollector),
+                                  PreXmlDoc ((6,29), FSharp.Compiler.Xml.XmlDocCollector),
                                   None,
-                                  /root/GlobalNamespaceShouldStartAtNamespaceKeyword.fsi (5,29--5,32),
+                                  /root/GlobalNamespaceShouldStartAtNamespaceKeyword.fsi (6,29--6,32),
                                   { LeadingKeyword = None })],
-                            PreXmlDoc ((5,11), FSharp.Compiler.Xml.XmlDocCollector),
+                            PreXmlDoc ((6,11), FSharp.Compiler.Xml.XmlDocCollector),
                             None,
-                            /root/GlobalNamespaceShouldStartAtNamespaceKeyword.fsi (5,13--5,32),
+                            /root/GlobalNamespaceShouldStartAtNamespaceKeyword.fsi (6,13--6,32),
                             { BarRange =
                                Some
-                                 /root/GlobalNamespaceShouldStartAtNamespaceKeyword.fsi (5,11--5,12) })],
-                        /root/GlobalNamespaceShouldStartAtNamespaceKeyword.fsi (5,11--5,32)),
-                     /root/GlobalNamespaceShouldStartAtNamespaceKeyword.fsi (5,11--5,32)),
+                                 /root/GlobalNamespaceShouldStartAtNamespaceKeyword.fsi (6,11--6,12) })],
+                        /root/GlobalNamespaceShouldStartAtNamespaceKeyword.fsi (6,11--6,32)),
+                     /root/GlobalNamespaceShouldStartAtNamespaceKeyword.fsi (6,11--6,32)),
                   [],
-                  /root/GlobalNamespaceShouldStartAtNamespaceKeyword.fsi (5,5--5,32),
+                  /root/GlobalNamespaceShouldStartAtNamespaceKeyword.fsi (6,5--6,32),
                   { LeadingKeyword =
                      Type
-                       /root/GlobalNamespaceShouldStartAtNamespaceKeyword.fsi (5,0--5,4)
+                       /root/GlobalNamespaceShouldStartAtNamespaceKeyword.fsi (6,0--6,4)
                     EqualsRange =
                      Some
-                       /root/GlobalNamespaceShouldStartAtNamespaceKeyword.fsi (5,9--5,10)
+                       /root/GlobalNamespaceShouldStartAtNamespaceKeyword.fsi (6,9--6,10)
                     WithKeyword = None })],
-              /root/GlobalNamespaceShouldStartAtNamespaceKeyword.fsi (5,0--5,32))],
+              /root/GlobalNamespaceShouldStartAtNamespaceKeyword.fsi (6,0--6,32))],
           PreXmlDocEmpty, [], None,
-          /root/GlobalNamespaceShouldStartAtNamespaceKeyword.fsi (3,0--5,32),
+          /root/GlobalNamespaceShouldStartAtNamespaceKeyword.fsi (4,0--6,32),
           { LeadingKeyword =
              Namespace
-               /root/GlobalNamespaceShouldStartAtNamespaceKeyword.fsi (3,0--3,9) })],
+               /root/GlobalNamespaceShouldStartAtNamespaceKeyword.fsi (4,0--4,9) })],
       { ConditionalDirectives = []
         CodeComments =
          [LineComment
-            /root/GlobalNamespaceShouldStartAtNamespaceKeyword.fsi (1,0--1,6);
+            /root/GlobalNamespaceShouldStartAtNamespaceKeyword.fsi (2,0--2,6);
           LineComment
-            /root/GlobalNamespaceShouldStartAtNamespaceKeyword.fsi (2,0--2,6)] },
+            /root/GlobalNamespaceShouldStartAtNamespaceKeyword.fsi (3,0--3,6)] },
       set []))

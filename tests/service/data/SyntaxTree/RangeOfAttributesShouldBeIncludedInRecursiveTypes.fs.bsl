@@ -13,31 +13,31 @@ ImplFile
                             ArgExpr =
                              Const
                                (Unit,
-                                /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (1,2--1,12))
+                                /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (2,2--2,12))
                             Target = None
                             AppliesToGetterAndSetter = false
                             Range =
-                             /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (1,2--1,12) };
+                             /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (2,2--2,12) };
                           { TypeName = SynLongIdent ([NoComparison], [], [None])
                             ArgExpr =
                              Const
                                (Unit,
-                                /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (1,15--1,27))
+                                /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (2,15--2,27))
                             Target = None
                             AppliesToGetterAndSetter = false
                             Range =
-                             /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (1,15--1,27) }]
+                             /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (2,15--2,27) }]
                         Range =
-                         /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (1,0--1,29) }],
+                         /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (2,0--2,29) }],
                      Some
                        (PostfixList
                           ([SynTyparDecl ([], SynTypar (context, None, false));
                             SynTyparDecl ([], SynTypar (a, None, false))], [],
-                           /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (2,8--2,22))),
+                           /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (3,8--3,22))),
                      [], [Foo],
-                     PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
+                     PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                      true, None,
-                     /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (2,5--2,8)),
+                     /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (3,5--3,8)),
                   Simple
                     (Union
                        (None,
@@ -50,39 +50,39 @@ ImplFile
                                     (LongIdent
                                        (SynLongIdent ([ApplyCrate], [], [None])),
                                      Some
-                                       /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (3,25--3,26),
+                                       /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (4,25--4,26),
                                      [Var
                                         (SynTypar (context, None, false),
-                                         /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (3,26--3,34));
+                                         /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (4,26--4,34));
                                       Var
                                         (SynTypar (a, None, false),
-                                         /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (3,36--3,38))],
-                                     [/root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (3,34--3,35)],
+                                         /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (4,36--4,38))],
+                                     [/root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (4,34--4,35)],
                                      Some
-                                       /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (3,38--3,39),
+                                       /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (4,38--4,39),
                                      false,
-                                     /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (3,15--3,39)),
+                                     /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (4,15--4,39)),
                                   false,
-                                  PreXmlDoc ((3,15), FSharp.Compiler.Xml.XmlDocCollector),
+                                  PreXmlDoc ((4,15), FSharp.Compiler.Xml.XmlDocCollector),
                                   None,
-                                  /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (3,15--3,39),
+                                  /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (4,15--4,39),
                                   { LeadingKeyword = None })],
-                            PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),
+                            PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector),
                             None,
-                            /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (3,6--3,39),
+                            /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (4,6--4,39),
                             { BarRange =
                                Some
-                                 /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (3,4--3,5) })],
-                        /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (3,4--3,39)),
-                     /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (3,4--3,39)),
+                                 /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (4,4--4,5) })],
+                        /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (4,4--4,39)),
+                     /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (4,4--4,39)),
                   [], None,
-                  /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (1,0--3,39),
+                  /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (2,0--4,39),
                   { LeadingKeyword =
                      Type
-                       /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (2,0--2,4)
+                       /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (3,0--3,4)
                     EqualsRange =
                      Some
-                       /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (2,23--2,24)
+                       /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (3,23--3,24)
                     WithKeyword = None });
                SynTypeDefn
                  (SynComponentInfo
@@ -92,79 +92,79 @@ ImplFile
                             ArgExpr =
                              Const
                                (Unit,
-                                /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (5,6--5,20))
+                                /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (6,6--6,20))
                             Target = None
                             AppliesToGetterAndSetter = false
                             Range =
-                             /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (5,6--5,20) };
+                             /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (6,6--6,20) };
                           { TypeName = SynLongIdent ([NoComparison], [], [None])
                             ArgExpr =
                              Const
                                (Unit,
-                                /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (5,23--5,35))
+                                /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (6,23--6,35))
                             Target = None
                             AppliesToGetterAndSetter = false
                             Range =
-                             /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (5,23--5,35) }]
+                             /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (6,23--6,35) }]
                         Range =
-                         /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (5,4--5,37) }],
+                         /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (6,4--6,37) }],
                      Some
                        (PostfixList
                           ([SynTyparDecl ([], SynTypar (context, None, false));
                             SynTyparDecl ([], SynTypar (a, None, false))], [],
-                           /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (5,41--5,55))),
+                           /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (6,41--6,55))),
                      [], [Bar],
-                     PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
+                     PreXmlDoc ((6,4), FSharp.Compiler.Xml.XmlDocCollector),
                      true, None,
-                     /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (5,38--5,41)),
+                     /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (6,38--6,41)),
                   Simple
                     (Record
                        (Some
                           (Internal
-                             /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (6,4--6,12)),
+                             /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (7,4--7,12)),
                         [SynField
                            ([], false, Some Hash,
                             LongIdent (SynLongIdent ([int], [], [None])), false,
-                            PreXmlDoc ((7,8), FSharp.Compiler.Xml.XmlDocCollector),
+                            PreXmlDoc ((8,8), FSharp.Compiler.Xml.XmlDocCollector),
                             None,
-                            /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (7,8--7,18),
+                            /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (8,8--8,18),
                             { LeadingKeyword = None });
                          SynField
                            ([], false, Some Foo,
                             App
                               (LongIdent (SynLongIdent ([Foo], [], [None])),
                                Some
-                                 /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (8,17--8,18),
+                                 /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (9,17--9,18),
                                [Var
                                   (SynTypar (a, None, false),
-                                   /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (8,18--8,20));
+                                   /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (9,18--9,20));
                                 Var
                                   (SynTypar (b, None, false),
-                                   /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (8,22--8,24))],
-                               [/root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (8,20--8,21)],
+                                   /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (9,22--9,24))],
+                               [/root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (9,20--9,21)],
                                Some
-                                 /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (8,24--8,25),
+                                 /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (9,24--9,25),
                                false,
-                               /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (8,14--8,25)),
+                               /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (9,14--9,25)),
                             false,
-                            PreXmlDoc ((8,8), FSharp.Compiler.Xml.XmlDocCollector),
+                            PreXmlDoc ((9,8), FSharp.Compiler.Xml.XmlDocCollector),
                             None,
-                            /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (8,8--8,25),
+                            /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (9,8--9,25),
                             { LeadingKeyword = None })],
-                        /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (6,4--9,5)),
-                     /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (6,4--9,5)),
+                        /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (7,4--10,5)),
+                     /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (7,4--10,5)),
                   [], None,
-                  /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (5,4--9,5),
+                  /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (6,4--10,5),
                   { LeadingKeyword =
                      And
-                       /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (5,0--5,3)
+                       /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (6,0--6,3)
                     EqualsRange =
                      Some
-                       /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (5,56--5,57)
+                       /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (6,56--6,57)
                     WithKeyword = None })],
-              /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (1,0--9,5))],
+              /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (2,0--10,5))],
           PreXmlDocEmpty, [], None,
-          /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (1,0--9,5),
+          /root/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs (2,0--11,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

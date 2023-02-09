@@ -9,9 +9,9 @@ ImplFile
              ([SynTypeDefn
                  (SynComponentInfo
                     ([], None, [], [X],
-                     PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
+                     PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None,
-                     /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (1,5--1,6)),
+                     /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (2,5--2,6)),
                   ObjectModel
                     (Unspecified,
                      [GetSetMember
@@ -19,7 +19,7 @@ ImplFile
                            (SynBinding
                               (None, Normal, false, false, [],
                                PreXmlMerge
-  (PreXmlDoc ((2,4), FSharp.Compiler.Xml.XmlDocCollector), PreXmlDocEmpty),
+  (PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector), PreXmlDocEmpty),
                                SynValData
                                  (Some
                                     { IsInstance = true
@@ -34,45 +34,45 @@ ImplFile
                                LongIdent
                                  (SynLongIdent
                                     ([this; Y],
-                                     [/root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (2,15--2,16)],
+                                     [/root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (3,15--3,16)],
                                      [None; None]), Some get, None,
                                   Pats
                                     [Paren
                                        (Const
                                           (Unit,
-                                           /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (2,26--2,28)),
-                                        /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (2,26--2,28))],
+                                           /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (3,26--3,28)),
+                                        /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (3,26--3,28))],
                                   None,
-                                  /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (2,23--2,28)),
+                                  /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (3,23--3,28)),
                                Some
                                  (SynBindingReturnInfo
                                     (LongIdent
                                        (SynLongIdent ([int], [], [None])),
-                                     /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (2,29--2,32),
+                                     /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (3,29--3,32),
                                      [],
                                      { ColonRange =
                                         Some
-                                          /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (2,28--2,29) })),
+                                          /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (3,28--3,29) })),
                                Typed
                                  (Const
                                     (Int32 1,
-                                     /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (2,35--2,36)),
+                                     /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (3,35--3,36)),
                                   LongIdent (SynLongIdent ([int], [], [None])),
-                                  /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (2,35--2,36)),
-                               /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (2,23--2,28),
+                                  /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (3,35--3,36)),
+                               /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (3,23--3,28),
                                NoneAtInvisible,
                                { LeadingKeyword =
                                   Member
-                                    /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (2,4--2,10)
+                                    /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (3,4--3,10)
                                  InlineKeyword = None
                                  EqualsRange =
                                   Some
-                                    /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (2,33--2,34) })),
+                                    /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (3,33--3,34) })),
                          Some
                            (SynBinding
                               (None, Normal, false, false, [],
                                PreXmlMerge
-  (PreXmlDoc ((2,4), FSharp.Compiler.Xml.XmlDocCollector), PreXmlDocEmpty),
+  (PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector), PreXmlDocEmpty),
                                SynValData
                                  (Some
                                     { IsInstance = true
@@ -88,69 +88,69 @@ ImplFile
                                LongIdent
                                  (SynLongIdent
                                     ([this; Y],
-                                     [/root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (2,15--2,16)],
+                                     [/root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (3,15--3,16)],
                                      [None; None]), Some set, None,
                                   Pats
                                     [Paren
                                        (Typed
                                           (Wild
-                                             /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (2,46--2,47),
+                                             /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (3,46--3,47),
                                            LongIdent
                                              (SynLongIdent ([int], [], [None])),
-                                           /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (2,46--2,51)),
-                                        /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (2,45--2,52))],
+                                           /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (3,46--3,51)),
+                                        /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (3,45--3,52))],
                                   None,
-                                  /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (2,41--2,52)),
+                                  /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (3,41--3,52)),
                                Some
                                  (SynBindingReturnInfo
                                     (LongIdent
                                        (SynLongIdent ([unit], [], [None])),
-                                     /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (2,53--2,57),
+                                     /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (3,53--3,57),
                                      [],
                                      { ColonRange =
                                         Some
-                                          /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (2,52--2,53) })),
+                                          /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (3,52--3,53) })),
                                Typed
                                  (Const
                                     (Unit,
-                                     /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (2,60--2,62)),
+                                     /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (3,60--3,62)),
                                   LongIdent (SynLongIdent ([unit], [], [None])),
-                                  /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (2,60--2,62)),
-                               /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (2,41--2,52),
+                                  /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (3,60--3,62)),
+                               /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (3,41--3,52),
                                NoneAtInvisible,
                                { LeadingKeyword =
                                   Member
-                                    /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (2,4--2,10)
+                                    /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (3,4--3,10)
                                  InlineKeyword = None
                                  EqualsRange =
                                   Some
-                                    /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (2,58--2,59) })),
-                         /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (2,4--2,62),
+                                    /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (3,58--3,59) })),
+                         /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (3,4--3,62),
                          { InlineKeyword = None
                            WithKeyword =
-                            /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (2,18--2,22)
+                            /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (3,18--3,22)
                            GetKeyword =
                             Some
-                              /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (2,23--2,26)
+                              /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (3,23--3,26)
                            AndKeyword =
                             Some
-                              /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (2,37--2,40)
+                              /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (3,37--3,40)
                            SetKeyword =
                             Some
-                              /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (2,41--2,44) })],
-                     /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (2,4--2,62)),
+                              /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (3,41--3,44) })],
+                     /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (3,4--3,62)),
                   [], None,
-                  /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (1,5--2,62),
+                  /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (2,5--3,62),
                   { LeadingKeyword =
                      Type
-                       /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (1,0--1,4)
+                       /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (2,0--2,4)
                     EqualsRange =
                      Some
-                       /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (1,7--1,8)
+                       /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (2,7--2,8)
                     WithKeyword = None })],
-              /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (1,0--2,62))],
+              /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (2,0--3,62))],
           PreXmlDocEmpty, [], None,
-          /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (1,0--2,62),
+          /root/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs (2,0--4,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

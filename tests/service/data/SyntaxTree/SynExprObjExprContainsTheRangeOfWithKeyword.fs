@@ -1,3 +1,4 @@
+
 { new obj() with
     member x.ToString() = "INotifyEnumerableInternal"
   interface INotifyEnumerableInternal<'T>

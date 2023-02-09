@@ -7,8 +7,8 @@ SigFile
              ([SynTypeDefnSig
                  (SynComponentInfo
                     ([], None, [], [X],
-                     PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, /root/StaticValKeyword.fsi (3,5--3,6)),
+                     PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
+                     false, None, /root/StaticValKeyword.fsi (4,5--4,6)),
                   ObjectModel
                     (Unspecified,
                      [ValField
@@ -17,25 +17,25 @@ SigFile
                             Fun
                               (LongIdent (SynLongIdent ([int], [], [None])),
                                LongIdent (SynLongIdent ([int], [], [None])),
-                               /root/StaticValKeyword.fsi (4,19--4,29),
+                               /root/StaticValKeyword.fsi (5,19--5,29),
                                { ArrowRange =
-                                  /root/StaticValKeyword.fsi (4,23--4,25) }),
+                                  /root/StaticValKeyword.fsi (5,23--5,25) }),
                             false,
-                            PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, /root/StaticValKeyword.fsi (4,4--4,29),
+                            PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
+                            None, /root/StaticValKeyword.fsi (5,4--5,29),
                             { LeadingKeyword =
                                Some
                                  (StaticVal
-                                    (/root/StaticValKeyword.fsi (4,4--4,10),
-                                     /root/StaticValKeyword.fsi (4,11--4,14))) }),
-                         /root/StaticValKeyword.fsi (4,4--4,29))],
-                     /root/StaticValKeyword.fsi (4,4--4,29)), [],
-                  /root/StaticValKeyword.fsi (3,5--4,29),
-                  { LeadingKeyword = Type /root/StaticValKeyword.fsi (3,0--3,4)
-                    EqualsRange = Some /root/StaticValKeyword.fsi (3,7--3,8)
+                                    (/root/StaticValKeyword.fsi (5,4--5,10),
+                                     /root/StaticValKeyword.fsi (5,11--5,14))) }),
+                         /root/StaticValKeyword.fsi (5,4--5,29))],
+                     /root/StaticValKeyword.fsi (5,4--5,29)), [],
+                  /root/StaticValKeyword.fsi (4,5--5,29),
+                  { LeadingKeyword = Type /root/StaticValKeyword.fsi (4,0--4,4)
+                    EqualsRange = Some /root/StaticValKeyword.fsi (4,7--4,8)
                     WithKeyword = None })],
-              /root/StaticValKeyword.fsi (3,0--4,29))], PreXmlDocEmpty, [], None,
-          /root/StaticValKeyword.fsi (1,0--4,29),
-          { LeadingKeyword = Namespace /root/StaticValKeyword.fsi (1,0--1,9) })],
+              /root/StaticValKeyword.fsi (4,0--5,29))], PreXmlDocEmpty, [], None,
+          /root/StaticValKeyword.fsi (2,0--5,29),
+          { LeadingKeyword = Namespace /root/StaticValKeyword.fsi (2,0--2,9) })],
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

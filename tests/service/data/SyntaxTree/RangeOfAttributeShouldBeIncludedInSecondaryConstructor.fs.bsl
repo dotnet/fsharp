@@ -10,24 +10,24 @@ ImplFile
              ([SynTypeDefn
                  (SynComponentInfo
                     ([], None, [], [T],
-                     PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
+                     PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None,
-                     /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (1,5--1,6)),
+                     /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (2,5--2,6)),
                   ObjectModel
                     (Unspecified,
                      [ImplicitCtor
                         (None, [],
                          SimplePats
                            ([],
-                            /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (1,6--1,8)),
+                            /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (2,6--2,8)),
                          None,
-                         PreXmlDoc ((1,6), FSharp.Compiler.Xml.XmlDocCollector),
-                         /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (1,5--1,6),
+                         PreXmlDoc ((2,6), FSharp.Compiler.Xml.XmlDocCollector),
+                         /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (2,5--2,6),
                          { AsKeyword = None });
                       Member
                         (SynBinding
                            (None, Normal, false, false, [],
-                            PreXmlDoc ((2,4), FSharp.Compiler.Xml.XmlDocCollector),
+                            PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),
                             SynValData
                               (Some { IsInstance = false
                                       IsDispatchSlot = false
@@ -44,31 +44,31 @@ ImplFile
                                  [Paren
                                     (Const
                                        (Unit,
-                                        /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (2,8--2,10)),
-                                     /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (2,8--2,10))],
+                                        /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (3,8--3,10)),
+                                     /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (3,8--3,10))],
                                None,
-                               /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (2,4--2,7)),
+                               /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (3,4--3,7)),
                             None,
                             App
                               (NonAtomic, false, Ident T,
                                Const
                                  (Unit,
-                                  /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (3,10--3,12)),
-                               /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (3,8--3,12)),
-                            /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (2,4--2,10),
+                                  /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (4,10--4,12)),
+                               /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (4,8--4,12)),
+                            /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (3,4--3,10),
                             NoneAtInvisible,
                             { LeadingKeyword =
                                New
-                                 /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (2,4--2,7)
+                                 /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (3,4--3,7)
                               InlineKeyword = None
                               EqualsRange =
                                Some
-                                 /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (2,11--2,12) }),
-                         /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (2,4--3,12));
+                                 /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (3,11--3,12) }),
+                         /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (3,4--4,12));
                       Member
                         (SynBinding
                            (None, Normal, false, false, [],
-                            PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
+                            PreXmlDoc ((6,4), FSharp.Compiler.Xml.XmlDocCollector),
                             SynValData
                               (Some { IsInstance = false
                                       IsDispatchSlot = false
@@ -85,29 +85,29 @@ ImplFile
                                  [Paren
                                     (Const
                                        (Unit,
-                                        /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (5,17--5,19)),
-                                     /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (5,17--5,19))],
+                                        /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (6,17--6,19)),
+                                     /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (6,17--6,19))],
                                Some
                                  (Internal
-                                    /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (5,4--5,12)),
-                               /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (5,13--5,16)),
+                                    /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (6,4--6,12)),
+                               /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (6,13--6,16)),
                             None,
                             App
                               (NonAtomic, false, Ident T,
                                Const
                                  (Unit,
-                                  /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (6,10--6,12)),
-                               /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (6,8--6,12)),
-                            /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (5,4--5,19),
+                                  /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (7,10--7,12)),
+                               /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (7,8--7,12)),
+                            /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (6,4--6,19),
                             NoneAtInvisible,
                             { LeadingKeyword =
                                New
-                                 /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (5,13--5,16)
+                                 /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (6,13--6,16)
                               InlineKeyword = None
                               EqualsRange =
                                Some
-                                 /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (5,20--5,21) }),
-                         /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (5,4--6,12));
+                                 /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (6,20--6,21) }),
+                         /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (6,4--7,12));
                       Member
                         (SynBinding
                            (None, Normal, false, false,
@@ -116,14 +116,14 @@ ImplFile
                                    ArgExpr =
                                     Const
                                       (Unit,
-                                       /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (8,6--8,9))
+                                       /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (9,6--9,9))
                                    Target = None
                                    AppliesToGetterAndSetter = false
                                    Range =
-                                    /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (8,6--8,9) }]
+                                    /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (9,6--9,9) }]
                                Range =
-                                /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (8,4--8,11) }],
-                            PreXmlDoc ((8,4), FSharp.Compiler.Xml.XmlDocCollector),
+                                /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (9,4--9,11) }],
+                            PreXmlDoc ((9,4), FSharp.Compiler.Xml.XmlDocCollector),
                             SynValData
                               (Some { IsInstance = false
                                       IsDispatchSlot = false
@@ -140,50 +140,50 @@ ImplFile
                                  [Paren
                                     (Const
                                        (Unit,
-                                        /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (9,8--9,10)),
-                                     /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (9,8--9,10))],
+                                        /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (10,8--10,10)),
+                                     /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (10,8--10,10))],
                                None,
-                               /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (9,4--9,7)),
+                               /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (10,4--10,7)),
                             None,
                             App
                               (NonAtomic, false, Ident T,
                                Const
                                  (Unit,
-                                  /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (10,10--10,12)),
-                               /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (10,8--10,12)),
-                            /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (8,4--9,10),
+                                  /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (11,10--11,12)),
+                               /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (11,8--11,12)),
+                            /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (9,4--10,10),
                             NoneAtInvisible,
                             { LeadingKeyword =
                                New
-                                 /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (9,4--9,7)
+                                 /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (10,4--10,7)
                               InlineKeyword = None
                               EqualsRange =
                                Some
-                                 /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (9,11--9,12) }),
-                         /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (8,4--10,12))],
-                     /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (2,4--10,12)),
+                                 /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (10,11--10,12) }),
+                         /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (9,4--11,12))],
+                     /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (3,4--11,12)),
                   [],
                   Some
                     (ImplicitCtor
                        (None, [],
                         SimplePats
                           ([],
-                           /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (1,6--1,8)),
+                           /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (2,6--2,8)),
                         None,
-                        PreXmlDoc ((1,6), FSharp.Compiler.Xml.XmlDocCollector),
-                        /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (1,5--1,6),
+                        PreXmlDoc ((2,6), FSharp.Compiler.Xml.XmlDocCollector),
+                        /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (2,5--2,6),
                         { AsKeyword = None })),
-                  /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (1,5--10,12),
+                  /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (2,5--11,12),
                   { LeadingKeyword =
                      Type
-                       /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (1,0--1,4)
+                       /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (2,0--2,4)
                     EqualsRange =
                      Some
-                       /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (1,9--1,10)
+                       /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (2,9--2,10)
                     WithKeyword = None })],
-              /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (1,0--10,12))],
+              /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (2,0--11,12))],
           PreXmlDocEmpty, [], None,
-          /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (1,0--10,12),
+          /root/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs (2,0--12,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

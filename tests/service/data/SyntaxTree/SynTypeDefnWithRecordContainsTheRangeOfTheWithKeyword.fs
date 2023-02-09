@@ -1,3 +1,4 @@
+
 type Foo =
     { Bar : int }
     with

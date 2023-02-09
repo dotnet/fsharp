@@ -8,9 +8,9 @@ SigFile
              ([SynTypeDefnSig
                  (SynComponentInfo
                     ([], None, [], [T],
-                     PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
+                     PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None,
-                     /root/SynTypeTupleDoesIncludeLeadingParameterName.fsi (1,5--1,6)),
+                     /root/SynTypeTupleDoesIncludeLeadingParameterName.fsi (2,5--2,6)),
                   ObjectModel
                     (Unspecified,
                      [Member
@@ -25,30 +25,30 @@ SigFile
                                         ([], false, Some p1,
                                          LongIdent
                                            (SynLongIdent ([a], [], [None])),
-                                         /root/SynTypeTupleDoesIncludeLeadingParameterName.fsi (2,14--2,19)));
+                                         /root/SynTypeTupleDoesIncludeLeadingParameterName.fsi (3,14--3,19)));
                                    Star
-                                     /root/SynTypeTupleDoesIncludeLeadingParameterName.fsi (2,20--2,21);
+                                     /root/SynTypeTupleDoesIncludeLeadingParameterName.fsi (3,20--3,21);
                                    Type
                                      (SignatureParameter
                                         ([], false, Some p2,
                                          LongIdent
                                            (SynLongIdent ([b], [], [None])),
-                                         /root/SynTypeTupleDoesIncludeLeadingParameterName.fsi (2,22--2,27)))],
-                                  /root/SynTypeTupleDoesIncludeLeadingParameterName.fsi (2,14--2,27)),
+                                         /root/SynTypeTupleDoesIncludeLeadingParameterName.fsi (3,22--3,27)))],
+                                  /root/SynTypeTupleDoesIncludeLeadingParameterName.fsi (3,14--3,27)),
                                LongIdent (SynLongIdent ([int], [], [None])),
-                               /root/SynTypeTupleDoesIncludeLeadingParameterName.fsi (2,14--2,34),
+                               /root/SynTypeTupleDoesIncludeLeadingParameterName.fsi (3,14--3,34),
                                { ArrowRange =
-                                  /root/SynTypeTupleDoesIncludeLeadingParameterName.fsi (2,28--2,30) }),
+                                  /root/SynTypeTupleDoesIncludeLeadingParameterName.fsi (3,28--3,30) }),
                             SynValInfo
                               ([[SynArgInfo ([], false, Some p1);
                                  SynArgInfo ([], false, Some p2)]],
                                SynArgInfo ([], false, None)), false, false,
-                            PreXmlDoc ((2,4), FSharp.Compiler.Xml.XmlDocCollector),
+                            PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),
                             None, None,
-                            /root/SynTypeTupleDoesIncludeLeadingParameterName.fsi (2,4--2,34),
+                            /root/SynTypeTupleDoesIncludeLeadingParameterName.fsi (3,4--3,34),
                             { LeadingKeyword =
                                Member
-                                 /root/SynTypeTupleDoesIncludeLeadingParameterName.fsi (2,4--2,10)
+                                 /root/SynTypeTupleDoesIncludeLeadingParameterName.fsi (3,4--3,10)
                               InlineKeyword = None
                               WithKeyword = None
                               EqualsRange = None }),
@@ -58,20 +58,20 @@ SigFile
                            IsFinal = false
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = Member },
-                         /root/SynTypeTupleDoesIncludeLeadingParameterName.fsi (2,4--2,34),
+                         /root/SynTypeTupleDoesIncludeLeadingParameterName.fsi (3,4--3,34),
                          { GetSetKeywords = None })],
-                     /root/SynTypeTupleDoesIncludeLeadingParameterName.fsi (2,4--2,34)),
+                     /root/SynTypeTupleDoesIncludeLeadingParameterName.fsi (3,4--3,34)),
                   [],
-                  /root/SynTypeTupleDoesIncludeLeadingParameterName.fsi (1,5--2,34),
+                  /root/SynTypeTupleDoesIncludeLeadingParameterName.fsi (2,5--3,34),
                   { LeadingKeyword =
                      Type
-                       /root/SynTypeTupleDoesIncludeLeadingParameterName.fsi (1,0--1,4)
+                       /root/SynTypeTupleDoesIncludeLeadingParameterName.fsi (2,0--2,4)
                     EqualsRange =
                      Some
-                       /root/SynTypeTupleDoesIncludeLeadingParameterName.fsi (1,7--1,8)
+                       /root/SynTypeTupleDoesIncludeLeadingParameterName.fsi (2,7--2,8)
                     WithKeyword = None })],
-              /root/SynTypeTupleDoesIncludeLeadingParameterName.fsi (1,0--2,34))],
+              /root/SynTypeTupleDoesIncludeLeadingParameterName.fsi (2,0--3,34))],
           PreXmlDocEmpty, [], None,
-          /root/SynTypeTupleDoesIncludeLeadingParameterName.fsi (1,0--2,34),
+          /root/SynTypeTupleDoesIncludeLeadingParameterName.fsi (2,0--4,0),
           { LeadingKeyword = None })], { ConditionalDirectives = []
                                          CodeComments = [] }, set []))

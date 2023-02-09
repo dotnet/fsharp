@@ -1,3 +1,4 @@
+
 namespace X
 
 exception Foo with

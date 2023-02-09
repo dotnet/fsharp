@@ -9,29 +9,29 @@ ImplFile
              (false,
               [SynBinding
                  (None, Normal, false, false, [],
-                  PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
+                  PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
                     (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
                   Named
                     (SynIdent (v, None), false, None,
-                     /root/DirectivesInMultilineStringAreNotReportedAsTrivia.fs (1,4--1,5)),
+                     /root/DirectivesInMultilineStringAreNotReportedAsTrivia.fs (2,4--2,5)),
                   None,
                   ArbitraryAfterError
                     ("localBinding1",
-                     /root/DirectivesInMultilineStringAreNotReportedAsTrivia.fs (1,7--1,7)),
-                  /root/DirectivesInMultilineStringAreNotReportedAsTrivia.fs (1,4--1,5),
+                     /root/DirectivesInMultilineStringAreNotReportedAsTrivia.fs (2,7--2,7)),
+                  /root/DirectivesInMultilineStringAreNotReportedAsTrivia.fs (2,4--2,5),
                   Yes
-                    /root/DirectivesInMultilineStringAreNotReportedAsTrivia.fs (1,4--1,7),
+                    /root/DirectivesInMultilineStringAreNotReportedAsTrivia.fs (2,4--2,7),
                   { LeadingKeyword =
                      Let
-                       /root/DirectivesInMultilineStringAreNotReportedAsTrivia.fs (1,0--1,3)
+                       /root/DirectivesInMultilineStringAreNotReportedAsTrivia.fs (2,0--2,3)
                     InlineKeyword = None
                     EqualsRange =
                      Some
-                       /root/DirectivesInMultilineStringAreNotReportedAsTrivia.fs (1,6--1,7) })],
-              /root/DirectivesInMultilineStringAreNotReportedAsTrivia.fs (1,0--1,7))],
+                       /root/DirectivesInMultilineStringAreNotReportedAsTrivia.fs (2,6--2,7) })],
+              /root/DirectivesInMultilineStringAreNotReportedAsTrivia.fs (2,0--2,7))],
           PreXmlDocEmpty, [], None,
-          /root/DirectivesInMultilineStringAreNotReportedAsTrivia.fs (1,0--6,6),
+          /root/DirectivesInMultilineStringAreNotReportedAsTrivia.fs (2,0--8,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

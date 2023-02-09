@@ -8,9 +8,9 @@ ImplFile
              ([SynTypeDefn
                  (SynComponentInfo
                     ([], None, [], [Foo],
-                     PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
+                     PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None,
-                     /root/NamedParametersInDelegateType.fs (1,5--1,8)),
+                     /root/NamedParametersInDelegateType.fs (2,5--2,8)),
                   ObjectModel
                     (Delegate
                        (Fun
@@ -20,27 +20,27 @@ ImplFile
                                  (SignatureParameter
                                     ([], false, Some a,
                                      LongIdent (SynLongIdent ([A], [], [None])),
-                                     /root/NamedParametersInDelegateType.fs (1,23--1,27)));
+                                     /root/NamedParametersInDelegateType.fs (2,23--2,27)));
                                Star
-                                 /root/NamedParametersInDelegateType.fs (1,28--1,29);
+                                 /root/NamedParametersInDelegateType.fs (2,28--2,29);
                                Type
                                  (SignatureParameter
                                     ([], false, Some b,
                                      LongIdent (SynLongIdent ([B], [], [None])),
-                                     /root/NamedParametersInDelegateType.fs (1,30--1,34)))],
-                              /root/NamedParametersInDelegateType.fs (1,23--1,34)),
+                                     /root/NamedParametersInDelegateType.fs (2,30--2,34)))],
+                              /root/NamedParametersInDelegateType.fs (2,23--2,34)),
                            Fun
                              (SignatureParameter
                                 ([], false, Some c,
                                  LongIdent (SynLongIdent ([C], [], [None])),
-                                 /root/NamedParametersInDelegateType.fs (1,38--1,41)),
+                                 /root/NamedParametersInDelegateType.fs (2,38--2,41)),
                               LongIdent (SynLongIdent ([D], [], [None])),
-                              /root/NamedParametersInDelegateType.fs (1,38--1,46),
+                              /root/NamedParametersInDelegateType.fs (2,38--2,46),
                               { ArrowRange =
-                                 /root/NamedParametersInDelegateType.fs (1,42--1,44) }),
-                           /root/NamedParametersInDelegateType.fs (1,23--1,46),
+                                 /root/NamedParametersInDelegateType.fs (2,42--2,44) }),
+                           /root/NamedParametersInDelegateType.fs (2,23--2,46),
                            { ArrowRange =
-                              /root/NamedParametersInDelegateType.fs (1,35--1,37) }),
+                              /root/NamedParametersInDelegateType.fs (2,35--2,37) }),
                         SynValInfo
                           ([[SynArgInfo ([], false, Some a);
                              SynArgInfo ([], false, Some b)];
@@ -58,35 +58,35 @@ ImplFile
                                         ([], false, Some a,
                                          LongIdent
                                            (SynLongIdent ([A], [], [None])),
-                                         /root/NamedParametersInDelegateType.fs (1,23--1,27)));
+                                         /root/NamedParametersInDelegateType.fs (2,23--2,27)));
                                    Star
-                                     /root/NamedParametersInDelegateType.fs (1,28--1,29);
+                                     /root/NamedParametersInDelegateType.fs (2,28--2,29);
                                    Type
                                      (SignatureParameter
                                         ([], false, Some b,
                                          LongIdent
                                            (SynLongIdent ([B], [], [None])),
-                                         /root/NamedParametersInDelegateType.fs (1,30--1,34)))],
-                                  /root/NamedParametersInDelegateType.fs (1,23--1,34)),
+                                         /root/NamedParametersInDelegateType.fs (2,30--2,34)))],
+                                  /root/NamedParametersInDelegateType.fs (2,23--2,34)),
                                Fun
                                  (SignatureParameter
                                     ([], false, Some c,
                                      LongIdent (SynLongIdent ([C], [], [None])),
-                                     /root/NamedParametersInDelegateType.fs (1,38--1,41)),
+                                     /root/NamedParametersInDelegateType.fs (2,38--2,41)),
                                   LongIdent (SynLongIdent ([D], [], [None])),
-                                  /root/NamedParametersInDelegateType.fs (1,38--1,46),
+                                  /root/NamedParametersInDelegateType.fs (2,38--2,46),
                                   { ArrowRange =
-                                     /root/NamedParametersInDelegateType.fs (1,42--1,44) }),
-                               /root/NamedParametersInDelegateType.fs (1,23--1,46),
+                                     /root/NamedParametersInDelegateType.fs (2,42--2,44) }),
+                               /root/NamedParametersInDelegateType.fs (2,23--2,46),
                                { ArrowRange =
-                                  /root/NamedParametersInDelegateType.fs (1,35--1,37) }),
+                                  /root/NamedParametersInDelegateType.fs (2,35--2,37) }),
                             SynValInfo
                               ([[SynArgInfo ([], false, Some a);
                                  SynArgInfo ([], false, Some b)];
                                 [SynArgInfo ([], false, Some c)]],
                                SynArgInfo ([], false, None)), false, false,
                             PreXmlDocEmpty, None, None,
-                            /root/NamedParametersInDelegateType.fs (1,11--1,46),
+                            /root/NamedParametersInDelegateType.fs (2,11--2,46),
                             { LeadingKeyword = Synthetic
                               InlineKeyword = None
                               WithKeyword = None
@@ -97,18 +97,18 @@ ImplFile
                            IsFinal = false
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = Member },
-                         /root/NamedParametersInDelegateType.fs (1,11--1,46),
+                         /root/NamedParametersInDelegateType.fs (2,11--2,46),
                          { GetSetKeywords = None })],
-                     /root/NamedParametersInDelegateType.fs (1,11--1,46)), [],
-                  None, /root/NamedParametersInDelegateType.fs (1,5--1,46),
+                     /root/NamedParametersInDelegateType.fs (2,11--2,46)), [],
+                  None, /root/NamedParametersInDelegateType.fs (2,5--2,46),
                   { LeadingKeyword =
-                     Type /root/NamedParametersInDelegateType.fs (1,0--1,4)
+                     Type /root/NamedParametersInDelegateType.fs (2,0--2,4)
                     EqualsRange =
-                     Some /root/NamedParametersInDelegateType.fs (1,9--1,10)
+                     Some /root/NamedParametersInDelegateType.fs (2,9--2,10)
                     WithKeyword = None })],
-              /root/NamedParametersInDelegateType.fs (1,0--1,46))],
+              /root/NamedParametersInDelegateType.fs (2,0--2,46))],
           PreXmlDocEmpty, [], None,
-          /root/NamedParametersInDelegateType.fs (1,0--1,46),
+          /root/NamedParametersInDelegateType.fs (2,0--3,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

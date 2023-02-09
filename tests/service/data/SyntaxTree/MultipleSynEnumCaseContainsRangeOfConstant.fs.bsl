@@ -8,49 +8,49 @@ ImplFile
              ([SynTypeDefn
                  (SynComponentInfo
                     ([], None, [], [Foo],
-                     PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
+                     PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None,
-                     /root/MultipleSynEnumCaseContainsRangeOfConstant.fs (1,5--1,8)),
+                     /root/MultipleSynEnumCaseContainsRangeOfConstant.fs (2,5--2,8)),
                   Simple
                     (Enum
                        ([SynEnumCase
                            ([], SynIdent (One, None),
                             Const
                               (Int32 1,
-                               /root/MultipleSynEnumCaseContainsRangeOfConstant.fs (2,13--2,23)),
-                            PreXmlDoc ((2,4), FSharp.Compiler.Xml.XmlDocCollector),
-                            /root/MultipleSynEnumCaseContainsRangeOfConstant.fs (2,6--2,23),
-                            { BarRange =
-                               Some
-                                 /root/MultipleSynEnumCaseContainsRangeOfConstant.fs (2,4--2,5)
-                              EqualsRange =
-                               /root/MultipleSynEnumCaseContainsRangeOfConstant.fs (2,10--2,11) });
-                         SynEnumCase
-                           ([], SynIdent (Two, None),
-                            Const
-                              (Int32 2,
-                               /root/MultipleSynEnumCaseContainsRangeOfConstant.fs (3,12--3,13)),
+                               /root/MultipleSynEnumCaseContainsRangeOfConstant.fs (3,13--3,23)),
                             PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),
-                            /root/MultipleSynEnumCaseContainsRangeOfConstant.fs (3,6--3,13),
+                            /root/MultipleSynEnumCaseContainsRangeOfConstant.fs (3,6--3,23),
                             { BarRange =
                                Some
                                  /root/MultipleSynEnumCaseContainsRangeOfConstant.fs (3,4--3,5)
                               EqualsRange =
-                               /root/MultipleSynEnumCaseContainsRangeOfConstant.fs (3,10--3,11) })],
-                        /root/MultipleSynEnumCaseContainsRangeOfConstant.fs (2,4--3,13)),
-                     /root/MultipleSynEnumCaseContainsRangeOfConstant.fs (2,4--3,13)),
+                               /root/MultipleSynEnumCaseContainsRangeOfConstant.fs (3,10--3,11) });
+                         SynEnumCase
+                           ([], SynIdent (Two, None),
+                            Const
+                              (Int32 2,
+                               /root/MultipleSynEnumCaseContainsRangeOfConstant.fs (4,12--4,13)),
+                            PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector),
+                            /root/MultipleSynEnumCaseContainsRangeOfConstant.fs (4,6--4,13),
+                            { BarRange =
+                               Some
+                                 /root/MultipleSynEnumCaseContainsRangeOfConstant.fs (4,4--4,5)
+                              EqualsRange =
+                               /root/MultipleSynEnumCaseContainsRangeOfConstant.fs (4,10--4,11) })],
+                        /root/MultipleSynEnumCaseContainsRangeOfConstant.fs (3,4--4,13)),
+                     /root/MultipleSynEnumCaseContainsRangeOfConstant.fs (3,4--4,13)),
                   [], None,
-                  /root/MultipleSynEnumCaseContainsRangeOfConstant.fs (1,5--3,13),
+                  /root/MultipleSynEnumCaseContainsRangeOfConstant.fs (2,5--4,13),
                   { LeadingKeyword =
                      Type
-                       /root/MultipleSynEnumCaseContainsRangeOfConstant.fs (1,0--1,4)
+                       /root/MultipleSynEnumCaseContainsRangeOfConstant.fs (2,0--2,4)
                     EqualsRange =
                      Some
-                       /root/MultipleSynEnumCaseContainsRangeOfConstant.fs (1,9--1,10)
+                       /root/MultipleSynEnumCaseContainsRangeOfConstant.fs (2,9--2,10)
                     WithKeyword = None })],
-              /root/MultipleSynEnumCaseContainsRangeOfConstant.fs (1,0--3,13))],
+              /root/MultipleSynEnumCaseContainsRangeOfConstant.fs (2,0--4,13))],
           PreXmlDocEmpty, [], None,
-          /root/MultipleSynEnumCaseContainsRangeOfConstant.fs (1,0--3,13),
+          /root/MultipleSynEnumCaseContainsRangeOfConstant.fs (2,0--5,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

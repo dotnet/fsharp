@@ -8,24 +8,24 @@ SigFile
              ([SynTypeDefnSig
                  (SynComponentInfo
                     ([], None, [], [Meh],
-                     PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
+                     PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None,
-                     /root/RangeOfTypeShouldEndAtEndKeyword.fsi (3,5--3,8)),
+                     /root/RangeOfTypeShouldEndAtEndKeyword.fsi (4,5--4,8)),
                   ObjectModel
                     (Class, [],
-                     /root/RangeOfTypeShouldEndAtEndKeyword.fsi (4,8--5,11)), [],
-                  /root/RangeOfTypeShouldEndAtEndKeyword.fsi (3,5--5,11),
+                     /root/RangeOfTypeShouldEndAtEndKeyword.fsi (5,8--6,11)), [],
+                  /root/RangeOfTypeShouldEndAtEndKeyword.fsi (4,5--6,11),
                   { LeadingKeyword =
-                     Type /root/RangeOfTypeShouldEndAtEndKeyword.fsi (3,0--3,4)
+                     Type /root/RangeOfTypeShouldEndAtEndKeyword.fsi (4,0--4,4)
                     EqualsRange =
-                     Some /root/RangeOfTypeShouldEndAtEndKeyword.fsi (3,9--3,10)
+                     Some /root/RangeOfTypeShouldEndAtEndKeyword.fsi (4,9--4,10)
                     WithKeyword = None })],
-              /root/RangeOfTypeShouldEndAtEndKeyword.fsi (3,0--5,11))],
+              /root/RangeOfTypeShouldEndAtEndKeyword.fsi (4,0--6,11))],
           PreXmlDocEmpty, [], None,
-          /root/RangeOfTypeShouldEndAtEndKeyword.fsi (1,0--5,11),
+          /root/RangeOfTypeShouldEndAtEndKeyword.fsi (2,0--6,11),
           { LeadingKeyword =
-             Namespace /root/RangeOfTypeShouldEndAtEndKeyword.fsi (1,0--1,9) })],
+             Namespace /root/RangeOfTypeShouldEndAtEndKeyword.fsi (2,0--2,9) })],
       { ConditionalDirectives = []
         CodeComments =
-         [LineComment /root/RangeOfTypeShouldEndAtEndKeyword.fsi (8,0--8,6)] },
+         [LineComment /root/RangeOfTypeShouldEndAtEndKeyword.fsi (9,0--9,6)] },
       set []))

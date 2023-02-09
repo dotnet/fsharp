@@ -1,3 +1,4 @@
+
 namespace X
 
 type Y =

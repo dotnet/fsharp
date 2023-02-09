@@ -15,14 +15,14 @@ ImplFile
                          ([op_Addition], [],
                           [Some
                              (OriginalNotationWithParen
-                                (/root/OperatorAsFunction.fs (1,0--1,1), "+",
-                                 /root/OperatorAsFunction.fs (1,2--1,3)))]),
-                       None, /root/OperatorAsFunction.fs (1,0--1,3)),
-                    Const (Int32 3, /root/OperatorAsFunction.fs (1,4--1,5)),
-                    /root/OperatorAsFunction.fs (1,0--1,5)),
-                 Const (Int32 4, /root/OperatorAsFunction.fs (1,6--1,7)),
-                 /root/OperatorAsFunction.fs (1,0--1,7)),
-              /root/OperatorAsFunction.fs (1,0--1,7))], PreXmlDocEmpty, [], None,
-          /root/OperatorAsFunction.fs (1,0--1,7), { LeadingKeyword = None })],
+                                (/root/OperatorAsFunction.fs (2,0--2,1), "+",
+                                 /root/OperatorAsFunction.fs (2,2--2,3)))]),
+                       None, /root/OperatorAsFunction.fs (2,0--2,3)),
+                    Const (Int32 3, /root/OperatorAsFunction.fs (2,4--2,5)),
+                    /root/OperatorAsFunction.fs (2,0--2,5)),
+                 Const (Int32 4, /root/OperatorAsFunction.fs (2,6--2,7)),
+                 /root/OperatorAsFunction.fs (2,0--2,7)),
+              /root/OperatorAsFunction.fs (2,0--2,7))], PreXmlDocEmpty, [], None,
+          /root/OperatorAsFunction.fs (2,0--2,7), { LeadingKeyword = None })],
       (true, false), { ConditionalDirectives = []
                        CodeComments = [] }, set []))

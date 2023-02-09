@@ -10,7 +10,7 @@ ImplFile
              (false,
               [SynBinding
                  (None, Normal, true, false, [],
-                  PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
+                  PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
                     (None, SynValInfo ([[]], SynArgInfo ([], false, None)), None),
                   LongIdent
@@ -26,14 +26,14 @@ ImplFile
                                        (Or
                                           (Var
                                              (SynTypar (T1, None, false),
-                                              /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (1,41--1,44)),
+                                              /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (2,41--2,44)),
                                            Var
                                              (SynTypar (T2, None, false),
-                                              /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (1,48--1,51)),
-                                           /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (1,41--1,51),
+                                              /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (2,48--2,51)),
+                                           /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (2,41--2,51),
                                            { OrKeyword =
-                                              /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (1,45--1,47) }),
-                                        /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (1,40--1,52)),
+                                              /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (2,45--2,47) }),
+                                        /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (2,40--2,52)),
                                      Member
                                        (SynValSig
                                           ([], SynIdent (StaticMethod, None),
@@ -45,20 +45,20 @@ ImplFile
                                               LongIdent
                                                 (SynLongIdent
                                                    ([int], [], [None])),
-                                              /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (1,84--1,94),
+                                              /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (2,84--2,94),
                                               { ArrowRange =
-                                                 /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (1,88--1,90) }),
+                                                 /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (2,88--2,90) }),
                                            SynValInfo
                                              ([[SynArgInfo ([], false, None)]],
                                               SynArgInfo ([], false, None)),
                                            false, false,
-                                           PreXmlDoc ((1,56), FSharp.Compiler.Xml.XmlDocCollector),
+                                           PreXmlDoc ((2,56), FSharp.Compiler.Xml.XmlDocCollector),
                                            None, None,
-                                           /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (1,56--1,94),
+                                           /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (2,56--2,94),
                                            { LeadingKeyword =
                                               StaticMember
-                                                (/root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (1,56--1,62),
-                                                 /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (1,63--1,69))
+                                                (/root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (2,56--2,62),
+                                                 /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (2,63--2,69))
                                              InlineKeyword = None
                                              WithKeyword = None
                                              EqualsRange = None }),
@@ -69,47 +69,47 @@ ImplFile
                                           GetterOrSetterIsCompilerGenerated =
                                            false
                                           MemberKind = Member },
-                                        /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (1,56--1,94),
+                                        /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (2,56--2,94),
                                         { GetSetKeywords = None }),
-                                     /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (1,40--1,95))],
-                                 /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (1,25--1,97))),
+                                     /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (2,40--2,95))],
+                                 /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (2,25--2,97))),
                            false)),
                      Pats
                        [Paren
                           (Const
                              (Unit,
-                              /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (1,97--1,99)),
-                           /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (1,97--1,99))],
+                              /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (2,97--2,99)),
+                           /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (2,97--2,99))],
                      None,
-                     /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (1,11--1,99)),
+                     /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (2,11--2,99)),
                   Some
                     (SynBindingReturnInfo
                        (LongIdent (SynLongIdent ([int], [], [None])),
-                        /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (1,102--1,105),
+                        /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (2,102--2,105),
                         [],
                         { ColonRange =
                            Some
-                             /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (1,100--1,101) })),
+                             /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (2,100--2,101) })),
                   Typed
                     (Const
                        (Unit,
-                        /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (2,4--2,6)),
+                        /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (3,4--3,6)),
                      LongIdent (SynLongIdent ([int], [], [None])),
-                     /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (2,4--2,6)),
-                  /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (1,11--1,99),
+                     /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (3,4--3,6)),
+                  /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (2,11--2,99),
                   NoneAtLet,
                   { LeadingKeyword =
                      Let
-                       /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (1,0--1,3)
+                       /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (2,0--2,3)
                     InlineKeyword =
                      Some
-                       /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (1,4--1,10)
+                       /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (2,4--2,10)
                     EqualsRange =
                      Some
-                       /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (1,106--1,107) })],
-              /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (1,0--2,6))],
+                       /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (2,106--2,107) })],
+              /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (2,0--3,6))],
           PreXmlDocEmpty, [], None,
-          /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (1,0--2,6),
+          /root/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs (2,0--4,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

@@ -1,3 +1,4 @@
+
 struct 
     {| Foo =
     //  meh

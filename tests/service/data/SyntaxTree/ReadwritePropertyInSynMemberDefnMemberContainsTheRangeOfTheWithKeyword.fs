@@ -1,3 +1,4 @@
+
 type Foo() =
     // A read-write property.
     member this.MyReadWriteProperty

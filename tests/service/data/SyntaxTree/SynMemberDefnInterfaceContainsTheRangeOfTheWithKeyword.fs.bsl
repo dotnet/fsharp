@@ -10,29 +10,29 @@ ImplFile
              ([SynTypeDefn
                  (SynComponentInfo
                     ([], None, [], [Foo],
-                     PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
+                     PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None,
-                     /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (1,5--1,8)),
+                     /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (2,5--2,8)),
                   ObjectModel
                     (Unspecified,
                      [ImplicitCtor
                         (None, [],
                          SimplePats
                            ([],
-                            /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (1,8--1,10)),
+                            /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (2,8--2,10)),
                          None,
-                         PreXmlDoc ((1,8), FSharp.Compiler.Xml.XmlDocCollector),
-                         /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (1,5--1,8),
+                         PreXmlDoc ((2,8), FSharp.Compiler.Xml.XmlDocCollector),
+                         /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (2,5--2,8),
                          { AsKeyword = None });
                       Interface
                         (LongIdent (SynLongIdent ([Bar], [], [None])),
                          Some
-                           /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (2,18--2,22),
+                           /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (3,18--3,22),
                          Some
                            [Member
                               (SynBinding
                                  (None, Normal, false, false, [],
-                                  PreXmlDoc ((3,8), FSharp.Compiler.Xml.XmlDocCollector),
+                                  PreXmlDoc ((4,8), FSharp.Compiler.Xml.XmlDocCollector),
                                   SynValData
                                     (Some
                                        { IsInstance = true
@@ -52,52 +52,52 @@ ImplFile
                                        [Paren
                                           (Const
                                              (Unit,
-                                              /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (3,19--3,21)),
-                                           /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (3,19--3,21))],
+                                              /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (4,19--4,21)),
+                                           /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (4,19--4,21))],
                                      None,
-                                     /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (3,15--3,21)),
+                                     /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (4,15--4,21)),
                                   None,
                                   Const
                                     (Unit,
-                                     /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (3,24--3,26)),
-                                  /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (3,15--3,21),
+                                     /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (4,24--4,26)),
+                                  /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (4,15--4,21),
                                   NoneAtInvisible,
                                   { LeadingKeyword =
                                      Member
-                                       /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (3,8--3,14)
+                                       /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (4,8--4,14)
                                     InlineKeyword = None
                                     EqualsRange =
                                      Some
-                                       /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (3,22--3,23) }),
-                               /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (3,8--3,26))],
-                         /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (2,4--3,26));
+                                       /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (4,22--4,23) }),
+                               /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (4,8--4,26))],
+                         /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (3,4--4,26));
                       Interface
                         (LongIdent (SynLongIdent ([Other], [], [None])), None,
                          None,
-                         /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (4,4--4,19))],
-                     /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (2,4--4,19)),
+                         /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (5,4--5,19))],
+                     /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (3,4--5,19)),
                   [],
                   Some
                     (ImplicitCtor
                        (None, [],
                         SimplePats
                           ([],
-                           /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (1,8--1,10)),
+                           /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (2,8--2,10)),
                         None,
-                        PreXmlDoc ((1,8), FSharp.Compiler.Xml.XmlDocCollector),
-                        /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (1,5--1,8),
+                        PreXmlDoc ((2,8), FSharp.Compiler.Xml.XmlDocCollector),
+                        /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (2,5--2,8),
                         { AsKeyword = None })),
-                  /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (1,5--4,19),
+                  /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (2,5--5,19),
                   { LeadingKeyword =
                      Type
-                       /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (1,0--1,4)
+                       /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (2,0--2,4)
                     EqualsRange =
                      Some
-                       /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (1,11--1,12)
+                       /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (2,11--2,12)
                     WithKeyword = None })],
-              /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (1,0--4,19))],
+              /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (2,0--5,19))],
           PreXmlDocEmpty, [], None,
-          /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (1,0--4,19),
+          /root/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs (2,0--6,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

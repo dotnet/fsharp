@@ -8,9 +8,9 @@ ImplFile
              ([SynTypeDefn
                  (SynComponentInfo
                     ([], None, [], [Foo],
-                     PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
+                     PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None,
-                     /root/SynMemberDefnAbstractSlotHasCorrectKeyword.fs (1,5--1,8)),
+                     /root/SynMemberDefnAbstractSlotHasCorrectKeyword.fs (2,5--2,8)),
                   ObjectModel
                     (Unspecified,
                      [AbstractSlot
@@ -20,12 +20,12 @@ ImplFile
                             LongIdent (SynLongIdent ([int], [], [None])),
                             SynValInfo ([], SynArgInfo ([], false, None)), false,
                             false,
-                            PreXmlDoc ((2,4), FSharp.Compiler.Xml.XmlDocCollector),
+                            PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),
                             None, None,
-                            /root/SynMemberDefnAbstractSlotHasCorrectKeyword.fs (2,4--2,20),
+                            /root/SynMemberDefnAbstractSlotHasCorrectKeyword.fs (3,4--3,20),
                             { LeadingKeyword =
                                Abstract
-                                 /root/SynMemberDefnAbstractSlotHasCorrectKeyword.fs (2,4--2,12)
+                                 /root/SynMemberDefnAbstractSlotHasCorrectKeyword.fs (3,4--3,12)
                               InlineKeyword = None
                               WithKeyword = None
                               EqualsRange = None }),
@@ -35,7 +35,7 @@ ImplFile
                            IsFinal = false
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = PropertyGet },
-                         /root/SynMemberDefnAbstractSlotHasCorrectKeyword.fs (2,4--2,20),
+                         /root/SynMemberDefnAbstractSlotHasCorrectKeyword.fs (3,4--3,20),
                          { GetSetKeywords = None });
                       AbstractSlot
                         (SynValSig
@@ -44,13 +44,13 @@ ImplFile
                             LongIdent (SynLongIdent ([int], [], [None])),
                             SynValInfo ([], SynArgInfo ([], false, None)), false,
                             false,
-                            PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),
+                            PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector),
                             None, None,
-                            /root/SynMemberDefnAbstractSlotHasCorrectKeyword.fs (3,4--3,26),
+                            /root/SynMemberDefnAbstractSlotHasCorrectKeyword.fs (4,4--4,26),
                             { LeadingKeyword =
                                AbstractMember
-                                 (/root/SynMemberDefnAbstractSlotHasCorrectKeyword.fs (3,4--3,12),
-                                  /root/SynMemberDefnAbstractSlotHasCorrectKeyword.fs (3,13--3,19))
+                                 (/root/SynMemberDefnAbstractSlotHasCorrectKeyword.fs (4,4--4,12),
+                                  /root/SynMemberDefnAbstractSlotHasCorrectKeyword.fs (4,13--4,19))
                               InlineKeyword = None
                               WithKeyword = None
                               EqualsRange = None }),
@@ -60,21 +60,21 @@ ImplFile
                            IsFinal = false
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = PropertyGet },
-                         /root/SynMemberDefnAbstractSlotHasCorrectKeyword.fs (3,4--3,26),
+                         /root/SynMemberDefnAbstractSlotHasCorrectKeyword.fs (4,4--4,26),
                          { GetSetKeywords = None })],
-                     /root/SynMemberDefnAbstractSlotHasCorrectKeyword.fs (2,4--3,26)),
+                     /root/SynMemberDefnAbstractSlotHasCorrectKeyword.fs (3,4--4,26)),
                   [], None,
-                  /root/SynMemberDefnAbstractSlotHasCorrectKeyword.fs (1,5--3,26),
+                  /root/SynMemberDefnAbstractSlotHasCorrectKeyword.fs (2,5--4,26),
                   { LeadingKeyword =
                      Type
-                       /root/SynMemberDefnAbstractSlotHasCorrectKeyword.fs (1,0--1,4)
+                       /root/SynMemberDefnAbstractSlotHasCorrectKeyword.fs (2,0--2,4)
                     EqualsRange =
                      Some
-                       /root/SynMemberDefnAbstractSlotHasCorrectKeyword.fs (1,9--1,10)
+                       /root/SynMemberDefnAbstractSlotHasCorrectKeyword.fs (2,9--2,10)
                     WithKeyword = None })],
-              /root/SynMemberDefnAbstractSlotHasCorrectKeyword.fs (1,0--3,26))],
+              /root/SynMemberDefnAbstractSlotHasCorrectKeyword.fs (2,0--4,26))],
           PreXmlDocEmpty, [], None,
-          /root/SynMemberDefnAbstractSlotHasCorrectKeyword.fs (1,0--3,26),
+          /root/SynMemberDefnAbstractSlotHasCorrectKeyword.fs (2,0--5,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

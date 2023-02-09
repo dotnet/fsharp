@@ -1,3 +1,4 @@
+
 type Foo =
 /// docs for Thing
 | Thing of

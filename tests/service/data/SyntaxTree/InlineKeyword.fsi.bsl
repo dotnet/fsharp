@@ -9,18 +9,18 @@ SigFile
                  Fun
                    (LongIdent (SynLongIdent ([int], [], [None])),
                     LongIdent (SynLongIdent ([int], [], [None])),
-                    /root/InlineKeyword.fsi (3,16--3,26),
-                    { ArrowRange = /root/InlineKeyword.fsi (3,20--3,22) }),
+                    /root/InlineKeyword.fsi (4,16--4,26),
+                    { ArrowRange = /root/InlineKeyword.fsi (4,20--4,22) }),
                  SynValInfo
                    ([[SynArgInfo ([], false, None)]],
                     SynArgInfo ([], false, None)), true, false,
-                 PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector), None,
-                 None, /root/InlineKeyword.fsi (3,0--3,26),
-                 { LeadingKeyword = Val /root/InlineKeyword.fsi (3,0--3,3)
-                   InlineKeyword = Some /root/InlineKeyword.fsi (3,4--3,10)
+                 PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector), None,
+                 None, /root/InlineKeyword.fsi (4,0--4,26),
+                 { LeadingKeyword = Val /root/InlineKeyword.fsi (4,0--4,3)
+                   InlineKeyword = Some /root/InlineKeyword.fsi (4,4--4,10)
                    WithKeyword = None
-                   EqualsRange = None }), /root/InlineKeyword.fsi (3,0--3,26))],
-          PreXmlDocEmpty, [], None, /root/InlineKeyword.fsi (1,0--3,26),
-          { LeadingKeyword = Namespace /root/InlineKeyword.fsi (1,0--1,9) })],
+                   EqualsRange = None }), /root/InlineKeyword.fsi (4,0--4,26))],
+          PreXmlDocEmpty, [], None, /root/InlineKeyword.fsi (2,0--4,26),
+          { LeadingKeyword = Namespace /root/InlineKeyword.fsi (2,0--2,9) })],
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

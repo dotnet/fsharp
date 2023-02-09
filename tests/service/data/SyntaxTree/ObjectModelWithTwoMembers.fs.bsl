@@ -8,50 +8,50 @@ ImplFile
              ([SynTypeDefn
                  (SynComponentInfo
                     ([], None, [], [X],
-                     PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, /root/ObjectModelWithTwoMembers.fs (1,5--1,6)),
+                     PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
+                     false, None, /root/ObjectModelWithTwoMembers.fs (2,5--2,6)),
                   ObjectModel
                     (Unspecified,
                      [ImplicitCtor
                         (None, [],
                          SimplePats
-                           ([], /root/ObjectModelWithTwoMembers.fs (1,6--1,8)),
+                           ([], /root/ObjectModelWithTwoMembers.fs (2,6--2,8)),
                          None,
-                         PreXmlDoc ((1,6), FSharp.Compiler.Xml.XmlDocCollector),
-                         /root/ObjectModelWithTwoMembers.fs (1,5--1,6),
+                         PreXmlDoc ((2,6), FSharp.Compiler.Xml.XmlDocCollector),
+                         /root/ObjectModelWithTwoMembers.fs (2,5--2,6),
                          { AsKeyword = None });
                       LetBindings
                         ([SynBinding
                             (None, Normal, false, true, [],
-                             PreXmlDoc ((2,4), FSharp.Compiler.Xml.XmlDocCollector),
+                             PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),
                              SynValData
                                (None,
                                 SynValInfo ([], SynArgInfo ([], false, None)),
                                 None),
                              Named
                                (SynIdent (allowInto, None), false, None,
-                                /root/ObjectModelWithTwoMembers.fs (2,16--2,25)),
+                                /root/ObjectModelWithTwoMembers.fs (3,16--3,25)),
                              None,
                              Const
                                (Int32 0,
-                                /root/ObjectModelWithTwoMembers.fs (2,28--2,29)),
-                             /root/ObjectModelWithTwoMembers.fs (2,16--2,25),
-                             Yes /root/ObjectModelWithTwoMembers.fs (2,4--2,29),
+                                /root/ObjectModelWithTwoMembers.fs (3,28--3,29)),
+                             /root/ObjectModelWithTwoMembers.fs (3,16--3,25),
+                             Yes /root/ObjectModelWithTwoMembers.fs (3,4--3,29),
                              { LeadingKeyword =
                                 Let
-                                  /root/ObjectModelWithTwoMembers.fs (2,4--2,7)
+                                  /root/ObjectModelWithTwoMembers.fs (3,4--3,7)
                                InlineKeyword = None
                                EqualsRange =
                                 Some
-                                  /root/ObjectModelWithTwoMembers.fs (2,26--2,27) })],
+                                  /root/ObjectModelWithTwoMembers.fs (3,26--3,27) })],
                          false, false,
-                         /root/ObjectModelWithTwoMembers.fs (2,4--2,29));
+                         /root/ObjectModelWithTwoMembers.fs (3,4--3,29));
                       GetSetMember
                         (Some
                            (SynBinding
                               (None, Normal, false, false, [],
                                PreXmlMerge
-  (PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector), PreXmlDocEmpty),
+  (PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector), PreXmlDocEmpty),
                                SynValData
                                  (Some
                                     { IsInstance = true
@@ -66,31 +66,31 @@ ImplFile
                                LongIdent
                                  (SynLongIdent
                                     ([_; AllowIntoPattern],
-                                     [/root/ObjectModelWithTwoMembers.fs (3,12--3,13)],
+                                     [/root/ObjectModelWithTwoMembers.fs (4,12--4,13)],
                                      [None; None]), Some get, None,
                                   Pats
                                     [Paren
                                        (Const
                                           (Unit,
-                                           /root/ObjectModelWithTwoMembers.fs (3,38--3,40)),
-                                        /root/ObjectModelWithTwoMembers.fs (3,38--3,40))],
+                                           /root/ObjectModelWithTwoMembers.fs (4,38--4,40)),
+                                        /root/ObjectModelWithTwoMembers.fs (4,38--4,40))],
                                   None,
-                                  /root/ObjectModelWithTwoMembers.fs (3,35--3,40)),
+                                  /root/ObjectModelWithTwoMembers.fs (4,35--4,40)),
                                None, Ident allowInto,
-                               /root/ObjectModelWithTwoMembers.fs (3,35--3,40),
+                               /root/ObjectModelWithTwoMembers.fs (4,35--4,40),
                                NoneAtInvisible,
                                { LeadingKeyword =
                                   Member
-                                    /root/ObjectModelWithTwoMembers.fs (3,4--3,10)
+                                    /root/ObjectModelWithTwoMembers.fs (4,4--4,10)
                                  InlineKeyword = None
                                  EqualsRange =
                                   Some
-                                    /root/ObjectModelWithTwoMembers.fs (3,41--3,42) })),
+                                    /root/ObjectModelWithTwoMembers.fs (4,41--4,42) })),
                          Some
                            (SynBinding
                               (None, Normal, false, false, [],
                                PreXmlMerge
-  (PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector), PreXmlDocEmpty),
+  (PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector), PreXmlDocEmpty),
                                SynValData
                                  (Some
                                     { IsInstance = true
@@ -106,56 +106,56 @@ ImplFile
                                LongIdent
                                  (SynLongIdent
                                     ([_; AllowIntoPattern],
-                                     [/root/ObjectModelWithTwoMembers.fs (3,12--3,13)],
+                                     [/root/ObjectModelWithTwoMembers.fs (4,12--4,13)],
                                      [None; None]), Some set, None,
                                   Pats
                                     [Named
                                        (SynIdent (v, None), false, None,
-                                        /root/ObjectModelWithTwoMembers.fs (3,61--3,62))],
+                                        /root/ObjectModelWithTwoMembers.fs (4,61--4,62))],
                                   None,
-                                  /root/ObjectModelWithTwoMembers.fs (3,57--3,62)),
+                                  /root/ObjectModelWithTwoMembers.fs (4,57--4,62)),
                                None,
                                LongIdentSet
                                  (SynLongIdent ([allowInto], [], [None]),
                                   Ident v,
-                                  /root/ObjectModelWithTwoMembers.fs (3,65--3,79)),
-                               /root/ObjectModelWithTwoMembers.fs (3,57--3,62),
+                                  /root/ObjectModelWithTwoMembers.fs (4,65--4,79)),
+                               /root/ObjectModelWithTwoMembers.fs (4,57--4,62),
                                NoneAtInvisible,
                                { LeadingKeyword =
                                   Member
-                                    /root/ObjectModelWithTwoMembers.fs (3,4--3,10)
+                                    /root/ObjectModelWithTwoMembers.fs (4,4--4,10)
                                  InlineKeyword = None
                                  EqualsRange =
                                   Some
-                                    /root/ObjectModelWithTwoMembers.fs (3,63--3,64) })),
-                         /root/ObjectModelWithTwoMembers.fs (3,4--3,79),
+                                    /root/ObjectModelWithTwoMembers.fs (4,63--4,64) })),
+                         /root/ObjectModelWithTwoMembers.fs (4,4--4,79),
                          { InlineKeyword = None
                            WithKeyword =
-                            /root/ObjectModelWithTwoMembers.fs (3,30--3,34)
+                            /root/ObjectModelWithTwoMembers.fs (4,30--4,34)
                            GetKeyword =
-                            Some /root/ObjectModelWithTwoMembers.fs (3,35--3,38)
+                            Some /root/ObjectModelWithTwoMembers.fs (4,35--4,38)
                            AndKeyword =
-                            Some /root/ObjectModelWithTwoMembers.fs (3,53--3,56)
+                            Some /root/ObjectModelWithTwoMembers.fs (4,53--4,56)
                            SetKeyword =
-                            Some /root/ObjectModelWithTwoMembers.fs (3,57--3,60) })],
-                     /root/ObjectModelWithTwoMembers.fs (2,4--3,79)), [],
+                            Some /root/ObjectModelWithTwoMembers.fs (4,57--4,60) })],
+                     /root/ObjectModelWithTwoMembers.fs (3,4--4,79)), [],
                   Some
                     (ImplicitCtor
                        (None, [],
                         SimplePats
-                          ([], /root/ObjectModelWithTwoMembers.fs (1,6--1,8)),
+                          ([], /root/ObjectModelWithTwoMembers.fs (2,6--2,8)),
                         None,
-                        PreXmlDoc ((1,6), FSharp.Compiler.Xml.XmlDocCollector),
-                        /root/ObjectModelWithTwoMembers.fs (1,5--1,6),
+                        PreXmlDoc ((2,6), FSharp.Compiler.Xml.XmlDocCollector),
+                        /root/ObjectModelWithTwoMembers.fs (2,5--2,6),
                         { AsKeyword = None })),
-                  /root/ObjectModelWithTwoMembers.fs (1,5--3,79),
+                  /root/ObjectModelWithTwoMembers.fs (2,5--4,79),
                   { LeadingKeyword =
-                     Type /root/ObjectModelWithTwoMembers.fs (1,0--1,4)
+                     Type /root/ObjectModelWithTwoMembers.fs (2,0--2,4)
                     EqualsRange =
-                     Some /root/ObjectModelWithTwoMembers.fs (1,9--1,10)
+                     Some /root/ObjectModelWithTwoMembers.fs (2,9--2,10)
                     WithKeyword = None })],
-              /root/ObjectModelWithTwoMembers.fs (1,0--3,79))], PreXmlDocEmpty,
-          [], None, /root/ObjectModelWithTwoMembers.fs (1,0--3,79),
+              /root/ObjectModelWithTwoMembers.fs (2,0--4,79))], PreXmlDocEmpty,
+          [], None, /root/ObjectModelWithTwoMembers.fs (2,0--5,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

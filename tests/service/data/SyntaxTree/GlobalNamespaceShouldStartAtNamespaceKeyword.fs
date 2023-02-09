@@ -1,3 +1,4 @@
+
 // foo
 // bar
 namespace  global

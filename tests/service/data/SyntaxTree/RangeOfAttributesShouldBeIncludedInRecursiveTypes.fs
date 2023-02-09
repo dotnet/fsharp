@@ -1,3 +1,4 @@
+
 [<NoEquality ; NoComparison>]
 type Foo<'context, 'a> =
     | Apply of ApplyCrate<'context, 'a>

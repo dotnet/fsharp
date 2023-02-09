@@ -10,22 +10,22 @@ ImplFile
                  SimplePats
                    ([Id
                        (x, None, false, false, false,
-                        /root/MultilineLambdaHasArrowRange.fs (1,4--1,5))],
-                    /root/MultilineLambdaHasArrowRange.fs (1,4--1,5)),
+                        /root/MultilineLambdaHasArrowRange.fs (2,4--2,5))],
+                    /root/MultilineLambdaHasArrowRange.fs (2,4--2,5)),
                  Lambda
                    (false, true,
                     SimplePats
                       ([Id
                           (y, None, false, false, false,
-                           /root/MultilineLambdaHasArrowRange.fs (1,6--1,7))],
-                       /root/MultilineLambdaHasArrowRange.fs (1,6--1,7)),
+                           /root/MultilineLambdaHasArrowRange.fs (2,6--2,7))],
+                       /root/MultilineLambdaHasArrowRange.fs (2,6--2,7)),
                     Lambda
                       (false, true,
                        SimplePats
                          ([Id
                              (z, None, false, false, false,
-                              /root/MultilineLambdaHasArrowRange.fs (1,8--1,9))],
-                          /root/MultilineLambdaHasArrowRange.fs (1,8--1,9)),
+                              /root/MultilineLambdaHasArrowRange.fs (2,8--2,9))],
+                          /root/MultilineLambdaHasArrowRange.fs (2,8--2,9)),
                        App
                          (NonAtomic, false,
                           App
@@ -35,7 +35,7 @@ ImplFile
                                 SynLongIdent
                                   ([op_Multiply], [],
                                    [Some (OriginalNotation "*")]), None,
-                                /root/MultilineLambdaHasArrowRange.fs (3,38--3,39)),
+                                /root/MultilineLambdaHasArrowRange.fs (4,38--4,39)),
                              App
                                (NonAtomic, false,
                                 App
@@ -45,31 +45,31 @@ ImplFile
                                       SynLongIdent
                                         ([op_Multiply], [],
                                          [Some (OriginalNotation "*")]), None,
-                                      /root/MultilineLambdaHasArrowRange.fs (3,34--3,35)),
+                                      /root/MultilineLambdaHasArrowRange.fs (4,34--4,35)),
                                    Ident x,
-                                   /root/MultilineLambdaHasArrowRange.fs (3,32--3,35)),
+                                   /root/MultilineLambdaHasArrowRange.fs (4,32--4,35)),
                                 Ident y,
-                                /root/MultilineLambdaHasArrowRange.fs (3,32--3,37)),
-                             /root/MultilineLambdaHasArrowRange.fs (3,32--3,39)),
+                                /root/MultilineLambdaHasArrowRange.fs (4,32--4,37)),
+                             /root/MultilineLambdaHasArrowRange.fs (4,32--4,39)),
                           Ident z,
-                          /root/MultilineLambdaHasArrowRange.fs (3,32--3,41)),
-                       None, /root/MultilineLambdaHasArrowRange.fs (1,0--3,41),
+                          /root/MultilineLambdaHasArrowRange.fs (4,32--4,41)),
+                       None, /root/MultilineLambdaHasArrowRange.fs (2,0--4,41),
                        { ArrowRange =
                           Some
-                            /root/MultilineLambdaHasArrowRange.fs (2,28--2,30) }),
-                    None, /root/MultilineLambdaHasArrowRange.fs (1,0--3,41),
+                            /root/MultilineLambdaHasArrowRange.fs (3,28--3,30) }),
+                    None, /root/MultilineLambdaHasArrowRange.fs (2,0--4,41),
                     { ArrowRange =
-                       Some /root/MultilineLambdaHasArrowRange.fs (2,28--2,30) }),
+                       Some /root/MultilineLambdaHasArrowRange.fs (3,28--3,30) }),
                  Some
                    ([Named
                        (SynIdent (x, None), false, None,
-                        /root/MultilineLambdaHasArrowRange.fs (1,4--1,5));
+                        /root/MultilineLambdaHasArrowRange.fs (2,4--2,5));
                      Named
                        (SynIdent (y, None), false, None,
-                        /root/MultilineLambdaHasArrowRange.fs (1,6--1,7));
+                        /root/MultilineLambdaHasArrowRange.fs (2,6--2,7));
                      Named
                        (SynIdent (z, None), false, None,
-                        /root/MultilineLambdaHasArrowRange.fs (1,8--1,9))],
+                        /root/MultilineLambdaHasArrowRange.fs (2,8--2,9))],
                     App
                       (NonAtomic, false,
                        App
@@ -79,7 +79,7 @@ ImplFile
                              SynLongIdent
                                ([op_Multiply], [], [Some (OriginalNotation "*")]),
                              None,
-                             /root/MultilineLambdaHasArrowRange.fs (3,38--3,39)),
+                             /root/MultilineLambdaHasArrowRange.fs (4,38--4,39)),
                           App
                             (NonAtomic, false,
                              App
@@ -89,20 +89,20 @@ ImplFile
                                    SynLongIdent
                                      ([op_Multiply], [],
                                       [Some (OriginalNotation "*")]), None,
-                                   /root/MultilineLambdaHasArrowRange.fs (3,34--3,35)),
+                                   /root/MultilineLambdaHasArrowRange.fs (4,34--4,35)),
                                 Ident x,
-                                /root/MultilineLambdaHasArrowRange.fs (3,32--3,35)),
+                                /root/MultilineLambdaHasArrowRange.fs (4,32--4,35)),
                              Ident y,
-                             /root/MultilineLambdaHasArrowRange.fs (3,32--3,37)),
-                          /root/MultilineLambdaHasArrowRange.fs (3,32--3,39)),
+                             /root/MultilineLambdaHasArrowRange.fs (4,32--4,37)),
+                          /root/MultilineLambdaHasArrowRange.fs (4,32--4,39)),
                        Ident z,
-                       /root/MultilineLambdaHasArrowRange.fs (3,32--3,41))),
-                 /root/MultilineLambdaHasArrowRange.fs (1,0--3,41),
+                       /root/MultilineLambdaHasArrowRange.fs (4,32--4,41))),
+                 /root/MultilineLambdaHasArrowRange.fs (2,0--4,41),
                  { ArrowRange =
-                    Some /root/MultilineLambdaHasArrowRange.fs (2,28--2,30) }),
-              /root/MultilineLambdaHasArrowRange.fs (1,0--3,41))],
+                    Some /root/MultilineLambdaHasArrowRange.fs (3,28--3,30) }),
+              /root/MultilineLambdaHasArrowRange.fs (2,0--4,41))],
           PreXmlDocEmpty, [], None,
-          /root/MultilineLambdaHasArrowRange.fs (1,0--3,41),
+          /root/MultilineLambdaHasArrowRange.fs (2,0--5,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

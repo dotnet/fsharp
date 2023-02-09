@@ -7,46 +7,46 @@ ImplFile
           [NestedModule
              (SynComponentInfo
                 ([], None, [], [Bar],
-                 PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector), false,
+                 PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector), false,
                  None,
-                 /root/NamespaceShouldContainNamespaceKeyword.fs (2,0--2,10)),
+                 /root/NamespaceShouldContainNamespaceKeyword.fs (3,0--3,10)),
               false,
               [Let
                  (false,
                   [SynBinding
                      (None, Normal, false, false, [],
-                      PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
+                      PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
                       SynValData
                         (None, SynValInfo ([], SynArgInfo ([], false, None)),
                          None),
                       Named
                         (SynIdent (a, None), false, None,
-                         /root/NamespaceShouldContainNamespaceKeyword.fs (3,4--3,5)),
+                         /root/NamespaceShouldContainNamespaceKeyword.fs (4,4--4,5)),
                       None,
                       Const
                         (Int32 42,
-                         /root/NamespaceShouldContainNamespaceKeyword.fs (3,8--3,10)),
-                      /root/NamespaceShouldContainNamespaceKeyword.fs (3,4--3,5),
+                         /root/NamespaceShouldContainNamespaceKeyword.fs (4,8--4,10)),
+                      /root/NamespaceShouldContainNamespaceKeyword.fs (4,4--4,5),
                       Yes
-                        /root/NamespaceShouldContainNamespaceKeyword.fs (3,0--3,10),
+                        /root/NamespaceShouldContainNamespaceKeyword.fs (4,0--4,10),
                       { LeadingKeyword =
                          Let
-                           /root/NamespaceShouldContainNamespaceKeyword.fs (3,0--3,3)
+                           /root/NamespaceShouldContainNamespaceKeyword.fs (4,0--4,3)
                         InlineKeyword = None
                         EqualsRange =
                          Some
-                           /root/NamespaceShouldContainNamespaceKeyword.fs (3,6--3,7) })],
-                  /root/NamespaceShouldContainNamespaceKeyword.fs (3,0--3,10))],
-              false, /root/NamespaceShouldContainNamespaceKeyword.fs (2,0--3,10),
+                           /root/NamespaceShouldContainNamespaceKeyword.fs (4,6--4,7) })],
+                  /root/NamespaceShouldContainNamespaceKeyword.fs (4,0--4,10))],
+              false, /root/NamespaceShouldContainNamespaceKeyword.fs (3,0--4,10),
               { ModuleKeyword =
-                 Some /root/NamespaceShouldContainNamespaceKeyword.fs (2,0--2,6)
+                 Some /root/NamespaceShouldContainNamespaceKeyword.fs (3,0--3,6)
                 EqualsRange =
                  Some
-                   /root/NamespaceShouldContainNamespaceKeyword.fs (2,11--2,12) })],
+                   /root/NamespaceShouldContainNamespaceKeyword.fs (3,11--3,12) })],
           PreXmlDocEmpty, [], None,
-          /root/NamespaceShouldContainNamespaceKeyword.fs (1,0--3,10),
+          /root/NamespaceShouldContainNamespaceKeyword.fs (2,0--4,10),
           { LeadingKeyword =
              Namespace
-               /root/NamespaceShouldContainNamespaceKeyword.fs (1,0--1,9) })],
+               /root/NamespaceShouldContainNamespaceKeyword.fs (2,0--2,9) })],
       (true, false), { ConditionalDirectives = []
                        CodeComments = [] }, set []))

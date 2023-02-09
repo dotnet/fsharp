@@ -8,9 +8,9 @@ SigFile
              ([SynTypeDefnSig
                  (SynComponentInfo
                     ([], None, [], [Y],
-                     PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
+                     PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None,
-                     /root/SynMemberSigMemberHasCorrectKeywords.fsi (3,5--3,6)),
+                     /root/SynMemberSigMemberHasCorrectKeywords.fsi (4,5--4,6)),
                   ObjectModel
                     (Unspecified,
                      [Member
@@ -20,12 +20,12 @@ SigFile
                             LongIdent (SynLongIdent ([int], [], [None])),
                             SynValInfo ([], SynArgInfo ([], false, None)), false,
                             false,
-                            PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector),
+                            PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
                             None, None,
-                            /root/SynMemberSigMemberHasCorrectKeywords.fsi (4,4--4,20),
+                            /root/SynMemberSigMemberHasCorrectKeywords.fsi (5,4--5,20),
                             { LeadingKeyword =
                                Abstract
-                                 /root/SynMemberSigMemberHasCorrectKeywords.fsi (4,4--4,12)
+                                 /root/SynMemberSigMemberHasCorrectKeywords.fsi (5,4--5,12)
                               InlineKeyword = None
                               WithKeyword = None
                               EqualsRange = None }),
@@ -35,7 +35,7 @@ SigFile
                            IsFinal = false
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = PropertyGet },
-                         /root/SynMemberSigMemberHasCorrectKeywords.fsi (4,4--4,20),
+                         /root/SynMemberSigMemberHasCorrectKeywords.fsi (5,4--5,20),
                          { GetSetKeywords = None });
                       Member
                         (SynValSig
@@ -44,13 +44,13 @@ SigFile
                             LongIdent (SynLongIdent ([double], [], [None])),
                             SynValInfo ([], SynArgInfo ([], false, None)), false,
                             false,
-                            PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
+                            PreXmlDoc ((6,4), FSharp.Compiler.Xml.XmlDocCollector),
                             None, None,
-                            /root/SynMemberSigMemberHasCorrectKeywords.fsi (5,4--5,30),
+                            /root/SynMemberSigMemberHasCorrectKeywords.fsi (6,4--6,30),
                             { LeadingKeyword =
                                AbstractMember
-                                 (/root/SynMemberSigMemberHasCorrectKeywords.fsi (5,4--5,12),
-                                  /root/SynMemberSigMemberHasCorrectKeywords.fsi (5,13--5,19))
+                                 (/root/SynMemberSigMemberHasCorrectKeywords.fsi (6,4--6,12),
+                                  /root/SynMemberSigMemberHasCorrectKeywords.fsi (6,13--6,19))
                               InlineKeyword = None
                               WithKeyword = None
                               EqualsRange = None }),
@@ -60,7 +60,7 @@ SigFile
                            IsFinal = false
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = PropertyGet },
-                         /root/SynMemberSigMemberHasCorrectKeywords.fsi (5,4--5,30),
+                         /root/SynMemberSigMemberHasCorrectKeywords.fsi (6,4--6,30),
                          { GetSetKeywords = None });
                       Member
                         (SynValSig
@@ -69,13 +69,13 @@ SigFile
                             LongIdent (SynLongIdent ([string], [], [None])),
                             SynValInfo ([], SynArgInfo ([], false, None)), false,
                             false,
-                            PreXmlDoc ((6,4), FSharp.Compiler.Xml.XmlDocCollector),
+                            PreXmlDoc ((7,4), FSharp.Compiler.Xml.XmlDocCollector),
                             None, None,
-                            /root/SynMemberSigMemberHasCorrectKeywords.fsi (6,4--6,28),
+                            /root/SynMemberSigMemberHasCorrectKeywords.fsi (7,4--7,28),
                             { LeadingKeyword =
                                StaticMember
-                                 (/root/SynMemberSigMemberHasCorrectKeywords.fsi (6,4--6,10),
-                                  /root/SynMemberSigMemberHasCorrectKeywords.fsi (6,11--6,17))
+                                 (/root/SynMemberSigMemberHasCorrectKeywords.fsi (7,4--7,10),
+                                  /root/SynMemberSigMemberHasCorrectKeywords.fsi (7,11--7,17))
                               InlineKeyword = None
                               WithKeyword = None
                               EqualsRange = None }),
@@ -85,7 +85,7 @@ SigFile
                            IsFinal = false
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = PropertyGet },
-                         /root/SynMemberSigMemberHasCorrectKeywords.fsi (6,4--6,28),
+                         /root/SynMemberSigMemberHasCorrectKeywords.fsi (7,4--7,28),
                          { GetSetKeywords = None });
                       Member
                         (SynValSig
@@ -94,12 +94,12 @@ SigFile
                             LongIdent (SynLongIdent ([int], [], [None])),
                             SynValInfo ([], SynArgInfo ([], false, None)), false,
                             false,
-                            PreXmlDoc ((7,4), FSharp.Compiler.Xml.XmlDocCollector),
+                            PreXmlDoc ((8,4), FSharp.Compiler.Xml.XmlDocCollector),
                             None, None,
-                            /root/SynMemberSigMemberHasCorrectKeywords.fsi (7,4--7,18),
+                            /root/SynMemberSigMemberHasCorrectKeywords.fsi (8,4--8,18),
                             { LeadingKeyword =
                                Member
-                                 /root/SynMemberSigMemberHasCorrectKeywords.fsi (7,4--7,10)
+                                 /root/SynMemberSigMemberHasCorrectKeywords.fsi (8,4--8,10)
                               InlineKeyword = None
                               WithKeyword = None
                               EqualsRange = None }),
@@ -109,7 +109,7 @@ SigFile
                            IsFinal = false
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = PropertyGet },
-                         /root/SynMemberSigMemberHasCorrectKeywords.fsi (7,4--7,18),
+                         /root/SynMemberSigMemberHasCorrectKeywords.fsi (8,4--8,18),
                          { GetSetKeywords = None });
                       Member
                         (SynValSig
@@ -118,12 +118,12 @@ SigFile
                             LongIdent (SynLongIdent ([int], [], [None])),
                             SynValInfo ([], SynArgInfo ([], false, None)), false,
                             false,
-                            PreXmlDoc ((8,4), FSharp.Compiler.Xml.XmlDocCollector),
+                            PreXmlDoc ((9,4), FSharp.Compiler.Xml.XmlDocCollector),
                             None, None,
-                            /root/SynMemberSigMemberHasCorrectKeywords.fsi (8,4--8,20),
+                            /root/SynMemberSigMemberHasCorrectKeywords.fsi (9,4--9,20),
                             { LeadingKeyword =
                                Override
-                                 /root/SynMemberSigMemberHasCorrectKeywords.fsi (8,4--8,12)
+                                 /root/SynMemberSigMemberHasCorrectKeywords.fsi (9,4--9,12)
                               InlineKeyword = None
                               WithKeyword = None
                               EqualsRange = None }),
@@ -133,7 +133,7 @@ SigFile
                            IsFinal = false
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = PropertyGet },
-                         /root/SynMemberSigMemberHasCorrectKeywords.fsi (8,4--8,20),
+                         /root/SynMemberSigMemberHasCorrectKeywords.fsi (9,4--9,20),
                          { GetSetKeywords = None });
                       Member
                         (SynValSig
@@ -142,12 +142,12 @@ SigFile
                             LongIdent (SynLongIdent ([int], [], [None])),
                             SynValInfo ([], SynArgInfo ([], false, None)), false,
                             false,
-                            PreXmlDoc ((9,4), FSharp.Compiler.Xml.XmlDocCollector),
+                            PreXmlDoc ((10,4), FSharp.Compiler.Xml.XmlDocCollector),
                             None, None,
-                            /root/SynMemberSigMemberHasCorrectKeywords.fsi (9,4--9,19),
+                            /root/SynMemberSigMemberHasCorrectKeywords.fsi (10,4--10,19),
                             { LeadingKeyword =
                                Default
-                                 /root/SynMemberSigMemberHasCorrectKeywords.fsi (9,4--9,11)
+                                 /root/SynMemberSigMemberHasCorrectKeywords.fsi (10,4--10,11)
                               InlineKeyword = None
                               WithKeyword = None
                               EqualsRange = None }),
@@ -157,21 +157,22 @@ SigFile
                            IsFinal = false
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = PropertyGet },
-                         /root/SynMemberSigMemberHasCorrectKeywords.fsi (9,4--9,19),
+                         /root/SynMemberSigMemberHasCorrectKeywords.fsi (10,4--10,19),
                          { GetSetKeywords = None })],
-                     /root/SynMemberSigMemberHasCorrectKeywords.fsi (4,4--9,19)),
-                  [], /root/SynMemberSigMemberHasCorrectKeywords.fsi (3,5--9,19),
+                     /root/SynMemberSigMemberHasCorrectKeywords.fsi (5,4--10,19)),
+                  [],
+                  /root/SynMemberSigMemberHasCorrectKeywords.fsi (4,5--10,19),
                   { LeadingKeyword =
                      Type
-                       /root/SynMemberSigMemberHasCorrectKeywords.fsi (3,0--3,4)
+                       /root/SynMemberSigMemberHasCorrectKeywords.fsi (4,0--4,4)
                     EqualsRange =
                      Some
-                       /root/SynMemberSigMemberHasCorrectKeywords.fsi (3,7--3,8)
+                       /root/SynMemberSigMemberHasCorrectKeywords.fsi (4,7--4,8)
                     WithKeyword = None })],
-              /root/SynMemberSigMemberHasCorrectKeywords.fsi (3,0--9,19))],
+              /root/SynMemberSigMemberHasCorrectKeywords.fsi (4,0--10,19))],
           PreXmlDocEmpty, [], None,
-          /root/SynMemberSigMemberHasCorrectKeywords.fsi (1,0--9,19),
+          /root/SynMemberSigMemberHasCorrectKeywords.fsi (2,0--10,19),
           { LeadingKeyword =
-             Namespace /root/SynMemberSigMemberHasCorrectKeywords.fsi (1,0--1,9) })],
+             Namespace /root/SynMemberSigMemberHasCorrectKeywords.fsi (2,0--2,9) })],
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

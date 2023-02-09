@@ -8,26 +8,26 @@ ImplFile
              ([SynTypeDefn
                  (SynComponentInfo
                     ([], None, [], [A],
-                     PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
+                     PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None,
-                     /root/SynTypeDefnWithMemberWithSetget.fs (1,5--1,6)),
+                     /root/SynTypeDefnWithMemberWithSetget.fs (2,5--2,6)),
                   ObjectModel
                     (Unspecified,
                      [ImplicitCtor
                         (None, [],
                          SimplePats
                            ([],
-                            /root/SynTypeDefnWithMemberWithSetget.fs (1,6--1,8)),
+                            /root/SynTypeDefnWithMemberWithSetget.fs (2,6--2,8)),
                          None,
-                         PreXmlDoc ((1,6), FSharp.Compiler.Xml.XmlDocCollector),
-                         /root/SynTypeDefnWithMemberWithSetget.fs (1,5--1,6),
+                         PreXmlDoc ((2,6), FSharp.Compiler.Xml.XmlDocCollector),
+                         /root/SynTypeDefnWithMemberWithSetget.fs (2,5--2,6),
                          { AsKeyword = None });
                       GetSetMember
                         (Some
                            (SynBinding
                               (None, Normal, false, false, [],
                                PreXmlMerge
-  (PreXmlDoc ((2,4), FSharp.Compiler.Xml.XmlDocCollector), PreXmlDocEmpty),
+  (PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector), PreXmlDocEmpty),
                                SynValData
                                  (Some
                                     { IsInstance = true
@@ -42,45 +42,45 @@ ImplFile
                                LongIdent
                                  (SynLongIdent
                                     ([this; Z],
-                                     [/root/SynTypeDefnWithMemberWithSetget.fs (2,15--2,16)],
+                                     [/root/SynTypeDefnWithMemberWithSetget.fs (3,15--3,16)],
                                      [None; None]), Some get, None,
                                   Pats
                                     [Paren
                                        (Const
                                           (Unit,
-                                           /root/SynTypeDefnWithMemberWithSetget.fs (2,52--2,54)),
-                                        /root/SynTypeDefnWithMemberWithSetget.fs (2,52--2,54))],
+                                           /root/SynTypeDefnWithMemberWithSetget.fs (3,52--3,54)),
+                                        /root/SynTypeDefnWithMemberWithSetget.fs (3,52--3,54))],
                                   None,
-                                  /root/SynTypeDefnWithMemberWithSetget.fs (2,49--2,54)),
+                                  /root/SynTypeDefnWithMemberWithSetget.fs (3,49--3,54)),
                                Some
                                  (SynBindingReturnInfo
                                     (LongIdent
                                        (SynLongIdent ([int], [], [None])),
-                                     /root/SynTypeDefnWithMemberWithSetget.fs (2,55--2,58),
+                                     /root/SynTypeDefnWithMemberWithSetget.fs (3,55--3,58),
                                      [],
                                      { ColonRange =
                                         Some
-                                          /root/SynTypeDefnWithMemberWithSetget.fs (2,54--2,55) })),
+                                          /root/SynTypeDefnWithMemberWithSetget.fs (3,54--3,55) })),
                                Typed
                                  (Const
                                     (Int32 1,
-                                     /root/SynTypeDefnWithMemberWithSetget.fs (2,61--2,62)),
+                                     /root/SynTypeDefnWithMemberWithSetget.fs (3,61--3,62)),
                                   LongIdent (SynLongIdent ([int], [], [None])),
-                                  /root/SynTypeDefnWithMemberWithSetget.fs (2,61--2,62)),
-                               /root/SynTypeDefnWithMemberWithSetget.fs (2,49--2,54),
+                                  /root/SynTypeDefnWithMemberWithSetget.fs (3,61--3,62)),
+                               /root/SynTypeDefnWithMemberWithSetget.fs (3,49--3,54),
                                NoneAtInvisible,
                                { LeadingKeyword =
                                   Member
-                                    /root/SynTypeDefnWithMemberWithSetget.fs (2,4--2,10)
+                                    /root/SynTypeDefnWithMemberWithSetget.fs (3,4--3,10)
                                  InlineKeyword = None
                                  EqualsRange =
                                   Some
-                                    /root/SynTypeDefnWithMemberWithSetget.fs (2,59--2,60) })),
+                                    /root/SynTypeDefnWithMemberWithSetget.fs (3,59--3,60) })),
                          Some
                            (SynBinding
                               (None, Normal, false, false, [],
                                PreXmlMerge
-  (PreXmlDoc ((2,4), FSharp.Compiler.Xml.XmlDocCollector), PreXmlDocEmpty),
+  (PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector), PreXmlDocEmpty),
                                SynValData
                                  (Some
                                     { IsInstance = true
@@ -96,76 +96,76 @@ ImplFile
                                LongIdent
                                  (SynLongIdent
                                     ([this; Z],
-                                     [/root/SynTypeDefnWithMemberWithSetget.fs (2,15--2,16)],
+                                     [/root/SynTypeDefnWithMemberWithSetget.fs (3,15--3,16)],
                                      [None; None]), Some set, None,
                                   Pats
                                     [Paren
                                        (Typed
                                           (Wild
-                                             /root/SynTypeDefnWithMemberWithSetget.fs (2,28--2,29),
+                                             /root/SynTypeDefnWithMemberWithSetget.fs (3,28--3,29),
                                            LongIdent
                                              (SynLongIdent ([int], [], [None])),
-                                           /root/SynTypeDefnWithMemberWithSetget.fs (2,28--2,33)),
-                                        /root/SynTypeDefnWithMemberWithSetget.fs (2,27--2,34))],
+                                           /root/SynTypeDefnWithMemberWithSetget.fs (3,28--3,33)),
+                                        /root/SynTypeDefnWithMemberWithSetget.fs (3,27--3,34))],
                                   None,
-                                  /root/SynTypeDefnWithMemberWithSetget.fs (2,23--2,34)),
+                                  /root/SynTypeDefnWithMemberWithSetget.fs (3,23--3,34)),
                                Some
                                  (SynBindingReturnInfo
                                     (LongIdent
                                        (SynLongIdent ([unit], [], [None])),
-                                     /root/SynTypeDefnWithMemberWithSetget.fs (2,35--2,39),
+                                     /root/SynTypeDefnWithMemberWithSetget.fs (3,35--3,39),
                                      [],
                                      { ColonRange =
                                         Some
-                                          /root/SynTypeDefnWithMemberWithSetget.fs (2,34--2,35) })),
+                                          /root/SynTypeDefnWithMemberWithSetget.fs (3,34--3,35) })),
                                Typed
                                  (Const
                                     (Unit,
-                                     /root/SynTypeDefnWithMemberWithSetget.fs (2,42--2,44)),
+                                     /root/SynTypeDefnWithMemberWithSetget.fs (3,42--3,44)),
                                   LongIdent (SynLongIdent ([unit], [], [None])),
-                                  /root/SynTypeDefnWithMemberWithSetget.fs (2,42--2,44)),
-                               /root/SynTypeDefnWithMemberWithSetget.fs (2,23--2,34),
+                                  /root/SynTypeDefnWithMemberWithSetget.fs (3,42--3,44)),
+                               /root/SynTypeDefnWithMemberWithSetget.fs (3,23--3,34),
                                NoneAtInvisible,
                                { LeadingKeyword =
                                   Member
-                                    /root/SynTypeDefnWithMemberWithSetget.fs (2,4--2,10)
+                                    /root/SynTypeDefnWithMemberWithSetget.fs (3,4--3,10)
                                  InlineKeyword = None
                                  EqualsRange =
                                   Some
-                                    /root/SynTypeDefnWithMemberWithSetget.fs (2,40--2,41) })),
-                         /root/SynTypeDefnWithMemberWithSetget.fs (2,4--2,62),
+                                    /root/SynTypeDefnWithMemberWithSetget.fs (3,40--3,41) })),
+                         /root/SynTypeDefnWithMemberWithSetget.fs (3,4--3,62),
                          { InlineKeyword = None
                            WithKeyword =
-                            /root/SynTypeDefnWithMemberWithSetget.fs (2,18--2,22)
+                            /root/SynTypeDefnWithMemberWithSetget.fs (3,18--3,22)
                            GetKeyword =
                             Some
-                              /root/SynTypeDefnWithMemberWithSetget.fs (2,49--2,52)
+                              /root/SynTypeDefnWithMemberWithSetget.fs (3,49--3,52)
                            AndKeyword =
                             Some
-                              /root/SynTypeDefnWithMemberWithSetget.fs (2,45--2,48)
+                              /root/SynTypeDefnWithMemberWithSetget.fs (3,45--3,48)
                            SetKeyword =
                             Some
-                              /root/SynTypeDefnWithMemberWithSetget.fs (2,23--2,26) })],
-                     /root/SynTypeDefnWithMemberWithSetget.fs (2,4--2,62)), [],
+                              /root/SynTypeDefnWithMemberWithSetget.fs (3,23--3,26) })],
+                     /root/SynTypeDefnWithMemberWithSetget.fs (3,4--3,62)), [],
                   Some
                     (ImplicitCtor
                        (None, [],
                         SimplePats
                           ([],
-                           /root/SynTypeDefnWithMemberWithSetget.fs (1,6--1,8)),
+                           /root/SynTypeDefnWithMemberWithSetget.fs (2,6--2,8)),
                         None,
-                        PreXmlDoc ((1,6), FSharp.Compiler.Xml.XmlDocCollector),
-                        /root/SynTypeDefnWithMemberWithSetget.fs (1,5--1,6),
+                        PreXmlDoc ((2,6), FSharp.Compiler.Xml.XmlDocCollector),
+                        /root/SynTypeDefnWithMemberWithSetget.fs (2,5--2,6),
                         { AsKeyword = None })),
-                  /root/SynTypeDefnWithMemberWithSetget.fs (1,5--2,62),
+                  /root/SynTypeDefnWithMemberWithSetget.fs (2,5--3,62),
                   { LeadingKeyword =
-                     Type /root/SynTypeDefnWithMemberWithSetget.fs (1,0--1,4)
+                     Type /root/SynTypeDefnWithMemberWithSetget.fs (2,0--2,4)
                     EqualsRange =
-                     Some /root/SynTypeDefnWithMemberWithSetget.fs (1,9--1,10)
+                     Some /root/SynTypeDefnWithMemberWithSetget.fs (2,9--2,10)
                     WithKeyword = None })],
-              /root/SynTypeDefnWithMemberWithSetget.fs (1,0--2,62))],
+              /root/SynTypeDefnWithMemberWithSetget.fs (2,0--3,62))],
           PreXmlDocEmpty, [], None,
-          /root/SynTypeDefnWithMemberWithSetget.fs (1,0--2,62),
+          /root/SynTypeDefnWithMemberWithSetget.fs (2,0--4,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

@@ -7,11 +7,11 @@ ImplFile
           [Expr
              (App
                 (Atomic, false, Ident foo,
-                 Const (Unit, /root/CommentOnSingleLine.fs (2,3--2,5)),
-                 /root/CommentOnSingleLine.fs (2,0--2,5)),
-              /root/CommentOnSingleLine.fs (2,0--2,5))], PreXmlDocEmpty, [],
-          None, /root/CommentOnSingleLine.fs (2,0--2,5),
+                 Const (Unit, /root/CommentOnSingleLine.fs (3,3--3,5)),
+                 /root/CommentOnSingleLine.fs (3,0--3,5)),
+              /root/CommentOnSingleLine.fs (3,0--3,5))], PreXmlDocEmpty, [],
+          None, /root/CommentOnSingleLine.fs (3,0--3,5),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
-        CodeComments = [LineComment /root/CommentOnSingleLine.fs (1,0--1,11)] },
+        CodeComments = [LineComment /root/CommentOnSingleLine.fs (2,0--2,11)] },
       set []))

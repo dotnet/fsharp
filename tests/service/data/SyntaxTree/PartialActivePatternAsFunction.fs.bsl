@@ -13,16 +13,16 @@ ImplFile
                       ([|Odd|_|], [],
                        [Some
                           (HasParenthesis
-                             (/root/PartialActivePatternAsFunction.fs (1,0--1,1),
-                              /root/PartialActivePatternAsFunction.fs (1,8--1,9)))]),
-                    None, /root/PartialActivePatternAsFunction.fs (1,0--1,9)),
+                             (/root/PartialActivePatternAsFunction.fs (2,0--2,1),
+                              /root/PartialActivePatternAsFunction.fs (2,8--2,9)))]),
+                    None, /root/PartialActivePatternAsFunction.fs (2,0--2,9)),
                  Const
                    (Int32 4,
-                    /root/PartialActivePatternAsFunction.fs (1,10--1,11)),
-                 /root/PartialActivePatternAsFunction.fs (1,0--1,11)),
-              /root/PartialActivePatternAsFunction.fs (1,0--1,11))],
+                    /root/PartialActivePatternAsFunction.fs (2,10--2,11)),
+                 /root/PartialActivePatternAsFunction.fs (2,0--2,11)),
+              /root/PartialActivePatternAsFunction.fs (2,0--2,11))],
           PreXmlDocEmpty, [], None,
-          /root/PartialActivePatternAsFunction.fs (1,0--1,11),
+          /root/PartialActivePatternAsFunction.fs (2,0--2,11),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

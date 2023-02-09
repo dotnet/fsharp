@@ -6,11 +6,11 @@ ImplFile
          ([SynExprDynamicDoesContainIdent], false, AnonModule,
           [Expr
              (Dynamic
-                (Ident x, /root/SynExprDynamicDoesContainIdent.fs (1,1--1,2),
-                 Ident k, /root/SynExprDynamicDoesContainIdent.fs (1,0--1,3)),
-              /root/SynExprDynamicDoesContainIdent.fs (1,0--1,3))],
+                (Ident x, /root/SynExprDynamicDoesContainIdent.fs (2,1--2,2),
+                 Ident k, /root/SynExprDynamicDoesContainIdent.fs (2,0--2,3)),
+              /root/SynExprDynamicDoesContainIdent.fs (2,0--2,3))],
           PreXmlDocEmpty, [], None,
-          /root/SynExprDynamicDoesContainIdent.fs (1,0--1,3),
+          /root/SynExprDynamicDoesContainIdent.fs (2,0--2,3),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

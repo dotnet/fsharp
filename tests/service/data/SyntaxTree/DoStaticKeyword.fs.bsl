@@ -8,8 +8,8 @@ ImplFile
              ([SynTypeDefn
                  (SynComponentInfo
                     ([], None, [], [X],
-                     PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, /root/DoStaticKeyword.fs (1,5--1,6)),
+                     PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
+                     false, None, /root/DoStaticKeyword.fs (2,5--2,6)),
                   ObjectModel
                     (Unspecified,
                      [LetBindings
@@ -19,23 +19,23 @@ ImplFile
                                (None,
                                 SynValInfo ([], SynArgInfo ([], false, None)),
                                 None),
-                             Const (Unit, /root/DoStaticKeyword.fs (2,11--2,16)),
+                             Const (Unit, /root/DoStaticKeyword.fs (3,11--3,16)),
                              None,
-                             Const (Unit, /root/DoStaticKeyword.fs (2,14--2,16)),
-                             /root/DoStaticKeyword.fs (2,11--2,16), NoneAtDo,
+                             Const (Unit, /root/DoStaticKeyword.fs (3,14--3,16)),
+                             /root/DoStaticKeyword.fs (3,11--3,16), NoneAtDo,
                              { LeadingKeyword =
                                 StaticDo
-                                  (/root/DoStaticKeyword.fs (2,4--2,10),
-                                   /root/DoStaticKeyword.fs (2,11--2,13))
+                                  (/root/DoStaticKeyword.fs (3,4--3,10),
+                                   /root/DoStaticKeyword.fs (3,11--3,13))
                                InlineKeyword = None
                                EqualsRange = None })], true, false,
-                         /root/DoStaticKeyword.fs (2,4--2,16))],
-                     /root/DoStaticKeyword.fs (2,4--2,16)), [], None,
-                  /root/DoStaticKeyword.fs (1,5--2,16),
-                  { LeadingKeyword = Type /root/DoStaticKeyword.fs (1,0--1,4)
-                    EqualsRange = Some /root/DoStaticKeyword.fs (1,7--1,8)
-                    WithKeyword = None })], /root/DoStaticKeyword.fs (1,0--2,16))],
-          PreXmlDocEmpty, [], None, /root/DoStaticKeyword.fs (1,0--2,16),
+                         /root/DoStaticKeyword.fs (3,4--3,16))],
+                     /root/DoStaticKeyword.fs (3,4--3,16)), [], None,
+                  /root/DoStaticKeyword.fs (2,5--3,16),
+                  { LeadingKeyword = Type /root/DoStaticKeyword.fs (2,0--2,4)
+                    EqualsRange = Some /root/DoStaticKeyword.fs (2,7--2,8)
+                    WithKeyword = None })], /root/DoStaticKeyword.fs (2,0--3,16))],
+          PreXmlDocEmpty, [], None, /root/DoStaticKeyword.fs (2,0--4,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

@@ -13,13 +13,13 @@ ImplFile
                       ([|Odd|Even|], [],
                        [Some
                           (HasParenthesis
-                             (/root/ActivePatternAsFunction.fs (1,0--1,1),
-                              /root/ActivePatternAsFunction.fs (1,11--1,12)))]),
-                    None, /root/ActivePatternAsFunction.fs (1,0--1,12)),
-                 Const (Int32 4, /root/ActivePatternAsFunction.fs (1,13--1,14)),
-                 /root/ActivePatternAsFunction.fs (1,0--1,14)),
-              /root/ActivePatternAsFunction.fs (1,0--1,14))], PreXmlDocEmpty, [],
-          None, /root/ActivePatternAsFunction.fs (1,0--1,14),
+                             (/root/ActivePatternAsFunction.fs (2,0--2,1),
+                              /root/ActivePatternAsFunction.fs (2,11--2,12)))]),
+                    None, /root/ActivePatternAsFunction.fs (2,0--2,12)),
+                 Const (Int32 4, /root/ActivePatternAsFunction.fs (2,13--2,14)),
+                 /root/ActivePatternAsFunction.fs (2,0--2,14)),
+              /root/ActivePatternAsFunction.fs (2,0--2,14))], PreXmlDocEmpty, [],
+          None, /root/ActivePatternAsFunction.fs (2,0--2,14),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

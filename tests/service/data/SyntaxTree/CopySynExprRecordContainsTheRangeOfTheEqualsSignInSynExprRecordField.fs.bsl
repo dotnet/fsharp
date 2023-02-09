@@ -13,21 +13,21 @@ ImplFile
                 (None,
                  Some
                    (Ident foo,
-                    (/root/CopySynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs (1,6--1,10),
+                    (/root/CopySynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs (2,6--2,10),
                      None)),
                  [SynExprRecordField
                     ((SynLongIdent ([X], [], [None]), true),
                      Some
-                       /root/CopySynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs (3,12--3,13),
+                       /root/CopySynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs (4,12--4,13),
                      Some
                        (Const
                           (Int32 12,
-                           /root/CopySynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs (4,16--4,18))),
+                           /root/CopySynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs (5,16--5,18))),
                      None)],
-                 /root/CopySynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs (1,0--4,20)),
-              /root/CopySynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs (1,0--4,20))],
+                 /root/CopySynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs (2,0--5,20)),
+              /root/CopySynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs (2,0--5,20))],
           PreXmlDocEmpty, [], None,
-          /root/CopySynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs (1,0--4,20),
+          /root/CopySynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs (2,0--5,20),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

@@ -1,3 +1,4 @@
+
 type Foo =
     static member this.B() = ()
     member this.A() = ()

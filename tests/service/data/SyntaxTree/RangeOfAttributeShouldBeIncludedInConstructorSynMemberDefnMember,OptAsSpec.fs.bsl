@@ -12,9 +12,9 @@ ImplFile
              ([SynTypeDefn
                  (SynComponentInfo
                     ([], None, [], [Tiger],
-                     PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
+                     PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None,
-                     /root/RangeOfAttributeShouldBeIncludedInConstructorSynMemberDefnMember,OptAsSpec.fs (1,5--1,10)),
+                     /root/RangeOfAttributeShouldBeIncludedInConstructorSynMemberDefnMember,OptAsSpec.fs (2,5--2,10)),
                   ObjectModel
                     (Unspecified,
                      [Member
@@ -25,14 +25,14 @@ ImplFile
                                    ArgExpr =
                                     Const
                                       (Unit,
-                                       /root/RangeOfAttributeShouldBeIncludedInConstructorSynMemberDefnMember,OptAsSpec.fs (2,6--2,9))
+                                       /root/RangeOfAttributeShouldBeIncludedInConstructorSynMemberDefnMember,OptAsSpec.fs (3,6--3,9))
                                    Target = None
                                    AppliesToGetterAndSetter = false
                                    Range =
-                                    /root/RangeOfAttributeShouldBeIncludedInConstructorSynMemberDefnMember,OptAsSpec.fs (2,6--2,9) }]
+                                    /root/RangeOfAttributeShouldBeIncludedInConstructorSynMemberDefnMember,OptAsSpec.fs (3,6--3,9) }]
                                Range =
-                                /root/RangeOfAttributeShouldBeIncludedInConstructorSynMemberDefnMember,OptAsSpec.fs (2,4--2,11) }],
-                            PreXmlDoc ((2,4), FSharp.Compiler.Xml.XmlDocCollector),
+                                /root/RangeOfAttributeShouldBeIncludedInConstructorSynMemberDefnMember,OptAsSpec.fs (3,4--3,11) }],
+                            PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),
                             SynValData
                               (Some { IsInstance = false
                                       IsDispatchSlot = false
@@ -49,37 +49,37 @@ ImplFile
                                  [Paren
                                     (Const
                                        (Unit,
-                                        /root/RangeOfAttributeShouldBeIncludedInConstructorSynMemberDefnMember,OptAsSpec.fs (3,8--3,10)),
-                                     /root/RangeOfAttributeShouldBeIncludedInConstructorSynMemberDefnMember,OptAsSpec.fs (3,8--3,10))],
+                                        /root/RangeOfAttributeShouldBeIncludedInConstructorSynMemberDefnMember,OptAsSpec.fs (4,8--4,10)),
+                                     /root/RangeOfAttributeShouldBeIncludedInConstructorSynMemberDefnMember,OptAsSpec.fs (4,8--4,10))],
                                None,
-                               /root/RangeOfAttributeShouldBeIncludedInConstructorSynMemberDefnMember,OptAsSpec.fs (3,4--3,7)),
+                               /root/RangeOfAttributeShouldBeIncludedInConstructorSynMemberDefnMember,OptAsSpec.fs (4,4--4,7)),
                             None,
                             Const
                               (Unit,
-                               /root/RangeOfAttributeShouldBeIncludedInConstructorSynMemberDefnMember,OptAsSpec.fs (3,21--3,23)),
-                            /root/RangeOfAttributeShouldBeIncludedInConstructorSynMemberDefnMember,OptAsSpec.fs (2,4--3,18),
+                               /root/RangeOfAttributeShouldBeIncludedInConstructorSynMemberDefnMember,OptAsSpec.fs (4,21--4,23)),
+                            /root/RangeOfAttributeShouldBeIncludedInConstructorSynMemberDefnMember,OptAsSpec.fs (3,4--4,18),
                             NoneAtInvisible,
                             { LeadingKeyword =
                                New
-                                 /root/RangeOfAttributeShouldBeIncludedInConstructorSynMemberDefnMember,OptAsSpec.fs (3,4--3,7)
+                                 /root/RangeOfAttributeShouldBeIncludedInConstructorSynMemberDefnMember,OptAsSpec.fs (4,4--4,7)
                               InlineKeyword = None
                               EqualsRange =
                                Some
-                                 /root/RangeOfAttributeShouldBeIncludedInConstructorSynMemberDefnMember,OptAsSpec.fs (3,19--3,20) }),
-                         /root/RangeOfAttributeShouldBeIncludedInConstructorSynMemberDefnMember,OptAsSpec.fs (2,4--3,23))],
-                     /root/RangeOfAttributeShouldBeIncludedInConstructorSynMemberDefnMember,OptAsSpec.fs (2,4--3,23)),
+                                 /root/RangeOfAttributeShouldBeIncludedInConstructorSynMemberDefnMember,OptAsSpec.fs (4,19--4,20) }),
+                         /root/RangeOfAttributeShouldBeIncludedInConstructorSynMemberDefnMember,OptAsSpec.fs (3,4--4,23))],
+                     /root/RangeOfAttributeShouldBeIncludedInConstructorSynMemberDefnMember,OptAsSpec.fs (3,4--4,23)),
                   [], None,
-                  /root/RangeOfAttributeShouldBeIncludedInConstructorSynMemberDefnMember,OptAsSpec.fs (1,5--3,23),
+                  /root/RangeOfAttributeShouldBeIncludedInConstructorSynMemberDefnMember,OptAsSpec.fs (2,5--4,23),
                   { LeadingKeyword =
                      Type
-                       /root/RangeOfAttributeShouldBeIncludedInConstructorSynMemberDefnMember,OptAsSpec.fs (1,0--1,4)
+                       /root/RangeOfAttributeShouldBeIncludedInConstructorSynMemberDefnMember,OptAsSpec.fs (2,0--2,4)
                     EqualsRange =
                      Some
-                       /root/RangeOfAttributeShouldBeIncludedInConstructorSynMemberDefnMember,OptAsSpec.fs (1,11--1,12)
+                       /root/RangeOfAttributeShouldBeIncludedInConstructorSynMemberDefnMember,OptAsSpec.fs (2,11--2,12)
                     WithKeyword = None })],
-              /root/RangeOfAttributeShouldBeIncludedInConstructorSynMemberDefnMember,OptAsSpec.fs (1,0--3,23))],
+              /root/RangeOfAttributeShouldBeIncludedInConstructorSynMemberDefnMember,OptAsSpec.fs (2,0--4,23))],
           PreXmlDocEmpty, [], None,
-          /root/RangeOfAttributeShouldBeIncludedInConstructorSynMemberDefnMember,OptAsSpec.fs (1,0--3,23),
+          /root/RangeOfAttributeShouldBeIncludedInConstructorSynMemberDefnMember,OptAsSpec.fs (2,0--5,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

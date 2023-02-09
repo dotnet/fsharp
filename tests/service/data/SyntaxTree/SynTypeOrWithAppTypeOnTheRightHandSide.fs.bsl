@@ -8,7 +8,7 @@ ImplFile
              (false,
               [SynBinding
                  (None, Normal, true, false, [],
-                  PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
+                  PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
                     (None,
                      SynValInfo
@@ -21,14 +21,14 @@ ImplFile
                           (Typed
                              (Named
                                 (SynIdent (x, None), false, None,
-                                 /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (1,14--1,15)),
+                                 /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (2,14--2,15)),
                               Var
                                 (SynTypar (T, None, false),
-                                 /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (1,17--1,19)),
-                              /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (1,14--1,19)),
-                           /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (1,13--1,20))],
+                                 /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (2,17--2,19)),
+                              /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (2,14--2,19)),
+                           /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (2,13--2,20))],
                      None,
-                     /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (1,11--1,20)),
+                     /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (2,11--2,20)),
                   None,
                   Paren
                     (TraitCall
@@ -36,12 +36,12 @@ ImplFile
                           (Or
                              (Var
                                 (SynTypar (T, HeadType, false),
-                                 /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (1,25--1,27)),
+                                 /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (2,25--2,27)),
                               LongIdent (SynLongIdent ([int], [], [None])),
-                              /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (1,25--1,34),
+                              /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (2,25--2,34),
                               { OrKeyword =
-                                 /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (1,28--1,30) }),
-                           /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (1,24--1,35)),
+                                 /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (2,28--2,30) }),
+                           /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (2,24--2,35)),
                         Member
                           (SynValSig
                              ([], SynIdent (A, None),
@@ -49,13 +49,13 @@ ImplFile
                               LongIdent (SynLongIdent ([int], [], [None])),
                               SynValInfo ([], SynArgInfo ([], false, None)),
                               false, false,
-                              PreXmlDoc ((1,39), FSharp.Compiler.Xml.XmlDocCollector),
+                              PreXmlDoc ((2,39), FSharp.Compiler.Xml.XmlDocCollector),
                               None, None,
-                              /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (1,39--1,59),
+                              /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (2,39--2,59),
                               { LeadingKeyword =
                                  StaticMember
-                                   (/root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (1,39--1,45),
-                                    /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (1,46--1,52))
+                                   (/root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (2,39--2,45),
+                                    /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (2,46--2,52))
                                 InlineKeyword = None
                                 WithKeyword = None
                                 EqualsRange = None }),
@@ -65,30 +65,30 @@ ImplFile
                              IsFinal = false
                              GetterOrSetterIsCompilerGenerated = false
                              MemberKind = PropertyGet },
-                           /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (1,39--1,59),
+                           /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (2,39--2,59),
                            { GetSetKeywords = None }),
                         Const
                           (Unit,
-                           /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (1,61--1,63)),
-                        /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (1,23--1,64)),
-                     /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (1,23--1,24),
+                           /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (2,61--2,63)),
+                        /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (2,23--2,64)),
+                     /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (2,23--2,24),
                      Some
-                       /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (1,63--1,64),
-                     /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (1,23--1,64)),
-                  /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (1,11--1,20),
+                       /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (2,63--2,64),
+                     /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (2,23--2,64)),
+                  /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (2,11--2,20),
                   NoneAtLet,
                   { LeadingKeyword =
                      Let
-                       /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (1,0--1,3)
+                       /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (2,0--2,3)
                     InlineKeyword =
                      Some
-                       /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (1,4--1,10)
+                       /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (2,4--2,10)
                     EqualsRange =
                      Some
-                       /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (1,21--1,22) })],
-              /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (1,0--1,64))],
+                       /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (2,21--2,22) })],
+              /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (2,0--2,64))],
           PreXmlDocEmpty, [], None,
-          /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (1,0--1,64),
+          /root/SynTypeOrWithAppTypeOnTheRightHandSide.fs (2,0--3,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

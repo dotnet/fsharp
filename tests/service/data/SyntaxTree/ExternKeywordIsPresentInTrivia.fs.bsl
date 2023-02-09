@@ -8,7 +8,7 @@ ImplFile
              (false,
               [SynBinding
                  (None, Normal, false, false, [],
-                  PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
+                  PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
                     (None, SynValInfo ([[]], SynArgInfo ([], false, None)), None),
                   LongIdent
@@ -17,8 +17,8 @@ ImplFile
                      Pats
                        [Tuple
                           (false, [],
-                           /root/ExternKeywordIsPresentInTrivia.fs (1,26--1,27))],
-                     None, /root/ExternKeywordIsPresentInTrivia.fs (1,12--1,26)),
+                           /root/ExternKeywordIsPresentInTrivia.fs (2,26--2,27))],
+                     None, /root/ExternKeywordIsPresentInTrivia.fs (2,12--2,26)),
                   Some
                     (SynBindingReturnInfo
                        (App
@@ -26,8 +26,8 @@ ImplFile
                              (SynLongIdent
                                 ([unit], [], [Some (OriginalNotation "void")])),
                            None, [], [], None, false,
-                           /root/ExternKeywordIsPresentInTrivia.fs (1,7--1,11)),
-                        /root/ExternKeywordIsPresentInTrivia.fs (1,7--1,11), [],
+                           /root/ExternKeywordIsPresentInTrivia.fs (2,7--2,11)),
+                        /root/ExternKeywordIsPresentInTrivia.fs (2,7--2,11), [],
                         { ColonRange = None })),
                   Typed
                     (App
@@ -36,25 +36,25 @@ ImplFile
                           (String
                              ("extern was not given a DllImport attribute",
                               Regular,
-                              /root/ExternKeywordIsPresentInTrivia.fs (1,27--1,28)),
-                           /root/ExternKeywordIsPresentInTrivia.fs (1,27--1,28)),
-                        /root/ExternKeywordIsPresentInTrivia.fs (1,0--1,28)),
+                              /root/ExternKeywordIsPresentInTrivia.fs (2,27--2,28)),
+                           /root/ExternKeywordIsPresentInTrivia.fs (2,27--2,28)),
+                        /root/ExternKeywordIsPresentInTrivia.fs (2,0--2,28)),
                      App
                        (LongIdent
                           (SynLongIdent
                              ([unit], [], [Some (OriginalNotation "void")])),
                         None, [], [], None, false,
-                        /root/ExternKeywordIsPresentInTrivia.fs (1,7--1,11)),
-                     /root/ExternKeywordIsPresentInTrivia.fs (1,0--1,28)),
-                  /root/ExternKeywordIsPresentInTrivia.fs (1,0--1,28),
+                        /root/ExternKeywordIsPresentInTrivia.fs (2,7--2,11)),
+                     /root/ExternKeywordIsPresentInTrivia.fs (2,0--2,28)),
+                  /root/ExternKeywordIsPresentInTrivia.fs (2,0--2,28),
                   NoneAtInvisible,
                   { LeadingKeyword =
-                     Extern /root/ExternKeywordIsPresentInTrivia.fs (1,0--1,6)
+                     Extern /root/ExternKeywordIsPresentInTrivia.fs (2,0--2,6)
                     InlineKeyword = None
                     EqualsRange = None })],
-              /root/ExternKeywordIsPresentInTrivia.fs (1,0--1,28))],
+              /root/ExternKeywordIsPresentInTrivia.fs (2,0--2,28))],
           PreXmlDocEmpty, [], None,
-          /root/ExternKeywordIsPresentInTrivia.fs (1,0--1,28),
+          /root/ExternKeywordIsPresentInTrivia.fs (2,0--2,28),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

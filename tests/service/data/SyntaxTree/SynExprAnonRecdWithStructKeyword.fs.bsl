@@ -8,19 +8,19 @@ ImplFile
              (AnonRecd
                 (true, None,
                  [(Foo,
-                   Some /root/SynExprAnonRecdWithStructKeyword.fs (2,11--2,12),
+                   Some /root/SynExprAnonRecdWithStructKeyword.fs (3,11--3,12),
                    Ident someValue)],
-                 /root/SynExprAnonRecdWithStructKeyword.fs (1,0--4,16)),
-              /root/SynExprAnonRecdWithStructKeyword.fs (1,0--4,16));
+                 /root/SynExprAnonRecdWithStructKeyword.fs (2,0--5,16)),
+              /root/SynExprAnonRecdWithStructKeyword.fs (2,0--5,16));
            Expr
              (AnonRecd
                 (true, None, [],
-                 /root/SynExprAnonRecdWithStructKeyword.fs (6,0--6,12)),
-              /root/SynExprAnonRecdWithStructKeyword.fs (6,0--6,12))],
+                 /root/SynExprAnonRecdWithStructKeyword.fs (7,0--7,12)),
+              /root/SynExprAnonRecdWithStructKeyword.fs (7,0--7,12))],
           PreXmlDocEmpty, [], None,
-          /root/SynExprAnonRecdWithStructKeyword.fs (1,0--6,12),
+          /root/SynExprAnonRecdWithStructKeyword.fs (2,0--7,12),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments =
-         [LineComment /root/SynExprAnonRecdWithStructKeyword.fs (3,4--3,11)] },
+         [LineComment /root/SynExprAnonRecdWithStructKeyword.fs (4,4--4,11)] },
       set []))

@@ -10,49 +10,49 @@ ImplFile
              ([SynTypeDefn
                  (SynComponentInfo
                     ([], None, [], [A],
-                     PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
+                     PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None,
-                     /root/SynTypeDefnWithXmlDocContainsTheRangeOfTheTypeKeyword.fs (3,5--3,6)),
+                     /root/SynTypeDefnWithXmlDocContainsTheRangeOfTheTypeKeyword.fs (4,5--4,6)),
                   Simple
                     (TypeAbbrev
                        (Ok, LongIdent (SynLongIdent ([B], [], [None])),
-                        /root/SynTypeDefnWithXmlDocContainsTheRangeOfTheTypeKeyword.fs (3,9--3,10)),
-                     /root/SynTypeDefnWithXmlDocContainsTheRangeOfTheTypeKeyword.fs (3,9--3,10)),
+                        /root/SynTypeDefnWithXmlDocContainsTheRangeOfTheTypeKeyword.fs (4,9--4,10)),
+                     /root/SynTypeDefnWithXmlDocContainsTheRangeOfTheTypeKeyword.fs (4,9--4,10)),
                   [], None,
-                  /root/SynTypeDefnWithXmlDocContainsTheRangeOfTheTypeKeyword.fs (1,0--3,10),
+                  /root/SynTypeDefnWithXmlDocContainsTheRangeOfTheTypeKeyword.fs (2,0--4,10),
                   { LeadingKeyword =
                      Type
-                       /root/SynTypeDefnWithXmlDocContainsTheRangeOfTheTypeKeyword.fs (3,0--3,4)
+                       /root/SynTypeDefnWithXmlDocContainsTheRangeOfTheTypeKeyword.fs (4,0--4,4)
                     EqualsRange =
                      Some
-                       /root/SynTypeDefnWithXmlDocContainsTheRangeOfTheTypeKeyword.fs (3,7--3,8)
+                       /root/SynTypeDefnWithXmlDocContainsTheRangeOfTheTypeKeyword.fs (4,7--4,8)
                     WithKeyword = None });
                SynTypeDefn
                  (SynComponentInfo
                     ([], None, [], [C],
-                     PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector),
+                     PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None,
-                     /root/SynTypeDefnWithXmlDocContainsTheRangeOfTheTypeKeyword.fs (4,4--4,5)),
+                     /root/SynTypeDefnWithXmlDocContainsTheRangeOfTheTypeKeyword.fs (5,4--5,5)),
                   Simple
                     (TypeAbbrev
                        (Ok, LongIdent (SynLongIdent ([D], [], [None])),
-                        /root/SynTypeDefnWithXmlDocContainsTheRangeOfTheTypeKeyword.fs (4,8--4,9)),
-                     /root/SynTypeDefnWithXmlDocContainsTheRangeOfTheTypeKeyword.fs (4,8--4,9)),
+                        /root/SynTypeDefnWithXmlDocContainsTheRangeOfTheTypeKeyword.fs (5,8--5,9)),
+                     /root/SynTypeDefnWithXmlDocContainsTheRangeOfTheTypeKeyword.fs (5,8--5,9)),
                   [], None,
-                  /root/SynTypeDefnWithXmlDocContainsTheRangeOfTheTypeKeyword.fs (4,4--4,9),
+                  /root/SynTypeDefnWithXmlDocContainsTheRangeOfTheTypeKeyword.fs (5,4--5,9),
                   { LeadingKeyword =
                      And
-                       /root/SynTypeDefnWithXmlDocContainsTheRangeOfTheTypeKeyword.fs (4,0--4,3)
+                       /root/SynTypeDefnWithXmlDocContainsTheRangeOfTheTypeKeyword.fs (5,0--5,3)
                     EqualsRange =
                      Some
-                       /root/SynTypeDefnWithXmlDocContainsTheRangeOfTheTypeKeyword.fs (4,6--4,7)
+                       /root/SynTypeDefnWithXmlDocContainsTheRangeOfTheTypeKeyword.fs (5,6--5,7)
                     WithKeyword = None })],
-              /root/SynTypeDefnWithXmlDocContainsTheRangeOfTheTypeKeyword.fs (1,0--4,9))],
+              /root/SynTypeDefnWithXmlDocContainsTheRangeOfTheTypeKeyword.fs (2,0--5,9))],
           PreXmlDocEmpty, [], None,
-          /root/SynTypeDefnWithXmlDocContainsTheRangeOfTheTypeKeyword.fs (3,0--4,9),
+          /root/SynTypeDefnWithXmlDocContainsTheRangeOfTheTypeKeyword.fs (4,0--6,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments =
          [LineComment
-            /root/SynTypeDefnWithXmlDocContainsTheRangeOfTheTypeKeyword.fs (2,0--2,8)] },
+            /root/SynTypeDefnWithXmlDocContainsTheRangeOfTheTypeKeyword.fs (3,0--3,8)] },
       set []))

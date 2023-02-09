@@ -1,3 +1,4 @@
+
 [<Foo>]
 type Bar =
     class

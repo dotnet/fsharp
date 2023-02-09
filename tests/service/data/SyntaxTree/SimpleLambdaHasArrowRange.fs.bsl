@@ -10,17 +10,17 @@ ImplFile
                  SimplePats
                    ([Id
                        (x, None, false, false, false,
-                        /root/SimpleLambdaHasArrowRange.fs (1,4--1,5))],
-                    /root/SimpleLambdaHasArrowRange.fs (1,4--1,5)), Ident x,
+                        /root/SimpleLambdaHasArrowRange.fs (2,4--2,5))],
+                    /root/SimpleLambdaHasArrowRange.fs (2,4--2,5)), Ident x,
                  Some
                    ([Named
                        (SynIdent (x, None), false, None,
-                        /root/SimpleLambdaHasArrowRange.fs (1,4--1,5))], Ident x),
-                 /root/SimpleLambdaHasArrowRange.fs (1,0--1,10),
+                        /root/SimpleLambdaHasArrowRange.fs (2,4--2,5))], Ident x),
+                 /root/SimpleLambdaHasArrowRange.fs (2,0--2,10),
                  { ArrowRange =
-                    Some /root/SimpleLambdaHasArrowRange.fs (1,6--1,8) }),
-              /root/SimpleLambdaHasArrowRange.fs (1,0--1,10))], PreXmlDocEmpty,
-          [], None, /root/SimpleLambdaHasArrowRange.fs (1,0--1,10),
+                    Some /root/SimpleLambdaHasArrowRange.fs (2,6--2,8) }),
+              /root/SimpleLambdaHasArrowRange.fs (2,0--2,10))], PreXmlDocEmpty,
+          [], None, /root/SimpleLambdaHasArrowRange.fs (2,0--3,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

@@ -12,19 +12,19 @@ ImplFile
              ([SynTypeDefn
                  (SynComponentInfo
                     ([], None, [], [Foo],
-                     PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
+                     PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None,
-                     /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (1,5--1,8)),
+                     /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (2,5--2,8)),
                   ObjectModel
                     (Unspecified,
                      [ImplicitCtor
                         (None, [],
                          SimplePats
                            ([],
-                            /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (1,8--1,10)),
+                            /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (2,8--2,10)),
                          None,
-                         PreXmlDoc ((1,8), FSharp.Compiler.Xml.XmlDocCollector),
-                         /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (1,5--1,8),
+                         PreXmlDoc ((2,8), FSharp.Compiler.Xml.XmlDocCollector),
+                         /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (2,5--2,8),
                          { AsKeyword = None });
                       GetSetMember
                         (None,
@@ -32,7 +32,7 @@ ImplFile
                            (SynBinding
                               (None, Normal, false, false, [],
                                PreXmlMerge
-  (PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector), PreXmlDocEmpty),
+  (PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector), PreXmlDocEmpty),
                                SynValData
                                  (Some
                                     { IsInstance = true
@@ -48,65 +48,65 @@ ImplFile
                                LongIdent
                                  (SynLongIdent
                                     ([this; MyWriteOnlyProperty],
-                                     [/root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (3,15--3,16)],
+                                     [/root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (4,15--4,16)],
                                      [None; None]), Some set, None,
                                   Pats
                                     [Paren
                                        (Named
                                           (SynIdent (value, None), false, None,
-                                           /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (3,46--3,51)),
-                                        /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (3,45--3,52))],
+                                           /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (4,46--4,51)),
+                                        /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (4,45--4,52))],
                                   None,
-                                  /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (3,41--3,52)),
+                                  /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (4,41--4,52)),
                                None,
                                LongIdentSet
                                  (SynLongIdent ([myInternalValue], [], [None]),
                                   Ident value,
-                                  /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (3,55--3,79)),
-                               /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (3,41--3,52),
+                                  /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (4,55--4,79)),
+                               /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (4,41--4,52),
                                NoneAtInvisible,
                                { LeadingKeyword =
                                   Member
-                                    /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (3,4--3,10)
+                                    /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (4,4--4,10)
                                  InlineKeyword = None
                                  EqualsRange =
                                   Some
-                                    /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (3,53--3,54) })),
-                         /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (3,4--3,79),
+                                    /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (4,53--4,54) })),
+                         /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (4,4--4,79),
                          { InlineKeyword = None
                            WithKeyword =
-                            /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (3,36--3,40)
+                            /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (4,36--4,40)
                            GetKeyword = None
                            AndKeyword = None
                            SetKeyword =
                             Some
-                              /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (3,41--3,44) })],
-                     /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (3,4--3,79)),
+                              /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (4,41--4,44) })],
+                     /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (4,4--4,79)),
                   [],
                   Some
                     (ImplicitCtor
                        (None, [],
                         SimplePats
                           ([],
-                           /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (1,8--1,10)),
+                           /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (2,8--2,10)),
                         None,
-                        PreXmlDoc ((1,8), FSharp.Compiler.Xml.XmlDocCollector),
-                        /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (1,5--1,8),
+                        PreXmlDoc ((2,8), FSharp.Compiler.Xml.XmlDocCollector),
+                        /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (2,5--2,8),
                         { AsKeyword = None })),
-                  /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (1,5--3,79),
+                  /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (2,5--4,79),
                   { LeadingKeyword =
                      Type
-                       /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (1,0--1,4)
+                       /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (2,0--2,4)
                     EqualsRange =
                      Some
-                       /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (1,11--1,12)
+                       /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (2,11--2,12)
                     WithKeyword = None })],
-              /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (1,0--3,79))],
+              /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (2,0--4,79))],
           PreXmlDocEmpty, [], None,
-          /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (1,0--3,79),
+          /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (2,0--5,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments =
          [LineComment
-            /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (2,4--2,29)] },
+            /root/Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword.fs (3,4--3,29)] },
       set []))

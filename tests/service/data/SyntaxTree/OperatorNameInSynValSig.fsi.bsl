@@ -11,40 +11,40 @@ SigFile
                    (op_Amp,
                     Some
                       (OriginalNotationWithParen
-                         (/root/OperatorNameInSynValSig.fsi (2,4--2,5), "&",
-                          /root/OperatorNameInSynValSig.fsi (2,6--2,7)))),
+                         (/root/OperatorNameInSynValSig.fsi (3,4--3,5), "&",
+                          /root/OperatorNameInSynValSig.fsi (3,6--3,7)))),
                  SynValTyparDecls (None, true),
                  Fun
                    (SignatureParameter
                       ([], false, Some e1,
                        LongIdent (SynLongIdent ([bool], [], [None])),
-                       /root/OperatorNameInSynValSig.fsi (2,9--2,17)),
+                       /root/OperatorNameInSynValSig.fsi (3,9--3,17)),
                     Fun
                       (SignatureParameter
                          ([], false, Some e2,
                           LongIdent (SynLongIdent ([bool], [], [None])),
-                          /root/OperatorNameInSynValSig.fsi (2,21--2,29)),
+                          /root/OperatorNameInSynValSig.fsi (3,21--3,29)),
                        LongIdent (SynLongIdent ([bool], [], [None])),
-                       /root/OperatorNameInSynValSig.fsi (2,21--2,37),
+                       /root/OperatorNameInSynValSig.fsi (3,21--3,37),
                        { ArrowRange =
-                          /root/OperatorNameInSynValSig.fsi (2,30--2,32) }),
-                    /root/OperatorNameInSynValSig.fsi (2,9--2,37),
+                          /root/OperatorNameInSynValSig.fsi (3,30--3,32) }),
+                    /root/OperatorNameInSynValSig.fsi (3,9--3,37),
                     { ArrowRange =
-                       /root/OperatorNameInSynValSig.fsi (2,18--2,20) }),
+                       /root/OperatorNameInSynValSig.fsi (3,18--3,20) }),
                  SynValInfo
                    ([[SynArgInfo ([], false, Some e1)];
                      [SynArgInfo ([], false, Some e2)]],
                     SynArgInfo ([], false, None)), false, false,
-                 PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector), None,
-                 None, /root/OperatorNameInSynValSig.fsi (2,0--2,37),
+                 PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector), None,
+                 None, /root/OperatorNameInSynValSig.fsi (3,0--3,37),
                  { LeadingKeyword =
-                    Val /root/OperatorNameInSynValSig.fsi (2,0--2,3)
+                    Val /root/OperatorNameInSynValSig.fsi (3,0--3,3)
                    InlineKeyword = None
                    WithKeyword = None
                    EqualsRange = None }),
-              /root/OperatorNameInSynValSig.fsi (2,0--2,37))],
-          PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
-          /root/OperatorNameInSynValSig.fsi (1,0--2,37),
-          { LeadingKeyword = Module /root/OperatorNameInSynValSig.fsi (1,0--1,6) })],
+              /root/OperatorNameInSynValSig.fsi (3,0--3,37))],
+          PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
+          /root/OperatorNameInSynValSig.fsi (2,0--3,37),
+          { LeadingKeyword = Module /root/OperatorNameInSynValSig.fsi (2,0--2,6) })],
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

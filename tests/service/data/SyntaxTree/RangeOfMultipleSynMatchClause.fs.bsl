@@ -10,34 +10,34 @@ ImplFile
                    (false, false,
                     [SynBinding
                        (None, Normal, false, false, [],
-                        PreXmlDoc ((2,4), FSharp.Compiler.Xml.XmlDocCollector),
+                        PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),
                         SynValData
                           (None, SynValInfo ([], SynArgInfo ([], false, None)),
                            None),
                         Named
                           (SynIdent (content, None), false, None,
-                           /root/RangeOfMultipleSynMatchClause.fs (2,8--2,15)),
+                           /root/RangeOfMultipleSynMatchClause.fs (3,8--3,15)),
                         None,
                         App
                           (NonAtomic, false, Ident tryDownloadFile, Ident url,
-                           /root/RangeOfMultipleSynMatchClause.fs (2,18--2,37)),
-                        /root/RangeOfMultipleSynMatchClause.fs (2,8--2,15),
-                        Yes /root/RangeOfMultipleSynMatchClause.fs (2,4--2,37),
+                           /root/RangeOfMultipleSynMatchClause.fs (3,18--3,37)),
+                        /root/RangeOfMultipleSynMatchClause.fs (3,8--3,15),
+                        Yes /root/RangeOfMultipleSynMatchClause.fs (3,4--3,37),
                         { LeadingKeyword =
-                           Let /root/RangeOfMultipleSynMatchClause.fs (2,4--2,7)
+                           Let /root/RangeOfMultipleSynMatchClause.fs (3,4--3,7)
                           InlineKeyword = None
                           EqualsRange =
                            Some
-                             /root/RangeOfMultipleSynMatchClause.fs (2,16--2,17) })],
+                             /root/RangeOfMultipleSynMatchClause.fs (3,16--3,17) })],
                     App
                       (NonAtomic, false, Ident Some, Ident content,
-                       /root/RangeOfMultipleSynMatchClause.fs (3,4--3,16)),
-                    /root/RangeOfMultipleSynMatchClause.fs (2,4--3,16),
+                       /root/RangeOfMultipleSynMatchClause.fs (4,4--4,16)),
+                    /root/RangeOfMultipleSynMatchClause.fs (3,4--4,16),
                     { InKeyword = None }),
                  [SynMatchClause
                     (Named
                        (SynIdent (ex, None), false, None,
-                        /root/RangeOfMultipleSynMatchClause.fs (5,2--5,4)), None,
+                        /root/RangeOfMultipleSynMatchClause.fs (6,2--6,4)), None,
                      Sequential
                        (SuppressNeither, true,
                         App
@@ -46,42 +46,42 @@ ImplFile
                              (false,
                               SynLongIdent
                                 ([Infrastructure; ReportWarning],
-                                 [/root/RangeOfMultipleSynMatchClause.fs (6,18--6,19)],
+                                 [/root/RangeOfMultipleSynMatchClause.fs (7,18--7,19)],
                                  [None; None]), None,
-                              /root/RangeOfMultipleSynMatchClause.fs (6,4--6,32)),
+                              /root/RangeOfMultipleSynMatchClause.fs (7,4--7,32)),
                            Ident ex,
-                           /root/RangeOfMultipleSynMatchClause.fs (6,4--6,35)),
+                           /root/RangeOfMultipleSynMatchClause.fs (7,4--7,35)),
                         Ident None,
-                        /root/RangeOfMultipleSynMatchClause.fs (6,4--7,8)),
-                     /root/RangeOfMultipleSynMatchClause.fs (5,2--7,8), Yes,
+                        /root/RangeOfMultipleSynMatchClause.fs (7,4--8,8)),
+                     /root/RangeOfMultipleSynMatchClause.fs (6,2--8,8), Yes,
                      { ArrowRange =
-                        Some /root/RangeOfMultipleSynMatchClause.fs (5,5--5,7)
+                        Some /root/RangeOfMultipleSynMatchClause.fs (6,5--6,7)
                        BarRange =
-                        Some /root/RangeOfMultipleSynMatchClause.fs (5,0--5,1) });
+                        Some /root/RangeOfMultipleSynMatchClause.fs (6,0--6,1) });
                   SynMatchClause
                     (Named
                        (SynIdent (exx, None), false, None,
-                        /root/RangeOfMultipleSynMatchClause.fs (8,2--8,5)), None,
+                        /root/RangeOfMultipleSynMatchClause.fs (9,2--9,5)), None,
                      Ident None,
-                     /root/RangeOfMultipleSynMatchClause.fs (8,2--9,8), Yes,
+                     /root/RangeOfMultipleSynMatchClause.fs (9,2--10,8), Yes,
                      { ArrowRange =
-                        Some /root/RangeOfMultipleSynMatchClause.fs (8,6--8,8)
+                        Some /root/RangeOfMultipleSynMatchClause.fs (9,6--9,8)
                        BarRange =
-                        Some /root/RangeOfMultipleSynMatchClause.fs (8,0--8,1) })],
-                 /root/RangeOfMultipleSynMatchClause.fs (1,0--9,8),
-                 Yes /root/RangeOfMultipleSynMatchClause.fs (1,0--1,3),
-                 Yes /root/RangeOfMultipleSynMatchClause.fs (4,0--4,4),
+                        Some /root/RangeOfMultipleSynMatchClause.fs (9,0--9,1) })],
+                 /root/RangeOfMultipleSynMatchClause.fs (2,0--10,8),
+                 Yes /root/RangeOfMultipleSynMatchClause.fs (2,0--2,3),
+                 Yes /root/RangeOfMultipleSynMatchClause.fs (5,0--5,4),
                  { TryKeyword =
-                    /root/RangeOfMultipleSynMatchClause.fs (1,0--1,3)
+                    /root/RangeOfMultipleSynMatchClause.fs (2,0--2,3)
                    TryToWithRange =
-                    /root/RangeOfMultipleSynMatchClause.fs (1,0--4,4)
+                    /root/RangeOfMultipleSynMatchClause.fs (2,0--5,4)
                    WithKeyword =
-                    /root/RangeOfMultipleSynMatchClause.fs (4,0--4,4)
+                    /root/RangeOfMultipleSynMatchClause.fs (5,0--5,4)
                    WithToEndRange =
-                    /root/RangeOfMultipleSynMatchClause.fs (4,0--9,8) }),
-              /root/RangeOfMultipleSynMatchClause.fs (1,0--9,8))],
+                    /root/RangeOfMultipleSynMatchClause.fs (5,0--10,8) }),
+              /root/RangeOfMultipleSynMatchClause.fs (2,0--10,8))],
           PreXmlDocEmpty, [], None,
-          /root/RangeOfMultipleSynMatchClause.fs (1,0--9,8),
+          /root/RangeOfMultipleSynMatchClause.fs (2,0--11,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

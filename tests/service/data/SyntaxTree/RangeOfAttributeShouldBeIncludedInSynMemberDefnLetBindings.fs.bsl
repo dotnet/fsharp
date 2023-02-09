@@ -11,9 +11,9 @@ ImplFile
              ([SynTypeDefn
                  (SynComponentInfo
                     ([], None, [], [Bar],
-                     PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
+                     PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None,
-                     /root/RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings.fs (1,5--1,8)),
+                     /root/RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings.fs (2,5--2,8)),
                   ObjectModel
                     (Unspecified,
                      [LetBindings
@@ -24,50 +24,50 @@ ImplFile
                                     ArgExpr =
                                      Const
                                        (Unit,
-                                        /root/RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings.fs (2,6--2,9))
+                                        /root/RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings.fs (3,6--3,9))
                                     Target = None
                                     AppliesToGetterAndSetter = false
                                     Range =
-                                     /root/RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings.fs (2,6--2,9) }]
+                                     /root/RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings.fs (3,6--3,9) }]
                                 Range =
-                                 /root/RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings.fs (2,4--2,11) }],
-                             PreXmlDoc ((2,4), FSharp.Compiler.Xml.XmlDocCollector),
+                                 /root/RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings.fs (3,4--3,11) }],
+                             PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),
                              SynValData
                                (None,
                                 SynValInfo ([], SynArgInfo ([], false, None)),
                                 None),
                              Named
                                (SynIdent (x, None), false, None,
-                                /root/RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings.fs (3,8--3,9)),
+                                /root/RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings.fs (4,8--4,9)),
                              None,
                              Const
                                (Int32 8,
-                                /root/RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings.fs (3,12--3,13)),
-                             /root/RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings.fs (2,4--3,9),
+                                /root/RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings.fs (4,12--4,13)),
+                             /root/RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings.fs (3,4--4,9),
                              Yes
-                               /root/RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings.fs (2,4--3,13),
+                               /root/RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings.fs (3,4--4,13),
                              { LeadingKeyword =
                                 Let
-                                  /root/RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings.fs (3,4--3,7)
+                                  /root/RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings.fs (4,4--4,7)
                                InlineKeyword = None
                                EqualsRange =
                                 Some
-                                  /root/RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings.fs (3,10--3,11) })],
+                                  /root/RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings.fs (4,10--4,11) })],
                          false, false,
-                         /root/RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings.fs (2,4--3,13))],
-                     /root/RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings.fs (2,4--3,13)),
+                         /root/RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings.fs (3,4--4,13))],
+                     /root/RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings.fs (3,4--4,13)),
                   [], None,
-                  /root/RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings.fs (1,5--3,13),
+                  /root/RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings.fs (2,5--4,13),
                   { LeadingKeyword =
                      Type
-                       /root/RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings.fs (1,0--1,4)
+                       /root/RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings.fs (2,0--2,4)
                     EqualsRange =
                      Some
-                       /root/RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings.fs (1,9--1,10)
+                       /root/RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings.fs (2,9--2,10)
                     WithKeyword = None })],
-              /root/RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings.fs (1,0--3,13))],
+              /root/RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings.fs (2,0--4,13))],
           PreXmlDocEmpty, [], None,
-          /root/RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings.fs (1,0--3,13),
+          /root/RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings.fs (2,0--5,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

@@ -11,11 +11,11 @@ ImplFile
                    (false,
                     SynLongIdent
                       ([op_SpliceUntyped], [], [Some (OriginalNotation "%%")]),
-                    None, /root/PrefixOperationWithTwoCharacters.fs (1,0--1,2)),
-                 Ident arg, /root/PrefixOperationWithTwoCharacters.fs (1,0--1,5)),
-              /root/PrefixOperationWithTwoCharacters.fs (1,0--1,5))],
+                    None, /root/PrefixOperationWithTwoCharacters.fs (2,0--2,2)),
+                 Ident arg, /root/PrefixOperationWithTwoCharacters.fs (2,0--2,5)),
+              /root/PrefixOperationWithTwoCharacters.fs (2,0--2,5))],
           PreXmlDocEmpty, [], None,
-          /root/PrefixOperationWithTwoCharacters.fs (1,0--1,5),
+          /root/PrefixOperationWithTwoCharacters.fs (2,0--2,5),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

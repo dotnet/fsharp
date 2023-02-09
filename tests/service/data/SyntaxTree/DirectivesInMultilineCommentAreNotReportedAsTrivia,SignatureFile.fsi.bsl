@@ -10,28 +10,28 @@ SigFile
                 ([], SynIdent (v, None), SynValTyparDecls (None, true),
                  LongIdent (SynLongIdent ([int], [], [None])),
                  SynValInfo ([], SynArgInfo ([], false, None)), false, false,
-                 PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector), None,
+                 PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector), None,
                  Some
                    (Const
                       (Int32 42,
-                       /root/DirectivesInMultilineCommentAreNotReportedAsTrivia,SignatureFile.fsi (9,0--9,2))),
-                 /root/DirectivesInMultilineCommentAreNotReportedAsTrivia,SignatureFile.fsi (3,0--9,2),
+                       /root/DirectivesInMultilineCommentAreNotReportedAsTrivia,SignatureFile.fsi (10,0--10,2))),
+                 /root/DirectivesInMultilineCommentAreNotReportedAsTrivia,SignatureFile.fsi (4,0--10,2),
                  { LeadingKeyword =
                     Val
-                      /root/DirectivesInMultilineCommentAreNotReportedAsTrivia,SignatureFile.fsi (3,0--3,3)
+                      /root/DirectivesInMultilineCommentAreNotReportedAsTrivia,SignatureFile.fsi (4,0--4,3)
                    InlineKeyword = None
                    WithKeyword = None
                    EqualsRange =
                     Some
-                      /root/DirectivesInMultilineCommentAreNotReportedAsTrivia,SignatureFile.fsi (3,12--3,13) }),
-              /root/DirectivesInMultilineCommentAreNotReportedAsTrivia,SignatureFile.fsi (3,0--9,2))],
+                      /root/DirectivesInMultilineCommentAreNotReportedAsTrivia,SignatureFile.fsi (4,12--4,13) }),
+              /root/DirectivesInMultilineCommentAreNotReportedAsTrivia,SignatureFile.fsi (4,0--10,2))],
           PreXmlDocEmpty, [], None,
-          /root/DirectivesInMultilineCommentAreNotReportedAsTrivia,SignatureFile.fsi (1,0--9,2),
+          /root/DirectivesInMultilineCommentAreNotReportedAsTrivia,SignatureFile.fsi (2,0--10,2),
           { LeadingKeyword =
              Namespace
-               /root/DirectivesInMultilineCommentAreNotReportedAsTrivia,SignatureFile.fsi (1,0--1,9) })],
+               /root/DirectivesInMultilineCommentAreNotReportedAsTrivia,SignatureFile.fsi (2,0--2,9) })],
       { ConditionalDirectives = []
         CodeComments =
          [BlockComment
-            /root/DirectivesInMultilineCommentAreNotReportedAsTrivia,SignatureFile.fsi (4,0--8,2)] },
+            /root/DirectivesInMultilineCommentAreNotReportedAsTrivia,SignatureFile.fsi (5,0--9,2)] },
       set []))

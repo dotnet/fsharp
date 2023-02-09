@@ -1,3 +1,4 @@
+
 namespace Foobar
 
 val v : int =

@@ -1,3 +1,4 @@
+
 namespace Meh
 
 type X =

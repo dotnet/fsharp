@@ -10,27 +10,27 @@ ImplFile
                  Some
                    (IfThenElse
                       (Ident c, Ident d, None,
-                       Yes /root/CommentBetweenElseAndIf.fs (3,34--3,43), false,
-                       /root/CommentBetweenElseAndIf.fs (3,34--4,1),
+                       Yes /root/CommentBetweenElseAndIf.fs (4,34--4,43), false,
+                       /root/CommentBetweenElseAndIf.fs (4,34--5,1),
                        { IfKeyword =
-                          /root/CommentBetweenElseAndIf.fs (3,34--3,36)
+                          /root/CommentBetweenElseAndIf.fs (4,34--4,36)
                          IsElif = false
                          ThenKeyword =
-                          /root/CommentBetweenElseAndIf.fs (3,39--3,43)
+                          /root/CommentBetweenElseAndIf.fs (4,39--4,43)
                          ElseKeyword = None
                          IfToThenRange =
-                          /root/CommentBetweenElseAndIf.fs (3,34--3,43) })),
-                 Yes /root/CommentBetweenElseAndIf.fs (1,0--1,9), false,
-                 /root/CommentBetweenElseAndIf.fs (1,0--4,1),
-                 { IfKeyword = /root/CommentBetweenElseAndIf.fs (1,0--1,2)
+                          /root/CommentBetweenElseAndIf.fs (4,34--4,43) })),
+                 Yes /root/CommentBetweenElseAndIf.fs (2,0--2,9), false,
+                 /root/CommentBetweenElseAndIf.fs (2,0--5,1),
+                 { IfKeyword = /root/CommentBetweenElseAndIf.fs (2,0--2,2)
                    IsElif = false
-                   ThenKeyword = /root/CommentBetweenElseAndIf.fs (1,5--1,9)
+                   ThenKeyword = /root/CommentBetweenElseAndIf.fs (2,5--2,9)
                    ElseKeyword =
-                    Some /root/CommentBetweenElseAndIf.fs (3,0--3,4)
-                   IfToThenRange = /root/CommentBetweenElseAndIf.fs (1,0--1,9) }),
-              /root/CommentBetweenElseAndIf.fs (1,0--4,1))], PreXmlDocEmpty, [],
-          None, /root/CommentBetweenElseAndIf.fs (1,0--4,1),
+                    Some /root/CommentBetweenElseAndIf.fs (4,0--4,4)
+                   IfToThenRange = /root/CommentBetweenElseAndIf.fs (2,0--2,9) }),
+              /root/CommentBetweenElseAndIf.fs (2,0--5,1))], PreXmlDocEmpty, [],
+          None, /root/CommentBetweenElseAndIf.fs (2,0--6,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments =
-         [BlockComment /root/CommentBetweenElseAndIf.fs (3,5--3,33)] }, set []))
+         [BlockComment /root/CommentBetweenElseAndIf.fs (4,5--4,33)] }, set []))

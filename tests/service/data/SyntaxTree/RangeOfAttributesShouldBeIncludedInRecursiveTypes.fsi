@@ -1,3 +1,4 @@
+
 namespace SomeNamespace
 
 type Foo =

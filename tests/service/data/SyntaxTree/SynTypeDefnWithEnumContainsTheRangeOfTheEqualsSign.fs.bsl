@@ -10,27 +10,15 @@ ImplFile
              ([SynTypeDefn
                  (SynComponentInfo
                     ([], None, [], [Bear],
-                     PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
+                     PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None,
-                     /root/SynTypeDefnWithEnumContainsTheRangeOfTheEqualsSign.fs (1,5--1,9)),
+                     /root/SynTypeDefnWithEnumContainsTheRangeOfTheEqualsSign.fs (2,5--2,9)),
                   Simple
                     (Enum
                        ([SynEnumCase
                            ([], SynIdent (BlackBear, None),
                             Const
                               (Int32 1,
-                               /root/SynTypeDefnWithEnumContainsTheRangeOfTheEqualsSign.fs (2,18--2,19)),
-                            PreXmlDoc ((2,4), FSharp.Compiler.Xml.XmlDocCollector),
-                            /root/SynTypeDefnWithEnumContainsTheRangeOfTheEqualsSign.fs (2,6--2,19),
-                            { BarRange =
-                               Some
-                                 /root/SynTypeDefnWithEnumContainsTheRangeOfTheEqualsSign.fs (2,4--2,5)
-                              EqualsRange =
-                               /root/SynTypeDefnWithEnumContainsTheRangeOfTheEqualsSign.fs (2,16--2,17) });
-                         SynEnumCase
-                           ([], SynIdent (PolarBear, None),
-                            Const
-                              (Int32 2,
                                /root/SynTypeDefnWithEnumContainsTheRangeOfTheEqualsSign.fs (3,18--3,19)),
                             PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),
                             /root/SynTypeDefnWithEnumContainsTheRangeOfTheEqualsSign.fs (3,6--3,19),
@@ -38,21 +26,33 @@ ImplFile
                                Some
                                  /root/SynTypeDefnWithEnumContainsTheRangeOfTheEqualsSign.fs (3,4--3,5)
                               EqualsRange =
-                               /root/SynTypeDefnWithEnumContainsTheRangeOfTheEqualsSign.fs (3,16--3,17) })],
-                        /root/SynTypeDefnWithEnumContainsTheRangeOfTheEqualsSign.fs (2,4--3,19)),
-                     /root/SynTypeDefnWithEnumContainsTheRangeOfTheEqualsSign.fs (2,4--3,19)),
+                               /root/SynTypeDefnWithEnumContainsTheRangeOfTheEqualsSign.fs (3,16--3,17) });
+                         SynEnumCase
+                           ([], SynIdent (PolarBear, None),
+                            Const
+                              (Int32 2,
+                               /root/SynTypeDefnWithEnumContainsTheRangeOfTheEqualsSign.fs (4,18--4,19)),
+                            PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector),
+                            /root/SynTypeDefnWithEnumContainsTheRangeOfTheEqualsSign.fs (4,6--4,19),
+                            { BarRange =
+                               Some
+                                 /root/SynTypeDefnWithEnumContainsTheRangeOfTheEqualsSign.fs (4,4--4,5)
+                              EqualsRange =
+                               /root/SynTypeDefnWithEnumContainsTheRangeOfTheEqualsSign.fs (4,16--4,17) })],
+                        /root/SynTypeDefnWithEnumContainsTheRangeOfTheEqualsSign.fs (3,4--4,19)),
+                     /root/SynTypeDefnWithEnumContainsTheRangeOfTheEqualsSign.fs (3,4--4,19)),
                   [], None,
-                  /root/SynTypeDefnWithEnumContainsTheRangeOfTheEqualsSign.fs (1,5--3,19),
+                  /root/SynTypeDefnWithEnumContainsTheRangeOfTheEqualsSign.fs (2,5--4,19),
                   { LeadingKeyword =
                      Type
-                       /root/SynTypeDefnWithEnumContainsTheRangeOfTheEqualsSign.fs (1,0--1,4)
+                       /root/SynTypeDefnWithEnumContainsTheRangeOfTheEqualsSign.fs (2,0--2,4)
                     EqualsRange =
                      Some
-                       /root/SynTypeDefnWithEnumContainsTheRangeOfTheEqualsSign.fs (1,10--1,11)
+                       /root/SynTypeDefnWithEnumContainsTheRangeOfTheEqualsSign.fs (2,10--2,11)
                     WithKeyword = None })],
-              /root/SynTypeDefnWithEnumContainsTheRangeOfTheEqualsSign.fs (1,0--3,19))],
+              /root/SynTypeDefnWithEnumContainsTheRangeOfTheEqualsSign.fs (2,0--4,19))],
           PreXmlDocEmpty, [], None,
-          /root/SynTypeDefnWithEnumContainsTheRangeOfTheEqualsSign.fs (1,0--3,19),
+          /root/SynTypeDefnWithEnumContainsTheRangeOfTheEqualsSign.fs (2,0--5,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

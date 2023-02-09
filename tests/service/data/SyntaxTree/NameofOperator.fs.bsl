@@ -13,11 +13,11 @@ ImplFile
                       ([op_Addition], [],
                        [Some
                           (OriginalNotationWithParen
-                             (/root/NameofOperator.fs (1,6--1,7), "+",
-                              /root/NameofOperator.fs (1,8--1,9)))]), None,
-                    /root/NameofOperator.fs (1,6--1,9)),
-                 /root/NameofOperator.fs (1,0--1,9)),
-              /root/NameofOperator.fs (1,0--1,9))], PreXmlDocEmpty, [], None,
-          /root/NameofOperator.fs (1,0--1,9), { LeadingKeyword = None })],
+                             (/root/NameofOperator.fs (2,6--2,7), "+",
+                              /root/NameofOperator.fs (2,8--2,9)))]), None,
+                    /root/NameofOperator.fs (2,6--2,9)),
+                 /root/NameofOperator.fs (2,0--2,9)),
+              /root/NameofOperator.fs (2,0--2,9))], PreXmlDocEmpty, [], None,
+          /root/NameofOperator.fs (2,0--2,9), { LeadingKeyword = None })],
       (true, false), { ConditionalDirectives = []
                        CodeComments = [] }, set []))

@@ -9,22 +9,22 @@ SigFile
                 ([], SynIdent (foo, None), SynValTyparDecls (None, true),
                  LongIdent (SynLongIdent ([int], [], [None])),
                  SynValInfo ([], SynArgInfo ([], false, None)), false, false,
-                 PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector), None,
+                 PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector), None,
                  None,
-                 /root/CommentAfterSourceCode,SignatureFile.fsi (3,0--3,13),
+                 /root/CommentAfterSourceCode,SignatureFile.fsi (4,0--4,13),
                  { LeadingKeyword =
                     Val
-                      /root/CommentAfterSourceCode,SignatureFile.fsi (3,0--3,3)
+                      /root/CommentAfterSourceCode,SignatureFile.fsi (4,0--4,3)
                    InlineKeyword = None
                    WithKeyword = None
                    EqualsRange = None }),
-              /root/CommentAfterSourceCode,SignatureFile.fsi (3,0--3,13))],
+              /root/CommentAfterSourceCode,SignatureFile.fsi (4,0--4,13))],
           PreXmlDocEmpty, [], None,
-          /root/CommentAfterSourceCode,SignatureFile.fsi (1,0--3,13),
+          /root/CommentAfterSourceCode,SignatureFile.fsi (2,0--4,13),
           { LeadingKeyword =
-             Namespace /root/CommentAfterSourceCode,SignatureFile.fsi (1,0--1,9) })],
+             Namespace /root/CommentAfterSourceCode,SignatureFile.fsi (2,0--2,9) })],
       { ConditionalDirectives = []
         CodeComments =
          [LineComment
-            /root/CommentAfterSourceCode,SignatureFile.fsi (3,14--3,25)] },
+            /root/CommentAfterSourceCode,SignatureFile.fsi (4,14--4,25)] },
       set []))

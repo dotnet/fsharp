@@ -8,9 +8,9 @@ ImplFile
              ([SynTypeDefn
                  (SynComponentInfo
                     ([], None, [], [Foo],
-                     PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
+                     PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None,
-                     /root/SingleSynUnionCaseHasBarRange.fs (1,5--1,8)),
+                     /root/SingleSynUnionCaseHasBarRange.fs (2,5--2,8)),
                   Simple
                     (Union
                        (None,
@@ -21,27 +21,27 @@ ImplFile
                                  ([], false, None,
                                   LongIdent
                                     (SynLongIdent ([string], [], [None])), false,
-                                  PreXmlDoc ((1,20), FSharp.Compiler.Xml.XmlDocCollector),
+                                  PreXmlDoc ((2,20), FSharp.Compiler.Xml.XmlDocCollector),
                                   None,
-                                  /root/SingleSynUnionCaseHasBarRange.fs (1,20--1,26),
+                                  /root/SingleSynUnionCaseHasBarRange.fs (2,20--2,26),
                                   { LeadingKeyword = None })],
-                            PreXmlDoc ((1,11), FSharp.Compiler.Xml.XmlDocCollector),
+                            PreXmlDoc ((2,11), FSharp.Compiler.Xml.XmlDocCollector),
                             None,
-                            /root/SingleSynUnionCaseHasBarRange.fs (1,13--1,26),
+                            /root/SingleSynUnionCaseHasBarRange.fs (2,13--2,26),
                             { BarRange =
                                Some
-                                 /root/SingleSynUnionCaseHasBarRange.fs (1,11--1,12) })],
-                        /root/SingleSynUnionCaseHasBarRange.fs (1,11--1,26)),
-                     /root/SingleSynUnionCaseHasBarRange.fs (1,11--1,26)), [],
-                  None, /root/SingleSynUnionCaseHasBarRange.fs (1,5--1,26),
+                                 /root/SingleSynUnionCaseHasBarRange.fs (2,11--2,12) })],
+                        /root/SingleSynUnionCaseHasBarRange.fs (2,11--2,26)),
+                     /root/SingleSynUnionCaseHasBarRange.fs (2,11--2,26)), [],
+                  None, /root/SingleSynUnionCaseHasBarRange.fs (2,5--2,26),
                   { LeadingKeyword =
-                     Type /root/SingleSynUnionCaseHasBarRange.fs (1,0--1,4)
+                     Type /root/SingleSynUnionCaseHasBarRange.fs (2,0--2,4)
                     EqualsRange =
-                     Some /root/SingleSynUnionCaseHasBarRange.fs (1,9--1,10)
+                     Some /root/SingleSynUnionCaseHasBarRange.fs (2,9--2,10)
                     WithKeyword = None })],
-              /root/SingleSynUnionCaseHasBarRange.fs (1,0--1,26))],
+              /root/SingleSynUnionCaseHasBarRange.fs (2,0--2,26))],
           PreXmlDocEmpty, [], None,
-          /root/SingleSynUnionCaseHasBarRange.fs (1,0--1,26),
+          /root/SingleSynUnionCaseHasBarRange.fs (2,0--3,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

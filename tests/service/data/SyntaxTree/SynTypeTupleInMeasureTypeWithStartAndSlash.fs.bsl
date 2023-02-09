@@ -12,17 +12,17 @@ ImplFile
                             ArgExpr =
                              Const
                                (Unit,
-                                /root/SynTypeTupleInMeasureTypeWithStartAndSlash.fs (1,2--1,9))
+                                /root/SynTypeTupleInMeasureTypeWithStartAndSlash.fs (2,2--2,9))
                             Target = None
                             AppliesToGetterAndSetter = false
                             Range =
-                             /root/SynTypeTupleInMeasureTypeWithStartAndSlash.fs (1,2--1,9) }]
+                             /root/SynTypeTupleInMeasureTypeWithStartAndSlash.fs (2,2--2,9) }]
                         Range =
-                         /root/SynTypeTupleInMeasureTypeWithStartAndSlash.fs (1,0--1,11) }],
+                         /root/SynTypeTupleInMeasureTypeWithStartAndSlash.fs (2,0--2,11) }],
                      None, [], [R],
-                     PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
+                     PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None,
-                     /root/SynTypeTupleInMeasureTypeWithStartAndSlash.fs (1,17--1,18)),
+                     /root/SynTypeTupleInMeasureTypeWithStartAndSlash.fs (2,17--2,18)),
                   Simple
                     (TypeAbbrev
                        (Ok,
@@ -30,26 +30,26 @@ ImplFile
                           (false,
                            [Type (LongIdent (SynLongIdent ([X], [], [None])));
                             Star
-                              /root/SynTypeTupleInMeasureTypeWithStartAndSlash.fs (1,23--1,24);
+                              /root/SynTypeTupleInMeasureTypeWithStartAndSlash.fs (2,23--2,24);
                             Type (LongIdent (SynLongIdent ([Y], [], [None])));
                             Slash
-                              /root/SynTypeTupleInMeasureTypeWithStartAndSlash.fs (1,27--1,28);
+                              /root/SynTypeTupleInMeasureTypeWithStartAndSlash.fs (2,27--2,28);
                             Type (LongIdent (SynLongIdent ([Z], [], [None])))],
-                           /root/SynTypeTupleInMeasureTypeWithStartAndSlash.fs (1,21--1,30)),
-                        /root/SynTypeTupleInMeasureTypeWithStartAndSlash.fs (1,21--1,30)),
-                     /root/SynTypeTupleInMeasureTypeWithStartAndSlash.fs (1,21--1,30)),
+                           /root/SynTypeTupleInMeasureTypeWithStartAndSlash.fs (2,21--2,30)),
+                        /root/SynTypeTupleInMeasureTypeWithStartAndSlash.fs (2,21--2,30)),
+                     /root/SynTypeTupleInMeasureTypeWithStartAndSlash.fs (2,21--2,30)),
                   [], None,
-                  /root/SynTypeTupleInMeasureTypeWithStartAndSlash.fs (1,0--1,30),
+                  /root/SynTypeTupleInMeasureTypeWithStartAndSlash.fs (2,0--2,30),
                   { LeadingKeyword =
                      Type
-                       /root/SynTypeTupleInMeasureTypeWithStartAndSlash.fs (1,12--1,16)
+                       /root/SynTypeTupleInMeasureTypeWithStartAndSlash.fs (2,12--2,16)
                     EqualsRange =
                      Some
-                       /root/SynTypeTupleInMeasureTypeWithStartAndSlash.fs (1,19--1,20)
+                       /root/SynTypeTupleInMeasureTypeWithStartAndSlash.fs (2,19--2,20)
                     WithKeyword = None })],
-              /root/SynTypeTupleInMeasureTypeWithStartAndSlash.fs (1,0--1,30))],
+              /root/SynTypeTupleInMeasureTypeWithStartAndSlash.fs (2,0--2,30))],
           PreXmlDocEmpty, [], None,
-          /root/SynTypeTupleInMeasureTypeWithStartAndSlash.fs (1,0--1,30),
+          /root/SynTypeTupleInMeasureTypeWithStartAndSlash.fs (2,0--3,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

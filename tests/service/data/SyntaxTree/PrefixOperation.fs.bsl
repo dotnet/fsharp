@@ -11,10 +11,10 @@ ImplFile
                    (false,
                     SynLongIdent
                       ([op_UnaryPlus], [], [Some (OriginalNotation "+")]), None,
-                    /root/PrefixOperation.fs (1,0--1,1)),
-                 Const (Int32 -86, /root/PrefixOperation.fs (1,2--1,5)),
-                 /root/PrefixOperation.fs (1,0--1,5)),
-              /root/PrefixOperation.fs (1,0--1,5))], PreXmlDocEmpty, [], None,
-          /root/PrefixOperation.fs (1,0--1,5), { LeadingKeyword = None })],
+                    /root/PrefixOperation.fs (2,0--2,1)),
+                 Const (Int32 -86, /root/PrefixOperation.fs (2,2--2,5)),
+                 /root/PrefixOperation.fs (2,0--2,5)),
+              /root/PrefixOperation.fs (2,0--2,5))], PreXmlDocEmpty, [], None,
+          /root/PrefixOperation.fs (2,0--2,5), { LeadingKeyword = None })],
       (true, false), { ConditionalDirectives = []
                        CodeComments = [] }, set []))

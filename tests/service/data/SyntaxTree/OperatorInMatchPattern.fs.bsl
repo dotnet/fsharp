@@ -6,33 +6,33 @@ ImplFile
          ([OperatorInMatchPattern], false, AnonModule,
           [Expr
              (Match
-                (Yes /root/OperatorInMatchPattern.fs (1,0--1,12), Ident x,
+                (Yes /root/OperatorInMatchPattern.fs (2,0--2,12), Ident x,
                  [SynMatchClause
                     (ListCons
                        (Paren
                           (Named
                              (SynIdent (head, None), false, None,
-                              /root/OperatorInMatchPattern.fs (2,3--2,7)),
-                           /root/OperatorInMatchPattern.fs (2,2--2,8)),
+                              /root/OperatorInMatchPattern.fs (3,3--3,7)),
+                           /root/OperatorInMatchPattern.fs (3,2--3,8)),
                         Paren
                           (Named
                              (SynIdent (tail, None), false, None,
-                              /root/OperatorInMatchPattern.fs (2,13--2,17)),
-                           /root/OperatorInMatchPattern.fs (2,12--2,18)),
-                        /root/OperatorInMatchPattern.fs (2,2--2,18),
+                              /root/OperatorInMatchPattern.fs (3,13--3,17)),
+                           /root/OperatorInMatchPattern.fs (3,12--3,18)),
+                        /root/OperatorInMatchPattern.fs (3,2--3,18),
                         { ColonColonRange =
-                           /root/OperatorInMatchPattern.fs (2,9--2,11) }), None,
-                     Const (Unit, /root/OperatorInMatchPattern.fs (2,22--2,24)),
-                     /root/OperatorInMatchPattern.fs (2,2--2,24), Yes,
+                           /root/OperatorInMatchPattern.fs (3,9--3,11) }), None,
+                     Const (Unit, /root/OperatorInMatchPattern.fs (3,22--3,24)),
+                     /root/OperatorInMatchPattern.fs (3,2--3,24), Yes,
                      { ArrowRange =
-                        Some /root/OperatorInMatchPattern.fs (2,19--2,21)
+                        Some /root/OperatorInMatchPattern.fs (3,19--3,21)
                        BarRange =
-                        Some /root/OperatorInMatchPattern.fs (2,0--2,1) })],
-                 /root/OperatorInMatchPattern.fs (1,0--2,24),
-                 { MatchKeyword = /root/OperatorInMatchPattern.fs (1,0--1,5)
-                   WithKeyword = /root/OperatorInMatchPattern.fs (1,8--1,12) }),
-              /root/OperatorInMatchPattern.fs (1,0--2,24))], PreXmlDocEmpty, [],
-          None, /root/OperatorInMatchPattern.fs (1,0--2,24),
+                        Some /root/OperatorInMatchPattern.fs (3,0--3,1) })],
+                 /root/OperatorInMatchPattern.fs (2,0--3,24),
+                 { MatchKeyword = /root/OperatorInMatchPattern.fs (2,0--2,5)
+                   WithKeyword = /root/OperatorInMatchPattern.fs (2,8--2,12) }),
+              /root/OperatorInMatchPattern.fs (2,0--3,24))], PreXmlDocEmpty, [],
+          None, /root/OperatorInMatchPattern.fs (2,0--4,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

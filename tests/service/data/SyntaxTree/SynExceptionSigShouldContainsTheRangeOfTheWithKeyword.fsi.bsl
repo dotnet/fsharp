@@ -11,30 +11,30 @@ SigFile
                    ([],
                     SynUnionCase
                       ([], SynIdent (Foo, None), Fields [], PreXmlDocEmpty, None,
-                       /root/SynExceptionSigShouldContainsTheRangeOfTheWithKeyword.fsi (3,10--3,13),
+                       /root/SynExceptionSigShouldContainsTheRangeOfTheWithKeyword.fsi (4,10--4,13),
                        { BarRange = None }), None,
-                    PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector), None,
-                    /root/SynExceptionSigShouldContainsTheRangeOfTheWithKeyword.fsi (3,0--3,13)),
+                    PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector), None,
+                    /root/SynExceptionSigShouldContainsTheRangeOfTheWithKeyword.fsi (4,0--4,13)),
                  Some
-                   /root/SynExceptionSigShouldContainsTheRangeOfTheWithKeyword.fsi (3,14--3,18),
+                   /root/SynExceptionSigShouldContainsTheRangeOfTheWithKeyword.fsi (4,14--4,18),
                  [Member
                     (SynValSig
                        ([], SynIdent (Meh, None), SynValTyparDecls (None, true),
                         Fun
                           (LongIdent (SynLongIdent ([unit], [], [None])),
                            LongIdent (SynLongIdent ([unit], [], [None])),
-                           /root/SynExceptionSigShouldContainsTheRangeOfTheWithKeyword.fsi (4,13--4,25),
+                           /root/SynExceptionSigShouldContainsTheRangeOfTheWithKeyword.fsi (5,13--5,25),
                            { ArrowRange =
-                              /root/SynExceptionSigShouldContainsTheRangeOfTheWithKeyword.fsi (4,18--4,20) }),
+                              /root/SynExceptionSigShouldContainsTheRangeOfTheWithKeyword.fsi (5,18--5,20) }),
                         SynValInfo
                           ([[SynArgInfo ([], false, None)]],
                            SynArgInfo ([], false, None)), false, false,
-                        PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
+                        PreXmlDoc ((5,0), FSharp.Compiler.Xml.XmlDocCollector),
                         None, None,
-                        /root/SynExceptionSigShouldContainsTheRangeOfTheWithKeyword.fsi (4,0--4,25),
+                        /root/SynExceptionSigShouldContainsTheRangeOfTheWithKeyword.fsi (5,0--5,25),
                         { LeadingKeyword =
                            Member
-                             /root/SynExceptionSigShouldContainsTheRangeOfTheWithKeyword.fsi (4,0--4,6)
+                             /root/SynExceptionSigShouldContainsTheRangeOfTheWithKeyword.fsi (5,0--5,6)
                           InlineKeyword = None
                           WithKeyword = None
                           EqualsRange = None }),
@@ -44,14 +44,14 @@ SigFile
                        IsFinal = false
                        GetterOrSetterIsCompilerGenerated = false
                        MemberKind = Member },
-                     /root/SynExceptionSigShouldContainsTheRangeOfTheWithKeyword.fsi (4,0--4,25),
+                     /root/SynExceptionSigShouldContainsTheRangeOfTheWithKeyword.fsi (5,0--5,25),
                      { GetSetKeywords = None })],
-                 /root/SynExceptionSigShouldContainsTheRangeOfTheWithKeyword.fsi (3,0--4,25)),
-              /root/SynExceptionSigShouldContainsTheRangeOfTheWithKeyword.fsi (3,0--4,25))],
+                 /root/SynExceptionSigShouldContainsTheRangeOfTheWithKeyword.fsi (4,0--5,25)),
+              /root/SynExceptionSigShouldContainsTheRangeOfTheWithKeyword.fsi (4,0--5,25))],
           PreXmlDocEmpty, [], None,
-          /root/SynExceptionSigShouldContainsTheRangeOfTheWithKeyword.fsi (1,0--4,25),
+          /root/SynExceptionSigShouldContainsTheRangeOfTheWithKeyword.fsi (2,0--5,25),
           { LeadingKeyword =
              Namespace
-               /root/SynExceptionSigShouldContainsTheRangeOfTheWithKeyword.fsi (1,0--1,9) })],
+               /root/SynExceptionSigShouldContainsTheRangeOfTheWithKeyword.fsi (2,0--2,9) })],
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

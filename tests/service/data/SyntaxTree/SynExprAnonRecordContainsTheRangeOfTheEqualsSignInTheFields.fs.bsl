@@ -12,26 +12,26 @@ ImplFile
                 (false, None,
                  [(X,
                    Some
-                     /root/SynExprAnonRecordContainsTheRangeOfTheEqualsSignInTheFields.fs (1,5--1,6),
+                     /root/SynExprAnonRecordContainsTheRangeOfTheEqualsSignInTheFields.fs (2,5--2,6),
                    Const
                      (Int32 5,
-                      /root/SynExprAnonRecordContainsTheRangeOfTheEqualsSignInTheFields.fs (1,7--1,8)));
+                      /root/SynExprAnonRecordContainsTheRangeOfTheEqualsSignInTheFields.fs (2,7--2,8)));
                   (Y,
                    Some
-                     /root/SynExprAnonRecordContainsTheRangeOfTheEqualsSignInTheFields.fs (2,8--2,9),
+                     /root/SynExprAnonRecordContainsTheRangeOfTheEqualsSignInTheFields.fs (3,8--3,9),
                    Const
                      (Int32 6,
-                      /root/SynExprAnonRecordContainsTheRangeOfTheEqualsSignInTheFields.fs (2,10--2,11)));
+                      /root/SynExprAnonRecordContainsTheRangeOfTheEqualsSignInTheFields.fs (3,10--3,11)));
                   (Z,
                    Some
-                     /root/SynExprAnonRecordContainsTheRangeOfTheEqualsSignInTheFields.fs (3,12--3,13),
+                     /root/SynExprAnonRecordContainsTheRangeOfTheEqualsSignInTheFields.fs (4,12--4,13),
                    Const
                      (Int32 7,
-                      /root/SynExprAnonRecordContainsTheRangeOfTheEqualsSignInTheFields.fs (3,14--3,15)))],
-                 /root/SynExprAnonRecordContainsTheRangeOfTheEqualsSignInTheFields.fs (1,0--3,18)),
-              /root/SynExprAnonRecordContainsTheRangeOfTheEqualsSignInTheFields.fs (1,0--3,18))],
+                      /root/SynExprAnonRecordContainsTheRangeOfTheEqualsSignInTheFields.fs (4,14--4,15)))],
+                 /root/SynExprAnonRecordContainsTheRangeOfTheEqualsSignInTheFields.fs (2,0--4,18)),
+              /root/SynExprAnonRecordContainsTheRangeOfTheEqualsSignInTheFields.fs (2,0--4,18))],
           PreXmlDocEmpty, [], None,
-          /root/SynExprAnonRecordContainsTheRangeOfTheEqualsSignInTheFields.fs (1,0--3,18),
+          /root/SynExprAnonRecordContainsTheRangeOfTheEqualsSignInTheFields.fs (2,0--4,18),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

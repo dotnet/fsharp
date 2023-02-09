@@ -1,3 +1,4 @@
+
 let 
 #if !FOO
     inline

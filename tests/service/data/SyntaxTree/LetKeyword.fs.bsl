@@ -7,7 +7,7 @@ ImplFile
              (false,
               [SynBinding
                  (None, Normal, false, false, [],
-                  PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
+                  PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
                     (None,
                      SynValInfo
@@ -18,8 +18,8 @@ ImplFile
                      Pats
                        [Named
                           (SynIdent (b, None), false, None,
-                           /root/LetKeyword.fs (1,6--1,7))], None,
-                     /root/LetKeyword.fs (1,4--1,7)), None,
+                           /root/LetKeyword.fs (2,6--2,7))], None,
+                     /root/LetKeyword.fs (2,4--2,7)), None,
                   App
                     (NonAtomic, false,
                      App
@@ -28,15 +28,15 @@ ImplFile
                           (false,
                            SynLongIdent
                              ([op_Addition], [], [Some (OriginalNotation "+")]),
-                           None, /root/LetKeyword.fs (1,12--1,13)), Ident b,
-                        /root/LetKeyword.fs (1,10--1,13)),
-                     Const (Int32 1, /root/LetKeyword.fs (1,14--1,15)),
-                     /root/LetKeyword.fs (1,10--1,15)),
-                  /root/LetKeyword.fs (1,4--1,7), NoneAtLet,
-                  { LeadingKeyword = Let /root/LetKeyword.fs (1,0--1,3)
+                           None, /root/LetKeyword.fs (2,12--2,13)), Ident b,
+                        /root/LetKeyword.fs (2,10--2,13)),
+                     Const (Int32 1, /root/LetKeyword.fs (2,14--2,15)),
+                     /root/LetKeyword.fs (2,10--2,15)),
+                  /root/LetKeyword.fs (2,4--2,7), NoneAtLet,
+                  { LeadingKeyword = Let /root/LetKeyword.fs (2,0--2,3)
                     InlineKeyword = None
-                    EqualsRange = Some /root/LetKeyword.fs (1,8--1,9) })],
-              /root/LetKeyword.fs (1,0--1,15))], PreXmlDocEmpty, [], None,
-          /root/LetKeyword.fs (1,0--1,15), { LeadingKeyword = None })],
+                    EqualsRange = Some /root/LetKeyword.fs (2,8--2,9) })],
+              /root/LetKeyword.fs (2,0--2,15))], PreXmlDocEmpty, [], None,
+          /root/LetKeyword.fs (2,0--3,0), { LeadingKeyword = None })],
       (true, false), { ConditionalDirectives = []
                        CodeComments = [] }, set []))

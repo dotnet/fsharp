@@ -18,29 +18,29 @@ ImplFile
                                   SynLongIdent
                                     ([op_Equality], [],
                                      [Some (OriginalNotation "=")]), None,
-                                  /root/RangeOfAttributeWithTarget.fs (1,28--1,29)),
+                                  /root/RangeOfAttributeWithTarget.fs (2,28--2,29)),
                                Ident foo,
-                               /root/RangeOfAttributeWithTarget.fs (1,24--1,29)),
+                               /root/RangeOfAttributeWithTarget.fs (2,24--2,29)),
                             Const
                               (String
                                  ("bar", Regular,
-                                  /root/RangeOfAttributeWithTarget.fs (1,29--1,34)),
-                               /root/RangeOfAttributeWithTarget.fs (1,29--1,34)),
-                            /root/RangeOfAttributeWithTarget.fs (1,24--1,34)),
-                         /root/RangeOfAttributeWithTarget.fs (1,23--1,24),
-                         Some /root/RangeOfAttributeWithTarget.fs (1,34--1,35),
-                         /root/RangeOfAttributeWithTarget.fs (1,23--1,35))
+                                  /root/RangeOfAttributeWithTarget.fs (2,29--2,34)),
+                               /root/RangeOfAttributeWithTarget.fs (2,29--2,34)),
+                            /root/RangeOfAttributeWithTarget.fs (2,24--2,34)),
+                         /root/RangeOfAttributeWithTarget.fs (2,23--2,24),
+                         Some /root/RangeOfAttributeWithTarget.fs (2,34--2,35),
+                         /root/RangeOfAttributeWithTarget.fs (2,23--2,35))
                      Target = Some assembly
                      AppliesToGetterAndSetter = false
-                     Range = /root/RangeOfAttributeWithTarget.fs (1,2--1,35) }]
-                 Range = /root/RangeOfAttributeWithTarget.fs (1,0--1,37) }],
-              /root/RangeOfAttributeWithTarget.fs (1,0--1,37));
+                     Range = /root/RangeOfAttributeWithTarget.fs (2,2--2,35) }]
+                 Range = /root/RangeOfAttributeWithTarget.fs (2,0--2,37) }],
+              /root/RangeOfAttributeWithTarget.fs (2,0--2,37));
            Expr
              (Do
-                (Const (Unit, /root/RangeOfAttributeWithTarget.fs (2,3--2,5)),
-                 /root/RangeOfAttributeWithTarget.fs (2,0--2,5)),
-              /root/RangeOfAttributeWithTarget.fs (2,0--2,5))], PreXmlDocEmpty,
-          [], None, /root/RangeOfAttributeWithTarget.fs (1,0--2,5),
+                (Const (Unit, /root/RangeOfAttributeWithTarget.fs (3,3--3,5)),
+                 /root/RangeOfAttributeWithTarget.fs (3,0--3,5)),
+              /root/RangeOfAttributeWithTarget.fs (3,0--3,5))], PreXmlDocEmpty,
+          [], None, /root/RangeOfAttributeWithTarget.fs (2,0--4,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

@@ -11,43 +11,43 @@ ImplFile
              ([SynTypeDefn
                  (SynComponentInfo
                     ([], None, [], [Foobar],
-                     PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
+                     PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None,
-                     /root/SynTypeDefnWithObjectModelClassContainsTheRangeOfTheEqualsSign.fs (1,5--1,11)),
+                     /root/SynTypeDefnWithObjectModelClassContainsTheRangeOfTheEqualsSign.fs (2,5--2,11)),
                   ObjectModel
                     (Class,
                      [ImplicitCtor
                         (None, [],
                          SimplePats
                            ([],
-                            /root/SynTypeDefnWithObjectModelClassContainsTheRangeOfTheEqualsSign.fs (1,12--1,14)),
+                            /root/SynTypeDefnWithObjectModelClassContainsTheRangeOfTheEqualsSign.fs (2,12--2,14)),
                          None,
-                         PreXmlDoc ((1,12), FSharp.Compiler.Xml.XmlDocCollector),
-                         /root/SynTypeDefnWithObjectModelClassContainsTheRangeOfTheEqualsSign.fs (1,5--1,11),
+                         PreXmlDoc ((2,12), FSharp.Compiler.Xml.XmlDocCollector),
+                         /root/SynTypeDefnWithObjectModelClassContainsTheRangeOfTheEqualsSign.fs (2,5--2,11),
                          { AsKeyword = None })],
-                     /root/SynTypeDefnWithObjectModelClassContainsTheRangeOfTheEqualsSign.fs (2,4--3,7)),
+                     /root/SynTypeDefnWithObjectModelClassContainsTheRangeOfTheEqualsSign.fs (3,4--4,7)),
                   [],
                   Some
                     (ImplicitCtor
                        (None, [],
                         SimplePats
                           ([],
-                           /root/SynTypeDefnWithObjectModelClassContainsTheRangeOfTheEqualsSign.fs (1,12--1,14)),
+                           /root/SynTypeDefnWithObjectModelClassContainsTheRangeOfTheEqualsSign.fs (2,12--2,14)),
                         None,
-                        PreXmlDoc ((1,12), FSharp.Compiler.Xml.XmlDocCollector),
-                        /root/SynTypeDefnWithObjectModelClassContainsTheRangeOfTheEqualsSign.fs (1,5--1,11),
+                        PreXmlDoc ((2,12), FSharp.Compiler.Xml.XmlDocCollector),
+                        /root/SynTypeDefnWithObjectModelClassContainsTheRangeOfTheEqualsSign.fs (2,5--2,11),
                         { AsKeyword = None })),
-                  /root/SynTypeDefnWithObjectModelClassContainsTheRangeOfTheEqualsSign.fs (1,5--3,7),
+                  /root/SynTypeDefnWithObjectModelClassContainsTheRangeOfTheEqualsSign.fs (2,5--4,7),
                   { LeadingKeyword =
                      Type
-                       /root/SynTypeDefnWithObjectModelClassContainsTheRangeOfTheEqualsSign.fs (1,0--1,4)
+                       /root/SynTypeDefnWithObjectModelClassContainsTheRangeOfTheEqualsSign.fs (2,0--2,4)
                     EqualsRange =
                      Some
-                       /root/SynTypeDefnWithObjectModelClassContainsTheRangeOfTheEqualsSign.fs (1,15--1,16)
+                       /root/SynTypeDefnWithObjectModelClassContainsTheRangeOfTheEqualsSign.fs (2,15--2,16)
                     WithKeyword = None })],
-              /root/SynTypeDefnWithObjectModelClassContainsTheRangeOfTheEqualsSign.fs (1,0--3,7))],
+              /root/SynTypeDefnWithObjectModelClassContainsTheRangeOfTheEqualsSign.fs (2,0--4,7))],
           PreXmlDocEmpty, [], None,
-          /root/SynTypeDefnWithObjectModelClassContainsTheRangeOfTheEqualsSign.fs (1,0--3,7),
+          /root/SynTypeDefnWithObjectModelClassContainsTheRangeOfTheEqualsSign.fs (2,0--5,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

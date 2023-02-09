@@ -7,10 +7,10 @@ ImplFile
           [HashDirective
              (ParsedHashDirective
                 ("I", [],
-                 /root/RegularStringAsParsedHashDirectiveArgument.fs (1,0--1,2)),
-              /root/RegularStringAsParsedHashDirectiveArgument.fs (1,0--1,4))],
+                 /root/RegularStringAsParsedHashDirectiveArgument.fs (2,0--2,2)),
+              /root/RegularStringAsParsedHashDirectiveArgument.fs (2,0--2,4))],
           PreXmlDocEmpty, [], None,
-          /root/RegularStringAsParsedHashDirectiveArgument.fs (1,0--1,4),
+          /root/RegularStringAsParsedHashDirectiveArgument.fs (2,0--2,4),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

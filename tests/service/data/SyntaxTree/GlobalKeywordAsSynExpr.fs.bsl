@@ -9,9 +9,9 @@ ImplFile
                 (false,
                  SynLongIdent
                    ([`global`], [], [Some (OriginalNotation "global")]), None,
-                 /root/GlobalKeywordAsSynExpr.fs (1,0--1,6)),
-              /root/GlobalKeywordAsSynExpr.fs (1,0--1,6))], PreXmlDocEmpty, [],
-          None, /root/GlobalKeywordAsSynExpr.fs (1,0--1,6),
+                 /root/GlobalKeywordAsSynExpr.fs (2,0--2,6)),
+              /root/GlobalKeywordAsSynExpr.fs (2,0--2,6))], PreXmlDocEmpty, [],
+          None, /root/GlobalKeywordAsSynExpr.fs (2,0--2,6),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

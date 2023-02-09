@@ -1,3 +1,4 @@
+
 namespace Z
 type SomeCollection with
     val LastIndex : int

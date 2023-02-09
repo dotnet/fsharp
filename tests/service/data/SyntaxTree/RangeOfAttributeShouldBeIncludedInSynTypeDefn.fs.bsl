@@ -12,32 +12,32 @@ ImplFile
                             ArgExpr =
                              Const
                                (Unit,
-                                /root/RangeOfAttributeShouldBeIncludedInSynTypeDefn.fs (1,2--1,5))
+                                /root/RangeOfAttributeShouldBeIncludedInSynTypeDefn.fs (2,2--2,5))
                             Target = None
                             AppliesToGetterAndSetter = false
                             Range =
-                             /root/RangeOfAttributeShouldBeIncludedInSynTypeDefn.fs (1,2--1,5) }]
+                             /root/RangeOfAttributeShouldBeIncludedInSynTypeDefn.fs (2,2--2,5) }]
                         Range =
-                         /root/RangeOfAttributeShouldBeIncludedInSynTypeDefn.fs (1,0--1,7) }],
+                         /root/RangeOfAttributeShouldBeIncludedInSynTypeDefn.fs (2,0--2,7) }],
                      None, [], [Bar],
-                     PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
+                     PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None,
-                     /root/RangeOfAttributeShouldBeIncludedInSynTypeDefn.fs (2,5--2,8)),
+                     /root/RangeOfAttributeShouldBeIncludedInSynTypeDefn.fs (3,5--3,8)),
                   ObjectModel
                     (Class, [],
-                     /root/RangeOfAttributeShouldBeIncludedInSynTypeDefn.fs (3,4--4,7)),
+                     /root/RangeOfAttributeShouldBeIncludedInSynTypeDefn.fs (4,4--5,7)),
                   [], None,
-                  /root/RangeOfAttributeShouldBeIncludedInSynTypeDefn.fs (1,0--4,7),
+                  /root/RangeOfAttributeShouldBeIncludedInSynTypeDefn.fs (2,0--5,7),
                   { LeadingKeyword =
                      Type
-                       /root/RangeOfAttributeShouldBeIncludedInSynTypeDefn.fs (2,0--2,4)
+                       /root/RangeOfAttributeShouldBeIncludedInSynTypeDefn.fs (3,0--3,4)
                     EqualsRange =
                      Some
-                       /root/RangeOfAttributeShouldBeIncludedInSynTypeDefn.fs (2,9--2,10)
+                       /root/RangeOfAttributeShouldBeIncludedInSynTypeDefn.fs (3,9--3,10)
                     WithKeyword = None })],
-              /root/RangeOfAttributeShouldBeIncludedInSynTypeDefn.fs (1,0--4,7))],
+              /root/RangeOfAttributeShouldBeIncludedInSynTypeDefn.fs (2,0--5,7))],
           PreXmlDocEmpty, [], None,
-          /root/RangeOfAttributeShouldBeIncludedInSynTypeDefn.fs (1,0--4,7),
+          /root/RangeOfAttributeShouldBeIncludedInSynTypeDefn.fs (2,0--6,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

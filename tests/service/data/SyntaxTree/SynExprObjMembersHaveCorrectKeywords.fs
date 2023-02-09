@@ -1,3 +1,4 @@
+
 let meh =
     { new Interface with
         override this.Foo () = ()

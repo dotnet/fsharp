@@ -10,26 +10,26 @@ SigFile
              ([SynTypeDefnSig
                  (SynComponentInfo
                     ([], None, [], [Foobar],
-                     PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
+                     PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None,
-                     /root/SynTypeDefnSigWithObjectModelClassContainsTheRangeOfTheEqualsSign.fsi (3,5--3,11)),
+                     /root/SynTypeDefnSigWithObjectModelClassContainsTheRangeOfTheEqualsSign.fsi (4,5--4,11)),
                   ObjectModel
                     (Class, [],
-                     /root/SynTypeDefnSigWithObjectModelClassContainsTheRangeOfTheEqualsSign.fsi (4,4--5,7)),
+                     /root/SynTypeDefnSigWithObjectModelClassContainsTheRangeOfTheEqualsSign.fsi (5,4--6,7)),
                   [],
-                  /root/SynTypeDefnSigWithObjectModelClassContainsTheRangeOfTheEqualsSign.fsi (3,5--5,7),
+                  /root/SynTypeDefnSigWithObjectModelClassContainsTheRangeOfTheEqualsSign.fsi (4,5--6,7),
                   { LeadingKeyword =
                      Type
-                       /root/SynTypeDefnSigWithObjectModelClassContainsTheRangeOfTheEqualsSign.fsi (3,0--3,4)
+                       /root/SynTypeDefnSigWithObjectModelClassContainsTheRangeOfTheEqualsSign.fsi (4,0--4,4)
                     EqualsRange =
                      Some
-                       /root/SynTypeDefnSigWithObjectModelClassContainsTheRangeOfTheEqualsSign.fsi (3,12--3,13)
+                       /root/SynTypeDefnSigWithObjectModelClassContainsTheRangeOfTheEqualsSign.fsi (4,12--4,13)
                     WithKeyword = None })],
-              /root/SynTypeDefnSigWithObjectModelClassContainsTheRangeOfTheEqualsSign.fsi (3,0--5,7))],
+              /root/SynTypeDefnSigWithObjectModelClassContainsTheRangeOfTheEqualsSign.fsi (4,0--6,7))],
           PreXmlDocEmpty, [], None,
-          /root/SynTypeDefnSigWithObjectModelClassContainsTheRangeOfTheEqualsSign.fsi (1,0--5,7),
+          /root/SynTypeDefnSigWithObjectModelClassContainsTheRangeOfTheEqualsSign.fsi (2,0--6,7),
           { LeadingKeyword =
              Namespace
-               /root/SynTypeDefnSigWithObjectModelClassContainsTheRangeOfTheEqualsSign.fsi (1,0--1,9) })],
+               /root/SynTypeDefnSigWithObjectModelClassContainsTheRangeOfTheEqualsSign.fsi (2,0--2,9) })],
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

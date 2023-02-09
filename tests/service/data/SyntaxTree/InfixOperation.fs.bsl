@@ -13,12 +13,12 @@ ImplFile
                       (false,
                        SynLongIdent
                          ([op_Addition], [], [Some (OriginalNotation "+")]),
-                       None, /root/InfixOperation.fs (1,2--1,3)),
-                    Const (Int32 1, /root/InfixOperation.fs (1,0--1,1)),
-                    /root/InfixOperation.fs (1,0--1,3)),
-                 Const (Int32 1, /root/InfixOperation.fs (1,4--1,5)),
-                 /root/InfixOperation.fs (1,0--1,5)),
-              /root/InfixOperation.fs (1,0--1,5))], PreXmlDocEmpty, [], None,
-          /root/InfixOperation.fs (1,0--1,5), { LeadingKeyword = None })],
+                       None, /root/InfixOperation.fs (2,2--2,3)),
+                    Const (Int32 1, /root/InfixOperation.fs (2,0--2,1)),
+                    /root/InfixOperation.fs (2,0--2,3)),
+                 Const (Int32 1, /root/InfixOperation.fs (2,4--2,5)),
+                 /root/InfixOperation.fs (2,0--2,5)),
+              /root/InfixOperation.fs (2,0--2,5))], PreXmlDocEmpty, [], None,
+          /root/InfixOperation.fs (2,0--2,5), { LeadingKeyword = None })],
       (true, false), { ConditionalDirectives = []
                        CodeComments = [] }, set []))

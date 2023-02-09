@@ -7,8 +7,8 @@ SigFile
              ([SynTypeDefnSig
                  (SynComponentInfo
                     ([], None, [], [X],
-                     PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, /root/SignatureMemberWithSet.fsi (3,5--3,6)),
+                     PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
+                     false, None, /root/SignatureMemberWithSet.fsi (4,5--4,6)),
                   ObjectModel
                     (Unspecified,
                      [Member
@@ -18,16 +18,16 @@ SigFile
                             LongIdent (SynLongIdent ([int], [], [None])),
                             SynValInfo ([], SynArgInfo ([], false, None)), false,
                             false,
-                            PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
+                            PreXmlDoc ((6,4), FSharp.Compiler.Xml.XmlDocCollector),
                             None, None,
-                            /root/SignatureMemberWithSet.fsi (5,4--7,31),
+                            /root/SignatureMemberWithSet.fsi (6,4--8,31),
                             { LeadingKeyword =
                                Member
-                                 /root/SignatureMemberWithSet.fsi (5,4--5,10)
+                                 /root/SignatureMemberWithSet.fsi (6,4--6,10)
                               InlineKeyword = None
                               WithKeyword =
                                Some
-                                 /root/SignatureMemberWithSet.fsi (6,20--6,24)
+                                 /root/SignatureMemberWithSet.fsi (7,20--7,24)
                               EqualsRange = None }),
                          { IsInstance = true
                            IsDispatchSlot = false
@@ -35,21 +35,21 @@ SigFile
                            IsFinal = false
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = PropertySet },
-                         /root/SignatureMemberWithSet.fsi (5,4--7,31),
+                         /root/SignatureMemberWithSet.fsi (6,4--8,31),
                          { GetSetKeywords =
                             Some
-                              (Set /root/SignatureMemberWithSet.fsi (7,28--7,31)) })],
-                     /root/SignatureMemberWithSet.fsi (5,4--7,31)), [],
-                  /root/SignatureMemberWithSet.fsi (3,5--7,31),
+                              (Set /root/SignatureMemberWithSet.fsi (8,28--8,31)) })],
+                     /root/SignatureMemberWithSet.fsi (6,4--8,31)), [],
+                  /root/SignatureMemberWithSet.fsi (4,5--8,31),
                   { LeadingKeyword =
-                     Type /root/SignatureMemberWithSet.fsi (3,0--3,4)
+                     Type /root/SignatureMemberWithSet.fsi (4,0--4,4)
                     EqualsRange =
-                     Some /root/SignatureMemberWithSet.fsi (3,7--3,8)
+                     Some /root/SignatureMemberWithSet.fsi (4,7--4,8)
                     WithKeyword = None })],
-              /root/SignatureMemberWithSet.fsi (3,0--7,31))],
-          PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
-          /root/SignatureMemberWithSet.fsi (1,0--7,31),
-          { LeadingKeyword = Module /root/SignatureMemberWithSet.fsi (1,0--1,6) })],
+              /root/SignatureMemberWithSet.fsi (4,0--8,31))],
+          PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
+          /root/SignatureMemberWithSet.fsi (2,0--8,31),
+          { LeadingKeyword = Module /root/SignatureMemberWithSet.fsi (2,0--2,6) })],
       { ConditionalDirectives = []
         CodeComments =
-         [LineComment /root/SignatureMemberWithSet.fsi (4,4--4,23)] }, set []))
+         [LineComment /root/SignatureMemberWithSet.fsi (5,4--5,23)] }, set []))

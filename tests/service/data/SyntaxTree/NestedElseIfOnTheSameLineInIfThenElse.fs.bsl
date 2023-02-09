@@ -11,33 +11,33 @@ ImplFile
                    (IfThenElse
                       (Ident c, Ident d, None,
                        Yes
-                         /root/NestedElseIfOnTheSameLineInIfThenElse.fs (3,5--3,14),
+                         /root/NestedElseIfOnTheSameLineInIfThenElse.fs (4,5--4,14),
                        false,
-                       /root/NestedElseIfOnTheSameLineInIfThenElse.fs (3,5--4,1),
+                       /root/NestedElseIfOnTheSameLineInIfThenElse.fs (4,5--5,1),
                        { IfKeyword =
-                          /root/NestedElseIfOnTheSameLineInIfThenElse.fs (3,5--3,7)
+                          /root/NestedElseIfOnTheSameLineInIfThenElse.fs (4,5--4,7)
                          IsElif = false
                          ThenKeyword =
-                          /root/NestedElseIfOnTheSameLineInIfThenElse.fs (3,10--3,14)
+                          /root/NestedElseIfOnTheSameLineInIfThenElse.fs (4,10--4,14)
                          ElseKeyword = None
                          IfToThenRange =
-                          /root/NestedElseIfOnTheSameLineInIfThenElse.fs (3,5--3,14) })),
-                 Yes /root/NestedElseIfOnTheSameLineInIfThenElse.fs (1,0--1,9),
+                          /root/NestedElseIfOnTheSameLineInIfThenElse.fs (4,5--4,14) })),
+                 Yes /root/NestedElseIfOnTheSameLineInIfThenElse.fs (2,0--2,9),
                  false,
-                 /root/NestedElseIfOnTheSameLineInIfThenElse.fs (1,0--4,1),
+                 /root/NestedElseIfOnTheSameLineInIfThenElse.fs (2,0--5,1),
                  { IfKeyword =
-                    /root/NestedElseIfOnTheSameLineInIfThenElse.fs (1,0--1,2)
+                    /root/NestedElseIfOnTheSameLineInIfThenElse.fs (2,0--2,2)
                    IsElif = false
                    ThenKeyword =
-                    /root/NestedElseIfOnTheSameLineInIfThenElse.fs (1,5--1,9)
+                    /root/NestedElseIfOnTheSameLineInIfThenElse.fs (2,5--2,9)
                    ElseKeyword =
                     Some
-                      /root/NestedElseIfOnTheSameLineInIfThenElse.fs (3,0--3,4)
+                      /root/NestedElseIfOnTheSameLineInIfThenElse.fs (4,0--4,4)
                    IfToThenRange =
-                    /root/NestedElseIfOnTheSameLineInIfThenElse.fs (1,0--1,9) }),
-              /root/NestedElseIfOnTheSameLineInIfThenElse.fs (1,0--4,1))],
+                    /root/NestedElseIfOnTheSameLineInIfThenElse.fs (2,0--2,9) }),
+              /root/NestedElseIfOnTheSameLineInIfThenElse.fs (2,0--5,1))],
           PreXmlDocEmpty, [], None,
-          /root/NestedElseIfOnTheSameLineInIfThenElse.fs (1,0--4,1),
+          /root/NestedElseIfOnTheSameLineInIfThenElse.fs (2,0--6,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

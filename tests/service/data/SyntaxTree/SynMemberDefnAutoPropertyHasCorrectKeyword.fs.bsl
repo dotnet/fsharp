@@ -8,9 +8,9 @@ ImplFile
              ([SynTypeDefn
                  (SynComponentInfo
                     ([], None, [], [Foo],
-                     PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
+                     PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None,
-                     /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (1,5--1,8)),
+                     /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (2,5--2,8)),
                   ObjectModel
                     (Unspecified,
                      [AutoProperty
@@ -28,21 +28,21 @@ ImplFile
                            IsFinal = false
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = PropertySet },
-                         PreXmlDoc ((2,4), FSharp.Compiler.Xml.XmlDocCollector),
+                         PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),
                          None,
                          Const
                            (Int32 1,
-                            /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (2,32--2,33)),
-                         /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (2,4--2,33),
+                            /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (3,32--3,33)),
+                         /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (3,4--3,33),
                          { LeadingKeyword =
                             StaticMemberVal
-                              (/root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (2,4--2,10),
-                               /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (2,11--2,17),
-                               /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (2,18--2,21))
+                              (/root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (3,4--3,10),
+                               /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (3,11--3,17),
+                               /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (3,18--3,21))
                            WithKeyword = None
                            EqualsRange =
                             Some
-                              /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (2,30--2,31)
+                              /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (3,30--3,31)
                            GetSetKeywords = None });
                       AutoProperty
                         ([], false, X,
@@ -59,20 +59,20 @@ ImplFile
                            IsFinal = false
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = PropertySet },
-                         PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),
+                         PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector),
                          None,
                          Const
                            (Int32 1,
-                            /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (3,25--3,26)),
-                         /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (3,4--3,26),
+                            /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (4,25--4,26)),
+                         /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (4,4--4,26),
                          { LeadingKeyword =
                             MemberVal
-                              (/root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (3,4--3,10),
-                               /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (3,11--3,14))
+                              (/root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (4,4--4,10),
+                               /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (4,11--4,14))
                            WithKeyword = None
                            EqualsRange =
                             Some
-                              /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (3,23--3,24)
+                              /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (4,23--4,24)
                            GetSetKeywords = None });
                       AutoProperty
                         ([], false, Y,
@@ -89,20 +89,20 @@ ImplFile
                            IsFinal = false
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = PropertySet },
-                         PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector),
+                         PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
                          None,
                          Const
                            (Int32 2,
-                            /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (4,27--4,28)),
-                         /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (4,4--4,28),
+                            /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (5,27--5,28)),
+                         /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (5,4--5,28),
                          { LeadingKeyword =
                             OverrideVal
-                              (/root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (4,4--4,12),
-                               /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (4,13--4,16))
+                              (/root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (5,4--5,12),
+                               /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (5,13--5,16))
                            WithKeyword = None
                            EqualsRange =
                             Some
-                              /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (4,25--4,26)
+                              /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (5,25--5,26)
                            GetSetKeywords = None });
                       AutoProperty
                         ([], false, Z,
@@ -119,34 +119,34 @@ ImplFile
                            IsFinal = false
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = PropertySet },
-                         PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
+                         PreXmlDoc ((6,4), FSharp.Compiler.Xml.XmlDocCollector),
                          None,
                          Const
                            (Int32 1,
-                            /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (5,26--5,27)),
-                         /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (5,4--5,27),
+                            /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (6,26--6,27)),
+                         /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (6,4--6,27),
                          { LeadingKeyword =
                             DefaultVal
-                              (/root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (5,4--5,11),
-                               /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (5,12--5,15))
+                              (/root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (6,4--6,11),
+                               /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (6,12--6,15))
                            WithKeyword = None
                            EqualsRange =
                             Some
-                              /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (5,24--5,25)
+                              /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (6,24--6,25)
                            GetSetKeywords = None })],
-                     /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (2,4--5,27)),
+                     /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (3,4--6,27)),
                   [], None,
-                  /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (1,5--5,27),
+                  /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (2,5--6,27),
                   { LeadingKeyword =
                      Type
-                       /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (1,0--1,4)
+                       /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (2,0--2,4)
                     EqualsRange =
                      Some
-                       /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (1,9--1,10)
+                       /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (2,9--2,10)
                     WithKeyword = None })],
-              /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (1,0--5,27))],
+              /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (2,0--6,27))],
           PreXmlDocEmpty, [], None,
-          /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (1,0--5,27),
+          /root/SynMemberDefnAutoPropertyHasCorrectKeyword.fs (2,0--7,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

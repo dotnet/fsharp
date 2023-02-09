@@ -11,24 +11,24 @@ ImplFile
              ([SynTypeDefn
                  (SynComponentInfo
                     ([], None, [], [X],
-                     PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
+                     PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None,
-                     /root/RangeOfEqualSignShouldBePresentInMemberBinding,WithParameters.fs (1,5--1,6)),
+                     /root/RangeOfEqualSignShouldBePresentInMemberBinding,WithParameters.fs (2,5--2,6)),
                   ObjectModel
                     (Unspecified,
                      [ImplicitCtor
                         (None, [],
                          SimplePats
                            ([],
-                            /root/RangeOfEqualSignShouldBePresentInMemberBinding,WithParameters.fs (1,6--1,8)),
+                            /root/RangeOfEqualSignShouldBePresentInMemberBinding,WithParameters.fs (2,6--2,8)),
                          None,
-                         PreXmlDoc ((1,6), FSharp.Compiler.Xml.XmlDocCollector),
-                         /root/RangeOfEqualSignShouldBePresentInMemberBinding,WithParameters.fs (1,5--1,6),
+                         PreXmlDoc ((2,6), FSharp.Compiler.Xml.XmlDocCollector),
+                         /root/RangeOfEqualSignShouldBePresentInMemberBinding,WithParameters.fs (2,5--2,6),
                          { AsKeyword = None });
                       Member
                         (SynBinding
                            (None, Normal, false, false, [],
-                            PreXmlDoc ((2,4), FSharp.Compiler.Xml.XmlDocCollector),
+                            PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),
                             SynValData
                               (Some { IsInstance = true
                                       IsDispatchSlot = false
@@ -42,50 +42,50 @@ ImplFile
                             LongIdent
                               (SynLongIdent
                                  ([this; Y],
-                                  [/root/RangeOfEqualSignShouldBePresentInMemberBinding,WithParameters.fs (2,15--2,16)],
+                                  [/root/RangeOfEqualSignShouldBePresentInMemberBinding,WithParameters.fs (3,15--3,16)],
                                   [None; None]), None, None,
                                Pats
                                  [Paren
                                     (Const
                                        (Unit,
-                                        /root/RangeOfEqualSignShouldBePresentInMemberBinding,WithParameters.fs (2,18--2,20)),
-                                     /root/RangeOfEqualSignShouldBePresentInMemberBinding,WithParameters.fs (2,18--2,20))],
+                                        /root/RangeOfEqualSignShouldBePresentInMemberBinding,WithParameters.fs (3,18--3,20)),
+                                     /root/RangeOfEqualSignShouldBePresentInMemberBinding,WithParameters.fs (3,18--3,20))],
                                None,
-                               /root/RangeOfEqualSignShouldBePresentInMemberBinding,WithParameters.fs (2,11--2,20)),
+                               /root/RangeOfEqualSignShouldBePresentInMemberBinding,WithParameters.fs (3,11--3,20)),
                             None, Ident z,
-                            /root/RangeOfEqualSignShouldBePresentInMemberBinding,WithParameters.fs (2,11--2,20),
+                            /root/RangeOfEqualSignShouldBePresentInMemberBinding,WithParameters.fs (3,11--3,20),
                             NoneAtInvisible,
                             { LeadingKeyword =
                                Member
-                                 /root/RangeOfEqualSignShouldBePresentInMemberBinding,WithParameters.fs (2,4--2,10)
+                                 /root/RangeOfEqualSignShouldBePresentInMemberBinding,WithParameters.fs (3,4--3,10)
                               InlineKeyword = None
                               EqualsRange =
                                Some
-                                 /root/RangeOfEqualSignShouldBePresentInMemberBinding,WithParameters.fs (2,21--2,22) }),
-                         /root/RangeOfEqualSignShouldBePresentInMemberBinding,WithParameters.fs (2,4--2,24))],
-                     /root/RangeOfEqualSignShouldBePresentInMemberBinding,WithParameters.fs (2,4--2,24)),
+                                 /root/RangeOfEqualSignShouldBePresentInMemberBinding,WithParameters.fs (3,21--3,22) }),
+                         /root/RangeOfEqualSignShouldBePresentInMemberBinding,WithParameters.fs (3,4--3,24))],
+                     /root/RangeOfEqualSignShouldBePresentInMemberBinding,WithParameters.fs (3,4--3,24)),
                   [],
                   Some
                     (ImplicitCtor
                        (None, [],
                         SimplePats
                           ([],
-                           /root/RangeOfEqualSignShouldBePresentInMemberBinding,WithParameters.fs (1,6--1,8)),
+                           /root/RangeOfEqualSignShouldBePresentInMemberBinding,WithParameters.fs (2,6--2,8)),
                         None,
-                        PreXmlDoc ((1,6), FSharp.Compiler.Xml.XmlDocCollector),
-                        /root/RangeOfEqualSignShouldBePresentInMemberBinding,WithParameters.fs (1,5--1,6),
+                        PreXmlDoc ((2,6), FSharp.Compiler.Xml.XmlDocCollector),
+                        /root/RangeOfEqualSignShouldBePresentInMemberBinding,WithParameters.fs (2,5--2,6),
                         { AsKeyword = None })),
-                  /root/RangeOfEqualSignShouldBePresentInMemberBinding,WithParameters.fs (1,5--2,24),
+                  /root/RangeOfEqualSignShouldBePresentInMemberBinding,WithParameters.fs (2,5--3,24),
                   { LeadingKeyword =
                      Type
-                       /root/RangeOfEqualSignShouldBePresentInMemberBinding,WithParameters.fs (1,0--1,4)
+                       /root/RangeOfEqualSignShouldBePresentInMemberBinding,WithParameters.fs (2,0--2,4)
                     EqualsRange =
                      Some
-                       /root/RangeOfEqualSignShouldBePresentInMemberBinding,WithParameters.fs (1,9--1,10)
+                       /root/RangeOfEqualSignShouldBePresentInMemberBinding,WithParameters.fs (2,9--2,10)
                     WithKeyword = None })],
-              /root/RangeOfEqualSignShouldBePresentInMemberBinding,WithParameters.fs (1,0--2,24))],
+              /root/RangeOfEqualSignShouldBePresentInMemberBinding,WithParameters.fs (2,0--3,24))],
           PreXmlDocEmpty, [], None,
-          /root/RangeOfEqualSignShouldBePresentInMemberBinding,WithParameters.fs (1,0--2,24),
+          /root/RangeOfEqualSignShouldBePresentInMemberBinding,WithParameters.fs (2,0--4,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

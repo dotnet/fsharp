@@ -11,9 +11,9 @@ SigFile
                    (op_UnaryNegation,
                     Some
                       (OriginalNotationWithParen
-                         (/root/OperatorNameInValConstraint.fsi (11,15--11,16),
+                         (/root/OperatorNameInValConstraint.fsi (12,15--12,16),
                           "~-",
-                          /root/OperatorNameInValConstraint.fsi (11,18--11,19)))),
+                          /root/OperatorNameInValConstraint.fsi (12,18--12,19)))),
                  SynValTyparDecls (None, true),
                  WithGlobalConstraints
                    (Fun
@@ -21,18 +21,18 @@ SigFile
                          ([], false, Some n,
                           Var
                             (SynTypar (T, HeadType, false),
-                             /root/OperatorNameInValConstraint.fsi (11,24--11,26)),
-                          /root/OperatorNameInValConstraint.fsi (11,21--11,26)),
+                             /root/OperatorNameInValConstraint.fsi (12,24--12,26)),
+                          /root/OperatorNameInValConstraint.fsi (12,21--12,26)),
                        Var
                          (SynTypar (T, HeadType, false),
-                          /root/OperatorNameInValConstraint.fsi (11,30--11,32)),
-                       /root/OperatorNameInValConstraint.fsi (11,21--11,32),
+                          /root/OperatorNameInValConstraint.fsi (12,30--12,32)),
+                       /root/OperatorNameInValConstraint.fsi (12,21--12,32),
                        { ArrowRange =
-                          /root/OperatorNameInValConstraint.fsi (11,27--11,29) }),
+                          /root/OperatorNameInValConstraint.fsi (12,27--12,29) }),
                     [WhereTyparSupportsMember
                        (Var
                           (SynTypar (T, HeadType, false),
-                           /root/OperatorNameInValConstraint.fsi (11,38--11,40)),
+                           /root/OperatorNameInValConstraint.fsi (12,38--12,40)),
                         Member
                           (SynValSig
                              ([],
@@ -40,30 +40,30 @@ SigFile
                                 (op_UnaryNegation,
                                  Some
                                    (OriginalNotationWithParen
-                                      (/root/OperatorNameInValConstraint.fsi (11,57--11,58),
+                                      (/root/OperatorNameInValConstraint.fsi (12,57--12,58),
                                        "~-",
-                                       /root/OperatorNameInValConstraint.fsi (11,62--11,63)))),
+                                       /root/OperatorNameInValConstraint.fsi (12,62--12,63)))),
                               SynValTyparDecls (None, true),
                               Fun
                                 (Var
                                    (SynTypar (T, HeadType, false),
-                                    /root/OperatorNameInValConstraint.fsi (11,65--11,67)),
+                                    /root/OperatorNameInValConstraint.fsi (12,65--12,67)),
                                  Var
                                    (SynTypar (T, HeadType, false),
-                                    /root/OperatorNameInValConstraint.fsi (11,71--11,73)),
-                                 /root/OperatorNameInValConstraint.fsi (11,65--11,73),
+                                    /root/OperatorNameInValConstraint.fsi (12,71--12,73)),
+                                 /root/OperatorNameInValConstraint.fsi (12,65--12,73),
                                  { ArrowRange =
-                                    /root/OperatorNameInValConstraint.fsi (11,68--11,70) }),
+                                    /root/OperatorNameInValConstraint.fsi (12,68--12,70) }),
                               SynValInfo
                                 ([[SynArgInfo ([], false, None)]],
                                  SynArgInfo ([], false, None)), false, false,
-                              PreXmlDoc ((11,43), FSharp.Compiler.Xml.XmlDocCollector),
+                              PreXmlDoc ((12,43), FSharp.Compiler.Xml.XmlDocCollector),
                               None, None,
-                              /root/OperatorNameInValConstraint.fsi (11,43--11,73),
+                              /root/OperatorNameInValConstraint.fsi (12,43--12,73),
                               { LeadingKeyword =
                                  StaticMember
-                                   (/root/OperatorNameInValConstraint.fsi (11,43--11,49),
-                                    /root/OperatorNameInValConstraint.fsi (11,50--11,56))
+                                   (/root/OperatorNameInValConstraint.fsi (12,43--12,49),
+                                    /root/OperatorNameInValConstraint.fsi (12,50--12,56))
                                 InlineKeyword = None
                                 WithKeyword = None
                                 EqualsRange = None }),
@@ -73,38 +73,38 @@ SigFile
                              IsFinal = false
                              GetterOrSetterIsCompilerGenerated = false
                              MemberKind = Member },
-                           /root/OperatorNameInValConstraint.fsi (11,43--11,73),
+                           /root/OperatorNameInValConstraint.fsi (12,43--12,73),
                            { GetSetKeywords = None }),
-                        /root/OperatorNameInValConstraint.fsi (11,38--11,74));
+                        /root/OperatorNameInValConstraint.fsi (12,38--12,74));
                      WhereTyparDefaultsToType
                        (SynTypar (T, HeadType, false),
                         LongIdent (SynLongIdent ([int], [], [None])),
-                        /root/OperatorNameInValConstraint.fsi (11,79--11,94))],
-                    /root/OperatorNameInValConstraint.fsi (11,21--11,94)),
+                        /root/OperatorNameInValConstraint.fsi (12,79--12,94))],
+                    /root/OperatorNameInValConstraint.fsi (12,21--12,94)),
                  SynValInfo
                    ([[SynArgInfo ([], false, Some n)]],
                     SynArgInfo ([], false, None)), true, false,
-                 PreXmlDoc ((11,4), FSharp.Compiler.Xml.XmlDocCollector), None,
-                 None, /root/OperatorNameInValConstraint.fsi (3,4--11,94),
+                 PreXmlDoc ((12,4), FSharp.Compiler.Xml.XmlDocCollector), None,
+                 None, /root/OperatorNameInValConstraint.fsi (4,4--12,94),
                  { LeadingKeyword =
-                    Val /root/OperatorNameInValConstraint.fsi (11,4--11,7)
+                    Val /root/OperatorNameInValConstraint.fsi (12,4--12,7)
                    InlineKeyword =
-                    Some /root/OperatorNameInValConstraint.fsi (11,8--11,14)
+                    Some /root/OperatorNameInValConstraint.fsi (12,8--12,14)
                    WithKeyword = None
                    EqualsRange = None }),
-              /root/OperatorNameInValConstraint.fsi (3,4--11,94))],
-          PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
+              /root/OperatorNameInValConstraint.fsi (4,4--12,94))],
+          PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
           [{ Attributes =
               [{ TypeName = SynLongIdent ([AutoOpen], [], [None])
                  ArgExpr =
                   Const
-                    (Unit, /root/OperatorNameInValConstraint.fsi (1,2--1,10))
+                    (Unit, /root/OperatorNameInValConstraint.fsi (2,2--2,10))
                  Target = None
                  AppliesToGetterAndSetter = false
-                 Range = /root/OperatorNameInValConstraint.fsi (1,2--1,10) }]
-             Range = /root/OperatorNameInValConstraint.fsi (1,0--1,12) }], None,
-          /root/OperatorNameInValConstraint.fsi (1,0--11,94),
+                 Range = /root/OperatorNameInValConstraint.fsi (2,2--2,10) }]
+             Range = /root/OperatorNameInValConstraint.fsi (2,0--2,12) }], None,
+          /root/OperatorNameInValConstraint.fsi (2,0--12,94),
           { LeadingKeyword =
-             Module /root/OperatorNameInValConstraint.fsi (2,4--2,10) })],
+             Module /root/OperatorNameInValConstraint.fsi (3,4--3,10) })],
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

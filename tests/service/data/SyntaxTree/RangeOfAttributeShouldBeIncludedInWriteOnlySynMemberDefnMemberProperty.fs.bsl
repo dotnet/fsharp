@@ -12,9 +12,9 @@ ImplFile
              ([SynTypeDefn
                  (SynComponentInfo
                     ([], None, [], [Crane],
-                     PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
+                     PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None,
-                     /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (1,5--1,10)),
+                     /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (2,5--2,10)),
                   ObjectModel
                     (Unspecified,
                      [GetSetMember
@@ -28,15 +28,15 @@ ImplFile
                                       ArgExpr =
                                        Const
                                          (Unit,
-                                          /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (2,6--2,9))
+                                          /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (3,6--3,9))
                                       Target = None
                                       AppliesToGetterAndSetter = false
                                       Range =
-                                       /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (2,6--2,9) }]
+                                       /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (3,6--3,9) }]
                                   Range =
-                                   /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (2,4--2,11) }],
+                                   /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (3,4--3,11) }],
                                PreXmlMerge
-  (PreXmlDoc ((2,4), FSharp.Compiler.Xml.XmlDocCollector), PreXmlDocEmpty),
+  (PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector), PreXmlDocEmpty),
                                SynValData
                                  (Some
                                     { IsInstance = true
@@ -52,52 +52,52 @@ ImplFile
                                LongIdent
                                  (SynLongIdent
                                     ([this; MyWriteOnlyProperty],
-                                     [/root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (3,15--3,16)],
+                                     [/root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (4,15--4,16)],
                                      [None; None]), Some set, None,
                                   Pats
                                     [Paren
                                        (Named
                                           (SynIdent (value, None), false, None,
-                                           /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (3,46--3,51)),
-                                        /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (3,45--3,52))],
+                                           /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (4,46--4,51)),
+                                        /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (4,45--4,52))],
                                   None,
-                                  /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (3,41--3,52)),
+                                  /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (4,41--4,52)),
                                None,
                                LongIdentSet
                                  (SynLongIdent ([myInternalValue], [], [None]),
                                   Ident value,
-                                  /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (3,55--3,79)),
-                               /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (2,4--3,52),
+                                  /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (4,55--4,79)),
+                               /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (3,4--4,52),
                                NoneAtInvisible,
                                { LeadingKeyword =
                                   Member
-                                    /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (3,4--3,10)
+                                    /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (4,4--4,10)
                                  InlineKeyword = None
                                  EqualsRange =
                                   Some
-                                    /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (3,53--3,54) })),
-                         /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (2,4--3,79),
+                                    /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (4,53--4,54) })),
+                         /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (3,4--4,79),
                          { InlineKeyword = None
                            WithKeyword =
-                            /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (3,36--3,40)
+                            /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (4,36--4,40)
                            GetKeyword = None
                            AndKeyword = None
                            SetKeyword =
                             Some
-                              /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (3,41--3,44) })],
-                     /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (2,4--3,79)),
+                              /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (4,41--4,44) })],
+                     /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (3,4--4,79)),
                   [], None,
-                  /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (1,5--3,79),
+                  /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (2,5--4,79),
                   { LeadingKeyword =
                      Type
-                       /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (1,0--1,4)
+                       /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (2,0--2,4)
                     EqualsRange =
                      Some
-                       /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (1,11--1,12)
+                       /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (2,11--2,12)
                     WithKeyword = None })],
-              /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (1,0--3,79))],
+              /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (2,0--4,79))],
           PreXmlDocEmpty, [], None,
-          /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (1,0--3,79),
+          /root/RangeOfAttributeShouldBeIncludedInWriteOnlySynMemberDefnMemberProperty.fs (2,0--5,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

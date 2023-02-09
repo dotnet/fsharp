@@ -7,10 +7,10 @@ ImplFile
           [HashDirective
              (ParsedHashDirective
                 ("nowarn", [],
-                 /root/TripleQuoteStringAsParsedHashDirectiveArgument.fs (1,0--1,7)),
-              /root/TripleQuoteStringAsParsedHashDirectiveArgument.fs (1,0--1,9))],
+                 /root/TripleQuoteStringAsParsedHashDirectiveArgument.fs (2,0--2,7)),
+              /root/TripleQuoteStringAsParsedHashDirectiveArgument.fs (2,0--2,9))],
           PreXmlDocEmpty, [], None,
-          /root/TripleQuoteStringAsParsedHashDirectiveArgument.fs (1,0--1,9),
+          /root/TripleQuoteStringAsParsedHashDirectiveArgument.fs (2,0--2,9),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

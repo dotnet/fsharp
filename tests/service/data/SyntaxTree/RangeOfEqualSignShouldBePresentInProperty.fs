@@ -1,3 +1,4 @@
+
 type Y() =
     member this.MyReadWriteProperty
         with get () = myInternalValue

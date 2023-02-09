@@ -1,3 +1,4 @@
+
 namespace Foobar
 
 let v : string = \"\"\"
