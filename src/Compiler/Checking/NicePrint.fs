@@ -168,18 +168,30 @@ module internal PrintUtilities =
         | GenericParameterStyle.Prefix -> true
         | GenericParameterStyle.Suffix -> false
 
+    let tryFindFSharpCorePrimitiveName (denv: DisplayEnv) (tcref: TyconRef) =
+        let isType (target: TyconRef)  = tyconRefEq denv.g target tcref 
+        
+        if isType denv.g.system_Int32_tcref then
+            Some "int"
+        else
+            None
+    
     let layoutTyconRefImpl isAttribute (denv: DisplayEnv) (tcref: TyconRef) =
 
         let prefix = usePrefix denv tcref
         let isArray = not prefix && isArrayTyconRef denv.g tcref
-        let demangled = 
+        let demangled, hasFSharpCoreAlias = 
             if isArray then
                 let numberOfCommas = tcref.CompiledName |> Seq.filter (fun c -> c = ',') |> Seq.length
                 if numberOfCommas = 0 then
-                    "array"
+                    "array", false
                 else
-                    $"array{numberOfCommas + 1}d"
+                    $"array{numberOfCommas + 1}d", false
             else
+                match tryFindFSharpCorePrimitiveName denv tcref with
+                | Some name -> name, true
+                | None ->
+                
                 let name =
                     if denv.includeStaticParametersInTypeNames then 
                         tcref.DisplayNameWithStaticParameters 
@@ -188,9 +200,9 @@ module internal PrintUtilities =
                     else
                         tcref.DisplayName+"<...>" // shorten
                 if isAttribute && name.EndsWithOrdinal("Attribute") then
-                    String.dropSuffix name "Attribute"
+                    String.dropSuffix name "Attribute", false
                 else 
-                    name
+                    name, false
 
         let tyconTagged =
             tagEntityRefName denv tcref demangled
@@ -198,7 +210,7 @@ module internal PrintUtilities =
 
         let tyconTextL = tyconTagged |> wordL
 
-        if denv.shortTypeNames then 
+        if denv.shortTypeNames || hasFSharpCoreAlias then 
             tyconTextL
         else
             let path = tcref.CompilationPath.DemangledPath

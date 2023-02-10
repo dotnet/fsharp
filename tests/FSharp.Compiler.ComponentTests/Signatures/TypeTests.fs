@@ -75,3 +75,33 @@ namespace Foo.Types
     val EndLine: int
 
     val EndColumn: int"""
+
+[<Fact>]
+let ``System.Int32 type extension`` () =
+    FSharp
+        """
+module Hej
+
+type System.Int32 with
+    member i.PlusPlus () = i + 1
+    member i.PlusPlusPlus () : int = i + 1 + 1
+
+type X(y:int) =
+    member x.PlusPlus () = y + 1
+"""
+    |> printSignatures
+    |> should equal
+        """
+module Hej
+type int with
+
+  member PlusPlus: unit -> int
+type int with
+
+  member PlusPlusPlus: unit -> int
+
+type X =
+
+  new: y: int -> X
+
+  member PlusPlus: unit -> int"""
