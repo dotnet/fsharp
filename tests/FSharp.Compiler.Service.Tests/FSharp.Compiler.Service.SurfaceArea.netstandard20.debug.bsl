@@ -9104,6 +9104,7 @@ FSharp.Compiler.Syntax.SyntaxNode: Int32 Tag
 FSharp.Compiler.Syntax.SyntaxNode: Int32 get_Tag()
 FSharp.Compiler.Syntax.SyntaxNode: System.String ToString()
 FSharp.Compiler.Syntax.SyntaxTraversal: Microsoft.FSharp.Core.FSharpOption`1[T] Traverse[T](FSharp.Compiler.Text.Position, FSharp.Compiler.Syntax.ParsedInput, FSharp.Compiler.Syntax.SyntaxVisitorBase`1[T])
+FSharp.Compiler.Syntax.SyntaxVisitorBase`1[T]: Microsoft.FSharp.Core.FSharpOption`1[T] VisitAttributeApplication(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SyntaxNode], FSharp.Compiler.Syntax.SynAttributeList)
 FSharp.Compiler.Syntax.SyntaxVisitorBase`1[T]: Microsoft.FSharp.Core.FSharpOption`1[T] VisitBinding(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SyntaxNode], Microsoft.FSharp.Core.FSharpFunc`2[FSharp.Compiler.Syntax.SynBinding,Microsoft.FSharp.Core.FSharpOption`1[T]], FSharp.Compiler.Syntax.SynBinding)
 FSharp.Compiler.Syntax.SyntaxVisitorBase`1[T]: Microsoft.FSharp.Core.FSharpOption`1[T] VisitComponentInfo(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SyntaxNode], FSharp.Compiler.Syntax.SynComponentInfo)
 FSharp.Compiler.Syntax.SyntaxVisitorBase`1[T]: Microsoft.FSharp.Core.FSharpOption`1[T] VisitEnumDefn(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SyntaxNode], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynEnumCase], FSharp.Compiler.Text.Range)
