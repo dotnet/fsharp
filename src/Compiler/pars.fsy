@@ -1543,7 +1543,7 @@ tyconDefn:
        let mEquals = rhs parseState 7
        // Gets the XML doc comments prior to the implicit constructor
        let xmlDoc = grabXmlDoc(parseState, $2, 2)
-       let memberCtorPattern = SynMemberDefn.ImplicitCtor (vis, $2, spats, az, xmlDoc, rangeOfLid lid)
+       let memberCtorPattern = SynMemberDefn.ImplicitCtor (vis, $2, spats, Option.map snd az, xmlDoc, rangeOfLid lid, { AsKeyword = Option.map fst az })
        let tcDefRepr = 
          match tcDefRepr with
          | SynTypeDefnRepr.ObjectModel (k, cspec, m) -> SynTypeDefnRepr.ObjectModel (k, memberCtorPattern :: cspec, m)
@@ -1865,7 +1865,7 @@ classDefnMember:
         let m = unionRanges mWholeBindLhs $7.Range |> unionRangeWithXmlDoc xmlDoc
         let mEquals = rhs parseState 6
         let expr = $7
-        let valSynData = SynValData (Some CtorMemberFlags, SynValInfo([SynInfo.InferSynArgInfoFromPat $4], SynInfo.unnamedRetVal), $5) 
+        let valSynData = SynValData (Some CtorMemberFlags, SynValInfo([SynInfo.InferSynArgInfoFromPat $4], SynInfo.unnamedRetVal), Option.map snd $5)
         let vis = $2 
         let declPat = SynPat.LongIdent (SynLongIdent([mkSynId (rhs parseState 3) "new"], [], [None]), None, Some noInferredTypars, SynArgPats.Pats [$4], vis, rhs parseState 3)
         // Check that 'SynPatForConstructorDecl' matches this correctly
@@ -2021,7 +2021,7 @@ optAsSpec:
 
 asSpec: 
   | AS ident
-     { $2 } 
+     { rhs parseState 1, $2 } 
 
 optBaseSpec: 
   | baseSpec
@@ -4904,10 +4904,11 @@ objExprInterface:
 
 braceBarExpr:
   | STRUCT braceBarExprCore
-      { $2 true }
+      { let mStruct = rhs parseState 1
+        $2 (Some mStruct) }
 
   | braceBarExprCore
-      { $1 false }
+      { $1 None }
 
 braceBarExprCore:
   | LBRACE_BAR recdExprCore bar_rbrace
@@ -4918,7 +4919,9 @@ braceBarExprCore:
              | SynExprRecordField((SynLongIdent([id], _, _), _), mEquals, None, _) -> Some (id, mEquals, arbExpr("anonField", id.idRange)) 
              | _ -> reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidAnonRecdType()); None) 
        let m = rhs2 parseState 1 3
-       (fun isStruct -> SynExpr.AnonRecd (isStruct, orig, flds, m)) }
+       (fun (mStruct: range option) -> 
+            let m = match mStruct with | None -> m | Some mStruct -> unionRanges mStruct m
+            SynExpr.AnonRecd (mStruct.IsSome, orig, flds, m)) }
 
   | LBRACE_BAR recdExprCore recover 
      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBraceBar())  
@@ -4929,21 +4932,29 @@ braceBarExprCore:
              | SynExprRecordField((SynLongIdent([id], _, _), _), mEquals, None, _) -> Some (id, mEquals, arbExpr("anonField", id.idRange)) 
              | _ -> reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidAnonRecdType()); None) 
        let m = rhs2 parseState 1 2
-       (fun isStruct -> SynExpr.AnonRecd (isStruct, orig, flds, m)) }
+       (fun (mStruct: range option) -> 
+           let m = match mStruct with | None -> m | Some mStruct -> unionRanges mStruct m
+           SynExpr.AnonRecd (mStruct.IsSome, orig, flds, m)) }
 
   | LBRACE_BAR error bar_rbrace
      { // silent recovery 
        let m = rhs2 parseState 1 3
-       (fun _ -> arbExpr("braceBarExpr", m)) }  
+       (fun (mStruct: range option) -> 
+           let m = match mStruct with | None -> m | Some mStruct -> unionRanges mStruct m
+           arbExpr("braceBarExpr", m)) }  
 
   | LBRACE_BAR recover
      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBraceBar())  
        let m = rhs2 parseState 1 1
-       (fun isStruct -> SynExpr.AnonRecd (isStruct, None, [], m)) }
+       (fun (mStruct: range option) -> 
+           let m = match mStruct with | None -> m | Some mStruct -> unionRanges mStruct m
+           SynExpr.AnonRecd (mStruct.IsSome, None, [], m)) }
 
   | LBRACE_BAR bar_rbrace 
      { let m = rhs2 parseState 1 2
-       (fun isStruct -> SynExpr.AnonRecd (isStruct, None, [], m)) }
+       (fun (mStruct: range option) -> 
+           let m = match mStruct with | None -> m | Some mStruct -> unionRanges mStruct m
+           SynExpr.AnonRecd (mStruct.IsSome, None, [], m)) }
 
 anonLambdaExpr: 
   | FUN atomicPatterns RARROW typedSequentialExprBlock 

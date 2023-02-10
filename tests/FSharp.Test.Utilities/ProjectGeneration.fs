@@ -141,7 +141,7 @@ type SyntheticProject =
                     )
                     |> Async.RunSynchronously
 
-                { baseOptions with
+                {
                     ProjectFileName = this.ProjectFileName
                     ProjectId = None
                     SourceFiles =
