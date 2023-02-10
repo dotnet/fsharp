@@ -5520,7 +5520,7 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         TcNonControlFlowExpr env <| fun env ->
         TcExprTuple cenv overallTy env tpenv (isExplicitStruct, args, m)
 
-    | SynExpr.AnonRecd (isStruct, withExprOpt, unsortedFieldExprs, mWholeExpr) ->
+    | SynExpr.AnonRecd (isStruct, withExprOpt, unsortedFieldExprs, mWholeExpr, _) ->
         TcNonControlFlowExpr env <| fun env ->
         TcPossiblyPropagatingExprLeafThenConvert (fun ty -> isAnonRecdTy g ty || isTyparTy g ty) cenv overallTy env mWholeExpr (fun overallTy ->
             TcAnonRecdExpr cenv overallTy env tpenv (isStruct, withExprOpt, unsortedFieldExprs, mWholeExpr)
