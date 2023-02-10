@@ -18,7 +18,7 @@ type FileIndex = int32
 [<AutoOpen>]
 module PosImpl =
     [<Literal>]
-    let columnBitCount = 20
+    let columnBitCount = 22
 
     [<Literal>]
     let lineBitCount = 31
@@ -83,13 +83,13 @@ type NotedSourceConstruct =
 [<AutoOpen>]
 module RangeImpl =
     [<Literal>]
-    let fileIndexBitCount = 24
+    let fileIndexBitCount = 20
 
     [<Literal>]
-    let startColumnBitCount = columnBitCount // 20
+    let startColumnBitCount = columnBitCount // 22
 
     [<Literal>]
-    let endColumnBitCount = columnBitCount // 20
+    let endColumnBitCount = columnBitCount // 22
 
     [<Literal>]
     let startLineBitCount = lineBitCount // 31
@@ -107,10 +107,10 @@ module RangeImpl =
     let fileIndexShift = 0
 
     [<Literal>]
-    let startColumnShift = 24
+    let startColumnShift = 20
 
     [<Literal>]
-    let endColumnShift = 44
+    let endColumnShift = 42
 
     [<Literal>]
     let startLineShift = 0
@@ -126,15 +126,15 @@ module RangeImpl =
 
     [<Literal>]
     let fileIndexMask =
-        0b0000000000000000000000000000000000000000111111111111111111111111L
+        0b0000000000000000000000000000000000000000000011111111111111111111L
 
     [<Literal>]
     let startColumnMask =
-        0b0000000000000000000011111111111111111111000000000000000000000000L
+        0b0000000000000000000000111111111111111111111100000000000000000000L
 
     [<Literal>]
     let endColumnMask =
-        0b1111111111111111111100000000000000000000000000000000000000000000L
+        0b1111111111111111111111000000000000000000000000000000000000000000L
 
     [<Literal>]
     let startLineMask =
@@ -277,18 +277,19 @@ type Range(code1: int64, code2: int64) =
 
     new(fIdx, b: pos, e: pos) = range (fIdx, b.Line, b.Column, e.Line, e.Column)
 
-    member _.StartLine = int32 ((code2 &&& startLineMask) >>> startLineShift)
+    member _.StartLine = int32 (uint64 (code2 &&& startLineMask) >>> startLineShift)
 
-    member _.StartColumn = int32 ((code1 &&& startColumnMask) >>> startColumnShift)
+    member _.StartColumn = int32 (uint64 (code1 &&& startColumnMask) >>> startColumnShift)
 
-    member m.EndLine = int32 ((code2 &&& heightMask) >>> heightShift) + m.StartLine
+    member m.EndLine = int32 (uint64 (code2 &&& heightMask) >>> heightShift) + m.StartLine
 
-    member _.EndColumn = int32 ((code1 &&& endColumnMask) >>> endColumnShift)
+    member _.EndColumn = int32 (uint64 (code1 &&& endColumnMask) >>> endColumnShift)
 
-    member _.IsSynthetic = int32 ((code2 &&& isSyntheticMask) >>> isSyntheticShift) <> 0
+    member _.IsSynthetic =
+        int32 (uint64 (code2 &&& isSyntheticMask) >>> isSyntheticShift) <> 0
 
     member _.NotedSourceConstruct =
-        match int32 ((code2 &&& debugPointKindMask) >>> debugPointKindShift) with
+        match int32 (uint64 (code2 &&& debugPointKindMask) >>> debugPointKindShift) with
         | 1 -> NotedSourceConstruct.While
         | 2 -> NotedSourceConstruct.For
         | 3 -> NotedSourceConstruct.Try
