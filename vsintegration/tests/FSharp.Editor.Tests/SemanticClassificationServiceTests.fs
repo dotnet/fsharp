@@ -14,9 +14,8 @@ open FSharp.Test
 type SemanticClassificationServiceTests() =
     let getRanges (source: string) : SemanticClassificationItem list =
         asyncMaybe {
-            let document = 
-                RoslynTestHelpers.CreateSolution(source)
-                |> RoslynTestHelpers.GetSingleDocument
+            let document =
+                RoslynTestHelpers.CreateSolution(source) |> RoslynTestHelpers.GetSingleDocument
 
             let! _, checkFileResults =
                 document.GetFSharpParseAndCheckResultsAsync("SemanticClassificationServiceTests")
@@ -41,8 +40,8 @@ type SemanticClassificationServiceTests() =
         match ranges |> List.tryFind (fun item -> Range.rangeContainsPos item.Range markerPos) with
         | None -> failwith "Cannot find colorization data for end of marker"
         | Some item ->
-            FSharpClassificationTypes.getClassificationTypeName item.Type |> Assert.shouldBeEqualWith classificationType
-                "Classification data doesn't match for end of marker"
+            FSharpClassificationTypes.getClassificationTypeName item.Type
+            |> Assert.shouldBeEqualWith classificationType "Classification data doesn't match for end of marker"
 
     let verifyNoClassificationDataAtEndOfMarker (fileContents: string, marker: string, classificationType: string) =
         let text = SourceText.From(fileContents)

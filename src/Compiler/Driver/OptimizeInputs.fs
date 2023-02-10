@@ -62,9 +62,9 @@ type FirstLoopRes =
 /// All the state optimization phases can produce (except 'CheckedImplFile') and most of what they require as input.
 type PhaseContext =
     {
-        FirstLoopRes : FirstLoopRes
-        OptEnvExtraLoop : Optimizer.IncrementalOptimizationEnv
-        OptEnvFinalSimplify : Optimizer.IncrementalOptimizationEnv
+        FirstLoopRes: FirstLoopRes
+        OptEnvExtraLoop: Optimizer.IncrementalOptimizationEnv
+        OptEnvFinalSimplify: Optimizer.IncrementalOptimizationEnv
     }
 
 /// The result of running a single Optimization Phase.
@@ -261,7 +261,10 @@ let optimizeFilesSequentially optEnv (phases: PhaseInfo[]) implFiles =
                         FirstLoopRes =
                             {
                                 OptEnv = optEnvFirstLoop
-                                OptInfo = lazy failwith "This dummy value wrapped in a Lazy was not expected to be evaluated before being replaced."
+                                OptInfo =
+                                    lazy
+                                        failwith
+                                            "This dummy value wrapped in a Lazy was not expected to be evaluated before being replaced."
                                 HidingInfo = hidden
                                 // A no-op optimizer
                                 OptDuringCodeGen = fun _ expr -> expr
@@ -292,7 +295,8 @@ let optimizeFilesSequentially optEnv (phases: PhaseInfo[]) implFiles =
                         OptimizeDuringCodeGen = state.FirstLoopRes.OptDuringCodeGen
                     }
 
-                (file, state.FirstLoopRes.OptInfo), (state.FirstLoopRes.OptEnv, state.OptEnvExtraLoop, state.OptEnvFinalSimplify, state.FirstLoopRes.HidingInfo))
+                (file, state.FirstLoopRes.OptInfo),
+                (state.FirstLoopRes.OptEnv, state.OptEnvExtraLoop, state.OptEnvFinalSimplify, state.FirstLoopRes.HidingInfo))
 
     results, optEnvFirstLoop
 
@@ -518,7 +522,9 @@ let ApplyAllOptimizations
         match tcConfig.optSettings.processingMode with
         // Parallel optimization breaks determinism - turn it off in deterministic builds.
         | Optimizer.OptimizationProcessingMode.Parallel when (not tcConfig.deterministic) ->
-            let results, optEnvFirstPhase = ParallelOptimization.optimizeFilesInParallel optEnv phases implFiles
+            let results, optEnvFirstPhase =
+                ParallelOptimization.optimizeFilesInParallel optEnv phases implFiles
+
             results |> Array.toList, optEnvFirstPhase
         | Optimizer.OptimizationProcessingMode.Parallel
         | Optimizer.OptimizationProcessingMode.Sequential -> optimizeFilesSequentially optEnv phases implFiles

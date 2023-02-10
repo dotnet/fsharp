@@ -45,15 +45,15 @@ let main argv =
         |]
 
     [<Theory>]
-    [<MemberData(nameof(BreakpointResolutionServiceTests.testCases))>]
+    [<MemberData(nameof (BreakpointResolutionServiceTests.testCases))>]
     member this.TestBreakpointResolution(searchToken: string, expectedResolution: string option) =
         let searchPosition = code.IndexOf(searchToken)
         Assert.True(searchPosition >= 0, $"SearchToken '{searchToken}' is not found in code")
 
         let sourceText = SourceText.From(code)
+
         let document =
-            RoslynTestHelpers.CreateSolution(code)
-            |> RoslynTestHelpers.GetSingleDocument
+            RoslynTestHelpers.CreateSolution(code) |> RoslynTestHelpers.GetSingleDocument
 
         let searchSpan =
             TextSpan.FromBounds(searchPosition, searchPosition + searchToken.Length)
