@@ -11,6 +11,9 @@ open FSharp.Test.ScriptHelpers
 
 
 
+module Configuration = 
+    let supportedNames = set ["testlib.fsi";"testlib.fs";"test.mli";"test.ml";"test.fsi";"test.fs";"test2.fsi";"test2.fs";"test.fsx";"test2.fsx"]
+
 module ScriptRunner = 
     open Internal.Utilities.Library
     
@@ -90,7 +93,6 @@ module TestFrameworkAdapter =
         | LangVersion.Latest  -> "latest", bonusArgs
         | LangVersion.SupportsMl -> "5.0",  "--mlcompatibility" :: bonusArgs       
 
-    let supportedNames = set ["testlib.fsi";"testlib.fs";"test.mli";"test.ml";"test.fsi";"test.fs";"test2.fsi";"test2.fs";"test.fsx";"test2.fsx"]
 
     let singleTestBuildAndRunAuxVersion (folder:string) bonusArgs mode langVersion = 
         let absFolder = Path.Combine(baseFolder,folder)
@@ -98,14 +100,14 @@ module TestFrameworkAdapter =
             match mode with 
             | NEG_TEST_BUILD testName -> 
                 let nameSet = 
-                    supportedNames
+                    Configuration.supportedNames
                         .Add(testName+".fsx")
                         .Add(testName+".fs")
                         .Add(testName+".fsi")
                         .Add(testName+"-pre.fs")
                 let files = Directory.GetFiles(absFolder,"*.fs*") |> Array.filter(fun n -> nameSet.Contains(Path.GetFileName(n)))
                 nameSet, files
-            | _ -> supportedNames, Directory.GetFiles(absFolder,"test*.fs*")
+            | _ -> Configuration.supportedNames, Directory.GetFiles(absFolder,"test*.fs*")
      
         let mainFile,otherFiles = 
             match files.Length with
