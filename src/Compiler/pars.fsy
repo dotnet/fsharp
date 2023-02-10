@@ -1281,10 +1281,9 @@ moduleDefn:
             [ SynModuleDecl.NestedModule(info, isRec, def, false, ((rhs2 parseState 1 4, def) ||> unionRangeWithListBy (fun d -> d.Range) |> unionRangeWithXmlDoc xmlDoc), trivia)] }
 
   /* incomplete 'module' definitions */
-  | opt_attributes opt_access moduleIntro
+  | opt_attributes opt_access moduleIntro recover
       { let xmlDoc = grabXmlDoc(parseState, $1, 1)
         let mWhole = rhs2 parseState 1 3 |> unionRangeWithXmlDoc xmlDoc
-        errorR(Error(FSComp.SR.parsIncompleteNestedModule(), mWhole))
         let attribs, (mModule, isRec, path, vis, attribs2) = $1, $3
         let info = SynComponentInfo(attribs @ attribs2, None, [], path, xmlDoc, false, vis, rhs parseState 3)
         let trivia: SynModuleDeclNestedModuleTrivia = { ModuleKeyword = Some mModule; EqualsRange = None }

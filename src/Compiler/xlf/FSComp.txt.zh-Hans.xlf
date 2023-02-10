@@ -732,11 +732,6 @@
         <target state="translated">预期模式</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsIncompleteNestedModule">
-        <source>Local module declarations must include the '=' sign, and their contents are indented. If this is supposed to be a top-level module instead, it must appear as the first declaration in a file.</source>
-        <target state="new">Local module declarations must include the '=' sign, and their contents are indented. If this is supposed to be a top-level module instead, it must appear as the first declaration in a file.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr1">
         <source>Incomplete character literal (example: 'Q') or qualified type invocation (example: 'T.Name)</source>
         <target state="translated">字符文本不完整(示例: "Q")或限定类型调用(示例: "T.Name")</target>

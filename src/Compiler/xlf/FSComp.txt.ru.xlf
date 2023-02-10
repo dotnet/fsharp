@@ -732,11 +732,6 @@
         <target state="translated">Ожидается шаблон</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsIncompleteNestedModule">
-        <source>Local module declarations must include the '=' sign, and their contents are indented. If this is supposed to be a top-level module instead, it must appear as the first declaration in a file.</source>
-        <target state="new">Local module declarations must include the '=' sign, and their contents are indented. If this is supposed to be a top-level module instead, it must appear as the first declaration in a file.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr1">
         <source>Incomplete character literal (example: 'Q') or qualified type invocation (example: 'T.Name)</source>
         <target state="translated">Неполный символьный литерал (например: "Q") или вызов квалифицированного типа (например: "T.Name)</target>
