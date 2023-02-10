@@ -483,7 +483,8 @@ type SynExpr =
         isStruct: bool *
         copyInfo: (SynExpr * BlockSeparator) option *
         recordFields: (Ident * range option * SynExpr) list *
-        range: range
+        range: range *
+        trivia: SynExprAnonRecdTrivia
 
     | ArrayOrList of isArray: bool * exprs: SynExpr list * range: range
 

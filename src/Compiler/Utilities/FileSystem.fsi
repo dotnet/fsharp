@@ -215,6 +215,9 @@ type public IFileSystem =
     /// Used to determine if a file will not be subject to deletion during the lifetime of a typical client process.
     abstract IsStableFileHeuristic: fileName: string -> bool
 
+    /// A shim over Path.ChangeExtension
+    abstract ChangeExtensionShim: path: string * extension: string -> string
+
 /// Represents a default (memory-mapped) implementation of the file system
 type DefaultFileSystem =
     /// Create a default implementation of the file system
@@ -283,6 +286,9 @@ type DefaultFileSystem =
 
     abstract IsStableFileHeuristic: fileName: string -> bool
     override IsStableFileHeuristic: fileName: string -> bool
+
+    abstract ChangeExtensionShim: path: string * extension: string -> string
+    override ChangeExtensionShim: path: string * extension: string -> string
 
     interface IFileSystem
 
