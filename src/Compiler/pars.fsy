@@ -1288,7 +1288,7 @@ moduleDefn:
         let attribs, (mModule, isRec, path, vis, attribs2) = $1, $3
         let info = SynComponentInfo(attribs @ attribs2, None, [], path, xmlDoc, false, vis, rhs parseState 3)
         let trivia: SynModuleDeclNestedModuleTrivia = { ModuleKeyword = Some mModule; EqualsRange = None }
-        [ SynModuleDecl.NestedModule(info, isRec, [], false, mWhole, trivia)] }
+        [ SynModuleDecl.NestedModule(info, isRec, [], false, mWhole, trivia) ] }
 
   /* unattached custom attributes */
   | attributes recover

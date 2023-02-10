@@ -1605,7 +1605,7 @@ type LexFilterImpl (
                 | _ ->
                     // Adding a new nested module, EQUALS hasn't been typed yet
                     // and we've encountered declarations below
-                    if debug then dprintf "CtxtModuleHead: MODULE/LET, popping CtxtModuleHead\n"
+                    if debug then dprintf "CtxtModuleHead: not start of file, popping CtxtModuleHead\n"
                     popCtxt()
                     reprocessWithoutBlockRule()
 
