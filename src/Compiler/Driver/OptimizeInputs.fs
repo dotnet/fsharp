@@ -171,6 +171,7 @@ module private ParallelOptimization =
                 let prevPhaseTask =
                     if node.Phase > 0 then
                         task {
+                            // Make sure that creating the task does not block before other node tasks finish
                             do! Task.Yield()
                             return! getTask prevPhaseNode
                         }
@@ -181,6 +182,7 @@ module private ParallelOptimization =
                 let prevFileTask =
                     if node.FileIdx > 0 then
                         task {
+                            // Make sure that creating the task does not block before other node tasks finish
                             do! Task.Yield()
                             return! getTask prevFileNode
                         }
@@ -205,6 +207,7 @@ module private ParallelOptimization =
 
         let startNodeTask (phase: PhaseInfo) (node: Node) =
             task {
+                // Make sure that creating the task does not block before other node tasks finish
                 do! Task.Yield()
                 let! inputs = getNodeInputs node
                 let res = phase.Func inputs
@@ -336,7 +339,7 @@ let ApplyAllOptimizations
         }
 
     // Only do these two steps in the first phase.
-    let phase2And3Settings =
+    let extraAndFinalLoopSettings =
         { firstLoopSettings with
             abstractBigTargets = false
             reportingPhase = false
@@ -424,7 +427,7 @@ let ApplyAllOptimizations
         : PhaseRes =
         let (optEnvExtraLoop, file, _, _), _ =
             Optimizer.OptimizeImplFile(
-                phase2And3Settings,
+                extraAndFinalLoopSettings,
                 ccu,
                 tcGlobals,
                 tcVal,
@@ -495,7 +498,7 @@ let ApplyAllOptimizations
         : PhaseRes =
         let (optEnvFinalSimplify, file, _, _), _ =
             Optimizer.OptimizeImplFile(
-                phase2And3Settings,
+                extraAndFinalLoopSettings,
                 ccu,
                 tcGlobals,
                 tcVal,
