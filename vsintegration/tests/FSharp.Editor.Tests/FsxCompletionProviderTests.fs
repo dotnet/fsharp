@@ -17,11 +17,7 @@ type Worker() =
     member _.VerifyCompletionListExactly(fileContents: string, marker: string, expected: List<string>) =
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
 
-        let options =
-            { RoslynTestHelpers.DefaultProjectOptions with
-                SourceFiles = [| filePath |]
-            }
-
+        let options = { RoslynTestHelpers.DefaultProjectOptions with SourceFiles = [|filePath|] }
         let document =
             RoslynTestHelpers.CreateSolution(fileContents, options = options)
             |> RoslynTestHelpers.GetSingleDocument
@@ -53,7 +49,7 @@ module FsxCompletionProviderTests =
     let getWorker () = Worker()
 
 #if RELEASE
-    [<Fact(Skip = "Fails in some CI, reproduces locally in Release mode, needs investigation")>]
+    [<Fact(Skip="Fails in some CI, reproduces locally in Release mode, needs investigation")>]
 #else
     [<Fact>]
 #endif

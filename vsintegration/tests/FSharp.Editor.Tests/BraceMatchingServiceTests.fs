@@ -19,15 +19,14 @@ type BraceMatchingServiceTests() =
         let position = fileContents.IndexOf(marker)
         Assert.True(position >= 0, $"Cannot find marker '{marker}' in file contents")
 
-        let parsingOptions, _ =
-            checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
+        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
 
         match
             FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, fileName, parsingOptions, position, "UnitTest")
             |> Async.RunImmediateExceptOnUI
         with
         | None -> ()
-        | Some (left, right) -> failwith $"Found match for brace '{marker}'"
+        | Some (left, right) ->  failwith $"Found match for brace '{marker}'"
 
     member private this.VerifyBraceMatch(fileContents: string, startMarker: string, endMarker: string) =
         let sourceText = SourceText.From(fileContents)
@@ -37,8 +36,7 @@ type BraceMatchingServiceTests() =
         Assert.True(startMarkerPosition >= 0, $"Cannot find start marker '{startMarkerPosition}' in file contents")
         Assert.True(endMarkerPosition >= 0, $"Cannot find end marker '{endMarkerPosition}' in file contents")
 
-        let parsingOptions, _ =
-            checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
+        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
 
         match
             FSharpBraceMatchingService.GetBraceMatchingResult(
@@ -204,9 +202,7 @@ let main argv =
     [<InlineData("let a8 = seq { yield() }", 13, 23)>]
     member this.DoNotMatchOnInnerSide(fileContents: string, [<ParamArray>] matchingPositions: int[]) =
         let sourceText = SourceText.From(fileContents)
-
-        let parsingOptions, _ =
-            checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
+        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
 
         for position in matchingPositions do
             match
@@ -219,4 +215,4 @@ let main argv =
                 | 0 -> ""
                 | _ -> fileContents.[position - 1] |> sprintf " (previous character '%c')"
                 |> sprintf "Didn't find a matching brace at position '%d' %s" position
-                |> raise (exn ())
+                |> raise (exn())

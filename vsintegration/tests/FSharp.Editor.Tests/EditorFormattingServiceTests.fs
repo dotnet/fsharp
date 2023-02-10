@@ -66,8 +66,7 @@ marker4"""
         let lineNumber =
             sourceText.Lines |> Seq.findIndex (fun line -> line.Span.Contains position)
 
-        let parsingOptions, _ =
-            checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
+        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
 
         let changesOpt =
             FSharpEditorFormattingService.GetFormattingChanges(
@@ -94,9 +93,7 @@ marker4"""
     [<InlineData(false, "")>]
     member this.TestPasteChanges_PastingOntoIndentedLine(enabled: bool, prefix: string) =
         let checker = FSharpChecker.Create()
-
-        let parsingOptions, _ =
-            checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
+        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
 
         let clipboard =
             prefix
@@ -152,17 +149,14 @@ somethingElseHere
                 Assert.Equal(expected, changedText)
             | _ -> failwithf "Expected text changes, but got %+A" changesOpt
         else
-            changesOpt
-            |> Assert.shouldBeEqualWith None "Expected no changes as FormatOnPaste is disabled"
+            changesOpt |> Assert.shouldBeEqualWith None "Expected no changes as FormatOnPaste is disabled"
 
     [<Theory>]
     [<InlineData "">]
     [<InlineData "        ">]
     member this.TestPasteChanges_PastingOntoEmptyLine(prefix: string) =
         let checker = FSharpChecker.Create()
-
-        let parsingOptions, _ =
-            checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
+        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
 
         let clipboard =
             prefix
@@ -220,9 +214,7 @@ somethingElseHere
     [<Fact>]
     member this.TestPasteChanges_PastingWithAutoIndentationInPasteSpan() =
         let checker = FSharpChecker.Create()
-
-        let parsingOptions, _ =
-            checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
+        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
 
         let clipboard =
             """[<Class>]

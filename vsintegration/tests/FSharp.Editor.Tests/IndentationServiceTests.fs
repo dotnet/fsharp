@@ -165,8 +165,7 @@ while true do
         for (expectedIndentation, lineNumber, template) in testCases do
             let sourceText = SourceText.From(template)
 
-            let parsingOptions, _ =
-                checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
+            let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
 
             let actualIndentation =
                 FSharpIndentationService.GetDesiredIndentation(
@@ -182,8 +181,7 @@ while true do
             match expectedIndentation with
             | None -> Assert.True(actualIndentation.IsNone, $"No indentation was expected at line {lineNumber}")
             | Some indentation ->
-                actualIndentation.Value
-                |> Assert.shouldBeEqualWith indentation $"Indentation on line {lineNumber} doesn't match"
+                actualIndentation.Value |> Assert.shouldBeEqualWith indentation  $"Indentation on line {lineNumber} doesn't match"
 
     [<Fact>]
     member this.TestAutoIndentation() =
@@ -191,8 +189,7 @@ while true do
 
             let sourceText = SourceText.From(template)
 
-            let parsingOptions, _ =
-                checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
+            let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
 
             let actualIndentation =
                 FSharpIndentationService.GetDesiredIndentation(
@@ -208,5 +205,4 @@ while true do
             match expectedIndentation with
             | None -> Assert.True(actualIndentation.IsNone, $"No indentation was expected at line {lineNumber}")
             | Some indentation ->
-                actualIndentation.Value
-                |> Assert.shouldBeEqualWith indentation $"Indentation on line {lineNumber} doesn't match"
+                actualIndentation.Value |> Assert.shouldBeEqualWith indentation  $"Indentation on line {lineNumber} doesn't match"

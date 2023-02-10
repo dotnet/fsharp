@@ -448,7 +448,7 @@ type MyType() =
         let actual = getParameterNameHints document
 
         Assert.Empty(actual)
-
+        
     [<Fact>]
     let ``Hints are shown correctly for inner bindings`` () =
         let code =

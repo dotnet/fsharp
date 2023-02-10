@@ -219,9 +219,8 @@ type RoslynTestHelpers private () =
             Stamp = None
         }
 
-    static member private GetSourceCodeKind filePath =
+    static member private GetSourceCodeKind filePath = 
         let extension = Path.GetExtension(filePath)
-
         match extension with
         | ".fsx" -> SourceCodeKind.Script
         | ".fsi" -> SourceCodeKind.Regular
@@ -233,7 +232,7 @@ type RoslynTestHelpers private () =
         let id = SolutionId.CreateNewId()
         let versionStamp = VersionStamp.Create(DateTime.UtcNow)
         let slnPath = "test.sln"
-
+ 
         let solutionInfo = SolutionInfo.Create(id, versionStamp, slnPath, projects)
         let solution = workspace.AddSolution(solutionInfo)
         solution
@@ -244,8 +243,7 @@ type RoslynTestHelpers private () =
             filePath,
             loader = TextLoader.From(SourceText.From(code).Container, VersionStamp.Create(DateTime.UtcNow)),
             filePath = filePath,
-            sourceCodeKind = RoslynTestHelpers.GetSourceCodeKind filePath
-        )
+            sourceCodeKind = RoslynTestHelpers.GetSourceCodeKind filePath)
 
     static member CreateProjectInfo id filePath documents =
         ProjectInfo.Create(
@@ -255,10 +253,9 @@ type RoslynTestHelpers private () =
             "test.dll",
             LanguageNames.FSharp,
             documents = documents,
-            filePath = filePath
-        )
+            filePath = filePath)
 
-    static member SetProjectOptions projId (solution: Solution) (options: FSharpProjectOptions) =
+    static member SetProjectOptions projId (solution: Solution) (options: FSharpProjectOptions)  = 
         solution
             .Workspace
             .Services
@@ -267,19 +264,18 @@ type RoslynTestHelpers private () =
             .SetCommandLineOptions(
                 projId,
                 options.SourceFiles,
-                options.OtherOptions |> ImmutableArray.CreateRange
-            )
+                options.OtherOptions |> ImmutableArray.CreateRange)
 
-    static member CreateSolution(source, ?options: FSharpProjectOptions) =
+    static member CreateSolution (source, ?options: FSharpProjectOptions) =
         let projId = ProjectId.CreateNewId()
 
         let docInfo = RoslynTestHelpers.CreateDocumentInfo projId "C:\\test.fs" source
 
         let projFilePath = "C:\\test.fsproj"
-        let projInfo = RoslynTestHelpers.CreateProjectInfo projId projFilePath [ docInfo ]
-        let solution = RoslynTestHelpers.CreateSolution [ projInfo ]
+        let projInfo = RoslynTestHelpers.CreateProjectInfo projId projFilePath [docInfo]
+        let solution = RoslynTestHelpers.CreateSolution [projInfo]
 
-        options
+        options 
         |> Option.defaultValue RoslynTestHelpers.DefaultProjectOptions
         |> RoslynTestHelpers.SetProjectOptions projId solution
 

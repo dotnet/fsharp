@@ -15,7 +15,7 @@ module DocumentHighlightsServiceTests =
     let filePath = "C:\\test.fs"
 
     let private getSpans (fileContents: string) (caretPosition: int) =
-        let document =
+        let document = 
             RoslynTestHelpers.CreateSolution(fileContents)
             |> RoslynTestHelpers.GetSingleDocument
 

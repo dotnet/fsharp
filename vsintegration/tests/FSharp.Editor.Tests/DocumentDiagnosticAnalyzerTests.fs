@@ -36,25 +36,17 @@ type DocumentDiagnosticAnalyzerTests() =
             |> Seq.filter (fun e -> e.Severity = DiagnosticSeverity.Error)
             |> Seq.toArray
 
-        errors.Length
-        |> Assert.shouldBeEqualWith 1 "There should be exactly one error generated"
-
+        errors.Length |> Assert.shouldBeEqualWith 1 "There should be exactly one error generated"
         let actualError = errors.[0]
 
         if expectedMessage.IsSome then
-            actualError.GetMessage()
-            |> Assert.shouldBeEqualWith expectedMessage.Value "Error messages should match"
+            actualError.GetMessage() |> Assert.shouldBeEqualWith expectedMessage.Value "Error messages should match"
 
         Assert.Equal(DiagnosticSeverity.Error, actualError.Severity)
         let expectedStart = fileContents.IndexOf(expectedMarker)
-
-        actualError.Location.SourceSpan.Start
-        |> Assert.shouldBeEqualWith expectedStart "Error start positions should match"
-
+        actualError.Location.SourceSpan.Start |> Assert.shouldBeEqualWith expectedStart "Error start positions should match"
         let expectedEnd = expectedStart + expectedMarker.Length
-
-        actualError.Location.SourceSpan.End
-        |> Assert.shouldBeEqualWith expectedEnd "Error end positions should match"
+        actualError.Location.SourceSpan.End |> Assert.shouldBeEqualWith expectedEnd "Error end positions should match"
 
     member private this.VerifyDiagnosticBetweenMarkers
         (
@@ -67,24 +59,14 @@ type DocumentDiagnosticAnalyzerTests() =
             |> Seq.filter (fun e -> e.Severity = expectedSeverity)
             |> Seq.toArray
 
-        errors.Length
-        |> Assert.shouldBeEqualWith 1 "There should be exactly one error generated"
-
+        errors.Length |> Assert.shouldBeEqualWith 1 "There should be exactly one error generated"
         let actualError = errors.[0]
         Assert.Equal(expectedSeverity, actualError.Severity)
-
-        actualError.GetMessage()
-        |> Assert.shouldBeEqualWith expectedMessage "Error messages should match"
-
+        actualError.GetMessage() |> Assert.shouldBeEqualWith expectedMessage "Error messages should match"
         let expectedStart = fileContents.IndexOf(startMarker) + startMarker.Length
-
-        actualError.Location.SourceSpan.Start
-        |> Assert.shouldBeEqualWith expectedStart "Error start positions should match"
-
+        actualError.Location.SourceSpan.Start |> Assert.shouldBeEqualWith expectedStart "Error start positions should match"
         let expectedEnd = fileContents.IndexOf(endMarker)
-
-        actualError.Location.SourceSpan.End
-        |> Assert.shouldBeEqualWith expectedEnd "Error end positions should match"
+        actualError.Location.SourceSpan.End |> Assert.shouldBeEqualWith expectedEnd "Error end positions should match"
 
     member private this.VerifyErrorBetweenMarkers(fileContents: string, expectedMessage: string) =
         this.VerifyDiagnosticBetweenMarkers(fileContents, expectedMessage, DiagnosticSeverity.Error)
