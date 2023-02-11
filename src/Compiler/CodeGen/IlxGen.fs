@@ -614,7 +614,8 @@ let GenReadOnlyAttribute (g: TcGlobals) =
 
 let GenReadOnlyAttributeIfNecessary (g: TcGlobals) ty =
     let add =
-        g.isSystem_Runtime_CompilerServices_IsReadOnlyAttributeAvailable
+        false
+        && g.isSystem_Runtime_CompilerServices_IsReadOnlyAttributeAvailable
         && isInByrefTy g ty
         && g.attrib_IsReadOnlyAttribute.TyconRef.CanDeref
 
@@ -2088,7 +2089,11 @@ type AnonTypeGenerationTable() =
                 [
                     for propName, fldName, fldTy in flds ->
                         let attrs =
-                            if g.isSystem_Runtime_CompilerServices_IsReadOnlyAttributeAvailable && isStruct then
+                            if
+                                false
+                                && g.isSystem_Runtime_CompilerServices_IsReadOnlyAttributeAvailable
+                                && isStruct
+                            then
                                 [ GenReadOnlyAttribute g ]
                             else
                                 []
@@ -9109,10 +9114,12 @@ and GenMethodForBinding
 
     // Do not push the attributes to the method for events and properties
     let ilAttrsCompilerGenerated =
-        if v.IsCompilerGenerated || v.GetterOrSetterIsCompilerGenerated then
-            [ g.CompilerGeneratedAttribute; g.DebuggerNonUserCodeAttribute ]
-        else
-            []
+        [
+            if v.IsCompilerGenerated || v.GetterOrSetterIsCompilerGenerated then
+                g.CompilerGeneratedAttribute
+            if v.GetterOrSetterIsCompilerGenerated then
+                g.DebuggerNonUserCodeAttribute
+        ]
 
     let ilAttrsThatGoOnPrimaryItem =
         [
@@ -10891,7 +10898,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
 
                             let attrs =
                                 if
-                                    g.isSystem_Runtime_CompilerServices_IsReadOnlyAttributeAvailable
+                                    false
+                                    && g.isSystem_Runtime_CompilerServices_IsReadOnlyAttributeAvailable
                                     && isStruct
                                     && not isStatic
                                 then
