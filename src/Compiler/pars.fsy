@@ -1281,13 +1281,16 @@ moduleDefn:
             [ SynModuleDecl.NestedModule(info, isRec, def, false, ((rhs2 parseState 1 4, def) ||> unionRangeWithListBy (fun d -> d.Range) |> unionRangeWithXmlDoc xmlDoc), trivia)] }
 
   /* incomplete 'module' definitions */
-  | opt_attributes opt_access moduleIntro recover
-      { let xmlDoc = grabXmlDoc(parseState, $1, 1)
+  /* 'moduleIntro' is expanded here and 'path' replaced with 'ident' */
+  /* This is so that we don't fall in here when the entire file consists of a top-level module declaration including a namespace */
+  | opt_attributes opt_access moduleKeyword opt_attributes opt_access opt_rec ident recover
+      { if not (isNil $4) then
+            parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AttributesToRightOfModuleKeyword (rhs parseState 4)
+        let xmlDoc = grabXmlDoc(parseState, $1, 1)
         let mWhole = rhs2 parseState 1 3 |> unionRangeWithXmlDoc xmlDoc
-        let attribs, (mModule, isRec, path, vis, attribs2) = $1, $3
-        let info = SynComponentInfo(attribs @ attribs2, None, [], path, xmlDoc, false, vis, rhs parseState 3)
-        let trivia: SynModuleDeclNestedModuleTrivia = { ModuleKeyword = Some mModule; EqualsRange = None }
-        [ SynModuleDecl.NestedModule(info, isRec, [], false, mWhole, trivia) ] }
+        let info = SynComponentInfo($1 @ $4, None, [], [ $7 ], xmlDoc, false, $5, rhs2 parseState 3 7)
+        let trivia: SynModuleDeclNestedModuleTrivia = { ModuleKeyword = Some (rhs parseState 3); EqualsRange = None }
+        [ SynModuleDecl.NestedModule(info, $6, [], false, mWhole, trivia) ] }
 
   /* unattached custom attributes */
   | attributes recover
