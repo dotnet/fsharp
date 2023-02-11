@@ -508,6 +508,8 @@ type IFileSystem =
 
     abstract IsStableFileHeuristic: fileName: string -> bool
 
+    abstract ChangeExtensionShim: path: string * extension: string -> string
+
 // note: do not add members if you can put generic implementation under StreamExtensions below.
 
 [<Experimental("This FCS API/Type is experimental and subject to change.")>]
@@ -698,6 +700,10 @@ type DefaultFileSystem() as this =
         || directory.Contains("packages\\")
         || directory.Contains("lib/mono/")
 
+    abstract ChangeExtensionShim: path: string * extension: string -> string
+
+    default _.ChangeExtensionShim(path: string, extension: string) : string = Path.ChangeExtension(path, extension)
+
     interface IFileSystem with
         member _.AssemblyLoader = this.AssemblyLoader
 
@@ -733,6 +739,9 @@ type DefaultFileSystem() as this =
         member _.EnumerateFilesShim(path: string, pattern: string) = this.EnumerateFilesShim(path, pattern)
         member _.EnumerateDirectoriesShim(path: string) = this.EnumerateDirectoriesShim path
         member _.IsStableFileHeuristic(fileName: string) = this.IsStableFileHeuristic fileName
+
+        member _.ChangeExtensionShim(path: string, extension: string) =
+            this.ChangeExtensionShim(path, extension)
 
 [<AutoOpen>]
 module public StreamExtensions =
