@@ -1477,9 +1477,7 @@ module ParsedInput =
 
                     // module Namespace.Top
                     // module Neste|
-                    | SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = [ ident ])) when
-                        rangeContainsPos ident.idRange pos
-                        ->
+                    | SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = [ ident ])) when rangeContainsPos ident.idRange pos ->
                         Some CompletionContext.Invalid
 
                     | _ -> defaultTraverse decl
