@@ -128,7 +128,7 @@ let TcImplicitCtorLhs_Phase2A(cenv: cenv, env, tpenv, tcref: TyconRef, vis, attr
         let valSynData = SynValInfo([synArgInfos], SynInfo.unnamedRetVal)
         let id = ident ("new", m)
 
-        CheckForNonAbstractInterface ModuleOrMemberBinding tcref memberFlags id.idRange
+        CheckForNonAbstractInterface g ModuleOrMemberBinding tcref memberFlags false id.idRange
         let memberInfo = MakeMemberDataAndMangledNameForMemberVal(g, tcref, false, attribs, [], memberFlags, valSynData, id, false)
         let prelimValReprInfo = TranslateSynValInfo m (TcAttributes cenv env) valSynData
         let prelimTyschemeG = GeneralizedType(copyOfTyconTypars, ctorTy)
@@ -152,7 +152,7 @@ let TcImplicitCtorLhs_Phase2A(cenv: cenv, env, tpenv, tcref: TyconRef, vis, attr
             let cctorTy = mkFunTy g g.unit_ty g.unit_ty
             let valSynData = SynValInfo([[]], SynInfo.unnamedRetVal)
             let id = ident ("cctor", m)
-            CheckForNonAbstractInterface ModuleOrMemberBinding tcref ClassCtorMemberFlags id.idRange
+            CheckForNonAbstractInterface g ModuleOrMemberBinding tcref ClassCtorMemberFlags false id.idRange
             let memberInfo = MakeMemberDataAndMangledNameForMemberVal(g, tcref, false, [], [], ClassCtorMemberFlags, valSynData, id, false)
             let prelimValReprInfo = TranslateSynValInfo m (TcAttributes cenv env) valSynData
             let prelimTyschemeG = GeneralizedType(copyOfTyconTypars, cctorTy)

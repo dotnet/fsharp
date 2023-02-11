@@ -841,7 +841,7 @@ let rec synExprContainsError inpExpr =
         | SynExpr.ArrayOrList (_, es, _)
         | SynExpr.Tuple (_, es, _, _) -> walkExprs es
 
-        | SynExpr.AnonRecd (_, origExpr, flds, _) ->
+        | SynExpr.AnonRecd (copyInfo = origExpr; recordFields = flds) ->
             (match origExpr with
              | Some (e, _) -> walkExpr e
              | None -> false)
