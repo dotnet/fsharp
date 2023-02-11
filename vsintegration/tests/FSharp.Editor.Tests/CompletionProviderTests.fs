@@ -1266,3 +1266,47 @@ let inline f_StaticProperty_SRTP<'T when 'T : (static member StaticProperty: 'T)
 """
 
         VerifyCompletionListWithOptions(fileContents, "'T.", [ "StaticProperty" ], [], [| "/langversion:preview" |])
+
+    [<Fact>]
+    let ``Completion list for attribute application contains settable members and ctor parameters`` () =
+        let fileContents =
+            """
+type LangAttribute (langParam: int) =
+    inherit System.Attribute ()
+
+    member val LangMember1 = 0 with get, set
+    member val LangMember2 = 0 with get, set
+
+[<Lang(1)>]
+module X =
+    [< Lang(2, LangMember1 = 2)>]
+    let a = ()
+
+[<  Lang(3, LangMember1 = 3, L)>]
+type B () =
+    [<   Lang(la)>]
+    member _.M = ""
+
+type G = { [<Lang(l)>] f: string }
+
+type A =
+    | [<Lang(l)>] A = 1
+"""
+
+        // Attribute on module, completing attribute name - settable properties omitted
+        VerifyCompletionList(fileContents, "[<La", [ "Lang" ], [ "LangMember1"; "langParam" ])
+
+        // Attribute on let-bound value - LangMember2 is already set, so it's omitted
+        VerifyCompletionList(fileContents, "[< Lang(2", [ "langParam"; "LangMember2" ], [ "LangMember1" ])
+
+        // Attribute on type - LangMember1 is already set, so it's omitted
+        VerifyCompletionList(fileContents, "[<  Lang(3, LangMember1 = 3, L", [ "LangMember2" ], [ "LangMember1" ])
+
+        // Attribute on member - All settable properties available
+        VerifyCompletionList(fileContents, "[<   Lang(l", [ "langParam"; "LangMember1"; "LangMember2" ], [])
+
+        // Attribute on record field - All settable properties available
+        VerifyCompletionList(fileContents, "{ [<Lang(l", [ "langParam"; "LangMember1"; "LangMember2" ], [])
+
+        // Attribute on enum case - All settable properties available
+        VerifyCompletionList(fileContents, "| [<Lang(l", [ "langParam"; "LangMember1"; "LangMember2" ], [])

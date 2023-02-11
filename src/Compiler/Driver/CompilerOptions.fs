@@ -1372,8 +1372,17 @@ let testFlag tcConfigB =
             | "ShowLoadedAssemblies" -> tcConfigB.showLoadedAssemblies <- true
             | "ContinueAfterParseFailure" -> tcConfigB.continueAfterParseFailure <- true
             | "ParallelOff" -> tcConfigB.concurrentBuild <- false
-            | "ParallelCheckingWithSignatureFilesOn" -> tcConfigB.parallelCheckingWithSignatureFiles <- true
             | "ParallelIlxGen" -> tcConfigB.parallelIlxGen <- true
+            | "GraphBasedChecking" ->
+                tcConfigB.typeCheckingConfig <-
+                    { tcConfigB.typeCheckingConfig with
+                        Mode = TypeCheckingMode.Graph
+                    }
+            | "DumpCheckingGraph" ->
+                tcConfigB.typeCheckingConfig <-
+                    { tcConfigB.typeCheckingConfig with
+                        DumpGraph = true
+                    }
 #if DEBUG
             | "ShowParserStackOnParseError" -> showParserStackOnParseError <- true
 #endif
