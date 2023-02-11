@@ -4634,7 +4634,7 @@
       </trans-unit>
       <trans-unit id="tcConcreteMembersIllegalInInterface">
         <source>Interfaces cannot contain definitions of concrete instance members. You may need to define a constructor on your type to indicate that the type is a class.</source>
-        <target state="needs-review-translation">인터페이스에는 구체적인 멤버의 정의를 포함할 수 없습니다. 사용자 형식에 대한 생성자를 정의하여 해당 형식이 클래스임을 나타내야 할 수 있습니다.</target>
+        <target state="new">Interfaces cannot contain definitions of concrete instance members. You may need to define a constructor on your type to indicate that the type is a class.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcConstructorsDisallowedInExceptionAugmentation">
