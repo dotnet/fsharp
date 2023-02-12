@@ -13,11 +13,10 @@ open System.Globalization
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
-open Microsoft.CodeAnalysis.PatternMatching
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Navigation
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.NavigateTo
+open Microsoft.VisualStudio.Text.PatternMatching
 
-open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax
 
@@ -172,6 +171,7 @@ module private Utils =
 type internal FSharpNavigateToSearchService 
     [<ImportingConstructor>] 
     (
+        patternMatcherFactory: IPatternMatcherFactory
     ) =
 
     let kindsProvided = ImmutableHashSet.Create(FSharpNavigateToItemKind.Module, FSharpNavigateToItemKind.Class, FSharpNavigateToItemKind.Field, FSharpNavigateToItemKind.Property, FSharpNavigateToItemKind.Method, FSharpNavigateToItemKind.Enum, FSharpNavigateToItemKind.EnumItem) :> IImmutableSet<string>
@@ -229,8 +229,6 @@ type internal FSharpNavigateToSearchService
         | PatternMatchKind.Exact -> FSharpNavigateToMatchKind.Exact
         | PatternMatchKind.Prefix -> FSharpNavigateToMatchKind.Prefix
         | PatternMatchKind.Substring -> FSharpNavigateToMatchKind.Substring
-        | PatternMatchKind.CamelCase -> FSharpNavigateToMatchKind.Regular
-        | PatternMatchKind.Fuzzy -> FSharpNavigateToMatchKind.Regular
         | _ -> FSharpNavigateToMatchKind.Regular
 
     interface IFSharpNavigateToSearchService with
@@ -250,14 +248,13 @@ type internal FSharpNavigateToSearchService
                         |> Array.filter (fun x -> x.Name.Length = 1 && String.Equals(x.Name, searchPattern, StringComparison.InvariantCultureIgnoreCase))
                     else
                         [| yield! items |> Array.map (fun items -> items.Find(searchPattern)) |> Array.concat
-                           use patternMatcher = new PatternMatcher(searchPattern, allowFuzzyMatching = true)
-                           yield! items
-                                  |> Array.collect (fun item -> item.AllItems)
-                                  |> Array.Parallel.collect (fun x -> 
-                                      patternMatcher.GetMatches(x.LogicalName)
-                                      |> Seq.map (fun pm ->
-                                          NavigateToSearchResult(x, patternMatchKindToNavigateToMatchKind pm.Kind) :> FSharpNavigateToSearchResult)
-                                      |> Seq.toArray) |]
+                           let patternMatcherOptions = PatternMatcherCreationOptions(cultureInfo = CultureInfo.CurrentUICulture, flags = PatternMatcherCreationFlags.AllowFuzzyMatching)
+                           let patternMatcher = patternMatcherFactory.CreatePatternMatcher(searchPattern, patternMatcherOptions)
+                           for item in items |> Array.collect (fun item -> item.AllItems) do
+                                match patternMatcher.TryMatch(item.LogicalName) |> Option.ofNullable with
+                                | Some pm -> yield NavigateToSearchResult(item, patternMatchKindToNavigateToMatchKind pm.Kind) :> FSharpNavigateToSearchResult
+                                | _ -> ()
+                        |]
 
                 return items |> Array.distinctBy (fun x -> x.NavigableItem.Document.Id, x.NavigableItem.SourceSpan)
             } 
