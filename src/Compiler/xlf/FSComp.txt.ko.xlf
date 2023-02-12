@@ -308,8 +308,8 @@
         <note />
       </trans-unit>
       <trans-unit id="featureNonInlineLiteralsAsPrintfFormat">
-        <source>Allow IL constants and string literals that are not defined inline to be used as printf format</source>
-        <target state="new">Allow IL constants and string literals that are not defined inline to be used as printf format</target>
+        <source>String values marked as literals and IL constants as printf format</source>
+        <target state="new">String values marked as literals and IL constants as printf format</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNonVariablePatternsToRightOfAsPatterns">
