@@ -1459,7 +1459,6 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             keepAllBackgroundSymbolUses,
             enableBackgroundItemKeyStoreAndSemanticClassification,
             enablePartialTypeChecking: bool,
-            enableParallelCheckingWithSignatureFiles: bool,
             dependencyProvider,
             parallelReferenceResolution,
             captureIdentifiersWhenParsing,
@@ -1545,7 +1544,6 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                     }
                     |> Some
 
-                tcConfigB.parallelCheckingWithSignatureFiles <- enableParallelCheckingWithSignatureFiles
                 tcConfigB.parallelReferenceResolution <- parallelReferenceResolution
                 tcConfigB.captureIdentifiersWhenParsing <- captureIdentifiersWhenParsing
 

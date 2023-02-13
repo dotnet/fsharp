@@ -37,13 +37,13 @@
   // WARNING: managed resource file FSharpOptimizationData.ToplevelModule created
 }
 .module ToplevelModule.exe
-// MVID: {62F987D1-3E21-F1E3-A745-0383D187F962}
+// MVID: {63E6EA31-3E21-F1E3-A745-038331EAE663}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x000001EAC2450000
+// Image base: 0x00000154AC310000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -152,7 +152,6 @@
             instance int32  CompareTo(class ABC/Expr obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       66 (0x42)
       .maxstack  5
       .locals init (class ABC/Expr V_0,
@@ -215,7 +214,6 @@
             instance int32  CompareTo(object obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       13 (0xd)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -230,7 +228,6 @@
                                       class [mscorlib]System.Collections.IComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       81 (0x51)
       .maxstack  5
       .locals init (class ABC/Expr V_0,
@@ -299,7 +296,6 @@
             instance int32  GetHashCode(class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       43 (0x2b)
       .maxstack  7
       .locals init (int32 V_0,
@@ -348,7 +344,6 @@
             instance int32  GetHashCode() cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       12 (0xc)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -362,7 +357,6 @@
                                   class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       61 (0x3d)
       .maxstack  4
       .locals init (class ABC/Expr V_0,
@@ -420,7 +414,6 @@
             instance bool  Equals(class ABC/Expr obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       37 (0x25)
       .maxstack  4
       .locals init (class ABC/Expr V_0,
@@ -459,7 +452,6 @@
             instance bool  Equals(object obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       20 (0x14)
       .maxstack  4
       .locals init (class ABC/Expr V_0)
@@ -567,7 +559,6 @@
             GetHashCode(class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       41 (0x29)
       .maxstack  7
       .locals init (int32 V_0,
@@ -610,7 +601,6 @@
             GetHashCode() cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       12 (0xc)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -624,7 +614,6 @@
                    class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       78 (0x4e)
       .maxstack  4
       .locals init (class [mscorlib]System.Exception V_0,
@@ -688,7 +677,6 @@
             Equals(class [mscorlib]System.Exception obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       56 (0x38)
       .maxstack  4
       .locals init (object V_0)
@@ -733,7 +721,6 @@
             Equals(object obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       20 (0x14)
       .maxstack  4
       .locals init (class [mscorlib]System.Exception V_0)
@@ -900,7 +887,6 @@
               instance int32  CompareTo(class ABC/ABC/Expr obj) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       66 (0x42)
         .maxstack  5
         .locals init (class ABC/ABC/Expr V_0,
@@ -963,7 +949,6 @@
               instance int32  CompareTo(object obj) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       13 (0xd)
         .maxstack  8
         IL_0000:  ldarg.0
@@ -978,7 +963,6 @@
                                         class [mscorlib]System.Collections.IComparer comp) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       81 (0x51)
         .maxstack  5
         .locals init (class ABC/ABC/Expr V_0,
@@ -1047,7 +1031,6 @@
               instance int32  GetHashCode(class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       43 (0x2b)
         .maxstack  7
         .locals init (int32 V_0,
@@ -1096,7 +1079,6 @@
               instance int32  GetHashCode() cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       12 (0xc)
         .maxstack  8
         IL_0000:  ldarg.0
@@ -1110,7 +1092,6 @@
                                     class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       61 (0x3d)
         .maxstack  4
         .locals init (class ABC/ABC/Expr V_0,
@@ -1168,7 +1149,6 @@
               instance bool  Equals(class ABC/ABC/Expr obj) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       37 (0x25)
         .maxstack  4
         .locals init (class ABC/ABC/Expr V_0,
@@ -1207,7 +1187,6 @@
               instance bool  Equals(object obj) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       20 (0x14)
         .maxstack  4
         .locals init (class ABC/ABC/Expr V_0)
@@ -1315,7 +1294,6 @@
               GetHashCode(class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       41 (0x29)
         .maxstack  7
         .locals init (int32 V_0,
@@ -1358,7 +1336,6 @@
               GetHashCode() cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       12 (0xc)
         .maxstack  8
         IL_0000:  ldarg.0
@@ -1372,7 +1349,6 @@
                      class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       78 (0x4e)
         .maxstack  4
         .locals init (class [mscorlib]System.Exception V_0,
@@ -1436,7 +1412,6 @@
               Equals(class [mscorlib]System.Exception obj) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       56 (0x38)
         .maxstack  4
         .locals init (object V_0)
@@ -1481,7 +1456,6 @@
               Equals(object obj) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       20 (0x14)
         .maxstack  4
         .locals init (class [mscorlib]System.Exception V_0)

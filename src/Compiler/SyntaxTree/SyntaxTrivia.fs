@@ -101,6 +101,9 @@ type SynExprMatchBangTrivia =
     }
 
 [<NoEquality; NoComparison>]
+type SynExprAnonRecdTrivia = { OpeningBraceRange: range }
+
+[<NoEquality; NoComparison>]
 type SynMatchClauseTrivia =
     {
         ArrowRange: range option
