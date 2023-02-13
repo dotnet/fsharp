@@ -22,6 +22,10 @@ test.fsx(482,18,482,21): typecheck error FS3387: This expression has type 'B' an
    static member B.op_Implicit: x: B -> C
    static member C.op_Implicit: x: B -> C
 
+test.fsx(482,18,482,21): typecheck error FS3387: This expression has type 'B' and is only made compatible with type 'C' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:
+   static member B.op_Implicit: x: B -> C
+   static member C.op_Implicit: x: B -> C
+
 test.fsx(546,30,546,31): typecheck error FS0001: This expression was expected to have type
     'float32'    
 but here has type
