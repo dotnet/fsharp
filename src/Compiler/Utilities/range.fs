@@ -387,7 +387,7 @@ type Range(code1: int64, code2: int64) =
         hash code1 + hash code2
 
     override r.ToString() =
-        sprintf "%s (%d,%d--%d,%d)" r.FileName r.StartLine r.StartColumn r.EndLine r.EndColumn
+        sprintf "(%d,%d--%d,%d)" r.StartLine r.StartColumn r.EndLine r.EndColumn
 
 and range = Range
 

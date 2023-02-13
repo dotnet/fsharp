@@ -16,32 +16,13 @@ ImplFile
                         SynValData
                           (None, SynValInfo ([], SynArgInfo ([], false, None)),
                            None),
-                        Named
-                          (SynIdent (x, None), false, None,
-                           /root/Expression/SynExprLetOrUseDoesNotContainTheRangeOfInKeyword.fs (3,4--3,5)),
-                        None,
-                        Const
-                          (Int32 1,
-                           /root/Expression/SynExprLetOrUseDoesNotContainTheRangeOfInKeyword.fs (3,8--3,9)),
-                        /root/Expression/SynExprLetOrUseDoesNotContainTheRangeOfInKeyword.fs (3,4--3,5),
-                        Yes
-                          /root/Expression/SynExprLetOrUseDoesNotContainTheRangeOfInKeyword.fs (3,0--3,9),
-                        { LeadingKeyword =
-                           Let
-                             /root/Expression/SynExprLetOrUseDoesNotContainTheRangeOfInKeyword.fs (3,0--3,3)
-                          InlineKeyword = None
-                          EqualsRange =
-                           Some
-                             /root/Expression/SynExprLetOrUseDoesNotContainTheRangeOfInKeyword.fs (3,6--3,7) })],
-                    Const
-                      (Unit,
-                       /root/Expression/SynExprLetOrUseDoesNotContainTheRangeOfInKeyword.fs (4,0--4,2)),
-                    /root/Expression/SynExprLetOrUseDoesNotContainTheRangeOfInKeyword.fs (3,0--4,2),
-                    { InKeyword = None }),
-                 /root/Expression/SynExprLetOrUseDoesNotContainTheRangeOfInKeyword.fs (2,0--4,2)),
-              /root/Expression/SynExprLetOrUseDoesNotContainTheRangeOfInKeyword.fs (2,0--4,2))],
-          PreXmlDocEmpty, [], None,
-          /root/Expression/SynExprLetOrUseDoesNotContainTheRangeOfInKeyword.fs (2,0--5,0),
+                        Named (SynIdent (x, None), false, None, (3,4--3,5)),
+                        None, Const (Int32 1, (3,8--3,9)), (3,4--3,5),
+                        Yes (3,0--3,9), { LeadingKeyword = Let (3,0--3,3)
+                                          InlineKeyword = None
+                                          EqualsRange = Some (3,6--3,7) })],
+                    Const (Unit, (4,0--4,2)), (3,0--4,2), { InKeyword = None }),
+                 (2,0--4,2)), (2,0--4,2))], PreXmlDocEmpty, [], None, (2,0--5,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

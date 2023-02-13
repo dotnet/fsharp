@@ -6,15 +6,9 @@ ImplFile
          ([Module], false, NamedModule,
           [Expr
              (LongIdent
-                (false,
-                 SynLongIdent
-                   ([A], [/root/SynIdent/IncompleteLongIdent.fs (4,1--4,2)],
-                    [None]), None,
-                 /root/SynIdent/IncompleteLongIdent.fs (4,0--4,2)),
-              /root/SynIdent/IncompleteLongIdent.fs (4,0--4,2))],
+                (false, SynLongIdent ([A], [(4,1--4,2)], [None]), None,
+                 (4,0--4,2)), (4,0--4,2))],
           PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
-          /root/SynIdent/IncompleteLongIdent.fs (2,0--4,2),
-          { LeadingKeyword =
-             Module /root/SynIdent/IncompleteLongIdent.fs (2,0--2,6) })],
-      (true, false), { ConditionalDirectives = []
-                       CodeComments = [] }, set []))
+          (2,0--4,2), { LeadingKeyword = Module (2,0--2,6) })], (true, false),
+      { ConditionalDirectives = []
+        CodeComments = [] }, set []))
