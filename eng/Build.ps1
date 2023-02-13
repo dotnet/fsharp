@@ -555,7 +555,7 @@ try {
         
         # Collect output from  background jobs
         Wait-job $bgJob | out-null
-        Receive-Job $bgJob -ErrorAction Stop     
+        Receive-Job $bgJob -ErrorAction Stop  
     }
 
     if ($testFSharpQA) {
