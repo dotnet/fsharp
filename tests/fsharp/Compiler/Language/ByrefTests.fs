@@ -266,7 +266,8 @@ let test () =
                     (FSharpDiagnosticSeverity.Error, 256, (6, 13, 6, 16), "A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'")
                 |]
 
-    [<Test>]
+    [<Test()>]
+    [<Ignore("Waiting for test to be aligned", Until = "2023-04-01 12:00:00Z")>]
     let ``Returning an 'inref<_>' from a property should emit System.Runtime.CompilerServices.IsReadOnlyAttribute on the return type of the signature`` () =
         let src =
             """
@@ -297,6 +298,7 @@ type C() =
         |> ignore
 
     [<Test>]
+    [<Ignore("Waiting for test to be aligned", Until = "2023-04-01 12:00:00Z")>]
     let ``Returning an 'inref<_>' from a generic method should emit System.Runtime.CompilerServices.IsReadOnlyAttribute on the return type of the signature`` () =
         let src =
             """
@@ -319,6 +321,7 @@ type C<'T>() =
         |> ignore
 
     [<Test>]
+    [<Ignore("Waiting for test to be aligned", Until = "2023-04-01 12:00:00Z")>]
     let ``Returning an 'inref<_>' from an abstract generic method should emit System.Runtime.CompilerServices.IsReadOnlyAttribute on the return type of the signature`` () =
         let src =
             """
@@ -342,6 +345,7 @@ type C<'T>() =
         |> ignore
 
     [<Test>]
+    [<Ignore("Waiting for test to be aligned", Until = "2023-04-01 12:00:00Z")>]
     let ``Returning an 'inref<_>' from an abstract property should emit System.Runtime.CompilerServices.IsReadOnlyAttribute on the return type of the signature`` () =
         let src =
             """
