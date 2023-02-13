@@ -267,7 +267,7 @@ let test () =
                 |]
 
     [<Test()>]
-    [<Ignore("Waiting for test to be aligned", Until = "2023-04-01 12:00:00Z")>]
+    //[<Ignore("Waiting for test to be aligned", Until = "2023-04-01 12:00:00Z")>]
     let ``Returning an 'inref<_>' from a property should emit System.Runtime.CompilerServices.IsReadOnlyAttribute on the return type of the signature`` () =
         let src =
             """
