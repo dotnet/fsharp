@@ -4358,12 +4358,13 @@ and TcTypeOrMeasure kindOpt (cenv: cenv) newOk checkConstraints occ (iwsam: Warn
 
 and CheckIWSAM (cenv: cenv) (env: TcEnv) checkConstraints iwsam m tcref =
     let g = cenv.g
-    let ad = env.eAccessRights
     let ty = generalizedTyconRef g tcref
+
     if iwsam = WarnOnIWSAM.Yes && isInterfaceTy g ty && checkConstraints = CheckCxs then
-        let tcref = tcrefOfAppTy g ty
-        let meths = AllMethInfosOfTypeInScope ResultCollectionSettings.AllResults cenv.infoReader env.NameEnv None ad IgnoreOverrides m ty
+        let meths = AllMethInfosOfTypeInScope ResultCollectionSettings.AllResults cenv.infoReader env.NameEnv None env.eAccessRights IgnoreOverrides m ty
+
         if meths |> List.exists (fun meth -> not meth.IsInstance && meth.IsDispatchSlot && not meth.IsExtensionMember) then
+            let tcref = tcrefOfAppTy g ty
             warning(Error(FSComp.SR.tcUsingInterfaceWithStaticAbstractMethodAsType(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
 
 and TcLongIdentType kindOpt (cenv: cenv) newOk checkConstraints occ iwsam env tpenv synLongId =
@@ -5520,7 +5521,7 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         TcNonControlFlowExpr env <| fun env ->
         TcExprTuple cenv overallTy env tpenv (isExplicitStruct, args, m)
 
-    | SynExpr.AnonRecd (isStruct, withExprOpt, unsortedFieldExprs, mWholeExpr) ->
+    | SynExpr.AnonRecd (isStruct, withExprOpt, unsortedFieldExprs, mWholeExpr, _) ->
         TcNonControlFlowExpr env <| fun env ->
         TcPossiblyPropagatingExprLeafThenConvert (fun ty -> isAnonRecdTy g ty || isTyparTy g ty) cenv overallTy env mWholeExpr (fun overallTy ->
             TcAnonRecdExpr cenv overallTy env tpenv (isStruct, withExprOpt, unsortedFieldExprs, mWholeExpr)
@@ -7224,7 +7225,7 @@ and TcConstExpr cenv (overallTy: OverallTy) env m tpenv c =
         let expr =
             let modName = "NumericLiteral" + suffix
             let ad = env.eAccessRights
-            match ResolveLongIdentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AtMostOneResult cenv.amap m true OpenQualified env.eNameResEnv ad (ident (modName, m)) [] false with
+            match ResolveLongIdentAsModuleOrNamespace cenv.tcSink cenv.amap m true OpenQualified env.eNameResEnv ad (ident (modName, m)) [] false with
             | Result []
             | Exception _ -> error(Error(FSComp.SR.tcNumericLiteralRequiresModule modName, m))
             | Result ((_, mref, _) :: _) ->
@@ -7964,7 +7965,7 @@ and TcNameOfExpr (cenv: cenv) env tpenv (synArg: SynExpr) =
             let resolvedToModuleOrNamespaceName =
                 if delayed.IsEmpty then
                     let id,rest = List.headAndTail longId
-                    match ResolveLongIdentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m true OpenQualified env.eNameResEnv ad id rest true with
+                    match ResolveLongIdentAsModuleOrNamespace cenv.tcSink cenv.amap m true OpenQualified env.eNameResEnv ad id rest true with
                     | Result modref when delayed.IsEmpty && modref |> List.exists (p23 >> IsEntityAccessible cenv.amap m ad) ->
                         true // resolved to a module or namespace, done with checks
                     | _ ->
@@ -11080,7 +11081,7 @@ and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (_: Val option) (a
 
        [], declaredTypars
 
-and CheckForNonAbstractInterface declKind tcref (memberFlags: SynMemberFlags) m =
+and CheckForNonAbstractInterface (g: TcGlobals) declKind tcref (memberFlags: SynMemberFlags) isMemberStatic m =
     if isInterfaceTyconRef tcref then
         if memberFlags.MemberKind = SynMemberKind.ClassConstructor then
             error(Error(FSComp.SR.tcStaticInitializersIllegalInInterface(), m))
@@ -11088,8 +11089,11 @@ and CheckForNonAbstractInterface declKind tcref (memberFlags: SynMemberFlags) m 
             error(Error(FSComp.SR.tcObjectConstructorsIllegalInInterface(), m))
         elif memberFlags.IsOverrideOrExplicitImpl then
             error(Error(FSComp.SR.tcMemberOverridesIllegalInInterface(), m))
-        elif not (declKind=ExtrinsicExtensionBinding || memberFlags.IsDispatchSlot ) then
-            error(Error(FSComp.SR.tcConcreteMembersIllegalInInterface(), m))
+        elif not (declKind = ExtrinsicExtensionBinding || memberFlags.IsDispatchSlot) then
+            if not isMemberStatic then
+                error(Error(FSComp.SR.tcConcreteMembersIllegalInInterface(), m))
+            else
+                checkLanguageFeatureError g.langVersion LanguageFeature.StaticMembersInInterfaces m
 
 //-------------------------------------------------------------------------
 // TcLetrecBindings - AnalyzeAndMakeAndPublishRecursiveValue s
@@ -11135,7 +11139,7 @@ and AnalyzeRecursiveStaticMemberOrValDecl
              memberFlags.IsOverrideOrExplicitImpl ->
 
            CheckMemberFlags intfSlotTyOpt newslotsOK overridesOK memberFlags id.idRange
-           CheckForNonAbstractInterface declKind tcref memberFlags id.idRange
+           CheckForNonAbstractInterface g declKind tcref memberFlags true id.idRange
 
            let isExtrinsic = (declKind = ExtrinsicExtensionBinding)
            let tcrefObjTy, enclosingDeclaredTypars, renaming, _, _ = FreshenObjectArgType cenv mBinding TyparRigidity.WillBeRigid tcref isExtrinsic declaredTyconTypars
@@ -11157,7 +11161,7 @@ and AnalyzeRecursiveStaticMemberOrValDecl
         assert (Option.isNone intfSlotTyOpt)
 
         CheckMemberFlags None newslotsOK overridesOK memberFlags id.idRange
-        CheckForNonAbstractInterface declKind tcref memberFlags id.idRange
+        CheckForNonAbstractInterface g declKind tcref memberFlags true id.idRange
 
         if memberFlags.MemberKind = SynMemberKind.Constructor && tcref.Deref.IsFSharpException then
             error(Error(FSComp.SR.tcConstructorsDisallowedInExceptionAugmentation(), id.idRange))
@@ -11262,7 +11266,7 @@ and AnalyzeRecursiveInstanceMemberDecl
          let argsAndRetTy = NewInferenceType g
          UnifyTypes cenv envinner mBinding ty (mkFunTy g thisTy argsAndRetTy)
 
-         CheckForNonAbstractInterface declKind tcref memberFlags memberId.idRange
+         CheckForNonAbstractInterface g declKind tcref memberFlags false memberId.idRange
 
          // Determine if a uniquely-identified-override exists based on the information
          // at the member signature. If so, we know the type of this member, and the full slotsig

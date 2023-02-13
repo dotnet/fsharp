@@ -555,7 +555,8 @@ type SynExpr =
         isStruct: bool *
         copyInfo: (SynExpr * BlockSeparator) option *
         recordFields: (Ident * range option * SynExpr) list *
-        range: range
+        range: range *
+        trivia: SynExprAnonRecdTrivia
 
     /// F# syntax: [ e1; ...; en ], [| e1; ...; en |]
     | ArrayOrList of isArray: bool * exprs: SynExpr list * range: range

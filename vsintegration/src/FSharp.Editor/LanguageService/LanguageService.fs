@@ -116,9 +116,6 @@ type internal FSharpWorkspaceServiceFactory
                                 |> Option.map f
                                 |> Option.defaultValue defaultValue
 
-                            let enableParallelCheckingWithSignatureFiles =
-                                getOption (fun options -> options.LanguageServicePerformance.EnableParallelCheckingWithSignatureFiles) false
-
                             let enableParallelReferenceResolution =
                                 getOption (fun options -> options.LanguageServicePerformance.EnableParallelReferenceResolution) false
 
@@ -134,7 +131,6 @@ type internal FSharpWorkspaceServiceFactory
                                     keepAllBackgroundSymbolUses = false,
                                     enableBackgroundItemKeyStoreAndSemanticClassification = true,
                                     enablePartialTypeChecking = true,
-                                    enableParallelCheckingWithSignatureFiles = enableParallelCheckingWithSignatureFiles,
                                     parallelReferenceResolution = enableParallelReferenceResolution,
                                     captureIdentifiersWhenParsing = true,
                                     documentSource = (if enableLiveBuffers then DocumentSource.Custom getSource else DocumentSource.FileSystem))
