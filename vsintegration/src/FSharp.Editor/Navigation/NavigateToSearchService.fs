@@ -259,10 +259,13 @@ type internal FSharpNavigateToSearchService
                                flags = PatternMatcherCreationFlags.AllowFuzzyMatching
                            )
                            let patternMatcher = patternMatcherFactory.CreatePatternMatcher(searchPattern, patternMatcherOptions)
-                           for item in items |> Array.collect (fun item -> item.AllItems) do
-                                match patternMatcher.TryMatch(item.LogicalName) |> Option.ofNullable with
-                                | Some pm -> yield NavigateToSearchResult(item, patternMatchKindToNavigateToMatchKind pm.Kind) :> FSharpNavigateToSearchResult
-                                | _ -> () |]
+                           yield! items
+                                  |> Array.collect (fun item -> item.AllItems)
+                                  |> Array.Parallel.choose (fun x -> 
+                                      patternMatcher.TryMatch(x.LogicalName)
+                                      |> Option.ofNullable
+                                      |> Option.map (fun pm ->
+                                          NavigateToSearchResult(x, patternMatchKindToNavigateToMatchKind pm.Kind) :> FSharpNavigateToSearchResult)) |]
 
                 return items |> Array.distinctBy (fun x -> x.NavigableItem.Document.Id, x.NavigableItem.SourceSpan)
             } 
