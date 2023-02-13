@@ -1562,7 +1562,7 @@ type LexFilterImpl (
         //  Otherwise it's a 'head' module declaration, so ignore it
 
         //  Here prevToken is either 'module', 'rec', 'global' (invalid), '.', or ident, because we skip attribute tokens and access modifier tokens
-        | _, CtxtModuleHead (moduleTokenPos, prevToken, lexingModuleAttributes) :: rest ->
+        | _, CtxtModuleHead (moduleTokenPos, prevToken, lexingModuleAttributes) :: _ ->
             match prevToken, token with
             | _, GREATER_RBRACK when lexingModuleAttributes = LexingModuleAttributes
                                      && moduleTokenPos.Column < tokenStartPos.Column ->
@@ -1588,27 +1588,18 @@ type LexFilterImpl (
                 pushCtxtSeqBlock(true, AddBlockEnd)
                 returnToken tokenLexbufState token
             | _ ->
-                match rest with
-                | [ CtxtSeqBlock _ ] ->
-                    if debug then dprintf "CtxtModuleHead: start of file, CtxtSeqBlock\n"
-                    popCtxt()
-                    // Don't push a new context if next token is EOF, since that raises an offside warning
-                    match tokenTup.Token with 
-                    | EOF _ -> 
-                        returnToken tokenLexbufState token
-                    | _ ->
-                        // We have reached other tokens without encountering '=' or ':', so this is a module declaration spanning the whole file
-                        delayToken tokenTup 
-                        pushCtxt tokenTup (CtxtModuleBody (moduleTokenPos, true))
-                        pushCtxtSeqBlockAt (tokenTup, true, AddBlockEnd) 
-                        hwTokenFetch false
+                if debug then dprintf "CtxtModuleHead: start of file, CtxtSeqBlock\n"
+                popCtxt()
+                // Don't push a new context if next token is EOF, since that raises an offside warning
+                match tokenTup.Token with 
+                | EOF _ -> 
+                    returnToken tokenLexbufState token
                 | _ ->
-                    // Adding a new nested module, EQUALS hasn't been typed yet
-                    // and we've encountered declarations below
-                    if debug then dprintf "CtxtModuleHead: not start of file, popping CtxtModuleHead\n"
-                    popCtxt()
-                    reprocessWithoutBlockRule()
-
+                    // We have reached other tokens without encountering '=' or ':', so this is a module declaration spanning the whole file
+                    delayToken tokenTup 
+                    pushCtxt tokenTup (CtxtModuleBody (moduleTokenPos, true))
+                    pushCtxtSeqBlockAt (tokenTup, true, AddBlockEnd) 
+                    hwTokenFetch false
         //  Offside rule for SeqBlock.  
         //      f x
         //      g x
