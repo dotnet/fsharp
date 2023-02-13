@@ -750,7 +750,12 @@ Updated automatically, please check diffs in your pull request, changes must be 
                 |> Async.RunImmediate
 
             if parseResults.Diagnostics.Length > 0 then
-                parseResults.Diagnostics
+                if options |> Array.contains "--test:ContinueAfterParseFailure" then
+                    [| yield! parseResults.Diagnostics
+                       match fileAnswer with
+                       | FSharpCheckFileAnswer.Succeeded(tcResults) -> yield! tcResults.Diagnostics 
+                       | _ -> () |]
+                else parseResults.Diagnostics
             else
 
                 match fileAnswer with
