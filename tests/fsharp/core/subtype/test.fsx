@@ -1088,7 +1088,7 @@ module InnerConstrainedClosureTests =
             printfn "hello, %A" z
         /// This uses the local type function in another closure that also captures one of the outer arguments
         let h() = g(3,y)
-        // This just returnes the closure to make sure we don't optimize it all away
+        /// This just returnes the closure to make sure we don't optimize it all away
         h
 
 
@@ -1099,7 +1099,7 @@ module InnerConstrainedClosureTests =
             printfn "hello, %A" z
         /// This uses the local type function in another closure that also captures one of the outer arguments
         let h() = g(3)
-        // This just returnes the closure to make sure we don't optimize it all away
+        /// This just returnes the closure to make sure we don't optimize it all away
         h
             
     let Example3 (y:'b,z:'a) = 
@@ -1108,7 +1108,7 @@ module InnerConstrainedClosureTests =
             printfn "hello, %A" z
         /// This uses the local type function in another closure that also captures one of the outer arguments
         let h() = g(3,y)
-        // This just returnes the closure to make sure we don't optimize it all away
+        /// This just returnes the closure to make sure we don't optimize it all away
         h
 
     let Example4 (y:'b,z:'a) = 
@@ -1119,7 +1119,7 @@ module InnerConstrainedClosureTests =
         let h1() = g(3,4,y)
         /// This uses the local type function in another closure that also captures one of the outer arguments
         let h2() = g("3","4",y)
-        // This just returnes the closure to make sure we don't optimize it all away
+        /// This just returnes the closure to make sure we don't optimize it all away
         h1,h2
 
 
@@ -1132,7 +1132,7 @@ module InnerConstrainedClosureTests =
         let h1() = g(3,4,y)
         /// This uses the local type function in another closure that also captures one of the outer arguments
         let h2() = g("3","4",y)
-        // This just returnes the closure to make sure we don't optimize it all away
+        /// This just returnes the closure to make sure we don't optimize it all away
         h1,h2
 
     let Example6 (y:'b,z:'a) = 
