@@ -538,7 +538,7 @@ try {
         
         # Collect output from  background jobs
         Wait-job $bgJob | out-null
-        Receive-Job $bgJob 
+        Receive-Job $bgJob -ErrorAction Stop
     }
 
     if ($testCoreClr) {
@@ -553,7 +553,7 @@ try {
         
         # Collect output from  background jobs
         Wait-job $bgJob | out-null
-        Receive-Job $bgJob      
+        Receive-Job $bgJob -ErrorAction Stop     
     }
 
     if ($testFSharpQA) {
