@@ -221,7 +221,7 @@ stages:
             maxParallel: 2
             matrix:
               regular:
-                _experimental_flag: null
+                _experimental_flag: ''
               experimental_features:
                 _experimental_flag: 1
           steps:
@@ -482,7 +482,7 @@ stages:
             maxParallel: 2
             matrix:
               regular:
-                _experimental_flag: null
+                _experimental_flag: ''
               experimental_features:
                 _experimental_flag: 1
           steps:

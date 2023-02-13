@@ -29,7 +29,13 @@ let getFirstAnonymousType asm =
 /// Gets a type's method
 let getMethod methodName (ty: Type) =
     match ty.GetMethod(methodName) with
-    | null -> failwith $"Error: Type did not contain member %s{methodName}"
+    | null -> failwith $"Error: Type did not contain public method %s{methodName}"
+    | methodInfo -> methodInfo
+
+/// Gets a type's private method
+let getPrivateMethod methodName (ty: Type) =
+    match ty.GetMethod(methodName, BindingFlags.NonPublic ||| BindingFlags.Instance) with
+    | null -> failwith $"Error: Type did not contain private method %s{methodName}"
     | methodInfo -> methodInfo
 
 /// Assert that function f returns Ok for given input

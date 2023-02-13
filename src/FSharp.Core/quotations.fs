@@ -19,7 +19,6 @@ open Microsoft.FSharp.Text.StructuredPrintfImpl.Layout
 open Microsoft.FSharp.Text.StructuredPrintfImpl.TaggedText
 
 #nowarn "52" // The value has been copied to ensure the original is not mutated by this operation
-
 //--------------------------------------------------------------------------
 // RAW quotations - basic data types
 //--------------------------------------------------------------------------
@@ -1099,6 +1098,10 @@ module Patterns =
 
     let mkNewStructTuple (asm, args) =
         let ty = FSharpType.MakeStructTupleType(asm, Array.map typeOf (Array.ofList args))
+        mkFEN (NewTupleOp ty) args
+
+    let mkNewStructTupleNetStandard args =
+        let ty = FSharpType.MakeStructTupleType(Array.map typeOf (Array.ofList args))
         mkFEN (NewTupleOp ty) args
 
     let mkTupleGet (ty, n, x) =
@@ -2585,6 +2588,9 @@ type Expr with
 
     static member NewStructTuple(asm: Assembly, elements) =
         mkNewStructTuple (asm, elements)
+
+    static member NewStructTuple elements =
+        mkNewStructTupleNetStandard elements
 
     static member NewRecord(recordType: Type, elements) =
         checkNonNull "recordType" recordType
