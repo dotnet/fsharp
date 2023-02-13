@@ -229,7 +229,13 @@ type internal FSharpNavigateToSearchService
         | PatternMatchKind.Exact -> FSharpNavigateToMatchKind.Exact
         | PatternMatchKind.Prefix -> FSharpNavigateToMatchKind.Prefix
         | PatternMatchKind.Substring -> FSharpNavigateToMatchKind.Substring
-        | _ -> FSharpNavigateToMatchKind.Regular
+        | PatternMatchKind.CamelCaseExact -> FSharpNavigateToMatchKind.CamelCaseExact
+        | PatternMatchKind.CamelCasePrefix -> FSharpNavigateToMatchKind.CamelCasePrefix
+        | PatternMatchKind.CamelCaseNonContiguousPrefix -> FSharpNavigateToMatchKind.CamelCaseNonContiguousPrefix
+        | PatternMatchKind.CamelCaseSubstring -> FSharpNavigateToMatchKind.CamelCaseSubstring
+        | PatternMatchKind.CamelCaseNonContiguousSubstring -> FSharpNavigateToMatchKind.CamelCaseNonContiguousSubstring
+        | PatternMatchKind.Fuzzy -> FSharpNavigateToMatchKind.Fuzzy
+        | _ -> FSharpNavigateToMatchKind.Fuzzy
 
     interface IFSharpNavigateToSearchService with
         member _.SearchProjectAsync(project, _priorityDocuments, searchPattern, kinds, cancellationToken) : Task<ImmutableArray<FSharpNavigateToSearchResult>> =
