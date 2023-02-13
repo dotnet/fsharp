@@ -254,13 +254,15 @@ type internal FSharpNavigateToSearchService
                         |> Array.filter (fun x -> x.Name.Length = 1 && String.Equals(x.Name, searchPattern, StringComparison.InvariantCultureIgnoreCase))
                     else
                         [| yield! items |> Array.map (fun items -> items.Find(searchPattern)) |> Array.concat
-                           let patternMatcherOptions = PatternMatcherCreationOptions(cultureInfo = CultureInfo.CurrentUICulture, flags = PatternMatcherCreationFlags.AllowFuzzyMatching)
+                           let patternMatcherOptions = PatternMatcherCreationOptions(
+                               cultureInfo = CultureInfo.CurrentUICulture,
+                               flags = PatternMatcherCreationFlags.AllowFuzzyMatching
+                           )
                            let patternMatcher = patternMatcherFactory.CreatePatternMatcher(searchPattern, patternMatcherOptions)
                            for item in items |> Array.collect (fun item -> item.AllItems) do
                                 match patternMatcher.TryMatch(item.LogicalName) |> Option.ofNullable with
                                 | Some pm -> yield NavigateToSearchResult(item, patternMatchKindToNavigateToMatchKind pm.Kind) :> FSharpNavigateToSearchResult
-                                | _ -> ()
-                        |]
+                                | _ -> () |]
 
                 return items |> Array.distinctBy (fun x -> x.NavigableItem.Document.Id, x.NavigableItem.SourceSpan)
             } 
