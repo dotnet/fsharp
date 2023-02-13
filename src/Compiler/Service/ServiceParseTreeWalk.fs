@@ -550,11 +550,11 @@ module SyntaxTraversal =
                         | false, SynExpr.Ident ident -> visitor.VisitRecordField(path, None, Some(SynLongIdent([ ident ], [], [ None ])))
                         | false, SynExpr.LongIdent (false, lidwd, _, _) -> visitor.VisitRecordField(path, None, Some lidwd)
 
-                        | false, SynExpr.DiscardAfterMissingQualificationAfterDot(synExpr, dotRange, _) ->
+                        | false, SynExpr.DiscardAfterMissingQualificationAfterDot (synExpr, dotRange, _) ->
                             match synExpr with
                             | SynExpr.Ident ident ->
                                 visitor.VisitRecordField(path, None, Some(SynLongIdent([ ident ], [ dotRange ], [ None ])))
-                            | SynExpr.LongIdent(false, SynLongIdent(idents, dotRanges, trivia), _, _) ->
+                            | SynExpr.LongIdent (false, SynLongIdent (idents, dotRanges, trivia), _, _) ->
                                 visitor.VisitRecordField(path, None, Some(SynLongIdent(idents, dotRanges @ [ dotRange ], trivia)))
                             | _ -> None
 
