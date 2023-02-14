@@ -557,7 +557,7 @@ try {
         
         # Collect output from  background jobs
         Wait-job $bgJob | out-null
-        Receive-Job $bgJob      
+        Receive-Job $bgJob    
     }
 
     if ($testFSharpQA) {
