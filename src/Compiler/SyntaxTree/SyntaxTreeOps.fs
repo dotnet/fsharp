@@ -73,6 +73,15 @@ let (|LongOrSingleIdent|_|) inp =
     match inp with
     | SynExpr.LongIdent (isOpt, lidwd, altId, _m) -> Some(isOpt, lidwd, altId, lidwd.RangeWithoutAnyExtraDot)
     | SynExpr.Ident id -> Some(false, SynLongIdent([ id ], [], [ None ]), None, id.idRange)
+
+    | SynExpr.DiscardAfterMissingQualificationAfterDot (synExpr, dotRange, _) ->
+        match synExpr with
+        | SynExpr.Ident ident ->
+            Some(false, SynLongIdent ([ ident ], [ dotRange ], [ None ]), None, ident.idRange)
+        | SynExpr.LongIdent (false, SynLongIdent (idents, dotRanges, trivia), _, range) ->
+            Some(false, SynLongIdent(idents, dotRanges @ [ dotRange ], trivia), None, range)
+        | _ -> None
+
     | _ -> None
 
 let (|SingleIdent|_|) inp =
