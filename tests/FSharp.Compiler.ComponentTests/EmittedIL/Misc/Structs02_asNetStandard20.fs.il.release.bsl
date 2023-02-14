@@ -4,10 +4,10 @@
 
 
 // Metadata version: v4.0.30319
-.assembly extern System.Runtime
+.assembly extern mscorlib
 {
-  .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:1:2:0
+  .publickeytoken = (B7 7A 5C 56 19 34 E0 89 )                         // .z\V.4..
+  .ver 4:0:0:0
 }
 .assembly extern netstandard
 {
@@ -18,6 +18,11 @@
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
   .ver 7:0:0:0
+}
+.assembly extern System.Collections.Immutable
+{
+  .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
+  .ver 6:0:0:0
 }
 .assembly Structs02_asNetStandard20
 {
@@ -42,19 +47,19 @@
   // WARNING: managed resource file FSharpOptimizationData.Structs02_asNetStandard20 created
 }
 .module Structs02_asNetStandard20.dll
-// MVID: {63EADE74-4477-7170-A745-038374DEEA63}
+// MVID: {63EB2A5A-37AB-0DD0-A745-03835A2AEB63}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x0000025E8FF30000
+// Image base: 0x0000020A45230000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
 
 .class public abstract auto ansi sealed Experiment.Test
-       extends [System.Runtime]System.Object
+       extends [mscorlib]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
   .class sequential ansi serializable sealed nested public Repro
@@ -71,6 +76,7 @@
     .method public hidebysig specialname 
             instance int32  get_hash() cil managed
     {
+      .custom instance void [System.Collections.Immutable]System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [netstandard]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [netstandard]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
@@ -348,7 +354,7 @@
 } // end of class Experiment.Test
 
 .class private abstract auto ansi sealed '<StartupCode$Structs02_asNetStandard20>.$Experiment'.Test
-       extends [System.Runtime]System.Object
+       extends [mscorlib]System.Object
 {
 } // end of class '<StartupCode$Structs02_asNetStandard20>.$Experiment'.Test
 
@@ -356,4 +362,4 @@
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
-// WARNING: Created Win32 resource file C:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Release\net7.0\tests\EmittedIL\Misc\Structs02_asNetStandard20_fs\Structs02_asNetStandard20.res
+// WARNING: Created Win32 resource file C:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Release\net472\tests\EmittedIL\Misc\Structs02_asNetStandard20_fs\Structs02_asNetStandard20.res

@@ -331,7 +331,7 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
     let rec processArg args =
         match args with
         | [] -> ()
-        | opt :: _ when isNull(opt) -> ()
+        | opt :: _ when isNull (opt) -> ()
         | opt: string :: t when opt.StartsWithOrdinal("@") ->
             let responseFileOptions =
                 let fullpath =
