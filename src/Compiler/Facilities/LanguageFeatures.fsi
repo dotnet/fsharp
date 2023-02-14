@@ -54,6 +54,7 @@ type LanguageFeature =
     | TryWithInSeqExpression
     | WarningWhenCopyAndUpdateRecordChangesAllFields
     | StaticMembersInInterfaces
+    | NonInlineLiteralsAsPrintfFormat
 
 /// LanguageVersion management
 type LanguageVersion =
