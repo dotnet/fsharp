@@ -331,25 +331,26 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
     let rec processArg args =
         match args with
         | [] -> ()
-        | rsp: string :: t when rsp.StartsWithOrdinal("@") ->
+        | opt :: _ when isNull(opt) -> ()
+        | opt: string :: t when opt.StartsWithOrdinal("@") ->
             let responseFileOptions =
                 let fullpath =
                     try
-                        Some(rsp.TrimStart('@') |> FileSystem.GetFullPathShim)
+                        Some(opt.TrimStart('@') |> FileSystem.GetFullPathShim)
                     with _ ->
                         None
 
                 match fullpath with
                 | None ->
-                    errorR (Error(FSComp.SR.optsResponseFileNameInvalid rsp, rangeCmdArgs))
+                    errorR (Error(FSComp.SR.optsResponseFileNameInvalid opt, rangeCmdArgs))
                     []
                 | Some path when not (FileSystem.FileExistsShim path) ->
-                    errorR (Error(FSComp.SR.optsResponseFileNotFound (rsp, path), rangeCmdArgs))
+                    errorR (Error(FSComp.SR.optsResponseFileNotFound (opt, path), rangeCmdArgs))
                     []
                 | Some path ->
                     match ResponseFile.parseFile path with
                     | Choice2Of2 _ ->
-                        errorR (Error(FSComp.SR.optsInvalidResponseFile (rsp, path), rangeCmdArgs))
+                        errorR (Error(FSComp.SR.optsInvalidResponseFile (opt, path), rangeCmdArgs))
                         []
                     | Choice1Of2 rspData ->
                         let onlyOptions l =

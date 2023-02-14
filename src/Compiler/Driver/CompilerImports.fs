@@ -1176,6 +1176,7 @@ and [<Sealed>] TcImports
             | None -> false
         | None -> false
 
+
     member internal _.Base =
         CheckDisposed()
         importsBase
