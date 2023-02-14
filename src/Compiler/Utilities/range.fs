@@ -369,9 +369,6 @@ type Range(code1: int64, code2: int64) =
             with e ->
                 e.ToString()
 
-    member m.ToShortString() =
-        sprintf "(%d,%d--%d,%d)" m.StartLine m.StartColumn m.EndLine m.EndColumn
-
     member _.Equals(m2: range) =
         let code2 = code2 &&& ~~~(debugPointKindMask ||| isSyntheticMask)
         let rcode2 = m2.Code2 &&& ~~~(debugPointKindMask ||| isSyntheticMask)
