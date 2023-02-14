@@ -76,10 +76,9 @@ let (|LongOrSingleIdent|_|) inp =
 
     | SynExpr.DiscardAfterMissingQualificationAfterDot (synExpr, dotRange, _) ->
         match synExpr with
-        | SynExpr.Ident ident ->
-            Some(false, SynLongIdent ([ ident ], [ dotRange ], [ None ]), None, ident.idRange)
+        | SynExpr.Ident ident -> Some(false, SynLongIdent([ ident ], [ dotRange ], [ None ]), None, ident.idRange)
         | SynExpr.LongIdent (false, SynLongIdent (idents, dotRanges, trivia), _, range) ->
-            Some(false, SynLongIdent (idents, dotRanges @ [ dotRange ], trivia), None, range)
+            Some(false, SynLongIdent(idents, dotRanges @ [ dotRange ], trivia), None, range)
         | _ -> None
 
     | _ -> None
