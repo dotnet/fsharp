@@ -547,7 +547,7 @@ module SyntaxTraversal =
 
                     let ok =
                         match isPartOfArrayOrList, synExpr with
-                        | false, LongOrSingleIdent(_, lid, _, _) -> visitor.VisitRecordField(path, None, Some lid)
+                        | false, LongOrSingleIdent (_, lid, _, _) -> visitor.VisitRecordField(path, None, Some lid)
                         | _ -> None
 
                     if ok.IsSome then ok else traverseSynExpr synExpr
