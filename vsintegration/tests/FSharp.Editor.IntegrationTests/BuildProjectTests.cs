@@ -29,6 +29,7 @@ let answer = 42
 
         await solutionExplorer.CreateSolutionAsync(nameof(BuildProjectTests), token);
         await solutionExplorer.AddProjectAsync("Library", template, token);
+        await solutionExplorer.RestoreNuGetPackagesAsync(token);
         await editor.SetTextAsync(code, token);
 
         var actualBuildSummary = await solutionExplorer.BuildSolutionAsync(token);
@@ -55,6 +56,7 @@ let answer =
 
         await solutionExplorer.CreateSolutionAsync(nameof(BuildProjectTests), token);
         await solutionExplorer.AddProjectAsync("Library", template, token);
+        await solutionExplorer.RestoreNuGetPackagesAsync(token);
         await editor.SetTextAsync(code, token);
 
         var actualBuildSummary = await solutionExplorer.BuildSolutionAsync(token);
