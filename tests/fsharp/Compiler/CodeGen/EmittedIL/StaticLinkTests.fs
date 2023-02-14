@@ -5,6 +5,7 @@ namespace FSharp.Compiler.UnitTests.CodeGen.EmittedIL
 open System.IO
 open System.Reflection
 open FSharp.Test
+open FSharp.Test.Utilities
 open NUnit.Framework
 
 [<TestFixture>]
@@ -222,7 +223,7 @@ if not test3 then
 if test1 && test2 && test3 then ()
 else failwith "Test Failed"
                 """
-            Compilation.Create(source, Exe, [|"--optimize+"|], [CompilationReference.CreateFSharp(module1, staticLink=true)])
+            Compilation.Create(source, Exe, [|"--optimize+"|], TargetFramework.Current, [CompilationReference.CreateFSharp(module1, staticLink=true)])
 
         CompilerAssert.Execute(module2, ignoreWarnings=true)
 

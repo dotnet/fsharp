@@ -1163,7 +1163,7 @@ and [<Sealed>] TcImports
         | ResolvedCcu ccu -> Some ccu
         | UnresolvedCcu _ -> None
 
-    static let ccuHasType (ccu: CcuThunk) (nsname: string list) (tname: string) =
+    static let ccuHasType (ccu: CcuThunk) (nsname: string list) (tname: string) (publicOnly: bool) =
         let matchNameSpace (entityOpt: Entity option) n =
             match entityOpt with
             | None -> None
@@ -1172,7 +1172,14 @@ and [<Sealed>] TcImports
         match (Some ccu.Contents, nsname) ||> List.fold matchNameSpace with
         | Some ns ->
             match Map.tryFind tname ns.ModuleOrNamespaceType.TypesByMangledName with
-            | Some _ -> true
+            | Some e ->
+                if publicOnly then
+                    match e.TypeReprInfo with
+                    | TILObjectRepr data ->
+                        let (TILObjectReprData(_, _, tyDef)) = data
+                        not (tyDef.Access = ILTypeDefAccess.Public)
+                    | _ -> true
+                else  true
             | None -> false
         | None -> false
 
@@ -2461,8 +2468,8 @@ and [<Sealed>] TcImports
                         ccu
                 |]
 
-            let tryFindSysTypeCcu path typeName =
-                sysCcus |> Array.tryFind (fun ccu -> ccuHasType ccu path typeName)
+            let tryFindSysTypeCcu path typeName publicOnly =
+                sysCcus |> Array.tryFind (fun ccu -> ccuHasType ccu path typeName publicOnly)
 
             let ilGlobals =
                 mkILGlobals (primaryScopeRef, equivPrimaryAssemblyRefs, fsharpCoreAssemblyScopeRef)
