@@ -87,19 +87,27 @@ module Utilities =
     let inline getTestsDirectory src dir = src ++ dir
 
     module private TestReferences =
+        let testDirectory = lazy ( 
+            let path = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())
+            Directory.CreateDirectory(path) |> ignore
+            path)
+
         let private writeToTempDirectory name (image: byte array) =
-            let path = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString(), $"{name}.dll")
+            let path = Path.Combine(testDirectory.Force(), $"{name}.dll")
             File.WriteAllBytes(path, image)
             path
 
         [<RequireQualifiedAccess>]
         module NetStandard20 =
+            let private System_Collections_Immutable = lazy getResourceBlob  "System.Collections.Immutable.dll"
+
             module Files =
                 let netStandard = lazy writeToTempDirectory "netstandard" TestResources.NetFX.netstandard20.netstandard
                 let mscorlib = lazy writeToTempDirectory "mscorlib" TestResources.NetFX.netstandard20.mscorlib
                 let systemRuntime = lazy writeToTempDirectory "System.Runtime" TestResources.NetFX.netstandard20.System_Runtime
                 let systemCore =  lazy writeToTempDirectory "System.Core" TestResources.NetFX.netstandard20.System_Core
                 let systemDynamicRuntime = lazy writeToTempDirectory "System.Core" TestResources.NetFX.netstandard20.System_Dynamic_Runtime
+                let systemCollectionsImmutable = lazy writeToTempDirectory "System.Collections.Immutable" (System_Collections_Immutable.Force())
 
             module References =
                 let netStandardRef = lazy AssemblyMetadata.CreateFromImage(TestResources.NetFX.netstandard20.netstandard).GetReference(display = "netstandard.dll (netstandard 2.0 ref)")
@@ -107,6 +115,7 @@ module Utilities =
                 let systemRuntimeRef = lazy AssemblyMetadata.CreateFromImage(TestResources.NetFX.netstandard20.System_Runtime).GetReference(display = "System.Runtime.dll (netstandard 2.0 ref)")
                 let systemCoreRef = lazy AssemblyMetadata.CreateFromImage(TestResources.NetFX.netstandard20.System_Core).GetReference(display = "System.Core.dll (netstandard 2.0 ref)")
                 let systemDynamicRuntimeRef = lazy AssemblyMetadata.CreateFromImage(TestResources.NetFX.netstandard20.System_Dynamic_Runtime).GetReference(display = "System.Dynamic.Runtime.dll (netstandard 2.0 ref)")
+                let systemCollectionsImmutableRef = lazy AssemblyMetadata.CreateFromImage(System_Collections_Immutable.Force()).GetReference(display = "System.Collections.Immutable.dll (netstandard 2.0 ref)")
 
         [<RequireQualifiedAccess>]
         module NetCoreApp31 =
@@ -245,7 +254,8 @@ let main argv = 0"""
                 NetStandard20.Files.mscorlib.Value,
                 NetStandard20.Files.systemRuntime.Value,
                 NetStandard20.Files.systemCore.Value,
-                NetStandard20.Files.systemDynamicRuntime.Value)
+                NetStandard20.Files.systemDynamicRuntime.Value,
+                NetStandard20.Files.systemCollectionsImmutable.Value)
 
         let private netStandard20References =
             lazy ImmutableArray.Create(
@@ -253,7 +263,8 @@ let main argv = 0"""
                 NetStandard20.References.mscorlibRef.Value, 
                 NetStandard20.References.systemRuntimeRef.Value, 
                 NetStandard20.References.systemCoreRef.Value, 
-                NetStandard20.References.systemDynamicRuntimeRef.Value)
+                NetStandard20.References.systemDynamicRuntimeRef.Value,
+                NetStandard20.References.systemCollectionsImmutableRef.Value)
 
         let private netCoreApp31References =
             lazy ImmutableArray.Create(
@@ -269,9 +280,7 @@ let main argv = 0"""
 
         let currentReferencesAsPEs =
             getNetCoreAppReferences
-            |> Seq.map (fun x ->
-                PortableExecutableReference.CreateFromFile(x)
-            )
+            |> Seq.map (fun x -> PortableExecutableReference.CreateFromFile(x))
             |> ImmutableArray.CreateRange
 
         let getReferences tf =
