@@ -88,6 +88,9 @@
     <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\net6.0\netstandard.dll" LogicalName="net6.01.netstandard.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
+    <EmbeddedResource Include="$(PkgSystem_Collections_Immutable)\lib\netstandard2.0\System.Collections.Immutable.dll" LogicalName="netstandard2.0.System.Collections.Immutable.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
   </ItemGroup>
 
 </Project>
