@@ -9,6 +9,13 @@ open System.Diagnostics
 let isSignatureFile (filePath:string) = 
     String.Equals (Path.GetExtension filePath, ".fsi", StringComparison.OrdinalIgnoreCase)
 
+/// Returns the corresponding signature file path for given implementation file path or vice versa
+let getOtherFile (filePath: string) =
+    if isSignatureFile filePath then
+        Path.ChangeExtension(filePath, ".fs")
+    else
+        Path.ChangeExtension(filePath, ".fsi")
+
 /// Checks if the file paht ends with '.fsx' or '.fsscript'
 let isScriptFile (filePath:string) = 
     let ext = Path.GetExtension filePath 

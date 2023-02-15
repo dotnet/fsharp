@@ -258,23 +258,35 @@ type FSharpSymbolUse(denv: DisplayEnv, symbol: FSharpSymbol, inst: TyparInstanti
 
     member _.Range = range
 
+    member this.IsPrivateToFileAndSignatureFile =
+
+        let couldBeParameter, declarationLocation =
+            match this.Symbol with
+            | :? FSharpParameter as p ->
+                true, Some p.DeclarationLocation
+            | :? FSharpMemberOrFunctionOrValue as m when not m.IsModuleValueOrMember ->
+                true, Some m.DeclarationLocation
+            | _ ->
+                false, None
+
+        let thisIsSignature = SourceFileImpl.IsSignatureFile this.Range.FileName
+
+        let signatureLocation =
+            match this.Symbol.Item with
+            | Item.Value v -> v.Deref.ArgReprInfoForDisplay
+            | _ -> None
+            |> Option.bind (fun a -> a.OtherRange)
+
+        couldBeParameter && (thisIsSignature || (signatureLocation.IsSome && signatureLocation <> declarationLocation))
+
     member this.IsPrivateToFile =
+
         let isPrivate =
             match this.Symbol with
-            | :? FSharpMemberOrFunctionOrValue as m when not m.IsModuleValueOrMember ->
-
-                // In case it's a parameter and it's in a signature file, then it's not private
-
-                // TODO: Can it be anything else than a parameter?
-
-                let signatureLocation =
-                    match m.Item with
-                    | Item.Value v -> v.Deref.ArgReprInfoForDisplay
-                    | _ -> None
-                    |> Option.bind (fun a -> a.OtherRange)
-
-                signatureLocation.IsNone || signatureLocation = Some(m.DeclarationLocation)
-
+            | _ when this.IsPrivateToFileAndSignatureFile -> false
+            | :? FSharpMemberOrFunctionOrValue as m when not m.IsModuleValueOrMember -> 
+                // local binding or parameter
+                true
             | :? FSharpMemberOrFunctionOrValue as m ->
                 let fileSignatureLocation =
                     m.DeclaringEntity |> Option.bind (fun e -> e.SignatureLocation)
@@ -286,6 +298,7 @@ type FSharpSymbolUse(denv: DisplayEnv, symbol: FSharpSymbol, inst: TyparInstanti
 
                 fileHasSignatureFile && not m.HasSignatureFile || m.Accessibility.IsPrivate
             | :? FSharpEntity as m -> m.Accessibility.IsPrivate
+            | :? FSharpParameter -> true
             | :? FSharpGenericParameter -> true
             | :? FSharpUnionCase as m -> m.Accessibility.IsPrivate
             | :? FSharpField as m -> m.Accessibility.IsPrivate

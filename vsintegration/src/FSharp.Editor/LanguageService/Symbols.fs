@@ -8,8 +8,9 @@ open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Symbols
 
 [<RequireQualifiedAccess; NoComparison>] 
-type SymbolDeclarationLocation = 
+type SymbolScope =
     | CurrentDocument
+    | SignatureAndImplementation
     | Projects of Project list * isLocalForProject: bool
 
 [<NoComparison>]
@@ -31,9 +32,11 @@ type FSharpSymbol with
 
 
 type FSharpSymbolUse with
-    member this.GetDeclarationLocation (currentDocument: Document) : SymbolDeclarationLocation option =
+    member this.GetDeclarationLocation (currentDocument: Document) : SymbolScope option =
         if this.IsPrivateToFile then
-            Some SymbolDeclarationLocation.CurrentDocument
+            Some SymbolScope.CurrentDocument
+        elif this.IsPrivateToFileAndSignatureFile then
+            Some SymbolScope.SignatureAndImplementation
         else
             let isSymbolLocalForProject = this.Symbol.IsInternalToProject
                 
@@ -47,12 +50,12 @@ type FSharpSymbolUse with
                 let filePath = Path.GetFullPathSafe loc.FileName
                 let isScript = isScriptFile filePath 
                 if isScript && filePath = currentDocument.FilePath then 
-                    Some SymbolDeclarationLocation.CurrentDocument
+                    Some SymbolScope.CurrentDocument
                 elif isScript then
                     // The standalone script might include other files via '#load'
                     // These files appear in project options and the standalone file 
                     // should be treated as an individual project
-                    Some (SymbolDeclarationLocation.Projects ([currentDocument.Project], isSymbolLocalForProject))
+                    Some (SymbolScope.Projects ([currentDocument.Project], isSymbolLocalForProject))
                 else
                     let projects =
                         currentDocument.Project.Solution.GetDocumentIdsWithFilePath(filePath)
@@ -62,7 +65,7 @@ type FSharpSymbolUse with
                         |> Seq.toList
                     match projects with
                     | [] -> None
-                    | projects -> Some (SymbolDeclarationLocation.Projects (projects, isSymbolLocalForProject))
+                    | projects -> Some (SymbolScope.Projects (projects, isSymbolLocalForProject))
             | None -> None
 
 type FSharpEntity with

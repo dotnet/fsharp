@@ -101,7 +101,7 @@ type internal FSharpFindUsagesService
                                 try do! context.OnReferenceFoundAsync(referenceItem) |> Async.AwaitTask with | _ -> () }
             
             match symbolUse.GetDeclarationLocation document with
-            | Some SymbolDeclarationLocation.CurrentDocument ->
+            | Some SymbolScope.CurrentDocument ->
                 let symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol)
                 for symbolUse in symbolUses do
                     match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range) with
@@ -112,12 +112,12 @@ type internal FSharpFindUsagesService
             | scope ->
                 let projectsToCheck =
                     match scope with
-                    | Some (SymbolDeclarationLocation.Projects (declProjects, false)) ->
+                    | Some (SymbolScope.Projects (declProjects, false)) ->
                         [ for declProject in declProjects do
                             yield declProject
                             yield! declProject.GetDependentProjects() ]
                         |> List.distinct
-                    | Some (SymbolDeclarationLocation.Projects (declProjects, true)) -> declProjects
+                    | Some (SymbolScope.Projects (declProjects, true)) -> declProjects
                     // The symbol is declared in .NET framework, an external assembly or in a C# project within the solution.
                     // In order to find all its usages we have to check all F# projects.
                     | _ -> Seq.toList document.Project.Solution.Projects

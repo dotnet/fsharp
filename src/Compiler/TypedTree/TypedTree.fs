@@ -1891,7 +1891,7 @@ type ExceptionInfo =
 
     override x.ToString() = sprintf "%+A" x 
 
-/// Represents the contents of of a module of namespace
+/// Represents the contents of a module or namespace
 [<Sealed; StructuredFormatDisplay("{DebugText}")>]
 type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, entities: QueueList<Entity>) = 
 
@@ -2622,8 +2622,9 @@ type Val =
         | _ -> x.val_range
 
     /// Range of the definition (signature) of the value, used by Visual Studio 
-    member x.SigRange = 
+    member x.SigRange =
         match x.val_opt_data with
+        | Some { arg_repr_info_for_display = Some { OtherRange = Some m } } -> m
         | Some { val_other_range = Some(m, false) } -> m
         | _ -> x.val_range
 

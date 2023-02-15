@@ -65,7 +65,7 @@ type internal InlineRenameInfo
         triggerSpan: TextSpan, 
         lexerSymbol: LexerSymbol,
         symbolUse: FSharpSymbolUse,
-        declLoc: SymbolDeclarationLocation,
+        declLoc: SymbolScope,
         checkFileResults: FSharpCheckFileResults
     ) =
 
@@ -77,7 +77,7 @@ type internal InlineRenameInfo
         | _ -> document.GetTextAsync(cancellationToken).Result
 
     let symbolUses ct =
-        SymbolHelpers.getSymbolUsesInSolution(symbolUse.Symbol, declLoc, checkFileResults, document.Project.Solution, ct)
+        SymbolHelpers.getSymbolUsesInSolution(symbolUse.Symbol, declLoc, checkFileResults, document, ct)
 
     override _.CanRename = true
     override _.LocalizedErrorMessage = null

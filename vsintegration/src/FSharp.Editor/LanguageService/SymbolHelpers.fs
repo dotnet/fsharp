@@ -42,29 +42,47 @@ module internal SymbolHelpers =
             Task.Run(fun () -> project.FindFSharpReferencesAsync(symbol, onFound, "getSymbolUsesInProjects", ct)))
         |> Task.WhenAll
 
-    let getSymbolUsesInSolution (symbol: FSharpSymbol, declLoc: SymbolDeclarationLocation, checkFileResults: FSharpCheckFileResults, solution: Solution, ct: CancellationToken) =
-        async {
-            let toDict (symbolUseRanges: range seq) =
-                let groups =
-                    symbolUseRanges
-                     |> Seq.collect (fun symbolUse -> 
-                          solution.GetDocumentIdsWithFilePath(symbolUse.FileName) |> Seq.map (fun id -> id, symbolUse))
-                     |> Seq.groupBy fst
-                groups.ToImmutableDictionary(
-                    (fun (id, _) -> id), 
-                    fun (_, xs) -> xs |> Seq.map snd |> Seq.toArray)
+    let getSymbolUsesInSolution (symbol: FSharpSymbol, declLoc: SymbolScope, checkFileResults: FSharpCheckFileResults, document: Document, ct: CancellationToken) =
+        let solution = document.Project.Solution
+        let toDict (symbolUseRanges: range seq) =
+            let groups =
+                symbolUseRanges
+                 |> Seq.collect (fun symbolUse -> 
+                      solution.GetDocumentIdsWithFilePath(symbolUse.FileName) |> Seq.map (fun id -> id, symbolUse))
+                 |> Seq.groupBy fst
+            groups.ToImmutableDictionary(
+                (fun (id, _) -> id), 
+                fun (_, xs) -> xs |> Seq.map snd |> Seq.toArray)
 
+        async {
             match declLoc with
-            | SymbolDeclarationLocation.CurrentDocument ->
-                let! ct = Async.CancellationToken
+            | SymbolScope.CurrentDocument ->
                 let symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbol, ct)
                 return toDict (symbolUses |> Seq.map (fun symbolUse -> symbolUse.Range))
-            | SymbolDeclarationLocation.Projects (projects, isInternalToProject) -> 
+
+            | SymbolScope.SignatureAndImplementation ->
+                let otherFile = getOtherFile document.FilePath
+                let! otherFileCheckResults =
+                    match solution.TryGetDocumentFromPath otherFile with
+                    | Some doc ->
+                        async {
+                            let! _, checkFileResults = doc.GetFSharpParseAndCheckResultsAsync("getSymbolUsesInSolution")
+                            return [checkFileResults]
+                        }
+                    | None -> async.Return []
+
+                return
+                    checkFileResults :: otherFileCheckResults
+                    |> Seq.collect (fun checkFileResults -> checkFileResults.GetUsesOfSymbolInFile(symbol, ct))
+                    |> Seq.map (fun symbolUse -> symbolUse.Range)
+                    |> toDict
+
+            | SymbolScope.Projects (projects, isInternalToProject) ->
                 let symbolUseRanges = ConcurrentBag()
-                    
+
                 let projects =
                     if isInternalToProject then projects
-                    else 
+                    else
                         [ for project in projects do
                             yield project
                             yield! project.GetDependentProjects() ]
@@ -75,7 +93,7 @@ module internal SymbolHelpers =
                         async { symbolUseRanges.Add symbolUseRange }
 
                 do! getSymbolUsesInProjects (symbol, projects, onFound, ct) |> Async.AwaitTask
-                    
+
                 // Distinct these down because each TFM will produce a new 'project'.
                 // Unless guarded by a #if define, symbols with the same range will be added N times
                 let symbolUseRanges = symbolUseRanges |> Seq.distinct
@@ -116,7 +134,7 @@ module internal SymbolHelpers =
                 Func<_,_>(fun (cancellationToken: CancellationToken) ->
                     async {
                         let! symbolUsesByDocumentId = 
-                            getSymbolUsesInSolution(symbolUse.Symbol, declLoc, checkFileResults, document.Project.Solution, cancellationToken)
+                            getSymbolUsesInSolution(symbolUse.Symbol, declLoc, checkFileResults, document, cancellationToken)
                         
                         let mutable solution = document.Project.Solution
                             
