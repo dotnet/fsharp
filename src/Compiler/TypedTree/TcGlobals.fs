@@ -103,24 +103,6 @@ let mk_MFCompilerServices_tcref ccu n = mkNonLocalTyconRef2 ccu CompilerServices
 let mk_MFRuntimeHelpers_tcref   ccu n = mkNonLocalTyconRef2 ccu RuntimeHelpersPath n
 let mk_MFControl_tcref          ccu n = mkNonLocalTyconRef2 ccu ControlPathArray n
 
-let mkLocalPrivateAttributeWithDefaultConstructor (ilg: ILGlobals, name: string) =
-    let ctor = mkILNonGenericEmptyCtor (ilg.typ_Attribute, None, None)
-
-    mkILGenericClass (
-        name,
-        ILTypeDefAccess.Private,
-        ILGenericParameterDefs.Empty,
-        ilg.typ_Attribute,
-        ILTypes.Empty,
-        mkILMethods [ ctor ],
-        emptyILFields,
-        emptyILTypeDefs,
-        emptyILProperties,
-        emptyILEvents,
-        emptyILCustomAttrs,
-        ILTypeInit.BeforeField
-    )
-
 type
     [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     BuiltinAttribInfo =
@@ -901,12 +883,6 @@ type TcGlobals(
   let mkCompilerGeneratedAttribute () = mkILCustomAttribute (tref_CompilerGeneratedAttribute, [], [], [])
   let compilerGlobalState = CompilerGlobalState()
 
-  // Todo: Review mkILCustomAttribute throughout fsc/fsi/ fcs to ensure that we use embedable attributes where appropriate
-  let addEmbeddableCustomAttribute (tref: ILTypeRef, argTys, argvs, propvs) =
-    if tref.Scope = ILScopeRef.Local && not(embeddedILTypeDefs.ContainsKey(tref.Name)) then
-        embeddedILTypeDefs.TryAdd(tref.Name, mkLocalPrivateAttributeWithDefaultConstructor (ilg, tref.Name)) |> ignore
-    mkILCustomAttribute (tref, argTys, argvs, propvs)
-
   // Requests attributes to be added to compiler generated methods.
   let addGeneratedAttrs (attrs: ILAttributes) =
     let attribs =
@@ -948,6 +924,33 @@ type TcGlobals(
   let addFieldNeverAttrs (fdef:ILFieldDef) = fdef.With(customAttrs = addNeverAttrs fdef.CustomAttrs)
 
   let mkDebuggerTypeProxyAttribute (ty : ILType) = mkILCustomAttribute (findSysILTypeRef tname_DebuggerTypeProxyAttribute,  [ilg.typ_Type], [ILAttribElem.TypeRef (Some ty.TypeRef)], [])
+
+  // Todo: Review mkILCustomAttribute throughout fsc/fsi/ fcs to ensure that we use embedable attributes where appropriate
+  let mkLocalPrivateAttributeWithDefaultConstructor (ilg: ILGlobals, name: string) =
+
+    let ctor = addMethodGeneratedAttrs (mkILNonGenericEmptyCtor (ilg.typ_Attribute, None, None))
+
+    mkILGenericClass (
+        name,
+        ILTypeDefAccess.Private,
+        ILGenericParameterDefs.Empty,
+        ilg.typ_Attribute,
+        ILTypes.Empty,
+        mkILMethods [ ctor ],
+        emptyILFields,
+        emptyILTypeDefs,
+        emptyILProperties,
+        emptyILEvents,
+        emptyILCustomAttrs,
+        ILTypeInit.BeforeField
+    )
+ 
+  let addEmbeddableCustomAttribute (tref: ILTypeRef, argTys, argvs, propvs) =
+
+    if tref.Scope = ILScopeRef.Local && not(embeddedILTypeDefs.ContainsKey(tref.Name)) then
+        embeddedILTypeDefs.TryAdd(tref.Name, mkLocalPrivateAttributeWithDefaultConstructor (ilg, tref.Name)) |> ignore
+
+    mkILCustomAttribute (tref, argTys, argvs, propvs)
 
   let betterTyconEntries =
      [| "Int32"    , v_int_tcr
@@ -1816,9 +1819,6 @@ type TcGlobals(
 
   /// Indicates if we can use System.Array.Empty when emitting IL for empty array literals
   member val isArrayEmptyAvailable = v_Array_tcref.ILTyconRawMetadata.Methods.FindByName "Empty" |> List.isEmpty |> not
-
-  /// Indicates if we can emit the System.Runtime.CompilerServices.IsReadOnlyAttribute
-  member val isSystem_Runtime_CompilerServices_IsReadOnlyAttributeAvailable = tryFindSysTypeCcu sysCompilerServices "IsReadOnlyAttribute" |> Option.isSome
 
   member _.FindSysTyconRef path nm = findSysTyconRef path nm
 
