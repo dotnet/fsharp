@@ -4935,9 +4935,9 @@ and ConvSynPatToSynExpr synPat =
     | SynPat.LongIdent (longDotId=SynLongIdent(longId, dotms, trivia) as synLongId; argPats=args; accessibility=None; range=m) ->
         let args = match args with SynArgPats.Pats args -> args | _ -> failwith "impossible: active patterns can be used only with SynConstructorArgs.Pats"
         let e =
-            if dotms.Length = longId.Length then
+            if not dotms.IsEmpty && dotms.Length = longId.Length then
                 let e = SynExpr.LongIdent (false, SynLongIdent(longId, List.truncate (dotms.Length - 1) dotms, trivia), None, m)
-                SynExpr.DiscardAfterMissingQualificationAfterDot (e, unionRanges e.Range (List.last dotms))
+                SynExpr.DiscardAfterMissingQualificationAfterDot (e, List.last dotms, unionRanges e.Range (List.last dotms))
             else SynExpr.LongIdent (false, synLongId, None, m)
         List.fold (fun f x -> mkSynApp1 f (ConvSynPatToSynExpr x) m) e args
 
@@ -5602,7 +5602,7 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         //SolveTypeAsError cenv env.DisplayEnv m overallTy
         mkDefault(m, overallTy.Commit), tpenv
 
-    | SynExpr.DiscardAfterMissingQualificationAfterDot (expr1, m) ->
+    | SynExpr.DiscardAfterMissingQualificationAfterDot (expr1, _, m) ->
         let _, _, tpenv = suppressErrorReporting (fun () -> TcExprOfUnknownTypeThen cenv env tpenv expr1 [DelayedDot])
         mkDefault(m, overallTy.Commit), tpenv
 

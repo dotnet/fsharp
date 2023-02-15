@@ -464,7 +464,7 @@ let mkSynDot mDot m l (SynIdent (r, rTrivia)) =
     | expr -> SynExpr.DotGet(expr, mDot, SynLongIdent([ r ], [], [ rTrivia ]), m)
 
 let mkSynDotMissing (mDot: range) (m: range) (expr: SynExpr) =
-    SynExpr.DiscardAfterMissingQualificationAfterDot(expr, unionRanges mDot m)
+    SynExpr.DiscardAfterMissingQualificationAfterDot(expr, mDot, unionRanges mDot m)
 
 let mkSynFunMatchLambdas synArgNameGenerator isMember wholem ps arrow e =
     let _, e = PushCurriedPatternsToExpr synArgNameGenerator wholem isMember ps arrow e
