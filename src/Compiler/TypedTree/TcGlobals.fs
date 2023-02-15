@@ -315,18 +315,32 @@ type TcGlobals(
       | Some _ -> Some (findSysAttrib nm)
       | None -> None
 
-  let findPublicSysAttrib nm =
+  let findPublicSysTypeCcu path typeName =
+      match tryFindPublicSysTypeCcu path typeName with
+      | None -> CcuThunk.CreateDelayed(dummyAssemblyNameCarryingUsefulErrorInformation path typeName)
+      | Some ccu -> ccu
+
+  let tryFindPublicSysTyconRef path nm =
+      match tryFindPublicSysTypeCcu path nm with
+      | Some ccu -> Some (mkNonLocalTyconRef2 ccu (Array.ofList path) nm)
+      | None -> None
+
+  let findPublicSysILTypeRef nm =
       let path, typeName = splitILTypeName nm
-      let tref, ccu =
-          let scoref, ccu =
-              match tryFindPublicSysTypeCcu path typeName with
-              | None ->
-                  ILScopeRef.Assembly (mkSimpleAssemblyRef (dummyAssemblyNameCarryingUsefulErrorInformation path typeName)),
-                  CcuThunk.CreateDelayed(dummyAssemblyNameCarryingUsefulErrorInformation path typeName)
-              | Some ccu -> ccu.ILScopeRef, ccu
-          mkILTyRef (scoref, nm), ccu
-      let tcref = mkNonLocalTyconRef2 ccu (Array.ofList path) nm
-      AttribInfo(tref, tcref)
+      let scoref =
+          match tryFindPublicSysTypeCcu path typeName with
+          | None -> ILScopeRef.Assembly (mkSimpleAssemblyRef (dummyAssemblyNameCarryingUsefulErrorInformation path typeName))
+          | Some ccu -> ccu.ILScopeRef
+      mkILTyRef (scoref, nm)
+
+  let findPublicSysTyconRef path nm =
+      let ccu = findPublicSysTypeCcu path nm
+      mkNonLocalTyconRef2 ccu (Array.ofList path) nm
+
+  let findPublicSysAttrib nm =
+      let tref = findPublicSysILTypeRef nm
+      let path, typeName = splitILTypeName nm
+      AttribInfo(tref, findPublicSysTyconRef path typeName)
 
   let findOrEmbedSysPublicAttribute nm =
         let sysAttrib = findPublicSysAttrib nm
