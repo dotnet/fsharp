@@ -9,8 +9,7 @@ ImplFile
                  (SynComponentInfo
                     ([], None, [], [X],
                      PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None,
-                     /root/LeadingKeyword/StaticMemberValKeyword.fs (2,5--2,6)),
+                     false, None, (2,5--2,6)),
                   ObjectModel
                     (Unspecified,
                      [AutoProperty
@@ -29,34 +28,16 @@ ImplFile
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = PropertySet },
                          PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),
-                         None,
-                         Const
-                           (Int32 1,
-                            /root/LeadingKeyword/StaticMemberValKeyword.fs (3,32--3,33)),
-                         /root/LeadingKeyword/StaticMemberValKeyword.fs (3,4--3,33),
+                         None, Const (Int32 1, (3,32--3,33)), (3,4--3,33),
                          { LeadingKeyword =
                             StaticMemberVal
-                              (/root/LeadingKeyword/StaticMemberValKeyword.fs (3,4--3,10),
-                               /root/LeadingKeyword/StaticMemberValKeyword.fs (3,11--3,17),
-                               /root/LeadingKeyword/StaticMemberValKeyword.fs (3,18--3,21))
+                              ((3,4--3,10), (3,11--3,17), (3,18--3,21))
                            WithKeyword = None
-                           EqualsRange =
-                            Some
-                              /root/LeadingKeyword/StaticMemberValKeyword.fs (3,30--3,31)
-                           GetSetKeywords = None })],
-                     /root/LeadingKeyword/StaticMemberValKeyword.fs (3,4--3,33)),
-                  [], None,
-                  /root/LeadingKeyword/StaticMemberValKeyword.fs (2,5--3,33),
-                  { LeadingKeyword =
-                     Type
-                       /root/LeadingKeyword/StaticMemberValKeyword.fs (2,0--2,4)
-                    EqualsRange =
-                     Some
-                       /root/LeadingKeyword/StaticMemberValKeyword.fs (2,7--2,8)
-                    WithKeyword = None })],
-              /root/LeadingKeyword/StaticMemberValKeyword.fs (2,0--3,33))],
-          PreXmlDocEmpty, [], None,
-          /root/LeadingKeyword/StaticMemberValKeyword.fs (2,0--4,0),
-          { LeadingKeyword = None })], (true, false),
-      { ConditionalDirectives = []
-        CodeComments = [] }, set []))
+                           EqualsRange = Some (3,30--3,31)
+                           GetSetKeywords = None })], (3,4--3,33)), [], None,
+                  (2,5--3,33), { LeadingKeyword = Type (2,0--2,4)
+                                 EqualsRange = Some (2,7--2,8)
+                                 WithKeyword = None })], (2,0--3,33))],
+          PreXmlDocEmpty, [], None, (2,0--4,0), { LeadingKeyword = None })],
+      (true, false), { ConditionalDirectives = []
+                       CodeComments = [] }, set []))

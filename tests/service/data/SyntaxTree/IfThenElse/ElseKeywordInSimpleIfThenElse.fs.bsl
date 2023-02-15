@@ -6,24 +6,12 @@ ImplFile
          ([ElseKeywordInSimpleIfThenElse], false, AnonModule,
           [Expr
              (IfThenElse
-                (Ident a, Ident b, Some (Ident c),
-                 Yes
-                   /root/IfThenElse/ElseKeywordInSimpleIfThenElse.fs (2,0--2,9),
-                 false,
-                 /root/IfThenElse/ElseKeywordInSimpleIfThenElse.fs (2,0--2,18),
-                 { IfKeyword =
-                    /root/IfThenElse/ElseKeywordInSimpleIfThenElse.fs (2,0--2,2)
-                   IsElif = false
-                   ThenKeyword =
-                    /root/IfThenElse/ElseKeywordInSimpleIfThenElse.fs (2,5--2,9)
-                   ElseKeyword =
-                    Some
-                      /root/IfThenElse/ElseKeywordInSimpleIfThenElse.fs (2,12--2,16)
-                   IfToThenRange =
-                    /root/IfThenElse/ElseKeywordInSimpleIfThenElse.fs (2,0--2,9) }),
-              /root/IfThenElse/ElseKeywordInSimpleIfThenElse.fs (2,0--2,18))],
-          PreXmlDocEmpty, [], None,
-          /root/IfThenElse/ElseKeywordInSimpleIfThenElse.fs (2,0--3,0),
-          { LeadingKeyword = None })], (true, false),
-      { ConditionalDirectives = []
-        CodeComments = [] }, set []))
+                (Ident a, Ident b, Some (Ident c), Yes (2,0--2,9), false,
+                 (2,0--2,18), { IfKeyword = (2,0--2,2)
+                                IsElif = false
+                                ThenKeyword = (2,5--2,9)
+                                ElseKeyword = Some (2,12--2,16)
+                                IfToThenRange = (2,0--2,9) }), (2,0--2,18))],
+          PreXmlDocEmpty, [], None, (2,0--3,0), { LeadingKeyword = None })],
+      (true, false), { ConditionalDirectives = []
+                       CodeComments = [] }, set []))
