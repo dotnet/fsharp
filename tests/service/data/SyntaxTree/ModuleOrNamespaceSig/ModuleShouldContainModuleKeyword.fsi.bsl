@@ -10,19 +10,11 @@ SigFile
                  LongIdent (SynLongIdent ([int], [], [None])),
                  SynValInfo ([], SynArgInfo ([], false, None)), false, false,
                  PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector), None,
-                 None,
-                 /root/ModuleOrNamespaceSig/ModuleShouldContainModuleKeyword.fsi (4,0--4,10),
-                 { LeadingKeyword =
-                    Val
-                      /root/ModuleOrNamespaceSig/ModuleShouldContainModuleKeyword.fsi (4,0--4,3)
-                   InlineKeyword = None
-                   WithKeyword = None
-                   EqualsRange = None }),
-              /root/ModuleOrNamespaceSig/ModuleShouldContainModuleKeyword.fsi (4,0--4,10))],
+                 None, (4,0--4,10), { LeadingKeyword = Val (4,0--4,3)
+                                      InlineKeyword = None
+                                      WithKeyword = None
+                                      EqualsRange = None }), (4,0--4,10))],
           PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
-          /root/ModuleOrNamespaceSig/ModuleShouldContainModuleKeyword.fsi (2,0--4,10),
-          { LeadingKeyword =
-             Module
-               /root/ModuleOrNamespaceSig/ModuleShouldContainModuleKeyword.fsi (2,0--2,6) })],
+          (2,0--4,10), { LeadingKeyword = Module (2,0--2,6) })],
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

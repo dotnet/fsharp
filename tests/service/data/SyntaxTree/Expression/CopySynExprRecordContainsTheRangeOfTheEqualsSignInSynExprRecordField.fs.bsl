@@ -10,24 +10,11 @@ ImplFile
           false, AnonModule,
           [Expr
              (Record
-                (None,
-                 Some
-                   (Ident foo,
-                    (/root/Expression/CopySynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs (2,6--2,10),
-                     None)),
+                (None, Some (Ident foo, ((2,6--2,10), None)),
                  [SynExprRecordField
-                    ((SynLongIdent ([X], [], [None]), true),
-                     Some
-                       /root/Expression/CopySynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs (4,12--4,13),
-                     Some
-                       (Const
-                          (Int32 12,
-                           /root/Expression/CopySynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs (5,16--5,18))),
-                     None)],
-                 /root/Expression/CopySynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs (2,0--5,20)),
-              /root/Expression/CopySynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs (2,0--5,20))],
-          PreXmlDocEmpty, [], None,
-          /root/Expression/CopySynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs (2,0--5,20),
+                    ((SynLongIdent ([X], [], [None]), true), Some (4,12--4,13),
+                     Some (Const (Int32 12, (5,16--5,18))), None)], (2,0--5,20)),
+              (2,0--5,20))], PreXmlDocEmpty, [], None, (2,0--5,20),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

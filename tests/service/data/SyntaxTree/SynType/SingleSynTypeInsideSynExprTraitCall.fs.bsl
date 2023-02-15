@@ -9,8 +9,7 @@ ImplFile
                  (SynComponentInfo
                     ([], None, [], [X],
                      PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None,
-                     /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (2,5--2,6)),
+                     false, None, (2,5--2,6)),
                   ObjectModel
                     (Unspecified,
                      [Member
@@ -43,7 +42,7 @@ ImplFile
                                            [WhereTyparSupportsMember
                                               (Var
                                                  (SynTypar (b, HeadType, false),
-                                                  /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (3,50--3,52)),
+                                                  (3,50--3,52)),
                                                Member
                                                  (SynValSig
                                                     ([],
@@ -58,23 +57,22 @@ ImplFile
                                                                  (SynTypar
                                                                     (a, HeadType,
                                                                      false),
-                                                                  /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (3,78--3,80)));
-                                                            Star
-                                                              /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (3,81--3,82);
+                                                                  (3,78--3,80)));
+                                                            Star (3,81--3,82);
                                                             Type
                                                               (Var
                                                                  (SynTypar
                                                                     (b, HeadType,
                                                                      false),
-                                                                  /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (3,83--3,85)))],
-                                                           /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (3,78--3,85)),
+                                                                  (3,83--3,85)))],
+                                                           (3,78--3,85)),
                                                         Var
                                                           (SynTypar
                                                              (c, HeadType, false),
-                                                           /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (3,89--3,91)),
-                                                        /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (3,78--3,91),
+                                                           (3,89--3,91)),
+                                                        (3,78--3,91),
                                                         { ArrowRange =
-                                                           /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (3,86--3,88) }),
+                                                           (3,86--3,88) }),
                                                      SynValInfo
                                                        ([[SynArgInfo
                                                             ([], false, None);
@@ -84,12 +82,11 @@ ImplFile
                                                           ([], false, None)),
                                                      false, false,
                                                      PreXmlDoc ((3,55), FSharp.Compiler.Xml.XmlDocCollector),
-                                                     None, None,
-                                                     /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (3,55--3,91),
+                                                     None, None, (3,55--3,91),
                                                      { LeadingKeyword =
                                                         StaticMember
-                                                          (/root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (3,55--3,61),
-                                                           /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (3,62--3,68))
+                                                          ((3,55--3,61),
+                                                           (3,62--3,68))
                                                        InlineKeyword = None
                                                        WithKeyword = None
                                                        EqualsRange = None }),
@@ -101,10 +98,9 @@ ImplFile
                                                     GetterOrSetterIsCompilerGenerated =
                                                      false
                                                     MemberKind = Member },
-                                                  /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (3,55--3,91),
+                                                  (3,55--3,91),
                                                   { GetSetKeywords = None }),
-                                               /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (3,50--3,92))],
-                                           /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (3,32--3,93))),
+                                               (3,50--3,92))], (3,32--3,93))),
                                      false)),
                                Pats
                                  [Paren
@@ -113,29 +109,23 @@ ImplFile
                                         [Typed
                                            (Named
                                               (SynIdent (a, None), false, None,
-                                               /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (3,94--3,95)),
+                                               (3,94--3,95)),
                                             Var
                                               (SynTypar (a, HeadType, false),
-                                               /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (3,97--3,99)),
-                                            /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (3,94--3,99));
+                                               (3,97--3,99)), (3,94--3,99));
                                          Typed
                                            (Named
                                               (SynIdent (f, None), false, None,
-                                               /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (3,101--3,102)),
+                                               (3,101--3,102)),
                                             Var
                                               (SynTypar (b, HeadType, false),
-                                               /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (3,104--3,106)),
-                                            /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (3,101--3,106))],
-                                        /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (3,94--3,106)),
-                                     /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (3,93--3,107))],
-                               None,
-                               /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (3,25--3,107)),
-                            None,
+                                               (3,104--3,106)), (3,101--3,106))],
+                                        (3,94--3,106)), (3,93--3,107))], None,
+                               (3,25--3,107)), None,
                             Paren
                               (TraitCall
                                  (Var
-                                    (SynTypar (b, HeadType, false),
-                                     /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (4,9--4,11)),
+                                    (SynTypar (b, HeadType, false), (4,9--4,11)),
                                   Member
                                     (SynValSig
                                        ([], SynIdent (replace, None),
@@ -147,33 +137,28 @@ ImplFile
                                                  (Var
                                                     (SynTypar
                                                        (a, HeadType, false),
-                                                     /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (4,38--4,40)));
-                                               Star
-                                                 /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (4,41--4,42);
+                                                     (4,38--4,40)));
+                                               Star (4,41--4,42);
                                                Type
                                                  (Var
                                                     (SynTypar
                                                        (b, HeadType, false),
-                                                     /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (4,43--4,45)))],
-                                              /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (4,38--4,45)),
+                                                     (4,43--4,45)))],
+                                              (4,38--4,45)),
                                            Var
                                              (SynTypar (c, HeadType, false),
-                                              /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (4,49--4,51)),
-                                           /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (4,38--4,51),
-                                           { ArrowRange =
-                                              /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (4,46--4,48) }),
+                                              (4,49--4,51)), (4,38--4,51),
+                                           { ArrowRange = (4,46--4,48) }),
                                         SynValInfo
                                           ([[SynArgInfo ([], false, None);
                                              SynArgInfo ([], false, None)]],
                                            SynArgInfo ([], false, None)), false,
                                         false,
                                         PreXmlDoc ((4,15), FSharp.Compiler.Xml.XmlDocCollector),
-                                        None, None,
-                                        /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (4,15--4,51),
+                                        None, None, (4,15--4,51),
                                         { LeadingKeyword =
                                            StaticMember
-                                             (/root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (4,15--4,21),
-                                              /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (4,22--4,28))
+                                             ((4,15--4,21), (4,22--4,28))
                                           InlineKeyword = None
                                           WithKeyword = None
                                           EqualsRange = None }),
@@ -182,49 +167,24 @@ ImplFile
                                        IsOverrideOrExplicitImpl = false
                                        IsFinal = false
                                        GetterOrSetterIsCompilerGenerated = false
-                                       MemberKind = Member },
-                                     /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (4,15--4,51),
+                                       MemberKind = Member }, (4,15--4,51),
                                      { GetSetKeywords = None }),
                                   Paren
                                     (Tuple
                                        (false, [Ident a; Ident f],
-                                        [/root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (4,55--4,56)],
-                                        /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (4,54--4,58)),
-                                     /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (4,53--4,54),
-                                     Some
-                                       /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (4,58--4,59),
-                                     /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (4,53--4,59)),
-                                  /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (4,8--4,60)),
-                               /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (4,8--4,9),
-                               Some
-                                 /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (4,59--4,60),
-                               /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (4,8--4,60)),
-                            /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (3,25--3,107),
+                                        [(4,55--4,56)], (4,54--4,58)),
+                                     (4,53--4,54), Some (4,58--4,59),
+                                     (4,53--4,59)), (4,8--4,60)), (4,8--4,9),
+                               Some (4,59--4,60), (4,8--4,60)), (3,25--3,107),
                             NoneAtInvisible,
                             { LeadingKeyword =
-                               StaticMember
-                                 (/root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (3,4--3,10),
-                                  /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (3,11--3,17))
-                              InlineKeyword =
-                               Some
-                                 /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (3,18--3,24)
-                              EqualsRange =
-                               Some
-                                 /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (3,108--3,109) }),
-                         /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (3,4--4,60))],
-                     /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (3,4--4,60)),
-                  [], None,
-                  /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (2,5--4,60),
-                  { LeadingKeyword =
-                     Type
-                       /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (2,0--2,4)
-                    EqualsRange =
-                     Some
-                       /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (2,7--2,8)
-                    WithKeyword = None })],
-              /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (2,0--4,60))],
-          PreXmlDocEmpty, [], None,
-          /root/SynType/SingleSynTypeInsideSynExprTraitCall.fs (2,0--5,0),
-          { LeadingKeyword = None })], (true, false),
+                               StaticMember ((3,4--3,10), (3,11--3,17))
+                              InlineKeyword = Some (3,18--3,24)
+                              EqualsRange = Some (3,108--3,109) }), (3,4--4,60))],
+                     (3,4--4,60)), [], None, (2,5--4,60),
+                  { LeadingKeyword = Type (2,0--2,4)
+                    EqualsRange = Some (2,7--2,8)
+                    WithKeyword = None })], (2,0--4,60))], PreXmlDocEmpty, [],
+          None, (2,0--5,0), { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
