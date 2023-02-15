@@ -1177,7 +1177,7 @@ and [<Sealed>] TcImports
                     match e.TypeReprInfo with
                     | TILObjectRepr data ->
                         let (TILObjectReprData(_, _, tyDef)) = data
-                        not (tyDef.Access = ILTypeDefAccess.Public)
+                        tyDef.Access = ILTypeDefAccess.Public
                     | _ -> true
                 else  true
             | None -> false
