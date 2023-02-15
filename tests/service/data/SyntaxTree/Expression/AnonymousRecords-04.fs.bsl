@@ -6,13 +6,8 @@ ImplFile
          ([AnonymousRecords-04], false, AnonModule,
           [Expr
              (AnonRecd
-                (false, None, [],
-                 /root/Expression/AnonymousRecords-04.fs (1,0--1,2),
-                 { OpeningBraceRange =
-                    /root/Expression/AnonymousRecords-04.fs (1,0--1,2) }),
-              /root/Expression/AnonymousRecords-04.fs (1,0--1,2))],
-          PreXmlDocEmpty, [], None,
-          /root/Expression/AnonymousRecords-04.fs (1,0--2,0),
+                (false, None, [], (1,0--1,2), { OpeningBraceRange = (1,0--1,2) }),
+              (1,0--1,2))], PreXmlDocEmpty, [], None, (1,0--2,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

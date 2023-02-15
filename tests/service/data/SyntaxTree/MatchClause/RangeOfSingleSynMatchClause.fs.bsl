@@ -15,32 +15,19 @@ ImplFile
                           (None, SynValInfo ([], SynArgInfo ([], false, None)),
                            None),
                         Named
-                          (SynIdent (content, None), false, None,
-                           /root/MatchClause/RangeOfSingleSynMatchClause.fs (3,8--3,15)),
+                          (SynIdent (content, None), false, None, (3,8--3,15)),
                         None,
                         App
                           (NonAtomic, false, Ident tryDownloadFile, Ident url,
-                           /root/MatchClause/RangeOfSingleSynMatchClause.fs (3,18--3,37)),
-                        /root/MatchClause/RangeOfSingleSynMatchClause.fs (3,8--3,15),
-                        Yes
-                          /root/MatchClause/RangeOfSingleSynMatchClause.fs (3,4--3,37),
-                        { LeadingKeyword =
-                           Let
-                             /root/MatchClause/RangeOfSingleSynMatchClause.fs (3,4--3,7)
+                           (3,18--3,37)), (3,8--3,15), Yes (3,4--3,37),
+                        { LeadingKeyword = Let (3,4--3,7)
                           InlineKeyword = None
-                          EqualsRange =
-                           Some
-                             /root/MatchClause/RangeOfSingleSynMatchClause.fs (3,16--3,17) })],
+                          EqualsRange = Some (3,16--3,17) })],
                     App
-                      (NonAtomic, false, Ident Some, Ident content,
-                       /root/MatchClause/RangeOfSingleSynMatchClause.fs (4,4--4,16)),
-                    /root/MatchClause/RangeOfSingleSynMatchClause.fs (3,4--4,16),
-                    { InKeyword = None }),
+                      (NonAtomic, false, Ident Some, Ident content, (4,4--4,16)),
+                    (3,4--4,16), { InKeyword = None }),
                  [SynMatchClause
-                    (Named
-                       (SynIdent (ex, None), false, None,
-                        /root/MatchClause/RangeOfSingleSynMatchClause.fs (5,5--5,7)),
-                     None,
+                    (Named (SynIdent (ex, None), false, None, (5,5--5,7)), None,
                      Sequential
                        (SuppressNeither, true,
                         App
@@ -48,34 +35,15 @@ ImplFile
                            LongIdent
                              (false,
                               SynLongIdent
-                                ([Infrastructure; ReportWarning],
-                                 [/root/MatchClause/RangeOfSingleSynMatchClause.fs (6,18--6,19)],
-                                 [None; None]), None,
-                              /root/MatchClause/RangeOfSingleSynMatchClause.fs (6,4--6,32)),
-                           Ident ex,
-                           /root/MatchClause/RangeOfSingleSynMatchClause.fs (6,4--6,35)),
-                        Ident None,
-                        /root/MatchClause/RangeOfSingleSynMatchClause.fs (6,4--7,8)),
-                     /root/MatchClause/RangeOfSingleSynMatchClause.fs (5,5--7,8),
-                     Yes,
-                     { ArrowRange =
-                        Some
-                          /root/MatchClause/RangeOfSingleSynMatchClause.fs (5,8--5,10)
-                       BarRange = None })],
-                 /root/MatchClause/RangeOfSingleSynMatchClause.fs (2,0--7,8),
-                 Yes /root/MatchClause/RangeOfSingleSynMatchClause.fs (2,0--2,3),
-                 Yes /root/MatchClause/RangeOfSingleSynMatchClause.fs (5,0--5,4),
-                 { TryKeyword =
-                    /root/MatchClause/RangeOfSingleSynMatchClause.fs (2,0--2,3)
-                   TryToWithRange =
-                    /root/MatchClause/RangeOfSingleSynMatchClause.fs (2,0--5,4)
-                   WithKeyword =
-                    /root/MatchClause/RangeOfSingleSynMatchClause.fs (5,0--5,4)
-                   WithToEndRange =
-                    /root/MatchClause/RangeOfSingleSynMatchClause.fs (5,0--7,8) }),
-              /root/MatchClause/RangeOfSingleSynMatchClause.fs (2,0--7,8))],
-          PreXmlDocEmpty, [], None,
-          /root/MatchClause/RangeOfSingleSynMatchClause.fs (2,0--8,0),
-          { LeadingKeyword = None })], (true, false),
-      { ConditionalDirectives = []
-        CodeComments = [] }, set []))
+                                ([Infrastructure; ReportWarning], [(6,18--6,19)],
+                                 [None; None]), None, (6,4--6,32)), Ident ex,
+                           (6,4--6,35)), Ident None, (6,4--7,8)), (5,5--7,8),
+                     Yes, { ArrowRange = Some (5,8--5,10)
+                            BarRange = None })], (2,0--7,8), Yes (2,0--2,3),
+                 Yes (5,0--5,4), { TryKeyword = (2,0--2,3)
+                                   TryToWithRange = (2,0--5,4)
+                                   WithKeyword = (5,0--5,4)
+                                   WithToEndRange = (5,0--7,8) }), (2,0--7,8))],
+          PreXmlDocEmpty, [], None, (2,0--8,0), { LeadingKeyword = None })],
+      (true, false), { ConditionalDirectives = []
+                       CodeComments = [] }, set []))
