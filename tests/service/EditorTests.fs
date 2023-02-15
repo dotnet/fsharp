@@ -471,7 +471,7 @@ let _ =  printf "           %a" (fun _ _ -> ()) 2
 let _ =  printf "            %*a" 3 (fun _ _ -> ()) 2
 """
 
-    let file = "/home/user/Test.fsx"
+    let file = System.IO.Path.Combine [| "home"; "user"; "Test.fsx" |]
     let parseResult, typeCheckResults = parseAndCheckScript(file, input)
 
     typeCheckResults.Diagnostics
