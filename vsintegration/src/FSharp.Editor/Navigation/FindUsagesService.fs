@@ -99,8 +99,9 @@ type internal FSharpFindUsagesService
                                 let referenceItem = FSharpSourceReferenceItem(definitionItem, FSharpDocumentSpan(doc, textSpan))
                                 // REVIEW: OnReferenceFoundAsync is throwing inside Roslyn, putting a try/with so find-all refs doesn't fail.
                                 try do! context.OnReferenceFoundAsync(referenceItem) |> Async.AwaitTask with | _ -> () }
-            
+
             match symbolUse.GetDeclarationLocation document with
+
             | Some SymbolScope.CurrentDocument ->
                 let symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol)
                 for symbolUse in symbolUses do
@@ -109,6 +110,32 @@ type internal FSharpFindUsagesService
                         do! onFound document textSpan symbolUse.Range |> liftAsync
                     | _ ->
                         ()
+
+            | Some SymbolScope.SignatureAndImplementation ->
+                let otherFile = getOtherFile document.FilePath
+                let! otherFileCheckResults =
+                    match document.Project.Solution.TryGetDocumentFromPath otherFile with
+                    | Some doc ->
+                        async {
+                            let! _, checkFileResults = doc.GetFSharpParseAndCheckResultsAsync("findReferencedSymbolsAsync")
+                            let! sourceText = doc.GetTextAsync(context.CancellationToken) |> Async.AwaitTask
+                            return [checkFileResults, sourceText, doc]
+                        }
+                    | None -> async.Return []
+                    |> liftAsync
+
+                let symbolUses =
+                    (checkFileResults, sourceText, document) :: otherFileCheckResults
+                    |> Seq.collect (fun (checkFileResults, sourceText, doc) ->
+                        checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol)
+                        |> Seq.choose (fun symbolUse ->
+                            match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range) with
+                            | Some textSpan -> Some (doc, textSpan, symbolUse.Range)
+                            | None -> None))
+
+                for document, textSpan, range in symbolUses do
+                    do! onFound document textSpan range |> liftAsync
+
             | scope ->
                 let projectsToCheck =
                     match scope with
