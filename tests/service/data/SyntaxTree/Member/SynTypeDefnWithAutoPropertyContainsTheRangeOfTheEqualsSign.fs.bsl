@@ -12,8 +12,7 @@ ImplFile
                  (SynComponentInfo
                     ([], None, [], [Person],
                      PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None,
-                     /root/Member/SynTypeDefnWithAutoPropertyContainsTheRangeOfTheEqualsSign.fs (3,5--3,11)),
+                     false, None, (3,5--3,11)),
                   ObjectModel
                     (Unspecified,
                      [ImplicitCtor
@@ -21,21 +20,16 @@ ImplFile
                          SimplePats
                            ([Typed
                                (Id
-                                  (name, None, false, false, false,
-                                   /root/Member/SynTypeDefnWithAutoPropertyContainsTheRangeOfTheEqualsSign.fs (3,12--3,16)),
+                                  (name, None, false, false, false, (3,12--3,16)),
                                 LongIdent (SynLongIdent ([string], [], [None])),
-                                /root/Member/SynTypeDefnWithAutoPropertyContainsTheRangeOfTheEqualsSign.fs (3,12--3,25));
+                                (3,12--3,25));
                              Typed
                                (Id
-                                  (age, None, false, false, false,
-                                   /root/Member/SynTypeDefnWithAutoPropertyContainsTheRangeOfTheEqualsSign.fs (3,27--3,30)),
+                                  (age, None, false, false, false, (3,27--3,30)),
                                 LongIdent (SynLongIdent ([int], [], [None])),
-                                /root/Member/SynTypeDefnWithAutoPropertyContainsTheRangeOfTheEqualsSign.fs (3,27--3,36))],
-                            /root/Member/SynTypeDefnWithAutoPropertyContainsTheRangeOfTheEqualsSign.fs (3,11--3,37)),
-                         None,
+                                (3,27--3,36))], (3,11--3,37)), None,
                          PreXmlDoc ((3,11), FSharp.Compiler.Xml.XmlDocCollector),
-                         /root/Member/SynTypeDefnWithAutoPropertyContainsTheRangeOfTheEqualsSign.fs (3,5--3,11),
-                         { AsKeyword = None });
+                         (3,5--3,11), { AsKeyword = None });
                       AutoProperty
                         ([], false, Name, None, PropertyGetSet,
                          { IsInstance = true
@@ -51,57 +45,32 @@ ImplFile
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = PropertySet },
                          PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
-                         None, Ident name,
-                         /root/Member/SynTypeDefnWithAutoPropertyContainsTheRangeOfTheEqualsSign.fs (4,4--5,26),
+                         None, Ident name, (4,4--5,26),
                          { LeadingKeyword =
-                            MemberVal
-                              (/root/Member/SynTypeDefnWithAutoPropertyContainsTheRangeOfTheEqualsSign.fs (5,4--5,10),
-                               /root/Member/SynTypeDefnWithAutoPropertyContainsTheRangeOfTheEqualsSign.fs (5,11--5,14))
-                           WithKeyword =
-                            Some
-                              /root/Member/SynTypeDefnWithAutoPropertyContainsTheRangeOfTheEqualsSign.fs (5,27--5,31)
-                           EqualsRange =
-                            Some
-                              /root/Member/SynTypeDefnWithAutoPropertyContainsTheRangeOfTheEqualsSign.fs (5,20--5,21)
+                            MemberVal ((5,4--5,10), (5,11--5,14))
+                           WithKeyword = Some (5,27--5,31)
+                           EqualsRange = Some (5,20--5,21)
                            GetSetKeywords =
-                            Some
-                              (GetSet
-                                 (/root/Member/SynTypeDefnWithAutoPropertyContainsTheRangeOfTheEqualsSign.fs (5,32--5,35),
-                                  /root/Member/SynTypeDefnWithAutoPropertyContainsTheRangeOfTheEqualsSign.fs (5,37--5,40))) })],
-                     /root/Member/SynTypeDefnWithAutoPropertyContainsTheRangeOfTheEqualsSign.fs (4,4--5,26)),
-                  [],
+                            Some (GetSet ((5,32--5,35), (5,37--5,40))) })],
+                     (4,4--5,26)), [],
                   Some
                     (ImplicitCtor
                        (None, [],
                         SimplePats
                           ([Typed
                               (Id
-                                 (name, None, false, false, false,
-                                  /root/Member/SynTypeDefnWithAutoPropertyContainsTheRangeOfTheEqualsSign.fs (3,12--3,16)),
+                                 (name, None, false, false, false, (3,12--3,16)),
                                LongIdent (SynLongIdent ([string], [], [None])),
-                               /root/Member/SynTypeDefnWithAutoPropertyContainsTheRangeOfTheEqualsSign.fs (3,12--3,25));
+                               (3,12--3,25));
                             Typed
-                              (Id
-                                 (age, None, false, false, false,
-                                  /root/Member/SynTypeDefnWithAutoPropertyContainsTheRangeOfTheEqualsSign.fs (3,27--3,30)),
+                              (Id (age, None, false, false, false, (3,27--3,30)),
                                LongIdent (SynLongIdent ([int], [], [None])),
-                               /root/Member/SynTypeDefnWithAutoPropertyContainsTheRangeOfTheEqualsSign.fs (3,27--3,36))],
-                           /root/Member/SynTypeDefnWithAutoPropertyContainsTheRangeOfTheEqualsSign.fs (3,11--3,37)),
-                        None,
+                               (3,27--3,36))], (3,11--3,37)), None,
                         PreXmlDoc ((3,11), FSharp.Compiler.Xml.XmlDocCollector),
-                        /root/Member/SynTypeDefnWithAutoPropertyContainsTheRangeOfTheEqualsSign.fs (3,5--3,11),
-                        { AsKeyword = None })),
-                  /root/Member/SynTypeDefnWithAutoPropertyContainsTheRangeOfTheEqualsSign.fs (2,0--5,26),
-                  { LeadingKeyword =
-                     Type
-                       /root/Member/SynTypeDefnWithAutoPropertyContainsTheRangeOfTheEqualsSign.fs (3,0--3,4)
-                    EqualsRange =
-                     Some
-                       /root/Member/SynTypeDefnWithAutoPropertyContainsTheRangeOfTheEqualsSign.fs (3,38--3,39)
-                    WithKeyword = None })],
-              /root/Member/SynTypeDefnWithAutoPropertyContainsTheRangeOfTheEqualsSign.fs (2,0--5,26))],
-          PreXmlDocEmpty, [], None,
-          /root/Member/SynTypeDefnWithAutoPropertyContainsTheRangeOfTheEqualsSign.fs (3,0--6,0),
-          { LeadingKeyword = None })], (true, false),
+                        (3,5--3,11), { AsKeyword = None })), (2,0--5,26),
+                  { LeadingKeyword = Type (3,0--3,4)
+                    EqualsRange = Some (3,38--3,39)
+                    WithKeyword = None })], (2,0--5,26))], PreXmlDocEmpty, [],
+          None, (3,0--6,0), { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
