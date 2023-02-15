@@ -262,12 +262,9 @@ type FSharpSymbolUse(denv: DisplayEnv, symbol: FSharpSymbol, inst: TyparInstanti
 
         let couldBeParameter, declarationLocation =
             match this.Symbol with
-            | :? FSharpParameter as p ->
-                true, Some p.DeclarationLocation
-            | :? FSharpMemberOrFunctionOrValue as m when not m.IsModuleValueOrMember ->
-                true, Some m.DeclarationLocation
-            | _ ->
-                false, None
+            | :? FSharpParameter as p -> true, Some p.DeclarationLocation
+            | :? FSharpMemberOrFunctionOrValue as m when not m.IsModuleValueOrMember -> true, Some m.DeclarationLocation
+            | _ -> false, None
 
         let thisIsSignature = SourceFileImpl.IsSignatureFile this.Range.FileName
 
@@ -277,14 +274,16 @@ type FSharpSymbolUse(denv: DisplayEnv, symbol: FSharpSymbol, inst: TyparInstanti
             | _ -> None
             |> Option.bind (fun a -> a.OtherRange)
 
-        couldBeParameter && (thisIsSignature || (signatureLocation.IsSome && signatureLocation <> declarationLocation))
+        couldBeParameter
+        && (thisIsSignature
+            || (signatureLocation.IsSome && signatureLocation <> declarationLocation))
 
     member this.IsPrivateToFile =
 
         let isPrivate =
             match this.Symbol with
             | _ when this.IsPrivateToFileAndSignatureFile -> false
-            | :? FSharpMemberOrFunctionOrValue as m when not m.IsModuleValueOrMember -> 
+            | :? FSharpMemberOrFunctionOrValue as m when not m.IsModuleValueOrMember ->
                 // local binding or parameter
                 true
             | :? FSharpMemberOrFunctionOrValue as m ->
