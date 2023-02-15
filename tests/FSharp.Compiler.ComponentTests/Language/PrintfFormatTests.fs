@@ -4,6 +4,7 @@ module FSharp.Compiler.ComponentTests.Language.PrintfFormatTests
 
 open Xunit
 open FSharp.Test.Compiler
+open StructuredResultsAsserts
 
 [<Fact>]
 let ``Constant defined in C# can be used as printf format``() =
