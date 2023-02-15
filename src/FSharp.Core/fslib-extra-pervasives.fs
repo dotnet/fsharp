@@ -330,6 +330,11 @@ module ExtraTopLevelOperators =
     [<assembly: AutoOpen("Microsoft.FSharp.Control.TaskBuilderExtensions.LowPriority")>]
     [<assembly: AutoOpen("Microsoft.FSharp.Control.TaskBuilderExtensions.MediumPriority")>]
     [<assembly: AutoOpen("Microsoft.FSharp.Control.TaskBuilderExtensions.HighPriority")>]
+#if NETSTANDARD2_1
+    [<assembly: AutoOpen("Microsoft.FSharp.Control.ValueTaskBuilderExtensions.LowPriority")>]
+    [<assembly: AutoOpen("Microsoft.FSharp.Control.ValueTaskBuilderExtensions.MediumPriority")>]
+    [<assembly: AutoOpen("Microsoft.FSharp.Control.ValueTaskBuilderExtensions.HighPriority")>]
+#endif
     [<assembly: AutoOpen("Microsoft.FSharp.Linq.QueryRunExtensions.LowPriority")>]
     [<assembly: AutoOpen("Microsoft.FSharp.Linq.QueryRunExtensions.HighPriority")>]
     do ()

@@ -204,6 +204,12 @@
     <Compile Include="tasks.fs">
       <Link>Control/tasks.fs</Link>
     </Compile>
+    <Compile Include="valuetasks.fsi">
+      <Link>Control/valuetasks.fsi</Link>
+    </Compile>
+    <Compile Include="valuetasks.fs">
+      <Link>Control/valuetasks.fs</Link>
+    </Compile>
     <Compile Include="eventmodule.fsi">
       <Link>Control/eventmodule.fsi</Link>
     </Compile>

@@ -84,6 +84,8 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Control\Tasks.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Control\TasksDynamic.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Control\NestedTaskFailures.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Control\ValueTasks.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Control\ValueTasksDynamic.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Control\MailboxProcessorType.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Control\AsyncModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Control\ObservableModule.fs" />
