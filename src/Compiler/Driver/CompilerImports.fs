@@ -1178,7 +1178,7 @@ and [<Sealed>] TcImports
                     | TILObjectRepr data ->
                         let (TILObjectReprData(_, _, tyDef)) = data
                         tyDef.Access = ILTypeDefAccess.Public
-                    | _ -> true
+                    | _ -> false
                 else  true
             | None -> false
         | None -> false
