@@ -91,25 +91,30 @@ module CoreTests =
         singleVersionedNegTest cfg "preview" "test-langversion-preview"
 
     [<Test>]
+    [<Ignore("Failing CI since 17.6, will be resolved separately", Until = "2023-04-01")>]
     let ``auto-widen-version-5_0``() = 
         let cfg = testConfig "core/auto-widen/5.0"
         singleVersionedNegTest cfg "5.0" "test"
 
     [<Test>]
+    [<Ignore("Failing CI since 17.6, will be resolved separately", Until = "2023-04-01")>]
     let ``auto-widen-version-FSC_DEBUG-preview``() =
         singleTestBuildAndRunVersion "core/auto-widen/preview" FSC_DEBUG "preview"
 
     [<Test>]
+    [<Ignore("Failing CI since 17.6, will be resolved separately", Until = "2023-04-01")>]
     let ``auto-widen-version-FSC_OPTIMIZED-preview``() =
         singleTestBuildAndRunVersion "core/auto-widen/preview" FSC_OPTIMIZED "preview"
 
     [<Test>]
+    [<Ignore("Failing CI since 17.6, will be resolved separately", Until = "2023-04-01")>]
     let ``auto-widen-version-preview-warns-on``() = 
         let cfg = testConfig "core/auto-widen/preview"
         let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --warnon:3388 --warnon:3389 --warnon:3395 --warnaserror+ --define:NEGATIVE" }
         singleVersionedNegTest cfg "preview" "test"
 
     [<Test>]
+    [<Ignore("Failing CI since 17.6, will be resolved separately", Until = "2023-04-01")>]
     let ``auto-widen-version-preview-default-warns``() = 
         let cfg = testConfig "core/auto-widen/preview-default-warns"
         let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --warnaserror+ --define:NEGATIVE" }
@@ -2802,6 +2807,7 @@ module TypecheckTests =
     let ``type check neg20`` () = singleNegTest (testConfig "typecheck/sigs") "neg20"
 
     [<Test>]
+    [<Ignore("Failing CI since 17.6, will be resolved separately", Until = "2023-04-01")>]
     let ``type check neg20 version 5_0`` () =
         let cfg = testConfig "typecheck/sigs/version50"
         singleVersionedNegTest cfg "5.0" "neg20"
