@@ -104,6 +104,7 @@
     <MicrosoftVisualStudioThreadingPackagesVersion>17.4.27</MicrosoftVisualStudioThreadingPackagesVersion>
     <MicrosoftBuildOverallPackagesVersion>17.4.0-preview-22469-04</MicrosoftBuildOverallPackagesVersion>
     <!-- Roslyn packages -->
+    <MicrosoftCodeAnalysisFeaturesVersion>$(RoslynVersion)</MicrosoftCodeAnalysisFeaturesVersion>
     <MicrosoftCodeAnalysisEditorFeaturesVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesVersion>
     <MicrosoftCodeAnalysisEditorFeaturesTextVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesTextVersion>
     <MicrosoftCodeAnalysisEditorFeaturesWpfVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesWpfVersion>
@@ -168,6 +169,7 @@
     <MicrosoftVisualStudioExtensibilityTestingVersion>0.1.162-beta</MicrosoftVisualStudioExtensibilityTestingVersion>
     <MicrosoftVisualStudioExtensibilityTestingSourceGeneratorVersion>$(MicrosoftVisualStudioExtensibilityTestingVersion)</MicrosoftVisualStudioExtensibilityTestingSourceGeneratorVersion>
     <MicrosoftVisualStudioExtensibilityTestingXunitVersion>$(MicrosoftVisualStudioExtensibilityTestingVersion)</MicrosoftVisualStudioExtensibilityTestingXunitVersion>
+    <InputSimulatorPlusVersion>1.0.7</InputSimulatorPlusVersion>
     <!-- Visual Studio Threading packags -->
     <MicrosoftVisualStudioThreadingVersion>$(MicrosoftVisualStudioThreadingPackagesVersion)</MicrosoftVisualStudioThreadingVersion>
     <!-- Visual Studio Project System packages-->
