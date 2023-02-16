@@ -7,12 +7,8 @@ ImplFile
           [Expr
              (Const
                 (SourceIdentifier
-                   ("__SOURCE_DIRECTORY__", "/root/SourceIdentifier",
-                    /root/SourceIdentifier/_SOURCEDIRECTORY_.fs (0,0--0,0)),
-                 /root/SourceIdentifier/_SOURCEDIRECTORY_.fs (0,0--0,0)),
-              /root/SourceIdentifier/_SOURCEDIRECTORY_.fs (0,0--0,0))],
-          PreXmlDocEmpty, [], None,
-          /root/SourceIdentifier/_SOURCEDIRECTORY_.fs (2,0--2,20),
-          { LeadingKeyword = None })], (true, false),
+                   ("__SOURCE_DIRECTORY__", "/root/SourceIdentifier", (0,0--0,0)),
+                 (0,0--0,0)), (0,0--0,0))], PreXmlDocEmpty, [], None,
+          (2,0--2,20), { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

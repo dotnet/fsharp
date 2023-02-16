@@ -9,8 +9,7 @@ SigFile
                  (SynComponentInfo
                     ([], None, [], [Y],
                      PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None,
-                     /root/MemberFlag/SynMemberSigMemberHasCorrectKeywords.fsi (4,5--4,6)),
+                     false, None, (4,5--4,6)),
                   ObjectModel
                     (Unspecified,
                      [Member
@@ -21,11 +20,8 @@ SigFile
                             SynValInfo ([], SynArgInfo ([], false, None)), false,
                             false,
                             PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, None,
-                            /root/MemberFlag/SynMemberSigMemberHasCorrectKeywords.fsi (5,4--5,20),
-                            { LeadingKeyword =
-                               Abstract
-                                 /root/MemberFlag/SynMemberSigMemberHasCorrectKeywords.fsi (5,4--5,12)
+                            None, None, (5,4--5,20),
+                            { LeadingKeyword = Abstract (5,4--5,12)
                               InlineKeyword = None
                               WithKeyword = None
                               EqualsRange = None }),
@@ -34,8 +30,7 @@ SigFile
                            IsOverrideOrExplicitImpl = false
                            IsFinal = false
                            GetterOrSetterIsCompilerGenerated = false
-                           MemberKind = PropertyGet },
-                         /root/MemberFlag/SynMemberSigMemberHasCorrectKeywords.fsi (5,4--5,20),
+                           MemberKind = PropertyGet }, (5,4--5,20),
                          { GetSetKeywords = None });
                       Member
                         (SynValSig
@@ -45,12 +40,9 @@ SigFile
                             SynValInfo ([], SynArgInfo ([], false, None)), false,
                             false,
                             PreXmlDoc ((6,4), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, None,
-                            /root/MemberFlag/SynMemberSigMemberHasCorrectKeywords.fsi (6,4--6,30),
+                            None, None, (6,4--6,30),
                             { LeadingKeyword =
-                               AbstractMember
-                                 (/root/MemberFlag/SynMemberSigMemberHasCorrectKeywords.fsi (6,4--6,12),
-                                  /root/MemberFlag/SynMemberSigMemberHasCorrectKeywords.fsi (6,13--6,19))
+                               AbstractMember ((6,4--6,12), (6,13--6,19))
                               InlineKeyword = None
                               WithKeyword = None
                               EqualsRange = None }),
@@ -59,8 +51,7 @@ SigFile
                            IsOverrideOrExplicitImpl = false
                            IsFinal = false
                            GetterOrSetterIsCompilerGenerated = false
-                           MemberKind = PropertyGet },
-                         /root/MemberFlag/SynMemberSigMemberHasCorrectKeywords.fsi (6,4--6,30),
+                           MemberKind = PropertyGet }, (6,4--6,30),
                          { GetSetKeywords = None });
                       Member
                         (SynValSig
@@ -70,12 +61,9 @@ SigFile
                             SynValInfo ([], SynArgInfo ([], false, None)), false,
                             false,
                             PreXmlDoc ((7,4), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, None,
-                            /root/MemberFlag/SynMemberSigMemberHasCorrectKeywords.fsi (7,4--7,28),
+                            None, None, (7,4--7,28),
                             { LeadingKeyword =
-                               StaticMember
-                                 (/root/MemberFlag/SynMemberSigMemberHasCorrectKeywords.fsi (7,4--7,10),
-                                  /root/MemberFlag/SynMemberSigMemberHasCorrectKeywords.fsi (7,11--7,17))
+                               StaticMember ((7,4--7,10), (7,11--7,17))
                               InlineKeyword = None
                               WithKeyword = None
                               EqualsRange = None }),
@@ -84,8 +72,7 @@ SigFile
                            IsOverrideOrExplicitImpl = false
                            IsFinal = false
                            GetterOrSetterIsCompilerGenerated = false
-                           MemberKind = PropertyGet },
-                         /root/MemberFlag/SynMemberSigMemberHasCorrectKeywords.fsi (7,4--7,28),
+                           MemberKind = PropertyGet }, (7,4--7,28),
                          { GetSetKeywords = None });
                       Member
                         (SynValSig
@@ -95,11 +82,8 @@ SigFile
                             SynValInfo ([], SynArgInfo ([], false, None)), false,
                             false,
                             PreXmlDoc ((8,4), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, None,
-                            /root/MemberFlag/SynMemberSigMemberHasCorrectKeywords.fsi (8,4--8,18),
-                            { LeadingKeyword =
-                               Member
-                                 /root/MemberFlag/SynMemberSigMemberHasCorrectKeywords.fsi (8,4--8,10)
+                            None, None, (8,4--8,18),
+                            { LeadingKeyword = Member (8,4--8,10)
                               InlineKeyword = None
                               WithKeyword = None
                               EqualsRange = None }),
@@ -108,8 +92,7 @@ SigFile
                            IsOverrideOrExplicitImpl = false
                            IsFinal = false
                            GetterOrSetterIsCompilerGenerated = false
-                           MemberKind = PropertyGet },
-                         /root/MemberFlag/SynMemberSigMemberHasCorrectKeywords.fsi (8,4--8,18),
+                           MemberKind = PropertyGet }, (8,4--8,18),
                          { GetSetKeywords = None });
                       Member
                         (SynValSig
@@ -119,11 +102,8 @@ SigFile
                             SynValInfo ([], SynArgInfo ([], false, None)), false,
                             false,
                             PreXmlDoc ((9,4), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, None,
-                            /root/MemberFlag/SynMemberSigMemberHasCorrectKeywords.fsi (9,4--9,20),
-                            { LeadingKeyword =
-                               Override
-                                 /root/MemberFlag/SynMemberSigMemberHasCorrectKeywords.fsi (9,4--9,12)
+                            None, None, (9,4--9,20),
+                            { LeadingKeyword = Override (9,4--9,12)
                               InlineKeyword = None
                               WithKeyword = None
                               EqualsRange = None }),
@@ -132,8 +112,7 @@ SigFile
                            IsOverrideOrExplicitImpl = true
                            IsFinal = false
                            GetterOrSetterIsCompilerGenerated = false
-                           MemberKind = PropertyGet },
-                         /root/MemberFlag/SynMemberSigMemberHasCorrectKeywords.fsi (9,4--9,20),
+                           MemberKind = PropertyGet }, (9,4--9,20),
                          { GetSetKeywords = None });
                       Member
                         (SynValSig
@@ -143,11 +122,8 @@ SigFile
                             SynValInfo ([], SynArgInfo ([], false, None)), false,
                             false,
                             PreXmlDoc ((10,4), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, None,
-                            /root/MemberFlag/SynMemberSigMemberHasCorrectKeywords.fsi (10,4--10,19),
-                            { LeadingKeyword =
-                               Default
-                                 /root/MemberFlag/SynMemberSigMemberHasCorrectKeywords.fsi (10,4--10,11)
+                            None, None, (10,4--10,19),
+                            { LeadingKeyword = Default (10,4--10,11)
                               InlineKeyword = None
                               WithKeyword = None
                               EqualsRange = None }),
@@ -156,24 +132,12 @@ SigFile
                            IsOverrideOrExplicitImpl = true
                            IsFinal = false
                            GetterOrSetterIsCompilerGenerated = false
-                           MemberKind = PropertyGet },
-                         /root/MemberFlag/SynMemberSigMemberHasCorrectKeywords.fsi (10,4--10,19),
-                         { GetSetKeywords = None })],
-                     /root/MemberFlag/SynMemberSigMemberHasCorrectKeywords.fsi (5,4--10,19)),
-                  [],
-                  /root/MemberFlag/SynMemberSigMemberHasCorrectKeywords.fsi (4,5--10,19),
-                  { LeadingKeyword =
-                     Type
-                       /root/MemberFlag/SynMemberSigMemberHasCorrectKeywords.fsi (4,0--4,4)
-                    EqualsRange =
-                     Some
-                       /root/MemberFlag/SynMemberSigMemberHasCorrectKeywords.fsi (4,7--4,8)
-                    WithKeyword = None })],
-              /root/MemberFlag/SynMemberSigMemberHasCorrectKeywords.fsi (4,0--10,19))],
-          PreXmlDocEmpty, [], None,
-          /root/MemberFlag/SynMemberSigMemberHasCorrectKeywords.fsi (2,0--10,19),
-          { LeadingKeyword =
-             Namespace
-               /root/MemberFlag/SynMemberSigMemberHasCorrectKeywords.fsi (2,0--2,9) })],
+                           MemberKind = PropertyGet }, (10,4--10,19),
+                         { GetSetKeywords = None })], (5,4--10,19)), [],
+                  (4,5--10,19), { LeadingKeyword = Type (4,0--4,4)
+                                  EqualsRange = Some (4,7--4,8)
+                                  WithKeyword = None })], (4,0--10,19))],
+          PreXmlDocEmpty, [], None, (2,0--10,19),
+          { LeadingKeyword = Namespace (2,0--2,9) })],
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

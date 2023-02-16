@@ -622,7 +622,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                         | SynExpr.ArrayOrListComputed (_, e, _)
                         | SynExpr.Typed (e, _, _)
                         | SynExpr.FromParseError (e, _)
-                        | SynExpr.DiscardAfterMissingQualificationAfterDot (e, _)
+                        | SynExpr.DiscardAfterMissingQualificationAfterDot (e, _, _)
                         | SynExpr.Do (e, _)
                         | SynExpr.Assert (e, _)
                         | SynExpr.Fixed (e, _)

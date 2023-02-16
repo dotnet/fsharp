@@ -9,8 +9,7 @@ ImplFile
                  (SynComponentInfo
                     ([], None, [], [D],
                      PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None,
-                     /root/LeadingKeyword/OverrideKeyword.fs (2,5--2,6)),
+                     false, None, (2,5--2,6)),
                   ObjectModel
                     (Unspecified,
                      [Member
@@ -29,45 +28,26 @@ ImplFile
                                   SynArgInfo ([], false, None)), None),
                             LongIdent
                               (SynLongIdent ([E], [], [None]), None, None,
-                               Pats [], None,
-                               /root/LeadingKeyword/OverrideKeyword.fs (3,13--3,14)),
+                               Pats [], None, (3,13--3,14)),
                             Some
                               (SynBindingReturnInfo
                                  (LongIdent
                                     (SynLongIdent ([string], [], [None])),
-                                  /root/LeadingKeyword/OverrideKeyword.fs (3,17--3,23),
-                                  [],
-                                  { ColonRange =
-                                     Some
-                                       /root/LeadingKeyword/OverrideKeyword.fs (3,15--3,16) })),
+                                  (3,17--3,23), [],
+                                  { ColonRange = Some (3,15--3,16) })),
                             Typed
                               (Const
-                                 (String
-                                    ("", Regular,
-                                     /root/LeadingKeyword/OverrideKeyword.fs (3,26--3,28)),
-                                  /root/LeadingKeyword/OverrideKeyword.fs (3,26--3,28)),
+                                 (String ("", Regular, (3,26--3,28)),
+                                  (3,26--3,28)),
                                LongIdent (SynLongIdent ([string], [], [None])),
-                               /root/LeadingKeyword/OverrideKeyword.fs (3,26--3,28)),
-                            /root/LeadingKeyword/OverrideKeyword.fs (3,13--3,14),
-                            NoneAtInvisible,
-                            { LeadingKeyword =
-                               Override
-                                 /root/LeadingKeyword/OverrideKeyword.fs (3,4--3,12)
+                               (3,26--3,28)), (3,13--3,14), NoneAtInvisible,
+                            { LeadingKeyword = Override (3,4--3,12)
                               InlineKeyword = None
-                              EqualsRange =
-                               Some
-                                 /root/LeadingKeyword/OverrideKeyword.fs (3,24--3,25) }),
-                         /root/LeadingKeyword/OverrideKeyword.fs (3,4--3,28))],
-                     /root/LeadingKeyword/OverrideKeyword.fs (3,4--3,28)), [],
-                  None, /root/LeadingKeyword/OverrideKeyword.fs (2,5--3,28),
-                  { LeadingKeyword =
-                     Type /root/LeadingKeyword/OverrideKeyword.fs (2,0--2,4)
-                    EqualsRange =
-                     Some /root/LeadingKeyword/OverrideKeyword.fs (2,7--2,8)
-                    WithKeyword = None })],
-              /root/LeadingKeyword/OverrideKeyword.fs (2,0--3,28))],
-          PreXmlDocEmpty, [], None,
-          /root/LeadingKeyword/OverrideKeyword.fs (2,0--4,0),
-          { LeadingKeyword = None })], (true, false),
+                              EqualsRange = Some (3,24--3,25) }), (3,4--3,28))],
+                     (3,4--3,28)), [], None, (2,5--3,28),
+                  { LeadingKeyword = Type (2,0--2,4)
+                    EqualsRange = Some (2,7--2,8)
+                    WithKeyword = None })], (2,0--3,28))], PreXmlDocEmpty, [],
+          None, (2,0--4,0), { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

@@ -12,8 +12,7 @@ ImplFile
                  (SynComponentInfo
                     ([], None, [], [Bar],
                      PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None,
-                     /root/Binding/RangeOfAttributeShouldBeIncludedInSynMemberDefnMember.fs (2,5--2,8)),
+                     false, None, (2,5--2,8)),
                   ObjectModel
                     (Unspecified,
                      [Member
@@ -21,16 +20,11 @@ ImplFile
                            (None, Normal, false, false,
                             [{ Attributes =
                                 [{ TypeName = SynLongIdent ([Foo], [], [None])
-                                   ArgExpr =
-                                    Const
-                                      (Unit,
-                                       /root/Binding/RangeOfAttributeShouldBeIncludedInSynMemberDefnMember.fs (3,6--3,9))
+                                   ArgExpr = Const (Unit, (3,6--3,9))
                                    Target = None
                                    AppliesToGetterAndSetter = false
-                                   Range =
-                                    /root/Binding/RangeOfAttributeShouldBeIncludedInSynMemberDefnMember.fs (3,6--3,9) }]
-                               Range =
-                                /root/Binding/RangeOfAttributeShouldBeIncludedInSynMemberDefnMember.fs (3,4--3,11) }],
+                                   Range = (3,6--3,9) }]
+                               Range = (3,4--3,11) }],
                             PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),
                             SynValData
                               (Some { IsInstance = true
@@ -44,44 +38,21 @@ ImplFile
                                   SynArgInfo ([], false, None)), None),
                             LongIdent
                               (SynLongIdent
-                                 ([this; Something],
-                                  [/root/Binding/RangeOfAttributeShouldBeIncludedInSynMemberDefnMember.fs (4,15--4,16)],
+                                 ([this; Something], [(4,15--4,16)],
                                   [None; None]), None, None,
                                Pats
                                  [Paren
-                                    (Const
-                                       (Unit,
-                                        /root/Binding/RangeOfAttributeShouldBeIncludedInSynMemberDefnMember.fs (4,26--4,28)),
-                                     /root/Binding/RangeOfAttributeShouldBeIncludedInSynMemberDefnMember.fs (4,26--4,28))],
-                               None,
-                               /root/Binding/RangeOfAttributeShouldBeIncludedInSynMemberDefnMember.fs (4,11--4,28)),
-                            None,
-                            Const
-                              (Unit,
-                               /root/Binding/RangeOfAttributeShouldBeIncludedInSynMemberDefnMember.fs (4,31--4,33)),
-                            /root/Binding/RangeOfAttributeShouldBeIncludedInSynMemberDefnMember.fs (3,4--4,28),
+                                    (Const (Unit, (4,26--4,28)), (4,26--4,28))],
+                               None, (4,11--4,28)), None,
+                            Const (Unit, (4,31--4,33)), (3,4--4,28),
                             NoneAtInvisible,
-                            { LeadingKeyword =
-                               Member
-                                 /root/Binding/RangeOfAttributeShouldBeIncludedInSynMemberDefnMember.fs (4,4--4,10)
+                            { LeadingKeyword = Member (4,4--4,10)
                               InlineKeyword = None
-                              EqualsRange =
-                               Some
-                                 /root/Binding/RangeOfAttributeShouldBeIncludedInSynMemberDefnMember.fs (4,29--4,30) }),
-                         /root/Binding/RangeOfAttributeShouldBeIncludedInSynMemberDefnMember.fs (3,4--4,33))],
-                     /root/Binding/RangeOfAttributeShouldBeIncludedInSynMemberDefnMember.fs (3,4--4,33)),
-                  [], None,
-                  /root/Binding/RangeOfAttributeShouldBeIncludedInSynMemberDefnMember.fs (2,5--4,33),
-                  { LeadingKeyword =
-                     Type
-                       /root/Binding/RangeOfAttributeShouldBeIncludedInSynMemberDefnMember.fs (2,0--2,4)
-                    EqualsRange =
-                     Some
-                       /root/Binding/RangeOfAttributeShouldBeIncludedInSynMemberDefnMember.fs (2,9--2,10)
-                    WithKeyword = None })],
-              /root/Binding/RangeOfAttributeShouldBeIncludedInSynMemberDefnMember.fs (2,0--4,33))],
-          PreXmlDocEmpty, [], None,
-          /root/Binding/RangeOfAttributeShouldBeIncludedInSynMemberDefnMember.fs (2,0--5,0),
-          { LeadingKeyword = None })], (true, false),
+                              EqualsRange = Some (4,29--4,30) }), (3,4--4,33))],
+                     (3,4--4,33)), [], None, (2,5--4,33),
+                  { LeadingKeyword = Type (2,0--2,4)
+                    EqualsRange = Some (2,9--2,10)
+                    WithKeyword = None })], (2,0--4,33))], PreXmlDocEmpty, [],
+          None, (2,0--5,0), { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
