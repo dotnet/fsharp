@@ -1273,12 +1273,17 @@ moduleDefn:
             | Some vis -> raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsIgnoreAttributesOnModuleAbbreviationAlwaysPrivate(vis.ToString()))
             | None -> ()
             [ SynModuleDecl.ModuleAbbrev(List.head path, eqn, (rhs parseState 3, eqn) ||> unionRangeWithListBy (fun id -> id.idRange) ) ]
-        | Choice2Of2 def -> 
+        | Choice2Of2 (def, mEndOpt) -> 
             if not (isSingleton path) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleAbbreviationMustBeSimpleName())
             let info = SynComponentInfo(attribs @ attribs2, None, [], path, xmlDoc, false, vis, rhs parseState 3)
             let mEquals = rhs parseState 4
             let trivia: SynModuleDeclNestedModuleTrivia = { ModuleKeyword = Some mModule; EqualsRange = Some mEquals }
-            [ SynModuleDecl.NestedModule(info, isRec, def, false, ((rhs2 parseState 1 4, def) ||> unionRangeWithListBy (fun d -> d.Range) |> unionRangeWithXmlDoc xmlDoc), trivia)] }
+            let m =
+                (rhs2 parseState 1 4, def)
+                ||> unionRangeWithListBy (fun (d: SynModuleDecl) -> d.Range)
+                |> unionRangeWithXmlDoc xmlDoc
+            let m = match mEndOpt with | None -> m | Some mEnd -> unionRanges m mEnd
+            [ SynModuleDecl.NestedModule(info, isRec, def, false, m, trivia) ] }
 
   /* unattached custom attributes */
   | attributes recover
@@ -1339,17 +1344,18 @@ namedModuleDefnBlock:
          match $2 with 
          | [ SynModuleDecl.Expr (LongOrSingleIdent(false, SynLongIdent(path, _, _), None, _), _) ] -> 
              Choice1Of2  path
-         | _ -> 
-             Choice2Of2 $2 
+         | _ ->
+             Choice2Of2 ($2, None) 
        }
 
   | OBLOCKBEGIN moduleDefnsOrExpr recover 
      { // The lex filter ensures we can only get a mismatch in OBLOCKBEGIN/OBLOCKEND tokens if there was some other kind of error, hence we don't need to report this error
        // reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnClosedBlockInHashLight())   
-       Choice2Of2 $2 }
+       Choice2Of2 ($2, None) }
 
   | OBLOCKBEGIN error oblockend                
-     { Choice2Of2 [] }
+     { let mEnd = rhs parseState 3
+       Choice2Of2 ([], Some mEnd) }
 
   | wrappedNamedModuleDefn 
      { Choice2Of2 $1 }
@@ -1361,14 +1367,16 @@ namedModuleDefnBlock:
 /* A module definition that includes a 'begin'...'end' (rarely used in F# with #light syntax) */ 
 wrappedNamedModuleDefn:
   | structOrBegin moduleDefnsOrExprPossiblyEmpty END 
-     { $2 }
+     { let mEnd = rhs parseState 3
+       $2, Some mEnd }
 
   | structOrBegin moduleDefnsOrExprPossiblyEmpty recover 
      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBeginOrStruct())  
-       $2 }
+       $2, None }
 
   | structOrBegin error END                      
-     { [] }
+     { let mEnd = rhs parseState 3
+       [], Some mEnd }
 
 
 tyconDefnAugmentation: 
