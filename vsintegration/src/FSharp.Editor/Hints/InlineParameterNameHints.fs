@@ -2,6 +2,7 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor.Hints
 
+open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
@@ -60,6 +61,14 @@ module InlineParameterNameHints =
         >> Seq.map (fun location -> location.ArgumentRange) 
         >> Seq.contains range
 
+    let private getSourceTextAtRange 
+        (sourceText: SourceText)
+        (range: range) =
+
+        let line = sourceText.Lines[range.Start.Line - 1].ToString()
+        let length = range.EndColumn - range.StartColumn
+        line.Substring(range.Start.Column, length)
+
     let isMemberOrFunctionOrValueValidForHint 
         (symbol: FSharpMemberOrFunctionOrValue) 
         (symbolUse: FSharpSymbolUse) =
@@ -83,6 +92,7 @@ module InlineParameterNameHints =
         && symbol.DisplayName <> "(::)"
 
     let getHintsForMemberOrFunctionOrValue
+        (sourceText: SourceText)
         (parseResults: FSharpParseFileResults) 
         (symbol: FSharpMemberOrFunctionOrValue) 
         (symbolUse: FSharpSymbolUse) =
@@ -97,10 +107,16 @@ module InlineParameterNameHints =
             if tupleRanges |> (not << Seq.isEmpty) then tupleRanges else curryRanges
             |> Seq.filter (fun range -> argumentLocations |> (not << isNamedArgument range))
 
+        let argumentNames = 
+            ranges
+            |> Seq.map (getSourceTextAtRange sourceText)
+
         parameters
         |> Seq.zip ranges // Seq.zip is important as List.zip requires equal lengths
         |> Seq.where (snd >> doesParameterNameExist)
-        |> Seq.map getParameterHint
+        |> Seq.zip argumentNames
+        |> Seq.choose (fun (argumentName, (range, parameter)) -> 
+            if argumentName <> parameter.DisplayName then Some (getParameterHint (range, parameter)) else None)
         |> Seq.toList
 
     let getHintsForUnionCase

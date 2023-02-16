@@ -18,10 +18,6 @@ open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.IO
 open FSharp.Compiler.Text.Range
 
-#if DEBUG
-let showEntryLookups = false
-#endif
-
 //---------------------------------------------------------------------
 // Byte, byte array fragments and other concrete representations
 // manipulations.
@@ -1072,18 +1068,6 @@ let GetMemberAccessFlags access =
     | ILMemberAccess.FamilyAndAssembly -> 0x00000002
     | ILMemberAccess.FamilyOrAssembly -> 0x00000005
     | ILMemberAccess.Assembly -> 0x00000003
-
-let GetTypeAccessFlags access =
-    match access with
-    | ILTypeDefAccess.Public -> 0x00000001
-    | ILTypeDefAccess.Private -> 0x00000000
-    | ILTypeDefAccess.Nested ILMemberAccess.Public -> 0x00000002
-    | ILTypeDefAccess.Nested ILMemberAccess.Private -> 0x00000003
-    | ILTypeDefAccess.Nested ILMemberAccess.Family -> 0x00000004
-    | ILTypeDefAccess.Nested ILMemberAccess.CompilerControlled -> failwith "bad type access"
-    | ILTypeDefAccess.Nested ILMemberAccess.FamilyAndAssembly -> 0x00000006
-    | ILTypeDefAccess.Nested ILMemberAccess.FamilyOrAssembly -> 0x00000007
-    | ILTypeDefAccess.Nested ILMemberAccess.Assembly -> 0x00000005
 
 exception MethodDefNotFound
 let FindMethodDefIdx cenv mdkey =
@@ -3747,7 +3731,6 @@ let writePdb (
                         stream.WriteTo fs
                     getInfoForPortablePdb contentId pdbfile pathMap debugDataChunk debugDeterministicPdbChunk debugChecksumPdbChunk algorithmName checkSum embeddedPDB deterministic
             | None -> [| |]
-        reportTime "Generate PDB Info"
 
         // Now we have the debug data we can go back and fill in the debug directory in the image
         use fs2 = reopenOutput()
@@ -3775,6 +3758,7 @@ let writePdb (
             reportTime "Finalize PDB"
             signImage ()
             os2.Dispose()
+            reportTime "Generate PDB Info"
         with exn ->
             failwith ("Error while writing debug directory entry: " + exn.Message)
             (try os2.Dispose(); FileSystem.FileDeleteShim outfile with _ -> ())

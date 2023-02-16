@@ -571,6 +571,9 @@ type Entity =
     /// Indicates if we have pre-determined that a type definition has a self-referential constructor using 'as x'
     member HasSelfReferentialConstructor: bool
 
+    /// Indicates if the value has a signature file counterpart
+    member HasSignatureFile: bool
+
     /// Get the Abstract IL scope, nesting type metadata for this
     /// type definition, assuming it is backed by Abstract IL metadata.
     member ILTyconInfo: TILObjectReprData
@@ -1817,6 +1820,9 @@ type ValOptionalData =
         /// MUTABILITY: for unpickle linkage
         mutable val_xmldoc: XmlDoc
 
+        /// the signature xml doc for an item in an implementation file.
+        mutable val_other_xmldoc: XmlDoc option
+
         /// Is the value actually an instance method/property/event that augments
         /// a type, type if so what name does it take in the IL?
         /// MUTABILITY: for unpickle linkage
@@ -1909,6 +1915,8 @@ type Val =
     member SetMemberInfo: member_info: ValMemberInfo -> unit
 
     member SetOtherRange: m: (range * bool) -> unit
+
+    member SetOtherXmlDoc: xmlDoc: XmlDoc -> unit
 
     member SetType: ty: TType -> unit
 
@@ -2084,6 +2092,9 @@ type Val =
     member IsOverrideOrExplicitImpl: bool
 
     member IsTypeFunction: bool
+
+    /// Indicates if the value has a signature file counterpart
+    member HasSignatureFile: bool
 
     /// The value of a value or member marked with [<LiteralAttribute>]
     member LiteralValue: Const option
@@ -4227,8 +4238,8 @@ type Construct =
 
 #if !NO_TYPEPROVIDERS
     /// Compute the definition location of a provided item
-    static member ComputeDefinitionLocationOfProvidedItem:
-        p: Tainted<#IProvidedCustomAttributeProvider> -> Text.range option
+    static member ComputeDefinitionLocationOfProvidedItem<'T when 'T :> IProvidedCustomAttributeProvider> :
+        p: Tainted<'T> -> range option
 #endif
 
     /// Key a Tycon or TyconRef by both mangled type demangled name.

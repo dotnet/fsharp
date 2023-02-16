@@ -1276,6 +1276,8 @@ type Entity =
 
     /// Indicates if we have pre-determined that a type definition has a self-referential constructor using 'as x'
     member x.HasSelfReferentialConstructor = x.entity_flags.HasSelfReferentialConstructor
+    
+    member x.HasSignatureFile = x.SigRange <> x.DefinitionRange
 
     /// Set the custom attributes on an F# type definition.
     member x.SetAttribs attribs = x.entity_attribs <- attribs
@@ -2543,7 +2545,10 @@ type ValOptionalData =
 
       /// XML documentation attached to a value.
       /// MUTABILITY: for unpickle linkage
-      mutable val_xmldoc: XmlDoc 
+      mutable val_xmldoc: XmlDoc
+      
+      /// the signature xml doc for an item in an implementation file.
+      mutable val_other_xmldoc : XmlDoc option
 
       /// Is the value actually an instance method/property/event that augments 
       /// a type, and if so what name does it take in the IL?
@@ -2599,6 +2604,7 @@ type Val =
           val_repr_info_for_display = None
           val_access = TAccess []
           val_xmldoc = XmlDoc.Empty
+          val_other_xmldoc = None
           val_member_info = None
           val_declaring_entity = ParentNone
           val_xmldocsig = String.Empty
@@ -2803,6 +2809,9 @@ type Val =
     //  Indicates if this value was declared to be a type function, e.g. "let f<'a> = typeof<'a>"
     member x.IsTypeFunction = x.val_flags.IsTypeFunction
 
+    member x.HasSignatureFile =
+        x.SigRange <> x.DefinitionRange
+    
     /// Get the inline declaration on the value
     member x.InlineInfo = x.val_flags.InlineInfo
 
@@ -2830,7 +2839,13 @@ type Val =
     /// Get the declared documentation for the value
     member x.XmlDoc =
         match x.val_opt_data with
-        | Some optData -> optData.val_xmldoc
+        | Some optData ->
+            if not optData.val_xmldoc.IsEmpty then
+                optData.val_xmldoc
+            else
+                match optData.val_other_xmldoc with
+                | Some xmlDoc -> xmlDoc
+                | None -> XmlDoc.Empty
         | _ -> XmlDoc.Empty
     
     ///Get the signature for the value's XML documentation
@@ -3060,6 +3075,11 @@ type Val =
         | Some optData -> optData.val_other_range <- Some m
         | _ -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_other_range = Some m }
 
+    member x.SetOtherXmlDoc xmlDoc =
+        match x.val_opt_data with
+        | Some optData -> optData.val_other_xmldoc <- Some xmlDoc
+        | _ -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_other_xmldoc = Some xmlDoc }
+    
     member x.SetDeclaringEntity parent = 
         match x.val_opt_data with
         | Some optData -> optData.val_declaring_entity <- parent
@@ -3114,6 +3134,7 @@ type Val =
                        val_repr_info = tg.val_repr_info
                        val_access = tg.val_access
                        val_xmldoc = tg.val_xmldoc
+                       val_other_xmldoc = tg.val_other_xmldoc
                        val_member_info = tg.val_member_info
                        val_declaring_entity = tg.val_declaring_entity
                        val_xmldocsig = tg.val_xmldocsig
@@ -4810,7 +4831,7 @@ type Expr =
         | WitnessArg _  -> "WitnessArg(..)"
         | TyChoose _ -> "TyChoose(..)"
         | Link e -> "Link(" + e.Value.ToDebugString(depth) + ")"
-        | DebugPoint (DebugPointAtLeafExpr.Yes m, e) -> sprintf "DebugPoint(%s, " (m.ToShortString()) + e.ToDebugString(depth) + ")"
+        | DebugPoint (DebugPointAtLeafExpr.Yes m, e) -> sprintf "DebugPoint(%s, " (m.ToString()) + e.ToDebugString(depth) + ")"
 
     /// Get the mark/range/position information from an expression
     member expr.Range =

@@ -15,12 +15,12 @@ open System.IO
 //---------------------------------------------------------------------
 [<Sealed>]
 type ILStrongNameSigner =
-    member PublicKey: byte[]
+    member PublicKey: byte array
     static member OpenPublicKeyOptions: byte array -> bool -> ILStrongNameSigner
-    static member OpenPublicKey: byte[] -> ILStrongNameSigner
-    static member OpenKeyPairFile: byte[] -> ILStrongNameSigner
+    static member OpenPublicKey: byte array -> ILStrongNameSigner
+    static member OpenKeyPairFile: byte array -> ILStrongNameSigner
     static member OpenKeyContainer: string -> ILStrongNameSigner
     member IsFullySigned: bool
-    member PublicKey: byte[]
+    member PublicKey: byte array
     member SignatureSize: int
     member SignStream: Stream -> unit
