@@ -5,9 +5,6 @@ ImplFile
       [SynModuleOrNamespace
          ([A; B; C], false, NamedModule, [],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
-          /root/ModuleOrNamespace/EmptyModuleOrNamespaceShouldBePresent.fs (1,0--1,12),
-          { LeadingKeyword =
-             Module
-               /root/ModuleOrNamespace/EmptyModuleOrNamespaceShouldBePresent.fs (1,0--1,6) })],
-      (true, false), { ConditionalDirectives = []
-                       CodeComments = [] }, set []))
+          (1,0--1,12), { LeadingKeyword = Module (1,0--1,6) })], (true, false),
+      { ConditionalDirectives = []
+        CodeComments = [] }, set []))
