@@ -701,7 +701,7 @@ type SynExpr =
 
     | FromParseError of expr: SynExpr * range: range
 
-    | DiscardAfterMissingQualificationAfterDot of expr: SynExpr * range: range
+    | DiscardAfterMissingQualificationAfterDot of expr: SynExpr * dotRange: range * range: range
 
     | Fixed of expr: SynExpr * range: range
 
@@ -787,13 +787,7 @@ type SynExpr =
 
     member e.RangeWithoutAnyExtraDot =
         match e with
-        | SynExpr.DotGet (expr, _, lidwd, m) ->
-            if lidwd.ThereIsAnExtraDotAtTheEnd then
-                unionRanges expr.Range lidwd.RangeWithoutAnyExtraDot
-            else
-                m
-        | SynExpr.LongIdent (_, lidwd, _, _) -> lidwd.RangeWithoutAnyExtraDot
-        | SynExpr.DiscardAfterMissingQualificationAfterDot (expr, _) -> expr.Range
+        | SynExpr.DiscardAfterMissingQualificationAfterDot (expr, _, _) -> expr.Range
         | _ -> e.Range
 
     member e.RangeOfFirstPortion =

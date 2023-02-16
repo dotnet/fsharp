@@ -547,8 +547,7 @@ module SyntaxTraversal =
 
                     let ok =
                         match isPartOfArrayOrList, synExpr with
-                        | false, SynExpr.Ident ident -> visitor.VisitRecordField(path, None, Some(SynLongIdent([ ident ], [], [ None ])))
-                        | false, SynExpr.LongIdent (false, lidwd, _, _) -> visitor.VisitRecordField(path, None, Some lidwd)
+                        | false, LongOrSingleIdent (_, lid, _, _) -> visitor.VisitRecordField(path, None, Some lid)
                         | _ -> None
 
                     if ok.IsSome then ok else traverseSynExpr synExpr
@@ -783,7 +782,7 @@ module SyntaxTraversal =
 
                 | SynExpr.FromParseError (synExpr, _range) -> traverseSynExpr synExpr
 
-                | SynExpr.DiscardAfterMissingQualificationAfterDot (synExpr, _range) -> traverseSynExpr synExpr
+                | SynExpr.DiscardAfterMissingQualificationAfterDot (synExpr, _, _range) -> traverseSynExpr synExpr
 
             visitor.VisitExpr(origPath, traverseSynExpr origPath, defaultTraverse, expr)
 
