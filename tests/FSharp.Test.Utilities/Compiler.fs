@@ -839,14 +839,17 @@ module rec Compiler =
         let source = fs.Source.GetSourceText |> Option.defaultValue ""
         script.Eval(source) |> (processScriptResults fs)  
 
+    let scriptingShim = Path.Combine(__SOURCE_DIRECTORY__,"ScriptingShims.fsx")
     let private evalScriptFromDisk (fs: FSharpCompilationSource) (script:FSharpScript) : CompilationResult =
+        
         let fileNames = 
             (fs.Source :: fs.AdditionalSources)
             |> List.map (fun x -> x.GetSourceFileName)
+            |> List.insertAt 0 scriptingShim
             |> List.map (sprintf " @\"%s\"")
             |> String.Concat
-    
-        script.Eval("#load" + fileNames ) |> (processScriptResults fs) 
+
+        script.Eval("#load " + fileNames ) |> (processScriptResults fs) 
 
     let eval (cUnit: CompilationUnit) : CompilationResult =
         match cUnit with
