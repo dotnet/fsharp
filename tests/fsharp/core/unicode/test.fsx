@@ -24,8 +24,6 @@ let input_byte (x : System.IO.FileStream) =
     let b = x.ReadByte() 
     if b = -1 then raise (System.IO.EndOfStreamException()) else b
 
-let bslFilePath = Path.Combine(__SOURCE_DIRECTORY__,"out.bsl")
-
 let test2925 () = 
   printfn "test2925...";
   (* This writes a file in the standard utf8 encoding.  Probably needs to be adjusted if default encodings differ *)
@@ -34,7 +32,7 @@ let test2925 () =
   os.Write "\u2260"; (* not equals *)
   os.Dispose();
   use is1 = System.IO.File.OpenRead "out1.txt" in 
-  use is2 = System.IO.File.OpenRead bslFilePath in 
+  use is2 = System.IO.File.OpenRead "out.bsl" in 
   try 
     while true do 
       let c2 = input_byte is2 in 
@@ -56,7 +54,7 @@ let test2925b () =
   os.Write "\U00002260"; (* not equals *)
   os.Dispose();
   let is1 = System.IO.File.OpenRead "out1.txt" in 
-  let is2 = System.IO.File.OpenRead bslFilePath in 
+  let is2 = System.IO.File.OpenRead "out.bsl" in 
   try 
     while true do 
       let c2 = input_byte is2 in 
@@ -79,7 +77,7 @@ let test2926 () =
   Printf.printf "length s = %d\n" (String.length s);
   os.Dispose();
   let is1 = System.IO.File.OpenRead "out2.txt" in 
-  let is2 = System.IO.File.OpenRead bslFilePath in 
+  let is2 = System.IO.File.OpenRead "out.bsl" in 
   try 
     while true do 
       let c2 = input_byte is2 in 

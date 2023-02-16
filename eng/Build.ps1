@@ -55,6 +55,7 @@ param (
     [switch]$testCompilerComponentTests,
     [switch]$testFSharpCore,
     [switch]$testFSharpQA,
+    [switch]$testIntegration,
     [switch]$testScripting,
     [switch]$testVs,
     [switch]$testAll,
@@ -102,6 +103,7 @@ function Print-Usage() {
     Write-Host "  -testCoreClr                  Run tests against CoreCLR"
     Write-Host "  -testFSharpCore               Run FSharpCore unit tests"
     Write-Host "  -testFSharpQA                 Run F# Cambridge tests"
+    Write-Host "  -testIntegration              Run F# integration tests"
     Write-Host "  -testScripting                Run Scripting tests"
     Write-Host "  -testVs                       Run F# editor unit tests"
     Write-Host "  -testpack                     Verify built packages"
@@ -142,6 +144,7 @@ function Process-Arguments() {
         $script:testDesktop = $True
         $script:testCoreClr = $True
         $script:testFSharpQA = $True
+        $script:testIntegration = $True
         $script:testVs = $True
     }
 
@@ -154,6 +157,7 @@ function Process-Arguments() {
         $script:testCoreClr = $False
         $script:testFSharpCore = $False
         $script:testFSharpQA = $False
+        $script:testIntegration = $False
         $script:testVs = $False
         $script:testpack = $False
         $script:verifypackageshipstatus = $True
@@ -553,7 +557,7 @@ try {
         
         # Collect output from  background jobs
         Wait-job $bgJob | out-null
-        Receive-Job $bgJob      
+        Receive-Job $bgJob    
     }
 
     if ($testFSharpQA) {
@@ -613,6 +617,10 @@ try {
     if ($testVs -and -not $noVisualStudio) {
         TestUsingNUnit -testProject "$RepoRoot\vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\VisualFSharp.UnitTests\"
         TestUsingXUnit -testProject "$RepoRoot\vsintegration\tests\FSharp.Editor.Tests\FSharp.Editor.Tests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Editor.Tests\FSharp.Editor.Tests.fsproj"
+    }
+    
+    if ($testIntegration) {
+        TestUsingXUnit -testProject "$RepoRoot\vsintegration\tests\FSharp.Editor.IntegrationTests\FSharp.Editor.IntegrationTests.csproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Editor.IntegrationTests\"
     }
 
     # verify nupkgs have access to the source code
