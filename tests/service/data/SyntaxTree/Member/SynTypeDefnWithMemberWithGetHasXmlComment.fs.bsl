@@ -9,8 +9,7 @@ ImplFile
                  (SynComponentInfo
                     ([], None, [], [A],
                      PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None,
-                     /root/Member/SynTypeDefnWithMemberWithGetHasXmlComment.fs (2,5--2,6)),
+                     false, None, (2,5--2,6)),
                   ObjectModel
                     (Unspecified,
                      [GetSetMember
@@ -32,53 +31,25 @@ ImplFile
                                      SynArgInfo ([], false, None)), None),
                                LongIdent
                                  (SynLongIdent
-                                    ([x; B],
-                                     [/root/Member/SynTypeDefnWithMemberWithGetHasXmlComment.fs (4,12--4,13)],
-                                     [None; None]), Some get, None,
+                                    ([x; B], [(4,12--4,13)], [None; None]),
+                                  Some get, None,
                                   Pats
                                     [Paren
-                                       (Const
-                                          (Unit,
-                                           /root/Member/SynTypeDefnWithMemberWithGetHasXmlComment.fs (4,23--4,25)),
-                                        /root/Member/SynTypeDefnWithMemberWithGetHasXmlComment.fs (4,23--4,25))],
-                                  None,
-                                  /root/Member/SynTypeDefnWithMemberWithGetHasXmlComment.fs (4,20--4,25)),
-                               None,
-                               Const
-                                 (Int32 5,
-                                  /root/Member/SynTypeDefnWithMemberWithGetHasXmlComment.fs (4,28--4,29)),
-                               /root/Member/SynTypeDefnWithMemberWithGetHasXmlComment.fs (3,4--4,25),
+                                       (Const (Unit, (4,23--4,25)), (4,23--4,25))],
+                                  None, (4,20--4,25)), None,
+                               Const (Int32 5, (4,28--4,29)), (3,4--4,25),
                                NoneAtInvisible,
-                               { LeadingKeyword =
-                                  Member
-                                    /root/Member/SynTypeDefnWithMemberWithGetHasXmlComment.fs (4,4--4,10)
+                               { LeadingKeyword = Member (4,4--4,10)
                                  InlineKeyword = None
-                                 EqualsRange =
-                                  Some
-                                    /root/Member/SynTypeDefnWithMemberWithGetHasXmlComment.fs (4,26--4,27) })),
-                         None,
-                         /root/Member/SynTypeDefnWithMemberWithGetHasXmlComment.fs (3,4--4,29),
-                         { InlineKeyword = None
-                           WithKeyword =
-                            /root/Member/SynTypeDefnWithMemberWithGetHasXmlComment.fs (4,15--4,19)
-                           GetKeyword =
-                            Some
-                              /root/Member/SynTypeDefnWithMemberWithGetHasXmlComment.fs (4,20--4,23)
-                           AndKeyword = None
-                           SetKeyword = None })],
-                     /root/Member/SynTypeDefnWithMemberWithGetHasXmlComment.fs (3,4--4,29)),
-                  [], None,
-                  /root/Member/SynTypeDefnWithMemberWithGetHasXmlComment.fs (2,5--4,29),
-                  { LeadingKeyword =
-                     Type
-                       /root/Member/SynTypeDefnWithMemberWithGetHasXmlComment.fs (2,0--2,4)
-                    EqualsRange =
-                     Some
-                       /root/Member/SynTypeDefnWithMemberWithGetHasXmlComment.fs (2,7--2,8)
-                    WithKeyword = None })],
-              /root/Member/SynTypeDefnWithMemberWithGetHasXmlComment.fs (2,0--4,29))],
-          PreXmlDocEmpty, [], None,
-          /root/Member/SynTypeDefnWithMemberWithGetHasXmlComment.fs (2,0--5,0),
-          { LeadingKeyword = None })], (true, false),
-      { ConditionalDirectives = []
-        CodeComments = [] }, set []))
+                                 EqualsRange = Some (4,26--4,27) })), None,
+                         (3,4--4,29), { InlineKeyword = None
+                                        WithKeyword = (4,15--4,19)
+                                        GetKeyword = Some (4,20--4,23)
+                                        AndKeyword = None
+                                        SetKeyword = None })], (3,4--4,29)), [],
+                  None, (2,5--4,29), { LeadingKeyword = Type (2,0--2,4)
+                                       EqualsRange = Some (2,7--2,8)
+                                       WithKeyword = None })], (2,0--4,29))],
+          PreXmlDocEmpty, [], None, (2,0--5,0), { LeadingKeyword = None })],
+      (true, false), { ConditionalDirectives = []
+                       CodeComments = [] }, set []))

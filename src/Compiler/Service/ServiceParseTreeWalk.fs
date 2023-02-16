@@ -220,7 +220,7 @@ module SyntaxTraversal =
 #endif
             if not isOrdered then
                 let s =
-                    sprintf "ServiceParseTreeWalk: not isOrdered: %A" (diveResults |> List.map (fun (r, _) -> r.ToShortString()))
+                    sprintf "ServiceParseTreeWalk: not isOrdered: %A" (diveResults |> List.map (fun (r, _) -> r.ToString()))
 
                 ignore s
             //System.Diagnostics.Debug.Assert(false, s)
@@ -237,8 +237,8 @@ module SyntaxTraversal =
                 let s =
                     sprintf
                         "ServiceParseTreeWalk: not outerContainsInner: %A : %A"
-                        (outerRange.ToShortString())
-                        (diveResults |> List.map (fun (r, _) -> r.ToShortString()))
+                        (outerRange.ToString())
+                        (diveResults |> List.map (fun (r, _) -> r.ToString()))
 
                 ignore s
             //System.Diagnostics.Debug.Assert(false, s)

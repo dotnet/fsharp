@@ -12,12 +12,9 @@ ImplFile
                    ([],
                     SynUnionCase
                       ([], SynIdent (Foo, None), Fields [], PreXmlDocEmpty, None,
-                       /root/Exception/SynExceptionDefnShouldContainsTheRangeOfTheWithKeyword.fs (4,10--4,13),
-                       { BarRange = None }), None,
+                       (4,10--4,13), { BarRange = None }), None,
                     PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector), None,
-                    /root/Exception/SynExceptionDefnShouldContainsTheRangeOfTheWithKeyword.fs (4,0--4,13)),
-                 Some
-                   /root/Exception/SynExceptionDefnShouldContainsTheRangeOfTheWithKeyword.fs (4,14--4,18),
+                    (4,0--4,13)), Some (4,14--4,18),
                  [Member
                     (SynBinding
                        (None, Normal, false, false, [],
@@ -35,33 +32,13 @@ ImplFile
                         LongIdent
                           (SynLongIdent ([Meh], [], [None]), None, None,
                            Pats
-                             [Paren
-                                (Const
-                                   (Unit,
-                                    /root/Exception/SynExceptionDefnShouldContainsTheRangeOfTheWithKeyword.fs (5,15--5,17)),
-                                 /root/Exception/SynExceptionDefnShouldContainsTheRangeOfTheWithKeyword.fs (5,15--5,17))],
-                           None,
-                           /root/Exception/SynExceptionDefnShouldContainsTheRangeOfTheWithKeyword.fs (5,11--5,17)),
-                        None,
-                        Const
-                          (Unit,
-                           /root/Exception/SynExceptionDefnShouldContainsTheRangeOfTheWithKeyword.fs (5,20--5,22)),
-                        /root/Exception/SynExceptionDefnShouldContainsTheRangeOfTheWithKeyword.fs (5,11--5,17),
-                        NoneAtInvisible,
-                        { LeadingKeyword =
-                           Member
-                             /root/Exception/SynExceptionDefnShouldContainsTheRangeOfTheWithKeyword.fs (5,4--5,10)
+                             [Paren (Const (Unit, (5,15--5,17)), (5,15--5,17))],
+                           None, (5,11--5,17)), None, Const (Unit, (5,20--5,22)),
+                        (5,11--5,17), NoneAtInvisible,
+                        { LeadingKeyword = Member (5,4--5,10)
                           InlineKeyword = None
-                          EqualsRange =
-                           Some
-                             /root/Exception/SynExceptionDefnShouldContainsTheRangeOfTheWithKeyword.fs (5,18--5,19) }),
-                     /root/Exception/SynExceptionDefnShouldContainsTheRangeOfTheWithKeyword.fs (5,4--5,22))],
-                 /root/Exception/SynExceptionDefnShouldContainsTheRangeOfTheWithKeyword.fs (4,0--5,22)),
-              /root/Exception/SynExceptionDefnShouldContainsTheRangeOfTheWithKeyword.fs (4,0--5,22))],
-          PreXmlDocEmpty, [], None,
-          /root/Exception/SynExceptionDefnShouldContainsTheRangeOfTheWithKeyword.fs (2,0--5,22),
-          { LeadingKeyword =
-             Namespace
-               /root/Exception/SynExceptionDefnShouldContainsTheRangeOfTheWithKeyword.fs (2,0--2,9) })],
+                          EqualsRange = Some (5,18--5,19) }), (5,4--5,22))],
+                 (4,0--5,22)), (4,0--5,22))], PreXmlDocEmpty, [], None,
+          (2,0--5,22), { LeadingKeyword = Namespace (2,0--2,9) })],
       (true, false), { ConditionalDirectives = []
                        CodeComments = [] }, set []))

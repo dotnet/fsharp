@@ -9,13 +9,8 @@ ImplFile
                  (SynComponentInfo
                     ([], None, [], [X],
                      PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None,
-                     /root/OperatorName/OperatorInMemberDefinition.fs (2,5--2,6)),
-                  ObjectModel
-                    (Augmentation
-                       /root/OperatorName/OperatorInMemberDefinition.fs (2,7--2,11),
-                     [],
-                     /root/OperatorName/OperatorInMemberDefinition.fs (2,5--3,28)),
+                     false, None, (2,5--2,6)),
+                  ObjectModel (Augmentation (2,7--2,11), [], (2,5--3,28)),
                   [Member
                      (SynBinding
                         (None, Normal, false, false, [],
@@ -34,25 +29,18 @@ ImplFile
                                SynArgInfo ([], false, None)), None),
                          LongIdent
                            (SynLongIdent
-                              ([_; op_Addition],
-                               [/root/OperatorName/OperatorInMemberDefinition.fs (3,12--3,13)],
+                              ([_; op_Addition], [(3,12--3,13)],
                                [None;
                                 Some
                                   (OriginalNotationWithParen
-                                     (/root/OperatorName/OperatorInMemberDefinition.fs (3,13--3,14),
-                                      "+",
-                                      /root/OperatorName/OperatorInMemberDefinition.fs (3,15--3,16)))]),
-                            None, None,
+                                     ((3,13--3,14), "+", (3,15--3,16)))]), None,
+                            None,
                             Pats
                               [Named
-                                 (SynIdent (a, None), false, None,
-                                  /root/OperatorName/OperatorInMemberDefinition.fs (3,17--3,18));
+                                 (SynIdent (a, None), false, None, (3,17--3,18));
                                Named
-                                 (SynIdent (b, None), false, None,
-                                  /root/OperatorName/OperatorInMemberDefinition.fs (3,19--3,20))],
-                            None,
-                            /root/OperatorName/OperatorInMemberDefinition.fs (3,11--3,20)),
-                         None,
+                                 (SynIdent (b, None), false, None, (3,19--3,20))],
+                            None, (3,11--3,20)), None,
                          App
                            (NonAtomic, false,
                             App
@@ -62,31 +50,14 @@ ImplFile
                                   SynLongIdent
                                     ([op_Addition], [],
                                      [Some (OriginalNotation "+")]), None,
-                                  /root/OperatorName/OperatorInMemberDefinition.fs (3,25--3,26)),
-                               Ident a,
-                               /root/OperatorName/OperatorInMemberDefinition.fs (3,23--3,26)),
-                            Ident b,
-                            /root/OperatorName/OperatorInMemberDefinition.fs (3,23--3,28)),
-                         /root/OperatorName/OperatorInMemberDefinition.fs (3,11--3,20),
-                         NoneAtInvisible,
-                         { LeadingKeyword =
-                            Member
-                              /root/OperatorName/OperatorInMemberDefinition.fs (3,4--3,10)
+                                  (3,25--3,26)), Ident a, (3,23--3,26)), Ident b,
+                            (3,23--3,28)), (3,11--3,20), NoneAtInvisible,
+                         { LeadingKeyword = Member (3,4--3,10)
                            InlineKeyword = None
-                           EqualsRange =
-                            Some
-                              /root/OperatorName/OperatorInMemberDefinition.fs (3,21--3,22) }),
-                      /root/OperatorName/OperatorInMemberDefinition.fs (3,4--3,28))],
-                  None,
-                  /root/OperatorName/OperatorInMemberDefinition.fs (2,5--3,28),
-                  { LeadingKeyword =
-                     Type
-                       /root/OperatorName/OperatorInMemberDefinition.fs (2,0--2,4)
-                    EqualsRange = None
-                    WithKeyword = None })],
-              /root/OperatorName/OperatorInMemberDefinition.fs (2,0--3,28))],
-          PreXmlDocEmpty, [], None,
-          /root/OperatorName/OperatorInMemberDefinition.fs (2,0--4,0),
-          { LeadingKeyword = None })], (true, false),
-      { ConditionalDirectives = []
-        CodeComments = [] }, set []))
+                           EqualsRange = Some (3,21--3,22) }), (3,4--3,28))],
+                  None, (2,5--3,28), { LeadingKeyword = Type (2,0--2,4)
+                                       EqualsRange = None
+                                       WithKeyword = None })], (2,0--3,28))],
+          PreXmlDocEmpty, [], None, (2,0--4,0), { LeadingKeyword = None })],
+      (true, false), { ConditionalDirectives = []
+                       CodeComments = [] }, set []))

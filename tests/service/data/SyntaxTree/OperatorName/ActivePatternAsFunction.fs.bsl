@@ -11,19 +11,9 @@ ImplFile
                    (false,
                     SynLongIdent
                       ([|Odd|Even|], [],
-                       [Some
-                          (HasParenthesis
-                             (/root/OperatorName/ActivePatternAsFunction.fs (2,0--2,1),
-                              /root/OperatorName/ActivePatternAsFunction.fs (2,11--2,12)))]),
-                    None,
-                    /root/OperatorName/ActivePatternAsFunction.fs (2,0--2,12)),
-                 Const
-                   (Int32 4,
-                    /root/OperatorName/ActivePatternAsFunction.fs (2,13--2,14)),
-                 /root/OperatorName/ActivePatternAsFunction.fs (2,0--2,14)),
-              /root/OperatorName/ActivePatternAsFunction.fs (2,0--2,14))],
-          PreXmlDocEmpty, [], None,
-          /root/OperatorName/ActivePatternAsFunction.fs (2,0--2,14),
+                       [Some (HasParenthesis ((2,0--2,1), (2,11--2,12)))]), None,
+                    (2,0--2,12)), Const (Int32 4, (2,13--2,14)), (2,0--2,14)),
+              (2,0--2,14))], PreXmlDocEmpty, [], None, (2,0--2,14),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

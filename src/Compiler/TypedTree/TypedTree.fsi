@@ -4238,8 +4238,8 @@ type Construct =
 
 #if !NO_TYPEPROVIDERS
     /// Compute the definition location of a provided item
-    static member ComputeDefinitionLocationOfProvidedItem:
-        p: Tainted<#IProvidedCustomAttributeProvider> -> Text.range option
+    static member ComputeDefinitionLocationOfProvidedItem<'T when 'T :> IProvidedCustomAttributeProvider> :
+        p: Tainted<'T> -> range option
 #endif
 
     /// Key a Tycon or TyconRef by both mangled type demangled name.

@@ -260,6 +260,19 @@ let dontInferTypars = ExplicitTyparInfo ([], [], false)
 
 let noArgOrRetAttribs = ArgAndRetAttribs ([], [])
 
+[<RequireQualifiedAccess>]
+type LiteralArgumentType =
+    /// Literal defined at call site
+    ///
+    /// call "literal"
+    | Inline
+
+    /// F# literal value or IL constant
+    ///
+    /// let [<Literal>] lit = "x"
+    /// call lit
+    | StaticField
+
 /// A flag to represent the sort of bindings are we processing.
 /// Processing "declaration" and "class" bindings that make up a module (such as "let x = 1 let y = 2")
 /// shares the same code paths (e.g. TcLetBinding and TcLetrecBindings) as processing expression bindings (such as "let x = 1 in ...")
@@ -5450,7 +5463,7 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
     | SynExpr.Const (SynConst.String (s, _, m), _) ->
         TcNonControlFlowExpr env <| fun env ->
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.AccessRights)
-        TcConstStringExpr cenv overallTy env m tpenv s
+        TcConstStringExpr cenv overallTy env m tpenv s LiteralArgumentType.Inline
 
     | SynExpr.InterpolatedString (parts, _, m) ->
         TcNonControlFlowExpr env <| fun env ->
@@ -6963,16 +6976,32 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
 //-------------------------------------------------------------------------
 
 /// Check a constant string expression. It might be a 'printf' format string
-and TcConstStringExpr cenv (overallTy: OverallTy) env m tpenv (s: string) =
+and TcConstStringExpr cenv (overallTy: OverallTy) env m tpenv (s: string) literalType =
+    let rec isFormat g ty =
+        match stripTyEqns g ty with
+        | TType_app (tcref, _, _) -> tyconRefEq g tcref g.format4_tcr || tyconRefEq g tcref g.format_tcr
+        | TType_var (typar, _) ->
+            typar.Constraints
+            |> List.exists (fun c ->
+                match c with
+                | TyparConstraint.CoercesTo (ty, _) -> isFormat g ty
+                | _ -> false)
+        | _ -> false
 
     let g = cenv.g
 
-    if AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy.Commit g.string_ty then
-        mkString g m s, tpenv
-    else
-        TcFormatStringExpr cenv overallTy env m tpenv s
+    if isFormat g overallTy.Commit then
+        if literalType = LiteralArgumentType.StaticField then
+            checkLanguageFeatureAndRecover g.langVersion LanguageFeature.NonInlineLiteralsAsPrintfFormat m
 
-and TcFormatStringExpr cenv (overallTy: OverallTy) env m tpenv (fmtString: string) =
+        TcFormatStringExpr cenv overallTy env m tpenv s literalType
+    else
+        if literalType = LiteralArgumentType.Inline && not (isObjTy g overallTy.Commit) then
+            AddCxTypeEqualsType env.eContextInfo env.DisplayEnv cenv.css m overallTy.Commit g.string_ty
+
+        mkString g m s, tpenv
+
+and TcFormatStringExpr cenv (overallTy: OverallTy) env m tpenv (fmtString: string) formatStringLiteralType =
     let g = cenv.g
     let aty = NewInferenceType g
     let bty = NewInferenceType g
@@ -6986,7 +7015,11 @@ and TcFormatStringExpr cenv (overallTy: OverallTy) env m tpenv (fmtString: strin
 
     if ok then
         // Parse the format string to work out the phantom types
-        let formatStringCheckContext = match cenv.tcSink.CurrentSink with None -> None | Some sink -> sink.FormatStringCheckContext
+        let formatStringCheckContext =
+            match cenv.tcSink.CurrentSink, formatStringLiteralType with
+            | Some sink, LiteralArgumentType.Inline -> sink.FormatStringCheckContext
+            | _ -> None
+
         let normalizedString = (fmtString.Replace("\r\n", "\n").Replace("\r", "\n"))
 
         let _argTys, atyRequired, etyRequired, _percentATys, specifierLocations, _dotnetFormatString =
@@ -8765,7 +8798,14 @@ and TcValueItemThen cenv overallTy env vref tpenv mItem afterResolution delayed 
     // Value get
     | _ ->
         let _, vExpr, isSpecial, _, _, tpenv = TcVal true cenv env tpenv vref None (Some afterResolution) mItem
-        let vexpFlex = (if isSpecial then MakeApplicableExprNoFlex cenv vExpr else MakeApplicableExprWithFlex cenv env vExpr)
+
+        let vExpr, tpenv =
+            match vExpr with
+            | Expr.Const (Const.String value, _, _) -> TcConstStringExpr cenv overallTy env mItem tpenv value LiteralArgumentType.StaticField
+            | _ -> vExpr, tpenv
+
+        let vexpFlex = if isSpecial then MakeApplicableExprNoFlex cenv vExpr else MakeApplicableExprWithFlex cenv env vExpr
+
         PropagateThenTcDelayed cenv overallTy env tpenv mItem vexpFlex vexpFlex.Type ExprAtomicFlag.Atomic delayed
 
 and TcPropertyItemThen cenv overallTy env nm pinfos tpenv mItem afterResolution staticTyOpt delayed =
@@ -8836,10 +8876,12 @@ and TcILFieldItemThen cenv overallTy env finfo tpenv mItem delayed =
 
     | _ ->
         // Get static IL field
-        let expr =
+        let (expr, tpenv), isSpecial =
             match finfo.LiteralValue with
+            | Some (ILFieldInit.String value) when typeEquiv g exprTy g.string_ty ->
+                TcConstStringExpr cenv overallTy env mItem tpenv value LiteralArgumentType.StaticField, true
             | Some lit ->
-                Expr.Const (TcFieldInit mItem lit, mItem, exprTy)
+                (Expr.Const (TcFieldInit mItem lit, mItem, exprTy), tpenv), false
             | None ->
                 let isStruct = finfo.IsValueType
                 let boxity = if isStruct then AsValue else AsObject
@@ -8854,9 +8896,16 @@ and TcILFieldItemThen cenv overallTy env finfo tpenv mItem delayed =
                       // Add an I_nop if this is an initonly field to make sure we never recognize it as an lvalue. See mkExprAddrOfExpr.
                       if finfo.IsInitOnly then AI_nop ]
 
-                mkAsmExpr (ilInstrs, finfo.TypeInst, [], [exprTy], mItem)
+                (mkAsmExpr (ilInstrs, finfo.TypeInst, [], [exprTy], mItem), tpenv), false
 
-        PropagateThenTcDelayed cenv overallTy env tpenv mItem (MakeApplicableExprWithFlex cenv env expr) exprTy ExprAtomicFlag.Atomic delayed
+        let exprTy, exprFlex =
+            if isSpecial then
+                let exprFlex = MakeApplicableExprNoFlex cenv expr
+                exprFlex.Type, exprFlex
+            else
+                exprTy, MakeApplicableExprWithFlex cenv env expr
+
+        PropagateThenTcDelayed cenv overallTy env tpenv mItem exprFlex exprTy ExprAtomicFlag.Atomic delayed
 
 and TcRecdFieldItemThen cenv overallTy env rfinfo tpenv mItem delayed =
     let g = cenv.g

@@ -120,9 +120,6 @@ type Range =
     /// Check if the range is adjacent to another range
     member internal IsAdjacentTo: otherRange: Range -> bool
 
-    /// Convert a range to string
-    member internal ToShortString: unit -> string
-
     /// The range where all values are zero
     static member Zero: range
   
