@@ -494,7 +494,7 @@ module rec Compiler =
     let asNetStandard20 (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
         | FS fs -> FS { fs with TargetFramework = TargetFramework.NetStandard20 }
-        | CS cs -> CS { cs with TargetFramework = TargetFramework.NetStandard20 }
+        | CS _ -> failwith "References are not supported in CS"
         | IL _ ->  failwith "References are not supported in IL"
 
     let asExe (cUnit: CompilationUnit) : CompilationUnit =
