@@ -143,12 +143,12 @@ type internal InlineRenameService
 
             let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(InlineRenameService)) |> liftAsync
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.Text.ToString(), symbol.FullIsland)
-            let! declLoc = symbolUse.GetDeclarationLocation(document)
+            let! symbolScope = symbolUse.GetSymbolScope(document)
 
             let! span = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range)
             let triggerSpan = Tokenizer.fixupSpan(sourceText, span)
 
-            return InlineRenameInfo(document, triggerSpan, symbol, symbolUse, declLoc, checkFileResults) :> FSharpInlineRenameInfo
+            return InlineRenameInfo(document, triggerSpan, symbol, symbolUse, symbolScope, checkFileResults) :> FSharpInlineRenameInfo
         }
     
     override _.GetRenameInfoAsync(document: Document, position: int, cancellationToken: CancellationToken) : Task<FSharpInlineRenameInfo> =

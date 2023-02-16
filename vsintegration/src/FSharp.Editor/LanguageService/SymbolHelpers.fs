@@ -42,7 +42,7 @@ module internal SymbolHelpers =
             Task.Run(fun () -> project.FindFSharpReferencesAsync(symbol, onFound, "getSymbolUsesInProjects", ct)))
         |> Task.WhenAll
 
-    let getSymbolUsesInSolution (symbol: FSharpSymbol, declLoc: SymbolScope, checkFileResults: FSharpCheckFileResults, document: Document, ct: CancellationToken) =
+    let getSymbolUsesInSolution (symbol: FSharpSymbol, symbolScope: SymbolScope, checkFileResults: FSharpCheckFileResults, document: Document, ct: CancellationToken) =
         let solution = document.Project.Solution
         let toDict (symbolUseRanges: range seq) =
             let groups =
@@ -55,7 +55,7 @@ module internal SymbolHelpers =
                 fun (_, xs) -> xs |> Seq.map snd |> Seq.toArray)
 
         async {
-            match declLoc with
+            match symbolScope with
             | SymbolScope.CurrentDocument ->
                 let symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbol, ct)
                 return toDict (symbolUses |> Seq.map (fun symbolUse -> symbolUse.Range))
@@ -127,14 +127,14 @@ module internal SymbolHelpers =
 
             let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(userOpName) |> liftAsync
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland)
-            let! declLoc = symbolUse.GetDeclarationLocation(document)
+            let! symbolScope = symbolUse.GetSymbolScope(document)
             let newText = textChanger originalText
             // defer finding all symbol uses throughout the solution
             return 
                 Func<_,_>(fun (cancellationToken: CancellationToken) ->
                     async {
                         let! symbolUsesByDocumentId = 
-                            getSymbolUsesInSolution(symbolUse.Symbol, declLoc, checkFileResults, document, cancellationToken)
+                            getSymbolUsesInSolution(symbolUse.Symbol, symbolScope, checkFileResults, document, cancellationToken)
                         
                         let mutable solution = document.Project.Solution
                             

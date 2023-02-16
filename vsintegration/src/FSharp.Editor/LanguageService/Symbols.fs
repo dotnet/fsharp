@@ -32,7 +32,7 @@ type FSharpSymbol with
 
 
 type FSharpSymbolUse with
-    member this.GetDeclarationLocation (currentDocument: Document) : SymbolScope option =
+    member this.GetSymbolScope (currentDocument: Document) : SymbolScope option =
         if this.IsPrivateToFile then
             Some SymbolScope.CurrentDocument
         elif this.IsPrivateToFileAndSignatureFile then

@@ -100,7 +100,7 @@ type internal FSharpFindUsagesService
                                 // REVIEW: OnReferenceFoundAsync is throwing inside Roslyn, putting a try/with so find-all refs doesn't fail.
                                 try do! context.OnReferenceFoundAsync(referenceItem) |> Async.AwaitTask with | _ -> () }
 
-            match symbolUse.GetDeclarationLocation document with
+            match symbolUse.GetSymbolScope document with
 
             | Some SymbolScope.CurrentDocument ->
                 let symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol)
