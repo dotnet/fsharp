@@ -6970,20 +6970,22 @@ and TcConstStringExpr cenv (overallTy: OverallTy) env m tpenv (s: string) litera
         | _ -> false
 
     let g = cenv.g
+  
 
-    let isFormat = isFormat g overallTy.Commit
-    let overallTyIsString = AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy.Commit g.string_ty
-    if not (overallTyIsString || isFormat) then
+    match isFormat g overallTy.Commit, literalType with
+    | true, LiteralArgumentType.StaticField ->
+        checkLanguageFeatureAndRecover g.langVersion LanguageFeature.NonInlineLiteralsAsPrintfFormat m
         TcFormatStringExpr cenv overallTy env m tpenv s literalType
-    else
-        if isFormat then
-            if literalType = LiteralArgumentType.StaticField then
-                checkLanguageFeatureAndRecover g.langVersion LanguageFeature.NonInlineLiteralsAsPrintfFormat m
-            TcFormatStringExpr cenv overallTy env m tpenv s literalType
-        else
-            if literalType = LiteralArgumentType.Inline && not (isObjTy g overallTy.Commit) then
-                AddCxTypeEqualsType env.eContextInfo env.DisplayEnv cenv.css m overallTy.Commit g.string_ty
-            mkString g m s, tpenv
+
+    | true, LiteralArgumentType.Inline ->
+        TcFormatStringExpr cenv overallTy env m tpenv s literalType
+
+    | false, LiteralArgumentType.StaticField ->
+        Expr.Const (TcFieldInit m (ILFieldInit.String s), m, g.string_ty), tpenv
+
+    | false, LiteralArgumentType.Inline ->
+        TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env (* true *) m (fun () ->
+                mkString g m s, tpenv)
 
 and TcFormatStringExpr cenv (overallTy: OverallTy) env m tpenv (fmtString: string) formatStringLiteralType =
     let g = cenv.g

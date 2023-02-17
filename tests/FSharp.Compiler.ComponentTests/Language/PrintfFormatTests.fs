@@ -33,7 +33,7 @@ module PrintfFormatTests
 [<Literal>]
 let Format = "%d"
 
-if sprintf Format Format.Length <> "2" then
+if sprintf Format (Format.Length) <> "2" then
     failwith "failed"
     """
     |> withLangVersionPreview
