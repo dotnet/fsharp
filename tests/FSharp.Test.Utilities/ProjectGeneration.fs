@@ -170,91 +170,103 @@ type SyntheticProject =
 
         OptionsCache[cacheKey]
 
+    member this.GetAllProjects() =
+        [ this
+          for p in this.DependsOn do
+              yield! p.GetAllProjects() ]
+
     member this.GetAllFiles() =
         [ for f in this.SourceFiles do
               this, f
           for p in this.DependsOn do
               yield! p.GetAllFiles() ]
 
-module Internal =
 
-    let renderNamespaceModule (project: SyntheticProject) (f: SyntheticSourceFile) =
-        seq {
-            if project.RecursiveNamespace then
-                $"namespace rec {project.Name}"
-                $"module {f.ModuleName}"
-            else
-                $"module %s{project.Name}.{f.ModuleName}"
-        } |> String.concat Environment.NewLine
+let getFilePath p (f: SyntheticSourceFile) = p.ProjectDir ++ f.FileName
+let getSignatureFilePath p (f: SyntheticSourceFile) = p.ProjectDir ++ f.SignatureFileName
 
-    let renderSourceFile (project: SyntheticProject) (f: SyntheticSourceFile) =
-        seq {
-            renderNamespaceModule project f
 
-            for p in project.DependsOn do
-                $"open {p.Name}"
+type SyntheticProject with
+    member this.GetFilePath fileId = this.Find fileId |> getFilePath this
+    member this.GetSignatureFilePath fileId = this.Find fileId |> getSignatureFilePath this
 
-            $"type {f.TypeName}<'a> = T{f.Id} of 'a"
 
-            $"let {f.FunctionName} x ="
+let private renderNamespaceModule (project: SyntheticProject) (f: SyntheticSourceFile) =
+    seq {
+        if project.RecursiveNamespace then
+            $"namespace rec {project.Name}"
+            $"module {f.ModuleName}"
+        else
+            $"module %s{project.Name}.{f.ModuleName}"
+    } |> String.concat Environment.NewLine
 
-            for dep in f.DependsOn do
-                $"    Module{dep}.{defaultFunctionName} x,"
+let renderSourceFile (project: SyntheticProject) (f: SyntheticSourceFile) =
+    seq {
+        renderNamespaceModule project f
 
-            $"    T{f.Id} x"
+        for p in project.DependsOn do
+            $"open {p.Name}"
 
-            $"let f2 x = x + {f.InternalVersion}"
+        $"type {f.TypeName}<'a> = T{f.Id} of 'a"
 
-            f.ExtraSource
+        $"let {f.FunctionName} x ="
 
-            if f.HasErrors then
-                "let wrong = 1 + 'a'"
+        for dep in f.DependsOn do
+            $"    Module{dep}.{defaultFunctionName} x,"
 
-            if f.EntryPoint then
-                "[<EntryPoint>]"
-                "let main _ ="
-                "   f 1 |> ignore"
-                "   printfn \"Hello World!\""
-                "   0"
-        }
-        |> String.concat Environment.NewLine
+        $"    T{f.Id} x"
 
-    let renderFsProj (p: SyntheticProject) =
-        seq {
-            """
-            <Project Sdk="Microsoft.NET.Sdk">
+        $"let f2 x = x + {f.InternalVersion}"
 
-            <PropertyGroup>
-                <OutputType>Exe</OutputType>
-                <TargetFramework>net7.0</TargetFramework>
-            </PropertyGroup>
+        f.ExtraSource
 
-            <ItemGroup>
-            """
+        if f.HasErrors then
+            "let wrong = 1 + 'a'"
 
-            for f in p.SourceFiles do
-                if f.HasSignatureFile then
-                    $"<Compile Include=\"{f.SignatureFileName}\" />"
+        if f.EntryPoint then
+            "[<EntryPoint>]"
+            "let main _ ="
+            "   f 1 |> ignore"
+            "   printfn \"Hello World!\""
+            "   0"
+    }
+    |> String.concat Environment.NewLine
 
-                $"<Compile Include=\"{f.FileName}\" />"
+let private renderFsProj (p: SyntheticProject) =
+    seq {
+        """
+        <Project Sdk="Microsoft.NET.Sdk">
 
-            """
-            </ItemGroup>
-            </Project>
-            """
-        }
-        |> String.concat Environment.NewLine
+        <PropertyGroup>
+            <OutputType>Exe</OutputType>
+            <TargetFramework>net7.0</TargetFramework>
+        </PropertyGroup>
 
-    let writeFileIfChanged path content =
-        if not (File.Exists path) || File.ReadAllText(path) <> content then
-            File.WriteAllText(path, content)
+        <ItemGroup>
+        """
 
-    let writeFile (p: SyntheticProject) (f: SyntheticSourceFile) =
-        let fileName = p.ProjectDir ++ f.FileName
-        let content = renderSourceFile p f
-        writeFileIfChanged fileName content
+        for f in p.SourceFiles do
+            if f.HasSignatureFile then
+                $"<Compile Include=\"{f.SignatureFileName}\" />"
 
-open Internal
+            $"<Compile Include=\"{f.FileName}\" />"
+
+        """
+        </ItemGroup>
+        </Project>
+        """
+    }
+    |> String.concat Environment.NewLine
+
+let private writeFileIfChanged path content =
+    if not (File.Exists path) || File.ReadAllText(path) <> content then
+        File.WriteAllText(path, content)
+
+let private writeFile (p: SyntheticProject) (f: SyntheticSourceFile) =
+    let fileName = getFilePath p f
+    let content = renderSourceFile p f
+    writeFileIfChanged fileName content
+
 
 [<AutoOpen>]
 module ProjectOperations =
@@ -303,7 +315,7 @@ module ProjectOperations =
     let checkFile fileId (project: SyntheticProject) (checker: FSharpChecker) =
         let file = project.Find fileId
         let contents = renderSourceFile project file
-        let absFileName = project.ProjectDir ++ file.FileName
+        let absFileName = getFilePath project file
 
         checker.ParseAndCheckFileInProject(
             absFileName,
@@ -621,7 +633,7 @@ type ProjectWorkflowBuilder
                     failwith $"Please place cursor at a valid location via {nameof this.PlaceCursor} first")
 
             let file = ctx.Project.Find fileId
-            let absFileName = ctx.Project.ProjectDir ++ file.FileName
+            let absFileName = getFilePath ctx.Project file
 
             let! results =
                 checker.FindBackgroundReferencesInFile(absFileName, options, symbolUse.Symbol, fastCheck = true)
@@ -733,3 +745,8 @@ type SyntheticProject with
 
     member this.WorkflowWith checker =
         ProjectWorkflowBuilder(this, checker = checker)
+
+    /// Saves project to disk and checks it with default options. Returns the FSharpChecker that was created
+    member this.SaveAndCheck() =
+        this.Workflow.Yield() |> Async.RunSynchronously |> ignore
+        this.Workflow.Checker
