@@ -42,21 +42,13 @@
   // WARNING: managed resource file FSharpOptimizationData.Structs02_asNetStandard20 created
 }
 .module Structs02_asNetStandard20.dll
-<<<<<<< HEAD
-// MVID: {63ED3C9F-B214-D289-A745-03839F3CED63}
-=======
 // MVID: {63EC9111-37AB-0DD0-A745-03831191EC63}
->>>>>>> 4422a3bb56f5686687ca7149eb78b9f89d9675b7
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-<<<<<<< HEAD
-// Image base: 0x000001B858C00000
-=======
 // Image base: 0x000002C5E0CF0000
->>>>>>> 4422a3bb56f5686687ca7149eb78b9f89d9675b7
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -362,11 +354,7 @@
 } // end of class '<StartupCode$Structs02_asNetStandard20>.$Experiment'.Test
 
 .class private auto ansi beforefieldinit System.Runtime.CompilerServices.IsReadOnlyAttribute
-<<<<<<< HEAD
-       extends [System.Runtime]System.Attribute
-=======
        extends [mscorlib]System.Attribute
->>>>>>> 4422a3bb56f5686687ca7149eb78b9f89d9675b7
 {
   .method public specialname rtspecialname 
           instance void  .ctor() cil managed
@@ -376,11 +364,7 @@
     // Code size       7 (0x7)
     .maxstack  8
     IL_0000:  ldarg.0
-<<<<<<< HEAD
-    IL_0001:  call       instance void [System.Runtime]System.Attribute::.ctor()
-=======
     IL_0001:  call       instance void [mscorlib]System.Attribute::.ctor()
->>>>>>> 4422a3bb56f5686687ca7149eb78b9f89d9675b7
     IL_0006:  ret
   } // end of method IsReadOnlyAttribute::.ctor
 
