@@ -4,10 +4,10 @@
 
 
 // Metadata version: v4.0.30319
-.assembly extern System.Runtime
+.assembly extern mscorlib
 {
-  .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:1:2:0
+  .publickeytoken = (B7 7A 5C 56 19 34 E0 89 )                         // .z\V.4..
+  .ver 4:0:0:0
 }
 .assembly extern netstandard
 {
@@ -42,19 +42,27 @@
   // WARNING: managed resource file FSharpOptimizationData.Structs02_asNetStandard20 created
 }
 .module Structs02_asNetStandard20.dll
+<<<<<<< HEAD
 // MVID: {63ED3C9F-B214-D289-A745-03839F3CED63}
+=======
+// MVID: {63EC9111-37AB-0DD0-A745-03831191EC63}
+>>>>>>> 4422a3bb56f5686687ca7149eb78b9f89d9675b7
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
+<<<<<<< HEAD
 // Image base: 0x000001B858C00000
+=======
+// Image base: 0x000002C5E0CF0000
+>>>>>>> 4422a3bb56f5686687ca7149eb78b9f89d9675b7
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
 
 .class public abstract auto ansi sealed Experiment.Test
-       extends [System.Runtime]System.Object
+       extends [mscorlib]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
   .class sequential ansi serializable sealed nested public Repro
@@ -349,12 +357,16 @@
 } // end of class Experiment.Test
 
 .class private abstract auto ansi sealed '<StartupCode$Structs02_asNetStandard20>.$Experiment'.Test
-       extends [System.Runtime]System.Object
+       extends [mscorlib]System.Object
 {
 } // end of class '<StartupCode$Structs02_asNetStandard20>.$Experiment'.Test
 
 .class private auto ansi beforefieldinit System.Runtime.CompilerServices.IsReadOnlyAttribute
+<<<<<<< HEAD
        extends [System.Runtime]System.Attribute
+=======
+       extends [mscorlib]System.Attribute
+>>>>>>> 4422a3bb56f5686687ca7149eb78b9f89d9675b7
 {
   .method public specialname rtspecialname 
           instance void  .ctor() cil managed
@@ -364,7 +376,11 @@
     // Code size       7 (0x7)
     .maxstack  8
     IL_0000:  ldarg.0
+<<<<<<< HEAD
     IL_0001:  call       instance void [System.Runtime]System.Attribute::.ctor()
+=======
+    IL_0001:  call       instance void [mscorlib]System.Attribute::.ctor()
+>>>>>>> 4422a3bb56f5686687ca7149eb78b9f89d9675b7
     IL_0006:  ret
   } // end of method IsReadOnlyAttribute::.ctor
 
@@ -374,4 +390,4 @@
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
-// WARNING: Created Win32 resource file C:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Release\net7.0\tests\EmittedIL\Misc\Structs02_asNetStandard20_fs\Structs02_asNetStandard20.res
+// WARNING: Created Win32 resource file C:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\release\net472\tests\EmittedIL\Misc\Structs02_asNetStandard20_fs\Structs02_asNetStandard20.res
