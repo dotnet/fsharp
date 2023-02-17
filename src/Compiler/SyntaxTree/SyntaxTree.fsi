@@ -555,7 +555,8 @@ type SynExpr =
         isStruct: bool *
         copyInfo: (SynExpr * BlockSeparator) option *
         recordFields: (Ident * range option * SynExpr) list *
-        range: range
+        range: range *
+        trivia: SynExprAnonRecdTrivia
 
     /// F# syntax: [ e1; ...; en ], [| e1; ...; en |]
     | ArrayOrList of isArray: bool * exprs: SynExpr list * range: range
@@ -904,7 +905,7 @@ type SynExpr =
     | FromParseError of expr: SynExpr * range: range
 
     /// Inserted for error recovery when there is "expr." and missing tokens or error recovery after the dot
-    | DiscardAfterMissingQualificationAfterDot of expr: SynExpr * range: range
+    | DiscardAfterMissingQualificationAfterDot of expr: SynExpr * dotRange: range * range: range
 
     /// 'use x = fixed expr'
     | Fixed of expr: SynExpr * range: range

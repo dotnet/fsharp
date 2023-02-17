@@ -38,6 +38,7 @@
     <Compile Include="Conformance\BasicTypeAndModuleDefinitions\NamespaceDeclGroups\NamespaceDeclGroups.fs" />
     <Compile Include="Conformance\BasicTypeAndModuleDefinitions\NullRepresentations\NullRepresentations.fs" />
     <Compile Include="Conformance\BasicTypeAndModuleDefinitions\TypeAbbreviations\TypeAbbreviations.fs" />
+    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\TypeAbbreviations\WarnForAutoOpenAttributeAlias.fs" />
     <Compile Include="Conformance\ClassTypes\ExplicitObjectConstructors\ExplicitObjectConstructors.fs" />
     <Compile Include="Conformance\ClassTypes\ImplicitObjectConstructors\ImplicitObjectConstructors.fs" />
     <Compile Include="Conformance\ClassTypes\ValueRestriction\ValueRestriction.fs" />
@@ -181,6 +182,8 @@
     <Compile Include="Language\ExtensionMethodTests.fs" />
     <Compile Include="Language\SequenceExpressionTests.fs" />
     <Compile Include="Language\StaticClassTests.fs" />
+    <Compile Include="Language\PrintfFormatTests.fs" />
+    <Compile Include="Language\InterfaceTests.fs" />
     <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="ConstraintSolver\MemberConstraints.fs" />
     <Compile Include="Interop\DeeplyNestedCSharpClasses.fs" />
@@ -190,7 +193,16 @@
     <Compile Include="Interop\VisibilityTests.fs" />
     <Compile Include="Scripting\Interactive.fs" />
     <Compile Include="TypeChecks\CheckDeclarationsTests.fs" />
-    <Compile Include="TypeChecks\ParallelCheckingWithSignatureFilesTests.fs" />
+    <Compile Include="TypeChecks\Graph\Utils.fs" />
+    <Compile Include="TypeChecks\Graph\QueryTrieTests.fs" />
+    <Compile Include="TypeChecks\Graph\TrieMappingTests.fs" />
+    <Compile Include="TypeChecks\Graph\FileContentMappingTests.fs" />
+    <Compile Include="TypeChecks\Graph\Scenarios.fs" />
+    <Compile Include="TypeChecks\Graph\DependencyResolutionTests.fs" />
+    <Compile Include="TypeChecks\Graph\CompilationTests.fs" />
+    <Content Include="TypeChecks\Graph\scrape.fsx" CopyToOutputDirectory="Never" />
+    <Compile Include="TypeChecks\Graph\CompilationFromCmdlineArgsTests.fs" />
+    <Compile Include="TypeChecks\Graph\TypedTreeGraph.fs" />
     <Compile Include="CompilerOptions\fsc\checked\checked.fs" />
     <Compile Include="CompilerOptions\fsc\cliversion.fs" />
     <Compile Include="CompilerOptions\fsc\codepage\codepage.fs" />
@@ -205,6 +217,7 @@
     <Compile Include="CompilerOptions\fsc\reflectionfree.fs" />
     <Compile Include="CompilerOptions\fsc\refonlyrefout.fs" />
 	<Compile Include="CompilerOptions\fsc\sourceFiles.fs" />
+    <Compile Include="CompilerService\RangeModule.fs" />
     <Compile Include="Debugger\PortablePdbs.fs" />
     <Compile Include="Diagnostics\async.fs" />
     <Compile Include="Diagnostics\General.fs" />
@@ -214,6 +227,7 @@
     <Compile Include="Miscellaneous\ListLiterals.fs" />
     <Compile Include="Miscellaneous\SemanticClassificationKeyBuilder.fs" />
     <Compile Include="Miscellaneous\XmlDoc.fs" />
+    <Compile Include="Miscellaneous\GraphTests.fs" />
     <Compile Include="Signatures\TestHelpers.fs" />
     <Compile Include="Signatures\ModuleOrNamespaceTests.fs" />
     <Compile Include="Signatures\RecordTests.fs" />

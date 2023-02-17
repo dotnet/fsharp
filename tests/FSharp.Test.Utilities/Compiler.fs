@@ -59,7 +59,8 @@ module rec Compiler =
           OutputDirectory:  DirectoryInfo option
           Name:             string option
           IgnoreWarnings:   bool
-          References:       CompilationUnit list }
+          References:       CompilationUnit list
+          TargetFramework: TargetFramework }
 
         member this.CreateOutputDirectory() =
             match this.OutputDirectory with
@@ -204,6 +205,7 @@ module rec Compiler =
             Name              = None
             IgnoreWarnings    = false
             References        = []
+            TargetFramework   = TargetFramework.Current
         }
 
     let private csFromString (source: SourceCodeFileKind) : CSharpCompilationSource =
@@ -306,6 +308,7 @@ module rec Compiler =
             Name              = Some name
             IgnoreWarnings    = false
             References        = []
+            TargetFramework   = TargetFramework.Current
         } |> FS
 
     let CSharp (source: string) : CompilationUnit =
@@ -330,6 +333,12 @@ module rec Compiler =
         | FS src -> FS { src with Name = Some name }
         | CS src -> CS { src with Name = Some name }
         | IL _ -> failwith "IL Compilation cannot be named."
+
+    let withReferenceFSharpCompilerService (cUnit: CompilationUnit) : CompilationUnit =
+        // Compute the location of the FSharp.Compiler.Service dll that matches the target framework used to build this test assembly
+        let compilerServiceAssemblyLocation =
+            typeof<FSharp.Compiler.Text.Range>.Assembly.Location
+        withOptionsHelper [ $"-r:{compilerServiceAssemblyLocation}" ] "withReferenceFSharpCompilerService is only supported for F#" cUnit
 
     let withReferences (references: CompilationUnit list) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
@@ -473,17 +482,24 @@ module rec Compiler =
         | CS cs -> CS { cs with LangVersion = ver }
         | _ -> failwith "Only supported in C#"
 
-    let asLibrary (cUnit: CompilationUnit) : CompilationUnit =
+    let withOutputType (outputType : CompileOutput) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
-        | FS fs -> FS { fs with OutputType = CompileOutput.Library }
-        | _ -> failwith "TODO: Implement asLibrary where applicable."
-
-    let asExe (cUnit: CompilationUnit) : CompilationUnit =
-        match cUnit with
-        | FS x -> FS { x with OutputType = Exe }
-        | CS x -> CS { x with OutputType = Exe }
+        | FS x -> FS { x with OutputType = outputType }
+        | CS x -> CS { x with OutputType = outputType }
         | _ -> failwith "TODO: Implement where applicable."
 
+    let asLibrary (cUnit: CompilationUnit) : CompilationUnit =
+        withOutputType CompileOutput.Library cUnit
+
+    let asNetStandard20 (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS fs -> FS { fs with TargetFramework = TargetFramework.NetStandard20 }
+        | CS cs -> CS { cs with TargetFramework = TargetFramework.NetStandard20 }
+        | IL _ ->  failwith "References are not supported in IL"
+
+    let asExe (cUnit: CompilationUnit) : CompilationUnit =
+        withOutputType CompileOutput.Exe cUnit    
+    
     let withPlatform (platform:ExecutionPlatform) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
         | FS _ ->
@@ -537,7 +553,7 @@ module rec Compiler =
                         | Some outputDirectory -> outputDirectory
                         | _ -> defaultOutputDirectory
                     let cmpl =
-                        Compilation.CreateFromSources([fs.Source] @ fs.AdditionalSources, fs.OutputType, options, refs, name, outDir) |> CompilationReference.CreateFSharp
+                        Compilation.CreateFromSources([fs.Source] @ fs.AdditionalSources, fs.OutputType, options, fs.TargetFramework, refs, name, outDir) |> CompilationReference.CreateFSharp
                     loop (cmpl::acc) xs
 
                 | CS cs ->
@@ -583,7 +599,7 @@ module rec Compiler =
             | Some di -> di
             | None -> DirectoryInfo(tryCreateTemporaryDirectory())
         let references = processReferences fs.References outputDirectory
-        let compilation = Compilation.CreateFromSources([fs.Source] @ fs.AdditionalSources, output, options, references, name, outputDirectory)
+        let compilation = Compilation.CreateFromSources([fs.Source] @ fs.AdditionalSources, output, options, fs.TargetFramework, references, name, outputDirectory)
         compileFSharpCompilation compilation fs.IgnoreWarnings (FS fs)
 
     let toErrorInfo (d: Diagnostic) =
@@ -840,7 +856,7 @@ module rec Compiler =
                 disposals.Add({ new IDisposable with member _.Dispose() = outputDirectory.Delete(true) })
 
                 let references = processReferences fs.References outputDirectory
-                let cmpl = Compilation.Create(fs.Source, fs.OutputType, options, references, name, outputDirectory)
+                let cmpl = Compilation.Create(fs.Source, fs.OutputType, options, fs.TargetFramework, references, name, outputDirectory)
                 let _compilationRefs, _deps = evaluateReferences outputDirectory disposals fs.IgnoreWarnings cmpl
                 let options =
                     let opts = new ResizeArray<string>(fs.Options)
@@ -850,7 +866,7 @@ module rec Compiler =
                         match reference with
                         | CompilationReference( cmpl, _) ->
                             match cmpl with
-                            | Compilation(_sources, _outputType, _options, _references, _name, outputDirectory) ->
+                            | Compilation(_sources, _outputType, _options, _targetFramework, _references, _name, outputDirectory) ->
                                 if outputDirectory.IsSome then
                                     opts.Add($"-I:\"{(outputDirectory.Value.FullName)}\"")
                         | _ -> ()

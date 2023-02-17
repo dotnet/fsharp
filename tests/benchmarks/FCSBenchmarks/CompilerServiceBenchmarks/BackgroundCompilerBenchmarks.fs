@@ -291,7 +291,6 @@ type FindAllReferences_MultiProject () =
         keepAllBackgroundSymbolUses = false,
         enableBackgroundItemKeyStoreAndSemanticClassification = true,
         enablePartialTypeChecking = true,
-        enableParallelCheckingWithSignatureFiles = true,
         parallelReferenceResolution = true)
 
     let getModuleSymbol fileId project =

@@ -32,6 +32,11 @@
         <target state="translated">Bir tür, hem [&lt;Sealed&gt;] hem de [&lt; AbstractClass&gt;] özniteliklerini kullanıyorsa bu statik olduğu anlamına gelir. Ek oluşturucuya izin verilmez.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkAutoOpenAttributeInTypeAbbrev">
+        <source>FSharp.Core.AutoOpenAttribute should not be aliased.</source>
+        <target state="new">FSharp.Core.AutoOpenAttribute should not be aliased.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkConstructorWithArgumentsOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Constructor with arguments is not allowed.</source>
         <target state="translated">Bir tür, hem [&lt;Sealed&gt;] hem de [&lt; AbstractClass&gt;] özniteliklerini kullanıyorsa bu statik olduğu anlamına gelir.Bağımsız değişkenlere sahip oluşturucuya izin verilmez.</target>
@@ -302,6 +307,11 @@
         <target state="translated">nameof</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureNonInlineLiteralsAsPrintfFormat">
+        <source>String values marked as literals and IL constants as printf format</source>
+        <target state="new">String values marked as literals and IL constants as printf format</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureNonVariablePatternsToRightOfAsPatterns">
         <source>non-variable patterns to the right of 'as' patterns</source>
         <target state="translated">'as' desenlerinin sağındaki değişken olmayan desenler</target>
@@ -372,6 +382,11 @@
         <target state="translated">tek alt çizgi deseni</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureStaticMembersInInterfaces">
+        <source>Static members in interfaces</source>
+        <target state="new">Static members in interfaces</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureStringInterpolation">
         <source>string interpolation</source>
         <target state="translated">dizede düz metin arasına kod ekleme</target>
@@ -382,19 +397,16 @@
         <target state="translated">etkin desenler için yapı gösterimi</target>
         <note />
       </trans-unit>
-      
       <trans-unit id="featureTryWithInSeqExpressions">
         <source>Support for try-with in sequence expressions</source>
         <target state="new">Support for try-with in sequence expressions</target>
         <note />
       </trans-unit>
-
       <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
         <source>Raises warnings when an copy-and-update record expression changes all fields of a record.</source>
         <target state="new">Raises warnings when an copy-and-update record expression changes all fields of a record.</target>
         <note />
       </trans-unit>
-      
       <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
         <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
         <target state="translated">[&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] özniteliği ile birlikte 'let inline ... =' kullanıldığında uyarı verir. İşlev satır içine alınmıyor.</target>
@@ -4626,8 +4638,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcConcreteMembersIllegalInInterface">
-        <source>Interfaces cannot contain definitions of concrete members. You may need to define a constructor on your type to indicate that the type is a class.</source>
-        <target state="translated">Arabirimler somut üyelerin tanımlarını içeremez. Türün sınıf olduğunu belirtmek için türünüzde bir oluşturucu tanımlamanız gerekebilir.</target>
+        <source>Interfaces cannot contain definitions of concrete instance members. You may need to define a constructor on your type to indicate that the type is a class.</source>
+        <target state="needs-review-translation">Arabirimler somut üyelerin tanımlarını içeremez. Türün sınıf olduğunu belirtmek için türünüzde bir oluşturucu tanımlamanız gerekebilir.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcConstructorsDisallowedInExceptionAugmentation">
