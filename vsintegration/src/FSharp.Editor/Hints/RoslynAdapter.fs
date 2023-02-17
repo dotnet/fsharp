@@ -30,6 +30,7 @@ type internal RoslynAdapter
                     let! sourceText = document.GetTextAsync cancellationToken |> Async.AwaitTask
                     let! nativeHints =
                         HintService.getHintsForDocument 
+                            sourceText
                             document 
                             hintKinds
                             userOpName 

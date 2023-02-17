@@ -33,15 +33,19 @@ Show structure guidelines for F# code;
 Outlining;
 Show outlining and collapsible nodes for F# code;
 Inline hints;
-Display inline type hints (experimental);
-Display inline parameter name hints (experimental);Beer</source>
-        <target state="translated">Vodítka struktury bloků;
-Zobrazit pokyny ke struktuře pro kód F#;
-Tvorba osnov;
-Zobrazit sbalitelné a sbalitelné uzly pro kód F#;
-Vložené tipy;
-Zobrazit pomocné parametry vloženého typu (experimentální);
-Zobrazit nápovědy k názvům vložených parametrů (experimentální); Pivo</target>
+Display inline type hints (preview);
+Display inline parameter name hints (preview);Beer;
+Live Buffers;
+Use live (unsaved) buffers for checking</source>
+        <target state="new">Block Structure Guides;
+Show structure guidelines for F# code;
+Outlining;
+Show outlining and collapsible nodes for F# code;
+Inline hints;
+Display inline type hints (preview);
+Display inline parameter name hints (preview);Beer;
+Live Buffers;
+Use live (unsaved) buffers for checking</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeFixesPageKeywords">

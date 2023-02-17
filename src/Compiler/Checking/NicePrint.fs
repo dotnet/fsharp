@@ -62,12 +62,6 @@ module internal PrintUtilities =
             s + ".0" 
         else s
 
-    let layoutsL (ls: Layout list) : Layout =
-        match ls with
-        | [] -> emptyL
-        | [x] -> x
-        | x :: xs -> List.fold (^^) x xs 
-
     // Layout a curried function type. Over multiple lines breaking takes some care, e.g.
     //
     // val SampleFunctionTupledAllBreakA:
@@ -1387,8 +1381,6 @@ module PrintTastMemberOrVals =
     let prettyLayoutOfValOrMemberNoInst denv infoReader v =
         prettyLayoutOfValOrMember denv infoReader emptyTyparInst v |> snd
 
-let layoutTrait denv x = x |> PrintTypes.layoutTrait denv
-
 let layoutTyparConstraint denv x = x |> PrintTypes.layoutTyparConstraint denv
 
 let outputType denv os x = x |> PrintTypes.layoutType denv |> bufferL os
@@ -2120,9 +2112,10 @@ module TastDefinitionPrinting =
 
             | _ when isNil allDecls ->
                 lhsL
-
+#if !NO_TYPEPROVIDERS
             | TProvidedNamespaceRepr _
             | TProvidedTypeRepr _
+#endif
             | TNoRepr -> 
                 allDecls
                 |> applyMaxMembers denv.maxMembers

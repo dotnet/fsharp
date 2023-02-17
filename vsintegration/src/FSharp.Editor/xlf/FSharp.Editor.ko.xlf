@@ -33,15 +33,19 @@ Show structure guidelines for F# code;
 Outlining;
 Show outlining and collapsible nodes for F# code;
 Inline hints;
-Display inline type hints (experimental);
-Display inline parameter name hints (experimental);Beer</source>
-        <target state="translated">블록 구조 안내선,
-F# 코드에 대한 구조 지침 표시,
-개요,
-F# 코드에 대한 개요 및 축소 가능한 노드 표시,
-인라인 힌트,
-인라인 형식 힌트 표시(실험적),
-인라인 매개 변수 이름 힌트 표시(실험적); 맥주</target>
+Display inline type hints (preview);
+Display inline parameter name hints (preview);Beer;
+Live Buffers;
+Use live (unsaved) buffers for checking</source>
+        <target state="new">Block Structure Guides;
+Show structure guidelines for F# code;
+Outlining;
+Show outlining and collapsible nodes for F# code;
+Inline hints;
+Display inline type hints (preview);
+Display inline parameter name hints (preview);Beer;
+Live Buffers;
+Use live (unsaved) buffers for checking</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeFixesPageKeywords">

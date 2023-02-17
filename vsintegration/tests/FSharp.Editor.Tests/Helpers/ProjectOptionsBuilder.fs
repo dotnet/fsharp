@@ -152,21 +152,8 @@ module internal ProjectOptionsBuilder =
 
     let CreateProjectFromMarkup (markup: XElement) =
         match markup.Name.LocalName with
-        | "Project" -> CreateSingleProjectFromMarkup markup
         | "Projects" -> CreateMultipleProjectsFromMarkup markup
         | name -> failwith <| sprintf "Unsupported root node name: %s" name
 
     let CreateProject (markup: string) =
         XDocument.Parse(markup).Root |> CreateProjectFromMarkup
-
-    let SingleFileProject (code: string) =
-        code
-        |> sprintf
-            @"
-<Project Name=""testProject.fsproj"">
-  <File Name=""testFile.fs"">
-    <![CDATA[%s]]>
-  </File>
-</Project>
-"
-        |> CreateProject
