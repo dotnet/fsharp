@@ -48,3 +48,12 @@ printf $"{a.Format}"
         Assert.Equal("%", $"%%")
         Assert.Equal("42%", $"{42}%%")
         Assert.Equal("% 42", $"%%%3d{42}")
+
+    [<Fact>]
+    let ``Percent signs separated by format specifier's flags`` () =
+        Fsx """
+let s = $"...%-%...{0}"
+        """
+        |> compile
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 3376, Line 2, Col 9, Line 2, Col 24, "Bad format specifier: '%'")

@@ -53,6 +53,8 @@ type LanguageFeature =
     | ErrorReportingOnStaticClasses
     | TryWithInSeqExpression
     | WarningWhenCopyAndUpdateRecordChangesAllFields
+    | StaticMembersInInterfaces
+    | NonInlineLiteralsAsPrintfFormat
 
 /// LanguageVersion management
 type LanguageVersion =
