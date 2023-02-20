@@ -14,9 +14,11 @@
     <BUILDING_FCS_SOLUTION Condition="'$(BUILDING_FCS_SOLUTION)' == ''">true</BUILDING_FCS_SOLUTION>
     <FSHARPCORE_USE_PACKAGE Condition="'$(FSHARPCORE_USE_PACKAGE)' == ''">true</FSHARPCORE_USE_PACKAGE>
     <DISABLE_ARCADE Condition="'$(DISABLE_ARCADE)' == ''">true</DISABLE_ARCADE>
-    <ArtifactsDir Condition="'$(ArtifactsDir)' == ''">$(MSBuildThisFileDirectory)artifacts/</ArtifactsDir>
-    <FsLexPath Condition="'$(FsLexPath)' == ''">$(RepoRoot)buildtools\fslex\bin\$(Configuration)\net7.0\fslex.dll</FsLexPath>
-    <FsYaccPath Condition="'$(FsYaccPath)' == ''">$(RepoRoot)buildtools\fsyacc\bin\$(Configuration)\net7.0\fsyacc.dll</FsYaccPath>
+    <ArtifactsDir>$(MSBuildThisFileDirectory)artifacts/</ArtifactsDir>
+    <OutputPath>$(ArtifactsDir)/bin/$(Configuration)/$(MSBuildProjectName)</OutputPath>
+    <IntermediateOutputPath>$(ArtifactsDir)obj/$(Configuration)/$(MSBuildProjectName)/</IntermediateOutputPath>
+    <FsLexPath>$(ArtifactsDir)/bin/$(Configuration)/fslex/net7.0/fslex.dll</FsLexPath>
+    <FsYaccPath>$(ArtifactsDir)/bin/$(Configuration)/fsyacc/net7.0/fsyacc.dll</FsYaccPath>
     <OtherFlags>$(OtherFlags) --test:ParallelCheckingWithSignatureFilesOn</OtherFlags>
   </PropertyGroup>
 
