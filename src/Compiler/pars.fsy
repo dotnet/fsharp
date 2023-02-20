@@ -27,7 +27,7 @@ open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Xml
 
-// This function is called by the generated parser code. Returning initiates error recovery 
+// This function is called by the generated parser code. Returning initiates error recovery
 // It must be called precisely "parse_error_rich"
 let parse_error_rich = Some (fun (ctxt: ParseErrorContext<_>) -> 
     errorR(SyntaxError(box ctxt, ctxt.ParseState.LexBuffer.LexemeRange)))

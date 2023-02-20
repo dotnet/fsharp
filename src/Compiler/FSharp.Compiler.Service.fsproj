@@ -22,8 +22,6 @@
     <!-- 3390: xmlDocBadlyFormed -->
     <OtherFlags>$(OtherFlags) --warnon:3390</OtherFlags>
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
-    <FsYaccOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsYaccOutputFolder>
-    <FsLexOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsLexOutputFolder>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
   </PropertyGroup>
 
@@ -33,8 +31,11 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <FsYaccOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsYaccOutputFolder>
-    <FsLexOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsLexOutputFolder>
+    <FsLexYaccGeneratedFolder>$(RepoRoot)\src\.fslexyacc.generated\$(TargetFramework)\</FsLexYaccGeneratedFolder>
+    <FsLexYaccChecksumFile>$(FsLexYaccGeneratedFolder)\.checksum</FsLexYaccChecksumFile>
+    <FsYaccOutputFolder>$(FsLexYaccGeneratedFolder)</FsYaccOutputFolder>
+    <FsLexOutputFolder>$(FsLexYaccGeneratedFolder)</FsLexOutputFolder>
+    <GenerateFsLexYacc>true</GenerateFsLexYacc>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -47,6 +48,51 @@
     <PreReleaseVersionLabel>preview</PreReleaseVersionLabel>
     <PackageIconFullPath>$(MSBuildThisFileDirectory)logo.png</PackageIconFullPath>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- We hash fslex and fsyacc themselves, and fsl/fsy files -->
+    <FilesToHash Include="$(RepoRoot)\buildtools\fslex\*;$(RepoRoot)\buildtools\fslex\*;$(RepoRoot)\src\Compiler\*.fsl;$(RepoRoot)\src\Compiler\*.fsy" />
+  </ItemGroup>
+
+  <Target Name="GetFsLexYaccHashes" BeforeTargets="BeforeBuild">
+    <GetFileHash Files="@(FilesToHash)" Algorithm="SHA256" HashEncoding="hex">
+      <Output
+          TaskParameter="Items"
+          ItemName="FilesWithHashes" />
+    </GetFileHash>
+
+    <ReadLinesFromFile
+        File="$(FsLexYaccChecksumFile)" >
+        <Output
+            TaskParameter="Lines"
+            ItemName="ExistingFsLexYaccChecksums"/>
+    </ReadLinesFromFile>
+
+    <!-- If hashes are the same, set the flag to false -->
+    <CreateProperty Condition="'@(ExistingFsLexYaccChecksums)' == '@(FilesWithHashes->'%(FileHash)')'" Value="false">
+      <Output TaskParameter="Value" PropertyName="GenerateFsLexYacc"/>
+    </CreateProperty>
+
+    <Message Condition="'@(ExistingFsLexYaccChecksums)' != '@(FilesWithHashes->'%(FileHash)')'"
+             Importance="High"
+             Text="---->   FsLexYacc cached hash does not match current. Re-generating from flx/fsy." />
+
+  </Target>
+
+
+  <Target Name="SetFsLexYaccHashes" AfterTargets="AfterBuild">
+    <GetFileHash Files="@(FilesToHash)" Algorithm="SHA256" HashEncoding="hex">
+      <Output
+          TaskParameter="Items"
+          ItemName="FilesWithHashes" />
+    </GetFileHash>
+
+    <Message Condition="'$(GenerateFsLexYacc)' != 'false'"
+             Importance="High"
+             Text="---->   New FsLexYacc output was generated, writing new checksum." />
+
+    <WriteLinesToFile Condition="'$(GenerateFsLexYacc)' != 'false'" File="$(FsLexYaccChecksumFile)" Lines="@(FilesWithHashes->'%(FileHash)')" Overwrite="true" Encoding="utf-8" />
+  </Target>
 
   <ItemGroup>
     <NuspecProperty Include="FSharpCorePackageVersion=$(FSCorePackageVersionValue)" Condition="'$(VersionSuffix)'==''" />
@@ -158,14 +204,14 @@
     <Compile Include="Facilities\CompilerLocation.fs" />
     <Compile Include="Facilities\BuildGraph.fsi" />
     <Compile Include="Facilities\BuildGraph.fs" />
-    <FsLex Include="AbstractIL\illex.fsl">
+    <FsLex Condition="'$(GenerateFsLexYacc)' != 'false'" Include="AbstractIL\illex.fsl">
       <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
       <Link>AbstractIL\illex.fsl</Link>
     </FsLex>
     <None Include="AbstractIL\illex.fsl">
       <Link>AbstractIL\illex.fsl</Link>
     </None>
-    <FsYacc Include="AbstractIL\ilpars.fsy">
+    <FsYacc Condition="'$(GenerateFsLexYacc)' != 'false'" Include="AbstractIL\ilpars.fsy">
       <OtherFlags>--module FSharp.Compiler.AbstractIL.AsciiParser --open FSharp.Compiler.AbstractIL --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
       <Link>AbstractIL\ilpars.fsy</Link>
     </FsYacc>
@@ -206,19 +252,19 @@
     <Compile Include="AbstractIL\ilreflect.fs" />
     <Compile Include="SyntaxTree\PrettyNaming.fsi" />
     <Compile Include="SyntaxTree\PrettyNaming.fs" />
-    <FsLex Include="pplex.fsl">
+    <FsLex Condition="'$(GenerateFsLexYacc)' != 'false'" Include="pplex.fsl">
       <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
       <Link>SyntaxTree\pplex.fsl</Link>
     </FsLex>
-    <FsYacc Include="pppars.fsy">
+    <FsYacc Condition="'$(GenerateFsLexYacc)' != 'false'" Include="pppars.fsy">
       <OtherFlags>--module FSharp.Compiler.PPParser --open FSharp.Compiler --open FSharp.Compiler.Syntax --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
       <Link>SyntaxTree\pppars.fsy</Link>
     </FsYacc>
-    <FsLex Include="lex.fsl">
+    <FsLex Condition="'$(GenerateFsLexYacc)' != 'false'" Include="lex.fsl">
       <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
       <Link>SyntaxTree\lex.fsl</Link>
     </FsLex>
-    <FsYacc Include="pars.fsy">
+    <FsYacc Condition="'$(GenerateFsLexYacc)' != 'false'" Include="pars.fsy">
       <OtherFlags>-v --module FSharp.Compiler.Parser --open FSharp.Compiler --open FSharp.Compiler.Syntax --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
       <Link>SyntaxTree\pars.fsy</Link>
     </FsYacc>
