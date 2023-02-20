@@ -2483,7 +2483,11 @@ let private ResolveObjectConstructorPrim (ncenv: NameResolver) edenv resInfo m a
                     [DefaultStructCtor(g, ty)]
                 else []
             if (isNil defaultStructCtorInfo && isNil ctorInfos) || (not (isAppTy g ty) && not (isAnyTupleTy g ty)) then
-                raze (Error(FSComp.SR.nrNoConstructorsAvailableForType(NicePrint.minimalStringOfType edenv ty), m))
+                let nm = NicePrint.minimalStringOfType edenv ty
+                if not (isRecdTy g ty || isUnionTy g ty) then
+                    errorR (Error(FSComp.SR.nrNoConstructorsAvailableForType(nm), m))
+
+                success (resInfo, Item.Types(nm, [ty]))
             else
                 let ctorInfos = ctorInfos |> List.filter (IsMethInfoAccessible amap m ad)
                 let metadataTy = convertToTypeWithMetadataIfPossible g ty
@@ -3496,8 +3500,9 @@ let ResolveTypeLongIdentAux sink (ncenv: NameResolver) occurence fullyQualified 
     match res with
     | Result (resInfo, tcref) ->
         ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.UseInType, ad, resInfo, ResultTyparChecker(fun () -> true))
-        let item = Item.Types(tcref.DisplayName, [FreshenTycon ncenv m tcref])
-        CallNameResolutionSink sink (m, nenv, item, emptyTyparInst, occurence, ad)
+        if occurence = ItemOccurence.Binding then
+            let item = Item.Types(tcref.DisplayName, [FreshenTycon ncenv m tcref])
+            CallNameResolutionSink sink (m, nenv, item, emptyTyparInst, occurence, ad)
     | _ -> ()
     res
 

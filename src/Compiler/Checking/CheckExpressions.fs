@@ -4877,6 +4877,16 @@ and TcTypeApp (cenv: cenv) newOk checkConstraints occ env tpenv m tcref pathType
     // Try to decode System.Tuple --> F# tuple types etc.
     let ty = g.decompileType tcref actualArgTys
 
+    let getInst (ty: TType) =
+        match stripTyparEqns ty with
+        | TType_app (tcref, typeArgs, _) ->
+            List.zip tcref.Deref.TyparsNoRange typeArgs
+        | _ -> []
+
+    let item = Item.Types(tcref.DisplayNameCore, [ty])
+    let inst = getInst ty
+    CallNameResolutionSink cenv.tcSink (m, env.NameEnv, item, inst, occ, env.eAccessRights)
+
     ty, tpenv
 
 and TcTypeOrMeasureAndRecover kindOpt (cenv: cenv) newOk checkConstraints occ iwsam env tpenv ty =
@@ -8186,8 +8196,9 @@ and TcItemThen (cenv: cenv) (overallTy: OverallTy) env tpenv (tinstEnclosing, it
     | Item.CtorGroup(nm, minfos) ->
         TcCtorItemThen cenv overallTy env item nm minfos tinstEnclosing tpenv mItem afterResolution delayed
 
-    | Item.FakeInterfaceCtor _ ->
-        error(Error(FSComp.SR.tcInvalidUseOfInterfaceType(), mItem))
+    | Item.FakeInterfaceCtor ty ->
+        let nm = NicePrint.minimalStringOfType env.DisplayEnv ty
+        TcTypeItemThen cenv overallTy env nm ty tpenv mItem tinstEnclosing delayed
 
     | Item.ImplicitOp(id, sln) ->
         TcImplicitOpItemThen cenv overallTy env id sln tpenv mItem delayed
@@ -8387,16 +8398,19 @@ and TcUnionCaseOrExnCaseOrActivePatternResultItemThen (cenv: cenv) overallTy env
 and TcTypeItemThen (cenv: cenv) overallTy env nm ty tpenv mItem tinstEnclosing delayed =
     let g = cenv.g
     let ad = env.eAccessRights
+
+    let reportWrongType ty m _mWithArgs =
+        if isInterfaceTy g ty then
+            error(Error(FSComp.SR.tcInvalidUseOfInterfaceType(), m))
+        else
+            error(Error(FSComp.SR.tcInvalidUseOfTypeName(), m))
+
     match delayed with
     | DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs) :: DelayedDotLookup (longId, mLongId) :: otherDelayed ->
         // If Item.Types is returned then the ty will be of the form TType_app(tcref, genericTyargs) where tyargs
         // is a fresh instantiation for tcref. TcNestedTypeApplication will chop off precisely #genericTyargs args
         // and replace them by 'tyargs'
         let ty, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv mExprAndTypeArgs ty tinstEnclosing tyargs
-
-        // Report information about the whole expression including type arguments to VS
-        let item = Item.Types(nm, [ty])
-        CallNameResolutionSink cenv.tcSink (mExprAndTypeArgs, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights)
         let typeNameResInfo = GetLongIdentTypeNameInfo otherDelayed
         let item, mItem, rest, afterResolution = ResolveExprDotLongIdentAndComputeRange cenv.tcSink cenv.nameResolver (unionRanges mExprAndTypeArgs mLongId) ad env.eNameResEnv ty longId typeNameResInfo IgnoreOverrides true
         TcItemThen cenv overallTy env tpenv ((argsOfAppTy g ty), item, mItem, rest, afterResolution) None otherDelayed
@@ -8404,17 +8418,15 @@ and TcTypeItemThen (cenv: cenv) overallTy env nm ty tpenv mItem tinstEnclosing d
     | DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs) :: _delayed' ->
         // A case where we have an incomplete name e.g. 'Foo<int>.' - we still want to report it to VS!
         let ty, _ = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv mExprAndTypeArgs ty tinstEnclosing tyargs
-        let item = Item.Types(nm, [ty])
-        CallNameResolutionSink cenv.tcSink (mExprAndTypeArgs, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights)
-
-        // Same error as in the following case
-        error(Error(FSComp.SR.tcInvalidUseOfTypeName(), mItem))
+        reportWrongType ty mItem mExprAndTypeArgs
 
     | _ ->
         // In this case the type is not generic, and indeed we should never have returned Item.Types.
         // That's because ResolveTypeNamesToCtors should have been set at the original
         // call to ResolveLongIdentAsExprAndComputeRange
-        error(Error(FSComp.SR.tcInvalidUseOfTypeName(), mItem))
+        let item = Item.Types(nm, [ty])
+        CallNameResolutionSink cenv.tcSink (mItem, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights)
+        reportWrongType ty mItem mItem
 
 and TcMethodItemThen (cenv: cenv) overallTy env item methodName minfos tpenv mItem afterResolution staticTyOpt delayed =
     let ad = env.eAccessRights
