@@ -36,6 +36,7 @@
     <FsYaccOutputFolder>$(FsLexYaccGeneratedFolder)</FsYaccOutputFolder>
     <FsLexOutputFolder>$(FsLexYaccGeneratedFolder)</FsLexOutputFolder>
     <GenerateFsLexYacc>true</GenerateFsLexYacc>
+    <FsLexYaccChecksums></FsLexYaccChecksums>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -76,9 +77,7 @@
     <Message Condition="'@(ExistingFsLexYaccChecksums)' != '@(FilesWithHashes->'%(FileHash)')'"
              Importance="High"
              Text="---->   FsLexYacc cached hash does not match current. Re-generating from flx/fsy." />
-
   </Target>
-
 
   <Target Name="SetFsLexYaccHashes" AfterTargets="AfterBuild">
     <GetFileHash Files="@(FilesToHash)" Algorithm="SHA256" HashEncoding="hex">
