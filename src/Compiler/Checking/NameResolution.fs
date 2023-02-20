@@ -2484,10 +2484,10 @@ let private ResolveObjectConstructorPrim (ncenv: NameResolver) edenv resInfo m a
                 else []
             if (isNil defaultStructCtorInfo && isNil ctorInfos) || (not (isAppTy g ty) && not (isAnyTupleTy g ty)) then
                 let nm = NicePrint.minimalStringOfType edenv ty
-                if not (isRecdTy g ty || isUnionTy g ty) then
-                    errorR (Error(FSComp.SR.nrNoConstructorsAvailableForType(nm), m))
-
-                success (resInfo, Item.Types(nm, [ty]))
+                if isRecdTy g ty || isUnionTy g ty then
+                    success (resInfo, Item.Types(nm, [ty]))
+                else
+                    raze (Error(FSComp.SR.nrNoConstructorsAvailableForType(nm), m))
             else
                 let ctorInfos = ctorInfos |> List.filter (IsMethInfoAccessible amap m ad)
                 let metadataTy = convertToTypeWithMetadataIfPossible g ty
