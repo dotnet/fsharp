@@ -362,7 +362,7 @@ let ImplicitlyOpenOwnNamespace tcSink g amap scopem enclosingNamespacePath (env:
         match enclosingNamespacePathToOpen with
         | id :: rest ->
             let ad = env.AccessRights
-            match ResolveLongIdentAsModuleOrNamespace tcSink ResultCollectionSettings.AllResults amap scopem true OpenQualified env.eNameResEnv ad id rest true with 
+            match ResolveLongIdentAsModuleOrNamespace tcSink amap scopem true OpenQualified env.eNameResEnv ad id rest true with 
             | Result modrefs -> 
                 let modrefs = List.map p23 modrefs
                 let lid = SynLongIdent(enclosingNamespacePathToOpen, [] , [])
@@ -637,7 +637,7 @@ let TcOpenLidAndPermitAutoResolve tcSink (env: TcEnv) amap (longId : Ident list)
     | [] -> []
     | id :: rest ->
         let m = longId |> List.map (fun id -> id.idRange) |> List.reduce unionRanges
-        match ResolveLongIdentAsModuleOrNamespace tcSink ResultCollectionSettings.AllResults amap m true OpenQualified env.NameEnv ad id rest true with 
+        match ResolveLongIdentAsModuleOrNamespace tcSink amap m true OpenQualified env.NameEnv ad id rest true with 
         | Result res -> res
         | Exception err ->
             errorR(err); []
@@ -1440,7 +1440,7 @@ module MutRecBindingChecking =
         let resolved =
             match p with
             | [] -> Result []
-            | id :: rest -> ResolveLongIdentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m true OpenQualified env.NameEnv ad id rest false
+            | id :: rest -> ResolveLongIdentAsModuleOrNamespace cenv.tcSink cenv.amap m true OpenQualified env.NameEnv ad id rest false
 
         let mvvs = ForceRaise resolved
 
@@ -3028,6 +3028,17 @@ module EstablishTypeDefinitionCores =
                     let kind = if hasMeasureAttr then TyparKind.Measure else TyparKind.Type
                     let ty, _ = TcTypeOrMeasureAndRecover (Some kind) cenv NoNewTypars checkConstraints ItemOccurence.UseInType WarnOnIWSAM.No envinner tpenv rhsType
 
+                    // Give a warning if `AutoOpenAttribute` is being aliased.
+                    // If the user were to alias the `Microsoft.FSharp.Core.AutoOpenAttribute` type, it would not be detected by the project graph dependency resolution algorithm.
+                    match stripTyEqns g ty with
+                    | AppTy g (tcref, _) when not tcref.IsErased ->
+                        match tcref.CompiledRepresentation with
+                        | CompiledTypeRepr.ILAsmOpen _ -> ()
+                        | CompiledTypeRepr.ILAsmNamed _ ->
+                            if tcref.CompiledRepresentationForNamedType.FullName = g.attrib_AutoOpenAttribute.TypeRef.FullName then
+                                warning(Error(FSComp.SR.chkAutoOpenAttributeInTypeAbbrev(), tycon.Id.idRange))
+                    | _ -> ()
+                    
                     if not firstPass then 
                         let ftyvs = freeInTypeLeftToRight g false ty 
                         let typars = tycon.Typars m
@@ -4278,7 +4289,7 @@ module TcDeclarations =
 
                 if not (isNil members) && tcref.IsTypeAbbrev then 
                     errorR(Error(FSComp.SR.tcTypeAbbreviationsCannotHaveAugmentations(), tyDeclRange))
-
+                
                 let (SynComponentInfo (attributes, _, _, _, _, _, _, _)) = synTyconInfo
                 if not (List.isEmpty attributes) && (declKind = ExtrinsicExtensionBinding || declKind = IntrinsicExtensionBinding) then
                     let attributeRange = (List.head attributes).Range
@@ -4564,7 +4575,7 @@ let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcE
             let resolved =
                 match p with
                 | [] -> Result []
-                | id :: rest -> ResolveLongIdentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m true OpenQualified env.NameEnv ad id rest false
+                | id :: rest -> ResolveLongIdentAsModuleOrNamespace cenv.tcSink cenv.amap m true OpenQualified env.NameEnv ad id rest false
             let mvvs = ForceRaise resolved
             let scopem = unionRanges m endm
             let unfilteredModrefs = mvvs |> List.map p23

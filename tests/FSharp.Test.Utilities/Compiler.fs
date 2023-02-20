@@ -59,7 +59,8 @@ module rec Compiler =
           OutputDirectory:  DirectoryInfo option
           Name:             string option
           IgnoreWarnings:   bool
-          References:       CompilationUnit list }
+          References:       CompilationUnit list
+          TargetFramework: TargetFramework }
 
         member this.CreateOutputDirectory() =
             match this.OutputDirectory with
@@ -204,6 +205,7 @@ module rec Compiler =
             Name              = None
             IgnoreWarnings    = false
             References        = []
+            TargetFramework   = TargetFramework.Current
         }
 
     let private csFromString (source: SourceCodeFileKind) : CSharpCompilationSource =
@@ -244,7 +246,7 @@ module rec Compiler =
     let private getWarnings diagnostics = diagnostics |> List.filter (fun e -> match e.Error with Warning _ -> true | _ -> false)
 
     let private adjustRange (range: Range) (adjust: int) : Range =
-        { range with
+        {
                 StartLine   = range.StartLine   - adjust
                 StartColumn = range.StartColumn + 1
                 EndLine     = range.EndLine     - adjust
@@ -306,6 +308,7 @@ module rec Compiler =
             Name              = Some name
             IgnoreWarnings    = false
             References        = []
+            TargetFramework   = TargetFramework.Current
         } |> FS
 
     let CSharp (source: string) : CompilationUnit =
@@ -331,6 +334,12 @@ module rec Compiler =
         | CS src -> CS { src with Name = Some name }
         | IL _ -> failwith "IL Compilation cannot be named."
 
+    let withReferenceFSharpCompilerService (cUnit: CompilationUnit) : CompilationUnit =
+        // Compute the location of the FSharp.Compiler.Service dll that matches the target framework used to build this test assembly
+        let compilerServiceAssemblyLocation =
+            typeof<FSharp.Compiler.Text.Range>.Assembly.Location
+        withOptionsHelper [ $"-r:{compilerServiceAssemblyLocation}" ] "withReferenceFSharpCompilerService is only supported for F#" cUnit
+
     let withReferences (references: CompilationUnit list) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
         | FS fs -> FS { fs with References = fs.References @ references }
@@ -353,6 +362,9 @@ module rec Compiler =
         match cUnit with
         | FS fs -> FS { fs with Options = fs.Options @ options }
         | _ -> failwith message
+
+    let withCodepage (codepage:string) (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ $"--codepage:{codepage}" ] "codepage is only supported on F#" cUnit
 
     let withDebug (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--debug+" ] "debug+ is only supported on F#" cUnit
@@ -397,14 +409,14 @@ module rec Compiler =
 
     let withLangVersionPreview (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:preview" ] "withLangVersionPreview is only supported on F#" cUnit
-        
+
     let withLangVersion (version: string) (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ $"--langversion:{version}" ] "withLangVersion is only supported on F#" cUnit
 
     let withAssemblyVersion (version:string) (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ $"--version:{version}" ] "withAssemblyVersion is only supported on F#" cUnit
 
-    let withWarnOn  (cUnit: CompilationUnit) warning : CompilationUnit =
+    let withWarnOn (warning : int) (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ $"--warnon:{warning}" ] "withWarnOn is only supported for F#" cUnit
 
     let withNoWarn warning (cUnit: CompilationUnit) : CompilationUnit =
@@ -470,17 +482,24 @@ module rec Compiler =
         | CS cs -> CS { cs with LangVersion = ver }
         | _ -> failwith "Only supported in C#"
 
-    let asLibrary (cUnit: CompilationUnit) : CompilationUnit =
+    let withOutputType (outputType : CompileOutput) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
-        | FS fs -> FS { fs with OutputType = CompileOutput.Library }
-        | _ -> failwith "TODO: Implement asLibrary where applicable."
-
-    let asExe (cUnit: CompilationUnit) : CompilationUnit =
-        match cUnit with
-        | FS x -> FS { x with OutputType = Exe }
-        | CS x -> CS { x with OutputType = Exe }
+        | FS x -> FS { x with OutputType = outputType }
+        | CS x -> CS { x with OutputType = outputType }
         | _ -> failwith "TODO: Implement where applicable."
 
+    let asLibrary (cUnit: CompilationUnit) : CompilationUnit =
+        withOutputType CompileOutput.Library cUnit
+
+    let asNetStandard20 (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS fs -> FS { fs with TargetFramework = TargetFramework.NetStandard20 }
+        | CS cs -> CS { cs with TargetFramework = TargetFramework.NetStandard20 }
+        | IL _ ->  failwith "References are not supported in IL"
+
+    let asExe (cUnit: CompilationUnit) : CompilationUnit =
+        withOutputType CompileOutput.Exe cUnit    
+    
     let withPlatform (platform:ExecutionPlatform) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
         | FS _ ->
@@ -534,7 +553,7 @@ module rec Compiler =
                         | Some outputDirectory -> outputDirectory
                         | _ -> defaultOutputDirectory
                     let cmpl =
-                        Compilation.CreateFromSources([fs.Source] @ fs.AdditionalSources, fs.OutputType, options, refs, name, outDir) |> CompilationReference.CreateFSharp
+                        Compilation.CreateFromSources([fs.Source] @ fs.AdditionalSources, fs.OutputType, options, fs.TargetFramework, refs, name, outDir) |> CompilationReference.CreateFSharp
                     loop (cmpl::acc) xs
 
                 | CS cs ->
@@ -580,7 +599,7 @@ module rec Compiler =
             | Some di -> di
             | None -> DirectoryInfo(tryCreateTemporaryDirectory())
         let references = processReferences fs.References outputDirectory
-        let compilation = Compilation.CreateFromSources([fs.Source] @ fs.AdditionalSources, output, options, references, name, outputDirectory)
+        let compilation = Compilation.CreateFromSources([fs.Source] @ fs.AdditionalSources, output, options, fs.TargetFramework, references, name, outputDirectory)
         compileFSharpCompilation compilation fs.IgnoreWarnings (FS fs)
 
     let toErrorInfo (d: Diagnostic) =
@@ -787,11 +806,8 @@ module rec Compiler =
 
     let compileExeAndRun = asExe >> compileAndRun
 
-    let private evalFSharp (fs: FSharpCompilationSource) : CompilationResult =
+    let private evalFSharp (fs: FSharpCompilationSource) (script:FSharpScript) : CompilationResult =
         let source = fs.Source.GetSourceText |> Option.defaultValue ""
-        let options = fs.Options |> Array.ofList
-
-        use script = new FSharpScript(additionalArgs=options)
         let (evalResult: Result<FsiValue option, exn>), (err: FSharpDiagnostic[]) = script.Eval(source)
         let diagnostics = err |> fromFSharpDiagnostic
         let result =
@@ -811,7 +827,17 @@ module rec Compiler =
 
     let eval (cUnit: CompilationUnit) : CompilationResult =
         match cUnit with
-        | FS fs -> evalFSharp fs
+        | FS fs -> 
+            let options = fs.Options |> Array.ofList
+            use script = new FSharpScript(additionalArgs=options)
+            evalFSharp fs script
+        | _ -> failwith "Script evaluation is only supported for F#."
+
+    let getSessionForEval () = new FSharpScript()
+
+    let evalInSharedSession (script:FSharpScript) (cUnit: CompilationUnit)  : CompilationResult =
+        match cUnit with
+        | FS fs -> evalFSharp fs script
         | _ -> failwith "Script evaluation is only supported for F#."
 
     let runFsi (cUnit: CompilationUnit) : CompilationResult =
@@ -830,7 +856,7 @@ module rec Compiler =
                 disposals.Add({ new IDisposable with member _.Dispose() = outputDirectory.Delete(true) })
 
                 let references = processReferences fs.References outputDirectory
-                let cmpl = Compilation.Create(fs.Source, fs.OutputType, options, references, name, outputDirectory)
+                let cmpl = Compilation.Create(fs.Source, fs.OutputType, options, fs.TargetFramework, references, name, outputDirectory)
                 let _compilationRefs, _deps = evaluateReferences outputDirectory disposals fs.IgnoreWarnings cmpl
                 let options =
                     let opts = new ResizeArray<string>(fs.Options)
@@ -840,7 +866,7 @@ module rec Compiler =
                         match reference with
                         | CompilationReference( cmpl, _) ->
                             match cmpl with
-                            | Compilation(_sources, _outputType, _options, _references, _name, outputDirectory) ->
+                            | Compilation(_sources, _outputType, _options, _targetFramework, _references, _name, outputDirectory) ->
                                 if outputDirectory.IsSome then
                                     opts.Add($"-I:\"{(outputDirectory.Value.FullName)}\"")
                         | _ -> ()
@@ -1088,7 +1114,7 @@ module rec Compiler =
                     failwith $"PDB file does not exists: {pdbPath}"
             | _ -> failwith "Output path is not set, please make sure compilation was successfull."
         match result with
-        | CompilationResult.Success r -> verifyPdbExists r 
+        | CompilationResult.Success r -> verifyPdbExists r
         | _ -> failwith "Result should be \"Success\" in order to verify PDB."
 
     let verifyNoPdb (result: CompilationResult): unit =
@@ -1100,7 +1126,7 @@ module rec Compiler =
                     failwith $"PDB file exists: {pdbPath}"
             | _ -> failwith "Output path is not set, please make sure compilation was successfull."
         match result with
-        | CompilationResult.Success r -> verifyPdbNotExists r 
+        | CompilationResult.Success r -> verifyPdbNotExists r
         | _ -> failwith "Result should be \"Success\" in order to verify PDB."
 
     [<AutoOpen>]
@@ -1175,6 +1201,10 @@ module rec Compiler =
                       match r.Output with
                       | Some (ExecutionOutput output) ->
                           sprintf "----output-----\n%s\n----error-------\n%s\n----------" output.StdOut output.StdErr
+                      | Some (EvalOutput (Result.Error exn) ) -> 
+                          sprintf "----script error-----\n%s\n----------" (exn.ToString())
+                      | Some (EvalOutput (Result.Ok fsiVal) ) -> 
+                          sprintf "----script output-----\n%A\n----------" (fsiVal)                   
                       | _ -> () ]
                     |> String.concat "\n"
                 failwith message
@@ -1369,6 +1399,6 @@ module rec Compiler =
             s.Replace("\r", "").Split('\n')
             |> Array.map (fun line -> line.TrimEnd())
             |> String.concat "\n"
-    
+
     let printSignatures cUnit = printSignaturesImpl None cUnit
     let printSignaturesWith pageWidth cUnit = printSignaturesImpl (Some pageWidth) cUnit

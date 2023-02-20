@@ -19,7 +19,7 @@ open NUnit.Framework
 
 let [<Literal>] private Marker = "(* marker *)"
 
-let private (=>) (source: string) (expected: CompletionContext option) =
+let private assertCompletionContext (checker: CompletionContext option -> bool) (source: string)  =
 
     let lines =
         use reader = new StringReader(source)
@@ -43,10 +43,10 @@ let private (=>) (source: string) (expected: CompletionContext option) =
     | Some markerPos ->
         let parseTree = parseSourceCode("C:\\test.fs", source)
         let actual = ParsedInput.TryGetCompletionContext(markerPos, parseTree, lines[Line.toZ markerPos.Line])
-        try Assert.AreEqual(expected, actual)
-        with e ->
+
+        if not (checker actual) then
             printfn "ParseTree: %A" parseTree
-            reraise()
+            failwithf "Completion context '%A' was not expected" actual
 
 module AttributeCompletion =
     [<Test>]
@@ -54,7 +54,7 @@ module AttributeCompletion =
         """
 [<(* marker *)
 """  
-     => Some CompletionContext.AttributeApplication
+        |> assertCompletionContext (fun x -> x = Some CompletionContext.AttributeApplication)
 
     [<TestCase ("[<(* marker *)", true)>]
     [<TestCase ("[<AnAttr(* marker *)", true)>]
@@ -65,17 +65,13 @@ module AttributeCompletion =
     [<TestCase ("[<AnAttribute; (* marker *)", true)>]
     [<TestCase ("[<AnAttribute>][<(* marker *)", true)>]
     [<TestCase ("[<AnAttribute>][< (* marker *)", true)>]
-    [<TestCase ("[<AnAttribute((* marker *)", false)>]
-    [<TestCase ("[<AnAttribute( (* marker *)", false)>]
-    [<TestCase ("[<AnAttribute (* marker *)", false)>]
-    [<TestCase ("[<AnAttribute>][<AnAttribute((* marker *)", false)>]
-    [<TestCase ("[<AnAttribute; AnAttribute((* marker *)", false)>]
     let ``incomplete``(lineStr: string, expectAttributeApplicationContext: bool) =
-        (sprintf """
-%s
+        let code = $"""
+{lineStr}
 type T =
-    { F: int }
-""" lineStr)  => (if expectAttributeApplicationContext then Some CompletionContext.AttributeApplication else None)
+    {{ F: int }}
+"""
+        code |> assertCompletionContext (fun x -> x = (if expectAttributeApplicationContext then Some CompletionContext.AttributeApplication else None))
 
     [<TestCase ("[<(* marker *)>]", true)>]
     [<TestCase ("[<AnAttr(* marker *)>]", true)>]
@@ -87,20 +83,40 @@ type T =
     [<TestCase ("[<AnAttribute;(* marker *)>]", true)>]
     [<TestCase ("[<AnAttribute; (* marker *) >]", true)>]
     [<TestCase ("[<AnAttribute>][<AnAttribute;(* marker *)>]", true)>]
-    [<TestCase ("[<AnAttribute((* marker *)>]", false)>]
     [<TestCase ("[<AnAttribute (* marker *) >]", false)>]
-    [<TestCase ("[<AnAttribute>][<AnAttribute((* marker *)>]", false)>]
-    [<TestCase ("[<AnAttribute; AnAttribute((* marker *)>]", false)>]
-    [<TestCase ("[<AnAttribute; AnAttribute( (* marker *)>]", false)>]
-    [<TestCase ("[<AnAttribute>][<AnAttribute; AnAttribute((* marker *)>]", false)>]
     let ``complete``(lineStr: string, expectAttributeApplicationContext: bool) =
-        (sprintf """
-%s
+        let code = $"""
+{lineStr}
 type T =
-    { F: int }
-""" lineStr)  => (if expectAttributeApplicationContext then Some CompletionContext.AttributeApplication else None)
+    {{ F: int }}
+"""
+        code |> assertCompletionContext (fun x -> x = (if expectAttributeApplicationContext then Some CompletionContext.AttributeApplication else None))
 
+module AttributeConstructorCompletion =
+    [<TestCase ("[<AnAttribute((* marker *)")>]
+    [<TestCase ("[<AnAttribute( (* marker *)")>]
+    [<TestCase ("[<AnAttribute>][<AnAttribute((* marker *)")>]
+    [<TestCase ("[<AnAttribute; AnAttribute((* marker *)")>]
+    let ``incomplete``(lineStr: string) =
+        let code = $"""
+{lineStr}
+type T =
+    {{ F: int }}
+"""
+        code |> assertCompletionContext (fun x -> match x with Some (CompletionContext.ParameterList _) -> true | _ -> false)
 
+    [<TestCase ("[<AnAttribute((* marker *)>]")>]
+    [<TestCase ("[<AnAttribute>][<AnAttribute((* marker *)>]")>]
+    [<TestCase ("[<AnAttribute; AnAttribute((* marker *)>]")>]
+    [<TestCase ("[<AnAttribute; AnAttribute( (* marker *)>]")>]
+    [<TestCase ("[<AnAttribute>][<AnAttribute; AnAttribute((* marker *)>]")>]
+    let ``complete``(lineStr: string) =
+        let code = $"""
+{lineStr}
+type T =
+    {{ F: int }}
+"""
+        code |> assertCompletionContext (fun x -> match x with Some (CompletionContext.ParameterList _) -> true | _ -> false)
 
 [<Test>]
 let ``Attribute lists`` () =

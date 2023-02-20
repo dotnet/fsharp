@@ -322,6 +322,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             // Propagate defn location information from implementation to signature . 
             sigVal.SetOtherRange (implVal.Range, true)
             implVal.SetOtherRange (sigVal.Range, false)
+            implVal.SetOtherXmlDoc(sigVal.XmlDoc)
 
             let mk_err denv f = ValueNotContained(denv, infoReader, implModRef, implVal, sigVal, f)
             let err denv f = errorR(mk_err denv f); false

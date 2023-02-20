@@ -622,7 +622,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                         | SynExpr.ArrayOrListComputed (_, e, _)
                         | SynExpr.Typed (e, _, _)
                         | SynExpr.FromParseError (e, _)
-                        | SynExpr.DiscardAfterMissingQualificationAfterDot (e, _)
+                        | SynExpr.DiscardAfterMissingQualificationAfterDot (e, _, _)
                         | SynExpr.Do (e, _)
                         | SynExpr.Assert (e, _)
                         | SynExpr.Fixed (e, _)
@@ -715,7 +715,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
 
                             yield! walkExprs (fs |> List.choose (fun (SynExprRecordField (expr = e)) -> e))
 
-                        | SynExpr.AnonRecd (_isStruct, copyExprOpt, fs, _) ->
+                        | SynExpr.AnonRecd (copyInfo = copyExprOpt; recordFields = fs) ->
                             match copyExprOpt with
                             | Some (e, _) -> yield! walkExpr true e
                             | None -> ()

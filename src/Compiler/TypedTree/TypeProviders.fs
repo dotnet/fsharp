@@ -136,7 +136,7 @@ let CreateTypeProvider (
                 SystemRuntimeAssemblyVersion = systemRuntimeAssemblyVersion)
 #else
             TypeProviderConfig(systemRuntimeContainsType,
-                getReferencedAssemblies,
+                ReferencedAssemblies=getReferencedAssemblies(),
                 ResolutionFolder=resolutionEnvironment.ResolutionFolder, 
                 RuntimeAssembly=runtimeAssemblyPath, 
                 TemporaryFolder=resolutionEnvironment.TemporaryFolder, 

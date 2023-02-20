@@ -51,6 +51,10 @@ type LanguageFeature =
     | EscapeDotnetFormattableStrings
     | ArithmeticInLiterals
     | ErrorReportingOnStaticClasses
+    | TryWithInSeqExpression
+    | WarningWhenCopyAndUpdateRecordChangesAllFields
+    | StaticMembersInInterfaces
+    | NonInlineLiteralsAsPrintfFormat
 
 /// LanguageVersion management
 type LanguageVersion =

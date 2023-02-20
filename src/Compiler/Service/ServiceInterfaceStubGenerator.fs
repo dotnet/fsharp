@@ -969,7 +969,7 @@ module InterfaceStubGenerator =
                 | SynExpr.ArbitraryAfterError (_debugStr, _range) -> None
 
                 | SynExpr.FromParseError (synExpr, _range)
-                | SynExpr.DiscardAfterMissingQualificationAfterDot (synExpr, _range) -> walkExpr synExpr
+                | SynExpr.DiscardAfterMissingQualificationAfterDot (synExpr, _, _range) -> walkExpr synExpr
 
                 | _ -> None
 

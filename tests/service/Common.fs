@@ -372,7 +372,7 @@ let inline dumpDiagnostics (results: FSharpCheckFileResults) =
             e.Message.Split('\n')
             |> Array.map (fun s -> s.Trim())
             |> String.concat " "
-        sprintf "%s: %s" (e.Range.ToShortString()) message)
+        sprintf "%s: %s" (e.Range.ToString()) message)
     |> List.ofArray
 
 let getSymbolUses (results: FSharpCheckFileResults) =
