@@ -36,7 +36,6 @@
     <FsYaccOutputFolder>$(FsLexYaccGeneratedFolder)</FsYaccOutputFolder>
     <FsLexOutputFolder>$(FsLexYaccGeneratedFolder)</FsLexOutputFolder>
     <GenerateFsLexYacc>true</GenerateFsLexYacc>
-    <FsLexYaccChecksums></FsLexYaccChecksums>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -83,14 +82,14 @@
     <GetFileHash Files="@(FilesToHash)" Algorithm="SHA256" HashEncoding="hex">
       <Output
           TaskParameter="Items"
-          ItemName="FilesWithHashes" />
+          ItemName="FilesWithHashesToCache" />
     </GetFileHash>
 
     <Message Condition="'$(GenerateFsLexYacc)' != 'false'"
              Importance="High"
              Text="---->   New FsLexYacc output was generated, writing new checksum." />
 
-    <WriteLinesToFile Condition="'$(GenerateFsLexYacc)' != 'false'" File="$(FsLexYaccChecksumFile)" Lines="@(FilesWithHashes->'%(FileHash)')" Overwrite="true" Encoding="utf-8" />
+    <WriteLinesToFile Condition="'$(GenerateFsLexYacc)' != 'false'" File="$(FsLexYaccChecksumFile)" Lines="@(FilesWithHashesToCache->'%(FileHash)')" Overwrite="true" WriteOnlyWhenDifferent="true" Encoding="utf-8" />
   </Target>
 
   <ItemGroup>
