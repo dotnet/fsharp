@@ -535,6 +535,11 @@ stages:
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Regular rebuild of FSharp.Compiler.Service.sln
+          - script: dotnet test .\FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularTest.binlog\"
+            workingDirectory: $(Build.SourcesDirectory)
+            env:
+              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
+            displayName: Regular test run for FSharp.Compiler.Service.sln
 
         # Plain FCS build Linux
         - job: Plain_Build_Linux

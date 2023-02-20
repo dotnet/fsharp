@@ -51,7 +51,7 @@
 
   <ItemGroup>
     <!-- We hash fslex and fsyacc themselves, and fsl/fsy files -->
-    <FilesToHash Include="$(RepoRoot)\buildtools\fslex\*;$(RepoRoot)\buildtools\fslex\*;$(RepoRoot)\src\Compiler\*.fsl;$(RepoRoot)\src\Compiler\*.fsy" />
+    <FilesToHash Include="$(RepoRoot)\buildtools\fslex\*;$(RepoRoot)\buildtools\fsyacc\*;$(RepoRoot)\src\Compiler\*.fsl;$(RepoRoot)\src\Compiler\*.fsy" />
   </ItemGroup>
 
   <Target Name="GetFsLexYaccHashes" BeforeTargets="BeforeBuild">
