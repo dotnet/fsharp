@@ -1,18 +1,18 @@
 {
   "sdk": {
-    "version": "7.0.102",
+    "version": "7.0.200",
     "allowPrerelease": true,
     "rollForward": "latestPatch"
   },
   "tools": {
-    "dotnet": "7.0.102",
+    "dotnet": "7.0.200",
     "vs": {
-      "version": "17.4",
+      "version": "17.5",
       "components": [
         "Microsoft.VisualStudio.Component.FSharp"
       ]
     },
-    "xcopy-msbuild": "17.4.1"
+    "xcopy-msbuild": "17.5.0"
   },
   "native-tools": {
     "perl": "5.32.1.1"
