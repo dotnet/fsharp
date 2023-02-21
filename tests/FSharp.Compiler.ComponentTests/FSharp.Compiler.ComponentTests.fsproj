@@ -20,7 +20,7 @@
     <!-- allow testing of static methods in interfaces on .NET 6  -->
     <EnablePreviewFeatures>true</EnablePreviewFeatures>
     <!-- allow testing of static methods in interfaces on .NET 6  -->
-  
+
 </PropertyGroup>
 
   <ItemGroup>
