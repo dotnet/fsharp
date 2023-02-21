@@ -74,7 +74,8 @@
     </CreateProperty>
 
     <PropertyGroup>
-        <FsLexYaccFilesContents>$(FsLexYaccFilesContents.Replace("\r\n", "\n"))</FsLexYaccFilesContents>
+        <!--<FsLexYaccFilesContents>$(FsLexYaccFilesContents.Replace("\r", ""))</FsLexYaccFilesContents>-->
+        <FsLexYaccFilesContents>$([System.Text.RegularExpressions.Regex]::Replace("$(FsLexYaccFilesContents)", "\r\n", "\n", "System.Text.RegularExpressions.RegexOptions.ECMAScript"))</FsLexYaccFilesContents>
     </PropertyGroup>
 
     <WriteLinesToFile File="$(ArtifactsDir)/fslexyacc.checksum" Lines="$(FsLexYaccFilesContents)" Overwrite="true" />
