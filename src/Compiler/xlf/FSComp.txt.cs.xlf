@@ -307,6 +307,11 @@
         <target state="translated">nameof</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureNonInlineLiteralsAsPrintfFormat">
+        <source>String values marked as literals and IL constants as printf format</source>
+        <target state="new">String values marked as literals and IL constants as printf format</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureNonVariablePatternsToRightOfAsPatterns">
         <source>non-variable patterns to the right of 'as' patterns</source>
         <target state="translated">neproměnné vzory napravo od vzorů typu „jako“</target>

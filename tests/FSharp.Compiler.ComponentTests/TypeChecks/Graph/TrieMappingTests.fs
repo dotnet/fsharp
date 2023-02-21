@@ -313,3 +313,188 @@ let _ = ()
     Assert.AreEqual(1, trie.Children.Count)
     let aNode = trie.Children.["A"]
     Assert.AreEqual(set [| 0 |], aNode.Files)
+
+[<Test>]
+let ``Two nested modules with the same name, in named namespace`` () =
+    let trie =
+        TrieMapping.mkTrie
+            [|
+                {
+                    Idx = 0
+                    FileName = "A.fs"
+                    ParsedInput =
+                        parseSourceCode (
+                            "A.fs",
+                            """
+namespace N
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>] 
+module ``module`` = 
+            let f x = x + 1
+module ``module`` =
+            let g x = x + 1
+"""                     )
+                }
+            |]
+
+    Assert.AreEqual(1, trie.Children.Count)
+    let node = trie.Children.["N"]
+    Assert.AreEqual(1, node.Children.Count)
+
+[<Test>]
+let ``Two nested modules with the same name, in namespace global`` () =
+    let trie =
+        TrieMapping.mkTrie
+            [|
+                {
+                    Idx = 0
+                    FileName = "A.fs"
+                    ParsedInput =
+                        parseSourceCode (
+                            "A.fs",
+                            """
+namespace global
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>] 
+module ``module`` = 
+            let f x = x + 1
+module ``module`` =
+            let g x = x + 1
+"""                     )
+                }
+            |]
+
+    // namespace global leads to a Root entry, no further processing will be done.
+    Assert.AreEqual(set [| 0 |], trie.Files)
+
+[<Test>]
+let ``Two nested modules with the same name, in anonymous module`` () =
+    let trie =
+        TrieMapping.mkTrie
+            [|
+                {
+                    Idx = 1
+                    FileName = "Program.fs"
+                    ParsedInput =
+                        parseSourceCode (
+                            "Program.fs",
+                            """
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>] 
+module ``module`` = 
+            let f x = x + 1
+module ``module`` =
+            let g x = x + 1
+"""                     )
+                }
+            |]
+
+    Assert.AreEqual(1, trie.Children.Count)
+    Assert.True(trie.Children.ContainsKey("module"))
+
+[<Test>]
+let ``Two nested modules with the same name, in nested module`` () =
+    let trie =
+        TrieMapping.mkTrie
+            [|
+                {
+                    Idx = 0
+                    FileName = "A.fs"
+                    ParsedInput =
+                        parseSourceCode (
+                            "A.fs",
+                            """
+namespace A
+
+module B =
+
+    [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>] 
+    module ``module`` = 
+                let f x = x + 1
+    module ``module`` =
+                let g x = x + 1
+"""                     )
+                }
+            |]
+
+    let bNode = trie.Children["A"].Children["B"]
+    Assert.AreEqual(1, bNode.Children.Count)
+    Assert.True(bNode.Children.ContainsKey("module"))
+
+[<Test>]
+let ``Two nested modules with the same name, in nested module in signature file`` () =
+    let trie =
+        TrieMapping.mkTrie
+            [|
+                {
+                    Idx = 0
+                    FileName = "A.fsi"
+                    ParsedInput =
+                        parseSourceCode (
+                            "A.fsi",
+                            """
+namespace A
+
+module B =
+
+    [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>] 
+    module ``module`` = begin end
+    module ``module`` = begin end
+"""                     )
+                }
+            |]
+
+    let bNode = trie.Children["A"].Children["B"]
+    Assert.AreEqual(1, bNode.Children.Count)
+    Assert.True(bNode.Children.ContainsKey("module"))
+
+[<Test>]
+let ``Two namespaces with the same name in the same implementation file`` () =
+    let trie =
+        TrieMapping.mkTrie
+            [|
+                {
+                    Idx = 0
+                    FileName = "A.fs"
+                    ParsedInput =
+                        parseSourceCode (
+                            "A.fs",
+                            """
+namespace A
+
+module B = begin end
+
+namespace A
+
+module C = begin end
+"""                     )
+                }
+            |]
+
+    let aNode = trie.Children["A"]
+    Assert.AreEqual(2, aNode.Children.Count)
+
+[<Test>]
+let ``Two namespaces with the same name in the same signature file`` () =
+    let trie =
+        TrieMapping.mkTrie
+            [|
+                {
+                    Idx = 0
+                    FileName = "A.fsi"
+                    ParsedInput =
+                        parseSourceCode (
+                            "A.fsi",
+                            """
+namespace A
+
+module B = begin end
+
+namespace A
+
+module C = begin end
+"""                     )
+                }
+            |]
+
+    let aNode = trie.Children["A"]
+    Assert.AreEqual(2, aNode.Children.Count)

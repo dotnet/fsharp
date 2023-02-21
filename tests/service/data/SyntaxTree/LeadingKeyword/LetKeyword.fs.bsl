@@ -16,11 +16,8 @@ ImplFile
                         SynArgInfo ([], false, None)), None),
                   LongIdent
                     (SynLongIdent ([a], [], [None]), None, None,
-                     Pats
-                       [Named
-                          (SynIdent (b, None), false, None,
-                           /root/LeadingKeyword/LetKeyword.fs (2,6--2,7))], None,
-                     /root/LeadingKeyword/LetKeyword.fs (2,4--2,7)), None,
+                     Pats [Named (SynIdent (b, None), false, None, (2,6--2,7))],
+                     None, (2,4--2,7)), None,
                   App
                     (NonAtomic, false,
                      App
@@ -29,19 +26,11 @@ ImplFile
                           (false,
                            SynLongIdent
                              ([op_Addition], [], [Some (OriginalNotation "+")]),
-                           None, /root/LeadingKeyword/LetKeyword.fs (2,12--2,13)),
-                        Ident b, /root/LeadingKeyword/LetKeyword.fs (2,10--2,13)),
-                     Const
-                       (Int32 1, /root/LeadingKeyword/LetKeyword.fs (2,14--2,15)),
-                     /root/LeadingKeyword/LetKeyword.fs (2,10--2,15)),
-                  /root/LeadingKeyword/LetKeyword.fs (2,4--2,7), NoneAtLet,
-                  { LeadingKeyword =
-                     Let /root/LeadingKeyword/LetKeyword.fs (2,0--2,3)
-                    InlineKeyword = None
-                    EqualsRange =
-                     Some /root/LeadingKeyword/LetKeyword.fs (2,8--2,9) })],
-              /root/LeadingKeyword/LetKeyword.fs (2,0--2,15))], PreXmlDocEmpty,
-          [], None, /root/LeadingKeyword/LetKeyword.fs (2,0--3,0),
-          { LeadingKeyword = None })], (true, false),
-      { ConditionalDirectives = []
-        CodeComments = [] }, set []))
+                           None, (2,12--2,13)), Ident b, (2,10--2,13)),
+                     Const (Int32 1, (2,14--2,15)), (2,10--2,15)), (2,4--2,7),
+                  NoneAtLet, { LeadingKeyword = Let (2,0--2,3)
+                               InlineKeyword = None
+                               EqualsRange = Some (2,8--2,9) })], (2,0--2,15))],
+          PreXmlDocEmpty, [], None, (2,0--3,0), { LeadingKeyword = None })],
+      (true, false), { ConditionalDirectives = []
+                       CodeComments = [] }, set []))

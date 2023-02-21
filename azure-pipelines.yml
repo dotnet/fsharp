@@ -332,7 +332,7 @@ stages:
             demands: ImageOverride -equals $(WindowsMachineQueueName)
           timeoutInMinutes: 120
           strategy:
-            maxParallel: 4
+            maxParallel: 5
             matrix:
               desktop_release:
                 _configuration: Release
@@ -346,6 +346,9 @@ stages:
               vs_release:
                 _configuration: Release
                 _testKind: testVs
+              inttests_release:
+                _configuration: Release
+                _testKind: testIntegration
           steps:
           - checkout: self
             clean: true
@@ -441,6 +444,8 @@ stages:
           - checkout: self
             clean: true
           - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr
+            env:
+              COMPlus_DefaultStackSize: 1000000
             displayName: Build / Test
           - task: PublishTestResults@2
             displayName: Publish Test Results
