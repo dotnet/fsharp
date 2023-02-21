@@ -61,11 +61,7 @@
         <FsLexYaccFilesContents></FsLexYaccFilesContents>
     </PropertyGroup>
 
-    <CreateItem Include="@(FilesToHash)">
-      <Output TaskParameter="Include" ItemName="FsLexYaccFiles" />
-    </CreateItem>
-
-    <ReadLinesFromFile File="%(FsLexYaccFiles.FullPath)">
+    <ReadLinesFromFile File="%(FilesToHash.FullPath)">
       <Output TaskParameter="Lines" ItemName="FsLexYaccFilesContent" />
     </ReadLinesFromFile>
 
@@ -78,7 +74,7 @@
         <FsLexYaccFilesContents>$([System.Text.RegularExpressions.Regex]::Replace("$(FsLexYaccFilesContents)", "\r\n", "\n", "System.Text.RegularExpressions.RegexOptions.ECMAScript"))</FsLexYaccFilesContents>
     </PropertyGroup>
 
-    <WriteLinesToFile File="$(ArtifactsDir)/fslexyacc.checksum" Lines="$(FsLexYaccFilesContents)" Overwrite="true" />
+    <WriteLinesToFile File="$(ArtifactsDir)/fslexyacc.checksum" Lines="$(FsLexYaccFilesContents)" Overwrite="true" Encoding="utf-8" />
 
     <GetFileHash Files="$(ArtifactsDir)/fslexyacc.checksum" Algorithm="SHA256" HashEncoding="hex">
       <Output
