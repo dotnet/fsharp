@@ -9657,12 +9657,12 @@ let EvalArithBinOp (opInt8, opInt16, opInt32, opInt64, opUInt8, opUInt16, opUInt
     with :? System.OverflowException -> error (Error ( FSComp.SR.tastConstantExpressionOverflow(), m))
 
 // See also PostTypeCheckSemanticChecks.CheckAttribArgExpr, which must match this precisely
-let rec EvalAttribArgExpr checkArithmeticsFeature (g: TcGlobals) (x: Expr) = 
+let rec EvalAttribArgExpr suppressLangFeatureCheck (g: TcGlobals) (x: Expr) = 
     let ignore (_x: 'a) = Unchecked.defaultof<'a>
     let ignore2 (_x: 'a) (_y: 'a) = Unchecked.defaultof<'a>
 
     let inline checkFeature() =
-        if checkArithmeticsFeature then
+        if suppressLangFeatureCheck = SuppressLanguageFeatureCheck.No then
             checkLanguageFeatureAndRecover g.langVersion LanguageFeature.ArithmeticInLiterals x.Range
 
     match x with 
@@ -9693,22 +9693,22 @@ let rec EvalAttribArgExpr checkArithmeticsFeature (g: TcGlobals) (x: Expr) =
     | TypeOfExpr g _ -> x
     | TypeDefOfExpr g _ -> x
     | Expr.Op (TOp.Coerce, _, [arg], _) -> 
-        EvalAttribArgExpr true g arg
+        EvalAttribArgExpr SuppressLanguageFeatureCheck.No g arg
     | EnumExpr g arg1 -> 
-        EvalAttribArgExpr true g arg1
+        EvalAttribArgExpr SuppressLanguageFeatureCheck.No g arg1
     // Detect bitwise or of attribute flags
     | AttribBitwiseOrExpr g (arg1, arg2) -> 
-        let v1 = EvalAttribArgExpr false g arg1
+        let v1 = EvalAttribArgExpr SuppressLanguageFeatureCheck.No g arg1
 
         match v1 with
         | IntegerConstExpr ->
-            EvalArithBinOp ((|||), (|||), (|||), (|||), (|||), (|||), (|||), (|||), ignore2, ignore2) v1 (EvalAttribArgExpr false g arg2) 
+            EvalArithBinOp ((|||), (|||), (|||), (|||), (|||), (|||), (|||), (|||), ignore2, ignore2) v1 (EvalAttribArgExpr SuppressLanguageFeatureCheck.No g arg2) 
         | _ ->
             errorR (Error ( FSComp.SR.tastNotAConstantExpression(), x.Range))
             x
     | SpecificBinopExpr g g.unchecked_addition_vref (arg1, arg2) ->
-        // At compile-time we check arithmetic
-        let v1, v2 = EvalAttribArgExpr false g arg1, EvalAttribArgExpr false g arg2
+        let v1, v2 = EvalAttribArgExpr SuppressLanguageFeatureCheck.No g arg1, EvalAttribArgExpr SuppressLanguageFeatureCheck.No g arg2
+
         match v1, v2 with
         | Expr.Const (Const.String x1, m, ty), Expr.Const (Const.String x2, _, _) ->
             Expr.Const (Const.String (x1 + x2), m, ty)
@@ -9720,7 +9720,7 @@ let rec EvalAttribArgExpr checkArithmeticsFeature (g: TcGlobals) (x: Expr) =
             EvalArithBinOp (Checked.(+), Checked.(+), Checked.(+), Checked.(+), Checked.(+), Checked.(+), Checked.(+), Checked.(+), Checked.(+), Checked.(+)) v1 v2
     | SpecificBinopExpr g g.unchecked_subtraction_vref (arg1, arg2) ->
         checkFeature()
-        let v1, v2 = EvalAttribArgExpr false g arg1, EvalAttribArgExpr false g arg2
+        let v1, v2 = EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1, EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2
         
         match v1, v2 with
         | Expr.Const (Const.Char x1, m, ty), Expr.Const (Const.Char x2, _, _) ->
@@ -9729,32 +9729,32 @@ let rec EvalAttribArgExpr checkArithmeticsFeature (g: TcGlobals) (x: Expr) =
             EvalArithBinOp (Checked.(-), Checked.(-), Checked.(-), Checked.(-), Checked.(-), Checked.(-), Checked.(-), Checked.(-), Checked.(-), Checked.(-)) v1 v2
     | SpecificBinopExpr g g.unchecked_multiply_vref (arg1, arg2) ->
         checkFeature()
-        EvalArithBinOp (Checked.(*), Checked.(*), Checked.(*), Checked.(*), Checked.(*), Checked.(*), Checked.(*), Checked.(*), Checked.(*), Checked.(*)) (EvalAttribArgExpr false g arg1) (EvalAttribArgExpr false g arg2)
+        EvalArithBinOp (Checked.(*), Checked.(*), Checked.(*), Checked.(*), Checked.(*), Checked.(*), Checked.(*), Checked.(*), Checked.(*), Checked.(*)) (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1) (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
     | SpecificBinopExpr g g.unchecked_division_vref (arg1, arg2) ->
         checkFeature()
-        EvalArithBinOp ((/), (/), (/), (/), (/), (/), (/), (/), (/), (/)) (EvalAttribArgExpr false g arg1) (EvalAttribArgExpr false g arg2)
+        EvalArithBinOp ((/), (/), (/), (/), (/), (/), (/), (/), (/), (/)) (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1) (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
     | SpecificBinopExpr g g.unchecked_modulus_vref (arg1, arg2) ->
         checkFeature()
-        EvalArithBinOp ((%), (%), (%), (%), (%), (%), (%), (%), (%), (%)) (EvalAttribArgExpr false g arg1) (EvalAttribArgExpr false g arg2)
+        EvalArithBinOp ((%), (%), (%), (%), (%), (%), (%), (%), (%), (%)) (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1) (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
     | SpecificBinopExpr g g.bitwise_shift_left_vref (arg1, arg2) ->
         checkFeature()
-        EvalArithShiftOp ((<<<), (<<<), (<<<), (<<<), (<<<), (<<<), (<<<), (<<<)) (EvalAttribArgExpr false g arg1) (EvalAttribArgExpr false g arg2)
+        EvalArithShiftOp ((<<<), (<<<), (<<<), (<<<), (<<<), (<<<), (<<<), (<<<)) (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1) (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
     | SpecificBinopExpr g g.bitwise_shift_right_vref (arg1, arg2) ->
         checkFeature()
-        EvalArithShiftOp ((>>>), (>>>), (>>>), (>>>), (>>>), (>>>), (>>>), (>>>)) (EvalAttribArgExpr false g arg1) (EvalAttribArgExpr false g arg2)
+        EvalArithShiftOp ((>>>), (>>>), (>>>), (>>>), (>>>), (>>>), (>>>), (>>>)) (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1) (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
     | SpecificBinopExpr g g.bitwise_and_vref (arg1, arg2) ->
         checkFeature()
-        let v1 = EvalAttribArgExpr false g arg1
+        let v1 = EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1
 
         match v1 with
         | IntegerConstExpr ->
-            EvalArithBinOp ((&&&), (&&&), (&&&), (&&&), (&&&), (&&&), (&&&), (&&&), ignore2, ignore2) v1 (EvalAttribArgExpr false g arg2)
+            EvalArithBinOp ((&&&), (&&&), (&&&), (&&&), (&&&), (&&&), (&&&), (&&&), ignore2, ignore2) v1 (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
         | _ ->
             errorR (Error ( FSComp.SR.tastNotAConstantExpression(), x.Range))
             x
     | SpecificUnopExpr g g.unchecked_unary_minus_vref arg1 ->
         checkFeature()
-        let v1 = EvalAttribArgExpr false g arg1
+        let v1 = EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1
 
         match v1 with
         | SignedConstExpr ->
@@ -9764,11 +9764,11 @@ let rec EvalAttribArgExpr checkArithmeticsFeature (g: TcGlobals) (x: Expr) =
             x
     | SpecificUnopExpr g g.unchecked_unary_plus_vref arg1 ->
         checkFeature()
-        EvalArithUnOp ((~+), (~+), (~+), (~+), (~+), (~+), (~+), (~+), (~+), (~+)) (EvalAttribArgExpr false g arg1)
+        EvalArithUnOp ((~+), (~+), (~+), (~+), (~+), (~+), (~+), (~+), (~+), (~+)) (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1)
     | SpecificUnopExpr g g.unchecked_unary_not_vref arg1 ->
         checkFeature()
 
-        match EvalAttribArgExpr false g arg1 with
+        match EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1 with
         | Expr.Const (Const.Bool value, m, ty) ->
             Expr.Const (Const.Bool (not value), m, ty)
         | expr ->
@@ -9778,7 +9778,7 @@ let rec EvalAttribArgExpr checkArithmeticsFeature (g: TcGlobals) (x: Expr) =
     | Expr.Match (decision = TDSwitch (input = input; cases = [ TCase (DecisionTreeTest.Const (Const.Bool test), TDSuccess ([], targetNum)) ]); targets = [| TTarget (_, t0, _); TTarget (_, t1, _) |]) ->
         checkFeature()
 
-        match EvalAttribArgExpr false g (stripDebugPoints input) with
+        match EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g (stripDebugPoints input) with
         | Expr.Const (Const.Bool value, _, _) ->
             let pass, fail =
                 if targetNum = 0 then
@@ -9787,9 +9787,9 @@ let rec EvalAttribArgExpr checkArithmeticsFeature (g: TcGlobals) (x: Expr) =
                     t1, t0
 
             if value = test then
-                EvalAttribArgExpr false g (stripDebugPoints pass)
+                EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g (stripDebugPoints pass)
             else
-                EvalAttribArgExpr false g (stripDebugPoints fail)
+                EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g (stripDebugPoints fail)
         | _ ->
             errorR (Error ( FSComp.SR.tastNotAConstantExpression(), x.Range))
             x
@@ -9826,10 +9826,10 @@ let EvalLiteralExprOrAttribArg g x =
     match x with 
     | Expr.Op (TOp.Coerce, _, [Expr.Op (TOp.Array, [elemTy], args, m)], _)
     | Expr.Op (TOp.Array, [elemTy], args, m) ->
-        let args = args |> List.map (EvalAttribArgExpr true g) 
+        let args = args |> List.map (EvalAttribArgExpr SuppressLanguageFeatureCheck.No g) 
         Expr.Op (TOp.Array, [elemTy], args, m) 
     | _ -> 
-        EvalAttribArgExpr true g x
+        EvalAttribArgExpr SuppressLanguageFeatureCheck.No g x
 
 // Take into account the fact that some "instance" members are compiled as static
 // members when using CompilationRepresentation.Static, or any non-virtual instance members
