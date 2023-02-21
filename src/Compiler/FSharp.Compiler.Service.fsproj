@@ -36,6 +36,7 @@
     <FsYaccOutputFolder>$(FsLexYaccGeneratedFolder)</FsYaccOutputFolder>
     <FsLexOutputFolder>$(FsLexYaccGeneratedFolder)</FsLexOutputFolder>
     <GenerateFsLexYacc>true</GenerateFsLexYacc>
+    <FsLexYaccFilesHashes></FsLexYaccFilesHashes>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -55,41 +56,62 @@
   </ItemGroup>
 
   <Target Name="GetFsLexYaccHashes" BeforeTargets="BeforeBuild">
-    <GetFileHash Files="@(FilesToHash)" Algorithm="SHA256" HashEncoding="hex">
+
+    <PropertyGroup>
+        <FsLexYaccFilesContents></FsLexYaccFilesContents>
+    </PropertyGroup>
+
+    <CreateItem Include="@(FilesToHash)">
+      <Output TaskParameter="Include" ItemName="FsLexYaccFiles" />
+    </CreateItem>
+
+    <ReadLinesFromFile File="%(FsLexYaccFiles.FullPath)">
+      <Output TaskParameter="Lines" ItemName="FsLexYaccFilesContent" />
+    </ReadLinesFromFile>
+
+    <CreateProperty Value="@(FsLexYaccFilesContent)">
+      <Output TaskParameter="Value" PropertyName="FsLexYaccFilesContents"/>
+    </CreateProperty>
+
+    <PropertyGroup>
+        <FsLexYaccFilesContents>$(FsLexYaccFilesContents.Replace("\r\n", "\n"))</FsLexYaccFilesContents>
+    </PropertyGroup>
+
+    <WriteLinesToFile File="$(ArtifactsDir)/fslexyacc.checksum" Lines="$(FsLexYaccFilesContents)" Overwrite="true" />
+
+    <GetFileHash Files="$(ArtifactsDir)/fslexyacc.checksum" Algorithm="SHA256" HashEncoding="hex">
       <Output
           TaskParameter="Items"
-          ItemName="FilesWithHashes" />
+          ItemName="FsLexYaccChecksum" />
     </GetFileHash>
+
+    <CreateProperty Value="@(FsLexYaccChecksum->'%(FileHash)')">
+      <Output TaskParameter="Value" PropertyName="FsLexYaccFilesHashes"/>
+    </CreateProperty>
 
     <ReadLinesFromFile
         File="$(FsLexYaccChecksumFile)" >
         <Output
             TaskParameter="Lines"
-            ItemName="ExistingFsLexYaccChecksums"/>
+            ItemName="ExistingFsLexYaccChecksum"/>
     </ReadLinesFromFile>
 
     <!-- If hashes are the same, set the flag to false -->
-    <CreateProperty Condition="'@(ExistingFsLexYaccChecksums)' == '@(FilesWithHashes->'%(FileHash)')'" Value="false">
+    <CreateProperty Condition="'@(ExistingFsLexYaccChecksum)' == '@(FsLexYaccChecksum->'%(FileHash)')'" Value="false">
       <Output TaskParameter="Value" PropertyName="GenerateFsLexYacc"/>
     </CreateProperty>
 
-    <Message Condition="'@(ExistingFsLexYaccChecksums)' != '@(FilesWithHashes->'%(FileHash)')'"
+    <Message Condition="'@(ExistingFsLexYaccChecksum)' != '@(FsLexYaccChecksum->'%(FileHash)')'"
              Importance="High"
-             Text="---->   FsLexYacc cached hash does not match current. Re-generating from flx/fsy." />
+             Text="---->    FsLexYacc cached hash does not match current. Re-generating from flx/fsy." />
   </Target>
 
   <Target Name="SetFsLexYaccHashes" AfterTargets="AfterBuild">
-    <GetFileHash Files="@(FilesToHash)" Algorithm="SHA256" HashEncoding="hex">
-      <Output
-          TaskParameter="Items"
-          ItemName="FilesWithHashesToCache" />
-    </GetFileHash>
-
     <Message Condition="'$(GenerateFsLexYacc)' != 'false'"
              Importance="High"
-             Text="---->   New FsLexYacc output was generated, writing new checksum." />
+             Text="---->    New FsLexYacc output was generated, writing new checksum." />
 
-    <WriteLinesToFile Condition="'$(GenerateFsLexYacc)' != 'false'" File="$(FsLexYaccChecksumFile)" Lines="@(FilesWithHashesToCache->'%(FileHash)')" Overwrite="true" WriteOnlyWhenDifferent="true" Encoding="utf-8" />
+    <WriteLinesToFile Condition="'$(GenerateFsLexYacc)' != 'false'" File="$(FsLexYaccChecksumFile)" Lines="$(FsLexYaccFilesHashes)" Overwrite="true" WriteOnlyWhenDifferent="true" Encoding="utf-8" />
   </Target>
 
   <ItemGroup>
