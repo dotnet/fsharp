@@ -1,6 +1,9 @@
 # Auto detect text files and perform LF normalization
 * text=auto
 
+buildtools/fslex/*.fs  text eol=lf
+buildtools/fsyacc/*.fs text eol=lf
+
 # Custom for Visual Studio
 *.cs     text diff=csharp
 *.sln    text eol=crlf merge=union
