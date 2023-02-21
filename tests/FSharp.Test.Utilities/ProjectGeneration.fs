@@ -342,7 +342,7 @@ module ProjectOperations =
         if checkResult.Diagnostics.Length > 0 then
             failwith $"Expected no errors, but there were some: \n%A{checkResult.Diagnostics}"
 
-    let expectSingleWarningAndNoErrors (warningSubString:string) parseAndCheckResults _  = 
+    let expectSingleWarningAndNoErrors (warningSubString:string) parseAndCheckResults _  =
         let checkResult = getTypeCheckResult parseAndCheckResults
         let errors = checkResult.Diagnostics|> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
         if errors.Length > 0 then
@@ -351,10 +351,10 @@ module ProjectOperations =
         let warnings = checkResult.Diagnostics|> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Warning)
         match warnings |> Array.tryExactlyOne with
         | None -> failwith $"Expected 1 warning, but got {warnings.Length} instead: \n%A{warnings}"
-        | Some w -> 
+        | Some w ->
             if w.Message.Contains warningSubString then
                 ()
-            else 
+            else
                 failwith $"Expected 1 warning with substring '{warningSubString}' but got %A{w}"
 
     let expectErrors parseAndCheckResults _ =
@@ -385,16 +385,16 @@ module ProjectOperations =
 
     let expectToFind expected (foundRanges: range seq) =
         let expected =
-            expected 
-            |> Seq.sortBy (fun (file, _, _, _) -> file) 
+            expected
+            |> Seq.sortBy (fun (file, _, _, _) -> file)
             |> Seq.toArray
-        
+
         let actual =
             foundRanges
             |> Seq.map (fun r -> Path.GetFileName(r.FileName), r.StartLine, r.StartColumn, r.EndColumn)
             |> Seq.sortBy (fun (file, _, _, _) -> file)
             |> Seq.toArray
-        
+
         Assert.Equal<(string * int * int * int)[]>(expected, actual)
 
     let rec saveProject (p: SyntheticProject) generateSignatureFiles checker =
@@ -731,7 +731,7 @@ type ProjectWorkflowBuilder
                 exn $"Compilation failed with exit code {exitCode}" |> raise
             return ctx
         }
-    
+
 /// Execute a set of operations on a given synthetic project.
 /// The project is saved to disk and type checked at the start.
 let projectWorkflow project = ProjectWorkflowBuilder project

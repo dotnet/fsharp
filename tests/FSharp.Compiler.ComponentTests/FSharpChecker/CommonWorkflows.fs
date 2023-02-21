@@ -1,4 +1,5 @@
-﻿module FSharp.Compiler.ComponentTests.FSharpChecker.CommonWorkflows
+﻿
+module FSharp.Compiler.ComponentTests.FSharpChecker.CommonWorkflows
 
 open System
 open System.IO
@@ -6,7 +7,6 @@ open System.IO
 open Xunit
 
 open FSharp.Test.ProjectGeneration
-open FSharp.Test.ProjectGeneration.Internal
 open FSharp.Compiler.Text
 open FSharp.Compiler.CodeAnalysis
 
