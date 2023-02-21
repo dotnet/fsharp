@@ -5657,7 +5657,7 @@ namespace Microsoft.FSharp.Core
                     let current () = 
                         // according to IEnumerator<int>.Current documentation, the result of of Current
                         // is undefined prior to the first call of MoveNext and post called to MoveNext
-                        // that return false (see https://msdn.microsoft.com/en-us/library/58e146b7%28v=vs.110%29.aspx)
+                        // that return false (see https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerator-1.current?redirectedfrom=MSDN&view=net-7.0#System_Collections_Generic_IEnumerator_1_Current)
                         // so we should be able to just return value here, and we could get rid of the 
                         // complete variable which would be faster
                         if not state.Started then
@@ -5715,7 +5715,7 @@ namespace Microsoft.FSharp.Core
                         let inline current () =
                             // according to IEnumerator<int>.Current documentation, the result of of Current
                             // is undefined prior to the first call of MoveNext and post called to MoveNext
-                            // that return false (see https://msdn.microsoft.com/en-us/library/58e146b7%28v=vs.110%29.aspx)
+                            // that return false (see https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerator-1.current?redirectedfrom=MSDN&view=net-7.0#System_Collections_Generic_IEnumerator_1_Current)
                             // so we should be able to just return value here, which would be faster
                             let derefValue = value
                             if derefValue < n then

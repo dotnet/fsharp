@@ -273,7 +273,7 @@ Evaluating code in using FsiEvaluationSession generates a .NET dynamic assembly 
 You can make generated code collectible by passing `collectible=true`.  However, code will only
 be collected if there are no outstanding object references involving types, for example
 `FsiValue` objects returned by `EvalExpression`, and you must have disposed the `FsiEvaluationSession`.
-See also [Restrictions on Collectible Assemblies](https://docs.microsoft.com/en-us/previous-versions/dotnet/netframework-4.0/dd554932(v=vs.100)#restrictions).
+See also [Restrictions on Collectible Assemblies](https://learn.microsoft.com/en-us/previous-versions/dotnet/netframework-4.0/dd554932(v=vs.100)#restrictions).
 
 The example below shows the creation of 200 evaluation sessions. Note that `collectible=true` and
 `use session = ...` are both used.

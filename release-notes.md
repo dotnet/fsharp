@@ -2245,19 +2245,19 @@ Includes commits up to `3385e58aabc91368c8e1f551650ba48705aaa285`
 Features Added in F# Language Versions
 ======================================
 
-# [F# 4.7](https://docs.microsoft.com/en-us/dotnet/fsharp/whats-new/fsharp-47)
+# [F# 4.7](https://learn.microsoft.com/en-us/dotnet/fsharp/whats-new/fsharp-47)
 
 - Compiler support for `LangVersion`
 - Implicit `yield`s
 - No more required double underscore (wildcard identifier)
 - Indentation relaxations for parameters passed to constructors and static methods
 
-# [F# 4.6](https://docs.microsoft.com/en-us/dotnet/fsharp/whats-new/fsharp-46)
+# [F# 4.6](https://learn.microsoft.com/en-us/dotnet/fsharp/whats-new/fsharp-46)
 
 - Anonymous records
 - `ValueOption` module functions
 
-# [F# 4.5](https://docs.microsoft.com/en-us/dotnet/fsharp/whats-new/fsharp-45)
+# [F# 4.5](https://learn.microsoft.com/en-us/dotnet/fsharp/whats-new/fsharp-45)
 
 - Versioning alignment of binary, package, and language
 - Support for `Span<'T>` and related types
@@ -2329,13 +2329,13 @@ Features Added in F# Language Versions
 - Native interoperability
 - Computation expressions
 
-# [F# 1.1](https://docs.microsoft.com/en-us/archive/blogs/dsyme/a-taste-of-whats-new-in-f-1-1)
+# [F# 1.1](https://learn.microsoft.com/en-us/archive/blogs/dsyme/a-taste-of-whats-new-in-f-1-1)
 
 - Interactive environment
 - Object programming
 - Encapsulation Extensions
 
-# [F# 1.0](https://docs.microsoft.com/en-us/archive/blogs/dsyme/welcome-to-dons-f-blog)
+# [F# 1.0](https://learn.microsoft.com/en-us/archive/blogs/dsyme/welcome-to-dons-f-blog)
 
 - Discriminated unions
 - Records

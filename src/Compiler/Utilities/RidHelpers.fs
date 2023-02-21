@@ -5,7 +5,7 @@ open System.Runtime.InteropServices
 module internal RidHelpers =
 
     // Computer valid dotnet-rids for this environment:
-    //      https://docs.microsoft.com/en-us/dotnet/core/rid-catalog
+    //      https://learn.microsoft.com/en-us/dotnet/core/rid-catalog
     //
     // Where rid is: win, win-x64, win-x86, osx-x64, linux-x64 etc ...
     let probingRids, baseRid, platformRid =
