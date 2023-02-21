@@ -39,7 +39,7 @@ let parse_error_rich = Some (fun (ctxt: ParseErrorContext<_>) ->
     errorR(SyntaxError(box ctxt, ctxt.ParseState.LexBuffer.LexemeRange)))
 
 
-# 42 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 42 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
 // This type is the type of tokens accepted by the parser
 type token = 
   | HASH_IF of (range * string * ParseHelpers.LexerContinuation)
@@ -2744,7 +2744,7 @@ let _fsyacc_reductionSymbolCounts = [|1us;1us;1us;1us;1us;1us;1us;1us;1us;1us;1u
 let _fsyacc_productionToNonTerminalTable = [|0us;1us;2us;3us;4us;5us;5us;5us;6us;6us;7us;7us;7us;7us;7us;7us;7us;8us;8us;9us;10us;11us;11us;12us;12us;13us;14us;14us;15us;15us;16us;16us;16us;17us;18us;19us;19us;20us;20us;21us;22us;22us;23us;23us;23us;23us;24us;24us;24us;25us;25us;25us;26us;26us;26us;26us;26us;26us;26us;27us;28us;28us;28us;29us;29us;29us;30us;30us;31us;31us;32us;32us;33us;33us;33us;34us;34us;34us;34us;35us;35us;35us;35us;36us;36us;36us;37us;37us;38us;39us;39us;39us;39us;39us;39us;39us;40us;40us;40us;40us;41us;41us;42us;42us;43us;44us;44us;45us;45us;45us;46us;46us;47us;47us;48us;49us;49us;50us;50us;50us;50us;51us;51us;52us;52us;52us;52us;52us;53us;53us;53us;53us;53us;54us;54us;55us;55us;55us;55us;55us;55us;55us;55us;56us;56us;57us;57us;58us;58us;58us;58us;58us;58us;58us;59us;59us;59us;60us;61us;61us;62us;62us;63us;63us;63us;63us;64us;64us;65us;65us;65us;66us;66us;66us;66us;67us;67us;67us;67us;68us;69us;69us;70us;70us;70us;70us;71us;71us;71us;72us;72us;72us;73us;73us;73us;73us;74us;74us;75us;75us;75us;76us;76us;76us;77us;78us;78us;78us;79us;79us;80us;81us;81us;82us;82us;82us;82us;83us;83us;83us;83us;83us;83us;83us;83us;83us;83us;83us;84us;85us;86us;86us;87us;87us;87us;87us;87us;88us;88us;89us;89us;89us;90us;90us;90us;91us;91us;92us;92us;92us;93us;93us;94us;95us;95us;96us;96us;97us;97us;97us;98us;98us;99us;99us;99us;99us;100us;100us;100us;101us;101us;101us;101us;101us;102us;102us;102us;103us;103us;104us;104us;104us;105us;105us;105us;106us;106us;107us;107us;107us;108us;108us;109us;109us;110us;111us;112us;112us;112us;113us;114us;114us;115us;115us;116us;116us;117us;117us;117us;117us;117us;117us;117us;117us;117us;117us;117us;118us;118us;119us;119us;119us;120us;121us;121us;122us;122us;122us;122us;122us;123us;123us;123us;124us;124us;124us;125us;125us;126us;126us;127us;127us;128us;128us;129us;129us;130us;131us;132us;133us;134us;134us;134us;135us;135us;136us;136us;137us;138us;139us;140us;140us;140us;140us;141us;141us;142us;143us;143us;143us;144us;144us;145us;145us;146us;146us;146us;146us;146us;147us;147us;148us;149us;149us;150us;150us;151us;151us;151us;152us;152us;152us;153us;154us;154us;155us;156us;156us;157us;157us;158us;158us;158us;158us;158us;158us;158us;158us;158us;158us;158us;158us;158us;158us;158us;158us;158us;158us;159us;159us;159us;159us;160us;160us;161us;161us;162us;162us;163us;164us;164us;164us;164us;165us;165us;166us;166us;166us;166us;166us;167us;167us;167us;167us;167us;167us;168us;168us;168us;168us;168us;168us;169us;169us;170us;170us;171us;172us;172us;172us;172us;172us;172us;172us;172us;172us;173us;173us;174us;174us;174us;174us;175us;175us;175us;175us;175us;175us;175us;175us;175us;175us;175us;175us;175us;175us;175us;175us;175us;175us;175us;175us;176us;176us;177us;177us;177us;177us;177us;177us;177us;177us;178us;178us;178us;178us;178us;178us;179us;179us;180us;180us;181us;182us;182us;182us;183us;183us;183us;184us;184us;185us;185us;186us;186us;187us;188us;188us;188us;188us;188us;188us;189us;189us;190us;190us;190us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;191us;192us;192us;193us;193us;193us;194us;194us;194us;194us;195us;196us;196us;196us;196us;196us;196us;197us;197us;198us;199us;200us;200us;200us;201us;201us;201us;201us;201us;201us;202us;202us;202us;202us;202us;202us;203us;203us;203us;203us;203us;203us;203us;203us;203us;203us;203us;203us;203us;203us;204us;204us;205us;205us;206us;206us;206us;206us;206us;206us;206us;206us;206us;206us;206us;206us;206us;206us;206us;206us;206us;206us;207us;207us;207us;207us;207us;207us;207us;207us;207us;207us;208us;208us;208us;208us;208us;208us;208us;208us;208us;208us;208us;209us;209us;209us;209us;210us;210us;210us;210us;211us;211us;211us;211us;212us;212us;212us;212us;212us;212us;212us;212us;212us;213us;213us;213us;214us;214us;215us;215us;216us;216us;216us;216us;216us;217us;217us;217us;218us;218us;219us;219us;220us;221us;222us;222us;222us;223us;224us;224us;225us;226us;226us;227us;227us;228us;228us;229us;229us;229us;230us;230us;231us;231us;231us;231us;231us;231us;231us;232us;232us;233us;233us;233us;233us;234us;234us;235us;235us;236us;236us;236us;236us;236us;237us;237us;237us;238us;238us;238us;239us;239us;240us;240us;240us;241us;242us;242us;242us;243us;244us;244us;245us;245us;245us;245us;245us;246us;246us;246us;246us;246us;246us;246us;246us;247us;247us;248us;248us;249us;249us;250us;250us;251us;251us;252us;252us;253us;253us;254us;254us;254us;254us;254us;254us;255us;255us;256us;257us;257us;257us;257us;258us;258us;258us;259us;259us;260us;260us;261us;261us;261us;261us;261us;261us;261us;262us;262us;262us;262us;262us;262us;262us;262us;262us;262us;262us;262us;262us;262us;262us;262us;262us;262us;262us;262us;262us;262us;262us;262us;262us;262us;262us;262us;262us;262us;262us;262us;263us;264us;264us;264us;265us;265us;266us;266us;267us;267us;268us;268us;268us;268us;268us;268us;268us;268us;268us;268us;268us;268us;268us;268us;268us;268us;268us;268us;268us;268us;269us;269us;270us;270us;270us;270us;270us;270us;270us;271us;271us;271us;272us;272us;273us;274us;274us;275us;275us;275us;276us;276us;276us;277us;277us;278us;278us;278us;278us;279us;279us;280us;281us;281us;281us;281us;282us;282us;282us;282us;282us;283us;283us;283us;283us;283us;283us;283us;283us;283us;283us;283us;283us;283us;283us;283us;283us;283us;283us;283us;283us;283us;283us;283us;283us;283us;283us;284us;285us;285us;286us;286us;287us;287us;287us;287us;288us;289us;289us;290us;290us;290us;291us;291us;292us;292us;293us;293us;293us;293us;294us;294us;294us;295us;295us;295us;295us;296us;296us;297us;297us;298us;298us;299us;299us;300us;300us;301us;301us;302us;302us;303us;303us;304us;304us;305us;305us;306us;306us;307us;307us;308us;308us;309us;309us;310us;311us;312us;312us;313us;313us;313us;314us;314us;314us;315us;315us;315us;316us;316us;317us;317us;317us;318us;318us;318us;319us;319us;319us;320us;321us;321us;321us;322us;322us;322us;323us;323us;323us;323us;323us;324us;324us;324us;324us;324us;324us;|]
 let _fsyacc_immediateActions = [|65535us;49152us;65535us;49152us;65535us;49152us;65535us;49152us;65535us;49152us;16389us;16390us;16391us;16392us;16393us;16394us;65535us;16395us;65535us;16396us;65535us;16397us;65535us;16398us;65535us;16399us;65535us;16400us;65535us;16402us;65535us;65535us;65535us;16404us;65535us;16406us;16407us;16408us;65535us;65535us;65535us;16411us;16412us;16413us;65535us;16414us;65535us;16415us;65535us;16416us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;16420us;65535us;16421us;65535us;65535us;16423us;65535us;65535us;65535us;16424us;16425us;16426us;65535us;65535us;65535us;16427us;16428us;65535us;16429us;16430us;65535us;65535us;65535us;16433us;65535us;65535us;16434us;16436us;16437us;65535us;65535us;65535us;65535us;16438us;16439us;65535us;65535us;16440us;16441us;16442us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;16443us;65535us;65535us;65535us;65535us;65535us;16446us;65535us;65535us;16447us;65535us;65535us;65535us;16448us;65535us;65535us;16449us;65535us;65535us;16450us;65535us;65535us;16452us;16453us;65535us;65535us;65535us;65535us;65535us;65535us;16454us;65535us;16455us;16456us;16457us;65535us;65535us;16458us;16459us;65535us;65535us;16460us;16461us;65535us;16462us;65535us;65535us;16463us;16464us;65535us;65535us;16465us;16466us;65535us;65535us;16467us;16468us;16469us;16470us;65535us;65535us;16472us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;16473us;65535us;65535us;65535us;65535us;65535us;16476us;65535us;65535us;16477us;65535us;16478us;65535us;65535us;16479us;65535us;16481us;65535us;65535us;16482us;16483us;65535us;65535us;16485us;16486us;16487us;65535us;16488us;65535us;65535us;16489us;65535us;16491us;65535us;16492us;65535us;16493us;65535us;16495us;65535us;16496us;65535us;65535us;16498us;65535us;65535us;65535us;16499us;16500us;65535us;65535us;65535us;16501us;16502us;65535us;16503us;16504us;16505us;65535us;65535us;65535us;65535us;16507us;16510us;16511us;65535us;16512us;65535us;16513us;65535us;65535us;65535us;65535us;16516us;16517us;16518us;65535us;65535us;16519us;65535us;16520us;65535us;16521us;65535us;65535us;16522us;16523us;65535us;65535us;16524us;65535us;16525us;16526us;65535us;65535us;65535us;65535us;65535us;16529us;65535us;65535us;65535us;16531us;16532us;65535us;16533us;16534us;16535us;16536us;65535us;65535us;65535us;16538us;16539us;16540us;65535us;65535us;16541us;16542us;65535us;16545us;65535us;65535us;65535us;65535us;16546us;65535us;65535us;16547us;16548us;16549us;16550us;65535us;16551us;65535us;65535us;16552us;65535us;65535us;65535us;16553us;65535us;65535us;65535us;65535us;16554us;65535us;16555us;65535us;16556us;65535us;16557us;65535us;16558us;65535us;16559us;16560us;16561us;16562us;65535us;65535us;16563us;65535us;65535us;16564us;65535us;65535us;16567us;16568us;65535us;65535us;65535us;65535us;65535us;65535us;16569us;65535us;65535us;65535us;65535us;65535us;65535us;16570us;16571us;65535us;16572us;16573us;16574us;65535us;65535us;16575us;16576us;65535us;65535us;16577us;16578us;65535us;16579us;65535us;65535us;16580us;16581us;65535us;65535us;16582us;16583us;16584us;16585us;65535us;16586us;65535us;65535us;16588us;65535us;16589us;65535us;65535us;16590us;16591us;65535us;65535us;16593us;65535us;65535us;65535us;65535us;65535us;16594us;65535us;65535us;65535us;65535us;16595us;16596us;65535us;16598us;65535us;16600us;65535us;65535us;65535us;65535us;16601us;16602us;65535us;65535us;16603us;65535us;65535us;16604us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;16605us;16606us;65535us;16607us;65535us;16608us;65535us;16609us;65535us;65535us;65535us;65535us;65535us;16610us;65535us;16611us;65535us;65535us;65535us;65535us;65535us;16612us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;16613us;65535us;16615us;65535us;65535us;16616us;65535us;65535us;16617us;16618us;65535us;65535us;65535us;16619us;16620us;16622us;16623us;16624us;16625us;65535us;65535us;16626us;65535us;65535us;16629us;65535us;65535us;16631us;65535us;65535us;16632us;16633us;16634us;65535us;16636us;16637us;65535us;16639us;16640us;65535us;65535us;16641us;16642us;16643us;65535us;65535us;16644us;65535us;65535us;65535us;65535us;16646us;65535us;16647us;16648us;65535us;65535us;16649us;65535us;16650us;16651us;16652us;65535us;65535us;65535us;65535us;65535us;16653us;16654us;16655us;16656us;65535us;65535us;65535us;65535us;16657us;65535us;65535us;16658us;16659us;65535us;16660us;65535us;16661us;16662us;65535us;65535us;16663us;16664us;65535us;16665us;16666us;16667us;16668us;16669us;16670us;65535us;65535us;65535us;65535us;16673us;16674us;65535us;65535us;16675us;65535us;65535us;65535us;65535us;16676us;16677us;65535us;16678us;65535us;65535us;65535us;16679us;16680us;65535us;65535us;65535us;65535us;16683us;16684us;65535us;65535us;65535us;65535us;65535us;16688us;16689us;65535us;65535us;65535us;16690us;65535us;65535us;65535us;65535us;16692us;65535us;16693us;16694us;65535us;65535us;16695us;65535us;65535us;65535us;65535us;65535us;65535us;16696us;65535us;16697us;16698us;65535us;65535us;65535us;65535us;65535us;16703us;65535us;65535us;16704us;65535us;16706us;65535us;65535us;16707us;65535us;65535us;65535us;65535us;16710us;16711us;65535us;16712us;65535us;65535us;16714us;65535us;65535us;16715us;65535us;65535us;16716us;65535us;16717us;65535us;65535us;65535us;16719us;65535us;16720us;65535us;65535us;16722us;65535us;65535us;65535us;65535us;16726us;16727us;65535us;65535us;16728us;16729us;65535us;16730us;65535us;65535us;65535us;65535us;16731us;65535us;16732us;65535us;65535us;65535us;65535us;16733us;65535us;65535us;16735us;16736us;65535us;65535us;65535us;65535us;16739us;16740us;65535us;16741us;65535us;65535us;65535us;16742us;65535us;65535us;16743us;16744us;16745us;16746us;16747us;16748us;16749us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;16750us;65535us;65535us;65535us;16754us;65535us;16755us;65535us;65535us;16757us;65535us;65535us;65535us;65535us;16759us;16760us;16761us;65535us;65535us;16762us;65535us;65535us;16765us;65535us;65535us;16766us;65535us;16768us;16769us;65535us;65535us;65535us;65535us;65535us;16770us;16771us;16772us;65535us;65535us;16773us;16774us;16775us;65535us;65535us;16777us;65535us;65535us;65535us;16779us;65535us;16780us;16781us;65535us;65535us;16782us;16783us;16784us;16785us;16786us;16787us;16788us;16789us;16790us;16791us;16792us;16793us;16794us;16795us;16796us;65535us;16797us;16798us;16799us;16800us;16801us;65535us;65535us;16802us;65535us;65535us;65535us;16803us;16806us;65535us;65535us;16807us;16808us;65535us;16809us;65535us;65535us;16811us;65535us;16813us;65535us;16814us;65535us;65535us;65535us;16815us;65535us;65535us;16818us;65535us;65535us;16819us;16820us;16821us;65535us;16822us;16823us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;16824us;65535us;65535us;65535us;65535us;16829us;65535us;65535us;16832us;16833us;65535us;16835us;65535us;65535us;65535us;16838us;65535us;16839us;65535us;65535us;65535us;65535us;65535us;65535us;16842us;65535us;16843us;65535us;16844us;16845us;65535us;16846us;65535us;16847us;65535us;16848us;16849us;65535us;65535us;16850us;16851us;65535us;16852us;65535us;16853us;65535us;16854us;16856us;65535us;16857us;65535us;65535us;16858us;65535us;65535us;16859us;65535us;65535us;16860us;65535us;65535us;16862us;16863us;16864us;16865us;16866us;16867us;65535us;65535us;16868us;16869us;65535us;65535us;16871us;65535us;65535us;65535us;16872us;16873us;65535us;16874us;16875us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;16878us;65535us;65535us;65535us;65535us;16882us;65535us;65535us;16885us;65535us;65535us;16888us;16889us;65535us;16891us;65535us;65535us;65535us;16894us;65535us;16895us;65535us;65535us;16898us;65535us;16899us;65535us;65535us;16900us;16901us;16902us;65535us;65535us;16903us;65535us;65535us;16905us;65535us;65535us;16907us;65535us;16909us;65535us;65535us;16910us;65535us;16913us;65535us;65535us;65535us;16914us;65535us;16916us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;16917us;65535us;65535us;65535us;65535us;16918us;65535us;65535us;65535us;65535us;65535us;16919us;65535us;65535us;16921us;16922us;65535us;16923us;16924us;65535us;16925us;16926us;16927us;16928us;16929us;65535us;65535us;16930us;16931us;65535us;65535us;16932us;16933us;65535us;65535us;16934us;16935us;65535us;16936us;65535us;65535us;16937us;16938us;16939us;65535us;65535us;65535us;65535us;65535us;16943us;65535us;16944us;65535us;65535us;65535us;65535us;16946us;16947us;65535us;16948us;16949us;16950us;16951us;65535us;65535us;65535us;65535us;16952us;16953us;16954us;16955us;16956us;65535us;16957us;65535us;65535us;65535us;16958us;16959us;16960us;16961us;16962us;65535us;65535us;16963us;16964us;16965us;65535us;65535us;65535us;65535us;65535us;16969us;16970us;65535us;65535us;65535us;65535us;65535us;65535us;16971us;65535us;65535us;65535us;65535us;65535us;65535us;16972us;16973us;65535us;65535us;65535us;65535us;16974us;65535us;65535us;16975us;65535us;65535us;65535us;16977us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;16978us;65535us;16979us;65535us;16980us;65535us;65535us;65535us;16982us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;16995us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;17005us;17006us;17007us;17008us;17009us;17010us;17011us;17012us;17013us;17014us;17015us;17016us;17017us;17018us;17019us;17020us;17021us;17022us;17023us;17024us;65535us;65535us;65535us;65535us;17028us;65535us;17030us;65535us;65535us;17031us;65535us;17032us;65535us;65535us;17033us;17034us;17035us;65535us;17036us;17037us;17038us;17039us;65535us;65535us;65535us;17041us;65535us;17042us;17043us;17044us;17045us;65535us;65535us;17048us;65535us;17049us;65535us;65535us;65535us;65535us;17051us;17052us;65535us;65535us;65535us;65535us;17055us;17056us;65535us;17057us;17058us;65535us;17060us;65535us;17061us;65535us;17064us;65535us;65535us;65535us;65535us;17065us;65535us;65535us;17066us;65535us;65535us;17067us;65535us;65535us;17068us;65535us;65535us;17069us;65535us;65535us;17070us;65535us;65535us;17071us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;17072us;17074us;17075us;65535us;17076us;65535us;17077us;65535us;65535us;65535us;17079us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;17085us;65535us;65535us;65535us;65535us;17087us;65535us;65535us;17088us;65535us;65535us;17089us;65535us;65535us;17090us;65535us;17091us;17092us;17093us;65535us;65535us;17094us;17095us;17096us;17097us;65535us;65535us;17098us;17099us;17100us;17101us;17102us;17104us;65535us;65535us;65535us;65535us;17105us;65535us;17106us;65535us;65535us;17107us;17108us;17109us;17110us;17111us;17112us;17113us;17114us;17115us;17116us;17117us;17118us;17119us;17120us;17121us;65535us;65535us;17122us;17123us;65535us;17124us;17125us;65535us;65535us;65535us;17126us;17127us;17128us;17129us;65535us;65535us;17130us;17131us;17132us;17133us;65535us;65535us;65535us;17134us;65535us;17135us;17136us;17137us;65535us;17138us;17139us;17140us;17141us;17142us;65535us;65535us;65535us;65535us;65535us;17143us;17144us;17145us;17146us;65535us;65535us;17147us;65535us;65535us;65535us;65535us;17150us;17151us;17152us;17153us;17154us;17155us;17156us;17157us;17158us;17160us;17162us;65535us;17163us;65535us;17165us;17166us;65535us;65535us;17168us;17169us;65535us;65535us;65535us;65535us;65535us;17170us;17171us;17174us;65535us;65535us;65535us;17176us;65535us;17178us;65535us;17179us;65535us;65535us;65535us;65535us;65535us;17180us;17181us;65535us;65535us;65535us;17182us;65535us;65535us;65535us;65535us;17185us;65535us;65535us;65535us;17186us;65535us;65535us;17187us;65535us;65535us;65535us;17188us;17189us;65535us;65535us;65535us;17193us;17194us;65535us;17196us;17197us;65535us;65535us;17199us;17201us;17203us;65535us;65535us;65535us;17204us;65535us;17205us;17207us;17210us;65535us;17212us;65535us;65535us;17213us;65535us;17214us;65535us;17215us;65535us;17217us;65535us;17218us;65535us;65535us;65535us;65535us;17219us;65535us;17220us;17221us;65535us;65535us;17222us;17223us;17224us;17225us;17226us;65535us;65535us;65535us;17227us;17228us;65535us;65535us;65535us;65535us;17229us;17230us;65535us;17231us;17232us;65535us;17233us;65535us;17234us;65535us;17235us;65535us;65535us;17236us;65535us;65535us;65535us;65535us;65535us;17242us;65535us;65535us;17243us;65535us;65535us;17245us;65535us;65535us;17247us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;17255us;65535us;17257us;65535us;65535us;17258us;65535us;17259us;65535us;17260us;65535us;65535us;17262us;65535us;17263us;65535us;17266us;65535us;65535us;65535us;65535us;17267us;65535us;17269us;65535us;17270us;17271us;65535us;65535us;65535us;17272us;17273us;65535us;17274us;65535us;65535us;17275us;65535us;17276us;65535us;17277us;65535us;17278us;65535us;17279us;65535us;17280us;65535us;17281us;65535us;17282us;65535us;17283us;65535us;17284us;65535us;17285us;65535us;17286us;65535us;17287us;65535us;17288us;65535us;17289us;65535us;17290us;65535us;17291us;65535us;17292us;65535us;17293us;65535us;17294us;65535us;17295us;65535us;17296us;65535us;17297us;65535us;17298us;65535us;17299us;65535us;17300us;65535us;17301us;65535us;17302us;65535us;17303us;65535us;17304us;65535us;17305us;65535us;17306us;65535us;17307us;65535us;65535us;65535us;65535us;65535us;65535us;17309us;17310us;65535us;65535us;17313us;65535us;65535us;65535us;17314us;65535us;65535us;17317us;65535us;65535us;17319us;17320us;65535us;65535us;65535us;17321us;17322us;65535us;65535us;65535us;65535us;17323us;17324us;17325us;17326us;17327us;17328us;17329us;65535us;17331us;17332us;65535us;17333us;17334us;65535us;65535us;17336us;65535us;17337us;17338us;65535us;17339us;65535us;65535us;65535us;65535us;17340us;17341us;17342us;65535us;17343us;17344us;17345us;17346us;65535us;65535us;17348us;17350us;17351us;65535us;65535us;17353us;65535us;17354us;65535us;17356us;65535us;65535us;17357us;65535us;65535us;17359us;17360us;65535us;17362us;17363us;65535us;65535us;65535us;65535us;65535us;65535us;65535us;17367us;65535us;17368us;65535us;17369us;17370us;17371us;65535us;17372us;17373us;65535us;65535us;17374us;65535us;17375us;17376us;65535us;65535us;17377us;65535us;65535us;17378us;17379us;17380us;17381us;17382us;17383us;17384us;17385us;17386us;17387us;17388us;17389us;17390us;17391us;17392us;17393us;17394us;17395us;17396us;17397us;17398us;17399us;17400us;17401us;65535us;17403us;65535us;17404us;17405us;65535us;17406us;17407us;17408us;17409us;65535us;17411us;65535us;17412us;17413us;17414us;17415us;17416us;17417us;17418us;17419us;65535us;17421us;65535us;17422us;65535us;65535us;17426us;17427us;17428us;17429us;17430us;17431us;17432us;17433us;17435us;17437us;17439us;17441us;17443us;17445us;17449us;17451us;17453us;17454us;17455us;17456us;17457us;17458us;17459us;17460us;17461us;17462us;17463us;17464us;65535us;17466us;17467us;65535us;65535us;17468us;17469us;65535us;65535us;17470us;17471us;17472us;17473us;17474us;17476us;65535us;65535us;17478us;17479us;17480us;65535us;65535us;17481us;17482us;17483us;65535us;17484us;17485us;17486us;17487us;65535us;17488us;17489us;17490us;65535us;17491us;17492us;17493us;17494us;17495us;17496us;17497us;17498us;17499us;17500us;17501us;17502us;17503us;17504us;|]
 let _fsyacc_reductions = lazy [|
-# 2747 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 2747 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> ParsedSigFile in
             Microsoft.FSharp.Core.Operators.box
@@ -2753,7 +2753,7 @@ let _fsyacc_reductions = lazy [|
                       raise (Internal.Utilities.Text.Parsing.Accept(Microsoft.FSharp.Core.Operators.box _1))
                    )
                  : 'gentype__startsignatureFile));
-# 2756 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 2756 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> ParsedImplFile in
             Microsoft.FSharp.Core.Operators.box
@@ -2762,7 +2762,7 @@ let _fsyacc_reductions = lazy [|
                       raise (Internal.Utilities.Text.Parsing.Accept(Microsoft.FSharp.Core.Operators.box _1))
                    )
                  : 'gentype__startimplementationFile));
-# 2765 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 2765 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> ParsedScriptInteraction in
             Microsoft.FSharp.Core.Operators.box
@@ -2771,7 +2771,7 @@ let _fsyacc_reductions = lazy [|
                       raise (Internal.Utilities.Text.Parsing.Accept(Microsoft.FSharp.Core.Operators.box _1))
                    )
                  : 'gentype__startinteraction));
-# 2774 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 2774 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -2780,7 +2780,7 @@ let _fsyacc_reductions = lazy [|
                       raise (Internal.Utilities.Text.Parsing.Accept(Microsoft.FSharp.Core.Operators.box _1))
                    )
                  : 'gentype__starttypedSequentialExprEOF));
-# 2783 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 2783 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynType in
             Microsoft.FSharp.Core.Operators.box
@@ -2789,7 +2789,7 @@ let _fsyacc_reductions = lazy [|
                       raise (Internal.Utilities.Text.Parsing.Accept(Microsoft.FSharp.Core.Operators.box _1))
                    )
                  : 'gentype__starttypEOF));
-# 2792 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 2792 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_interactiveItemsTerminator in
             Microsoft.FSharp.Core.Operators.box
@@ -2800,7 +2800,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 386 "pars.fsy"
                  : ParsedScriptInteraction));
-# 2803 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 2803 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -2811,7 +2811,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 389 "pars.fsy"
                  : ParsedScriptInteraction));
-# 2814 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 2814 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -2821,7 +2821,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 393 "pars.fsy"
                  : ParsedScriptInteraction));
-# 2824 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 2824 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -2831,7 +2831,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 397 "pars.fsy"
                  : 'gentype_interactiveTerminator));
-# 2834 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 2834 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> ParseHelpers.LexerContinuation in
             Microsoft.FSharp.Core.Operators.box
@@ -2842,7 +2842,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 398 "pars.fsy"
                  : 'gentype_interactiveTerminator));
-# 2845 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 2845 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_interactiveTerminator in
             Microsoft.FSharp.Core.Operators.box
@@ -2853,7 +2853,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 412 "pars.fsy"
                  : 'gentype_interactiveItemsTerminator));
-# 2856 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 2856 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_interactiveDefns in
             let _2 = parseState.GetInput(2) :?> 'gentype_interactiveTerminator in
@@ -2865,7 +2865,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 415 "pars.fsy"
                  : 'gentype_interactiveItemsTerminator));
-# 2868 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 2868 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_interactiveExpr in
             let _2 = parseState.GetInput(2) :?> 'gentype_interactiveTerminator in
@@ -2877,7 +2877,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 418 "pars.fsy"
                  : 'gentype_interactiveItemsTerminator));
-# 2880 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 2880 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_interactiveHash in
             let _2 = parseState.GetInput(2) :?> 'gentype_interactiveTerminator in
@@ -2889,7 +2889,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 421 "pars.fsy"
                  : 'gentype_interactiveItemsTerminator));
-# 2892 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 2892 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_interactiveDefns in
             let _2 = parseState.GetInput(2) :?> 'gentype_interactiveSeparators in
@@ -2902,7 +2902,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 424 "pars.fsy"
                  : 'gentype_interactiveItemsTerminator));
-# 2905 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 2905 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_interactiveExpr in
             let _2 = parseState.GetInput(2) :?> 'gentype_interactiveSeparators in
@@ -2915,7 +2915,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 427 "pars.fsy"
                  : 'gentype_interactiveItemsTerminator));
-# 2918 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 2918 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_interactiveHash in
             let _2 = parseState.GetInput(2) :?> 'gentype_interactiveSeparators in
@@ -2928,7 +2928,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 430 "pars.fsy"
                  : 'gentype_interactiveItemsTerminator));
-# 2931 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 2931 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_moduleDefn in
             Microsoft.FSharp.Core.Operators.box
@@ -2939,7 +2939,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 436 "pars.fsy"
                  : 'gentype_interactiveDefns));
-# 2942 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 2942 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_moduleDefn in
             let _2 = parseState.GetInput(2) :?> 'gentype_interactiveDefns in
@@ -2951,7 +2951,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 439 "pars.fsy"
                  : 'gentype_interactiveDefns));
-# 2954 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 2954 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -2968,7 +2968,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 445 "pars.fsy"
                  : 'gentype_interactiveExpr));
-# 2971 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 2971 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_hashDirective in
             Microsoft.FSharp.Core.Operators.box
@@ -2979,7 +2979,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 454 "pars.fsy"
                  : 'gentype_interactiveHash));
-# 2982 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 2982 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_interactiveSeparator in
             Microsoft.FSharp.Core.Operators.box
@@ -2990,7 +2990,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 458 "pars.fsy"
                  : 'gentype_interactiveSeparators));
-# 2993 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 2993 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_interactiveSeparator in
             let _2 = parseState.GetInput(2) :?> 'gentype_interactiveSeparators in
@@ -3002,7 +3002,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 460 "pars.fsy"
                  : 'gentype_interactiveSeparators));
-# 3005 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3005 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -3012,7 +3012,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 464 "pars.fsy"
                  : 'gentype_interactiveSeparator));
-# 3015 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3015 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -3022,7 +3022,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 465 "pars.fsy"
                  : 'gentype_interactiveSeparator));
-# 3025 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3025 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> string in
             let _3 = parseState.GetInput(3) :?> 'gentype_hashDirectiveArgs in
@@ -3035,7 +3035,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 474 "pars.fsy"
                  : 'gentype_hashDirective));
-# 3038 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3038 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -3045,7 +3045,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 481 "pars.fsy"
                  : 'gentype_hashDirectiveArgs));
-# 3048 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3048 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_hashDirectiveArgs in
             let _2 = parseState.GetInput(2) :?> 'gentype_hashDirectiveArg in
@@ -3057,7 +3057,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 484 "pars.fsy"
                  : 'gentype_hashDirectiveArgs));
-# 3060 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3060 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_string in
             Microsoft.FSharp.Core.Operators.box
@@ -3069,7 +3069,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 490 "pars.fsy"
                  : 'gentype_hashDirectiveArg));
-# 3072 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3072 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_sourceIdentifier in
             Microsoft.FSharp.Core.Operators.box
@@ -3081,7 +3081,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 493 "pars.fsy"
                  : 'gentype_hashDirectiveArg));
-# 3084 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3084 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_fileNamespaceSpecs in
             let _2 = parseState.GetInput(2) :?> ParseHelpers.LexerContinuation in
@@ -3093,7 +3093,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 503 "pars.fsy"
                  : ParsedSigFile));
-# 3096 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3096 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_fileNamespaceSpecs in
             let _3 = parseState.GetInput(3) :?> ParseHelpers.LexerContinuation in
@@ -3105,7 +3105,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 506 "pars.fsy"
                  : ParsedSigFile));
-# 3108 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3108 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> ParseHelpers.LexerContinuation in
             Microsoft.FSharp.Core.Operators.box
@@ -3117,7 +3117,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 512 "pars.fsy"
                  : ParsedSigFile));
-# 3120 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3120 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_moduleKeyword in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_attributes in
@@ -3135,7 +3135,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 520 "pars.fsy"
                  : 'gentype_moduleIntro));
-# 3138 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3138 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_rec in
             let _3 = parseState.GetInput(3) :?> SynLongIdent in
@@ -3148,7 +3148,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 529 "pars.fsy"
                  : 'gentype_namespaceIntro));
-# 3151 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3151 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_fileModuleSpec in
             Microsoft.FSharp.Core.Operators.box
@@ -3159,7 +3159,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 536 "pars.fsy"
                  : 'gentype_fileNamespaceSpecs));
-# 3162 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3162 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_fileModuleSpec in
             let _2 = parseState.GetInput(2) :?> 'gentype_fileNamespaceSpecList in
@@ -3184,7 +3184,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 539 "pars.fsy"
                  : 'gentype_fileNamespaceSpecs));
-# 3187 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3187 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_fileNamespaceSpec in
             let _2 = parseState.GetInput(2) :?> 'gentype_fileNamespaceSpecList in
@@ -3196,7 +3196,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 557 "pars.fsy"
                  : 'gentype_fileNamespaceSpecList));
-# 3199 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3199 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_fileNamespaceSpec in
             Microsoft.FSharp.Core.Operators.box
@@ -3207,7 +3207,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 560 "pars.fsy"
                  : 'gentype_fileNamespaceSpecList));
-# 3210 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3210 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_namespaceIntro in
             let _2 = parseState.GetInput(2) :?> 'gentype_deprecated_opt_equals in
@@ -3220,7 +3220,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 564 "pars.fsy"
                  : 'gentype_fileNamespaceSpec));
-# 3223 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3223 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -3244,7 +3244,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 570 "pars.fsy"
                  : 'gentype_fileModuleSpec));
-# 3247 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3247 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_moduleSpfnsPossiblyEmptyBlock in
             Microsoft.FSharp.Core.Operators.box
@@ -3267,7 +3267,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 583 "pars.fsy"
                  : 'gentype_fileModuleSpec));
-# 3270 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3270 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_moduleSpfnsPossiblyEmpty in
             Microsoft.FSharp.Core.Operators.box
@@ -3278,7 +3278,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 600 "pars.fsy"
                  : 'gentype_moduleSpfnsPossiblyEmptyBlock));
-# 3281 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3281 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_moduleSpfnsPossiblyEmpty in
             let _3 = parseState.GetInput(3) :?> 'gentype_oblockend in
@@ -3291,7 +3291,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 603 "pars.fsy"
                  : 'gentype_moduleSpfnsPossiblyEmptyBlock));
-# 3294 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3294 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_moduleSpfnsPossiblyEmpty in
             let _3 = parseState.GetInput(3) :?> 'gentype_recover in
@@ -3306,7 +3306,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 606 "pars.fsy"
                  : 'gentype_moduleSpfnsPossiblyEmptyBlock));
-# 3309 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3309 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _3 = parseState.GetInput(3) :?> 'gentype_oblockend in
             Microsoft.FSharp.Core.Operators.box
@@ -3317,7 +3317,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 612 "pars.fsy"
                  : 'gentype_moduleSpfnsPossiblyEmptyBlock));
-# 3320 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3320 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_moduleSpfns in
             Microsoft.FSharp.Core.Operators.box
@@ -3328,7 +3328,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 617 "pars.fsy"
                  : 'gentype_moduleSpfnsPossiblyEmpty));
-# 3331 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3331 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -3338,7 +3338,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 620 "pars.fsy"
                  : 'gentype_moduleSpfnsPossiblyEmpty));
-# 3341 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3341 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -3348,7 +3348,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 623 "pars.fsy"
                  : 'gentype_moduleSpfnsPossiblyEmpty));
-# 3351 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3351 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_moduleSpfn in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_topSeparators in
@@ -3361,7 +3361,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 628 "pars.fsy"
                  : 'gentype_moduleSpfns));
-# 3364 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3364 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_topSeparators in
             let _3 = parseState.GetInput(3) :?> 'gentype_moduleSpfns in
@@ -3373,7 +3373,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 631 "pars.fsy"
                  : 'gentype_moduleSpfns));
-# 3376 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3376 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_moduleSpfn in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_topSeparators in
@@ -3385,7 +3385,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 634 "pars.fsy"
                  : 'gentype_moduleSpfns));
-# 3388 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3388 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_hashDirective in
             Microsoft.FSharp.Core.Operators.box
@@ -3396,7 +3396,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 639 "pars.fsy"
                  : 'gentype_moduleSpfn));
-# 3399 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3399 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_valSpfn in
             Microsoft.FSharp.Core.Operators.box
@@ -3407,7 +3407,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 642 "pars.fsy"
                  : 'gentype_moduleSpfn));
-# 3410 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3410 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -3430,7 +3430,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 645 "pars.fsy"
                  : 'gentype_moduleSpfn));
-# 3433 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3433 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -3455,7 +3455,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 656 "pars.fsy"
                  : 'gentype_moduleSpfn));
-# 3458 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3458 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -3482,7 +3482,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 669 "pars.fsy"
                  : 'gentype_moduleSpfn));
-# 3485 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3485 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -3501,7 +3501,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 684 "pars.fsy"
                  : 'gentype_moduleSpfn));
-# 3504 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3504 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_openDecl in
             Microsoft.FSharp.Core.Operators.box
@@ -3512,7 +3512,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 693 "pars.fsy"
                  : 'gentype_moduleSpfn));
-# 3515 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3515 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -3546,7 +3546,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 697 "pars.fsy"
                  : 'gentype_valSpfn));
-# 3549 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3549 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -3556,7 +3556,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 716 "pars.fsy"
                  : 'gentype_optLiteralValueSpfn));
-# 3559 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3559 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -3568,7 +3568,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 719 "pars.fsy"
                  : 'gentype_optLiteralValueSpfn));
-# 3571 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3571 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _3 = parseState.GetInput(3) :?> SynExpr in
             let _4 = parseState.GetInput(4) :?> 'gentype_oblockend in
@@ -3582,7 +3582,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 723 "pars.fsy"
                  : 'gentype_optLiteralValueSpfn));
-# 3585 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3585 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_moduleSpfns in
             let _3 = parseState.GetInput(3) :?> 'gentype_oblockend in
@@ -3594,7 +3594,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 732 "pars.fsy"
                  : 'gentype_moduleSpecBlock));
-# 3597 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3597 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_sigOrBegin in
             let _3 = parseState.GetInput(3) :?> 'gentype_moduleSpfnsPossiblyEmpty in
@@ -3607,7 +3607,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 736 "pars.fsy"
                  : 'gentype_moduleSpecBlock));
-# 3610 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3610 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_sigOrBegin in
             let _2 = parseState.GetInput(2) :?> 'gentype_moduleSpfnsPossiblyEmpty in
@@ -3619,7 +3619,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 740 "pars.fsy"
                  : 'gentype_moduleSpecBlock));
-# 3622 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3622 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_tyconSpfn in
             let _3 = parseState.GetInput(3) :?> SynTypeDefnSig list in
@@ -3645,7 +3645,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 745 "pars.fsy"
                  : SynTypeDefnSig list));
-# 3648 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3648 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -3655,7 +3655,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 763 "pars.fsy"
                  : SynTypeDefnSig list));
-# 3658 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3658 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_typeNameInfo in
             let _3 = parseState.GetInput(3) :?> 'gentype_tyconSpfnRhsBlock in
@@ -3669,7 +3669,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 769 "pars.fsy"
                  : 'gentype_tyconSpfn));
-# 3672 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3672 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_typeNameInfo in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_classSpfn in
@@ -3693,7 +3693,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 773 "pars.fsy"
                  : 'gentype_tyconSpfn));
-# 3696 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3696 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_tyconSpfnRhs in
             let _3 = parseState.GetInput(3) :?> 'gentype_opt_OBLOCKSEP in
@@ -3712,7 +3712,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 799 "pars.fsy"
                  : 'gentype_tyconSpfnRhsBlock));
-# 3715 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3715 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_tyconSpfnRhs in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_classSpfn in
@@ -3727,7 +3727,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 805 "pars.fsy"
                  : 'gentype_tyconSpfnRhsBlock));
-# 3730 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3730 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynTypeDefnSimpleRepr in
             Microsoft.FSharp.Core.Operators.box
@@ -3742,7 +3742,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 814 "pars.fsy"
                  : 'gentype_tyconSpfnRhs));
-# 3745 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3745 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_tyconClassSpfn in
             Microsoft.FSharp.Core.Operators.box
@@ -3767,7 +3767,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 821 "pars.fsy"
                  : 'gentype_tyconSpfnRhs));
-# 3770 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3770 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _3 = parseState.GetInput(3) :?> 'gentype_topType in
             Microsoft.FSharp.Core.Operators.box
@@ -3787,7 +3787,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 839 "pars.fsy"
                  : 'gentype_tyconSpfnRhs));
-# 3790 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3790 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_classSpfnBlockKindUnspecified in
             Microsoft.FSharp.Core.Operators.box
@@ -3799,7 +3799,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 854 "pars.fsy"
                  : 'gentype_tyconClassSpfn));
-# 3802 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3802 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_classOrInterfaceOrStruct in
             let _2 = parseState.GetInput(2) :?> 'gentype_classSpfnBlock in
@@ -3811,7 +3811,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 858 "pars.fsy"
                  : 'gentype_tyconClassSpfn));
-# 3814 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3814 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_classOrInterfaceOrStruct in
             let _2 = parseState.GetInput(2) :?> 'gentype_classSpfnBlock in
@@ -3825,7 +3825,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 861 "pars.fsy"
                  : 'gentype_tyconClassSpfn));
-# 3828 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3828 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_classOrInterfaceOrStruct in
             Microsoft.FSharp.Core.Operators.box
@@ -3837,7 +3837,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 865 "pars.fsy"
                  : 'gentype_tyconClassSpfn));
-# 3840 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3840 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_classSpfnMembers in
             let _3 = parseState.GetInput(3) :?> 'gentype_oblockend in
@@ -3849,7 +3849,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 872 "pars.fsy"
                  : 'gentype_classSpfnBlockKindUnspecified));
-# 3852 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3852 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_classSpfnMembers in
             let _3 = parseState.GetInput(3) :?> 'gentype_recover in
@@ -3862,7 +3862,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 875 "pars.fsy"
                  : 'gentype_classSpfnBlockKindUnspecified));
-# 3865 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3865 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_classSpfnBlock in
             Microsoft.FSharp.Core.Operators.box
@@ -3873,7 +3873,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 880 "pars.fsy"
                  : 'gentype_classSpfnBlockKindUnspecified));
-# 3876 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3876 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_classSpfnBlock in
             let _3 = parseState.GetInput(3) :?> 'gentype_recover in
@@ -3885,7 +3885,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 883 "pars.fsy"
                  : 'gentype_classSpfnBlockKindUnspecified));
-# 3888 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3888 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_classSpfnMembers in
             let _3 = parseState.GetInput(3) :?> 'gentype_oblockend in
@@ -3897,7 +3897,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 889 "pars.fsy"
                  : 'gentype_classSpfnBlock));
-# 3900 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3900 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_classSpfnMembers in
             let _3 = parseState.GetInput(3) :?> 'gentype_recover in
@@ -3910,7 +3910,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 892 "pars.fsy"
                  : 'gentype_classSpfnBlock));
-# 3913 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3913 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_classSpfnMembers in
             Microsoft.FSharp.Core.Operators.box
@@ -3921,7 +3921,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 895 "pars.fsy"
                  : 'gentype_classSpfnBlock));
-# 3924 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3924 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_classSpfnMembersAtLeastOne in
             Microsoft.FSharp.Core.Operators.box
@@ -3932,7 +3932,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 900 "pars.fsy"
                  : 'gentype_classSpfnMembers));
-# 3935 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3935 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -3942,7 +3942,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 903 "pars.fsy"
                  : 'gentype_classSpfnMembers));
-# 3945 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3945 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_classMemberSpfn in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_seps in
@@ -3955,7 +3955,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 909 "pars.fsy"
                  : 'gentype_classSpfnMembersAtLeastOne));
-# 3958 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3958 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -3996,7 +3996,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 915 "pars.fsy"
                  : 'gentype_classMemberSpfn));
-# 3999 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 3999 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -4011,7 +4011,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 939 "pars.fsy"
                  : 'gentype_classMemberSpfn));
-# 4014 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4014 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -4025,7 +4025,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 943 "pars.fsy"
                  : 'gentype_classMemberSpfn));
-# 4028 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4028 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -4043,7 +4043,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 947 "pars.fsy"
                  : 'gentype_classMemberSpfn));
-# 4046 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4046 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -4062,7 +4062,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 955 "pars.fsy"
                  : 'gentype_classMemberSpfn));
-# 4065 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4065 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -4078,7 +4078,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 964 "pars.fsy"
                  : 'gentype_classMemberSpfn));
-# 4081 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4081 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -4097,7 +4097,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 969 "pars.fsy"
                  : 'gentype_classMemberSpfn));
-# 4100 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4100 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -4107,7 +4107,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 981 "pars.fsy"
                  : 'gentype_classMemberSpfnGetSet));
-# 4110 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4110 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_classMemberSpfnGetSetElements in
             Microsoft.FSharp.Core.Operators.box
@@ -4119,7 +4119,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 984 "pars.fsy"
                  : 'gentype_classMemberSpfnGetSet));
-# 4122 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4122 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_classMemberSpfnGetSetElements in
             Microsoft.FSharp.Core.Operators.box
@@ -4131,7 +4131,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 988 "pars.fsy"
                  : 'gentype_classMemberSpfnGetSet));
-# 4134 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4134 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_classMemberSpfnGetSetElements in
             Microsoft.FSharp.Core.Operators.box
@@ -4144,7 +4144,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 992 "pars.fsy"
                  : 'gentype_classMemberSpfnGetSet));
-# 4147 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4147 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_nameop in
             Microsoft.FSharp.Core.Operators.box
@@ -4161,7 +4161,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1000 "pars.fsy"
                  : 'gentype_classMemberSpfnGetSetElements));
-# 4164 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4164 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_nameop in
             let _3 = parseState.GetInput(3) :?> 'gentype_nameop in
@@ -4182,7 +4182,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1009 "pars.fsy"
                  : 'gentype_classMemberSpfnGetSetElements));
-# 4185 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4185 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_memberFlags in
             Microsoft.FSharp.Core.Operators.box
@@ -4193,7 +4193,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1021 "pars.fsy"
                  : 'gentype_memberSpecFlags));
-# 4196 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4196 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_abstractMemberFlags in
             Microsoft.FSharp.Core.Operators.box
@@ -4204,7 +4204,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1022 "pars.fsy"
                  : 'gentype_memberSpecFlags));
-# 4207 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4207 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExceptionDefnRepr in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_classSpfn in
@@ -4217,7 +4217,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1028 "pars.fsy"
                  : 'gentype_exconSpfn));
-# 4220 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4220 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_classSpfnBlock in
             let _3 = parseState.GetInput(3) :?> 'gentype_declEnd in
@@ -4230,7 +4230,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1035 "pars.fsy"
                  : 'gentype_opt_classSpfn));
-# 4233 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4233 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -4240,7 +4240,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1039 "pars.fsy"
                  : 'gentype_opt_classSpfn));
-# 4243 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4243 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_fileNamespaceImpls in
             let _2 = parseState.GetInput(2) :?> ParseHelpers.LexerContinuation in
@@ -4252,7 +4252,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1048 "pars.fsy"
                  : ParsedImplFile));
-# 4255 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4255 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_fileNamespaceImpls in
             let _3 = parseState.GetInput(3) :?> ParseHelpers.LexerContinuation in
@@ -4264,7 +4264,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1051 "pars.fsy"
                  : ParsedImplFile));
-# 4267 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4267 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> ParseHelpers.LexerContinuation in
             Microsoft.FSharp.Core.Operators.box
@@ -4276,7 +4276,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1057 "pars.fsy"
                  : ParsedImplFile));
-# 4279 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4279 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_fileModuleImpl in
             Microsoft.FSharp.Core.Operators.box
@@ -4287,7 +4287,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1064 "pars.fsy"
                  : 'gentype_fileNamespaceImpls));
-# 4290 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4290 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_fileModuleImpl in
             let _2 = parseState.GetInput(2) :?> 'gentype_fileNamespaceImplList in
@@ -4312,7 +4312,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1067 "pars.fsy"
                  : 'gentype_fileNamespaceImpls));
-# 4315 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4315 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_fileNamespaceImpl in
             let _2 = parseState.GetInput(2) :?> 'gentype_fileNamespaceImplList in
@@ -4324,7 +4324,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1086 "pars.fsy"
                  : 'gentype_fileNamespaceImplList));
-# 4327 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4327 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_fileNamespaceImpl in
             Microsoft.FSharp.Core.Operators.box
@@ -4335,7 +4335,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1089 "pars.fsy"
                  : 'gentype_fileNamespaceImplList));
-# 4338 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4338 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_namespaceIntro in
             let _2 = parseState.GetInput(2) :?> 'gentype_deprecated_opt_equals in
@@ -4348,7 +4348,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1095 "pars.fsy"
                  : 'gentype_fileNamespaceImpl));
-# 4351 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4351 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -4372,7 +4372,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1101 "pars.fsy"
                  : 'gentype_fileModuleImpl));
-# 4375 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4375 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynModuleDecl list in
             Microsoft.FSharp.Core.Operators.box
@@ -4395,7 +4395,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1114 "pars.fsy"
                  : 'gentype_fileModuleImpl));
-# 4398 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4398 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_moduleDefnsOrExprPossiblyEmpty in
             let _3 = parseState.GetInput(3) :?> 'gentype_oblockend in
@@ -4408,7 +4408,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1132 "pars.fsy"
                  : SynModuleDecl list));
-# 4411 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4411 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_moduleDefnsOrExprPossiblyEmpty in
             let _3 = parseState.GetInput(3) :?> 'gentype_recover in
@@ -4422,7 +4422,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1135 "pars.fsy"
                  : SynModuleDecl list));
-# 4425 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4425 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _3 = parseState.GetInput(3) :?> 'gentype_oblockend in
             Microsoft.FSharp.Core.Operators.box
@@ -4433,7 +4433,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1140 "pars.fsy"
                  : SynModuleDecl list));
-# 4436 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4436 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_moduleDefnsOrExprPossiblyEmpty in
             Microsoft.FSharp.Core.Operators.box
@@ -4444,7 +4444,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1143 "pars.fsy"
                  : SynModuleDecl list));
-# 4447 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4447 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_moduleDefnsOrExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -4455,7 +4455,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1149 "pars.fsy"
                  : 'gentype_moduleDefnsOrExprPossiblyEmpty));
-# 4458 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4458 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -4465,7 +4465,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1152 "pars.fsy"
                  : 'gentype_moduleDefnsOrExprPossiblyEmpty));
-# 4468 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4468 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -4484,7 +4484,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1159 "pars.fsy"
                  : 'gentype_moduleDefnsOrExpr));
-# 4487 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4487 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -4502,7 +4502,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1166 "pars.fsy"
                  : 'gentype_moduleDefnsOrExpr));
-# 4505 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4505 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -4519,7 +4519,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1173 "pars.fsy"
                  : 'gentype_moduleDefnsOrExpr));
-# 4522 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4522 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_moduleDefns in
             Microsoft.FSharp.Core.Operators.box
@@ -4530,7 +4530,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1180 "pars.fsy"
                  : 'gentype_moduleDefnsOrExpr));
-# 4533 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4533 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             Microsoft.FSharp.Core.Operators.box
@@ -4541,7 +4541,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1183 "pars.fsy"
                  : 'gentype_moduleDefnsOrExpr));
-# 4544 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4544 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_moduleDefnOrDirective in
             let _2 = parseState.GetInput(2) :?> 'gentype_moduleDefns in
@@ -4553,7 +4553,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1189 "pars.fsy"
                  : 'gentype_moduleDefns));
-# 4556 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4556 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_moduleDefnOrDirective in
             let _2 = parseState.GetInput(2) :?> 'gentype_topSeparators in
@@ -4566,7 +4566,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1192 "pars.fsy"
                  : 'gentype_moduleDefns));
-# 4569 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4569 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_moduleDefnOrDirective in
             Microsoft.FSharp.Core.Operators.box
@@ -4577,7 +4577,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1195 "pars.fsy"
                  : 'gentype_moduleDefns));
-# 4580 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4580 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_moduleDefnOrDirective in
             let _2 = parseState.GetInput(2) :?> 'gentype_topSeparators in
@@ -4589,7 +4589,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1198 "pars.fsy"
                  : 'gentype_moduleDefns));
-# 4592 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4592 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_topSeparators in
             let _3 = parseState.GetInput(3) :?> 'gentype_moduleDefnsOrExpr in
@@ -4601,7 +4601,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1201 "pars.fsy"
                  : 'gentype_moduleDefns));
-# 4604 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4604 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_moduleDefn in
             Microsoft.FSharp.Core.Operators.box
@@ -4612,7 +4612,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1207 "pars.fsy"
                  : 'gentype_moduleDefnOrDirective));
-# 4615 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4615 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_hashDirective in
             Microsoft.FSharp.Core.Operators.box
@@ -4623,7 +4623,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1210 "pars.fsy"
                  : 'gentype_moduleDefnOrDirective));
-# 4626 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4626 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -4639,7 +4639,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1219 "pars.fsy"
                  : 'gentype_moduleDefn));
-# 4642 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4642 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -4655,7 +4655,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1226 "pars.fsy"
                  : 'gentype_moduleDefn));
-# 4658 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4658 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -4670,7 +4670,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1233 "pars.fsy"
                  : 'gentype_moduleDefn));
-# 4673 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4673 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -4694,7 +4694,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1239 "pars.fsy"
                  : 'gentype_moduleDefn));
-# 4697 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4697 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -4713,7 +4713,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1252 "pars.fsy"
                  : 'gentype_moduleDefn));
-# 4716 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4716 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -4751,7 +4751,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1262 "pars.fsy"
                  : 'gentype_moduleDefn));
-# 4754 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4754 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_recover in
@@ -4764,7 +4764,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1290 "pars.fsy"
                  : 'gentype_moduleDefn));
-# 4767 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4767 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_openDecl in
             Microsoft.FSharp.Core.Operators.box
@@ -4775,7 +4775,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1295 "pars.fsy"
                  : 'gentype_moduleDefn));
-# 4778 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4778 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynLongIdent in
             Microsoft.FSharp.Core.Operators.box
@@ -4786,7 +4786,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1300 "pars.fsy"
                  : 'gentype_openDecl));
-# 4789 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4789 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_typeKeyword in
             let _3 = parseState.GetInput(3) :?> 'gentype_appType in
@@ -4798,7 +4798,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1303 "pars.fsy"
                  : 'gentype_openDecl));
-# 4801 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4801 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynLongIdent in
             let _3 = parseState.GetInput(3) :?> 'gentype_oblockend in
@@ -4810,7 +4810,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1310 "pars.fsy"
                  : 'gentype_namedModuleAbbrevBlock));
-# 4813 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4813 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynLongIdent in
             Microsoft.FSharp.Core.Operators.box
@@ -4821,7 +4821,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1313 "pars.fsy"
                  : 'gentype_namedModuleAbbrevBlock));
-# 4824 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4824 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_wrappedNamedModuleDefn in
             let _3 = parseState.GetInput(3) :?> 'gentype_oblockend in
@@ -4833,7 +4833,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1319 "pars.fsy"
                  : 'gentype_namedModuleDefnBlock));
-# 4836 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4836 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_wrappedNamedModuleDefn in
             let _3 = parseState.GetInput(3) :?> 'gentype_recover in
@@ -4846,7 +4846,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1322 "pars.fsy"
                  : 'gentype_namedModuleDefnBlock));
-# 4849 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4849 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_moduleDefnsOrExpr in
             let _3 = parseState.GetInput(3) :?> 'gentype_oblockend in
@@ -4880,7 +4880,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1326 "pars.fsy"
                  : 'gentype_namedModuleDefnBlock));
-# 4883 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4883 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_moduleDefnsOrExpr in
             let _3 = parseState.GetInput(3) :?> 'gentype_recover in
@@ -4894,7 +4894,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1352 "pars.fsy"
                  : 'gentype_namedModuleDefnBlock));
-# 4897 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4897 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _3 = parseState.GetInput(3) :?> 'gentype_oblockend in
             Microsoft.FSharp.Core.Operators.box
@@ -4906,7 +4906,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1357 "pars.fsy"
                  : 'gentype_namedModuleDefnBlock));
-# 4909 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4909 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_wrappedNamedModuleDefn in
             Microsoft.FSharp.Core.Operators.box
@@ -4917,7 +4917,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1361 "pars.fsy"
                  : 'gentype_namedModuleDefnBlock));
-# 4920 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4920 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynLongIdent in
             Microsoft.FSharp.Core.Operators.box
@@ -4928,7 +4928,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1364 "pars.fsy"
                  : 'gentype_namedModuleDefnBlock));
-# 4931 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4931 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_structOrBegin in
             let _2 = parseState.GetInput(2) :?> 'gentype_moduleDefnsOrExprPossiblyEmpty in
@@ -4941,7 +4941,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1370 "pars.fsy"
                  : 'gentype_wrappedNamedModuleDefn));
-# 4944 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4944 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_structOrBegin in
             let _2 = parseState.GetInput(2) :?> 'gentype_moduleDefnsOrExprPossiblyEmpty in
@@ -4955,7 +4955,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1374 "pars.fsy"
                  : 'gentype_wrappedNamedModuleDefn));
-# 4958 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4958 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_structOrBegin in
             Microsoft.FSharp.Core.Operators.box
@@ -4967,7 +4967,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1378 "pars.fsy"
                  : 'gentype_wrappedNamedModuleDefn));
-# 4970 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4970 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_classDefnBlock in
             let _3 = parseState.GetInput(3) :?> 'gentype_declEnd in
@@ -4980,7 +4980,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1384 "pars.fsy"
                  : range * SynMemberDefns));
-# 4983 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4983 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_attributes in
             Microsoft.FSharp.Core.Operators.box
@@ -4991,7 +4991,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1391 "pars.fsy"
                  : 'gentype_opt_attributes));
-# 4994 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 4994 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -5001,7 +5001,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1394 "pars.fsy"
                  : 'gentype_opt_attributes));
-# 5004 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5004 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_attributeList in
             Microsoft.FSharp.Core.Operators.box
@@ -5012,7 +5012,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1399 "pars.fsy"
                  : 'gentype_attributes));
-# 5015 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5015 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_attributeList in
             let _2 = parseState.GetInput(2) :?> 'gentype_attributes in
@@ -5024,7 +5024,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1402 "pars.fsy"
                  : 'gentype_attributes));
-# 5027 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5027 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_attributeListElements in
             let _3 = parseState.GetInput(3) :?> 'gentype_opt_seps in
@@ -5037,7 +5037,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1408 "pars.fsy"
                  : 'gentype_attributeList));
-# 5040 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5040 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _4 = parseState.GetInput(4) :?> 'gentype_opt_OBLOCKSEP in
             Microsoft.FSharp.Core.Operators.box
@@ -5048,7 +5048,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1411 "pars.fsy"
                  : 'gentype_attributeList));
-# 5051 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5051 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_attributeListElements in
             let _3 = parseState.GetInput(3) :?> 'gentype_opt_seps in
@@ -5062,7 +5062,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1414 "pars.fsy"
                  : 'gentype_attributeList));
-# 5065 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5065 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_ends_coming_soon_or_recover in
             Microsoft.FSharp.Core.Operators.box
@@ -5074,7 +5074,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1418 "pars.fsy"
                  : 'gentype_attributeList));
-# 5077 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5077 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_attribute in
             Microsoft.FSharp.Core.Operators.box
@@ -5085,7 +5085,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1425 "pars.fsy"
                  : 'gentype_attributeListElements));
-# 5088 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5088 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_attributeListElements in
             let _2 = parseState.GetInput(2) :?> 'gentype_seps in
@@ -5098,7 +5098,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1428 "pars.fsy"
                  : 'gentype_attributeListElements));
-# 5101 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5101 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynLongIdent in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_HIGH_PRECEDENCE_APP in
@@ -5113,7 +5113,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1435 "pars.fsy"
                  : 'gentype_attribute));
-# 5116 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5116 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_attributeTarget in
             let _2 = parseState.GetInput(2) :?> SynLongIdent in
@@ -5130,7 +5130,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1441 "pars.fsy"
                  : 'gentype_attribute));
-# 5133 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5133 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_attributeTarget in
             let _3 = parseState.GetInput(3) :?> SynLongIdent in
@@ -5148,7 +5148,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1448 "pars.fsy"
                  : 'gentype_attribute));
-# 5151 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5151 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_moduleKeyword in
             Microsoft.FSharp.Core.Operators.box
@@ -5159,7 +5159,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1457 "pars.fsy"
                  : 'gentype_attributeTarget));
-# 5162 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5162 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_typeKeyword in
             Microsoft.FSharp.Core.Operators.box
@@ -5170,7 +5170,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1460 "pars.fsy"
                  : 'gentype_attributeTarget));
-# 5173 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5173 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> Ident in
             Microsoft.FSharp.Core.Operators.box
@@ -5181,7 +5181,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1462 "pars.fsy"
                  : 'gentype_attributeTarget));
-# 5184 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5184 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> bool in
             Microsoft.FSharp.Core.Operators.box
@@ -5193,7 +5193,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1466 "pars.fsy"
                  : 'gentype_attributeTarget));
-# 5196 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5196 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -5205,7 +5205,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1472 "pars.fsy"
                  : 'gentype_memberFlags));
-# 5208 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5208 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -5216,7 +5216,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1476 "pars.fsy"
                  : 'gentype_memberFlags));
-# 5219 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5219 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -5227,7 +5227,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1479 "pars.fsy"
                  : 'gentype_memberFlags));
-# 5230 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5230 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -5238,7 +5238,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1482 "pars.fsy"
                  : 'gentype_memberFlags));
-# 5241 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5241 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_tyconNameAndTyparDecls in
@@ -5253,7 +5253,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1488 "pars.fsy"
                  : 'gentype_typeNameInfo));
-# 5256 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5256 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_tyconDefn in
             let _3 = parseState.GetInput(3) :?> 'gentype_tyconDefnList in
@@ -5279,7 +5279,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1495 "pars.fsy"
                  : 'gentype_tyconDefnList));
-# 5282 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5282 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -5289,7 +5289,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1512 "pars.fsy"
                  : 'gentype_tyconDefnList));
-# 5292 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5292 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_typeNameInfo in
             Microsoft.FSharp.Core.Operators.box
@@ -5302,7 +5302,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1517 "pars.fsy"
                  : 'gentype_tyconDefn));
-# 5305 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5305 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_typeNameInfo in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_equals in
@@ -5329,7 +5329,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1522 "pars.fsy"
                  : 'gentype_tyconDefn));
-# 5332 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5332 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_typeNameInfo in
             let _2 = parseState.GetInput(2) :?> range * SynMemberDefns in
@@ -5345,7 +5345,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1540 "pars.fsy"
                  : 'gentype_tyconDefn));
-# 5348 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5348 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_typeNameInfo in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_attributes in
@@ -5380,7 +5380,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1547 "pars.fsy"
                  : 'gentype_tyconDefn));
-# 5383 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5383 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_tyconDefnRhs in
             let _3 = parseState.GetInput(3) :?> 'gentype_opt_OBLOCKSEP in
@@ -5402,7 +5402,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1579 "pars.fsy"
                  : 'gentype_tyconDefnRhsBlock));
-# 5405 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5405 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_tyconDefnRhs in
             let _3 = parseState.GetInput(3) :?> 'gentype_opt_OBLOCKSEP in
@@ -5422,7 +5422,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1588 "pars.fsy"
                  : 'gentype_tyconDefnRhsBlock));
-# 5425 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5425 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_tyconDefnRhs in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_classDefn in
@@ -5438,7 +5438,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1596 "pars.fsy"
                  : 'gentype_tyconDefnRhsBlock));
-# 5441 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5441 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynTypeDefnSimpleRepr in
             Microsoft.FSharp.Core.Operators.box
@@ -5450,7 +5450,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1608 "pars.fsy"
                  : 'gentype_tyconDefnRhs));
-# 5453 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5453 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_tyconClassDefn in
             Microsoft.FSharp.Core.Operators.box
@@ -5468,7 +5468,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1613 "pars.fsy"
                  : 'gentype_tyconDefnRhs));
-# 5471 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5471 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _3 = parseState.GetInput(3) :?> 'gentype_topType in
             Microsoft.FSharp.Core.Operators.box
@@ -5486,7 +5486,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1624 "pars.fsy"
                  : 'gentype_tyconDefnRhs));
-# 5489 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5489 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_classDefnBlockKindUnspecified in
             Microsoft.FSharp.Core.Operators.box
@@ -5498,7 +5498,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1637 "pars.fsy"
                  : 'gentype_tyconClassDefn));
-# 5501 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5501 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_classOrInterfaceOrStruct in
             let _2 = parseState.GetInput(2) :?> 'gentype_classDefnBlock in
@@ -5510,7 +5510,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1641 "pars.fsy"
                  : 'gentype_tyconClassDefn));
-# 5513 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5513 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_classOrInterfaceOrStruct in
             let _2 = parseState.GetInput(2) :?> 'gentype_classDefnBlock in
@@ -5525,7 +5525,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1644 "pars.fsy"
                  : 'gentype_tyconClassDefn));
-# 5528 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5528 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_classOrInterfaceOrStruct in
             Microsoft.FSharp.Core.Operators.box
@@ -5537,7 +5537,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1649 "pars.fsy"
                  : 'gentype_tyconClassDefn));
-# 5540 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5540 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_classDefnMembers in
             let _3 = parseState.GetInput(3) :?> 'gentype_recover in
@@ -5554,7 +5554,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1656 "pars.fsy"
                  : 'gentype_classDefnBlockKindUnspecified));
-# 5557 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5557 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_classDefnMembers in
             let _3 = parseState.GetInput(3) :?> 'gentype_oblockend in
@@ -5570,7 +5570,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1664 "pars.fsy"
                  : 'gentype_classDefnBlockKindUnspecified));
-# 5573 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5573 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_classDefnMembers in
             let _3 = parseState.GetInput(3) :?> 'gentype_recover in
@@ -5583,7 +5583,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1674 "pars.fsy"
                  : 'gentype_classDefnBlock));
-# 5586 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5586 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_classDefnMembers in
             let _3 = parseState.GetInput(3) :?> 'gentype_oblockend in
@@ -5595,7 +5595,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1678 "pars.fsy"
                  : 'gentype_classDefnBlock));
-# 5598 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5598 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_classDefnMembers in
             Microsoft.FSharp.Core.Operators.box
@@ -5606,7 +5606,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1681 "pars.fsy"
                  : 'gentype_classDefnBlock));
-# 5609 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5609 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_classDefnMembersAtLeastOne in
             Microsoft.FSharp.Core.Operators.box
@@ -5617,7 +5617,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1687 "pars.fsy"
                  : 'gentype_classDefnMembers));
-# 5620 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5620 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_classDefnMembers in
             Microsoft.FSharp.Core.Operators.box
@@ -5628,7 +5628,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1691 "pars.fsy"
                  : 'gentype_classDefnMembers));
-# 5631 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5631 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -5638,7 +5638,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1694 "pars.fsy"
                  : 'gentype_classDefnMembers));
-# 5641 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5641 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_classDefnMember in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_seps in
@@ -5655,7 +5655,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1700 "pars.fsy"
                  : 'gentype_classDefnMembersAtLeastOne));
-# 5658 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5658 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_classDefnMemberGetSetElements in
             Microsoft.FSharp.Core.Operators.box
@@ -5667,7 +5667,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1710 "pars.fsy"
                  : 'gentype_classDefnMemberGetSet));
-# 5670 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5670 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_classDefnMemberGetSetElements in
             Microsoft.FSharp.Core.Operators.box
@@ -5679,7 +5679,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1714 "pars.fsy"
                  : 'gentype_classDefnMemberGetSet));
-# 5682 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5682 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_classDefnMemberGetSetElements in
             Microsoft.FSharp.Core.Operators.box
@@ -5692,7 +5692,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1718 "pars.fsy"
                  : 'gentype_classDefnMemberGetSet));
-# 5695 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5695 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_classDefnMemberGetSetElement in
             Microsoft.FSharp.Core.Operators.box
@@ -5703,7 +5703,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1725 "pars.fsy"
                  : 'gentype_classDefnMemberGetSetElements));
-# 5706 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5706 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_classDefnMemberGetSetElement in
             let _3 = parseState.GetInput(3) :?> 'gentype_classDefnMemberGetSetElement in
@@ -5716,7 +5716,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1728 "pars.fsy"
                  : 'gentype_classDefnMemberGetSetElements));
-# 5719 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5719 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_inline in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_attributes in
@@ -5733,7 +5733,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1733 "pars.fsy"
                  : 'gentype_classDefnMemberGetSetElement));
-# 5736 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5736 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_inline in
             let _2 = parseState.GetInput(2) :?> 'gentype_bindingPattern in
@@ -5759,7 +5759,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1742 "pars.fsy"
                  : 'gentype_memberCore));
-# 5762 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5762 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_inline in
             let _2 = parseState.GetInput(2) :?> 'gentype_bindingPattern in
@@ -5785,7 +5785,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1758 "pars.fsy"
                  : 'gentype_memberCore));
-# 5788 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5788 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -5796,7 +5796,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1775 "pars.fsy"
                  : 'gentype_abstractMemberFlags));
-# 5799 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5799 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -5808,7 +5808,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1779 "pars.fsy"
                  : 'gentype_abstractMemberFlags));
-# 5811 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5811 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -5824,7 +5824,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1784 "pars.fsy"
                  : 'gentype_abstractMemberFlags));
-# 5827 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5827 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -5841,7 +5841,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1793 "pars.fsy"
                  : 'gentype_abstractMemberFlags));
-# 5844 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5844 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -5855,7 +5855,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1805 "pars.fsy"
                  : 'gentype_classDefnMember));
-# 5858 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5858 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -5869,7 +5869,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1809 "pars.fsy"
                  : 'gentype_classDefnMember));
-# 5872 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5872 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -5888,7 +5888,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1813 "pars.fsy"
                  : 'gentype_classDefnMember));
-# 5891 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5891 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -5909,7 +5909,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1820 "pars.fsy"
                  : 'gentype_classDefnMember));
-# 5912 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5912 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -5943,7 +5943,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1829 "pars.fsy"
                  : 'gentype_classDefnMember));
-# 5946 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5946 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -5958,7 +5958,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1847 "pars.fsy"
                  : 'gentype_classDefnMember));
-# 5961 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5961 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -5974,7 +5974,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1852 "pars.fsy"
                  : 'gentype_classDefnMember));
-# 5977 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5977 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -5991,7 +5991,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1857 "pars.fsy"
                  : 'gentype_classDefnMember));
-# 5994 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 5994 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -6010,7 +6010,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1863 "pars.fsy"
                  : 'gentype_classDefnMember));
-# 6013 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6013 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -6038,7 +6038,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1870 "pars.fsy"
                  : 'gentype_classDefnMember));
-# 6041 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6041 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -6054,7 +6054,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1885 "pars.fsy"
                  : 'gentype_classDefnMember));
-# 6057 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6057 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_mutable in
             let _3 = parseState.GetInput(3) :?> 'gentype_opt_access in
@@ -6080,7 +6080,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1893 "pars.fsy"
                  : 'gentype_valDefnDecl));
-# 6083 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6083 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_mutable in
             let _3 = parseState.GetInput(3) :?> 'gentype_opt_access in
@@ -6110,7 +6110,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1911 "pars.fsy"
                  : 'gentype_autoPropsDefnDecl));
-# 6113 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6113 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -6120,7 +6120,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1929 "pars.fsy"
                  : 'gentype_opt_typ));
-# 6123 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6123 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynType in
             Microsoft.FSharp.Core.Operators.box
@@ -6131,7 +6131,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1930 "pars.fsy"
                  : 'gentype_opt_typ));
-# 6134 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6134 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _3 = parseState.GetInput(3) :?> SynLongIdent in
             Microsoft.FSharp.Core.Operators.box
@@ -6146,7 +6146,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1935 "pars.fsy"
                  : 'gentype_atomicPatternLongIdent));
-# 6149 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6149 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _3 = parseState.GetInput(3) :?> SynLongIdent in
             Microsoft.FSharp.Core.Operators.box
@@ -6159,7 +6159,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1943 "pars.fsy"
                  : 'gentype_atomicPatternLongIdent));
-# 6162 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6162 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynLongIdent in
             Microsoft.FSharp.Core.Operators.box
@@ -6170,7 +6170,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1948 "pars.fsy"
                  : 'gentype_atomicPatternLongIdent));
-# 6173 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6173 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_access in
             let _4 = parseState.GetInput(4) :?> SynLongIdent in
@@ -6186,7 +6186,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1951 "pars.fsy"
                  : 'gentype_atomicPatternLongIdent));
-# 6189 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6189 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_access in
             let _2 = parseState.GetInput(2) :?> SynLongIdent in
@@ -6198,7 +6198,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1959 "pars.fsy"
                  : 'gentype_atomicPatternLongIdent));
-# 6201 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6201 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -6208,7 +6208,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1964 "pars.fsy"
                  : 'gentype_opt_access));
-# 6211 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6211 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_access in
             Microsoft.FSharp.Core.Operators.box
@@ -6219,7 +6219,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1967 "pars.fsy"
                  : 'gentype_opt_access));
-# 6222 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6222 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -6230,7 +6230,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1972 "pars.fsy"
                  : 'gentype_access));
-# 6233 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6233 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -6241,7 +6241,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1976 "pars.fsy"
                  : 'gentype_access));
-# 6244 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6244 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -6252,7 +6252,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1980 "pars.fsy"
                  : 'gentype_access));
-# 6255 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6255 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_objectImplementationBlock in
             let _3 = parseState.GetInput(3) :?> 'gentype_declEnd in
@@ -6267,7 +6267,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1986 "pars.fsy"
                  : 'gentype_opt_interfaceImplDefn));
-# 6270 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6270 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -6278,7 +6278,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1992 "pars.fsy"
                  : 'gentype_opt_interfaceImplDefn));
-# 6281 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6281 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -6288,7 +6288,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 1996 "pars.fsy"
                  : 'gentype_opt_interfaceImplDefn));
-# 6291 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6291 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_classDefnBlock in
             let _3 = parseState.GetInput(3) :?> 'gentype_declEnd in
@@ -6301,7 +6301,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2001 "pars.fsy"
                  : 'gentype_opt_classDefn));
-# 6304 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6304 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -6311,7 +6311,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2005 "pars.fsy"
                  : 'gentype_opt_classDefn));
-# 6314 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6314 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_atomTypeNonAtomicDeprecated in
             let _3 = parseState.GetInput(3) :?> 'gentype_optBaseSpec in
@@ -6324,7 +6324,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2011 "pars.fsy"
                  : 'gentype_inheritsDefn));
-# 6327 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6327 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_atomTypeNonAtomicDeprecated in
             let _3 = parseState.GetInput(3) :?> 'gentype_opt_HIGH_PRECEDENCE_APP in
@@ -6339,7 +6339,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2015 "pars.fsy"
                  : 'gentype_inheritsDefn));
-# 6342 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6342 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_ends_coming_soon_or_recover in
             Microsoft.FSharp.Core.Operators.box
@@ -6352,7 +6352,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2019 "pars.fsy"
                  : 'gentype_inheritsDefn));
-# 6355 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6355 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_asSpec in
             Microsoft.FSharp.Core.Operators.box
@@ -6363,7 +6363,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2025 "pars.fsy"
                  : 'gentype_optAsSpec));
-# 6366 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6366 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -6373,7 +6373,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2028 "pars.fsy"
                  : 'gentype_optAsSpec));
-# 6376 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6376 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> Ident in
             Microsoft.FSharp.Core.Operators.box
@@ -6384,7 +6384,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2032 "pars.fsy"
                  : 'gentype_asSpec));
-# 6387 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6387 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_baseSpec in
             Microsoft.FSharp.Core.Operators.box
@@ -6395,7 +6395,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2036 "pars.fsy"
                  : 'gentype_optBaseSpec));
-# 6398 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6398 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -6405,7 +6405,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2039 "pars.fsy"
                  : 'gentype_optBaseSpec));
-# 6408 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6408 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> Ident in
             Microsoft.FSharp.Core.Operators.box
@@ -6418,7 +6418,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2043 "pars.fsy"
                  : 'gentype_baseSpec));
-# 6421 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6421 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -6429,7 +6429,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2048 "pars.fsy"
                  : 'gentype_baseSpec));
-# 6432 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6432 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_objectImplementationMembers in
             let _3 = parseState.GetInput(3) :?> 'gentype_oblockend in
@@ -6441,7 +6441,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2055 "pars.fsy"
                  : 'gentype_objectImplementationBlock));
-# 6444 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6444 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_objectImplementationMembers in
             let _3 = parseState.GetInput(3) :?> 'gentype_recover in
@@ -6454,7 +6454,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2058 "pars.fsy"
                  : 'gentype_objectImplementationBlock));
-# 6457 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6457 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_objectImplementationMembers in
             Microsoft.FSharp.Core.Operators.box
@@ -6465,7 +6465,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2062 "pars.fsy"
                  : 'gentype_objectImplementationBlock));
-# 6468 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6468 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_objectImplementationMember in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_seps in
@@ -6478,7 +6478,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2068 "pars.fsy"
                  : 'gentype_objectImplementationMembers));
-# 6481 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6481 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_objectImplementationMember in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_seps in
@@ -6490,7 +6490,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2071 "pars.fsy"
                  : 'gentype_objectImplementationMembers));
-# 6493 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6493 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_staticMemberOrMemberOrOverride in
@@ -6505,7 +6505,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2077 "pars.fsy"
                  : 'gentype_objectImplementationMember));
-# 6508 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6508 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_staticMemberOrMemberOrOverride in
@@ -6520,7 +6520,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2081 "pars.fsy"
                  : 'gentype_objectImplementationMember));
-# 6523 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6523 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_staticMemberOrMemberOrOverride in
@@ -6532,7 +6532,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2085 "pars.fsy"
                  : 'gentype_objectImplementationMember));
-# 6535 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6535 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _3 = parseState.GetInput(3) :?> 'gentype_memberCore in
@@ -6545,7 +6545,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2088 "pars.fsy"
                  : 'gentype_objectImplementationMember));
-# 6548 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6548 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -6557,7 +6557,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2093 "pars.fsy"
                  : 'gentype_staticMemberOrMemberOrOverride));
-# 6560 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6560 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -6568,7 +6568,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2097 "pars.fsy"
                  : 'gentype_staticMemberOrMemberOrOverride));
-# 6571 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6571 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -6579,7 +6579,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2100 "pars.fsy"
                  : 'gentype_staticMemberOrMemberOrOverride));
-# 6582 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6582 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -6596,7 +6596,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2109 "pars.fsy"
                  : SynTypeDefnSimpleRepr));
-# 6599 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6599 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -6611,7 +6611,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2114 "pars.fsy"
                  : SynTypeDefnSimpleRepr));
-# 6614 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6614 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -6638,7 +6638,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2120 "pars.fsy"
                  : SynTypeDefnSimpleRepr));
-# 6641 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6641 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -6652,7 +6652,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2138 "pars.fsy"
                  : SynTypeDefnSimpleRepr));
-# 6655 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6655 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -6672,7 +6672,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2143 "pars.fsy"
                  : SynTypeDefnSimpleRepr));
-# 6675 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6675 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> ParseHelpers.LexerContinuation in
             let _2 = parseState.GetInput(2) :?> 'gentype_recdFieldDeclList in
@@ -6685,7 +6685,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2155 "pars.fsy"
                  : 'gentype_braceFieldDeclList));
-# 6688 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6688 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> ParseHelpers.LexerContinuation in
             let _2 = parseState.GetInput(2) :?> 'gentype_recdFieldDeclList in
@@ -6699,7 +6699,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2158 "pars.fsy"
                  : 'gentype_braceFieldDeclList));
-# 6702 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6702 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> ParseHelpers.LexerContinuation in
             let _3 = parseState.GetInput(3) :?> 'gentype_rbrace in
@@ -6711,7 +6711,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2162 "pars.fsy"
                  : 'gentype_braceFieldDeclList));
-# 6714 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6714 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_braceBarFieldDeclListCore in
             Microsoft.FSharp.Core.Operators.box
@@ -6722,7 +6722,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2166 "pars.fsy"
                  : 'gentype_anonRecdType));
-# 6725 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6725 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_braceBarFieldDeclListCore in
             Microsoft.FSharp.Core.Operators.box
@@ -6733,7 +6733,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2168 "pars.fsy"
                  : 'gentype_anonRecdType));
-# 6736 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6736 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_recdFieldDeclList in
             let _3 = parseState.GetInput(3) :?> 'gentype_bar_rbrace in
@@ -6745,7 +6745,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2173 "pars.fsy"
                  : 'gentype_braceBarFieldDeclListCore));
-# 6748 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6748 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_recdFieldDeclList in
             let _3 = parseState.GetInput(3) :?> 'gentype_recover in
@@ -6758,7 +6758,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2176 "pars.fsy"
                  : 'gentype_braceBarFieldDeclListCore));
-# 6761 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6761 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _3 = parseState.GetInput(3) :?> 'gentype_bar_rbrace in
             Microsoft.FSharp.Core.Operators.box
@@ -6769,7 +6769,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2180 "pars.fsy"
                  : 'gentype_braceBarFieldDeclListCore));
-# 6772 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6772 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -6779,7 +6779,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2184 "pars.fsy"
                  : 'gentype_classOrInterfaceOrStruct));
-# 6782 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6782 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -6789,7 +6789,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2187 "pars.fsy"
                  : 'gentype_classOrInterfaceOrStruct));
-# 6792 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6792 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -6799,7 +6799,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2190 "pars.fsy"
                  : 'gentype_classOrInterfaceOrStruct));
-# 6802 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6802 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -6809,7 +6809,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2193 "pars.fsy"
                  : 'gentype_interfaceMember));
-# 6812 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6812 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -6819,7 +6819,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2194 "pars.fsy"
                  : 'gentype_interfaceMember));
-# 6822 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6822 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_access in
             let _2 = parseState.GetInput(2) :?> SynLongIdent in
@@ -6831,7 +6831,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2198 "pars.fsy"
                  : 'gentype_tyconNameAndTyparDecls));
-# 6834 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6834 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_access in
             let _2 = parseState.GetInput(2) :?> 'gentype_prefixTyparDecls in
@@ -6844,7 +6844,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2201 "pars.fsy"
                  : 'gentype_tyconNameAndTyparDecls));
-# 6847 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6847 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_access in
             let _2 = parseState.GetInput(2) :?> SynLongIdent in
@@ -6857,7 +6857,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2204 "pars.fsy"
                  : 'gentype_tyconNameAndTyparDecls));
-# 6860 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6860 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynTypar in
             Microsoft.FSharp.Core.Operators.box
@@ -6868,7 +6868,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2208 "pars.fsy"
                  : 'gentype_prefixTyparDecls));
-# 6871 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6871 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_typarDeclList in
             let _3 = parseState.GetInput(3) :?> 'gentype_rparen in
@@ -6880,7 +6880,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2211 "pars.fsy"
                  : 'gentype_prefixTyparDecls));
-# 6883 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6883 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_typarDeclList in
             let _3 = parseState.GetInput(3) :?> 'gentype_typarDecl in
@@ -6892,7 +6892,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2214 "pars.fsy"
                  : 'gentype_typarDeclList));
-# 6895 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6895 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_typarDecl in
             Microsoft.FSharp.Core.Operators.box
@@ -6903,7 +6903,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2215 "pars.fsy"
                  : 'gentype_typarDeclList));
-# 6906 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6906 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> SynTypar in
@@ -6915,7 +6915,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2219 "pars.fsy"
                  : 'gentype_typarDecl));
-# 6918 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6918 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_HIGH_PRECEDENCE_TYAPP in
             let _2 = parseState.GetInput(2) :?> bool in
@@ -6932,7 +6932,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2225 "pars.fsy"
                  : 'gentype_postfixTyparDecls));
-# 6935 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6935 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_typarDeclList in
             Microsoft.FSharp.Core.Operators.box
@@ -6943,7 +6943,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2233 "pars.fsy"
                  : 'gentype_explicitValTyparDeclsCore));
-# 6946 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6946 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_typarDeclList in
             Microsoft.FSharp.Core.Operators.box
@@ -6954,7 +6954,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2236 "pars.fsy"
                  : 'gentype_explicitValTyparDeclsCore));
-# 6957 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6957 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -6964,7 +6964,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2239 "pars.fsy"
                  : 'gentype_explicitValTyparDeclsCore));
-# 6967 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6967 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_HIGH_PRECEDENCE_TYAPP in
             let _2 = parseState.GetInput(2) :?> bool in
@@ -6983,7 +6983,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2243 "pars.fsy"
                  : 'gentype_explicitValTyparDecls));
-# 6986 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6986 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_explicitValTyparDecls in
             Microsoft.FSharp.Core.Operators.box
@@ -6994,7 +6994,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2251 "pars.fsy"
                  : 'gentype_opt_explicitValTyparDecls));
-# 6997 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 6997 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -7004,7 +7004,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2253 "pars.fsy"
                  : 'gentype_opt_explicitValTyparDecls));
-# 7007 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7007 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -7014,7 +7014,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2259 "pars.fsy"
                  : 'gentype_opt_typeConstraints));
-# 7017 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7017 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_typeConstraints in
             Microsoft.FSharp.Core.Operators.box
@@ -7025,7 +7025,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2262 "pars.fsy"
                  : 'gentype_opt_typeConstraints));
-# 7028 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7028 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_typeConstraints in
             let _3 = parseState.GetInput(3) :?> 'gentype_typeConstraint in
@@ -7037,7 +7037,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2268 "pars.fsy"
                  : 'gentype_typeConstraints));
-# 7040 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7040 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_typeConstraint in
             Microsoft.FSharp.Core.Operators.box
@@ -7048,7 +7048,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2271 "pars.fsy"
                  : 'gentype_typeConstraints));
-# 7051 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7051 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynTypar in
             let _4 = parseState.GetInput(4) :?> SynType in
@@ -7061,7 +7061,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2277 "pars.fsy"
                  : 'gentype_typeConstraint));
-# 7064 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7064 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynTypar in
             let _3 = parseState.GetInput(3) :?> SynType in
@@ -7073,7 +7073,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2281 "pars.fsy"
                  : 'gentype_typeConstraint));
-# 7076 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7076 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynTypar in
             Microsoft.FSharp.Core.Operators.box
@@ -7084,7 +7084,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2284 "pars.fsy"
                  : 'gentype_typeConstraint));
-# 7087 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7087 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynTypar in
             let _3 = parseState.GetInput(3) :?> string in
@@ -7097,7 +7097,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2287 "pars.fsy"
                  : 'gentype_typeConstraint));
-# 7100 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7100 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynTypar in
             Microsoft.FSharp.Core.Operators.box
@@ -7108,7 +7108,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2291 "pars.fsy"
                  : 'gentype_typeConstraint));
-# 7111 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7111 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynTypar in
             let _4 = parseState.GetInput(4) :?> 'gentype_classMemberSpfn in
@@ -7122,7 +7122,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2294 "pars.fsy"
                  : 'gentype_typeConstraint));
-# 7125 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7125 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_typeAlts in
             let _3 = parseState.GetInput(3) :?> 'gentype_rparen in
@@ -7138,7 +7138,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2298 "pars.fsy"
                  : 'gentype_typeConstraint));
-# 7141 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7141 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynTypar in
             let _4 = parseState.GetInput(4) :?> range * range option * SynType list * range list * range in
@@ -7151,7 +7151,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2303 "pars.fsy"
                  : 'gentype_typeConstraint));
-# 7154 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7154 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynTypar in
             let _3 = parseState.GetInput(3) :?> string in
@@ -7168,7 +7168,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2307 "pars.fsy"
                  : 'gentype_typeConstraint));
-# 7171 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7171 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynTypar in
             let _3 = parseState.GetInput(3) :?> string in
@@ -7184,7 +7184,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2314 "pars.fsy"
                  : 'gentype_typeConstraint));
-# 7187 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7187 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_appType in
             Microsoft.FSharp.Core.Operators.box
@@ -7195,7 +7195,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2321 "pars.fsy"
                  : 'gentype_typeConstraint));
-# 7198 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7198 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_typeAlts in
             let _3 = parseState.GetInput(3) :?> 'gentype_appType in
@@ -7209,7 +7209,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2325 "pars.fsy"
                  : 'gentype_typeAlts));
-# 7212 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7212 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_appType in
             Microsoft.FSharp.Core.Operators.box
@@ -7220,7 +7220,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2330 "pars.fsy"
                  : 'gentype_typeAlts));
-# 7223 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7223 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_barAndgrabXmlDoc in
             let _2 = parseState.GetInput(2) :?> 'gentype_attrUnionCaseDecls in
@@ -7232,7 +7232,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2337 "pars.fsy"
                  : Choice<SynEnumCase, SynUnionCase> list));
-# 7235 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7235 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_firstUnionCaseDeclOfMany in
             let _2 = parseState.GetInput(2) :?> 'gentype_barAndgrabXmlDoc in
@@ -7245,7 +7245,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2340 "pars.fsy"
                  : Choice<SynEnumCase, SynUnionCase> list));
-# 7248 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7248 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_firstUnionCaseDecl in
             Microsoft.FSharp.Core.Operators.box
@@ -7256,7 +7256,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2343 "pars.fsy"
                  : Choice<SynEnumCase, SynUnionCase> list));
-# 7259 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7259 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -7267,7 +7267,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2347 "pars.fsy"
                  : 'gentype_barAndgrabXmlDoc));
-# 7270 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7270 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_attrUnionCaseDecl in
             let _2 = parseState.GetInput(2) :?> 'gentype_barAndgrabXmlDoc in
@@ -7280,7 +7280,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2352 "pars.fsy"
                  : 'gentype_attrUnionCaseDecls));
-# 7283 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7283 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_attrUnionCaseDecl in
             Microsoft.FSharp.Core.Operators.box
@@ -7291,7 +7291,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2355 "pars.fsy"
                  : 'gentype_attrUnionCaseDecls));
-# 7294 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7294 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -7309,7 +7309,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2360 "pars.fsy"
                  : 'gentype_attrUnionCaseDecl));
-# 7312 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7312 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -7328,7 +7328,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2368 "pars.fsy"
                  : 'gentype_attrUnionCaseDecl));
-# 7331 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7331 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -7347,7 +7347,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2376 "pars.fsy"
                  : 'gentype_attrUnionCaseDecl));
-# 7350 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7350 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -7367,7 +7367,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2384 "pars.fsy"
                  : 'gentype_attrUnionCaseDecl));
-# 7370 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7370 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -7387,7 +7387,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2393 "pars.fsy"
                  : 'gentype_attrUnionCaseDecl));
-# 7390 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7390 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_nameop in
             Microsoft.FSharp.Core.Operators.box
@@ -7398,7 +7398,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2404 "pars.fsy"
                  : 'gentype_unionCaseName));
-# 7401 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7401 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _3 = parseState.GetInput(3) :?> 'gentype_rparen in
             Microsoft.FSharp.Core.Operators.box
@@ -7411,7 +7411,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2407 "pars.fsy"
                  : 'gentype_unionCaseName));
-# 7414 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7414 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _4 = parseState.GetInput(4) :?> 'gentype_rparen in
             Microsoft.FSharp.Core.Operators.box
@@ -7424,7 +7424,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2412 "pars.fsy"
                  : 'gentype_unionCaseName));
-# 7427 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7427 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> Ident in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_OBLOCKSEP in
@@ -7439,7 +7439,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2418 "pars.fsy"
                  : 'gentype_firstUnionCaseDeclOfMany));
-# 7442 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7442 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> Ident in
             let _3 = parseState.GetInput(3) :?> SynExpr * bool in
@@ -7456,7 +7456,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2424 "pars.fsy"
                  : 'gentype_firstUnionCaseDeclOfMany));
-# 7459 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7459 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_firstUnionCaseDecl in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_OBLOCKSEP in
@@ -7468,7 +7468,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2431 "pars.fsy"
                  : 'gentype_firstUnionCaseDeclOfMany));
-# 7471 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7471 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> Ident in
             let _3 = parseState.GetInput(3) :?> 'gentype_unionCaseRepr in
@@ -7483,7 +7483,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2435 "pars.fsy"
                  : 'gentype_firstUnionCaseDecl));
-# 7486 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7486 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> Ident in
             let _3 = parseState.GetInput(3) :?> SynExpr * bool in
@@ -7500,7 +7500,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2441 "pars.fsy"
                  : 'gentype_firstUnionCaseDecl));
-# 7503 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7503 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_unionCaseReprElement in
             let _3 = parseState.GetInput(3) :?> 'gentype_unionCaseReprElements in
@@ -7512,7 +7512,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2449 "pars.fsy"
                  : 'gentype_unionCaseReprElements));
-# 7515 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7515 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_unionCaseReprElement in
             Microsoft.FSharp.Core.Operators.box
@@ -7523,7 +7523,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2452 "pars.fsy"
                  : 'gentype_unionCaseReprElements));
-# 7526 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7526 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> Ident in
             let _3 = parseState.GetInput(3) :?> 'gentype_appType in
@@ -7537,7 +7537,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2456 "pars.fsy"
                  : 'gentype_unionCaseReprElement));
-# 7540 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7540 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_appType in
             Microsoft.FSharp.Core.Operators.box
@@ -7549,7 +7549,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2461 "pars.fsy"
                  : 'gentype_unionCaseReprElement));
-# 7552 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7552 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_braceFieldDeclList in
             Microsoft.FSharp.Core.Operators.box
@@ -7561,7 +7561,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2466 "pars.fsy"
                  : 'gentype_unionCaseRepr));
-# 7564 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7564 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_unionCaseReprElements in
             Microsoft.FSharp.Core.Operators.box
@@ -7572,7 +7572,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2470 "pars.fsy"
                  : 'gentype_unionCaseRepr));
-# 7575 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7575 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_recdFieldDecl in
             let _2 = parseState.GetInput(2) :?> 'gentype_seps in
@@ -7585,7 +7585,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2475 "pars.fsy"
                  : 'gentype_recdFieldDeclList));
-# 7588 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7588 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_recdFieldDecl in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_seps in
@@ -7597,7 +7597,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2478 "pars.fsy"
                  : 'gentype_recdFieldDeclList));
-# 7600 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7600 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_fieldDecl in
@@ -7614,7 +7614,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2483 "pars.fsy"
                  : 'gentype_recdFieldDecl));
-# 7617 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7617 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_mutable in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_access in
@@ -7630,7 +7630,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2493 "pars.fsy"
                  : 'gentype_fieldDecl));
-# 7633 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7633 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExceptionDefnRepr in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_classDefn in
@@ -7643,7 +7643,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2500 "pars.fsy"
                  : SynExceptionDefn));
-# 7646 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7646 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_attributes in
             let _3 = parseState.GetInput(3) :?> 'gentype_opt_access in
@@ -7657,7 +7657,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2506 "pars.fsy"
                  : SynExceptionDefnRepr));
-# 7660 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7660 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> Ident in
             Microsoft.FSharp.Core.Operators.box
@@ -7668,7 +7668,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2511 "pars.fsy"
                  : 'gentype_exconIntro));
-# 7671 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7671 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> Ident in
             let _3 = parseState.GetInput(3) :?> 'gentype_unionCaseRepr in
@@ -7680,7 +7680,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2514 "pars.fsy"
                  : 'gentype_exconIntro));
-# 7683 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7683 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> Ident in
             let _3 = parseState.GetInput(3) :?> 'gentype_recover in
@@ -7692,7 +7692,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2517 "pars.fsy"
                  : 'gentype_exconIntro));
-# 7695 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7695 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -7702,7 +7702,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2521 "pars.fsy"
                  : 'gentype_exconRepr));
-# 7705 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7705 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynLongIdent in
             Microsoft.FSharp.Core.Operators.box
@@ -7713,7 +7713,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2524 "pars.fsy"
                  : 'gentype_exconRepr));
-# 7716 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7716 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> bool in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_rec in
@@ -7750,7 +7750,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2532 "pars.fsy"
                  : 'gentype_defnBindings));
-# 7753 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7753 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_cPrototype in
             Microsoft.FSharp.Core.Operators.box
@@ -7762,7 +7762,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2561 "pars.fsy"
                  : 'gentype_defnBindings));
-# 7765 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7765 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -7777,7 +7777,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2568 "pars.fsy"
                  : 'gentype_doBinding));
-# 7780 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7780 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> bool in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_rec in
@@ -7823,7 +7823,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2578 "pars.fsy"
                  : 'gentype_hardwhiteLetBindings));
-# 7826 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7826 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynExpr in
             let _3 = parseState.GetInput(3) :?> 'gentype_hardwhiteDefnBindingsTerminator in
@@ -7840,7 +7840,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2618 "pars.fsy"
                  : 'gentype_hardwhiteDoBinding));
-# 7843 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7843 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_defnBindings in
             Microsoft.FSharp.Core.Operators.box
@@ -7851,7 +7851,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2629 "pars.fsy"
                  : 'gentype_classDefnBindings));
-# 7854 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7854 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_doBinding in
             Microsoft.FSharp.Core.Operators.box
@@ -7862,7 +7862,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2632 "pars.fsy"
                  : 'gentype_classDefnBindings));
-# 7865 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7865 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_hardwhiteLetBindings in
             Microsoft.FSharp.Core.Operators.box
@@ -7873,7 +7873,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2635 "pars.fsy"
                  : 'gentype_classDefnBindings));
-# 7876 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7876 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_hardwhiteDoBinding in
             Microsoft.FSharp.Core.Operators.box
@@ -7884,7 +7884,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2638 "pars.fsy"
                  : 'gentype_classDefnBindings));
-# 7887 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7887 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -7897,7 +7897,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2644 "pars.fsy"
                  : 'gentype_hardwhiteDefnBindingsTerminator));
-# 7900 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7900 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_recover in
             Microsoft.FSharp.Core.Operators.box
@@ -7915,7 +7915,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2650 "pars.fsy"
                  : 'gentype_hardwhiteDefnBindingsTerminator));
-# 7918 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7918 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_cRetType in
             let _3 = parseState.GetInput(3) :?> 'gentype_opt_access in
@@ -7954,7 +7954,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2662 "pars.fsy"
                  : 'gentype_cPrototype));
-# 7957 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7957 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_externMoreArgs in
             Microsoft.FSharp.Core.Operators.box
@@ -7965,7 +7965,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2690 "pars.fsy"
                  : 'gentype_externArgs));
-# 7968 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7968 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_externArg in
             Microsoft.FSharp.Core.Operators.box
@@ -7976,7 +7976,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2693 "pars.fsy"
                  : 'gentype_externArgs));
-# 7979 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7979 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -7986,7 +7986,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2695 "pars.fsy"
                  : 'gentype_externArgs));
-# 7989 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 7989 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_externMoreArgs in
             let _3 = parseState.GetInput(3) :?> 'gentype_externArg in
@@ -7998,7 +7998,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2701 "pars.fsy"
                  : 'gentype_externMoreArgs));
-# 8001 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8001 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_externArg in
             let _3 = parseState.GetInput(3) :?> 'gentype_externArg in
@@ -8010,7 +8010,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2704 "pars.fsy"
                  : 'gentype_externMoreArgs));
-# 8013 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8013 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_cType in
@@ -8022,7 +8022,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2710 "pars.fsy"
                  : 'gentype_externArg));
-# 8025 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8025 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_cType in
@@ -8035,7 +8035,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2713 "pars.fsy"
                  : 'gentype_externArg));
-# 8038 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8038 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynLongIdent in
             Microsoft.FSharp.Core.Operators.box
@@ -8047,7 +8047,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2718 "pars.fsy"
                  : 'gentype_cType));
-# 8050 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8050 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_cType in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_HIGH_PRECEDENCE_APP in
@@ -8060,7 +8060,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2722 "pars.fsy"
                  : 'gentype_cType));
-# 8063 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8063 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_cType in
             Microsoft.FSharp.Core.Operators.box
@@ -8072,7 +8072,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2726 "pars.fsy"
                  : 'gentype_cType));
-# 8075 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8075 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_cType in
             Microsoft.FSharp.Core.Operators.box
@@ -8084,7 +8084,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2730 "pars.fsy"
                  : 'gentype_cType));
-# 8087 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8087 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -8095,7 +8095,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2734 "pars.fsy"
                  : 'gentype_cType));
-# 8098 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8098 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_cType in
@@ -8107,7 +8107,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2741 "pars.fsy"
                  : 'gentype_cRetType));
-# 8110 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8110 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             Microsoft.FSharp.Core.Operators.box
@@ -8119,7 +8119,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2744 "pars.fsy"
                  : 'gentype_cRetType));
-# 8122 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8122 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_attr_localBinding in
             let _2 = parseState.GetInput(2) :?> 'gentype_moreLocalBindings in
@@ -8141,7 +8141,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2750 "pars.fsy"
                  : 'gentype_localBindings));
-# 8144 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8144 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_attr_localBinding in
             let _3 = parseState.GetInput(3) :?> 'gentype_moreLocalBindings in
@@ -8159,7 +8159,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2765 "pars.fsy"
                  : 'gentype_moreLocalBindings));
-# 8162 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8162 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -8169,7 +8169,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2774 "pars.fsy"
                  : 'gentype_moreLocalBindings));
-# 8172 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8172 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_localBinding in
@@ -8184,7 +8184,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2780 "pars.fsy"
                  : 'gentype_attr_localBinding));
-# 8187 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8187 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -8194,7 +8194,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2786 "pars.fsy"
                  : 'gentype_attr_localBinding));
-# 8197 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8197 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_inline in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_mutable in
@@ -8222,7 +8222,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2792 "pars.fsy"
                  : 'gentype_localBinding));
-# 8225 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8225 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_inline in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_mutable in
@@ -8248,7 +8248,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2808 "pars.fsy"
                  : 'gentype_localBinding));
-# 8251 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8251 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_inline in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_mutable in
@@ -8274,7 +8274,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2823 "pars.fsy"
                  : 'gentype_localBinding));
-# 8277 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8277 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_typedExprWithStaticOptimizations in
             let _3 = parseState.GetInput(3) :?> 'gentype_oblockend in
@@ -8286,7 +8286,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2839 "pars.fsy"
                  : 'gentype_typedExprWithStaticOptimizationsBlock));
-# 8289 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8289 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_typedExprWithStaticOptimizations in
             let _3 = parseState.GetInput(3) :?> 'gentype_recover in
@@ -8300,7 +8300,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2842 "pars.fsy"
                  : 'gentype_typedExprWithStaticOptimizationsBlock));
-# 8303 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8303 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_typedExprWithStaticOptimizations in
             Microsoft.FSharp.Core.Operators.box
@@ -8311,7 +8311,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2847 "pars.fsy"
                  : 'gentype_typedExprWithStaticOptimizationsBlock));
-# 8314 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8314 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_typedSequentialExpr in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_staticOptimizations in
@@ -8323,7 +8323,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2851 "pars.fsy"
                  : 'gentype_typedExprWithStaticOptimizations));
-# 8326 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8326 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opt_staticOptimizations in
             let _2 = parseState.GetInput(2) :?> 'gentype_staticOptimization in
@@ -8335,7 +8335,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2855 "pars.fsy"
                  : 'gentype_opt_staticOptimizations));
-# 8338 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8338 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -8345,7 +8345,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2858 "pars.fsy"
                  : 'gentype_opt_staticOptimizations));
-# 8348 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8348 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_staticOptimizationConditions in
             let _4 = parseState.GetInput(4) :?> SynExpr in
@@ -8357,7 +8357,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2862 "pars.fsy"
                  : 'gentype_staticOptimization));
-# 8360 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8360 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_staticOptimizationConditions in
             let _3 = parseState.GetInput(3) :?> 'gentype_staticOptimizationCondition in
@@ -8369,7 +8369,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2866 "pars.fsy"
                  : 'gentype_staticOptimizationConditions));
-# 8372 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8372 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_staticOptimizationCondition in
             Microsoft.FSharp.Core.Operators.box
@@ -8380,7 +8380,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2869 "pars.fsy"
                  : 'gentype_staticOptimizationConditions));
-# 8383 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8383 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynTypar in
             let _3 = parseState.GetInput(3) :?> SynType in
@@ -8392,7 +8392,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2873 "pars.fsy"
                  : 'gentype_staticOptimizationCondition));
-# 8395 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8395 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynTypar in
             Microsoft.FSharp.Core.Operators.box
@@ -8403,7 +8403,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2876 "pars.fsy"
                  : 'gentype_staticOptimizationCondition));
-# 8406 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8406 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> sbyte * bool in
             Microsoft.FSharp.Core.Operators.box
@@ -8415,7 +8415,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2880 "pars.fsy"
                  : 'gentype_rawConstant));
-# 8418 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8418 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> byte in
             Microsoft.FSharp.Core.Operators.box
@@ -8426,7 +8426,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2884 "pars.fsy"
                  : 'gentype_rawConstant));
-# 8429 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8429 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> int16 * bool in
             Microsoft.FSharp.Core.Operators.box
@@ -8438,7 +8438,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2887 "pars.fsy"
                  : 'gentype_rawConstant));
-# 8441 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8441 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> uint16 in
             Microsoft.FSharp.Core.Operators.box
@@ -8449,7 +8449,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2891 "pars.fsy"
                  : 'gentype_rawConstant));
-# 8452 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8452 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> int32 * bool in
             Microsoft.FSharp.Core.Operators.box
@@ -8461,7 +8461,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2894 "pars.fsy"
                  : 'gentype_rawConstant));
-# 8464 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8464 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> uint32 in
             Microsoft.FSharp.Core.Operators.box
@@ -8472,7 +8472,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2898 "pars.fsy"
                  : 'gentype_rawConstant));
-# 8475 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8475 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> int64 * bool in
             Microsoft.FSharp.Core.Operators.box
@@ -8484,7 +8484,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2901 "pars.fsy"
                  : 'gentype_rawConstant));
-# 8487 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8487 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> uint64 in
             Microsoft.FSharp.Core.Operators.box
@@ -8495,7 +8495,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2905 "pars.fsy"
                  : 'gentype_rawConstant));
-# 8498 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8498 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> int64 * bool in
             Microsoft.FSharp.Core.Operators.box
@@ -8507,7 +8507,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2908 "pars.fsy"
                  : 'gentype_rawConstant));
-# 8510 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8510 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> uint64 in
             Microsoft.FSharp.Core.Operators.box
@@ -8518,7 +8518,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2912 "pars.fsy"
                  : 'gentype_rawConstant));
-# 8521 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8521 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> single in
             Microsoft.FSharp.Core.Operators.box
@@ -8529,7 +8529,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2915 "pars.fsy"
                  : 'gentype_rawConstant));
-# 8532 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8532 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> double in
             Microsoft.FSharp.Core.Operators.box
@@ -8540,7 +8540,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2918 "pars.fsy"
                  : 'gentype_rawConstant));
-# 8543 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8543 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> char in
             Microsoft.FSharp.Core.Operators.box
@@ -8551,7 +8551,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2921 "pars.fsy"
                  : 'gentype_rawConstant));
-# 8554 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8554 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> System.Decimal in
             Microsoft.FSharp.Core.Operators.box
@@ -8562,7 +8562,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2924 "pars.fsy"
                  : 'gentype_rawConstant));
-# 8565 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8565 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> (string * string) in
             Microsoft.FSharp.Core.Operators.box
@@ -8573,7 +8573,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2927 "pars.fsy"
                  : 'gentype_rawConstant));
-# 8576 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8576 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_string in
             Microsoft.FSharp.Core.Operators.box
@@ -8585,7 +8585,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2930 "pars.fsy"
                  : 'gentype_rawConstant));
-# 8588 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8588 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_sourceIdentifier in
             Microsoft.FSharp.Core.Operators.box
@@ -8597,7 +8597,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2934 "pars.fsy"
                  : 'gentype_rawConstant));
-# 8600 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8600 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> byte[] * SynByteStringKind * ParseHelpers.LexerContinuation in
             Microsoft.FSharp.Core.Operators.box
@@ -8609,7 +8609,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2938 "pars.fsy"
                  : 'gentype_rawConstant));
-# 8612 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8612 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> int32 * bool in
             let _2 = parseState.GetInput(2) :?> string in
@@ -8625,7 +8625,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2943 "pars.fsy"
                  : 'gentype_rationalConstant));
-# 8628 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8628 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> int32 * bool in
             let _3 = parseState.GetInput(3) :?> string in
@@ -8641,7 +8641,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2949 "pars.fsy"
                  : 'gentype_rationalConstant));
-# 8644 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8644 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> int32 * bool in
             Microsoft.FSharp.Core.Operators.box
@@ -8653,7 +8653,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2955 "pars.fsy"
                  : 'gentype_rationalConstant));
-# 8656 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8656 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> int32 * bool in
             Microsoft.FSharp.Core.Operators.box
@@ -8665,7 +8665,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2959 "pars.fsy"
                  : 'gentype_rationalConstant));
-# 8668 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8668 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> int32 * bool in
             Microsoft.FSharp.Core.Operators.box
@@ -8677,7 +8677,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2963 "pars.fsy"
                  : 'gentype_atomicUnsignedRationalConstant));
-# 8680 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8680 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_rationalConstant in
             let _3 = parseState.GetInput(3) :?> 'gentype_rparen in
@@ -8689,7 +8689,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2967 "pars.fsy"
                  : 'gentype_atomicUnsignedRationalConstant));
-# 8692 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8692 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_atomicUnsignedRationalConstant in
             Microsoft.FSharp.Core.Operators.box
@@ -8700,7 +8700,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2970 "pars.fsy"
                  : 'gentype_atomicRationalConstant));
-# 8703 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8703 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_atomicUnsignedRationalConstant in
             Microsoft.FSharp.Core.Operators.box
@@ -8711,7 +8711,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2973 "pars.fsy"
                  : 'gentype_atomicRationalConstant));
-# 8714 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8714 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_rawConstant in
             Microsoft.FSharp.Core.Operators.box
@@ -8722,7 +8722,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2977 "pars.fsy"
                  : 'gentype_constant));
-# 8725 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8725 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_rawConstant in
             let _3 = parseState.GetInput(3) :?> 'gentype_measureTypeArg in
@@ -8734,7 +8734,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2980 "pars.fsy"
                  : 'gentype_constant));
-# 8737 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8737 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynPat in
             Microsoft.FSharp.Core.Operators.box
@@ -8745,7 +8745,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2984 "pars.fsy"
                  : 'gentype_bindingPattern));
-# 8748 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8748 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> Ident in
             Microsoft.FSharp.Core.Operators.box
@@ -8757,7 +8757,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2991 "pars.fsy"
                  : 'gentype_simplePattern));
-# 8760 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8760 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> Ident in
             Microsoft.FSharp.Core.Operators.box
@@ -8768,7 +8768,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2995 "pars.fsy"
                  : 'gentype_simplePattern));
-# 8771 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8771 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_simplePattern in
             let _3 = parseState.GetInput(3) :?> 'gentype_typeWithTypeConstraints in
@@ -8780,7 +8780,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 2998 "pars.fsy"
                  : 'gentype_simplePattern));
-# 8783 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8783 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_simplePattern in
@@ -8792,7 +8792,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3001 "pars.fsy"
                  : 'gentype_simplePattern));
-# 8795 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8795 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_simplePattern in
             Microsoft.FSharp.Core.Operators.box
@@ -8803,7 +8803,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3005 "pars.fsy"
                  : 'gentype_simplePatternCommaList));
-# 8806 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8806 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_simplePattern in
             let _3 = parseState.GetInput(3) :?> 'gentype_simplePatternCommaList in
@@ -8817,7 +8817,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3008 "pars.fsy"
                  : 'gentype_simplePatternCommaList));
-# 8820 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8820 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_simplePatternCommaList in
             let _3 = parseState.GetInput(3) :?> 'gentype_rparen in
@@ -8831,7 +8831,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3014 "pars.fsy"
                  : 'gentype_simplePatterns));
-# 8834 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8834 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_rparen in
             Microsoft.FSharp.Core.Operators.box
@@ -8844,7 +8844,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3019 "pars.fsy"
                  : 'gentype_simplePatterns));
-# 8847 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8847 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_simplePatternCommaList in
             let _3 = parseState.GetInput(3) :?> 'gentype_recover in
@@ -8859,7 +8859,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3024 "pars.fsy"
                  : 'gentype_simplePatterns));
-# 8862 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8862 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _3 = parseState.GetInput(3) :?> 'gentype_rparen in
             Microsoft.FSharp.Core.Operators.box
@@ -8872,7 +8872,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3030 "pars.fsy"
                  : 'gentype_simplePatterns));
-# 8875 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8875 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_recover in
             Microsoft.FSharp.Core.Operators.box
@@ -8886,7 +8886,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3035 "pars.fsy"
                  : 'gentype_simplePatterns));
-# 8889 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8889 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynPat in
             let _3 = parseState.GetInput(3) :?> 'gentype_constrPattern in
@@ -8898,7 +8898,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3043 "pars.fsy"
                  : SynPat));
-# 8901 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8901 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynPat in
             let _3 = parseState.GetInput(3) :?> SynPat in
@@ -8911,7 +8911,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3046 "pars.fsy"
                  : SynPat));
-# 8914 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8914 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynPat in
             let _3 = parseState.GetInput(3) :?> SynPat in
@@ -8924,7 +8924,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3050 "pars.fsy"
                  : SynPat));
-# 8927 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8927 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_tuplePatternElements in
             Microsoft.FSharp.Core.Operators.box
@@ -8937,7 +8937,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3054 "pars.fsy"
                  : SynPat));
-# 8940 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8940 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_conjPatternElements in
             Microsoft.FSharp.Core.Operators.box
@@ -8948,7 +8948,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3059 "pars.fsy"
                  : SynPat));
-# 8951 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8951 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_constrPattern in
             Microsoft.FSharp.Core.Operators.box
@@ -8959,7 +8959,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3062 "pars.fsy"
                  : SynPat));
-# 8962 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8962 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_tuplePatternElements in
             let _3 = parseState.GetInput(3) :?> SynPat in
@@ -8971,7 +8971,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3066 "pars.fsy"
                  : 'gentype_tuplePatternElements));
-# 8974 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8974 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynPat in
             let _3 = parseState.GetInput(3) :?> SynPat in
@@ -8983,7 +8983,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3069 "pars.fsy"
                  : 'gentype_tuplePatternElements));
-# 8986 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 8986 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_tuplePatternElements in
             let _3 = parseState.GetInput(3) :?> 'gentype_ends_coming_soon_or_recover in
@@ -8998,7 +8998,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3072 "pars.fsy"
                  : 'gentype_tuplePatternElements));
-# 9001 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9001 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynPat in
             let _3 = parseState.GetInput(3) :?> 'gentype_ends_coming_soon_or_recover in
@@ -9013,7 +9013,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3078 "pars.fsy"
                  : 'gentype_tuplePatternElements));
-# 9016 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9016 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynPat in
             Microsoft.FSharp.Core.Operators.box
@@ -9027,7 +9027,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3084 "pars.fsy"
                  : 'gentype_tuplePatternElements));
-# 9030 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9030 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_ends_coming_soon_or_recover in
             Microsoft.FSharp.Core.Operators.box
@@ -9042,7 +9042,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3090 "pars.fsy"
                  : 'gentype_tuplePatternElements));
-# 9045 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9045 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_conjPatternElements in
             let _3 = parseState.GetInput(3) :?> SynPat in
@@ -9054,7 +9054,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3098 "pars.fsy"
                  : 'gentype_conjPatternElements));
-# 9057 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9057 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynPat in
             let _3 = parseState.GetInput(3) :?> SynPat in
@@ -9066,7 +9066,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3101 "pars.fsy"
                  : 'gentype_conjPatternElements));
-# 9069 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9069 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_namePatPair in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_seps in
@@ -9078,7 +9078,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3105 "pars.fsy"
                  : 'gentype_namePatPairs));
-# 9081 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9081 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_namePatPair in
             let _2 = parseState.GetInput(2) :?> 'gentype_seps in
@@ -9091,7 +9091,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3108 "pars.fsy"
                  : 'gentype_namePatPairs));
-# 9094 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9094 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> Ident in
             let _3 = parseState.GetInput(3) :?> 'gentype_parenPattern in
@@ -9104,7 +9104,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3112 "pars.fsy"
                  : 'gentype_namePatPair));
-# 9107 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9107 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_atomicPatternLongIdent in
             let _2 = parseState.GetInput(2) :?> 'gentype_explicitValTyparDecls in
@@ -9117,7 +9117,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3117 "pars.fsy"
                  : 'gentype_constrPattern));
-# 9120 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9120 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_atomicPatternLongIdent in
             let _2 = parseState.GetInput(2) :?> 'gentype_explicitValTyparDecls in
@@ -9133,7 +9133,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3121 "pars.fsy"
                  : 'gentype_constrPattern));
-# 9136 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9136 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_atomicPatternLongIdent in
             let _2 = parseState.GetInput(2) :?> 'gentype_explicitValTyparDecls in
@@ -9149,7 +9149,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3127 "pars.fsy"
                  : 'gentype_constrPattern));
-# 9152 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9152 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_atomicPatternLongIdent in
             let _2 = parseState.GetInput(2) :?> 'gentype_explicitValTyparDecls in
@@ -9165,7 +9165,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3133 "pars.fsy"
                  : 'gentype_constrPattern));
-# 9168 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9168 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_atomicPatternLongIdent in
             let _2 = parseState.GetInput(2) :?> SynArgPats * Range in
@@ -9180,7 +9180,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3139 "pars.fsy"
                  : 'gentype_constrPattern));
-# 9183 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9183 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_atomicPatternLongIdent in
             let _3 = parseState.GetInput(3) :?> SynArgPats * Range in
@@ -9195,7 +9195,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3145 "pars.fsy"
                  : 'gentype_constrPattern));
-# 9198 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9198 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_atomicPatternLongIdent in
             let _3 = parseState.GetInput(3) :?> SynArgPats * Range in
@@ -9210,7 +9210,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3151 "pars.fsy"
                  : 'gentype_constrPattern));
-# 9213 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9213 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_atomTypeOrAnonRecdType in
             Microsoft.FSharp.Core.Operators.box
@@ -9221,7 +9221,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3157 "pars.fsy"
                  : 'gentype_constrPattern));
-# 9224 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9224 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_atomicPattern in
             Microsoft.FSharp.Core.Operators.box
@@ -9232,7 +9232,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3160 "pars.fsy"
                  : 'gentype_constrPattern));
-# 9235 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9235 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_namePatPairs in
             let _3 = parseState.GetInput(3) :?> 'gentype_rparen in
@@ -9247,7 +9247,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3164 "pars.fsy"
                  : SynArgPats * Range));
-# 9250 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9250 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynPat list in
             Microsoft.FSharp.Core.Operators.box
@@ -9260,7 +9260,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3170 "pars.fsy"
                  : SynArgPats * Range));
-# 9263 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9263 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_atomicPattern in
             let _2 = parseState.GetInput(2) :?> SynPat list in
@@ -9272,7 +9272,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3176 "pars.fsy"
                  : SynPat list));
-# 9275 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9275 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_atomicPattern in
             let _3 = parseState.GetInput(3) :?> SynPat list in
@@ -9285,7 +9285,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3179 "pars.fsy"
                  : SynPat list));
-# 9288 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9288 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_atomicPattern in
             let _3 = parseState.GetInput(3) :?> SynPat list in
@@ -9298,7 +9298,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3183 "pars.fsy"
                  : SynPat list));
-# 9301 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9301 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_atomicPattern in
             Microsoft.FSharp.Core.Operators.box
@@ -9309,7 +9309,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3187 "pars.fsy"
                  : SynPat list));
-# 9312 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9312 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_quoteExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -9320,7 +9320,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3192 "pars.fsy"
                  : 'gentype_atomicPattern));
-# 9323 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9323 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> char in
             let _3 = parseState.GetInput(3) :?> char in
@@ -9332,7 +9332,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3195 "pars.fsy"
                  : 'gentype_atomicPattern));
-# 9335 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9335 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> ParseHelpers.LexerContinuation in
             let _2 = parseState.GetInput(2) :?> 'gentype_recordPatternElementsAux in
@@ -9345,7 +9345,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3198 "pars.fsy"
                  : 'gentype_atomicPattern));
-# 9348 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9348 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_listPatternElements in
             Microsoft.FSharp.Core.Operators.box
@@ -9356,7 +9356,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3201 "pars.fsy"
                  : 'gentype_atomicPattern));
-# 9359 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9359 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_listPatternElements in
             Microsoft.FSharp.Core.Operators.box
@@ -9367,7 +9367,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3204 "pars.fsy"
                  : 'gentype_atomicPattern));
-# 9370 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9370 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -9377,7 +9377,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3207 "pars.fsy"
                  : 'gentype_atomicPattern));
-# 9380 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9380 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> Ident in
             Microsoft.FSharp.Core.Operators.box
@@ -9388,7 +9388,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3210 "pars.fsy"
                  : 'gentype_atomicPattern));
-# 9391 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9391 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_atomicPatternLongIdent in
             Microsoft.FSharp.Core.Operators.box
@@ -9405,7 +9405,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3213 "pars.fsy"
                  : 'gentype_atomicPattern));
-# 9408 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9408 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_constant in
             Microsoft.FSharp.Core.Operators.box
@@ -9416,7 +9416,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3222 "pars.fsy"
                  : 'gentype_atomicPattern));
-# 9419 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9419 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -9426,7 +9426,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3225 "pars.fsy"
                  : 'gentype_atomicPattern));
-# 9429 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9429 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -9436,7 +9436,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3228 "pars.fsy"
                  : 'gentype_atomicPattern));
-# 9439 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9439 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -9446,7 +9446,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3231 "pars.fsy"
                  : 'gentype_atomicPattern));
-# 9449 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9449 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_parenPatternBody in
             let _3 = parseState.GetInput(3) :?> 'gentype_rparen in
@@ -9459,7 +9459,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3234 "pars.fsy"
                  : 'gentype_atomicPattern));
-# 9462 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9462 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_parenPatternBody in
             let _3 = parseState.GetInput(3) :?> 'gentype_recover in
@@ -9474,7 +9474,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3238 "pars.fsy"
                  : 'gentype_atomicPattern));
-# 9477 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9477 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _3 = parseState.GetInput(3) :?> 'gentype_rparen in
             Microsoft.FSharp.Core.Operators.box
@@ -9486,7 +9486,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3244 "pars.fsy"
                  : 'gentype_atomicPattern));
-# 9489 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9489 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_recover in
             Microsoft.FSharp.Core.Operators.box
@@ -9501,7 +9501,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3248 "pars.fsy"
                  : 'gentype_atomicPattern));
-# 9504 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9504 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _3 = parseState.GetInput(3) :?> 'gentype_tupleParenPatternElements in
             let _4 = parseState.GetInput(4) :?> 'gentype_rparen in
@@ -9513,7 +9513,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3255 "pars.fsy"
                  : 'gentype_atomicPattern));
-# 9516 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9516 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _3 = parseState.GetInput(3) :?> 'gentype_tupleParenPatternElements in
             let _4 = parseState.GetInput(4) :?> 'gentype_recover in
@@ -9526,7 +9526,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3258 "pars.fsy"
                  : 'gentype_atomicPattern));
-# 9529 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9529 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _4 = parseState.GetInput(4) :?> 'gentype_rparen in
             Microsoft.FSharp.Core.Operators.box
@@ -9537,7 +9537,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3262 "pars.fsy"
                  : 'gentype_atomicPattern));
-# 9540 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9540 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _3 = parseState.GetInput(3) :?> 'gentype_recover in
             Microsoft.FSharp.Core.Operators.box
@@ -9549,7 +9549,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3265 "pars.fsy"
                  : 'gentype_atomicPattern));
-# 9552 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9552 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_parenPattern in
             Microsoft.FSharp.Core.Operators.box
@@ -9560,7 +9560,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3270 "pars.fsy"
                  : 'gentype_parenPatternBody));
-# 9563 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9563 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -9570,7 +9570,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3273 "pars.fsy"
                  : 'gentype_parenPatternBody));
-# 9573 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9573 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_parenPattern in
             let _3 = parseState.GetInput(3) :?> 'gentype_constrPattern in
@@ -9582,7 +9582,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3302 "pars.fsy"
                  : 'gentype_parenPattern));
-# 9585 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9585 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_parenPattern in
             let _3 = parseState.GetInput(3) :?> 'gentype_parenPattern in
@@ -9595,7 +9595,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3305 "pars.fsy"
                  : 'gentype_parenPattern));
-# 9598 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9598 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_tupleParenPatternElements in
             Microsoft.FSharp.Core.Operators.box
@@ -9608,7 +9608,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3309 "pars.fsy"
                  : 'gentype_parenPattern));
-# 9611 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9611 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_conjParenPatternElements in
             Microsoft.FSharp.Core.Operators.box
@@ -9619,7 +9619,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3314 "pars.fsy"
                  : 'gentype_parenPattern));
-# 9622 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9622 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_parenPattern in
             let _3 = parseState.GetInput(3) :?> 'gentype_typeWithTypeConstraints in
@@ -9632,7 +9632,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3317 "pars.fsy"
                  : 'gentype_parenPattern));
-# 9635 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9635 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_parenPattern in
@@ -9645,7 +9645,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3321 "pars.fsy"
                  : 'gentype_parenPattern));
-# 9648 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9648 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_parenPattern in
             let _3 = parseState.GetInput(3) :?> 'gentype_parenPattern in
@@ -9658,7 +9658,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3325 "pars.fsy"
                  : 'gentype_parenPattern));
-# 9661 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9661 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_constrPattern in
             Microsoft.FSharp.Core.Operators.box
@@ -9669,7 +9669,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3328 "pars.fsy"
                  : 'gentype_parenPattern));
-# 9672 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9672 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_tupleParenPatternElements in
             let _3 = parseState.GetInput(3) :?> 'gentype_parenPattern in
@@ -9681,7 +9681,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3332 "pars.fsy"
                  : 'gentype_tupleParenPatternElements));
-# 9684 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9684 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_parenPattern in
             let _3 = parseState.GetInput(3) :?> 'gentype_parenPattern in
@@ -9693,7 +9693,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3335 "pars.fsy"
                  : 'gentype_tupleParenPatternElements));
-# 9696 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9696 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_tupleParenPatternElements in
             let _3 = parseState.GetInput(3) :?> 'gentype_ends_coming_soon_or_recover in
@@ -9708,7 +9708,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3338 "pars.fsy"
                  : 'gentype_tupleParenPatternElements));
-# 9711 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9711 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_parenPattern in
             let _3 = parseState.GetInput(3) :?> 'gentype_ends_coming_soon_or_recover in
@@ -9723,7 +9723,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3344 "pars.fsy"
                  : 'gentype_tupleParenPatternElements));
-# 9726 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9726 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_parenPattern in
             Microsoft.FSharp.Core.Operators.box
@@ -9737,7 +9737,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3350 "pars.fsy"
                  : 'gentype_tupleParenPatternElements));
-# 9740 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9740 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_ends_coming_soon_or_recover in
             Microsoft.FSharp.Core.Operators.box
@@ -9752,7 +9752,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3356 "pars.fsy"
                  : 'gentype_tupleParenPatternElements));
-# 9755 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9755 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_conjParenPatternElements in
             let _3 = parseState.GetInput(3) :?> 'gentype_parenPattern in
@@ -9764,7 +9764,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3364 "pars.fsy"
                  : 'gentype_conjParenPatternElements));
-# 9767 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9767 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_parenPattern in
             let _3 = parseState.GetInput(3) :?> 'gentype_parenPattern in
@@ -9776,7 +9776,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3367 "pars.fsy"
                  : 'gentype_conjParenPatternElements));
-# 9779 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9779 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_recordPatternElement in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_seps in
@@ -9788,7 +9788,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3371 "pars.fsy"
                  : 'gentype_recordPatternElementsAux));
-# 9791 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9791 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_recordPatternElement in
             let _2 = parseState.GetInput(2) :?> 'gentype_seps in
@@ -9801,7 +9801,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3374 "pars.fsy"
                  : 'gentype_recordPatternElementsAux));
-# 9804 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9804 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynLongIdent in
             let _3 = parseState.GetInput(3) :?> 'gentype_parenPattern in
@@ -9814,7 +9814,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3378 "pars.fsy"
                  : 'gentype_recordPatternElement));
-# 9817 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9817 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -9824,7 +9824,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3383 "pars.fsy"
                  : 'gentype_listPatternElements));
-# 9827 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9827 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_parenPattern in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_seps in
@@ -9836,7 +9836,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3386 "pars.fsy"
                  : 'gentype_listPatternElements));
-# 9839 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9839 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_parenPattern in
             let _2 = parseState.GetInput(2) :?> 'gentype_seps in
@@ -9849,7 +9849,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3389 "pars.fsy"
                  : 'gentype_listPatternElements));
-# 9852 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9852 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_typedSequentialExpr in
             let _3 = parseState.GetInput(3) :?> 'gentype_oblockend in
@@ -9861,7 +9861,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3394 "pars.fsy"
                  : SynExpr));
-# 9864 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9864 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_typedSequentialExpr in
             let _3 = parseState.GetInput(3) :?> 'gentype_recover in
@@ -9874,7 +9874,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3397 "pars.fsy"
                  : SynExpr));
-# 9877 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9877 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_typedSequentialExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -9885,7 +9885,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3401 "pars.fsy"
                  : SynExpr));
-# 9888 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9888 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_typedSequentialExpr in
             let _3 = parseState.GetInput(3) :?> 'gentype_oblockend in
@@ -9897,7 +9897,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3406 "pars.fsy"
                  : SynExpr));
-# 9900 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9900 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -9908,7 +9908,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3409 "pars.fsy"
                  : SynExpr));
-# 9911 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9911 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_typedSequentialExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -9919,7 +9919,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3415 "pars.fsy"
                  : 'gentype_typedSequentialExprBlockR));
-# 9922 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9922 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_typedSequentialExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -9930,7 +9930,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3418 "pars.fsy"
                  : 'gentype_typedSequentialExprBlockR));
-# 9933 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9933 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_sequentialExpr in
             let _3 = parseState.GetInput(3) :?> 'gentype_typeWithTypeConstraints in
@@ -9942,7 +9942,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3422 "pars.fsy"
                  : 'gentype_typedSequentialExpr));
-# 9945 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9945 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_sequentialExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -9953,7 +9953,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3425 "pars.fsy"
                  : 'gentype_typedSequentialExpr));
-# 9956 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9956 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_typedSequentialExpr in
             let _2 = parseState.GetInput(2) :?> ParseHelpers.LexerContinuation in
@@ -9965,7 +9965,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3429 "pars.fsy"
                  : SynExpr));
-# 9968 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9968 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _2 = parseState.GetInput(2) :?> 'gentype_seps in
@@ -9978,7 +9978,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3433 "pars.fsy"
                  : 'gentype_sequentialExpr));
-# 9981 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9981 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _2 = parseState.GetInput(2) :?> 'gentype_seps in
@@ -9990,7 +9990,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3436 "pars.fsy"
                  : 'gentype_sequentialExpr));
-# 9993 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 9993 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -10001,7 +10001,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3439 "pars.fsy"
                  : 'gentype_sequentialExpr));
-# 10004 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10004 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _3 = parseState.GetInput(3) :?> 'gentype_sequentialExpr in
@@ -10013,7 +10013,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3442 "pars.fsy"
                  : 'gentype_sequentialExpr));
-# 10016 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10016 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _4 = parseState.GetInput(4) :?> 'gentype_typedSequentialExpr in
@@ -10026,7 +10026,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3445 "pars.fsy"
                  : 'gentype_sequentialExpr));
-# 10029 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10029 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_hardwhiteLetBindings in
             Microsoft.FSharp.Core.Operators.box
@@ -10042,7 +10042,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3448 "pars.fsy"
                  : 'gentype_sequentialExpr));
-# 10045 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10045 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -10052,7 +10052,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3461 "pars.fsy"
                  : 'gentype_recover));
-# 10055 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10055 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> ParseHelpers.LexerContinuation in
             Microsoft.FSharp.Core.Operators.box
@@ -10063,7 +10063,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3464 "pars.fsy"
                  : 'gentype_recover));
-# 10066 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10066 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> bool in
             let _2 = parseState.GetInput(2) :?> SynPat in
@@ -10081,7 +10081,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3468 "pars.fsy"
                  : 'gentype_moreBinders));
-# 10084 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10084 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> bool in
             let _2 = parseState.GetInput(2) :?> SynPat in
@@ -10102,7 +10102,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3475 "pars.fsy"
                  : 'gentype_moreBinders));
-# 10105 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10105 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -10112,7 +10112,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3483 "pars.fsy"
                  : 'gentype_moreBinders));
-# 10115 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10115 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_defnBindings in
             let _3 = parseState.GetInput(3) :?> 'gentype_typedSequentialExpr in
@@ -10125,7 +10125,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3487 "pars.fsy"
                  : SynExpr));
-# 10128 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10128 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_defnBindings in
             Microsoft.FSharp.Core.Operators.box
@@ -10137,7 +10137,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3491 "pars.fsy"
                  : SynExpr));
-# 10140 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10140 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_hardwhiteLetBindings in
             let _2 = parseState.GetInput(2) :?> SynExpr in
@@ -10150,7 +10150,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3498 "pars.fsy"
                  : SynExpr));
-# 10153 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10153 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_hardwhiteLetBindings in
             Microsoft.FSharp.Core.Operators.box
@@ -10163,7 +10163,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3502 "pars.fsy"
                  : SynExpr));
-# 10166 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10166 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_hardwhiteLetBindings in
             let _3 = parseState.GetInput(3) :?> SynExpr in
@@ -10176,7 +10176,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3507 "pars.fsy"
                  : SynExpr));
-# 10179 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10179 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_hardwhiteLetBindings in
             Microsoft.FSharp.Core.Operators.box
@@ -10189,7 +10189,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3511 "pars.fsy"
                  : SynExpr));
-# 10192 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10192 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_hardwhiteDoBinding in
             Microsoft.FSharp.Core.Operators.box
@@ -10201,7 +10201,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3516 "pars.fsy"
                  : SynExpr));
-# 10204 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10204 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_anonMatchingExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -10212,7 +10212,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3520 "pars.fsy"
                  : SynExpr));
-# 10215 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10215 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_anonLambdaExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -10223,7 +10223,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3523 "pars.fsy"
                  : SynExpr));
-# 10226 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10226 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_typedSequentialExpr in
             let _3 = parseState.GetInput(3) :?> 'gentype_withClauses in
@@ -10239,7 +10239,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3526 "pars.fsy"
                  : SynExpr));
-# 10242 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10242 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_typedSequentialExpr in
             let _3 = parseState.GetInput(3) :?> 'gentype_recover in
@@ -10253,7 +10253,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3533 "pars.fsy"
                  : SynExpr));
-# 10256 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10256 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_typedSequentialExpr in
             let _3 = parseState.GetInput(3) :?> 'gentype_withClauses in
@@ -10269,7 +10269,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3538 "pars.fsy"
                  : SynExpr));
-# 10272 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10272 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_typedSequentialExpr in
             let _3 = parseState.GetInput(3) :?> 'gentype_recover in
@@ -10283,7 +10283,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3545 "pars.fsy"
                  : SynExpr));
-# 10286 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10286 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_typedSequentialExprBlockR in
             let _3 = parseState.GetInput(3) :?> 'gentype_withClauses in
@@ -10307,7 +10307,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3550 "pars.fsy"
                  : SynExpr));
-# 10310 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10310 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_typedSequentialExprBlockR in
             let _3 = parseState.GetInput(3) :?> 'gentype_recover in
@@ -10322,7 +10322,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3565 "pars.fsy"
                  : SynExpr));
-# 10325 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10325 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_typedSequentialExprBlockR in
             let _4 = parseState.GetInput(4) :?> SynExpr in
@@ -10340,7 +10340,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3571 "pars.fsy"
                  : SynExpr));
-# 10343 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10343 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynExpr in
             let _3 = parseState.GetInput(3) :?> 'gentype_ifExprCases in
@@ -10353,7 +10353,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3580 "pars.fsy"
                  : SynExpr));
-# 10356 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10356 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynExpr in
             let _3 = parseState.GetInput(3) :?> 'gentype_recover in
@@ -10370,7 +10370,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3584 "pars.fsy"
                  : SynExpr));
-# 10373 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10373 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_recover in
             Microsoft.FSharp.Core.Operators.box
@@ -10388,7 +10388,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3592 "pars.fsy"
                  : SynExpr));
-# 10391 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10391 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -10399,7 +10399,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3602 "pars.fsy"
                  : SynExpr));
-# 10402 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10402 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -10410,7 +10410,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3605 "pars.fsy"
                  : SynExpr));
-# 10413 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10413 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -10420,7 +10420,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3608 "pars.fsy"
                  : SynExpr));
-# 10423 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10423 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -10431,7 +10431,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3611 "pars.fsy"
                  : SynExpr));
-# 10434 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10434 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -10442,7 +10442,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3614 "pars.fsy"
                  : SynExpr));
-# 10445 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10445 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -10452,7 +10452,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3617 "pars.fsy"
                  : SynExpr));
-# 10455 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10455 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynExpr in
             let _3 = parseState.GetInput(3) :?> 'gentype_doToken in
@@ -10469,7 +10469,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3620 "pars.fsy"
                  : SynExpr));
-# 10472 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10472 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynExpr in
             let _3 = parseState.GetInput(3) :?> 'gentype_doToken in
@@ -10487,7 +10487,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3626 "pars.fsy"
                  : SynExpr));
-# 10490 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10490 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynExpr in
             let _3 = parseState.GetInput(3) :?> 'gentype_doToken in
@@ -10505,7 +10505,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3633 "pars.fsy"
                  : SynExpr));
-# 10508 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10508 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynExpr in
             let _3 = parseState.GetInput(3) :?> 'gentype_recover in
@@ -10522,7 +10522,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3641 "pars.fsy"
                  : SynExpr));
-# 10525 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10525 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_recover in
             Microsoft.FSharp.Core.Operators.box
@@ -10534,7 +10534,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3649 "pars.fsy"
                  : SynExpr));
-# 10537 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10537 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _3 = parseState.GetInput(3) :?> 'gentype_doneDeclEnd in
             Microsoft.FSharp.Core.Operators.box
@@ -10550,7 +10550,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3653 "pars.fsy"
                  : SynExpr));
-# 10553 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10553 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_forLoopBinder in
             let _3 = parseState.GetInput(3) :?> 'gentype_doToken in
@@ -10568,7 +10568,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3661 "pars.fsy"
                  : SynExpr));
-# 10571 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10571 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_forLoopBinder in
             let _3 = parseState.GetInput(3) :?> 'gentype_doToken in
@@ -10587,7 +10587,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3668 "pars.fsy"
                  : SynExpr));
-# 10590 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10590 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_forLoopBinder in
             let _3 = parseState.GetInput(3) :?> 'gentype_doToken in
@@ -10606,7 +10606,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3676 "pars.fsy"
                  : SynExpr));
-# 10609 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10609 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_forLoopBinder in
             let _3 = parseState.GetInput(3) :?> 'gentype_doToken in
@@ -10625,7 +10625,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3685 "pars.fsy"
                  : SynExpr));
-# 10628 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10628 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_forLoopBinder in
             let _3 = parseState.GetInput(3) :?> 'gentype_ends_coming_soon_or_recover in
@@ -10643,7 +10643,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3694 "pars.fsy"
                  : SynExpr));
-# 10646 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10646 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_forLoopBinder in
             let _3 = parseState.GetInput(3) :?> 'gentype_opt_OBLOCKSEP in
@@ -10658,7 +10658,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3703 "pars.fsy"
                  : SynExpr));
-# 10661 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10661 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_forLoopRange in
             let _3 = parseState.GetInput(3) :?> 'gentype_doToken in
@@ -10676,7 +10676,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3708 "pars.fsy"
                  : SynExpr));
-# 10679 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10679 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_forLoopRange in
             let _3 = parseState.GetInput(3) :?> 'gentype_doToken in
@@ -10696,7 +10696,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3715 "pars.fsy"
                  : SynExpr));
-# 10699 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10699 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_forLoopRange in
             let _3 = parseState.GetInput(3) :?> 'gentype_doToken in
@@ -10715,7 +10715,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3724 "pars.fsy"
                  : SynExpr));
-# 10718 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10718 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_forLoopRange in
             let _3 = parseState.GetInput(3) :?> 'gentype_doToken in
@@ -10734,7 +10734,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3733 "pars.fsy"
                  : SynExpr));
-# 10737 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10737 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_forLoopRange in
             let _3 = parseState.GetInput(3) :?> 'gentype_recover in
@@ -10752,7 +10752,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3742 "pars.fsy"
                  : SynExpr));
-# 10755 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10755 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _3 = parseState.GetInput(3) :?> 'gentype_doToken in
             let _4 = parseState.GetInput(4) :?> SynExpr in
@@ -10770,7 +10770,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3751 "pars.fsy"
                  : SynExpr));
-# 10773 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10773 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_ends_coming_soon_or_recover in
             Microsoft.FSharp.Core.Operators.box
@@ -10782,7 +10782,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3759 "pars.fsy"
                  : SynExpr));
-# 10785 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10785 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_parenPattern in
             let _4 = parseState.GetInput(4) :?> 'gentype_doneDeclEnd in
@@ -10800,7 +10800,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3763 "pars.fsy"
                  : SynExpr));
-# 10803 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10803 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_parenPattern in
             let _3 = parseState.GetInput(3) :?> 'gentype_recover in
@@ -10819,7 +10819,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3772 "pars.fsy"
                  : SynExpr));
-# 10822 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10822 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> bool in
             let _2 = parseState.GetInput(2) :?> SynExpr in
@@ -10831,7 +10831,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3782 "pars.fsy"
                  : SynExpr));
-# 10834 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10834 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> bool in
             let _2 = parseState.GetInput(2) :?> SynExpr in
@@ -10843,7 +10843,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3785 "pars.fsy"
                  : SynExpr));
-# 10846 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10846 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> bool in
             let _2 = parseState.GetInput(2) :?> 'gentype_recover in
@@ -10856,7 +10856,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3788 "pars.fsy"
                  : SynExpr));
-# 10859 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10859 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> bool in
             let _2 = parseState.GetInput(2) :?> 'gentype_recover in
@@ -10869,7 +10869,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3792 "pars.fsy"
                  : SynExpr));
-# 10872 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10872 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string in
             let _2 = parseState.GetInput(2) :?> SynPat in
@@ -10889,7 +10889,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3796 "pars.fsy"
                  : SynExpr));
-# 10892 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10892 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string in
             let _2 = parseState.GetInput(2) :?> SynPat in
@@ -10912,7 +10912,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3803 "pars.fsy"
                  : SynExpr));
-# 10915 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10915 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string in
             let _2 = parseState.GetInput(2) :?> SynPat in
@@ -10933,7 +10933,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3812 "pars.fsy"
                  : SynExpr));
-# 10936 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10936 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_typedSequentialExpr in
             let _4 = parseState.GetInput(4) :?> 'gentype_opt_OBLOCKSEP in
@@ -10948,7 +10948,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3821 "pars.fsy"
                  : SynExpr));
-# 10951 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10951 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynExpr in
             let _3 = parseState.GetInput(3) :?> 'gentype_hardwhiteDefnBindingsTerminator in
@@ -10960,7 +10960,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3826 "pars.fsy"
                  : SynExpr));
-# 10963 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10963 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -10971,7 +10971,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3829 "pars.fsy"
                  : SynExpr));
-# 10974 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10974 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_typedSequentialExprBlockR in
             Microsoft.FSharp.Core.Operators.box
@@ -10983,7 +10983,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3832 "pars.fsy"
                  : SynExpr));
-# 10986 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10986 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _3 = parseState.GetInput(3) :?> SynType in
@@ -10995,7 +10995,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3836 "pars.fsy"
                  : SynExpr));
-# 10998 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 10998 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _3 = parseState.GetInput(3) :?> SynType in
@@ -11007,7 +11007,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3839 "pars.fsy"
                  : SynExpr));
-# 11010 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11010 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _3 = parseState.GetInput(3) :?> SynType in
@@ -11019,7 +11019,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3842 "pars.fsy"
                  : SynExpr));
-# 11022 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11022 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _3 = parseState.GetInput(3) :?> SynExpr in
@@ -11031,7 +11031,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3845 "pars.fsy"
                  : SynExpr));
-# 11034 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11034 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _3 = parseState.GetInput(3) :?> SynExpr in
@@ -11043,7 +11043,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3848 "pars.fsy"
                  : SynExpr));
-# 11046 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11046 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_tupleExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -11061,7 +11061,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3851 "pars.fsy"
                  : SynExpr));
-# 11064 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11064 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _3 = parseState.GetInput(3) :?> SynExpr in
@@ -11073,7 +11073,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3862 "pars.fsy"
                  : SynExpr));
-# 11076 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11076 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _3 = parseState.GetInput(3) :?> SynExpr in
@@ -11085,7 +11085,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3865 "pars.fsy"
                  : SynExpr));
-# 11088 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11088 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _2 = parseState.GetInput(2) :?> string in
@@ -11098,7 +11098,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3868 "pars.fsy"
                  : SynExpr));
-# 11101 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11101 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _3 = parseState.GetInput(3) :?> SynExpr in
@@ -11110,7 +11110,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3871 "pars.fsy"
                  : SynExpr));
-# 11113 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11113 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _3 = parseState.GetInput(3) :?> SynExpr in
@@ -11122,7 +11122,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3874 "pars.fsy"
                  : SynExpr));
-# 11125 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11125 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _3 = parseState.GetInput(3) :?> SynExpr in
@@ -11134,7 +11134,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3877 "pars.fsy"
                  : SynExpr));
-# 11137 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11137 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _2 = parseState.GetInput(2) :?> string in
@@ -11147,7 +11147,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3880 "pars.fsy"
                  : SynExpr));
-# 11150 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11150 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _3 = parseState.GetInput(3) :?> SynExpr in
@@ -11159,7 +11159,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3883 "pars.fsy"
                  : SynExpr));
-# 11162 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11162 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _2 = parseState.GetInput(2) :?> string in
@@ -11172,7 +11172,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3886 "pars.fsy"
                  : SynExpr));
-# 11175 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11175 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _3 = parseState.GetInput(3) :?> SynExpr in
@@ -11184,7 +11184,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3889 "pars.fsy"
                  : SynExpr));
-# 11187 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11187 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _2 = parseState.GetInput(2) :?> bool in
@@ -11197,7 +11197,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3892 "pars.fsy"
                  : SynExpr));
-# 11200 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11200 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _2 = parseState.GetInput(2) :?> bool in
@@ -11211,7 +11211,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3895 "pars.fsy"
                  : SynExpr));
-# 11214 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11214 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _2 = parseState.GetInput(2) :?> bool in
@@ -11224,7 +11224,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3899 "pars.fsy"
                  : SynExpr));
-# 11227 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11227 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _2 = parseState.GetInput(2) :?> string in
@@ -11237,7 +11237,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3902 "pars.fsy"
                  : SynExpr));
-# 11240 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11240 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _2 = parseState.GetInput(2) :?> string in
@@ -11250,7 +11250,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3905 "pars.fsy"
                  : SynExpr));
-# 11253 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11253 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _3 = parseState.GetInput(3) :?> SynExpr in
@@ -11264,7 +11264,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3908 "pars.fsy"
                  : SynExpr));
-# 11267 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11267 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _2 = parseState.GetInput(2) :?> string in
@@ -11277,7 +11277,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3913 "pars.fsy"
                  : SynExpr));
-# 11280 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11280 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _3 = parseState.GetInput(3) :?> SynExpr in
@@ -11289,7 +11289,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3916 "pars.fsy"
                  : SynExpr));
-# 11292 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11292 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _3 = parseState.GetInput(3) :?> SynExpr in
@@ -11301,7 +11301,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3919 "pars.fsy"
                  : SynExpr));
-# 11304 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11304 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _2 = parseState.GetInput(2) :?> string in
@@ -11314,7 +11314,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3922 "pars.fsy"
                  : SynExpr));
-# 11317 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11317 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _2 = parseState.GetInput(2) :?> string in
@@ -11327,7 +11327,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3925 "pars.fsy"
                  : SynExpr));
-# 11330 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11330 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -11339,7 +11339,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3928 "pars.fsy"
                  : SynExpr));
-# 11342 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11342 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -11351,7 +11351,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3932 "pars.fsy"
                  : SynExpr));
-# 11354 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11354 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _2 = parseState.GetInput(2) :?> string in
@@ -11364,7 +11364,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3936 "pars.fsy"
                  : SynExpr));
-# 11367 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11367 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -11376,7 +11376,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3940 "pars.fsy"
                  : SynExpr));
-# 11379 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11379 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -11388,7 +11388,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3944 "pars.fsy"
                  : SynExpr));
-# 11391 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11391 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -11400,7 +11400,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3948 "pars.fsy"
                  : SynExpr));
-# 11403 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11403 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _2 = parseState.GetInput(2) :?> string in
@@ -11413,7 +11413,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3952 "pars.fsy"
                  : SynExpr));
-# 11416 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11416 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -11425,7 +11425,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3956 "pars.fsy"
                  : SynExpr));
-# 11428 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11428 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _2 = parseState.GetInput(2) :?> string in
@@ -11438,7 +11438,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3960 "pars.fsy"
                  : SynExpr));
-# 11441 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11441 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -11450,7 +11450,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3964 "pars.fsy"
                  : SynExpr));
-# 11453 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11453 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _2 = parseState.GetInput(2) :?> bool in
@@ -11463,7 +11463,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3968 "pars.fsy"
                  : SynExpr));
-# 11466 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11466 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _2 = parseState.GetInput(2) :?> bool in
@@ -11476,7 +11476,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3972 "pars.fsy"
                  : SynExpr));
-# 11479 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11479 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _2 = parseState.GetInput(2) :?> string in
@@ -11489,7 +11489,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3976 "pars.fsy"
                  : SynExpr));
-# 11492 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11492 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _2 = parseState.GetInput(2) :?> string in
@@ -11502,7 +11502,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3980 "pars.fsy"
                  : SynExpr));
-# 11505 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11505 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -11516,7 +11516,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3984 "pars.fsy"
                  : SynExpr));
-# 11519 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11519 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _2 = parseState.GetInput(2) :?> string in
@@ -11529,7 +11529,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3990 "pars.fsy"
                  : SynExpr));
-# 11532 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11532 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -11541,7 +11541,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3994 "pars.fsy"
                  : SynExpr));
-# 11544 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11544 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -11553,7 +11553,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 3998 "pars.fsy"
                  : SynExpr));
-# 11556 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11556 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _2 = parseState.GetInput(2) :?> string in
@@ -11566,7 +11566,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4002 "pars.fsy"
                  : SynExpr));
-# 11569 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11569 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _2 = parseState.GetInput(2) :?> string in
@@ -11579,7 +11579,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4006 "pars.fsy"
                  : SynExpr));
-# 11582 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11582 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _3 = parseState.GetInput(3) :?> SynExpr in
@@ -11593,7 +11593,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4010 "pars.fsy"
                  : SynExpr));
-# 11596 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11596 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -11606,7 +11606,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4015 "pars.fsy"
                  : SynExpr));
-# 11609 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11609 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -11619,7 +11619,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4020 "pars.fsy"
                  : SynExpr));
-# 11622 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11622 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -11630,7 +11630,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4025 "pars.fsy"
                  : SynExpr));
-# 11633 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11633 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -11641,7 +11641,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4028 "pars.fsy"
                  : SynExpr));
-# 11644 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11644 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string in
             Microsoft.FSharp.Core.Operators.box
@@ -11653,7 +11653,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4032 "pars.fsy"
                  : 'gentype_dynamicArg));
-# 11656 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11656 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_typedSequentialExpr in
             let _3 = parseState.GetInput(3) :?> 'gentype_rparen in
@@ -11668,7 +11668,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4036 "pars.fsy"
                  : 'gentype_dynamicArg));
-# 11671 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11671 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_withPatternClauses in
             Microsoft.FSharp.Core.Operators.box
@@ -11679,7 +11679,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4043 "pars.fsy"
                  : 'gentype_withClauses));
-# 11682 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11682 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_withPatternClauses in
             Microsoft.FSharp.Core.Operators.box
@@ -11690,7 +11690,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4046 "pars.fsy"
                  : 'gentype_withClauses));
-# 11693 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11693 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_withPatternClauses in
             let _3 = parseState.GetInput(3) :?> 'gentype_recover in
@@ -11703,7 +11703,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4049 "pars.fsy"
                  : 'gentype_withClauses));
-# 11706 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11706 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_patternClauses in
             Microsoft.FSharp.Core.Operators.box
@@ -11714,7 +11714,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4054 "pars.fsy"
                  : 'gentype_withPatternClauses));
-# 11717 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11717 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_patternClauses in
             Microsoft.FSharp.Core.Operators.box
@@ -11726,7 +11726,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4057 "pars.fsy"
                  : 'gentype_withPatternClauses));
-# 11729 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11729 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -11738,7 +11738,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4061 "pars.fsy"
                  : 'gentype_withPatternClauses));
-# 11741 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11741 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -11750,7 +11750,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4066 "pars.fsy"
                  : 'gentype_withPatternClauses));
-# 11753 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11753 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_parenPattern in
             let _2 = parseState.GetInput(2) :?> 'gentype_patternGuard in
@@ -11762,7 +11762,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4073 "pars.fsy"
                  : 'gentype_patternAndGuard));
-# 11765 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11765 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_patternAndGuard in
             let _2 = parseState.GetInput(2) :?> Range * SynExpr in
@@ -11779,7 +11779,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4077 "pars.fsy"
                  : 'gentype_patternClauses));
-# 11782 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11782 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_patternAndGuard in
             let _2 = parseState.GetInput(2) :?> Range * SynExpr in
@@ -11798,7 +11798,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4085 "pars.fsy"
                  : 'gentype_patternClauses));
-# 11801 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11801 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_patternAndGuard in
             let _4 = parseState.GetInput(4) :?> 'gentype_patternClauses in
@@ -11816,7 +11816,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4094 "pars.fsy"
                  : 'gentype_patternClauses));
-# 11819 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11819 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_patternAndGuard in
             let _2 = parseState.GetInput(2) :?> Range * SynExpr in
@@ -11834,7 +11834,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4103 "pars.fsy"
                  : 'gentype_patternClauses));
-# 11837 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11837 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_patternAndGuard in
             let _2 = parseState.GetInput(2) :?> Range * SynExpr in
@@ -11851,7 +11851,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4111 "pars.fsy"
                  : 'gentype_patternClauses));
-# 11854 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11854 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_patternAndGuard in
             let _2 = parseState.GetInput(2) :?> 'gentype_recover in
@@ -11867,7 +11867,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4118 "pars.fsy"
                  : 'gentype_patternClauses));
-# 11870 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11870 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -11878,7 +11878,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4126 "pars.fsy"
                  : 'gentype_patternGuard));
-# 11881 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11881 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -11888,7 +11888,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4129 "pars.fsy"
                  : 'gentype_patternGuard));
-# 11891 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11891 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_typedSequentialExprBlockR in
             Microsoft.FSharp.Core.Operators.box
@@ -11900,7 +11900,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4133 "pars.fsy"
                  : Range * SynExpr));
-# 11903 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11903 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_ifExprThen in
             let _2 = parseState.GetInput(2) :?> 'gentype_ifExprElifs in
@@ -11920,7 +11920,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4138 "pars.fsy"
                  : 'gentype_ifExprCases));
-# 11923 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11923 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -11931,7 +11931,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4150 "pars.fsy"
                  : 'gentype_ifExprThen));
-# 11934 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11934 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _3 = parseState.GetInput(3) :?> 'gentype_typedSequentialExpr in
             let _4 = parseState.GetInput(4) :?> 'gentype_oblockend in
@@ -11943,7 +11943,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4153 "pars.fsy"
                  : 'gentype_ifExprThen));
-# 11946 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11946 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _3 = parseState.GetInput(3) :?> 'gentype_typedSequentialExpr in
             let _4 = parseState.GetInput(4) :?> 'gentype_recover in
@@ -11956,7 +11956,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4156 "pars.fsy"
                  : 'gentype_ifExprThen));
-# 11959 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11959 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -11966,7 +11966,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4161 "pars.fsy"
                  : 'gentype_ifExprElifs));
-# 11969 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11969 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -11978,7 +11978,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4164 "pars.fsy"
                  : 'gentype_ifExprElifs));
-# 11981 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11981 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _3 = parseState.GetInput(3) :?> 'gentype_typedSequentialExpr in
             let _4 = parseState.GetInput(4) :?> 'gentype_oblockend in
@@ -11991,7 +11991,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4168 "pars.fsy"
                  : 'gentype_ifExprElifs));
-# 11994 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 11994 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _3 = parseState.GetInput(3) :?> 'gentype_typedSequentialExpr in
             let _4 = parseState.GetInput(4) :?> 'gentype_recover in
@@ -12005,7 +12005,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4172 "pars.fsy"
                  : 'gentype_ifExprElifs));
-# 12008 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12008 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynExpr in
             let _3 = parseState.GetInput(3) :?> 'gentype_ifExprCases in
@@ -12025,7 +12025,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4177 "pars.fsy"
                  : 'gentype_ifExprElifs));
-# 12028 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12028 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynExpr in
             let _3 = parseState.GetInput(3) :?> 'gentype_recover in
@@ -12037,7 +12037,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4188 "pars.fsy"
                  : 'gentype_ifExprElifs));
-# 12040 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12040 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_tupleExpr in
             let _3 = parseState.GetInput(3) :?> SynExpr in
@@ -12050,7 +12050,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4192 "pars.fsy"
                  : 'gentype_tupleExpr));
-# 12053 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12053 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_tupleExpr in
             let _3 = parseState.GetInput(3) :?> 'gentype_ends_coming_soon_or_recover in
@@ -12065,7 +12065,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4196 "pars.fsy"
                  : 'gentype_tupleExpr));
-# 12068 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12068 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _3 = parseState.GetInput(3) :?> 'gentype_ends_coming_soon_or_recover in
@@ -12079,7 +12079,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4202 "pars.fsy"
                  : 'gentype_tupleExpr));
-# 12082 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12082 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _3 = parseState.GetInput(3) :?> SynExpr in
@@ -12091,7 +12091,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4207 "pars.fsy"
                  : 'gentype_tupleExpr));
-# 12094 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12094 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -12104,7 +12104,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4210 "pars.fsy"
                  : 'gentype_tupleExpr));
-# 12107 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12107 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_ends_coming_soon_or_recover in
             Microsoft.FSharp.Core.Operators.box
@@ -12117,7 +12117,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4215 "pars.fsy"
                  : 'gentype_tupleExpr));
-# 12120 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12120 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string in
             let _2 = parseState.GetInput(2) :?> SynExpr in
@@ -12131,7 +12131,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4221 "pars.fsy"
                  : SynExpr));
-# 12134 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12134 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -12142,7 +12142,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4226 "pars.fsy"
                  : SynExpr));
-# 12145 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12145 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string in
             let _2 = parseState.GetInput(2) :?> SynExpr in
@@ -12155,7 +12155,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4229 "pars.fsy"
                  : SynExpr));
-# 12158 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12158 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string in
             let _2 = parseState.GetInput(2) :?> SynExpr in
@@ -12168,7 +12168,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4233 "pars.fsy"
                  : SynExpr));
-# 12171 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12171 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string in
             let _2 = parseState.GetInput(2) :?> SynExpr in
@@ -12181,7 +12181,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4237 "pars.fsy"
                  : SynExpr));
-# 12184 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12184 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -12192,7 +12192,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4241 "pars.fsy"
                  : SynExpr));
-# 12195 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12195 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -12203,7 +12203,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4244 "pars.fsy"
                  : SynExpr));
-# 12206 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12206 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_atomTypeNonAtomicDeprecated in
             let _3 = parseState.GetInput(3) :?> 'gentype_opt_HIGH_PRECEDENCE_APP in
@@ -12219,7 +12219,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4247 "pars.fsy"
                  : SynExpr));
-# 12222 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12222 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_atomTypeNonAtomicDeprecated in
             let _3 = parseState.GetInput(3) :?> 'gentype_opt_HIGH_PRECEDENCE_APP in
@@ -12232,7 +12232,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4252 "pars.fsy"
                  : SynExpr));
-# 12235 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12235 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_atomTypeNonAtomicDeprecated in
             let _3 = parseState.GetInput(3) :?> 'gentype_opt_HIGH_PRECEDENCE_APP in
@@ -12244,7 +12244,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4255 "pars.fsy"
                  : SynExpr));
-# 12247 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12247 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -12254,7 +12254,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4258 "pars.fsy"
                  : SynExpr));
-# 12257 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12257 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -12265,7 +12265,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4261 "pars.fsy"
                  : SynExpr));
-# 12268 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12268 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -12276,7 +12276,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4264 "pars.fsy"
                  : SynExpr));
-# 12279 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12279 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -12287,7 +12287,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4267 "pars.fsy"
                  : SynExpr));
-# 12290 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12290 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _2 = parseState.GetInput(2) :?> SynExpr in
@@ -12299,7 +12299,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4271 "pars.fsy"
                  : SynExpr));
-# 12302 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12302 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr * bool in
             Microsoft.FSharp.Core.Operators.box
@@ -12311,7 +12311,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4274 "pars.fsy"
                  : SynExpr));
-# 12314 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12314 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string in
             let _2 = parseState.GetInput(2) :?> SynExpr * bool in
@@ -12326,7 +12326,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4279 "pars.fsy"
                  : SynExpr));
-# 12329 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12329 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr * bool in
             Microsoft.FSharp.Core.Operators.box
@@ -12339,7 +12339,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4285 "pars.fsy"
                  : SynExpr));
-# 12342 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12342 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr * bool in
             let _3 = parseState.GetInput(3) :?> SynExpr * bool in
@@ -12353,7 +12353,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4291 "pars.fsy"
                  : SynExpr * bool));
-# 12356 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12356 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr * bool in
             let _3 = parseState.GetInput(3) :?> SynExpr * bool in
@@ -12367,7 +12367,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4296 "pars.fsy"
                  : SynExpr * bool));
-# 12370 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12370 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr * bool in
             let _3 = parseState.GetInput(3) :?> range * range option * bool     * SynType list * range list * range in
@@ -12382,7 +12382,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4301 "pars.fsy"
                  : SynExpr * bool));
-# 12385 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12385 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string in
             let _2 = parseState.GetInput(2) :?> SynExpr * bool in
@@ -12396,7 +12396,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4307 "pars.fsy"
                  : SynExpr * bool));
-# 12399 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12399 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> Ident in
             Microsoft.FSharp.Core.Operators.box
@@ -12410,7 +12410,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4312 "pars.fsy"
                  : SynExpr * bool));
-# 12413 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12413 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr * bool in
             let _3 = parseState.GetInput(3) :?> 'gentype_atomicExprQualification in
@@ -12423,7 +12423,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4318 "pars.fsy"
                  : SynExpr * bool));
-# 12426 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12426 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _3 = parseState.GetInput(3) :?> 'gentype_atomicExprQualification in
             Microsoft.FSharp.Core.Operators.box
@@ -12435,7 +12435,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4322 "pars.fsy"
                  : SynExpr * bool));
-# 12438 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12438 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_nameop in
             Microsoft.FSharp.Core.Operators.box
@@ -12447,7 +12447,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4326 "pars.fsy"
                  : SynExpr * bool));
-# 12450 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12450 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr * bool in
             let _3 = parseState.GetInput(3) :?> 'gentype_dynamicArg in
@@ -12462,7 +12462,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4330 "pars.fsy"
                  : SynExpr * bool));
-# 12465 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12465 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -12474,7 +12474,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4336 "pars.fsy"
                  : SynExpr * bool));
-# 12477 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12477 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_identExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -12485,7 +12485,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4341 "pars.fsy"
                  : SynExpr * bool));
-# 12488 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12488 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_listExprElements in
             Microsoft.FSharp.Core.Operators.box
@@ -12496,7 +12496,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4344 "pars.fsy"
                  : SynExpr * bool));
-# 12499 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12499 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_listExprElements in
             let _3 = parseState.GetInput(3) :?> 'gentype_recover in
@@ -12509,7 +12509,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4347 "pars.fsy"
                  : SynExpr * bool));
-# 12512 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12512 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -12520,7 +12520,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4351 "pars.fsy"
                  : SynExpr * bool));
-# 12523 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12523 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_recover in
             Microsoft.FSharp.Core.Operators.box
@@ -12533,7 +12533,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4355 "pars.fsy"
                  : SynExpr * bool));
-# 12536 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12536 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _3 = parseState.GetInput(3) :?> 'gentype_tupleExpr in
             let _4 = parseState.GetInput(4) :?> 'gentype_rparen in
@@ -12547,7 +12547,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4360 "pars.fsy"
                  : SynExpr * bool));
-# 12550 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12550 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _3 = parseState.GetInput(3) :?> 'gentype_tupleExpr in
             let _4 = parseState.GetInput(4) :?> 'gentype_recover in
@@ -12562,7 +12562,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4365 "pars.fsy"
                  : SynExpr * bool));
-# 12565 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12565 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -12573,7 +12573,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4371 "pars.fsy"
                  : SynExpr * bool));
-# 12576 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12576 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_identOrOp in
             Microsoft.FSharp.Core.Operators.box
@@ -12585,7 +12585,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4375 "pars.fsy"
                  : 'gentype_atomicExprQualification));
-# 12588 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12588 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -12598,7 +12598,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4379 "pars.fsy"
                  : 'gentype_atomicExprQualification));
-# 12601 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12601 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -12611,7 +12611,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4385 "pars.fsy"
                  : 'gentype_atomicExprQualification));
-# 12614 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12614 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_recover in
             Microsoft.FSharp.Core.Operators.box
@@ -12626,7 +12626,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4390 "pars.fsy"
                  : 'gentype_atomicExprQualification));
-# 12629 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12629 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _3 = parseState.GetInput(3) :?> 'gentype_rparen in
             let _5 = parseState.GetInput(5) :?> int32 * bool in
@@ -12640,7 +12640,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4396 "pars.fsy"
                  : 'gentype_atomicExprQualification));
-# 12643 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12643 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_typedSequentialExpr in
             let _3 = parseState.GetInput(3) :?> 'gentype_rparen in
@@ -12665,7 +12665,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4401 "pars.fsy"
                  : 'gentype_atomicExprQualification));
-# 12668 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12668 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_typedSequentialExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -12676,7 +12676,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4417 "pars.fsy"
                  : 'gentype_atomicExprQualification));
-# 12679 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12679 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_typedSequentialExpr in
             let _3 = parseState.GetInput(3) :?> 'gentype_recover in
@@ -12689,7 +12689,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4420 "pars.fsy"
                  : 'gentype_atomicExprQualification));
-# 12692 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12692 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -12700,7 +12700,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4424 "pars.fsy"
                  : 'gentype_atomicExprQualification));
-# 12703 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12703 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_recover in
             Microsoft.FSharp.Core.Operators.box
@@ -12713,7 +12713,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4428 "pars.fsy"
                  : 'gentype_atomicExprQualification));
-# 12716 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12716 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_constant in
             Microsoft.FSharp.Core.Operators.box
@@ -12724,7 +12724,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4435 "pars.fsy"
                  : SynExpr));
-# 12727 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12727 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_parenExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -12735,7 +12735,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4438 "pars.fsy"
                  : SynExpr));
-# 12738 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12738 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_braceExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -12746,7 +12746,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4441 "pars.fsy"
                  : SynExpr));
-# 12749 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12749 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_braceBarExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -12757,7 +12757,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4444 "pars.fsy"
                  : SynExpr));
-# 12760 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12760 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_interpolatedString in
             Microsoft.FSharp.Core.Operators.box
@@ -12769,7 +12769,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4447 "pars.fsy"
                  : SynExpr));
-# 12772 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12772 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -12779,7 +12779,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4451 "pars.fsy"
                  : SynExpr));
-# 12782 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12782 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -12789,7 +12789,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4454 "pars.fsy"
                  : SynExpr));
-# 12792 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12792 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -12799,7 +12799,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4457 "pars.fsy"
                  : SynExpr));
-# 12802 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12802 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_quoteExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -12810,7 +12810,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4460 "pars.fsy"
                  : SynExpr));
-# 12813 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12813 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_arrayExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -12821,7 +12821,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4463 "pars.fsy"
                  : SynExpr));
-# 12824 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12824 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_beginEndExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -12832,7 +12832,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4466 "pars.fsy"
                  : SynExpr));
-# 12835 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12835 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_typedSequentialExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -12843,7 +12843,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4470 "pars.fsy"
                  : 'gentype_beginEndExpr));
-# 12846 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12846 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_typedSequentialExpr in
             let _3 = parseState.GetInput(3) :?> 'gentype_recover in
@@ -12855,7 +12855,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4473 "pars.fsy"
                  : 'gentype_beginEndExpr));
-# 12858 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12858 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -12865,7 +12865,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4476 "pars.fsy"
                  : 'gentype_beginEndExpr));
-# 12868 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12868 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -12875,7 +12875,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4479 "pars.fsy"
                  : 'gentype_beginEndExpr));
-# 12878 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12878 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string * bool in
             let _2 = parseState.GetInput(2) :?> 'gentype_typedSequentialExpr in
@@ -12889,7 +12889,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4483 "pars.fsy"
                  : 'gentype_quoteExpr));
-# 12892 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12892 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string * bool in
             let _2 = parseState.GetInput(2) :?> 'gentype_typedSequentialExpr in
@@ -12904,7 +12904,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4487 "pars.fsy"
                  : 'gentype_quoteExpr));
-# 12907 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12907 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string * bool in
             let _3 = parseState.GetInput(3) :?> string * bool in
@@ -12916,7 +12916,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4492 "pars.fsy"
                  : 'gentype_quoteExpr));
-# 12919 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12919 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string * bool in
             let _2 = parseState.GetInput(2) :?> 'gentype_recover in
@@ -12929,7 +12929,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4495 "pars.fsy"
                  : 'gentype_quoteExpr));
-# 12932 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12932 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_arrayExprElements in
             Microsoft.FSharp.Core.Operators.box
@@ -12940,7 +12940,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4500 "pars.fsy"
                  : 'gentype_arrayExpr));
-# 12943 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12943 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_arrayExprElements in
             let _3 = parseState.GetInput(3) :?> 'gentype_recover in
@@ -12953,7 +12953,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4503 "pars.fsy"
                  : 'gentype_arrayExpr));
-# 12956 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12956 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -12963,7 +12963,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4507 "pars.fsy"
                  : 'gentype_arrayExpr));
-# 12966 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12966 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_recover in
             Microsoft.FSharp.Core.Operators.box
@@ -12976,7 +12976,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4510 "pars.fsy"
                  : 'gentype_arrayExpr));
-# 12979 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12979 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_rparen in
             Microsoft.FSharp.Core.Operators.box
@@ -12987,7 +12987,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4516 "pars.fsy"
                  : 'gentype_parenExpr));
-# 12990 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 12990 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_parenExprBody in
             let _3 = parseState.GetInput(3) :?> 'gentype_rparen in
@@ -13000,7 +13000,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4519 "pars.fsy"
                  : 'gentype_parenExpr));
-# 13003 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13003 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_parenExprBody in
             let _3 = parseState.GetInput(3) :?> 'gentype_ends_other_than_rparen_coming_soon_or_recover in
@@ -13014,7 +13014,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4523 "pars.fsy"
                  : 'gentype_parenExpr));
-# 13017 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13017 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _3 = parseState.GetInput(3) :?> 'gentype_rparen in
             Microsoft.FSharp.Core.Operators.box
@@ -13026,7 +13026,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4528 "pars.fsy"
                  : 'gentype_parenExpr));
-# 13029 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13029 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -13038,7 +13038,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4532 "pars.fsy"
                  : 'gentype_parenExpr));
-# 13041 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13041 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -13050,7 +13050,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4537 "pars.fsy"
                  : 'gentype_parenExpr));
-# 13053 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13053 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -13062,7 +13062,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4542 "pars.fsy"
                  : 'gentype_parenExpr));
-# 13065 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13065 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -13074,7 +13074,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4547 "pars.fsy"
                  : 'gentype_parenExpr));
-# 13077 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13077 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_recover in
             Microsoft.FSharp.Core.Operators.box
@@ -13086,7 +13086,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4552 "pars.fsy"
                  : 'gentype_parenExpr));
-# 13089 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13089 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_typars in
             let _4 = parseState.GetInput(4) :?> 'gentype_classMemberSpfn in
@@ -13100,7 +13100,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4564 "pars.fsy"
                  : 'gentype_parenExprBody));
-# 13103 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13103 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_typedSequentialExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -13111,7 +13111,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4567 "pars.fsy"
                  : 'gentype_parenExprBody));
-# 13114 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13114 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_inlineAssemblyExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -13122,7 +13122,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4570 "pars.fsy"
                  : 'gentype_parenExprBody));
-# 13125 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13125 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynTypar in
             Microsoft.FSharp.Core.Operators.box
@@ -13133,7 +13133,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4574 "pars.fsy"
                  : 'gentype_typars));
-# 13136 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13136 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_typarAlts in
             let _3 = parseState.GetInput(3) :?> 'gentype_rparen in
@@ -13146,7 +13146,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4577 "pars.fsy"
                  : 'gentype_typars));
-# 13149 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13149 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_typarAlts in
             let _3 = parseState.GetInput(3) :?> 'gentype_appType in
@@ -13160,7 +13160,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4582 "pars.fsy"
                  : 'gentype_typarAlts));
-# 13163 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13163 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynTypar in
             Microsoft.FSharp.Core.Operators.box
@@ -13171,7 +13171,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4587 "pars.fsy"
                  : 'gentype_typarAlts));
-# 13174 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13174 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> ParseHelpers.LexerContinuation in
             let _2 = parseState.GetInput(2) :?> 'gentype_braceExprBody in
@@ -13184,7 +13184,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4591 "pars.fsy"
                  : 'gentype_braceExpr));
-# 13187 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13187 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> ParseHelpers.LexerContinuation in
             let _2 = parseState.GetInput(2) :?> 'gentype_braceExprBody in
@@ -13200,7 +13200,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4594 "pars.fsy"
                  : 'gentype_braceExpr));
-# 13203 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13203 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> ParseHelpers.LexerContinuation in
             let _3 = parseState.GetInput(3) :?> 'gentype_rbrace in
@@ -13213,7 +13213,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4600 "pars.fsy"
                  : 'gentype_braceExpr));
-# 13216 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13216 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> ParseHelpers.LexerContinuation in
             let _2 = parseState.GetInput(2) :?> 'gentype_recover in
@@ -13227,7 +13227,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4604 "pars.fsy"
                  : 'gentype_braceExpr));
-# 13230 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13230 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> ParseHelpers.LexerContinuation in
             let _2 = parseState.GetInput(2) :?> 'gentype_rbrace in
@@ -13240,7 +13240,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4609 "pars.fsy"
                  : 'gentype_braceExpr));
-# 13243 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13243 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_recdExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -13251,7 +13251,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4614 "pars.fsy"
                  : 'gentype_braceExprBody));
-# 13254 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13254 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_objExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -13262,7 +13262,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4617 "pars.fsy"
                  : 'gentype_braceExprBody));
-# 13265 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13265 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_computationExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -13273,7 +13273,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4620 "pars.fsy"
                  : 'gentype_braceExprBody));
-# 13276 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13276 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_sequentialExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -13284,7 +13284,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4624 "pars.fsy"
                  : 'gentype_listExprElements));
-# 13287 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13287 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -13294,7 +13294,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4627 "pars.fsy"
                  : 'gentype_listExprElements));
-# 13297 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13297 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_sequentialExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -13305,7 +13305,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4631 "pars.fsy"
                  : 'gentype_arrayExprElements));
-# 13308 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13308 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -13315,7 +13315,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4634 "pars.fsy"
                  : 'gentype_arrayExprElements));
-# 13318 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13318 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_sequentialExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -13326,7 +13326,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4638 "pars.fsy"
                  : 'gentype_computationExpr));
-# 13329 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13329 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_typedSequentialExprBlockR in
             Microsoft.FSharp.Core.Operators.box
@@ -13337,7 +13337,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4642 "pars.fsy"
                  : 'gentype_arrowThenExprR));
-# 13340 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13340 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_parenPattern in
             let _3 = parseState.GetInput(3) :?> SynExpr in
@@ -13349,7 +13349,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4646 "pars.fsy"
                  : 'gentype_forLoopBinder));
-# 13352 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13352 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_parenPattern in
             let _3 = parseState.GetInput(3) :?> 'gentype_ends_coming_soon_or_recover in
@@ -13362,7 +13362,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4649 "pars.fsy"
                  : 'gentype_forLoopBinder));
-# 13365 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13365 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_parenPattern in
             let _2 = parseState.GetInput(2) :?> 'gentype_ends_coming_soon_or_recover in
@@ -13375,7 +13375,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4653 "pars.fsy"
                  : 'gentype_forLoopBinder));
-# 13378 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13378 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_parenPattern in
             let _3 = parseState.GetInput(3) :?> SynExpr in
@@ -13391,7 +13391,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4658 "pars.fsy"
                  : 'gentype_forLoopRange));
-# 13394 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13394 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -13401,7 +13401,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4663 "pars.fsy"
                  : 'gentype_forLoopDirection));
-# 13404 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13404 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -13411,7 +13411,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4665 "pars.fsy"
                  : 'gentype_forLoopDirection));
-# 13414 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13414 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_string in
             let _3 = parseState.GetInput(3) :?> 'gentype_opt_inlineAssemblyTypeArg in
@@ -13429,7 +13429,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4669 "pars.fsy"
                  : 'gentype_inlineAssemblyExpr));
-# 13432 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13432 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_optCurriedArgExprs in
             let _2 = parseState.GetInput(2) :?> SynExpr in
@@ -13441,7 +13441,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4677 "pars.fsy"
                  : 'gentype_optCurriedArgExprs));
-# 13444 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13444 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -13451,7 +13451,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4680 "pars.fsy"
                  : 'gentype_optCurriedArgExprs));
-# 13454 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13454 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -13461,7 +13461,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4684 "pars.fsy"
                  : 'gentype_opt_atomicExprAfterType));
-# 13464 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13464 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -13472,7 +13472,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4687 "pars.fsy"
                  : 'gentype_opt_atomicExprAfterType));
-# 13475 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13475 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -13482,7 +13482,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4691 "pars.fsy"
                  : 'gentype_opt_inlineAssemblyTypeArg));
-# 13485 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13485 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_typeKeyword in
             let _3 = parseState.GetInput(3) :?> SynType in
@@ -13495,7 +13495,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4694 "pars.fsy"
                  : 'gentype_opt_inlineAssemblyTypeArg));
-# 13498 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13498 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -13505,7 +13505,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4698 "pars.fsy"
                  : 'gentype_optInlineAssemblyReturnTypes));
-# 13508 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13508 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynType in
             Microsoft.FSharp.Core.Operators.box
@@ -13516,7 +13516,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4701 "pars.fsy"
                  : 'gentype_optInlineAssemblyReturnTypes));
-# 13519 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13519 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _3 = parseState.GetInput(3) :?> 'gentype_rparen in
             Microsoft.FSharp.Core.Operators.box
@@ -13527,7 +13527,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4704 "pars.fsy"
                  : 'gentype_optInlineAssemblyReturnTypes));
-# 13530 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13530 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_atomTypeNonAtomicDeprecated in
             let _3 = parseState.GetInput(3) :?> 'gentype_opt_HIGH_PRECEDENCE_APP in
@@ -13548,7 +13548,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4708 "pars.fsy"
                  : 'gentype_recdExpr));
-# 13551 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13551 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_recdExprCore in
             Microsoft.FSharp.Core.Operators.box
@@ -13559,7 +13559,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4717 "pars.fsy"
                  : 'gentype_recdExpr));
-# 13562 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13562 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _3 = parseState.GetInput(3) :?> SynExpr in
@@ -13580,7 +13580,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4721 "pars.fsy"
                  : 'gentype_recdExprCore));
-# 13583 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13583 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -13594,7 +13594,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4735 "pars.fsy"
                  : 'gentype_recdExprCore));
-# 13597 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13597 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -13610,7 +13610,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4742 "pars.fsy"
                  : 'gentype_recdExprCore));
-# 13613 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13613 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _3 = parseState.GetInput(3) :?> SynExpr in
             let _4 = parseState.GetInput(4) :?> 'gentype_recdExprBindings in
@@ -13628,7 +13628,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4751 "pars.fsy"
                  : 'gentype_recdExprCore));
-# 13631 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13631 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _3 = parseState.GetInput(3) :?> 'gentype_recdBinding in
@@ -13644,7 +13644,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4760 "pars.fsy"
                  : 'gentype_recdExprCore));
-# 13647 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13647 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _3 = parseState.GetInput(3) :?> 'gentype_opt_seps_recd in
@@ -13656,7 +13656,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4765 "pars.fsy"
                  : 'gentype_recdExprCore));
-# 13659 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13659 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _3 = parseState.GetInput(3) :?> 'gentype_recdBinding in
@@ -13672,7 +13672,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4768 "pars.fsy"
                  : 'gentype_recdExprCore));
-# 13675 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13675 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_seps_recd in
             Microsoft.FSharp.Core.Operators.box
@@ -13683,7 +13683,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4774 "pars.fsy"
                  : 'gentype_opt_seps_recd));
-# 13686 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13686 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -13693,7 +13693,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4777 "pars.fsy"
                  : 'gentype_opt_seps_recd));
-# 13696 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13696 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -13703,7 +13703,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4781 "pars.fsy"
                  : 'gentype_seps_recd));
-# 13706 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13706 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -13713,7 +13713,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4784 "pars.fsy"
                  : 'gentype_seps_recd));
-# 13716 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13716 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -13723,7 +13723,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4787 "pars.fsy"
                  : 'gentype_seps_recd));
-# 13726 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13726 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -13733,7 +13733,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4790 "pars.fsy"
                  : 'gentype_seps_recd));
-# 13736 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13736 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynLongIdent in
             Microsoft.FSharp.Core.Operators.box
@@ -13744,7 +13744,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4796 "pars.fsy"
                  : 'gentype_pathOrUnderscore));
-# 13747 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13747 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -13756,7 +13756,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4799 "pars.fsy"
                  : 'gentype_pathOrUnderscore));
-# 13759 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13759 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_recdExprBindings in
             let _2 = parseState.GetInput(2) :?> 'gentype_seps_recd in
@@ -13769,7 +13769,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4805 "pars.fsy"
                  : 'gentype_recdExprBindings));
-# 13772 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13772 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -13779,7 +13779,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4808 "pars.fsy"
                  : 'gentype_recdExprBindings));
-# 13782 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13782 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_pathOrUnderscore in
             let _3 = parseState.GetInput(3) :?> SynExpr in
@@ -13792,7 +13792,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4812 "pars.fsy"
                  : 'gentype_recdBinding));
-# 13795 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13795 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_pathOrUnderscore in
             Microsoft.FSharp.Core.Operators.box
@@ -13805,7 +13805,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4816 "pars.fsy"
                  : 'gentype_recdBinding));
-# 13808 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13808 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_pathOrUnderscore in
             let _3 = parseState.GetInput(3) :?> 'gentype_ends_coming_soon_or_recover in
@@ -13819,7 +13819,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4821 "pars.fsy"
                  : 'gentype_recdBinding));
-# 13822 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13822 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_pathOrUnderscore in
             Microsoft.FSharp.Core.Operators.box
@@ -13831,7 +13831,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4826 "pars.fsy"
                  : 'gentype_recdBinding));
-# 13834 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13834 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_pathOrUnderscore in
             let _2 = parseState.GetInput(2) :?> 'gentype_ends_coming_soon_or_recover in
@@ -13844,7 +13844,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4830 "pars.fsy"
                  : 'gentype_recdBinding));
-# 13847 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13847 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_objExprBaseCall in
             let _2 = parseState.GetInput(2) :?> 'gentype_objExprBindings in
@@ -13861,7 +13861,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4841 "pars.fsy"
                  : 'gentype_objExpr));
-# 13864 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13864 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_objExprBaseCall in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_OBLOCKSEP in
@@ -13876,7 +13876,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4847 "pars.fsy"
                  : 'gentype_objExpr));
-# 13879 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13879 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_atomTypeNonAtomicDeprecated in
             Microsoft.FSharp.Core.Operators.box
@@ -13888,7 +13888,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4852 "pars.fsy"
                  : 'gentype_objExpr));
-# 13891 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13891 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_atomTypeNonAtomicDeprecated in
             let _3 = parseState.GetInput(3) :?> 'gentype_opt_HIGH_PRECEDENCE_APP in
@@ -13902,7 +13902,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4857 "pars.fsy"
                  : 'gentype_objExprBaseCall));
-# 13905 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13905 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_atomTypeNonAtomicDeprecated in
             let _3 = parseState.GetInput(3) :?> 'gentype_opt_HIGH_PRECEDENCE_APP in
@@ -13915,7 +13915,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4860 "pars.fsy"
                  : 'gentype_objExprBaseCall));
-# 13918 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13918 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_atomTypeNonAtomicDeprecated in
             Microsoft.FSharp.Core.Operators.box
@@ -13926,7 +13926,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4863 "pars.fsy"
                  : 'gentype_objExprBaseCall));
-# 13929 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13929 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_objExprBindings in
             Microsoft.FSharp.Core.Operators.box
@@ -13937,7 +13937,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4869 "pars.fsy"
                  : 'gentype_opt_objExprBindings));
-# 13940 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13940 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -13947,7 +13947,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4872 "pars.fsy"
                  : 'gentype_opt_objExprBindings));
-# 13950 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13950 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_localBindings in
             Microsoft.FSharp.Core.Operators.box
@@ -13960,7 +13960,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4876 "pars.fsy"
                  : 'gentype_objExprBindings));
-# 13963 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13963 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_localBindings in
             Microsoft.FSharp.Core.Operators.box
@@ -13973,7 +13973,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4881 "pars.fsy"
                  : 'gentype_objExprBindings));
-# 13976 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13976 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_objectImplementationBlock in
             let _3 = parseState.GetInput(3) :?> 'gentype_opt_declEnd in
@@ -13992,7 +13992,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4886 "pars.fsy"
                  : 'gentype_objExprBindings));
-# 13995 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 13995 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_objExprInterface in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_objExprInterfaces in
@@ -14004,7 +14004,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4896 "pars.fsy"
                  : 'gentype_objExprInterfaces));
-# 14007 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14007 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -14014,7 +14014,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4900 "pars.fsy"
                  : 'gentype_opt_objExprInterfaces));
-# 14017 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14017 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_objExprInterface in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_objExprInterfaces in
@@ -14026,7 +14026,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4903 "pars.fsy"
                  : 'gentype_opt_objExprInterfaces));
-# 14029 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14029 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_objExprInterfaces in
             Microsoft.FSharp.Core.Operators.box
@@ -14037,7 +14037,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4906 "pars.fsy"
                  : 'gentype_opt_objExprInterfaces));
-# 14040 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14040 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_interfaceMember in
             let _2 = parseState.GetInput(2) :?> 'gentype_appType in
@@ -14053,7 +14053,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4910 "pars.fsy"
                  : 'gentype_objExprInterface));
-# 14056 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14056 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_braceBarExprCore in
             Microsoft.FSharp.Core.Operators.box
@@ -14065,7 +14065,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4915 "pars.fsy"
                  : 'gentype_braceBarExpr));
-# 14068 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14068 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_braceBarExprCore in
             Microsoft.FSharp.Core.Operators.box
@@ -14076,7 +14076,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4919 "pars.fsy"
                  : 'gentype_braceBarExpr));
-# 14079 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14079 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_recdExprCore in
             let _3 = parseState.GetInput(3) :?> 'gentype_bar_rbrace in
@@ -14098,7 +14098,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4923 "pars.fsy"
                  : 'gentype_braceBarExprCore));
-# 14101 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14101 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_recdExprCore in
             let _3 = parseState.GetInput(3) :?> 'gentype_recover in
@@ -14121,7 +14121,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4936 "pars.fsy"
                  : 'gentype_braceBarExprCore));
-# 14124 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14124 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _3 = parseState.GetInput(3) :?> 'gentype_bar_rbrace in
             Microsoft.FSharp.Core.Operators.box
@@ -14137,7 +14137,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4950 "pars.fsy"
                  : 'gentype_braceBarExprCore));
-# 14140 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14140 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_recover in
             Microsoft.FSharp.Core.Operators.box
@@ -14152,7 +14152,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4958 "pars.fsy"
                  : 'gentype_braceBarExprCore));
-# 14155 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14155 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_bar_rbrace in
             Microsoft.FSharp.Core.Operators.box
@@ -14167,7 +14167,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4965 "pars.fsy"
                  : 'gentype_braceBarExprCore));
-# 14170 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14170 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynPat list in
             let _4 = parseState.GetInput(4) :?> SynExpr in
@@ -14181,7 +14181,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4973 "pars.fsy"
                  : 'gentype_anonLambdaExpr));
-# 14184 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14184 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynPat list in
             Microsoft.FSharp.Core.Operators.box
@@ -14194,7 +14194,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4978 "pars.fsy"
                  : 'gentype_anonLambdaExpr));
-# 14197 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14197 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynPat list in
             let _4 = parseState.GetInput(4) :?> 'gentype_typedSequentialExprBlockR in
@@ -14208,7 +14208,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4983 "pars.fsy"
                  : 'gentype_anonLambdaExpr));
-# 14211 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14211 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynPat list in
             let _4 = parseState.GetInput(4) :?> 'gentype_typedSequentialExprBlockR in
@@ -14224,7 +14224,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4988 "pars.fsy"
                  : 'gentype_anonLambdaExpr));
-# 14227 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14227 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynPat list in
             Microsoft.FSharp.Core.Operators.box
@@ -14238,7 +14238,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 4994 "pars.fsy"
                  : 'gentype_anonLambdaExpr));
-# 14241 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14241 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynPat list in
             let _4 = parseState.GetInput(4) :?> 'gentype_recover in
@@ -14253,7 +14253,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5000 "pars.fsy"
                  : 'gentype_anonLambdaExpr));
-# 14256 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14256 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynPat list in
             Microsoft.FSharp.Core.Operators.box
@@ -14265,7 +14265,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5006 "pars.fsy"
                  : 'gentype_anonLambdaExpr));
-# 14268 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14268 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -14275,7 +14275,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5010 "pars.fsy"
                  : 'gentype_anonLambdaExpr));
-# 14278 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14278 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_withPatternClauses in
             Microsoft.FSharp.Core.Operators.box
@@ -14288,7 +14288,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5014 "pars.fsy"
                  : 'gentype_anonMatchingExpr));
-# 14291 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14291 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_withPatternClauses in
             Microsoft.FSharp.Core.Operators.box
@@ -14301,7 +14301,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5019 "pars.fsy"
                  : 'gentype_anonMatchingExpr));
-# 14304 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14304 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynType in
             Microsoft.FSharp.Core.Operators.box
@@ -14312,7 +14312,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5028 "pars.fsy"
                  : 'gentype_typeWithTypeConstraints));
-# 14315 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14315 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynType in
             let _3 = parseState.GetInput(3) :?> 'gentype_typeConstraints in
@@ -14324,7 +14324,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5031 "pars.fsy"
                  : 'gentype_typeWithTypeConstraints));
-# 14327 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14327 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_topType in
             Microsoft.FSharp.Core.Operators.box
@@ -14335,7 +14335,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5035 "pars.fsy"
                  : 'gentype_topTypeWithTypeConstraints));
-# 14338 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14338 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_topType in
             let _3 = parseState.GetInput(3) :?> 'gentype_typeConstraints in
@@ -14349,7 +14349,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5038 "pars.fsy"
                  : 'gentype_topTypeWithTypeConstraints));
-# 14352 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14352 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -14359,7 +14359,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5044 "pars.fsy"
                  : 'gentype_opt_topReturnTypeWithTypeConstraints));
-# 14362 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14362 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_topTypeWithTypeConstraints in
             Microsoft.FSharp.Core.Operators.box
@@ -14373,7 +14373,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5047 "pars.fsy"
                  : 'gentype_opt_topReturnTypeWithTypeConstraints));
-# 14376 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14376 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_topTupleType in
             let _3 = parseState.GetInput(3) :?> 'gentype_topType in
@@ -14388,7 +14388,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5054 "pars.fsy"
                  : 'gentype_topType));
-# 14391 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14391 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_topTupleType in
             Microsoft.FSharp.Core.Operators.box
@@ -14399,7 +14399,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5060 "pars.fsy"
                  : 'gentype_topType));
-# 14402 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14402 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_topAppType in
             let _3 = parseState.GetInput(3) :?> 'gentype_topTupleTypeElements in
@@ -14415,7 +14415,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5064 "pars.fsy"
                  : 'gentype_topTupleType));
-# 14418 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14418 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_topAppType in
             Microsoft.FSharp.Core.Operators.box
@@ -14426,7 +14426,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5071 "pars.fsy"
                  : 'gentype_topTupleType));
-# 14429 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14429 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_topAppType in
             let _3 = parseState.GetInput(3) :?> 'gentype_topTupleTypeElements in
@@ -14440,7 +14440,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5075 "pars.fsy"
                  : 'gentype_topTupleTypeElements));
-# 14443 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14443 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_topAppType in
             Microsoft.FSharp.Core.Operators.box
@@ -14452,7 +14452,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5080 "pars.fsy"
                  : 'gentype_topTupleTypeElements));
-# 14455 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14455 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_appType in
@@ -14469,7 +14469,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5085 "pars.fsy"
                  : 'gentype_topAppType));
-# 14472 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14472 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_attributes in
             let _3 = parseState.GetInput(3) :?> Ident in
@@ -14483,7 +14483,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5092 "pars.fsy"
                  : 'gentype_topAppType));
-# 14486 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14486 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_attributes in
             let _2 = parseState.GetInput(2) :?> 'gentype_appType in
@@ -14496,7 +14496,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5096 "pars.fsy"
                  : 'gentype_topAppType));
-# 14499 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14499 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_appType in
             let _3 = parseState.GetInput(3) :?> 'gentype_appType in
@@ -14512,7 +14512,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5100 "pars.fsy"
                  : 'gentype_topAppType));
-# 14515 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14515 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> Ident in
             let _4 = parseState.GetInput(4) :?> 'gentype_appType in
@@ -14525,7 +14525,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5107 "pars.fsy"
                  : 'gentype_topAppType));
-# 14528 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14528 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_appType in
             Microsoft.FSharp.Core.Operators.box
@@ -14536,7 +14536,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5111 "pars.fsy"
                  : 'gentype_topAppType));
-# 14539 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14539 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_tupleType in
             let _3 = parseState.GetInput(3) :?> SynType in
@@ -14549,7 +14549,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5117 "pars.fsy"
                  : SynType));
-# 14552 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14552 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_tupleType in
             Microsoft.FSharp.Core.Operators.box
@@ -14560,7 +14560,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5121 "pars.fsy"
                  : SynType));
-# 14563 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14563 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynType in
             let _2 = parseState.GetInput(2) :?> ParseHelpers.LexerContinuation in
@@ -14572,7 +14572,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5124 "pars.fsy"
                  : SynType));
-# 14575 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14575 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_appType in
             let _3 = parseState.GetInput(3) :?> 'gentype_tupleOrQuotTypeElements in
@@ -14586,7 +14586,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5129 "pars.fsy"
                  : 'gentype_tupleType));
-# 14589 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14589 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string in
             let _2 = parseState.GetInput(2) :?> 'gentype_tupleOrQuotTypeElements in
@@ -14601,7 +14601,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5134 "pars.fsy"
                  : 'gentype_tupleType));
-# 14604 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14604 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_appType in
             let _2 = parseState.GetInput(2) :?> string in
@@ -14617,7 +14617,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5140 "pars.fsy"
                  : 'gentype_tupleType));
-# 14620 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14620 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_appType in
             Microsoft.FSharp.Core.Operators.box
@@ -14628,7 +14628,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5146 "pars.fsy"
                  : 'gentype_tupleType));
-# 14631 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14631 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_appType in
             let _3 = parseState.GetInput(3) :?> 'gentype_tupleOrQuotTypeElements in
@@ -14641,7 +14641,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5150 "pars.fsy"
                  : 'gentype_tupleOrQuotTypeElements));
-# 14644 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14644 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_appType in
             let _2 = parseState.GetInput(2) :?> string in
@@ -14656,7 +14656,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5154 "pars.fsy"
                  : 'gentype_tupleOrQuotTypeElements));
-# 14659 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14659 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_appType in
             Microsoft.FSharp.Core.Operators.box
@@ -14667,7 +14667,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5159 "pars.fsy"
                  : 'gentype_tupleOrQuotTypeElements));
-# 14670 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14670 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynLongIdent in
             Microsoft.FSharp.Core.Operators.box
@@ -14678,7 +14678,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5163 "pars.fsy"
                  : 'gentype_appTypeCon));
-# 14681 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14681 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynTypar in
             Microsoft.FSharp.Core.Operators.box
@@ -14689,7 +14689,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5166 "pars.fsy"
                  : 'gentype_appTypeCon));
-# 14692 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14692 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_appTypeCon in
             let _2 = parseState.GetInput(2) :?> string in
@@ -14704,7 +14704,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5170 "pars.fsy"
                  : 'gentype_appTypeConPower));
-# 14707 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14707 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_appTypeCon in
             Microsoft.FSharp.Core.Operators.box
@@ -14715,7 +14715,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5175 "pars.fsy"
                  : 'gentype_appTypeConPower));
-# 14718 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14718 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_appType in
             let _2 = parseState.GetInput(2) :?> 'gentype_arrayTypeSuffix in
@@ -14727,7 +14727,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5179 "pars.fsy"
                  : 'gentype_appType));
-# 14730 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14730 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_appType in
             let _3 = parseState.GetInput(3) :?> 'gentype_arrayTypeSuffix in
@@ -14739,7 +14739,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5182 "pars.fsy"
                  : 'gentype_appType));
-# 14742 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14742 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_appType in
             let _2 = parseState.GetInput(2) :?> 'gentype_appTypeConPower in
@@ -14751,7 +14751,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5186 "pars.fsy"
                  : 'gentype_appType));
-# 14754 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14754 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_appTypePrefixArguments in
             let _3 = parseState.GetInput(3) :?> 'gentype_rparen in
@@ -14769,7 +14769,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5189 "pars.fsy"
                  : 'gentype_appType));
-# 14772 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14772 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_powerType in
             Microsoft.FSharp.Core.Operators.box
@@ -14780,7 +14780,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5197 "pars.fsy"
                  : 'gentype_appType));
-# 14783 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14783 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynTypar in
             let _3 = parseState.GetInput(3) :?> SynType in
@@ -14794,7 +14794,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5200 "pars.fsy"
                  : 'gentype_appType));
-# 14797 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14797 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _3 = parseState.GetInput(3) :?> SynType in
             Microsoft.FSharp.Core.Operators.box
@@ -14805,7 +14805,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5205 "pars.fsy"
                  : 'gentype_appType));
-# 14808 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14808 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -14815,7 +14815,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5209 "pars.fsy"
                  : 'gentype_arrayTypeSuffix));
-# 14818 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14818 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -14825,7 +14825,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5212 "pars.fsy"
                  : 'gentype_arrayTypeSuffix));
-# 14828 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14828 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -14835,7 +14835,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5215 "pars.fsy"
                  : 'gentype_arrayTypeSuffix));
-# 14838 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14838 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -14845,7 +14845,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5218 "pars.fsy"
                  : 'gentype_arrayTypeSuffix));
-# 14848 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14848 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -14855,7 +14855,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5221 "pars.fsy"
                  : 'gentype_arrayTypeSuffix));
-# 14858 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14858 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -14865,7 +14865,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5224 "pars.fsy"
                  : 'gentype_arrayTypeSuffix));
-# 14868 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14868 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -14875,7 +14875,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5227 "pars.fsy"
                  : 'gentype_arrayTypeSuffix));
-# 14878 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14878 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -14885,7 +14885,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5230 "pars.fsy"
                  : 'gentype_arrayTypeSuffix));
-# 14888 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14888 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -14895,7 +14895,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5233 "pars.fsy"
                  : 'gentype_arrayTypeSuffix));
-# 14898 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14898 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -14905,7 +14905,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5236 "pars.fsy"
                  : 'gentype_arrayTypeSuffix));
-# 14908 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14908 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -14915,7 +14915,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5239 "pars.fsy"
                  : 'gentype_arrayTypeSuffix));
-# 14918 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14918 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -14925,7 +14925,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5242 "pars.fsy"
                  : 'gentype_arrayTypeSuffix));
-# 14928 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14928 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -14935,7 +14935,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5245 "pars.fsy"
                  : 'gentype_arrayTypeSuffix));
-# 14938 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14938 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -14945,7 +14945,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5248 "pars.fsy"
                  : 'gentype_arrayTypeSuffix));
-# 14948 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14948 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -14955,7 +14955,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5251 "pars.fsy"
                  : 'gentype_arrayTypeSuffix));
-# 14958 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14958 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -14965,7 +14965,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5254 "pars.fsy"
                  : 'gentype_arrayTypeSuffix));
-# 14968 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14968 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -14975,7 +14975,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5257 "pars.fsy"
                  : 'gentype_arrayTypeSuffix));
-# 14978 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14978 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -14985,7 +14985,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5260 "pars.fsy"
                  : 'gentype_arrayTypeSuffix));
-# 14988 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14988 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -14995,7 +14995,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5263 "pars.fsy"
                  : 'gentype_arrayTypeSuffix));
-# 14998 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 14998 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -15005,7 +15005,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5266 "pars.fsy"
                  : 'gentype_arrayTypeSuffix));
-# 15008 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15008 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -15015,7 +15015,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5269 "pars.fsy"
                  : 'gentype_arrayTypeSuffix));
-# 15018 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15018 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -15025,7 +15025,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5272 "pars.fsy"
                  : 'gentype_arrayTypeSuffix));
-# 15028 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15028 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -15035,7 +15035,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5275 "pars.fsy"
                  : 'gentype_arrayTypeSuffix));
-# 15038 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15038 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -15045,7 +15045,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5278 "pars.fsy"
                  : 'gentype_arrayTypeSuffix));
-# 15048 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15048 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -15055,7 +15055,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5281 "pars.fsy"
                  : 'gentype_arrayTypeSuffix));
-# 15058 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15058 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -15065,7 +15065,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5284 "pars.fsy"
                  : 'gentype_arrayTypeSuffix));
-# 15068 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15068 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -15075,7 +15075,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5287 "pars.fsy"
                  : 'gentype_arrayTypeSuffix));
-# 15078 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15078 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -15085,7 +15085,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5290 "pars.fsy"
                  : 'gentype_arrayTypeSuffix));
-# 15088 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15088 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -15095,7 +15095,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5293 "pars.fsy"
                  : 'gentype_arrayTypeSuffix));
-# 15098 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15098 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -15105,7 +15105,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5296 "pars.fsy"
                  : 'gentype_arrayTypeSuffix));
-# 15108 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15108 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -15115,7 +15115,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5299 "pars.fsy"
                  : 'gentype_arrayTypeSuffix));
-# 15118 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15118 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -15125,7 +15125,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5302 "pars.fsy"
                  : 'gentype_arrayTypeSuffix));
-# 15128 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15128 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_typeArgActual in
             let _3 = parseState.GetInput(3) :?> 'gentype_typeArgActual in
@@ -15138,7 +15138,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5306 "pars.fsy"
                  : 'gentype_appTypePrefixArguments));
-# 15141 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15141 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_typeArgListElements in
             let _3 = parseState.GetInput(3) :?> 'gentype_typeArgActual in
@@ -15151,7 +15151,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5310 "pars.fsy"
                  : 'gentype_typeArgListElements));
-# 15154 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15154 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_typeArgListElements in
             let _3 = parseState.GetInput(3) :?> 'gentype_dummyTypeArg in
@@ -15165,7 +15165,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5314 "pars.fsy"
                  : 'gentype_typeArgListElements));
-# 15168 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15168 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -15175,7 +15175,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5319 "pars.fsy"
                  : 'gentype_typeArgListElements));
-# 15178 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15178 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_atomTypeOrAnonRecdType in
             Microsoft.FSharp.Core.Operators.box
@@ -15186,7 +15186,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5323 "pars.fsy"
                  : 'gentype_powerType));
-# 15189 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15189 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_atomTypeOrAnonRecdType in
             let _2 = parseState.GetInput(2) :?> string in
@@ -15201,7 +15201,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5326 "pars.fsy"
                  : 'gentype_powerType));
-# 15204 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15204 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_appTypePrefixArguments in
             let _3 = parseState.GetInput(3) :?> 'gentype_rparen in
@@ -15219,7 +15219,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5335 "pars.fsy"
                  : 'gentype_atomTypeNonAtomicDeprecated));
-# 15222 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15222 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_atomType in
             Microsoft.FSharp.Core.Operators.box
@@ -15230,7 +15230,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5343 "pars.fsy"
                  : 'gentype_atomTypeNonAtomicDeprecated));
-# 15233 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15233 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_atomType in
             Microsoft.FSharp.Core.Operators.box
@@ -15241,7 +15241,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5347 "pars.fsy"
                  : 'gentype_atomTypeOrAnonRecdType));
-# 15244 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15244 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_anonRecdType in
             Microsoft.FSharp.Core.Operators.box
@@ -15257,7 +15257,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5350 "pars.fsy"
                  : 'gentype_atomTypeOrAnonRecdType));
-# 15260 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15260 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_atomType in
             Microsoft.FSharp.Core.Operators.box
@@ -15268,7 +15268,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5361 "pars.fsy"
                  : 'gentype_atomType));
-# 15271 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15271 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_appTypeConPower in
             Microsoft.FSharp.Core.Operators.box
@@ -15279,7 +15279,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5364 "pars.fsy"
                  : 'gentype_atomType));
-# 15282 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15282 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -15289,7 +15289,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5367 "pars.fsy"
                  : 'gentype_atomType));
-# 15292 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15292 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynType in
             let _3 = parseState.GetInput(3) :?> 'gentype_rparen in
@@ -15301,7 +15301,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5370 "pars.fsy"
                  : 'gentype_atomType));
-# 15304 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15304 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynType in
             let _3 = parseState.GetInput(3) :?> 'gentype_recover in
@@ -15314,7 +15314,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5373 "pars.fsy"
                  : 'gentype_atomType));
-# 15317 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15317 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _3 = parseState.GetInput(3) :?> 'gentype_appType in
             let _5 = parseState.GetInput(5) :?> 'gentype_tupleOrQuotTypeElements in
@@ -15330,7 +15330,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5377 "pars.fsy"
                  : 'gentype_atomType));
-# 15333 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15333 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _3 = parseState.GetInput(3) :?> 'gentype_appType in
             let _5 = parseState.GetInput(5) :?> 'gentype_tupleOrQuotTypeElements in
@@ -15347,7 +15347,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5383 "pars.fsy"
                  : 'gentype_atomType));
-# 15350 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15350 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _3 = parseState.GetInput(3) :?> 'gentype_appType in
             let _5 = parseState.GetInput(5) :?> 'gentype_recover in
@@ -15360,7 +15360,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5390 "pars.fsy"
                  : 'gentype_atomType));
-# 15363 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15363 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _3 = parseState.GetInput(3) :?> 'gentype_appType in
             let _4 = parseState.GetInput(4) :?> 'gentype_recover in
@@ -15373,7 +15373,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5394 "pars.fsy"
                  : 'gentype_atomType));
-# 15376 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15376 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _3 = parseState.GetInput(3) :?> 'gentype_recover in
             Microsoft.FSharp.Core.Operators.box
@@ -15385,7 +15385,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5398 "pars.fsy"
                  : 'gentype_atomType));
-# 15388 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15388 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_rawConstant in
             Microsoft.FSharp.Core.Operators.box
@@ -15396,7 +15396,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5402 "pars.fsy"
                  : 'gentype_atomType));
-# 15399 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15399 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -15407,7 +15407,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5405 "pars.fsy"
                  : 'gentype_atomType));
-# 15410 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15410 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> SynExpr * bool in
             Microsoft.FSharp.Core.Operators.box
@@ -15419,7 +15419,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5409 "pars.fsy"
                  : 'gentype_atomType));
-# 15422 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15422 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -15429,7 +15429,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5413 "pars.fsy"
                  : 'gentype_atomType));
-# 15432 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15432 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -15439,7 +15439,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5416 "pars.fsy"
                  : 'gentype_atomType));
-# 15442 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15442 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _3 = parseState.GetInput(3) :?> 'gentype_rparen in
             Microsoft.FSharp.Core.Operators.box
@@ -15450,7 +15450,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5419 "pars.fsy"
                  : 'gentype_atomType));
-# 15453 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15453 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_appTypeCon in
             let _2 = parseState.GetInput(2) :?> range * range option * SynType list * range list * range in
@@ -15462,7 +15462,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5422 "pars.fsy"
                  : 'gentype_atomType));
-# 15465 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15465 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_atomType in
             let _3 = parseState.GetInput(3) :?> SynLongIdent in
@@ -15474,7 +15474,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5425 "pars.fsy"
                  : 'gentype_atomType));
-# 15477 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15477 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_atomType in
             let _3 = parseState.GetInput(3) :?> SynLongIdent in
@@ -15488,7 +15488,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5428 "pars.fsy"
                  : 'gentype_atomType));
-# 15491 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15491 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_appTypeCon in
             let _3 = parseState.GetInput(3) :?> 'gentype_ends_coming_soon_or_recover in
@@ -15501,7 +15501,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5432 "pars.fsy"
                  : 'gentype_atomType));
-# 15504 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15504 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> range * range option * bool     * SynType list * range list * range in
             Microsoft.FSharp.Core.Operators.box
@@ -15515,7 +15515,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5437 "pars.fsy"
                  : range * range option * SynType list * range list * range));
-# 15518 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15518 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> range * range option * bool     * SynType list * range list * range in
             Microsoft.FSharp.Core.Operators.box
@@ -15527,7 +15527,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5443 "pars.fsy"
                  : range * range option * SynType list * range list * range));
-# 15530 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15530 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> bool in
             let _2 = parseState.GetInput(2) :?> 'gentype_typeArgActualOrDummyIfEmpty in
@@ -15543,7 +15543,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5448 "pars.fsy"
                  : range * range option * bool     * SynType list * range list * range));
-# 15546 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15546 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> bool in
             let _2 = parseState.GetInput(2) :?> 'gentype_typeArgActualOrDummyIfEmpty in
@@ -15565,7 +15565,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5452 "pars.fsy"
                  : range * range option * bool     * SynType list * range list * range));
-# 15568 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15568 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> bool in
             let _2 = parseState.GetInput(2) :?> 'gentype_typeArgActualOrDummyIfEmpty in
@@ -15581,7 +15581,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5462 "pars.fsy"
                  : range * range option * bool     * SynType list * range list * range));
-# 15584 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15584 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> bool in
             let _2 = parseState.GetInput(2) :?> 'gentype_typeArgActual in
@@ -15594,7 +15594,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5468 "pars.fsy"
                  : range * range option * bool     * SynType list * range list * range));
-# 15597 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15597 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> bool in
             let _2 = parseState.GetInput(2) :?> 'gentype_typeArgActual in
@@ -15610,7 +15610,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5471 "pars.fsy"
                  : range * range option * bool     * SynType list * range list * range));
-# 15613 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15613 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> bool in
             let _2 = parseState.GetInput(2) :?> bool in
@@ -15622,7 +15622,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5477 "pars.fsy"
                  : range * range option * bool     * SynType list * range list * range));
-# 15625 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15625 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> bool in
             let _2 = parseState.GetInput(2) :?> 'gentype_recover in
@@ -15640,7 +15640,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5480 "pars.fsy"
                  : range * range option * bool     * SynType list * range list * range));
-# 15643 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15643 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynType in
             Microsoft.FSharp.Core.Operators.box
@@ -15651,7 +15651,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5490 "pars.fsy"
                  : 'gentype_typeArgActual));
-# 15654 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15654 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynType in
             let _3 = parseState.GetInput(3) :?> SynType in
@@ -15663,7 +15663,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5493 "pars.fsy"
                  : 'gentype_typeArgActual));
-# 15666 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15666 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynType in
             Microsoft.FSharp.Core.Operators.box
@@ -15677,7 +15677,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5496 "pars.fsy"
                  : 'gentype_typeArgActual));
-# 15680 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15680 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_typeArgActual in
             Microsoft.FSharp.Core.Operators.box
@@ -15688,7 +15688,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5503 "pars.fsy"
                  : 'gentype_typeArgActualOrDummyIfEmpty));
-# 15691 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15691 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_dummyTypeArg in
             Microsoft.FSharp.Core.Operators.box
@@ -15700,7 +15700,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5506 "pars.fsy"
                  : 'gentype_typeArgActualOrDummyIfEmpty));
-# 15703 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15703 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -15714,7 +15714,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5511 "pars.fsy"
                  : 'gentype_dummyTypeArg));
-# 15717 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15717 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> bool in
             let _2 = parseState.GetInput(2) :?> 'gentype_measureTypeExpr in
@@ -15727,7 +15727,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5519 "pars.fsy"
                  : 'gentype_measureTypeArg));
-# 15730 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15730 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> bool in
             let _3 = parseState.GetInput(3) :?> bool in
@@ -15739,7 +15739,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5522 "pars.fsy"
                  : 'gentype_measureTypeArg));
-# 15742 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15742 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynLongIdent in
             Microsoft.FSharp.Core.Operators.box
@@ -15750,7 +15750,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5526 "pars.fsy"
                  : 'gentype_measureTypeAtom));
-# 15753 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15753 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynTypar in
             Microsoft.FSharp.Core.Operators.box
@@ -15761,7 +15761,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5529 "pars.fsy"
                  : 'gentype_measureTypeAtom));
-# 15764 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15764 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_measureTypeExpr in
             let _3 = parseState.GetInput(3) :?> 'gentype_rparen in
@@ -15774,7 +15774,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5532 "pars.fsy"
                  : 'gentype_measureTypeAtom));
-# 15777 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15777 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_measureTypeAtom in
             Microsoft.FSharp.Core.Operators.box
@@ -15785,7 +15785,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5537 "pars.fsy"
                  : 'gentype_measureTypePower));
-# 15788 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15788 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_measureTypeAtom in
             let _2 = parseState.GetInput(2) :?> string in
@@ -15800,7 +15800,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5540 "pars.fsy"
                  : 'gentype_measureTypePower));
-# 15803 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15803 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> int32 * bool in
             Microsoft.FSharp.Core.Operators.box
@@ -15812,7 +15812,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5545 "pars.fsy"
                  : 'gentype_measureTypePower));
-# 15815 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15815 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_measureTypePower in
             Microsoft.FSharp.Core.Operators.box
@@ -15823,7 +15823,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5550 "pars.fsy"
                  : 'gentype_measureTypeSeq));
-# 15826 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15826 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_measureTypePower in
             let _2 = parseState.GetInput(2) :?> 'gentype_measureTypeSeq in
@@ -15835,7 +15835,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5553 "pars.fsy"
                  : 'gentype_measureTypeSeq));
-# 15838 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15838 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_measureTypeSeq in
             Microsoft.FSharp.Core.Operators.box
@@ -15846,7 +15846,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5557 "pars.fsy"
                  : 'gentype_measureTypeExpr));
-# 15849 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15849 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_measureTypeExpr in
             let _3 = parseState.GetInput(3) :?> 'gentype_measureTypeExpr in
@@ -15858,7 +15858,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5560 "pars.fsy"
                  : 'gentype_measureTypeExpr));
-# 15861 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15861 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_measureTypeExpr in
             let _2 = parseState.GetInput(2) :?> string in
@@ -15873,7 +15873,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5563 "pars.fsy"
                  : 'gentype_measureTypeExpr));
-# 15876 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15876 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string in
             let _2 = parseState.GetInput(2) :?> 'gentype_measureTypeExpr in
@@ -15886,7 +15886,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5568 "pars.fsy"
                  : 'gentype_measureTypeExpr));
-# 15889 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15889 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> Ident in
             Microsoft.FSharp.Core.Operators.box
@@ -15898,7 +15898,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5573 "pars.fsy"
                  : SynTypar));
-# 15901 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15901 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string in
             let _2 = parseState.GetInput(2) :?> Ident in
@@ -15912,7 +15912,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5577 "pars.fsy"
                  : SynTypar));
-# 15915 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15915 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string in
             Microsoft.FSharp.Core.Operators.box
@@ -15923,7 +15923,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5583 "pars.fsy"
                  : Ident));
-# 15926 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15926 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -15933,7 +15933,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5588 "pars.fsy"
                  : SynLongIdent));
-# 15936 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15936 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> Ident in
             Microsoft.FSharp.Core.Operators.box
@@ -15944,7 +15944,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5591 "pars.fsy"
                  : SynLongIdent));
-# 15947 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15947 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynLongIdent in
             let _3 = parseState.GetInput(3) :?> Ident in
@@ -15956,7 +15956,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5594 "pars.fsy"
                  : SynLongIdent));
-# 15959 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15959 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynLongIdent in
             let _3 = parseState.GetInput(3) :?> 'gentype_ends_coming_soon_or_recover in
@@ -15969,7 +15969,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5597 "pars.fsy"
                  : SynLongIdent));
-# 15972 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15972 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_operatorName in
             let _3 = parseState.GetInput(3) :?> 'gentype_rparen in
@@ -15983,7 +15983,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5604 "pars.fsy"
                  : 'gentype_opName));
-# 15986 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 15986 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _3 = parseState.GetInput(3) :?> 'gentype_rparen in
             Microsoft.FSharp.Core.Operators.box
@@ -15997,7 +15997,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5609 "pars.fsy"
                  : 'gentype_opName));
-# 16000 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16000 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16010,7 +16010,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5615 "pars.fsy"
                  : 'gentype_opName));
-# 16013 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16013 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_activePatternCaseNames in
             let _4 = parseState.GetInput(4) :?> 'gentype_rparen in
@@ -16025,7 +16025,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5622 "pars.fsy"
                  : 'gentype_opName));
-# 16028 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16028 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_activePatternCaseNames in
             let _6 = parseState.GetInput(6) :?> 'gentype_rparen in
@@ -16040,7 +16040,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5629 "pars.fsy"
                  : 'gentype_opName));
-# 16043 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16043 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string in
             Microsoft.FSharp.Core.Operators.box
@@ -16053,7 +16053,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5637 "pars.fsy"
                  : 'gentype_operatorName));
-# 16056 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16056 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string in
             Microsoft.FSharp.Core.Operators.box
@@ -16064,7 +16064,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5642 "pars.fsy"
                  : 'gentype_operatorName));
-# 16067 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16067 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string in
             Microsoft.FSharp.Core.Operators.box
@@ -16075,7 +16075,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5645 "pars.fsy"
                  : 'gentype_operatorName));
-# 16078 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16078 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string in
             Microsoft.FSharp.Core.Operators.box
@@ -16086,7 +16086,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5648 "pars.fsy"
                  : 'gentype_operatorName));
-# 16089 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16089 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string in
             Microsoft.FSharp.Core.Operators.box
@@ -16097,7 +16097,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5651 "pars.fsy"
                  : 'gentype_operatorName));
-# 16100 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16100 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string in
             Microsoft.FSharp.Core.Operators.box
@@ -16108,7 +16108,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5654 "pars.fsy"
                  : 'gentype_operatorName));
-# 16111 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16111 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string in
             Microsoft.FSharp.Core.Operators.box
@@ -16119,7 +16119,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5657 "pars.fsy"
                  : 'gentype_operatorName));
-# 16122 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16122 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string in
             Microsoft.FSharp.Core.Operators.box
@@ -16130,7 +16130,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5660 "pars.fsy"
                  : 'gentype_operatorName));
-# 16133 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16133 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16140,7 +16140,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5663 "pars.fsy"
                  : 'gentype_operatorName));
-# 16143 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16143 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string in
             Microsoft.FSharp.Core.Operators.box
@@ -16151,7 +16151,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5666 "pars.fsy"
                  : 'gentype_operatorName));
-# 16154 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16154 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16161,7 +16161,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5669 "pars.fsy"
                  : 'gentype_operatorName));
-# 16164 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16164 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16171,7 +16171,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5672 "pars.fsy"
                  : 'gentype_operatorName));
-# 16174 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16174 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16181,7 +16181,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5675 "pars.fsy"
                  : 'gentype_operatorName));
-# 16184 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16184 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16191,7 +16191,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5678 "pars.fsy"
                  : 'gentype_operatorName));
-# 16194 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16194 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> bool in
             Microsoft.FSharp.Core.Operators.box
@@ -16202,7 +16202,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5681 "pars.fsy"
                  : 'gentype_operatorName));
-# 16205 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16205 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> bool in
             Microsoft.FSharp.Core.Operators.box
@@ -16213,7 +16213,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5684 "pars.fsy"
                  : 'gentype_operatorName));
-# 16216 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16216 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16223,7 +16223,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5687 "pars.fsy"
                  : 'gentype_operatorName));
-# 16226 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16226 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16233,7 +16233,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5690 "pars.fsy"
                  : 'gentype_operatorName));
-# 16236 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16236 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16243,7 +16243,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5693 "pars.fsy"
                  : 'gentype_operatorName));
-# 16246 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16246 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16253,7 +16253,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5696 "pars.fsy"
                  : 'gentype_operatorName));
-# 16256 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16256 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16263,7 +16263,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5699 "pars.fsy"
                  : 'gentype_operatorName));
-# 16266 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16266 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string in
             Microsoft.FSharp.Core.Operators.box
@@ -16276,7 +16276,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5702 "pars.fsy"
                  : 'gentype_operatorName));
-# 16279 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16279 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string in
             Microsoft.FSharp.Core.Operators.box
@@ -16287,7 +16287,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5707 "pars.fsy"
                  : 'gentype_operatorName));
-# 16290 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16290 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16297,7 +16297,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5710 "pars.fsy"
                  : 'gentype_operatorName));
-# 16300 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16300 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16307,7 +16307,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5713 "pars.fsy"
                  : 'gentype_operatorName));
-# 16310 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16310 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string * bool in
             let _2 = parseState.GetInput(2) :?> string * bool in
@@ -16320,7 +16320,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5716 "pars.fsy"
                  : 'gentype_operatorName));
-# 16323 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16323 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string in
             Microsoft.FSharp.Core.Operators.box
@@ -16333,7 +16333,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5722 "pars.fsy"
                  : 'gentype_activePatternCaseName));
-# 16336 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16336 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_activePatternCaseName in
             Microsoft.FSharp.Core.Operators.box
@@ -16344,7 +16344,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5729 "pars.fsy"
                  : 'gentype_activePatternCaseNames));
-# 16347 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16347 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_activePatternCaseNames in
             let _3 = parseState.GetInput(3) :?> 'gentype_activePatternCaseName in
@@ -16356,7 +16356,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5732 "pars.fsy"
                  : 'gentype_activePatternCaseNames));
-# 16359 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16359 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> Ident in
             Microsoft.FSharp.Core.Operators.box
@@ -16367,7 +16367,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5737 "pars.fsy"
                  : 'gentype_identOrOp));
-# 16370 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16370 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opName in
             Microsoft.FSharp.Core.Operators.box
@@ -16379,7 +16379,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5740 "pars.fsy"
                  : 'gentype_identOrOp));
-# 16382 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16382 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> Ident in
             Microsoft.FSharp.Core.Operators.box
@@ -16390,7 +16390,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5747 "pars.fsy"
                  : SynLongIdent));
-# 16393 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16393 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opName in
             Microsoft.FSharp.Core.Operators.box
@@ -16402,7 +16402,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5750 "pars.fsy"
                  : SynLongIdent));
-# 16405 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16405 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> Ident in
             let _3 = parseState.GetInput(3) :?> SynLongIdent in
@@ -16414,7 +16414,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5754 "pars.fsy"
                  : SynLongIdent));
-# 16417 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16417 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> Ident in
             Microsoft.FSharp.Core.Operators.box
@@ -16425,7 +16425,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5757 "pars.fsy"
                  : SynLongIdent));
-# 16428 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16428 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_identOrOp in
             Microsoft.FSharp.Core.Operators.box
@@ -16436,7 +16436,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5762 "pars.fsy"
                  : 'gentype_nameop));
-# 16439 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16439 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> Ident in
             Microsoft.FSharp.Core.Operators.box
@@ -16447,7 +16447,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5766 "pars.fsy"
                  : 'gentype_identExpr));
-# 16450 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16450 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_opName in
             Microsoft.FSharp.Core.Operators.box
@@ -16460,7 +16460,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5769 "pars.fsy"
                  : 'gentype_identExpr));
-# 16463 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16463 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16470,7 +16470,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5774 "pars.fsy"
                  : 'gentype_topSeparator));
-# 16473 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16473 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16480,7 +16480,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5775 "pars.fsy"
                  : 'gentype_topSeparator));
-# 16483 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16483 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16490,7 +16490,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5776 "pars.fsy"
                  : 'gentype_topSeparator));
-# 16493 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16493 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_topSeparator in
             Microsoft.FSharp.Core.Operators.box
@@ -16501,7 +16501,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5779 "pars.fsy"
                  : 'gentype_topSeparators));
-# 16504 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16504 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_topSeparator in
             let _2 = parseState.GetInput(2) :?> 'gentype_topSeparators in
@@ -16513,7 +16513,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5780 "pars.fsy"
                  : 'gentype_topSeparators));
-# 16516 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16516 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_topSeparator in
             let _2 = parseState.GetInput(2) :?> 'gentype_opt_topSeparators in
@@ -16525,7 +16525,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5783 "pars.fsy"
                  : 'gentype_opt_topSeparators));
-# 16528 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16528 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16535,7 +16535,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5784 "pars.fsy"
                  : 'gentype_opt_topSeparators));
-# 16538 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16538 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16545,7 +16545,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5788 "pars.fsy"
                  : 'gentype_seps));
-# 16548 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16548 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16555,7 +16555,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5789 "pars.fsy"
                  : 'gentype_seps));
-# 16558 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16558 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16565,7 +16565,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5790 "pars.fsy"
                  : 'gentype_seps));
-# 16568 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16568 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16575,7 +16575,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5791 "pars.fsy"
                  : 'gentype_seps));
-# 16578 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16578 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16585,7 +16585,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5796 "pars.fsy"
                  : 'gentype_declEnd));
-# 16588 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16588 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16595,7 +16595,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5798 "pars.fsy"
                  : 'gentype_declEnd));
-# 16598 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16598 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16605,7 +16605,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5800 "pars.fsy"
                  : 'gentype_declEnd));
-# 16608 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16608 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16615,7 +16615,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5805 "pars.fsy"
                  : 'gentype_opt_declEnd));
-# 16618 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16618 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16625,7 +16625,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5807 "pars.fsy"
                  : 'gentype_opt_declEnd));
-# 16628 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16628 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16635,7 +16635,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5809 "pars.fsy"
                  : 'gentype_opt_declEnd));
-# 16638 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16638 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16645,7 +16645,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5811 "pars.fsy"
                  : 'gentype_opt_declEnd));
-# 16648 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16648 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16655,7 +16655,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5814 "pars.fsy"
                  : 'gentype_opt_ODECLEND));
-# 16658 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16658 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16665,7 +16665,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5815 "pars.fsy"
                  : 'gentype_opt_ODECLEND));
-# 16668 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16668 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16675,7 +16675,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5818 "pars.fsy"
                  : 'gentype_deprecated_opt_equals));
-# 16678 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16678 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16685,7 +16685,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5819 "pars.fsy"
                  : 'gentype_deprecated_opt_equals));
-# 16688 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16688 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16695,7 +16695,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5822 "pars.fsy"
                  : 'gentype_opt_equals));
-# 16698 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16698 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16705,7 +16705,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5823 "pars.fsy"
                  : 'gentype_opt_equals));
-# 16708 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16708 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16715,7 +16715,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5826 "pars.fsy"
                  : 'gentype_opt_OBLOCKSEP));
-# 16718 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16718 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16725,7 +16725,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5827 "pars.fsy"
                  : 'gentype_opt_OBLOCKSEP));
-# 16728 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16728 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_seps in
             Microsoft.FSharp.Core.Operators.box
@@ -16736,7 +16736,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5830 "pars.fsy"
                  : 'gentype_opt_seps));
-# 16739 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16739 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16746,7 +16746,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5831 "pars.fsy"
                  : 'gentype_opt_seps));
-# 16749 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16749 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16756,7 +16756,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5834 "pars.fsy"
                  : 'gentype_opt_rec));
-# 16759 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16759 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16766,7 +16766,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5835 "pars.fsy"
                  : 'gentype_opt_rec));
-# 16769 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16769 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16776,7 +16776,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5838 "pars.fsy"
                  : 'gentype_opt_bar));
-# 16779 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16779 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16786,7 +16786,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5839 "pars.fsy"
                  : 'gentype_opt_bar));
-# 16789 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16789 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16796,7 +16796,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5842 "pars.fsy"
                  : 'gentype_opt_inline));
-# 16799 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16799 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16806,7 +16806,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5843 "pars.fsy"
                  : 'gentype_opt_inline));
-# 16809 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16809 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16816,7 +16816,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5846 "pars.fsy"
                  : 'gentype_opt_mutable));
-# 16819 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16819 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16826,7 +16826,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5847 "pars.fsy"
                  : 'gentype_opt_mutable));
-# 16829 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16829 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16836,7 +16836,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5851 "pars.fsy"
                  : 'gentype_doToken));
-# 16839 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16839 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16846,7 +16846,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5852 "pars.fsy"
                  : 'gentype_doToken));
-# 16849 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16849 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16856,7 +16856,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5855 "pars.fsy"
                  : 'gentype_doneDeclEnd));
-# 16859 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16859 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16866,7 +16866,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5856 "pars.fsy"
                  : 'gentype_doneDeclEnd));
-# 16869 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16869 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16880,7 +16880,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5860 "pars.fsy"
                  : 'gentype_structOrBegin));
-# 16883 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16883 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16890,7 +16890,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5865 "pars.fsy"
                  : 'gentype_structOrBegin));
-# 16893 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16893 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16904,7 +16904,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5869 "pars.fsy"
                  : 'gentype_sigOrBegin));
-# 16907 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16907 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16914,7 +16914,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5874 "pars.fsy"
                  : 'gentype_sigOrBegin));
-# 16917 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16917 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16929,7 +16929,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5878 "pars.fsy"
                  : 'gentype_colonOrEquals));
-# 16932 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16932 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -16939,7 +16939,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5884 "pars.fsy"
                  : 'gentype_colonOrEquals));
-# 16942 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16942 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string * SynStringKind * ParseHelpers.LexerContinuation in
             Microsoft.FSharp.Core.Operators.box
@@ -16951,7 +16951,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5889 "pars.fsy"
                  : 'gentype_string));
-# 16954 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16954 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string * string in
             Microsoft.FSharp.Core.Operators.box
@@ -16962,7 +16962,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5893 "pars.fsy"
                  : 'gentype_sourceIdentifier));
-# 16965 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16965 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             Microsoft.FSharp.Core.Operators.box
@@ -16973,7 +16973,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5897 "pars.fsy"
                  : 'gentype_interpolatedStringFill));
-# 16976 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16976 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> SynExpr in
             let _3 = parseState.GetInput(3) :?> Ident in
@@ -16985,7 +16985,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5900 "pars.fsy"
                  : 'gentype_interpolatedStringFill));
-# 16988 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16988 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string * ParseHelpers.LexerContinuation in
             Microsoft.FSharp.Core.Operators.box
@@ -16996,7 +16996,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5904 "pars.fsy"
                  : 'gentype_interpolatedStringParts));
-# 16999 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 16999 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string * ParseHelpers.LexerContinuation in
             let _2 = parseState.GetInput(2) :?> 'gentype_interpolatedStringFill in
@@ -17009,7 +17009,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5907 "pars.fsy"
                  : 'gentype_interpolatedStringParts));
-# 17012 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 17012 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string * ParseHelpers.LexerContinuation in
             let _2 = parseState.GetInput(2) :?> 'gentype_interpolatedStringParts in
@@ -17025,7 +17025,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5910 "pars.fsy"
                  : 'gentype_interpolatedStringParts));
-# 17028 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 17028 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string * SynStringKind * ParseHelpers.LexerContinuation in
             let _2 = parseState.GetInput(2) :?> 'gentype_interpolatedStringFill in
@@ -17039,7 +17039,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5921 "pars.fsy"
                  : 'gentype_interpolatedString));
-# 17042 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 17042 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string * SynStringKind * ParseHelpers.LexerContinuation in
             Microsoft.FSharp.Core.Operators.box
@@ -17051,7 +17051,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5925 "pars.fsy"
                  : 'gentype_interpolatedString));
-# 17054 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 17054 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string * SynStringKind * ParseHelpers.LexerContinuation in
             let _2 = parseState.GetInput(2) :?> 'gentype_interpolatedStringParts in
@@ -17068,7 +17068,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5929 "pars.fsy"
                  : 'gentype_interpolatedString));
-# 17071 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 17071 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -17078,7 +17078,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5937 "pars.fsy"
                  : 'gentype_opt_HIGH_PRECEDENCE_APP));
-# 17081 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 17081 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -17088,7 +17088,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5938 "pars.fsy"
                  : 'gentype_opt_HIGH_PRECEDENCE_APP));
-# 17091 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 17091 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -17098,7 +17098,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5939 "pars.fsy"
                  : 'gentype_opt_HIGH_PRECEDENCE_APP));
-# 17101 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 17101 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -17108,7 +17108,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5942 "pars.fsy"
                  : 'gentype_opt_HIGH_PRECEDENCE_TYAPP));
-# 17111 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 17111 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -17118,7 +17118,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5943 "pars.fsy"
                  : 'gentype_opt_HIGH_PRECEDENCE_TYAPP));
-# 17121 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 17121 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_typeKeyword in
             Microsoft.FSharp.Core.Operators.box
@@ -17129,7 +17129,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5947 "pars.fsy"
                  : 'gentype_typeKeyword));
-# 17132 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 17132 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -17139,7 +17139,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5948 "pars.fsy"
                  : 'gentype_typeKeyword));
-# 17142 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 17142 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -17149,7 +17149,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5949 "pars.fsy"
                  : 'gentype_typeKeyword));
-# 17152 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 17152 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_moduleKeyword in
             Microsoft.FSharp.Core.Operators.box
@@ -17160,7 +17160,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5953 "pars.fsy"
                  : 'gentype_moduleKeyword));
-# 17163 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 17163 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -17170,7 +17170,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5954 "pars.fsy"
                  : 'gentype_moduleKeyword));
-# 17173 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 17173 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -17180,7 +17180,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5955 "pars.fsy"
                  : 'gentype_moduleKeyword));
-# 17183 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 17183 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_rbrace in
             Microsoft.FSharp.Core.Operators.box
@@ -17191,7 +17191,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5958 "pars.fsy"
                  : 'gentype_rbrace));
-# 17194 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 17194 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -17201,7 +17201,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5959 "pars.fsy"
                  : 'gentype_rbrace));
-# 17204 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 17204 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> ParseHelpers.LexerContinuation in
             Microsoft.FSharp.Core.Operators.box
@@ -17212,7 +17212,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5960 "pars.fsy"
                  : 'gentype_rbrace));
-# 17215 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 17215 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -17222,7 +17222,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5963 "pars.fsy"
                  : 'gentype_bar_rbrace));
-# 17225 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 17225 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_rparen in
             Microsoft.FSharp.Core.Operators.box
@@ -17233,7 +17233,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5966 "pars.fsy"
                  : 'gentype_rparen));
-# 17236 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 17236 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -17243,7 +17243,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5967 "pars.fsy"
                  : 'gentype_rparen));
-# 17246 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 17246 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -17253,7 +17253,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5968 "pars.fsy"
                  : 'gentype_rparen));
-# 17256 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 17256 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_oblockend in
             Microsoft.FSharp.Core.Operators.box
@@ -17264,7 +17264,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5971 "pars.fsy"
                  : 'gentype_oblockend));
-# 17267 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 17267 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -17274,7 +17274,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5972 "pars.fsy"
                  : 'gentype_oblockend));
-# 17277 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 17277 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -17284,7 +17284,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5973 "pars.fsy"
                  : 'gentype_oblockend));
-# 17287 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 17287 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -17294,7 +17294,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5976 "pars.fsy"
                  : 'gentype_ends_other_than_rparen_coming_soon_or_recover));
-# 17297 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 17297 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -17304,7 +17304,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5977 "pars.fsy"
                  : 'gentype_ends_other_than_rparen_coming_soon_or_recover));
-# 17307 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 17307 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -17314,7 +17314,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5978 "pars.fsy"
                  : 'gentype_ends_other_than_rparen_coming_soon_or_recover));
-# 17317 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 17317 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -17324,7 +17324,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5979 "pars.fsy"
                  : 'gentype_ends_other_than_rparen_coming_soon_or_recover));
-# 17327 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 17327 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_recover in
             Microsoft.FSharp.Core.Operators.box
@@ -17335,7 +17335,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5980 "pars.fsy"
                  : 'gentype_ends_other_than_rparen_coming_soon_or_recover));
-# 17338 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 17338 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -17345,7 +17345,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5983 "pars.fsy"
                  : 'gentype_ends_coming_soon_or_recover));
-# 17348 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 17348 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -17355,7 +17355,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5984 "pars.fsy"
                  : 'gentype_ends_coming_soon_or_recover));
-# 17358 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 17358 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -17365,7 +17365,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5985 "pars.fsy"
                  : 'gentype_ends_coming_soon_or_recover));
-# 17368 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 17368 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -17375,7 +17375,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5986 "pars.fsy"
                  : 'gentype_ends_coming_soon_or_recover));
-# 17378 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 17378 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
@@ -17385,7 +17385,7 @@ let _fsyacc_reductions = lazy [|
                    )
 # 5987 "pars.fsy"
                  : 'gentype_ends_coming_soon_or_recover));
-# 17388 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 17388 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
         (fun (parseState : Internal.Utilities.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_recover in
             Microsoft.FSharp.Core.Operators.box
@@ -17397,7 +17397,7 @@ let _fsyacc_reductions = lazy [|
 # 5988 "pars.fsy"
                  : 'gentype_ends_coming_soon_or_recover));
 |]
-# 17400 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/pars.fs"
+# 17400 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\pars.fs"
 let tables : Internal.Utilities.Text.Parsing.Tables<_> = 
   { reductions = _fsyacc_reductions.Value;
     endOfInputTag = _fsyacc_endOfInputTag;
