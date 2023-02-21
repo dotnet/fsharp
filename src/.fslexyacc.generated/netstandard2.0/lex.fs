@@ -224,7 +224,7 @@ let evalFloat args lexbuf =
         fail args lexbuf (FSComp.SR.lexInvalidFloat()) 0.0f
 
 
-# 227 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 227 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
 let trans : uint16[] array = 
     [| 
     (* State 0 *)
@@ -1805,32 +1805,32 @@ and token args skip lexbuf =
   | 0 -> ( 
 # 347 "lex.fsl"
                       Keywords.KeywordOrIdentifierToken args lexbuf (lexeme lexbuf) 
-# 1808 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 1808 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 1 -> ( 
 # 350 "lex.fsl"
                       DO_BANG 
-# 1813 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 1813 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 2 -> ( 
 # 353 "lex.fsl"
                       YIELD_BANG(true)  
-# 1818 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 1818 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 3 -> ( 
 # 356 "lex.fsl"
                       YIELD_BANG(false) 
-# 1823 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 1823 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 4 -> ( 
 # 359 "lex.fsl"
                       MATCH_BANG 
-# 1828 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 1828 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 5 -> ( 
 # 362 "lex.fsl"
                       AND_BANG(false) 
-# 1833 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 1833 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 6 -> ( 
 # 365 "lex.fsl"
@@ -1838,12 +1838,12 @@ and token args skip lexbuf =
                       match tok with
                       | LET _ -> BINDER (lexemeTrimRight lexbuf 1)
                       | _ -> fail args lexbuf (FSComp.SR.lexIdentEndInMarkReserved("!")) (Keywords.KeywordOrIdentifierToken args lexbuf (lexeme lexbuf)) 
-# 1841 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 1841 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 7 -> ( 
 # 371 "lex.fsl"
                       fail args lexbuf (FSComp.SR.lexIdentEndInMarkReserved("#")) (Keywords.KeywordOrIdentifierToken args lexbuf (lexeme lexbuf)) 
-# 1846 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 1846 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 8 -> ( 
 # 374 "lex.fsl"
@@ -1852,21 +1852,21 @@ and token args skip lexbuf =
                       if Ranges.isInt8BadMax n then INT8(SByte.MinValue, true (* 'true' = 'bad'*) )
                       else if n > int SByte.MaxValue || n < int SByte.MinValue then fail args lexbuf (FSComp.SR.lexOutsideEightBitSigned()) (INT8(0y, false))
                       else INT8(sbyte n, false)  
-# 1855 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 1855 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 9 -> ( 
 # 381 "lex.fsl"
                       let n = lexemeTrimRightToInt32 args lexbuf 1
                       if n > int Byte.MaxValue || n < 0 then fail args lexbuf (FSComp.SR.lexOutsideEightBitSignedHex()) (INT8(0y, false))
                       else INT8(sbyte(byte(n)), false) 
-# 1862 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 1862 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 10 -> ( 
 # 386 "lex.fsl"
                       let n = lexemeTrimRightToInt32 args lexbuf 2
                       if n > int Byte.MaxValue || n < 0 then fail args lexbuf (FSComp.SR.lexOutsideEightBitUnsigned()) (UINT8(0uy))
                       else UINT8(byte n)  
-# 1869 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 1869 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 11 -> ( 
 # 391 "lex.fsl"
@@ -1875,21 +1875,21 @@ and token args skip lexbuf =
                       if Ranges.isInt16BadMax n then INT16(Int16.MinValue, true (* 'true' = 'bad'*) )
                       else if n > int Int16.MaxValue || n < int Int16.MinValue then fail args lexbuf (FSComp.SR.lexOutsideSixteenBitSigned()) (INT16(0s, false))
                       else INT16(int16 n, false)  
-# 1878 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 1878 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 12 -> ( 
 # 398 "lex.fsl"
                       let n = lexemeTrimRightToInt32 args lexbuf 1
                       if n > int UInt16.MaxValue || n < 0 then fail args lexbuf (FSComp.SR.lexOutsideSixteenBitSigned()) (INT16(0s,false))
                       else INT16(int16(uint16(n)), false) 
-# 1885 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 1885 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 13 -> ( 
 # 403 "lex.fsl"
                       let n = lexemeTrimRightToInt32 args lexbuf 2
                       if n > int UInt16.MaxValue || n < 0 then fail args lexbuf (FSComp.SR.lexOutsideSixteenBitUnsigned()) (UINT16(0us))
                       else UINT16(uint16 n) 
-# 1892 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 1892 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 14 -> ( 
 # 408 "lex.fsl"
@@ -1899,7 +1899,7 @@ and token args skip lexbuf =
                       let n = try int32 s with _ ->  fail args lexbuf (FSComp.SR.lexOutsideThirtyTwoBitSigned()) 0
                       INT32_DOT_DOT(n, false)
                     
-# 1902 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 1902 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 15 -> ( 
 # 417 "lex.fsl"
@@ -1910,7 +1910,7 @@ and token args skip lexbuf =
                           try int32 s with _ ->  fail args lexbuf (FSComp.SR.lexOutsideThirtyTwoBitSigned()) 0
                       INT32(n, false)
                     
-# 1913 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 1913 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 16 -> ( 
 # 427 "lex.fsl"
@@ -1921,7 +1921,7 @@ and token args skip lexbuf =
                           try int32 s with _ ->  fail args lexbuf (FSComp.SR.lexOutsideThirtyTwoBitSigned()) 0
                       INT32(n, false)
                     
-# 1924 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 1924 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 17 -> ( 
 # 436 "lex.fsl"
@@ -1931,7 +1931,7 @@ and token args skip lexbuf =
                           try int64 s with _ ->  fail args lexbuf (FSComp.SR.lexOutsideThirtyTwoBitUnsigned()) 0L
                       if n > int64 UInt32.MaxValue || n < 0L then fail args lexbuf (FSComp.SR.lexOutsideThirtyTwoBitUnsigned()) (UINT32(0u)) else
                       UINT32(uint32 (uint64 n)) 
-# 1934 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 1934 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 18 -> ( 
 # 444 "lex.fsl"
@@ -1941,7 +1941,7 @@ and token args skip lexbuf =
                           try int64 s with _ ->  fail args lexbuf (FSComp.SR.lexOutsideThirtyTwoBitUnsigned()) 0L
                       if n > int64 UInt32.MaxValue || n < 0L then fail args lexbuf (FSComp.SR.lexOutsideThirtyTwoBitUnsigned()) (UINT32(0u)) else
                       UINT32(uint32 (uint64 n)) 
-# 1944 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 1944 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 19 -> ( 
 # 452 "lex.fsl"
@@ -1952,7 +1952,7 @@ and token args skip lexbuf =
                           try int64 s with _ ->  fail args lexbuf (FSComp.SR.lexOutsideSixtyFourBitSigned()) 0L
                       INT64(n,false)
                     
-# 1955 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 1955 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 20 -> ( 
 # 461 "lex.fsl"
@@ -1960,7 +1960,7 @@ and token args skip lexbuf =
                       let n =
                         try uint64 s with _ -> fail args lexbuf (FSComp.SR.lexOutsideSixtyFourBitUnsigned()) 0UL
                       UINT64(n) 
-# 1963 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 1963 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 21 -> ( 
 # 467 "lex.fsl"
@@ -1971,19 +1971,19 @@ and token args skip lexbuf =
                           try int64 s with _ ->  fail args lexbuf (FSComp.SR.lexOutsideNativeSigned()) 0L
                       NATIVEINT(n,false)
                     
-# 1974 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 1974 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 22 -> ( 
 # 476 "lex.fsl"
                       try
                           UNATIVEINT(uint64 (removeUnderscores (lexemeTrimRight lexbuf 2)))
                       with _ ->  fail args lexbuf (FSComp.SR.lexOutsideNativeUnsigned())  (UNATIVEINT(0UL)) 
-# 1981 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 1981 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 23 -> ( 
 # 481 "lex.fsl"
                       IEEE32 (evalFloat args lexbuf) 
-# 1986 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 1986 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 24 -> ( 
 # 484 "lex.fsl"
@@ -1992,12 +1992,12 @@ and token args skip lexbuf =
                       else
                          fail args lexbuf (FSComp.SR.lexInvalidFloat()) (IEEE32 0.0f)
                     
-# 1995 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 1995 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 25 -> ( 
 # 491 "lex.fsl"
                       IEEE64 (try float(lexeme lexbuf) with _ -> fail args lexbuf (FSComp.SR.lexInvalidFloat()) 0.0) 
-# 2000 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2000 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 26 -> ( 
 # 494 "lex.fsl"
@@ -2009,7 +2009,7 @@ and token args skip lexbuf =
                       with
                          e -> fail args lexbuf (FSComp.SR.lexOusideDecimal()) (DECIMAL (decimal 0))
                     
-# 2012 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2012 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 27 -> ( 
 # 503 "lex.fsl"
@@ -2019,31 +2019,31 @@ and token args skip lexbuf =
                       let n64 = (try (int64 s) with _ -> fail args lexbuf (FSComp.SR.lexInvalidFloat()) 0L)
                       if n64 > 0xFFFFFFFFL || n64 < 0L then fail args lexbuf (FSComp.SR.lexOusideThirtyTwoBitFloat()) (IEEE32 0.0f) else
                       IEEE32 (System.BitConverter.ToSingle(System.BitConverter.GetBytes(int32 (uint32 (uint64 n64))),0)) 
-# 2022 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2022 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 28 -> ( 
 # 511 "lex.fsl"
                      
                       let n64 = (try int64 (removeUnderscores (lexemeTrimRight lexbuf 2)) with _ -> fail args lexbuf (FSComp.SR.lexInvalidFloat()) 0L)
                       IEEE64 (System.BitConverter.Int64BitsToDouble(n64)) 
-# 2029 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2029 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 29 -> ( 
 # 516 "lex.fsl"
                         let s = lexeme lexbuf
                         BIGNUM (removeUnderscores (lexemeTrimRight lexbuf 1), s.[s.Length-1..s.Length-1]) 
-# 2035 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2035 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 30 -> ( 
 # 520 "lex.fsl"
                         fail args lexbuf (FSComp.SR.lexInvalidNumericLiteral()) (INT32(0,false)) 
-# 2040 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2040 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 31 -> ( 
 # 523 "lex.fsl"
                       let s = lexeme lexbuf
                       CHAR (if s.[1] = '\\' then escape s.[2] else s.[1])  
-# 2046 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2046 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 32 -> ( 
 # 527 "lex.fsl"
@@ -2053,7 +2053,7 @@ and token args skip lexbuf =
                           fail args lexbuf (FSComp.SR.lexInvalidByteLiteral()) (UINT8(byte 0))
                       else
                           UINT8 (byte(x))  
-# 2056 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2056 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 33 -> ( 
 # 535 "lex.fsl"
@@ -2064,7 +2064,7 @@ and token args skip lexbuf =
                           fail args lexbuf (FSComp.SR.lexInvalidCharLiteral()) (CHAR c)
                       else
                           CHAR c 
-# 2067 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2067 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 34 -> ( 
 # 544 "lex.fsl"
@@ -2074,7 +2074,7 @@ and token args skip lexbuf =
                           fail args lexbuf (FSComp.SR.lexInvalidByteLiteral()) (UINT8(byte 0))
                       else
                           UINT8 (byte(x))  
-# 2077 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2077 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 35 -> ( 
 # 552 "lex.fsl"
@@ -2083,24 +2083,24 @@ and token args skip lexbuf =
                           fail args lexbuf (FSComp.SR.lexInvalidByteLiteral()) (UINT8(byte 0))
                       else
                           UINT8 (byte(x))  
-# 2086 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2086 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 36 -> ( 
 # 558 "lex.fsl"
                                             CHAR (char (int32 (hexGraphShort (lexemeTrimBoth lexbuf 3 1)))) 
-# 2091 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2091 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 37 -> ( 
 # 560 "lex.fsl"
                                                 CHAR (char (int32 (unicodeGraphShort (lexemeTrimBoth lexbuf 3 1)))) 
-# 2096 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2096 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 38 -> ( 
 # 563 "lex.fsl"
                       match unicodeGraphLong (lexemeTrimBoth lexbuf 3 1) with
                       | SingleChar(c) -> CHAR (char c)
                       | _ -> fail args lexbuf  (FSComp.SR.lexThisUnicodeOnlyInStringLiterals()) (CHAR (char 0)) 
-# 2103 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2103 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 39 -> ( 
 # 568 "lex.fsl"
@@ -2108,44 +2108,44 @@ and token args skip lexbuf =
                          mlCompatWarning (FSComp.SR.lexIndentOffForML()) lexbuf.LexemeRange
                       if not skip then COMMENT (LexCont.Token (args.ifdefStack, args.stringNest))
                       else token args skip lexbuf 
-# 2111 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2111 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 40 -> ( 
 # 574 "lex.fsl"
                       if not skip then COMMENT (LexCont.Token (args.ifdefStack, args.stringNest))
                       else token args skip lexbuf 
-# 2117 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2117 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 41 -> ( 
 # 578 "lex.fsl"
                       if not skip then COMMENT (LexCont.Token (args.ifdefStack, args.stringNest))
                       else token args skip lexbuf  
-# 2123 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2123 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 42 -> ( 
 # 582 "lex.fsl"
                       if not skip then COMMENT (LexCont.Token (args.ifdefStack, args.stringNest))
                       else token args skip lexbuf 
-# 2129 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2129 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 43 -> ( 
 # 586 "lex.fsl"
                       LPAREN_STAR_RPAREN 
-# 2134 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2134 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 44 -> ( 
 # 589 "lex.fsl"
                       let m = lexbuf.LexemeRange
                       if not skip then COMMENT (LexCont.Comment(args.ifdefStack, args.stringNest, 1, m))
                       else comment (1,m,args) skip lexbuf 
-# 2141 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2141 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 45 -> ( 
 # 594 "lex.fsl"
                       let m = lexbuf.LexemeRange
                       if not skip then COMMENT (LexCont.MLOnly(args.ifdefStack, args.stringNest, m))
                       else mlOnly m args skip lexbuf 
-# 2148 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2148 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 46 -> ( 
 # 599 "lex.fsl"
@@ -2153,137 +2153,125 @@ and token args skip lexbuf =
                       // Single quote in triple quote ok, others disallowed
                       match args.stringNest with
                       | (_, LexerStringStyle.TripleQuote, _) :: _ -> ()
-                      | _ :: rest ->
-                          args.stringNest <- rest
-                          errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
+                      | _ :: _ -> errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
                       | [] -> ()
                       if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, LexerStringKind.String, m))
                       else singleQuoteString (buf, fin, m, LexerStringKind.String, args) skip lexbuf 
-# 2162 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2160 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 47 -> ( 
-# 613 "lex.fsl"
+# 611 "lex.fsl"
                       let buf, fin, m = startString args lexbuf
                       // Single quote in triple quote ok, others disallowed
                       match args.stringNest with
-                      | _ :: rest ->
-                          args.stringNest <- rest
-                          errorR(Error(FSComp.SR.lexTripleQuoteInTripleQuote(), m))
+                      | _ :: _ -> errorR(Error(FSComp.SR.lexTripleQuoteInTripleQuote(), m))
                       | [] -> ()
                       if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, LexerStringKind.InterpolatedStringFirst, m))
                       else tripleQuoteString (buf, fin, m, LexerStringKind.InterpolatedStringFirst, args) skip lexbuf 
-# 2175 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2171 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 48 -> ( 
-# 626 "lex.fsl"
+# 622 "lex.fsl"
                       let buf,fin,m = startString args lexbuf
                       // Single quote in triple quote ok, others disallowed
                       match args.stringNest with
                       | (_, LexerStringStyle.TripleQuote, _) :: _ -> ()
-                      | _ :: rest ->
-                          args.stringNest <- rest
-                          errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
+                      | _ :: _ -> errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
                       | _ -> ()
                       if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, LexerStringKind.InterpolatedStringFirst, m))
                       else singleQuoteString (buf, fin, m, LexerStringKind.InterpolatedStringFirst, args) skip lexbuf 
-# 2189 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2183 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 49 -> ( 
-# 640 "lex.fsl"
+# 634 "lex.fsl"
                       let buf, fin, m = startString args lexbuf
                       // Single quote in triple quote ok, others disallowed
                       match args.stringNest with
-                      | _ :: rest ->
-                          args.stringNest <- rest
-                          errorR(Error(FSComp.SR.lexTripleQuoteInTripleQuote(), m))
+                      | _ :: _ -> errorR(Error(FSComp.SR.lexTripleQuoteInTripleQuote(), m))
                       | _ -> ()
                       if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, LexerStringKind.String, m))
                       else tripleQuoteString (buf, fin, m, LexerStringKind.String, args) skip lexbuf 
-# 2202 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2194 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 50 -> ( 
-# 653 "lex.fsl"
+# 645 "lex.fsl"
                       let buf, fin, m = startString args lexbuf
                       // Single quote in triple quote ok, others disallowed
                       match args.stringNest with
                       | (_, LexerStringStyle.TripleQuote, _) :: _ -> ()
-                      | _ :: rest ->
-                          args.stringNest <- rest
-                          errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
+                      | _ :: _ -> errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
                       | _ -> ()
                       if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, LexerStringKind.String, m))
                       else verbatimString (buf, fin, m, LexerStringKind.String, args) skip lexbuf 
-# 2216 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2206 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 51 -> ( 
-# 667 "lex.fsl"
+# 657 "lex.fsl"
                       let buf, fin, m = startString args lexbuf
                       // Single quote in triple quote ok, others disallowed
                       match args.stringNest with
                       | (_, LexerStringStyle.TripleQuote, _) :: _ -> ()
-                      | _ :: rest ->
-                          args.stringNest <- rest
-                          errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
+                      | _ :: _ -> errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
                       | _ -> ()
                       if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, LexerStringKind.InterpolatedStringFirst, m))
                       else verbatimString (buf, fin, m, LexerStringKind.InterpolatedStringFirst, args) skip lexbuf 
-# 2230 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2218 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 52 -> ( 
-# 681 "lex.fsl"
+# 669 "lex.fsl"
                       if skip then token args skip lexbuf
                       else WHITESPACE (LexCont.Token(args.ifdefStack, args.stringNest)) 
-# 2236 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2224 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 53 -> ( 
-# 685 "lex.fsl"
+# 673 "lex.fsl"
                       if args.indentationSyntaxStatus.Status then errorR(Error(FSComp.SR.lexTabsNotAllowed(), lexbuf.LexemeRange))
                       if not skip then WHITESPACE (LexCont.Token(args.ifdefStack, args.stringNest))
                       else token args skip lexbuf 
-# 2243 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2231 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 54 -> ( 
-# 690 "lex.fsl"
+# 678 "lex.fsl"
                       // 4+ slash are 1-line comments, online 3 slash are XmlDoc
                       let m = lexbuf.LexemeRange
                       LexbufLocalXmlDocStore.AddGrabPointDelayed(lexbuf)
                       if not skip then LINE_COMMENT (LexCont.SingleLineComment(args.ifdefStack, args.stringNest, 1, m))
                       else singleLineComment (None,1,m,m,args) skip lexbuf 
-# 2252 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2240 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 55 -> ( 
-# 697 "lex.fsl"
+# 685 "lex.fsl"
                       // Match exactly 3 slash, 4+ slash caught by preceding rule
                       let m = lexbuf.LexemeRange
                       let doc = lexemeTrimLeft lexbuf 3
                       let sb = (new StringBuilder(100)).Append(doc)
                       if not skip then LINE_COMMENT (LexCont.SingleLineComment(args.ifdefStack, args.stringNest, 1, m))
                       else singleLineComment (Some (m, sb),1,m,m,args) skip lexbuf 
-# 2262 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2250 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 56 -> ( 
-# 705 "lex.fsl"
+# 693 "lex.fsl"
                       // Need to read all operator symbols too, otherwise it might be parsed by a rule below
                       let m = lexbuf.LexemeRange
                       LexbufLocalXmlDocStore.AddGrabPointDelayed(lexbuf)
                       if not skip then LINE_COMMENT (LexCont.SingleLineComment(args.ifdefStack, args.stringNest, 1, m))
                       else singleLineComment (None,1,m,m,args) skip lexbuf 
-# 2271 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2259 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 57 -> ( 
-# 712 "lex.fsl"
+# 700 "lex.fsl"
                       newline lexbuf
                       if not skip then WHITESPACE (LexCont.Token(args.ifdefStack, args.stringNest))
                       else token args skip lexbuf 
-# 2278 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2266 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 58 -> ( 
-# 717 "lex.fsl"
+# 705 "lex.fsl"
                       Keywords.IdentifierToken args lexbuf (lexemeTrimBoth lexbuf 2 2) 
-# 2283 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2271 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 59 -> ( 
-# 720 "lex.fsl"
+# 708 "lex.fsl"
                        let pos = lexbuf.EndPos
                        if skip then
                            let s = lexeme lexbuf
@@ -2330,220 +2318,220 @@ and token args skip lexbuf =
                            newline lexbuf
                            HASH_LINE (LexCont.Token (args.ifdefStack, args.stringNest))
                     
-# 2333 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2321 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 60 -> ( 
-# 776 "lex.fsl"
+# 764 "lex.fsl"
                          checkExprOp lexbuf; LQUOTE ("<@ @>", false) 
-# 2338 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2326 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 61 -> ( 
-# 778 "lex.fsl"
+# 766 "lex.fsl"
                           checkExprOp lexbuf; LQUOTE ("<@@ @@>", true) 
-# 2343 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2331 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 62 -> ( 
-# 780 "lex.fsl"
+# 768 "lex.fsl"
                          checkExprOp lexbuf; RQUOTE ("<@ @>", false) 
-# 2348 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2336 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 63 -> ( 
-# 782 "lex.fsl"
+# 770 "lex.fsl"
                           checkExprOp lexbuf; RQUOTE ("<@@ @@>", true) 
-# 2353 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2341 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 64 -> ( 
-# 784 "lex.fsl"
+# 772 "lex.fsl"
                         HASH 
-# 2358 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2346 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 65 -> ( 
-# 786 "lex.fsl"
+# 774 "lex.fsl"
                         AMP 
-# 2363 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2351 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 66 -> ( 
-# 788 "lex.fsl"
+# 776 "lex.fsl"
                          AMP_AMP 
-# 2368 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2356 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 67 -> ( 
-# 790 "lex.fsl"
+# 778 "lex.fsl"
                          BAR_BAR 
-# 2373 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2361 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 68 -> ( 
-# 792 "lex.fsl"
+# 780 "lex.fsl"
                          QUOTE 
-# 2378 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2366 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 69 -> ( 
-# 794 "lex.fsl"
+# 782 "lex.fsl"
                         LPAREN 
-# 2383 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2371 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 70 -> ( 
-# 796 "lex.fsl"
+# 784 "lex.fsl"
                         RPAREN 
-# 2388 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2376 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 71 -> ( 
-# 798 "lex.fsl"
+# 786 "lex.fsl"
                         STAR 
-# 2393 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2381 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 72 -> ( 
-# 800 "lex.fsl"
+# 788 "lex.fsl"
                         COMMA 
-# 2398 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2386 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 73 -> ( 
-# 802 "lex.fsl"
+# 790 "lex.fsl"
                          RARROW 
-# 2403 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2391 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 74 -> ( 
-# 804 "lex.fsl"
+# 792 "lex.fsl"
                         QMARK 
-# 2408 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2396 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 75 -> ( 
-# 806 "lex.fsl"
+# 794 "lex.fsl"
                          QMARK_QMARK 
-# 2413 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2401 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 76 -> ( 
-# 808 "lex.fsl"
+# 796 "lex.fsl"
                          DOT_DOT 
-# 2418 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2406 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 77 -> ( 
-# 810 "lex.fsl"
+# 798 "lex.fsl"
                           DOT_DOT_HAT 
-# 2423 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2411 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 78 -> ( 
-# 812 "lex.fsl"
+# 800 "lex.fsl"
                         DOT 
-# 2428 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2416 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 79 -> ( 
-# 814 "lex.fsl"
+# 802 "lex.fsl"
                         COLON 
-# 2433 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2421 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 80 -> ( 
-# 816 "lex.fsl"
+# 804 "lex.fsl"
                          COLON_COLON 
-# 2438 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2426 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 81 -> ( 
-# 818 "lex.fsl"
+# 806 "lex.fsl"
                          COLON_GREATER 
-# 2443 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2431 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 82 -> ( 
-# 820 "lex.fsl"
+# 808 "lex.fsl"
                           RQUOTE_DOT ("<@ @>",false) 
-# 2448 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2436 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 83 -> ( 
-# 822 "lex.fsl"
+# 810 "lex.fsl"
                            RQUOTE_DOT ("<@@ @@>",true) 
-# 2453 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2441 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 84 -> ( 
-# 824 "lex.fsl"
+# 812 "lex.fsl"
                           GREATER_BAR_RBRACK 
-# 2458 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2446 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 85 -> ( 
-# 826 "lex.fsl"
+# 814 "lex.fsl"
                           COLON_QMARK_GREATER 
-# 2463 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2451 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 86 -> ( 
-# 828 "lex.fsl"
+# 816 "lex.fsl"
                          COLON_QMARK 
-# 2468 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2456 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 87 -> ( 
-# 830 "lex.fsl"
+# 818 "lex.fsl"
                          COLON_EQUALS 
-# 2473 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2461 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 88 -> ( 
-# 832 "lex.fsl"
+# 820 "lex.fsl"
                          SEMICOLON_SEMICOLON 
-# 2478 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2466 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 89 -> ( 
-# 834 "lex.fsl"
+# 822 "lex.fsl"
                         SEMICOLON 
-# 2483 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2471 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 90 -> ( 
-# 836 "lex.fsl"
+# 824 "lex.fsl"
                          LARROW 
-# 2488 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2476 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 91 -> ( 
-# 838 "lex.fsl"
+# 826 "lex.fsl"
                         EQUALS 
-# 2493 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2481 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 92 -> ( 
-# 840 "lex.fsl"
+# 828 "lex.fsl"
                         LBRACK 
-# 2498 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2486 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 93 -> ( 
-# 842 "lex.fsl"
+# 830 "lex.fsl"
                          LBRACK_BAR 
-# 2503 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2491 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 94 -> ( 
-# 844 "lex.fsl"
+# 832 "lex.fsl"
                          LBRACE_BAR 
-# 2508 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2496 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 95 -> ( 
-# 846 "lex.fsl"
+# 834 "lex.fsl"
                         LESS false 
-# 2513 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2501 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 96 -> ( 
-# 848 "lex.fsl"
+# 836 "lex.fsl"
                         GREATER false 
-# 2518 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2506 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 97 -> ( 
-# 850 "lex.fsl"
+# 838 "lex.fsl"
                          LBRACK_LESS 
-# 2523 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2511 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 98 -> ( 
-# 852 "lex.fsl"
+# 840 "lex.fsl"
                         RBRACK 
-# 2528 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2516 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 99 -> ( 
-# 854 "lex.fsl"
+# 842 "lex.fsl"
                          BAR_RBRACK 
-# 2533 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2521 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 100 -> ( 
-# 856 "lex.fsl"
+# 844 "lex.fsl"
                          BAR_RBRACE 
-# 2538 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2526 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 101 -> ( 
-# 858 "lex.fsl"
+# 846 "lex.fsl"
                          GREATER_RBRACK 
-# 2543 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2531 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 102 -> ( 
-# 861 "lex.fsl"
+# 849 "lex.fsl"
                      
                       match args.stringNest with
                       | [] -> ()
@@ -2555,15 +2543,15 @@ and token args skip lexbuf =
                       let cont = LexCont.Token(args.ifdefStack, args.stringNest)
                       LBRACE cont
                     
-# 2558 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2546 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 103 -> ( 
-# 873 "lex.fsl"
+# 861 "lex.fsl"
                         BAR 
-# 2563 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2551 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 104 -> ( 
-# 876 "lex.fsl"
+# 864 "lex.fsl"
                      
                       // We encounter a '}' in the expression token stream.  First check if we're in an interpolated string expression
                       // and continue the string if necessary
@@ -2588,94 +2576,94 @@ and token args skip lexbuf =
                           let cont = LexCont.Token(args.ifdefStack, args.stringNest)
                           RBRACE cont
                     
-# 2591 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2579 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 105 -> ( 
-# 903 "lex.fsl"
+# 891 "lex.fsl"
                         DOLLAR 
-# 2596 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2584 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 106 -> ( 
-# 905 "lex.fsl"
+# 893 "lex.fsl"
                         PERCENT_OP("%") 
-# 2601 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2589 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 107 -> ( 
-# 907 "lex.fsl"
+# 895 "lex.fsl"
                          PERCENT_OP("%%") 
-# 2606 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2594 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 108 -> ( 
-# 909 "lex.fsl"
+# 897 "lex.fsl"
                         MINUS 
-# 2611 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2599 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 109 -> ( 
-# 911 "lex.fsl"
+# 899 "lex.fsl"
                         RESERVED 
-# 2616 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2604 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 110 -> ( 
-# 913 "lex.fsl"
+# 901 "lex.fsl"
                         RESERVED 
-# 2621 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2609 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 111 -> ( 
-# 915 "lex.fsl"
+# 903 "lex.fsl"
                                                                          checkExprOp lexbuf; INFIX_STAR_STAR_OP(lexeme lexbuf) 
-# 2626 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2614 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 112 -> ( 
-# 917 "lex.fsl"
+# 905 "lex.fsl"
                                                                          checkExprOp lexbuf; INFIX_STAR_DIV_MOD_OP(lexeme lexbuf) 
-# 2631 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2619 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 113 -> ( 
-# 919 "lex.fsl"
+# 907 "lex.fsl"
                                                                          checkExprOp lexbuf; PLUS_MINUS_OP(lexeme lexbuf) 
-# 2636 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2624 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 114 -> ( 
-# 921 "lex.fsl"
+# 909 "lex.fsl"
                                                                          checkExprOp lexbuf; INFIX_AT_HAT_OP(lexeme lexbuf) 
-# 2641 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2629 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 115 -> ( 
-# 923 "lex.fsl"
+# 911 "lex.fsl"
                                                                               checkExprOp lexbuf; INFIX_COMPARE_OP(lexeme lexbuf) 
-# 2646 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2634 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 116 -> ( 
-# 925 "lex.fsl"
+# 913 "lex.fsl"
                                                                          checkExprOp lexbuf; INFIX_AMP_OP(lexeme lexbuf) 
-# 2651 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2639 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 117 -> ( 
-# 927 "lex.fsl"
+# 915 "lex.fsl"
                                                                          checkExprOp lexbuf; INFIX_BAR_OP(lexeme lexbuf) 
-# 2656 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2644 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 118 -> ( 
-# 929 "lex.fsl"
+# 917 "lex.fsl"
                                                                          checkExprOp lexbuf; PREFIX_OP(lexeme lexbuf) 
-# 2661 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2649 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 119 -> ( 
-# 933 "lex.fsl"
+# 921 "lex.fsl"
                                       FUNKY_OPERATOR_NAME(lexeme lexbuf) 
-# 2666 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2654 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 120 -> ( 
-# 936 "lex.fsl"
+# 924 "lex.fsl"
                     // Treat shebangs like regular comments, but they are only allowed at the start of a file
                       let m = lexbuf.LexemeRange
                       let tok = LINE_COMMENT (LexCont.SingleLineComment(args.ifdefStack, args.stringNest, 1, m))
                       let tok = shouldStartFile args lexbuf m (0,FSComp.SR.lexHashBangMustBeFirstInFile()) tok
                       if not skip then tok else singleLineComment (None,1,m,m,args) skip lexbuf 
-# 2675 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2663 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 121 -> ( 
-# 944 "lex.fsl"
+# 932 "lex.fsl"
                     if args.indentationSyntaxStatus.ExplicitlySet && args.indentationSyntaxStatus.WarnOnMultipleTokens then
                         let s = lexeme lexbuf
                         warning(Error((0, sprintf "%s should only be set once in an F# source file." s), lexbuf.LexemeRange))
@@ -2684,10 +2672,10 @@ and token args skip lexbuf =
                     args.indentationSyntaxStatus.Status <- true
                     if not skip then HASH_LIGHT (LexCont.Token(args.ifdefStack, args.stringNest))
                     else token args skip lexbuf 
-# 2687 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2675 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 122 -> ( 
-# 954 "lex.fsl"
+# 942 "lex.fsl"
                     args.indentationSyntaxStatus.Status <- false
                     if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
                         mlCompatError (FSComp.SR.mlCompatLightOffNoLongerSupported()) lexbuf.LexemeRange
@@ -2695,10 +2683,10 @@ and token args skip lexbuf =
                         mlCompatWarning (FSComp.SR.lexIndentOffForML()) lexbuf.LexemeRange
                     if not skip then HASH_LIGHT (LexCont.Token (args.ifdefStack, args.stringNest))
                     else token args skip lexbuf 
-# 2698 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2686 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 123 -> ( 
-# 963 "lex.fsl"
+# 951 "lex.fsl"
                     let m = lexbuf.LexemeRange
                     let lookup id = List.contains id args.conditionalDefines
                     let lexed = lexeme lexbuf
@@ -2717,10 +2705,10 @@ and token args skip lexbuf =
                             cont, f
                     let tok = shouldStartLine args lexbuf m (FSComp.SR.lexHashIfMustBeFirst()) (HASH_IF(m,lexed,cont))
                     if not skip then tok else f lexbuf 
-# 2720 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2708 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 124 -> ( 
-# 985 "lex.fsl"
+# 973 "lex.fsl"
                     let lexed = (lexeme lexbuf)
                     match args.ifdefStack with
                     | [] ->  LEX_FAILURE (FSComp.SR.lexHashElseNoMatchingIf())
@@ -2732,10 +2720,10 @@ and token args skip lexbuf =
                       let tok = HASH_ELSE(m, lexed, LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Skip(0, m)))
                       let tok = shouldStartLine args lexbuf m (FSComp.SR.lexHashElseMustBeFirst()) tok
                       if not skip then tok else endline (LexerEndlineContinuation.Skip(0, m)) args skip lexbuf 
-# 2735 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2723 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 125 -> ( 
-# 998 "lex.fsl"
+# 986 "lex.fsl"
                     let lexed = (lexeme lexbuf)
                     let m = lexbuf.LexemeRange
                     match args.ifdefStack with
@@ -2746,38 +2734,38 @@ and token args skip lexbuf =
                        let tok = HASH_ENDIF(m,lexed,LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Token))
                        let tok = shouldStartLine args lexbuf m (FSComp.SR.lexHashEndifMustBeFirst()) tok
                        if not skip then tok else endline LexerEndlineContinuation.Token args skip lexbuf 
-# 2749 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2737 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 126 -> ( 
-# 1010 "lex.fsl"
+# 998 "lex.fsl"
                     let tok = WHITESPACE (LexCont.Token (args.ifdefStack, args.stringNest))
                     let tok = fail args lexbuf (FSComp.SR.lexHashIfMustHaveIdent()) tok
                     if not skip then tok else token args skip lexbuf 
-# 2756 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2744 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 127 -> ( 
-# 1018 "lex.fsl"
+# 1006 "lex.fsl"
                     let n = (lexeme lexbuf).IndexOf('#')
                     lexbuf.StartPos <- lexbuf.StartPos.ShiftColumnBy(n)
                     HASH_IDENT(lexemeTrimLeft lexbuf (n+1)) 
-# 2763 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2751 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 128 -> ( 
-# 1025 "lex.fsl"
+# 1013 "lex.fsl"
                     unexpectedChar lexbuf 
-# 2768 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2756 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 129 -> ( 
-# 1028 "lex.fsl"
+# 1016 "lex.fsl"
                     EOF (LexCont.Token(args.ifdefStack, args.stringNest)) 
-# 2773 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2761 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | _ -> failwith "token"
 // Rule ifdefSkip
 and ifdefSkip n m args skip lexbuf =
   match _fslex_tables.Interpret(308,lexbuf) with
   | 0 -> ( 
-# 1034 "lex.fsl"
+# 1022 "lex.fsl"
                     let m = lexbuf.LexemeRange
                     // If #if is the first thing on the line then increase depth, otherwise skip, because it is invalid (e.g. "(**) #if ...")
                     if (m.StartColumn <> 0) then
@@ -2790,10 +2778,10 @@ and ifdefSkip n m args skip lexbuf =
                       LexbufIfdefStore.SaveIfHash(lexbuf, lexed, expr, m)
                       let tok = INACTIVECODE(LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Skip(n+1, m)))
                       if not skip then tok else endline (LexerEndlineContinuation.Skip(n+1, m)) args skip lexbuf 
-# 2793 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2781 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 1 -> ( 
-# 1049 "lex.fsl"
+# 1037 "lex.fsl"
                      let lexed = (lexeme lexbuf)
                      let m = lexbuf.LexemeRange
                      // If #else is the first thing on the line then process it, otherwise ignore, because it is invalid (e.g. "(**) #else ...")
@@ -2814,10 +2802,10 @@ and ifdefSkip n m args skip lexbuf =
                         LexbufIfdefStore.SaveElseHash(lexbuf, lexed, m)
                         if not skip then INACTIVECODE(LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Skip(n, m)))
                         else endline (LexerEndlineContinuation.Skip(n, m)) args skip lexbuf 
-# 2817 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2805 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 2 -> ( 
-# 1072 "lex.fsl"
+# 1060 "lex.fsl"
                      let lexed = lexeme lexbuf
                      let m = lexbuf.LexemeRange
                      // If #endif is the first thing on the line then process it, otherwise ignore, because it is invalid (e.g. "(**) #endif ...")
@@ -2837,31 +2825,31 @@ and ifdefSkip n m args skip lexbuf =
                           let tok = INACTIVECODE(LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Skip(n-1, m)))
                           let tok = shouldStartLine args lexbuf m (FSComp.SR.lexWrongNestedHashEndif()) tok
                           if not skip then tok else endline (LexerEndlineContinuation.Skip(n-1, m)) args skip lexbuf 
-# 2840 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2828 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 3 -> ( 
-# 1094 "lex.fsl"
+# 1082 "lex.fsl"
                      newline lexbuf; ifdefSkip n m args skip lexbuf 
-# 2845 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2833 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 4 -> ( 
-# 1103 "lex.fsl"
+# 1091 "lex.fsl"
                      // This tries to be nice and get tokens as 'words' because VS uses this when selecting stuff
                      if not skip then INACTIVECODE (LexCont.IfDefSkip(args.ifdefStack, args.stringNest, n, m))
                      else ifdefSkip n m args skip lexbuf 
-# 2852 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2840 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 5 -> ( 
-# 1108 "lex.fsl"
+# 1096 "lex.fsl"
                      EOF (LexCont.IfDefSkip(args.ifdefStack, args.stringNest, n, m)) 
-# 2857 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2845 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | _ -> failwith "ifdefSkip"
 // Rule endline
 and endline cont args skip lexbuf =
   match _fslex_tables.Interpret(301,lexbuf) with
   | 0 -> ( 
-# 1114 "lex.fsl"
+# 1102 "lex.fsl"
                     newline lexbuf
                     match cont with
                     | LexerEndlineContinuation.Token ->
@@ -2871,31 +2859,31 @@ and endline cont args skip lexbuf =
                         if not skip then INACTIVECODE (LexCont.IfDefSkip(args.ifdefStack, args.stringNest, n, m))
                         else ifdefSkip n m args skip lexbuf
                   
-# 2874 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2862 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 1 -> ( 
-# 1126 "lex.fsl"
+# 1114 "lex.fsl"
                     match cont with
                     | LexerEndlineContinuation.Token ->
                         EOF(LexCont.Token(args.ifdefStack, args.stringNest))
                     | LexerEndlineContinuation.Skip(n, m) ->
                         EOF(LexCont.IfDefSkip(args.ifdefStack, args.stringNest, n, m))
                   
-# 2884 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2872 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 2 -> ( 
-# 1136 "lex.fsl"
+# 1124 "lex.fsl"
                     let tok = WHITESPACE (LexCont.Token (args.ifdefStack, args.stringNest))
                     let tok = fail args lexbuf (FSComp.SR.pplexExpectedSingleLineComment()) tok
                     if not skip then tok else token args skip lexbuf 
-# 2891 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2879 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | _ -> failwith "endline"
 // Rule singleQuoteString
 and singleQuoteString sargs skip lexbuf =
   match _fslex_tables.Interpret(244,lexbuf) with
   | 0 -> ( 
-# 1142 "lex.fsl"
+# 1130 "lex.fsl"
                      let (_buf, _fin, m, kind, args) = sargs
                      newline lexbuf
                      let text = lexeme lexbuf
@@ -2903,43 +2891,43 @@ and singleQuoteString sargs skip lexbuf =
                      advanceColumnBy lexbuf (text.Length - text2.Length)
                      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, m))
                      else singleQuoteString sargs skip lexbuf 
-# 2906 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2894 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 1 -> ( 
-# 1151 "lex.fsl"
+# 1139 "lex.fsl"
                      let (buf, _fin, m, kind, args) = sargs
                      addByteChar buf (escape (lexeme lexbuf).[1])
                      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, m))
                      else singleQuoteString sargs skip lexbuf 
-# 2914 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2902 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 2 -> ( 
-# 1157 "lex.fsl"
+# 1145 "lex.fsl"
                      let (buf, _fin, m, kind, args) = sargs
                      let s = lexeme lexbuf
                      addByteChar buf (trigraph s.[1] s.[2] s.[3])
                      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, m))
                      else singleQuoteString sargs skip lexbuf 
-# 2923 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2911 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 3 -> ( 
-# 1164 "lex.fsl"
+# 1152 "lex.fsl"
                      let (buf, _fin, m, kind, args) = sargs
                      addUnicodeChar buf (int (hexGraphShort (lexemeTrimLeft lexbuf 2)))
                      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, m))
                      else singleQuoteString sargs skip lexbuf  
-# 2931 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2919 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 4 -> ( 
-# 1170 "lex.fsl"
+# 1158 "lex.fsl"
                      let (buf, _fin, m, kind, args) = sargs
                      addUnicodeChar buf (int (unicodeGraphShort (lexemeTrimLeft lexbuf 2)))
                      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, m))
                      else singleQuoteString sargs skip lexbuf  
-# 2939 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2927 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 5 -> ( 
-# 1176 "lex.fsl"
+# 1164 "lex.fsl"
                      let (buf, _fin, m, kind, args) = sargs
                      let hexChars = lexemeTrimLeft lexbuf 2
                      let result() =
@@ -2955,35 +2943,35 @@ and singleQuoteString sargs skip lexbuf =
                          addUnicodeChar buf (int hi)
                          addUnicodeChar buf (int lo)
                          result() 
-# 2958 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2946 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 6 -> ( 
-# 1193 "lex.fsl"
+# 1181 "lex.fsl"
                      let (buf, fin, _m, kind, args) = sargs
                      let cont = LexCont.Token(args.ifdefStack, args.stringNest)
                      fin.Finish buf kind (enum<LexerStringFinisherContext>(0)) cont
                    
-# 2966 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2954 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 7 -> ( 
-# 1199 "lex.fsl"
+# 1187 "lex.fsl"
                      let (buf, fin, _m, kind, args) = sargs
                      let cont = LexCont.Token(args.ifdefStack, args.stringNest)
                      fin.Finish buf { kind with IsByteString = true } (enum<LexerStringFinisherContext>(0)) cont
                    
-# 2974 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2962 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 8 -> ( 
-# 1205 "lex.fsl"
+# 1193 "lex.fsl"
                      let (buf, _fin, m, kind, args) = sargs
                      let s = lexeme lexbuf
                      addUnicodeString buf (if kind.IsInterpolated then s.[0..0] else s)
                      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, m))
                      else singleQuoteString sargs skip lexbuf 
-# 2983 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2971 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 9 -> ( 
-# 1212 "lex.fsl"
+# 1200 "lex.fsl"
                      let (buf, fin, m, kind, args) = sargs
                      if kind.IsInterpolated then
                          // get a new range for where the fill starts
@@ -2996,10 +2984,10 @@ and singleQuoteString sargs skip lexbuf =
                          if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, m))
                          else singleQuoteString sargs skip lexbuf
                    
-# 2999 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 2987 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 10 -> ( 
-# 1226 "lex.fsl"
+# 1214 "lex.fsl"
                      let (buf, _fin, m, kind, args) = sargs
                      let result() =
                          if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, m))
@@ -3010,103 +2998,103 @@ and singleQuoteString sargs skip lexbuf =
                          addUnicodeString buf (lexeme lexbuf)
                          (result())
                    
-# 3013 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3001 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 11 -> ( 
-# 1238 "lex.fsl"
+# 1226 "lex.fsl"
                      let (buf, _fin, m, kind, args) = sargs
                      newline lexbuf
                      addUnicodeString buf (lexeme lexbuf)
                      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, m))
                      else singleQuoteString sargs skip lexbuf 
-# 3022 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3010 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 12 -> ( 
-# 1245 "lex.fsl"
+# 1233 "lex.fsl"
                      let (buf, _fin, m, kind, args) = sargs
                      addUnicodeString buf (lexeme lexbuf)
                      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, m))
                      else singleQuoteString sargs skip lexbuf 
-# 3030 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3018 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 13 -> ( 
-# 1252 "lex.fsl"
+# 1240 "lex.fsl"
                      let (buf, _fin, m, kind, args) = sargs
                      addUnicodeString buf (lexeme lexbuf)
                      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, m))
                      else singleQuoteString sargs skip lexbuf 
-# 3038 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3026 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 14 -> ( 
+# 1246 "lex.fsl"
+                     let (buf, _fin, m, kind, args) = sargs
+                     addUnicodeString buf (lexeme lexbuf)
+                     if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, m))
+                     else singleQuoteString sargs skip lexbuf 
+# 3034 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
+          )
+  | 15 -> ( 
+# 1252 "lex.fsl"
+                     let (_buf, _fin, m, kind, args) = sargs
+                     EOF (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, m)) 
+# 3040 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
+          )
+  | 16 -> ( 
 # 1258 "lex.fsl"
                      let (buf, _fin, m, kind, args) = sargs
                      addUnicodeString buf (lexeme lexbuf)
                      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, m))
                      else singleQuoteString sargs skip lexbuf 
-# 3046 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
-          )
-  | 15 -> ( 
-# 1264 "lex.fsl"
-                     let (_buf, _fin, m, kind, args) = sargs
-                     EOF (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, m)) 
-# 3052 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
-          )
-  | 16 -> ( 
-# 1270 "lex.fsl"
-                     let (buf, _fin, m, kind, args) = sargs
-                     addUnicodeString buf (lexeme lexbuf)
-                     if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, m))
-                     else singleQuoteString sargs skip lexbuf 
-# 3060 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3048 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | _ -> failwith "singleQuoteString"
 // Rule verbatimString
 and verbatimString sargs skip lexbuf =
   match _fslex_tables.Interpret(211,lexbuf) with
   | 0 -> ( 
-# 1277 "lex.fsl"
+# 1265 "lex.fsl"
                     let (buf, _fin, m, kind, args) = sargs
                     addByteChar buf '\"'
                     if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, kind, m))
                     else verbatimString sargs skip lexbuf 
-# 3072 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3060 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 1 -> ( 
-# 1283 "lex.fsl"
+# 1271 "lex.fsl"
                      let (buf, fin, _m, kind, args) = sargs
                      let cont = LexCont.Token(args.ifdefStack, args.stringNest)
                      fin.Finish buf kind LexerStringFinisherContext.Verbatim cont
                    
-# 3080 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3068 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 2 -> ( 
-# 1289 "lex.fsl"
+# 1277 "lex.fsl"
                      let (buf, fin, _m, kind, args) = sargs
                      let cont = LexCont.Token(args.ifdefStack, args.stringNest)
                      fin.Finish buf { kind with IsByteString = true } LexerStringFinisherContext.Verbatim cont
                    
-# 3088 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3076 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 3 -> ( 
-# 1295 "lex.fsl"
+# 1283 "lex.fsl"
                      let (buf, _fin, m, kind, args) = sargs
                      newline lexbuf
                      addUnicodeString buf (lexeme lexbuf)
                      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, kind, m))
                      else verbatimString sargs skip lexbuf 
-# 3097 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3085 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 4 -> ( 
-# 1302 "lex.fsl"
+# 1290 "lex.fsl"
                      let (buf, _fin, m, kind, args) = sargs
                      let s = lexeme lexbuf
                      addUnicodeString buf (if kind.IsInterpolated then s.[0..0] else s)
                      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, kind, m))
                      else verbatimString sargs skip lexbuf 
-# 3106 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3094 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 5 -> ( 
-# 1309 "lex.fsl"
+# 1297 "lex.fsl"
                      let (buf, fin, m, kind, args) = sargs
                      if kind.IsInterpolated then
                          // get a new range for where the fill starts
@@ -3119,10 +3107,10 @@ and verbatimString sargs skip lexbuf =
                          if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, kind, m))
                          else verbatimString sargs skip lexbuf
                    
-# 3122 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3110 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 6 -> ( 
-# 1323 "lex.fsl"
+# 1311 "lex.fsl"
                      let (buf, _fin, m, kind, args) = sargs
                      let result() =
                          if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, kind, m))
@@ -3133,101 +3121,101 @@ and verbatimString sargs skip lexbuf =
                          addUnicodeString buf (lexeme lexbuf)
                          (result())
                    
-# 3136 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3124 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 7 -> ( 
-# 1335 "lex.fsl"
+# 1323 "lex.fsl"
                      let (buf, _fin, m, kind, args) = sargs
                      addUnicodeString buf (lexeme lexbuf)
                      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, kind, m))
                      else verbatimString sargs skip lexbuf 
-# 3144 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3132 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 8 -> ( 
-# 1342 "lex.fsl"
+# 1330 "lex.fsl"
                      let (buf, _fin, m, kind, args) = sargs
                      addUnicodeString buf (lexeme lexbuf)
                      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, kind, m))
                      else verbatimString sargs skip lexbuf 
-# 3152 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3140 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 9 -> ( 
-# 1348 "lex.fsl"
+# 1336 "lex.fsl"
                      let (buf, _fin, m, kind, args) = sargs
                      addUnicodeString buf (lexeme lexbuf)
                      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, kind, m))
                      else verbatimString sargs skip lexbuf 
-# 3160 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3148 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 10 -> ( 
-# 1354 "lex.fsl"
+# 1342 "lex.fsl"
                      let (_buf, _fin, m, kind, args) = sargs
                      EOF (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, kind, m)) 
-# 3166 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3154 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 11 -> ( 
-# 1359 "lex.fsl"
+# 1347 "lex.fsl"
                      let (buf, _fin, m, kind, args) = sargs
                      addUnicodeString buf (lexeme lexbuf)
                      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, kind, m))
                      else verbatimString sargs skip lexbuf 
-# 3174 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3162 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | _ -> failwith "verbatimString"
 // Rule tripleQuoteString
 and tripleQuoteString sargs skip lexbuf =
   match _fslex_tables.Interpret(178,lexbuf) with
   | 0 -> ( 
-# 1366 "lex.fsl"
+# 1354 "lex.fsl"
                      let (buf, fin, _m, kind, args) = sargs
                      let cont = LexCont.Token(args.ifdefStack, args.stringNest)
                      fin.Finish buf kind (enum<LexerStringFinisherContext>(4)) cont 
-# 3185 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3173 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 1 -> ( 
-# 1371 "lex.fsl"
+# 1359 "lex.fsl"
                      let (buf, _fin, m, kind, args) = sargs
                      newline lexbuf
                      addUnicodeString buf (lexeme lexbuf)
                      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, m))
                      else tripleQuoteString sargs skip lexbuf 
-# 3194 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3182 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 2 -> ( 
-# 1379 "lex.fsl"
+# 1367 "lex.fsl"
                      let (buf, _fin, m, kind, args) = sargs
                      addUnicodeString buf (lexeme lexbuf)
                      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, m))
                      else tripleQuoteString sargs skip lexbuf 
-# 3202 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3190 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 3 -> ( 
-# 1386 "lex.fsl"
+# 1374 "lex.fsl"
                      let (buf, _fin, m, kind, args) = sargs
                      addUnicodeString buf (lexeme lexbuf)
                      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, m))
                      else tripleQuoteString sargs skip lexbuf 
-# 3210 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3198 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 4 -> ( 
-# 1392 "lex.fsl"
+# 1380 "lex.fsl"
                      let (buf, _fin, m, kind, args) = sargs
                      addUnicodeString buf (lexeme lexbuf)
                      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, m))
                      else tripleQuoteString sargs skip lexbuf 
-# 3218 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3206 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 5 -> ( 
-# 1398 "lex.fsl"
+# 1386 "lex.fsl"
                      let (buf, _fin, m, kind, args) = sargs
                      let s = lexeme lexbuf
                      addUnicodeString buf (if kind.IsInterpolated then s.[0..0] else s)
                      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, m))
                      else tripleQuoteString sargs skip lexbuf 
-# 3227 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3215 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 6 -> ( 
-# 1405 "lex.fsl"
+# 1393 "lex.fsl"
                      let (buf, fin, m, kind, args) = sargs
                      if kind.IsInterpolated then
                          // get a new range for where the fill starts
@@ -3240,10 +3228,10 @@ and tripleQuoteString sargs skip lexbuf =
                          if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, m))
                          else tripleQuoteString sargs skip lexbuf
                    
-# 3243 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3231 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 7 -> ( 
-# 1419 "lex.fsl"
+# 1407 "lex.fsl"
                      let (buf, _fin, m, kind, args) = sargs
                      let result() =
                          if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, m))
@@ -3254,28 +3242,28 @@ and tripleQuoteString sargs skip lexbuf =
                          addUnicodeString buf (lexeme lexbuf)
                          (result())
                    
-# 3257 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3245 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 8 -> ( 
-# 1431 "lex.fsl"
+# 1419 "lex.fsl"
                      let (_buf, _fin, m, kind, args) = sargs
                      EOF (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, m)) 
-# 3263 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3251 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 9 -> ( 
-# 1436 "lex.fsl"
+# 1424 "lex.fsl"
                      let (buf, _fin, m, kind, args) = sargs
                      addUnicodeString buf (lexeme lexbuf)
                      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, m))
                      else tripleQuoteString sargs skip lexbuf 
-# 3271 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3259 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | _ -> failwith "tripleQuoteString"
 // Rule singleLineComment
 and singleLineComment cargs skip lexbuf =
   match _fslex_tables.Interpret(165,lexbuf) with
   | 0 -> ( 
-# 1444 "lex.fsl"
+# 1432 "lex.fsl"
                       let buff,_n, mStart, mEnd, args = cargs
                       trySaveXmlDoc lexbuf buff
                       newline lexbuf
@@ -3284,90 +3272,90 @@ and singleLineComment cargs skip lexbuf =
                       else
                           if Option.isNone buff then LexbufCommentStore.SaveSingleLineComment(lexbuf, mStart, mEnd)
                           token args skip lexbuf 
-# 3287 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3275 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 1 -> ( 
-# 1454 "lex.fsl"
+# 1442 "lex.fsl"
                       let buff, _n, mStart, mEnd, args = cargs
                       trySaveXmlDoc lexbuf buff
                       LexbufCommentStore.SaveSingleLineComment(lexbuf, mStart, mEnd)
                       // NOTE: it is legal to end a file with this comment, so we'll return EOF as a token
                       EOF (LexCont.Token(args.ifdefStack, args.stringNest)) 
-# 3296 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3284 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 2 -> ( 
-# 1462 "lex.fsl"
+# 1450 "lex.fsl"
                       let buff, n, m, _, args = cargs
                       // Append the current token to the XML documentation if we're collecting it
                       tryAppendXmlDoc buff (lexeme lexbuf)
                       if not skip then LINE_COMMENT (LexCont.SingleLineComment(args.ifdefStack, args.stringNest, n, m))
                       else singleLineComment (buff, n, m, lexbuf.LexemeRange, args) skip lexbuf  
-# 3305 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3293 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 3 -> ( 
-# 1469 "lex.fsl"
+# 1457 "lex.fsl"
                       let _, _n, _mStart, _mEnd, args = cargs
                       if not skip then LINE_COMMENT (LexCont.Token(args.ifdefStack, args.stringNest))
                       else token args skip lexbuf 
-# 3312 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3300 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | _ -> failwith "singleLineComment"
 // Rule comment
 and comment cargs skip lexbuf =
   match _fslex_tables.Interpret(139,lexbuf) with
   | 0 -> ( 
-# 1476 "lex.fsl"
+# 1464 "lex.fsl"
                      let n, m, args = cargs
                      if not skip then COMMENT (LexCont.Comment(args.ifdefStack, args.stringNest, n, m))
                      else comment (n, m, args) skip lexbuf  
-# 3323 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3311 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 1 -> ( 
-# 1481 "lex.fsl"
+# 1469 "lex.fsl"
                      let n, m, args = cargs
                      if not skip then COMMENT (LexCont.StringInComment(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, n, m))
                      else stringInComment n m args skip lexbuf 
-# 3330 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3318 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 2 -> ( 
-# 1486 "lex.fsl"
+# 1474 "lex.fsl"
                      let n, m, args = cargs
                      if not skip then COMMENT (LexCont.StringInComment(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, n, m))
                      else tripleQuoteStringInComment n m args skip lexbuf 
-# 3337 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3325 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 3 -> ( 
-# 1491 "lex.fsl"
+# 1479 "lex.fsl"
                      let n, m, args = cargs
                      if not skip then COMMENT (LexCont.StringInComment(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, n, m))
                      else verbatimStringInComment n m args skip lexbuf 
-# 3344 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3332 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 4 -> ( 
-# 1496 "lex.fsl"
+# 1484 "lex.fsl"
                      let n, m, args = cargs
                      LexbufLocalXmlDocStore.AddGrabPoint(lexbuf)
                      if not skip then COMMENT (LexCont.Comment(args.ifdefStack, args.stringNest, n, m))
                      else comment cargs skip lexbuf 
-# 3352 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3340 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 5 -> ( 
-# 1502 "lex.fsl"
+# 1490 "lex.fsl"
                      let n, m, args = cargs
                      if not skip then COMMENT (LexCont.Comment(args.ifdefStack, args.stringNest, n+1, m))
                      else comment (n+1,m,args) skip lexbuf 
-# 3359 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3347 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 6 -> ( 
-# 1507 "lex.fsl"
+# 1495 "lex.fsl"
                      let n, m, args = cargs
                      newline lexbuf
                      if not skip then COMMENT (LexCont.Comment(args.ifdefStack, args.stringNest, n, m))
                      else comment cargs skip lexbuf 
-# 3367 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3355 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 7 -> ( 
-# 1512 "lex.fsl"
+# 1500 "lex.fsl"
                     
                      let n, m, args = cargs
                      if n > 1 then
@@ -3379,192 +3367,192 @@ and comment cargs skip lexbuf =
                          else
                              LexbufCommentStore.SaveBlockComment(lexbuf, m, lexbuf.LexemeRange) 
                              token args skip lexbuf 
-# 3382 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3370 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 8 -> ( 
-# 1526 "lex.fsl"
+# 1514 "lex.fsl"
                      let n, m, args = cargs
                      if not skip then COMMENT (LexCont.Comment(args.ifdefStack, args.stringNest, n, m))
                      else comment cargs skip lexbuf 
-# 3389 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3377 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 9 -> ( 
-# 1531 "lex.fsl"
+# 1519 "lex.fsl"
                       let n, m, args = cargs
                       EOF (LexCont.Comment(args.ifdefStack, args.stringNest, n, m)) 
-# 3395 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3383 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 10 -> ( 
-# 1535 "lex.fsl"
+# 1523 "lex.fsl"
                       let n, m, args = cargs
                       if not skip then COMMENT (LexCont.Comment(args.ifdefStack, args.stringNest, n, m))
                       else comment (n, m, args) skip lexbuf 
-# 3402 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3390 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | _ -> failwith "comment"
 // Rule stringInComment
 and stringInComment n m args skip lexbuf =
   match _fslex_tables.Interpret(90,lexbuf) with
   | 0 -> ( 
-# 1542 "lex.fsl"
+# 1530 "lex.fsl"
                       newline lexbuf
                       if not skip then COMMENT (LexCont.StringInComment(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, n, m))
                       else stringInComment n m args skip lexbuf 
-# 3413 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3401 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 1 -> ( 
-# 1555 "lex.fsl"
+# 1543 "lex.fsl"
                       if not skip then COMMENT (LexCont.StringInComment(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, n, m))
                       else stringInComment n m args skip lexbuf 
-# 3419 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3407 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 2 -> ( 
-# 1560 "lex.fsl"
+# 1548 "lex.fsl"
                       if not skip then COMMENT (LexCont.Comment(args.ifdefStack, args.stringNest, n, m))
                       else comment (n, m, args) skip lexbuf 
-# 3425 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3413 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 3 -> ( 
-# 1564 "lex.fsl"
+# 1552 "lex.fsl"
                       newline lexbuf
                       if not skip then COMMENT (LexCont.StringInComment(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, n, m))
                       else stringInComment n m args skip lexbuf 
-# 3432 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3420 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 4 -> ( 
-# 1569 "lex.fsl"
+# 1557 "lex.fsl"
                       EOF (LexCont.StringInComment(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, n, m)) 
-# 3437 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3425 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 5 -> ( 
-# 1573 "lex.fsl"
+# 1561 "lex.fsl"
                       if not skip then COMMENT (LexCont.StringInComment(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, n, m))
                       else stringInComment n m args skip lexbuf 
-# 3443 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3431 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | _ -> failwith "stringInComment"
 // Rule verbatimStringInComment
 and verbatimStringInComment n m args skip lexbuf =
   match _fslex_tables.Interpret(61,lexbuf) with
   | 0 -> ( 
-# 1579 "lex.fsl"
+# 1567 "lex.fsl"
                       if not skip then COMMENT (LexCont.StringInComment(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, n, m))
                       else verbatimStringInComment n m args skip lexbuf 
-# 3453 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3441 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 1 -> ( 
-# 1583 "lex.fsl"
+# 1571 "lex.fsl"
                       if not skip then COMMENT (LexCont.Comment(args.ifdefStack, args.stringNest, n, m))
                       else comment (n, m, args) skip lexbuf 
-# 3459 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3447 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 2 -> ( 
-# 1590 "lex.fsl"
+# 1578 "lex.fsl"
                       if not skip then COMMENT (LexCont.StringInComment(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, n, m))
                       else verbatimStringInComment n m args skip lexbuf 
-# 3465 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3453 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 3 -> ( 
-# 1594 "lex.fsl"
+# 1582 "lex.fsl"
                       newline lexbuf
                       if not skip then COMMENT (LexCont.StringInComment(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, n, m))
                       else verbatimStringInComment n m args skip lexbuf 
-# 3472 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3460 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 4 -> ( 
-# 1599 "lex.fsl"
+# 1587 "lex.fsl"
                       EOF (LexCont.StringInComment(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, n, m)) 
-# 3477 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3465 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 5 -> ( 
-# 1603 "lex.fsl"
+# 1591 "lex.fsl"
                       if not skip then COMMENT (LexCont.StringInComment(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, n, m))
                       else verbatimStringInComment n m args skip lexbuf 
-# 3483 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3471 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | _ -> failwith "verbatimStringInComment"
 // Rule tripleQuoteStringInComment
 and tripleQuoteStringInComment n m args skip lexbuf =
   match _fslex_tables.Interpret(31,lexbuf) with
   | 0 -> ( 
-# 1609 "lex.fsl"
+# 1597 "lex.fsl"
                       if not skip then COMMENT (LexCont.Comment(args.ifdefStack, args.stringNest, n, m))
                       else comment (n, m, args) skip lexbuf 
-# 3493 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3481 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 1 -> ( 
-# 1616 "lex.fsl"
+# 1604 "lex.fsl"
                       if not skip then COMMENT (LexCont.StringInComment(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, n, m))
                       else tripleQuoteStringInComment n m args skip lexbuf 
-# 3499 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3487 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 2 -> ( 
-# 1620 "lex.fsl"
+# 1608 "lex.fsl"
                       newline lexbuf
                       if not skip then COMMENT (LexCont.StringInComment(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, n, m))
                       else tripleQuoteStringInComment n m args skip lexbuf 
-# 3506 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3494 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 3 -> ( 
-# 1625 "lex.fsl"
+# 1613 "lex.fsl"
                       EOF (LexCont.StringInComment(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, n, m)) 
-# 3511 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3499 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 4 -> ( 
-# 1629 "lex.fsl"
+# 1617 "lex.fsl"
                       if not skip then COMMENT (LexCont.StringInComment(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, n, m))
                       else tripleQuoteStringInComment n m args skip lexbuf 
-# 3517 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3505 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | _ -> failwith "tripleQuoteStringInComment"
 // Rule mlOnly
 and mlOnly m args skip lexbuf =
   match _fslex_tables.Interpret(0,lexbuf) with
   | 0 -> ( 
-# 1635 "lex.fsl"
+# 1623 "lex.fsl"
                       let buf = ByteBuffer.Create StringCapacity
                       let m2 = lexbuf.LexemeRange
                       let _ = singleQuoteString (buf, LexerStringFinisher.Default, m2, LexerStringKind.String, args) skip lexbuf
                       if not skip then COMMENT (LexCont.MLOnly(args.ifdefStack, args.stringNest, m))
                       else mlOnly m args skip lexbuf 
-# 3530 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3518 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 1 -> ( 
-# 1642 "lex.fsl"
+# 1630 "lex.fsl"
                       newline lexbuf
                       if not skip then COMMENT (LexCont.MLOnly(args.ifdefStack, args.stringNest, m))
                       else mlOnly m args skip lexbuf 
-# 3537 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3525 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 2 -> ( 
-# 1647 "lex.fsl"
+# 1635 "lex.fsl"
                       if not skip then COMMENT (LexCont.Token(args.ifdefStack, args.stringNest))
                       else token args skip lexbuf 
-# 3543 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3531 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 3 -> ( 
-# 1651 "lex.fsl"
+# 1639 "lex.fsl"
                       if not skip then COMMENT (LexCont.Token(args.ifdefStack, args.stringNest))
                       else token args skip lexbuf 
-# 3549 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3537 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 4 -> ( 
-# 1655 "lex.fsl"
+# 1643 "lex.fsl"
                       if not skip then COMMENT (LexCont.MLOnly(args.ifdefStack, args.stringNest, m))
                       else mlOnly m args skip lexbuf 
-# 3555 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3543 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 5 -> ( 
-# 1659 "lex.fsl"
+# 1647 "lex.fsl"
                       EOF (LexCont.MLOnly(args.ifdefStack, args.stringNest, m)) 
-# 3560 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3548 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | 6 -> ( 
-# 1663 "lex.fsl"
+# 1651 "lex.fsl"
                       if not skip then COMMENT (LexCont.MLOnly(args.ifdefStack, args.stringNest, m))
                       else mlOnly m args skip lexbuf 
-# 3566 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3554 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
           )
   | _ -> failwith "mlOnly"
 
-# 3000000 "C:\Users\vlza\code\fsharp3\\src\.fslexyacc.generated\netstandard2.0\lex.fs"
+# 3000000 "/home/u/code/fsharp/src/.fslexyacc.generated/netstandard2.0/lex.fs"
