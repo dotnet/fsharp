@@ -16,8 +16,6 @@ open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.CodeAnalysis.Host.Mef
 open FSharp.Compiler.CodeAnalysis
 open System.Threading
-open FSharp.Test.ProjectGeneration
-open Microsoft.CodeAnalysis
 
 [<AutoOpen>]
 module MefHelpers =
@@ -221,7 +219,7 @@ type RoslynTestHelpers private () =
             Stamp = None
         }
 
-    static member private GetSourceCodeKind filePath =
+    static member private GetSourceCodeKind filePath = 
         let extension = Path.GetExtension(filePath)
         match extension with
         | ".fsx" -> SourceCodeKind.Script
@@ -234,7 +232,7 @@ type RoslynTestHelpers private () =
         let id = SolutionId.CreateNewId()
         let versionStamp = VersionStamp.Create(DateTime.UtcNow)
         let slnPath = "test.sln"
-
+ 
         let solutionInfo = SolutionInfo.Create(id, versionStamp, slnPath, projects)
         let solution = workspace.AddSolution(solutionInfo)
         solution
@@ -257,7 +255,7 @@ type RoslynTestHelpers private () =
             documents = documents,
             filePath = filePath)
 
-    static member SetProjectOptions projId (solution: Solution) (options: FSharpProjectOptions)  =
+    static member SetProjectOptions projId (solution: Solution) (options: FSharpProjectOptions)  = 
         solution
             .Workspace
             .Services
@@ -277,7 +275,7 @@ type RoslynTestHelpers private () =
         let projInfo = RoslynTestHelpers.CreateProjectInfo projId projFilePath [docInfo]
         let solution = RoslynTestHelpers.CreateSolution [projInfo]
 
-        options
+        options 
         |> Option.defaultValue RoslynTestHelpers.DefaultProjectOptions
         |> RoslynTestHelpers.SetProjectOptions projId solution
 
@@ -287,36 +285,3 @@ type RoslynTestHelpers private () =
         let project = solution.Projects |> Seq.exactlyOne
         let document = project.Documents |> Seq.exactlyOne
         document
-
-    static member CreateSolution (syntheticProject: SyntheticProject) =
-
-        let checker = syntheticProject.SaveAndCheck()
-
-        assert (syntheticProject.DependsOn = []) // multi-project not supported yet
-
-        let projId = ProjectId.CreateNewId()
-
-        let docInfos =
-            [ for project, file in syntheticProject.GetAllFiles() do
-                let filePath = getFilePath project file
-                RoslynTestHelpers.CreateDocumentInfo projId filePath (File.ReadAllText filePath)
-                if file.HasSignatureFile then
-                    let sigFilePath = getSignatureFilePath project file
-                    RoslynTestHelpers.CreateDocumentInfo projId sigFilePath (File.ReadAllText sigFilePath) ]
-
-        let projInfo = RoslynTestHelpers.CreateProjectInfo projId syntheticProject.ProjectFileName docInfos
-
-        let options = syntheticProject.GetProjectOptions checker
-
-        let metadataReferences =
-            options.OtherOptions
-            |> Seq.filter (fun x -> x.StartsWith("-r:"))
-            |> Seq.map (fun x -> x.Substring(3) |> MetadataReference.CreateFromFile :> MetadataReference)
-
-        let projInfo = projInfo.WithMetadataReferences metadataReferences
-
-        let solution = RoslynTestHelpers.CreateSolution [projInfo]
-
-        options |> RoslynTestHelpers.SetProjectOptions projId solution
-
-        solution, checker
