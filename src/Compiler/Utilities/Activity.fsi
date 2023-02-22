@@ -5,7 +5,7 @@ namespace FSharp.Compiler.Diagnostics
 open System
 
 /// For activities following the dotnet distributed tracing concept
-/// https://learn.microsoft.com/en-us/dotnet/core/diagnostics/distributed-tracing-concepts?source=recommendations
+/// https://learn.microsoft.com/dotnet/core/diagnostics/distributed-tracing-concepts?source=recommendations
 [<RequireQualifiedAccess>]
 module internal Activity =
 
