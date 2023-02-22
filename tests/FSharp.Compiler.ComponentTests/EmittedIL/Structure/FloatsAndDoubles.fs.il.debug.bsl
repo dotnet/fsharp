@@ -37,13 +37,13 @@
   // WARNING: managed resource file FSharpOptimizationData.FloatsAndDoubles created
 }
 .module FloatsAndDoubles.exe
-// MVID: {63E6EA31-274A-A48B-A745-038331EAE663}
+// MVID: {63EB2B21-274A-A48B-A745-0383212BEB63}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x0000015AA6730000
+// Image base: 0x000001AE7E770000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -65,6 +65,7 @@
     .method public hidebysig specialname 
             instance float64  get_F() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
@@ -411,6 +412,7 @@
     .method public hidebysig specialname 
             instance float64  get_D() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)

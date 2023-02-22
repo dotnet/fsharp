@@ -81,28 +81,3 @@ let x = 1.0 + "" // a type error
 let errors1b, exitCode1b = 
     checker.Compile([| "fsc.exe"; "-o"; fn3; "-a"; fn2 |])
     |> Async.RunSynchronously
-
-(**
-
-Compiling to a dynamic assembly
-===============================
-
-You can also compile to a dynamic assembly, which uses the F# Interactive code generator.
-This can be useful if you are, for example, in a situation where writing to the file system
-is not really an option.
-
-You still have to pass the "-o" option to name the output file, but the output file is not actually written to disk.
-
-The 'None' option indicates that the initialization code for the assembly is not executed. 
-*)
-let errors2, exitCode2, dynAssembly2 = 
-    checker.CompileToDynamicAssembly([| "-o"; fn3; "-a"; fn2 |], execute=None)
-     |> Async.RunSynchronously
-
-(*
-Passing 'Some' for the 'execute' parameter executes  the initialization code for the assembly.
-*)
-let errors3, exitCode3, dynAssembly3 = 
-    checker.CompileToDynamicAssembly([| "-o"; fn3; "-a"; fn2 |], Some(stdout,stderr))
-     |> Async.RunSynchronously
-

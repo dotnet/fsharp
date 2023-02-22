@@ -73,6 +73,10 @@ let ``auto-widen-version-FSC_OPTIMIZED-preview``() =
     singleTestBuildAndRunVersion "core/auto-widen/preview" FSC_OPTIMIZED LangVersion.Preview
 
 [<Fact>]
+let ``auto-widen-minimal``() =
+    singleTestBuildAndRunVersion "core/auto-widen/minimal" FSC_OPTIMIZED LangVersion.V70
+
+[<Fact>]
 let ``auto-widen-version-preview-warns-on``() = 
     singleVersionedNegTestAux "core/auto-widen/preview" ["--warnon:3388";"--warnon:3389";"--warnon:3395";"--warnaserror+";"--define:NEGATIVE"] LangVersion.Preview "test"
 

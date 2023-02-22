@@ -14,16 +14,11 @@ ImplFile
                  (None, Normal, false, false,
                   [{ Attributes =
                       [{ TypeName = SynLongIdent ([Literal], [], [None])
-                         ArgExpr =
-                          Const
-                            (Unit,
-                             /root/Binding/RangeOfAttributeBetweenLetKeywordAndPatternShouldBeIncludedInSynModuleDeclLet.fs (2,6--2,13))
+                         ArgExpr = Const (Unit, (2,6--2,13))
                          Target = None
                          AppliesToGetterAndSetter = false
-                         Range =
-                          /root/Binding/RangeOfAttributeBetweenLetKeywordAndPatternShouldBeIncludedInSynModuleDeclLet.fs (2,6--2,13) }]
-                     Range =
-                      /root/Binding/RangeOfAttributeBetweenLetKeywordAndPatternShouldBeIncludedInSynModuleDeclLet.fs (2,4--2,15) }],
+                         Range = (2,6--2,13) }]
+                     Range = (2,4--2,15) }],
                   PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
                     (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
@@ -31,29 +26,12 @@ ImplFile
                     (LongIdent
                        (SynLongIdent ([A], [], [None]), None, None,
                         Pats
-                          [Named
-                             (SynIdent (x, None), false, None,
-                              /root/Binding/RangeOfAttributeBetweenLetKeywordAndPatternShouldBeIncludedInSynModuleDeclLet.fs (2,19--2,20))],
-                        None,
-                        /root/Binding/RangeOfAttributeBetweenLetKeywordAndPatternShouldBeIncludedInSynModuleDeclLet.fs (2,17--2,20)),
-                     /root/Binding/RangeOfAttributeBetweenLetKeywordAndPatternShouldBeIncludedInSynModuleDeclLet.fs (2,16--2,21)),
-                  None,
-                  Const
-                    (Int32 1,
-                     /root/Binding/RangeOfAttributeBetweenLetKeywordAndPatternShouldBeIncludedInSynModuleDeclLet.fs (2,24--2,25)),
-                  /root/Binding/RangeOfAttributeBetweenLetKeywordAndPatternShouldBeIncludedInSynModuleDeclLet.fs (2,4--2,21),
-                  Yes
-                    /root/Binding/RangeOfAttributeBetweenLetKeywordAndPatternShouldBeIncludedInSynModuleDeclLet.fs (2,0--2,25),
-                  { LeadingKeyword =
-                     Let
-                       /root/Binding/RangeOfAttributeBetweenLetKeywordAndPatternShouldBeIncludedInSynModuleDeclLet.fs (2,0--2,3)
+                          [Named (SynIdent (x, None), false, None, (2,19--2,20))],
+                        None, (2,17--2,20)), (2,16--2,21)), None,
+                  Const (Int32 1, (2,24--2,25)), (2,4--2,21), Yes (2,0--2,25),
+                  { LeadingKeyword = Let (2,0--2,3)
                     InlineKeyword = None
-                    EqualsRange =
-                     Some
-                       /root/Binding/RangeOfAttributeBetweenLetKeywordAndPatternShouldBeIncludedInSynModuleDeclLet.fs (2,22--2,23) })],
-              /root/Binding/RangeOfAttributeBetweenLetKeywordAndPatternShouldBeIncludedInSynModuleDeclLet.fs (2,0--2,25))],
-          PreXmlDocEmpty, [], None,
-          /root/Binding/RangeOfAttributeBetweenLetKeywordAndPatternShouldBeIncludedInSynModuleDeclLet.fs (2,0--3,0),
-          { LeadingKeyword = None })], (true, false),
-      { ConditionalDirectives = []
-        CodeComments = [] }, set []))
+                    EqualsRange = Some (2,22--2,23) })], (2,0--2,25))],
+          PreXmlDocEmpty, [], None, (2,0--3,0), { LeadingKeyword = None })],
+      (true, false), { ConditionalDirectives = []
+                       CodeComments = [] }, set []))

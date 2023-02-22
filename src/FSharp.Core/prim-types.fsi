@@ -2592,7 +2592,7 @@ namespace Microsoft.FSharp.Collections
     /// the notation <c>[1; 2; 3]</c>. Use the values in the <c>List</c> module to manipulate 
     /// values of this type, or pattern match against the values directly.
     ///
-    ///  See also <a href="https://docs.microsoft.com/dotnet/fsharp/language-reference/lists">F# Language Guide - Lists</a>.
+    ///  See also <a href="https://learn.microsoft.com/dotnet/fsharp/language-reference/lists">F# Language Guide - Lists</a>.
     /// </remarks>
     and 'T list = List<'T>
 
@@ -2604,7 +2604,7 @@ namespace Microsoft.FSharp.Collections
     /// <remarks>
     ///  See the <see cref="T:Microsoft.FSharp.Collections.SeqModule"/> module for further operations related to sequences.
     ///
-    ///  See also <a href="https://docs.microsoft.com/dotnet/fsharp/language-reference/sequences">F# Language Guide - Sequences</a>.
+    ///  See also <a href="https://learn.microsoft.com/dotnet/fsharp/language-reference/sequences">F# Language Guide - Sequences</a>.
     ///</remarks>
     type seq<'T> = IEnumerable<'T>
 

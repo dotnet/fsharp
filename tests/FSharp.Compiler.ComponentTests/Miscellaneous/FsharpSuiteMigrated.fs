@@ -18,17 +18,7 @@ module ScriptRunner =
     open Internal.Utilities.Library
     
     let private createEngine(args,version) = 
-        let scriptingEnv = getSessionForEval args version
-        scriptingEnv.Eval """
-let errorStringWriter = new System.IO.StringWriter()        
-let oldConsoleError = System.Console.Error
-System.Console.SetError(errorStringWriter)
-let exit (code:int) = 
-    System.Console.SetError(oldConsoleError)
-    if code=0 then 
-        () 
-    else failwith $"Script called function 'exit' with code={code} and collected in stderr: {errorStringWriter.ToString()}" """ |> ignore
-        scriptingEnv
+        getSessionForEval args version
 
     let defaultDefines = 
         [ 

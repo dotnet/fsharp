@@ -9,17 +9,13 @@ ImplFile
                  (SynComponentInfo
                     ([], None, [], [Y],
                      PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, /root/LeadingKeyword/NewKeyword.fs (2,5--2,6)),
+                     false, None, (2,5--2,6)),
                   ObjectModel
                     (Unspecified,
                      [ImplicitCtor
-                        (None, [],
-                         SimplePats
-                           ([], /root/LeadingKeyword/NewKeyword.fs (2,6--2,8)),
-                         None,
+                        (None, [], SimplePats ([], (2,6--2,8)), None,
                          PreXmlDoc ((2,6), FSharp.Compiler.Xml.XmlDocCollector),
-                         /root/LeadingKeyword/NewKeyword.fs (2,5--2,6),
-                         { AsKeyword = None });
+                         (2,5--2,6), { AsKeyword = None });
                       Member
                         (SynBinding
                            (None, Normal, false, false, [],
@@ -42,47 +38,27 @@ ImplFile
                                     (Typed
                                        (Named
                                           (SynIdent (message, None), false, None,
-                                           /root/LeadingKeyword/NewKeyword.fs (3,9--3,16)),
+                                           (3,9--3,16)),
                                         LongIdent
                                           (SynLongIdent ([string], [], [None])),
-                                        /root/LeadingKeyword/NewKeyword.fs (3,9--3,23)),
-                                     /root/LeadingKeyword/NewKeyword.fs (3,8--3,24))],
-                               None,
-                               /root/LeadingKeyword/NewKeyword.fs (3,4--3,7)),
-                            None,
+                                        (3,9--3,23)), (3,8--3,24))], None,
+                               (3,4--3,7)), None,
                             App
                               (Atomic, false, Ident Y,
-                               Const
-                                 (Unit,
-                                  /root/LeadingKeyword/NewKeyword.fs (3,28--3,30)),
-                               /root/LeadingKeyword/NewKeyword.fs (3,27--3,30)),
-                            /root/LeadingKeyword/NewKeyword.fs (3,4--3,24),
-                            NoneAtInvisible,
-                            { LeadingKeyword =
-                               New /root/LeadingKeyword/NewKeyword.fs (3,4--3,7)
+                               Const (Unit, (3,28--3,30)), (3,27--3,30)),
+                            (3,4--3,24), NoneAtInvisible,
+                            { LeadingKeyword = New (3,4--3,7)
                               InlineKeyword = None
-                              EqualsRange =
-                               Some
-                                 /root/LeadingKeyword/NewKeyword.fs (3,25--3,26) }),
-                         /root/LeadingKeyword/NewKeyword.fs (3,4--3,30))],
-                     /root/LeadingKeyword/NewKeyword.fs (3,4--3,30)), [],
+                              EqualsRange = Some (3,25--3,26) }), (3,4--3,30))],
+                     (3,4--3,30)), [],
                   Some
                     (ImplicitCtor
-                       (None, [],
-                        SimplePats
-                          ([], /root/LeadingKeyword/NewKeyword.fs (2,6--2,8)),
-                        None,
+                       (None, [], SimplePats ([], (2,6--2,8)), None,
                         PreXmlDoc ((2,6), FSharp.Compiler.Xml.XmlDocCollector),
-                        /root/LeadingKeyword/NewKeyword.fs (2,5--2,6),
-                        { AsKeyword = None })),
-                  /root/LeadingKeyword/NewKeyword.fs (2,5--3,30),
-                  { LeadingKeyword =
-                     Type /root/LeadingKeyword/NewKeyword.fs (2,0--2,4)
-                    EqualsRange =
-                     Some /root/LeadingKeyword/NewKeyword.fs (2,9--2,10)
-                    WithKeyword = None })],
-              /root/LeadingKeyword/NewKeyword.fs (2,0--3,30))], PreXmlDocEmpty,
-          [], None, /root/LeadingKeyword/NewKeyword.fs (2,0--4,0),
-          { LeadingKeyword = None })], (true, false),
+                        (2,5--2,6), { AsKeyword = None })), (2,5--3,30),
+                  { LeadingKeyword = Type (2,0--2,4)
+                    EqualsRange = Some (2,9--2,10)
+                    WithKeyword = None })], (2,0--3,30))], PreXmlDocEmpty, [],
+          None, (2,0--4,0), { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
