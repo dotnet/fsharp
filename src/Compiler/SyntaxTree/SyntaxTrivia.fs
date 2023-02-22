@@ -101,6 +101,9 @@ type SynExprMatchBangTrivia =
     }
 
 [<NoEquality; NoComparison>]
+type SynExprAnonRecdTrivia = { OpeningBraceRange: range }
+
+[<NoEquality; NoComparison>]
 type SynMatchClauseTrivia =
     {
         ArrowRange: range option
@@ -315,6 +318,9 @@ type SynMemberGetSetTrivia =
         AndKeyword: range option
         SetKeyword: range option
     }
+
+[<NoEquality; NoComparison>]
+type SynMemberDefnImplicitCtorTrivia = { AsKeyword: range option }
 
 [<NoEquality; NoComparison>]
 type SynArgPatsNamePatPairsTrivia = { ParenRange: range }

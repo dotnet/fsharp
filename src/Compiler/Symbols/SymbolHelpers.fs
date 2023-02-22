@@ -229,14 +229,6 @@ module internal SymbolHelpers =
                 | Some dir -> Path.Combine(dir, file)
          else file
 
-    /// Cut long filenames to make them visually appealing 
-    let cutFileName s = if String.length s > 40 then String.sub s 0 10 + "..."+String.sub s (String.length s - 27) 27 else s
-
-    let libFileOfEntityRef x =
-        match x with
-        | ERefLocal _ -> None
-        | ERefNonLocal nlref -> nlref.Ccu.FileName      
-
     let ParamNameAndTypesOfUnaryCustomOperation g minfo = 
         match minfo with 
         | FSMeth(_, _, vref, _) -> 
@@ -517,14 +509,6 @@ module internal SymbolHelpers =
               | Item.DelegateCtor _
               | Item.ModuleOrNamespaces [] -> 0
               ) }
-
-    let ItemWithTypeDisplayPartialEquality g = 
-        let itemComparer = ItemDisplayPartialEquality g
-        
-        { new IPartialEqualityComparer<Item * _> with
-            member x.InEqualityRelation ((item, _)) = itemComparer.InEqualityRelation item
-            member x.Equals((item1, _), (item2, _)) = itemComparer.Equals(item1, item2)
-            member x.GetHashCode ((item, _)) = itemComparer.GetHashCode item }
     
     /// Remove all duplicate items
     let RemoveDuplicateItems g (items: ItemWithInst list) =     

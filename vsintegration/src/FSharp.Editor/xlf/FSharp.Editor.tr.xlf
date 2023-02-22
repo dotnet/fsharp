@@ -33,15 +33,19 @@ Show structure guidelines for F# code;
 Outlining;
 Show outlining and collapsible nodes for F# code;
 Inline hints;
-Display inline type hints (experimental);
-Display inline parameter name hints (experimental);Beer</source>
-        <target state="translated">Blok Yapısı Kılavuzları;
-F# kodu için yapı yönergelerini göster;
-Anahat oluşturma;
-F# kodu için ana hattı ve daraltılabilir düğümleri göster;
-Satır içi ipuçları;
-Satır içi tür ipuçlarını görüntüle (deneysel);
-Satır içi parametre adı ipuçlarını görüntüle (deneysel);Bira</target>
+Display inline type hints (preview);
+Display inline parameter name hints (preview);Beer;
+Live Buffers;
+Use live (unsaved) buffers for checking</source>
+        <target state="new">Block Structure Guides;
+Show structure guidelines for F# code;
+Outlining;
+Show outlining and collapsible nodes for F# code;
+Inline hints;
+Display inline type hints (preview);
+Display inline parameter name hints (preview);Beer;
+Live Buffers;
+Use live (unsaved) buffers for checking</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeFixesPageKeywords">

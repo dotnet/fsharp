@@ -12,6 +12,11 @@
         <target state="translated">Włącz szybkie znajdowanie odwołań i zmień nazwę (eksperymentalne)</target>
         <note />
       </trans-unit>
+      <trans-unit id="Enable_Live_Buffers">
+        <source>Use live (unsaved) buffers for checking (restart required)</source>
+        <target state="new">Use live (unsaved) buffers for checking (restart required)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Find_References_Performance">
         <source>Find References Performance Options</source>
         <target state="translated">Opcje wydajności znajdowania odwołań</target>
@@ -62,6 +67,11 @@
         <target state="translated">P_odkreślenie z kropek</target>
         <note />
       </trans-unit>
+      <trans-unit id="LiveBuffers">
+        <source>Live Buffers (experimental)</source>
+        <target state="new">Live Buffers (experimental)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Navigation_links">
         <source>Navigation links</source>
         <target state="translated">Linki nawigacyjne</target>
@@ -73,13 +83,13 @@
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Parameter_Name_Hints">
-        <source>Display inline parameter name hints (experimental)</source>
-        <target state="translated">Wyświetlaj wbudowane wskazówki dotyczące nazw parametrów (eksperymentalne)</target>
+        <source>Display inline parameter name hints (preview)</source>
+        <target state="new">Display inline parameter name hints (preview)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Type_Hints">
-        <source>Display inline type hints (experimental)</source>
-        <target state="translated">Wyświetl wskazówki typu wbudowanego (eksperymentalne)</target>
+        <source>Display inline type hints (preview)</source>
+        <target state="new">Display inline type hints (preview)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_all_symbols">

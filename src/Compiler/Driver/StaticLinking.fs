@@ -98,7 +98,9 @@ type TypeForwarding(tcImports: TcImports) =
 
     member _.TypeForwardILTypeRef tref = typeForwardILTypeRef tref
 
-let debugStaticLinking = condition "FSHARP_DEBUG_STATIC_LINKING"
+#if !NO_TYPEPROVIDERS
+let debugStaticLinking = isEnvVarSet "FSHARP_DEBUG_STATIC_LINKING"
+#endif
 
 let StaticLinkILModules
     (
@@ -419,6 +421,7 @@ let FindDependentILModulesForStaticLinking (ctok, tcConfig: TcConfig, tcImports:
                     (n.ccu, n.data)
         ]
 
+#if !NO_TYPEPROVIDERS
 // Add all provider-generated assemblies into the static linking set
 let FindProviderGeneratedILModules (ctok, tcImports: TcImports, providerGeneratedAssemblies: (ImportedBinary * _) list) =
     [
@@ -442,6 +445,7 @@ let FindProviderGeneratedILModules (ctok, tcImports: TcImports, providerGenerate
                 (ccu, dllInfo.ILScopeRef, modul), (ilAssemRef.Name, provAssemStaticLinkInfo)
             | None -> ()
     ]
+#endif
 
 /// Split the list into left, middle and right parts at the first element satisfying 'p'. If no element matches return
 /// 'None' for the middle part.

@@ -106,15 +106,6 @@ let GetResourceNameAndOptimizationDataFunc (r: ILResource) =
 let IsReflectedDefinitionsResource (r: ILResource) =
     r.Name.StartsWithOrdinal(QuotationPickler.SerializedReflectedDefinitionsResourceNameBase)
 
-let MakeILResource rName bytes =
-    {
-        Name = rName
-        Location = ILResourceLocation.Local(ByteStorage.FromByteArray(bytes))
-        Access = ILResourceAccess.Public
-        CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
-        MetadataIndex = NoMetadataIdx
-    }
-
 let PickleToResource inMem file (g: TcGlobals) compress scope rName p x =
     let file = PathMap.apply g.pathMap file
 
@@ -1105,8 +1096,9 @@ and [<Sealed>] TcImports
         initialResolutions: TcAssemblyResolutions,
         importsBase: TcImports option,
         dependencyProviderOpt: DependencyProvider option
-    ) as this
+    )
 #if !NO_TYPEPROVIDERS
+    as this
 #endif
  =
 
@@ -2025,10 +2017,14 @@ and [<Sealed>] TcImports
                         UsesFSharp20PlusQuotations = minfo.usesQuotations
                         MemberSignatureEquality = (fun ty1 ty2 -> typeEquivAux EraseAll (tcImports.GetTcGlobals()) ty1 ty2)
                         TypeForwarders = ImportILAssemblyTypeForwarders(tcImports.GetImportMap, m, ilModule.GetRawTypeForwarders())
+#if !NO_TYPEPROVIDERS
                         XmlDocumentationInfo =
                             match tcConfig.xmlDocInfoLoader with
                             | Some xmlDocInfoLoader -> xmlDocInfoLoader.TryLoad(fileName)
                             | _ -> None
+#else
+                        XmlDocumentationInfo = None
+#endif
                     }
 
                 let ccu = CcuThunk.Create(ccuName, ccuData)

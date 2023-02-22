@@ -22,9 +22,19 @@
         <target state="translated">L'extension de fichier de '{0}' n'est pas reconnue. Les fichiers sources doivent avoir l'extension .fs, .fsi, .fsx, ou .fsscript.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkAbstractMembersDeclarationsOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Abstract member declarations are not allowed.</source>
+        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Abstract member declarations are not allowed.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkAdditionalConstructorOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Additional constructor is not allowed.</source>
         <target state="translated">Si un type utilise les attributs [&lt;Sealed&gt;] et [&lt;AbstractClass&gt;], cela signifie qu’il est statique. Un constructeur supplémentaire n’est pas autorisé.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkAutoOpenAttributeInTypeAbbrev">
+        <source>FSharp.Core.AutoOpenAttribute should not be aliased.</source>
+        <target state="new">FSharp.Core.AutoOpenAttribute should not be aliased.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkConstructorWithArgumentsOnStaticClasses">
@@ -35,6 +45,11 @@
       <trans-unit id="chkDuplicatedMethodParameter">
         <source>Duplicate parameter. The parameter '{0}' has been used more that once in this method.</source>
         <target state="translated">Paramètre dupliqué. Le paramètre « {0} » a été utilisé une fois de plus dans cette méthode.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkExplicitFieldsDeclarationsOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Explicit field declarations are not allowed.</source>
+        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Explicit field declarations are not allowed.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
@@ -50,6 +65,11 @@
       <trans-unit id="chkFeatureNotSupportedInLibrary">
         <source>Feature '{0}' requires the F# library for language version {1} or greater.</source>
         <target state="translated">La fonctionnalité '{0}' nécessite la bibliothèque F# pour le langage version {1} ou ultérieure.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkImplementingInterfacesOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Implementing interfaces is not allowed.</source>
+        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Implementing interfaces is not allowed.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInfoRefcellAssign">
@@ -70,6 +90,11 @@
       <trans-unit id="chkInfoRefcellIncr">
         <source>The use of 'incr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'incr cell' to 'cell.Value &lt;- cell.Value + 1'.</source>
         <target state="translated">L’utilisation de « incr » à partir de la bibliothèque F# est déconseillée. Voir https://aka.ms/fsharp-refcell-ops. Par exemple, veuillez remplacer « incr cell » par « cell.Value &lt;- cell.Value + 1 ».</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInstanceLetBindingOnStaticClasses">
+        <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance let bindings are not allowed.</source>
+        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance let bindings are not allowed.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInstanceMemberOnStaticClasses">
@@ -352,6 +377,11 @@
         <target state="translated">modèle de trait de soulignement unique</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureStaticMembersInInterfaces">
+        <source>Static members in interfaces</source>
+        <target state="new">Static members in interfaces</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureStringInterpolation">
         <source>string interpolation</source>
         <target state="translated">interpolation de chaîne</target>
@@ -360,6 +390,16 @@
       <trans-unit id="featureStructActivePattern">
         <source>struct representation for active patterns</source>
         <target state="translated">représentation de structure pour les modèles actifs</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureTryWithInSeqExpressions">
+        <source>Support for try-with in sequence expressions</source>
+        <target state="new">Support for try-with in sequence expressions</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
+        <source>Raises warnings when an copy-and-update record expression changes all fields of a record.</source>
+        <target state="new">Raises warnings when an copy-and-update record expression changes all fields of a record.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
@@ -852,6 +892,11 @@
         <target state="translated">Impossible d'appliquer des attributs aux extensions de type.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">
+        <source>This copy-and-update record expression changes all fields of record type '{0}'. Consider using the record construction syntax instead.</source>
+        <target state="new">This copy-and-update record expression changes all fields of record type '{0}'. Consider using the record construction syntax instead.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
         <source>The syntax 'expr1[expr2]' is used for indexing. Consider adding a type annotation to enable indexing, or if calling a function add a space, e.g. 'expr1 [expr2]'.</source>
         <target state="translated">La syntaxe « expr1[expr2] » est utilisée pour l’indexation. Envisagez d’ajouter une annotation de type pour activer l’indexation, ou si vous appelez une fonction, ajoutez un espace, par exemple « expr1 [expr2] ».</target>
@@ -1115,6 +1160,11 @@
       <trans-unit id="typrelInterfaceWithConcreteAndVariableObjectExpression">
         <source>You cannot implement the interface '{0}' with the two instantiations '{1}' and '{2}' because they may unify.</source>
         <target state="translated">Vous ne pouvez pas implémenter l'interface '{0}' avec les deux instanciations '{1}' et '{2}', car elles peuvent s'unifier.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="typrelNeverRefinedAwayFromTop">
+        <source>A type has been implicitly inferred as 'obj', which may be unintended. Consider adding explicit type annotations. You can disable this warning by using '#nowarn \"3559\"' or '--nowarn:3559'.</source>
+        <target state="new">A type has been implicitly inferred as 'obj', which may be unintended. Consider adding explicit type annotations. You can disable this warning by using '#nowarn \"3559\"' or '--nowarn:3559'.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
@@ -4583,8 +4633,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcConcreteMembersIllegalInInterface">
-        <source>Interfaces cannot contain definitions of concrete members. You may need to define a constructor on your type to indicate that the type is a class.</source>
-        <target state="translated">Les interfaces ne peuvent pas contenir de définitions de membres concrets. Vous pouvez définir un constructeur sur votre type pour indiquer que le type est une classe.</target>
+        <source>Interfaces cannot contain definitions of concrete instance members. You may need to define a constructor on your type to indicate that the type is a class.</source>
+        <target state="new">Interfaces cannot contain definitions of concrete instance members. You may need to define a constructor on your type to indicate that the type is a class.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcConstructorsDisallowedInExceptionAugmentation">

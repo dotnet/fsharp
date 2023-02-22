@@ -33,15 +33,19 @@ Show structure guidelines for F# code;
 Outlining;
 Show outlining and collapsible nodes for F# code;
 Inline hints;
-Display inline type hints (experimental);
-Display inline parameter name hints (experimental);Beer</source>
-        <target state="translated">块结构参考线；
-显示 F# 代码的结构准则；
-大纲；
-显示 F# 代码大纲和可折叠的节点；
-内联提示；
-显示内联类型提示(实验性)；
-显示内联参数名称提示(实验性)；啤酒</target>
+Display inline type hints (preview);
+Display inline parameter name hints (preview);Beer;
+Live Buffers;
+Use live (unsaved) buffers for checking</source>
+        <target state="new">Block Structure Guides;
+Show structure guidelines for F# code;
+Outlining;
+Show outlining and collapsible nodes for F# code;
+Inline hints;
+Display inline type hints (preview);
+Display inline parameter name hints (preview);Beer;
+Live Buffers;
+Use live (unsaved) buffers for checking</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeFixesPageKeywords">

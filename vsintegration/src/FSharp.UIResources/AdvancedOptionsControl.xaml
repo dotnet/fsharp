@@ -32,6 +32,10 @@
                                   Content="{x:Static local:Strings.Show_Inline_Parameter_Name_Hints}"/>
                     </StackPanel>
                 </GroupBox>
+                <GroupBox Header="{x:Static local:Strings.LiveBuffers}">
+                    <CheckBox x:Name="toggleLiveBuffers" IsChecked="{Binding IsLiveBuffersEnabled}"
+                              Content="{x:Static local:Strings.Enable_Live_Buffers}"/>
+                </GroupBox>
             </StackPanel>
         </ScrollViewer>
     </Grid>
