@@ -64,6 +64,7 @@ type LanguageFeature =
     | TryWithInSeqExpression
     | WarningWhenCopyAndUpdateRecordChangesAllFields
     | StaticMembersInInterfaces
+    | NonInlineLiteralsAsPrintfFormat
  
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -144,6 +145,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.TryWithInSeqExpression, previewVersion
                 LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields, previewVersion
                 LanguageFeature.StaticMembersInInterfaces, previewVersion
+                LanguageFeature.NonInlineLiteralsAsPrintfFormat, previewVersion
 
             ]
 
@@ -261,6 +263,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.TryWithInSeqExpression -> FSComp.SR.featureTryWithInSeqExpressions ()
         | LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields -> FSComp.SR.featureWarningWhenCopyAndUpdateRecordChangesAllFields ()
         | LanguageFeature.StaticMembersInInterfaces -> FSComp.SR.featureStaticMembersInInterfaces ()
+        | LanguageFeature.NonInlineLiteralsAsPrintfFormat -> FSComp.SR.featureNonInlineLiteralsAsPrintfFormat ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

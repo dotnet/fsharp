@@ -8,6 +8,7 @@ open Xunit.Sdk
 
 open FSharp.Compiler.IO
 open FSharp.Test.Compiler
+open FSharp.Test.Utilities
 
 /// Attribute to use with Xunit's TheoryAttribute.
 /// Takes a directory, relative to current test suite's root.
@@ -135,7 +136,8 @@ type DirectoryAttribute(dir: string) =
             Name                = Some filename
             IgnoreWarnings      = false
             References          = []
-            OutputDirectory     = outputDirectory } |> FS
+            OutputDirectory     = outputDirectory
+            TargetFramework     = TargetFramework.Current} |> FS
 
     member _.BaselineSuffix with get() = baselineSuffix and set v = baselineSuffix <- v
     member _.Includes with get() = includes and set v = includes <- v

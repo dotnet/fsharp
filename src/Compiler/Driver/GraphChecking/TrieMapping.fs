@@ -100,7 +100,8 @@ let mkDictFromKeyValuePairs (items: KeyValuePair<'TKey, 'TValue> list) =
     let dict = Dictionary(Seq.length items)
 
     for KeyValue (k, v) in items do
-        dict.Add(k, v)
+        if not (dict.ContainsKey(k)) then
+            dict.Add(k, v)
 
     dict
 
@@ -188,8 +189,7 @@ let processSynModuleOrNamespace<'Decl>
                         mkSingletonDict name { Current = current; Children = node } |> continuation)
                     tail
 
-        if List.isEmpty name then
-            // This can happen for a namespace global.
+        if kind = SynModuleOrNamespaceKind.AnonModule then
             // We collect the child nodes from the decls
             decls |> List.choose (mkTrieForDeclaration idx) |> mkDictFromKeyValuePairs
         else
