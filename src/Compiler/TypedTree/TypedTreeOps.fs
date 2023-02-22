@@ -9693,21 +9693,21 @@ let rec EvalAttribArgExpr suppressLangFeatureCheck (g: TcGlobals) (x: Expr) =
     | TypeOfExpr g _ -> x
     | TypeDefOfExpr g _ -> x
     | Expr.Op (TOp.Coerce, _, [arg], _) -> 
-        EvalAttribArgExpr SuppressLanguageFeatureCheck.No g arg
+        EvalAttribArgExpr suppressLangFeatureCheck g arg
     | EnumExpr g arg1 -> 
-        EvalAttribArgExpr SuppressLanguageFeatureCheck.No g arg1
+        EvalAttribArgExpr suppressLangFeatureCheck g arg1
     // Detect bitwise or of attribute flags
     | AttribBitwiseOrExpr g (arg1, arg2) -> 
-        let v1 = EvalAttribArgExpr SuppressLanguageFeatureCheck.No g arg1
+        let v1 = EvalAttribArgExpr suppressLangFeatureCheck g arg1
 
         match v1 with
         | IntegerConstExpr ->
-            EvalArithBinOp ((|||), (|||), (|||), (|||), (|||), (|||), (|||), (|||), ignore2, ignore2) v1 (EvalAttribArgExpr SuppressLanguageFeatureCheck.No g arg2) 
+            EvalArithBinOp ((|||), (|||), (|||), (|||), (|||), (|||), (|||), (|||), ignore2, ignore2) v1 (EvalAttribArgExpr suppressLangFeatureCheck g arg2) 
         | _ ->
             errorR (Error ( FSComp.SR.tastNotAConstantExpression(), x.Range))
             x
     | SpecificBinopExpr g g.unchecked_addition_vref (arg1, arg2) ->
-        let v1, v2 = EvalAttribArgExpr SuppressLanguageFeatureCheck.No g arg1, EvalAttribArgExpr SuppressLanguageFeatureCheck.No g arg2
+        let v1, v2 = EvalAttribArgExpr suppressLangFeatureCheck g arg1, EvalAttribArgExpr suppressLangFeatureCheck g arg2
 
         match v1, v2 with
         | Expr.Const (Const.String x1, m, ty), Expr.Const (Const.String x2, _, _) ->
