@@ -41,7 +41,7 @@ $(POUND_R)
 
         projectTemplate.Replace("$(POUND_R)", expandReferences)
 
-    let generateProjectBody =
+    let generateProjectFile =
         """
 <Project Sdk='Microsoft.NET.Sdk'>
 
@@ -193,3 +193,12 @@ $(PACKAGEREFERENCES)
   </Target>
 
 </Project>"""
+
+    let generateProjectNugetConfigFile =
+        """<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <packageSources>
+    <clear />
+  </packageSources>
+</configuration>
+    """

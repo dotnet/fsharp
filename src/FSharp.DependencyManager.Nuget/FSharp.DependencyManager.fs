@@ -371,14 +371,15 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
         let packageReferenceText = String.Join(Environment.NewLine, packageReferenceLines)
 
         let projectPath = Path.Combine(projectDirectory.Value, "Project.fsproj")
+        let nugetPath = Path.Combine(projectDirectory.Value, "NuGet.config")
 
         let generateAndBuildProjectArtifacts =
             let writeFile path body =
                 if not (generatedScripts.ContainsKey(body.GetHashCode().ToString())) then
                     emitFile path body
 
-            let generateProjBody =
-                generateProjectBody
+            let generateProjectFile =
+                generateProjectFile
                     .Replace("$(TARGETFRAMEWORK)", targetFrameworkMoniker)
                     .Replace("$(RUNTIMEIDENTIFIER)", runtimeIdentifier)
                     .Replace("$(PACKAGEREFERENCES)", packageReferenceText)
@@ -389,7 +390,8 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
                 | Some _ -> package_timeout
                 | None -> Some timeout
 
-            writeFile projectPath generateProjBody
+            writeFile projectPath generateProjectFile
+            writeFile nugetPath generateProjectNugetConfigFile
             buildProject projectPath binLogPath timeout
 
         generateAndBuildProjectArtifacts
