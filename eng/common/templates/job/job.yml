@@ -2,7 +2,7 @@
 # and some (Microbuild) should only be applied to non-PR cases for internal builds.
 
 parameters:
-# Job schema parameters - https://learn.microsoft.com/en-us/azure/devops/pipelines/yaml-schema?view=vsts&tabs=schema#job
+# Job schema parameters - https://learn.microsoft.com/azure/devops/pipelines/yaml-schema?view=vsts&tabs=schema#job
   cancelTimeoutInMinutes: ''
   condition: ''
   container: ''

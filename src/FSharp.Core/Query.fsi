@@ -16,7 +16,7 @@ namespace Microsoft.FSharp.Linq
     ///
     /// <namespacedoc><summary>
     ///   Library functionality for F# query syntax and interoperability with .NET LINQ Expressions. See
-    ///   also <a href="https://learn.microsoft.com/en-us/dotnet/fsharp/language-reference/query-expressions">F# Query Expressions</a> in the F# Language Guide.
+    ///   also <a href="https://learn.microsoft.com/dotnet/fsharp/language-reference/query-expressions">F# Query Expressions</a> in the F# Language Guide.
     /// </summary></namespacedoc>
     [<NoComparison; NoEquality; Sealed>]
     type QuerySource<'T, 'Q> =
@@ -31,7 +31,7 @@ namespace Microsoft.FSharp.Linq
         member Source: seq<'T>
 
     /// The type used to support the F# query syntax. Use 'query { ... }' to use the query syntax. See
-    /// also <a href="https://learn.microsoft.com/en-us/dotnet/fsharp/language-reference/query-expressions">F# Query Expressions</a> in the F# Language Guide.
+    /// also <a href="https://learn.microsoft.com/dotnet/fsharp/language-reference/query-expressions">F# Query Expressions</a> in the F# Language Guide.
     [<Class>]
     type QueryBuilder =
         /// <summary>Create an instance of this builder. Use 'query { ... }' to use the query syntax.</summary>

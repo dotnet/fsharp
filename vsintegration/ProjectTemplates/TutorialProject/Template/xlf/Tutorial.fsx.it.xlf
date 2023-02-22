@@ -88,7 +88,7 @@
         <note />
       </trans-unit>
       <trans-unit id="XmlComments-Line3">
-        <source>To learn more, see: https://learn.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/xml-documentation</source>
+        <source>To learn more, see: https://learn.microsoft.com/dotnet/articles/fsharp/language-reference/xml-documentation</source>
         <target state="translated">Per altre informazioni, vedere: https://learn.microsoft.com/it-it/dotnet/articles/fsharp/language-reference/xml-documentation</target>
         <note />
       </trans-unit>
@@ -98,7 +98,7 @@
         <note />
       </trans-unit>
       <trans-unit id="LearnMore">
-        <source>To learn more, see: https://learn.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/import-declarations-the-open-keyword</source>
+        <source>To learn more, see: https://learn.microsoft.com/dotnet/articles/fsharp/language-reference/import-declarations-the-open-keyword</source>
         <target state="translated">Per altre informazioni, vedere: https://learn.microsoft.com/it-it/dotnet/articles/fsharp/language-reference/import-declarations-the-open-keyword</target>
         <note />
       </trans-unit>
@@ -113,7 +113,7 @@
         <note />
       </trans-unit>
       <trans-unit id="Module-Line3">
-        <source>To learn more, see: https://learn.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/modules</source>
+        <source>To learn more, see: https://learn.microsoft.com/dotnet/articles/fsharp/language-reference/modules</source>
         <target state="translated">Per altre informazioni, vedere: https://learn.microsoft.com/it-it/dotnet/articles/fsharp/language-reference/modules</target>
         <note />
       </trans-unit>
@@ -168,7 +168,7 @@
         <note />
       </trans-unit>
       <trans-unit id="ValuesImmutable-Line3">
-        <source>To learn more, see: https://learn.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/values/index#why-immutable</source>
+        <source>To learn more, see: https://learn.microsoft.com/dotnet/articles/fsharp/language-reference/values/index#why-immutable</source>
         <target state="translated">Per altre informazioni, vedere: https://learn.microsoft.com/it-it/dotnet/articles/fsharp/language-reference/values/index#why-immutable</target>
         <note />
       </trans-unit>
@@ -218,7 +218,7 @@
         <note />
       </trans-unit>
       <trans-unit id="FunctionsModule-Line3">
-        <source>To learn more, see: https://learn.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/functions/</source>
+        <source>To learn more, see: https://learn.microsoft.com/dotnet/articles/fsharp/language-reference/functions/</source>
         <target state="translated">Per altre informazioni, vedere: https://learn.microsoft.com/it-it/dotnet/articles/fsharp/language-reference/functions/</target>
         <note />
       </trans-unit>
@@ -308,7 +308,7 @@
         <note />
       </trans-unit>
       <trans-unit id="Strings-Line2">
-        <source>To learn more, see: https://learn.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/strings</source>
+        <source>To learn more, see: https://learn.microsoft.com/dotnet/articles/fsharp/language-reference/strings</source>
         <target state="translated">Per altre informazioni, vedere: https://learn.microsoft.com/it-it/dotnet/articles/fsharp/language-reference/strings</target>
         <note />
       </trans-unit>
@@ -358,7 +358,7 @@
         <note />
       </trans-unit>
       <trans-unit id="Tuples-Line2">
-        <source>To learn more, see: https://learn.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/tuples</source>
+        <source>To learn more, see: https://learn.microsoft.com/dotnet/articles/fsharp/language-reference/tuples</source>
         <target state="translated">Per altre informazioni, vedere: https://learn.microsoft.com/it-it/dotnet/articles/fsharp/language-reference/tuples</target>
         <note />
       </trans-unit>
@@ -448,12 +448,12 @@
         <note />
       </trans-unit>
       <trans-unit id="Pipes-Line4">
-        <source>To learn more about these operators, see: https://learn.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/functions/#function-composition-and-pipelining</source>
+        <source>To learn more about these operators, see: https://learn.microsoft.com/dotnet/articles/fsharp/language-reference/functions/#function-composition-and-pipelining</source>
         <target state="translated">Per altre informazioni su questi operatori, vedere: https://learn.microsoft.com/it-it/dotnet/articles/fsharp/language-reference/functions/#function-composition-and-pipelining</target>
         <note />
       </trans-unit>
       <trans-unit id="Pipes-Line5">
-        <source>To learn more about Partial Application, see: https://learn.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/functions/#partial-application-of-arguments</source>
+        <source>To learn more about Partial Application, see: https://learn.microsoft.com/dotnet/articles/fsharp/language-reference/functions/#partial-application-of-arguments</source>
         <target state="translated">Per altre informazioni sull'applicazione parziale, vedere: https://learn.microsoft.com/it-it/dotnet/articles/fsharp/language-reference/functions/#partial-application-of-arguments</target>
         <note />
       </trans-unit>
@@ -613,7 +613,7 @@
         <note />
       </trans-unit>
       <trans-unit id="Lists-Line4">
-        <source>To learn more, see: https://learn.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/lists</source>
+        <source>To learn more, see: https://learn.microsoft.com/dotnet/articles/fsharp/language-reference/lists</source>
         <target state="translated">Per altre informazioni, vedere: https://learn.microsoft.com/it-it/dotnet/articles/fsharp/language-reference/lists</target>
         <note />
       </trans-unit>
@@ -703,7 +703,7 @@
         <note />
       </trans-unit>
       <trans-unit id="Arrays-Line4">
-        <source>To learn more, see: https://learn.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/arrays</source>
+        <source>To learn more, see: https://learn.microsoft.com/dotnet/articles/fsharp/language-reference/arrays</source>
         <target state="translated">Per altre informazioni, vedere: https://learn.microsoft.com/it-it/dotnet/articles/fsharp/language-reference/arrays</target>
         <note />
       </trans-unit>
@@ -748,7 +748,7 @@
         <note />
       </trans-unit>
       <trans-unit id="ArrayAssignment-Line2">
-        <source>To learn more about this operator, see: https://learn.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/values/index#mutable-variables</source>
+        <source>To learn more about this operator, see: https://learn.microsoft.com/dotnet/articles/fsharp/language-reference/values/index#mutable-variables</source>
         <target state="translated">Per altre informazioni su questo operatore, vedere: https://learn.microsoft.com/it-it/dotnet/articles/fsharp/language-reference/values/index#mutable-variables</target>
         <note />
       </trans-unit>
@@ -783,7 +783,7 @@
         <note />
       </trans-unit>
       <trans-unit id="Sequences-Line5">
-        <source>To learn more, see: https://learn.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/sequences</source>
+        <source>To learn more, see: https://learn.microsoft.com/dotnet/articles/fsharp/language-reference/sequences</source>
         <target state="translated">Per altre informazioni, vedere: https://learn.microsoft.com/it-it/dotnet/articles/fsharp/language-reference/sequences</target>
         <note />
       </trans-unit>
@@ -843,7 +843,7 @@
         <note />
       </trans-unit>
       <trans-unit id="RecursiveFunctions-Line4">
-        <source>To learn more, see: https://learn.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/functions/index#recursive-functions</source>
+        <source>To learn more, see: https://learn.microsoft.com/dotnet/articles/fsharp/language-reference/functions/index#recursive-functions</source>
         <target state="translated">Per altre informazioni, vedere: https://learn.microsoft.com/it-it/dotnet/articles/fsharp/language-reference/functions/index#recursive-functions</target>
         <note />
       </trans-unit>
@@ -908,7 +908,7 @@
         <note />
       </trans-unit>
       <trans-unit id="Records-Line3">
-        <source>To learn more, see: https://learn.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/records</source>
+        <source>To learn more, see: https://learn.microsoft.com/dotnet/articles/fsharp/language-reference/records</source>
         <target state="translated">Per altre informazioni, vedere: https://learn.microsoft.com/it-it/dotnet/articles/fsharp/language-reference/records</target>
         <note />
       </trans-unit>
@@ -943,7 +943,7 @@
         <note />
       </trans-unit>
       <trans-unit id="UpdateRecord-Line4">
-        <source>To learn more, see: https://learn.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/copy-and-update-record-expressions</source>
+        <source>To learn more, see: https://learn.microsoft.com/dotnet/articles/fsharp/language-reference/copy-and-update-record-expressions</source>
         <target state="translated">Per altre informazioni, vedere: https://learn.microsoft.com/it-it/dotnet/articles/fsharp/language-reference/copy-and-update-record-expressions</target>
         <note />
       </trans-unit>
@@ -998,7 +998,7 @@
         <note />
       </trans-unit>
       <trans-unit id="DiscriminatedUnions-Line3">
-        <source>To learn more, see: https://learn.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/discriminated-unions</source>
+        <source>To learn more, see: https://learn.microsoft.com/dotnet/articles/fsharp/language-reference/discriminated-unions</source>
         <target state="translated">Per altre informazioni, vedere: https://learn.microsoft.com/it-it/dotnet/articles/fsharp/language-reference/discriminated-unions</target>
         <note />
       </trans-unit>
@@ -1203,7 +1203,7 @@
         <note />
       </trans-unit>
       <trans-unit id="PatternMatching-Line5">
-        <source>To learn more, see: https://learn.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/pattern-matching</source>
+        <source>To learn more, see: https://learn.microsoft.com/dotnet/articles/fsharp/language-reference/pattern-matching</source>
         <target state="translated">Per altre informazioni, vedere: https://learn.microsoft.com/it-it/dotnet/articles/fsharp/language-reference/pattern-matching</target>
         <note />
       </trans-unit>
@@ -1278,7 +1278,7 @@
         <note />
       </trans-unit>
       <trans-unit id="ActivePatterns-Line3">
-        <source>To learn more, see: https://learn.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/active-patterns</source>
+        <source>To learn more, see: https://learn.microsoft.com/dotnet/articles/fsharp/language-reference/active-patterns</source>
         <target state="translated">Per altre informazioni, vedere: https://learn.microsoft.com/it-it/dotnet/articles/fsharp/language-reference/active-patterns</target>
         <note />
       </trans-unit>
@@ -1308,7 +1308,7 @@
         <note />
       </trans-unit>
       <trans-unit id="Option-Line4">
-        <source>To learn more, see: https://learn.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/options</source>
+        <source>To learn more, see: https://learn.microsoft.com/dotnet/articles/fsharp/language-reference/options</source>
         <target state="translated">Per altre informazioni, vedere: https://learn.microsoft.com/it-it/dotnet/articles/fsharp/language-reference/options</target>
         <note />
       </trans-unit>
@@ -1358,7 +1358,7 @@
         <note />
       </trans-unit>
       <trans-unit id="UnitsOfMeasure-Line3">
-        <source>To learn more, see: https://learn.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/units-of-measure</source>
+        <source>To learn more, see: https://learn.microsoft.com/dotnet/articles/fsharp/language-reference/units-of-measure</source>
         <target state="translated">Per altre informazioni, vedere: https://learn.microsoft.com/it-it/dotnet/articles/fsharp/language-reference/units-of-measure</target>
         <note />
       </trans-unit>
@@ -1408,12 +1408,12 @@
         <note />
       </trans-unit>
       <trans-unit id="Classes-Line3">
-        <source>To learn more about Classes, see: https://learn.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/classes</source>
+        <source>To learn more about Classes, see: https://learn.microsoft.com/dotnet/articles/fsharp/language-reference/classes</source>
         <target state="translated">Per altre informazioni sulle classi, vedere: https://learn.microsoft.com/it-it/dotnet/articles/fsharp/language-reference/classes</target>
         <note />
       </trans-unit>
       <trans-unit id="Classes-Line4">
-        <source>To learn more about Members, see: https://learn.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/members</source>
+        <source>To learn more about Members, see: https://learn.microsoft.com/dotnet/articles/fsharp/language-reference/members</source>
         <target state="translated">Per altre informazioni sui membri, vedere: https://learn.microsoft.com/it-it/dotnet/articles/fsharp/language-reference/members</target>
         <note />
       </trans-unit>
@@ -1478,7 +1478,7 @@
         <note />
       </trans-unit>
       <trans-unit id="GenericClasses-Line3">
-        <source>To learn more, see: https://learn.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/generics/</source>
+        <source>To learn more, see: https://learn.microsoft.com/dotnet/articles/fsharp/language-reference/generics/</source>
         <target state="translated">Per altre informazioni, vedere: https://learn.microsoft.com/it-it/dotnet/articles/fsharp/language-reference/generics/</target>
         <note />
       </trans-unit>
@@ -1528,7 +1528,7 @@
         <note />
       </trans-unit>
       <trans-unit id="Interfaces-Line3">
-        <source>To learn more, see: https://learn.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/interfaces</source>
+        <source>To learn more, see: https://learn.microsoft.com/dotnet/articles/fsharp/language-reference/interfaces</source>
         <target state="translated">Per altre informazioni, vedere: https://learn.microsoft.com/it-it/dotnet/articles/fsharp/language-reference/interfaces</target>
         <note />
       </trans-unit>
@@ -1598,7 +1598,7 @@
         <note />
       </trans-unit>
       <trans-unit id="Events-Line2">
-        <source>To learn more, see: https://learn.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/members/events</source>
+        <source>To learn more, see: https://learn.microsoft.com/dotnet/articles/fsharp/language-reference/members/events</source>
         <target state="translated">Per altre informazioni, vedere: https://learn.microsoft.com/it-it/dotnet/articles/fsharp/language-reference/members/events</target>
         <note />
       </trans-unit>

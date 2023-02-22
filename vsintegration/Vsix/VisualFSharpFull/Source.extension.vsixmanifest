@@ -6,7 +6,7 @@
     <DisplayName>Visual F# Tools</DisplayName>
     <Description xml:space="preserve">Deploy Visual F# Tools Binaries to Visual Studio</Description>
     <PackageId>Microsoft.FSharp.VSIX.Full.Core</PackageId>
-    <MoreInfo>https://learn.microsoft.com/en-us/dotnet/articles/fsharp/</MoreInfo>
+    <MoreInfo>https://learn.microsoft.com/dotnet/articles/fsharp/</MoreInfo>
   </Metadata>
   <Installation Experimental="true">
     <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[|%CurrentProject%;GetVSGeneralVersion|,)">

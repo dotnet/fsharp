@@ -10,7 +10,7 @@ open Microsoft.FSharp.Collections
 ///
 /// <namespacedoc><summary>
 ///   Library functionality for native interopability. See
-///   also <a href="https://learn.microsoft.com/en-us/dotnet/fsharp/language-reference/functions/external-functions">F# External Functions</a> in
+///   also <a href="https://learn.microsoft.com/dotnet/fsharp/language-reference/functions/external-functions">F# External Functions</a> in
 ///   the F# Language Guide.
 /// </summary></namespacedoc>
 [<RequireQualifiedAccess>]
