@@ -73,8 +73,9 @@ let makeFmts (context: FormatStringCheckContext) (isInterpolated: bool) (fragRan
             // However we make an effort to remove these to keep the calls to GetSubStringText valid.  So
             // we work out how much extra text there is at the end of the last line of the fragment,
             // which may or may not be quote markers. If there's no flex, we don't trim the quote marks
-            let endNextLineIndex = if m.EndLine < lineStartPositions.Length then lineStartPositions[m.EndLine] else endIndex
-            let endIndexFlex = endNextLineIndex - endIndex
+            // let endNextLineIndex = if m.EndLine < lineStartPositions.Length then lineStartPositions[m.EndLine] else endIndex
+            // let endIndexFlex = endNextLineIndex - endIndex
+            let endIndexFlex = 1
             let mLength = endIndex - startIndex
 
             if isInterpolated && i=0 && startIndex < length-4 && sourceText.SubTextEquals("$\"\"\"", startIndex) then
