@@ -29,7 +29,9 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 
+#if !NO_TYPEPROVIDERS
 let verbose = false
+#endif
 
 let ffailwith fileName str =
     let msg = FSComp.SR.pickleErrorReadingWritingMetadata(fileName, str)

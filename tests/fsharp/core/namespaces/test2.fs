@@ -13,7 +13,7 @@ module M =
 
 
 #if TESTS_AS_APP
-    let RUN() = !failures
+    let RUN() = !Hello.Goodbye.Utils.failures
 #else
     let aa =
       if not (!Hello.Goodbye.Utils.failures).IsEmpty then 
