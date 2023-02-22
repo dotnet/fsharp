@@ -19,12 +19,12 @@ namespace Microsoft.FSharp.Control
     ///  This type has no members. Asynchronous computations are normally specified either by using an async expression
     ///  or the static methods in the <see cref="T:Microsoft.FSharp.Control.FSharpAsync`1"/> type.
     ///
-    ///  See also <a href="https://learn.microsoft.com/en-us/dotnet/fsharp/language-reference/asynchronous-workflows">F# Language Guide - Async Workflows</a>.
+    ///  See also <a href="https://learn.microsoft.com/en-us/dotnet/fsharp/language-reference/async-expressions">F# Language Guide - Async Workflows</a>.
     /// </remarks> 
     ///
     /// <namespacedoc><summary>
     ///   Library functionality for asynchronous programming, events and agents. See also
-    ///   <a href="https://learn.microsoft.com/en-us/dotnet/fsharp/language-reference/asynchronous-workflows">Asynchronous Programming</a>, 
+    ///   <a href="https://learn.microsoft.com/en-us/dotnet/fsharp/language-reference/async-expressions">Asynchronous Programming</a>, 
     ///   <a href="https://learn.microsoft.com/en-us/dotnet/fsharp/language-reference/members/events">Events</a> and
     ///   <a href="https://learn.microsoft.com/en-us/dotnet/fsharp/language-reference/lazy-expressions">Lazy Expressions</a> in the
     ///   F# Language Guide.
@@ -38,7 +38,7 @@ namespace Microsoft.FSharp.Control
     /// <summary>Holds static members for creating and manipulating asynchronous computations.</summary>
     ///
     /// <remarks>
-    ///  See also <a href="https://learn.microsoft.com/en-us/dotnet/fsharp/language-reference/asynchronous-workflows">F# Language Guide - Async Workflows</a>.
+    ///  See also <a href="https://learn.microsoft.com/en-us/dotnet/fsharp/language-reference/async-expressions">F# Language Guide - Async Workflows</a>.
     /// </remarks>
     ///
     /// <category index="1">Async Programming</category>
