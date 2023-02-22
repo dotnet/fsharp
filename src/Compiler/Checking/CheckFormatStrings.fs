@@ -61,6 +61,7 @@ let makeFmts (context: FormatStringCheckContext) (isInterpolated: bool) (fragRan
     let sourceText = context.SourceText
     let lineStartPositions = context.LineStartPositions
     let length = sourceText.Length
+    let mutable tripleQuoted = false
     [ for i, fragRange in List.indexed fragRanges do
         let m = fragRange
         if m.StartLine - 1 < lineStartPositions.Length && m.EndLine - 1 < lineStartPositions.Length then
@@ -73,42 +74,41 @@ let makeFmts (context: FormatStringCheckContext) (isInterpolated: bool) (fragRan
             // However we make an effort to remove these to keep the calls to GetSubStringText valid.  So
             // we work out how much extra text there is at the end of the last line of the fragment,
             // which may or may not be quote markers. If there's no flex, we don't trim the quote marks
-            // let endNextLineIndex = if m.EndLine < lineStartPositions.Length then lineStartPositions[m.EndLine] else endIndex
-            // let endIndexFlex = endNextLineIndex - endIndex
-            let endIndexFlex = 1
             let mLength = endIndex - startIndex
 
             if isInterpolated && i=0 && startIndex < length-4 && sourceText.SubTextEquals("$\"\"\"", startIndex) then
                 // Take of the ending triple quote or '{'
-                let fragLength = mLength - 4 - min endIndexFlex (if i = numFrags-1 then 3 else 1)
+                let fragLength = mLength - 4 - (if numFrags = 1 then 3 else 1)
+                tripleQuoted <- true
                 (4, sourceText.GetSubTextString(startIndex + 4, fragLength), m)
             elif not isInterpolated && i=0 && startIndex < length-3 && sourceText.SubTextEquals("\"\"\"", startIndex) then
                 // Take of the ending triple quote or '{'
-                let fragLength = mLength - 2 - min endIndexFlex (if i = numFrags-1 then 3 else 1)
+                let fragLength = mLength - 3 - (if numFrags = 1 then 3 else 1)
+                tripleQuoted <- true
                 (3, sourceText.GetSubTextString(startIndex + 3, fragLength), m)
             elif isInterpolated && i=0 && startIndex < length-3 && sourceText.SubTextEquals("$@\"", startIndex) then
                 // Take of the ending quote or '{', always length 1
-                let fragLength = mLength - 3 - min endIndexFlex 1
+                let fragLength = mLength - 3 - 1
                 (3, sourceText.GetSubTextString(startIndex + 3, fragLength), m)
             elif isInterpolated && i=0 && startIndex < length-3 && sourceText.SubTextEquals("@$\"", startIndex) then
                 // Take of the ending quote or '{', always length 1
-                let fragLength = mLength - 3 - min endIndexFlex 1
+                let fragLength = mLength - 3 - 1
                 (3, sourceText.GetSubTextString(startIndex + 3, fragLength), m)
             elif not isInterpolated && i=0 && startIndex < length-2 && sourceText.SubTextEquals("@\"", startIndex) then
                 // Take of the ending quote or '{', always length 1
-                let fragLength = mLength - 2 - min endIndexFlex 1
+                let fragLength = mLength - 2 - 1
                 (2, sourceText.GetSubTextString(startIndex + 2, fragLength), m)
             elif isInterpolated && i=0 && startIndex < length-2 && sourceText.SubTextEquals("$\"", startIndex) then
                 // Take of the ending quote or '{', always length 1
-                let fragLength = mLength - 2 - min endIndexFlex 1
+                let fragLength = mLength - 2 - 1
                 (2, sourceText.GetSubTextString(startIndex + 2, fragLength), m)
             elif isInterpolated && i <> 0 && startIndex < length-1 && sourceText.SubTextEquals("}", startIndex) then
                 // Take of the ending quote or '{', always length 1
-                let fragLength = mLength - 1 - min endIndexFlex 1
+                let fragLength = mLength - 1 - (if i = numFrags - 1 && tripleQuoted then 3 else 1)
                 (1, sourceText.GetSubTextString(startIndex + 1, fragLength), m)
             else
                 // Take of the ending quote or '{', always length 1
-                let fragLength = mLength - 1 - min endIndexFlex 1
+                let fragLength = mLength - 1 - (if i = numFrags - 1 && tripleQuoted then 3 else 1)
                 (1, sourceText.GetSubTextString(startIndex + 1, fragLength), m)
         else (1, fmt, m) ]
 
