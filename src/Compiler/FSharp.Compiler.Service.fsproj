@@ -50,16 +50,15 @@
     <PackageIconFullPath>$(MSBuildThisFileDirectory)logo.png</PackageIconFullPath>
   </PropertyGroup>
 
-  <ItemGroup>
-    <!-- We hash fslex and fsyacc themselves, and fsl/fsy files -->
-    <FilesToHash Include="$(RepoRoot)\buildtools\fslex\*.fs;$(RepoRoot)\buildtools\fsyacc\*.fs;$(RepoRoot)\src\Compiler\*.fsl;$(RepoRoot)\src\Compiler\*.fsy" />
-  </ItemGroup>
-
   <Target Name="GetFsLexYaccHashes" BeforeTargets="BeforeBuild">
 
     <PropertyGroup>
         <FsLexYaccFilesContents></FsLexYaccFilesContents>
     </PropertyGroup>
+
+    <CreateItem Include="$(RepoRoot)\buildtools\fslex\*.fs;$(RepoRoot)\buildtools\fsyacc\*.fs;$(RepoRoot)\src\Compiler\*.fsl;$(RepoRoot)\src\Compiler\*.fsy">
+      <Output TaskParameter="Include" ItemName="FilesToHash" />
+    </CreateItem>
 
     <ReadLinesFromFile File="%(FilesToHash.FullPath)">
       <Output TaskParameter="Lines" ItemName="FsLexYaccFilesContent" />
