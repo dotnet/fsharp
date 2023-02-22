@@ -90,6 +90,9 @@ src/Compiler/TypedTree/TypedTreeOps.fs
 src/Compiler/TypedTree/TypedTreePickle.fs
 src/Compiler/TypedTree/TypeProviders.fs
 
+# https://github.com/fsprojects/fantomas/issues/2779
+vsintegration/tests/FSharp.Editor.Tests/QuickInfoProviderTests.fs
+
 # Explicitly unformatted file that needs more care to get it to format well
 
 src/Compiler/SyntaxTree/LexFilter.fs
