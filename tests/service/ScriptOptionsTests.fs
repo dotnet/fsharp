@@ -75,7 +75,7 @@ let pi = Math.PI
 //
 // This must be because of some setting in the CI build scripts - e.g. an environment variable
 // that allows SDK resolution to be overriden. I've tried to track this down by looking through
-// https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet resolution rules
+// https://learn.microsoft.com/dotnet/core/tools/dotnet resolution rules
 // and the F# and CI settings but can't find the setting that is causing this.
 //
 // Because of this the test has been manually verified by running locally.

@@ -14,7 +14,7 @@ open Microsoft.FSharp.Collections
 ///
 /// <namespacedoc><summary>
 ///   Library functionality for accessing additional information about F# types and F# values at
-///   runtime, augmenting that available through <a href="https://docs.microsoft.com/dotnet/api/system.reflection">System.Reflection</a>.
+///   runtime, augmenting that available through <a href="https://learn.microsoft.com/dotnet/api/system.reflection">System.Reflection</a>.
 /// </summary></namespacedoc>
 [<Sealed>]
 type UnionCaseInfo =
