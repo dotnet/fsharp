@@ -188,13 +188,13 @@ or
 Some of the code in this repository is formatted automatically by [Fantomas](https://github.com/fsprojects/fantomas). To format all files use:
 
 ```cmd
-dotnet fantomas src -r
+dotnet fantomas . -r
 ```
 
 The formatting is checked automatically by CI:
 
 ```cmd
-dotnet fantomas src -r --check
+dotnet fantomas . -r --check
 ```
 
 At the time of writing only a subset of signature files (`*.fsi`) are formatted. See the settings in `.fantomasignore` and `.editorconfig`.
