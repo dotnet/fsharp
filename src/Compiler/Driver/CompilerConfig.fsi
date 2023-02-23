@@ -513,6 +513,8 @@ type TcConfigBuilder =
         mutable captureIdentifiersWhenParsing: bool
 
         mutable typeCheckingConfig: TypeCheckingConfig
+
+        mutable dumpSignatureData: bool
     }
 
     static member CreateNew:
@@ -883,6 +885,8 @@ type TcConfig =
     member captureIdentifiersWhenParsing: bool
 
     member typeCheckingConfig: TypeCheckingConfig
+
+    member dumpSignatureData: bool
 
 /// Represents a computation to return a TcConfig. Normally this is just a constant immutable TcConfig,
 /// but for F# Interactive it may be based on an underlying mutable TcConfigBuilder.
