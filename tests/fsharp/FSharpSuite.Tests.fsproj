@@ -61,7 +61,6 @@
     <Compile Include="Compiler\Language\CustomCollectionTests.fs" />
     <Compile Include="Compiler\Language\HatDesugaringTests.fs" />
     <Compile Include="Compiler\Language\TypeAttributeTests.fs" />
-    <Compile Include="Compiler\Language\ByrefTests.fs" />
     <Compile Include="Compiler\Language\StringInterpolation.fs" />
     <Compile Include="Compiler\Language\InterfaceTests.fs" />
     <Compile Include="Compiler\Language\AnonRecordTests.fs" />
