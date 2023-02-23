@@ -610,16 +610,10 @@ type PtrsOK =
     | PtrTypesNotOK
 
 let GenReadOnlyAttribute (g: TcGlobals) =
-    mkILCustomAttribute (g.attrib_IsReadOnlyAttribute.TypeRef, [], [], [])
+    g.AddEmbeddableSystemAttribute(g.attrib_IsReadOnlyAttribute.TypeRef, [], [], [])
 
 let GenReadOnlyAttributeIfNecessary (g: TcGlobals) ty =
-    let add =
-        false
-        && g.isSystem_Runtime_CompilerServices_IsReadOnlyAttributeAvailable
-        && isInByrefTy g ty
-        && g.attrib_IsReadOnlyAttribute.TyconRef.CanDeref
-
-    if add then
+    if isInByrefTy g ty then
         let attr = GenReadOnlyAttribute g
         Some attr
     else
@@ -2088,15 +2082,7 @@ type AnonTypeGenerationTable() =
             let ilMethods =
                 [
                     for propName, fldName, fldTy in flds ->
-                        let attrs =
-                            if
-                                false
-                                && g.isSystem_Runtime_CompilerServices_IsReadOnlyAttributeAvailable
-                                && isStruct
-                            then
-                                [ GenReadOnlyAttribute g ]
-                            else
-                                []
+                        let attrs = if isStruct then [ GenReadOnlyAttribute g ] else []
 
                         mkLdfldMethodDef ("get_" + propName, ILMemberAccess.Public, false, ilTy, fldName, fldTy, attrs)
                         |> g.AddMethodGeneratedAttributes
@@ -10897,12 +10883,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                             let isStruct = isStructTyconRef tcref
 
                             let attrs =
-                                if
-                                    false
-                                    && g.isSystem_Runtime_CompilerServices_IsReadOnlyAttributeAvailable
-                                    && isStruct
-                                    && not isStatic
-                                then
+                                if isStruct && not isStatic then
                                     [ GenReadOnlyAttribute g ]
                                 else
                                     []

@@ -188,13 +188,13 @@ or
 Some of the code in this repository is formatted automatically by [Fantomas](https://github.com/fsprojects/fantomas). To format all files use:
 
 ```cmd
-dotnet fantomas src -r
+dotnet fantomas . -r
 ```
 
 The formatting is checked automatically by CI:
 
 ```cmd
-dotnet fantomas src -r --check
+dotnet fantomas . -r --check
 ```
 
 At the time of writing only a subset of signature files (`*.fsi`) are formatted. See the settings in `.fantomasignore` and `.editorconfig`.
@@ -247,7 +247,7 @@ Where `<version>` corresponds to the latest Visual Studio version on your machin
 
 * Coding conventions vary from file to file
 
-* Format using [the F# style guide](https://docs.microsoft.com/en-us/dotnet/fsharp/style-guide/)
+* Format using [the F# style guide](https://learn.microsoft.com/dotnet/fsharp/style-guide/)
 
 * Avoid tick identifiers like `body'`. They are generally harder to read and can't be inspected in the debugger as things stand. Generally use R suffix instead, e.g. `bodyR`. The R can stand for "rewritten" or "result"
 
@@ -427,4 +427,4 @@ See the "Debugging The Compiler" section of this [article](https://medium.com/@w
 
 If you are behind a proxy server, NuGet client tool must be configured to use it:
 
-See the Nuget config file documention for use with a proxy server [https://docs.microsoft.com/en-us/nuget/reference/nuget-config-file](https://docs.microsoft.com/en-us/nuget/reference/nuget-config-file)
+See the Nuget config file documention for use with a proxy server [https://learn.microsoft.com/nuget/reference/nuget-config-file](https://learn.microsoft.com/nuget/reference/nuget-config-file)
