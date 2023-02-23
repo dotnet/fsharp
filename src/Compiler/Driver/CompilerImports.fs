@@ -138,6 +138,13 @@ let GetSignatureData (file, ilScopeRef, ilModule, byteReader) : PickledDataWithR
 let WriteSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, ccu: CcuThunk, fileName, inMem) : ILResource =
     let mspec = ApplyExportRemappingToEntity tcGlobals exportRemapping ccu.Contents
 
+    if tcConfig.dumpSignatureData then
+        tcConfig.outputFile
+        |> Option.iter (fun outputFile ->
+            let outputFile = FileSystem.GetFullPathShim(outputFile)
+            let signatureDataFile = FileSystem.ChangeExtensionShim(outputFile, ".signature-data.json")
+            serializeEntity signatureDataFile mspec)
+    
     // For historical reasons, we use a different resource name for FSharp.Core, so older F# compilers
     // don't complain when they see the resource.
     let rName, compress =

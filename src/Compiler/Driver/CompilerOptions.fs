@@ -1383,6 +1383,7 @@ let testFlag tcConfigB =
                     { tcConfigB.typeCheckingConfig with
                         DumpGraph = true
                     }
+            | "DumpSignatureData" -> tcConfigB.dumpSignatureData <- true
 #if DEBUG
             | "ShowParserStackOnParseError" -> showParserStackOnParseError <- true
 #endif
