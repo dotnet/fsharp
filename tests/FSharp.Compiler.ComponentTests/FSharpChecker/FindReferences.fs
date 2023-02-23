@@ -208,12 +208,13 @@ let ``We find a type that has been aliased`` () =
                                     "type MyInt = int32\n" +
                                     "val myNum: MyInt") },
         { sourceFile "Second" [] with
-            ExtraSource = "let foo x = ModuleFirst.myNum + x"})
+            ExtraSource = "let goo x = ModuleFirst.myNum + x"})
 
     project.Workflow {
         placeCursor "First" "myNum"
         findAllReferences (expectToFind [
             "FileFirst.fs", 7, 4, 9
-            "FileSecond.fs", 6, 16, 21
+            "FileFirst.fsi", 3, 4, 9
+            "FileSecond.fs", 6, 12, 29
         ])
     }
