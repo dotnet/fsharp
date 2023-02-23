@@ -596,6 +596,33 @@ type ProjectWorkflowBuilder
             return { ctx with Cursor = su }
         }
 
+    /// Find a symbol by finding the first occurrence of the symbol name in the file
+    [<CustomOperation "placeCursor">]
+    member this.PlaceCursor(workflow: Async<WorkflowContext>, fileId, symbolName: string) =
+        async {
+            let! ctx = workflow
+
+            let source = renderSourceFile ctx.Project (ctx.Project.Find fileId)
+            let index = source.IndexOf symbolName
+            let line = source |> Seq.take index |> Seq.where ((=) '\n') |> Seq.length
+            let fullLine = source.Split '\n' |> Array.item line
+            let colAtEndOfNames = fullLine.IndexOf symbolName + symbolName.Length
+
+            let! results = checkFile fileId ctx.Project checker
+            let typeCheckResults = getTypeCheckResult results
+
+            let su =
+                typeCheckResults.GetSymbolUseAtLocation(line + 1, colAtEndOfNames, fullLine, [symbolName])
+
+            if su.IsNone then
+                let file = ctx.Project.Find fileId
+
+                failwith
+                    $"No symbol found in {file.FileName} at {line}:{colAtEndOfNames}\nFile contents:\n\n{source}\n"
+
+            return { ctx with Cursor = su }
+        }
+
     /// Find all references within a single file, results are provided to the 'processResults' function
     [<CustomOperation "findAllReferencesInFile">]
     member this.FindAllReferencesInFile(workflow: Async<WorkflowContext>, fileId: string, processResults) =
@@ -606,7 +633,7 @@ type ProjectWorkflowBuilder
             let symbolUse =
                 ctx.Cursor
                 |> Option.defaultWith (fun () ->
-                    failwith $"Please place cursor at a valid location via {nameof this.PlaceCursor} first")
+                    failwith $"Please place cursor at a valid location via placeCursor first")
 
             let file = ctx.Project.Find fileId
             let absFileName = ctx.Project.ProjectDir ++ file.FileName
@@ -629,7 +656,7 @@ type ProjectWorkflowBuilder
             let symbolUse =
                 ctx.Cursor
                 |> Option.defaultWith (fun () ->
-                    failwith $"Please place cursor at a valid location via {nameof this.PlaceCursor} first")
+                    failwith $"Please place cursor at a valid location via placeCursor first")
 
             let! results =
                 [ for f in options.SourceFiles do

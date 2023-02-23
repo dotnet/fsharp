@@ -241,6 +241,7 @@
     <Compile Include="FSharpChecker\CommonWorkflows.fs" />
     <Compile Include="FSharpChecker\SymbolUse.fs" />
     <Compile Include="FSharpChecker\FindReferences.fs" />
+    <Compile Include="FSharpChecker\FindAllReferences.fs" />
   </ItemGroup>
 
   <ItemGroup>
