@@ -56,60 +56,45 @@ let escapeDotnetFormatString str =
     |> Seq.collect (fun x -> if x = '{' || x = '}' then [x;x] else [x])
     |> System.String.Concat
 
-let makeFmts (context: FormatStringCheckContext) (isInterpolated: bool) (fragRanges: range list) (fmt: string)=
+let makeFmts (context: FormatStringCheckContext) (fragRanges: range list) (fmt: string) =
+    // Splits the string on interpolation holes based on fragment ranges.
+    // Returns a list of tuples in the form of: offset * fragment as a string * original range of the fragment
+    // where "offset" is the offset between beginning of the original range and where the string content begins
+
     let numFrags = fragRanges.Length
     let sourceText = context.SourceText
     let lineStartPositions = context.LineStartPositions
-    let length = sourceText.Length
-    [ for i, fragRange in List.indexed fragRanges do
-        let m = fragRange
-        if m.StartLine - 1 < lineStartPositions.Length && m.EndLine - 1 < lineStartPositions.Length then
-            let startIndex = lineStartPositions[m.StartLine-1] + m.StartColumn
-            let endIndex = lineStartPositions[m.EndLine-1] + m.EndColumn
-            // Note, some extra """ text may be included at end of these snippets, meaning CheckFormatString in the IDE
-            // may be using a slightly false format string to colorize the %d markers.  This doesn't matter as there
-            // won't be relevant %d in these sections
-            //
-            // However we make an effort to remove these to keep the calls to GetSubStringText valid.  So
-            // we work out how much extra text there is at the end of the last line of the fragment,
-            // which may or may not be quote markers. If there's no flex, we don't trim the quote marks
-            let endNextLineIndex = if m.EndLine < lineStartPositions.Length then lineStartPositions[m.EndLine] else endIndex
-            let endIndexFlex = endNextLineIndex - endIndex
-            let mLength = endIndex - startIndex
 
-            if isInterpolated && i=0 && startIndex < length-4 && sourceText.SubTextEquals("$\"\"\"", startIndex) then
-                // Take of the ending triple quote or '{'
-                let fragLength = mLength - 4 - min endIndexFlex (if i = numFrags-1 then 3 else 1)
-                (4, sourceText.GetSubTextString(startIndex + 4, fragLength), m)
-            elif not isInterpolated && i=0 && startIndex < length-3 && sourceText.SubTextEquals("\"\"\"", startIndex) then
-                // Take of the ending triple quote or '{'
-                let fragLength = mLength - 2 - min endIndexFlex (if i = numFrags-1 then 3 else 1)
-                (3, sourceText.GetSubTextString(startIndex + 3, fragLength), m)
-            elif isInterpolated && i=0 && startIndex < length-3 && sourceText.SubTextEquals("$@\"", startIndex) then
-                // Take of the ending quote or '{', always length 1
-                let fragLength = mLength - 3 - min endIndexFlex 1
-                (3, sourceText.GetSubTextString(startIndex + 3, fragLength), m)
-            elif isInterpolated && i=0 && startIndex < length-3 && sourceText.SubTextEquals("@$\"", startIndex) then
-                // Take of the ending quote or '{', always length 1
-                let fragLength = mLength - 3 - min endIndexFlex 1
-                (3, sourceText.GetSubTextString(startIndex + 3, fragLength), m)
-            elif not isInterpolated && i=0 && startIndex < length-2 && sourceText.SubTextEquals("@\"", startIndex) then
-                // Take of the ending quote or '{', always length 1
-                let fragLength = mLength - 2 - min endIndexFlex 1
-                (2, sourceText.GetSubTextString(startIndex + 2, fragLength), m)
-            elif isInterpolated && i=0 && startIndex < length-2 && sourceText.SubTextEquals("$\"", startIndex) then
-                // Take of the ending quote or '{', always length 1
-                let fragLength = mLength - 2 - min endIndexFlex 1
-                (2, sourceText.GetSubTextString(startIndex + 2, fragLength), m)
-            elif isInterpolated && i <> 0 && startIndex < length-1 && sourceText.SubTextEquals("}", startIndex) then
-                // Take of the ending quote or '{', always length 1
-                let fragLength = mLength - 1 - min endIndexFlex 1
-                (1, sourceText.GetSubTextString(startIndex + 1, fragLength), m)
-            else
-                // Take of the ending quote or '{', always length 1
-                let fragLength = mLength - 1 - min endIndexFlex 1
-                (1, sourceText.GetSubTextString(startIndex + 1, fragLength), m)
-        else (1, fmt, m) ]
+    let (|PrefixedBy|_|) (prefix: string) (str: string) =
+        if str.StartsWith prefix then
+            Some prefix.Length
+        else
+            None
+
+    let mutable nQuotes = 1
+    [ for i, r in List.indexed fragRanges do
+        if r.StartLine - 1 < lineStartPositions.Length && r.EndLine - 1 < lineStartPositions.Length then
+            let startIndex = lineStartPositions[r.StartLine - 1] + r.StartColumn
+            let rLength = lineStartPositions[r.EndLine - 1] + r.EndColumn - startIndex
+            let offset =
+                if i = 0 then
+                    match sourceText.GetSubTextString(startIndex, rLength) with
+                    | PrefixedBy "$\"\"\"" len
+                    | PrefixedBy "\"\"\"" len ->
+                        nQuotes <- 3
+                        len
+                    | PrefixedBy "$@\"" len
+                    | PrefixedBy "@$\"" len
+                    | PrefixedBy "$\"" len
+                    | PrefixedBy "@\"" len -> len
+                    | _ -> 1
+                else
+                    1 // <- corresponds to '}' that's closing an interpolation hole
+            let fragLen = rLength - offset - (if i = numFrags - 1 then nQuotes else 1)
+            (offset, sourceText.GetSubTextString(startIndex + offset, fragLen), r)
+        else (1, fmt, r)
+    ]
+
 
 module internal Parsing =
 
@@ -248,7 +233,7 @@ let parseFormatStringInternal
     let fmt, fragments =
         match context with
         | Some context when fragRanges.Length > 0 ->
-            let fmts = makeFmts context isInterpolated fragRanges fmt
+            let fmts = makeFmts context fragRanges fmt
 
             // Join the fragments with holes. Note this join is only used on the IDE path,
             // the CheckExpressions.fs does its own joining with the right alignments etc. substituted
