@@ -2,18 +2,14 @@
 
 namespace FSharp.Editor.Tests
 
-open System
-open System.IO
-open NUnit.Framework
+open Xunit
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
-open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 open FSharp.Editor.Tests.Helpers
 
-[<TestFixture>]
 module GoToDefinitionServiceTests =
 
     let userOpName = "GoToDefinitionServiceTests"
@@ -54,47 +50,29 @@ module GoToDefinitionServiceTests =
             | _ -> return! None
         }
 
-    let makeOptions filePath args =
-        {
-            ProjectFileName = "C:\\test.fsproj"
-            ProjectId = None
-            SourceFiles = [| filePath |]
-            ReferencedProjects = [||]
-            OtherOptions = args
-            IsIncompleteTypeCheckEnvironment = true
-            UseScriptResolutionRules = false
-            LoadTime = DateTime.MaxValue
-            OriginalLoadReferences = []
-            UnresolvedReferences = None
-            Stamp = None
-        }
-
-    let GoToDefinitionTest (fileContents: string, caretMarker: string, expected, opts) =
-
-        let filePath = Path.GetTempFileName() + ".fs"
-        File.WriteAllText(filePath, fileContents)
-        let options = makeOptions filePath opts
+    let GoToDefinitionTest (fileContents: string, caretMarker: string, expected) =
 
         let caretPosition = fileContents.IndexOf(caretMarker) + caretMarker.Length - 1 // inside the marker
 
-        let document, sourceText =
-            RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents, options = options)
+        let sourceText = SourceText.From(fileContents)
+
+        let document =
+            RoslynTestHelpers.CreateSolution(fileContents)
+            |> RoslynTestHelpers.GetSingleDocument
 
         let actual =
             findDefinition (document, sourceText, caretPosition, [])
             |> Option.map (fun range -> (range.StartLine, range.EndLine, range.StartColumn, range.EndColumn))
 
         if actual <> expected then
-            Assert.Fail(
-                sprintf
-                    "Incorrect information returned for fileContents=<<<%s>>>, caretMarker=<<<%s>>>, expected =<<<%A>>>, actual = <<<%A>>>"
-                    fileContents
-                    caretMarker
-                    expected
-                    actual
-            )
+            failwithf
+                "Incorrect information returned for fileContents=<<<%s>>>, caretMarker=<<<%s>>>, expected =<<<%A>>>, actual = <<<%A>>>"
+                fileContents
+                caretMarker
+                expected
+                actual
 
-    [<Test>]
+    [<Fact>]
     let ``goto definition smoke test`` () =
 
         let manyTestCases =
@@ -134,9 +112,9 @@ let _ = Module1.foo 1
             for caretMarker, expected in testCases do
 
                 printfn "Test case: caretMarker=<<<%s>>>" caretMarker
-                GoToDefinitionTest(fileContents, caretMarker, expected, [||])
+                GoToDefinitionTest(fileContents, caretMarker, expected)
 
-    [<Test>]
+    [<Fact>]
     let ``goto definition for string interpolation`` () =
 
         let fileContents =
@@ -147,9 +125,9 @@ let yyyy = $"{abc{xxxxx}def}" """
         let caretMarker = "xxxxx"
         let expected = Some(2, 2, 4, 9)
 
-        GoToDefinitionTest(fileContents, caretMarker, expected, [||])
+        GoToDefinitionTest(fileContents, caretMarker, expected)
 
-    [<Test>]
+    [<Fact>]
     let ``goto definition for static abstract method invocation`` () =
 
         let fileContents =
@@ -164,4 +142,4 @@ let f_IWSAM_flex_StaticProperty(x: #IStaticProperty<'T>) =
         let caretMarker = "'T.StaticProperty"
         let expected = Some(3, 3, 20, 34)
 
-        GoToDefinitionTest(fileContents, caretMarker, expected, [| "/langversion:preview" |])
+        GoToDefinitionTest(fileContents, caretMarker, expected)

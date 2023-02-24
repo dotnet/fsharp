@@ -1328,6 +1328,36 @@ let internal mkBoundValueTypedImpl tcGlobals m moduleName name ty =
     let qname = QualifiedNameOfFile.QualifiedNameOfFile(Ident(moduleName, m))
     entity, v, CheckedImplFile.CheckedImplFile(qname, [], mty, contents, false, false, StampMap.Empty, Map.empty)
 
+
+let scriptingSymbolsPath =
+    let createDirectory path =
+        lazy
+            try
+                if not (Directory.Exists(path)) then
+                    Directory.CreateDirectory(path) |> ignore
+
+                path
+            with _ ->
+                path
+
+    createDirectory (Path.Combine(Path.GetTempPath(), $"{DateTime.Now:s}-{Guid.NewGuid():n}".Replace(':', '-')))
+
+let deleteScriptingSymbols () =
+    try
+#if !DEBUG
+            if scriptingSymbolsPath.IsValueCreated then
+                if Directory.Exists(scriptingSymbolsPath.Value) then
+                    Directory.Delete(scriptingSymbolsPath.Value, true)
+#else
+            ()
+#endif
+    with _ ->
+        ()
+
+AppDomain.CurrentDomain.ProcessExit |> Event.add (fun _ -> deleteScriptingSymbols ())
+
+let dynamicCcuName = "FSI-ASSEMBLY"
+
 /// Encapsulates the coordination of the typechecking, optimization and code generation
 /// components of the F# compiler for interactively executed fragments of code.
 ///
@@ -1350,12 +1380,12 @@ type internal FsiDynamicCompiler(
 
     let outfile = "TMPFSCI.exe"
 
-    let dynamicCcuName = "FSI-ASSEMBLY"
-
     let valueBoundEvent = Control.Event<_>()
 
     let mutable fragmentId = 0
+
     static let mutable dynamicAssemblyId = 0
+
     static let maxVersion = int Int16.MaxValue
 
     let mutable prevIt : ValRef option = None
@@ -1387,7 +1417,8 @@ type internal FsiDynamicCompiler(
     /// Add attributes
     let CreateModuleFragment (tcConfigB: TcConfigBuilder, dynamicCcuName, codegenResults) =
         if progress then fprintfn fsiConsoleOutput.Out "Creating main module..."
-        let mainModule = mkILSimpleModule dynamicCcuName (GetGeneratedILModuleName tcConfigB.target dynamicCcuName) (tcConfigB.target = CompilerTarget.Dll) tcConfigB.subsystemVersion tcConfigB.useHighEntropyVA (mkILTypeDefs codegenResults.ilTypeDefs) None None 0x0 (mkILExportedTypes []) ""
+        let mainModule =
+            mkILSimpleModule dynamicCcuName (GetGeneratedILModuleName tcConfigB.target dynamicCcuName) (tcConfigB.target = CompilerTarget.Dll) tcConfigB.subsystemVersion tcConfigB.useHighEntropyVA (mkILTypeDefs codegenResults.ilTypeDefs) None None 0x0 (mkILExportedTypes []) ""
         { mainModule
           with Manifest =
                 (let man = mainModule.ManifestOfAssembly
@@ -1402,7 +1433,7 @@ type internal FsiDynamicCompiler(
         let manifest =
             let manifest = ilxMainModule.Manifest.Value
             let attrs = [
-                tcGlobals.MakeInternalsVisibleToAttribute(ilxMainModule.ManifestOfAssembly.Name)
+                tcGlobals.MakeInternalsVisibleToAttribute(dynamicCcuName)
                 yield! manifest.CustomAttrs.AsList()
                 ]
             { manifest with 
@@ -1412,7 +1443,7 @@ type internal FsiDynamicCompiler(
                 CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs attrs)
             }
 
-        // The name of the assembly is "FSI-ASSEMBLY" for all submissions. This number is used for the Version 
+        // The name of the assembly is "FSI-ASSEMBLY" for all submissions. This number is used for the Version
         dynamicAssemblyId <- (dynamicAssemblyId + 1) % maxVersion
 
         let ilxMainModule = { ilxMainModule with Manifest = Some manifest }
@@ -1421,44 +1452,43 @@ type internal FsiDynamicCompiler(
         let ilxMainModule =
             ilxMainModule |> Morphs.morphILTypeRefsInILModuleMemoized emEnv.MapTypeRef
 
-        let opts = 
-            { ilg = tcGlobals.ilg
-              // This is not actually written, because we are writing to a stream,
-              // but needs to be set for some logic of ilwrite to function.
-              outfile = multiAssemblyName + ".dll"
-              // This is not actually written, because we embed debug info,
-              // but needs to be set for some logic of ilwrite to function.
-              pdbfile = (if tcConfig.debuginfo then Some (multiAssemblyName + ".pdb") else None)
-              emitTailcalls = tcConfig.emitTailcalls
-              deterministic = tcConfig.deterministic           
-              // we always use portable for F# Interactive debug emit
-              portablePDB = true
-              // we don't use embedded for F# Interactive debug emit
-              embeddedPDB = false
-              embedAllSource = tcConfig.embedAllSource
-              embedSourceList = tcConfig.embedSourceList
-              // we don't add additional source files to the debug document set
-              allGivenSources = []
-              sourceLink = tcConfig.sourceLink
-              checksumAlgorithm = tcConfig.checksumAlgorithm
-              signer = None
-              dumpDebugInfo = tcConfig.dumpDebugInfo
-              referenceAssemblyOnly = false
-              referenceAssemblyAttribOpt = None
-              pathMap = tcConfig.pathMap }
+        let opts = {
+            ilg = tcGlobals.ilg
+            outfile = multiAssemblyName + ".dll"
+            pdbfile = Some (Path.Combine(scriptingSymbolsPath.Value, $"{multiAssemblyName}-{dynamicAssemblyId}.pdb"))
+            emitTailcalls = tcConfig.emitTailcalls
+            deterministic = tcConfig.deterministic
+            portablePDB = true
+            embeddedPDB = false
+            embedAllSource = false
+            embedSourceList = []
+            allGivenSources = []
+            sourceLink = tcConfig.sourceLink
+            checksumAlgorithm = tcConfig.checksumAlgorithm
+            signer = None
+            dumpDebugInfo = tcConfig.dumpDebugInfo
+            referenceAssemblyOnly = false
+            referenceAssemblyAttribOpt = None
+            pathMap = tcConfig.pathMap
+        }
 
-        let normalizeAssemblyRefs = id
-
-        let assemblyBytes, pdbBytes = WriteILBinaryInMemory (opts, ilxMainModule, normalizeAssemblyRefs)
+        let assemblyBytes, pdbBytes = WriteILBinaryInMemory (opts, ilxMainModule, id)
 
         let asm =
+            match opts.pdbfile, pdbBytes with
+            | (Some pdbfile), (Some pdbBytes) ->
+                File.WriteAllBytes(pdbfile,  pdbBytes)
+            | _ -> ()
+
             match pdbBytes with
             | None -> Assembly.Load(assemblyBytes)
             | Some pdbBytes -> Assembly.Load(assemblyBytes, pdbBytes)
-        dynamicAssemblies.Add(asm)
 
-        let loadedTypes = [ for t in asm.GetTypes() -> t]
-        ignore loadedTypes
+        // Force generated types to load
+        for t in asm.GetTypes() do ignore t
+
+        // remember this assembly
+        dynamicAssemblies.Add(asm)
 
         let ilScopeRef = ILScopeRef.Assembly (ILAssemblyRef.FromAssemblyName(asm.GetName()))
 
@@ -1475,7 +1505,7 @@ type internal FsiDynamicCompiler(
         let execs =
             [ for edef in entries do
                 if edef.ArgCount = 0 then
-                    yield (fun () -> 
+                    yield (fun () ->
                         let typ = asm.GetType(edef.DeclaringTypeRef.BasicQualifiedName)
                         try
                             ignore (typ.InvokeMember (edef.Name, BindingFlags.InvokeMethod ||| BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Static, null, null, [| |], Globalization.CultureInfo.InvariantCulture))
@@ -2513,7 +2543,7 @@ type internal MagicAssemblyResolution () =
                     let res = CommitOperationResult overallSearchResult
                     match res with
                     | Choice1Of2 assemblyName ->
-                        if simpleAssemName <> "Mono.Posix" then fsiConsoleOutput.uprintfn "%s" (FSIstrings.SR.fsiBindingSessionTo(assemblyName))
+                        if simpleAssemName <> "Mono.Posix" && progress then fsiConsoleOutput.uprintfn "%s" (FSIstrings.SR.fsiBindingSessionTo(assemblyName))
                         if isRunningOnCoreClr then
                             assemblyLoadFrom assemblyName
                         else
@@ -3379,22 +3409,19 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     do tcConfigB.useFsiAuxLib <- fsi.UseFsiAuxLib
     do tcConfigB.conditionalDefines <- "INTERACTIVE" :: tcConfigB.conditionalDefines
 
-#if NETSTANDARD
+
     do tcConfigB.SetUseSdkRefs true
     do tcConfigB.useSimpleResolution <- true
     do if isRunningOnCoreClr then SetTargetProfile tcConfigB "netcore" // always assume System.Runtime codegen
-#endif
 
     // Preset: --optimize+ -g --tailcalls+ (see 4505)
     do SetOptimizeSwitch tcConfigB OptionSwitch.On
     do SetDebugSwitch    tcConfigB (Some "pdbonly") OptionSwitch.On
     do SetTailcallSwitch tcConfigB OptionSwitch.On
 
-#if NETSTANDARD
     // set platform depending on whether the current process is a 64-bit process.
     // BUG 429882 : FsiAnyCPU.exe issues warnings (x64 v MSIL) when referencing 64-bit assemblies
     do tcConfigB.platform <- if IntPtr.Size = 8 then Some AMD64 else Some X86
-#endif
 
     let fsiStdinSyphon = FsiStdinSyphon(errorWriter)
     let fsiConsoleOutput = FsiConsoleOutput(tcConfigB, outWriter, errorWriter)
@@ -3476,8 +3503,8 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     let resolveAssemblyRef (aref: ILAssemblyRef) =
         // Explanation: This callback is invoked during compilation to resolve assembly references
         // We don't yet propagate the ctok through these calls (though it looks plausible to do so).
-        let ctok = AssumeCompilationThreadWithoutEvidence ()
 #if !NO_TYPEPROVIDERS
+        let ctok = AssumeCompilationThreadWithoutEvidence ()
         match tcImports.TryFindProviderGeneratedAssemblyByName (ctok, aref.Name) with
         | Some assembly -> Some (Choice2Of2 assembly)
         | None ->
@@ -3631,17 +3658,23 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     member _.FormatValue(reflectionValue:obj, reflectionType) =
         fsiDynamicCompiler.FormatValue(reflectionValue, reflectionType)
 
-    member _.EvalExpression(code) =
+    member this.EvalExpression(code) =
+        this.EvalExpression(code, dummyScriptFileName)
+
+    member _.EvalExpression(code, scriptFileName) =
 
         // Explanation: When the user of the FsiInteractiveSession object calls this method, the
         // code is parsed, checked and evaluated on the calling thread. This means EvalExpression
         // is not safe to call concurrently.
         let ctok = AssumeCompilationThreadWithoutEvidence()
 
-        fsiInteractionProcessor.EvalExpression(ctok, code, dummyScriptFileName, diagnosticsLogger)
+        fsiInteractionProcessor.EvalExpression(ctok, code, scriptFileName, diagnosticsLogger)
         |> commitResult
 
-    member _.EvalExpressionNonThrowing(code) =
+    member this.EvalExpressionNonThrowing(code) =
+        this.EvalExpressionNonThrowing(code, dummyScriptFileName)
+
+    member _.EvalExpressionNonThrowing(code, scriptFileName) =
         // Explanation: When the user of the FsiInteractiveSession object calls this method, the
         // code is parsed, checked and evaluated on the calling thread. This means EvalExpression
         // is not safe to call concurrently.
@@ -3649,20 +3682,28 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
         let errorOptions = TcConfig.Create(tcConfigB,validate = false).diagnosticsOptions
         let diagnosticsLogger = CompilationDiagnosticLogger("EvalInteraction", errorOptions, eagerFormat)
-        fsiInteractionProcessor.EvalExpression(ctok, code, dummyScriptFileName, diagnosticsLogger)
-        |> commitResultNonThrowing errorOptions dummyScriptFileName diagnosticsLogger
+        fsiInteractionProcessor.EvalExpression(ctok, code, scriptFileName, diagnosticsLogger)
+        |> commitResultNonThrowing errorOptions scriptFileName diagnosticsLogger
 
-    member _.EvalInteraction(code, ?cancellationToken) : unit =
+    member this.EvalInteraction(code, ?cancellationToken) : unit =
+        let cancellationToken = defaultArg cancellationToken CancellationToken.None
+        this.EvalInteraction(code, dummyScriptFileName, cancellationToken)
+
+    member _.EvalInteraction(code, scriptFileName, ?cancellationToken) : unit =
         // Explanation: When the user of the FsiInteractiveSession object calls this method, the
         // code is parsed, checked and evaluated on the calling thread. This means EvalExpression
         // is not safe to call concurrently.
         let ctok = AssumeCompilationThreadWithoutEvidence()
         let cancellationToken = defaultArg cancellationToken CancellationToken.None
-        fsiInteractionProcessor.EvalInteraction(ctok, code, dummyScriptFileName, diagnosticsLogger, cancellationToken)
+        fsiInteractionProcessor.EvalInteraction(ctok, code, scriptFileName, diagnosticsLogger, cancellationToken)
         |> commitResult
         |> ignore
 
-    member _.EvalInteractionNonThrowing(code, ?cancellationToken) =
+    member this.EvalInteractionNonThrowing(code, ?cancellationToken) =
+        let cancellationToken = defaultArg cancellationToken CancellationToken.None
+        this.EvalInteractionNonThrowing(code, dummyScriptFileName, cancellationToken)
+        
+    member this.EvalInteractionNonThrowing(code, scriptFileName, ?cancellationToken) =
         // Explanation: When the user of the FsiInteractiveSession object calls this method, the
         // code is parsed, checked and evaluated on the calling thread. This means EvalExpression
         // is not safe to call concurrently.
@@ -3671,8 +3712,8 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
         let errorOptions = TcConfig.Create(tcConfigB,validate = false).diagnosticsOptions
         let diagnosticsLogger = CompilationDiagnosticLogger("EvalInteraction", errorOptions, eagerFormat)
-        fsiInteractionProcessor.EvalInteraction(ctok, code, dummyScriptFileName, diagnosticsLogger, cancellationToken)
-        |> commitResultNonThrowing errorOptions "input.fsx" diagnosticsLogger
+        fsiInteractionProcessor.EvalInteraction(ctok, code, scriptFileName, diagnosticsLogger, cancellationToken)
+        |> commitResultNonThrowing errorOptions scriptFileName diagnosticsLogger
 
     member _.EvalScript(filePath) : unit =
         // Explanation: When the user of the FsiInteractiveSession object calls this method, the
@@ -3729,7 +3770,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     /// A background thread is started by this thread to read from the inReader and/or console reader.
 
     member x.Run() =
-        progress <- condition "FSHARP_INTERACTIVE_PROGRESS"
+        progress <- isEnvVarSet "FSHARP_INTERACTIVE_PROGRESS"
 
         // Explanation: When Run is called we do a bunch of processing. For fsi.exe
         // and fsiAnyCpu.exe there are no other active threads at this point, so we can assume this is the

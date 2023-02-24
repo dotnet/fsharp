@@ -3,36 +3,20 @@
 namespace FSharp.Editor.Tests
 
 open System
-open NUnit.Framework
+open Xunit
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Editor.Tests.Helpers
+open FSharp.Test
 
-[<SetUpFixture>]
 type public AssemblyResolverTestFixture() =
 
-    [<OneTimeSetUp>]
     member public __.Init() = AssemblyResolver.addResolver ()
 
 module QuickInfoProviderTests =
 
     let filePath = "C:\\test.fs"
-
-    let internal projectOptions =
-        {
-            ProjectFileName = "C:\\test.fsproj"
-            ProjectId = None
-            SourceFiles = [| filePath |]
-            ReferencedProjects = [||]
-            OtherOptions = [||]
-            IsIncompleteTypeCheckEnvironment = true
-            UseScriptResolutionRules = false
-            LoadTime = DateTime.MaxValue
-            OriginalLoadReferences = []
-            UnresolvedReferences = None
-            Stamp = None
-        }
 
     let private normalizeLineEnds (s: string) =
         s.Replace("\r\n", "\n").Replace("\n\n", "\n")
@@ -76,28 +60,28 @@ module QuickInfoProviderTests =
         elements |> List.map parseElement |> String.concat "\n" |> normalizeLineEnds
 
     let executeQuickInfoTest (programText: string) testCases =
-        let document, _ =
-            RoslynTestHelpers.CreateSingleDocumentSolution(filePath, programText)
+        let document =
+            RoslynTestHelpers.CreateSolution(programText)
+            |> RoslynTestHelpers.GetSingleDocument
 
-        Assert.Multiple(fun _ ->
-            for (symbol: string, expected: string option) in testCases do
-                let expected =
-                    expected
-                    |> Option.map normalizeLineEnds
-                    |> Option.map (fun s -> s.Replace("___", ""))
+        for (symbol: string, expected: string option) in testCases do
+            let expected =
+                expected
+                |> Option.map normalizeLineEnds
+                |> Option.map (fun s -> s.Replace("___", ""))
 
-                let caretPosition = programText.IndexOf(symbol) + symbol.Length - 1
+            let caretPosition = programText.IndexOf(symbol) + symbol.Length - 1
 
-                let quickInfo =
-                    FSharpAsyncQuickInfoSource.ProvideQuickInfo(document, caretPosition)
-                    |> Async.RunSynchronously
+            let quickInfo =
+                FSharpAsyncQuickInfoSource.ProvideQuickInfo(document, caretPosition)
+                |> Async.RunSynchronously
 
-                let actual =
-                    quickInfo |> Option.map (fun qi -> tooltipTextToRawString qi.StructuredText)
+            let actual =
+                quickInfo |> Option.map (fun qi -> tooltipTextToRawString qi.StructuredText)
 
-                Assert.AreEqual(expected, actual, "Symbol: " + symbol))
+            actual |> Assert.shouldBeEqualWith expected $"Symbol: {symbol}"
 
-    [<Test>]
+    [<Fact>]
     let ShouldShowQuickInfoAtCorrectPositions () =
         let fileContents =
             """
@@ -126,7 +110,7 @@ Full name: Microsoft.FSharp.Core.Operators.(+)
 
         executeQuickInfoTest fileContents testCases
 
-    [<Test>]
+    [<Fact>]
     let ShouldShowQuickKeywordInfoAtCorrectPositionsForSignatureFiles () =
         let fileContents =
             """
@@ -152,7 +136,7 @@ module internal MyModule =
 
         executeQuickInfoTest fileContents testCases
 
-    [<Test>]
+    [<Fact>]
     let ShouldShowQuickKeywordInfoAtCorrectPositionsWithinComputationExpressions () =
         let fileContents =
             """
@@ -178,7 +162,7 @@ let x =
 
         executeQuickInfoTest fileContents testCases
 
-    [<Test>]
+    [<Fact>]
     let ShouldShowQuickInfoForGenericParameters () =
         let fileContents =
             """
@@ -209,97 +193,97 @@ let res8 = abs 5.0<kg>
         let testCases =
 
             [
-                ("GroupBy",
-                 Some
-                     "(extension) System.Collections.Generic.IEnumerable.GroupBy<'TSource,'TKey>(keySelector: System.Func<'TSource,'TKey>) : System.Collections.Generic.IEnumerable<IGrouping<'TKey,'TSource>>
+                "GroupBy",
+                Some
+                    "(extension) System.Collections.Generic.IEnumerable.GroupBy<'TSource,'TKey>(keySelector: System.Func<'TSource,'TKey>) : System.Collections.Generic.IEnumerable<IGrouping<'TKey,'TSource>>
 'TSource is int * string
-'TKey is int");
-                ("Sort",
-                 Some
-                     "System.Array.Sort<'T>(array: 'T array) : unit
-'T is int");
-                ("let test4 x = C().FSharpGenericMethodExplitTypeParams",
-                 Some
-                     "member C.FSharpGenericMethodExplitTypeParams: a: 'T0 * y: 'T0 -> 'T0 * 'T0
-'T is 'a list");
-                ("let test5<'U> (x: 'U) = C().FSharpGenericMethodExplitTypeParams",
-                 Some
-                     "member C.FSharpGenericMethodExplitTypeParams: a: 'T0 * y: 'T0 -> 'T0 * 'T0
-'T is 'U list");
-                ("let test6 = C().FSharpGenericMethodExplitTypeParams",
-                 Some
-                     "member C.FSharpGenericMethodExplitTypeParams: a: 'T0 * y: 'T0 -> 'T0 * 'T0
-'T is int");
-                ("let test7 x = C().FSharpGenericMethodInferredTypeParams",
-                 Some
-                     "member C.FSharpGenericMethodInferredTypeParams: a: 'a1 * y: 'b2 -> 'a1 * 'b2
+'TKey is int"
+                "Sort",
+                Some
+                    "System.Array.Sort<'T>(array: 'T array) : unit
+'T is int"
+                "let test4 x = C().FSharpGenericMethodExplitTypeParams",
+                Some
+                    "member C.FSharpGenericMethodExplitTypeParams: a: 'T0 * y: 'T0 -> 'T0 * 'T0
+'T is 'a list"
+                "let test5<'U> (x: 'U) = C().FSharpGenericMethodExplitTypeParams",
+                Some
+                    "member C.FSharpGenericMethodExplitTypeParams: a: 'T0 * y: 'T0 -> 'T0 * 'T0
+'T is 'U list"
+                "let test6 = C().FSharpGenericMethodExplitTypeParams",
+                Some
+                    "member C.FSharpGenericMethodExplitTypeParams: a: 'T0 * y: 'T0 -> 'T0 * 'T0
+'T is int"
+                "let test7 x = C().FSharpGenericMethodInferredTypeParams",
+                Some
+                    "member C.FSharpGenericMethodInferredTypeParams: a: 'a1 * y: 'b2 -> 'a1 * 'b2
 'a is 'a0 list
-'b is 'a0 list");
-                ("let test8 = C().FSharpGenericMethodInferredTypeParams",
-                 Some
-                     "member C.FSharpGenericMethodInferredTypeParams: a: 'a0 * y: 'b1 -> 'a0 * 'b1
+'b is 'a0 list"
+                "let test8 = C().FSharpGenericMethodInferredTypeParams",
+                Some
+                    "member C.FSharpGenericMethodInferredTypeParams: a: 'a0 * y: 'b1 -> 'a0 * 'b1
 'a is int
-'b is int");
-                ("let test9<'U> (x: 'U) = C().FSharpGenericMethodInferredTypeParams",
-                 Some
-                     "member C.FSharpGenericMethodInferredTypeParams: a: 'a0 * y: 'b1 -> 'a0 * 'b1
+'b is int"
+                "let test9<'U> (x: 'U) = C().FSharpGenericMethodInferredTypeParams",
+                Some
+                    "member C.FSharpGenericMethodInferredTypeParams: a: 'a0 * y: 'b1 -> 'a0 * 'b1
 'a is 'U list
-'b is 'U list");
-                ("let res3 = [1] |>",
-                 Some
-                     "val (|>) : arg: 'T1 -> func: ('T1 -> 'U) -> 'U
+'b is 'U list"
+                "let res3 = [1] |>",
+                Some
+                    "val (|>) : arg: 'T1 -> func: ('T1 -> 'U) -> 'U
 Full name: Microsoft.FSharp.Core.Operators.(|>)
 'T1 is int list
-'U is int list");
-                ("let res3 = [1] |> List.map id",
-                 Some
-                     "val id: x: 'T -> 'T
+'U is int list"
+                "let res3 = [1] |> List.map id",
+                Some
+                    "val id: x: 'T -> 'T
 Full name: Microsoft.FSharp.Core.Operators.id
-'T is int");
-                ("let res4 = (1.0,[1]) ||>",
-                 Some
-                     "val (||>) : arg1: 'T1 * arg2: 'T2 -> func: ('T1 -> 'T2 -> 'U) -> 'U
+'T is int"
+                "let res4 = (1.0,[1]) ||>",
+                Some
+                    "val (||>) : arg1: 'T1 * arg2: 'T2 -> func: ('T1 -> 'T2 -> 'U) -> 'U
 Full name: Microsoft.FSharp.Core.Operators.(||>)
 'T1 is float
 'T2 is int list
-'U is float");
-                ("let res4 = (1.0,[1]) ||> List.fold",
-                 Some
-                     "val fold: folder: ('State -> 'T -> 'State) -> state: 'State -> list: 'T list -> 'State
+'U is float"
+                "let res4 = (1.0,[1]) ||> List.fold",
+                Some
+                    "val fold: folder: ('State -> 'T -> 'State) -> state: 'State -> list: 'T list -> 'State
 Full name: Microsoft.FSharp.Collections.List.fold
 'T is int
-'State is float");
-                ("let res4 = (1.0,[1]) ||> List.fold (fun s x -> string s +",
-                 Some
-                     "val (+) : x: 'T1 -> y: 'T2 -> 'T3 (requires member (+))
+'State is float"
+                "let res4 = (1.0,[1]) ||> List.fold (fun s x -> string s +",
+                Some
+                    "val (+) : x: 'T1 -> y: 'T2 -> 'T3 (requires member (+))
 Full name: Microsoft.FSharp.Core.Operators.(+)
 'T1 is string
 'T2 is string
-'T3 is float");
-                ("let res5 = 1 +",
-                 Some
-                     "val (+) : x: 'T1 -> y: 'T2 -> 'T3 (requires member (+))
+'T3 is float"
+                "let res5 = 1 +",
+                Some
+                    "val (+) : x: 'T1 -> y: 'T2 -> 'T3 (requires member (+))
 Full name: Microsoft.FSharp.Core.Operators.(+)
 'T1 is int
 'T2 is int
-'T3 is int");
-                ("let res6 = System.DateTime.Now +",
-                 Some
-                     "val (+) : x: 'T1 -> y: 'T2 -> 'T3 (requires member (+))
+'T3 is int"
+                "let res6 = System.DateTime.Now +",
+                Some
+                    "val (+) : x: 'T1 -> y: 'T2 -> 'T3 (requires member (+))
 Full name: Microsoft.FSharp.Core.Operators.(+)
 'T1 is System.DateTime
 'T2 is System.TimeSpan
-'T3 is System.DateTime");
-                ("let res7 = sin",
-                 Some
-                     "val sin: value: 'T -> 'T (requires member Sin)
+'T3 is System.DateTime"
+                "let res7 = sin",
+                Some
+                    "val sin: value: 'T -> 'T (requires member Sin)
 Full name: Microsoft.FSharp.Core.Operators.sin
-'T is float");
-                ("let res8 = abs",
-                 Some
-                     "val abs: value: 'T -> 'T (requires member Abs)
+'T is float"
+                "let res8 = abs",
+                Some
+                    "val abs: value: 'T -> 'T (requires member Abs)
 Full name: Microsoft.FSharp.Core.Operators.abs
-'T is int");
+'T is int"
             ]
 
         executeQuickInfoTest fileContents testCases

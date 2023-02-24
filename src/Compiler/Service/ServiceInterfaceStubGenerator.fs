@@ -6,6 +6,7 @@ open System
 open System.Diagnostics
 open Internal.Utilities.Library
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices.ParsedInput
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
@@ -46,13 +47,6 @@ module internal CodeGenerationUtils =
             member _.Dispose() =
                 stringWriter.Dispose()
                 indentWriter.Dispose()
-
-    /// An recursive pattern that collect all sequential expressions to avoid StackOverflowException
-    let rec (|Sequentials|_|) =
-        function
-        | SynExpr.Sequential (_, _, e, Sequentials es, _) -> Some(e :: es)
-        | SynExpr.Sequential (_, _, e1, e2, _) -> Some [ e1; e2 ]
-        | _ -> None
 
     /// Represent environment where a captured identifier should be renamed
     type NamesWithIndices = Map<string, Set<int>>
@@ -522,21 +516,6 @@ module InterfaceStubGenerator =
         | Some ty -> Some ty
         | None -> None
 
-    let internal (|EventFunctionType|_|) (ty: FSharpType) =
-        match ty with
-        | MemberFunctionType ty ->
-            if ty.IsFunctionType && ty.GenericArguments.Count = 2 then
-                let retType = ty.GenericArguments[0]
-                let argType = ty.GenericArguments[1]
-
-                if argType.GenericArguments.Count = 2 then
-                    Some(argType.GenericArguments[0], retType)
-                else
-                    None
-            else
-                None
-        | _ -> None
-
     let internal removeWhitespace (str: string) = str.Replace(" ", "")
 
     /// Filter out duplicated interfaces in inheritance chain
@@ -990,7 +969,7 @@ module InterfaceStubGenerator =
                 | SynExpr.ArbitraryAfterError (_debugStr, _range) -> None
 
                 | SynExpr.FromParseError (synExpr, _range)
-                | SynExpr.DiscardAfterMissingQualificationAfterDot (synExpr, _range) -> walkExpr synExpr
+                | SynExpr.DiscardAfterMissingQualificationAfterDot (synExpr, _, _range) -> walkExpr synExpr
 
                 | _ -> None
 

@@ -39,6 +39,9 @@ src/Compiler/Checking/SignatureConformance.fs
 src/Compiler/Checking/TypeHierarchy.fs
 src/Compiler/Checking/TypeRelations.fs
 
+# Incorrectly formatted: https://github.com/dotnet/fsharp/pull/14645/commits/49443a67ea8a17670c8a7c80c8bdf91f82231e91 or https://github.com/fsprojects/fantomas/issues/2733
+src/Compiler/Driver/CompilerImports.fs
+
 src/Compiler/DependencyManager/AssemblyResolveHandler.fs
 src/Compiler/DependencyManager/DependencyProvider.fs
 src/Compiler/DependencyManager/NativeDllResolveHandler.fs

@@ -6,40 +6,25 @@ module CompletionProviderTests =
 
     open System
     open System.Linq
-    open NUnit.Framework
     open Microsoft.CodeAnalysis
     open Microsoft.CodeAnalysis.Completion
     open Microsoft.CodeAnalysis.Text
     open Microsoft.VisualStudio.FSharp.Editor
-    open FSharp.Compiler.CodeAnalysis
     open FSharp.Editor.Tests.Helpers
+    open Xunit
+    open FSharp.Test
 
     let filePath = "C:\\test.fs"
-
-    let internal projectOptions opts =
-        {
-            ProjectFileName = "C:\\test.fsproj"
-            ProjectId = None
-            SourceFiles = [| filePath |]
-            ReferencedProjects = [||]
-            OtherOptions = opts
-            IsIncompleteTypeCheckEnvironment = true
-            UseScriptResolutionRules = false
-            LoadTime = DateTime.MaxValue
-            OriginalLoadReferences = []
-            UnresolvedReferences = None
-            Stamp = None
-        }
 
     let formatCompletions (completions: string seq) =
         "\n\t" + String.Join("\n\t", completions)
 
     let VerifyCompletionListWithOptions (fileContents: string, marker: string, expected: string list, unexpected: string list, opts) =
-        let options = projectOptions opts
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
 
-        let document, _ =
-            RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents, options = options)
+        let document =
+            RoslynTestHelpers.CreateSolution(fileContents)
+            |> RoslynTestHelpers.GetSingleDocument
 
         let results =
             FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> []))
@@ -76,17 +61,17 @@ module CompletionProviderTests =
 
             let msg = sprintf "%s%s%s" expectedNotFoundMsg unexpectedFoundMsg completionsMsg
 
-            Assert.Fail(msg)
+            failwith msg
 
     let VerifyCompletionList (fileContents, marker, expected, unexpected) =
         VerifyCompletionListWithOptions(fileContents, marker, expected, unexpected, [||])
 
     let VerifyCompletionListExactlyWithOptions (fileContents: string, marker: string, expected: string list, opts) =
-        let options = projectOptions opts
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
 
-        let document, _ =
-            RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents, options = options)
+        let document =
+            RoslynTestHelpers.CreateSolution(fileContents)
+            |> RoslynTestHelpers.GetSingleDocument
 
         let actual =
             FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> []))
@@ -99,13 +84,11 @@ module CompletionProviderTests =
         let actualNames = actual |> List.map (fun x -> x.DisplayText)
 
         if actualNames <> expected then
-            Assert.Fail(
-                sprintf
-                    "Expected:\n%s,\nbut was:\n%s\nactual with sort text:\n%s"
-                    (String.Join("; ", expected |> List.map (sprintf "\"%s\"")))
-                    (String.Join("; ", actualNames |> List.map (sprintf "\"%s\"")))
-                    (String.Join("\n", actual |> List.map (fun x -> sprintf "%s => %s" x.DisplayText x.SortText)))
-            )
+            failwithf
+                "Expected:\n%s,\nbut was:\n%s\nactual with sort text:\n%s"
+                (String.Join("; ", expected |> List.map (sprintf "\"%s\"")))
+                (String.Join("; ", actualNames |> List.map (sprintf "\"%s\"")))
+                (String.Join("\n", actual |> List.map (fun x -> sprintf "%s => %s" x.DisplayText x.SortText)))
 
     let VerifyCompletionListExactly (fileContents: string, marker: string, expected: string list) =
         VerifyCompletionListExactlyWithOptions(fileContents, marker, expected, [||])
@@ -121,9 +104,9 @@ module CompletionProviderTests =
         let resultSpan =
             CompletionUtils.getDefaultCompletionListSpan (sourceText, caretPosition, documentId, filePath, [])
 
-        Assert.AreEqual(expected, sourceText.ToString(resultSpan))
+        Assert.Equal(expected, sourceText.ToString(resultSpan))
 
-    [<Test>]
+    [<Fact>]
     let ShouldTriggerCompletionAtCorrectMarkers () =
         let testCases =
             [
@@ -158,13 +141,12 @@ System.Console.WriteLine(x + y)
                     IntelliSenseOptions.Default
                 )
 
-            Assert.AreEqual(
-                shouldBeTriggered,
-                triggered,
+            triggered
+            |> Assert.shouldBeEqualWith
+                shouldBeTriggered
                 "FSharpCompletionProvider.ShouldTriggerCompletionAux() should compute the correct result"
-            )
 
-    [<Test>]
+    [<Fact>]
     let ShouldNotTriggerCompletionAfterAnyTriggerOtherThanInsertionOrDeletion () =
         for triggerKind in [ CompletionTriggerKind.Invoke; CompletionTriggerKind.Snippets ] do
             let fileContents = "System.Console.WriteLine(123)"
@@ -181,9 +163,9 @@ System.Console.WriteLine(x + y)
                     IntelliSenseOptions.Default
                 )
 
-            Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
+            Assert.False(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
 
-    [<Test>]
+    [<Fact>]
     let ShouldNotTriggerCompletionInStringLiterals () =
         let fileContents = "let literal = \"System.Console.WriteLine()\""
         let caretPosition = fileContents.IndexOf("System.")
@@ -199,9 +181,9 @@ System.Console.WriteLine(x + y)
                 IntelliSenseOptions.Default
             )
 
-        Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
+        Assert.False(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
 
-    [<Test>]
+    [<Fact>]
     let ShouldNotTriggerCompletionInComments () =
         let fileContents =
             """
@@ -224,9 +206,9 @@ System.Console.WriteLine()
                 IntelliSenseOptions.Default
             )
 
-        Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
+        Assert.False(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
 
-    [<Test>]
+    [<Fact>]
     let ShouldTriggerCompletionInInterpolatedString () =
         let fileContents =
             """
@@ -262,13 +244,12 @@ let z = $"abc  {System.Console.WriteLine(x + y)} def"
                     IntelliSenseOptions.Default
                 )
 
-            Assert.AreEqual(
-                shouldBeTriggered,
-                triggered,
-                sprintf "FSharpCompletionProvider.ShouldTriggerCompletionAux() should compute the correct result for marker '%s'" marker
-            )
+            triggered
+            |> Assert.shouldBeEqualWith
+                shouldBeTriggered
+                $"FSharpCompletionProvider.ShouldTriggerCompletionAux() should compute the correct result for marker '{marker}"
 
-    [<Test>]
+    [<Fact>]
     let ShouldNotTriggerCompletionInExcludedCode () =
         let fileContents =
             """
@@ -290,9 +271,9 @@ System.Console.WriteLine()
                 IntelliSenseOptions.Default
             )
 
-        Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
+        Assert.False(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
 
-    [<Test>]
+    [<Fact>]
     let ShouldNotTriggerCompletionInOperatorWithDot () =
         // Simulate mistyping '|>' as '|.'
         let fileContents =
@@ -314,9 +295,9 @@ let f() =
                 IntelliSenseOptions.Default
             )
 
-        Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger on operators")
+        Assert.False(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger on operators")
 
-    [<Test>]
+    [<Fact>]
     let ShouldTriggerCompletionInAttribute () =
         let fileContents =
             """
@@ -338,9 +319,9 @@ module Foo = module end
                 IntelliSenseOptions.Default
             )
 
-        Assert.IsTrue(triggered, "Completion should trigger on Attributes.")
+        Assert.True(triggered, "Completion should trigger on Attributes.")
 
-    [<Test>]
+    [<Fact>]
     let ShouldTriggerCompletionAfterDerefOperator () =
         let fileContents =
             """
@@ -362,9 +343,9 @@ printfn "%d" !f
                 IntelliSenseOptions.Default
             )
 
-        Assert.IsTrue(triggered, "Completion should trigger after typing an identifier that follows a dereference operator (!).")
+        Assert.True(triggered, "Completion should trigger after typing an identifier that follows a dereference operator (!).")
 
-    [<Test>]
+    [<Fact>]
     let ShouldTriggerCompletionAfterAddressOfOperator () =
         let fileContents =
             """
@@ -387,9 +368,9 @@ use ptr = fixed &p
                 IntelliSenseOptions.Default
             )
 
-        Assert.IsTrue(triggered, "Completion should trigger after typing an identifier that follows an addressOf operator (&).")
+        Assert.True(triggered, "Completion should trigger after typing an identifier that follows an addressOf operator (&).")
 
-    [<Test>]
+    [<Fact>]
     let ShouldTriggerCompletionAfterArithmeticOperation () =
         let fileContents =
             """
@@ -421,9 +402,9 @@ xVal**y
                     IntelliSenseOptions.Default
                 )
 
-            Assert.IsTrue(triggered, "Completion should trigger after typing an identifier that follows a mathematical operation")
+            Assert.True(triggered, "Completion should trigger after typing an identifier that follows a mathematical operation")
 
-    [<Test>]
+    [<Fact>]
     let ShouldTriggerCompletionAtStartOfFileWithInsertion =
         let fileContents =
             """
@@ -443,12 +424,12 @@ l"""
                 IntelliSenseOptions.Default
             )
 
-        Assert.IsTrue(
+        Assert.True(
             triggered,
             "Completion should trigger after typing an Insertion character at the top of the file, e.g. a function definition in a new script file."
         )
 
-    [<Test>]
+    [<Fact>]
     let ShouldDisplayTypeMembers () =
         let fileContents =
             """
@@ -464,7 +445,7 @@ let main argv =
 
         VerifyCompletionList(fileContents, "obj.", [ "M1"; "M2" ], [ "System" ])
 
-    [<Test>]
+    [<Fact>]
     let ShouldDisplaySystemNamespace () =
         let fileContents =
             """
@@ -476,7 +457,7 @@ System.Console.WriteLine()
 
         VerifyCompletionList(fileContents, "System.", [ "Console"; "Array"; "String" ], [ "T1"; "M1"; "M2" ])
 
-    [<Test>]
+    [<Fact>]
     let ShouldDisplaySystemNamespaceInInterpolatedString () =
         let fileContents =
             """
@@ -488,7 +469,7 @@ let x = $"1 not the same as {System.Int32.MaxValue} is it"
 
         VerifyCompletionList(fileContents, "System.", [ "Console"; "Array"; "String" ], [ "T1"; "M1"; "M2" ])
 
-    [<Test>]
+    [<Fact>]
     let ``Class instance members are ordered according to their kind and where they are defined (simple case, by a variable)`` () =
         let fileContents =
             """
@@ -519,7 +500,7 @@ x.
 
         VerifyCompletionListExactly(fileContents, "x.", expected)
 
-    [<Test>]
+    [<Fact>]
     let ``Class instance members are ordered according to their kind and where they are defined (simple case, by a constructor)`` () =
         let fileContents =
             """
@@ -549,7 +530,7 @@ let x = Class().
 
         VerifyCompletionListExactly(fileContents, "let x = Class().", expected)
 
-    [<Test>]
+    [<Fact>]
     let ``Class static members are ordered according to their kind and where they are defined`` () =
         let fileContents =
             """
@@ -570,7 +551,7 @@ Class.
 
         VerifyCompletionListExactly(fileContents, "Class.", expected)
 
-    [<Test>]
+    [<Fact>]
     let ``Class instance members are ordered according to their kind and where they are defined (complex case)`` () =
         let fileContents =
             """
@@ -635,7 +616,7 @@ x.
 
         VerifyCompletionListExactly(fileContents, "x.", expected)
 
-    [<Test>]
+    [<Fact>]
     let ``Constructing a new class with object initializer syntax`` () =
         let fileContents =
             """
@@ -651,7 +632,7 @@ let _ = new A(Setta)
         let notExpected = [ "NonSettableProperty" ]
         VerifyCompletionList(fileContents, "(Setta", expected, notExpected)
 
-    [<Test>]
+    [<Fact>]
     let ``Constructing a new class with object initializer syntax and verifying 'at' character doesn't exist.`` () =
         let fileContents =
             """
@@ -670,7 +651,7 @@ let _ = new A(Setta)
 
         VerifyCompletionList(fileContents, "(Setta", expected, notExpected)
 
-    [<Test; Ignore("https://github.com/dotnet/fsharp/issues/3954")>]
+    [<Fact(Skip = "https://github.com/dotnet/fsharp/issues/3954")>]
     let ``Constructing a new fully qualified class with object initializer syntax without ending paren`` () =
         let fileContents =
             """
@@ -687,7 +668,7 @@ let _ = new M.A(Setta
         let notExpected = [ "NonSettableProperty" ]
         VerifyCompletionList(fileContents, "(Setta", expected, notExpected)
 
-    [<Test>]
+    [<Fact>]
     let ``Extension methods go after everything else, extension properties are treated as normal ones`` () =
         let fileContents =
             """
@@ -745,7 +726,7 @@ List().
 
         VerifyCompletionListExactly(fileContents, "List().", expected)
 
-    [<Test>]
+    [<Fact>]
     let ``Completion for open contains namespaces and static types`` () =
         let fileContents =
             """
@@ -755,7 +736,7 @@ open type System.Ma
         let expected = [ "Management"; "Math" ] // both namespace and static type
         VerifyCompletionList(fileContents, "System.Ma", expected, [])
 
-    [<Test>]
+    [<Fact>]
     let ``No completion on type name at declaration site`` () =
         let fileContents =
             """
@@ -765,7 +746,7 @@ type T
 
         VerifyNoCompletionList(fileContents, "type T")
 
-    [<Test>]
+    [<Fact>]
     let ``No completion on name of unfinished function declaration`` () =
         let fileContents =
             """
@@ -775,7 +756,7 @@ let f
 
         VerifyNoCompletionList(fileContents, "let f")
 
-    [<Test>]
+    [<Fact>]
     let ``No completion on name of value declaration`` () =
         let fileContents =
             """
@@ -785,7 +766,7 @@ let xyz = 1
 
         VerifyNoCompletionList(fileContents, "let xy")
 
-    [<Test>]
+    [<Fact>]
     let ``No completion on name of function declaration`` () =
         let fileContents =
             """
@@ -795,7 +776,7 @@ let foo x = 1
 
         VerifyNoCompletionList(fileContents, "let fo")
 
-    [<Test>]
+    [<Fact>]
     let ``No completion on name of tupled function declaration`` () =
         let fileContents =
             """
@@ -805,7 +786,7 @@ let foo (x, y) = 1
 
         VerifyNoCompletionList(fileContents, "let fo")
 
-    [<Test>]
+    [<Fact>]
     let ``No completion on member name at declaration site`` () =
         let fileContents =
             """
@@ -815,7 +796,7 @@ type T() =
 
         VerifyNoCompletionList(fileContents, "member this.M")
 
-    [<Test>]
+    [<Fact>]
     let ``No completion on function first argument name`` () =
         let fileContents =
             """
@@ -824,7 +805,7 @@ let func (p
 
         VerifyNoCompletionList(fileContents, "let func (p")
 
-    [<Test>]
+    [<Fact>]
     let ``No completion on function subsequent argument name`` () =
         let fileContents =
             """
@@ -833,7 +814,7 @@ let func (p, h
 
         VerifyNoCompletionList(fileContents, "let func (p, h")
 
-    [<Test>]
+    [<Fact>]
     let ``No completion on curried function subsequent argument name`` () =
         let fileContents =
             """
@@ -842,7 +823,7 @@ let func (p) (h
 
         VerifyNoCompletionList(fileContents, "let func (p) (h")
 
-    [<Test>]
+    [<Fact>]
     let ``No completion on method first argument name`` () =
         let fileContents =
             """
@@ -852,7 +833,7 @@ type T() =
 
         VerifyNoCompletionList(fileContents, "member this.M(p")
 
-    [<Test>]
+    [<Fact>]
     let ``No completion on method subsequent argument name`` () =
         let fileContents =
             """
@@ -862,7 +843,7 @@ type T() =
 
         VerifyNoCompletionList(fileContents, "member this.M(p:int, h")
 
-    [<Test>]
+    [<Fact>]
     let ``Completion list on abstract member type signature contains modules and types but not keywords or functions`` =
         let fileContents =
             """
@@ -872,7 +853,7 @@ type Interface =
 
         VerifyCompletionList(fileContents, "Eat: l", [ "LanguagePrimitives"; "List" ], [ "let"; "log" ])
 
-    [<Test>]
+    [<Fact>]
     let ``Provide completion on first function argument type hint`` () =
         let fileContents =
             """
@@ -881,7 +862,7 @@ let func (p:i
 
         VerifyCompletionList(fileContents, "let func (p:i", [ "int" ], [])
 
-    [<Test>]
+    [<Fact>]
     let ``Provide completion on subsequent function argument type hint`` () =
         let fileContents =
             """
@@ -890,7 +871,7 @@ let func (p:int, h:f
 
         VerifyCompletionList(fileContents, "let func (p:int, h:f", [ "float" ], [])
 
-    [<Test>]
+    [<Fact>]
     let ``Provide completion on local function argument type hint`` () =
         let fileContents =
             """
@@ -900,7 +881,7 @@ let top () =
 
         VerifyCompletionList(fileContents, "let func (p:i", [ "int" ], [])
 
-    [<Test>]
+    [<Fact>]
     let ``No completion on implicit constructor first argument name`` () =
         let fileContents =
             """
@@ -909,7 +890,7 @@ type T(p) =
 
         VerifyNoCompletionList(fileContents, "type T(p")
 
-    [<Test>]
+    [<Fact>]
     let ``No completion on implicit constructor subsequent argument name`` () =
         let fileContents =
             """
@@ -918,7 +899,7 @@ type T(p:int, h) =
 
         VerifyNoCompletionList(fileContents, "type T(p:int, h")
 
-    [<Test>]
+    [<Fact>]
     let ``Provide completion on implicit constructor argument type hint`` () =
         let fileContents =
             """
@@ -927,7 +908,7 @@ type T(p:i) =
 
         VerifyCompletionList(fileContents, "type T(p:i", [ "int" ], [])
 
-    [<Test>]
+    [<Fact>]
     let ``No completion on lambda argument name`` () =
         let fileContents =
             """
@@ -936,7 +917,7 @@ let _ = fun (p) -> ()
 
         VerifyNoCompletionList(fileContents, "let _ = fun (p")
 
-    [<Test>]
+    [<Fact>]
     let ``No completion on lambda argument name2`` () =
         let fileContents =
             """
@@ -945,7 +926,7 @@ let _ = fun (p: int) -> ()
 
         VerifyNoCompletionList(fileContents, "let _ = fun (p")
 
-    [<Test>]
+    [<Fact>]
     let ``Completions on lambda argument type hint contain modules and types but not keywords or functions`` () =
         let fileContents =
             """
@@ -954,7 +935,7 @@ let _ = fun (p:l) -> ()
 
         VerifyCompletionList(fileContents, "let _ = fun (p:l", [ "LanguagePrimitives"; "List" ], [ "let"; "log" ])
 
-    [<Test>]
+    [<Fact>]
     let ``Completions in match clause type test contain modules and types but not keywords or functions`` () =
         let fileContents =
             """
@@ -965,7 +946,7 @@ match box 5 with
 
         VerifyCompletionList(fileContents, ":? l", [ "LanguagePrimitives"; "List" ], [ "let"; "log" ])
 
-    [<Test>]
+    [<Fact>]
     let ``Completions in catch clause type test contain modules and types but not keywords or functions`` () =
         let fileContents =
             """
@@ -977,7 +958,7 @@ with :? l as x ->
 
         VerifyCompletionList(fileContents, ":? l", [ "LanguagePrimitives"; "List" ], [ "let"; "log" ])
 
-    [<Test>]
+    [<Fact>]
     let ``Extensions.Bug5162`` () =
         let fileContents =
             """
@@ -991,7 +972,7 @@ module M2 =
 
         VerifyCompletionList(fileContents, "    Ext", [ "Extensions"; "ExtraTopLevelOperators" ], [])
 
-    [<Test>]
+    [<Fact>]
     let ``Custom operations should be at the top of completion list inside computation expression`` () =
         let fileContents =
             """
@@ -1007,7 +988,7 @@ let _ =
 
         VerifyCompletionList(fileContents, "        join", [ "groupJoin"; "join"; "leftOuterJoin"; "joinLocal" ], [])
 
-    [<Test>]
+    [<Fact>]
     let ``Byref Extension Methods`` () =
         let fileContents =
             """
@@ -1037,7 +1018,7 @@ module Extensions =
 
         VerifyCompletionList(fileContents, "wrappedMessage.", [ "PrintRef" ], [])
 
-    [<Test>]
+    [<Fact>]
     let ``Completion list span works with underscore in identifier`` () =
         let fileContents =
             """
@@ -1046,7 +1027,7 @@ let x = A.B_C
 
         VerifyCompletionListSpan(fileContents, "A.B_C", "B_C")
 
-    [<Test>]
+    [<Fact>]
     let ``Completion list span works with digit in identifier`` () =
         let fileContents =
             """
@@ -1055,7 +1036,7 @@ let x = A.B1C
 
         VerifyCompletionListSpan(fileContents, "A.B1C", "B1C")
 
-    [<Test>]
+    [<Fact>]
     let ``Completion list span works with enclosed backtick identifier`` () =
         let fileContents =
             """
@@ -1064,7 +1045,7 @@ let x = A.``B C``
 
         VerifyCompletionListSpan(fileContents, "A.``B C``", "``B C``")
 
-    [<Test>]
+    [<Fact>]
     let ``Completion list span works with partial backtick identifier`` () =
         let fileContents =
             """
@@ -1073,7 +1054,7 @@ let x = A.``B C
 
         VerifyCompletionListSpan(fileContents, "A.``B C", "``B C")
 
-    [<Test>]
+    [<Fact>]
     let ``Completion list span works with first of multiple enclosed backtick identifiers`` () =
         let fileContents =
             """
@@ -1082,7 +1063,7 @@ let x = A.``B C`` + D.``E F``
 
         VerifyCompletionListSpan(fileContents, "A.``B C``", "``B C``")
 
-    [<Test>]
+    [<Fact>]
     let ``Completion list span works with last of multiple enclosed backtick identifiers`` () =
         let fileContents =
             """
@@ -1091,7 +1072,7 @@ let x = A.``B C`` + D.``E F``
 
         VerifyCompletionListSpan(fileContents, "D.``E F``", "``E F``")
 
-    [<Test>]
+    [<Fact>]
     let ``No completion on record field identifier at declaration site`` () =
         let fileContents =
             """
@@ -1100,7 +1081,7 @@ type A = { le: string }
 
         VerifyNoCompletionList(fileContents, "le")
 
-    [<Test>]
+    [<Fact>]
     let ``Completion list on record field type at declaration site contains modules, types and type parameters but not keywords or functions``
         ()
         =
@@ -1111,7 +1092,7 @@ type A<'lType> = { Field: l }
 
         VerifyCompletionList(fileContents, "Field: l", [ "LanguagePrimitives"; "List" ], [ "let"; "log" ])
 
-    [<Test>]
+    [<Fact>]
     let ``No completion on record stub with no fields at declaration site`` () =
         let fileContents =
             """
@@ -1120,7 +1101,7 @@ type A = {  }
 
         VerifyNoCompletionList(fileContents, "{ ")
 
-    [<Test>]
+    [<Fact>]
     let ``No completion on record outside of all fields at declaration site`` () =
         let fileContents =
             """
@@ -1129,7 +1110,7 @@ type A = { Field: string; }
 
         VerifyNoCompletionList(fileContents, "; ")
 
-    [<Test>]
+    [<Fact>]
     let ``No completion on union case identifier at declaration site`` () =
         let fileContents =
             """
@@ -1139,7 +1120,7 @@ type A =
 
         VerifyNoCompletionList(fileContents, "| C")
 
-    [<Test>]
+    [<Fact>]
     let ``No completion on union case field identifier at declaration site`` () =
         let fileContents =
             """
@@ -1149,7 +1130,7 @@ type A =
 
         VerifyNoCompletionList(fileContents, "str")
 
-    [<Test>]
+    [<Fact>]
     let ``Completion list on union case type at declaration site contains modules, types and type parameters but not keywords or functions``
         ()
         =
@@ -1161,7 +1142,7 @@ type A<'lType> =
 
         VerifyCompletionList(fileContents, "str: l", [ "LanguagePrimitives"; "List"; "lType" ], [ "let"; "log" ])
 
-    [<Test>]
+    [<Fact>]
     let ``Completion list on union case type at declaration site contains modules, types and type parameters but not keywords or functions2``
         ()
         =
@@ -1173,7 +1154,7 @@ type A<'lType> =
 
         VerifyCompletionList(fileContents, "of l", [ "LanguagePrimitives"; "List"; "lType" ], [ "let"; "log" ])
 
-    [<Test>]
+    [<Fact>]
     let ``Completion list on union case type at declaration site contains type parameter`` () =
         let fileContents =
             """
@@ -1183,7 +1164,7 @@ type A<'keyType> =
 
         VerifyCompletionList(fileContents, "of key", [ "keyType" ], [])
 
-    [<Test>]
+    [<Fact>]
     let ``Completion list on type alias contains modules and types but not keywords or functions`` () =
         let fileContents =
             """
@@ -1192,7 +1173,7 @@ type A = l
 
         VerifyCompletionList(fileContents, "= l", [ "LanguagePrimitives"; "List" ], [ "let"; "log" ])
 
-    [<Test>]
+    [<Fact>]
     let ``No completion on enum case identifier at declaration site`` () =
         let fileContents =
             """
@@ -1202,7 +1183,7 @@ type A =
 
         VerifyNoCompletionList(fileContents, "| C")
 
-    [<Test>]
+    [<Fact>]
     let ``Completion list in generic function body contains type parameter`` () =
         let fileContents =
             """
@@ -1212,7 +1193,7 @@ let Null<'wrappedType> () =
 
         VerifyCompletionList(fileContents, "defaultof<wrapp", [ "wrappedType" ], [])
 
-    [<Test>]
+    [<Fact>]
     let ``Completion list in generic method body contains type parameter`` () =
         let fileContents =
             """
@@ -1222,7 +1203,7 @@ type A () =
 
         VerifyCompletionList(fileContents, "defaultof<wrapp", [ "wrappedType" ], [])
 
-    [<Test>]
+    [<Fact>]
     let ``Completion list in generic class method body contains type parameter`` () =
         let fileContents =
             """
@@ -1232,7 +1213,7 @@ type A<'wrappedType> () =
 
         VerifyCompletionList(fileContents, "defaultof<wrapp", [ "wrappedType" ], [])
 
-    [<Test>]
+    [<Fact>]
     let ``Completion list in type application contains modules, types and type parameters but not keywords or functions`` () =
         let fileContents =
             """
@@ -1242,7 +1223,7 @@ let emptyMap<'keyType, 'lValueType> () =
 
         VerifyCompletionList(fileContents, ", l", [ "LanguagePrimitives"; "List"; "lValueType" ], [ "let"; "log" ])
 
-    [<Test>]
+    [<Fact>]
     let ``Completion list for interface with static abstract method type invocation contains static property with residue`` () =
         let fileContents =
             """
@@ -1255,7 +1236,7 @@ let f_IWSAM_flex_StaticProperty(x: #IStaticProperty<'T>) =
 
         VerifyCompletionListWithOptions(fileContents, "'T.Stati", [ "StaticProperty" ], [], [| "/langversion:preview" |])
 
-    [<Test>]
+    [<Fact>]
     let ``Completion list for interface with static abstract method type invocation contains static property after dot`` () =
         let fileContents =
             """
@@ -1268,7 +1249,7 @@ let f_IWSAM_flex_StaticProperty(x: #IStaticProperty<'T>) =
 
         VerifyCompletionListWithOptions(fileContents, "'T.", [ "StaticProperty" ], [], [| "/langversion:preview" |])
 
-    [<Test>]
+    [<Fact>]
     let ``Completion list for SRTP invocation contains static property with residue`` () =
         let fileContents =
             """
@@ -1279,7 +1260,7 @@ let inline f_StaticProperty_SRTP<'T when 'T : (static member StaticProperty: 'T)
 
         VerifyCompletionListWithOptions(fileContents, "'T.Stati", [ "StaticProperty" ], [], [| "/langversion:preview" |])
 
-    [<Test>]
+    [<Fact>]
     let ``Completion list for SRTP invocation contains static property after dot`` () =
         let fileContents =
             """
@@ -1289,3 +1270,47 @@ let inline f_StaticProperty_SRTP<'T when 'T : (static member StaticProperty: 'T)
 """
 
         VerifyCompletionListWithOptions(fileContents, "'T.", [ "StaticProperty" ], [], [| "/langversion:preview" |])
+
+    [<Fact>]
+    let ``Completion list for attribute application contains settable members and ctor parameters`` () =
+        let fileContents =
+            """
+type LangAttribute (langParam: int) =
+    inherit System.Attribute ()
+
+    member val LangMember1 = 0 with get, set
+    member val LangMember2 = 0 with get, set
+
+[<Lang(1)>]
+module X =
+    [< Lang(2, LangMember1 = 2)>]
+    let a = ()
+
+[<  Lang(3, LangMember1 = 3, L)>]
+type B () =
+    [<   Lang(la)>]
+    member _.M = ""
+
+type G = { [<Lang(l)>] f: string }
+
+type A =
+    | [<Lang(l)>] A = 1
+"""
+
+        // Attribute on module, completing attribute name - settable properties omitted
+        VerifyCompletionList(fileContents, "[<La", [ "Lang" ], [ "LangMember1"; "langParam" ])
+
+        // Attribute on let-bound value - LangMember2 is already set, so it's omitted
+        VerifyCompletionList(fileContents, "[< Lang(2", [ "langParam"; "LangMember2" ], [ "LangMember1" ])
+
+        // Attribute on type - LangMember1 is already set, so it's omitted
+        VerifyCompletionList(fileContents, "[<  Lang(3, LangMember1 = 3, L", [ "LangMember2" ], [ "LangMember1" ])
+
+        // Attribute on member - All settable properties available
+        VerifyCompletionList(fileContents, "[<   Lang(l", [ "langParam"; "LangMember1"; "LangMember2" ], [])
+
+        // Attribute on record field - All settable properties available
+        VerifyCompletionList(fileContents, "{ [<Lang(l", [ "langParam"; "LangMember1"; "LangMember2" ], [])
+
+        // Attribute on enum case - All settable properties available
+        VerifyCompletionList(fileContents, "| [<Lang(l", [ "langParam"; "LangMember1"; "LangMember2" ], [])

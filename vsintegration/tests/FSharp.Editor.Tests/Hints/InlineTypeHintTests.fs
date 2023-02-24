@@ -2,12 +2,13 @@
 
 namespace FSharp.Editor.Tests.Hints
 
-open NUnit.Framework
+open Xunit
 open HintTestFramework
+open FSharp.Test
 
 module InlineTypeHintTests =
 
-    [<Test>]
+    [<Fact>]
     let ``Hint is shown for a let binding`` () =
         let code =
             """
@@ -28,9 +29,9 @@ let s = { Artist = "Moby"; Title = "Porcelain" }
 
         let actual = getTypeHints document
 
-        Assert.AreEqual(expected, actual)
+        Assert.Equal(expected, actual)
 
-    [<Test>]
+    [<Fact>]
     let ``Hint is shown for a parameter`` () =
         let code =
             """
@@ -51,9 +52,9 @@ let whoSings s = s.Artist
 
         let actual = getTypeHints document
 
-        Assert.AreEqual(expected, actual)
+        Assert.Equal(expected, actual)
 
-    [<Test>]
+    [<Fact>]
     let ``Hints are not shown in signature files`` () =
         let fsiCode =
             """
@@ -69,13 +70,13 @@ module Test
 let numbers = [|42|]
 """
 
-        let fsiDocument, _ = getFsiAndFsDocuments fsiCode fsCode
+        let fsiDocument = getFsiAndFsDocuments fsiCode fsCode |> Seq.head
 
         let result = getTypeHints fsiDocument
 
-        Assert.IsEmpty(result)
+        Assert.Empty(result)
 
-    [<Test>]
+    [<Fact>]
     let ``Hints are not shown for let-bound functions yet`` () =
         let code =
             """
@@ -86,9 +87,9 @@ let setConsoleOut = System.Console.SetOut
 
         let result = getTypeHints document
 
-        Assert.IsEmpty(result)
+        Assert.Empty(result)
 
-    [<Test>]
+    [<Fact>]
     let ``Hint is not shown for a let binding when the type is manually specified`` () =
         let code =
             """
@@ -101,9 +102,9 @@ let s: Song = { Artist = "Moby"; Title = "Porcelain" }
 
         let result = getTypeHints document
 
-        Assert.IsEmpty(result)
+        Assert.Empty(result)
 
-    [<Test>]
+    [<Fact>]
     let ``Hint is not shown for a parameter when the type is manually specified`` () =
         let code =
             """
@@ -116,9 +117,9 @@ let whoSings (s: Song) = s.Artist
 
         let result = getTypeHints document
 
-        Assert.IsEmpty(result)
+        Assert.Empty(result)
 
-    [<Test>] // here we don't want a hint after "this"
+    [<Fact>] // here we don't want a hint after "this"
     let ``Hint is not shown for type self-identifiers`` () =
         let code =
             """
@@ -130,9 +131,9 @@ type Song() =
 
         let result = getTypeHints document
 
-        Assert.IsEmpty(result)
+        Assert.Empty(result)
 
-    [<Test>] // here we don't want a hint after "x"
+    [<Fact>] // here we don't want a hint after "x"
     let ``Hint is not shown for type aliases`` () =
         let code =
             """
@@ -144,9 +145,9 @@ type Song() as x =
 
         let result = getTypeHints document
 
-        Assert.IsEmpty(result)
+        Assert.Empty(result)
 
-    [<Test>]
+    [<Fact>]
     let ``Hints are shown within lambdas`` () =
         let code =
             """
@@ -159,9 +160,9 @@ let iamboring() =
 
         let actual = getTypeHints document
 
-        Assert.AreEqual(expected, actual)
+        Assert.Equal(expected, actual)
 
-    [<Test>]
+    [<Fact>]
     let ``Hints are shown within lambdas with tuples`` () =
         let code =
             """
@@ -182,9 +183,9 @@ let zip4 (l1: 'a list) (l2: 'b list) (l3: 'c list) (l4: 'd list) =
 
         let actual = getTypeHints document
 
-        CollectionAssert.AreEquivalent(expected, actual)
+        actual |> Assert.shouldBeEquivalentTo expected
 
-    [<Test>]
+    [<Fact>]
     let ``Hints are not shown for lambda return types`` () =
         let code =
             """
@@ -195,34 +196,36 @@ let func = fun () -> 3
 
         let result = getTypeHints document
 
-        Assert.IsEmpty(result)
+        Assert.Empty(result)
 
-    [<Test>]
+    [<Fact>]
     let ``Hints are not shown for unfinished expressions`` () =
         let code =
             """
 let x
 """
+
         let document = getFsDocument code
 
         let result = getTypeHints document
 
-        Assert.IsEmpty(result)
+        Assert.Empty(result)
 
-    [<Test>]
-    let ``Hints are not shown for unsolved types in _for_ expressions in collections`` () = 
+    [<Fact>]
+    let ``Hints are not shown for unsolved types in _for_ expressions in collections`` () =
         let code =
             """
 let _ = [ for x ]
 """
+
         let document = getFsDocument code
 
         let result = getTypeHints document
 
-        Assert.IsEmpty(result)
+        Assert.Empty(result)
 
-    [<Test>]
-    let ``Hints are not shown for unsolved types in _for_ expressions within computational expressions`` () = 
+    [<Fact>]
+    let ``Hints are not shown for unsolved types in _for_ expressions within computational expressions`` () =
         let code =
             """
 do task {
@@ -231,13 +234,14 @@ do task {
     do! Task.Delay 0
     }
 """
+
         let document = getFsDocument code
 
         let result = getTypeHints document
 
-        Assert.IsEmpty(result)
+        Assert.Empty(result)
 
-    [<Test>]
+    [<Fact>]
     let ``Hints are shown for IWSAM`` () =
         let code =
             """
@@ -249,19 +253,26 @@ type Number<'T when IAddition<'T>>(value: 'T) =
     interface IAddition<Number<'T>> with
         static member op_Addition(a, b) = Number(a.Value + b.Value)
 """
+
         let document = getFsDocument code
 
         let expected =
             [
-                { Content = ": Number<'T>"; Location = (7, 36) }
-                { Content = ": Number<'T>"; Location = (7, 39) }
+                {
+                    Content = ": Number<'T>"
+                    Location = (7, 36)
+                }
+                {
+                    Content = ": Number<'T>"
+                    Location = (7, 39)
+                }
             ]
 
         let actual = getTypeHints document
 
-        CollectionAssert.AreEquivalent(expected, actual)
+        actual |> Assert.shouldBeEquivalentTo expected
 
-    [<Test>]
+    [<Fact>]
     let ``Hints are not shown when type is specified`` () =
         let code =
             """
@@ -276,4 +287,4 @@ type MyType() =
 
         let result = getTypeHints document
 
-        Assert.IsEmpty(result)
+        Assert.Empty(result)

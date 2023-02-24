@@ -283,10 +283,6 @@ module ExtraTopLevelOperators =
     let eprintfn format =
         Printf.eprintfn format
 
-    [<CompiledName("FailWith")>]
-    let failwith s =
-        raise (Failure s)
-
     [<CompiledName("DefaultAsyncBuilder")>]
     let async = AsyncBuilder()
 

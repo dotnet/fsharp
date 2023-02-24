@@ -14,7 +14,7 @@ open Microsoft.FSharp.Collections
 ///
 /// <namespacedoc><summary>
 ///   Library functionality for accessing additional information about F# types and F# values at
-///   runtime, augmenting that available through <a href="https://docs.microsoft.com/dotnet/api/system.reflection">System.Reflection</a>.
+///   runtime, augmenting that available through <a href="https://learn.microsoft.com/dotnet/api/system.reflection">System.Reflection</a>.
 /// </summary></namespacedoc>
 [<Sealed>]
 type UnionCaseInfo =
@@ -618,6 +618,15 @@ type FSharpType =
     ///
     /// <example-tbd></example-tbd>
     static member MakeStructTupleType: asm: Assembly * types: Type[] -> Type
+
+    /// <summary>Returns a <see cref="T:System.Type"/> representing an F# struct tuple type with the given element types</summary>
+    ///
+    /// <param name="types">An array of types for the tuple elements.</param>
+    ///
+    /// <returns>The type representing the struct tuple containing the input elements.</returns>
+    ///
+    /// <example-tbd></example-tbd>
+    static member MakeStructTupleType: types: Type[] -> Type
 
     /// <summary>Return true if the <c>typ</c> is a representation of an F# tuple type </summary>
     ///

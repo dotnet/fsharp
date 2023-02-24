@@ -3,6 +3,7 @@
 /// Defines derived expression manipulation and construction functions.
 module internal FSharp.Compiler.TypedTreeOps
 
+open System.CodeDom.Compiler
 open System.Collections.Generic
 open System.Collections.Immutable
 open Internal.Utilities
@@ -11,6 +12,7 @@ open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open Internal.Utilities.Rational
 
+open FSharp.Compiler.IO
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.DiagnosticsLogger
@@ -141,22 +143,6 @@ let rec instTyparRef tpinst ty tp =
         if typarEq tp tpR then tyR 
         else instTyparRef t ty tp
 
-let instMeasureTyparRef tpinst unt (tp: Typar) =
-   match tp.Kind with 
-   | TyparKind.Measure ->
-        let rec loop tpinst = 
-            match tpinst with 
-            | [] -> unt
-            | (tpR, tyR) :: t -> 
-                if typarEq tp tpR then 
-                    match tyR with 
-                    | TType_measure unt -> unt
-                    | _ -> failwith "instMeasureTyparRef incorrect kind"
-                else
-                    loop t
-        loop tpinst
-   | _ -> failwith "instMeasureTyparRef: kind=Type"
-
 let remapTyconRef (tcmap: TyconRefMap<_>) tcref =
     match tcmap.TryFind tcref with 
     | Some tcref -> tcref
@@ -269,12 +255,6 @@ and remapTyparConstraintsAux tyenv cs =
          | TyparConstraint.IsNonNullableStruct _ 
          | TyparConstraint.IsReferenceType _ 
          | TyparConstraint.RequiresDefaultConstructor _ -> Some x)
-
-and remapTraitWitnessInfo tyenv (TraitWitnessInfo(tys, nm, flags, argTys, retTy)) =
-    let tysR = remapTypesAux tyenv tys
-    let argTysR = remapTypesAux tyenv argTys
-    let rtyR = Option.map (remapTypeAux tyenv) retTy
-    TraitWitnessInfo(tysR, nm, flags, argTysR, rtyR)
 
 and remapTraitInfo tyenv (TTrait(tys, nm, flags, argTys, retTy, slnCell)) =
     let slnCell = 
@@ -1253,8 +1233,6 @@ let isRefTupleExpr e = match e with Expr.Op (TOp.Tuple tupInfo, _, _, _) -> not 
 
 let tryDestRefTupleExpr e = match e with Expr.Op (TOp.Tuple tupInfo, _, es, _) when not (evalTupInfoIsStruct tupInfo) -> es | _ -> [e]
 
-let rangeOfExpr (x: Expr) = x.Range
-
 //---------------------------------------------------------------------------
 // Build nodes in decision graphs
 //---------------------------------------------------------------------------
@@ -1355,10 +1333,6 @@ let mkCompGenBind v e = TBind(v, e, DebugPointAtBinding.NoneAtSticky)
 let mkCompGenBinds (vs: Val list) (es: Expr list) = List.map2 mkCompGenBind vs es
 
 let mkCompGenLet m v x body = mkLetBind m (mkCompGenBind v x) body
-
-let mkCompGenLets m vs xs body = mkLetsBind m (mkCompGenBinds vs xs) body
-
-let mkCompGenLetsFromBindings m vs xs body = mkLetsFromBindings m (mkCompGenBinds vs xs) body
 
 let mkInvisibleBind v e = TBind(v, e, DebugPointAtBinding.NoneAtInvisible)
 
@@ -2270,11 +2244,6 @@ and accFreeInTrait opts (TTrait(tys, _, _, argTys, retTy, sln)) acc =
          (accFreeInTypes opts argTys 
            (Option.foldBack (accFreeInType opts) retTy acc)))
 
-and accFreeInWitnessArg opts (TraitWitnessInfo(tys, _nm, _mf, argTys, retTy)) acc = 
-       accFreeInTypes opts tys 
-         (accFreeInTypes opts argTys 
-           (Option.foldBack (accFreeInType opts) retTy acc))
-
 and accFreeInTraitSln opts sln acc = 
     match sln with 
     | ILMethSln(ty, _, _, minst, staticTyOpt) ->
@@ -2785,7 +2754,6 @@ let generalizedTyconRef (g: TcGlobals) tcref =
     let tinst = generalTyconRefInst tcref
     TType_app(tcref, tinst, g.knownWithoutNull)
 
-let isTTyparSupportsStaticMethod = function TyparConstraint.MayResolveMember _ -> true | _ -> false
 let isTTyparCoercesToType = function TyparConstraint.CoercesTo _ -> true | _ -> false
 
 //--------------------------------------------------------------------------
@@ -2919,8 +2887,6 @@ module PrettyTypes =
     let safeDestAnyParTy orig g ty = match tryAnyParTy g ty with ValueNone -> orig | ValueSome x -> x
 
     let foldUnurriedArgInfos f z (x: UncurriedArgInfos) = List.fold (fold1Of2 f) z x
-    let mapUnurriedArgInfos f (x: UncurriedArgInfos) = List.map (map1Of2 f) x
-
     let foldTypar f z (x: Typar) = foldOn mkTyparTy f z x
     let mapTypar g f (x: Typar) : Typar = (mkTyparTy >> f >> safeDestAnyParTy x g) x
 
@@ -3394,7 +3360,6 @@ let TryDecodeILAttribute tref (attrs: ILAttributes) =
 // F# view of attributes (these get converted to AbsIL attributes in ilxgen) 
 let IsMatchingFSharpAttribute g (AttribInfo(_, tcref)) (Attrib(tcref2, _, _, _, _, _, _)) = tyconRefEq g tcref tcref2
 let HasFSharpAttribute g tref attrs = List.exists (IsMatchingFSharpAttribute g tref) attrs
-let findAttrib g tref attrs = List.find (IsMatchingFSharpAttribute g tref) attrs
 let TryFindFSharpAttribute g tref attrs = List.tryFind (IsMatchingFSharpAttribute g tref) attrs
 let TryFindFSharpAttributeOpt g tref attrs = match tref with None -> None | Some tref -> List.tryFind (IsMatchingFSharpAttribute g tref) attrs
 
@@ -3851,19 +3816,9 @@ module DebugPrint =
     let mutable layoutStamps = false
     let mutable layoutValReprInfo = false
 
-    let squareAngleL l = LeftL.leftBracketAngle ^^ l ^^ RightL.rightBracketAngle
-
-    let angleL l = sepL leftAngle ^^ l ^^ rightL rightAngle
-
-    let braceL l = leftL leftBrace ^^ l ^^ rightL rightBrace
-
     let braceBarL l = leftL leftBraceBar ^^ l ^^ rightL rightBraceBar
 
-    let boolL b = if b then WordL.keywordTrue else WordL.keywordFalse
-
     let intL (n: int) = wordL (tagNumericLiteral (string n))
-
-    let int64L (n: int64) = wordL (tagNumericLiteral (string n))
 
     let qlistL f xmap = QueueList.foldBack (fun x z -> z @@ f x) xmap emptyL
 
@@ -3881,6 +3836,7 @@ module DebugPrint =
 
     let angleBracketListL l = angleBracketL (sepListL (sepL (tagText ",")) l)
 
+#if DEBUG
     let layoutMemberFlags (memFlags: SynMemberFlags) = 
         let stat = 
             if memFlags.IsInstance || (memFlags.MemberKind = SynMemberKind.Constructor) then emptyL 
@@ -3890,6 +3846,7 @@ module DebugPrint =
             elif memFlags.IsOverrideOrExplicitImpl then stat ++ wordL (tagText "override")
             else stat
         stat
+#endif
 
     let stampL (n: Stamp) w = 
         if layoutStamps then w ^^ wordL (tagText ("#" + string n)) else w
@@ -3998,8 +3955,6 @@ module DebugPrint =
 
     and auxTypar2L env typar = auxTyparWrapL env false typar
 
-    and auxTyparAtomL env typar = auxTyparWrapL env true typar
-
     and auxTyparConstraintTypL env ty = auxTypeL env ty
 
     and auxTraitL env (ttrait: TraitConstraintInfo) =
@@ -4055,8 +4010,6 @@ module DebugPrint =
         | cxs -> wordL (tagText "when") --- aboveListL (List.map (auxTyparConstraintL env) cxs)
 
     and typarL tp = auxTypar2L SimplifyTypes.typeSimplificationInfo0 tp 
-
-    and typarAtomL tp = auxTyparAtomL SimplifyTypes.typeSimplificationInfo0 tp
 
     and typeAtomL tau =
         let tau, cxs = tau, []
@@ -4120,6 +4073,7 @@ module DebugPrint =
           ^^ (if v.IsMutable then wordL(tagText "mutable ") else emptyL)
           ^^ (if layoutTypes then wordL (tagText ":") ^^ typeL v.Type else emptyL)
 
+#if DEBUG
     let tslotparamL (TSlotParam(nmOpt, ty, inFlag, outFlag, _, _)) =
         (optionL (tagText >> wordL) nmOpt) ^^ 
          wordL(tagText ":") ^^ 
@@ -4127,6 +4081,7 @@ module DebugPrint =
          (if inFlag then wordL(tagText "[in]") else emptyL) ^^ 
          (if outFlag then wordL(tagText "[out]") else emptyL) ^^ 
          (if inFlag then wordL(tagText "[opt]") else emptyL)
+#endif
 
     let slotSigL (slotsig: SlotSig) =
 #if DEBUG
@@ -4144,12 +4099,7 @@ module DebugPrint =
         wordL(tagText "slotsig")
 #endif
 
-    let rec memberL (g:TcGlobals) (v: Val) (membInfo: ValMemberInfo) = 
-        aboveListL 
-            [ wordL(tagText "compiled_name! = ") ^^ wordL (tagText (v.CompiledName g.CompilerGlobalState))
-              wordL(tagText "membInfo-slotsig! = ") ^^ listL slotSigL membInfo.ImplementedSlotSigs ]
-
-    and valAtBindL v =
+    let valAtBindL v =
         let vL = valL v
         let vL = (if v.IsMutable then wordL(tagText "mutable") ++ vL else vL)
         let vL =
@@ -4166,8 +4116,6 @@ module DebugPrint =
     let unionCaseRefL (ucr: UnionCaseRef) = wordL (tagText ucr.CaseName)
 
     let recdFieldRefL (rfref: RecdFieldRef) = wordL (tagText rfref.FieldName)
-
-    let identL (id: Ident) = wordL (tagText id.idText)
 
     // Note: We need nice printing of constants in order to print literals and attributes 
     let constL c =
@@ -4611,9 +4559,6 @@ module DebugPrint =
 
     and implFileL (CheckedImplFile (signature=implFileTy; contents=implFileContents)) =
         aboveListL [(wordL(tagText "top implementation ")) @@-- mexprL implFileTy implFileContents]
-
-    and ccuL (ccu: CcuThunk) =
-        entityL ccu.Contents
 
     let showType x = showL (typeL x)
 
@@ -5655,9 +5600,6 @@ let bindLocalVal (v: Val) (v': Val) tmenv =
 let bindLocalVals vs vs' tmenv = 
     { tmenv with valRemap= (vs, vs', tmenv.valRemap) |||> List.foldBack2 (fun v v' acc -> acc.Add v (mkLocalValRef v') ) }
 
-let bindTycon (tc: Tycon) (tc': Tycon) tyenv = 
-    { tyenv with tyconRefRemap=tyenv.tyconRefRemap.Add (mkLocalTyconRef tc) (mkLocalTyconRef tc') }
-
 let bindTycons tcs tcs' tyenv =  
     { tyenv with tyconRefRemap= (tcs, tcs', tyenv.tyconRefRemap) |||> List.foldBack2 (fun tc tc' acc -> acc.Add (mkLocalTyconRef tc) (mkLocalTyconRef tc')) }
 
@@ -6043,14 +5985,14 @@ and remapUnionCases ctxt tmenv (x: TyconUnionData) =
     x.UnionCasesAsList |> List.map (remapUnionCase ctxt tmenv) |> Construct.MakeUnionCases 
 
 and remapFsObjData ctxt tmenv x = 
-    { x with 
-          fsobjmodel_kind = 
-             (match x.fsobjmodel_kind with 
-              | TFSharpDelegate slotsig -> TFSharpDelegate (remapSlotSig (remapAttribs ctxt tmenv) tmenv slotsig)
-              | TFSharpClass | TFSharpInterface | TFSharpStruct | TFSharpEnum -> x.fsobjmodel_kind)
-          fsobjmodel_vslots = x.fsobjmodel_vslots |> List.map (remapValRef tmenv)
-          fsobjmodel_rfields = x.fsobjmodel_rfields |> remapRecdFields ctxt tmenv } 
-
+    { 
+        fsobjmodel_kind = 
+            match x.fsobjmodel_kind with 
+            | TFSharpDelegate slotsig -> TFSharpDelegate (remapSlotSig (remapAttribs ctxt tmenv) tmenv slotsig)
+            | TFSharpClass | TFSharpInterface | TFSharpStruct | TFSharpEnum -> x.fsobjmodel_kind
+        fsobjmodel_vslots = x.fsobjmodel_vslots |> List.map (remapValRef tmenv)
+        fsobjmodel_rfields = x.fsobjmodel_rfields |> remapRecdFields ctxt tmenv
+    } 
 
 and remapTyconRepr ctxt tmenv repr = 
     match repr with 
@@ -7809,6 +7751,9 @@ let mkCallSeqGenerated g m elemTy arg1 arg2 =
                        
 let mkCallSeqFinally g m elemTy arg1 arg2 = 
     mkApps g (typedExprForIntrinsic g m g.seq_finally_info, [[elemTy]], [ arg1; arg2 ], m) 
+
+let mkCallSeqTryWith g m elemTy origSeq exnFilter exnHandler = 
+    mkApps g (typedExprForIntrinsic g m g.seq_trywith_info, [[elemTy]], [ origSeq; exnFilter; exnHandler ], m) 
                        
 let mkCallSeqOfFunctions g m ty1 ty2 arg1 arg2 arg3 = 
     mkApps g (typedExprForIntrinsic g m g.seq_of_functions_info, [[ty1;ty2]], [ arg1; arg2; arg3 ], m) 
@@ -8028,8 +7973,6 @@ let TryDecodeTypeProviderAssemblyAttr (cattr: ILAttribute) : string MaybeNull op
 //----------------------------------------------------------------------------
 
 let tname_SignatureDataVersionAttr = FSharpLib.Core + ".FSharpInterfaceDataVersionAttribute"
-
-let tnames_SignatureDataVersionAttr = splitILTypeName tname_SignatureDataVersionAttr
 
 let tref_SignatureDataVersionAttr fsharpCoreAssemblyScopeRef = mkILTyRef(fsharpCoreAssemblyScopeRef, tname_SignatureDataVersionAttr)
 
@@ -8280,13 +8223,6 @@ let AdjustValForExpectedValReprInfo g m (vref: ValRef) flags valReprInfo =
             (call, rtyR)
     // Build a type-lambda expression for the toplevel value if needed... 
     mkTypeLambda m tpsR (tauexpr, tauty), tpsR +-> tauty
-
-let IsSubsumptionExpr g expr =
-    match expr with 
-    | Expr.Op (TOp.Coerce, [inputTy;actualTy], [_], _) ->
-        isFunTy g actualTy && isFunTy g inputTy   
-    | _ -> 
-        false
 
 let stripTupledFunTy g ty = 
     let argTys, retTy = stripFunTy g ty
@@ -8854,7 +8790,6 @@ let XmlDocSigOfEntity (eref: EntityRef) =
 
 let enum_CompilationRepresentationAttribute_Static = 0b0000000000000001
 let enum_CompilationRepresentationAttribute_Instance = 0b0000000000000010
-let enum_CompilationRepresentationAttribute_StaticInstanceMask = 0b0000000000000011
 let enum_CompilationRepresentationAttribute_ModuleSuffix = 0b0000000000000100
 let enum_CompilationRepresentationAttribute_PermitNull = 0b0000000000001000
 
@@ -10322,14 +10257,6 @@ let (|ResumableEntryMatchExpr|_|) g expr =
         | _ -> None
     | _ -> None
 
-let (|PossiblyCompiledTypeOfExpr|_|) g expr =
-    match expr with 
-    | TypeOfExpr g ty -> Some ty
-    | Expr.Op(TOp.ILCall (_, _, _, _, _, _, _, ilMethRef, _, _, _), [],[Expr.Op (TOp.ILAsm ([ I_ldtoken (ILToken.ILType _) ], _), [ty], _, _)], _)
-              when ilMethRef.DeclaringTypeRef.Name = "System.Type" && ilMethRef.Name = "GetTypeFromHandle" -> 
-        Some ty
-    | _ -> None
-
 let (|StructStateMachineExpr|_|) g expr =
     match expr with
     | ValApp g g.cgh__stateMachine_vref ([dataTy; _resultTy], [moveNext; setStateMachine; afterCode], _m) ->
@@ -10556,3 +10483,106 @@ let tryAddExtensionAttributeIfNotAlreadyPresent
         match tryFindExtensionAttributeIn tryFindExtensionAttribute with
         | None -> entity
         | Some extensionAttrib -> { entity with entity_attribs = extensionAttrib :: entity.Attribs }
+
+type TypedTreeNode =
+    {
+        Kind: string
+        Name: string
+        Children: TypedTreeNode list
+    }
+
+let rec visitEntity (entity: Entity) : TypedTreeNode =
+    let kind =
+        if entity.IsModule then
+            "module"
+        elif entity.IsNamespace then
+            "namespace"
+        else
+            "other"
+
+    let children =
+        if not entity.IsModuleOrNamespace then
+            Seq.empty
+        else
+            seq {
+                yield! Seq.map visitEntity entity.ModuleOrNamespaceType.AllEntities
+                yield! Seq.map visitVal entity.ModuleOrNamespaceType.AllValsAndMembers
+            }
+
+    {
+        Kind = kind
+        Name = entity.CompiledName
+        Children = Seq.toList children
+    }
+
+and visitVal (v: Val) : TypedTreeNode =
+    let children =
+        seq {
+            match v.ValReprInfo with
+            | None -> ()
+            | Some reprInfo ->
+                yield!
+                    reprInfo.ArgInfos
+                    |> Seq.collect (fun argInfos ->
+                        argInfos
+                        |> Seq.map (fun argInfo -> {
+                            Name = argInfo.Name |> Option.map (fun i -> i.idText) |> Option.defaultValue ""
+                            Kind = "ArgInfo"
+                            Children = []
+                        })
+                    )
+
+            yield!
+                v.Typars
+                |> Seq.map (fun typar -> {
+                    Name = typar.Name
+                    Kind = "Typar"
+                    Children = []
+                })
+        }
+
+    {
+        Name = v.CompiledName None
+        Kind = "val"
+        Children = Seq.toList children
+    }
+
+let rec serializeNode (writer: IndentedTextWriter) (addTrailingComma:bool) (node: TypedTreeNode) =
+    writer.WriteLine("{")
+    // Add indent after opening {
+    writer.Indent <- writer.Indent + 1
+    
+    writer.WriteLine($"\"name\": \"{node.Name}\",")
+    writer.WriteLine($"\"kind\": \"{node.Kind}\",")
+
+    if node.Children.IsEmpty then
+        writer.WriteLine("\"children\": []")
+    else
+        writer.WriteLine("\"children\": [")
+        
+        // Add indent after opening [
+        writer.Indent <- writer.Indent + 1
+        
+        node.Children
+        |> List.iteri (fun idx -> serializeNode writer (idx + 1 < node.Children.Length))
+
+        // Remove indent before closing ]
+        writer.Indent <- writer.Indent - 1
+        writer.WriteLine("]")
+    
+    // Remove indent before closing }
+    writer.Indent <- writer.Indent - 1
+    if addTrailingComma then
+        writer.WriteLine("},")
+    else
+        writer.WriteLine("}")
+ 
+let rec serializeEntity path (entity: Entity) =
+    let root = visitEntity entity
+    use sw = new System.IO.StringWriter()
+    use writer = new IndentedTextWriter(sw)
+    serializeNode writer false root
+    writer.Flush()
+    let json = sw.ToString()
+    use out = FileSystem.OpenFileForWriteShim(path, fileMode = System.IO.FileMode.Create)
+    out.WriteAllText(json)

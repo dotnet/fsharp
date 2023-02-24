@@ -2,23 +2,40 @@
 
 namespace FSharp.Editor.Tests
 
-open System.IO
 open Microsoft.VisualStudio.FSharp.Editor
-open NUnit.Framework
+open Xunit
 open FSharp.Editor.Tests.Helpers
 
 module QuickInfo =
 
-    let internal GetQuickInfo (project: FSharpProject) (fileName: string) (caretPosition: int) =
+    let private GetCaretPosition (codeWithCaret: string) =
+        let caretSentinel = "$$"
+        let mutable cursorInfo: (int * string) = (0, null)
+
+        // find the '$$' sentinel that represents the cursor location
+        let caretPosition = codeWithCaret.IndexOf(caretSentinel)
+
+        if caretPosition >= 0 then
+            let newContents =
+                codeWithCaret.Substring(0, caretPosition)
+                + codeWithCaret.Substring(caretPosition + caretSentinel.Length)
+
+            cursorInfo <- caretPosition, newContents
+
+        cursorInfo
+
+    let internal GetQuickInfo (code: string) caretPosition =
         async {
-            let code = File.ReadAllText(fileName)
-            let document, _ = RoslynTestHelpers.CreateSingleDocumentSolution(fileName, code)
+            let document =
+                RoslynTestHelpers.CreateSolution(code) |> RoslynTestHelpers.GetSingleDocument
+
             return! FSharpAsyncQuickInfoSource.ProvideQuickInfo(document, caretPosition)
         }
         |> Async.RunSynchronously
 
-    let GetQuickInfoText (project: FSharpProject) (fileName: string) (caretPosition: int) =
-        let sigHelp = GetQuickInfo project fileName caretPosition
+    let GetQuickInfoTextFromCode (codeWithCaret: string) =
+        let caretPosition, code = GetCaretPosition codeWithCaret
+        let sigHelp = GetQuickInfo code caretPosition
 
         match sigHelp with
         | Some (quickInfo) ->
@@ -36,14 +53,9 @@ module QuickInfo =
             System.String.Join(System.String.Empty, (Seq.concat [ mainTextItems; docTextItems ]))
         | _ -> ""
 
-    let GetQuickInfoTextFromCode (code: string) =
-        use project = SingleFileProject code
-        let fileName, caretPosition = project.GetCaretPosition()
-        GetQuickInfoText project fileName caretPosition
-
     let expectedLines (lines: string list) = System.String.Join("\n", lines)
 
-    [<Test>]
+    [<Fact>]
     let ``Automation.EnumDUInterfacefromFSBrowse.InsideComputationExpression`` () =
         let code =
             """
@@ -67,9 +79,9 @@ module Test =
 
         let quickInfo = GetQuickInfoTextFromCode code
         let expected = "MyColors.Red: MyColors = 0"
-        Assert.AreEqual(expected, quickInfo)
+        Assert.Equal(expected, quickInfo)
 
-    [<Test>]
+    [<Fact>]
     let ``Automation.EnumDUInterfacefromFSBrowse.InsideMatch`` () =
         let code =
             """
@@ -103,9 +115,9 @@ module Test =
                     "Full name: FsTest.MyDistance"
                 ]
 
-        Assert.AreEqual(expected, quickInfo)
+        Assert.Equal(expected, quickInfo)
 
-    [<Test>]
+    [<Fact>]
     let ``Automation.EnumDUInterfacefromFSBrowse.InsideLambda`` () =
         let code =
             """
@@ -133,9 +145,9 @@ module Test =
 
         let quickInfo = GetQuickInfoTextFromCode code
         let expected = "abstract IMyInterface.Represent: unit -> string"
-        Assert.AreEqual(expected, quickInfo)
+        Assert.Equal(expected, quickInfo)
 
-    [<Test>]
+    [<Fact>]
     let ``Automation.RecordAndInterfaceFromFSProj.InsideComputationExpression`` () =
         let code =
             """
@@ -171,10 +183,10 @@ module Test =
                     "Full name: FsTest.MyEmployee"
                 ]
 
-        Assert.AreEqual(expected, quickInfo)
+        Assert.Equal(expected, quickInfo)
         ()
 
-    [<Test>]
+    [<Fact>]
     let ``Automation.RecordAndInterfaceFromFSProj.InsideQuotation`` () =
         let code =
             """
@@ -196,10 +208,10 @@ module Test =
 
         let quickInfo = GetQuickInfoTextFromCode code
         let expected = "val aa: MyEmployee"
-        Assert.AreEqual(expected, quickInfo)
+        Assert.Equal(expected, quickInfo)
         ()
 
-    [<Test>]
+    [<Fact>]
     let ``Automation.RecordAndInterfaceFromFSProj.InsideLambda`` () =
         let code =
             """
@@ -223,10 +235,10 @@ module Test =
 
         let quickInfo = GetQuickInfoTextFromCode code
         let expected = "MyEmployee.IsFTE: bool"
-        Assert.AreEqual(expected, quickInfo)
+        Assert.Equal(expected, quickInfo)
         ()
 
-    [<Test>]
+    [<Fact>]
     let ``Automation.TupleRecordFromFSBrowse.InsideComputationExpression`` () =
         let code =
             """
@@ -249,10 +261,10 @@ module Test =
 
         let quickInfo = GetQuickInfoTextFromCode code
         let expected = "val myTuple: int * string * float * (int -> string * int)"
-        Assert.AreEqual(expected, quickInfo)
+        Assert.Equal(expected, quickInfo)
         ()
 
-    [<Test>]
+    [<Fact>]
     let ``Automation.TupleRecordFromFSBrowse.SequenceOfMethods`` () =
         let code =
             """
@@ -279,10 +291,10 @@ module Test =
 
         let quickInfo = GetQuickInfoTextFromCode code
         let expected = "val methodSeq: seq<(int -> string * int)>"
-        Assert.AreEqual(expected, quickInfo)
+        Assert.Equal(expected, quickInfo)
         ()
 
-    [<Test>]
+    [<Fact>]
     let ``Automation.UnionAndStructFromFSProj.MatchExpression`` () =
         let code =
             """
@@ -303,10 +315,10 @@ module Test =
 
         let quickInfo = GetQuickInfoTextFromCode code
         let expected = "val p1: MyPoint"
-        Assert.AreEqual(expected, quickInfo)
+        Assert.Equal(expected, quickInfo)
         ()
 
-    [<Test>]
+    [<Fact>]
     let ``Automation.UnionAndStructFromFSProj.MatchPattern`` () =
         let code =
             """
@@ -327,10 +339,10 @@ module Test =
 
         let quickInfo = GetQuickInfoTextFromCode code
         let expected = "val p3: MyPoint"
-        Assert.AreEqual(expected, quickInfo)
+        Assert.Equal(expected, quickInfo)
         ()
 
-    [<Test>]
+    [<Fact>]
     let ``Automation.UnionAndStructFromFSProj.UnionIfPredicate`` () =
         let code =
             """
@@ -350,10 +362,10 @@ module Test =
 
         let quickInfo = GetQuickInfoTextFromCode code
         let expected = "val dd: MyDistance"
-        Assert.AreEqual(expected, quickInfo)
+        Assert.Equal(expected, quickInfo)
         ()
 
-    [<Test>]
+    [<Fact>]
     let ``Automation.UnionAndStructFromFSProj.UnionForPattern`` () =
         let code =
             """
@@ -373,10 +385,10 @@ module Test =
 
         let quickInfo = GetQuickInfoTextFromCode code
         let expected = "val distance: MyDistance"
-        Assert.AreEqual(expected, quickInfo)
+        Assert.Equal(expected, quickInfo)
         ()
 
-    [<Test>]
+    [<Fact>]
     let ``Automation.UnionAndStructFromFSProj.UnionMethodPatternMatch`` () =
         let code =
             """
@@ -404,10 +416,10 @@ module Test =
 
         let quickInfo = GetQuickInfoTextFromCode code
         let expected = "static member MyDistance.toMiles: x: MyDistance -> MyDistance"
-        Assert.AreEqual(expected, quickInfo)
+        Assert.Equal(expected, quickInfo)
         ()
 
-    [<Test>]
+    [<Fact>]
     let ``Automation.UnionAndStructFromFSProj.UnionMethodPatternMatchBody`` () =
         let code =
             """
@@ -433,10 +445,10 @@ module Test =
 
         let quickInfo = GetQuickInfoTextFromCode code
         let expected = "member MyDistance.IncreaseBy: dist: float -> MyDistance"
-        Assert.AreEqual(expected, quickInfo)
+        Assert.Equal(expected, quickInfo)
         ()
 
-    [<Test>]
+    [<Fact>]
     let ``Automation.UnionAndStructFromFSProj.UnionPropertyInComputationExpression`` () =
         let code =
             """
@@ -465,10 +477,10 @@ module Test =
 
         let quickInfo = GetQuickInfoTextFromCode code
         let expected = "property MyDistance.asNautical: MyDistance with get"
-        Assert.AreEqual(expected, quickInfo)
+        Assert.Equal(expected, quickInfo)
         ()
 
-    [<Test>]
+    [<Fact>]
     let ``Automation.LetBindings.Module`` () =
         let code =
             """
@@ -482,10 +494,10 @@ module Test =
 
         let tooltip = GetQuickInfoTextFromCode code
 
-        StringAssert.StartsWith(expectedSignature, tooltip)
+        Assert.StartsWith(expectedSignature, tooltip)
         ()
 
-    [<Test>]
+    [<Fact>]
     let ``Automation.LetBindings.InsideType.Instance`` () =
         let code =
             """
@@ -500,9 +512,9 @@ module Test =
 
         let tooltip = GetQuickInfoTextFromCode code
 
-        StringAssert.StartsWith(expectedSignature, tooltip)
+        Assert.StartsWith(expectedSignature, tooltip)
 
-    [<Test>]
+    [<Fact>]
     let ``Automation.LetBindings.InsideType.Static`` () =
         let code =
             """
@@ -517,10 +529,10 @@ module Test =
 
         let tooltip = GetQuickInfoTextFromCode code
 
-        StringAssert.StartsWith(expectedSignature, tooltip)
+        Assert.StartsWith(expectedSignature, tooltip)
         ()
 
-    [<Test>]
+    [<Fact>]
     let ``Automation.LetBindings`` () =
         let code =
             """
@@ -534,9 +546,9 @@ module Test =
 
         let expectedSignature = "val func: x: 'a -> unit"
         let tooltip = GetQuickInfoTextFromCode code
-        StringAssert.StartsWith(expectedSignature, tooltip)
+        Assert.StartsWith(expectedSignature, tooltip)
 
-    [<Test>]
+    [<Fact>]
     let ``quick info for IWSAM property get`` () =
         let code =
             """
@@ -549,9 +561,9 @@ let f_IWSAM_flex_StaticProperty(x: #IStaticProperty<'T>) =
 
         let expectedSignature = "property IStaticProperty.StaticProperty: 'T with get"
         let tooltip = GetQuickInfoTextFromCode code
-        StringAssert.StartsWith(expectedSignature, tooltip)
+        Assert.StartsWith(expectedSignature, tooltip)
 
-    [<Test>]
+    [<Fact>]
     let ``quick info for IWSAM method call`` () =
         let code =
             """
@@ -564,9 +576,9 @@ let f (x: #IStaticMethod<'T>) =
 
         let expectedSignature = "static abstract IStaticMethod.StaticMethod: unit -> 'T"
         let tooltip = GetQuickInfoTextFromCode code
-        StringAssert.StartsWith(expectedSignature, tooltip)
+        Assert.StartsWith(expectedSignature, tooltip)
 
-    [<Test>]
+    [<Fact>]
     let ``quick info for SRTP property get`` () =
         let code =
             """
@@ -577,9 +589,9 @@ let inline f_StaticProperty_SRTP<'T when 'T : (static member StaticProperty: 'T)
 
         let expectedSignature = "'T: (static member StaticProperty: 'T)"
         let tooltip = GetQuickInfoTextFromCode code
-        StringAssert.StartsWith(expectedSignature, tooltip)
+        Assert.StartsWith(expectedSignature, tooltip)
 
-    [<Test>]
+    [<Fact>]
     let ``quick info for SRTP method call`` () =
         let code =
             """
@@ -590,9 +602,9 @@ let inline f_StaticProperty_SRTP<'T when 'T : (static member StaticMethod: unit 
 
         let expectedSignature = "'T: (static member StaticMethod: unit -> 'T)"
         let tooltip = GetQuickInfoTextFromCode code
-        StringAssert.StartsWith(expectedSignature, tooltip)
+        Assert.StartsWith(expectedSignature, tooltip)
 
-    [<Test>]
+    [<Fact>]
     let ``Display names for exceptions with backticks preserve backticks`` () =
         let code =
             """
@@ -602,10 +614,10 @@ exception SomeError of ``thing wi$$th space``: string
         let expected = "``thing with space``"
 
         let actual = GetQuickInfoTextFromCode code
-        StringAssert.Contains(expected, actual)
+        Assert.Contains(expected, actual)
         ()
 
-    [<Test>]
+    [<Fact>]
     let ``Display names for anonymous record fields with backticks preserve backticks`` () =
         let code =
             """
@@ -616,10 +628,10 @@ type R = {| ``thing wi$$th space``: string |}
 
         let actual = GetQuickInfoTextFromCode code
 
-        StringAssert.Contains(expected, actual)
+        Assert.Contains(expected, actual)
         ()
 
-    [<Test>]
+    [<Fact>]
     let ``Display names identifiers for active patterns with backticks preserve backticks`` () =
         let code =
             """
@@ -634,5 +646,5 @@ match 4 with
 
         let actual = GetQuickInfoTextFromCode code
 
-        StringAssert.Contains(expected, actual)
+        Assert.Contains(expected, actual)
         ()

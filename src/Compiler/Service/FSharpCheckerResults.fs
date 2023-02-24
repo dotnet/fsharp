@@ -270,9 +270,7 @@ type FSharpSymbolUse(denv: DisplayEnv, symbol: FSharpSymbol, inst: TyparInstanti
 
                 let fileHasSignatureFile = fileSignatureLocation <> fileDeclarationLocation
 
-                let symbolIsNotInSignatureFile = m.SignatureLocation = Some m.DeclarationLocation
-
-                fileHasSignatureFile && symbolIsNotInSignatureFile
+                fileHasSignatureFile && not m.HasSignatureFile
                 || not m.IsModuleValueOrMember
                 || m.Accessibility.IsPrivate
             | :? FSharpEntity as m -> m.Accessibility.IsPrivate
@@ -1264,7 +1262,7 @@ type internal TypeCheckInfo
             // No completion at '...: string'
             | Some (CompletionContext.RecordField (RecordContext.Declaration true)) -> None
 
-            // Completion at ' SomeMethod( ... ) ' with named arguments
+            // Completion at ' SomeMethod( ... ) ' or ' [<SomeAttribute( ... )>] ' with named arguments
             | Some (CompletionContext.ParameterList (endPos, fields)) ->
                 let results = GetNamedParametersAndSettableFields endPos
 
@@ -1437,7 +1435,7 @@ type internal TypeCheckInfo
 
     member _.GetVisibleNamespacesAndModulesAtPosition(cursorPos: pos) : ModuleOrNamespaceRef list =
         let (nenv, ad), m = GetBestEnvForPos cursorPos
-        GetVisibleNamespacesAndModulesAtPoint ncenv nenv m ad
+        GetVisibleNamespacesAndModulesAtPoint ncenv nenv OpenQualified m ad
 
     /// Determines if a long ident is resolvable at a specific point.
     member _.IsRelativeNameResolvable(cursorPos: pos, plid: string list, item: Item) : bool =
@@ -2345,7 +2343,15 @@ module internal ParseAndCheckFile =
 
         matchingBraces.ToArray()
 
-    let parseFile (sourceText: ISourceText, fileName, options: FSharpParsingOptions, userOpName: string, suggestNamesForErrors: bool) =
+    let parseFile
+        (
+            sourceText: ISourceText,
+            fileName,
+            options: FSharpParsingOptions,
+            userOpName: string,
+            suggestNamesForErrors: bool,
+            identCapture: bool
+        ) =
         Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "parseFile", fileName)
 
         use act =
@@ -2377,7 +2383,8 @@ module internal ParseAndCheckFile =
                         lexbuf,
                         None,
                         fileName,
-                        (isLastCompiland, isExe)
+                        (isLastCompiland, isExe),
+                        identCapture
                     )
                 with e ->
                     errHandler.DiagnosticsLogger.StopProcessingRecovery e range0 // don't re-raise any exceptions, we must return None.
@@ -3180,7 +3187,14 @@ type FsiInteractiveChecker(legacyReferenceResolver, tcConfig: TcConfig, tcGlobal
                 FSharpParsingOptions.FromTcConfig(tcConfig, [| fileName |], true)
 
             let parseErrors, parsedInput, anyErrors =
-                ParseAndCheckFile.parseFile (sourceText, fileName, parsingOptions, userOpName, suggestNamesForErrors)
+                ParseAndCheckFile.parseFile (
+                    sourceText,
+                    fileName,
+                    parsingOptions,
+                    userOpName,
+                    suggestNamesForErrors,
+                    tcConfig.captureIdentifiersWhenParsing
+                )
 
             let dependencyFiles = [||] // interactions have no dependencies
 

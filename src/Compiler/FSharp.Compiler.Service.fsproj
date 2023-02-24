@@ -80,6 +80,7 @@
     <InternalsVisibleTo Include="LanguageServiceProfiling" />
     <InternalsVisibleTo Include="FSharp.Compiler.Benchmarks" />
     <InternalsVisibleTo Include="HistoricalBenchmark" />
+    <InternalsVisibleTo Include="FSharp.Test.Utilities" />
   </ItemGroup>
 
   <ItemGroup>
@@ -380,6 +381,23 @@
     <Compile Include="Driver\CompilerImports.fs" />
     <Compile Include="Driver\CompilerDiagnostics.fsi" />
     <Compile Include="Driver\CompilerDiagnostics.fs" />
+    <Compile Include="Driver\GraphChecking\Continuation.fsi" />
+    <Compile Include="Driver\GraphChecking\Continuation.fs" />
+    <Compile Include="Driver\GraphChecking\Types.fsi" />
+    <Compile Include="Driver\GraphChecking\Types.fs" />
+    <Compile Include="Driver\GraphChecking\Graph.fsi" />
+    <Compile Include="Driver\GraphChecking\Graph.fs" />
+    <Compile Include="Driver\GraphChecking\TrieMapping.fsi" />
+    <Compile Include="Driver\GraphChecking\TrieMapping.fs" />
+    <Compile Include="Driver\GraphChecking\FileContentMapping.fsi" />
+    <Compile Include="Driver\GraphChecking\FileContentMapping.fs" />
+    <Compile Include="Driver\GraphChecking\DependencyResolution.fsi" />
+    <Compile Include="Driver\GraphChecking\DependencyResolution.fs" />
+    <Compile Include="Driver\GraphChecking\GraphProcessing.fsi" />
+    <Compile Include="Driver\GraphChecking\GraphProcessing.fs" />
+    <Compile Include="Driver\GraphChecking\TypeCheckingGraphProcessing.fsi" />
+    <Compile Include="Driver\GraphChecking\TypeCheckingGraphProcessing.fs" />
+    <Content Include="Driver\GraphChecking\Docs.md" />
     <Compile Include="Driver\ParseAndCheckInputs.fsi" />
     <Compile Include="Driver\ParseAndCheckInputs.fs" />
     <Compile Include="Driver\ScriptClosure.fsi" />

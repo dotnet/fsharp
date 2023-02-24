@@ -447,7 +447,7 @@ type LowerStateMachine(g: TcGlobals) =
         let res = 
             match expr with 
             | ResumableCodeInvoke g (_, _, _, m, _) ->
-                Result.Error (FSComp.SR.reprResumableCodeInvokeNotReduced(m.ToShortString()))
+                Result.Error (FSComp.SR.reprResumableCodeInvokeNotReduced(m.ToString()))
 
             // Eliminate 'if __useResumableCode ...' within.  
             | IfUseResumableStateMachinesExpr g (thenExpr, _) -> 

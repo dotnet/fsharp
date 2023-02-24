@@ -331,25 +331,25 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
     let rec processArg args =
         match args with
         | [] -> ()
-        | rsp: string :: t when rsp.StartsWithOrdinal("@") ->
+        | opt: string :: t when opt.StartsWithOrdinal("@") ->
             let responseFileOptions =
                 let fullpath =
                     try
-                        Some(rsp.TrimStart('@') |> FileSystem.GetFullPathShim)
+                        Some(opt.TrimStart('@') |> FileSystem.GetFullPathShim)
                     with _ ->
                         None
 
                 match fullpath with
                 | None ->
-                    errorR (Error(FSComp.SR.optsResponseFileNameInvalid rsp, rangeCmdArgs))
+                    errorR (Error(FSComp.SR.optsResponseFileNameInvalid opt, rangeCmdArgs))
                     []
                 | Some path when not (FileSystem.FileExistsShim path) ->
-                    errorR (Error(FSComp.SR.optsResponseFileNotFound (rsp, path), rangeCmdArgs))
+                    errorR (Error(FSComp.SR.optsResponseFileNotFound (opt, path), rangeCmdArgs))
                     []
                 | Some path ->
                     match ResponseFile.parseFile path with
                     | Choice2Of2 _ ->
-                        errorR (Error(FSComp.SR.optsInvalidResponseFile (rsp, path), rangeCmdArgs))
+                        errorR (Error(FSComp.SR.optsInvalidResponseFile (opt, path), rangeCmdArgs))
                         []
                     | Choice1Of2 rspData ->
                         let onlyOptions l =
@@ -508,7 +508,6 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
 // Compiler options
 //--------------------------------------------------------------------------
 
-let lexFilterVerbose = false
 let mutable enableConsoleColoring = true // global state
 
 let setFlag r n =
@@ -709,11 +708,9 @@ let tagModule = "module"
 let tagFile = "<file>"
 let tagFileList = "<file;...>"
 let tagDirList = "<dir;...>"
-let tagPathList = "<path;...>"
 let tagResInfo = "<resinfo>"
 let tagFullPDBOnlyPortable = "{full|pdbonly|portable|embedded}"
 let tagWarnList = "<warn;...>"
-let tagSymbolList = "<symbol;...>"
 let tagAddress = "<address>"
 let tagAlgorithm = "{SHA1|SHA256}"
 let tagInt = "<n>"
@@ -768,24 +765,6 @@ let inputFileFlagsBoth (tcConfigB: TcConfigBuilder) =
             Some(FSComp.SR.optsCompilerTool ())
         )
     ]
-
-let referenceFlagAbbrev (tcConfigB: TcConfigBuilder) =
-    CompilerOption(
-        "r",
-        tagFile,
-        OptionString(fun s -> tcConfigB.AddReferencedAssemblyByPath(rangeStartup, s)),
-        None,
-        Some(FSComp.SR.optsShortFormOf ("--reference"))
-    )
-
-let compilerToolFlagAbbrev (tcConfigB: TcConfigBuilder) =
-    CompilerOption(
-        "t",
-        tagFile,
-        OptionString(fun s -> tcConfigB.AddCompilerToolsByPath s),
-        None,
-        Some(FSComp.SR.optsShortFormOf ("--compilertool"))
-    )
 
 let inputFileFlagsFsc tcConfigB = inputFileFlagsBoth tcConfigB
 
@@ -1393,7 +1372,18 @@ let testFlag tcConfigB =
             | "ShowLoadedAssemblies" -> tcConfigB.showLoadedAssemblies <- true
             | "ContinueAfterParseFailure" -> tcConfigB.continueAfterParseFailure <- true
             | "ParallelOff" -> tcConfigB.concurrentBuild <- false
-            | "ParallelCheckingWithSignatureFilesOn" -> tcConfigB.parallelCheckingWithSignatureFiles <- true
+            | "ParallelIlxGen" -> tcConfigB.parallelIlxGen <- true
+            | "GraphBasedChecking" ->
+                tcConfigB.typeCheckingConfig <-
+                    { tcConfigB.typeCheckingConfig with
+                        Mode = TypeCheckingMode.Graph
+                    }
+            | "DumpCheckingGraph" ->
+                tcConfigB.typeCheckingConfig <-
+                    { tcConfigB.typeCheckingConfig with
+                        DumpGraph = true
+                    }
+            | "DumpSignatureData" -> tcConfigB.dumpSignatureData <- true
 #if DEBUG
             | "ShowParserStackOnParseError" -> showParserStackOnParseError <- true
 #endif
@@ -2334,29 +2324,6 @@ let ApplyCommandLineArgs (tcConfigB: TcConfigBuilder, sourceFiles: string list, 
     with e ->
         errorRecovery e range0
         sourceFiles
-
-//----------------------------------------------------------------------------
-// PrintWholeAssemblyImplementation
-//----------------------------------------------------------------------------
-
-let mutable showTermFileCount = 0
-
-let PrintWholeAssemblyImplementation (tcConfig: TcConfig) outfile header expr =
-    if tcConfig.showTerms then
-        if tcConfig.writeTermsToFiles then
-            let fileName = outfile + ".terms"
-
-            use f =
-                FileSystem
-                    .OpenFileForWriteShim(fileName + "-" + string showTermFileCount + "-" + header, FileMode.Create)
-                    .GetWriter()
-
-            showTermFileCount <- showTermFileCount + 1
-            LayoutRender.outL f (Display.squashTo 192 (DebugPrint.implFilesL expr))
-        else
-            dprintf "\n------------------\nshowTerm: %s:\n" header
-            LayoutRender.outL stderr (Display.squashTo 192 (DebugPrint.implFilesL expr))
-            dprintf "\n------------------\n"
 
 //----------------------------------------------------------------------------
 // ReportTime
