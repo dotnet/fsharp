@@ -390,8 +390,7 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
                     .Replace("$(SCRIPTEXTENSION)", scriptExt)
 
             let generateProjectNugetConfigFile =
-                generateProjectNugetConfigFile
-                    .Replace("$(NUGET_SOURCES)", generatedNugetSources)
+                generateProjectNugetConfigFile.Replace("$(NUGET_SOURCES)", generatedNugetSources)
 
             let timeout =
                 match package_timeout with
@@ -491,7 +490,15 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
                 match tryGetResultsForResolutionHash resolutionHash projectDirectory with
                 | Some resolutionResult -> true, resolutionResult
                 | None ->
-                    false, prepareDependencyResolutionFiles (scriptDirectory, scriptExt, packageManagerTextLines, targetFrameworkMoniker, runtimeIdentifier, timeout)
+                    false,
+                    prepareDependencyResolutionFiles (
+                        scriptDirectory,
+                        scriptExt,
+                        packageManagerTextLines,
+                        targetFrameworkMoniker,
+                        runtimeIdentifier,
+                        timeout
+                    )
 
             match resolutionResult.resolutionsFile with
             | Some file ->
