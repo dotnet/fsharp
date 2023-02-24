@@ -347,6 +347,7 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
 
     let prepareDependencyResolutionFiles
         (
+            scriptDirectory: string,
             scriptExt: string,
             directiveLines: (string * string) seq,
             targetFrameworkMoniker: string,
@@ -368,6 +369,9 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
             |> List.map FSharpDependencyManager.formatPackageReference
             |> Seq.concat
 
+        let generatedNugetSources =
+            generateSourcesFromNugetConfigs scriptDirectory projectDirectory.Value timeout
+
         let packageReferenceText = String.Join(Environment.NewLine, packageReferenceLines)
 
         let projectPath = Path.Combine(projectDirectory.Value, "Project.fsproj")
@@ -384,6 +388,10 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
                     .Replace("$(RUNTIMEIDENTIFIER)", runtimeIdentifier)
                     .Replace("$(PACKAGEREFERENCES)", packageReferenceText)
                     .Replace("$(SCRIPTEXTENSION)", scriptExt)
+
+            let generateProjectNugetConfigFile =
+                generateProjectNugetConfigFile
+                    .Replace("$(NUGET_SOURCES)", generatedNugetSources)
 
             let timeout =
                 match package_timeout with
@@ -471,15 +479,10 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
             | _ -> "#r @\""
 
         let generateAndBuildProjectArtifacts =
-            let configIncludes =
-                generateSourcesFromNugetConfigs scriptDirectory projectDirectory.Value timeout
-
-            let directiveLines = Seq.append packageManagerTextLines configIncludes
-
             let resolutionHash =
                 FSharpDependencyManager.computeHashForResolutionInputs (
                     scriptExt,
-                    directiveLines,
+                    packageManagerTextLines,
                     targetFrameworkMoniker,
                     runtimeIdentifier
                 )
@@ -488,7 +491,7 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
                 match tryGetResultsForResolutionHash resolutionHash projectDirectory with
                 | Some resolutionResult -> true, resolutionResult
                 | None ->
-                    false, prepareDependencyResolutionFiles (scriptExt, directiveLines, targetFrameworkMoniker, runtimeIdentifier, timeout)
+                    false, prepareDependencyResolutionFiles (scriptDirectory, scriptExt, packageManagerTextLines, targetFrameworkMoniker, runtimeIdentifier, timeout)
 
             match resolutionResult.resolutionsFile with
             | Some file ->

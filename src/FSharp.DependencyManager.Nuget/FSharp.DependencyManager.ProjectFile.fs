@@ -199,6 +199,7 @@ $(PACKAGEREFERENCES)
 <configuration>
   <packageSources>
     <clear />
+$(NUGET_SOURCES)
   </packageSources>
 </configuration>
     """
