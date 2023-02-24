@@ -219,8 +219,9 @@ devenv.exe /rootsuffix RoslynDev
 
 ### Deploy your changes into a current Visual Studio installation
 
-If you'd like to "run with your changes", you can produce a VSIX and install it into your current Visual Studio instance:
+If you'd like to "run with your changes", you can produce a VSIX and install it into your current Visual Studio instance.
 
+For this, run the following using the VS Developer PowerShell from the repo root:
 ```shell
 VSIXInstaller.exe /u:"VisualFSharp"
 VSIXInstaller.exe artifacts\VSSetup\Release\VisualFSharpDebug.vsix
