@@ -742,6 +742,16 @@ val internal ResolveField:
     allFields: Ident list ->
         FieldResolution list
 
+/// Resolve a long identifier to a nested field
+val internal ResolveNestedField:
+    sink: TcResultsSink ->
+    ncenv: NameResolver ->
+    nenv: NameResolutionEnv ->
+    ad: AccessorDomain ->
+    ty: TType ->
+    lid: Ident list ->
+        Ident list * Ident list
+
 /// Resolve a long identifier occurring in an expression position
 val internal ResolveExprLongIdent:
     sink: TcResultsSink ->

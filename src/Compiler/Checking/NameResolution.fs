@@ -3692,6 +3692,116 @@ let ResolveField sink ncenv nenv ad ty mp id allFields =
         ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.UseInType, ad, resInfo, checker)
         rfref)
 
+/// Resolve a long identifier representing a nested record field
+let ResolveNestedField sink (ncenv: NameResolver) nenv ad ty lid =
+    let typeNameResInfo = TypeNameResolutionInfo.Default
+    let g = ncenv.g
+
+    let lookupFld ty (id: Ident) =
+        let m = id.idRange
+        let otherRecdFlds ty =
+            let typeName = NicePrint.minimalStringOfType nenv.eDisplayEnv ty
+            [
+                for KeyValue (_, v) in nenv.eFieldLabels do
+                    match v |> List.tryFind (fun r -> r.TyconRef.DisplayName = typeName) with
+                    | Some rfref -> yield rfref.RecdField.Id
+                    | None  -> () 
+            ]
+
+        let lookup() =
+            let frefs = 
+                match (Map.tryFind id.idText nenv.eFieldLabels) with
+                | Some field -> success field
+                | None -> raze (SuggestLabelsOfRelatedRecords g nenv id (otherRecdFlds ty))
+
+            // Eliminate duplicates arising from multiple 'open' 
+            frefs 
+            |?> ListSet.setify (fun fref1 fref2 -> tyconRefEq g fref1.TyconRef fref2.TyconRef)
+            |?> List.map (fun rfref -> FieldResolution(FreshenRecdFieldRef ncenv m rfref, false))
+
+        if isAppTy g ty then 
+            match ncenv.InfoReader.TryFindRecdOrClassFieldInfoOfType(id.idText,m,ty) with
+            | ValueSome (RecdFieldInfo (_, rfref)) -> success [ FieldResolution(FreshenRecdFieldRef ncenv m rfref, false) ]
+            | _ ->
+                if isRecdTy g ty then
+                    // record label doesn't belong to record type -> suggest other labels of same record
+                    let suggestLabels addToBuffer = 
+                        for label in SuggestOtherLabelsOfSameRecordType g nenv ty id (otherRecdFlds ty) do
+                            addToBuffer label
+
+                    let typeName = NicePrint.minimalStringOfType nenv.eDisplayEnv ty
+                    let errorText = FSComp.SR.nrRecordDoesNotContainSuchLabel(typeName,id.idText)
+                    raze (ErrorWithSuggestions(errorText, m, id.idText, suggestLabels))
+                else
+                    lookup()
+        else 
+            lookup()
+
+    let access, flds =
+        match lid with
+        | [] -> [], []
+        | [ id ] -> [], lookupFld ty id |> ForceRaise
+        | id :: _ ->
+            let fldSearch () =
+                match lid with
+                | id :: rest ->
+                    lookupFld ty id
+                    |?> List.map (fun (FieldResolution (rfinfo, dep)) ->
+                        let ref = rfinfo.RecdFieldRef
+                        FieldResolution(rfinfo, dep), ref.FieldName, ref.RecdField.FormalType, rest)
+                | _ -> NoResultsOrUsefulErrors
+
+            let tyconSearch ad () =
+                match lid with
+                | tn :: id :: rest ->
+                    let m = tn.idRange
+                    let tcrefs = LookupTypeNameInEnvNoArity OpenQualified tn.idText nenv
+                    if isNil tcrefs then NoResultsOrUsefulErrors else
+                    let tcrefs = tcrefs |> List.map (fun tcref -> (ResolutionInfo.Empty,tcref))
+
+                    ResolveLongIdentInTyconRefs ResultCollectionSettings.AllResults ncenv nenv LookupKind.RecdField 1 m ad id rest typeNameResInfo tn.idRange tcrefs
+                    |?> List.choose (fun x ->
+                        match x with
+                        | _, Item.RecdField (RecdFieldInfo (_, rfref)), rest ->Some(FieldResolution(FreshenRecdFieldRef ncenv m rfref, false), rfref.FieldName, rfref.RecdField.FormalType, rest)
+                        | _ -> None)
+                | _ -> NoResultsOrUsefulErrors
+
+            let moduleOrNsSearch ad () =
+                match lid with
+                | [] -> NoResultsOrUsefulErrors
+                | id :: rest ->
+                    let m = id.idRange
+
+                    ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m OpenQualified nenv ad id rest false (ResolveFieldInModuleOrNamespace ncenv nenv ad)
+                    |?> List.map (fun (_, FieldResolution(rfinfo, dep), rest) ->
+                        let ref = rfinfo.RecdFieldRef
+                        FieldResolution(rfinfo, dep), ref.FieldName, ref.RecdField.FormalType, rest)
+
+            let item, fldIdText, fldTy, rest =
+                fldSearch () +++ moduleOrNsSearch ad +++ tyconSearch ad +++ moduleOrNsSearch AccessibleFromSomeFSharpCode +++ tyconSearch AccessibleFromSomeFSharpCode
+                |> AtMostOneResult id.idRange
+                |> ForceRaise
+
+            let idsBeforeField = lid |> List.takeWhile (fun id -> id.idText <> fldIdText)
+
+            match rest with
+            | [] -> idsBeforeField, [ item ]
+            | _ ->  
+                let rec nestedFieldSearch flds ty =
+                    function
+                    | [] -> flds
+                    | id :: rest -> 
+                        let resolved = lookupFld ty id |> ForceRaise
+                        let fldTy =
+                            match resolved with
+                            | [ FieldResolution (rfinfo, _) ] -> rfinfo.RecdField.FormalType
+                            | _ -> ty
+                        nestedFieldSearch (flds @ resolved) fldTy rest
+
+                idsBeforeField, item :: (nestedFieldSearch [] fldTy rest)
+
+    access, flds |> List.map (fun (FieldResolution (rfinfo, _)) -> lid |> List.find (fun id -> id.idText = rfinfo.RecdFieldRef.FieldName))
+
 /// Resolve F#/IL "." syntax in expressions (2).
 ///
 /// We have an expr. on the left, and we do an access, e.g.
