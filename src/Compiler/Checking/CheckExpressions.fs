@@ -7317,10 +7317,10 @@ and TcRecdExpr cenv (overallTy: TType) env tpenv (inherits, withExprOpt, synRecd
 
                 (lid, lid |> combineIds |> calcLidSeparatorRanges)
 
-            let totalRange (origId : Ident) (id : Ident) =
+            let totalRange (origId: Ident) (id: Ident) =
                 mkRange origId.idRange.FileName origId.idRange.End id.idRange.Start
 
-            let rangeOfBlockSeperator (id : Ident) =
+            let rangeOfBlockSeperator (id: Ident) =
                 let idEnd = id.idRange.End
                 let blockSeperatorStartCol = idEnd.Column
                 let blockSeperatorEndCol = blockSeperatorStartCol + 4

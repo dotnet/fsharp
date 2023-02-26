@@ -3757,7 +3757,7 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad ty lid =
                     let m = tn.idRange
                     let tcrefs = LookupTypeNameInEnvNoArity OpenQualified tn.idText nenv
                     if isNil tcrefs then NoResultsOrUsefulErrors else
-                    let tcrefs = tcrefs |> List.map (fun tcref -> (ResolutionInfo.Empty,tcref))
+                    let tcrefs = tcrefs |> List.map (fun tcref -> (ResolutionInfo.Empty, tcref))
 
                     ResolveLongIdentInTyconRefs ResultCollectionSettings.AllResults ncenv nenv LookupKind.RecdField 1 m ad id rest typeNameResInfo tn.idRange tcrefs
                     |?> List.choose (fun x ->
@@ -4809,11 +4809,7 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics ty (
         let amap = ncenv.amap
 
         match item with
-        | Item.RecdField _ ->
-            yield!
-                ncenv.InfoReader.GetRecordOrClassFieldsOfType(None, ad, m, ty)
-                |> List.filter (fun rfref -> rfref.IsStatic = statics  &&  IsFieldInfoAccessible ad rfref)
-                |> List.map Item.RecdField
+        | Item.RecdField _ -> yield! ResolveRecordOrClassFieldsOfType ncenv m ad ty statics
         | Item.UnionCase _ ->
             if statics then
                 match tryAppTy g ty with

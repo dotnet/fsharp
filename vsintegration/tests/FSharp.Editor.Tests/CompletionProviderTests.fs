@@ -1314,3 +1314,69 @@ type A =
 
         // Attribute on enum case - All settable properties available
         VerifyCompletionList(fileContents, "| [<Lang(l", [ "langParam"; "LangMember1"; "LangMember2" ], [])
+
+    [<Fact>]
+    let ``Completion list for nested copy and update contains correct record fields, nominal`` () =
+        let fileContents =
+            """
+type AnotherNestedRecTy = { A: int }
+
+type NestdRecTy = { B: string; C: AnotherNestedRecTy }
+
+module F =
+    type RecTy = { D: NestdRecTy; E: string option }
+
+open F
+
+let t1 = { D = { B = "t1"; C = { A = 1; } }; E = None; }
+
+let t2 = { t1 with D.B = "12" }
+
+let t3 = { t2 with F.RecTy.d }
+
+let t4 = { t2 with F.RecTy.D. }
+
+let t5 = { t2 with F.RecTy.D.C. }
+
+let t6 = { t2 with E. }
+
+let t7 = { t2 with D.B. }
+
+let t8 = { t2 with F. }
+
+let t9 = { t2 with d }
+
+let t10 x = { x with d } 
+
+let t11 = { t2 with NestdRecTy.C. }
+
+let t12 x = { x with F.RecTy.d }
+
+let t13 x = { x with RecTy.D. }
+"""
+
+        VerifyCompletionListExactly(fileContents, "t1 with ", [ "D"; "E" ])
+        VerifyCompletionListExactly(fileContents, "t1 with D.", [ "B"; "C" ])
+
+        VerifyCompletionListExactly(fileContents, "let t3 = { t2 with F.RecTy.d", [ "D"; "E" ])
+
+        VerifyCompletionListExactly(fileContents, "let t4 = { t2 with F.RecTy.D.", [ "B"; "C" ])
+
+        VerifyCompletionListExactly(fileContents, "let t5 = { t2 with F.RecTy.D.C.", [ "A" ])
+
+        VerifyNoCompletionList(fileContents, "let t6 = { t2 with E.")
+
+        VerifyNoCompletionList(fileContents, "let t7 = { t2 with D.B.")
+
+        VerifyCompletionListExactly(fileContents, "let t8 = { t2 with F.", [ "D"; "E"; "RecTy" ])
+
+        VerifyCompletionListExactly(fileContents, "let t9 = { t2 with d", [ "D"; "E" ])
+
+        // The type of `x` is not known, so show fields of records in scope
+        VerifyCompletionList(fileContents, "let t10 x = { x with d", [ "A"; "B"; "C"; "D"; "E" ], [])
+
+        VerifyNoCompletionList(fileContents, "let t11 = { t2 with NestdRecTy.C.")
+
+        VerifyCompletionListExactly(fileContents, "let t12 x = { x with F.RecTy.d", [ "D"; "E" ])
+
+        VerifyCompletionListExactly(fileContents, "let t13 x = { x with RecTy.D.", [ "B"; "C" ])

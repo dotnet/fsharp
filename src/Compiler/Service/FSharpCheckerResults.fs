@@ -643,24 +643,37 @@ type internal TypeCheckInfo
         let thereWereSomeQuals = not (Array.isEmpty quals)
         thereWereSomeQuals, quals
 
-    /// obtains captured typing for the given position
-    /// if type of captured typing is record - returns list of record fields
-    let GetRecdFieldsForExpr (r: range) =
-        let _, quals = GetExprTypingForPosition(r.End)
+    /// Returns the list of available record fields, taking into account to potential nesting
+    let GetRecdFieldsForCopyAndUpdateExpr (identRange: range, plid: string list) =
+        let _, quals = GetExprTypingForPosition(identRange.End)
 
-        let bestQual =
-            match quals with
-            | [||] -> None
-            | quals ->
-                quals
-                |> Array.tryFind (fun (_, _, _, rq) ->
-                    ignore (r) // for breakpoint
-                    posEq r.Start rq.Start)
+        let rec dive (ty, nenv: NameResolutionEnv, ad, m) plid isPastTypePrefix wasPathEmpty =
+            if isRecdTy nenv.DisplayEnv.g ty then
+                let fields =
+                    ncenv.InfoReader.GetRecordOrClassFieldsOfType(None, ad, m, ty)
+                    |> List.filter (fun rfref -> not rfref.IsStatic && IsFieldInfoAccessible ad rfref)
+                
+                match plid with
+                | [] ->
+                    if wasPathEmpty || isPastTypePrefix then
+                        Some(fields |> List.map Item.RecdField, nenv.DisplayEnv, m)
+                    else
+                        None
+                | id :: rest ->
+                    match fields |> List.tryFind (fun f -> f.LogicalName = id) with
+                    | Some f -> dive (f.RecdField.FormalType, nenv, ad, m) rest true wasPathEmpty
+                    | _ ->
+                        // Field name can be optionally qualified
+                        // If we haven't matched a field name yet, keep peeling off the prefix
+                        if isPastTypePrefix then
+                            Some([], nenv.DisplayEnv, m)
+                        else
+                            dive (ty, nenv, ad, m) rest false wasPathEmpty
+            else
+                Some([], nenv.DisplayEnv, m)
 
-        match bestQual with
-        | Some (ty, nenv, ad, m) when isRecdTy nenv.DisplayEnv.g ty ->
-            let items = ResolveRecordOrClassFieldsOfType ncenv m ad ty false
-            Some(items, nenv.DisplayEnv, m)
+        match quals |> Array.tryFind (fun (_, _, _, rq) -> posEq identRange.Start rq.Start) with
+        | Some qual -> dive qual plid false plid.IsEmpty
         | _ -> None
 
     /// Looks at the exact expression types at the position to the left of the
@@ -1247,8 +1260,8 @@ type internal TypeCheckInfo
                 GetEnvironmentLookupResolutionsIncludingRecordFieldsAtPosition cursorPos [] envItems
 
             // Completion at ' { XXX = ... with ... } "
-            | Some (CompletionContext.RecordField (RecordContext.CopyOnUpdate (r, (plid, _)))) ->
-                match GetRecdFieldsForExpr(r) with
+            | Some (CompletionContext.RecordField (RecordContext.CopyOnUpdate (identRange, (plid, _)))) ->
+                match GetRecdFieldsForCopyAndUpdateExpr(identRange, plid) with
                 | None ->
                     Some(GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid, false))
                     |> Option.map toCompletionItems
@@ -1256,8 +1269,9 @@ type internal TypeCheckInfo
 
             // Completion at ' { XXX = ... with ... } "
             | Some (CompletionContext.RecordField (RecordContext.Constructor (typeName))) ->
-                Some(GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, [ typeName ], false))
-                |> Option.map toCompletionItems
+                GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, [ typeName ], false)
+                |> toCompletionItems
+                |> Some
 
             // No completion at '...: string'
             | Some (CompletionContext.RecordField (RecordContext.Declaration true)) -> None
