@@ -33,8 +33,9 @@ type PdbDebugInfo(debugInfo: string) =
     member _.InfoText = debugInfo
 
 type CompileOutput =
-    | Library
     | Exe
+    | Library
+    | Module
 
 type SourceCodeFile =
     {
@@ -489,7 +490,7 @@ module rec CompilerAssertHelpers =
         let isExe, sources, options, targetFramework, name =
             match cmpl with
             | Compilation(sources, output, options, targetFramework, _, name, _) ->
-                (match output with | Library -> false | Exe -> true),           // isExe
+                (match output with | Module -> false | Library -> false | Exe -> true),           // isExe
                 sources,
                 options,
                 targetFramework,
