@@ -131,14 +131,11 @@ but here has type
         compilation
         |> asExe
         |> compile
-        |> shouldFail
-        |> withDiagnostics [
-            (Warning 988, Line 1, Col 1, Line 1, Col 1, "Main module of program is empty: nothing will happen when it is run")
-        ]
+        |> shouldSucceed
 
     //NoMT	SOURCE=entrypointandFSI02.fsx SCFLAGS="--multiemit-" FSIMODE=EXEC COMPILE_ONLY=1				# entrypointandFSI02.fsx
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"entrypointandFSI02.fsx"|])>]
-    let ``W_NoEntryPointInLastModuleInsideMultipleNamespace_fsentrypointandFSI02_fsx`` compilation =
+    let ``entrypointandFSI02_fsx`` compilation =
         compilation
         |> asExe
         |> compile
