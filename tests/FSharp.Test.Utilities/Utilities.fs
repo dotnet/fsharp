@@ -8,11 +8,13 @@ open System.Reflection
 open System.Collections.Immutable
 open System.Diagnostics
 open System.Threading
+open System.Text
 open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
 open TestFramework
 open NUnit.Framework
+open System.Collections.Generic
 
 type TheoryForNETCOREAPPAttribute() =
     inherit Xunit.TheoryAttribute()
@@ -34,6 +36,83 @@ type FactForDESKTOPAttribute() =
 
 // This file mimics how Roslyn handles their compilation references for compilation testing
 module Utilities =
+
+    type CapturedTextReader() =
+        inherit TextReader()
+        let queue = Queue<char>()
+        member _.ProvideInput(text: string) =
+            for c in text.ToCharArray() do
+                queue.Enqueue(c)
+        override _.Peek() =
+            if queue.Count > 0 then queue.Peek() |> int else -1
+        override _.Read() =
+            if queue.Count > 0 then queue.Dequeue() |> int else -1
+
+    type RedirectConsoleInput() =
+        let oldStdIn = Console.In
+        let newStdIn = new CapturedTextReader()
+        do Console.SetIn(newStdIn)
+        member _.ProvideInput(text: string) =
+            newStdIn.ProvideInput(text)
+        interface IDisposable with
+            member _.Dispose() =
+                Console.SetIn(oldStdIn)
+                newStdIn.Dispose()
+
+    type EventedTextWriter() =
+        inherit TextWriter()
+        let sb = StringBuilder()
+        let lineWritten = Event<string>()
+        member _.LineWritten = lineWritten.Publish
+        override _.Encoding = Encoding.UTF8
+        override _.Write(c: char) =
+            if c = '\n' then
+                let line =
+                    let v = sb.ToString()
+                    if v.EndsWith("\r") then v.Substring(0, v.Length - 1)
+                    else v
+                sb.Clear() |> ignore
+                lineWritten.Trigger(line)
+            else sb.Append(c) |> ignore
+
+    type RedirectConsoleOutput() =
+        let outputProduced = Event<string>()
+        let errorProduced = Event<string>()
+        let oldStdOut = Console.Out
+        let oldStdErr = Console.Error
+        let newStdOut = new EventedTextWriter()
+        let newStdErr = new EventedTextWriter()
+
+        do newStdOut.LineWritten.Add outputProduced.Trigger
+        do newStdErr.LineWritten.Add errorProduced.Trigger
+        do Console.SetOut(newStdOut)
+        do Console.SetError(newStdErr)
+
+        member _.OutputProduced = outputProduced.Publish
+
+        member _.ErrorProduced = errorProduced.Publish
+
+        interface IDisposable with
+            member _.Dispose() =
+                Console.SetOut(oldStdOut)
+                Console.SetError(oldStdErr)
+                newStdOut.Dispose()
+                newStdErr.Dispose()
+
+    type RedirectConsoleToFiles() =
+        let redirector = new RedirectConsoleOutput()
+        let outputLines = StringBuilder()
+        let errorLines = StringBuilder()
+
+        do redirector.OutputProduced.Add (fun line -> outputLines.AppendLine line |>ignore)
+        do redirector.ErrorProduced.Add(fun line -> errorLines.AppendLine line |>ignore)
+
+        member _.Output () = outputLines.ToString()
+
+        member _.ErrorOutput () = errorLines.ToString()
+
+        interface IDisposable with
+            member _.Dispose() = (redirector :> IDisposable).Dispose()
 
     type Async with
         static member RunImmediate (computation: Async<'T>, ?cancellationToken ) =

@@ -342,14 +342,13 @@ module rec CompilerAssertHelpers =
                 yield "-o:" + outputFilePath
                 yield (if isExe then "--target:exe" else "--target:library")
                 yield! (defaultProjectOptions targetFramework).OtherOptions
-//                yield! TargetFrameworkUtil.getFileReferences targetFramework
                 yield! options
              |]
 
         // Generate a response file, purely for diagnostic reasons.
         File.WriteAllLines(Path.ChangeExtension(outputFilePath, ".rsp"), args)
-        let errors, _ = checker.Compile args |> Async.RunImmediate
-        errors, outputFilePath
+        let errors, rc = checker.Compile args |> Async.RunImmediate
+        errors, rc, outputFilePath
 
     let compileDisposable (outputDirectory:DirectoryInfo) isExe options targetFramework nameOpt (sources:SourceCodeFileKind list) =
         let disposeFile path =
@@ -461,11 +460,11 @@ module rec CompilerAssertHelpers =
                             let tmp = Path.Combine(outputPath.FullName, Path.ChangeExtension(fileName, ".dll"))
                             disposals.Add({ new IDisposable with member _.Dispose() = File.Delete tmp })
                             cmpl.EmitAsFile tmp
-                            (([||], tmp), []), false)
+                            (([||], 0, tmp), []), false)
 
             let compilationRefs =
                 compiledRefs
-                |> List.map (fun (((errors, outputFilePath), _), staticLink) ->
+                |> List.map (fun (((errors, _, outputFilePath), _), staticLink) ->
                     assertErrors 0 ignoreWarnings errors [||]
                     let rOption = "-r:" + outputFilePath
                     if staticLink then
@@ -483,7 +482,7 @@ module rec CompilerAssertHelpers =
 
             compilationRefs, deps
 
-    let compileCompilationAux outputDirectory (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : (FSharpDiagnostic[] * string) * string list =
+    let compileCompilationAux outputDirectory (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : (FSharpDiagnostic[] * int * string) * string list =
 
         let compilationRefs, deps = evaluateReferences outputDirectory disposals ignoreWarnings cmpl
         let isExe, sources, options, targetFramework, name =
@@ -595,7 +594,7 @@ open CompilerAssertHelpers
 type CompilerAssert private () =
 
     static let compileExeAndRunWithOptions options (source: SourceCodeFileKind) =
-        compile true options source (fun (errors, outputExe) ->
+        compile true options source (fun (errors, _, outputExe) ->
 
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
@@ -604,7 +603,7 @@ type CompilerAssert private () =
         )
 
     static let compileLibraryAndVerifyILWithOptions options (source: SourceCodeFileKind) (f: ILVerifier -> unit) =
-        compile false options source (fun (errors, outputFilePath) ->
+        compile false options source (fun (errors, _, outputFilePath) ->
             let errors =
                 errors |> Array.filter (fun x -> x.Severity = FSharpDiagnosticSeverity.Error)
             if errors.Length > 0 then
@@ -616,7 +615,7 @@ type CompilerAssert private () =
 
     static let compileLibraryAndVerifyDebugInfoWithOptions options (expectedFile: string) (source: SourceCodeFileKind) =
         let options = [| yield! options; yield"--test:DumpDebugInfo" |]
-        compile false options source (fun (errors, outputFilePath) ->
+        compile false options source (fun (errors, _, outputFilePath) ->
             let errors =
                 errors |> Array.filter (fun x -> x.Severity = FSharpDiagnosticSeverity.Error)
             if errors.Length > 0 then
@@ -652,7 +651,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
 
     static member CompileWithErrors(cmpl: Compilation, expectedErrors, ?ignoreWarnings) =
         let ignoreWarnings = defaultArg ignoreWarnings false
-        compileCompilation ignoreWarnings cmpl (fun ((errors, _), _) ->
+        compileCompilation ignoreWarnings cmpl (fun ((errors, _, _), _) ->
             assertErrors 0 ignoreWarnings errors expectedErrors)
 
     static member Compile(cmpl: Compilation, ?ignoreWarnings) =
@@ -681,7 +680,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         let beforeExecute = defaultArg beforeExecute copyDependenciesToOutputDir
         let newProcess = defaultArg newProcess false
         let onOutput = defaultArg onOutput (fun _ -> ())
-        compileCompilation ignoreWarnings cmpl (fun ((errors, outputFilePath), deps) ->
+        compileCompilation ignoreWarnings cmpl (fun ((errors, _, outputFilePath), deps) ->
             assertErrors 0 ignoreWarnings errors [||]
             beforeExecute outputFilePath deps
             if newProcess then
@@ -857,12 +856,12 @@ Updated automatically, please check diffs in your pull request, changes must be 
         CompilerAssert.TypeCheckWithErrors source [| expectedSeverity, expectedErrorNumber, expectedErrorRange, expectedErrorMsg |]
 
     static member CompileExeWithOptions(options, (source: SourceCodeFileKind)) =
-        compile true options source (fun (errors, _) ->
+        compile true options source (fun (errors, _, _) ->
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors))
 
     static member CompileExeWithOptions(options, (source: string)) =
-        compile true options (SourceCodeFileKind.Create("test.fs", source)) (fun (errors, _) ->
+        compile true options (SourceCodeFileKind.Create("test.fs", source)) (fun (errors, _, _) ->
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors))
 
