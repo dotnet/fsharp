@@ -99,7 +99,7 @@ module Utilities =
                 newStdOut.Dispose()
                 newStdErr.Dispose()
 
-    type RedirectConsoleToFiles() =
+    type RedirectConsole() =
         let redirector = new RedirectConsoleOutput()
         let outputLines = StringBuilder()
         let errorLines = StringBuilder()
