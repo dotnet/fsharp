@@ -586,7 +586,7 @@ module rec Compiler =
 
     let private compileFSharpCompilation compilation ignoreWarnings (cUnit: CompilationUnit) : CompilationResult =
 
-        use redirect = new RedirectConsoleToFiles()
+        use redirect = new RedirectConsole()
         let ((err: FSharpDiagnostic[], rc: int, outputFilePath: string), deps) =
             CompilerAssert.CompileRaw(compilation, ignoreWarnings)
 
