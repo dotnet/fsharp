@@ -504,18 +504,21 @@ module rec Compiler =
         | CS x -> CS { x with OutputType = outputType }
         | _ -> failwith "TODO: Implement where applicable."
 
+    let asExe (cUnit: CompilationUnit) : CompilationUnit =
+        withOutputType CompileOutput.Exe cUnit    
+    
     let asLibrary (cUnit: CompilationUnit) : CompilationUnit =
         withOutputType CompileOutput.Library cUnit
 
+    let asModule (cUnit: CompilationUnit) : CompilationUnit =
+        withOutputType CompileOutput.Module cUnit    
+    
     let asNetStandard20 (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
         | FS fs -> FS { fs with TargetFramework = TargetFramework.NetStandard20 }
         | CS _ -> failwith "References are not supported in CS"
         | IL _ ->  failwith "References are not supported in IL"
 
-    let asExe (cUnit: CompilationUnit) : CompilationUnit =
-        withOutputType CompileOutput.Exe cUnit    
-    
     let withPlatform (platform:ExecutionPlatform) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
         | FS _ ->
@@ -691,6 +694,7 @@ module rec Compiler =
             match csSource.OutputType with
             | Exe -> OutputKind.ConsoleApplication, "exe"
             | Library -> OutputKind.DynamicallyLinkedLibrary, "dll"
+            | Module -> OutputKind.NetModule, "mod"
 
         let cmpl =
           CSharpCompilation.Create(
