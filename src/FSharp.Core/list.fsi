@@ -10,7 +10,7 @@ open Microsoft.FSharp.Collections
 /// <summary>Contains operations for working with values of type <see cref="T:Microsoft.FSharp.Collections.list`1"/>.</summary>
 ///
 /// <namespacedoc><summary>Operations for collections such as lists, arrays, sets, maps and sequences. See also 
-///    <a href="https://docs.microsoft.com/dotnet/fsharp/language-reference/fsharp-collection-types">F# Collection Types</a> in the F# Language Guide.
+///    <a href="https://learn.microsoft.com/dotnet/fsharp/language-reference/fsharp-collection-types">F# Collection Types</a> in the F# Language Guide.
 /// </summary></namespacedoc>
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 [<RequireQualifiedAccess>]

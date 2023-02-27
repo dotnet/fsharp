@@ -13,7 +13,7 @@ open System.Reflection
 ///
 /// <namespacedoc><summary>
 ///   Library functionality for F# quotations.
-///    See also <a href="https: //docs.microsoft.com/dotnet/fsharp/language-reference/code-quotations">F# Code Quotations</a> in the F# Language Guide.
+///    See also <a href="https://learn.microsoft.com/dotnet/fsharp/language-reference/code-quotations">F# Code Quotations</a> in the F# Language Guide.
 /// </summary></namespacedoc>
 [<Sealed>]
 [<CompiledName("FSharpVar")>]

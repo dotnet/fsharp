@@ -7,8 +7,8 @@ open Microsoft.FSharp.Collections
 
 /// <summary>Functional programming operators for string processing.  Further string operations
 /// are available via the member functions on strings and other functionality in
-///  <a href="http://msdn2.microsoft.com/en-us/library/system.string.aspx">System.String</a>
-/// and <a href="http://msdn2.microsoft.com/library/system.text.regularexpressions.aspx">System.Text.RegularExpressions</a> types.
+///  <a href="https://learn.microsoft.com/dotnet/api/system.string">System.String</a>
+/// and <a href="https://learn.microsoft.com/dotnet/api/system.text.regularexpressions">System.Text.RegularExpressions</a> types.
 /// </summary>
 ///
 /// <category>Strings and Text</category>

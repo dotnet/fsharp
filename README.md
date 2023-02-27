@@ -47,7 +47,7 @@ After it's finished, open `FSharp.sln` in your editor of choice.
 
 ### Documentation for F# community
 
-* [The F# Documentation](https://docs.microsoft.com/dotnet/fsharp/) is the primary documentation for F#. The source for the content is [here](https://github.com/dotnet/docs/tree/main/docs/fsharp).
+* [The F# Documentation](https://learn.microsoft.com/dotnet/fsharp/) is the primary documentation for F#. The source for the content is [here](https://github.com/dotnet/docs/tree/main/docs/fsharp).
 
 * [The F# Language Design Process](https://github.com/fsharp/fslang-design/) is the fundamental design process for the language, from [suggestions](https://github.com/fsharp/fslang-suggestions) to completed RFCs.  There are also [tooling RFCs](https://github.com/fsharp/fslang-design/tree/main/tooling) for some topics where cross-community co-operation and visibility is most useful.
 
@@ -106,7 +106,7 @@ Additionally, you can use the `#fsharp` tag on Twitter if you have general F# qu
 
 If you're curious about F# itself, check out these links:
 
-* [What is F#](https://docs.microsoft.com/dotnet/fsharp/what-is-fsharp)
-* [Get started with F#](https://docs.microsoft.com/dotnet/fsharp/get-started/)
+* [What is F#](https://learn.microsoft.com/dotnet/fsharp/what-is-fsharp)
+* [Get started with F#](https://learn.microsoft.com/dotnet/fsharp/get-started/)
 * [F# Software Foundation](https://fsharp.org)
 * [F# Testimonials](https://fsharp.org/testimonials)
