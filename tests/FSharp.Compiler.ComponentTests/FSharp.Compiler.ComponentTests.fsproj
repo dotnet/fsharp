@@ -210,6 +210,7 @@
     <Compile Include="CompilerOptions\fsc\codepage\codepage.fs" />
     <Compile Include="CompilerOptions\fsc\debug.fs" />
     <Compile Include="CompilerOptions\fsc\langversion.fs" />
+    <Compile Include="CompilerOptions\fsc\misc\misc.fs" />
     <Compile Include="CompilerOptions\fsc\noframework\noframework.fs" />
     <Compile Include="CompilerOptions\fsc\platform\platform.fs" />
     <Compile Include="CompilerOptions\fsc\times\times.fs" />
