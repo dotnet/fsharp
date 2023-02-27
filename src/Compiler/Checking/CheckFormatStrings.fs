@@ -56,6 +56,13 @@ let escapeDotnetFormatString str =
     |> Seq.collect (fun x -> if x = '{' || x = '}' then [x;x] else [x])
     |> System.String.Concat
 
+[<return: Struct>]
+let (|PrefixedBy|_|) (prefix: string) (str: string) =
+    if str.StartsWith prefix then
+        ValueSome prefix.Length
+    else
+        ValueNone
+
 let makeFmts (context: FormatStringCheckContext) (fragRanges: range list) (fmt: string) =
     // Splits the string on interpolation holes based on fragment ranges.
     // Returns a list of tuples in the form of: offset * fragment as a string * original range of the fragment
@@ -64,12 +71,6 @@ let makeFmts (context: FormatStringCheckContext) (fragRanges: range list) (fmt: 
     let numFrags = fragRanges.Length
     let sourceText = context.SourceText
     let lineStartPositions = context.LineStartPositions
-
-    let (|PrefixedBy|_|) (prefix: string) (str: string) =
-        if str.StartsWith prefix then
-            Some prefix.Length
-        else
-            None
 
     let mutable nQuotes = 1
     [ for i, r in List.indexed fragRanges do
