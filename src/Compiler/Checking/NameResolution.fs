@@ -3696,6 +3696,7 @@ let ResolveField sink ncenv nenv ad ty mp id allFields =
 let ResolveNestedField sink (ncenv: NameResolver) nenv ad ty lid =
     let typeNameResInfo = TypeNameResolutionInfo.Default
     let g = ncenv.g
+    let isAnonRecd = isAnonRecdTy g ty
 
     let lookupFld ty (id: Ident) =
         let m = id.idRange
@@ -3708,6 +3709,8 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad ty lid =
         | _ ->
             let otherRecdFlds ty =
                 let typeName = NicePrint.minimalStringOfType nenv.eDisplayEnv ty
+
+                // todo investigate refactoring
                 [
                     for KeyValue (_, v) in nenv.eFieldLabels do
                         match v |> List.tryFind (fun r -> r.TyconRef.DisplayName = typeName) with
@@ -3717,7 +3720,7 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad ty lid =
 
             let lookup() =
                 let frefs = 
-                    match (Map.tryFind id.idText nenv.eFieldLabels) with
+                    match Map.tryFind id.idText nenv.eFieldLabels with
                     | Some field -> success field
                     | None -> raze (SuggestLabelsOfRelatedRecords g nenv id (otherRecdFlds ty))
 
@@ -3791,11 +3794,21 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad ty lid =
                         Choice1Of2(FieldResolution(rfinfo, dep)), ref.FieldName, ref.RecdField.FormalType, rest)
 
             let item, fldIdText, fldTy, rest =
-                fldSearch () +++ moduleOrNsSearch ad +++ tyconSearch ad +++ moduleOrNsSearch AccessibleFromSomeFSharpCode +++ tyconSearch AccessibleFromSomeFSharpCode
+                let search =
+                    if isAnonRecd then
+                        fldSearch ()
+                    else
+                        fldSearch () +++ moduleOrNsSearch ad +++ tyconSearch ad +++ moduleOrNsSearch AccessibleFromSomeFSharpCode +++ tyconSearch AccessibleFromSomeFSharpCode
+
+                search
                 |> AtMostOneResult id.idRange
                 |> ForceRaise
 
-            let idsBeforeField = lid |> List.takeWhile (fun id -> id.idText <> fldIdText)
+            let idsBeforeField =
+                if isAnonRecd then
+                    []
+                else
+                    lid |> List.takeWhile (fun id -> id.idText <> fldIdText)
 
             match rest with
             | [] -> idsBeforeField, [ item ]

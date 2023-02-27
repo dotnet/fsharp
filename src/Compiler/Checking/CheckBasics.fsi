@@ -127,6 +127,9 @@ type TcEnv =
         eLambdaArgInfos: ArgReprInfo list list
 
         eIsControlFlow: bool
+
+        /// Type checking an expanded nested copy-and-update record expression
+        eIsInNestedCopyAndUpdate: bool
     }
 
     member DisplayEnv: DisplayEnv

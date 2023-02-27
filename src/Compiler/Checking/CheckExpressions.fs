@@ -1852,6 +1852,94 @@ let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ((Ident list * Ident) * '
                 | _ -> error(Error(FSComp.SR.tcRecordFieldInconsistentTypes(), m)))
     tinst, tcref, fldsmap, List.rev rfldsList
 
+/// Merges updates to nested record fields on the same level in record copy-and-update
+let GroupUpdatesToNestedFields (fields: (bool * (Ident list * Ident) * SynExpr option) list) =
+    let rec groupIfNested res xs =
+        match xs with
+        | [] -> res
+        | x :: [] -> x :: res 
+        | x :: y :: ys ->
+            match x, y with
+            | (aIsNestedUpdate, lidwid, Some (SynExpr.Record (baseInfo, copyInfo, aFlds, m))), (bIsNestedUpdate, _, Some (SynExpr.Record (recordFields = bFlds))) ->
+                let reducedRecd = (aIsNestedUpdate || bIsNestedUpdate, lidwid, Some(SynExpr.Record (baseInfo, copyInfo, aFlds @ bFlds, m))) 
+                groupIfNested (reducedRecd :: res) ys
+            | (aIsNestedUpdate, lidwid, Some (SynExpr.AnonRecd (isStruct, copyInfo, aFlds, m, trivia))), (bIsNestedUpdate, _, Some (SynExpr.AnonRecd (recordFields = bFlds))) ->
+                let reducedRecd = (aIsNestedUpdate || bIsNestedUpdate, lidwid, Some(SynExpr.AnonRecd (isStruct, copyInfo, aFlds @ bFlds, m, trivia))) 
+                groupIfNested (reducedRecd :: res) ys
+            | _ -> groupIfNested (x :: res) (y :: ys)
+
+    fields
+    |> List.groupBy (fun (_, (_, field), _) -> field.idText)
+    |> List.collect (fun (_, fields) ->
+        if fields.Length < 2 then 
+            fields
+        else
+            groupIfNested [] fields)
+
+/// Expands a long identifier into nested copy-and-update expressions
+let TransformAstForNestedUpdates cenv env overallTy (lid: LongIdent) v withExpr =
+    let recdExprCopyInfo ids withExpr id =
+        let upToId origSepRng id lidwd =
+            let rec buildLid res (id: Ident) =
+                function
+                | [] -> res
+                | (h: Ident) :: t -> if h.idText = id.idText then h :: res else buildLid (h :: res) id t
+
+            let rec combineIds =
+                function
+                | [] | [_] -> []
+                | id1::id2::rest -> (id1, id2) :: (id2 :: rest |> combineIds)
+
+            let calcLidSeparatorRanges lid =
+                match lid with
+                | [] | [_] -> [origSepRng]
+                | _ :: t -> origSepRng :: List.map (fun (s: Ident, e: Ident) -> mkRange s.idRange.FileName s.idRange.End e.idRange.Start) t
+
+            let lid = buildLid [] id lidwd |> List.rev
+
+            (lid, lid |> combineIds |> calcLidSeparatorRanges)
+
+        let totalRange (origId: Ident) (id: Ident) =
+            mkRange origId.idRange.FileName origId.idRange.End id.idRange.Start
+
+        let rangeOfBlockSeperator (id: Ident) =
+            let idEnd = id.idRange.End
+            let blockSeperatorStartCol = idEnd.Column
+            let blockSeperatorEndCol = blockSeperatorStartCol + 4
+            let blockSeperatorStartPos = mkPos idEnd.Line blockSeperatorStartCol
+            let blockSeporatorEndPos = mkPos idEnd.Line blockSeperatorEndCol
+
+            mkRange id.idRange.FileName blockSeperatorStartPos blockSeporatorEndPos
+
+        match withExpr with 
+        | SynExpr.Ident origId, (sepRange, _) ->
+            let lid, rng = upToId sepRange id (origId :: ids)
+            Some (SynExpr.LongIdent (false, LongIdentWithDots(lid, rng), None, totalRange origId id), (rangeOfBlockSeperator id, None)) // TODO: id.idRange should be the range of the next separator
+        | _ -> None
+
+    let rec synExprRecd copyInfo (id: Ident) fields v =
+        match fields with 
+        | [] -> failwith "unreachable"
+        | (fldId, isAnon) :: rest -> 
+            // todo the unit
+            let nestedField = if rest.IsEmpty then Option.defaultValue (mkSynUnit range0) v else synExprRecd copyInfo fldId rest v
+
+            if isAnon then
+                // The correct structness will later be taken from the anynymous type, which already exists
+                SynExpr.AnonRecd(false, copyInfo id, [ ([ fldId ], None, nestedField) ], id.idRange, { OpeningBraceRange = range0 })
+            else
+                SynExpr.Record(None, copyInfo id, [ SynExprRecordField((LongIdentWithDots ([ fldId ], []), true), None, Some nestedField, None) ], id.idRange)
+
+    let access, flds = ResolveNestedField cenv.tcSink cenv.nameResolver env.eNameResEnv env.eAccessRights overallTy lid
+
+    match access, flds with
+    | [], [] -> None
+    | accessIds, [] -> Some (false, List.frontAndBack accessIds, v)
+    | accessIds, [ (fldId, _) ] -> Some (false, List.frontAndBack (accessIds @ [ fldId ]), v)
+    | accessIds, (fldId, _) :: rest ->
+        // todo remove the other some
+        Some (true, (accessIds, fldId), Some (synExprRecd (recdExprCopyInfo (flds |> List.map fst) withExpr) fldId rest v))
+
 let rec ApplyUnionCaseOrExn (makerForUnionCase, makerForExnTag) m (cenv: cenv) env overallTy item =
     let g = cenv.g
     let ad = env.eAccessRights
@@ -6565,7 +6653,7 @@ and TcRecordConstruction (cenv: cenv) (overallTy: TType) env tpenv withExprInfoO
         if not (Zset.subset ns2 ns1) then
             error(MissingFields(Zset.elements (Zset.diff ns2 ns1), m))
     | _ ->
-        if oldFldsList.IsEmpty then
+        if oldFldsList.IsEmpty && not env.eIsInNestedCopyAndUpdate then
             let enabledByLangFeature = g.langVersion.SupportsFeature LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields
             warning(ErrorEnabledWithLanguageFeature(FSComp.SR.tcCopyAndUpdateRecordChangesAllFields(fullDisplayTextOfTyconRef tcref), m, enabledByLangFeature))
 
@@ -7291,91 +7379,6 @@ and TcAssertExpr cenv overallTy env (m: range) tpenv x =
 
     TcExpr cenv overallTy env tpenv callDiagnosticsExpr
 
-and transformAstForNestedUpdates cenv env overallTy (lid: LongIdent) v withExprOpt =
-    let recdExprCopyInfo ids withExprOpt id =
-        let upToId origSepRng id lidwd =
-            let rec buildLid res (id: Ident) =
-                function
-                | [] -> res
-                | (h: Ident) :: t -> if h.idText = id.idText then h :: res else buildLid (h :: res) id t
-
-            let rec combineIds =
-                function
-                | [] | [_] -> []
-                | id1::id2::rest -> (id1, id2) :: (id2 :: rest |> combineIds)
-
-            let calcLidSeparatorRanges lid =
-                match lid with
-                | [] | [_] -> [origSepRng]
-                | _ :: t -> origSepRng :: List.map (fun (s : Ident, e : Ident) -> mkRange s.idRange.FileName s.idRange.End e.idRange.Start) t
-
-            let lid = buildLid [] id lidwd |> List.rev
-
-            (lid, lid |> combineIds |> calcLidSeparatorRanges)
-
-        let totalRange (origId: Ident) (id: Ident) =
-            mkRange origId.idRange.FileName origId.idRange.End id.idRange.Start
-
-        let rangeOfBlockSeperator (id: Ident) =
-            let idEnd = id.idRange.End
-            let blockSeperatorStartCol = idEnd.Column
-            let blockSeperatorEndCol = blockSeperatorStartCol + 4
-            let blockSeperatorStartPos = mkPos idEnd.Line blockSeperatorStartCol
-            let blockSeporatorEndPos = mkPos idEnd.Line blockSeperatorEndCol
-
-            mkRange id.idRange.FileName blockSeperatorStartPos blockSeporatorEndPos
-
-        match withExprOpt with 
-        | Some (SynExpr.Ident origId, (sepRange, _)) ->
-            let lid, rng = upToId sepRange id (origId :: ids)
-            Some (SynExpr.LongIdent (false, LongIdentWithDots(lid, rng), None, totalRange origId id), (rangeOfBlockSeperator id, None)) // TODO: id.idRange should be the range of the next separator
-        | _ -> None
-
-    let rec synExprRecd copyInfo (id: Ident) fields v =
-        match fields with 
-        | [] -> failwith "unreachable"
-        | (fldId, isAnon) :: rest -> 
-            // todo the unit
-            let nestedField = if rest.IsEmpty then Option.defaultValue (mkSynUnit range0) v else synExprRecd copyInfo fldId rest v
-
-            if isAnon then
-                // The correct structness will later be taken from the anynymous type, which already exists
-                SynExpr.AnonRecd(false, copyInfo id, [ (fldId, None, nestedField) ], id.idRange, { OpeningBraceRange = range0 })
-            else
-                SynExpr.Record(None, copyInfo id, [ SynExprRecordField((LongIdentWithDots ([ fldId ], []), true), None, Some nestedField, None) ], id.idRange)
-
-    let access, flds = ResolveNestedField cenv.tcSink cenv.nameResolver env.eNameResEnv env.eAccessRights overallTy lid
-
-    match access, flds with
-    | [], [] -> None
-    | accessIds, [] -> Some (List.frontAndBack accessIds, v)
-    | accessIds, [ (fldId, _) ] -> Some (List.frontAndBack (accessIds @ [ fldId ]), v)
-    | accessIds, (fldId, _) :: rest ->
-        Some ((accessIds, fldId), Some (synExprRecd (recdExprCopyInfo (flds |> List.map fst) withExprOpt) fldId rest v))
-
-and groupUpdatesToNestedFields (fields: ((Ident list * Ident) * SynExpr option) list) =
-    let rec groupIfNested res xs =
-        match xs with
-        | [] -> res
-        | x :: [] -> x :: res 
-        | x :: y :: ys ->
-            match x, y with
-            | (lidwid, Some (SynExpr.Record (baseInfo, copyInfo, aFlds, m))), (_, Some (SynExpr.Record (recordFields = bFlds))) ->
-                let reducedRecd = (lidwid, Some(SynExpr.Record (baseInfo, copyInfo, aFlds @ bFlds, m))) 
-                groupIfNested (reducedRecd :: res) ys
-            | (lidwid, Some (SynExpr.AnonRecd (isStruct, copyInfo, aFlds, m, trivia))), (_, Some (SynExpr.AnonRecd (recordFields = bFlds))) ->
-                let reducedRecd = (lidwid, Some(SynExpr.AnonRecd (isStruct, copyInfo, aFlds @ bFlds, m, trivia))) 
-                groupIfNested (reducedRecd :: res) ys
-            | _ -> groupIfNested (x :: res) (y :: ys)
-
-    fields
-    |> List.groupBy (fun ((_, field), _) -> field.idText)
-    |> List.collect (fun (_, fields) ->
-        if fields.Length < 2 then 
-            fields
-        else
-            groupIfNested [] fields)
-
 and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, mWholeExpr) =
     let g = cenv.g
 
@@ -7394,7 +7397,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
 
     let hasOrigExpr = withExprOptChecked.IsSome
 
-    let fldsList =
+    let fldsList, containsNestedUpdates =
         let flds =
             synRecdFields
             |> List.choose (fun (SynExprRecordField (fieldName = (synLongId, isOk); expr = v)) ->
@@ -7404,23 +7407,27 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
                     // we assume that parse errors were already reported
                     raise (ReportedError None)
 
-                match synLongId.LongIdent with
-                | [] -> None
-                | [ id ] -> Some (([], id), v)
-                | lid -> transformAstForNestedUpdates cenv env overallTy lid v withExprOpt)
-            |> groupUpdatesToNestedFields
+                match withExprOpt with
+                | Some withExpr ->
+                    match synLongId.LongIdent with
+                    | [] -> None
+                    | [ id ] -> Some (false, ([], id), v)
+                    | lid -> TransformAstForNestedUpdates cenv env overallTy lid v withExpr
+                | _ -> Some (false, List.frontAndBack synLongId.LongIdent, v))
+
+        let flds = if hasOrigExpr then GroupUpdatesToNestedFields flds else flds
 
         match flds with
-        | [] -> []
+        | [] -> [], false
         | _ ->
-            let tinst, tcref, _, fldsList = BuildFieldMap cenv env hasOrigExpr overallTy flds mWholeExpr
+            let tinst, tcref, _, fldsList = BuildFieldMap cenv env hasOrigExpr overallTy (flds |> List.map (fun (_, x, y) -> x, y)) mWholeExpr
             let gtyp = mkAppTy tcref tinst
             UnifyTypes cenv env mWholeExpr overallTy gtyp
 
             [ for n, v in fldsList do
                 match v with
                 | Some v -> yield n, v
-                | None -> () ]
+                | None -> () ], flds |> List.exists (fun (isNestedUpdate, _, _) -> isNestedUpdate)
 
     let withExprInfoOpt =
         match withExprOptChecked with
@@ -7462,7 +7469,8 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
             errorR(InternalError("Unexpected failure in getting super type", mWholeExpr))
             None, tpenv
 
-    let expr, tpenv = TcRecordConstruction cenv overallTy env tpenv withExprInfoOpt overallTy fldsList mWholeExpr
+    let envinner = if containsNestedUpdates then { env with eIsInNestedCopyAndUpdate = true } else env
+    let expr, tpenv = TcRecordConstruction cenv overallTy envinner tpenv withExprInfoOpt overallTy fldsList mWholeExpr
 
     let expr =
         match superInitExprOpt  with
@@ -7477,7 +7485,7 @@ and TcAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, optOrigSynExpr, 
 
     // Check for duplicate field IDs
     unsortedFieldIdsAndSynExprsGiven
-    |> List.countBy (fun (fId, _, _) -> fId.idText)
+    |> List.countBy (fun (fId, _, _) -> textOfLid fId)
     |> List.iter (fun (label, count) ->
         if count > 1 then error (Error (FSComp.SR.tcAnonRecdDuplicateFieldId(label), mWholeExpr)))
 
@@ -7492,7 +7500,7 @@ and TcNewAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, unsortedField
 
     let g = cenv.g
     let unsortedFieldSynExprsGiven = unsortedFieldIdsAndSynExprsGiven |> List.map (fun (_, _, fieldExpr) -> fieldExpr)
-    let unsortedFieldIds = unsortedFieldIdsAndSynExprsGiven |> List.map (fun (fieldId, _, _) -> fieldId) |> List.toArray
+    let unsortedFieldIds = unsortedFieldIdsAndSynExprsGiven |> List.map (fun (fieldId, _, _) -> fieldId[0]) |> List.toArray
     let anonInfo, sortedFieldTys = UnifyAnonRecdTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv mWholeExpr overallTy isStruct unsortedFieldIds
 
     // Sort into canonical order
@@ -7506,8 +7514,9 @@ and TcNewAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, unsortedField
     let sortedFieldExprs = sortedIndexedArgs |> List.map snd
 
     sortedFieldExprs |> List.iteri (fun j (fieldId, _, _) ->
-        let item = Item.AnonRecdField(anonInfo, sortedFieldTys, j, fieldId.idRange)
-        CallNameResolutionSink cenv.tcSink (fieldId.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights))
+        let m = rangeOfLid fieldId
+        let item = Item.AnonRecdField(anonInfo, sortedFieldTys, j, m)
+        CallNameResolutionSink cenv.tcSink (m, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights))
 
     let unsortedFieldTys =
         sortedFieldTys
@@ -7532,7 +7541,6 @@ and TcCopyAndUpdateAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, ori
     // Unlike in the case of record type copy-and-update {| a with X = 1 |} does not force a.X to exist or have had type 'int'
 
     let g = cenv.g
-    let unsortedFieldSynExprsGiven = unsortedFieldIdsAndSynExprsGiven |> List.map (fun (_, _, e) -> e)
     let origExprTy = NewInferenceType g
     let origExprChecked, tpenv = TcExpr cenv (MustEqual origExprTy) env tpenv origExpr
     let oldv, oldve = mkCompGenLocal mWholeExpr "inputRecord" origExprTy
@@ -7540,6 +7548,18 @@ and TcCopyAndUpdateAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, ori
 
     if not (isAppTy g origExprTy || isAnonRecdTy g origExprTy) then
         error (Error (FSComp.SR.tcCopyAndUpdateNeedsRecordType(), mOrigExpr))
+
+    // Expand expressions with respect to potential nesting
+    let unsortedFieldIdsAndSynExprsGiven =
+        unsortedFieldIdsAndSynExprsGiven
+        |> List.choose (fun (lid, _, e) ->
+            match lid with
+            | [] -> None
+            | [ id ] -> Some (false, ([], id), Some e) // todo remove options
+            | lid -> TransformAstForNestedUpdates cenv env origExprTy lid (Some e) (origExpr, (range0, range0)))
+        |> GroupUpdatesToNestedFields
+
+    let unsortedFieldSynExprsGiven = unsortedFieldIdsAndSynExprsGiven |> List.map (fun (_, _, e) -> e.Value) //todo
 
     let origExprIsStruct =
         match tryDestAnonRecdTy g origExprTy with
@@ -7556,7 +7576,7 @@ and TcCopyAndUpdateAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, ori
     ///   - Choice2Of2 for a binding coming from the original expression
     let unsortedIdAndExprsAll =
         [|
-            for id, _, e in unsortedFieldIdsAndSynExprsGiven do
+            for _, (_, id), e in unsortedFieldIdsAndSynExprsGiven do
                 yield (id, Choice1Of2 e)
             match tryDestAnonRecdTy g origExprTy with
             | ValueSome (anonInfo, tinst) ->
@@ -7607,6 +7627,12 @@ and TcCopyAndUpdateAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, ori
 
     // Check the expressions in unsorted order
     let unsortedFieldExprsGiven, tpenv =
+        let env =
+            if unsortedFieldIdsAndSynExprsGiven |> List.exists (fun (isNestedUpdate, _, _) -> isNestedUpdate) then
+                { env with eIsInNestedCopyAndUpdate = true }
+            else
+                env
+
         TcExprsWithFlexes cenv env mWholeExpr tpenv flexes unsortedFieldTysGiven unsortedFieldSynExprsGiven
 
     let unsortedFieldExprsGiven = unsortedFieldExprsGiven |> List.toArray
