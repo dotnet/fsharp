@@ -652,7 +652,7 @@ type internal TypeCheckInfo
                 let fields =
                     ncenv.InfoReader.GetRecordOrClassFieldsOfType(None, ad, m, ty)
                     |> List.filter (fun rfref -> not rfref.IsStatic && IsFieldInfoAccessible ad rfref)
-                
+
                 match plid with
                 | [] ->
                     if wasPathEmpty || isPastTypePrefix then
