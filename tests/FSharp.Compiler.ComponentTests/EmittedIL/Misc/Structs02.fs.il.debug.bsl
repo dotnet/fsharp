@@ -37,13 +37,13 @@
   // WARNING: managed resource file FSharpOptimizationData.Structs02 created
 }
 .module Structs02.exe
-// MVID: {63E6EA31-BE14-39D7-A745-038331EAE663}
+// MVID: {63EB287E-BE14-39D7-A745-03837E28EB63}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x000002A17A200000
+// Image base: 0x0000013176FA0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -66,6 +66,7 @@
     .method public hidebysig specialname 
             instance int32  get_hash() cil managed
     {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)

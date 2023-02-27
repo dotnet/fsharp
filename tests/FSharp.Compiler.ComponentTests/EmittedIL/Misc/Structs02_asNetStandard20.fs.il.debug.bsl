@@ -42,13 +42,13 @@
   // WARNING: managed resource file FSharpOptimizationData.Structs02_asNetStandard20 created
 }
 .module Structs02_asNetStandard20.dll
-// MVID: {63EADB4E-37AB-0DD0-A745-03834EDBEA63}
+// MVID: {63EC9609-37AB-0DD0-A745-03830996EC63}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x0000024835680000
+// Image base: 0x000001D3ECF40000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -71,6 +71,7 @@
     .method public hidebysig specialname 
             instance int32  get_hash() cil managed
     {
+      .custom instance void System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [netstandard]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [netstandard]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
@@ -385,8 +386,25 @@
 {
 } // end of class '<StartupCode$Structs02_asNetStandard20>.$Experiment'.Test
 
+.class private auto ansi beforefieldinit System.Runtime.CompilerServices.IsReadOnlyAttribute
+       extends [mscorlib]System.Attribute
+{
+  .method public specialname rtspecialname 
+          instance void  .ctor() cil managed
+  {
+    .custom instance void [netstandard]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [netstandard]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    // Code size       7 (0x7)
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  call       instance void [mscorlib]System.Attribute::.ctor()
+    IL_0006:  ret
+  } // end of method IsReadOnlyAttribute::.ctor
+
+} // end of class System.Runtime.CompilerServices.IsReadOnlyAttribute
+
 
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
-// WARNING: Created Win32 resource file C:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Debug\net472\tests\EmittedIL\Misc\Structs02_asNetStandard20_fs\Structs02_asNetStandard20.res
+// WARNING: Created Win32 resource file C:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\debug\net472\tests\EmittedIL\Misc\Structs02_asNetStandard20_fs\Structs02_asNetStandard20.res

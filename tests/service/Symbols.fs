@@ -373,3 +373,57 @@ let tester2: int Group = []
                 |> shouldEqual $"int array{rank}d"
 
             | other -> Assert.Fail(sprintf "myArr was supposed to be a value, but is %A"  other)
+
+    [<Test>]
+    let ``Unfinished long ident type `` () =
+        let _, checkResults = getParseAndCheckResults """
+let g (s: string) = ()
+
+let f1 a1 a2 a3 a4 =
+    if true then
+        a1
+        a2
+
+    a3
+    a4
+
+    g a2
+    g a4
+
+let f2 b1 b2 b3 b4 b5 =
+    if true then
+        b1.
+        b2.
+        b5.
+
+    b3.
+    b4.
+
+    g b2
+    g b4
+    g b5.
+"""
+        let symbolTypes = 
+            ["a1", Some "unit"
+             "a2", Some "unit"
+             "a3", Some "unit"
+             "a4", Some "unit"
+
+             "b1", None
+             "b2", Some "string"
+             "b3", None
+             "b4", Some "string"
+             "b5", None]
+            |> dict
+
+        for symbol in getSymbolUses checkResults |> getSymbols do
+            match symbol with
+            | :? FSharpMemberOrFunctionOrValue as mfv ->
+                match symbolTypes.TryGetValue(mfv.DisplayName) with
+                | true, Some expectedType ->
+                    mfv.FullType.TypeDefinition.DisplayName |> should equal expectedType
+                | true, None ->
+                    mfv.FullType.IsGenericParameter |> should equal true
+                    mfv.FullType.AllInterfaces.Count |> should equal 0
+                | _ -> ()
+            | _ -> ()
