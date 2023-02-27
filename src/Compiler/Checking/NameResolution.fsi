@@ -750,7 +750,7 @@ val internal ResolveNestedField:
     ad: AccessorDomain ->
     ty: TType ->
     lid: Ident list ->
-        Ident list * Ident list
+        Ident list * (Ident * bool) list
 
 /// Resolve a long identifier occurring in an expression position
 val internal ResolveExprLongIdent:
