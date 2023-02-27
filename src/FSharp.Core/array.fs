@@ -2072,3 +2072,158 @@ module Array =
                     iFalse <- iFalse + 1
 
             res1, res2
+
+        
+        // The following two parameters were benchmarked and found to be optimal.
+        // Benchmark was run using: 11th Gen Intel Core i9-11950H 2.60GHz, 1 CPU, 16 logical and 8 physical cores
+        let private maxPartitions = Environment.ProcessorCount // The maximum number of partitions to use
+        let private sequentialCutoffForSorting = 2_500  // Arrays smaller then this will be sorted sequentially
+        let private minChunkSize = 64 // The minimum size of a chunk to be sorted in parallel
+     
+        let private createPartitions (array : 'T[]) = 
+            [|
+                let chunkSize = 
+                    match array.Length with 
+                    | smallSize when smallSize < minChunkSize -> smallSize
+                    | biggerSize when biggerSize % maxPartitions = 0 -> biggerSize / maxPartitions
+                    | biggerSize -> (biggerSize / maxPartitions) + 1            
+         
+                let mutable offset = 0
+
+                while (offset+chunkSize) <= array.Length do       
+                    yield new ArraySegment<'T>(array, offset, chunkSize)
+                    offset <- offset + chunkSize
+
+                if (offset <> array.Length) then
+                    yield new ArraySegment<'T>(array, offset, array.Length - offset)                      
+            |]
+
+        let private prepareSortedRunsInPlaceWith array comparer = 
+            let partitions = createPartitions array
+            Parallel.For(0,partitions.Length,fun i ->  
+                Array.Sort(array,partitions[i].Offset,partitions[i].Count,comparer)              
+                ) |> ignore
+
+            partitions
+
+        let private prepareSortedRunsInPlace array keysArray = 
+            let partitions = createPartitions array
+            let keyComparer = LanguagePrimitives.FastGenericComparerCanBeNull
+            Parallel.For(0,partitions.Length,fun i ->  
+                Array.Sort<_,_>(keysArray, array,partitions[i].Offset,partitions[i].Count, keyComparer) 
+                ) |> ignore
+
+            partitions
+
+        let inline swap leftIdx rightIdx (array:'T[]) = 
+            let temp = array[leftIdx]
+            array[leftIdx] <- array[rightIdx]
+            array[rightIdx] <- temp
+
+        let private mergeTwoSortedConsequtiveSegmentsInPlaceByKeys (keysArray:'TKey[]) (left:ArraySegment<'T>) (right: ArraySegment<'T>)  =                   
+            let mutable leftIdx = left.Offset       
+            let leftMax,rightMax = left.Offset+left.Count, right.Offset+right.Count
+
+            while leftIdx<leftMax  do
+                while (leftIdx<leftMax) && (compare keysArray[leftIdx] keysArray[right.Offset]) <= 0 do
+                    leftIdx <- leftIdx + 1
+
+                let leftMostUnprocessed = keysArray[leftIdx]        
+                let mutable writableRightIdx = right.Offset
+                while (writableRightIdx < rightMax) && (compare leftMostUnprocessed keysArray[writableRightIdx]) > 0 do   
+                    keysArray |> swap leftIdx writableRightIdx
+                    left.Array |> swap leftIdx writableRightIdx
+                    writableRightIdx <- writableRightIdx + 1
+                    leftIdx <- leftIdx + 1
+
+            new ArraySegment<'T>(left.Array, left.Offset, left.Count + right.Count)
+
+        let private mergeTwoSortedConsequtiveSegmentsInPlaceWith (comparer:IComparer<'T>) (left:ArraySegment<'T>) (right: ArraySegment<'T>)  =        
+            let mutable leftIdx = left.Offset       
+            let leftMax,rightMax,fullArray = left.Offset+left.Count, right.Offset+right.Count, left.Array
+
+            while leftIdx<leftMax  do
+                while (leftIdx<leftMax) && comparer.Compare(fullArray[leftIdx],fullArray[right.Offset]) <= 0 do
+                    leftIdx <- leftIdx + 1
+
+                let leftMostUnprocessed = fullArray[leftIdx]        
+                let mutable writableRightIdx = right.Offset
+                while (writableRightIdx < rightMax) && comparer.Compare(leftMostUnprocessed,fullArray[writableRightIdx]) > 0 do                      
+                    fullArray |> swap leftIdx writableRightIdx
+                    writableRightIdx <- writableRightIdx + 1
+                    leftIdx <- leftIdx + 1
+
+            new ArraySegment<'T>(left.Array, left.Offset, left.Count + right.Count)
+
+        let rec mergeRunsInParallel (segmentsInOrder:ArraySegment<'T> []) pairwiseMerger = 
+            match segmentsInOrder with
+            | [|singleRun|] ->  singleRun
+            | [|first;second|] -> pairwiseMerger first second
+            | [||] -> invalidArg "runs" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
+            | threeOrMoreSegments ->   
+                let mutable left = None
+                let mutable right = None
+                let midIndex = threeOrMoreSegments.Length/2
+                Parallel.Invoke( 
+                    (fun () -> left <- Some (mergeRunsInParallel threeOrMoreSegments[0..midIndex-1] pairwiseMerger)),
+                    (fun () -> right <- Some (mergeRunsInParallel threeOrMoreSegments[midIndex..] pairwiseMerger)))
+                
+                pairwiseMerger left.Value right.Value
+
+        [<CompiledName("SortInPlaceWith")>]
+        let sortInPlaceWith comparer (array: 'T[]) =
+            checkNonNull "array" array
+            let comparer = ComparisonIdentity.FromFunction(comparer)  
+            if array.Length < sequentialCutoffForSorting then       
+                Array.Sort(array, comparer)
+            else
+                let preSortedPartitions = prepareSortedRunsInPlaceWith array comparer 
+                mergeRunsInParallel preSortedPartitions (mergeTwoSortedConsequtiveSegmentsInPlaceWith comparer) |> ignore
+
+        [<CompiledName("SortInPlaceBy")>]
+        let sortInPlaceBy (projection: 'T -> 'U) (array: 'T[]) =
+            checkNonNull "array" array
+            if array.Length < sequentialCutoffForSorting then
+                Microsoft.FSharp.Primitives.Basics.Array.unstableSortInPlaceBy projection array
+            else              
+                let projectedFields = map projection array
+                let preSortedPartitions = prepareSortedRunsInPlace array projectedFields            
+                mergeRunsInParallel preSortedPartitions (mergeTwoSortedConsequtiveSegmentsInPlaceByKeys projectedFields) |> ignore        
+            
+        [<CompiledName("SortInPlace")>]
+        let sortInPlace (array: 'T[]) =
+            checkNonNull "array" array          
+            if array.Length < sequentialCutoffForSorting then
+                Microsoft.FSharp.Primitives.Basics.Array.unstableSortInPlace array
+            else            
+                let preSortedPartitions = prepareSortedRunsInPlaceWith array LanguagePrimitives.FastGenericComparerCanBeNull
+                mergeRunsInParallel preSortedPartitions (mergeTwoSortedConsequtiveSegmentsInPlaceWith LanguagePrimitives.FastGenericComparer) |> ignore
+
+        [<CompiledName("SortWith")>]
+        let sortWith (comparer: 'T -> 'T -> int) (array: 'T[]) =           
+            let result = copy array
+            sortInPlaceWith comparer result
+            result
+
+        [<CompiledName("SortBy")>]
+        let sortBy projection array =         
+            let result = copy array
+            sortInPlaceBy projection result
+            result
+
+        [<CompiledName("Sort")>]
+        let sort array =        
+            let result = copy array
+            sortInPlace result
+            result
+
+        [<CompiledName("SortByDescending")>]
+        let inline sortByDescending projection array =
+            let inline compareDescending a b = compare (projection b) (projection a)            
+            sortWith compareDescending array
+
+        [<CompiledName("SortDescending")>]
+        let inline sortDescending array =   
+            let inline compareDescending a b = compare b a
+            sortWith compareDescending array
+         
