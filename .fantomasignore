@@ -11,12 +11,7 @@ vsintegration/*
 !vsintegration/tests/FSharp.Editor.Tests
 artifacts/
 
-# Parser-generated files
-
-src/.fslexyacc.generated/*
-
-# Explicitly unformatted implementation files
-
+# Explicitly unformatted implementation 
 src/Compiler/Checking/AccessibilityLogic.fs
 src/Compiler/Checking/AttributeChecking.fs
 src/Compiler/Checking/AugmentWithHashCompare.fs
