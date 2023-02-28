@@ -5279,6 +5279,12 @@ and TcExprThen (cenv: cenv) overallTy env tpenv isArg synExpr delayed =
 
     match synExpr with
 
+    // A.
+    // A.B.
+    | SynExpr.DiscardAfterMissingQualificationAfterDot (expr1, _, m) ->
+        let _, _, tpenv = suppressErrorReporting (fun () -> TcExprOfUnknownTypeThen cenv env tpenv expr1 [DelayedDot])
+        mkDefault(m, overallTy.Commit), tpenv
+
     // A
     // A.B.C
     | LongOrSingleIdent (isOpt, longId, altNameRefCellOpt, mLongId) ->
@@ -5546,7 +5552,8 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
     | SynExpr.LongIdent _
     | SynExpr.App _
     | SynExpr.Dynamic _
-    | SynExpr.DotGet _ ->
+    | SynExpr.DotGet _
+    | SynExpr.DiscardAfterMissingQualificationAfterDot _ ->
         error(Error(FSComp.SR.tcExprUndelayed(), synExpr.Range))
 
     | SynExpr.Const (SynConst.String (s, _, m), _) ->
@@ -5689,10 +5696,6 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
 
     | SynExpr.ArbitraryAfterError (_debugStr, m) ->
         //SolveTypeAsError cenv env.DisplayEnv m overallTy
-        mkDefault(m, overallTy.Commit), tpenv
-
-    | SynExpr.DiscardAfterMissingQualificationAfterDot (expr1, _, m) ->
-        let _, _, tpenv = suppressErrorReporting (fun () -> TcExprOfUnknownTypeThen cenv env tpenv expr1 [DelayedDot])
         mkDefault(m, overallTy.Commit), tpenv
 
     | SynExpr.FromParseError (expr1, m) ->

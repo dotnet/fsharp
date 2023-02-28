@@ -28,6 +28,7 @@
     <Compile Include="GoToDefinitionServiceTests.fs" />
     <Compile Include="HelpContextServiceTests.fs" />
     <Compile Include="QuickInfoTests.fs" />
+    <Compile Include="NavigateToSearchServiceTests.fs" />
     <Compile Include="Hints\HintTestFramework.fs" />
     <Compile Include="Hints\OptionParserTests.fs" />
     <Compile Include="Hints\InlineParameterNameHintTests.fs" />
