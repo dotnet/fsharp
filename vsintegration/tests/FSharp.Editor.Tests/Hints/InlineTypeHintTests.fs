@@ -204,6 +204,7 @@ let func = fun () -> 3
             """
 let x
 """
+
         let document = getFsDocument code
 
         let result = getTypeHints document
@@ -211,11 +212,12 @@ let x
         Assert.Empty(result)
 
     [<Fact>]
-    let ``Hints are not shown for unsolved types in _for_ expressions in collections`` () = 
+    let ``Hints are not shown for unsolved types in _for_ expressions in collections`` () =
         let code =
             """
 let _ = [ for x ]
 """
+
         let document = getFsDocument code
 
         let result = getTypeHints document
@@ -223,7 +225,7 @@ let _ = [ for x ]
         Assert.Empty(result)
 
     [<Fact>]
-    let ``Hints are not shown for unsolved types in _for_ expressions within computational expressions`` () = 
+    let ``Hints are not shown for unsolved types in _for_ expressions within computational expressions`` () =
         let code =
             """
 do task {
@@ -232,6 +234,7 @@ do task {
     do! Task.Delay 0
     }
 """
+
         let document = getFsDocument code
 
         let result = getTypeHints document
@@ -250,12 +253,19 @@ type Number<'T when IAddition<'T>>(value: 'T) =
     interface IAddition<Number<'T>> with
         static member op_Addition(a, b) = Number(a.Value + b.Value)
 """
+
         let document = getFsDocument code
 
         let expected =
             [
-                { Content = ": Number<'T>"; Location = (7, 36) }
-                { Content = ": Number<'T>"; Location = (7, 39) }
+                {
+                    Content = ": Number<'T>"
+                    Location = (7, 36)
+                }
+                {
+                    Content = ": Number<'T>"
+                    Location = (7, 39)
+                }
             ]
 
         let actual = getTypeHints document

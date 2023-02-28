@@ -251,3 +251,25 @@ let foo x = 5""" })
                 "FileThird.fs", 8, 2, 13
             ])
         }
+
+[<Fact>]
+let ``We find a type that has been aliased`` () =
+
+    let project = SyntheticProject.Create("TypeAliasTest",
+        { sourceFile "First" [] with
+            ExtraSource = "type MyInt = int32\n" +
+                          "let myNum = 7"
+            SignatureFile = Custom ("module TypeAliasTest.ModuleFirst\n" +
+                                    "type MyInt = int32\n" +
+                                    "val myNum: MyInt") },
+        { sourceFile "Second" [] with
+            ExtraSource = "let goo x = ModuleFirst.myNum + x"})
+
+    project.Workflow {
+        placeCursor "First" "myNum"
+        findAllReferences (expectToFind [
+            "FileFirst.fs", 7, 4, 9
+            "FileFirst.fsi", 3, 4, 9
+            "FileSecond.fs", 6, 12, 29
+        ])
+    }

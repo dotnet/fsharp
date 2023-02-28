@@ -604,6 +604,8 @@ type TcConfigBuilder =
         mutable captureIdentifiersWhenParsing: bool
 
         mutable typeCheckingConfig: TypeCheckingConfig
+
+        mutable dumpSignatureData: bool
     }
 
     // Directories to start probing in
@@ -803,6 +805,7 @@ type TcConfigBuilder =
                             TypeCheckingMode.Sequential
                     DumpGraph = false
                 }
+            dumpSignatureData = false
         }
 
     member tcConfigB.FxResolver =
@@ -1343,6 +1346,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.parallelReferenceResolution = data.parallelReferenceResolution
     member _.captureIdentifiersWhenParsing = data.captureIdentifiersWhenParsing
     member _.typeCheckingConfig = data.typeCheckingConfig
+    member _.dumpSignatureData = data.dumpSignatureData
 
     static member Create(builder, validate) =
         use _ = UseBuildPhase BuildPhase.Parameter
