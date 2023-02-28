@@ -1877,7 +1877,7 @@ let GroupUpdatesToNestedFields (fields: (bool * (Ident list * Ident) * SynExpr o
             groupIfNested [] fields)
 
 /// Expands a long identifier into nested copy-and-update expressions
-let TransformAstForNestedUpdates cenv env overallTy (lid: LongIdent) v withExpr =
+let TransformAstForNestedUpdates cenv env overallTy (lid: LongIdent) exprBeingAssigned withExpr =
     let recdExprCopyInfo ids withExpr id =
         let upToId origSepRng id lidwd =
             let rec buildLid res (id: Ident) =
@@ -1917,12 +1917,11 @@ let TransformAstForNestedUpdates cenv env overallTy (lid: LongIdent) v withExpr 
             Some (SynExpr.LongIdent (false, LongIdentWithDots(lid, rng), None, totalRange origId id), (rangeOfBlockSeperator id, None)) // TODO: id.idRange should be the range of the next separator
         | _ -> None
 
-    let rec synExprRecd copyInfo (id: Ident) fields v =
+    let rec synExprRecd copyInfo (id: Ident) fields exprBeingAssigned =
         match fields with 
         | [] -> failwith "unreachable"
         | (fldId, isAnon) :: rest -> 
-            // todo the unit
-            let nestedField = if rest.IsEmpty then Option.defaultValue (mkSynUnit range0) v else synExprRecd copyInfo fldId rest v
+            let nestedField = if rest.IsEmpty then exprBeingAssigned else synExprRecd copyInfo fldId rest exprBeingAssigned
 
             if isAnon then
                 // The correct structness will later be taken from the anynymous type, which already exists
@@ -1934,12 +1933,12 @@ let TransformAstForNestedUpdates cenv env overallTy (lid: LongIdent) v withExpr 
 
     match access, flds with
     | [], [] -> None
-    | accessIds, [] -> Some (false, List.frontAndBack accessIds, v)
-    | accessIds, [ (fldId, _) ] -> Some (false, List.frontAndBack (accessIds @ [ fldId ]), v)
+    | accessIds, [] -> Some (false, List.frontAndBack accessIds, Some exprBeingAssigned)
+    | accessIds, [ (fldId, _) ] -> Some (false, List.frontAndBack (accessIds @ [ fldId ]), Some exprBeingAssigned)
     | accessIds, (fldId, _) :: rest ->
         checkLanguageFeatureAndRecover cenv.g.langVersion LanguageFeature.NestedCopyAndUpdate (rangeOfLid lid)
-        // todo remove the other some
-        Some (true, (accessIds, fldId), Some (synExprRecd (recdExprCopyInfo (flds |> List.map fst) withExpr) fldId rest v))
+
+        Some (true, (accessIds, fldId), Some (synExprRecd (recdExprCopyInfo (flds |> List.map fst) withExpr) fldId rest exprBeingAssigned))
 
 let rec ApplyUnionCaseOrExn (makerForUnionCase, makerForExnTag) m (cenv: cenv) env overallTy item =
     let g = cenv.g
@@ -7404,7 +7403,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
     let fldsList, containsNestedUpdates =
         let flds =
             synRecdFields
-            |> List.choose (fun (SynExprRecordField (fieldName = (synLongId, isOk); expr = v)) ->
+            |> List.choose (fun (SynExprRecordField (fieldName = (synLongId, isOk); expr = exprBeingAssigned)) ->
                 // if we met at least one field that is not syntactically correct - raise ReportedError to transfer control to the recovery routine
                 if not isOk then
                     // raising ReportedError None transfers control to the closest errorRecovery point but do not make any records into log
@@ -7413,11 +7412,12 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
 
                 match withExprOpt with
                 | Some withExpr ->
-                    match synLongId.LongIdent with
-                    | [] -> None
-                    | [ id ] -> Some (false, ([], id), v)
-                    | lid -> TransformAstForNestedUpdates cenv env overallTy lid v withExpr
-                | _ -> Some (false, List.frontAndBack synLongId.LongIdent, v))
+                    match synLongId.LongIdent, exprBeingAssigned with
+                    | [], _ -> None
+                    | [ id ], _ -> Some (false, ([], id), exprBeingAssigned)
+                    | lid, Some exprBeingAssigned -> TransformAstForNestedUpdates cenv env overallTy lid exprBeingAssigned withExpr
+                    | _ -> Some (false, List.frontAndBack synLongId.LongIdent, exprBeingAssigned)
+                | _ -> Some (false, List.frontAndBack synLongId.LongIdent, exprBeingAssigned))
 
         let flds = if hasOrigExpr then GroupUpdatesToNestedFields flds else flds
 
@@ -7497,8 +7497,8 @@ and TcAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, optOrigSynExpr, 
     | None ->
         TcNewAnonRecdExpr cenv overallTy env tpenv (isStruct, unsortedFieldIdsAndSynExprsGiven, mWholeExpr)
 
-    | Some (origExpr, _) ->
-        TcCopyAndUpdateAnonRecdExpr cenv overallTy env tpenv (isStruct, origExpr, unsortedFieldIdsAndSynExprsGiven, mWholeExpr)
+    | Some orig ->
+        TcCopyAndUpdateAnonRecdExpr cenv overallTy env tpenv (isStruct, orig, unsortedFieldIdsAndSynExprsGiven, mWholeExpr)
 
 and TcNewAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, unsortedFieldIdsAndSynExprsGiven, mWholeExpr) =
 
@@ -7534,7 +7534,7 @@ and TcNewAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, unsortedField
 
     mkAnonRecd g mWholeExpr anonInfo unsortedFieldIds unsortedCheckedArgs unsortedFieldTys, tpenv
 
-and TcCopyAndUpdateAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, origExpr, unsortedFieldIdsAndSynExprsGiven, mWholeExpr) =
+and TcCopyAndUpdateAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, (origExpr, blockSeparator), unsortedFieldIdsAndSynExprsGiven, mWholeExpr) =
     // The fairly complex case '{| origExpr with X = 1; Y = 2 |}'
     // The origExpr may be either a record or anonymous record.
     // The origExpr may be either a struct or not.
@@ -7556,11 +7556,11 @@ and TcCopyAndUpdateAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, ori
     // Expand expressions with respect to potential nesting
     let unsortedFieldIdsAndSynExprsGiven =
         unsortedFieldIdsAndSynExprsGiven
-        |> List.choose (fun (lid, _, e) ->
+        |> List.choose (fun (lid, _, exprBeingAssigned) ->
             match lid with
             | [] -> None
-            | [ id ] -> Some (false, ([], id), Some e) // todo remove options
-            | lid -> TransformAstForNestedUpdates cenv env origExprTy lid (Some e) (origExpr, (range0, range0)))
+            | [ id ] -> Some (false, ([], id), Some exprBeingAssigned)
+            | lid -> TransformAstForNestedUpdates cenv env origExprTy lid exprBeingAssigned (origExpr, blockSeparator))
         |> GroupUpdatesToNestedFields
 
     let unsortedFieldSynExprsGiven = unsortedFieldIdsAndSynExprsGiven |> List.map (fun (_, _, e) -> e.Value) //todo
