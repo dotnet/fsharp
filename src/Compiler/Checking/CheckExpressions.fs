@@ -16,7 +16,6 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
-open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.DiagnosticsLogger
@@ -7563,7 +7562,7 @@ and TcCopyAndUpdateAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, (or
             | lid -> TransformAstForNestedUpdates cenv env origExprTy lid exprBeingAssigned (origExpr, blockSeparator))
         |> GroupUpdatesToNestedFields
 
-    let unsortedFieldSynExprsGiven = unsortedFieldIdsAndSynExprsGiven |> List.map (fun (_, _, e) -> e.Value) //todo
+    let unsortedFieldSynExprsGiven = unsortedFieldIdsAndSynExprsGiven |> List.choose p33
 
     let origExprIsStruct =
         match tryDestAnonRecdTy g origExprTy with
