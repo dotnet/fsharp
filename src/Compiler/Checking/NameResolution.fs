@@ -3710,7 +3710,6 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad ty lid =
             let otherRecdFlds ty =
                 let typeName = NicePrint.minimalStringOfType nenv.eDisplayEnv ty
 
-                // todo investigate refactoring
                 [
                     for KeyValue (_, v) in nenv.eFieldLabels do
                         match v |> List.tryFind (fun r -> r.TyconRef.DisplayName = typeName) with
@@ -3760,8 +3759,8 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad ty lid =
                         match x with
                         | Choice1Of2 (FieldResolution (rfinfo, dep)) ->
                             let ref = rfinfo.RecdFieldRef
-                            Choice1Of2(FieldResolution(rfinfo, dep)), ref.FieldName, ref.RecdField.FormalType, rest
-                        | Choice2Of2 (anonInfo, tys, index) -> Choice2Of2(anonInfo, tys, index), anonInfo.SortedNames[index], tys[index], rest)
+                            Choice1Of2(FieldResolution(rfinfo, dep)), id.idRange, ref.RecdField.FormalType, rest
+                        | Choice2Of2 (anonInfo, tys, index) -> Choice2Of2(anonInfo, tys, index), id.idRange, tys[index], rest)
                 | _ -> NoResultsOrUsefulErrors
 
             let tyconSearch ad () =
@@ -3770,15 +3769,15 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad ty lid =
                     let m = tn.idRange
                     let tcrefs = LookupTypeNameInEnvNoArity OpenQualified tn.idText nenv
                     if isNil tcrefs then NoResultsOrUsefulErrors else
-                    let tcrefs = tcrefs |> List.map (fun tcref -> (ResolutionInfo.Empty, tcref))
+                    let tcrefs = tcrefs |> List.map (fun tcref -> ResolutionInfo.Empty, tcref)
 
                     ResolveLongIdentInTyconRefs ResultCollectionSettings.AllResults ncenv nenv LookupKind.RecdField 1 m ad id rest typeNameResInfo tn.idRange tcrefs
                     |?> List.choose (fun x ->
                         match x with
                         | _, Item.RecdField (RecdFieldInfo (_, rfref)), rest ->
-                            (Choice1Of2(FieldResolution(FreshenRecdFieldRef ncenv m rfref, false)), rfref.FieldName, rfref.RecdField.FormalType, rest) |> Some
+                            (Choice1Of2(FieldResolution(FreshenRecdFieldRef ncenv m rfref, false)), m, rfref.RecdField.FormalType, rest) |> Some
                         | _, Item.AnonRecdField (anonInfo, tys, i, _), rest ->
-                            (Choice2Of2(anonInfo, tys, i), anonInfo.SortedNames[i], tys[i], rest) |> Some
+                            (Choice2Of2(anonInfo, tys, i), m, tys[i], rest) |> Some
                         | _ -> None)
                 | _ -> NoResultsOrUsefulErrors
 
@@ -3790,15 +3789,14 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad ty lid =
 
                     ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m OpenQualified nenv ad id rest false (ResolveFieldInModuleOrNamespace ncenv nenv ad)
                     |?> List.map (fun (_, FieldResolution(rfinfo, dep), rest) ->
-                        let ref = rfinfo.RecdFieldRef
-                        Choice1Of2(FieldResolution(rfinfo, dep)), ref.FieldName, ref.RecdField.FormalType, rest)
+                        Choice1Of2(FieldResolution(rfinfo, dep)), m, rfinfo.RecdFieldRef.RecdField.FormalType, rest)
 
-            let item, fldIdText, fldTy, rest =
+            let item, fldRange, fldTy, rest =
                 let search =
                     if isAnonRecd then
                         fldSearch ()
                     else
-                        fldSearch () +++ moduleOrNsSearch ad +++ tyconSearch ad +++ moduleOrNsSearch AccessibleFromSomeFSharpCode +++ tyconSearch AccessibleFromSomeFSharpCode
+                        moduleOrNsSearch ad () +++ tyconSearch ad +++ moduleOrNsSearch AccessibleFromSomeFSharpCode +++ tyconSearch AccessibleFromSomeFSharpCode +++ fldSearch
 
                 search
                 |> AtMostOneResult id.idRange
@@ -3808,8 +3806,7 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad ty lid =
                 if isAnonRecd then
                     []
                 else
-                    // todo questionable - match by range?
-                    lid |> List.takeWhile (fun id -> id.idText <> fldIdText)
+                    lid |> List.takeWhile (fun id -> id.idRange <> fldRange)
 
             match rest with
             | [] -> idsBeforeField, [ item ]
