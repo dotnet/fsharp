@@ -1942,10 +1942,9 @@ module Array =
                 Parallel.For(
                     0,
                     array.Length,
-                    body =
-                        (fun i pState ->
-                            if predicate array[i] then
-                                pState.Break())
+                    (fun i pState ->
+                        if predicate array[i] then
+                            pState.Break())
                 )
 
             pResult.LowestBreakIteration |> Option.ofNullable |> Option.map int
@@ -1963,13 +1962,12 @@ module Array =
                 Parallel.For(
                     0,
                     array.Length,
-                    body =
-                        (fun i pState ->
-                            match chooser array[i] with
-                            | None -> ()
-                            | chosenElement ->
-                                allChosen[i] <- chosenElement
-                                pState.Break())
+                    (fun i pState ->
+                        match chooser array[i] with
+                        | None -> ()
+                        | chosenElement ->
+                            allChosen[i] <- chosenElement
+                            pState.Break())
                 )
 
             pResult.LowestBreakIteration
