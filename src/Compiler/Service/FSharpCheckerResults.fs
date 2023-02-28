@@ -672,11 +672,12 @@ type internal TypeCheckInfo
                 | ValueSome (anonInfo, tys) ->
                     match plid with
                     | [] ->
-                        let items = [
-                            for i in 0 .. anonInfo.SortedIds.Length - 1 do
-                                Item.AnonRecdField (anonInfo, tys, i, anonInfo.SortedIds[i].idRange)
-                        ]
-                        
+                        let items =
+                            [
+                                for i in 0 .. anonInfo.SortedIds.Length - 1 do
+                                    Item.AnonRecdField(anonInfo, tys, i, anonInfo.SortedIds[i].idRange)
+                            ]
+
                         Some(items, denv, m)
                     | id :: rest ->
                         match anonInfo.SortedNames |> Array.tryFindIndex (fun x -> x = id) with
@@ -684,7 +685,11 @@ type internal TypeCheckInfo
                         | _ -> Some([], denv, m)
                 | ValueNone -> Some([], denv, m)
 
-        match GetExprTypingForPosition identRange.End |> snd |> Array.tryFind (fun (_, _, _, rq) -> posEq identRange.Start rq.Start) with
+        match
+            GetExprTypingForPosition identRange.End
+            |> snd
+            |> Array.tryFind (fun (_, _, _, rq) -> posEq identRange.Start rq.Start)
+        with
         | Some (ty, nenv, ad, m) -> dive ty nenv.DisplayEnv ad m plid false plid.IsEmpty
         | _ -> None
 
