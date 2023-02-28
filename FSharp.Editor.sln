@@ -13,8 +13,6 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.DependencyManager.Nu
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Editor", "vsintegration\src\FSharp.Editor\FSharp.Editor.fsproj", "{86E148BE-92C8-47CC-A070-11D769C6D898}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FSharp.PatternMatcher", "vsintegration\src\FSharp.PatternMatcher\FSharp.PatternMatcher.csproj", "{4FFA5E03-4128-48C9-8FCD-D7C60729ED74}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FSharp.UIResources", "vsintegration\src\FSharp.UIResources\FSharp.UIResources.csproj", "{DA9495E6-BEAA-42A4-AD3B-170D2005AF4B}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.VS.FSI", "vsintegration\src\FSharp.VS.FSI\FSharp.VS.FSI.fsproj", "{EAC029EB-4A8F-4966-9B38-60D73D8E20D1}"
