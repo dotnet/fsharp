@@ -1937,6 +1937,7 @@ let TransformAstForNestedUpdates cenv env overallTy (lid: LongIdent) v withExpr 
     | accessIds, [] -> Some (false, List.frontAndBack accessIds, v)
     | accessIds, [ (fldId, _) ] -> Some (false, List.frontAndBack (accessIds @ [ fldId ]), v)
     | accessIds, (fldId, _) :: rest ->
+        checkLanguageFeatureAndRecover cenv.g.langVersion LanguageFeature.NestedCopyAndUpdate (rangeOfLid lid)
         // todo remove the other some
         Some (true, (accessIds, fldId), Some (synExprRecd (recdExprCopyInfo (flds |> List.map fst) withExpr) fldId rest v))
 
