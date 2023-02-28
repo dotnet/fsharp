@@ -1278,7 +1278,7 @@ let AddStorageForVal (g: TcGlobals) (v, s) eenv =
     // v, dereferencing it to find the corresponding signature Val, and adding an entry for the signature val.
     //
     // A similar code path exists in ilxgen.fs for the tables of "optimization data" for values
-    if g.compilingFSharpCore then
+    if g.compilingCoreLibrary then
         // Passing an empty remap is sufficient for FSharp.Core.dll because it turns out the remapped type signature can
         // still be resolved.
         match tryRescopeVal g.fslibCcu Remap.Empty v with
@@ -3801,7 +3801,7 @@ and GenUnionCaseProof cenv cgbuf eenv (e, ucref, tyargs, m) sequel =
     GenExpr cenv cgbuf eenv e Continue
     let cuspec, idx = GenUnionCaseSpec cenv m eenv.tyenv ucref tyargs
     let fty = EraseUnions.GetILTypeForAlternative cuspec idx
-    let avoidHelpers = entityRefInThisAssembly g.compilingFSharpCore ucref.TyconRef
+    let avoidHelpers = entityRefInThisAssembly g.compilingCoreLibrary ucref.TyconRef
     EraseUnions.emitCastData g.ilg (UnionCodeGen cgbuf) (false, avoidHelpers, cuspec, idx)
     CG.EmitInstrs cgbuf (pop 1) (Push [ fty ]) [] // push/pop to match the line above
     GenSequel cenv eenv.cloc cgbuf sequel
@@ -3813,7 +3813,7 @@ and GenGetUnionCaseField cenv cgbuf eenv (e, ucref, tyargs, n, m) sequel =
     GenExpr cenv cgbuf eenv e Continue
     let cuspec, idx = GenUnionCaseSpec cenv m eenv.tyenv ucref tyargs
     let fty = actualTypOfIlxUnionField cuspec idx n
-    let avoidHelpers = entityRefInThisAssembly g.compilingFSharpCore ucref.TyconRef
+    let avoidHelpers = entityRefInThisAssembly g.compilingCoreLibrary ucref.TyconRef
     CG.EmitInstr cgbuf (pop 1) (Push [ fty ]) (EraseUnions.mkLdData (avoidHelpers, cuspec, idx, n))
     GenSequel cenv eenv.cloc cgbuf sequel
 
@@ -3824,7 +3824,7 @@ and GenGetUnionCaseFieldAddr cenv cgbuf eenv (e, ucref, tyargs, n, m) sequel =
     GenExpr cenv cgbuf eenv e Continue
     let cuspec, idx = GenUnionCaseSpec cenv m eenv.tyenv ucref tyargs
     let fty = actualTypOfIlxUnionField cuspec idx n
-    let avoidHelpers = entityRefInThisAssembly g.compilingFSharpCore ucref.TyconRef
+    let avoidHelpers = entityRefInThisAssembly g.compilingCoreLibrary ucref.TyconRef
     CG.EmitInstr cgbuf (pop 1) (Push [ ILType.Byref fty ]) (EraseUnions.mkLdDataAddr (avoidHelpers, cuspec, idx, n))
     GenSequel cenv eenv.cloc cgbuf sequel
 
@@ -3832,7 +3832,7 @@ and GenGetUnionCaseTag cenv cgbuf eenv (e, tcref, tyargs, m) sequel =
     let g = cenv.g
     GenExpr cenv cgbuf eenv e Continue
     let cuspec = GenUnionSpec cenv m eenv.tyenv tcref tyargs
-    let avoidHelpers = entityRefInThisAssembly g.compilingFSharpCore tcref
+    let avoidHelpers = entityRefInThisAssembly g.compilingCoreLibrary tcref
     EraseUnions.emitLdDataTag g.ilg (UnionCodeGen cgbuf) (avoidHelpers, cuspec)
     CG.EmitInstrs cgbuf (pop 1) (Push [ g.ilg.typ_Int32 ]) [] // push/pop to match the line above
     GenSequel cenv eenv.cloc cgbuf sequel
@@ -3841,7 +3841,7 @@ and GenSetUnionCaseField cenv cgbuf eenv (e, ucref, tyargs, n, e2, m) sequel =
     let g = cenv.g
     GenExpr cenv cgbuf eenv e Continue
     let cuspec, idx = GenUnionCaseSpec cenv m eenv.tyenv ucref tyargs
-    let avoidHelpers = entityRefInThisAssembly g.compilingFSharpCore ucref.TyconRef
+    let avoidHelpers = entityRefInThisAssembly g.compilingCoreLibrary ucref.TyconRef
     EraseUnions.emitCastData g.ilg (UnionCodeGen cgbuf) (false, avoidHelpers, cuspec, idx)
     CG.EmitInstrs cgbuf (pop 1) (Push [ cuspec.DeclaringType ]) [] // push/pop to match the line above
     GenExpr cenv cgbuf eenv e2 Continue
@@ -3885,7 +3885,7 @@ and GenFieldGet isStatic cenv cgbuf eenv (rfref: RecdFieldRef, tyargs, m) =
 
     if
         useGenuineField rfref.Tycon rfref.RecdField
-        || entityRefInThisAssembly cenv.g.compilingFSharpCore rfref.TyconRef
+        || entityRefInThisAssembly cenv.g.compilingCoreLibrary rfref.TyconRef
     then
         let instr =
             if isStatic then
@@ -5603,7 +5603,7 @@ and GenGenericParam cenv eenv (tp: Typar) =
             | None -> tp.Name
             | Some nm -> nm
         // Some special rules apply when compiling Fsharp.Core.dll to avoid a proliferation of [<CompiledName>] attributes on type parameters
-        if g.compilingFSharpCore then
+        if g.compilingCoreLibrary then
             match nm with
             | "U" -> "TResult"
             | "U1" -> "TResult1"
@@ -7560,7 +7560,7 @@ and GenDecisionTreeSwitch
 
         let cuspec = GenUnionSpec cenv m eenv.tyenv c.TyconRef tyargs
         let idx = c.Index
-        let avoidHelpers = entityRefInThisAssembly g.compilingFSharpCore c.TyconRef
+        let avoidHelpers = entityRefInThisAssembly g.compilingCoreLibrary c.TyconRef
 
         let tester =
             (Some(pop 1, Push [ g.ilg.typ_Bool ], Choice1Of2(avoidHelpers, cuspec, idx)))
@@ -7679,7 +7679,7 @@ and GenDecisionTreeSwitch
                     | TCase (DecisionTreeTest.UnionCase (c, _), _) -> (c.Index, label.CodeLabel)
                     | _ -> failwith "error: mixed constructor/const test?")
 
-            let avoidHelpers = entityRefInThisAssembly g.compilingFSharpCore hdc.TyconRef
+            let avoidHelpers = entityRefInThisAssembly g.compilingCoreLibrary hdc.TyconRef
             EraseUnions.emitDataSwitch g.ilg (UnionCodeGen cgbuf) (avoidHelpers, cuspec, dests)
             CG.EmitInstrs cgbuf (pop 1) Push0 [] // push/pop to match the line above
 
@@ -10660,7 +10660,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
 
             let generateDebugDisplayAttribute =
                 not g.useReflectionFreeCodeGen
-                && not g.compilingFSharpCore
+                && not g.compilingCoreLibrary
                 && tycon.IsUnionTycon
                 && isNil debugDisplayAttrs
 

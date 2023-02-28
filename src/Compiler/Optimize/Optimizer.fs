@@ -570,7 +570,7 @@ let BindExternalLocalVal cenv (v: Val) vval env =
     //
     // A similar code path exists in ilxgen.fs for the tables of "representations" for values
     let env = 
-        if g.compilingFSharpCore then 
+        if g.compilingCoreLibrary then 
             // Passing an empty remap is sufficient for FSharp.Core.dll because it turns out the remapped type signature can
             // still be resolved.
             match tryRescopeVal g.fslibCcu Remap.Empty v with 
@@ -659,7 +659,7 @@ let GetInfoForNonLocalVal cenv env (vref: ValRef) =
             | None -> 
                   //dprintn ("\n\n*** Optimization info for value "+n+" from module "+(full_name_of_nlpath smv)+" not found, module contains values: "+String.concat ", " (NameMap.domainL structInfo.ValInfos))  
                   //System.Diagnostics.Debug.Assert(false, sprintf "Break for module %s, value %s" (full_name_of_nlpath smv) n)
-                  if g.compilingFSharpCore then 
+                  if g.compilingCoreLibrary then 
                       match structInfo.ValInfos.TryFindForFslib (g, vref) with 
                       | true, ninfo -> snd ninfo
                       | _ -> UnknownValInfo
@@ -3360,7 +3360,7 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
         // confuse the optimizer if the assembly is referenced on 4.0, since there will be no value to tie back
         // to FSharp.Core                              
         let isValFromLazyExtensions =
-            if g.compilingFSharpCore then
+            if g.compilingCoreLibrary then
                 false
             else
                 match finfo.Info with
@@ -4093,7 +4093,7 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
                // ilxgen.fs, hence treat them as if no-inline (when preparing the inline information for 
                // FSharp.Core).
                (let nvref = mkLocalValRef vref 
-                g.compilingFSharpCore &&
+                g.compilingCoreLibrary &&
                    (valRefEq g nvref g.seq_vref ||
                     valRefEq g nvref g.seq_generated_vref ||
                     valRefEq g nvref g.seq_finally_vref ||

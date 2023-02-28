@@ -612,7 +612,7 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, fileNam
                         LexFilter
                             .LexFilter(
                                 indentationSyntaxStatus,
-                                tcConfig.compilingFSharpCore,
+                                tcConfig.compilingCoreLibrary,
                                 Lexer.token lexargs skipWhitespaceTokens,
                                 lexbuf
                             )
@@ -622,7 +622,7 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, fileNam
                         LexFilter
                             .LexFilter(
                                 indentationSyntaxStatus,
-                                tcConfig.compilingFSharpCore,
+                                tcConfig.compilingCoreLibrary,
                                 Lexer.token lexargs skipWhitespaceTokens,
                                 lexbuf
                             )
@@ -685,7 +685,7 @@ let parseInputStreamAux
 
     // Set up the LexBuffer for the file
     let lexbuf =
-        UnicodeLexing.StreamReaderAsLexbuf(not tcConfig.compilingFSharpCore, tcConfig.langVersion, reader)
+        UnicodeLexing.StreamReaderAsLexbuf(not tcConfig.compilingCoreLibrary, tcConfig.langVersion, reader)
 
     // Parse the file drawing tokens from the lexbuf
     ParseOneInputLexbuf(tcConfig, lexResourceManager, lexbuf, fileName, isLastCompiland, diagnosticsLogger)
@@ -701,7 +701,7 @@ let parseInputSourceTextAux
     ) =
     // Set up the LexBuffer for the file
     let lexbuf =
-        UnicodeLexing.SourceTextAsLexbuf(not tcConfig.compilingFSharpCore, tcConfig.langVersion, sourceText)
+        UnicodeLexing.SourceTextAsLexbuf(not tcConfig.compilingCoreLibrary, tcConfig.langVersion, sourceText)
 
     // Parse the file drawing tokens from the lexbuf
     ParseOneInputLexbuf(tcConfig, lexResourceManager, lexbuf, fileName, isLastCompiland, diagnosticsLogger)
@@ -713,7 +713,7 @@ let parseInputFileAux (tcConfig: TcConfig, lexResourceManager, fileName, isLastC
 
     // Set up the LexBuffer for the file
     let lexbuf =
-        UnicodeLexing.StreamReaderAsLexbuf(not tcConfig.compilingFSharpCore, tcConfig.langVersion, reader)
+        UnicodeLexing.StreamReaderAsLexbuf(not tcConfig.compilingCoreLibrary, tcConfig.langVersion, reader)
 
     // Parse the file drawing tokens from the lexbuf
     ParseOneInputLexbuf(tcConfig, lexResourceManager, lexbuf, fileName, isLastCompiland, diagnosticsLogger)
@@ -1130,7 +1130,7 @@ let GetInitialTcState (m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcI
     let ccu = CcuThunk.Create(ccuName, ccuData)
 
     // OK, is this is the FSharp.Core CCU then fix it up.
-    if tcConfig.compilingFSharpCore then
+    if tcConfig.compilingCoreLibrary then
         tcGlobals.fslibCcu.Fixup ccu
 
     {
@@ -1629,7 +1629,7 @@ let CheckMultipleInputsUsingGraphMode
     let filePairs = FilePairMap(sourceFiles)
 
     let graph =
-        DependencyResolution.mkGraph tcConfig.compilingFSharpCore filePairs sourceFiles
+        DependencyResolution.mkGraph tcConfig.compilingCoreLibrary filePairs sourceFiles
 
     let nodeGraph =
         let mkArtificialImplFile n = NodeToTypeCheck.ArtificialImplFile n

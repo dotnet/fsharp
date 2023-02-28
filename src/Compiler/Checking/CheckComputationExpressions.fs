@@ -2213,7 +2213,7 @@ let TcSequenceExpressionEntry (cenv: cenv) env (overallTy: OverallTy) tpenv (has
     | _ -> 
         ()
 
-    if not hasBuilder && not cenv.g.compilingFSharpCore then 
+    if not hasBuilder && not cenv.g.compilingCoreLibrary then 
         error(Error(FSComp.SR.tcInvalidSequenceExpressionSyntaxForm(), m))
         
     TcSequenceExpression cenv env tpenv comp overallTy m
@@ -2238,7 +2238,7 @@ let TcArrayOrListComputedExpression (cenv: cenv) env (overallTy: OverallTy) tpen
         let expr, tpenv = TcExpr cenv (MustEqual exprTy) env tpenv replacementExpr
 
         let expr = 
-            if cenv.g.compilingFSharpCore then 
+            if cenv.g.compilingCoreLibrary then 
                 expr 
             else 
                 // We add a call to 'seq ... ' to make sure sequence expression compilation gets applied to the contents of the
@@ -2304,8 +2304,7 @@ let TcArrayOrListComputedExpression (cenv: cenv) env (overallTy: OverallTy) tpen
         let expr = mkCoerceIfNeeded cenv.g exprTy (tyOfExpr cenv.g expr) expr
 
         let expr = 
-            if cenv.g.compilingFSharpCore then 
-                //warning(Error(FSComp.SR.fslibUsingComputedListOrArray(), expr.Range))
+            if cenv.g.compilingCoreLibrary then 
                 expr 
             else 
                 // We add a call to 'seq ... ' to make sure sequence expression compilation gets applied to the contents of the

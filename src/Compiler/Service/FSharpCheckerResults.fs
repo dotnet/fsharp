@@ -2120,21 +2120,23 @@ type FSharpParsingOptions =
             LangVersionText = tcConfig.langVersion.VersionText
             IsInteractive = isInteractive
             IndentationAwareSyntax = tcConfig.indentationAwareSyntax
-            CompilingFSharpCore = tcConfig.compilingFSharpCore
+            CompilingFSharpCore = tcConfig.compilingCoreLibrary
             IsExe = tcConfig.target.IsExe
         }
 
     static member FromTcConfigBuilder(tcConfigB: TcConfigBuilder, sourceFiles, isInteractive: bool) =
+        let tcConfig = tcConfigB.ToTcConfig(false)
+
         {
             SourceFiles = sourceFiles
-            ApplyLineDirectives = tcConfigB.applyLineDirectives
-            ConditionalDefines = tcConfigB.conditionalDefines
-            DiagnosticOptions = tcConfigB.diagnosticsOptions
-            LangVersionText = tcConfigB.langVersion.VersionText
+            ApplyLineDirectives = tcConfig.applyLineDirectives
+            ConditionalDefines = tcConfig.conditionalDefines
+            DiagnosticOptions = tcConfig.diagnosticsOptions
+            LangVersionText = tcConfig.langVersion.VersionText
             IsInteractive = isInteractive
-            IndentationAwareSyntax = tcConfigB.indentationAwareSyntax
-            CompilingFSharpCore = tcConfigB.compilingFSharpCore
-            IsExe = tcConfigB.target.IsExe
+            IndentationAwareSyntax = tcConfig.indentationAwareSyntax
+            CompilingFSharpCore = tcConfig.compilingCoreLibrary
+            IsExe = tcConfig.target.IsExe
         }
 
 module internal ParseAndCheckFile =

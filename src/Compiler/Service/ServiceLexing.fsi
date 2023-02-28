@@ -355,7 +355,8 @@ type public FSharpLexerFlags =
     | Default = 0x11011
     | LightSyntaxOn = 0x00001
     | Compiling = 0x00010
-    | CompilingFSharpCore = 0x00110
+    | [<Obsolete("CompilingFSharpCore is deprecated, please use CompilingCoreLibrary instead.")>] CompilingFSharpCore = 0x00110
+    | CompilingCoreLibrary = 0x00110
     | SkipTrivia = 0x01000
     | UseLexFilter = 0x10000
 

@@ -191,7 +191,7 @@ let tname_IsByRefLikeAttribute = "System.Runtime.CompilerServices.IsByRefLikeAtt
 //-------------------------------------------------------------------------
 
 type TcGlobals(
-    compilingFSharpCore: bool,
+    compilingCoreLibrary: bool,
     ilg: ILGlobals,
     fslibCcu: CcuThunk,
     directoryToResolveRelativePaths,
@@ -575,7 +575,7 @@ type TcGlobals(
   let v_choice5_tcr     = mk_MFCore_tcref fslibCcu "Choice`5"
   let v_choice6_tcr     = mk_MFCore_tcref fslibCcu "Choice`6"
   let v_choice7_tcr     = mk_MFCore_tcref fslibCcu "Choice`7"
-  let tyconRefEq x y = primEntityRefEq compilingFSharpCore fslibCcu  x y
+  let tyconRefEq x y = primEntityRefEq compilingCoreLibrary fslibCcu  x y
 
   let v_suppressed_types =
     [ mk_MFCore_tcref fslibCcu "Option`1";
@@ -1036,8 +1036,8 @@ type TcGlobals(
   /// Doing this normalization is a fairly performance critical piece of code as it is frequently invoked
   /// in the process of converting .NET metadata to F# internal compiler data structures (see import.fs).
   let decompileTy (tcref: EntityRef) tinst =
-      if compilingFSharpCore then
-          // No need to decompile when compiling FSharp.Core.dll
+      if compilingCoreLibrary then
+          // No need to decompile when compiling FSharps CoreLibrary
           TType_app (tcref, tinst, v_knownWithoutNull)
       else
           let dict = getDecompileTypeDict()
@@ -1049,7 +1049,7 @@ type TcGlobals(
   /// Doing this normalization is a fairly performance critical piece of code as it is frequently invoked
   /// in the process of converting .NET metadata to F# internal compiler data structures (see import.fs).
   let improveTy (tcref: EntityRef) tinst =
-        if compilingFSharpCore then
+        if compilingCoreLibrary then
             let dict = getBetterTypeDict1()
             match dict.TryGetValue tcref.LogicalName with
             | true, builder -> builder tcref tinst
@@ -1086,7 +1086,7 @@ type TcGlobals(
   // better the job we do of mapping from provided expressions back to FSharp.Core F# functions and values.
   member _.knownFSharpCoreModules = v_knownFSharpCoreModules
 
-  member _.compilingFSharpCore = compilingFSharpCore
+  member _.compilingCoreLibrary = compilingCoreLibrary
 
   member _.useReflectionFreeCodeGen = useReflectionFreeCodeGen
 
@@ -1100,9 +1100,9 @@ type TcGlobals(
 
   member _.langVersion = langVersion
 
-  member _.unionCaseRefEq x y = primUnionCaseRefEq compilingFSharpCore fslibCcu x y
+  member _.unionCaseRefEq x y = primUnionCaseRefEq compilingCoreLibrary fslibCcu x y
 
-  member _.valRefEq x y = primValRefEq compilingFSharpCore fslibCcu x y
+  member _.valRefEq x y = primValRefEq compilingCoreLibrary fslibCcu x y
 
   member _.fslibCcu = fslibCcu
 
@@ -1801,7 +1801,7 @@ type TcGlobals(
   /// Indicates if we are generating witness arguments for SRTP constraints. Only done if the FSharp.Core
   /// supports witness arguments.
   member g.generateWitnesses =
-      compilingFSharpCore ||
+      compilingCoreLibrary ||
       ((ValRefForIntrinsic g.call_with_witnesses_info).TryDeref.IsSome && langVersion.SupportsFeature LanguageFeature.WitnessPassing)
 
   /// Indicates if we can use System.Array.Empty when emitting IL for empty array literals

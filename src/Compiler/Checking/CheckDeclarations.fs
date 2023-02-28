@@ -382,7 +382,7 @@ exception NotUpperCaseConstructorWithoutRQA of range: range
 
 let CheckNamespaceModuleOrTypeName (g: TcGlobals) (id: Ident) = 
     // type names '[]' etc. are used in fslib
-    if not g.compilingFSharpCore && id.idText.IndexOfAny IllegalCharactersInTypeAndNamespaceNames <> -1 then 
+    if not g.compilingCoreLibrary && id.idText.IndexOfAny IllegalCharactersInTypeAndNamespaceNames <> -1 then 
         errorR(Error(FSComp.SR.tcInvalidNamespaceModuleTypeUnionName(), id.idRange))
 
 let CheckDuplicates (idf: _ -> Ident) k elems = 
@@ -1304,7 +1304,7 @@ module MutRecBindingChecking =
                         //
                         // REVIEW: consider allowing an optimization switch to turn off these checks
 
-                        let needsSafeStaticInit = not g.compilingFSharpCore
+                        let needsSafeStaticInit = not g.compilingCoreLibrary
                         
                         // We only need safe static init checks if there are some static field bindings (actually, we look for non-method bindings)
                         let hasStaticBindings = 
@@ -2028,7 +2028,7 @@ module TyconConstraintInference =
                 assumedTycons |> Set.filter (fun tyconStamp -> 
                    let tycon, structuralTypes = tab[tyconStamp] 
 
-                   if g.compilingFSharpCore && 
+                   if g.compilingCoreLibrary && 
                       AugmentWithHashCompare.TyconIsCandidateForAugmentationWithCompare g tycon && 
                       not (HasFSharpAttribute g g.attrib_StructuralComparisonAttribute tycon.Attribs) && 
                       not (HasFSharpAttribute g g.attrib_NoComparisonAttribute tycon.Attribs) then 
@@ -2156,7 +2156,7 @@ module TyconConstraintInference =
 
                    let tycon, structuralTypes = tab[tyconStamp] 
 
-                   if g.compilingFSharpCore && 
+                   if g.compilingCoreLibrary && 
                       AugmentWithHashCompare.TyconIsCandidateForAugmentationWithEquals g tycon && 
                       not (HasFSharpAttribute g g.attrib_StructuralEqualityAttribute tycon.Attribs) && 
                       not (HasFSharpAttribute g g.attrib_NoEqualityAttribute tycon.Attribs) then 
@@ -3177,7 +3177,7 @@ module EstablishTypeDefinitionCores =
             let hasAbstractAttr = HasFSharpAttribute g g.attrib_AbstractClassAttribute attrs
             let hasSealedAttr = 
                 // The special case is needed for 'unit' because the 'Sealed' attribute is not yet available when this type is defined.
-                if g.compilingFSharpCore && id.idText = "Unit" then 
+                if g.compilingCoreLibrary && id.idText = "Unit" then 
                     Some true
                 else
                     TryFindFSharpBoolAttribute g g.attrib_SealedAttribute attrs
@@ -3223,7 +3223,7 @@ module EstablishTypeDefinitionCores =
                 
             let hiddenReprChecks hasRepr =
                  structLayoutAttributeCheck false
-                 if hasSealedAttr = Some false || (hasRepr && hasSealedAttr <> Some true && not (id.idText = "Unit" && g.compilingFSharpCore) ) then 
+                 if hasSealedAttr = Some false || (hasRepr && hasSealedAttr <> Some true && not (id.idText = "Unit" && g.compilingCoreLibrary) ) then 
                     errorR(Error(FSComp.SR.tcRepresentationOfTypeHiddenBySignature(), m))
                  if hasAbstractAttr then 
                      errorR (Error(FSComp.SR.tcOnlyClassesCanHaveAbstract(), m))
@@ -3974,7 +3974,7 @@ module TcDeclarations =
                  | _ -> 
                         //false
                         // There is a special case we allow when compiling FSharp.Core.dll which permits interface implementations across namespace fragments
-                        g.compilingFSharpCore && tcref.LogicalName.StartsWithOrdinal("Tuple`")
+                        g.compilingCoreLibrary && tcref.LogicalName.StartsWithOrdinal("Tuple`")
         
             let nReqTypars = reqTypars.Length
 

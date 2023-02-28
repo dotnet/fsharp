@@ -228,6 +228,7 @@ module internal FSharpEnvironment =
     let getCompilerToolsDesignTimeAssemblyPaths compilerToolPaths = searchToolPaths None compilerToolPaths
 
     let getFSharpCoreLibraryName = "FSharp.Core"
+
     let fsiLibraryName = "FSharp.Compiler.Interactive.Settings"
 
     let getFSharpCompilerLocationWithDefaultFromType (defaultLocation: Type) =

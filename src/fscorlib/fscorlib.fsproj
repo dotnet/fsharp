@@ -1,0 +1,253 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+
+    <NoWarn>$(NoWarn);62</NoWarn>       <!-- ML Compat -->
+    <NoWarn>$(NoWarn);75</NoWarn>       <!-- InternalCommandLineOption -->
+    <NoWarn>$(NoWarn);1204</NoWarn>     <!-- This construct is for use in the FSharp.Core library and should not be used directly -->
+    <NoWarn>$(NoWarn);57</NoWarn>       <!-- Turn off 57: Use of construct with Experimental attribute -->
+    <NoWarn>$(NoWarn);3511</NoWarn>     <!-- Turn off 3511: state machine not compilable - expected for inlined functions defining state machine generators -->
+    <NoWarn>$(NoWarn);3513</NoWarn>     <!-- Turn off 3513: resumable code invocation' - expected for resumable code combinators -->
+
+    <AllowCrossTargeting>true</AllowCrossTargeting>
+    <DefineConstants>$(DefineConstants);FSHARP_CORE</DefineConstants>
+    <OtherFlags>$(OtherFlags) --warnon:3218</OtherFlags>          <!-- 3218: ArgumentsInSigAndImplMismatch -->
+    <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>          <!-- 1182: Unused variables -->
+    <OtherFlags>$(OtherFlags) --warnon:3390</OtherFlags>          <!-- 3390: xmlDocBadlyFormed -->
+    <OtherFlags>$(OtherFlags) --warnon:3520</OtherFlags>          <!-- 3520: invalidXmlDocPosition -->
+    <OtherFlags>$(OtherFlags) --compiling-fscorlib --maxerrors:100 --extraoptimizationloops:1</OtherFlags>
+    <Tailcalls>true</Tailcalls>            <!-- .tail annotations always emitted for this binary, even in debug mode -->
+    <NGenBinary>true</NGenBinary>
+    <PreRelease>true</PreRelease>
+    <Configurations>Debug;Release;Proto</Configurations>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="..\FSharp.Core\FSCore.resx">
+      <GenerateSource>true</GenerateSource>
+      <GenerateLegacyCode>true</GenerateLegacyCode>
+      <GenerateLiterals>false</GenerateLiterals>
+      <GeneratedModuleName>Microsoft.FSharp.Core.SR</GeneratedModuleName>
+      <Link>FSCore.resx</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\FSharp.Core\ILLink.LinkAttributes.xml" LogicalName="ILLink.LinkAttributes.xml" />
+    <EmbeddedResource Include="..\FSharp.Core\ILLink.Substitutions.xml" LogicalName="ILLink.Substitutions.xml" />
+      <CompileBefore Include="..\FSharp.Core\prim-types-prelude.fsi">
+      <Link>Primitives/prim-types-prelude.fsi</Link>
+    </CompileBefore>
+    <CompileBefore Include="..\FSharp.Core\prim-types-prelude.fs">
+      <Link>Primitives/prim-types-prelude.fs</Link>
+    </CompileBefore>
+	<!--
+    <Compile Include="..\FSharp.Core\prim-types.fsi">
+      <Link>Primitives/prim-types.fsi</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\prim-types.fs">
+      <Link>Primitives/prim-types.fs</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\local.fsi">
+      <Link>Collections/local.fsi</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\local.fs">
+      <Link>Collections/local.fs</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\array2.fsi">
+      <Link>Collections/array2.fsi</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\array2.fs">
+      <Link>Collections/array2.fs</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\option.fsi">
+      <Link>Collections/option.fsi</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\option.fs">
+      <Link>Collections/option.fs</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\result.fsi">
+      <Link>Collections/result.fsi</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\result.fs">
+      <Link>Collections/result.fs</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\collections.fsi">
+      <Link>Collections/collections.fsi</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\collections.fs">
+      <Link>Collections/collections.fs</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\seqcore.fsi">
+      <Link>Collections/seqcore.fsi</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\seqcore.fs">
+      <Link>Collections/seqcore.fs</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\seq.fsi">
+      <Link>Collections/seq.fsi</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\seq.fs">
+      <Link>Collections/seq.fs</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\string.fsi">
+      <Link>Collections/string.fsi</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\string.fs">
+      <Link>Collections/string.fs</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\list.fsi">
+      <Link>Collections/list.fsi</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\list.fs">
+      <Link>Collections/list.fs</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\array.fsi">
+      <Link>Collections/array.fsi</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\array.fs">
+      <Link>Collections/array.fs</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\array3.fsi">
+      <Link>Collections/array3.fsi</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\array3.fs">
+      <Link>Collections/array3.fs</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\map.fsi">
+      <Link>Collections/map.fsi</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\map.fs">
+      <Link>Collections/map.fs</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\set.fsi">
+      <Link>Collections/set.fsi</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\set.fs">
+      <Link>Collections/set.fs</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\reflect.fsi">
+      <Link>Reflection/reflect.fsi</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\reflect.fs">
+      <Link>Reflection/reflect.fs</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\math\z.fsi">
+      <Link>Numerics/z.fsi</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\math\z.fs">
+      <Link>Numerics/z.fs</Link>
+    </Compile>
+    <Compile Include="..\Compiler\Utilities\sformat.fsi">
+      <Link>Printf/sformat.fsi</Link>
+    </Compile>
+    <Compile Include="..\Compiler\Utilities\sformat.fs">
+      <Link>Printf/sformat.fs</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\printf.fsi">
+      <Link>Printf/printf.fsi</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\printf.fs">
+      <Link>Printf/printf.fs</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\quotations.fsi">
+      <Link>Quotations/quotations.fsi</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\quotations.fs">
+      <Link>Quotations/quotations.fs</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\nativeptr.fsi">
+      <Link>NativeInterop/nativeptr.fsi</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\nativeptr.fs">
+      <Link>NativeInterop/nativeptr.fs</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\event.fsi">
+      <Link>Control/event.fsi</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\event.fs">
+      <Link>Control/event.fs</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\resumable.fsi">
+      <Link>Control/resumable.fsi</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\resumable.fs">
+      <Link>Control/resumable.fs</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\async.fsi">
+      <Link>Control/async.fsi</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\async.fs">
+      <Link>Control/async.fs</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\tasks.fsi">
+      <Link>Control/tasks.fsi</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\tasks.fs">
+      <Link>Control/tasks.fs</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\eventmodule.fsi">
+      <Link>Control/eventmodule.fsi</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\eventmodule.fs">
+      <Link>Control/eventmodule.fs</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\observable.fsi">
+      <Link>Control/observable.fsi</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\observable.fs">
+      <Link>Control/observable.fs</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\mailbox.fsi">
+      <Link>MailboxProcessor/mailbox.fsi</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\mailbox.fs">
+      <Link>MailboxProcessor/mailbox.fs</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\Nullable.fsi">
+      <Link>Queries/Nullable.fsi</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\Nullable.fs">
+      <Link>Queries/Nullable.fs</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\Linq.fsi">
+      <Link>Queries/Linq.fsi</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\Linq.fs">
+      <Link>Queries/Linq.fs</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\MutableTuple.fs">
+      <Link>Queries/MutableTuple.fs</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\QueryExtensions.fs">
+      <Link>Queries/QueryExtensions.fs</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\Query.fsi">
+      <Link>Queries/Query.fsi</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\Query.fs">
+      <Link>Queries/Query.fs</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\SI.fs">
+      <Link>Units/SI.fs</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\fslib-extra-pervasives.fsi">
+      <Link>Extras/fslib-extra-pervasives.fsi</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Core\fslib-extra-pervasives.fs">
+      <Link>Extras/fslib-extra-pervasives.fs</Link>
+    </Compile>
+-->
+  </ItemGroup>
+
+  <Target Name="CopyToBuiltBin" BeforeTargets="BuiltProjectOutputGroup" AfterTargets="CoreCompile">
+    <PropertyGroup>
+      <BuildOutputGroupLocation>$(BaseOutputPath)\$(Configuration)\$(TargetFramework)</BuildOutputGroupLocation>
+    </PropertyGroup>
+    <ItemGroup>
+      <BuiltProjectOutputGroupKeyOutput Include="..\FSharp.Core\$(BuildOutputGroupLocation)\fscorlib.xml" />
+    </ItemGroup>
+  </Target>
+
+</Project>

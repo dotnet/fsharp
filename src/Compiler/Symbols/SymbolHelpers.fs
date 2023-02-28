@@ -607,11 +607,11 @@ module internal SymbolHelpers =
                 GetXmlCommentForItemAux None infoReader m item
 
         | Item.Value vref | Item.CustomBuilder (_, vref) ->            
-            let doc = if valRefInThisAssembly g.compilingFSharpCore vref || vref.XmlDoc.NonEmpty then Some vref.XmlDoc else None
+            let doc = if valRefInThisAssembly g.compilingCoreLibrary vref || vref.XmlDoc.NonEmpty then Some vref.XmlDoc else None
             GetXmlCommentForItemAux doc infoReader m item
 
         | Item.UnionCase(ucinfo, _) -> 
-            let doc = if tyconRefUsesLocalXmlDoc g.compilingFSharpCore ucinfo.TyconRef || ucinfo.UnionCase.XmlDoc.NonEmpty then Some ucinfo.UnionCase.XmlDoc else None
+            let doc = if tyconRefUsesLocalXmlDoc g.compilingCoreLibrary ucinfo.TyconRef || ucinfo.UnionCase.XmlDoc.NonEmpty then Some ucinfo.UnionCase.XmlDoc else None
             GetXmlCommentForItemAux doc infoReader m item
 
         | Item.ActivePatternCase apref -> 
@@ -619,13 +619,13 @@ module internal SymbolHelpers =
             GetXmlCommentForItemAux doc infoReader m item
 
         | Item.ExnCase ecref -> 
-            let doc = if tyconRefUsesLocalXmlDoc g.compilingFSharpCore ecref || ecref.XmlDoc.NonEmpty then Some ecref.XmlDoc else None
+            let doc = if tyconRefUsesLocalXmlDoc g.compilingCoreLibrary ecref || ecref.XmlDoc.NonEmpty then Some ecref.XmlDoc else None
             GetXmlCommentForItemAux doc infoReader m item
 
         | Item.RecdField rfinfo ->
             let tcref = rfinfo.TyconRef
             let doc =
-                if tyconRefUsesLocalXmlDoc g.compilingFSharpCore tcref || tcref.XmlDoc.NonEmpty then
+                if tyconRefUsesLocalXmlDoc g.compilingCoreLibrary tcref || tcref.XmlDoc.NonEmpty then
                     if tcref.IsFSharpException then
                         Some tcref.XmlDoc
                     else
@@ -652,7 +652,7 @@ module internal SymbolHelpers =
             let doc =
                 match tys with
                 | AbbrevOrAppTy tcref :: _ ->
-                    if tyconRefUsesLocalXmlDoc g.compilingFSharpCore tcref || tcref.XmlDoc.NonEmpty then
+                    if tyconRefUsesLocalXmlDoc g.compilingCoreLibrary tcref || tcref.XmlDoc.NonEmpty then
                         Some tcref.XmlDoc
                     else
                         None
@@ -663,7 +663,7 @@ module internal SymbolHelpers =
             let doc =
                 match tcrefs with
                 | tcref :: _ ->
-                    if tyconRefUsesLocalXmlDoc g.compilingFSharpCore tcref || tcref.XmlDoc.NonEmpty then
+                    if tyconRefUsesLocalXmlDoc g.compilingCoreLibrary tcref || tcref.XmlDoc.NonEmpty then
                         Some tcref.XmlDoc
                     else
                         None
@@ -673,7 +673,7 @@ module internal SymbolHelpers =
         | Item.ModuleOrNamespaces(modref :: _ as modrefs) -> 
             let definiteNamespace = modrefs |> List.forall (fun modref -> modref.IsNamespace)
             if not definiteNamespace then
-                let doc = if entityRefInThisAssembly g.compilingFSharpCore modref || modref.XmlDoc.NonEmpty  then Some modref.XmlDoc else None
+                let doc = if entityRefInThisAssembly g.compilingCoreLibrary modref || modref.XmlDoc.NonEmpty  then Some modref.XmlDoc else None
                 GetXmlCommentForItemAux doc infoReader m item
             else
                 GetXmlCommentForItemAux None infoReader m item
@@ -684,13 +684,13 @@ module internal SymbolHelpers =
                 | Some(ArgumentContainer.Method minfo) ->
                     if minfo.HasDirectXmlComment || minfo.XmlDoc.NonEmpty  then Some minfo.XmlDoc else None 
                 | Some(ArgumentContainer.Type tcref) ->
-                    if tyconRefUsesLocalXmlDoc g.compilingFSharpCore tcref || tcref.XmlDoc.NonEmpty  then Some tcref.XmlDoc else None
+                    if tyconRefUsesLocalXmlDoc g.compilingCoreLibrary tcref || tcref.XmlDoc.NonEmpty  then Some tcref.XmlDoc else None
                 | _ -> None
             GetXmlCommentForItemAux doc infoReader m item
 
         | Item.UnionCaseField (ucinfo, _) ->
             let doc =
-                if tyconRefUsesLocalXmlDoc g.compilingFSharpCore ucinfo.TyconRef || ucinfo.UnionCase.XmlDoc.NonEmpty then
+                if tyconRefUsesLocalXmlDoc g.compilingCoreLibrary ucinfo.TyconRef || ucinfo.UnionCase.XmlDoc.NonEmpty then
                     Some ucinfo.UnionCase.XmlDoc
                 else
                     None

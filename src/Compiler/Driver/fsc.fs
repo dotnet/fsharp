@@ -1160,7 +1160,7 @@ let main6
     // Don't copy referenced FSharp.core.dll if we are building FSharp.Core.dll
     if
         (tcConfig.copyFSharpCore = CopyFSharpCoreFlag.Yes)
-        && not tcConfig.compilingFSharpCore
+        && not tcConfig.compilingCoreLibrary
         && not tcConfig.standalone
     then
         CopyFSharpCore(outfile, tcConfig.referencedDLLs)

@@ -2331,6 +2331,8 @@ val internal parseILVersion: string -> ILVersionInfo
 val internal formatILVersion: ILVersionInfo -> string
 val internal compareILVersions: ILVersionInfo -> ILVersionInfo -> int
 
+val internal mkDummyCoreLibraryScopeRef: string -> ILScopeRef
+
 /// Decompose a type definition according to its kind.
 type internal ILEnumInfo =
     { enumValues: (string * ILFieldInit) list

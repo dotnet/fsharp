@@ -682,6 +682,11 @@
         <target state="translated">Neplatná hodnota „{0}“ pro --interfacedata, platná hodnota je: none, file, compress.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsUnrecognizedCompilingCoreLib">
+        <source>Unrecognized value '{0}' for --compiling-core-library: valid values: 'FSharp.Core' and "fscorlib'</source>
+        <target state="new">Unrecognized value '{0}' for --compiling-core-library: valid values: 'FSharp.Core' and "fscorlib'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageVersion">
         <source>Unrecognized value '{0}' for --langversion use --langversion:? for complete list</source>
         <target state="translated">Nerozpoznaná hodnota {0} pro parametr --langversion; seznam možností zobrazíte zadáním --langversion:?</target>

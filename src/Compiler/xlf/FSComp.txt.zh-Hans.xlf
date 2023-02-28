@@ -682,6 +682,11 @@
         <target state="translated">--interfacedata 的值 "{0}" 无效，有效值为: none、file、compress。</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsUnrecognizedCompilingCoreLib">
+        <source>Unrecognized value '{0}' for --compiling-core-library: valid values: 'FSharp.Core' and "fscorlib'</source>
+        <target state="new">Unrecognized value '{0}' for --compiling-core-library: valid values: 'FSharp.Core' and "fscorlib'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageVersion">
         <source>Unrecognized value '{0}' for --langversion use --langversion:? for complete list</source>
         <target state="translated">--langversion 的值“{0}”无法识别，使用 --langversion:? 获取完整列表。</target>

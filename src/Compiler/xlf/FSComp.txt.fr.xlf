@@ -682,6 +682,11 @@
         <target state="translated">Valeur non valide '{0}' pour --interfacedata. Les valeurs valides sont : none, file, compress.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsUnrecognizedCompilingCoreLib">
+        <source>Unrecognized value '{0}' for --compiling-core-library: valid values: 'FSharp.Core' and "fscorlib'</source>
+        <target state="new">Unrecognized value '{0}' for --compiling-core-library: valid values: 'FSharp.Core' and "fscorlib'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageVersion">
         <source>Unrecognized value '{0}' for --langversion use --langversion:? for complete list</source>
         <target state="translated">Valeur non reconnue '{0}' pour --langversion use --langversion:? pour la liste complète</target>

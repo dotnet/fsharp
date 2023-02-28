@@ -682,6 +682,11 @@
         <target state="translated">--interfacedata에 대한 '{0}' 값이 잘못되었습니다. 올바른 값은 none, file, compress입니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsUnrecognizedCompilingCoreLib">
+        <source>Unrecognized value '{0}' for --compiling-core-library: valid values: 'FSharp.Core' and "fscorlib'</source>
+        <target state="new">Unrecognized value '{0}' for --compiling-core-library: valid values: 'FSharp.Core' and "fscorlib'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageVersion">
         <source>Unrecognized value '{0}' for --langversion use --langversion:? for complete list</source>
         <target state="translated">전체 목록에 대한 --langversion use --langversion:?의 인식할 수 없는 값 '{0}'입니다.</target>
