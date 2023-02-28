@@ -1934,6 +1934,48 @@ module Array =
     module Parallel =
         open System.Threading.Tasks
 
+        [<CompiledName("TryFindIndex")>]
+        let tryFindIndex predicate (array: _[]) =
+            checkNonNull "array" array
+
+            let pResult =
+                Parallel.For(
+                    0,
+                    array.Length,
+                    body =
+                        (fun i pState ->
+                            if predicate array[i] then
+                                pState.Break())
+                )
+
+            pResult.LowestBreakIteration |> Option.ofNullable |> Option.map int
+
+        [<CompiledName("TryFind")>]
+        let tryFind predicate (array: _[]) =
+            array |> tryFindIndex predicate |> Option.map (fun i -> array.[i])
+
+        [<CompiledName("TryPick")>]
+        let tryPick chooser (array: _[]) =
+            checkNonNull "array" array
+            let allChosen = new System.Collections.Concurrent.ConcurrentDictionary<_, _>()
+
+            let pResult =
+                Parallel.For(
+                    0,
+                    array.Length,
+                    body =
+                        (fun i pState ->
+                            match chooser array[i] with
+                            | None -> ()
+                            | chosenElement ->
+                                allChosen[i] <- chosenElement
+                                pState.Break())
+                )
+
+            pResult.LowestBreakIteration
+            |> Option.ofNullable
+            |> Option.bind (fun i -> allChosen[int i])
+
         [<CompiledName("Choose")>]
         let choose chooser (array: 'T[]) =
             checkNonNull "array" array
