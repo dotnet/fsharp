@@ -60,6 +60,9 @@ type Document with
     member this.IsFSharpScript =
         isScriptFile this.FilePath
 
+    member this.IsFSharpSignatureFile =
+        isSignatureFile this.FilePath
+
 module private SourceText =
 
     open System.Runtime.CompilerServices
