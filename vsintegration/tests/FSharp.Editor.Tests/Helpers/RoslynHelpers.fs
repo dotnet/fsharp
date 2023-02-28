@@ -292,7 +292,7 @@ type RoslynTestHelpers private () =
         let document = project.Documents |> Seq.exactlyOne
         document
 
-    static member CreateSolution (syntheticProject: SyntheticProject) =
+    static member CreateSolution(syntheticProject: SyntheticProject) =
 
         let checker = syntheticProject.SaveAndCheck()
 
@@ -301,14 +301,18 @@ type RoslynTestHelpers private () =
         let projId = ProjectId.CreateNewId()
 
         let docInfos =
-            [ for project, file in syntheticProject.GetAllFiles() do
-                let filePath = getFilePath project file
-                RoslynTestHelpers.CreateDocumentInfo projId filePath (File.ReadAllText filePath)
-                if file.HasSignatureFile then
-                    let sigFilePath = getSignatureFilePath project file
-                    RoslynTestHelpers.CreateDocumentInfo projId sigFilePath (File.ReadAllText sigFilePath) ]
+            [
+                for project, file in syntheticProject.GetAllFiles() do
+                    let filePath = getFilePath project file
+                    RoslynTestHelpers.CreateDocumentInfo projId filePath (File.ReadAllText filePath)
 
-        let projInfo = RoslynTestHelpers.CreateProjectInfo projId syntheticProject.ProjectFileName docInfos
+                    if file.HasSignatureFile then
+                        let sigFilePath = getSignatureFilePath project file
+                        RoslynTestHelpers.CreateDocumentInfo projId sigFilePath (File.ReadAllText sigFilePath)
+            ]
+
+        let projInfo =
+            RoslynTestHelpers.CreateProjectInfo projId syntheticProject.ProjectFileName docInfos
 
         let options = syntheticProject.GetProjectOptions checker
 
@@ -319,7 +323,7 @@ type RoslynTestHelpers private () =
 
         let projInfo = projInfo.WithMetadataReferences metadataReferences
 
-        let solution = RoslynTestHelpers.CreateSolution [projInfo]
+        let solution = RoslynTestHelpers.CreateSolution [ projInfo ]
 
         options |> RoslynTestHelpers.SetProjectOptions projId solution
 
