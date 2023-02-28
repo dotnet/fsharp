@@ -3808,6 +3808,7 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad ty lid =
                 if isAnonRecd then
                     []
                 else
+                    // todo questionable - match by range?
                     lid |> List.takeWhile (fun id -> id.idText <> fldIdText)
 
             match rest with

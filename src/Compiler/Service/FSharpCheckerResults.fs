@@ -643,12 +643,10 @@ type internal TypeCheckInfo
         let thereWereSomeQuals = not (Array.isEmpty quals)
         thereWereSomeQuals, quals
 
-    /// Returns the list of available record fields, taking into account to potential nesting
+    /// Returns the list of available record fields, taking into account potential nesting
     let GetRecdFieldsForCopyAndUpdateExpr (identRange: range, plid: string list) =
-        let _, quals = GetExprTypingForPosition(identRange.End)
-
-        let rec dive (ty, nenv: NameResolutionEnv, ad, m) plid isPastTypePrefix wasPathEmpty =
-            if isRecdTy nenv.DisplayEnv.g ty then
+        let rec dive ty (denv: DisplayEnv) ad m plid isPastTypePrefix wasPathEmpty =
+            if isRecdTy denv.g ty then
                 let fields =
                     ncenv.InfoReader.GetRecordOrClassFieldsOfType(None, ad, m, ty)
                     |> List.filter (fun rfref -> not rfref.IsStatic && IsFieldInfoAccessible ad rfref)
@@ -656,24 +654,38 @@ type internal TypeCheckInfo
                 match plid with
                 | [] ->
                     if wasPathEmpty || isPastTypePrefix then
-                        Some(fields |> List.map Item.RecdField, nenv.DisplayEnv, m)
+                        Some(fields |> List.map Item.RecdField, denv, m)
                     else
                         None
                 | id :: rest ->
                     match fields |> List.tryFind (fun f -> f.LogicalName = id) with
-                    | Some f -> dive (f.RecdField.FormalType, nenv, ad, m) rest true wasPathEmpty
+                    | Some f -> dive f.RecdField.FormalType denv ad m rest true wasPathEmpty
                     | _ ->
                         // Field name can be optionally qualified
                         // If we haven't matched a field name yet, keep peeling off the prefix
                         if isPastTypePrefix then
-                            Some([], nenv.DisplayEnv, m)
+                            Some([], denv, m)
                         else
-                            dive (ty, nenv, ad, m) rest false wasPathEmpty
+                            dive ty denv ad m rest false wasPathEmpty
             else
-                Some([], nenv.DisplayEnv, m)
+                match tryDestAnonRecdTy denv.g ty with
+                | ValueSome (anonInfo, tys) ->
+                    match plid with
+                    | [] ->
+                        let items = [
+                            for i in 0 .. anonInfo.SortedIds.Length - 1 do
+                                Item.AnonRecdField (anonInfo, tys, i, anonInfo.SortedIds[i].idRange)
+                        ]
+                        
+                        Some(items, denv, m)
+                    | id :: rest ->
+                        match anonInfo.SortedNames |> Array.tryFindIndex (fun x -> x = id) with
+                        | Some i -> dive tys[i] denv ad m rest true wasPathEmpty
+                        | _ -> Some([], denv, m)
+                | ValueNone -> Some([], denv, m)
 
-        match quals |> Array.tryFind (fun (_, _, _, rq) -> posEq identRange.Start rq.Start) with
-        | Some qual -> dive qual plid false plid.IsEmpty
+        match GetExprTypingForPosition identRange.End |> snd |> Array.tryFind (fun (_, _, _, rq) -> posEq identRange.Start rq.Start) with
+        | Some (ty, nenv, ad, m) -> dive ty nenv.DisplayEnv ad m plid false plid.IsEmpty
         | _ -> None
 
     /// Looks at the exact expression types at the position to the left of the
