@@ -75,7 +75,7 @@ jobs:
     - name: Process fantomas command
       if: steps.command-extractor.outputs.result == 'fantomas'
       id: fantomas
-      run: dotnet fantomas src -r
+      run: dotnet fantomas . -r
     - name: Process fantomas command
       if: steps.command-extractor.outputs.result == 'xlf'
       id: xlf

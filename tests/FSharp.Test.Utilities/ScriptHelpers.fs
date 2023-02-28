@@ -11,71 +11,17 @@ open FSharp.Compiler
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditorServices
-
-type CapturedTextReader() =
-    inherit TextReader()
-    let queue = Queue<char>()
-    member _.ProvideInput(text: string) =
-        for c in text.ToCharArray() do
-            queue.Enqueue(c)
-    override _.Peek() =
-        if queue.Count > 0 then queue.Peek() |> int else -1
-    override _.Read() =
-        if queue.Count > 0 then queue.Dequeue() |> int else -1
-
-type RedirectConsoleInput() =
-    let oldStdIn = Console.In
-    let newStdIn = new CapturedTextReader()
-    do Console.SetIn(newStdIn)
-    member _.ProvideInput(text: string) =
-        newStdIn.ProvideInput(text)
-    interface IDisposable with
-        member _.Dispose() =
-            Console.SetIn(oldStdIn)
-            newStdIn.Dispose()
-
-type EventedTextWriter() =
-    inherit TextWriter()
-    let sb = StringBuilder()
-    let lineWritten = Event<string>()
-    member _.LineWritten = lineWritten.Publish
-    override _.Encoding = Encoding.UTF8
-    override _.Write(c: char) =
-        if c = '\n' then
-            let line =
-                let v = sb.ToString()
-                if v.EndsWith("\r") then v.Substring(0, v.Length - 1)
-                else v
-            sb.Clear() |> ignore
-            lineWritten.Trigger(line)
-        else sb.Append(c) |> ignore
-
-type RedirectConsoleOutput() =
-    let outputProduced = Event<string>()
-    let errorProduced = Event<string>()
-    let oldStdOut = Console.Out
-    let oldStdErr = Console.Error
-    let newStdOut = new EventedTextWriter()
-    let newStdErr = new EventedTextWriter()
-    do newStdOut.LineWritten.Add outputProduced.Trigger
-    do newStdErr.LineWritten.Add errorProduced.Trigger
-    do Console.SetOut(newStdOut)
-    do Console.SetError(newStdErr)
-    member _.OutputProduced = outputProduced.Publish
-    member _.ErrorProduced = errorProduced.Publish
-    interface IDisposable with
-        member _.Dispose() =
-            Console.SetOut(oldStdOut)
-            Console.SetError(oldStdErr)
-            newStdOut.Dispose()
-            newStdErr.Dispose()
-
+open FSharp.Test.Utilities
 
 [<RequireQualifiedAccess>]
 type LangVersion =
     | V47
     | V50
+    | V60
+    | V70
     | Preview
+    | Latest
+    | SupportsMl
 
 type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVersion) =
 
@@ -96,8 +42,11 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
         if quiet then "--quiet"
         match langVersion with
         | LangVersion.V47 -> "--langversion:4.7"
-        | LangVersion.V50 -> "--langversion:5.0"
+        | LangVersion.V50 | LangVersion.SupportsMl -> "--langversion:5.0"
         | LangVersion.Preview -> "--langversion:preview"
+        | LangVersion.Latest -> "--langversion:latest"
+        | LangVersion.V60 -> "--langversion:6.0"
+        | LangVersion.V70 -> "--langversion:7.0"
         |]
 
     let argv = Array.append baseArgs additionalArgs

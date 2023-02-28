@@ -4,6 +4,7 @@ module FSharp.Compiler.ComponentTests.Language.PrintfFormatTests
 
 open Xunit
 open FSharp.Test.Compiler
+open StructuredResultsAsserts
 
 [<Fact>]
 let ``Constant defined in C# can be used as printf format``() =
@@ -32,7 +33,7 @@ module PrintfFormatTests
 [<Literal>]
 let Format = "%d"
 
-if sprintf Format Format.Length <> "2" then
+if sprintf Format (Format.Length) <> "2" then
     failwith "failed"
     """
     |> withLangVersionPreview
