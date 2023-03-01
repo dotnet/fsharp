@@ -7,7 +7,7 @@ ImplFile
           [Expr
              (AnonRecd
                 (false, None,
-                 [(A, Some (1,5--1,6), Const (Int32 1, (1,7--1,8)))],
+                 [([A], Some (1,5--1,6), Const (Int32 1, (1,7--1,8)))],
                  (1,0--1,11), { OpeningBraceRange = (1,0--1,2) }), (1,0--1,11))],
           PreXmlDocEmpty, [], None, (1,0--1,11), { LeadingKeyword = None })],
       (true, false), { ConditionalDirectives = []
