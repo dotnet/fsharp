@@ -19,20 +19,21 @@ open Microsoft.VisualStudio.Text.PatternMatching
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax
 
-[<Export(typeof<IFSharpNavigateToSearchService>)>]
+[<Export(typeof<IFSharpNavigateToSearchService>); Shared>]
 type internal FSharpNavigateToSearchService [<ImportingConstructor>]
     (
         patternMatcherFactory: IPatternMatcherFactory,
-        workspace: VisualStudioWorkspace
+        [<Import(AllowDefault = true)>] workspace: VisualStudioWorkspace
     ) =
 
     let cache = ConcurrentDictionary<DocumentId, VersionStamp * NavigableItem array>()
 
     do
-        workspace.WorkspaceChanged.Add
-        <| fun e ->
-            if e.NewSolution.Id <> e.OldSolution.Id then
-                cache.Clear()
+        if workspace <> null then
+            workspace.WorkspaceChanged.Add
+            <| fun e ->
+                if e.NewSolution.Id <> e.OldSolution.Id then
+                    cache.Clear()
 
     let getNavigableItems (document: Document) =
         async {
@@ -140,7 +141,7 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>]
             | 0 -> PatternMatch(PatternMatchKind.Prefix, false, true) |> Some
             | _ -> patternMatcher.Value.TryMatch name |> Option.ofNullable
 
-    let processDocument (document: Document) (tryMatch: string -> PatternMatch option) (kinds: IImmutableSet<string>) =
+    let processDocument (tryMatch: string -> PatternMatch option) (kinds: IImmutableSet<string>) (document: Document) =
         async {
             let! sourceText = document.GetTextAsync Async.DefaultCancellationToken |> Async.AwaitTask
 
@@ -190,7 +191,8 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>]
                 let tryMatch = createMatcherFor searchPattern
 
                 let! results =
-                    seq { for document in project.Documents -> processDocument document tryMatch kinds }
+                    project.Documents
+                    |> Seq.map (processDocument tryMatch kinds)
                     |> Async.Parallel
 
                 return results |> Array.concat |> Array.toImmutableArray
@@ -205,7 +207,7 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>]
                 cancellationToken
             ) : Task<ImmutableArray<FSharpNavigateToSearchResult>> =
             async {
-                let! result = processDocument document (createMatcherFor searchPattern) kinds
+                let! result = processDocument (createMatcherFor searchPattern) kinds document
                 return result |> Array.toImmutableArray
             }
             |> RoslynHelpers.StartAsyncAsTask cancellationToken
