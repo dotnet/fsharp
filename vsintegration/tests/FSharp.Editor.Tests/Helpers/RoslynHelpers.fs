@@ -28,6 +28,7 @@ module MefHelpers =
             [|
                 "Microsoft.CodeAnalysis.Workspaces.dll"
                 "Microsoft.VisualStudio.Shell.15.0.dll"
+                "Microsoft.VisualStudio.Platform.VSEditor.dll"
                 "FSharp.Editor.dll"
             |]
 
@@ -49,7 +50,7 @@ module MefHelpers =
         |> Seq.append MefHostServices.DefaultAssemblies
         |> Array.ofSeq
 
-    let createExportProvider () =
+    let exportProviderFactory =
         let resolver = Resolver.DefaultInstance
 
         let catalog =
@@ -62,15 +63,19 @@ module MefHelpers =
                 )
 
             let parts = partDiscovery.CreatePartsAsync(asms).Result
-            let catalog = ComposableCatalog.Create(resolver)
-            catalog.AddParts(parts)
+            ComposableCatalog
+                .Create(resolver)
+                .AddParts(parts)
+                .WithCompositionService()
 
         let configuration =
-            CompositionConfiguration.Create(catalog.WithCompositionService())
+            CompositionConfiguration.Create(catalog)
 
-        let runtimeComposition = RuntimeComposition.CreateRuntimeComposition(configuration)
-        let exportProviderFactory = runtimeComposition.CreateExportProviderFactory()
-        exportProviderFactory.CreateExportProvider()
+        RuntimeComposition
+            .CreateRuntimeComposition(configuration)
+            .CreateExportProviderFactory()
+
+    let createExportProvider () = exportProviderFactory.CreateExportProvider()
 
 type TestWorkspaceServiceMetadata(serviceType: string, layer: string) =
 
