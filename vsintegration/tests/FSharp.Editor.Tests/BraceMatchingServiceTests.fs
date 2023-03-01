@@ -93,6 +93,35 @@ type BraceMatchingServiceTests() =
         this.VerifyBraceMatch("let x = $\"abc{1}def\"", "{1", "}def")
 
     [<Fact>]
+    member this.BraceInInterpolatedStringWith3Dollars() =
+        this.VerifyBraceMatch("let x = $$$\"\"\"abc{{{1}}}def\"\"\"", "{{{", "}}}")
+
+    [<Theory>]
+    [<InlineData("{{not")>]
+    [<InlineData("}}match")>]
+    [<InlineData("f{")>]
+    [<InlineData("6}")>]
+    member this.BraceNoMatchInNestedInterpolatedStrings(marker) =
+        let source =
+            "let x = $$$\"\"\"{{not a }}match
+e{{{4$\"f{56}g\"}}}h
+\"\"\""
+
+        this.VerifyNoBraceMatch(source, marker)
+
+    [<Theory>]
+    [<InlineData("{{{23", "}}}d")>]
+    [<InlineData("{{{4$", "}}}h")>]
+    [<InlineData("{56", "}g")>]
+    member this.BraceMatchInNestedInterpolatedStrings(startMark, endMark) =
+        let source =
+            "let x = $$$\"\"\"a{{{01}}}b --- c{{{23}}}d
+e{{{4$\"f{56}g\"}}}h
+\"\"\""
+
+        this.VerifyBraceMatch(source, startMark, endMark)
+
+    [<Fact>]
     member this.BraceInInterpolatedStringTwoHoles() =
         this.VerifyBraceMatch("let x = $\"abc{1}def{2+3}hij\"", "{2", "}hij")
 
