@@ -4406,12 +4406,12 @@ atomicExprQualification:
             reportParseErrorAt mDot (FSComp.SR.parsMissingQualificationAfterDot()) 
             let fixedLhsm = mkRange mLhs.FileName mLhs.Start mDot.End // previous mLhs is wrong after 'recover'
             mkSynDotMissing mDot fixedLhsm e) }
-  | recover 
-      { (fun e mLhs mDot -> 
-            reportParseErrorAt mDot (FSComp.SR.parsMissingQualificationAfterDot()) 
+  | recover
+      { (fun e mLhs mDot ->
+            reportParseErrorAt mDot (FSComp.SR.parsMissingQualificationAfterDot())
             let fixedLhsm = mkRange mLhs.FileName mLhs.Start mDot.End // previous mLhs is wrong after 'recover'
             // Include 'e' in the returned expression but throw it away
-            SynExpr.DiscardAfterMissingQualificationAfterDot (e, fixedLhsm)) }
+            mkSynDotMissing mDot fixedLhsm e) }
   | LPAREN COLON_COLON rparen DOT INT32  
       { (fun e mLhs mDot -> 
             if parseState.LexBuffer.ReportLibraryOnlyFeatures then libraryOnlyError(lhs parseState)

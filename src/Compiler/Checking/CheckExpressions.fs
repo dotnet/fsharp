@@ -4935,9 +4935,9 @@ and ConvSynPatToSynExpr synPat =
     | SynPat.LongIdent (longDotId=SynLongIdent(longId, dotms, trivia) as synLongId; argPats=args; accessibility=None; range=m) ->
         let args = match args with SynArgPats.Pats args -> args | _ -> failwith "impossible: active patterns can be used only with SynConstructorArgs.Pats"
         let e =
-            if dotms.Length = longId.Length then
+            if not dotms.IsEmpty && dotms.Length = longId.Length then
                 let e = SynExpr.LongIdent (false, SynLongIdent(longId, List.truncate (dotms.Length - 1) dotms, trivia), None, m)
-                SynExpr.DiscardAfterMissingQualificationAfterDot (e, unionRanges e.Range (List.last dotms))
+                SynExpr.DiscardAfterMissingQualificationAfterDot (e, List.last dotms, unionRanges e.Range (List.last dotms))
             else SynExpr.LongIdent (false, synLongId, None, m)
         List.fold (fun f x -> mkSynApp1 f (ConvSynPatToSynExpr x) m) e args
 
@@ -5190,6 +5190,12 @@ and TcExprThen (cenv: cenv) overallTy env tpenv isArg synExpr delayed =
 
     match synExpr with
 
+    // A.
+    // A.B.
+    | SynExpr.DiscardAfterMissingQualificationAfterDot (expr1, _, m) ->
+        let _, _, tpenv = suppressErrorReporting (fun () -> TcExprOfUnknownTypeThen cenv env tpenv expr1 [DelayedDot])
+        mkDefault(m, overallTy.Commit), tpenv
+
     // A
     // A.B.C
     | LongOrSingleIdent (isOpt, longId, altNameRefCellOpt, mLongId) ->
@@ -5231,7 +5237,7 @@ and TcExprThen (cenv: cenv) overallTy env tpenv isArg synExpr delayed =
     // etc.
     | SynExpr.DotGet (expr1, _, SynLongIdent(longId, _, _), _) ->
         TcNonControlFlowExpr env <| fun env ->
-        TcExprThen cenv overallTy env tpenv false expr1 ((DelayedDotLookup (longId, synExpr.RangeWithoutAnyExtraDot)) :: delayed)
+        TcExprThen cenv overallTy env tpenv false expr1 ((DelayedDotLookup (longId, synExpr.Range)) :: delayed)
 
     // expr1.[expr2]
     // expr1.[e21, ..., e2n]
@@ -5457,7 +5463,8 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
     | SynExpr.LongIdent _
     | SynExpr.App _
     | SynExpr.Dynamic _
-    | SynExpr.DotGet _ ->
+    | SynExpr.DotGet _
+    | SynExpr.DiscardAfterMissingQualificationAfterDot _ ->
         error(Error(FSComp.SR.tcExprUndelayed(), synExpr.Range))
 
     | SynExpr.Const (SynConst.String (s, _, m), _) ->
@@ -5600,10 +5607,6 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
 
     | SynExpr.ArbitraryAfterError (_debugStr, m) ->
         //SolveTypeAsError cenv env.DisplayEnv m overallTy
-        mkDefault(m, overallTy.Commit), tpenv
-
-    | SynExpr.DiscardAfterMissingQualificationAfterDot (expr1, m) ->
-        let _, _, tpenv = suppressErrorReporting (fun () -> TcExprOfUnknownTypeThen cenv env tpenv expr1 [DelayedDot])
         mkDefault(m, overallTy.Commit), tpenv
 
     | SynExpr.FromParseError (expr1, m) ->
@@ -6007,45 +6010,26 @@ and TcExprStaticOptimization (cenv: cenv) overallTy env tpenv (constraints, synE
 /// synExpr1.longId <- synExpr2
 and TcExprDotSet (cenv: cenv) overallTy env tpenv (synExpr1, synLongId, synExpr2, mStmt) =
     let (SynLongIdent(longId, _, _)) = synLongId
-  
-    if synLongId.ThereIsAnExtraDotAtTheEnd then
-        // just drop rhs on the floor
-        let mExprAndDotLookup = unionRanges synExpr1.Range (rangeOfLid longId)
-        TcExprThen cenv overallTy env tpenv false synExpr1 [DelayedDotLookup(longId, mExprAndDotLookup)]
-    else
-        let mExprAndDotLookup = unionRanges synExpr1.Range (rangeOfLid longId)
-        TcExprThen cenv overallTy env tpenv false synExpr1 [DelayedDotLookup(longId, mExprAndDotLookup); MakeDelayedSet(synExpr2, mStmt)]
+    let mExprAndDotLookup = unionRanges synExpr1.Range (rangeOfLid longId)
+    TcExprThen cenv overallTy env tpenv false synExpr1 [DelayedDotLookup(longId, mExprAndDotLookup); MakeDelayedSet(synExpr2, mStmt)]
 
 /// synExpr1.longId(synExpr2) <- expr3, very rarely used named property setters
 and TcExprDotNamedIndexedPropertySet (cenv: cenv) overallTy env tpenv (synExpr1, synLongId, synExpr2, expr3, mStmt) =
     let (SynLongIdent(longId, _, _)) = synLongId
-    if synLongId.ThereIsAnExtraDotAtTheEnd then
-        // just drop rhs on the floor
-        let mExprAndDotLookup = unionRanges synExpr1.Range (rangeOfLid longId)
-        TcExprThen cenv overallTy env tpenv false synExpr1 [DelayedDotLookup(longId, mExprAndDotLookup)]
-    else
-        let mExprAndDotLookup = unionRanges synExpr1.Range (rangeOfLid longId)
-        TcExprThen cenv overallTy env tpenv false synExpr1 
-            [ DelayedDotLookup(longId, mExprAndDotLookup); 
-              DelayedApp(ExprAtomicFlag.Atomic, false, None, synExpr2, mStmt)
-              MakeDelayedSet(expr3, mStmt)]
+    let mExprAndDotLookup = unionRanges synExpr1.Range (rangeOfLid longId)
+    TcExprThen cenv overallTy env tpenv false synExpr1 
+        [ DelayedDotLookup(longId, mExprAndDotLookup); 
+          DelayedApp(ExprAtomicFlag.Atomic, false, None, synExpr2, mStmt)
+          MakeDelayedSet(expr3, mStmt)]
 
 and TcExprLongIdentSet (cenv: cenv) overallTy env tpenv (synLongId, synExpr2, m) =
-    if synLongId.ThereIsAnExtraDotAtTheEnd then
-        // just drop rhs on the floor
-        TcLongIdentThen cenv overallTy env tpenv synLongId [ ]
-    else
-        TcLongIdentThen cenv overallTy env tpenv synLongId [ MakeDelayedSet(synExpr2, m) ]
+    TcLongIdentThen cenv overallTy env tpenv synLongId [ MakeDelayedSet(synExpr2, m) ]
 
 // Type.Items(synExpr1) <- synExpr2
 and TcExprNamedIndexPropertySet (cenv: cenv) overallTy env tpenv (synLongId, synExpr1, synExpr2, mStmt) =
-    if synLongId.ThereIsAnExtraDotAtTheEnd then
-        // just drop rhs on the floor
-        TcLongIdentThen cenv overallTy env tpenv synLongId [ ]
-    else
-        TcLongIdentThen cenv overallTy env tpenv synLongId 
-            [ DelayedApp(ExprAtomicFlag.Atomic, false, None, synExpr1, mStmt)
-              MakeDelayedSet(synExpr2, mStmt) ]
+    TcLongIdentThen cenv overallTy env tpenv synLongId 
+        [ DelayedApp(ExprAtomicFlag.Atomic, false, None, synExpr1, mStmt)
+          MakeDelayedSet(synExpr2, mStmt) ]
 
 and TcExprTraitCall (cenv: cenv) overallTy env tpenv (synTypes, synMemberSig, arg, m) =
     let g = cenv.g
@@ -6989,17 +6973,22 @@ and TcConstStringExpr cenv (overallTy: OverallTy) env m tpenv (s: string) litera
         | _ -> false
 
     let g = cenv.g
+  
 
-    if isFormat g overallTy.Commit then
-        if literalType = LiteralArgumentType.StaticField then
-            checkLanguageFeatureAndRecover g.langVersion LanguageFeature.NonInlineLiteralsAsPrintfFormat m
-
+    match isFormat g overallTy.Commit, literalType with
+    | true, LiteralArgumentType.StaticField ->
+        checkLanguageFeatureAndRecover g.langVersion LanguageFeature.NonInlineLiteralsAsPrintfFormat m
         TcFormatStringExpr cenv overallTy env m tpenv s literalType
-    else
-        if literalType = LiteralArgumentType.Inline && not (isObjTy g overallTy.Commit) then
-            AddCxTypeEqualsType env.eContextInfo env.DisplayEnv cenv.css m overallTy.Commit g.string_ty
 
-        mkString g m s, tpenv
+    | true, LiteralArgumentType.Inline ->
+        TcFormatStringExpr cenv overallTy env m tpenv s literalType
+
+    | false, LiteralArgumentType.StaticField ->
+        Expr.Const (TcFieldInit m (ILFieldInit.String s), m, g.string_ty), tpenv
+
+    | false, LiteralArgumentType.Inline ->
+        TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env (* true *) m (fun () ->
+                mkString g m s, tpenv)
 
 and TcFormatStringExpr cenv (overallTy: OverallTy) env m tpenv (fmtString: string) formatStringLiteralType =
     let g = cenv.g
@@ -8018,7 +8007,7 @@ and TcNameOfExpr (cenv: cenv) env tpenv (synArg: SynExpr) =
         // expr.ID allowed
         | SynExpr.DotGet (hd, _, SynLongIdent(longId, _, _), _) ->
             let result = defaultArg resultOpt (List.last longId)
-            check overallTyOpt (Some result) hd ((DelayedDotLookup (longId, expr.RangeWithoutAnyExtraDot)) :: delayed)
+            check overallTyOpt (Some result) hd ((DelayedDotLookup (longId, expr.Range)) :: delayed)
 
         // "(expr)" allowed with no subsequent qualifications
         | SynExpr.Paren(expr, _, _, _) when delayed.IsEmpty && overallTyOpt.IsNone ->

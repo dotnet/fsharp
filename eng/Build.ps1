@@ -311,13 +311,15 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     if ($env:RunningAsPullRequest -ne "true" -and $noTestFilter -eq $false) {
         $args += " --filter TestCategory!=PullRequest"
     }
-
     
     if ($asBackgroundJob) {
         Write-Host("Starting on the background: $args")
         Write-Host("------------------------------------")
         $bgJob = Start-Job -ScriptBlock {       
             & $using:dotnetExe test $using:testProject -c $using:configuration -f $using:targetFramework -v n --test-adapter-path $using:testadapterpath --logger "nunit;LogFilePath=$using:testLogPath" /bl:$using:testBinLogPath  --blame --results-directory $using:ArtifactsDir\TestResults\$using:configuration
+            if ($LASTEXITCODE -ne 0) { 
+                throw "Command failed to execute with exit code $($LASTEXITCODE): $using:dotnetExe $using:args" 
+            }           
         }
         return $bgJob
     } else{
@@ -542,7 +544,7 @@ try {
         
         # Collect output from  background jobs
         Wait-job $bgJob | out-null
-        Receive-Job $bgJob 
+        Receive-Job $bgJob -ErrorAction Stop
     }
 
     if ($testCoreClr) {
@@ -557,7 +559,7 @@ try {
         
         # Collect output from  background jobs
         Wait-job $bgJob | out-null
-        Receive-Job $bgJob    
+        Receive-Job $bgJob -ErrorAction Stop  
     }
 
     if ($testFSharpQA) {
