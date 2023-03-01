@@ -60,7 +60,8 @@ module rec Compiler =
           Name:             string option
           IgnoreWarnings:   bool
           References:       CompilationUnit list
-          TargetFramework: TargetFramework }
+          TargetFramework:  TargetFramework
+          }
 
         member this.CreateOutputDirectory() =
             match this.OutputDirectory with
@@ -395,6 +396,9 @@ module rec Compiler =
         | FS fs -> FS { fs with OutputDirectory = Some (DirectoryInfo(path)) }
         | _ -> failwith "withOutputDirectory is only supported on F#"
 
+    let withBufferWidth (width: int)(cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ $"--bufferwidth:{width}" ] "withBufferWidth is only supported on F#" cUnit
+
     let withDefines (defines: string list) (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper (defines |> List.map(fun define -> $"--define:{define}")) "withDefines is only supported on F#" cUnit
 
@@ -500,18 +504,21 @@ module rec Compiler =
         | CS x -> CS { x with OutputType = outputType }
         | _ -> failwith "TODO: Implement where applicable."
 
-    let asLibrary (cUnit: CompilationUnit) : CompilationUnit =
-        withOutputType CompileOutput.Library cUnit
-
-    let asNetStandard20 (cUnit: CompilationUnit) : CompilationUnit =
-        match cUnit with
-        | FS fs -> FS { fs with TargetFramework = TargetFramework.NetStandard20 }
-        | CS cs -> CS { cs with TargetFramework = TargetFramework.NetStandard20 }
-        | IL _ ->  failwith "References are not supported in IL"
-
     let asExe (cUnit: CompilationUnit) : CompilationUnit =
         withOutputType CompileOutput.Exe cUnit    
     
+    let asLibrary (cUnit: CompilationUnit) : CompilationUnit =
+        withOutputType CompileOutput.Library cUnit
+
+    let asModule (cUnit: CompilationUnit) : CompilationUnit =
+        withOutputType CompileOutput.Module cUnit    
+    
+    let asNetStandard20 (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS fs -> FS { fs with TargetFramework = TargetFramework.NetStandard20 }
+        | CS _ -> failwith "References are not supported in CS"
+        | IL _ ->  failwith "References are not supported in IL"
+
     let withPlatform (platform:ExecutionPlatform) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
         | FS _ ->
@@ -582,18 +589,22 @@ module rec Compiler =
 
     let private compileFSharpCompilation compilation ignoreWarnings (cUnit: CompilationUnit) : CompilationResult =
 
-        let ((err: FSharpDiagnostic[], outputFilePath: string), deps) = CompilerAssert.CompileRaw(compilation, ignoreWarnings)
+        use redirect = new RedirectConsole()
+        let ((err: FSharpDiagnostic[], rc: int, outputFilePath: string), deps) =
+            CompilerAssert.CompileRaw(compilation, ignoreWarnings)
 
+        // Create and stash the console output
         let diagnostics = err |> fromFSharpDiagnostic
 
-        let result =
-            { OutputPath    = None
-              Dependencies  = deps
-              Adjust        = 0
-              PerFileErrors = diagnostics
-              Diagnostics   = diagnostics |> List.map snd
-              Output        = None
-              Compilation   = cUnit }
+        let result = {
+            OutputPath    = None
+            Dependencies  = deps
+            Adjust        = 0
+            PerFileErrors = diagnostics
+            Diagnostics   = diagnostics |> List.map snd
+            Output        = Some (RunOutput.ExecutionOutput { ExitCode = rc; StdOut = redirect.Output(); StdErr = redirect.ErrorOutput() })
+            Compilation   = cUnit
+        }
 
         let (errors, warnings) = partitionErrors result.Diagnostics
 
@@ -683,6 +694,7 @@ module rec Compiler =
             match csSource.OutputType with
             | Exe -> OutputKind.ConsoleApplication, "exe"
             | Library -> OutputKind.DynamicallyLinkedLibrary, "dll"
+            | Module -> OutputKind.NetModule, "mod"
 
         let cmpl =
           CSharpCompilation.Create(
@@ -1020,6 +1032,62 @@ module rec Compiler =
         cUnit
 
     let verifyBaselines = verifyBaseline >> verifyILBaseline
+
+    let normalizeNewlines output =
+        let regex = new Regex("(\r\n|\r|\n)", RegexOptions.Singleline ||| RegexOptions.ExplicitCapture)
+        let result = regex.Replace(output, System.Environment.NewLine)
+        result
+
+    let regexStrip output pattern flags =
+        let regex = new Regex(pattern, flags)
+        let result = regex.Replace(output, "")
+        result
+
+    let stripEnvironment output = 
+        let pattern = @"(---------------------------------------------------------------(\r\n|\r|\n)).*(\n---------------------------------------------------------------(\r\n|\r|\n))"
+        let result = regexStrip output pattern (RegexOptions.Singleline ||| RegexOptions.ExplicitCapture)
+        result
+
+    let stripVersion output =
+        let pattern = @"(Microsoft \(R\) (.*) version (.*) F# (.*))"
+        let result = regexStrip output pattern (RegexOptions.Multiline ||| RegexOptions.ExplicitCapture)
+        result
+
+    let getOutput (cResult: CompilationResult) : string option =
+        let result =
+            match cResult  with
+            | CompilationResult.Failure f -> failwith $"Build failure: {f}"
+            | CompilationResult.Success output ->
+                match output.Output with
+                | Some (EvalOutput _) -> None
+                | Some (ExecutionOutput eo) ->
+                    match eo.StdOut with
+                    | null -> None
+                    | output -> Some (stripVersion (stripEnvironment (normalizeNewlines output)))
+                | None -> None
+        result
+
+    let verifyOutput (expected: string) (cResult: CompilationResult) : CompilationResult =
+        match getOutput cResult with
+        | None -> cResult
+        | Some actual ->
+            let expected = stripVersion (normalizeNewlines expected)
+            if expected <> actual then
+                failwith $"""Output does not match expected: ------------{Environment.NewLine}{expected}{Environment.NewLine}Actual: ------------{Environment.NewLine}{actual}{Environment.NewLine}"""
+            else
+                cResult
+
+    let verifyOutputWithBaseline path =
+        verifyOutput (File.ReadAllText(path).Replace(@"\r\n", Environment.NewLine))
+
+    let verifyOutputContains (expected: string array) (cResult: CompilationResult) : CompilationResult =
+        match getOutput cResult with
+        | None -> cResult
+        | Some actual ->
+            for item in expected do
+                if not(actual.Contains(item)) then
+                    failwith $"""Output does not match expected: ------------{Environment.NewLine}{item}{Environment.NewLine}Actual: ------------{Environment.NewLine}{actual}{Environment.NewLine}"""
+            cResult
 
     type ImportScope = { Kind: ImportDefinitionKind; Name: string }
 

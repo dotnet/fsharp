@@ -5719,7 +5719,7 @@ let checkContentAsScript content =
     // set).
     // because of this we have to do it all manually
     let scriptName = "test.fsx"
-    let tempDir = Path.GetTempPath()
+    let tempDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)
     let scriptFullPath = Path.Combine(tempDir, scriptName)
     let sourceText = SourceText.ofString content
     let projectOptions, _ = checker.GetProjectOptionsFromScript(scriptFullPath, sourceText, useSdkRefs = true, assumeDotNetFramework = false) |>    Async.RunImmediate
@@ -5732,17 +5732,13 @@ let checkContentAsScript content =
 
 [<Test>]
 let ``References from #r nuget are included in script project options`` () =
-    let isMacos = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX)
-    if isMacos then
-        Assert.Inconclusive("This test is failing on MacOS VMs now")
-    else
-        let checkResults = checkContentAsScript """
+    let checkResults = checkContentAsScript """
 #i "nuget:https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-tools/nuget/v3/index.json"
 #r "nuget: Dapper"
 """
-        let assemblyNames =
-            checkResults.ProjectContext.GetReferencedAssemblies()
-            |> Seq.choose (fun f -> f.FileName |> Option.map Path.GetFileName)
-            |> Seq.distinct
-        printfn "%s" (assemblyNames |> String.concat "\n")
-        assemblyNames |> should contain "Dapper.dll"
+    let assemblyNames =
+        checkResults.ProjectContext.GetReferencedAssemblies()
+        |> Seq.choose (fun f -> f.FileName |> Option.map Path.GetFileName)
+        |> Seq.distinct
+    printfn "%s" (assemblyNames |> String.concat "\n")
+    assemblyNames |> should contain "Dapper.dll"

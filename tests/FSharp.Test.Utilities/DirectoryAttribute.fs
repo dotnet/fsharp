@@ -121,23 +121,23 @@ type DirectoryAttribute(dir: string) =
         let fsBslSource = readFileOrDefault fsBslFilePath
         let ilBslSource = readFileOrDefault ilBslFilePath
 
-        {
-            Source              = SourceCodeFileKind.Create(sourceFilePath)
-            AdditionalSources   = []
-            Baseline            =
+        {   Source            = SourceCodeFileKind.Create(sourceFilePath)
+            AdditionalSources = []
+            Baseline          =
                 Some
                     {
                         SourceFilename = Some sourceFilePath
                         FSBaseline = { FilePath = fsOutFilePath; BslSource=fsBslFilePath; Content = fsBslSource }
                         ILBaseline = { FilePath = ilOutFilePath; BslSource=ilBslFilePath ; Content = ilBslSource  }
                     }
-            Options             = []
-            OutputType          = Library
-            Name                = Some filename
-            IgnoreWarnings      = false
-            References          = []
-            OutputDirectory     = outputDirectory
-            TargetFramework     = TargetFramework.Current} |> FS
+            Options           = []
+            OutputType        = Library
+            Name              = Some filename
+            IgnoreWarnings    = false
+            References        = []
+            OutputDirectory   = outputDirectory
+            TargetFramework   = TargetFramework.Current
+            } |> FS
 
     member _.BaselineSuffix with get() = baselineSuffix and set v = baselineSuffix <- v
     member _.Includes with get() = includes and set v = includes <- v
