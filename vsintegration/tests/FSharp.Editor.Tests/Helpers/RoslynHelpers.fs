@@ -63,19 +63,16 @@ module MefHelpers =
                 )
 
             let parts = partDiscovery.CreatePartsAsync(asms).Result
-            ComposableCatalog
-                .Create(resolver)
-                .AddParts(parts)
-                .WithCompositionService()
+            ComposableCatalog.Create(resolver).AddParts(parts).WithCompositionService()
 
-        let configuration =
-            CompositionConfiguration.Create(catalog)
+        let configuration = CompositionConfiguration.Create(catalog)
 
         RuntimeComposition
             .CreateRuntimeComposition(configuration)
             .CreateExportProviderFactory()
 
-    let createExportProvider () = exportProviderFactory.CreateExportProvider()
+    let createExportProvider () =
+        exportProviderFactory.CreateExportProvider()
 
 type TestWorkspaceServiceMetadata(serviceType: string, layer: string) =
 
