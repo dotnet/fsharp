@@ -174,7 +174,7 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>]
                 }
 
             let! items = getNavigableItems document
-            let! processed = items |> Seq.map (fun item -> processItem item) |> Async.Parallel
+            let! processed = items |> Seq.map processItem |> Async.Parallel
             return processed |> Array.choose id
         }
 
