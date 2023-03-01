@@ -3740,10 +3740,10 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad ty lid =
                 |?> ListSet.setify (fun fref1 fref2 -> tyconRefEq g fref1.TyconRef fref2.TyconRef)
                 |?> List.map (fun rfref -> Choice1Of2(FieldResolution(FreshenRecdFieldRef ncenv m rfref, false)))
 
-    let isAnonRecdFieldF field =
+    let anonRecdInfoF field =
         match field with
-        | Choice1Of2 _ -> false
-        | Choice2Of2 _ -> true
+        | Choice1Of2 _ -> None
+        | Choice2Of2 (anonInfo, _, _) -> Some anonInfo
 
     match lid with
     | [] -> [], []
@@ -3751,7 +3751,7 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad ty lid =
         let res =
             lookupFld ty id
             |> ForceRaise
-            |> List.map (fun x -> id, isAnonRecdFieldF x)
+            |> List.map (fun x -> id, anonRecdInfoF x)
 
         [], res
     | id :: _ ->
@@ -3763,8 +3763,8 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad ty lid =
                     match x with
                     | Choice1Of2 (FieldResolution (rfinfo, _)) ->
                         let ref = rfinfo.RecdFieldRef
-                        false, id, ref.RecdField.FormalType, rest
-                    | Choice2Of2 (_, tys, index) -> true, id, tys[index], rest)
+                        None, id, ref.RecdField.FormalType, rest
+                    | Choice2Of2 (anonInfo, tys, index) -> Some anonInfo, id, tys[index], rest)
             | _ -> NoResultsOrUsefulErrors
 
         let tyconSearch ad () =
@@ -3778,9 +3778,9 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad ty lid =
                 |?> List.choose (fun x ->
                     match x with
                     | _, Item.RecdField (RecdFieldInfo (_, rfref)), rest ->
-                        (false, fieldId, rfref.RecdField.FormalType, rest) |> Some
-                    | _, Item.AnonRecdField (_, tys, i, _), rest ->
-                        (true, fieldId, tys[i], rest) |> Some
+                        (None, fieldId, rfref.RecdField.FormalType, rest) |> Some
+                    | _, Item.AnonRecdField (anonInfo, tys, i, _), rest ->
+                        (Some anonInfo, fieldId, tys[i], rest) |> Some
                     | _ -> None)
             | _ -> NoResultsOrUsefulErrors
 
@@ -3791,9 +3791,9 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad ty lid =
                 ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap modOrNsId.idRange OpenQualified nenv ad modOrNsId rest false (ResolveFieldInModuleOrNamespace ncenv nenv ad)
                 |?> List.map (fun (_, FieldResolution(rfinfo, _), restAfterField) ->
                     let fieldId = rest.[ rest.Length - restAfterField.Length - 1 ]
-                    false, fieldId, rfinfo.RecdFieldRef.RecdField.FormalType, restAfterField)
+                    None, fieldId, rfinfo.RecdFieldRef.RecdField.FormalType, restAfterField)
 
-        let isAnonRecdField, fld, fldTy, rest =
+        let anonRecdInfo, fld, fldTy, rest =
             let search =
                 if isAnonRecdTy then
                     fldSearch ()
@@ -3811,7 +3811,7 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad ty lid =
                 lid |> List.takeWhile (fun id -> id.idRange <> fld.idRange)
 
         match rest with
-        | [] -> idsBeforeField, [ (fld, isAnonRecdField) ]
+        | [] -> idsBeforeField, [ (fld, anonRecdInfo) ]
         | _ ->  
             let rec nestedFieldSearch flds ty =
                 function
@@ -3824,11 +3824,11 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad ty lid =
                         | [ Choice2Of2 (_, tys, index) ] -> tys[index]
                         | _ -> ty
 
-                    let resolved = resolved |> List.map (fun x -> id, isAnonRecdFieldF x)
+                    let resolved = resolved |> List.map (fun x -> id, anonRecdInfoF x)
 
                     nestedFieldSearch (flds @ resolved) fldTy rest
 
-            idsBeforeField, (fld, isAnonRecdField) :: (nestedFieldSearch [] fldTy rest)
+            idsBeforeField, (fld, anonRecdInfo) :: (nestedFieldSearch [] fldTy rest)
 
 /// Resolve F#/IL "." syntax in expressions (2).
 ///

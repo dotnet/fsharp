@@ -1,0 +1,133 @@
+﻿module FSharp.Compiler.ComponentTests.Language.CopyAndUpdateTests
+
+open Xunit
+open FSharp.Test.Compiler
+
+[<Fact>]
+let ``Cannot update the same field twice in nested copy-and-update``() =
+    FSharp """
+type NestdRecTy = { B: string }
+
+type RecTy = { D: NestdRecTy; E: string option }
+
+let t2 x = { x with D.B = "a"; D.B = "b" }
+    """
+    |> withLangVersionPreview
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [
+        (Error 668, Line 6, Col 21, Line 6, Col 22, "The field 'B' appears twice in this record expression or pattern")
+    ]
+
+[<Fact>]
+let ``Cannot use nested copy-and-update in lang version70``() =
+    FSharp """
+type NestdRecTy = { B: string }
+
+type RecTy = { D: NestdRecTy; E: string option }
+
+let t2 x = { x with D.B = "a" }
+    """
+    |> withLangVersion70
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [
+        (Error 3350, Line 6, Col 21, Line 6, Col 24, "Feature 'Nested record field copy-and-update' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.")
+    ]
+
+[<Fact>]
+let ``Nested copy-and-update merges same level updates``() =
+    FSharp """
+module CopyAndUpdateTests
+
+type AnotherNestedRecTy = { A: int }
+
+type NestdRecTy = { B: AnotherNestedRecTy; C: string }
+
+type RecTy = { D: NestdRecTy; E: string option }
+
+let t2 x = { x with D.B.A = 1; D.C = "ads" }
+    """
+    |> withLangVersionPreview
+    |> withNoDebug
+    |> withOptimize
+    |> compile
+    |> shouldSucceed
+    |> verifyIL [
+(*
+        public static CopyAndUpdateTests.RecTy t2(CopyAndUpdateTests.RecTy x)
+        {
+            return new CopyAndUpdateTests.RecTy(new CopyAndUpdateTests.NestdRecTy(new CopyAndUpdateTests.AnotherNestedRecTy(1), "ads"), x.E@);
+        }
+*)
+        """
+.method public static class CopyAndUpdateTests/RecTy 
+        t2(class CopyAndUpdateTests/RecTy x) cil managed
+{
+    
+  .maxstack  8
+  IL_0000:  ldc.i4.1
+  IL_0001:  newobj     instance void CopyAndUpdateTests/AnotherNestedRecTy::.ctor(int32)
+  IL_0006:  ldstr      "ads"
+  IL_000b:  newobj     instance void CopyAndUpdateTests/NestdRecTy::.ctor(class CopyAndUpdateTests/AnotherNestedRecTy,
+                                                                          string)
+  IL_0010:  ldarg.0
+  IL_0011:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string> CopyAndUpdateTests/RecTy::E@
+  IL_0016:  newobj     instance void CopyAndUpdateTests/RecTy::.ctor(class CopyAndUpdateTests/NestdRecTy,
+                                                                     class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string>)
+  IL_001b:  ret
+} 
+        """
+    ]
+
+[<Fact>]
+let ``Nested copy-and-update correctly updates fields in nominal record``() =
+    FSharp """
+module CopyAndUpdateTests
+
+type AnotherNestedRecTy = { A: int }
+
+type NestdRecTy = { B: string; C: AnotherNestedRecTy }
+
+type RecTy = { D: NestdRecTy; E: string option }
+
+let t1 = { D = { B = "t1"; C = { A = 1 } }; E = None }
+
+let actual1 = { t1 with D.B = "t2" }
+let expected1 = { D = { B = "t2"; C = { A = 1 } }; E = None }
+
+let actual2 = { t1 with D.C.A = 3; E = Some "a" }
+let expected2 = { D = { B = "t1"; C = { A = 3 } }; E = Some "a" }
+
+if actual1 <> expected1 then
+    failwith "actual1 does not equal expected1"
+
+if actual2 <> expected2 then
+    failwith "actual2 does not equal expected2"
+    """
+    |> withLangVersionPreview
+    |> compileExeAndRun
+    |> shouldSucceed
+
+[<Fact>]
+let ``Nested copy-and-update correctly updates fields in anonymous record``() =
+    FSharp """
+module CopyAndUpdateTests
+
+let t1 = {| D = {| B = "t1"; C = struct {| A = 1 |} |}; E = Option<string>.None |}
+
+let actual1 = {| t1 with D.B = "t2" |}
+let expected1 = {| D = {| B = "t2"; C = struct {| A = 1 |} |}; E = None |}
+
+let actual2 = {| t1 with D.C.A = 3; E = Some "a" |}
+let expected2 = {| D = {| B = "t1"; C = struct {| A = 3 |} |}; E = Some "a" |}
+
+if actual1 <> expected1 then
+    failwith "actual1 does not equal expected1"
+
+if actual2 <> expected2 then
+    failwith "actual2 does not equal expected2"
+    """
+    |> withLangVersionPreview
+    |> compileExeAndRun
+    |> shouldSucceed

@@ -1919,14 +1919,12 @@ let TransformAstForNestedUpdates cenv env overallTy (lid: LongIdent) exprBeingAs
     let rec synExprRecd copyInfo (id: Ident) fields exprBeingAssigned =
         match fields with 
         | [] -> failwith "unreachable"
-        | (fldId, isAnon) :: rest -> 
+        | (fldId, anonInfo) :: rest -> 
             let nestedField = if rest.IsEmpty then exprBeingAssigned else synExprRecd copyInfo fldId rest exprBeingAssigned
 
-            if isAnon then
-                // The correct structness will later be taken from the anynymous type, which already exists
-                SynExpr.AnonRecd(false, copyInfo id, [ ([ fldId ], None, nestedField) ], id.idRange, { OpeningBraceRange = range0 })
-            else
-                SynExpr.Record(None, copyInfo id, [ SynExprRecordField((LongIdentWithDots ([ fldId ], []), true), None, Some nestedField, None) ], id.idRange)
+            match anonInfo with
+            | Some { AnonRecdTypeInfo.TupInfo = TupInfo.Const isStruct } -> SynExpr.AnonRecd(isStruct, copyInfo id, [ ([ fldId ], None, nestedField) ], id.idRange, { OpeningBraceRange = range0 })
+            | _ -> SynExpr.Record(None, copyInfo id, [ SynExprRecordField((LongIdentWithDots ([ fldId ], []), true), None, Some nestedField, None) ], id.idRange)
 
     let access, flds = ResolveNestedField cenv.tcSink cenv.nameResolver env.eNameResEnv env.eAccessRights overallTy lid
 
