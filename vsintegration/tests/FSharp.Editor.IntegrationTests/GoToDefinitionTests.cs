@@ -33,10 +33,9 @@ let increment = add 1
 
         await solutionExplorer.BuildSolutionAsync(token);
 
-        await TestServices.Editor.PlaceCaretAsync("add", token);
+        await editor.PlaceCaretAsync("add", token);
+        await editor.InvokeGoToDefinitionAsync(token);
 
-        await TestServices.Editor.InvokeGoToDefinitionAsync(token);
-
-        //await TestServices.Editor.WaitForCurrentLineTextAsync("private void IncrementCount()", ControlledHangMitigatingCancellationToken);
+        await TestServices.Editor.WaitForCurrentLineTextAsync("let add x y = x + y", token);
     }
 }
