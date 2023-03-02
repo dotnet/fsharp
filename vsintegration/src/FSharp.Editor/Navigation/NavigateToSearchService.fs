@@ -13,11 +13,10 @@ open System.Globalization
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
-open Microsoft.CodeAnalysis.PatternMatching
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Navigation
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.NavigateTo
+open Microsoft.VisualStudio.Text.PatternMatching
 
-open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax
 
@@ -172,6 +171,7 @@ module private Utils =
 type internal FSharpNavigateToSearchService 
     [<ImportingConstructor>] 
     (
+        patternMatcherFactory: IPatternMatcherFactory
     ) =
 
     let kindsProvided = ImmutableHashSet.Create(FSharpNavigateToItemKind.Module, FSharpNavigateToItemKind.Class, FSharpNavigateToItemKind.Field, FSharpNavigateToItemKind.Property, FSharpNavigateToItemKind.Method, FSharpNavigateToItemKind.Enum, FSharpNavigateToItemKind.EnumItem) :> IImmutableSet<string>
@@ -229,9 +229,13 @@ type internal FSharpNavigateToSearchService
         | PatternMatchKind.Exact -> FSharpNavigateToMatchKind.Exact
         | PatternMatchKind.Prefix -> FSharpNavigateToMatchKind.Prefix
         | PatternMatchKind.Substring -> FSharpNavigateToMatchKind.Substring
-        | PatternMatchKind.CamelCase -> FSharpNavigateToMatchKind.Regular
-        | PatternMatchKind.Fuzzy -> FSharpNavigateToMatchKind.Regular
-        | _ -> FSharpNavigateToMatchKind.Regular
+        | PatternMatchKind.CamelCaseExact -> FSharpNavigateToMatchKind.CamelCaseExact
+        | PatternMatchKind.CamelCasePrefix -> FSharpNavigateToMatchKind.CamelCasePrefix
+        | PatternMatchKind.CamelCaseNonContiguousPrefix -> FSharpNavigateToMatchKind.CamelCaseNonContiguousPrefix
+        | PatternMatchKind.CamelCaseSubstring -> FSharpNavigateToMatchKind.CamelCaseSubstring
+        | PatternMatchKind.CamelCaseNonContiguousSubstring -> FSharpNavigateToMatchKind.CamelCaseNonContiguousSubstring
+        | PatternMatchKind.Fuzzy -> FSharpNavigateToMatchKind.Fuzzy
+        | _ -> FSharpNavigateToMatchKind.Fuzzy
 
     interface IFSharpNavigateToSearchService with
         member _.SearchProjectAsync(project, _priorityDocuments, searchPattern, kinds, cancellationToken) : Task<ImmutableArray<FSharpNavigateToSearchResult>> =
@@ -250,14 +254,18 @@ type internal FSharpNavigateToSearchService
                         |> Array.filter (fun x -> x.Name.Length = 1 && String.Equals(x.Name, searchPattern, StringComparison.InvariantCultureIgnoreCase))
                     else
                         [| yield! items |> Array.map (fun items -> items.Find(searchPattern)) |> Array.concat
-                           use patternMatcher = new PatternMatcher(searchPattern, allowFuzzyMatching = true)
+                           let patternMatcherOptions = PatternMatcherCreationOptions(
+                               cultureInfo = CultureInfo.CurrentUICulture,
+                               flags = PatternMatcherCreationFlags.AllowFuzzyMatching
+                           )
+                           let patternMatcher = patternMatcherFactory.CreatePatternMatcher(searchPattern, patternMatcherOptions)
                            yield! items
                                   |> Array.collect (fun item -> item.AllItems)
-                                  |> Array.Parallel.collect (fun x -> 
-                                      patternMatcher.GetMatches(x.LogicalName)
-                                      |> Seq.map (fun pm ->
-                                          NavigateToSearchResult(x, patternMatchKindToNavigateToMatchKind pm.Kind) :> FSharpNavigateToSearchResult)
-                                      |> Seq.toArray) |]
+                                  |> Array.Parallel.choose (fun x -> 
+                                      patternMatcher.TryMatch(x.LogicalName)
+                                      |> Option.ofNullable
+                                      |> Option.map (fun pm ->
+                                          NavigateToSearchResult(x, patternMatchKindToNavigateToMatchKind pm.Kind) :> FSharpNavigateToSearchResult)) |]
 
                 return items |> Array.distinctBy (fun x -> x.NavigableItem.Document.Id, x.NavigableItem.SourceSpan)
             } 
