@@ -234,3 +234,33 @@ let f x = { x with E.A = "May I be a string now?" }
 but here has type
     'string'    "
     }
+
+[<Fact>]
+let ``Nested copy-and-update does not compile when referencing invalid fields``() =
+    FSharp """
+module CopyAndUpdateTests
+
+type NestdRecTy = { B: string; G: {| a: int |} }
+
+type RecTy = { D: NestdRecTy; E: string option }
+
+let t1 x = { x with D.B.A = "a" }
+let t2 x = { x with D.C = "a" }
+let t3 x = { x with D.G.b = "a" }
+let t4 x = { x with C.D = "a" }
+let t5 (x: {| a: int; b: NestdRecTy |}) = {| x with b.C = "a" |}
+let t6 (x: {| a: int; b: NestdRecTy |}) = {| x with b.G.b = "a" |}
+let t7 (x: {| a: int; b: NestdRecTy |}) = {| x with c.D = "a" |}
+    """
+    |> withLangVersionPreview
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [
+        (Error 39, Line 8, Col 25, Line 8, Col 26, "The record label 'A' is not defined.")
+        (Error 1129, Line 9, Col 23, Line 9, Col 24, "The record type 'NestdRecTy' does not contain a label 'C'.")
+        (Error 1129, Line 10, Col 25, Line 10, Col 26, "The record type '{| a: int |}' does not contain a label 'b'.")
+        (Error 39, Line 11, Col 21, Line 11, Col 22, "The namespace or module 'C' is not defined.")
+        (Error 1129, Line 12, Col 55, Line 12, Col 56, "The record type 'NestdRecTy' does not contain a label 'C'.")
+        (Error 1129, Line 13, Col 57, Line 13, Col 58, "The record type '{| a: int |}' does not contain a label 'b'.")
+        (Error 1129, Line 14, Col 53, Line 14, Col 54, "The record type '{| a: int; b: NestdRecTy |}' does not contain a label 'c'.")
+    ]

@@ -1380,3 +1380,30 @@ let t13 x = { x with RecTy.D. }
         VerifyCompletionListExactly(fileContents, "let t12 x = { x with F.RecTy.d", [ "D"; "E" ])
 
         VerifyCompletionListExactly(fileContents, "let t13 x = { x with RecTy.D.", [ "B"; "C" ])
+
+    [<Fact>]
+    let ``Completion list for nested copy and update contains correct record fields, mixed nominal and anonymous`` () =
+        let fileContents =
+            """
+type AnotherNestedRecTy = { A: int }
+
+type NestdRecTy = { B: string; C: {| C: AnotherNestedRecTy |} }
+
+type RecTy = { D: NestdRecTy; E: {| a: string |} }
+
+let t1 x = { x with D.C.C.A = 12; E.a = "a" }
+
+let t2 (x: {| D: NestdRecTy; E: {| a: string |} |}) = {| x with E.a = "a"; D.B = "z" |}
+"""
+
+        VerifyCompletionListExactly(fileContents, "let t1 x = { x with D.", [ "B"; "C" ])
+        VerifyCompletionListExactly(fileContents, "let t1 x = { x with D.C.", [ "C" ])
+        VerifyCompletionListExactly(fileContents, "let t1 x = { x with D.C.C.", [ "A" ])
+        VerifyCompletionListExactly(fileContents, "let t1 x = { x with D.C.C.A = 12; ", [ "D"; "E" ])
+        VerifyCompletionListExactly(fileContents, "let t1 x = { x with D.C.C.A = 12; E.", [ "a" ])
+
+        // Because of general deficiencies in establishing the completion context for anonymous record fields,
+        // we do not show any completions in these positions rather than the wrong ones.
+        VerifyNoCompletionList(fileContents, "let t2 (x: {| D: NestdRecTy; E: {| a: string |} |}) = {| x with ")
+        VerifyNoCompletionList(fileContents, "let t2 (x: {| D: NestdRecTy; E: {| a: string |} |}) = {| x with E.")
+        VerifyNoCompletionList(fileContents, "let t2 (x: {| D: NestdRecTy; E: {| a: string |} |}) = {| x with E.a = \"a\"; D.")

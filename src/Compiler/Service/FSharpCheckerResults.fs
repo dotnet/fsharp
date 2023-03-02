@@ -661,8 +661,8 @@ type internal TypeCheckInfo
                     match fields |> List.tryFind (fun f -> f.LogicalName = id) with
                     | Some f -> dive f.RecdField.FormalType denv ad m rest true wasPathEmpty
                     | _ ->
-                        // Field name can be optionally qualified
-                        // If we haven't matched a field name yet, keep peeling off the prefix
+                        // Field name can be optionally qualified.
+                        // If we haven't matched a field name yet, keep peeling off the prefix.
                         if isPastTypePrefix then
                             Some([], denv, m)
                         else
@@ -671,6 +671,10 @@ type internal TypeCheckInfo
                 match tryDestAnonRecdTy denv.g ty with
                 | ValueSome (anonInfo, tys) ->
                     match plid with
+                    // Because of an oversight in syntax visitor where the path is not computed correctly,
+                    // we might receive an empty plid even though some identifiers were present.
+                    // Return no completions instead of wrong fields.
+                    | [] when wasPathEmpty -> Some([], denv, m)
                     | [] ->
                         let items =
                             [
