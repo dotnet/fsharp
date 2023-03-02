@@ -1882,7 +1882,7 @@ let TransformAstForNestedUpdates cenv env overallTy (lid: LongIdent) exprBeingAs
             let rec buildLid res (id: Ident) =
                 function
                 | [] -> res
-                | (h: Ident) :: t -> if h.idRange = id.idRange then h :: res else buildLid (h :: res) id t
+                | (h: Ident) :: t -> if equals h.idRange id.idRange then h :: res else buildLid (h :: res) id t
 
             let rec combineIds =
                 function

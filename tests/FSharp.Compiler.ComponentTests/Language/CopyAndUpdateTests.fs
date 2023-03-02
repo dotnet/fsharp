@@ -2,6 +2,7 @@
 
 open Xunit
 open FSharp.Test.Compiler
+open StructuredResultsAsserts
 
 [<Fact>]
 let ``Cannot update the same field twice in nested copy-and-update``() =
@@ -189,3 +190,47 @@ if actual <> expected then
     |> withLangVersionPreview
     |> compileExeAndRun
     |> shouldSucceed
+
+[<Fact>]
+let ``Anonymous record with nested copy-and-update can change shape``() =
+    FSharp """
+module CopyAndUpdateTests
+
+type RecTy = { D: int; E: string option }
+
+let start = {| R = { D = 2; E = Some "e" }; S = 3 |}
+
+let actual = {| start with R.E = None; S = "May I be a string now?"; T = 4 |}
+
+let expected = {| R = { D = 2; E = None }; S = "May I be a string now?"; T = 4 |}
+
+if actual <> expected then
+    failwith "actual does not equal expected"
+    """
+    |> withLangVersionPreview
+    |> compileExeAndRun
+    |> shouldSucceed
+
+[<Fact>]
+let ``Anonymous record in a nominal record with nested copy-and-update cannot change shape``() =
+    FSharp """
+module CopyAndUpdateTests
+
+type RecTy = { D: int; E: {| A: int |} }
+
+let f x = { x with E.A = "May I be a string now?" }
+    """
+    |> withLangVersionPreview
+    |> typecheck
+    |> shouldFail
+    |> withResult {
+        Error = Error 1
+        Range = { StartLine = 6
+                  StartColumn = 26
+                  EndLine = 6
+                  EndColumn = 50 }
+        Message = "This expression was expected to have type
+    'int'    
+but here has type
+    'string'    "
+    }

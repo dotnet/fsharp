@@ -3804,7 +3804,7 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
             if isAnonRecdTy then
                 []
             else
-                lid |> List.takeWhile (fun id -> id.idRange <> fld.idRange)
+                lid |> List.takeWhile (fun id -> not (equals id.idRange fld.idRange))
 
         match rest with
         | [] -> idsBeforeField, [ (fld, anonRecdInfo) ]
