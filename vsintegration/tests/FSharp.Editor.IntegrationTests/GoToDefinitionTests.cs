@@ -35,7 +35,7 @@ let increment = add 1
 
         await TestServices.Editor.PlaceCaretAsync("add", token);
 
-        //await TestServices.Editor.InvokeGoToDefinitionAsync(ControlledHangMitigatingCancellationToken);
+        await TestServices.Editor.InvokeGoToDefinitionAsync(token);
 
         //await TestServices.Editor.WaitForCurrentLineTextAsync("private void IncrementCount()", ControlledHangMitigatingCancellationToken);
     }
