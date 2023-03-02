@@ -33,7 +33,7 @@ let increment = add 1
 
         await solutionExplorer.BuildSolutionAsync(token);
 
-        await editor.PlaceCaretAsync("add", token);
+        await editor.PlaceCaretAsync("add", 2, token);
         await editor.InvokeGoToDefinitionAsync(token);
 
         await TestServices.Editor.WaitForCurrentLineTextAsync("let add x y = x + y", token);

@@ -33,11 +33,12 @@ internal partial class EditorInProcess
         view.TextBuffer.Replace(replacementSpan, text);
     }
 
-    public Task PlaceCaretAsync(string marker, CancellationToken cancellationToken)
-        => PlaceCaretAsync(marker, charsOffset: -1, occurrence: 0, extendSelection: false, selectBlock: false, cancellationToken);
+    // count occurrences from 1
+    public Task PlaceCaretAsync(string marker, int occurrence, CancellationToken cancellationToken)
+        => PlaceCaretAsync(marker, charsOffset: -1, occurrence: occurrence - 1, extendSelection: false, selectBlock: false, cancellationToken);
 
 
-    public async Task PlaceCaretAsync(
+    private async Task PlaceCaretAsync(
         string marker,
         int charsOffset,
         int occurrence,
