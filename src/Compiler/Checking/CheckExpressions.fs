@@ -1882,16 +1882,16 @@ let TransformAstForNestedUpdates cenv env overallTy (lid: LongIdent) exprBeingAs
             let rec buildLid res (id: Ident) =
                 function
                 | [] -> res
-                | (h: Ident) :: t -> if h.idText = id.idText then h :: res else buildLid (h :: res) id t
+                | (h: Ident) :: t -> if h.idRange = id.idRange then h :: res else buildLid (h :: res) id t
 
             let rec combineIds =
                 function
                 | [] | [_] -> []
-                | id1::id2::rest -> (id1, id2) :: (id2 :: rest |> combineIds)
+                | id1 :: id2 :: rest -> (id1, id2) :: (id2 :: rest |> combineIds)
 
             let calcLidSeparatorRanges lid =
                 match lid with
-                | [] | [_] -> [origSepRng]
+                | [] | [_] -> [ origSepRng ]
                 | _ :: t -> origSepRng :: List.map (fun (s: Ident, e: Ident) -> mkRange s.idRange.FileName s.idRange.End e.idRange.Start) t
 
             let lid = buildLid [] id lidwd |> List.rev

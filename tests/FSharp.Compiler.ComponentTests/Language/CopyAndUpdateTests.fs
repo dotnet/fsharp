@@ -168,3 +168,24 @@ let c4 = { U.U = Unchecked.defaultof<_>; I = 3 }
     |> withLangVersionPreview
     |> typecheck
     |> shouldSucceed
+
+[<Fact>]
+let ``Nested copy-and-update works correctly on recursive records``() =
+    FSharp """
+module CopyAndUpdateTests
+
+type G = { U: {| a: G |}; I: int }
+
+let f x = { x with U.a.U.a.I = 0; I = -1 }
+
+let start = { I = 1; U = {| a = { I = 2; U = {| a = { I = 3; U = Unchecked.defaultof<_> } |} } |} }
+
+let actual = f start
+let expected = { I = -1; U = {| a = { I = 2; U = {| a = { I = 0; U = Unchecked.defaultof<_> } |} } |} }
+
+if actual <> expected then
+    failwith "actual does not equal expected"
+    """
+    |> withLangVersionPreview
+    |> compileExeAndRun
+    |> shouldSucceed
