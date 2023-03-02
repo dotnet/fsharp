@@ -117,17 +117,9 @@
     <MicrosoftVisualStudioInteropVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioInteropVersion>
     <MicrosoftInternalVisualStudioInteropVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftInternalVisualStudioInteropVersion>
     <MicrosoftVisualStudioImagingInterop140DesignTimeVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioImagingInterop140DesignTimeVersion>
-    <MicrosoftVisualStudioShellInterop80Version>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioShellInterop80Version>
-    <MicrosoftVisualStudioShellInterop90Version>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioShellInterop90Version>
-    <MicrosoftVisualStudioShellInterop100Version>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioShellInterop100Version>
-    <MicrosoftVisualStudioShellInterop110Version>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioShellInterop110Version>
-    <MicrosoftVisualStudioShellInterop120Version>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioShellInterop120Version>
     <MicrosoftVisualStudioImageCatalogVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioImageCatalogVersion>
     <MicrosoftVisualStudioShellInteropVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioShellInteropVersion>
     <MicrosoftVisualStudioTextManagerInteropVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioTextManagerInteropVersion>
-    <MicrosoftVisualStudioTextManagerInterop80Version>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioTextManagerInterop80Version>
-    <MicrosoftVisualStudioTextManagerInterop100Version>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioTextManagerInterop100Version>
-    <MicrosoftVisualStudioTextManagerInterop120Version>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioTextManagerInterop120Version>
     <MicrosoftVisualStudioOLEInteropVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioOLEInteropVersion>
     <MicrosoftVisualStudioShell150Version>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioShell150Version>
     <MicrosoftVisualStudioShellDesignVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioShellDesignVersion>
@@ -192,10 +184,7 @@
     <MicrosoftMSXMLVersion>8.0.0</MicrosoftMSXMLVersion>
     <MicrosoftNetCompilersVersion>4.3.0-1.22220.8</MicrosoftNetCompilersVersion>
     <MicrosoftNETCoreAppRefVersion>3.1.0</MicrosoftNETCoreAppRefVersion>
-    <MicrosoftNETCoreILDAsmVersion>5.0.0-preview.7.20364.11</MicrosoftNETCoreILDAsmVersion>
-    <MicrosoftNETCoreILAsmVersion>5.0.0-preview.7.20364.11</MicrosoftNETCoreILAsmVersion>
     <MicrosoftNETTestSdkVersion>16.11.0</MicrosoftNETTestSdkVersion>
-    <MicrosoftWin32RegistryVersion>5.0.0</MicrosoftWin32RegistryVersion>
     <NewtonsoftJsonVersion>13.0.2</NewtonsoftJsonVersion>
     <NUnitVersion>3.13.2</NUnitVersion>
     <NUnit3TestAdapterVersion>4.1.0</NUnit3TestAdapterVersion>
