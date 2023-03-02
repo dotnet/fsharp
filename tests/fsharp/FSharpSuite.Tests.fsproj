@@ -110,9 +110,10 @@
     </ProjectReference>
   </ItemGroup>
 
-  <!-- This is a runtime dependency. Sad but true. -->
+  <!-- Runtime dependencies. Beware. -->
   <ItemGroup>
     <PackageReference Include="Microsoft.NETCore.ILDAsm" Version="$(MicrosoftNETCoreILDAsmVersion)" />
+    <PackageReference Include="Microsoft.NETCore.ILAsm" Version="$(MicrosoftNETCoreILAsmVersion)" />
   </ItemGroup>
   
   <ItemGroup>
