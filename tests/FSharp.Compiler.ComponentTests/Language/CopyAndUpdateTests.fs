@@ -131,3 +131,40 @@ if actual2 <> expected2 then
     |> withLangVersionPreview
     |> compileExeAndRun
     |> shouldSucceed
+
+[<Fact>]
+let ``Qualified record field names are correctly recognized in nested copy-and-update``() =
+    FSharp """
+module CopyAndUpdateTests
+
+module U =
+    module U =
+        type G = { U: {| a: G |}; I: int }
+
+let moduleModulePrefix x = { x with U.U.U.a.U.a.U.a.I = 1 }
+
+let moduleModuleTypePrefix x = { x with U.U.G.U.a.I = 1 }
+
+open U
+
+let modulePrefix x = { x with U.U.a.I = 1 }
+
+let moduleTypePrefix x = { x with U.G.U.a.I = 1 }
+
+open U
+
+let typePrefix x = { x with G.U.a.I = 1 }
+
+let modulePrefix2 x = { x with U.U.a.I = 1 }
+
+let moduleTypePrefix2 x = { x with U.G.U.a.I = 1 }
+
+let noPrefix x = { x with U.a.I = 1 }
+
+let c3 = { U.G.U = Unchecked.defaultof<_>; I = 3 }
+
+let c4 = { U.U = Unchecked.defaultof<_>; I = 3 }
+    """
+    |> withLangVersionPreview
+    |> typecheck
+    |> shouldSucceed

@@ -748,7 +748,7 @@ val internal ResolveNestedField:
     ncenv: NameResolver ->
     nenv: NameResolutionEnv ->
     ad: AccessorDomain ->
-    ty: TType ->
+    recdTy: TType ->
     lid: Ident list ->
         Ident list * (Ident * AnonRecdTypeInfo option) list
 
