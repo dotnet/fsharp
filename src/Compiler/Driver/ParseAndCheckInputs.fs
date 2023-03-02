@@ -1612,19 +1612,6 @@ let AddSignatureResultToTcImplEnv (tcImports: TcImports, tcGlobals, prefixPathOp
 
             partialResult, tcState
 
-let rec kindaEvilFixingEntity (entity: Entity) =
-    for e in entity.ModuleOrNamespaceType.AllEntities do
-        kindaEvilFixingEntity e
-
-    for v in entity.ModuleOrNamespaceType.AllValsAndMembers do
-        kindaEvilFixingTypars v
-
-and kindaEvilFixingTypars (v: Val) =
-    for typar in v.Typars do
-        if typar.id_suggestions.Count > 0 then
-            let lowestKey = typar.id_suggestions.Keys |> Seq.min
-            typar.typar_id <- typar.id_suggestions.[lowestKey]
-
 /// Constructs a file dependency graph and type-checks the files in parallel where possible.
 let CheckMultipleInputsUsingGraphMode
     ((ctok, checkForErrors, tcConfig: TcConfig, tcImports: TcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs): 'a * (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcState * (PhasedDiagnostic -> PhasedDiagnostic) * ParsedInput list)
@@ -1780,9 +1767,6 @@ let CheckMultipleInputsUsingGraphMode
             // Bring back the original, index-based file order.
             |> List.sortBy fst
             |> List.map snd
-
-        // Yup, that evil
-        kindaEvilFixingEntity tcState.Ccu.Deref.Contents
 
         partialResults, tcState)
 

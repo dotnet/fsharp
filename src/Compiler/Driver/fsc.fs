@@ -689,6 +689,22 @@ let main1
     AbortOnError(diagnosticsLogger, exiter)
     ReportTime tcConfig "Typechecked"
 
+    // Fixup typars
+    let rec kindaEvilFixingEntity (entity: Entity) =
+        for e in entity.ModuleOrNamespaceType.AllEntities do
+            kindaEvilFixingEntity e
+
+        for v in entity.ModuleOrNamespaceType.AllValsAndMembers do
+            kindaEvilFixingTypars v
+
+    and kindaEvilFixingTypars (v: Val) =
+        for typar in v.Typars do
+            if typar.id_suggestions.Count > 0 then
+                let lowestKey = typar.id_suggestions.Keys |> Seq.min
+                typar.typar_id <- typar.id_suggestions.[lowestKey]
+
+    kindaEvilFixingEntity tcState.Ccu.Deref.Contents
+
     Args(
         ctok,
         tcGlobals,
