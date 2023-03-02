@@ -184,8 +184,8 @@
     <MicrosoftMSXMLVersion>8.0.0</MicrosoftMSXMLVersion>
     <MicrosoftNetCompilersVersion>4.3.0-1.22220.8</MicrosoftNetCompilersVersion>
     <MicrosoftNETCoreAppRefVersion>3.1.0</MicrosoftNETCoreAppRefVersion>
-    <MicrosoftNETCoreILAsmVersion>5.0.0-preview.7.20364.11</MicrosoftNETCoreILAsmVersion>
     <MicrosoftNETCoreILDAsmVersion>5.0.0-preview.7.20364.11</MicrosoftNETCoreILDAsmVersion>
+    <MicrosoftNETCoreILAsmVersion>5.0.0-preview.7.20364.11</MicrosoftNETCoreILAsmVersion>
     <MicrosoftNETTestSdkVersion>16.11.0</MicrosoftNETTestSdkVersion>
     <NewtonsoftJsonVersion>13.0.2</NewtonsoftJsonVersion>
     <NUnitVersion>3.13.2</NUnitVersion>
