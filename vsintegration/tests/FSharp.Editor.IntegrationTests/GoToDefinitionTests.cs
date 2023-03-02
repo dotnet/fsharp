@@ -4,7 +4,6 @@
 
 using Microsoft.CodeAnalysis.Testing;
 using Microsoft.VisualStudio.Extensibility.Testing;
-using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -35,7 +34,7 @@ let increment = add 1
 
         await solutionExplorer.BuildSolutionAsync(token);
 
-        await editor.PlaceCaretAsync("add", 2, token);
+        await editor.PlaceCaretAsync("add 1", token);
 
         await editor.GoToDefinitionAsync(token);
 
@@ -45,33 +44,5 @@ let increment = add 1
         var editorText = view.TextSnapshot.GetText();
 
         Assert.Contains(expectedText, editorText);
-    }
-
-    [IdeFact]
-    public async Task RazorWay_Async()
-    {
-        var token = HangMitigatingCancellationToken;
-        var template = WellKnownProjectTemplates.FSharpNetCoreClassLibrary;
-        var solutionExplorer = TestServices.SolutionExplorer;
-        var editor = TestServices.Editor;
-        var code = """
-module Test
-
-let add x y = x + y
-
-let increment = add 1
-""";
-
-        await solutionExplorer.CreateSolutionAsync(nameof(BuildProjectTests), token);
-        await solutionExplorer.AddProjectAsync("Library", template, token);
-        await solutionExplorer.RestoreNuGetPackagesAsync(token);
-        await editor.SetTextAsync(code, token);
-
-        await solutionExplorer.BuildSolutionAsync(token);
-
-        await editor.PlaceCaretAsync("add", 2, token);
-        await editor.InvokeGoToDefinitionAsync(token);
-
-        await TestServices.Editor.WaitForCurrentLineTextAsync("let add x y = x + y", token);
     }
 }
