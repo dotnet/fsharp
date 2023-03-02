@@ -33,7 +33,7 @@ let increment = add 1
 
         await solutionExplorer.BuildSolutionAsync(token);
 
-        await TestServices.Editor.PlaceCaretAsync("IncrementCount", charsOffset: -1, token);
+        await TestServices.Editor.PlaceCaretAsync("add", token);
 
         //await TestServices.Editor.InvokeGoToDefinitionAsync(ControlledHangMitigatingCancellationToken);
 
