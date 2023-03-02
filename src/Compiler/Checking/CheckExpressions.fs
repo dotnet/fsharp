@@ -5190,6 +5190,12 @@ and TcExprThen (cenv: cenv) overallTy env tpenv isArg synExpr delayed =
 
     match synExpr with
 
+    // A.
+    // A.B.
+    | SynExpr.DiscardAfterMissingQualificationAfterDot (expr1, _, m) ->
+        let _, _, tpenv = suppressErrorReporting (fun () -> TcExprOfUnknownTypeThen cenv env tpenv expr1 [DelayedDot])
+        mkDefault(m, overallTy.Commit), tpenv
+
     // A
     // A.B.C
     | LongOrSingleIdent (isOpt, longId, altNameRefCellOpt, mLongId) ->
@@ -5457,7 +5463,8 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
     | SynExpr.LongIdent _
     | SynExpr.App _
     | SynExpr.Dynamic _
-    | SynExpr.DotGet _ ->
+    | SynExpr.DotGet _
+    | SynExpr.DiscardAfterMissingQualificationAfterDot _ ->
         error(Error(FSComp.SR.tcExprUndelayed(), synExpr.Range))
 
     | SynExpr.Const (SynConst.String (s, _, m), _) ->
@@ -5600,10 +5607,6 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
 
     | SynExpr.ArbitraryAfterError (_debugStr, m) ->
         //SolveTypeAsError cenv env.DisplayEnv m overallTy
-        mkDefault(m, overallTy.Commit), tpenv
-
-    | SynExpr.DiscardAfterMissingQualificationAfterDot (expr1, _, m) ->
-        let _, _, tpenv = suppressErrorReporting (fun () -> TcExprOfUnknownTypeThen cenv env tpenv expr1 [DelayedDot])
         mkDefault(m, overallTy.Commit), tpenv
 
     | SynExpr.FromParseError (expr1, m) ->
@@ -6970,17 +6973,22 @@ and TcConstStringExpr cenv (overallTy: OverallTy) env m tpenv (s: string) litera
         | _ -> false
 
     let g = cenv.g
+  
 
-    if isFormat g overallTy.Commit then
-        if literalType = LiteralArgumentType.StaticField then
-            checkLanguageFeatureAndRecover g.langVersion LanguageFeature.NonInlineLiteralsAsPrintfFormat m
-
+    match isFormat g overallTy.Commit, literalType with
+    | true, LiteralArgumentType.StaticField ->
+        checkLanguageFeatureAndRecover g.langVersion LanguageFeature.NonInlineLiteralsAsPrintfFormat m
         TcFormatStringExpr cenv overallTy env m tpenv s literalType
-    else
-        if literalType = LiteralArgumentType.Inline && not (isObjTy g overallTy.Commit) then
-            AddCxTypeEqualsType env.eContextInfo env.DisplayEnv cenv.css m overallTy.Commit g.string_ty
 
-        mkString g m s, tpenv
+    | true, LiteralArgumentType.Inline ->
+        TcFormatStringExpr cenv overallTy env m tpenv s literalType
+
+    | false, LiteralArgumentType.StaticField ->
+        Expr.Const (TcFieldInit m (ILFieldInit.String s), m, g.string_ty), tpenv
+
+    | false, LiteralArgumentType.Inline ->
+        TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env (* true *) m (fun () ->
+                mkString g m s, tpenv)
 
 and TcFormatStringExpr cenv (overallTy: OverallTy) env m tpenv (fmtString: string) formatStringLiteralType =
     let g = cenv.g

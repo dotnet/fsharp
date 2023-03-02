@@ -5719,7 +5719,7 @@ let checkContentAsScript content =
     // set).
     // because of this we have to do it all manually
     let scriptName = "test.fsx"
-    let tempDir = Path.GetTempPath()
+    let tempDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)
     let scriptFullPath = Path.Combine(tempDir, scriptName)
     let sourceText = SourceText.ofString content
     let projectOptions, _ = checker.GetProjectOptionsFromScript(scriptFullPath, sourceText, useSdkRefs = true, assumeDotNetFramework = false) |>    Async.RunImmediate

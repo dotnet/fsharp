@@ -1,17 +1,16 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.UnitTests
+namespace FSharp.Compiler.ComponentTests.EmittedIL
 
-open NUnit.Framework
+open Xunit
 open FSharp.Compiler.Diagnostics
 open FSharp.Test
 open FSharp.Test.Utilities
 open FSharp.Test.Compiler
 
-[<TestFixture>]
-module ByrefTests =
+module byrefTests =
 
-    [<Test>]
+    [<Fact>]
     let ``No defensive copy on .NET struct`` () =
         CompilerAssert.Pass
             """
@@ -51,7 +50,7 @@ let test6 () =
     DateTime.Now.Test().Test().Test()
             """
 
-    [<Test>]
+    [<Fact>]
     let ``Extension method scope errors`` () =
         CompilerAssert.TypeCheckWithErrors
             """
@@ -119,7 +118,7 @@ let f5 () =
 // TODO: A better way to test the ones below are to use a custom struct in C# code that contains explicit use of their "readonly" keyword.
 #if NETCOREAPP
     // NETCORE makes DateTime a readonly struct; therefore, it should not error.
-    [<Test>]
+    [<Fact>]
     let ``No defensive copy on .NET struct - netcore`` () =
         CompilerAssert.Pass
             """
@@ -148,7 +147,7 @@ let test2 () =
             """
 #else
     // Note: Currently this is assuming NET472. That may change which might break these tests. Consider using custom C# code.
-    [<Test>]
+    [<Fact>]
     let ``Defensive copy on .NET struct for inref`` () =
         CompilerAssert.TypeCheckWithErrors
             """
@@ -201,7 +200,7 @@ let test1 () =
 #endif
 
 #if NETCOREAPP
-    [<Test>]
+    [<Fact>]
     let ``Consume CSharp interface with a method that has a readonly byref`` () =
         let cs =
             """
@@ -240,7 +239,7 @@ type MyClass() =
 
 #endif
 
-    [<Test>]
+    [<Fact>]
     let ``Can take native address to get a nativeptr of a mutable value`` () =
         CompilerAssert.Pass
             """
@@ -252,7 +251,7 @@ let test () =
     ()
             """
 
-    [<Test>]
+    [<Fact>]
     let ``Cannot take native address to get a nativeptr of an immmutable value`` () =
         CompilerAssert.TypeCheckWithErrors
             """
@@ -266,8 +265,7 @@ let test () =
                     (FSharpDiagnosticSeverity.Error, 256, (6, 13, 6, 16), "A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'")
                 |]
 
-    [<Test()>]
-    [<Ignore("Waiting for test to be aligned", Until = "2023-04-01 12:00:00Z")>]
+    [<Fact>]
     let ``Returning an 'inref<_>' from a property should emit System.Runtime.CompilerServices.IsReadOnlyAttribute on the return type of the signature`` () =
         let src =
             """
@@ -297,8 +295,56 @@ type C() =
         |> verifyIL [verifyProperty;verifyMethod]
         |> ignore
 
-    [<Test>]
-    [<Ignore("Waiting for test to be aligned", Until = "2023-04-01 12:00:00Z")>]
+    [<Fact>]
+    let ``Returning an 'inref<_>' from a property should emit System.Runtime.CompilerServices.IsReadOnlyAttribute on the return type of the signature and generate the `` () =
+        let src =
+            """
+module Test
+
+type C() =
+    let x = 59
+    member _.X: inref<_> = &x
+            """
+
+        let verifyProperty = """.property instance int32& modreq([netstandard]System.Runtime.InteropServices.InAttribute)
+                X()
+        {
+          .custom instance void System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 ) 
+          .get instance int32& modreq([netstandard]System.Runtime.InteropServices.InAttribute) Test/C::get_X()
+        }"""
+
+        let verifyMethod = """.method public hidebysig specialname 
+                instance int32& modreq([netstandard]System.Runtime.InteropServices.InAttribute) 
+                get_X() cil managed
+        {
+          .param [0]
+          .custom instance void System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 )"""
+
+        let verifyIsReadOnlyAttribute = """
+.class private auto ansi beforefieldinit System.Runtime.CompilerServices.IsReadOnlyAttribute
+       extends [System.Runtime]System.Attribute
+{
+  .method public specialname rtspecialname 
+          instance void  .ctor() cil managed
+  {
+    .custom instance void [netstandard]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [netstandard]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    // Code size       7 (0x7)
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  call       instance void [System.Runtime]System.Attribute::.ctor()
+    IL_0006:  ret
+  } // end of method IsReadOnlyAttribute::.ctor
+
+} // end of class System.Runtime.CompilerServices.IsReadOnlyAttribute"""
+
+        FSharp src
+        |> asNetStandard20
+        |> compile
+        |> verifyIL [verifyProperty;verifyMethod;verifyIsReadOnlyAttribute]
+        |> ignore
+
+    [<Fact>]
     let ``Returning an 'inref<_>' from a generic method should emit System.Runtime.CompilerServices.IsReadOnlyAttribute on the return type of the signature`` () =
         let src =
             """
@@ -320,8 +366,7 @@ type C<'T>() =
         |> verifyIL [verifyMethod]
         |> ignore
 
-    [<Test>]
-    [<Ignore("Waiting for test to be aligned", Until = "2023-04-01 12:00:00Z")>]
+    [<Fact>]
     let ``Returning an 'inref<_>' from an abstract generic method should emit System.Runtime.CompilerServices.IsReadOnlyAttribute on the return type of the signature`` () =
         let src =
             """
@@ -344,8 +389,7 @@ type C<'T>() =
         |> verifyIL [verifyMethod]
         |> ignore
 
-    [<Test>]
-    [<Ignore("Waiting for test to be aligned", Until = "2023-04-01 12:00:00Z")>]
+    [<Fact>]
     let ``Returning an 'inref<_>' from an abstract property should emit System.Runtime.CompilerServices.IsReadOnlyAttribute on the return type of the signature`` () =
         let src =
             """

@@ -10,7 +10,7 @@ open Microsoft.FSharp.Core.Operators
 /// <summary>Contains operations for working with rank 3 arrays.</summary>
 ///
 /// <remarks>
-///  See also <a href="https://docs.microsoft.com/dotnet/fsharp/language-reference/arrays">F# Language Guide - Arrays</a>.
+///  See also <a href="https://learn.microsoft.com/dotnet/fsharp/language-reference/arrays">F# Language Guide - Arrays</a>.
 /// </remarks>
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 [<RequireQualifiedAccess>]

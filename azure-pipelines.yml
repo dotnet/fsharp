@@ -268,10 +268,10 @@ stages:
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Install tools
-          - script: dotnet fantomas src -r --check
+          - script: dotnet fantomas . -r --check
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
-            displayName: Check code formatting (run 'dotnet fantomas src -r' to fix)
+            displayName: Check code formatting (run 'dotnet fantomas . -r' to fix)
 
         # Check whether package with current version has been published to nuget.org
         # We will try to restore both FSharp.Core and FCS and if restore is _successful_, package version needs to be bumped.
@@ -346,12 +346,13 @@ stages:
               vs_release:
                 _configuration: Release
                 _testKind: testVs
-              inttests_release:
-                _configuration: Release
-                _testKind: testIntegration
           steps:
           - checkout: self
             clean: true
+
+          - powershell: eng\SetupVSHive.ps1
+            displayName: Setup VS Hive
+
           - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
             displayName: Build / Test
           - task: PublishTestResults@2
@@ -444,6 +445,8 @@ stages:
           - checkout: self
             clean: true
           - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr
+            env:
+              COMPlus_DefaultStackSize: 1000000
             displayName: Build / Test
           - task: PublishTestResults@2
             displayName: Publish Test Results
