@@ -1466,6 +1466,10 @@ type Typar =
 
         /// The optional data for the type parameter
         mutable typar_opt_data: TyparOptionalData option
+
+        /// When type-checking using the graph method, multiple proposals for the typar_id can be found concurrently.
+        /// We would pick the ident with the lowest file index value (int), as that is the name the sequential type-checking would pick.
+        id_suggestions: Dictionary<int, Ident>
     }
 
     /// Creates a type variable based on the given data. Only used during unpickling of F# metadata.

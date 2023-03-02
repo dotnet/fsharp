@@ -23,6 +23,7 @@ val CheckImplFile:
     implFileTy: ModuleOrNamespaceType *
     implFileContents: ModuleOrNamespaceContents *
     extraAttribs: Attribs *
+    fileIndex: int option *
     (bool * bool) *
     isInternalTestSpanStackReferring: bool ->
         bool * StampMap<AnonRecdTypeInfo>

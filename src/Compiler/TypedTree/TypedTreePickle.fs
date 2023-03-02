@@ -1615,7 +1615,8 @@ let u_tyar_spec_data st =
       typar_opt_data=
         match g, e, c with
         | doc, [], [] when doc.IsEmpty -> None
-        | _ -> Some { typar_il_name = None; typar_xmldoc = g; typar_constraints = e; typar_attribs = c } }
+        | _ -> Some { typar_il_name = None; typar_xmldoc = g; typar_constraints = e; typar_attribs = c }
+      id_suggestions = Dictionary(0) }
 
 let u_tyar_spec st =
     u_osgn_decl st.itypars u_tyar_spec_data st

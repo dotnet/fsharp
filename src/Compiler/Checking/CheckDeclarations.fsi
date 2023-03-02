@@ -60,6 +60,7 @@ val CheckOneImplFile:
     TcEnv *
     ModuleOrNamespaceType option *
     ParsedImplFileInput *
+    FileIndex option *
     FSharpDiagnosticOptions ->
         Cancellable<TopAttribs * CheckedImplFile * TcEnv * bool>
 

@@ -2139,6 +2139,10 @@ type Typar =
       
       /// The optional data for the type parameter
       mutable typar_opt_data: TyparOptionalData option
+      
+      /// When type-checking using the graph method, multiple proposals for the typar_id can be found concurrently.
+      /// We would pick the ident with the lowest file index value (int), as that is the name the sequential type-checking would pick.
+      id_suggestions: Dictionary<int, Ident>
     }
 
     /// The name of the type parameter 
@@ -2248,7 +2252,8 @@ type Typar =
           typar_stamp = -1L
           typar_solution = Unchecked.defaultof<_>
           typar_astype = Unchecked.defaultof<_>
-          typar_opt_data = Unchecked.defaultof<_> }
+          typar_opt_data = Unchecked.defaultof<_>
+          id_suggestions = Dictionary(1) }
 
     /// Creates a type variable based on the given data. Only used during unpickling of F# metadata.
     static member New (data: TyparData) : Typar = data
@@ -5835,7 +5840,8 @@ type Construct() =
             typar_opt_data =
                 match attribs with
                 | [] -> None
-                | _ -> Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = attribs } } 
+                | _ -> Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = attribs }
+            id_suggestions = Dictionary(0) } 
 
     /// Create a new type parameter node for a declared type parameter
     static member NewRigidTypar nm m =

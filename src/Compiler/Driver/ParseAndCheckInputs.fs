@@ -1321,6 +1321,7 @@ let CheckOneInputAux
                             tcState.tcsTcImplEnv,
                             rootSigOpt,
                             file,
+                            None,
                             tcConfig.diagnosticsOptions
                         )
 
@@ -1469,7 +1470,7 @@ let CheckOneInputWithCallback
       tcSink,
       tcState: TcState,
       inp: ParsedInput,
-      _skipImplIfSigExists: bool): (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcResultsSink * TcState * ParsedInput * bool)
+      idx: FileIndex): (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcResultsSink * TcState * ParsedInput * FileIndex)
     : Cancellable<Finisher<TcState, PartialResult>> =
     cancellable {
         try
@@ -1559,6 +1560,7 @@ let CheckOneInputWithCallback
                         tcState.tcsTcImplEnv,
                         rootSigOpt,
                         file,
+                        Some idx,
                         tcConfig.diagnosticsOptions
                     )
 
@@ -1609,6 +1611,19 @@ let AddSignatureResultToTcImplEnv (tcImports: TcImports, tcGlobals, prefixPathOp
                 tcState.tcsTcSigEnv, EmptyTopAttrs, None, ccuSigForFile
 
             partialResult, tcState
+
+let rec kindaEvilFixingEntity (entity: Entity) =
+    for e in entity.ModuleOrNamespaceType.AllEntities do
+        kindaEvilFixingEntity e
+
+    for v in entity.ModuleOrNamespaceType.AllValsAndMembers do
+        kindaEvilFixingTypars v
+
+and kindaEvilFixingTypars (v: Val) =
+    for typar in v.Typars do
+        if typar.id_suggestions.Count > 0 then
+            let lowestKey = typar.id_suggestions.Keys |> Seq.min
+            typar.typar_id <- typar.id_suggestions.[lowestKey]
 
 /// Constructs a file dependency graph and type-checks the files in parallel where possible.
 let CheckMultipleInputsUsingGraphMode
@@ -1706,6 +1721,7 @@ let CheckMultipleInputsUsingGraphMode
             partialResult, (nextTcState, currentPriorErrors))
 
     let processFile
+        (idx: FileIndex)
         ((input, logger): ParsedInput * DiagnosticsLogger)
         ((currentTcState, _currentPriorErrors): State)
         : Finisher<State, PartialResult> =
@@ -1714,7 +1730,7 @@ let CheckMultipleInputsUsingGraphMode
         let tcSink = TcResultsSink.NoSink
 
         let finisher =
-            CheckOneInputWithCallback(checkForErrors2, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, currentTcState, input, false)
+            CheckOneInputWithCallback(checkForErrors2, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, currentTcState, input, idx)
             |> Cancellable.runWithoutCancellation
 
         Finisher(fun (state: State) ->
@@ -1741,7 +1757,7 @@ let CheckMultipleInputsUsingGraphMode
                 processArtificialImplFile parsedInput state
             | NodeToTypeCheck.PhysicalFile idx ->
                 let parsedInput, logger = inputsWithLoggers[idx]
-                processFile (parsedInput, logger) state
+                processFile idx (parsedInput, logger) state
 
         let state: State = tcState, priorErrors
 
@@ -1765,13 +1781,16 @@ let CheckMultipleInputsUsingGraphMode
             |> List.sortBy fst
             |> List.map snd
 
+        // Yup, that evil
+        kindaEvilFixingEntity tcState.Ccu.Deref.Contents
+
         partialResults, tcState)
 
 let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs) =
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions
     let results, tcState =
         match tcConfig.typeCheckingConfig.Mode with
-        | TypeCheckingMode.Graph when (not tcConfig.isInteractive && not tcConfig.deterministic) ->
+        | TypeCheckingMode.Graph when (not tcConfig.isInteractive) ->
             CheckMultipleInputsUsingGraphMode(
                 ctok,
                 checkForErrors,

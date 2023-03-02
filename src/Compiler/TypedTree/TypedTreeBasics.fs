@@ -205,7 +205,8 @@ let copyTypar clearStaticReq (tp: Typar) =
                 typar_solution = tp.typar_solution
                 typar_astype = Unchecked.defaultof<_>
                 // Be careful to clone the mutable optional data too
-                typar_opt_data = optData } 
+                typar_opt_data = optData
+                id_suggestions = tp.id_suggestions } 
 
 let copyTypars clearStaticReq tps = List.map (copyTypar clearStaticReq) tps
 
