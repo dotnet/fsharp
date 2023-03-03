@@ -78,4 +78,5 @@ module HeyHo =
     let ``operator`` () = assertResultsContain "+>" "+>"
 
     [<Fact>]
-    let ``nested containers`` () = assertResultsContain "hh.a.b.g.d" "Delta"
+    let ``nested containers`` () =
+        assertResultsContain "hh.a.b.g.d" "Delta"
