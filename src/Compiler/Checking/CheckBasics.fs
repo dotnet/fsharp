@@ -242,9 +242,6 @@ type TcEnv =
 
       // Do we lay down an implicit debug point?
       eIsControlFlow: bool
-
-      /// Type checking an expanded nested copy-and-update record expression
-      eIsInNestedCopyAndUpdate: bool
     }
 
     member tenv.DisplayEnv = tenv.eNameResEnv.DisplayEnv
