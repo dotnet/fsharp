@@ -58,7 +58,7 @@ module HeyHo =
     let ``capitalized camel case`` () =
         assertResultsContain "CLN" "CamelCaseLongName"
 
-    [<Fact(Skip = "Old pattern matcher matches only capital letters to camel case.")>]
+    [<Fact>]
     let ``lower camel case`` () =
         assertResultsContain "cln" "CamelCaseLongName"
 
@@ -69,5 +69,5 @@ module HeyHo =
     let ``backticked identifier`` () =
         assertResultsContain "a few words" "a few words"
 
-    [<Fact(Skip = "Operators show logical name instead of display name.")>]
+    [<Fact>]
     let ``operator`` () = assertResultsContain "+>" "+>"
