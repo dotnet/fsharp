@@ -111,7 +111,8 @@ type NavigableContainer =
     member Name: string
 
 type NavigableItem =
-    { LogicalName: string
+    { Name: string
+      NeedsBackticks: bool
       Range: range
       IsSignature: bool
       Kind: NavigableItemKind

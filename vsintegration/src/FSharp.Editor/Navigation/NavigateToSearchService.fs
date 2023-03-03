@@ -127,12 +127,14 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>]
         fun (item: NavigableItem) ->  
             // PatternMatcher will not match operators and some backtick escaped identifiers.
             // To handle them, we fall back to simple substring match.
-            let name = item.LogicalName
-            match name.IndexOf(searchPattern, StringComparison.CurrentCultureIgnoreCase) with
-            | i when i > 0 -> PatternMatch(PatternMatchKind.Substring, false, false) |> Some
-            | 0 when name.Length = searchPattern.Length -> PatternMatch(PatternMatchKind.Exact, false, false) |> Some
-            | 0 -> PatternMatch(PatternMatchKind.Prefix, false, false) |> Some
-            | _ ->
+            let name = item.Name
+            if item.NeedsBackticks then
+                match name.IndexOf(searchPattern, StringComparison.CurrentCultureIgnoreCase) with
+                | i when i > 0 -> PatternMatch(PatternMatchKind.Substring, false, false) |> Some
+                | 0 when name.Length = searchPattern.Length -> PatternMatch(PatternMatchKind.Exact, false, false) |> Some
+                | 0 -> PatternMatch(PatternMatchKind.Prefix, false, false) |> Some
+                | _ -> None
+            else
                 // full name with dots allows for path matching, e.g.
                 // "f.c.so.elseif" will match "Fantomas.Core.SyntaxOak.ElseIfNode"
                 patternMatcher.TryMatch $"{item.Container.FullName}.{name}"
@@ -153,15 +155,14 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>]
                     let glyph = navigateToItemKindToGlyph item.Kind
                     let kind = navigateToItemKindToRoslynKind item.Kind
                     let additionalInfo = formatInfo item.Container document
-                    let name = item.LogicalName
 
                     return
                         FSharpNavigateToSearchResult(
                             additionalInfo,
                             kind,
                             patternMatchKindToNavigateToMatchKind m.Kind,
-                            name,
-                            FSharpNavigableItem(glyph, ImmutableArray.Create(TaggedText(TextTags.Text, name)), document, sourceSpan)
+                            item.Name,
+                            FSharpNavigableItem(glyph, ImmutableArray.Create(TaggedText(TextTags.Text, item.Name)), document, sourceSpan)
                         )
                 }
 

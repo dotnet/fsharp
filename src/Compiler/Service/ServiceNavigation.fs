@@ -699,9 +699,9 @@ type NavigableContainer =
         let rec loop acc =
             function
             | File _ -> acc
-            | Container (_, name, parent) -> loop (name @ acc) parent
+            | Container (_, nameParts, parent) -> loop (nameParts @ acc) parent
 
-        loop [] x |> String.concat "."
+        loop [] x |> textOfPath
 
     member x.Type =
         match x with
@@ -716,7 +716,8 @@ type NavigableContainer =
 
 type NavigableItem =
     {
-        LogicalName: string
+        Name: string
+        NeedsBackticks: bool
         Range: range
         IsSignature: bool
         Kind: NavigableItemKind
@@ -727,12 +728,7 @@ type NavigableItem =
 module NavigateTo =
     let GetNavigableItems (parsedInput: ParsedInput) : NavigableItem[] =
 
-        // empty lid is possible in case of broken ast
-        let lastInLid (lid: LongIdent) = lid |> List.tryLast
-
-        let getParts (lid: LongIdent) = lid |> List.map (fun id -> id.idText)
-
-        let unmangleOpName name =
+        let convertToDisplayName name =
             if PrettyNaming.IsLogicalOpName name then
                 PrettyNaming.ConvertValLogicalNameToDisplayNameCore name
             else
@@ -740,23 +736,36 @@ module NavigateTo =
 
         let result = ResizeArray()
 
+        let addLongIdent kind (lid: LongIdent) (isSignature: bool) (container: NavigableContainer) =
+            if not lid.IsEmpty then
+                let name = textOfLid lid
+
+                {
+                    Name = name
+                    NeedsBackticks = PrettyNaming.DoesIdentifierNeedBackticks name
+                    Range = rangeOfLid lid
+                    IsSignature = isSignature
+                    Kind = kind
+                    Container = container
+                }
+                |> result.Add
+
         let addIdent kind (id: Ident) (isSignature: bool) (container: NavigableContainer) =
             if not (String.IsNullOrEmpty id.idText) then
-                let item =
-                    {
-                        LogicalName = unmangleOpName id.idText
-                        Range = id.idRange
-                        IsSignature = isSignature
-                        Kind = kind
-                        Container = container
-                    }
+                let name = convertToDisplayName id.idText
 
-                result.Add item
+                {
+                    Name = name
+                    NeedsBackticks = PrettyNaming.DoesIdentifierNeedBackticks name
+                    Range = id.idRange
+                    IsSignature = isSignature
+                    Kind = kind
+                    Container = container
+                }
+                |> result.Add
 
         let addModule lid isSig container =
-            match lastInLid lid with
-            | Some id -> addIdent NavigableItemKind.Module id isSig container
-            | _ -> ()
+            addLongIdent NavigableItemKind.Module lid isSig container
 
         let addModuleAbbreviation (id: Ident) isSig container =
             addIdent NavigableItemKind.ModuleAbbreviation id isSig container
@@ -768,12 +777,9 @@ module NavigateTo =
 
         let addComponentInfo containerType kind info isSig container =
             let (SynComponentInfo (longId = lid)) = info
+            addLongIdent kind lid isSig container
 
-            match lastInLid lid with
-            | Some id -> addIdent kind id isSig container
-            | _ -> ()
-
-            NavigableContainer.Container(containerType, getParts lid, container)
+            NavigableContainer.Container(containerType, pathOfLid lid, container)
 
         let addValSig kind synValSig isSig container =
             let (SynValSig(ident = SynIdent (id, _))) = synValSig
@@ -851,7 +857,7 @@ module NavigateTo =
                     NavigableContainerType.Namespace
 
             for decl in decls do
-                walkSynModuleSigDecl decl (NavigableContainer.Container(ctype, getParts lid, container))
+                walkSynModuleSigDecl decl (NavigableContainer.Container(ctype, pathOfLid lid, container))
 
         and walkSynModuleSigDecl (decl: SynModuleSigDecl) container =
             match decl with
@@ -910,7 +916,7 @@ module NavigateTo =
                     NavigableContainerType.Namespace
 
             for decl in decls do
-                walkSynModuleDecl decl (NavigableContainer.Container(ctype, getParts lid, container))
+                walkSynModuleDecl decl (NavigableContainer.Container(ctype, pathOfLid lid, container))
 
         and walkSynModuleDecl (decl: SynModuleDecl) container =
             match decl with
