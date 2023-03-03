@@ -24,7 +24,7 @@ module ExtraTopLevelOperators =
     /// <returns>The formatted result.</returns>
     /// 
     /// <example>See <c>Printf.printf</c> (link: <see cref='M:Microsoft.FSharp.Core.PrintfModule.PrintFormat``1'/>) for examples.</example>
-    [<CompiledName("PrintFormat")>]
+    [<CompiledName("PrintFormat"); EditorBrowsableAttribute(EditorBrowsableState.Never)>]
     val printf: format: Printf.TextWriterFormat<'T> -> 'T
 
     /// <summary>Print to <c>stdout</c> using the given format, and add a newline.</summary>
@@ -34,7 +34,7 @@ module ExtraTopLevelOperators =
     /// <returns>The formatted result.</returns>
     /// 
     /// <example>See <c>Printf.printfn</c> (link: <see cref='M:Microsoft.FSharp.Core.PrintfModule.PrintFormatLine``1'/>) for examples.</example>
-    [<CompiledName("PrintFormatLine")>]
+    [<CompiledName("PrintFormatLine"); EditorBrowsableAttribute(EditorBrowsableState.Never)>]
     val printfn: format: Printf.TextWriterFormat<'T> -> 'T
 
     /// <summary>Print to <c>stderr</c> using the given format.</summary>
@@ -44,7 +44,7 @@ module ExtraTopLevelOperators =
     /// <returns>The formatted result.</returns>
     /// 
     /// <example>See <c>Printf.eprintf</c> (link: <see cref='M:Microsoft.FSharp.Core.PrintfModule.PrintFormatToError``1'/>) for examples.</example>
-    [<CompiledName("PrintFormatToError")>]
+    [<CompiledName("PrintFormatToError"); EditorBrowsableAttribute(EditorBrowsableState.Never)>]
     val eprintf: format: Printf.TextWriterFormat<'T> -> 'T
 
     /// <summary>Print to <c>stderr</c> using the given format, and add a newline.</summary>
@@ -54,7 +54,7 @@ module ExtraTopLevelOperators =
     /// <returns>The formatted result.</returns>
     /// 
     /// <example>See <c>Printf.eprintfn</c> (link: <see cref='M:Microsoft.FSharp.Core.PrintfModule.PrintFormatLineToError``1'/>) for examples.</example>
-    [<CompiledName("PrintFormatLineToError")>]
+    [<CompiledName("PrintFormatLineToError"); EditorBrowsableAttribute(EditorBrowsableState.Never)>]
     val eprintfn: format: Printf.TextWriterFormat<'T> -> 'T
 
     /// <summary>Print to a string using the given format.</summary>
@@ -64,7 +64,7 @@ module ExtraTopLevelOperators =
     /// <returns>The formatted result.</returns>
     /// 
     /// <example>See <c>Printf.sprintf</c> (link: <see cref='M:Microsoft.FSharp.Core.PrintfModule.PrintFormatToStringThen``1'/>) for examples.</example>
-    [<CompiledName("PrintFormatToString")>]
+    [<CompiledName("PrintFormatToString"); EditorBrowsableAttribute(EditorBrowsableState.Never)>]
     val sprintf: format: Printf.StringFormat<'T> -> 'T
 
     /// <summary>Print to a string buffer and raise an exception with the given
@@ -75,7 +75,7 @@ module ExtraTopLevelOperators =
     /// <returns>The formatted result.</returns>
     /// 
     /// <example>See <c>Printf.failwithf</c> (link: <see cref='M:Microsoft.FSharp.Core.PrintfModule.PrintFormatToStringThenFail``2'/>) for examples.</example>
-    [<CompiledName("PrintFormatToStringThenFail")>]
+    [<CompiledName("PrintFormatToStringThenFail"); EditorBrowsableAttribute(EditorBrowsableState.Never)>]
     val failwithf: format: Printf.StringFormat<'T,'Result> -> 'T
 
     /// <summary>Print to a file using the given format.</summary>
@@ -86,7 +86,7 @@ module ExtraTopLevelOperators =
     /// <returns>The formatted result.</returns>
     /// 
     /// <example>See <c>Printf.fprintf</c> (link: <see cref='M:Microsoft.FSharp.Core.PrintfModule.PrintFormatToTextWriter``1'/>) for examples.</example>
-    [<CompiledName("PrintFormatToTextWriter")>]
+    [<CompiledName("PrintFormatToTextWriter"); EditorBrowsableAttribute(EditorBrowsableState.Never)>]
     val fprintf: textWriter: TextWriter -> format:Printf.TextWriterFormat<'T> -> 'T
 
     /// <summary>Print to a file using the given format, and add a newline.</summary>
@@ -97,7 +97,7 @@ module ExtraTopLevelOperators =
     /// <returns>The formatted result.</returns>
     /// 
     /// <example>See <c>Printf.fprintfn</c> (link: <see cref='M:Microsoft.FSharp.Core.PrintfModule.PrintFormatLineToTextWriter``1'/>) for examples.</example>
-    [<CompiledName("PrintFormatLineToTextWriter")>]
+    [<CompiledName("PrintFormatLineToTextWriter"); EditorBrowsableAttribute(EditorBrowsableState.Never)>]
     val fprintfn : textWriter: TextWriter -> format:Printf.TextWriterFormat<'T> -> 'T
 
     /// <summary>Builds a set from a sequence of objects. The objects are indexed using generic comparison.</summary>

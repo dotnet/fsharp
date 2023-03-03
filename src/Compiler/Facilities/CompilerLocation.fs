@@ -228,9 +228,10 @@ module internal FSharpEnvironment =
     let getCompilerToolsDesignTimeAssemblyPaths compilerToolPaths = searchToolPaths None compilerToolPaths
 
     let getfscorlibLibraryName = "fscorlib"
+
     let getFSharpCoreLibraryName = "FSharp.Core"
 
-    let fsiLibraryName = "FSharp.Compiler.Interactive.Settings"
+    let getFsiLibraryName = "FSharp.Compiler.Interactive.Settings"
 
     let getFSharpCompilerLocationWithDefaultFromType (defaultLocation: Type) =
         let location =
@@ -264,7 +265,7 @@ module internal FSharpEnvironment =
 
     // Must be alongside the location of FSharp.CompilerService.dll
     let getDefaultFsiLibraryLocation () =
-        Path.Combine(Path.GetDirectoryName(getFSharpCompilerLocation ()), fsiLibraryName + ".dll")
+        Path.Combine(Path.GetDirectoryName(getFSharpCompilerLocation ()), getFsiLibraryName + ".dll")
 
     let isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
 

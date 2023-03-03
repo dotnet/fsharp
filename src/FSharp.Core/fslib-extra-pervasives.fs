@@ -252,64 +252,64 @@ module ExtraTopLevelOperators =
 
             res
 
-    [<CompiledName("PrintFormatToString")>]
+    [<CompiledName("PrintFormatToString"); EditorBrowsableAttribute(EditorBrowsableState.Never)>]
     let sprintf format =
         Printf.sprintf format
 
-    [<CompiledName("PrintFormatToStringThenFail")>]
+    [<CompiledName("PrintFormatToStringThenFail"); EditorBrowsableAttribute(EditorBrowsableState.Never)>]
     let failwithf format =
         Printf.failwithf format
 
-    [<CompiledName("PrintFormatToTextWriter")>]
+    [<CompiledName("PrintFormatToTextWriter"); EditorBrowsableAttribute(EditorBrowsableState.Never)>]
     let fprintf (textWriter: TextWriter) format =
         Printf.fprintf textWriter format
 
-    [<CompiledName("PrintFormatLineToTextWriter")>]
+    [<CompiledName("PrintFormatLineToTextWriter"); EditorBrowsableAttribute(EditorBrowsableState.Never)>]
     let fprintfn (textWriter: TextWriter) format =
         Printf.fprintfn textWriter format
 
-    [<CompiledName("PrintFormat")>]
+    [<CompiledName("PrintFormat"); EditorBrowsableAttribute(EditorBrowsableState.Never)>]
     let printf format =
         Printf.printf format
 
-    [<CompiledName("PrintFormatToError")>]
+    [<CompiledName("PrintFormatToError"); EditorBrowsableAttribute(EditorBrowsableState.Never)>]
     let eprintf format =
         Printf.eprintf format
 
-    [<CompiledName("PrintFormatLine")>]
+    [<CompiledName("PrintFormatLine"); EditorBrowsableAttribute(EditorBrowsableState.Never)>]
     let printfn format =
         Printf.printfn format
 
-    [<CompiledName("PrintFormatLineToError")>]
+    [<CompiledName("PrintFormatLineToError"); EditorBrowsableAttribute(EditorBrowsableState.Never)>]
     let eprintfn format =
         Printf.eprintfn format
 
     [<CompiledName("DefaultAsyncBuilder")>]
     let async = AsyncBuilder()
 
-    [<CompiledName("ToSingle")>]
+    [<CompiledName("ToSingle"); EditorBrowsableAttribute(EditorBrowsableState.Never)>]
     let inline single value =
         float32 value
 
-    [<CompiledName("ToDouble")>]
+    [<CompiledName("ToDouble"); EditorBrowsableAttribute(EditorBrowsableState.Never)>]
     let inline double value =
         float value
 
-    [<CompiledName("ToByte")>]
+    [<CompiledName("ToByte"); EditorBrowsableAttribute(EditorBrowsableState.Never)>]
     let inline uint8 value =
         byte value
 
-    [<CompiledName("ToSByte")>]
+    [<CompiledName("ToSByte"); EditorBrowsableAttribute(EditorBrowsableState.Never)>]
     let inline int8 value =
         sbyte value
 
     module Checked =
 
-        [<CompiledName("ToByte")>]
+        [<CompiledName("ToByte"); EditorBrowsableAttribute(EditorBrowsableState.Never)>]
         let inline uint8 value =
             Checked.byte value
 
-        [<CompiledName("ToSByte")>]
+        [<CompiledName("ToSByte"); EditorBrowsableAttribute(EditorBrowsableState.Never)>]
         let inline int8 value =
             Checked.sbyte value
 
