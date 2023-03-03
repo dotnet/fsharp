@@ -1923,8 +1923,12 @@ let TransformAstForNestedUpdates cenv env overallTy (lid: LongIdent) exprBeingAs
             let nestedField = if rest.IsEmpty then exprBeingAssigned else synExprRecd copyInfo fldId rest exprBeingAssigned
 
             match anonInfo with
-            | Some { AnonRecdTypeInfo.TupInfo = TupInfo.Const isStruct } -> SynExpr.AnonRecd(isStruct, copyInfo id, [ ([ fldId ], None, nestedField) ], id.idRange, { OpeningBraceRange = range0 })
-            | _ -> SynExpr.Record(None, copyInfo id, [ SynExprRecordField((LongIdentWithDots ([ fldId ], []), true), None, Some nestedField, None) ], id.idRange)
+            | Some { AnonRecdTypeInfo.TupInfo = TupInfo.Const isStruct } ->
+                let fields = [ LongIdentWithDots ([ fldId ], []), None, nestedField ]
+                SynExpr.AnonRecd(isStruct, copyInfo id, fields, id.idRange, { OpeningBraceRange = range0 })
+            | _ ->
+                let fields = [ SynExprRecordField((LongIdentWithDots ([ fldId ], []), true), None, Some nestedField, None) ]
+                SynExpr.Record(None, copyInfo id, fields, id.idRange)
 
     let access, flds = ResolveNestedField cenv.tcSink cenv.nameResolver env.eNameResEnv env.eAccessRights overallTy lid
 
@@ -7482,7 +7486,7 @@ and TcAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, optOrigSynExpr, 
 
     // Check for duplicate field IDs
     unsortedFieldIdsAndSynExprsGiven
-    |> List.countBy (fun (fId, _, _) -> textOfLid fId)
+    |> List.countBy (fun (fId, _, _) -> textOfLid fId.LongIdent)
     |> List.iter (fun (label, count) ->
         if count > 1 then error (Error (FSComp.SR.tcAnonRecdDuplicateFieldId(label), mWholeExpr)))
 
@@ -7497,7 +7501,7 @@ and TcNewAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, unsortedField
 
     let g = cenv.g
     let unsortedFieldSynExprsGiven = unsortedFieldIdsAndSynExprsGiven |> List.map (fun (_, _, fieldExpr) -> fieldExpr)
-    let unsortedFieldIds = unsortedFieldIdsAndSynExprsGiven |> List.map (fun (fieldId, _, _) -> fieldId[0]) |> List.toArray
+    let unsortedFieldIds = unsortedFieldIdsAndSynExprsGiven |> List.map (fun (synLongIdent, _, _) -> synLongIdent.LongIdent[0]) |> List.toArray
     let anonInfo, sortedFieldTys = UnifyAnonRecdTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv mWholeExpr overallTy isStruct unsortedFieldIds
 
     // Sort into canonical order
@@ -7510,8 +7514,8 @@ and TcNewAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, unsortedField
     let sigma = sortedIndexedArgs |> List.map fst |> List.toArray
     let sortedFieldExprs = sortedIndexedArgs |> List.map snd
 
-    sortedFieldExprs |> List.iteri (fun j (fieldId, _, _) ->
-        let m = rangeOfLid fieldId
+    sortedFieldExprs |> List.iteri (fun j (synLongIdent, _, _) ->
+        let m = rangeOfLid synLongIdent.LongIdent
         let item = Item.AnonRecdField(anonInfo, sortedFieldTys, j, m)
         CallNameResolutionSink cenv.tcSink (m, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights))
 
@@ -7549,8 +7553,8 @@ and TcCopyAndUpdateAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, (or
     // Expand expressions with respect to potential nesting
     let unsortedFieldIdsAndSynExprsGiven =
         unsortedFieldIdsAndSynExprsGiven
-        |> List.map (fun (lid, _, exprBeingAssigned) ->
-            match lid with
+        |> List.map (fun (synLongIdent, _, exprBeingAssigned) ->
+            match synLongIdent.LongIdent with
             | [] -> error(Error(FSComp.SR.nrUnexpectedEmptyLongId(), mWholeExpr))
             | [ id ] -> false, ([], id), Some exprBeingAssigned
             | lid -> TransformAstForNestedUpdates cenv env origExprTy lid exprBeingAssigned (origExpr, blockSeparator))

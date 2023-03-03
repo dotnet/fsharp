@@ -671,10 +671,6 @@ type internal TypeCheckInfo
                 match tryDestAnonRecdTy denv.g ty with
                 | ValueSome (anonInfo, tys) ->
                     match plid with
-                    // Because of an oversight in syntax visitor where the path is not computed correctly,
-                    // we might receive an empty plid even though some identifiers were present.
-                    // Return no completions instead of wrong fields.
-                    | [] when wasPathEmpty -> Some([], denv, m)
                     | [] ->
                         let items =
                             [

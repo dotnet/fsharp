@@ -4923,9 +4923,9 @@ braceBarExprCore:
      { let orig, flds = $2
        let flds = 
            flds |> List.choose (function 
-             | SynExprRecordField((SynLongIdent(lid, _, _), _), mEquals, Some e, _) when orig.IsSome -> Some (lid, mEquals, e) // copy-and-update, long identifier signifies nesting
-             | SynExprRecordField((SynLongIdent([id], _, _), _), mEquals, Some e, _) -> Some ([id], mEquals, e) // record construction, long identifier not valid
-             | SynExprRecordField((SynLongIdent(lid, _, _), _), mEquals, None, _) -> Some (lid, mEquals, arbExpr("anonField", rangeOfLongIdent lid)) 
+             | SynExprRecordField((synLongIdent, _), mEquals, Some e, _) when orig.IsSome -> Some (synLongIdent, mEquals, e) // copy-and-update, long identifier signifies nesting
+             | SynExprRecordField((SynLongIdent([ _id ], _, _) as synLongIdent, _), mEquals, Some e, _) -> Some (synLongIdent, mEquals, e) // record construction, long identifier not valid
+             | SynExprRecordField((synLongIdent, _), mEquals, None, _) -> Some (synLongIdent, mEquals, arbExpr("anonField", synLongIdent.Range)) 
              | _ -> reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidAnonRecdType()); None)
        let mLeftBrace = rhs parseState 1
        let mRightBrace = rhs parseState 3
@@ -4938,8 +4938,8 @@ braceBarExprCore:
        let orig, flds = $2 
        let flds = 
            flds |> List.map (function 
-             | SynExprRecordField((SynLongIdent(lid, _, _), _), mEquals, Some e, _) -> (lid, mEquals, e) 
-             | SynExprRecordField((SynLongIdent(lid, _, _), _), mEquals, None, _) -> (lid, mEquals, arbExpr("anonField", rangeOfLongIdent lid))) 
+             | SynExprRecordField((synLongIdent, _), mEquals, Some e, _) -> (synLongIdent, mEquals, e) 
+             | SynExprRecordField((synLongIdent, _), mEquals, None, _) -> (synLongIdent, mEquals, arbExpr("anonField", synLongIdent.Range))) 
        let mLeftBrace = rhs parseState 1
        let mExpr = rhs parseState 2
        (fun (mStruct: range option) -> 
