@@ -708,11 +708,11 @@ type NavigableContainer =
         | File _ -> NavigableContainerType.File
         | Container (t, _, _) -> t
 
-    member x.Name = 
+    member x.Name =
         match x with
         | File name -> name
         | Container(nameParts = []) -> ""
-        | Container(nameParts = ns) -> ns |> List.last
+        | Container (nameParts = ns) -> ns |> List.last
 
 type NavigableItem =
     {
@@ -764,7 +764,7 @@ module NavigateTo =
         let addExceptionRepr exnRepr isSig container =
             let (SynExceptionDefnRepr (_, SynUnionCase(ident = SynIdent (id, _)), _, _, _, _)) = exnRepr
             addIdent NavigableItemKind.Exception id isSig container
-            NavigableContainer.Container(NavigableContainerType.Exception, [id.idText] , container)
+            NavigableContainer.Container(NavigableContainerType.Exception, [ id.idText ], container)
 
         let addComponentInfo containerType kind info isSig container =
             let (SynComponentInfo (longId = lid)) = info
