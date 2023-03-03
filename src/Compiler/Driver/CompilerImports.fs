@@ -2434,9 +2434,15 @@ and [<Sealed>] TcImports
 
             let! fslibCcu, fsharpCoreAssemblyScopeRef =
                 node {
-                    if tcConfig.compilingCoreLibrary then
+                    if tcConfig.compilingfscorlib then
+                        // When compiling fscorlib.dll, the fslibCcu reference to fscorlib.dll is a delayed ccu thunk fixed up during type checking
+                        return CcuThunk.CreateDelayed getfscorlibLibraryName, ILScopeRef.Local
+                    elif tcConfig.compilingCoreLibrary then
                         // When compiling FSharp.Core.dll, the fslibCcu reference to FSharp.Core.dll is a delayed ccu thunk fixed up during type checking
                         return CcuThunk.CreateDelayed getFSharpCoreLibraryName, ILScopeRef.Local
+                    //elif tcConfig.compilingCoreLibrary then
+                    //    // When compiling FSharp.Core.dll, the fslibCcu reference to FSharp.Core.dll is a delayed ccu thunk fixed up during type checking
+                    //    return CcuThunk.CreateDelayed getfscorlibLibraryName, ILScopeRef.Local
                     else
                         let coreLibraryReference = tcConfig.CoreLibraryDllReference()
 

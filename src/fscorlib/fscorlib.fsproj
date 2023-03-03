@@ -42,13 +42,13 @@
     <CompileBefore Include="..\FSharp.Core\prim-types-prelude.fs">
       <Link>Primitives/prim-types-prelude.fs</Link>
     </CompileBefore>
-	<!--
     <Compile Include="..\FSharp.Core\prim-types.fsi">
-      <Link>Primitives/prim-types.fsi</Link>
+        <Link>Primitives/prim-types.fsi</Link>
     </Compile>
     <Compile Include="..\FSharp.Core\prim-types.fs">
-      <Link>Primitives/prim-types.fs</Link>
+        <Link>Primitives/prim-types.fs</Link>
     </Compile>
+    <!--
     <Compile Include="..\FSharp.Core\local.fsi">
       <Link>Collections/local.fsi</Link>
     </Compile>

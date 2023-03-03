@@ -260,9 +260,11 @@ type internal FxResolver
 
     let getImplementationAssemblyDir () = implementationAssemblyDir.Force()
 
-    let getFSharpCoreLibraryName = "FSharp.Core"
+    static let getFSharpCoreLibraryName = "FSharp.Core"
 
-    let getFsiLibraryName = "FSharp.Compiler.Interactive.Settings"
+    static let getfscorlibLibraryName = "fscorlib"
+
+    static let getFsiLibraryName = "FSharp.Compiler.Interactive.Settings"
 
     // Use the FSharp.Core that is executing with the compiler as a backup reference
     let getFSharpCoreImplementationReference () =
@@ -584,6 +586,7 @@ type internal FxResolver
             "System.Core"
             "System.Configuration"
 
+//@@@@@            getfscorlibLibraryName
             getFSharpCoreLibraryName
             if useFsiAuxLib then
                 fsiLibraryName
@@ -638,6 +641,7 @@ type internal FxResolver
                 "mscorlib"
                 "netstandard"
                 "System"
+                getfscorlibLibraryName
                 getFSharpCoreLibraryName
                 "FSharp.Compiler.Interactive.Settings"
                 "Microsoft.CSharp"

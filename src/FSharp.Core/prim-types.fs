@@ -4554,7 +4554,9 @@ namespace Microsoft.FSharp.Core
              // According to the somewhat subtle rules of static optimizations,
              // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
              when ^T : ^T = (^T : (static member op_Explicit: ^T -> byte) (value))
-            
+
+        let inline uint8 value = byte value
+
         [<NoDynamicInvocation(isLegacy=true)>]
         [<CompiledName("ToSByte")>]
         let inline sbyte (value: ^T) = 
@@ -4576,6 +4578,8 @@ namespace Microsoft.FSharp.Core
              // According to the somewhat subtle rules of static optimizations,
              // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
              when ^T : ^T = (^T : (static member op_Explicit: ^T -> sbyte) (value))
+
+        let inline int8 value = sbyte value
 
         [<NoDynamicInvocation(isLegacy=true)>]
         [<CompiledName("ToUInt16")>]
@@ -4757,6 +4761,9 @@ namespace Microsoft.FSharp.Core
              when ^T : byte     = (# "conv.r.un conv.r4" value  : float32 #)
              when ^T : ^T = (^T : (static member op_Explicit: ^T -> float32) (value))
 
+        let inline single value =
+            float32 value
+
         [<NoDynamicInvocation(isLegacy=true)>]
         [<CompiledName("ToDouble")>]
         let inline float (value: ^T) = 
@@ -4778,6 +4785,9 @@ namespace Microsoft.FSharp.Core
              when ^T : byte      = (# "conv.r.un conv.r8" value  : float #)
              when ^T : decimal   = (Convert.ToDouble((# "" value : decimal #))) 
              when ^T : ^T = (^T : (static member op_Explicit: ^T -> float) (value))
+
+        let inline double value =
+            float value
 
         [<NoDynamicInvocation(isLegacy=true)>]
         [<CompiledName("ToDecimal")>]
@@ -5309,6 +5319,8 @@ namespace Microsoft.FSharp.Core
                  when ^T : byte       = (# "" value  : byte #)
                  when ^T : ^T = (^T : (static member op_Explicit: ^T -> byte) (value))
 
+            let inline uint8 value = byte value
+
             [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToSByte")>]
             let inline sbyte (value: ^T) = 
@@ -5328,6 +5340,8 @@ namespace Microsoft.FSharp.Core
                  when ^T : unativeint = (# "conv.ovf.i1.un" value  : sbyte #)
                  when ^T : byte       = (# "conv.ovf.i1.un" value  : sbyte #)
                  when ^T : ^T = (^T : (static member op_Explicit: ^T -> sbyte) (value))
+
+            let inline int8 value = sbyte value
 
             [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToUInt16")>]

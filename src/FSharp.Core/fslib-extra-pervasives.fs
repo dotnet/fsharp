@@ -6,6 +6,7 @@ module ExtraTopLevelOperators =
 
     open System
     open System.Collections.Generic
+    open System.ComponentModel
     open System.IO
     open System.Diagnostics
     open Microsoft.FSharp
