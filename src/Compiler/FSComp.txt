@@ -1559,7 +1559,7 @@ featureMatchNotAllowedForUnionCaseWithNoData,"Pattern match discard is not allow
 featureCSharpExtensionAttributeNotRequired,"Allow implicit Extension attribute on declaring types, modules"
 featureErrorForNonVirtualMembersOverrides,"Raises errors for non-virtual members overrides"
 featureWarningWhenInliningMethodImplNoInlineMarkedFunction,"Raises warnings when 'let inline ... =' is used together with [<MethodImpl(MethodImplOptions.NoInlining)>] attribute. Function is not getting inlined."
-featureArithmeticInLiterals,"Allow arithmetic and logical operations in literals"
+featureArithmeticInLiterals,"Arithmetic and logical operations in literals, enum definitions and attributes"
 featureErrorReportingOnStaticClasses,"Error reporting on static classes"
 featureTryWithInSeqExpressions,"Support for try-with in sequence expressions"
 featureWarningWhenCopyAndUpdateRecordChangesAllFields,"Raises warnings when an copy-and-update record expression changes all fields of a record."

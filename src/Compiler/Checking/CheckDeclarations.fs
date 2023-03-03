@@ -579,15 +579,13 @@ module TcRecdUnionAndEnumDeclarations =
         | SynExpr.Const (synConst, _) -> 
             let konst = TcConst cenv fieldTy valueRange env synConst
             MakeEnumCaseSpec cenv env parent attrs thisTy caseRange id xmldoc konst
-        | _ when cenv.g.langVersion.SupportsFeature LanguageFeature.ArithmeticInLiterals ->
+        | _ ->
             let expr, actualTy, _ = TcExprOfUnknownType cenv env tpenv valueExpr
             UnifyTypes cenv env valueRange fieldTy actualTy
             
             match EvalLiteralExprOrAttribArg cenv.g expr with
             | Expr.Const (konst, _, _) -> MakeEnumCaseSpec cenv env parent attrs thisTy caseRange id xmldoc konst
             | _ -> error(Error(FSComp.SR.tcInvalidEnumerationLiteral(), valueRange))
-        | _ ->
-            error(Error(FSComp.SR.tcInvalidEnumerationLiteral(), valueRange))
 
     let TcEnumDecls (cenv: cenv) env tpenv parent thisTy enumCases =
         let g = cenv.g

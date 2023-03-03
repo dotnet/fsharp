@@ -188,8 +188,8 @@
         <note />
       </trans-unit>
       <trans-unit id="featureArithmeticInLiterals">
-        <source>Allow arithmetic and logical operations in literals</source>
-        <target state="translated">Zezwalaj na operacje arytmetyczne i logiczne w literałach</target>
+        <source>Arithmetic and logical operations in literals, enum definitions and attributes</source>
+        <target state="needs-review-translation">Zezwalaj na operacje arytmetyczne i logiczne w literałach</target>
         <note />
       </trans-unit>
       <trans-unit id="featureAttributesToRightOfModuleKeyword">
