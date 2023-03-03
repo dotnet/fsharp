@@ -189,7 +189,7 @@
       </trans-unit>
       <trans-unit id="featureArithmeticInLiterals">
         <source>Arithmetic and logical operations in literals, enum definitions and attributes</source>
-        <target state="needs-review-translation">리터럴에서 산술 및 논리 연산 허용</target>
+        <target state="new">Arithmetic and logical operations in literals, enum definitions and attributes</target>
         <note />
       </trans-unit>
       <trans-unit id="featureAttributesToRightOfModuleKeyword">
