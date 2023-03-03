@@ -1404,5 +1404,15 @@ let t2 (x: {| D: NestdRecTy; E: {| a: string |} |}) = {| x with E.a = "a"; D.B =
 
         VerifyCompletionListExactly(fileContents, "let t2 (x: {| D: NestdRecTy; E: {| a: string |} |}) = {| x with ", [ "D"; "E" ])
         VerifyCompletionListExactly(fileContents, "let t2 (x: {| D: NestdRecTy; E: {| a: string |} |}) = {| x with E.", [ "a" ])
-        VerifyCompletionListExactly(fileContents, "let t2 (x: {| D: NestdRecTy; E: {| a: string |} |}) = {| x with E.a = \"a\"; ", [ "D"; "E" ])
-        VerifyCompletionListExactly(fileContents, "let t2 (x: {| D: NestdRecTy; E: {| a: string |} |}) = {| x with E.a = \"a\"; D.", [ "B"; "C" ])
+
+        VerifyCompletionListExactly(
+            fileContents,
+            "let t2 (x: {| D: NestdRecTy; E: {| a: string |} |}) = {| x with E.a = \"a\"; ",
+            [ "D"; "E" ]
+        )
+
+        VerifyCompletionListExactly(
+            fileContents,
+            "let t2 (x: {| D: NestdRecTy; E: {| a: string |} |}) = {| x with E.a = \"a\"; D.",
+            [ "B"; "C" ]
+        )
