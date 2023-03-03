@@ -599,7 +599,7 @@ type internal TypeCheckInfo
                 let parameters = CollectParameters ctors amap m
                 let items = props @ parameters
                 Some(denv, m, items)
-            | CNR (Item.MethodGroup (methods= methods), _, denv, nenv, ad, m) :: _ ->
+            | CNR (Item.MethodGroup (methods = methods), _, denv, nenv, ad, m) :: _ ->
                 let props =
                     methods
                     |> List.collect (fun meth ->
@@ -838,7 +838,7 @@ type internal TypeCheckInfo
             | Item.FakeInterfaceCtor _
             | Item.DelegateCtor _
             | Item.CtorGroup _ -> CompletionItemKind.Method false
-            | Item.MethodGroup (methods= minfos) ->
+            | Item.MethodGroup (methods = minfos) ->
                 match minfos with
                 | [] -> CompletionItemKind.Method false
                 | minfo :: _ -> CompletionItemKind.Method minfo.IsExtensionMember
@@ -1586,7 +1586,7 @@ type internal TypeCheckInfo
                         let isOpItem (nm, item: CompletionItem list) =
                             match item |> List.map (fun x -> x.Item) with
                             | [ Item.Value _ ]
-                            | [ Item.MethodGroup (methods= [ _ ]) ] -> IsOperatorDisplayName nm
+                            | [ Item.MethodGroup(methods = [ _ ]) ] -> IsOperatorDisplayName nm
                             | [ Item.UnionCase _ ] -> IsOperatorDisplayName nm
                             | _ -> false
 
@@ -1907,7 +1907,7 @@ type internal TypeCheckInfo
                                     FindDeclResult.ExternalDecl(assemblyRef.Name, externalSym))
                             | _ -> None
 
-                        | Item.MethodGroup (displayName= name; methods= ILMeth(_, ilinfo, _) :: _) ->
+                        | Item.MethodGroup (displayName = name; methods = ILMeth (_, ilinfo, _) :: _) ->
                             match ilinfo.MetadataScope with
                             | ILScopeRef.Assembly assemblyRef ->
                                 let typeVarNames = getTypeVarNames ilinfo
@@ -1995,7 +1995,7 @@ type internal TypeCheckInfo
 #if !NO_TYPEPROVIDERS
                             // provided items may have TypeProviderDefinitionLocationAttribute that binds them to some location
                             | Item.CtorGroup (name, ProvidedMeth _ :: _)
-                            | Item.MethodGroup (displayName= name; methods= ProvidedMeth _ :: _)
+                            | Item.MethodGroup (displayName = name; methods = ProvidedMeth _ :: _)
                             | Item.Property (name, ProvidedProp _ :: _) -> FindDeclFailureReason.ProvidedMember name
                             | Item.Event (ProvidedEvent _ as e) -> FindDeclFailureReason.ProvidedMember e.EventName
                             | Item.ILField (ProvidedField _ as f) -> FindDeclFailureReason.ProvidedMember f.FieldName

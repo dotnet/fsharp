@@ -251,7 +251,7 @@ val ResolveOverloadingForCall:
     ConstraintSolverState ->
     range ->
     methodName: string ->
-    methodNameRange : range option ->
+    methodNameRange: range option ->
     callerArgs: CallerArgs<Expr> ->
     AccessorDomain ->
     calledMethGroup: CalledMeth<Expr> list ->

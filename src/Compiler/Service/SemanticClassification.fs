@@ -290,7 +290,7 @@ module TcResolutionsExtensions =
 
                         | Item.FakeInterfaceCtor _, _, m -> add m SemanticClassificationType.ConstructorForReferenceType
 
-                        | Item.MethodGroup (methods= minfos), _, m ->
+                        | Item.MethodGroup (methods = minfos), _, m ->
                             match minfos with
                             | [] -> add m SemanticClassificationType.Method
                             | _ ->
