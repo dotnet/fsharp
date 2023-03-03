@@ -346,9 +346,11 @@ stages:
               vs_release:
                 _configuration: Release
                 _testKind: testVs
+
           steps:
           - checkout: self
             clean: true
+
           - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
             displayName: Build / Test
           - task: PublishTestResults@2
