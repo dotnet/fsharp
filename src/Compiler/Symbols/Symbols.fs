@@ -286,7 +286,7 @@ type FSharpSymbol(cenv: SymbolEnv, item: unit -> Item, access: FSharpSymbol -> C
         | Item.Property(_, pinfo :: _) -> 
             FSharpMemberOrFunctionOrValue(cenv, P pinfo, item) :> _
             
-        | Item.MethodGroup(_, minfo :: _, _) -> 
+        | Item.MethodGroup(methods= minfo :: _) -> 
             FSharpMemberOrFunctionOrValue(cenv, M minfo, item) :> _
 
         | Item.CtorGroup(_, cinfo :: _) -> 
@@ -338,7 +338,7 @@ type FSharpSymbol(cenv: SymbolEnv, item: unit -> Item, access: FSharpSymbol -> C
         | Item.UnqualifiedType []
         | Item.ModuleOrNamespaces []
         | Item.Property (_, [])
-        | Item.MethodGroup (_, [], _)
+        | Item.MethodGroup (methods= [])
         | Item.CtorGroup (_, [])
         // These cases cover misc. corned cases (non-symbol types)
         | Item.Types _
@@ -647,7 +647,7 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef) =
                if minfo.IsConstructor || minfo.IsClassConstructor then
                    FSharpMemberOrFunctionOrValue(cenv, C minfo, Item.CtorGroup (minfo.DisplayName, [minfo]))
                else
-                   FSharpMemberOrFunctionOrValue(cenv, M minfo, Item.MethodGroup (minfo.DisplayName, [minfo], None))
+                   FSharpMemberOrFunctionOrValue(cenv, M minfo, Item.MethodGroup (minfo.DisplayName, None, [minfo], None))
            if x.IsFSharpAbbreviation then 
                ()
            elif x.IsFSharp then 
@@ -1620,7 +1620,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             let nm = (match v with VRefNonLocal n -> n.ItemKey.PartialKey.LogicalName | _ -> "<local>")
             invalidOp (sprintf "The value or member '%s' does not exist or is in an unresolved assembly." nm)
 
-    let mkMethSym minfo = FSharpMemberOrFunctionOrValue(cenv, M minfo, Item.MethodGroup (minfo.DisplayName, [minfo], None))
+    let mkMethSym minfo = FSharpMemberOrFunctionOrValue(cenv, M minfo, Item.MethodGroup (minfo.DisplayName, None, [minfo], None))
     let mkEventSym einfo = FSharpMemberOrFunctionOrValue(cenv, E einfo, Item.Event einfo)
 
     new (cenv, vref) = FSharpMemberFunctionOrValue(cenv, V vref, Item.Value vref)
@@ -1629,7 +1629,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         if minfo.IsConstructor || minfo.IsClassConstructor then
             FSharpMemberFunctionOrValue(cenv, C minfo, Item.CtorGroup(minfo.LogicalName, [minfo]))
         else
-            FSharpMemberFunctionOrValue(cenv, M minfo, Item.MethodGroup(minfo.LogicalName, [minfo], None))
+            FSharpMemberFunctionOrValue(cenv, M minfo, Item.MethodGroup(minfo.LogicalName, None, [minfo], None))
 
     member _.IsUnresolved = 
         isUnresolved()
@@ -1645,7 +1645,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         match d with
         | M m | C m ->
             match item with
-            | Item.MethodGroup (_, methodInfos, _)
+            | Item.MethodGroup (methods= methodInfos)
             | Item.CtorGroup (_, methodInfos) ->
                 let isConstructor = x.IsConstructor
                 let methods =

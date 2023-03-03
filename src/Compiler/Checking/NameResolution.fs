@@ -196,7 +196,7 @@ type Item =
     | Property of string * PropInfo list
 
     /// Represents the resolution of a name to a group of methods.
-    | MethodGroup of displayName: string * methods: MethInfo list * uninstantiatedMethodOpt: MethInfo option
+    | MethodGroup of displayName: string * displayNameRange: range option * methods: MethInfo list * uninstantiatedMethodOpt: MethInfo option
 
     /// Represents the resolution of a name to a constructor
     | CtorGroup of string * MethInfo list
@@ -246,9 +246,9 @@ type Item =
     /// Represents the potential resolution of an unqualified name to a type.
     | UnqualifiedType of TyconRef list
 
-    static member MakeMethGroup (nm, minfos: MethInfo list) =
+    static member MakeMethGroup (nm, mName: range option, minfos: MethInfo list) =
         let minfos = minfos |> List.sortBy (fun minfo -> minfo.NumArgs |> List.sum)
-        Item.MethodGroup (nm, minfos, None)
+        Item.MethodGroup (nm, mName, minfos, None)
 
     static member MakeCtorGroup (nm, minfos: MethInfo list) =
         let minfos = minfos |> List.sortBy (fun minfo -> minfo.NumArgs |> List.sum)
@@ -269,8 +269,8 @@ type Item =
         | Item.Event einfo -> einfo.DisplayNameCore 
         | Item.Property(_, pinfo :: _) -> pinfo.DisplayNameCore
         | Item.Property(nm, _) -> nm |> ConvertValLogicalNameToDisplayNameCore
-        | Item.MethodGroup(_, FSMeth(_, _, v, _) :: _, _) -> v.DisplayNameCore
-        | Item.MethodGroup(nm, _, _) -> nm |> ConvertValLogicalNameToDisplayNameCore
+        | Item.MethodGroup(methods = FSMeth(_, _, v, _) :: _) -> v.DisplayNameCore
+        | Item.MethodGroup(displayName= nm) -> nm |> ConvertValLogicalNameToDisplayNameCore
         | Item.CtorGroup(nm, _) -> nm |> DemangleGenericTypeName 
         | Item.FakeInterfaceCtor ty
         | Item.DelegateCtor ty ->
@@ -305,7 +305,7 @@ type Item =
         | Item.ActivePatternCase apref -> apref.DisplayName
         | Item.Property(_, pinfo :: _) -> pinfo.DisplayName
         | Item.Event einfo -> einfo.DisplayName
-        | Item.MethodGroup(_, minfo :: _, _) -> minfo.DisplayName
+        | Item.MethodGroup(methods = minfo :: _) -> minfo.DisplayName
         | Item.DelegateCtor (AbbrevOrAppTy tcref) -> tcref.DisplayName
         | Item.UnqualifiedType(tcref :: _) -> tcref.DisplayName
         | Item.ModuleOrNamespaces(modref :: _) -> modref.DisplayName
@@ -1165,7 +1165,7 @@ let ChooseMethInfosForNameEnv g m ty (minfos: MethInfo list) =
         not (IsLogicalOpName minfo.LogicalName))
     |> List.groupBy (fun minfo -> minfo.LogicalName)
     |> List.filter (fun (_, methGroup) -> not methGroup.IsEmpty)
-    |> List.map (fun (methName, methGroup) -> KeyValuePair(methName, Item.MethodGroup(methName, methGroup, None)))
+    |> List.map (fun (methName, methGroup) -> KeyValuePair(methName, Item.MethodGroup(methName, None, methGroup, None)))
 
 let ChoosePropInfosForNameEnv g ty (pinfos: PropInfo list) =
     pinfos
@@ -1250,12 +1250,12 @@ let rec AddStaticContentOfTypeToNameEnv (g:TcGlobals) (amap: Import.ImportMap) a
         // Combine methods and extension method groups of the same type
         |> List.map (fun pair ->
             match pair.Value with
-            | Item.MethodGroup(name, methInfos, orig) ->              
+            | Item.MethodGroup(name, mName, methInfos, orig) ->              
                 match nenv.eUnqualifiedItems.TryFind pair.Key with
                 // First method of the found group must be an extension and have the same enclosing type as the type we are opening.
                 // If the first method is an extension, we are assuming the rest of the methods in the group are also extensions.
-                | Some(Item.MethodGroup(_, (methInfo :: _ as methInfos2), _)) when methInfo.IsExtensionMember && typeEquiv g methInfo.ApparentEnclosingType ty ->
-                    KeyValuePair (pair.Key, Item.MethodGroup(name, methInfos @ methInfos2, orig))
+                | Some(Item.MethodGroup(methods= (methInfo :: _ as methInfos2))) when methInfo.IsExtensionMember && typeEquiv g methInfo.ApparentEnclosingType ty ->
+                    KeyValuePair (pair.Key, Item.MethodGroup(name, mName, methInfos @ methInfos2, orig))
                 | _ ->
                     pair
             | _ ->
@@ -1788,12 +1788,12 @@ let rec (|FSharpPropertyUse|_|) (item: Item) =
 
 let (|MethodUse|_|) (item: Item) =
     match item with
-    | Item.MethodGroup(_, [minfo], _) -> Some minfo
+    | Item.MethodGroup(methods= [minfo]) -> Some minfo
     | _ -> None
 
 let (|FSharpMethodUse|_|) (item: Item) =
     match item with
-    | Item.MethodGroup(_, [ValRefOfMeth vref], _) -> Some vref
+    | Item.MethodGroup(methods = [ValRefOfMeth vref]) -> Some vref
     | Item.Value vref when vref.IsMember -> Some vref
     | _ -> None
 
@@ -2223,7 +2223,7 @@ let CheckAllTyparsInferrable amap m item =
             let free = Zset.diff freeInDeclaringType.FreeTypars  freeInArgsAndRetType.FreeTypars
             free.IsEmpty)
 
-    | Item.MethodGroup(_, minfos, _) ->
+    | Item.MethodGroup(methods = minfos) ->
         minfos |> List.forall (fun minfo ->
             minfo.IsExtensionMember ||
             let fminst = minfo.FormalMethodInst
@@ -2636,7 +2636,7 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
                 // fold the available extension members into the overload resolution
                 let extensionMethInfos = ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv optFilter isInstanceFilter m ty
 
-                success [resInfo, Item.MakeMethGroup (nm, minfos@extensionMethInfos), rest]
+                success [resInfo, Item.MakeMethGroup (nm, Some id.idRange, minfos@extensionMethInfos), rest]
 
             | Some (ILFieldItem (finfo :: _))  when (match lookupKind with LookupKind.Expr _ | LookupKind.Pattern -> true | _ -> false) ->
                 success [resInfo, Item.ILField finfo, rest]
@@ -2656,7 +2656,7 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
             let minfos = ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv optFilter isInstanceFilter m ty
 
             if not (isNil minfos) && isLookUpExpr then
-                success [resInfo, Item.MakeMethGroup (nm, minfos), rest]
+                success [resInfo, Item.MakeMethGroup (nm, Some id.idRange, minfos), rest]
             elif isTyparTy g ty then raze (IndeterminateType(unionRanges m id.idRange))
             else NoResultsOrUsefulErrors
 
@@ -3745,15 +3745,15 @@ let ComputeItemRange wholem (lid: Ident list) rest =
 
 let FilterMethodGroups (ncenv: NameResolver) itemRange item staticOnly =
     match item with
-    | Item.MethodGroup(nm, minfos, orig) ->
+    | Item.MethodGroup(nm, mName, minfos, orig) ->
         let minfos = minfos |> List.filter  (fun minfo ->
            staticOnly = isNil (minfo.GetObjArgTypes(ncenv.amap, itemRange, minfo.FormalMethodInst)))
-        Item.MethodGroup(nm, minfos, orig)
+        Item.MethodGroup(nm, mName, minfos, orig)
     | item -> item
 
 let NeedsWorkAfterResolution namedItem =
     match namedItem with
-    | Item.MethodGroup(_, minfos, _)
+    | Item.MethodGroup(methods= minfos)
     | Item.CtorGroup(_, minfos) -> minfos.Length > 1 || minfos |> List.exists (fun minfo -> not (isNil minfo.FormalMethodInst))
     | Item.Property(_, pinfos) -> pinfos.Length > 1
     | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(vref=vref)) })
@@ -3784,7 +3784,7 @@ let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameReso
     let item = FilterMethodGroups ncenv itemRange item1 true
 
     match item1, item with
-    | Item.MethodGroup(name, minfos1, _), Item.MethodGroup(_, [], _) when not (isNil minfos1) ->
+    | Item.MethodGroup(displayName= name; methods = minfos1), Item.MethodGroup(methods = []) when not (isNil minfos1) ->
         raze(Error(FSComp.SR.methodIsNotStatic name, wholem))
     | _ -> 
 
@@ -3811,7 +3811,7 @@ let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameReso
         let refinedItem =
             match pinfoOpt with
             | None when minfo.IsConstructor -> Item.CtorGroup(minfo.LogicalName, [minfo])
-            | None -> Item.MethodGroup(minfo.LogicalName, [minfo], None)
+            | None -> Item.MethodGroup(minfo.LogicalName, None, [minfo], None)
             | Some pinfo -> Item.Property(pinfo.PropertyName, [pinfo])
 
         callSink (refinedItem, tpinst)
@@ -3830,7 +3830,7 @@ let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameReso
 
 let (|NonOverridable|_|) namedItem =
     match namedItem with
-    |   Item.MethodGroup(_, minfos, _) when minfos |> List.exists(fun minfo -> minfo.IsVirtual || minfo.IsAbstract) -> None
+    |   Item.MethodGroup(methods= minfos) when minfos |> List.exists(fun minfo -> minfo.IsVirtual || minfo.IsAbstract) -> None
     |   Item.Property(_, pinfos) when pinfos |> List.exists(fun pinfo -> pinfo.IsVirtualProperty) -> None
     |   _ -> Some ()
 
@@ -3874,7 +3874,7 @@ let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameRes
                 let refinedItem =
                     match pinfoOpt with
                     | None when minfo.IsConstructor -> Item.CtorGroup(minfo.LogicalName, [minfo])
-                    | None -> Item.MethodGroup(minfo.LogicalName, [minfo], None)
+                    | None -> Item.MethodGroup(minfo.LogicalName, None, [minfo], None)
                     | Some pinfo -> Item.Property(pinfo.PropertyName, [pinfo])
 
                 callSink (refinedItem, tpinst)
@@ -4201,7 +4201,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
     List.map Item.ILField finfos @
     List.map Item.Event einfos @
     List.map (ItemOfTy g) nestedTypes @
-    List.map Item.MakeMethGroup (NameMap.toList (partitionl minfos Map.empty))
+    List.map(fun (nm, minfos) -> Item.MakeMethGroup(nm, None, minfos)) (NameMap.toList (partitionl minfos Map.empty))
 
 // e.g. <val-id>.<property-id>.<more>
 // e.g. <val-id>.<property-id>.<more> 
@@ -4878,7 +4878,7 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics ty (
                         let nm = h.LogicalName
                         partitionl t (NameMultiMap.add nm h acc)
 
-                yield! List.map Item.MakeMethGroup (NameMap.toList (partitionl minfos Map.empty))
+                yield! List.map(fun (nm, methInfo) -> Item.MakeMethGroup(nm, None, methInfo)) (NameMap.toList (partitionl minfos Map.empty))
             | _ -> ()
     }
 

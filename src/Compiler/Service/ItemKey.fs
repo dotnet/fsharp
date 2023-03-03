@@ -390,7 +390,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
 
         | Item.UnqualifiedType [ tcref ] -> writeEntityRef tcref
 
-        | Item.MethodGroup (_, [ info ], _)
+        | Item.MethodGroup (methods= [ info ])
         | Item.CtorGroup (_, [ info ]) ->
             match info with
             | FSMeth (_, ty, vref, _) when vref.IsConstructor -> writeType true ty
@@ -430,14 +430,14 @@ and [<Sealed>] ItemKeyStoreBuilder() =
         // Empty lists do not occur
         | Item.Types (_, []) -> ()
         | Item.UnqualifiedType [] -> ()
-        | Item.MethodGroup (_, [], _) -> ()
+        | Item.MethodGroup (methods= []) -> ()
         | Item.CtorGroup (_, []) -> ()
         | Item.ModuleOrNamespaces [] -> ()
 
         // Items are flattened so multiples are not expected
         | Item.Types (_, _ :: _ :: _) -> ()
         | Item.UnqualifiedType (_ :: _ :: _) -> ()
-        | Item.MethodGroup (_, (_ :: _ :: _), _) -> ()
+        | Item.MethodGroup (methods= (_ :: _ :: _)) -> ()
         | Item.CtorGroup (_, (_ :: _ :: _)) -> ()
         | Item.ModuleOrNamespaces (_ :: _ :: _) -> ()
 

@@ -337,7 +337,7 @@ module DeclarationListHelpers =
 
         // F# constructors and methods
         | Item.CtorGroup(_, minfos) 
-        | Item.MethodGroup(_, minfos, _) ->
+        | Item.MethodGroup(_, _, minfos, _) ->
             FormatOverloadsToList infoReader m denv item minfos
         
         // The 'fake' zero-argument constructors of .NET interfaces.
@@ -781,7 +781,7 @@ module internal DescriptionListsImpl =
             prettyParams, prettyRetTyL
 
         | Item.CtorGroup(_, minfo :: _) 
-        | Item.MethodGroup(_, minfo :: _, _) -> 
+        | Item.MethodGroup(_, _, minfo :: _, _) -> 
             let paramDatas = minfo.GetParamDatas(amap, m, minfo.FormalMethodInst) |> List.head
             let retTy = minfo.GetFSharpReturnType(amap, m, minfo.FormalMethodInst)
             let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInstantiation paramDatas retTy
@@ -845,7 +845,7 @@ module internal DescriptionListsImpl =
         | Item.ModuleOrNamespaces _
         | Item.ImplicitOp _
         | Item.ArgName _
-        | Item.MethodGroup(_, [], _)
+        | Item.MethodGroup(_, _, [], _)
         | Item.CtorGroup(_,[])
         | Item.Property(_,[]) -> 
             [], emptyL
@@ -915,7 +915,7 @@ module internal DescriptionListsImpl =
             | Item.DelegateCtor _ 
             | Item.FakeInterfaceCtor _
             | Item.CustomOperation _ -> FSharpGlyph.Method
-            | Item.MethodGroup (_, minfos, _) when minfos |> List.forall (fun minfo -> minfo.IsExtensionMember) -> FSharpGlyph.ExtensionMethod
+            | Item.MethodGroup (methods = minfos) when minfos |> List.forall (fun minfo -> minfo.IsExtensionMember) -> FSharpGlyph.ExtensionMethod
             | Item.MethodGroup _ -> FSharpGlyph.Method
             | Item.Trait _ -> FSharpGlyph.Method
             | Item.TypeVar _ -> FSharpGlyph.TypeParameter
@@ -980,7 +980,7 @@ module internal DescriptionListsImpl =
             // we pretend that provided-types-with-static-args are method-like in order to get ParamInfo for them
             [item] 
 #endif
-        | Item.MethodGroup(nm, minfos, orig) -> minfos |> List.map (fun minfo -> Item.MethodGroup(nm, [minfo], orig)) 
+        | Item.MethodGroup(nm, mName, minfos, orig) -> minfos |> List.map (fun minfo -> Item.MethodGroup(nm, mName, [minfo], orig)) 
         | Item.CustomOperation _ -> [item]
         // These are not items that can participate in a method group
         | Item.TypeVar _
@@ -1084,7 +1084,7 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                 | Item.DelegateCtor (TType_app(tcref, _, _)) -> { x with MinorPriority = 1000 + tcref.TyparsNoRange.Length }
                 // Put type ctors after types, sorted by #typars. RemoveDuplicateItems will remove DefaultStructCtors if a type is also reported with this name
                 | Item.CtorGroup (_, cinfo :: _) -> { x with MinorPriority = 1000 + 10 * cinfo.DeclaringTyconRef.TyparsNoRange.Length }
-                | Item.MethodGroup(_, minfo :: _, _) -> { x with IsOwnMember = tyconRefOptEq x.Type minfo.DeclaringTyconRef }
+                | Item.MethodGroup(methods= minfo :: _) -> { x with IsOwnMember = tyconRefOptEq x.Type minfo.DeclaringTyconRef }
                 | Item.Property(_, pinfo :: _) -> { x with IsOwnMember = tyconRefOptEq x.Type pinfo.DeclaringTyconRef }
                 | Item.ILField finfo -> { x with IsOwnMember = tyconRefOptEq x.Type finfo.DeclaringTyconRef }
                 | _ -> x)
@@ -1277,8 +1277,8 @@ type MethodGroup( name: string, unsortedMethods: MethodGroupItem[] ) =
 
                         let hasParamArrayArg = 
                             match flatItem with 
-                            | Item.CtorGroup(_, [meth]) 
-                            | Item.MethodGroup(_, [meth], _) -> meth.HasParamArrayArg(infoReader.amap, m, meth.FormalMethodInst) 
+                            | Item.CtorGroup(_, [meth])
+                            | Item.MethodGroup(methods= [meth]) -> meth.HasParamArrayArg(infoReader.amap, m, meth.FormalMethodInst) 
                             | _ -> false
 
                         let hasStaticParameters = 

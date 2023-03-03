@@ -89,7 +89,7 @@ type Item =
     | Property of string * PropInfo list
 
     /// Represents the resolution of a name to a group of methods.
-    | MethodGroup of displayName: string * methods: MethInfo list * uninstantiatedMethodOpt: MethInfo option
+    | MethodGroup of displayName: string * displayNameRange: range option * methods: MethInfo list * uninstantiatedMethodOpt: MethInfo option
 
     /// Represents the resolution of a name to a constructor
     | CtorGroup of string * MethInfo list

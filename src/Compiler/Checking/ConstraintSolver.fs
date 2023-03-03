@@ -1765,7 +1765,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
               let methOverloadResult, errors = 
                   trace.CollectThenUndoOrCommit
                       (fun (a, _) -> Option.isSome a)
-                      (fun trace -> ResolveOverloading csenv (WithTrace trace) nm ndeep (Some traitInfo) CallerArgs.Empty AccessibleFromEverywhere calledMethGroup false (Some (MustEqual retTy)))
+                      (fun trace -> ResolveOverloading csenv (WithTrace trace) nm  None ndeep (Some traitInfo) CallerArgs.Empty AccessibleFromEverywhere calledMethGroup false (Some (MustEqual retTy)))
 
               match anonRecdPropSearch, recdPropSearch, methOverloadResult with 
               | Some (anonInfo, tinst, i), None, None -> 
@@ -2975,6 +2975,7 @@ and ResolveOverloading
          (csenv: ConstraintSolverEnv) 
          trace           // The undo trace, if any
          methodName      // The name of the method being called, for error reporting
+         (methodNameRange: range option)
          ndeep           // Depth of inference
          cx              // We're doing overload resolution as part of constraint solving, where special rules apply for op_Explicit and op_Implicit constraints.
          (callerArgs: CallerArgs<Expr>)
@@ -3084,7 +3085,7 @@ and ResolveOverloading
                             | ErrorResult(_warnings, exn) ->
                                 Some {methodSlot = calledMeth; infoReader = infoReader; error = exn })
 
-                let err = FailOverloading csenv calledMethGroup reqdRetTyOpt isOpConversion callerArgs (NoOverloadsFound (methodName, errors, cx)) m
+                let err = FailOverloading csenv calledMethGroup reqdRetTyOpt isOpConversion callerArgs (NoOverloadsFound (methodName, errors, cx)) (methodNameRange |> Option.defaultValue m) 
 
                 None, ErrorD err, NoTrace
 
@@ -3374,9 +3375,9 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
         let err = FailOverloading csenv calledMethGroup reqdRetTyOpt isOpConversion callerArgs (PossibleCandidates(methodName, methods,cx)) m
         None, ErrorD err, NoTrace
 
-let ResolveOverloadingForCall denv css m  methodName callerArgs ad calledMethGroup permitOptArgs reqdRetTy =
+let ResolveOverloadingForCall denv css m  methodName methodNameRange callerArgs ad calledMethGroup permitOptArgs reqdRetTy =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    ResolveOverloading csenv NoTrace methodName 0 None callerArgs ad calledMethGroup permitOptArgs (Some reqdRetTy)
+    ResolveOverloading csenv NoTrace methodName methodNameRange 0 None callerArgs ad calledMethGroup permitOptArgs (Some reqdRetTy)
 
 /// This is used before analyzing the types of arguments in a single overload resolution
 let UnifyUniqueOverloading 

@@ -105,7 +105,7 @@ module internal SymbolHelpers =
         | Item.Trait _ -> None
         | Item.TypeVar (_, tp)  -> Some tp.Range
         | Item.ModuleOrNamespaces modrefs -> modrefs |> List.tryPick (rangeOfEntityRef preferFlag >> Some)
-        | Item.MethodGroup(_, minfos, _) 
+        | Item.MethodGroup(methods= minfos) 
         | Item.CtorGroup(_, minfos) -> minfos |> List.tryPick (rangeOfMethInfo g preferFlag)
         | Item.ActivePatternResult(APInfo _, _, _, m) -> Some m
         | Item.SetterArg (_, item) -> rangeOfItem g preferFlag item
@@ -174,7 +174,7 @@ module internal SymbolHelpers =
             | Some (ArgumentContainer.Method minfo) -> ccuOfMethInfo g minfo
             | Some (ArgumentContainer.Type eref) -> computeCcuOfTyconRef eref
 
-        | Item.MethodGroup(_, minfos, _)
+        | Item.MethodGroup(methods= minfos)
         | Item.CtorGroup(_, minfos) ->
             minfos |> List.tryPick (ccuOfMethInfo g)
 
@@ -303,7 +303,7 @@ module internal SymbolHelpers =
         | Item.Event einfo ->
             mkXmlComment (GetXmlDocSigOfEvent infoReader m einfo)
 
-        | Item.MethodGroup(_, minfo :: _, _) ->
+        | Item.MethodGroup(methods= minfo :: _) ->
             mkXmlComment (GetXmlDocSigOfMethInfo infoReader  m minfo)
 
         | Item.CtorGroup(_, minfo :: _) ->
@@ -329,7 +329,7 @@ module internal SymbolHelpers =
 
         // These empty lists are not expected to occur
         | Item.CtorGroup (_, [])
-        | Item.MethodGroup (_, [], _)
+        | Item.MethodGroup (methods= [])
         | Item.Property (_, [])
         | Item.ModuleOrNamespaces []
         | Item.UnqualifiedType []
@@ -438,7 +438,7 @@ module internal SymbolHelpers =
                     (nm1 = nm2) && typarRefEq tp1 tp2
               | Item.ModuleOrNamespaces(modref1 :: _), Item.ModuleOrNamespaces(modref2 :: _) -> fullDisplayTextOfModRef modref1 = fullDisplayTextOfModRef modref2
               | Item.SetterArg(id1, _), Item.SetterArg(id2, _) -> Range.equals id1.idRange id2.idRange && id1.idText = id2.idText
-              | Item.MethodGroup(_, meths1, _), Item.MethodGroup(_, meths2, _) -> 
+              | Item.MethodGroup(methods= meths1), Item.MethodGroup(methods= meths2) -> 
                   Seq.zip meths1 meths2 |> Seq.forall (fun (minfo1, minfo2) ->
                     MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2)
               | (Item.Value vref1 | Item.CustomBuilder (_, vref1)), (Item.Value vref2 | Item.CustomBuilder (_, vref2)) -> 
@@ -483,7 +483,7 @@ module internal SymbolHelpers =
               | Item.CustomOperation (_, _, None) -> 1
               | Item.ModuleOrNamespaces(modref :: _) -> hash (fullDisplayTextOfModRef modref)          
               | Item.SetterArg(id, _) -> hash (id.idRange, id.idText)
-              | Item.MethodGroup(_, meths, _) -> meths |> List.fold (fun st a -> st + a.ComputeHashCode()) 0
+              | Item.MethodGroup(methods= meths) -> meths |> List.fold (fun st a -> st + a.ComputeHashCode()) 0
               | Item.CtorGroup(name, meths) -> name.GetHashCode() + (meths |> List.fold (fun st a -> st + a.ComputeHashCode()) 0)
               | Item.Value vref | Item.CustomBuilder (_, vref) -> hash vref.LogicalName
               | Item.ActivePatternCase(APElemRef(_apinfo, vref, idx, _)) -> hash (vref.LogicalName, idx)
@@ -564,8 +564,8 @@ module internal SymbolHelpers =
         | Item.Property(_, pinfo :: _) -> buildString (fun os -> NicePrint.outputTyconRef denv os pinfo.DeclaringTyconRef; bprintf os ".%s" pinfo.PropertyName)
         | Item.CustomOperation (customOpName, _, _) -> customOpName
         | Item.CtorGroup(_, minfo :: _) -> buildString (fun os -> NicePrint.outputTyconRef denv os minfo.DeclaringTyconRef)
-        | Item.MethodGroup(_, _, Some minfo) -> buildString (fun os -> NicePrint.outputTyconRef denv os minfo.DeclaringTyconRef; bprintf os ".%s" minfo.DisplayName)        
-        | Item.MethodGroup(_, minfo :: _, _) -> buildString (fun os -> NicePrint.outputTyconRef denv os minfo.DeclaringTyconRef; bprintf os ".%s" minfo.DisplayName)        
+        | Item.MethodGroup(uninstantiatedMethodOpt= Some minfo) -> buildString (fun os -> NicePrint.outputTyconRef denv os minfo.DeclaringTyconRef; bprintf os ".%s" minfo.DisplayName)        
+        | Item.MethodGroup(methods= minfo :: _) -> buildString (fun os -> NicePrint.outputTyconRef denv os minfo.DeclaringTyconRef; bprintf os ".%s" minfo.DisplayName)        
         | Item.UnqualifiedType (tcref :: _) -> buildString (fun os -> NicePrint.outputTyconRef denv os tcref)
         | Item.FakeInterfaceCtor ty 
         | Item.DelegateCtor ty 
@@ -586,7 +586,7 @@ module internal SymbolHelpers =
         | Item.UnqualifiedType([]) 
         | Item.Types(_, []) 
         | Item.CtorGroup(_, []) 
-        | Item.MethodGroup(_, [], _) 
+        | Item.MethodGroup(methods= []) 
         | Item.ModuleOrNamespaces []
         | Item.Property(_, []) -> ""
 
@@ -644,8 +644,8 @@ module internal SymbolHelpers =
             GetXmlCommentForItemAux doc infoReader m item
 
         | Item.CustomOperation (_, _, Some minfo) 
-        | Item.CtorGroup(_, minfo :: _) 
-        | Item.MethodGroup(_, minfo :: _, _) ->
+        | Item.CtorGroup(_, minfo :: _)
+        | Item.MethodGroup(methods= minfo :: _) ->
             GetXmlCommentForMethInfoItem infoReader m item minfo
 
         | Item.Types(_, tys) ->
@@ -700,7 +700,7 @@ module internal SymbolHelpers =
             GetXmlCommentForItem infoReader m item
         
         // In all these cases, there is no direct XML documentation from F# comments
-        | Item.MethodGroup (_, [], _)
+        | Item.MethodGroup (methods= [])
         | Item.CtorGroup (_, [])
         | Item.ModuleOrNamespaces []
         | Item.Types (_, [])
@@ -768,11 +768,11 @@ module internal SymbolHelpers =
     let (|ItemIsProvidedMethodWithStaticArguments|_|) item =
         match item with
         // Prefer the static parameters from the uninstantiated method info
-        | Item.MethodGroup(_, _, Some minfo) ->
+        | Item.MethodGroup(uninstantiatedMethodOpt= Some minfo) ->
             match minfo.ProvidedStaticParameterInfo  with 
             | Some (_, staticParameters) -> Some staticParameters
             | _ -> None
-        | Item.MethodGroup(_, [minfo], _) ->
+        | Item.MethodGroup(methods= [minfo]) ->
             match minfo.ProvidedStaticParameterInfo  with 
             | Some (_, staticParameters) -> Some staticParameters
             | _ -> None
@@ -928,10 +928,10 @@ module internal SymbolHelpers =
                 let tcref = minfo.DeclaringTyconRef
                 (tcref |> ticksAndArgCountTextOfTyconRef)+".#ctor" |> Some
         | Item.CustomOperation (_, _, Some minfo) -> getKeywordForMethInfo minfo
-        | Item.MethodGroup(_, _, Some minfo) -> getKeywordForMethInfo minfo
-        | Item.MethodGroup(_, minfo :: _, _) -> getKeywordForMethInfo minfo
+        | Item.MethodGroup(uninstantiatedMethodOpt= Some minfo) -> getKeywordForMethInfo minfo
+        | Item.MethodGroup(methods= minfo :: _) -> getKeywordForMethInfo minfo
         | Item.SetterArg (_, propOrField) -> GetF1Keyword g propOrField 
-        | Item.MethodGroup(_, [], _) 
+        | Item.MethodGroup(methods= []) 
         | Item.CustomOperation (_, _, None)   // "into"
         | Item.NewDef _ // "let x$yz = ..." - no keyword
         | Item.ArgName _ // no keyword on named parameters 
@@ -950,8 +950,8 @@ module internal SymbolHelpers =
     let SelectMethodGroupItems2 g (m: range) (item: ItemWithInst) : ItemWithInst list =
         ignore m
         match item.Item with 
-        | Item.MethodGroup(nm, minfos, orig) ->
-            minfos |> List.map (fun minfo -> { Item = Item.MethodGroup(nm, [minfo], orig); TyparInstantiation = item.TyparInstantiation })
+        | Item.MethodGroup(nm, mName, minfos, orig) ->
+            minfos |> List.map (fun minfo -> { Item = Item.MethodGroup(nm, mName, [minfo], orig); TyparInstantiation = item.TyparInstantiation })
         | Item.CtorGroup(nm, cinfos) ->
             cinfos |> List.map (fun minfo -> { Item = Item.CtorGroup(nm, [minfo]); TyparInstantiation = item.TyparInstantiation }) 
         | Item.FakeInterfaceCtor _
