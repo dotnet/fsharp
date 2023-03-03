@@ -692,10 +692,27 @@ type NavigableContainerType =
     | Exception
 
 type NavigableContainer =
-    {
-        Type: NavigableContainerType
-        LogicalName: string
-    }
+    | File of fileName: string
+    | Container of containerType: NavigableContainerType * nameParts: string list * parent: NavigableContainer
+
+    member x.FullName =
+        let rec loop acc =
+            function
+            | File _ -> acc
+            | Container (_, name, parent) -> loop (name @ acc) parent
+
+        loop [] x |> String.concat "."
+
+    member x.Type =
+        match x with
+        | File _ -> NavigableContainerType.File
+        | Container (t, _, _) -> t
+
+    member x.Name = 
+        match x with
+        | File name -> name
+        | Container(nameParts = []) -> ""
+        | Container(nameParts = ns) -> ns |> List.last
 
 type NavigableItem =
     {
@@ -709,14 +726,17 @@ type NavigableItem =
 [<RequireQualifiedAccess>]
 module NavigateTo =
     let GetNavigableItems (parsedInput: ParsedInput) : NavigableItem[] =
-        let rec lastInLid (lid: LongIdent) =
-            match lid with
-            | [ x ] -> Some x
-            | _ :: xs -> lastInLid xs
-            | _ -> None // empty lid is possible in case of broken ast
 
-        let formatLongIdent (lid: LongIdent) =
-            lid |> List.map (fun id -> id.idText) |> String.concat "."
+        // empty lid is possible in case of broken ast
+        let lastInLid (lid: LongIdent) = lid |> List.tryLast
+
+        let getParts (lid: LongIdent) = lid |> List.map (fun id -> id.idText)
+
+        let unmangleOpName name =
+            if PrettyNaming.IsLogicalOpName name then
+                PrettyNaming.ConvertValLogicalNameToDisplayNameCore name
+            else
+                name
 
         let result = ResizeArray()
 
@@ -724,7 +744,7 @@ module NavigateTo =
             if not (String.IsNullOrEmpty id.idText) then
                 let item =
                     {
-                        LogicalName = id.idText
+                        LogicalName = unmangleOpName id.idText
                         Range = id.idRange
                         IsSignature = isSignature
                         Kind = kind
@@ -744,23 +764,16 @@ module NavigateTo =
         let addExceptionRepr exnRepr isSig container =
             let (SynExceptionDefnRepr (_, SynUnionCase(ident = SynIdent (id, _)), _, _, _, _)) = exnRepr
             addIdent NavigableItemKind.Exception id isSig container
-
-            {
-                Type = NavigableContainerType.Exception
-                LogicalName = id.idText
-            }
+            NavigableContainer.Container(NavigableContainerType.Exception, [id.idText] , container)
 
         let addComponentInfo containerType kind info isSig container =
-            let (SynComponentInfo (_, _, _, lid, _, _, _, _)) = info
+            let (SynComponentInfo (longId = lid)) = info
 
             match lastInLid lid with
             | Some id -> addIdent kind id isSig container
             | _ -> ()
 
-            {
-                Type = containerType
-                LogicalName = formatLongIdent lid
-            }
+            NavigableContainer.Container(containerType, getParts lid, container)
 
         let addValSig kind synValSig isSig container =
             let (SynValSig(ident = SynIdent (id, _))) = synValSig
@@ -822,12 +835,7 @@ module NavigateTo =
         let rec walkSigFileInput (file: ParsedSigFileInput) =
 
             for item in file.Contents do
-                walkSynModuleOrNamespaceSig
-                    item
-                    {
-                        Type = NavigableContainerType.File
-                        LogicalName = file.FileName
-                    }
+                walkSynModuleOrNamespaceSig item (NavigableContainer.File file.FileName)
 
         and walkSynModuleOrNamespaceSig (inp: SynModuleOrNamespaceSig) container =
             let (SynModuleOrNamespaceSig (longId = lid; kind = kind; decls = decls)) = inp
@@ -836,18 +844,14 @@ module NavigateTo =
             if isModule then
                 addModule lid true container
 
-            let container =
-                {
-                    Type =
-                        if isModule then
-                            NavigableContainerType.Module
-                        else
-                            NavigableContainerType.Namespace
-                    LogicalName = formatLongIdent lid
-                }
+            let ctype =
+                if isModule then
+                    NavigableContainerType.Module
+                else
+                    NavigableContainerType.Namespace
 
             for decl in decls do
-                walkSynModuleSigDecl decl container
+                walkSynModuleSigDecl decl (NavigableContainer.Container(ctype, getParts lid, container))
 
         and walkSynModuleSigDecl (decl: SynModuleSigDecl) container =
             match decl with
@@ -889,15 +893,8 @@ module NavigateTo =
             | SynMemberSig.Interface _ -> ()
 
         and walkImplFileInput (inp: ParsedImplFileInput) =
-
-            let container =
-                {
-                    Type = NavigableContainerType.File
-                    LogicalName = inp.FileName
-                }
-
             for item in inp.Contents do
-                walkSynModuleOrNamespace item container
+                walkSynModuleOrNamespace item (NavigableContainer.File inp.FileName)
 
         and walkSynModuleOrNamespace inp container =
             let (SynModuleOrNamespace (longId = lid; kind = kind; decls = decls)) = inp
@@ -906,18 +903,14 @@ module NavigateTo =
             if isModule then
                 addModule lid false container
 
-            let container =
-                {
-                    Type =
-                        if isModule then
-                            NavigableContainerType.Module
-                        else
-                            NavigableContainerType.Namespace
-                    LogicalName = formatLongIdent lid
-                }
+            let ctype =
+                if isModule then
+                    NavigableContainerType.Module
+                else
+                    NavigableContainerType.Namespace
 
             for decl in decls do
-                walkSynModuleDecl decl container
+                walkSynModuleDecl decl (NavigableContainer.Container(ctype, getParts lid, container))
 
         and walkSynModuleDecl (decl: SynModuleDecl) container =
             match decl with

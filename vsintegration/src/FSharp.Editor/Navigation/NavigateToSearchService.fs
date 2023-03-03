@@ -17,7 +17,6 @@ open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.Text.PatternMatching
 
 open FSharp.Compiler.EditorServices
-open FSharp.Compiler.Syntax
 
 [<Export(typeof<IFSharpNavigateToSearchService>); Shared>]
 type internal FSharpNavigateToSearchService [<ImportingConstructor>]
@@ -87,25 +86,20 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>]
         | NavigableItemKind.EnumCase -> Glyph.EnumPublic
         | NavigableItemKind.UnionCase -> Glyph.EnumPublic
 
-    let containerToString (container: NavigableContainer) (document: Document) =
-        let typeAsString =
+    let formatInfo (container: NavigableContainer) (document: Document) =
+        let projectName = document.Project.Name
+        let description = 
             match container.Type with
-            | NavigableContainerType.File -> "project"
-            | NavigableContainerType.Namespace -> "namespace"
-            | NavigableContainerType.Module -> "module"
-            | NavigableContainerType.Exception -> "exception"
-            | NavigableContainerType.Type -> "type"
-
-        let name =
-            match container.Type with
-            | NavigableContainerType.File ->
-                $"{Path.GetFileNameWithoutExtension document.Project.Name}, {Path.GetFileName container.LogicalName}"
-            | _ -> container.LogicalName
-
-        if document.IsFSharpSignatureFile then
-            $"signature for: {typeAsString} {name}"
+            | NavigableContainerType.File -> $"{Path.GetFileName container.Name} - project {projectName}"
+            | NavigableContainerType.Exception
+            | NavigableContainerType.Type -> $"in {container.Name} - project {projectName}"
+            | NavigableContainerType.Module -> $"module {container.Name} - project {projectName}"
+            | NavigableContainerType.Namespace -> $"{container.FullName} - project {projectName}" // or maybe show only project name?
+         
+        if document.IsFSharpSignatureFile then 
+            $"signature, {description}"
         else
-            $"{typeAsString} {name}"
+            description
 
     let patternMatchKindToNavigateToMatchKind =
         function
@@ -122,26 +116,30 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>]
 
     let createMatcherFor searchPattern =
         let patternMatcher =
-            lazy
                 patternMatcherFactory.CreatePatternMatcher(
                     searchPattern,
                     PatternMatcherCreationOptions(
                         cultureInfo = CultureInfo.CurrentUICulture,
-                        flags =
-                            (PatternMatcherCreationFlags.AllowFuzzyMatching
-                             ||| PatternMatcherCreationFlags.AllowSimpleSubstringMatching)
+                        flags = PatternMatcherCreationFlags.AllowFuzzyMatching,
+                        containerSplitCharacters = ['.']
                     )
                 )
-        // PatternMatcher will not match operators and some backtick escaped identifiers.
-        // To handle them, do a simple substring match first.
-        fun (name: string) ->
+        fun (item: NavigableItem) ->  
+            // PatternMatcher will not match operators and some backtick escaped identifiers.
+            // To handle them, we fall back to simple substring match.
+            let name = item.LogicalName
             match name.IndexOf(searchPattern, StringComparison.CurrentCultureIgnoreCase) with
-            | i when i > 0 -> PatternMatch(PatternMatchKind.Substring, false, true) |> Some
-            | 0 when name.Length = searchPattern.Length -> PatternMatch(PatternMatchKind.Exact, false, true) |> Some
-            | 0 -> PatternMatch(PatternMatchKind.Prefix, false, true) |> Some
-            | _ -> patternMatcher.Value.TryMatch name |> Option.ofNullable
+            | i when i > 0 -> PatternMatch(PatternMatchKind.Substring, false, false) |> Some
+            | 0 when name.Length = searchPattern.Length -> PatternMatch(PatternMatchKind.Exact, false, false) |> Some
+            | 0 -> PatternMatch(PatternMatchKind.Prefix, false, false) |> Some
+            | _ ->
+                // full name with dots allows for path matching, e.g.
+                // "f.c.so.elseif" will match "Fantomas.Core.SyntaxOak.ElseIfNode"
+                patternMatcher.TryMatch $"{item.Container.FullName}.{name}"
+                |> Option.ofNullable   
+            
 
-    let processDocument (tryMatch: string -> PatternMatch option) (kinds: IImmutableSet<string>) (document: Document) =
+    let processDocument (tryMatch: NavigableItem -> PatternMatch option) (kinds: IImmutableSet<string>) (document: Document) =
         async {
             let! sourceText = document.GetTextAsync Async.DefaultCancellationToken |> Async.AwaitTask
 
@@ -149,19 +147,13 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>]
                 asyncMaybe {
                     do! Option.guard (kinds.Contains(navigateToItemKindToRoslynKind item.Kind))
 
-                    let name =
-                        // This conversion back from logical names to display names should never be needed, because
-                        // the FCS API should only report display names in the first place.
-                        if PrettyNaming.IsLogicalOpName item.LogicalName then
-                            PrettyNaming.ConvertValLogicalNameToDisplayNameCore item.LogicalName
-                        else
-                            item.LogicalName
+                    let! m = tryMatch item
 
-                    let! m = tryMatch name
                     let! sourceSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, item.Range)
                     let glyph = navigateToItemKindToGlyph item.Kind
                     let kind = navigateToItemKindToRoslynKind item.Kind
-                    let additionalInfo = containerToString item.Container document
+                    let additionalInfo = formatInfo item.Container document
+                    let name = item.LogicalName
 
                     return
                         FSharpNavigateToSearchResult(
