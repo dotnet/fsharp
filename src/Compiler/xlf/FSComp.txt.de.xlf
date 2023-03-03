@@ -4639,7 +4639,7 @@
       </trans-unit>
       <trans-unit id="tcConcreteMembersIllegalInInterface">
         <source>Interfaces cannot contain definitions of concrete instance members. You may need to define a constructor on your type to indicate that the type is a class.</source>
-        <target state="needs-review-translation">Schnittstellen dürfen keine Definitionen konkreter Member enthalten. Sie müssen ggf. einen Konstruktor für den Typ definieren, um anzugeben, dass es sich bei dem Typ um eine Klasse handelt.</target>
+        <target state="new">Interfaces cannot contain definitions of concrete instance members. You may need to define a constructor on your type to indicate that the type is a class.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcConstructorsDisallowedInExceptionAugmentation">

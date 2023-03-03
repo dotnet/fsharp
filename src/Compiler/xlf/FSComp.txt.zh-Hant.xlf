@@ -4639,7 +4639,7 @@
       </trans-unit>
       <trans-unit id="tcConcreteMembersIllegalInInterface">
         <source>Interfaces cannot contain definitions of concrete instance members. You may need to define a constructor on your type to indicate that the type is a class.</source>
-        <target state="needs-review-translation">介面不能包含具象成員的定義。您必須在類型上定義建構函式，以指示類型是類別。</target>
+        <target state="new">Interfaces cannot contain definitions of concrete instance members. You may need to define a constructor on your type to indicate that the type is a class.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcConstructorsDisallowedInExceptionAugmentation">
