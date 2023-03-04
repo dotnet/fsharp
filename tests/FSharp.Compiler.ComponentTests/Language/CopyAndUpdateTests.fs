@@ -90,15 +90,15 @@ type AnotherNestedRecTy = { A: int }
 
 type NestdRecTy = { B: string; C: AnotherNestedRecTy }
 
-type RecTy = { D: NestdRecTy; E: string option }
+type RecTy = { D: NestdRecTy; E: string option; F: int }
 
-let t1 = { D = { B = "t1"; C = { A = 1 } }; E = None }
+let t1 = { D = { B = "t1"; C = { A = 1 } }; E = None; F = 42 }
 
 let actual1 = { t1 with D.B = "t2" }
-let expected1 = { D = { B = "t2"; C = { A = 1 } }; E = None }
+let expected1 = { D = { B = "t2"; C = { A = 1 } }; E = None; F = 42 }
 
 let actual2 = { t1 with D.C.A = 3; E = Some "a" }
-let expected2 = { D = { B = "t1"; C = { A = 3 } }; E = Some "a" }
+let expected2 = { D = { B = "t1"; C = { A = 3 } }; E = Some "a"; F = 42 }
 
 if actual1 <> expected1 then
     failwith "actual1 does not equal expected1"
@@ -175,14 +175,14 @@ let ``Nested copy-and-update works correctly on recursive records``() =
     FSharp """
 module CopyAndUpdateTests
 
-type G = { U: {| a: G |}; I: int }
+type G = { T: string; U: {| a: G |}; I: int }
 
 let f x = { x with U.a.U.a.I = 0; I = -1 }
 
-let start = { I = 1; U = {| a = { I = 2; U = {| a = { I = 3; U = Unchecked.defaultof<_> } |} } |} }
+let start = { T = "a"; I = 1; U = {| a = { T = "a"; I = 2; U = {| a = { T = "a"; I = 3; U = Unchecked.defaultof<_> } |} } |} }
 
 let actual = f start
-let expected = { I = -1; U = {| a = { I = 2; U = {| a = { I = 0; U = Unchecked.defaultof<_> } |} } |} }
+let expected = { T = "a"; I = -1; U = {| a = { T = "a"; I = 2; U = {| a = { T = "a"; I = 0; U = Unchecked.defaultof<_> } |} } |} }
 
 if actual <> expected then
     failwith "actual does not equal expected"
