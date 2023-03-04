@@ -1,7 +1,7 @@
 
 neg106.fs(8,59,8,61): typecheck error FS3230: A value defined in a module must be mutable in order to take its address, e.g. 'let mutable x = ...'
 
-neg106.fs(13,18,13,72): typecheck error FS0041: No overloads match for method 'CompareExchange'.
+neg106.fs(13,18,13,62): typecheck error FS0041: No overloads match for method 'CompareExchange'.
 
 Known types of arguments: inref<int> * int * int
 
@@ -16,7 +16,7 @@ Available overloads:
 
 neg106.fs(17,59,17,61): typecheck error FS3236: Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
 
-neg106.fs(17,14,17,68): typecheck error FS0041: No overloads match for method 'CompareExchange'.
+neg106.fs(17,14,17,58): typecheck error FS0041: No overloads match for method 'CompareExchange'.
 
 Known types of arguments: inref<int> * int * int
 
@@ -41,7 +41,7 @@ but given a
     'inref<int>'    
 The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'
 
-neg106.fs(40,18,40,32): typecheck error FS0041: No overloads match for method 'M'.
+neg106.fs(40,18,40,21): typecheck error FS0041: No overloads match for method 'M'.
 
 Known types of arguments: string * inref<int>
 
@@ -49,7 +49,7 @@ Available overloads:
  - static member C.M: a: int * x: byref<int> -> unit // Argument 'a' doesn't match
  - static member C.M: a: string * x: byref<int> -> unit // Argument 'x' doesn't match
 
-neg106.fs(41,19,41,31): typecheck error FS0041: No overloads match for method 'M'.
+neg106.fs(41,19,41,22): typecheck error FS0041: No overloads match for method 'M'.
 
 Known types of arguments: int * inref<int>
 
@@ -91,7 +91,7 @@ but given a
     'inref<'T>'    
 The type 'ByRefKinds.Out' does not match the type 'ByRefKinds.In'
 
-neg106.fs(102,37,102,40): typecheck error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
+neg106.fs(102,39,102,40): typecheck error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
 
 neg106.fs(102,36,102,40): typecheck error FS3236: Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
 
@@ -107,7 +107,7 @@ but given a
     'inref<'T>'    
 The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'
 
-neg106.fs(112,39,112,42): typecheck error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
+neg106.fs(112,41,112,42): typecheck error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
 
 neg106.fs(112,38,112,42): typecheck error FS3236: Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
 
@@ -123,7 +123,7 @@ but given a
     'inref<'T>'    
 The type 'ByRefKinds.Out' does not match the type 'ByRefKinds.In'
 
-neg106.fs(122,39,122,42): typecheck error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
+neg106.fs(122,41,122,42): typecheck error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
 
 neg106.fs(122,38,122,42): typecheck error FS3236: Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
 
@@ -139,7 +139,7 @@ but given a
     'inref<'T>'    
 The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'
 
-neg106.fs(132,39,132,42): typecheck error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
+neg106.fs(132,41,132,42): typecheck error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
 
 neg106.fs(132,38,132,42): typecheck error FS3236: Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
 
@@ -155,7 +155,7 @@ but given a
     'inref<'T>'    
 The type 'ByRefKinds.Out' does not match the type 'ByRefKinds.In'
 
-neg106.fs(142,39,142,42): typecheck error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
+neg106.fs(142,41,142,42): typecheck error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
 
 neg106.fs(142,38,142,42): typecheck error FS3236: Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
 

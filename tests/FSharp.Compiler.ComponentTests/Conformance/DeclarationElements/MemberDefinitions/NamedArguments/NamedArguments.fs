@@ -37,7 +37,7 @@ module NamedArguments =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 35, Line 16, Col 1, Line 16, Col 35, "This construct is deprecated: The unnamed arguments do not form a prefix of the arguments of the method called")
+            (Error 35, Line 16, Col 3, Line 16, Col 35, "This construct is deprecated: The unnamed arguments do not form a prefix of the arguments of the method called")
         ]
 
     // SOURCE=E_NonNamedAfterNamed.fs		# E_NonNamedAfterNamed.fs
@@ -58,8 +58,8 @@ module NamedArguments =
         |> shouldFail
         |> withDiagnostics [
             (Error 941, Line 13, Col 28, Line 13, Col 38, "Accessibility modifiers are not permitted on overrides or interface implementations")
-            (Error 497, Line 18, Col 1, Line 18, Col 32, "The member or object constructor 'NamedMeth1' requires 1 additional argument(s). The required signature is 'abstract IFoo.NamedMeth1: arg1: int * arg2: int * arg3: int * arg4: int -> float'.")
-            (Error 500, Line 19, Col 1, Line 19, Col 43, "The member or object constructor 'NamedMeth1' requires 4 argument(s) but is here given 2 unnamed and 3 named argument(s). The required signature is 'abstract IFoo.NamedMeth1: arg1: int * arg2: int * arg3: int * arg4: int -> float'.")
+            (Error 497, Line 18, Col 3, Line 18, Col 32, "The member or object constructor 'NamedMeth1' requires 1 additional argument(s). The required signature is 'abstract IFoo.NamedMeth1: arg1: int * arg2: int * arg3: int * arg4: int -> float'.")
+            (Error 500, Line 19, Col 3, Line 19, Col 43, "The member or object constructor 'NamedMeth1' requires 4 argument(s) but is here given 2 unnamed and 3 named argument(s). The required signature is 'abstract IFoo.NamedMeth1: arg1: int * arg2: int * arg3: int * arg4: int -> float'.")
         ]
 
     // SOURCE=E_ReusedParam.fs			# E_ReusedParam.fs
@@ -82,7 +82,7 @@ module NamedArguments =
         |> withDiagnostics [
             (Error 39, Line 8, Col 47, Line 8, Col 51, "The value or constructor 'arg1' is not defined.")
             (Error 39, Line 8, Col 54, Line 8, Col 58, "The value or constructor 'arg2' is not defined.")
-            (Error 3, Line 12, Col 1, Line 12, Col 8, "This value is not a function and cannot be applied.")
+            (Error 3, Line 12, Col 3, Line 12, Col 8, "This value is not a function and cannot be applied.")
         ]
 
     // SOURCE=genericNamedParams.fs		# genericNamedParams.fs

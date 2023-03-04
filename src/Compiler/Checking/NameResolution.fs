@@ -3734,11 +3734,7 @@ let private ResolveExprDotLongIdent (ncenv: NameResolver) m ad nenv ty (id: Iden
 let ComputeItemRange wholem (lid: Ident list) rest =
     match rest with
     | [] -> wholem
-    | _ ->
-        let ids = List.truncate (max 0 (lid.Length - rest.Length)) lid
-        match ids with
-        | [] -> wholem
-        | _ -> rangeOfLid ids
+    | _ -> (List.last lid).idRange
 
 /// Filters method groups that will be sent to Visual Studio IntelliSense
 /// to include only static/instance members

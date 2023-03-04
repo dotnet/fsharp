@@ -223,7 +223,7 @@ module MethodsAndProperties =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 493, Line 10, Col 14, Line 10, Col 30, "StaticMethod is not an instance method")
+            (Error 493, Line 10, Col 16, Line 10, Col 30, "StaticMethod is not an instance method")
         ]
 
     // SOURCE=genericGenericClass.fs			# genericGenericClass.fs

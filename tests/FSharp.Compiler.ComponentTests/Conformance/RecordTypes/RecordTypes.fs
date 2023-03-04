@@ -91,9 +91,9 @@ module RecordTypes =
         |> shouldFail
         |> withDiagnostics [
             (Error 39, Line 16, Col 15, Line 16, Col 30, "The type 'IStructuralHash' is not defined.")
-            (Error 72, Line 17, Col 1, Line 17, Col 25, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
+            (Error 72, Line 17, Col 4, Line 17, Col 25, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
             (Error 39, Line 20, Col 15, Line 20, Col 30, "The type 'IStructuralHash' is not defined.")
-            (Error 72, Line 21, Col 1, Line 21, Col 25, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
+            (Error 72, Line 21, Col 4, Line 21, Col 25, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
         ]
 
     // SOURCE=E_MutableFields01.fsx SCFLAGS="--test:ErrorRanges"                                # E_MutableFields01.fsx
@@ -105,9 +105,9 @@ module RecordTypes =
         |> withDiagnostics [
             (Warning 464, Line 15, Col 22, Line 15, Col 28, "This code is less generic than indicated by its annotations. A unit-of-measure specified using '_' has been determined to be '1', i.e. dimensionless. Consider making the code generic, or removing the use of '_'.")
             (Warning 464, Line 15, Col 35, Line 15, Col 42, "This code is less generic than indicated by its annotations. A unit-of-measure specified using '_' has been determined to be '1', i.e. dimensionless. Consider making the code generic, or removing the use of '_'.")
-            (Error 5, Line 17, Col 1, Line 17, Col 5, "This field is not mutable")
+            (Error 5, Line 17, Col 4, Line 17, Col 5, "This field is not mutable")
             (Error 1, Line 17, Col 16, Line 17, Col 22, "The type 'decimal<Kg>' does not match the type 'float<Kg>'")
-            (Error 5, Line 18, Col 1, Line 18, Col 5, "This field is not mutable")
+            (Error 5, Line 18, Col 4, Line 18, Col 5, "This field is not mutable")
             (Error 1, Line 18, Col 16, Line 18, Col 21, "This expression was expected to have type\n    'float'    \nbut here has type\n    'decimal'    ")
         ]
 

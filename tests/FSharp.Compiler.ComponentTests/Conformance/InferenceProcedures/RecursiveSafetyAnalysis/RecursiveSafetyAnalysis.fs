@@ -60,7 +60,7 @@ module RecursiveSafetyAnalysis =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 193, Line 15, Col 14, Line 15, Col 20, "Type constraint mismatch. The type \n    'int * 'a'    \nis not compatible with type\n    'string'    \n")
+            (Error 193, Line 15, Col 16, Line 15, Col 20, "Type constraint mismatch. The type \n    'int * 'a'    \nis not compatible with type\n    'string'    \n")
         ]
 
     //<Expects status="error" id="FS0193" span="(21,27-21,28)">Type constraint mismatch</Expects>

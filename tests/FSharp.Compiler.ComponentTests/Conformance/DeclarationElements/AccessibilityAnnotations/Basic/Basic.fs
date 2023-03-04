@@ -59,7 +59,7 @@ module Basic =
         |> withDiagnostics [
             (Error 1094, Line 18, Col 17, Line 18, Col 41, "The value 'somePrivateField' is not accessible from this code location")
             (Error 1094, Line 19, Col 17, Line 19, Col 42, "The value 'somePrivateMethod' is not accessible from this code location")
-            (Error 491, Line 23, Col 17, Line 23, Col 34, "The member or object constructor 'PrivateMethod' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
+            (Error 491, Line 23, Col 19, Line 23, Col 34, "The member or object constructor 'PrivateMethod' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
         ]
 
     //SOURCE=E_privateThingsInaccessible02.fs SCFLAGS="--test:ErrorRanges"            # E_privateThingsInaccessible02.fs
@@ -129,7 +129,7 @@ module Basic =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 629, Line 11, Col 24, Line 11, Col 41, "Method 'MemberwiseClone' is not accessible from this code location")
+            (Error 629, Line 11, Col 26, Line 11, Col 41, "Method 'MemberwiseClone' is not accessible from this code location")
         ]
 
     //SOURCE=E_MoreAccessibleBaseClass01.fs                                           # E_MoreAccessibleBaseClass01.fs

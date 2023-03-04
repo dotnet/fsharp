@@ -157,9 +157,9 @@ module UnionTypes =
         |> shouldFail
         |> withDiagnostics [
             (Error 39, Line 17, Col 15, Line 17, Col 30, "The type 'IStructuralHash' is not defined.")
-            (Error 72, Line 18, Col 1, Line 18, Col 25, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
+            (Error 72, Line 18, Col 4, Line 18, Col 25, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
             (Error 39, Line 21, Col 15, Line 21, Col 30, "The type 'IStructuralHash' is not defined.")
-            (Error 72, Line 22, Col 1, Line 22, Col 25, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
+            (Error 72, Line 22, Col 4, Line 22, Col 25, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
         ]
 
     //SOURCE=E_FieldNameUsedMulti.fs SCFLAGS="--test:ErrorRanges"                                 # E_FieldNameUsedMulti.fs

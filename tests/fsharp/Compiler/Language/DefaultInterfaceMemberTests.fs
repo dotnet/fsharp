@@ -1441,8 +1441,8 @@ let f () =
             Compilation.Create(fsharpSource, Library, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpDiagnosticSeverity.Error, 491, (26, 5, 26, 15), "The member or object constructor 'M1' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
-            (FSharpDiagnosticSeverity.Error, 491, (31, 5, 31, 16), "The member or object constructor 'M1' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
+            (FSharpDiagnosticSeverity.Error, 491, (26, 10, 26, 15), "The member or object constructor 'M1' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
+            (FSharpDiagnosticSeverity.Error, 491, (31, 11, 31, 16), "The member or object constructor 'M1' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
         |])
 
     [<Test>]

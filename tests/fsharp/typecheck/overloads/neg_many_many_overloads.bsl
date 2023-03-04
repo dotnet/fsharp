@@ -77,7 +77,7 @@ Candidates:
  - static member Class.A: a: Task<uint8> -> Task<uint8>
  - static member Class.A: a: string -> string
 
-neg_many_many_overloads.fsx(124,1,124,34): typecheck error FS0041: No overloads match for method 'A'.
+neg_many_many_overloads.fsx(124,1,124,8): typecheck error FS0041: No overloads match for method 'A'.
 
 Known type of argument: Type
 
@@ -167,7 +167,7 @@ Available overloads:
  - static member Class.A: a: uint64 -> uint64 // Argument 'a' doesn't match
  - static member Class.A: a: uint8 -> uint8 // Argument 'a' doesn't match
 
-neg_many_many_overloads.fsx(125,1,125,25): typecheck error FS0041: No overloads match for method 'A'.
+neg_many_many_overloads.fsx(125,1,125,8): typecheck error FS0041: No overloads match for method 'A'.
 
 Known type of argument: Guid
 
@@ -257,7 +257,7 @@ Available overloads:
  - static member Class.A: a: uint64 -> uint64 // Argument 'a' doesn't match
  - static member Class.A: a: uint8 -> uint8 // Argument 'a' doesn't match
 
-neg_many_many_overloads.fsx(126,1,126,48): typecheck error FS0041: No overloads match for method 'A'.
+neg_many_many_overloads.fsx(126,1,126,8): typecheck error FS0041: No overloads match for method 'A'.
 
 Known type of argument: DayOfWeek
 

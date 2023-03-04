@@ -60,7 +60,7 @@ module ModuleDefinitions =
         |> shouldFail
         |> withDiagnostics [
             (Warning 1178, Line 12, Col 10, Line 12, Col 17, "The struct, record or union type 'SpecSet' is not structurally comparable because the type 'SpecMulti' does not satisfy the 'comparison' constraint. Consider adding the 'NoComparison' attribute to the type 'SpecSet' to clarify that the type is not comparable")
-            (Error 491, Line 22, Col 13, Line 22, Col 27, "The member or object constructor 'Impl' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
+            (Error 491, Line 22, Col 21, Line 22, Col 27, "The member or object constructor 'Impl' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
         ]
 
     // SOURCE=E_ModuleSuffix01.fsx SCFLAGS="--test:ErrorRanges"                                                            # E_ModuleSuffix01.fsx

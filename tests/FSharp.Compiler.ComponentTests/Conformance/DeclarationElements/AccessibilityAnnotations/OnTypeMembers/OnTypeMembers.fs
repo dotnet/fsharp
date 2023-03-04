@@ -52,7 +52,7 @@ module OnTypeMembers =
         |> shouldFail
         |> withDiagnostics [
             (Warning 1178, Line 9, Col 10, Line 9, Col 17, "The struct, record or union type 'SpecSet' is not structurally comparable because the type 'SpecMulti' does not satisfy the 'comparison' constraint. Consider adding the 'NoComparison' attribute to the type 'SpecSet' to clarify that the type is not comparable")
-            (Error 491, Line 14, Col 13, Line 14, Col 28, "The member or object constructor 'Impl' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
+            (Error 491, Line 14, Col 21, Line 14, Col 28, "The member or object constructor 'Impl' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
         ]
 
     // SOURCE=E_OnProperty01.fs                                                # E_OnProperty01.fs
@@ -62,18 +62,18 @@ module OnTypeMembers =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 491, Line 42, Col 1, Line 42, Col 6, "The member or object constructor 'Foo' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
-            (Error 491, Line 42, Col 9, Line 42, Col 16, "The member or object constructor 'test1' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
-            (Error 491, Line 42, Col 19, Line 42, Col 26, "The member or object constructor 'test2' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
-            (Error 491, Line 42, Col 29, Line 42, Col 36, "The member or object constructor 'test5' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
-            (Error 491, Line 42, Col 40, Line 42, Col 47, "The member or object constructor 'test6' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
-            (Error 807, Line 42, Col 60, Line 42, Col 67, "Property 'test8' is not readable")
+            (Error 491, Line 42, Col 3, Line 42, Col 6, "The member or object constructor 'Foo' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
+            (Error 491, Line 42, Col 11, Line 42, Col 16, "The member or object constructor 'test1' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
+            (Error 491, Line 42, Col 21, Line 42, Col 26, "The member or object constructor 'test2' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
+            (Error 491, Line 42, Col 31, Line 42, Col 36, "The member or object constructor 'test5' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
+            (Error 491, Line 42, Col 42, Line 42, Col 47, "The member or object constructor 'test6' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
+            (Error 807, Line 42, Col 62, Line 42, Col 67, "Property 'test8' is not readable")
             (Error 491, Line 43, Col 1, Line 43, Col 13, "The member or object constructor 'test3' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
             (Error 491, Line 44, Col 1, Line 44, Col 13, "The member or object constructor 'test4' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
             (Error 491, Line 45, Col 1, Line 45, Col 13, "The member or object constructor 'test5' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
             (Error 491, Line 46, Col 1, Line 46, Col 13, "The member or object constructor 'test6' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
-            (Error 810, Line 47, Col 1, Line 47, Col 8, "Property 'test7' cannot be set")
-            (Error 257, Line 47, Col 1, Line 47, Col 8, "Invalid mutation of a constant expression. Consider copying the expression to a mutable local, e.g. 'let mutable x = ...'.")
+            (Error 810, Line 47, Col 3, Line 47, Col 8, "Property 'test7' cannot be set")
+            (Error 257, Line 47, Col 3, Line 47, Col 8, "Invalid mutation of a constant expression. Consider copying the expression to a mutable local, e.g. 'let mutable x = ...'.")
         ]
 
     // SOURCE=E_OnProperty02.fs SCFLAGS="--test:ErrorRanges"                   # E_OnProperty02.fs

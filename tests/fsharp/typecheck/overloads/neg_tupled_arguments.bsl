@@ -1,5 +1,5 @@
 
-neg_tupled_arguments.fsx(6,9,6,31): typecheck error FS0041: No overloads match for method 'A'.
+neg_tupled_arguments.fsx(6,9,6,12): typecheck error FS0041: No overloads match for method 'A'.
 
 Known types of arguments: (int * (int * string) * int) * int
 
@@ -9,7 +9,7 @@ Available overloads:
 
 neg_tupled_arguments.fsx(7,9,7,28): typecheck error FS0503: A member or object constructor 'A' taking 4 arguments is not accessible from this code location. All accessible versions of method 'A' take 2 arguments.
 
-neg_tupled_arguments.fsx(14,9,14,40): typecheck error FS0041: No overloads match for method 'B'.
+neg_tupled_arguments.fsx(14,9,14,12): typecheck error FS0041: No overloads match for method 'B'.
 
 Known types of arguments: int * int * (int * (int * int * int * (int * int))) * int * int
 

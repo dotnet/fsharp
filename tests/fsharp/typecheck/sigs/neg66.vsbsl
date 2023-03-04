@@ -3,4 +3,4 @@ neg66.fsx(43,4,43,5): parse error FS0010: Unexpected symbol ')' in definition. E
 
 neg66.fsx(43,4,43,5): parse error FS0010: Unexpected symbol ')' in definition. Expected incomplete structured construct at or before this point or other token.
 
-neg66.fsx(30,1,38,33): typecheck error FS0003: This value is not a function and cannot be applied.
+neg66.fsx(30,12,38,33): typecheck error FS0003: This value is not a function and cannot be applied.

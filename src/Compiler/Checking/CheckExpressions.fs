@@ -9574,7 +9574,7 @@ and TcMethodApplication
         mMethExpr // range of the entire method expression
         mItem
         methodName
-        (methodNameRange: range option)
+        (_methodNameRange: range option)
         (objTyOpt: TType option)
         ad
         mut
@@ -9662,7 +9662,7 @@ and TcMethodApplication
             CanonicalizePartialInferenceProblem cenv.css denv mItem
                  (unnamedCurriedCallerArgs |> List.collectSquared (fun callerArg -> freeInTypeLeftToRight g false callerArg.CallerArgumentType))
 
-        let result, errors = ResolveOverloadingForCall denv cenv.css mMethExpr methodName methodNameRange callerArgs ad postArgumentTypeCheckingCalledMethGroup true returnTy
+        let result, errors = ResolveOverloadingForCall denv cenv.css mMethExpr methodName (Some mItem) callerArgs ad postArgumentTypeCheckingCalledMethGroup true returnTy
 
         match afterResolution, result with
         | AfterResolution.DoNothing, _ -> ()

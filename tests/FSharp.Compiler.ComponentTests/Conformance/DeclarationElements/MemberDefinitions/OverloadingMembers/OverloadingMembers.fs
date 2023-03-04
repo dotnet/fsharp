@@ -60,10 +60,10 @@ module OverloadingMembers =
         |> withDiagnostics [
             (Warning 1173, Line 17, Col 40, Line 17, Col 41, "Infix operator member '+' has 1 initial argument(s). Expected a tuple of 2 arguments, e.g. static member (+) (x,y) = ...")
             (Warning 1174, Line 17, Col 40, Line 17, Col 41, "Infix operator member '+' has extra curried arguments. Expected a tuple of 2 arguments, e.g. static member (+) (x,y) = ...")
-            (Warning 52, Line 17, Col 83, Line 17, Col 87, "The value has been copied to ensure the original is not mutated by this operation or because the copy is implicit when returning a struct from a member and another member is then accessed")
-            (Warning 52, Line 17, Col 90, Line 17, Col 94, "The value has been copied to ensure the original is not mutated by this operation or because the copy is implicit when returning a struct from a member and another member is then accessed")
-            (Warning 52, Line 17, Col 96, Line 17, Col 100, "The value has been copied to ensure the original is not mutated by this operation or because the copy is implicit when returning a struct from a member and another member is then accessed")
-            (Warning 52, Line 17, Col 103, Line 17, Col 107, "The value has been copied to ensure the original is not mutated by this operation or because the copy is implicit when returning a struct from a member and another member is then accessed")
+            (Warning 52, Line 17, Col 86, Line 17, Col 87, "The value has been copied to ensure the original is not mutated by this operation or because the copy is implicit when returning a struct from a member and another member is then accessed")
+            (Warning 52, Line 17, Col 93, Line 17, Col 94, "The value has been copied to ensure the original is not mutated by this operation or because the copy is implicit when returning a struct from a member and another member is then accessed")
+            (Warning 52, Line 17, Col 99, Line 17, Col 100, "The value has been copied to ensure the original is not mutated by this operation or because the copy is implicit when returning a struct from a member and another member is then accessed")
+            (Warning 52, Line 17, Col 106, Line 17, Col 107, "The value has been copied to ensure the original is not mutated by this operation or because the copy is implicit when returning a struct from a member and another member is then accessed")
             (Error 43, Line 21, Col 13, Line 21, Col 14, "Method or object constructor 'op_Addition' not found")
         ]
 

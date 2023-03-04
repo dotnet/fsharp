@@ -4,7 +4,7 @@ E_RigidTypeAnnotation03.fsx(17,13,17,16): typecheck error FS0001: This expressio
 but here has type
     'byte'    
 
-E_RigidTypeAnnotation03.fsx(17,9,17,25): typecheck error FS0041: No overloads match for method 'M'.
+E_RigidTypeAnnotation03.fsx(17,9,17,12): typecheck error FS0041: No overloads match for method 'M'.
 
 Known type of argument: sbyte
 
@@ -20,7 +20,7 @@ E_RigidTypeAnnotation03.fsx(18,13,18,19): typecheck error FS0001: This expressio
 but here has type
     'float<'u>'    
 
-E_RigidTypeAnnotation03.fsx(18,9,18,30): typecheck error FS0041: No overloads match for method 'M'.
+E_RigidTypeAnnotation03.fsx(18,9,18,12): typecheck error FS0041: No overloads match for method 'M'.
 
 Known type of argument: float32
 
@@ -42,7 +42,7 @@ but given a
     'decimal<Kg>'    
 The unit of measure 'N s ^ 2' does not match the unit of measure 'Kg'
 
-E_RigidTypeAnnotation03.fsx(20,9,20,39): typecheck error FS0041: No overloads match for method 'M'.
+E_RigidTypeAnnotation03.fsx(20,9,20,12): typecheck error FS0041: No overloads match for method 'M'.
 
 Known type of argument: decimal<N s ^ 2>
 
@@ -58,7 +58,7 @@ E_RigidTypeAnnotation03.fsx(21,14,21,18): typecheck error FS0001: This expressio
 but here has type
     'string'    
 
-E_RigidTypeAnnotation03.fsx(21,9,21,27): typecheck error FS0041: No overloads match for method 'M'.
+E_RigidTypeAnnotation03.fsx(21,9,21,12): typecheck error FS0041: No overloads match for method 'M'.
 
 Known type of argument: char
 

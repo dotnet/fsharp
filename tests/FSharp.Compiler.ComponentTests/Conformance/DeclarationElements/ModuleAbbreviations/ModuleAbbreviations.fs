@@ -31,7 +31,7 @@ module ModuleAbbreviations =
             (Error 39, Line 13, Col 15, Line 13, Col 17, "The value, namespace, type or module 'IO' is not defined.")
             (Error 965, Line 16, Col 1, Line 16, Col 43, "The path 'System.Text.RegularExpressions' is a namespace. A module abbreviation may not abbreviate a namespace.")
             (Error 39, Line 18, Col 19, Line 18, Col 21, "The namespace or module 'rx' is not defined.")
-            (Error 72, Line 21, Col 4, Line 21, Col 19, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
+            (Error 72, Line 21, Col 12, Line 21, Col 19, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
         ]
 
     // SOURCE=E_InvalidAbbrevName01.fs  SCFLAGS="--test:ErrorRanges"		# E_InvalidAbbrevName01.fs

@@ -86,13 +86,13 @@ let f5 () =
                 (
                     FSharpDiagnosticSeverity.Error,
                     3228,
-                    (12, 6, 12, 25),
+                    (12, 19, 12, 25),
                     "The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope."
                 )
                 (
                     FSharpDiagnosticSeverity.Error,
                     3228,
-                    (17, 10, 17, 19),
+                    (17, 13, 17, 19),
                     "The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope."
                 )
                 (
@@ -175,13 +175,13 @@ let test1 () =
                 (
                     FSharpDiagnosticSeverity.Warning,
                     52,
-                    (3, 30, 3, 45),
+                    (3, 32, 3, 45),
                     "The value has been copied to ensure the original is not mutated by this operation or because the copy is implicit when returning a struct from a member and another member is then accessed"
                 )
                 (
                     FSharpDiagnosticSeverity.Warning,
                     52,
-                    (7, 5, 7, 20),
+                    (7, 7, 7, 20),
                     "The value has been copied to ensure the original is not mutated by this operation or because the copy is implicit when returning a struct from a member and another member is then accessed"
                 )
                 (

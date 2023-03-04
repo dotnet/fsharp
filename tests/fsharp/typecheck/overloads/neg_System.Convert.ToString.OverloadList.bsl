@@ -1,5 +1,5 @@
 
-neg_System.Convert.ToString.OverloadList.fsx(1,1,1,31): typecheck error FS0041: No overloads match for method 'ToString'.
+neg_System.Convert.ToString.OverloadList.fsx(1,1,1,24): typecheck error FS0041: No overloads match for method 'ToString'.
 
 Known types of arguments: char * int
 
@@ -25,7 +25,7 @@ Available overloads:
  - System.Convert.ToString(value: uint32, provider: System.IFormatProvider) : string // Argument 'value' doesn't match
  - System.Convert.ToString(value: uint64, provider: System.IFormatProvider) : string // Argument 'value' doesn't match
 
-neg_System.Convert.ToString.OverloadList.fsx(2,1,2,47): typecheck error FS0041: No overloads match for method 'ToString'.
+neg_System.Convert.ToString.OverloadList.fsx(2,1,2,24): typecheck error FS0041: No overloads match for method 'ToString'.
 
 Known types of arguments: provider: char * value: int
 

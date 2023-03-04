@@ -11,7 +11,7 @@ Available overloads:
  - static member TestType.(+++) : a: TestType<'T,'S> * b: ('T -> 'S) -> 'T // Argument 'a' doesn't match
  - static member TestType.(+++) : a: TestType<'T,'S> * b: TestType<'T,'S> -> 'T // Argument 'a' doesn't match
 
-E_LessThanDotOpenParen001.fsx(25,10,25,45): typecheck error FS0041: No overloads match for method 'op_PlusPlusPlus'.
+E_LessThanDotOpenParen001.fsx(25,10,25,37): typecheck error FS0041: No overloads match for method 'op_PlusPlusPlus'.
 
 Known types of arguments: (string -> int) * TestType<int,string>
 
@@ -21,7 +21,7 @@ Available overloads:
  - static member TestType.(+++) : a: TestType<'T,'S> * b: ('T -> 'S) -> 'T // Argument 'a' doesn't match
  - static member TestType.(+++) : a: TestType<'T,'S> * b: TestType<'T,'S> -> 'T // Argument 'a' doesn't match
 
-E_LessThanDotOpenParen001.fsx(26,10,26,68): typecheck error FS0041: No overloads match for method 'op_PlusPlusPlus'.
+E_LessThanDotOpenParen001.fsx(26,10,26,37): typecheck error FS0041: No overloads match for method 'op_PlusPlusPlus'.
 
 Known types of arguments: (string -> int) * TestType<int,string>
 
