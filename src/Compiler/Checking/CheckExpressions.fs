@@ -1882,7 +1882,11 @@ let TransformAstForNestedUpdates cenv env overallTy (lid: LongIdent) exprBeingAs
             let rec buildLid res (id: Ident) =
                 function
                 | [] -> res
-                | (h: Ident) :: t -> if equals h.idRange id.idRange then h :: res else buildLid (h :: res) id t
+                | (h: Ident) :: t ->
+                    // Mark these hidden field accesses as synthetic so that they don't make it
+                    // into the name resolution sink.
+                    let h = ident(h.idText, h.idRange.MakeSynthetic())
+                    if equals h.idRange id.idRange then h :: res else buildLid (h :: res) id t
 
             let rec combineIds =
                 function
