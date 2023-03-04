@@ -1,8 +1,6 @@
 
 neg07.fs(7,10,7,29): typecheck error FS0049: Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.
 
-neg07.fs(7,10,7,29): typecheck error FS0049: Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.
-
 neg07.fs(24,13,24,23): typecheck error FS0039: The value or constructor 'UnionCase1' is not defined. Maybe you want one of the following:
    X.UnionCase1
 

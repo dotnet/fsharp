@@ -5,6 +5,7 @@ namespace Microsoft.FSharp.Collections
 open System
 open System.Collections
 open System.Collections.Generic
+open System.ComponentModel
 open System.Diagnostics
 open System.Text
 open Microsoft.FSharp.Core
@@ -1158,3 +1159,21 @@ module Set =
     [<CompiledName("MaxElement")>]
     let maxElement (set: Set<'T>) =
         set.MaximumElement
+
+/// <summary>Contains global operations specific to the Set collection class.</summary>
+module SetGlobalOperators =
+
+    /// <summary>Builds a set from a sequence of objects. The objects are indexed using generic comparison.</summary>
+    ///
+    /// <param name="elements">The input sequence of elements.</param>
+    ///
+    /// <returns>The created set.</returns>
+    /// 
+    /// <example id="set-1">
+    /// <code lang="fsharp">
+    /// let values = set [ 1; 2; 3; 5; 7; 11 ]
+    /// </code>
+    /// Evaluates to a set containing the given numbers.
+    /// </example>
+    [<CompiledName("CreateSet")>]
+    let set elements = Set.ofSeq elements

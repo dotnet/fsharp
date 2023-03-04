@@ -45,10 +45,6 @@ neg32.fs(59,4,59,33): typecheck error FS0671: A property cannot have explicit ty
 
 neg32.fs(62,10,62,12): typecheck error FS0039: The type parameter 'T is not defined.
 
-neg32.fs(62,10,62,12): typecheck error FS0039: The type parameter 'T is not defined.
-
-neg32.fs(65,11,65,13): typecheck error FS0039: The type parameter 'T is not defined.
-
 neg32.fs(65,11,65,13): typecheck error FS0039: The type parameter 'T is not defined.
 
 neg32.fs(69,65,69,86): typecheck error FS0033: The non-generic type 'System.EventArgs' does not expect any type arguments, but here is given 1 type argument(s)

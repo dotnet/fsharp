@@ -505,6 +505,7 @@ Microsoft.FSharp.Collections.SeqModule: Void Iterate2[T1,T2](Microsoft.FSharp.Co
 Microsoft.FSharp.Collections.SeqModule: Void IterateIndexed2[T1,T2](Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,Microsoft.FSharp.Core.Unit]]], System.Collections.Generic.IEnumerable`1[T1], System.Collections.Generic.IEnumerable`1[T2])
 Microsoft.FSharp.Collections.SeqModule: Void IterateIndexed[T](Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.Unit]], System.Collections.Generic.IEnumerable`1[T])
 Microsoft.FSharp.Collections.SeqModule: Void Iterate[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.Unit], System.Collections.Generic.IEnumerable`1[T])
+Microsoft.FSharp.Collections.SetGlobalOperators: Microsoft.FSharp.Collections.FSharpSet`1[T] CreateSet[T](System.Collections.Generic.IEnumerable`1[T])
 Microsoft.FSharp.Collections.SetModule: Boolean Contains[T](T, Microsoft.FSharp.Collections.FSharpSet`1[T])
 Microsoft.FSharp.Collections.SetModule: Boolean Exists[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], Microsoft.FSharp.Collections.FSharpSet`1[T])
 Microsoft.FSharp.Collections.SetModule: Boolean ForAll[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], Microsoft.FSharp.Collections.FSharpSet`1[T])

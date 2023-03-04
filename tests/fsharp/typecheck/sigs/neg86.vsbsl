@@ -1,8 +1,6 @@
 
 neg86.fsx(18,20,18,22): parse error FS3156: Unexpected token 'in' or incomplete expression
 
-neg86.fsx(18,20,18,22): parse error FS3156: Unexpected token 'in' or incomplete expression
-
 neg86.fsx(4,21,4,23): typecheck error FS3156: Unexpected token 'in' or incomplete expression
 
 neg86.fsx(8,13,8,17): typecheck error FS3096: 'join' must be followed by a variable name. Usage: join var in collection on (outerKey = innerKey). Note that parentheses are required after 'on'.

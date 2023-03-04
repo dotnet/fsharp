@@ -1,14 +1,6 @@
 
 neg77.fsx(134,15,134,16): parse error FS0058: Possible incorrect indentation: this token is offside of context started at position (133:19). Try indenting this token further or using standard formatting conventions.
 
-neg77.fsx(134,15,134,16): parse error FS0058: Possible incorrect indentation: this token is offside of context started at position (133:19). Try indenting this token further or using standard formatting conventions.
-
-neg77.fsx(134,15,134,16): parse error FS0010: Unexpected symbol '|' in expression
-
-neg77.fsx(134,15,134,16): parse error FS0058: Possible incorrect indentation: this token is offside of context started at position (133:19). Try indenting this token further or using standard formatting conventions.
-
-neg77.fsx(134,15,134,16): parse error FS0058: Possible incorrect indentation: this token is offside of context started at position (133:19). Try indenting this token further or using standard formatting conventions.
-
 neg77.fsx(134,15,134,16): parse error FS0010: Unexpected symbol '|' in expression
 
 neg77.fsx(153,75,153,79): typecheck error FS0001: The type 'Planet * 'a' is not compatible with the type 'Planet'

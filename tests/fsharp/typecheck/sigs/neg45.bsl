@@ -45,11 +45,7 @@ neg45.fs(79,28,79,33): typecheck error FS0193: A type parameter is missing a con
 
 neg45.fs(79,20,79,22): typecheck error FS0340: The signature and implementation are not compatible because the declaration of the type parameter 'T' requires a constraint of the form 'T :> System.IComparable
 
-neg45.fs(79,20,79,22): typecheck error FS0340: The signature and implementation are not compatible because the declaration of the type parameter 'T' requires a constraint of the form 'T :> System.IComparable
-
 neg45.fs(80,28,80,33): typecheck error FS0193: A type parameter is missing a constraint 'when 'T :> System.IComparable'
-
-neg45.fs(80,20,80,22): typecheck error FS0340: The signature and implementation are not compatible because the declaration of the type parameter 'T' requires a constraint of the form 'T :> System.IComparable
 
 neg45.fs(80,20,80,22): typecheck error FS0340: The signature and implementation are not compatible because the declaration of the type parameter 'T' requires a constraint of the form 'T :> System.IComparable
 

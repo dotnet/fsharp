@@ -4,6 +4,7 @@ namespace Microsoft.FSharp.Collections
 
 open System
 open System.Collections.Generic
+open System.ComponentModel
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Collections
 
@@ -233,12 +234,6 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison> =
     interface IReadOnlyCollection<'T>
     override Equals: obj -> bool
 
-namespace Microsoft.FSharp.Collections
-
-open System
-open System.Collections.Generic
-open Microsoft.FSharp.Core
-open Microsoft.FSharp.Collections
 
 /// <summary>Contains operations for working with values of type <see cref="T:Microsoft.FSharp.Collections.FSharpSet`1"/>.</summary>
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -821,3 +816,22 @@ module Set =
     /// </example>
     [<CompiledName("Difference")>]
     val difference: set1: Set<'T> -> set2: Set<'T> -> Set<'T>
+
+/// <summary>Contains operations specific to the Set collection class.</summary>
+[<AutoOpen>]
+module SetGlobalOperators =
+
+    /// <summary>Builds a set from a sequence of objects. The objects are indexed using generic comparison.</summary>
+    ///
+    /// <param name="elements">The input sequence of elements.</param>
+    ///
+    /// <returns>The created set.</returns>
+    /// 
+    /// <example id="set-1">
+    /// <code lang="fsharp">
+    /// let values = set [ 1; 2; 3; 5; 7; 11 ]
+    /// </code>
+    /// Evaluates to a set containing the given numbers.
+    /// </example>
+    [<CompiledName("CreateSet"); EditorBrowsableAttribute(EditorBrowsableState.Never)>]
+    val set: elements: seq<'T> -> Set<'T>

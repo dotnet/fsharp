@@ -112,7 +112,7 @@ module ExtraTopLevelOperators =
     /// </code>
     /// Evaluates to a set containing the given numbers.
     /// </example>
-    [<CompiledName("CreateSet")>]
+    [<CompiledName("CreateSet"); EditorBrowsableAttribute(EditorBrowsableState.Never)>]
     val set: elements: seq<'T> -> Set<'T>
 
     /// <summary>Builds an asynchronous workflow using computation expression syntax.</summary>

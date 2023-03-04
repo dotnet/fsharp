@@ -523,17 +523,18 @@ type TcGlobals(
   let fslib_MFIntrinsicFunctions_nleref        = mkNestedNonLocalEntityRef fslib_MFLanguagePrimitives_nleref "IntrinsicFunctions"
   let fslib_MFHashCompare_nleref               = mkNestedNonLocalEntityRef fslib_MFLanguagePrimitives_nleref "HashCompare"
   let fslib_MFOperators_nleref                 = mkNestedNonLocalEntityRef fslib_MFCore_nleref "Operators"
-  let fslib_MFByRefKinds_nleref                 = mkNestedNonLocalEntityRef fslib_MFCore_nleref "ByRefKinds"
+  let fslib_MFByRefKinds_nleref                = mkNestedNonLocalEntityRef fslib_MFCore_nleref "ByRefKinds"
   let fslib_MFOperatorIntrinsics_nleref        = mkNestedNonLocalEntityRef fslib_MFOperators_nleref "OperatorIntrinsics"
   let fslib_MFOperatorsUnchecked_nleref        = mkNestedNonLocalEntityRef fslib_MFOperators_nleref "Unchecked"
-  let fslib_MFOperatorsChecked_nleref        = mkNestedNonLocalEntityRef fslib_MFOperators_nleref "Checked"
+  let fslib_MFOperatorsChecked_nleref          = mkNestedNonLocalEntityRef fslib_MFOperators_nleref "Checked"
+  let fslib_MFSetOperators_nleref              = mkNestedNonLocalEntityRef fslib_MFCore_nleref "SetGlobalOperators"
   let fslib_MFExtraTopLevelOperators_nleref    = mkNestedNonLocalEntityRef fslib_MFCore_nleref "ExtraTopLevelOperators"
   let fslib_MFNullableOperators_nleref         = mkNestedNonLocalEntityRef fslib_MFLinq_nleref "NullableOperators"
-  let fslib_MFQueryRunExtensions_nleref              = mkNestedNonLocalEntityRef fslib_MFLinq_nleref "QueryRunExtensions"
+  let fslib_MFQueryRunExtensions_nleref        = mkNestedNonLocalEntityRef fslib_MFLinq_nleref "QueryRunExtensions"
   let fslib_MFQueryRunExtensionsLowPriority_nleref   = mkNestedNonLocalEntityRef fslib_MFQueryRunExtensions_nleref "LowPriority"
   let fslib_MFQueryRunExtensionsHighPriority_nleref  = mkNestedNonLocalEntityRef fslib_MFQueryRunExtensions_nleref "HighPriority"
 
-  let fslib_MFPrintfModule_nleref                 = mkNestedNonLocalEntityRef fslib_MFCore_nleref "PrintfModule"
+  let fslib_MFPrintfModule_nleref              = mkNestedNonLocalEntityRef fslib_MFCore_nleref "PrintfModule"
   let fslib_MFSeqModule_nleref                 = mkNestedNonLocalEntityRef fslib_MFCollections_nleref "SeqModule"
   let fslib_MFListModule_nleref                = mkNestedNonLocalEntityRef fslib_MFCollections_nleref "ListModule"
   let fslib_MFArrayModule_nleref               = mkNestedNonLocalEntityRef fslib_MFCollections_nleref "ArrayModule"
@@ -593,12 +594,12 @@ type TcGlobals(
                             fslib_MFOperatorIntrinsics_nleref
                             fslib_MFOperatorsUnchecked_nleref
                             fslib_MFOperatorsChecked_nleref
+                            fslib_MFSetOperators_nleref
                             fslib_MFExtraTopLevelOperators_nleref
                             fslib_MFNullableOperators_nleref
                             fslib_MFQueryRunExtensions_nleref
                             fslib_MFQueryRunExtensionsLowPriority_nleref
                             fslib_MFQueryRunExtensionsHighPriority_nleref
-
                             fslib_MFPrintfModule_nleref
                             fslib_MFSeqModule_nleref
                             fslib_MFListModule_nleref
