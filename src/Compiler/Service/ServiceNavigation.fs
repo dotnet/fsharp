@@ -742,7 +742,7 @@ module NavigateTo =
 
                 {
                     Name = name
-                    NeedsBackticks = PrettyNaming.DoesIdentifierNeedBackticks name
+                    NeedsBackticks = pathOfLid lid |> List.exists PrettyNaming.DoesIdentifierNeedBackticks
                     Range = rangeOfLid lid
                     IsSignature = isSignature
                     Kind = kind
