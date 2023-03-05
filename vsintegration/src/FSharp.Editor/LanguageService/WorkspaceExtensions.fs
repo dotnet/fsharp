@@ -21,7 +21,7 @@ module private CheckerExtensions =
                 let! sourceText = document.GetTextAsync(ct) |> Async.AwaitTask
                 let! version = document.GetTextVersionAsync ct |> Async.AwaitTask
                 let textVersionHash = version.GetHashCode()
-                return! checker.ParseFile(document.FilePath, sourceText.ToFSharpSourceText(), parsingOptions, cache=true, fileVersion=textVersionHash, userOpName=userOpName)
+                return! checker.ParseFile(document.FilePath, sourceText.ToFSharpSourceText(), parsingOptions, fileVersion=textVersionHash, userOpName=userOpName)
             }
 
         /// Parse and check the source text from the Roslyn document with possible stale results.
