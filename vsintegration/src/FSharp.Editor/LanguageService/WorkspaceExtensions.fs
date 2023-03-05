@@ -19,8 +19,9 @@ module private CheckerExtensions =
             async {
                 let! ct = Async.CancellationToken
                 let! sourceText = document.GetTextAsync(ct) |> Async.AwaitTask
-
-                return! checker.ParseFile(document.FilePath, sourceText.ToFSharpSourceText(), parsingOptions, userOpName=userOpName)
+                let! version = document.GetTextVersionAsync ct |> Async.AwaitTask
+                let textVersionHash = version.GetHashCode()
+                return! checker.ParseFile(document.FilePath, sourceText.ToFSharpSourceText(), parsingOptions, cache=true, fileVersion=textVersionHash, userOpName=userOpName)
             }
 
         /// Parse and check the source text from the Roslyn document with possible stale results.
@@ -68,7 +69,7 @@ module private CheckerExtensions =
                         | Some x -> async.Return (Some x)
                         | None ->
                             async {
-                                match checker.TryGetRecentCheckResultsForFile(filePath, options, userOpName=userOpName) with
+                                match checker.TryGetRecentCheckResultsForFile(filePath, options, fileVersion=textVersionHash, userOpName=userOpName) with
                                 | Some (parseResults, checkFileResults, _) ->
                                     return Some (parseResults, checkFileResults)
                                 | None ->

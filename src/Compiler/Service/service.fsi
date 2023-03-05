@@ -91,9 +91,15 @@ type public FSharpChecker =
     /// <param name="sourceText">The source to be parsed.</param>
     /// <param name="options">Parsing options for the project or script.</param>
     /// <param name="cache">Store the parse in a size-limited cache assocaited with the FSharpChecker. Default: true</param>
+    /// <param name="fileVersion">An integer that can be used to indicate the version of the file.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member ParseFile:
-        fileName: string * sourceText: ISourceText * options: FSharpParsingOptions * ?cache: bool * ?userOpName: string ->
+        fileName: string *
+        sourceText: ISourceText *
+        options: FSharpParsingOptions *
+        ?cache: bool *
+        ?fileVersion: int *
+        ?userOpName: string ->
             Async<FSharpParseFileResults>
 
     /// <summary>
@@ -104,10 +110,16 @@ type public FSharpChecker =
     /// <param name="source">The source to be parsed.</param>
     /// <param name="options">Parsing options for the project or script.</param>
     /// <param name="cache">Store the parse in a size-limited cache assocaited with the FSharpChecker. Default: true</param>
+    /// <param name="fileVersion">An integer that can be used to indicate the version of the file. This will be returned by TryGetRecentCheckResultsForFile when looking up the file.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     [<Obsolete("Please call checker.ParseFile instead.  To do this, you must also pass FSharpParsingOptions instead of FSharpProjectOptions. If necessary generate FSharpParsingOptions from FSharpProjectOptions by calling checker.GetParsingOptionsFromProjectOptions(options)")>]
     member ParseFileInProject:
-        fileName: string * source: string * options: FSharpProjectOptions * ?cache: bool * ?userOpName: string ->
+        fileName: string *
+        source: string *
+        options: FSharpProjectOptions *
+        ?cache: bool *
+        ?fileVersion: int *
+        ?userOpName: string ->
             Async<FSharpParseFileResults>
 
     /// <summary>
@@ -122,18 +134,17 @@ type public FSharpChecker =
     /// </summary>
     ///
     /// <param name="parseResults">The results of ParseFile for this file.</param>
-    /// <param name="fileName">The name of the file in the project whose source is being checked.</param>
-    /// <param name="fileVersion">An integer that can be used to indicate the version of the file. This will be returned by TryGetRecentCheckResultsForFile when looking up the file.</param>
-    /// <param name="source">The full source for the file.</param>
+    /// <param name="fileName">The name of the file in the project whose source is being checked.</param>    /// <param name="source">The full source for the file.</param>
     /// <param name="options">The options for the project or script.</param>
+    /// <param name="fileVersion">An integer that can be used to indicate the version of the file. This will be returned by TryGetRecentCheckResultsForFile when looking up the file.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     [<Obsolete("This member should no longer be used, please use 'CheckFileInProject'")>]
     member CheckFileInProjectAllowingStaleCachedResults:
         parseResults: FSharpParseFileResults *
         fileName: string *
-        fileVersion: int *
         source: string *
         options: FSharpProjectOptions *
+        ?fileVersion: int *
         ?userOpName: string ->
             Async<FSharpCheckFileAnswer option>
 
@@ -351,11 +362,11 @@ type public FSharpChecker =
     ///
     /// <param name="fileName">The file name for the file.</param>
     /// <param name="options">The options for the project or script, used to determine active --define conditionals and other options relevant to parsing.</param>
-    /// <param name="sourceText">Optionally, specify source that must match the previous parse precisely.</param>
+    /// <param name="fileVersion">Optionally, specify integer indicating current version of the file.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member TryGetRecentCheckResultsForFile:
-        fileName: string * options: FSharpProjectOptions * ?sourceText: ISourceText * ?userOpName: string ->
-            (FSharpParseFileResults * FSharpCheckFileResults (* hash *) * int64) option
+        fileName: string * options: FSharpProjectOptions * ?fileVersion: int * ?userOpName: string ->
+            (FSharpParseFileResults * FSharpCheckFileResults (* hash *) * int) option
 
     /// This function is called when the entire environment is known to have changed for reasons not encoded in the ProjectOptions of any project/compilation.
     member InvalidateAll: unit -> unit
