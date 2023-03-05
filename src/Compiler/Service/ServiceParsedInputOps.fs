@@ -344,7 +344,7 @@ module ParsedInput =
                                 Some(unionRanges synExpr.Range r)
 
                     // get this for e.g. "bar()."
-                    | SynExpr.DiscardAfterMissingQualificationAfterDot (synExpr, _) ->
+                    | SynExpr.DiscardAfterMissingQualificationAfterDot (synExpr, _, _) ->
                         if SyntaxTraversal.rangeContainsPosLeftEdgeInclusive synExpr.Range pos then
                             traverseSynExpr synExpr
                         else
@@ -466,7 +466,7 @@ module ParsedInput =
 
                     if not (rangeContainsPos expr.Range pos) then
                         match expr with
-                        | SynExpr.DiscardAfterMissingQualificationAfterDot (e, _m) ->
+                        | SynExpr.DiscardAfterMissingQualificationAfterDot (e, _, _m) ->
                             // This happens with e.g. "f(x)  .   $" when you bring up a completion list a few spaces after a dot.  The cursor is not 'in the parse tree',
                             // but the dive algorithm will dive down into this node, and this is the one case where we do want to give a result despite the cursor
                             // not properly being in a node.
@@ -540,7 +540,7 @@ module ParsedInput =
                                 // the cursor is left of the dot
                                 None
 
-                        | SynExpr.DiscardAfterMissingQualificationAfterDot (e, m) ->
+                        | SynExpr.DiscardAfterMissingQualificationAfterDot (e, _, m) ->
                             match traverseSynExpr e with
                             | None ->
                                 if posEq m.End pos then

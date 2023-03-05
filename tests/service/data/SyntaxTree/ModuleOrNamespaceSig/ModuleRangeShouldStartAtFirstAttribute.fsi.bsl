@@ -10,32 +10,17 @@ SigFile
                  LongIdent (SynLongIdent ([string], [], [None])),
                  SynValInfo ([], SynArgInfo ([], false, None)), false, false,
                  PreXmlDoc ((5,0), FSharp.Compiler.Xml.XmlDocCollector), None,
-                 None,
-                 /root/ModuleOrNamespaceSig/ModuleRangeShouldStartAtFirstAttribute.fsi (5,0--5,14),
-                 { LeadingKeyword =
-                    Val
-                      /root/ModuleOrNamespaceSig/ModuleRangeShouldStartAtFirstAttribute.fsi (5,0--5,3)
-                   InlineKeyword = None
-                   WithKeyword = None
-                   EqualsRange = None }),
-              /root/ModuleOrNamespaceSig/ModuleRangeShouldStartAtFirstAttribute.fsi (5,0--5,14))],
+                 None, (5,0--5,14), { LeadingKeyword = Val (5,0--5,3)
+                                      InlineKeyword = None
+                                      WithKeyword = None
+                                      EqualsRange = None }), (5,0--5,14))],
           PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
-          [{ Attributes =
-              [{ TypeName = SynLongIdent ([Foo], [], [None])
-                 ArgExpr =
-                  Const
-                    (Unit,
-                     /root/ModuleOrNamespaceSig/ModuleRangeShouldStartAtFirstAttribute.fsi (2,4--2,7))
-                 Target = None
-                 AppliesToGetterAndSetter = false
-                 Range =
-                  /root/ModuleOrNamespaceSig/ModuleRangeShouldStartAtFirstAttribute.fsi (2,4--2,7) }]
-             Range =
-              /root/ModuleOrNamespaceSig/ModuleRangeShouldStartAtFirstAttribute.fsi (2,0--2,11) }],
-          None,
-          /root/ModuleOrNamespaceSig/ModuleRangeShouldStartAtFirstAttribute.fsi (2,0--5,14),
-          { LeadingKeyword =
-             Module
-               /root/ModuleOrNamespaceSig/ModuleRangeShouldStartAtFirstAttribute.fsi (3,0--3,6) })],
-      { ConditionalDirectives = []
-        CodeComments = [] }, set []))
+          [{ Attributes = [{ TypeName = SynLongIdent ([Foo], [], [None])
+                             ArgExpr = Const (Unit, (2,4--2,7))
+                             Target = None
+                             AppliesToGetterAndSetter = false
+                             Range = (2,4--2,7) }]
+             Range = (2,0--2,11) }], None, (2,0--5,14),
+          { LeadingKeyword = Module (3,0--3,6) })], { ConditionalDirectives = []
+                                                      CodeComments = [] },
+      set []))

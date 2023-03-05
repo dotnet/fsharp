@@ -810,6 +810,13 @@ let NormalizeErrorString (text: string MaybeNull) =
 
     buf.ToString()
 
+/// Indicates whether a language feature check should be skipped. Typically used in recursive functions
+/// where we don't want repeated recursive calls to raise the same diagnostic multiple times.
+[<RequireQualifiedAccess>]
+type internal SuppressLanguageFeatureCheck =
+    | Yes
+    | No
+
 let private tryLanguageFeatureErrorAux (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: range) =
     if not (langVersion.SupportsFeature langFeature) then
         let featureStr = LanguageVersion.GetFeatureString langFeature

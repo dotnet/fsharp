@@ -55,6 +55,7 @@ param (
     [switch]$testCompilerComponentTests,
     [switch]$testFSharpCore,
     [switch]$testFSharpQA,
+    [switch]$testIntegration,
     [switch]$testScripting,
     [switch]$testVs,
     [switch]$testAll,
@@ -102,6 +103,7 @@ function Print-Usage() {
     Write-Host "  -testCoreClr                  Run tests against CoreCLR"
     Write-Host "  -testFSharpCore               Run FSharpCore unit tests"
     Write-Host "  -testFSharpQA                 Run F# Cambridge tests"
+    Write-Host "  -testIntegration              Run F# integration tests"
     Write-Host "  -testScripting                Run Scripting tests"
     Write-Host "  -testVs                       Run F# editor unit tests"
     Write-Host "  -testpack                     Verify built packages"
@@ -142,6 +144,7 @@ function Process-Arguments() {
         $script:testDesktop = $True
         $script:testCoreClr = $True
         $script:testFSharpQA = $True
+        $script:testIntegration = $True
         $script:testVs = $True
     }
 
@@ -154,6 +157,7 @@ function Process-Arguments() {
         $script:testCoreClr = $False
         $script:testFSharpCore = $False
         $script:testFSharpQA = $False
+        $script:testIntegration = $False
         $script:testVs = $False
         $script:testpack = $False
         $script:verifypackageshipstatus = $True
@@ -307,13 +311,15 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     if ($env:RunningAsPullRequest -ne "true" -and $noTestFilter -eq $false) {
         $args += " --filter TestCategory!=PullRequest"
     }
-
     
     if ($asBackgroundJob) {
         Write-Host("Starting on the background: $args")
         Write-Host("------------------------------------")
         $bgJob = Start-Job -ScriptBlock {       
             & $using:dotnetExe test $using:testProject -c $using:configuration -f $using:targetFramework -v n --test-adapter-path $using:testadapterpath --logger "nunit;LogFilePath=$using:testLogPath" /bl:$using:testBinLogPath  --blame --results-directory $using:ArtifactsDir\TestResults\$using:configuration
+            if ($LASTEXITCODE -ne 0) { 
+                throw "Command failed to execute with exit code $($LASTEXITCODE): $using:dotnetExe $using:args" 
+            }           
         }
         return $bgJob
     } else{
@@ -538,7 +544,7 @@ try {
         
         # Collect output from  background jobs
         Wait-job $bgJob | out-null
-        Receive-Job $bgJob 
+        Receive-Job $bgJob -ErrorAction Stop
     }
 
     if ($testCoreClr) {
@@ -553,7 +559,7 @@ try {
         
         # Collect output from  background jobs
         Wait-job $bgJob | out-null
-        Receive-Job $bgJob      
+        Receive-Job $bgJob -ErrorAction Stop  
     }
 
     if ($testFSharpQA) {

@@ -32,6 +32,11 @@
         <target state="translated">Si un type utilise les attributs [&lt;Sealed&gt;] et [&lt;AbstractClass&gt;], cela signifie qu’il est statique. Un constructeur supplémentaire n’est pas autorisé.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkAutoOpenAttributeInTypeAbbrev">
+        <source>FSharp.Core.AutoOpenAttribute should not be aliased.</source>
+        <target state="new">FSharp.Core.AutoOpenAttribute should not be aliased.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkConstructorWithArgumentsOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Constructor with arguments is not allowed.</source>
         <target state="translated">Si un type utilise les attributs [&lt;Sealed&gt;] et [&lt;AbstractClass&gt;], cela signifie qu’il est statique. Le constructeur avec des arguments n’est pas autorisé.</target>
@@ -183,8 +188,8 @@
         <note />
       </trans-unit>
       <trans-unit id="featureArithmeticInLiterals">
-        <source>Allow arithmetic and logical operations in literals</source>
-        <target state="translated">Autoriser les opérations arithmétiques et logiques dans les littéraux</target>
+        <source>Arithmetic and logical operations in literals, enum definitions and attributes</source>
+        <target state="needs-review-translation">Autoriser les opérations arithmétiques et logiques dans les littéraux</target>
         <note />
       </trans-unit>
       <trans-unit id="featureAttributesToRightOfModuleKeyword">
@@ -302,6 +307,11 @@
         <target state="translated">nameof</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureNonInlineLiteralsAsPrintfFormat">
+        <source>String values marked as literals and IL constants as printf format</source>
+        <target state="new">String values marked as literals and IL constants as printf format</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureNonVariablePatternsToRightOfAsPatterns">
         <source>non-variable patterns to the right of 'as' patterns</source>
         <target state="translated">modèles non variables à droite de modèles « as »</target>
@@ -372,6 +382,11 @@
         <target state="translated">modèle de trait de soulignement unique</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureStaticMembersInInterfaces">
+        <source>Static members in interfaces</source>
+        <target state="new">Static members in interfaces</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureStringInterpolation">
         <source>string interpolation</source>
         <target state="translated">interpolation de chaîne</target>
@@ -382,19 +397,16 @@
         <target state="translated">représentation de structure pour les modèles actifs</target>
         <note />
       </trans-unit>
-      
       <trans-unit id="featureTryWithInSeqExpressions">
         <source>Support for try-with in sequence expressions</source>
         <target state="new">Support for try-with in sequence expressions</target>
         <note />
       </trans-unit>
-
       <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
         <source>Raises warnings when an copy-and-update record expression changes all fields of a record.</source>
         <target state="new">Raises warnings when an copy-and-update record expression changes all fields of a record.</target>
         <note />
       </trans-unit>
-      
       <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
         <source>Raises warnings when 'let inline ... =' is used together with [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] attribute. Function is not getting inlined.</source>
         <target state="translated">Génère des avertissements lorsque « let inline ... = » est utilisé avec l’attribut [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;]. La fonction n’est pas inlined.</target>
@@ -4626,8 +4638,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcConcreteMembersIllegalInInterface">
-        <source>Interfaces cannot contain definitions of concrete members. You may need to define a constructor on your type to indicate that the type is a class.</source>
-        <target state="translated">Les interfaces ne peuvent pas contenir de définitions de membres concrets. Vous pouvez définir un constructeur sur votre type pour indiquer que le type est une classe.</target>
+        <source>Interfaces cannot contain definitions of concrete instance members. You may need to define a constructor on your type to indicate that the type is a class.</source>
+        <target state="needs-review-translation">Les interfaces ne peuvent pas contenir de définitions de membres concrets. Vous pouvez définir un constructeur sur votre type pour indiquer que le type est une classe.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcConstructorsDisallowedInExceptionAugmentation">

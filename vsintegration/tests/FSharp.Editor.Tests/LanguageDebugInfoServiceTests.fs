@@ -44,7 +44,7 @@ let main argv =
         |]
 
     [<Theory>]
-    [<MemberData(nameof(LanguageDebugInfoServiceTests.testCases))>]
+    [<MemberData(nameof (LanguageDebugInfoServiceTests.testCases))>]
     member this.TestDebugInfo(searchToken: string, expectedDataTip: string option) =
         let searchPosition = code.IndexOf(searchToken)
         Assert.True(searchPosition >= 0, $"SearchToken '{searchToken}' is not found in code")
@@ -70,9 +70,6 @@ let main argv =
         | Some (actualDataTipSpan) ->
             let actualDataTipText = sourceText.GetSubText(actualDataTipSpan).ToString()
 
-            Assert.True(
-                expectedDataTip.IsSome,
-                $"LanguageDebugInfoService produced a data tip while it shouldn't at: {actualDataTipText}"
-            )
+            Assert.True(expectedDataTip.IsSome, $"LanguageDebugInfoService produced a data tip while it shouldn't at: {actualDataTipText}")
 
             Assert.Equal(expectedDataTip.Value, actualDataTipText)

@@ -15,59 +15,27 @@ ImplFile
                           (None, SynValInfo ([], SynArgInfo ([], false, None)),
                            None),
                         Named
-                          (SynIdent (content, None), false, None,
-                           /root/MatchClause/RangeOfSingleSynMatchClauseFollowedByBar.fs (3,8--3,15)),
+                          (SynIdent (content, None), false, None, (3,8--3,15)),
                         None,
                         App
                           (NonAtomic, false, Ident tryDownloadFile, Ident url,
-                           /root/MatchClause/RangeOfSingleSynMatchClauseFollowedByBar.fs (3,18--3,37)),
-                        /root/MatchClause/RangeOfSingleSynMatchClauseFollowedByBar.fs (3,8--3,15),
-                        Yes
-                          /root/MatchClause/RangeOfSingleSynMatchClauseFollowedByBar.fs (3,4--3,37),
-                        { LeadingKeyword =
-                           Let
-                             /root/MatchClause/RangeOfSingleSynMatchClauseFollowedByBar.fs (3,4--3,7)
+                           (3,18--3,37)), (3,8--3,15), Yes (3,4--3,37),
+                        { LeadingKeyword = Let (3,4--3,7)
                           InlineKeyword = None
-                          EqualsRange =
-                           Some
-                             /root/MatchClause/RangeOfSingleSynMatchClauseFollowedByBar.fs (3,16--3,17) })],
+                          EqualsRange = Some (3,16--3,17) })],
                     App
-                      (NonAtomic, false, Ident Some, Ident content,
-                       /root/MatchClause/RangeOfSingleSynMatchClauseFollowedByBar.fs (4,4--4,16)),
-                    /root/MatchClause/RangeOfSingleSynMatchClauseFollowedByBar.fs (3,4--4,16),
-                    { InKeyword = None }),
+                      (NonAtomic, false, Ident Some, Ident content, (4,4--4,16)),
+                    (3,4--4,16), { InKeyword = None }),
                  [SynMatchClause
-                    (Named
-                       (SynIdent (ex, None), false, None,
-                        /root/MatchClause/RangeOfSingleSynMatchClauseFollowedByBar.fs (6,2--6,4)),
-                     None,
-                     Const
-                       (Unit,
-                        /root/MatchClause/RangeOfSingleSynMatchClauseFollowedByBar.fs (7,4--7,6)),
-                     /root/MatchClause/RangeOfSingleSynMatchClauseFollowedByBar.fs (6,2--7,6),
-                     Yes,
-                     { ArrowRange =
-                        Some
-                          /root/MatchClause/RangeOfSingleSynMatchClauseFollowedByBar.fs (6,5--6,7)
-                       BarRange =
-                        Some
-                          /root/MatchClause/RangeOfSingleSynMatchClauseFollowedByBar.fs (6,0--6,1) })],
-                 /root/MatchClause/RangeOfSingleSynMatchClauseFollowedByBar.fs (2,0--8,1),
-                 Yes
-                   /root/MatchClause/RangeOfSingleSynMatchClauseFollowedByBar.fs (2,0--2,3),
-                 Yes
-                   /root/MatchClause/RangeOfSingleSynMatchClauseFollowedByBar.fs (5,0--5,4),
-                 { TryKeyword =
-                    /root/MatchClause/RangeOfSingleSynMatchClauseFollowedByBar.fs (2,0--2,3)
-                   TryToWithRange =
-                    /root/MatchClause/RangeOfSingleSynMatchClauseFollowedByBar.fs (2,0--5,4)
-                   WithKeyword =
-                    /root/MatchClause/RangeOfSingleSynMatchClauseFollowedByBar.fs (5,0--5,4)
-                   WithToEndRange =
-                    /root/MatchClause/RangeOfSingleSynMatchClauseFollowedByBar.fs (5,0--8,1) }),
-              /root/MatchClause/RangeOfSingleSynMatchClauseFollowedByBar.fs (2,0--8,1))],
-          PreXmlDocEmpty, [], None,
-          /root/MatchClause/RangeOfSingleSynMatchClauseFollowedByBar.fs (2,0--9,0),
+                    (Named (SynIdent (ex, None), false, None, (6,2--6,4)), None,
+                     Const (Unit, (7,4--7,6)), (6,2--7,6), Yes,
+                     { ArrowRange = Some (6,5--6,7)
+                       BarRange = Some (6,0--6,1) })], (2,0--8,1),
+                 Yes (2,0--2,3), Yes (5,0--5,4), { TryKeyword = (2,0--2,3)
+                                                   TryToWithRange = (2,0--5,4)
+                                                   WithKeyword = (5,0--5,4)
+                                                   WithToEndRange = (5,0--8,1) }),
+              (2,0--8,1))], PreXmlDocEmpty, [], None, (2,0--9,0),
           { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

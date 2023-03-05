@@ -9,32 +9,18 @@ ImplFile
                 (Ident a, Ident b,
                  Some
                    (IfThenElse
-                      (Ident c, Ident d, None,
-                       Yes
-                         /root/IfThenElse/NestedElifInIfThenElse.fs (4,0--4,11),
-                       false,
-                       /root/IfThenElse/NestedElifInIfThenElse.fs (4,0--4,13),
-                       { IfKeyword =
-                          /root/IfThenElse/NestedElifInIfThenElse.fs (4,0--4,4)
-                         IsElif = true
-                         ThenKeyword =
-                          /root/IfThenElse/NestedElifInIfThenElse.fs (4,7--4,11)
-                         ElseKeyword = None
-                         IfToThenRange =
-                          /root/IfThenElse/NestedElifInIfThenElse.fs (4,0--4,11) })),
-                 Yes /root/IfThenElse/NestedElifInIfThenElse.fs (2,0--2,9),
-                 false, /root/IfThenElse/NestedElifInIfThenElse.fs (2,0--4,13),
-                 { IfKeyword =
-                    /root/IfThenElse/NestedElifInIfThenElse.fs (2,0--2,2)
+                      (Ident c, Ident d, None, Yes (4,0--4,11), false,
+                       (4,0--4,13), { IfKeyword = (4,0--4,4)
+                                      IsElif = true
+                                      ThenKeyword = (4,7--4,11)
+                                      ElseKeyword = None
+                                      IfToThenRange = (4,0--4,11) })),
+                 Yes (2,0--2,9), false, (2,0--4,13),
+                 { IfKeyword = (2,0--2,2)
                    IsElif = false
-                   ThenKeyword =
-                    /root/IfThenElse/NestedElifInIfThenElse.fs (2,5--2,9)
+                   ThenKeyword = (2,5--2,9)
                    ElseKeyword = None
-                   IfToThenRange =
-                    /root/IfThenElse/NestedElifInIfThenElse.fs (2,0--2,9) }),
-              /root/IfThenElse/NestedElifInIfThenElse.fs (2,0--4,13))],
-          PreXmlDocEmpty, [], None,
-          /root/IfThenElse/NestedElifInIfThenElse.fs (2,0--5,0),
-          { LeadingKeyword = None })], (true, false),
+                   IfToThenRange = (2,0--2,9) }), (2,0--4,13))], PreXmlDocEmpty,
+          [], None, (2,0--5,0), { LeadingKeyword = None })], (true, false),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
