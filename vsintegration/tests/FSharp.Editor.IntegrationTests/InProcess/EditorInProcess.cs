@@ -22,6 +22,16 @@ internal partial class EditorInProcess
         return textSnapshot.GetText();
     }
 
+    public async Task<string> GetCurrentLineTextAsync(CancellationToken cancellationToken)
+    {
+        await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+
+        var view = await TestServices.Editor.GetActiveTextViewAsync(cancellationToken);
+        var bufferPosition = view.Caret.Position.BufferPosition;
+        var line = bufferPosition.GetContainingLine();
+        return line.GetText();
+    }
+
     public async Task SetTextAsync(string text, CancellationToken cancellationToken)
     {
         await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);

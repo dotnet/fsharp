@@ -42,12 +42,12 @@ let increment = add 1
         await shell.ExecuteCommandAsync(VSStd97CmdID.GotoDefn, token);
         await workspace.WaitForAsyncOperationsAsync(token);
         
-        var actualText = await editor.GetTextAsync(token);
+        var actualText = await editor.GetCurrentLineTextAsync(token);
         Assert.Contains(expectedText, actualText);
     }
 
     [IdeFact]
-    public async Task GoesToDefinition_OtherFile_Async()
+    public async Task GoesToDefinition_AnotherFile_Async()
     {
         var token = HangMitigatingCancellationToken;
         var template = WellKnownProjectTemplates.FSharpNetCoreClassLibrary;
@@ -80,12 +80,12 @@ let increment = add 1
         await solutionExplorer.OpenFileAsync(projectName, "Math2.fs", token);
 
         await solutionExplorer.BuildSolutionAsync(token);
-        await editor.PlaceCaretAsync("add", token);
+        await editor.PlaceCaretAsync("add 1", token);
 
         await shell.ExecuteCommandAsync(VSStd97CmdID.GotoDefn, token);
         await workspace.WaitForAsyncOperationsAsync(token);
 
-        var actualText = await editor.GetTextAsync(token);
+        var actualText = await editor.GetCurrentLineTextAsync(token);
         Assert.Contains(expectedText, actualText);
     }
 }
