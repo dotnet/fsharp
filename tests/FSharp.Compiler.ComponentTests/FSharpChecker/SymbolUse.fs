@@ -62,11 +62,18 @@ val f: x: 'a -> TFirstV_1<'a>
         }
 
     [<Fact>]
-    let ``Function parameter, with signature file`` () =
+    let ``Function parameter, with signature file, part 1`` () =
         SyntheticProject.Create(sourceFile "First" [] |> addSignatureFile).Workflow {
             checkFile "First" (fun (typeCheckResult: FSharpCheckFileResults) ->
                 let symbolUse = typeCheckResult.GetSymbolUseAtLocation(5, 8, "let f2 x = x + 1", ["x"]) |> Option.defaultWith (fun () -> failwith "no symbol use found")
-                Assert.False(symbolUse.IsPrivateToFile)
+                Assert.False(symbolUse.IsPrivateToFile))
+        }
+
+    [<Fact>]
+    let ``Function parameter, with signature file, part 2`` () =
+        SyntheticProject.Create(sourceFile "First" [] |> addSignatureFile).Workflow {
+            checkFile "First" (fun (typeCheckResult: FSharpCheckFileResults) ->
+                let symbolUse = typeCheckResult.GetSymbolUseAtLocation(5, 8, "let f2 x = x + 1", ["x"]) |> Option.defaultWith (fun () -> failwith "no symbol use found")
                 Assert.True(symbolUse.IsPrivateToFileAndSignatureFile))
         }
 
