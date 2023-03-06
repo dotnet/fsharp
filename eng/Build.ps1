@@ -59,6 +59,7 @@ param (
     [switch]$testScripting,
     [switch]$testVs,
     [switch]$testAll,
+    [switch]$testAllButIntegration,
     [switch]$testpack,
     [string]$officialSkipTests = "false",
     [switch]$noVisualStudio,
