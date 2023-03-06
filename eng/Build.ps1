@@ -445,7 +445,7 @@ function EnablePreviewSdks() {
     }
 
     $vsId = $vsInfo.instanceId
-    $vsMajorVersion = $vsInfo.installationVersion.Split('.')[0]
+    $vsMajorVersion = 17 # $vsInfo.installationVersion.Split('.')[0]
 
     $instanceDir = Join-Path ${env:USERPROFILE} "AppData\Local\Microsoft\VisualStudio\$vsMajorVersion.0_$vsId"
     Create-Directory $instanceDir
