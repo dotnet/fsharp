@@ -346,10 +346,16 @@ stages:
               vs_release:
                 _configuration: Release
                 _testKind: testVs
-
+              inttests_release:
+                _configuration: Release
+                _testKind: testIntegration
           steps:
           - checkout: self
             clean: true
+
+          - powershell: eng\SetupVSHive.ps1
+            displayName: Setup VS Hive
+            condition: or(eq(variables['_testKind'], 'testVs'), eq(variables['_testKind'], 'testIntegration'))
 
           - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
             displayName: Build / Test
