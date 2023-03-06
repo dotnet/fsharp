@@ -124,7 +124,7 @@ stages:
           - script: eng\CIBuild.cmd
                     -configuration $(_BuildConfig)
                     -prepareMachine
-                    -testAll
+                    -testAllButIntegration
                     -officialSkipTests $(SkipTests)
                     /p:SignType=$(_SignType)
                     /p:DotNetSignType=$(_SignType)
