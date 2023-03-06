@@ -3168,10 +3168,11 @@ FSharp.Compiler.EditorServices.NavigableContainer: Int32 CompareTo(System.Object
 FSharp.Compiler.EditorServices.NavigableContainer: Int32 CompareTo(System.Object, System.Collections.IComparer)
 FSharp.Compiler.EditorServices.NavigableContainer: Int32 GetHashCode()
 FSharp.Compiler.EditorServices.NavigableContainer: Int32 GetHashCode(System.Collections.IEqualityComparer)
-FSharp.Compiler.EditorServices.NavigableContainer: System.String LogicalName
+FSharp.Compiler.EditorServices.NavigableContainer: System.String FullName
+FSharp.Compiler.EditorServices.NavigableContainer: System.String Name
+FSharp.Compiler.EditorServices.NavigableContainer: System.String get_FullName()
+FSharp.Compiler.EditorServices.NavigableContainer: System.String get_Name()
 FSharp.Compiler.EditorServices.NavigableContainer: System.String ToString()
-FSharp.Compiler.EditorServices.NavigableContainer: System.String get_LogicalName()
-FSharp.Compiler.EditorServices.NavigableContainer: Void .ctor(FSharp.Compiler.EditorServices.NavigableContainerType, System.String)
 FSharp.Compiler.EditorServices.NavigableContainerType+Tags: Int32 Exception
 FSharp.Compiler.EditorServices.NavigableContainerType+Tags: Int32 File
 FSharp.Compiler.EditorServices.NavigableContainerType+Tags: Int32 Module
@@ -3222,10 +3223,12 @@ FSharp.Compiler.EditorServices.NavigableItem: FSharp.Compiler.Text.Range Range
 FSharp.Compiler.EditorServices.NavigableItem: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.EditorServices.NavigableItem: Int32 GetHashCode()
 FSharp.Compiler.EditorServices.NavigableItem: Int32 GetHashCode(System.Collections.IEqualityComparer)
-FSharp.Compiler.EditorServices.NavigableItem: System.String LogicalName
 FSharp.Compiler.EditorServices.NavigableItem: System.String ToString()
-FSharp.Compiler.EditorServices.NavigableItem: System.String get_LogicalName()
-FSharp.Compiler.EditorServices.NavigableItem: Void .ctor(System.String, FSharp.Compiler.Text.Range, Boolean, FSharp.Compiler.EditorServices.NavigableItemKind, FSharp.Compiler.EditorServices.NavigableContainer)
+FSharp.Compiler.EditorServices.NavigableItem: Boolean NeedsBackticks
+FSharp.Compiler.EditorServices.NavigableItem: Boolean get_NeedsBackticks()
+FSharp.Compiler.EditorServices.NavigableItem: System.String Name
+FSharp.Compiler.EditorServices.NavigableItem: System.String get_Name()
+FSharp.Compiler.EditorServices.NavigableItem: Void .ctor(System.String, Boolean, FSharp.Compiler.Text.Range, Boolean, FSharp.Compiler.EditorServices.NavigableItemKind, FSharp.Compiler.EditorServices.NavigableContainer)
 FSharp.Compiler.EditorServices.NavigableItemKind+Tags: Int32 Constructor
 FSharp.Compiler.EditorServices.NavigableItemKind+Tags: Int32 EnumCase
 FSharp.Compiler.EditorServices.NavigableItemKind+Tags: Int32 Exception
