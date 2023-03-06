@@ -25,6 +25,11 @@ module HeyHo =
     let two'' = 2
 
     type CamelCaseLongName = class end
+
+    module Alpha =
+        module Beta =
+            type Gamma() =
+                member val Delta = 3
 """
 
     let sourceText = SourceText.From(fileContents)
@@ -71,3 +76,7 @@ module HeyHo =
 
     [<Fact>]
     let ``operator`` () = assertResultsContain "+>" "+>"
+
+    [<Fact>]
+    let ``nested containers`` () =
+        assertResultsContain "hh.a.b.g.d" "Delta"
