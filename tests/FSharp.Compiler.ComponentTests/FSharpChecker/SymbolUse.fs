@@ -6,6 +6,9 @@ open Xunit
 open FSharp.Test.ProjectGeneration
 open FSharp.Compiler.Symbols
 
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.NameResolution
+
 
 module IsPrivateToFile =
 
@@ -79,42 +82,40 @@ val f: x: 'a -> TFirstV_1<'a>
                 Assert.True(symbolUse.IsPrivateToFileAndSignatureFile))
         }
 
-open FSharp.Compiler.EditorServices
-open FSharp.Compiler.NameResolution
-
     [<Fact>]
     let ``Function parameter, with signature file, part 3`` () =
-        SyntheticProject.Create(sourceFile "First" [] |> addSignatureFile).Workflow {
-            checkFile "First" (fun (typeCheckResult: FSharpCheckFileResults) ->
-                let symbolUse = typeCheckResult.GetSymbolUseAtLocation(5, 8, "let f2 x = x + 1", ["x"]) |> Option.defaultWith (fun () -> failwith "no symbol use found")
 
-                let couldBeParameter, declarationLocation =
-                    match symbolUse.Symbol with
-                    | :? FSharpParameter as p -> true, Some p.DeclarationLocation
-                    | :? FSharpMemberOrFunctionOrValue as m when not m.IsModuleValueOrMember -> true, Some m.DeclarationLocation
-                    | _ -> false, None
+        for attempt in 1 .. 20 do
+            SyntheticProject.Create(sourceFile "First" [] |> addSignatureFile).Workflow {
+                checkFile "First" (fun (typeCheckResult: FSharpCheckFileResults) ->
+                    let symbolUse = typeCheckResult.GetSymbolUseAtLocation(5, 8, "let f2 x = x + 1", ["x"]) |> Option.defaultWith (fun () -> failwith "no symbol use found")
 
-                let thisIsSignature = SourceFileImpl.IsSignatureFile symbolUse.Range.FileName
+                    let couldBeParameter, declarationLocation =
+                        match symbolUse.Symbol with
+                        | :? FSharpParameter as p -> true, Some p.DeclarationLocation
+                        | :? FSharpMemberOrFunctionOrValue as m when not m.IsModuleValueOrMember -> true, Some m.DeclarationLocation
+                        | _ -> false, None
 
-                let argReprInfo =
-                    match symbolUse.Symbol.Item with
-                    | Item.Value v -> v.Deref.ArgReprInfoForDisplay
-                    | _ -> None
+                    let thisIsSignature = SourceFileImpl.IsSignatureFile symbolUse.Range.FileName
 
-                let signatureLocation = argReprInfo |> Option.bind (fun a -> a.OtherRange)
+                    let argReprInfo =
+                        match symbolUse.Symbol.Item with
+                        | Item.Value v -> v.Deref.ArgReprInfoForDisplay
+                        | _ -> None
 
-                let diagnostics = $"couldBeParameter: {couldBeParameter} \n declarationLocation: {declarationLocation} \n thisIsSignature: {thisIsSignature} \n signatureLocation: {signatureLocation} \n argReprInfo: {argReprInfo}"
+                    let signatureLocation = argReprInfo |> Option.bind (fun a -> a.OtherRange)
 
-                let result =
-                    couldBeParameter
-                    && (thisIsSignature
-                        || (signatureLocation.IsSome && signatureLocation <> declarationLocation))
+                    let diagnostics = $"#{attempt} couldBeParameter: {couldBeParameter} \n declarationLocation: {declarationLocation} \n thisIsSignature: {thisIsSignature} \n signatureLocation: {signatureLocation} \n argReprInfo: {argReprInfo}"
 
-                if not result then
-                    failwith diagnostics)
-        }
+                    let result =
+                        couldBeParameter
+                        && (thisIsSignature
+                            || (signatureLocation.IsSome && signatureLocation <> declarationLocation))
 
-
+                    if not result then
+                        failwith diagnostics)
+            }
+            |> ignore
 
     // [<Fact>] This is a bug - https://github.com/dotnet/fsharp/issues/14419
     let ``Private function, with signature file`` () =
