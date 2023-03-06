@@ -77,11 +77,11 @@
             "group": "build"
         },
         {
-            "label": "Run tests (all but integration)",
+            "label": "Run tests (all)",
             "command": "./build.sh",
             "type": "shell",
             "args": [
-                "-testAllButIntegration"
+                "-testAll"
             ],
             "windows": {
                 "command": "${workspaceFolder}/Build.cmd",
