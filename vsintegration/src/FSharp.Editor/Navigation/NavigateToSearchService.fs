@@ -143,7 +143,8 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>]
 
     let processDocument (tryMatch: NavigableItem -> PatternMatch option) (kinds: IImmutableSet<string>) (document: Document) =
         async {
-            let! sourceText = document.GetTextAsync Async.CancellationToken |> Async.AwaitTask
+            let! ct = Async.CancellationToken
+            let! sourceText = document.GetTextAsync ct |> Async.AwaitTask
 
             let processItem item =
                 asyncMaybe {
