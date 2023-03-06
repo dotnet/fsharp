@@ -6,19 +6,23 @@ using Microsoft.CodeAnalysis.Testing;
 using Microsoft.VisualStudio.Extensibility.Testing;
 using System.Threading.Tasks;
 using Xunit;
+using static Microsoft.VisualStudio.VSConstants;
 
 namespace FSharp.Editor.IntegrationTests;
 
 public class GoToDefinitionTests : AbstractIntegrationTest
 {
-
     [IdeFact]
-    public async Task RoslynWay_Async()
+    public async Task GoesToDefinition_SameFile_Async()
     {
         var token = HangMitigatingCancellationToken;
         var template = WellKnownProjectTemplates.FSharpNetCoreClassLibrary;
+
         var solutionExplorer = TestServices.SolutionExplorer;
         var editor = TestServices.Editor;
+        var shell = TestServices.Shell;
+        var workspace = TestServices.Workspace;
+
         var code = """
 module Test
 
@@ -26,23 +30,53 @@ let add x y = x + y
 
 let increment = add 1
 """;
+        var expectedText = "let add x y = x + y";
 
-        await solutionExplorer.CreateSolutionAsync(nameof(BuildProjectTests), token);
+        await solutionExplorer.CreateSolutionAsync(nameof(GoToDefinitionTests), token);
         await solutionExplorer.AddProjectAsync("Library", template, token);
         await solutionExplorer.RestoreNuGetPackagesAsync(token);
         await editor.SetTextAsync(code, token);
-
         await solutionExplorer.BuildSolutionAsync(token);
-
         await editor.PlaceCaretAsync("add 1", token);
 
-        await editor.GoToDefinitionAsync(token);
+        await shell.ExecuteCommandAsync(VSStd97CmdID.GotoDefn, token);
+        await workspace.WaitForAsyncOperationsAsync(token);
+        
+        var actualText = await editor.GetTextAsync(token);
+        Assert.Contains(expectedText, actualText);
+    }
 
+    [IdeFact]
+    public async Task GoesToDefinition_OtherFile_Async()
+    {
+        var token = HangMitigatingCancellationToken;
+        var template = WellKnownProjectTemplates.FSharpNetCoreClassLibrary;
+
+        var solutionExplorer = TestServices.SolutionExplorer;
+        var editor = TestServices.Editor;
+        var shell = TestServices.Shell;
+        var workspace = TestServices.Workspace;
+
+        var code = """
+module Test
+
+let add x y = x + y
+
+let increment = add 1
+""";
         var expectedText = "let add x y = x + y";
 
-        var view = await editor.GetActiveTextViewAsync(token);
-        var editorText = view.TextSnapshot.GetText();
+        await solutionExplorer.CreateSolutionAsync(nameof(GoToDefinitionTests), token);
+        await solutionExplorer.AddProjectAsync("Library", template, token);
+        await solutionExplorer.RestoreNuGetPackagesAsync(token);
+        await editor.SetTextAsync(code, token);
+        await solutionExplorer.BuildSolutionAsync(token);
+        await editor.PlaceCaretAsync("add 1", token);
 
-        Assert.Contains(expectedText, editorText);
+        await shell.ExecuteCommandAsync(VSStd97CmdID.GotoDefn, token);
+        await workspace.WaitForAsyncOperationsAsync(token);
+
+        var actualText = await editor.GetTextAsync(token);
+        Assert.Contains(expectedText, actualText);
     }
 }
