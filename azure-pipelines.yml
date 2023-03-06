@@ -346,6 +346,7 @@ stages:
               vs_release:
                 _configuration: Release
                 _testKind: testVs
+          ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
               inttests_release:
                 _configuration: Release
                 _testKind: testIntegration
