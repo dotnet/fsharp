@@ -140,6 +140,47 @@ internal partial class SolutionExplorerInProcess
         return pane;
     }
 
+    public async Task AddFileAsync(string projectName, string fileName, string? contents, CancellationToken cancellationToken)
+    {
+        await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+
+        var project = await GetProjectAsync(projectName, cancellationToken);
+        var projectDirectory = Path.GetDirectoryName(project.FullName);
+        var filePath = Path.Combine(projectDirectory, fileName);
+        var directoryPath = Path.GetDirectoryName(filePath);
+        Directory.CreateDirectory(directoryPath);
+
+        File.WriteAllText(filePath, contents);
+        _ = project.ProjectItems.AddFromFile(filePath);
+    }
+
+    public async Task OpenFileAsync(string projectName, string relativeFilePath, CancellationToken cancellationToken)
+    {
+        await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+
+        var filePath = await GetAbsolutePathForProjectRelativeFilePathAsync(projectName, relativeFilePath, cancellationToken);
+        VsShellUtilities.OpenDocument(ServiceProvider.GlobalProvider, filePath, VSConstants.LOGVIEWID.Code_guid, out _, out _, out _, out var view);
+
+        // Reliably set focus using NavigateToLineAndColumn
+        var textManager = await GetRequiredGlobalServiceAsync<SVsTextManager, IVsTextManager>(cancellationToken);
+        ErrorHandler.ThrowOnFailure(view.GetBuffer(out var textLines));
+        ErrorHandler.ThrowOnFailure(view.GetCaretPos(out var line, out var column));
+        ErrorHandler.ThrowOnFailure(textManager.NavigateToLineAndColumn(textLines, VSConstants.LOGVIEWID.Code_guid, line, column, line, column));
+    }
+
+    private async Task<string> GetAbsolutePathForProjectRelativeFilePathAsync(string projectName, string relativeFilePath, CancellationToken cancellationToken)
+    {
+        await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+
+        var dte = await GetRequiredGlobalServiceAsync<SDTE, EnvDTE.DTE>(cancellationToken);
+        var solution = dte.Solution;
+        Assumes.Present(solution);
+
+        var project = solution.Projects.Cast<EnvDTE.Project>().First(x => x.Name == projectName);
+        var projectPath = Path.GetDirectoryName(project.FullName);
+        return Path.Combine(projectPath, relativeFilePath);
+    }
+
     private async Task<IEnumerable<string>> WaitForBuildToFinishAsync(IVsOutputWindowPane buildOutputWindowPane, CancellationToken cancellationToken)
     {
         await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
