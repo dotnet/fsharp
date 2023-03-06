@@ -97,6 +97,17 @@ module IncrementalBuilderEventTesting =
 
 module Tc = CheckExpressions
 
+module Caching =
+    let mkKey (source: FSharpSource) = 
+        source.GetTextContainer().GetHashCode()
+
+    let areSame (k1, k2) = k1 = k2
+
+    let cache = MruCache(200, areSame)
+
+    let token = obj()
+
+
 // This module is only here to contain the SyntaxTree type as to avoid ambiguity with the module FSharp.Compiler.Syntax.
 [<AutoOpen>]
 module IncrementalBuildSyntaxTree =
@@ -113,7 +124,6 @@ module IncrementalBuildSyntaxTree =
         ) =
 
         let fileName = source.FilePath
-        let mutable weakCache: WeakReference<_> option = None
 
         let parse(sigNameOpt: QualifiedNameOfFile option) =
 
@@ -161,7 +171,7 @@ module IncrementalBuildSyntaxTree =
                 let res = input, sourceRange, fileName, diagnosticsLogger.GetDiagnostics()
                 // If we do not skip parsing the file, then we can cache the real result.
                 if not canSkip then
-                    weakCache <- Some(WeakReference<_>(res))
+                    Caching.cache.Set(Caching.token, Caching.mkKey source, res)
                 res
             with exn ->
                 let msg = sprintf "unexpected failure in SyntaxTree.parse\nerror = %s" (exn.ToString())
@@ -170,11 +180,8 @@ module IncrementalBuildSyntaxTree =
 
         /// Parse the given file and return the given input.
         member _.Parse sigNameOpt =
-            match weakCache with
-            | Some weakCache ->
-                match weakCache.TryGetTarget() with
-                | true, res -> res
-                | _ -> parse sigNameOpt
+            match Caching.cache.TryGet(Caching.token, Caching.mkKey source) with
+            | Some res -> res
             | _ -> parse sigNameOpt
 
         member _.Invalidate() =
