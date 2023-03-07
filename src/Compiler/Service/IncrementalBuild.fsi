@@ -245,6 +245,8 @@ type internal IncrementalBuilder =
     member GetParseResultsForFile:
         fileName: string -> ParsedInput * range * string * (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
 
+    member SourceTextChanged: fileName: string -> unit
+
     member NotifyFileChanged: fileName: string * timeStamp: DateTime -> NodeCode<unit>
 
     /// Create the incremental builder

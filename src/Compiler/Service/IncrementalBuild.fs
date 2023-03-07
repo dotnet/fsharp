@@ -97,20 +97,10 @@ module IncrementalBuilderEventTesting =
 
 module Tc = CheckExpressions
 
-module Caching =
-    let mkKey (source: FSharpSource) = 
-        source.GetTextContainer().GetHashCode()
-
-    let areSame (k1, k2) = k1 = k2
-
-    let cache = MruCache(200, areSame)
-
-    let token = obj()
-
-
 // This module is only here to contain the SyntaxTree type as to avoid ambiguity with the module FSharp.Compiler.Syntax.
 [<AutoOpen>]
 module IncrementalBuildSyntaxTree =
+    open System.Runtime.CompilerServices
 
     /// Information needed to lazily parse a file to get a ParsedInput. Internally uses a weak cache.
     [<Sealed>]
@@ -122,6 +112,10 @@ module IncrementalBuildSyntaxTree =
             source: FSharpSource,
             isLastCompiland
         ) =
+
+        static let cache = ConditionalWeakTable<TcConfig, ConditionalWeakTable<_, _>>()
+
+        let projectCache = cache.GetOrCreateValue(tcConfig)
 
         let fileName = source.FilePath
 
@@ -168,24 +162,20 @@ module IncrementalBuildSyntaxTree =
 
                 fileParsed.Trigger fileName
 
-                let res = input, sourceRange, fileName, diagnosticsLogger.GetDiagnostics()
-                // If we do not skip parsing the file, then we can cache the real result.
-                if not canSkip then
-                    Caching.cache.Set(Caching.token, Caching.mkKey source, res)
-                res
+                input, sourceRange, fileName, diagnosticsLogger.GetDiagnostics()
+
             with exn ->
                 let msg = sprintf "unexpected failure in SyntaxTree.parse\nerror = %s" (exn.ToString())
                 System.Diagnostics.Debug.Assert(false, msg)
                 failwith msg
 
         /// Parse the given file and return the given input.
-        member _.Parse sigNameOpt =
-            match Caching.cache.TryGet(Caching.token, Caching.mkKey source) with
-            | Some res -> res
-            | _ -> parse sigNameOpt
+        member _.Parse(sigNameOpt) =
+            projectCache.GetValue(source, fun _ -> parse sigNameOpt)
 
-        member _.Invalidate() =
-            SyntaxTree(tcConfig, fileParsed, lexResourceManager, sourceRange, source, isLastCompiland)
+        member _.Invalidate() = projectCache.Remove(source) |> ignore
+
+        static member Invalidate(tcConfig, source) = cache.GetOrCreateValue(tcConfig).Remove(source) |> ignore
 
         member _.FileName = fileName
 
@@ -356,9 +346,7 @@ type BoundModel private (tcConfig: TcConfig,
         // If partial checking is enabled and we have a backing sig file, then use the partial state. The partial state contains the sig state.
         if tcInfoNode.HasFull && enablePartialTypeChecking && hasSig then
             // Always invalidate the syntax tree cache.
-            let newSyntaxTreeOpt =
-                syntaxTreeOpt
-                |> Option.map (fun x -> x.Invalidate())
+            syntaxTreeOpt |> Option.iter (fun x -> x.Invalidate())
 
             let newTcInfoStateOpt =
                 match tcInfoNode with
@@ -377,7 +365,7 @@ type BoundModel private (tcConfig: TcConfig,
                 beforeFileChecked,
                 fileChecked,
                 prevTcInfo,
-                newSyntaxTreeOpt,
+                syntaxTreeOpt,
                 newTcInfoStateOpt)
         else
             this
@@ -1435,6 +1423,11 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         let syntaxTree = GetSyntaxTree initialState.tcConfig initialState.fileParsed initialState.lexResourceManager fileInfo
         syntaxTree.Parse None
 
+    member builder.SourceTextChanged(fileName) =
+        let slotOfFile = builder.GetSlotOfFileName fileName
+        let _, source, _ = fileNames[slotOfFile]
+        SyntaxTree.Invalidate(initialState.tcConfig, source)
+
     member builder.NotifyFileChanged(fileName, timeStamp) =
         node {
             let slotOfFile = builder.GetSlotOfFileName fileName
@@ -1681,7 +1674,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             let getFSharpSource fileName =
                 getSource
                 |> Option.map(fun getSource ->
-                    let getTimeStamp() = DateTime.UtcNow
+                    let creationTime = DateTime.UtcNow
+                    let getTimeStamp = fun () -> creationTime
                     let getSourceText() = getSource fileName
                     FSharpSource.Create(fileName, getTimeStamp, getSourceText))
                 |> Option.defaultWith(fun () -> FSharpSource.CreateFromFile(fileName))
