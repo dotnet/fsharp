@@ -1860,7 +1860,7 @@ let inline conditionalAdd condition flagToAdd source =
 
 let NoMetadataIdx = -1
 
-[<NoComparison; NoEquality>]
+[<NoComparison; NoEquality; StructuredFormatDisplay("{DebugText}")>]
 type ILMethodDef
     (
         name: string,
@@ -2098,6 +2098,11 @@ type ILMethodDef
 
     member x.WithRuntime(condition) =
         x.With(implAttributes = (x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.Runtime))
+
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText = x.ToString()
+
+    override x.ToString() = "method " + x.Name
 
 /// Index table by name and arity.
 type MethodDefMap = Map<string, ILMethodDef list>
@@ -2560,7 +2565,7 @@ let convertInitSemantics (init: ILTypeInit) =
     | ILTypeInit.BeforeField -> TypeAttributes.BeforeFieldInit
     | ILTypeInit.OnAny -> enum 0
 
-[<NoComparison; NoEquality>]
+[<NoComparison; NoEquality; StructuredFormatDisplay("{DebugText}")>]
 type ILTypeDef
     (
         name: string,
@@ -2773,6 +2778,11 @@ type ILTypeDef
 
     member x.WithInitSemantics(init) =
         x.With(attributes = (x.Attributes ||| convertInitSemantics init))
+
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText = x.ToString()
+
+    override x.ToString() = "type " + x.Name
 
 and [<Sealed>] ILTypeDefs(f: unit -> ILPreTypeDef[]) =
 
