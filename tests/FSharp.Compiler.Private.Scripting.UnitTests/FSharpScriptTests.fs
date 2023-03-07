@@ -11,6 +11,7 @@ open System.Threading
 open System.Threading.Tasks
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Test.ScriptHelpers
+open FSharp.Test.Utilities
 
 open Xunit
 

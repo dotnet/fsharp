@@ -425,6 +425,13 @@ val NewlineifyErrorString: message: string -> string
 /// which is decoded by the IDE with 'NewlineifyErrorString' back into newlines, so that multi-line errors can be displayed in QuickInfo
 val NormalizeErrorString: text: string -> string
 
+/// Indicates whether a language feature check should be skipped. Typically used in recursive functions
+/// where we don't want repeated recursive calls to raise the same diagnostic multiple times.
+[<RequireQualifiedAccess>]
+type SuppressLanguageFeatureCheck =
+    | Yes
+    | No
+
 val checkLanguageFeatureError: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> unit
 
 val checkLanguageFeatureAndRecover: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> unit

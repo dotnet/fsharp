@@ -59,6 +59,7 @@ param (
     [switch]$testScripting,
     [switch]$testVs,
     [switch]$testAll,
+    [switch]$testAllButIntegration,
     [switch]$testpack,
     [string]$officialSkipTests = "false",
     [switch]$noVisualStudio,
@@ -95,6 +96,7 @@ function Print-Usage() {
     Write-Host ""
     Write-Host "Test actions"
     Write-Host "  -testAll                      Run all tests"
+    Write-Host "  -testAllButIntegration        Run all but integration tests"
     Write-Host "  -testCambridge                Run Cambridge tests"
     Write-Host "  -testCompiler                 Run FSharpCompiler unit tests"
     Write-Host "  -testCompilerService          Run FSharpCompilerService unit tests"
@@ -148,8 +150,17 @@ function Process-Arguments() {
         $script:testVs = $True
     }
 
+    if ($testAllButIntegration) {
+        $script:testDesktop = $True
+        $script:testCoreClr = $True
+        $script:testFSharpQA = $True
+        $script:testIntegration = $False
+        $script:testVs = $True
+    }
+
     if ([System.Boolean]::Parse($script:officialSkipTests)) {
         $script:testAll = $False
+        $script:testAllButIntegration = $False
         $script:testCambridge = $False
         $script:testCompiler = $False
         $script:testCompilerService = $False

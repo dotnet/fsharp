@@ -108,6 +108,7 @@ You can find all test options as separate flags. For example `build -testAll`:
 
 ```shell
   -testAll                  Run all tests
+  -testAllButIntegration    Run all but integration tests
   -testCambridge            Run Cambridge tests
   -testCompiler             Run FSharpCompiler unit tests
   -testCompilerService      Run FSharpCompilerService unit tests
@@ -188,13 +189,13 @@ or
 Some of the code in this repository is formatted automatically by [Fantomas](https://github.com/fsprojects/fantomas). To format all files use:
 
 ```cmd
-dotnet fantomas src -r
+dotnet fantomas . -r
 ```
 
 The formatting is checked automatically by CI:
 
 ```cmd
-dotnet fantomas src -r --check
+dotnet fantomas . -r --check
 ```
 
 At the time of writing only a subset of signature files (`*.fsi`) are formatted. See the settings in `.fantomasignore` and `.editorconfig`.
@@ -219,8 +220,9 @@ devenv.exe /rootsuffix RoslynDev
 
 ### Deploy your changes into a current Visual Studio installation
 
-If you'd like to "run with your changes", you can produce a VSIX and install it into your current Visual Studio instance:
+If you'd like to "run with your changes", you can produce a VSIX and install it into your current Visual Studio instance.
 
+For this, run the following using the VS Developer PowerShell from the repo root:
 ```shell
 VSIXInstaller.exe /u:"VisualFSharp"
 VSIXInstaller.exe artifacts\VSSetup\Release\VisualFSharpDebug.vsix

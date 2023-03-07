@@ -141,7 +141,9 @@ System.Console.WriteLine(x + y)
                     IntelliSenseOptions.Default
                 )
 
-            triggered |> Assert.shouldBeEqualWith shouldBeTriggered 
+            triggered
+            |> Assert.shouldBeEqualWith
+                shouldBeTriggered
                 "FSharpCompletionProvider.ShouldTriggerCompletionAux() should compute the correct result"
 
     [<Fact>]
@@ -242,7 +244,9 @@ let z = $"abc  {System.Console.WriteLine(x + y)} def"
                     IntelliSenseOptions.Default
                 )
 
-            triggered |> Assert.shouldBeEqualWith shouldBeTriggered 
+            triggered
+            |> Assert.shouldBeEqualWith
+                shouldBeTriggered
                 $"FSharpCompletionProvider.ShouldTriggerCompletionAux() should compute the correct result for marker '{marker}"
 
     [<Fact>]
