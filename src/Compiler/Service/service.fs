@@ -636,8 +636,8 @@ type BackgroundCompiler
         ) =
 
         node {
-            if useChangeNotifications then
-                do! builder.NotifyFileChanged(fileName, DateTime.UtcNow)
+            //if useChangeNotifications then
+            //    do! builder.NotifyFileChanged(fileName, DateTime.UtcNow)
 
             match! bc.GetCachedCheckFileResult(builder, fileName, sourceText, options) with
             | Some (_, results) -> return FSharpCheckFileAnswer.Succeeded results
