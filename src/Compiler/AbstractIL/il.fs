@@ -2320,7 +2320,7 @@ let convertFieldAccess (ilMemberAccess: ILMemberAccess) =
     | ILMemberAccess.Private -> FieldAttributes.Private
     | ILMemberAccess.Public -> FieldAttributes.Public
 
-[<NoComparison; NoEquality>]
+[<NoComparison; NoEquality; StructuredFormatDisplay("{DebugText}")>]
 type ILFieldDef
     (
         name: string,
@@ -2410,6 +2410,11 @@ type ILFieldDef
 
     member x.WithFieldMarshal(marshal) =
         x.With(marshal = marshal, attributes = (x.Attributes |> conditionalAdd marshal.IsSome FieldAttributes.HasFieldMarshal))
+
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText = x.ToString()
+
+    override x.ToString() = "field " + x.Name
 
 // Index table by name. Keep a canonical list to make sure field order is not disturbed for binary manipulation.
 type ILFieldDefs =
