@@ -85,9 +85,12 @@ module ILChecker =
 
         ilFilePath
 
-    let private generateIL (dllFilePath: string) =
+    let private generateIL (dllFilePath: string) ildasmArgs =
         let assemblyName = Some (Path.GetFileNameWithoutExtension dllFilePath)
-        generateIlFile dllFilePath >> File.ReadAllText >> normalizeILText assemblyName
+        let ilFilePath = generateIlFile dllFilePath ildasmArgs
+        let normalizedText = normalizeILText assemblyName (File.ReadAllText(ilFilePath))
+        File.WriteAllText(ilFilePath, normalizedText)
+        normalizedText
 
     let private compareIL assemblyName (actualIL: string) expectedIL =
 
