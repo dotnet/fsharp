@@ -1419,7 +1419,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
     member builder.GetParseResultsForFile fileName =
         let slotOfFile = builder.GetSlotOfFileName fileName
         let fileInfo = fileNames[slotOfFile]
-        // re-parse on demand instead of retaining
+        // use cached parse results if possible
         let syntaxTree = GetSyntaxTree initialState.tcConfig initialState.fileParsed initialState.lexResourceManager fileInfo
         syntaxTree.Parse None
 
