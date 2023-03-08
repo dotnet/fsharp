@@ -243,7 +243,7 @@ and mytype = MyType
 
 /// https://github.com/dotnet/fsharp/issues/14396
 [<Fact>]
-let ``itemKeyStore dissappearance`` () =
+let ``itemKeyStore disappearance`` () =
 
     let source = """
 type MyType() = class end
@@ -272,7 +272,7 @@ let x = MyType()
     }
 
 [<Fact>]
-let ``itemKeyStore dissappearance with live buffers`` () =
+let ``itemKeyStore disappearance with live buffers`` () =
 
     let source = """
 type MyType() = class end
