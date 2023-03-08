@@ -121,7 +121,7 @@ module IncrementalBuildSyntaxTree =
         let source = fileInfo.Source
         let isLastCompiland = fileInfo.Flags
 
-        let implStub =
+        let tryImplStubWhenHasSig =
             function
             | Some sigName when FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) ->
                 Some (
@@ -142,12 +142,17 @@ module IncrementalBuildSyntaxTree =
             | _ -> None
 
         let parse _ =
+            use _ =
+                Activity.start "IncrementalBuildSyntaxTree.parse"
+                    [|
+                        Activity.Tags.fileName, source.FilePath
+                        "buildPhase", BuildPhase.Parse.ToString()
+                    |] 
             let diagnosticsLogger = CompilationDiagnosticLogger("Parse", tcConfig.diagnosticsOptions)
             // Return the disposable object that cleans up
             use _holder = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parse)
 
-            try
-                IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBEParsed fileName)            
+            try           
                 use text = source.GetTextContainer()
                 let input = 
                     match text with
@@ -167,18 +172,14 @@ module IncrementalBuildSyntaxTree =
                 System.Diagnostics.Debug.Assert(false, msg)
                 failwith msg
 
-        /// Parse the given file and return the given input.
-        member _.Parse(sigNameOpt) =
-            //use act =
-            //    Activity.start "IncrementalBuildSyntaxTree.parse"
-            //        [|
-            //            Activity.Tags.fileName, source.FilePath
-            //            "buildPhase", BuildPhase.Parse.ToString()
-            //            "canSkip", canSkip.ToString()
-            //        |] 
-            match implStub sigNameOpt with
+        let parseOrSkip sigNameOpt =
+            IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBEParsed fileName) 
+            match tryImplStubWhenHasSig sigNameOpt with
             | Some result -> result
             | _ -> cache.GetValue(fileInfo.Source, parse)
+
+        /// Parse the given file and return the given input.
+        member _.Parse(sigNameOpt) = parseOrSkip sigNameOpt
         
         static member Invalidate(source) = cache.Remove(source) |> ignore
 
