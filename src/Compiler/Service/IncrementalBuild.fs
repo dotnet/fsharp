@@ -121,14 +121,15 @@ module IncrementalBuildSyntaxTree =
         let source = fileInfo.Source
         let isLastCompiland = fileInfo.Flags
 
-        let implStub (sigNameOpt: QualifiedNameOfFile option) =
-            if sigNameOpt.IsSome && FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
+        let implStub =
+            function
+            | Some sigName when FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) ->
                 Some (
                     ParsedInput.ImplFile(
                         ParsedImplFileInput(
                             fileName,
                             false,
-                            sigNameOpt.Value,
+                            sigName,
                             [],
                             [],
                             [],
@@ -138,8 +139,7 @@ module IncrementalBuildSyntaxTree =
                         )
                     ), sourceRange, fileName, [||]
                 )
-            else
-                None
+            | _ -> None
 
         let parse _ =
             let diagnosticsLogger = CompilationDiagnosticLogger("Parse", tcConfig.diagnosticsOptions)
@@ -181,8 +181,6 @@ module IncrementalBuildSyntaxTree =
             | _ -> cache.GetValue(fileInfo.Source, parse)
         
         static member Invalidate(source) = cache.Remove(source) |> ignore
-
-        member _.Invalidate() = SyntaxTree.Invalidate(fileInfo.Source)
 
         member _.FileName = fileName
 
@@ -352,9 +350,6 @@ type BoundModel private (tcConfig: TcConfig,
 
         // If partial checking is enabled and we have a backing sig file, then use the partial state. The partial state contains the sig state.
         if tcInfoNode.HasFull && enablePartialTypeChecking && hasSig then
-            // Always invalidate the syntax tree cache.
-            syntaxTreeOpt |> Option.iter (fun x -> x.Invalidate())
-
             let newTcInfoStateOpt =
                 match tcInfoNode with
                 | TcInfoNode(_, fullGraphNode) -> 
@@ -1079,7 +1074,8 @@ module IncrementalBuilderStateHelpers =
 
         if currentStamp <> stamp then
 
-            SyntaxTree.Invalidate fileInfo.Source
+            if not initialState.useChangeNotifications then
+                SyntaxTree.Invalidate fileInfo.Source
 
             match state.boundModels[slot].TryPeekValue() with
             // This prevents an implementation file that has a backing signature file from invalidating the rest of the build.

@@ -136,13 +136,24 @@ type internal FSharpWorkspaceServiceFactory
                                     documentSource = (if enableLiveBuffers then DocumentSource.Custom getSource else DocumentSource.FileSystem))
 
                             if enableLiveBuffers then
-                                workspace.WorkspaceChanged.Add(fun args ->
+                                
+                                let mutable docId = Unchecked.defaultof<_>
+                                let mutable cts = new CancellationTokenSource()
+
+                                workspace.WorkspaceChanged.Add <| fun args ->
                                     if args.DocumentId <> null then
-                                        backgroundTask {
+                                        if docId = args.DocumentId && cts <> null then 
+                                            cts.Cancel()
+                                            cts.Dispose()
+                                        docId <- args.DocumentId
+                                        if cts.IsCancellationRequested then
+                                            cts <- new CancellationTokenSource()
+                                        Async.Start( async {
+                                            do! Async.Sleep 200
                                             let document = args.NewSolution.GetDocument(args.DocumentId)
                                             let! _, _, _, options = document.GetFSharpCompilationOptionsAsync(nameof(workspace.WorkspaceChanged))
-                                            do! checker.NotifyFileChanged(document.FilePath, options)
-                                        } |> ignore)
+                                            return! checker.NotifyFileChanged(document.FilePath, options)
+                                        }, cts.Token)
 
                             checker
                     checkerSingleton <- Some checker
