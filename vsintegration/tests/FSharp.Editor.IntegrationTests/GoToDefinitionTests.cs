@@ -36,13 +36,11 @@ let increment = add 1
         await solutionExplorer.AddProjectAsync("Library", template, token);
         await solutionExplorer.RestoreNuGetPackagesAsync(token);
         await editor.SetTextAsync(code, token);
-        await solutionExplorer.BuildSolutionAsync(token);
-        await editor.PlaceCaretAsync("add 1", token);
-
-        await shell.ExecuteCommandAsync(VSStd97CmdID.GotoDefn, token);
-        await workspace.WaitForAsyncOperationsAsync(token);
         
+        await editor.PlaceCaretAsync("add 1", token);
+        await shell.ExecuteCommandAsync(VSStd97CmdID.GotoDefn, token);
         var actualText = await editor.GetCurrentLineTextAsync(token);
+        
         Assert.Contains(expectedText, actualText);
     }
 
@@ -79,13 +77,10 @@ let increment = add 1
         await solutionExplorer.AddFileAsync(projectName, "Math2.fs", code2, token);
         await solutionExplorer.OpenFileAsync(projectName, "Math2.fs", token);
 
-        await solutionExplorer.BuildSolutionAsync(token);
         await editor.PlaceCaretAsync("add 1", token);
-
         await shell.ExecuteCommandAsync(VSStd97CmdID.GotoDefn, token);
-        await workspace.WaitForAsyncOperationsAsync(token);
-
         var actualText = await editor.GetCurrentLineTextAsync(token);
+        
         Assert.Contains(expectedText, actualText);
     }
 }
