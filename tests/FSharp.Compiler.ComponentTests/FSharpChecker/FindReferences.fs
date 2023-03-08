@@ -218,3 +218,65 @@ let ``We find a type that has been aliased`` () =
             "FileSecond.fs", 6, 12, 29
         ])
     }
+
+/// https://github.com/dotnet/fsharp/issues/14396
+[<Fact>]
+let ``itemKeyStore dissappearance`` () =
+
+    let source = """
+type MyType() = class end
+
+let x = MyType()
+"""
+    SyntheticProject.Create(
+        { sourceFile "Program" [] with
+            SignatureFile = Custom "module Moo"
+            Source = source } ).Workflow {
+
+        placeCursor "Program" "MyType"
+
+        findAllReferences (expectToFind [
+            "FileProgram.fs", 3, 5, 11
+            "FileProgram.fs", 5, 8, 14
+        ])
+
+        updateFile "Program" (fun f -> { f with Source = "\n" + f.Source })
+        saveFile "Program"
+
+        findAllReferences (expectToFind [
+            "FileProgram.fs", 4, 5, 11
+            "FileProgram.fs", 6, 8, 14
+        ])
+    }
+
+[<Fact>]
+let ``itemKeyStore dissappearance with live buffers`` () =
+
+    let source = """
+type MyType() = class end
+
+let x = MyType()
+"""
+    let project = SyntheticProject.Create(
+        { sourceFile "Program" [] with
+            SignatureFile = Custom "module Moo"
+            Source = source } )
+
+    ProjectWorkflowBuilder(project, useGetSource = true, useChangeNotifications = true) {
+
+        placeCursor "Program" "MyType"
+
+        findAllReferences (expectToFind [
+            "FileProgram.fs", 3, 5, 11
+            "FileProgram.fs", 5, 8, 14
+        ])
+
+        updateFile "Program" (fun f -> { f with Source = "\n" + f.Source })
+
+        placeCursor "Program" "MyType"
+
+        findAllReferences (expectToFind [
+            "FileProgram.fs", 4, 5, 11
+            "FileProgram.fs", 6, 8, 14
+        ])
+    }
