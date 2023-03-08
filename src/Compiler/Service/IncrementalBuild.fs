@@ -731,10 +731,6 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, generate
 [<AutoOpen>]
 module IncrementalBuilderHelpers =
 
-    /// Get the timestamp of the given file name.
-    let StampFileNameTask (cache: TimeStampCache) (file: FSharpFile) =
-        cache.GetFileTimeStamp file.Source.FilePath
-
     /// Timestamps of referenced assemblies are taken from the file's timestamp.
     let StampReferencedAssemblyTask (cache: TimeStampCache) (_ref, timeStamper) =
         timeStamper cache
@@ -1070,16 +1066,17 @@ module IncrementalBuilderStateHelpers =
 
     and computeStampedFileNames (initialState: IncrementalBuilderInitialState) (state: IncrementalBuilderState) (cache: TimeStampCache) =
 
+        let getStamp slot =
+            if initialState.useChangeNotifications then 
+                state.notifiedStampedFileNames[slot]
+            else
+                cache.GetFileTimeStamp initialState.fileNames[slot].Source.FilePath
+
         let modified =
-          [
-            for i, file in initialState.fileNames |> Seq.indexed do
-                let stamp = StampFileNameTask cache file
-                if 
-                    state.notifiedStampedFileNames[i] <> state.stampedFileNames[i] ||
-                    state.stampedFileNames[i] <> stamp
-                then
-                    i, stamp, file
-          ]
+          [ for i, file in initialState.fileNames |> Seq.indexed do
+                let stamp = getStamp i
+                if state.stampedFileNames[i] <> stamp then
+                    i, stamp, file ]
 
         for _, _, f in modified do SyntaxTree.Invalidate f
 
@@ -1100,8 +1097,7 @@ module IncrementalBuilderStateHelpers =
 
                 // Invalidate the file and all files below it.
                 for j = slot to stampedFileNames.Count - 1 do
-                    let file = initialState.fileNames[j]
-                    let stamp = StampFileNameTask cache file
+                    let stamp = getStamp j
                     stampedFileNames[j] <- stamp
                     logicalStampedFileNames[j] <- stamp
                     boundModels[j] <- createBoundModelGraphNode initialState state.initialBoundModel boundModels j
