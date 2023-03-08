@@ -1035,12 +1035,13 @@ type IncrementalBuilderState =
 [<AutoOpen>]
 module IncrementalBuilderStateHelpers =
 
-    let createBoundModelGraphNode (initialState: IncrementalBuilderInitialState) (file: FSharpFile) initialBoundModel (boundModels: ImmutableArray<GraphNode<BoundModel>>.Builder) i =
+    let createBoundModelGraphNode (initialState: IncrementalBuilderInitialState) initialBoundModel (boundModels: ImmutableArray<GraphNode<BoundModel>>.Builder) i =
+        let fileInfo = initialState.fileNames[i]
         let prevBoundModelGraphNode =
             match i with
             | 0 (* first file *) -> initialBoundModel
             | _ -> boundModels[i - 1]
-        let syntaxTree = GetSyntaxTree initialState.tcConfig initialState.fileParsed initialState.lexResourceManager file
+        let syntaxTree = GetSyntaxTree initialState.tcConfig initialState.fileParsed initialState.lexResourceManager fileInfo
         GraphNode(node {
             let! prevBoundModel = prevBoundModelGraphNode.GetOrComputeValue()
             return! TypeCheckTask initialState.enablePartialTypeChecking prevBoundModel syntaxTree
@@ -1103,7 +1104,7 @@ module IncrementalBuilderStateHelpers =
                     let stamp = StampFileNameTask cache file
                     stampedFileNames[j] <- stamp
                     logicalStampedFileNames[j] <- stamp
-                    boundModels[j] <- createBoundModelGraphNode initialState file state.initialBoundModel boundModels j
+                    boundModels[j] <- createBoundModelGraphNode initialState state.initialBoundModel boundModels j
 
                 { state with
                     // Something changed, the finalized view of the project must be invalidated.
@@ -1160,7 +1161,7 @@ type IncrementalBuilderState with
         let boundModels = ImmutableArrayBuilder.create fileNames.Length
 
         for slot = 0 to fileNames.Length - 1 do
-            boundModels.Add(createBoundModelGraphNode initialState initialState.fileNames[slot] initialBoundModel boundModels slot)
+            boundModels.Add(createBoundModelGraphNode initialState initialBoundModel boundModels slot)
 
         let state =
             {
