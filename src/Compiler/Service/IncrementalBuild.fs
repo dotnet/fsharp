@@ -1065,55 +1065,55 @@ module IncrementalBuilderStateHelpers =
             return result
         })
 
-    and computeStampedFileName (initialState: IncrementalBuilderInitialState) (state: IncrementalBuilderState) (cache: TimeStampCache) slot fileInfo =
-        let isLiveBuffer slot = state.sources[slot] <> initialState.fileNames[slot]
-
-        let currentStamp = state.stampedFileNames[slot]
-        let stamp = StampFileNameTask cache fileInfo (isLiveBuffer slot)
-
-        if currentStamp <> stamp then
-
-            // invalidate manually when not using live buffers
-            if not (isLiveBuffer slot) then
-                SyntaxTree.Invalidate fileInfo.Source
-
-            match state.boundModels[slot].TryPeekValue() with
-            // This prevents an implementation file that has a backing signature file from invalidating the rest of the build.
-            | ValueSome(boundModel) when initialState.enablePartialTypeChecking && boundModel.BackingSignature.IsSome ->
-                SyntaxTree.Invalidate fileInfo.Source
-                let newBoundModel = boundModel.ClearTcInfoExtras()
-                { state with
-                    boundModels = state.boundModels.SetItem(slot, GraphNode(node.Return newBoundModel))
-                    stampedFileNames = state.stampedFileNames.SetItem(slot, stamp)
-                }
-            | _ ->
-
-                let stampedFileNames = state.stampedFileNames.ToBuilder()
-                let logicalStampedFileNames = state.logicalStampedFileNames.ToBuilder()
-                let boundModels = state.boundModels.ToBuilder()
-
-                // Invalidate the file and all files below it.
-                for j = slot to stampedFileNames.Count - 1 do
-                    let file = state.sources[j]
-                    let stamp = StampFileNameTask cache file (isLiveBuffer j)
-                    stampedFileNames[j] <- stamp
-                    logicalStampedFileNames[j] <- stamp
-                    boundModels[j] <- createBoundModelGraphNode initialState file state.initialBoundModel boundModels j
-
-                { state with
-                    // Something changed, the finalized view of the project must be invalidated.
-                    finalizedBoundModel = createFinalizeBoundModelGraphNode initialState boundModels
-
-                    stampedFileNames = stampedFileNames.ToImmutable()
-                    logicalStampedFileNames = logicalStampedFileNames.ToImmutable()
-                    boundModels = boundModels.ToImmutable()
-                }
-        else
-            state
-
     and computeStampedFileNames (initialState: IncrementalBuilderInitialState) (state: IncrementalBuilderState) (cache: TimeStampCache) =
+
+        // manually invalidate cache for sources that are not live buffers
+        for i, file in state.sources |> Seq.indexed do
+            if initialState.fileNames[i] = file && (StampFileNameTask cache file false) <> state.stampedFileNames[i] then
+                SyntaxTree.Invalidate file.Source
+
+        let computeStampedFileName state (slot, fileInfo) =
+            let isLiveBuffer slot = state.sources[slot] <> initialState.fileNames[slot]
+
+            let currentStamp = state.stampedFileNames[slot]
+            let stamp = StampFileNameTask cache fileInfo (isLiveBuffer slot)
+
+            if currentStamp <> stamp then
+                match state.boundModels[slot].TryPeekValue() with
+                // This prevents an implementation file that has a backing signature file from invalidating the rest of the build.
+                | ValueSome(boundModel) when initialState.enablePartialTypeChecking && boundModel.BackingSignature.IsSome ->
+                    let newBoundModel = boundModel.ClearTcInfoExtras()
+                    { state with
+                        boundModels = state.boundModels.SetItem(slot, GraphNode(node.Return newBoundModel))
+                        stampedFileNames = state.stampedFileNames.SetItem(slot, stamp)
+                    }
+                | _ ->
+
+                    let stampedFileNames = state.stampedFileNames.ToBuilder()
+                    let logicalStampedFileNames = state.logicalStampedFileNames.ToBuilder()
+                    let boundModels = state.boundModels.ToBuilder()
+
+                    // Invalidate the file and all files below it.
+                    for j = slot to stampedFileNames.Count - 1 do
+                        let file = state.sources[j]
+                        let stamp = StampFileNameTask cache file (isLiveBuffer j)
+                        stampedFileNames[j] <- stamp
+                        logicalStampedFileNames[j] <- stamp
+                        boundModels[j] <- createBoundModelGraphNode initialState file state.initialBoundModel boundModels j
+
+                    { state with
+                        // Something changed, the finalized view of the project must be invalidated.
+                        finalizedBoundModel = createFinalizeBoundModelGraphNode initialState boundModels
+
+                        stampedFileNames = stampedFileNames.ToImmutable()
+                        logicalStampedFileNames = logicalStampedFileNames.ToImmutable()
+                        boundModels = boundModels.ToImmutable()
+                    }
+            else
+                state
+
         (state, state.sources |> Seq.indexed)
-        ||> Seq.fold (fun state (slot, fileInfo) -> computeStampedFileName initialState state cache slot fileInfo)
+        ||> Seq.fold computeStampedFileName
 
     and computeStampedReferencedAssemblies (initialState: IncrementalBuilderInitialState) state canTriggerInvalidation (cache: TimeStampCache) =
         let stampedReferencedAssemblies = state.stampedReferencedAssemblies.ToBuilder()
