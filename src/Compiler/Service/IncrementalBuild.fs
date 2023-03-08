@@ -140,17 +140,10 @@ module IncrementalBuildSyntaxTree =
                 )
             | _ -> None
 
-        let parse _ =
-            use _ =
-                Activity.start "IncrementalBuildSyntaxTree.parse"
-                    [|
-                        Activity.Tags.fileName, source.FilePath
-                        "buildPhase", BuildPhase.Parse.ToString()
-                    |] 
+        let parse _ = 
             let diagnosticsLogger = CompilationDiagnosticLogger("Parse", tcConfig.diagnosticsOptions)
             // Return the disposable object that cleans up
             use _holder = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parse)
-
             try           
                 use text = source.GetTextContainer()
                 let input = 
@@ -172,8 +165,17 @@ module IncrementalBuildSyntaxTree =
                 failwith msg
 
         let parseOrSkip sigNameOpt =
-            IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBEParsed fileName) 
-            match tryImplStubWhenHasSig sigNameOpt with
+            IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBEParsed fileName)
+
+            let implStub = tryImplStubWhenHasSig sigNameOpt
+
+            use _ =
+                Activity.start "IncrementalBuildSyntaxTree.parse"
+                    [| Activity.Tags.fileName, source.FilePath                       
+                       "buildPhase", BuildPhase.Parse.ToString()
+                       "canSkip", implStub.IsSome.ToString() |]
+
+            match implStub with
             | Some result -> result
             | _ -> cache.GetValue(fileInfo, parse)
 
