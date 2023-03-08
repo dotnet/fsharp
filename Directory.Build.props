@@ -14,7 +14,7 @@
       <BUILDING_USING_DOTNET Condition="'$(BUILDING_USING_DOTNET)' == ''">true</BUILDING_USING_DOTNET>
   </PropertyGroup>
 
-  <Import Project="Directory.Build.props.user" Condition = "Exists('Directory.Build.props.user')" />
+  <Import Project="$(RepoRoot)/Directory.Build.props.user" Condition = "Exists('$(RepoRoot)/Directory.Build.props.user')" />
 
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' != 'false'">
     <DisableAutoSetFscCompilerPath>false</DisableAutoSetFscCompilerPath>
