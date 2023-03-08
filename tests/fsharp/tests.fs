@@ -786,7 +786,7 @@ module CoreTests =
 
         exeStream.Dispose()
         if isSigned then
-            // We think the assembly is signed let's run sn -vr to vberify the hashes
+            // We think the assembly is signed let's run sn -vr to verify the hashes
             sn cfg " %s    -q -vf" "" assemblyPath
 
         Assert.AreEqual(expectedSigning, actualSigning)
