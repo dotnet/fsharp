@@ -291,7 +291,11 @@ type BoundModel private (tcConfig: TcConfig,
 
     let tcInfoNode = 
         match tcInfoStateOpt with
-        | Some tcInfoState -> TcInfoNode.FromState(tcInfoState)
+        | Some tcInfoState when
+            // If we don't have tcInfoExtras and BackgroundItemKeyStoreAndSemanticClassification is enabled
+            // we need to do a type check to generate them
+            tcInfoState.TcInfoExtras.IsSome || not enableBackgroundItemKeyStoreAndSemanticClassification ->
+            TcInfoNode.FromState(tcInfoState)
         | _ ->
             let fullGraphNode =
                 GraphNode(node {
@@ -301,7 +305,7 @@ type BoundModel private (tcConfig: TcConfig,
                         return tcInfo, emptyTcInfoExtras
                 })
 
-            let partialGraphNode =              
+            let partialGraphNode =
                 GraphNode(node {
                     if enablePartialTypeChecking then
                         // Optimization so we have less of a chance to duplicate work.
