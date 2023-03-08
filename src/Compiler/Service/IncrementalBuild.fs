@@ -44,7 +44,7 @@ module internal IncrementalBuild =
     let mutable injectCancellationFault = false
     let LocallyInjectCancellationFault() =
         injectCancellationFault <- true
-        { new IDisposable with member _.Dispose() =  injectCancellationFault <- false }
+        { new IDisposable with member _.Dispose() = injectCancellationFault <- false }
 
 // Record the most recent IncrementalBuilder events, so we can more easily unit test/debug the
 // 'incremental' behavior of the product.
@@ -113,7 +113,7 @@ module IncrementalBuildSyntaxTree =
             fileInfo: FSharpFile
         ) =
 
-        static let cache = ConditionalWeakTable<FSharpSource, _>()
+        static let cache = ConditionalWeakTable<FSharpFile, _>()
 
         let fileName = fileInfo.Source.FilePath
         let sourceRange = fileInfo.Range
@@ -175,7 +175,7 @@ module IncrementalBuildSyntaxTree =
             IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBEParsed fileName) 
             match tryImplStubWhenHasSig sigNameOpt with
             | Some result -> result
-            | _ -> cache.GetValue(fileInfo.Source, parse)
+            | _ -> cache.GetValue(fileInfo, parse)
 
         /// Parse the given file and return the given input.
         member _.Parse(sigNameOpt) = parseOrSkip sigNameOpt
@@ -730,8 +730,8 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, generate
 module IncrementalBuilderHelpers =
 
     /// Get the timestamp of the given file name.
-    let StampFileNameTask (cache: TimeStampCache) (fileInfo: FSharpFile) isLiveBuffer =
-        if isLiveBuffer then fileInfo.Source.TimeStamp else cache.GetFileTimeStamp fileInfo.Source.FilePath
+    let StampFileNameTask (cache: TimeStampCache) (file: FSharpFile) =
+        cache.GetFileTimeStamp file.Source.FilePath
 
     /// Timestamps of referenced assemblies are taken from the file's timestamp.
     let StampReferencedAssemblyTask (cache: TimeStampCache) (_ref, timeStamper) =
@@ -1022,7 +1022,7 @@ type IncrementalBuilderState =
         // notifiedStampedFileNames represent the stamps of when we got notified about file changes
         // logicalStampedFileNames represent the stamps of the files that are used to calculate the project's logical timestamp.
         stampedFileNames: ImmutableArray<DateTime>
-        sources: ImmutableArray<FSharpFile>
+        notifiedStampedFileNames: ImmutableArray<DateTime>
         logicalStampedFileNames: ImmutableArray<DateTime>
         stampedReferencedAssemblies: ImmutableArray<DateTime>
         initialBoundModel: GraphNode<BoundModel>
@@ -1067,53 +1067,53 @@ module IncrementalBuilderStateHelpers =
 
     and computeStampedFileNames (initialState: IncrementalBuilderInitialState) (state: IncrementalBuilderState) (cache: TimeStampCache) =
 
-        // manually invalidate cache for sources that are not live buffers
-        for i, file in state.sources |> Seq.indexed do
-            if initialState.fileNames[i] = file && (StampFileNameTask cache file false) <> state.stampedFileNames[i] then
-                SyntaxTree.Invalidate file.Source
+        let modified =
+          [
+            for i, file in initialState.fileNames |> Seq.indexed do
+                let stamp = StampFileNameTask cache file
+                if 
+                    state.notifiedStampedFileNames[i] <> state.stampedFileNames[i] ||
+                    state.stampedFileNames[i] <> stamp
+                then
+                    i, stamp, file
+          ]
 
-        let computeStampedFileName state (slot, fileInfo) =
-            let isLiveBuffer slot = state.sources[slot] <> initialState.fileNames[slot]
+        for _, _, f in modified do SyntaxTree.Invalidate f
 
-            let currentStamp = state.stampedFileNames[slot]
-            let stamp = StampFileNameTask cache fileInfo (isLiveBuffer slot)
+        let computeStampedFileName state (slot, stamp, _) =
+            match state.boundModels[slot].TryPeekValue() with
+            // This prevents an implementation file that has a backing signature file from invalidating the rest of the build.
+            | ValueSome(boundModel) when initialState.enablePartialTypeChecking && boundModel.BackingSignature.IsSome ->
+                let newBoundModel = boundModel.ClearTcInfoExtras()
+                { state with
+                    boundModels = state.boundModels.SetItem(slot, GraphNode(node.Return newBoundModel))
+                    stampedFileNames = state.stampedFileNames.SetItem(slot, stamp)
+                }
+            | _ ->
 
-            if currentStamp <> stamp then
-                match state.boundModels[slot].TryPeekValue() with
-                // This prevents an implementation file that has a backing signature file from invalidating the rest of the build.
-                | ValueSome(boundModel) when initialState.enablePartialTypeChecking && boundModel.BackingSignature.IsSome ->
-                    let newBoundModel = boundModel.ClearTcInfoExtras()
-                    { state with
-                        boundModels = state.boundModels.SetItem(slot, GraphNode(node.Return newBoundModel))
-                        stampedFileNames = state.stampedFileNames.SetItem(slot, stamp)
-                    }
-                | _ ->
+                let stampedFileNames = state.stampedFileNames.ToBuilder()
+                let logicalStampedFileNames = state.logicalStampedFileNames.ToBuilder()
+                let boundModels = state.boundModels.ToBuilder()
 
-                    let stampedFileNames = state.stampedFileNames.ToBuilder()
-                    let logicalStampedFileNames = state.logicalStampedFileNames.ToBuilder()
-                    let boundModels = state.boundModels.ToBuilder()
+                // Invalidate the file and all files below it.
+                for j = slot to stampedFileNames.Count - 1 do
+                    let file = initialState.fileNames[j]
+                    let stamp = StampFileNameTask cache file
+                    stampedFileNames[j] <- stamp
+                    logicalStampedFileNames[j] <- stamp
+                    boundModels[j] <- createBoundModelGraphNode initialState file state.initialBoundModel boundModels j
 
-                    // Invalidate the file and all files below it.
-                    for j = slot to stampedFileNames.Count - 1 do
-                        let file = state.sources[j]
-                        let stamp = StampFileNameTask cache file (isLiveBuffer j)
-                        stampedFileNames[j] <- stamp
-                        logicalStampedFileNames[j] <- stamp
-                        boundModels[j] <- createBoundModelGraphNode initialState file state.initialBoundModel boundModels j
+                { state with
+                    // Something changed, the finalized view of the project must be invalidated.
+                    finalizedBoundModel = createFinalizeBoundModelGraphNode initialState boundModels
 
-                    { state with
-                        // Something changed, the finalized view of the project must be invalidated.
-                        finalizedBoundModel = createFinalizeBoundModelGraphNode initialState boundModels
+                    stampedFileNames = stampedFileNames.ToImmutable()
+                    logicalStampedFileNames = logicalStampedFileNames.ToImmutable()
+                    boundModels = boundModels.ToImmutable()
+                }
 
-                        stampedFileNames = stampedFileNames.ToImmutable()
-                        logicalStampedFileNames = logicalStampedFileNames.ToImmutable()
-                        boundModels = boundModels.ToImmutable()
-                    }
-            else
-                state
-
-        (state, state.sources |> Seq.indexed)
-        ||> Seq.fold computeStampedFileName
+        (state, modified)
+        ||> List.fold computeStampedFileName
 
     and computeStampedReferencedAssemblies (initialState: IncrementalBuilderInitialState) state canTriggerInvalidation (cache: TimeStampCache) =
         let stampedReferencedAssemblies = state.stampedReferencedAssemblies.ToBuilder()
@@ -1163,7 +1163,7 @@ type IncrementalBuilderState with
         let state =
             {
                 stampedFileNames = ImmutableArray.init fileNames.Length (fun _ -> DateTime.MinValue)
-                sources = fileNames |> ImmutableArray.ofSeq
+                notifiedStampedFileNames = ImmutableArray.init fileNames.Length (fun _ -> DateTime.MinValue)
                 logicalStampedFileNames = ImmutableArray.init fileNames.Length (fun _ -> DateTime.MinValue)
                 stampedReferencedAssemblies = ImmutableArray.init referencedAssemblies.Length (fun _ -> DateTime.MinValue)
                 initialBoundModel = initialBoundModel
@@ -1246,7 +1246,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
     let checkFileTimeStamps (cache: TimeStampCache) =
         node {
             let! ct = NodeCode.CancellationToken
-            setCurrentState currentState cache ct 
+            setCurrentState currentState cache ct
         }
 
     do IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBECreated)
@@ -1319,7 +1319,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
     member builder.GetCheckResultsBeforeSlotInProject slotOfFile =
       node {
         let cache = TimeStampCache defaultTimeStamp
-        do! checkFileTimeStamps cache 
+        do! checkFileTimeStamps cache
         let! result = evalUpToTargetSlot currentState (slotOfFile - 1)
         match result with
         | Some (boundModel, timestamp) ->
@@ -1419,24 +1419,18 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
     member builder.GetParseResultsForFile fileName =
         let slotOfFile = builder.GetSlotOfFileName fileName
-        let fileInfo = currentState.sources[slotOfFile]
+        let fileInfo = initialState.fileNames[slotOfFile]
         // use cached parse results if possible
         let syntaxTree = GetSyntaxTree initialState.tcConfig initialState.fileParsed initialState.lexResourceManager fileInfo
         syntaxTree.Parse None
 
-    member builder.NotifyFileChanged(fileName, timeStamp, getSource) =
+    member builder.NotifyFileChanged(fileName, timeStamp) =
         node {
             let slotOfFile = builder.GetSlotOfFileName fileName
-
-            let fileInfo = currentState.sources[slotOfFile]
-            let source = FSharpSource.Create(fileInfo.Source.FilePath, (fun () -> timeStamp), (fun () -> getSource fileInfo.Source.FilePath))
-            let newState =
-                { currentState with 
-                      sources = currentState.sources.SetItem(slotOfFile, { fileInfo with Source = source } ) }
-
+            let newState = { currentState with notifiedStampedFileNames = currentState.notifiedStampedFileNames.SetItem(slotOfFile, timeStamp) }
             let cache = TimeStampCache defaultTimeStamp
             let! ct = NodeCode.CancellationToken
-            setCurrentState newState cache  ct
+            setCurrentState newState cache ct
         }
 
     member _.SourceFiles = fileNames |> Seq.map (fun f -> f.Source.FilePath) |> List.ofSeq

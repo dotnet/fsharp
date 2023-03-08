@@ -780,7 +780,7 @@ type BackgroundCompiler
                     return (parseResults, checkResults)
         }
 
-    member _.NotifyFileChanged(fileName, getSource, options, userOpName) =
+    member _.NotifyFileChanged(fileName, options, userOpName) =
         node {
             use _ =
                 Activity.start
@@ -795,7 +795,7 @@ type BackgroundCompiler
 
             match builderOpt with
             | None -> return ()
-            | Some builder -> do! builder.NotifyFileChanged(fileName, DateTime.UtcNow, getSource)
+            | Some builder -> do! builder.NotifyFileChanged(fileName, DateTime.UtcNow)
         }
 
     /// Fetch the check information from the background compiler (which checks w.r.t. the FileSystem API)
@@ -1479,12 +1479,7 @@ type FSharpChecker
 
     member _.NotifyFileChanged(fileName: string, options: FSharpProjectOptions, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
-
-        node {
-            match getSource with
-            | Some f -> do! backgroundCompiler.NotifyFileChanged(fileName, f, options, userOpName)
-            | _ -> return ()
-        }
+        backgroundCompiler.NotifyFileChanged(fileName, options, userOpName)
         |> Async.AwaitNodeCode
 
     /// Typecheck a source code file, returning a handle to the results of the
