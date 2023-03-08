@@ -370,10 +370,10 @@ module ProjectOperations =
         let actual =
             foundRanges
             |> Seq.map (fun r -> Path.GetFileName(r.FileName), r.StartLine, r.StartColumn, r.EndColumn)
-            |> Seq.sortBy (fun (file, _, _, _) -> file)
+            |> Seq.sort
             |> Seq.toArray
 
-        Assert.Equal<(string * int * int * int)[]>(expected |> Seq.toArray, actual)
+        Assert.Equal<(string * int * int * int)[]>(expected |> Seq.sort |> Seq.toArray, actual)
 
     let rec saveProject (p: SyntheticProject) generateSignatureFiles checker =
         async {
@@ -399,6 +399,65 @@ module ProjectOperations =
 
             writeFileIfChanged (p.ProjectDir ++ $"{p.Name}.fsproj") (renderFsProj p)
         }
+
+
+module Helpers =
+
+    let getSymbolUse fileName (source: string) (symbolName: string) options (checker: FSharpChecker) =
+        async {
+            let index = source.IndexOf symbolName
+            let line = source |> Seq.take index |> Seq.where ((=) '\n') |> Seq.length
+            let fullLine = source.Split '\n' |> Array.item line
+            let colAtEndOfNames = fullLine.IndexOf symbolName + symbolName.Length
+
+            let! results = checker.ParseAndCheckFileInProject(
+                fileName, 0, SourceText.ofString source, options)
+
+            let typeCheckResults = getTypeCheckResult results
+
+            let symbolUse =
+                typeCheckResults.GetSymbolUseAtLocation(line + 1, colAtEndOfNames, fullLine, [symbolName])
+
+            return symbolUse |> Option.defaultWith (fun () ->
+                failwith $"No symbol found in {fileName} at {line}:{colAtEndOfNames}\nFile contents:\n\n{source}\n")
+        }
+
+    let singleFileChecker source =
+
+        let fileName = "test.fs"
+
+        let getSource _ = source |> SourceText.ofString |> Some
+
+        let checker = FSharpChecker.Create(
+            keepAllBackgroundSymbolUses = false,
+            enableBackgroundItemKeyStoreAndSemanticClassification = true,
+            enablePartialTypeChecking = true,
+            captureIdentifiersWhenParsing = true,
+            documentSource = DocumentSource.Custom getSource)
+
+        let options =
+            let baseOptions, _ =
+                checker.GetProjectOptionsFromScript(
+                    fileName,
+                    SourceText.ofString "",
+                    assumeDotNetFramework = false
+                )
+                |> Async.RunSynchronously
+
+            { baseOptions with
+                ProjectFileName = "project"
+                ProjectId = None
+                SourceFiles = [|fileName|]
+                IsIncompleteTypeCheckEnvironment = false
+                UseScriptResolutionRules = false
+                LoadTime = DateTime()
+                UnresolvedReferences = None
+                OriginalLoadReferences = []
+                Stamp = None }
+
+        fileName, options, checker
+
+open Helpers
 
 
 type WorkflowContext =
@@ -601,26 +660,12 @@ type ProjectWorkflowBuilder
     member this.PlaceCursor(workflow: Async<WorkflowContext>, fileId, symbolName: string) =
         async {
             let! ctx = workflow
-
-            let source = renderSourceFile ctx.Project (ctx.Project.Find fileId)
-            let index = source.IndexOf symbolName
-            let line = source |> Seq.take index |> Seq.where ((=) '\n') |> Seq.length
-            let fullLine = source.Split '\n' |> Array.item line
-            let colAtEndOfNames = fullLine.IndexOf symbolName + symbolName.Length
-
-            let! results = checkFile fileId ctx.Project checker
-            let typeCheckResults = getTypeCheckResult results
-
-            let su =
-                typeCheckResults.GetSymbolUseAtLocation(line + 1, colAtEndOfNames, fullLine, [symbolName])
-
-            if su.IsNone then
-                let file = ctx.Project.Find fileId
-
-                failwith
-                    $"No symbol found in {file.FileName} at {line}:{colAtEndOfNames}\nFile contents:\n\n{source}\n"
-
-            return { ctx with Cursor = su }
+            let file = ctx.Project.Find fileId
+            let fileName = ctx.Project.ProjectDir ++ file.FileName
+            let source = renderSourceFile ctx.Project file
+            let options= ctx.Project.GetProjectOptions checker
+            let! su = getSymbolUse fileName source symbolName options checker
+            return { ctx with Cursor = Some su }
         }
 
     /// Find all references within a single file, results are provided to the 'processResults' function
