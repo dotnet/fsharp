@@ -22,7 +22,7 @@
       <NoOptimizationData>true</NoOptimizationData>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(BUILDING_FCS_SOLUTION)' == 'true'">
+  <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
     <OutputPath>$(ArtifactsDir)/bin/$(MSBuildProjectName)/$(Configuration)/</OutputPath>
     <IntermediateOutputPath>$(ArtifactsDir)obj/$(MSBuildProjectName)/$(Configuration)/</IntermediateOutputPath>
   </PropertyGroup>

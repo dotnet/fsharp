@@ -13,7 +13,7 @@
     <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(BUILDING_FCS_SOLUTION)' == 'true'">
+  <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
     <DisableAutoSetFscCompilerPath>false</DisableAutoSetFscCompilerPath>
   </PropertyGroup>
 

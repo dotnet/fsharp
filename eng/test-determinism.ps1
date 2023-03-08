@@ -74,7 +74,7 @@ function Run-Build([string]$rootDir, [string]$logFileName) {
     /p:BootstrapBuildPath=$bootstrapDir `
     /p:RunAnalyzers=false `
     /p:RunAnalyzersDuringBuild=false `
-    /p:BUILDING_FCS_SOLUTION=false `
+    /p:BUILDING_USING_DOTNET=false `
     /bl:$logFilePath
 
   Stop-Processes

@@ -486,7 +486,7 @@
     </None>
   </ItemGroup>
 
-  <ItemGroup Condition="'$(BUILDING_FCS_SOLUTION)' == 'true'">
+  <ItemGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
     <!-- We are setting TFM explicitly here, since we are only using fslexyacc's dlls in msbuild -->
     <ProjectReference Include="$(RepoRoot)\buildtools\fslex\fslex.fsproj" ReferenceOutputAssembly="False">
       <SetTargetFramework>TargetFramework=net7.0</SetTargetFramework>

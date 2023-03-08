@@ -9,9 +9,15 @@
    FSharp.Core project.
    We also disable arcade and reset certain artifacts and compiler paths to use default ones
    All settings below can be overriden via CLI switches if needed. -->
-  <PropertyGroup Condition="'$(SolutionName)' == 'FSharp.Compiler.Service' and '$(BUILDING_FCS_SOLUTION)' != 'false'">
+
+  <PropertyGroup Condition="'$(SolutionName)' == 'FSharp.Compiler.Service' and '$(BUILDING_USING_DOTNET)' != 'false'">
+      <BUILDING_USING_DOTNET Condition="'$(BUILDING_USING_DOTNET)' == ''">true</BUILDING_USING_DOTNET>
+  </PropertyGroup>
+
+  <Import Project="Directory.Build.props.user" Condition = "Exists('Directory.Build.props.user')" />
+
+  <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' != 'false'">
     <DisableAutoSetFscCompilerPath>false</DisableAutoSetFscCompilerPath>
-    <BUILDING_FCS_SOLUTION Condition="'$(BUILDING_FCS_SOLUTION)' == ''">true</BUILDING_FCS_SOLUTION>
     <FSHARPCORE_USE_PACKAGE Condition="'$(FSHARPCORE_USE_PACKAGE)' == ''">true</FSHARPCORE_USE_PACKAGE>
     <DISABLE_ARCADE Condition="'$(DISABLE_ARCADE)' == ''">true</DISABLE_ARCADE>
     <ArtifactsDir>$(MSBuildThisFileDirectory)artifacts/</ArtifactsDir>
