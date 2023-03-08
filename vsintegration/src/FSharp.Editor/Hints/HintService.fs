@@ -51,7 +51,7 @@ module HintService =
         |> Seq.collect (fun resolve -> resolve symbolUses)
 
     let getHintsForDocument sourceText (document: Document) hintKinds userOpName cancellationToken = 
-        async {
+        backgroundTask {
             if isSignatureFile document.FilePath
             then 
                 return []

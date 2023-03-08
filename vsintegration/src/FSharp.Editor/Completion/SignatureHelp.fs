@@ -504,7 +504,7 @@ type internal FSharpSignatureHelpProvider
             possibleCurrentSignatureHelpSessionKind: CurrentSignatureHelpSessionKind option
         ) =
         asyncMaybe {
-            let! parseResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync("ProvideSignatureHelp") |> liftAsync
+            let! parseResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync("ProvideSignatureHelp") |> Async.AwaitTask |> liftAsync
 
             let! sourceText = document.GetTextAsync() |> liftTaskAsync
 

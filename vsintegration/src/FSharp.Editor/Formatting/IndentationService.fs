@@ -92,7 +92,7 @@ type internal FSharpIndentationService
         }
 
     interface IFSharpIndentationService with
-        member this.GetDesiredIndentation(services: HostLanguageServices, text: SourceText, documentId: DocumentId, path: string, lineNumber: int, options: FSharpIndentationOptions): Nullable<FSharpIndentationResult> =
+        member _.GetDesiredIndentation(services: HostLanguageServices, text: SourceText, documentId: DocumentId, path: string, lineNumber: int, options: FSharpIndentationOptions): Nullable<FSharpIndentationResult> =
             let workspaceService = services.WorkspaceServices.GetRequiredService<IFSharpWorkspaceService>()
             let parsingOptions = workspaceService.FSharpProjectOptionsManager.TryGetQuickParsingOptionsForEditingDocumentOrProject(documentId, path)
             let indent = FSharpIndentationService.GetDesiredIndentation(documentId, text, path, lineNumber, options.TabSize, options.IndentStyle, parsingOptions)

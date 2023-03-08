@@ -122,10 +122,19 @@ type AsyncMaybeBuilder () =
         }
 
     [<DebuggerStepThrough>]
-    member _.Bind (value: System.Threading.Tasks.Task<'T>, f : 'T -> Async<'U option>) : Async<'U option> =
+    member _.Bind (value: Threading.Tasks.Task<'T>, f : 'T -> Async<'U option>) : Async<'U option> =
         async {
             let! value' = Async.AwaitTask value
             return! f value'
+        }
+
+    [<DebuggerStepThrough>]
+    member _.Bind (value: Threading.Tasks.Task<'T option>, f : 'T -> Async<'U option>) : Async<'U option> =
+        async {
+            let! value' = Async.AwaitTask value
+            match value' with
+            | None -> return None
+            | Some value -> return! f value
         }
 
     [<DebuggerStepThrough>]

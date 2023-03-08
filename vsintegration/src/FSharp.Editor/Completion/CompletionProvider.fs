@@ -101,7 +101,7 @@ type internal FSharpCompletionProvider
     static member ProvideCompletionsAsyncAux(document: Document, caretPosition: int, getAllSymbols: FSharpCheckFileResults -> AssemblySymbol list) = 
 
         asyncMaybe {
-            let! parseResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync("ProvideCompletionsAsyncAux") |> liftAsync
+            let! parseResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync("ProvideCompletionsAsyncAux") |> Async.AwaitTask |> liftAsync
             let! sourceText = document.GetTextAsync()
             let textLines = sourceText.Lines
             let caretLinePos = textLines.GetLinePosition(caretPosition)
@@ -222,8 +222,8 @@ type internal FSharpCompletionProvider
             context.AddItems(results)
         } |> Async.Ignore |> RoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
 
-    override _.GetDescriptionAsync(document: Document, completionItem: Completion.CompletionItem, cancellationToken: CancellationToken): Task<CompletionDescription> =
-        async {
+    override _.GetDescriptionAsync(document: Document, completionItem: Completion.CompletionItem, _cancellationToken: CancellationToken): Task<CompletionDescription> =
+        backgroundTask {
             use _logBlock = Logger.LogBlockMessage document.Name LogEditorFunctionId.Completion_GetDescriptionAsync
             match completionItem.Properties.TryGetValue IndexPropName with
             | true, completionItemIndexStr ->
@@ -245,7 +245,7 @@ type internal FSharpCompletionProvider
                     return CompletionDescription.FromText(keywordDescription)
                 | false, _ ->
                     return CompletionDescription.Empty
-        } |> RoslynHelpers.StartAsyncAsTask cancellationToken
+        }
 
     override _.GetChangeAsync(document, item, _, cancellationToken) : Task<CompletionChange> =
         async {
@@ -279,7 +279,7 @@ type internal FSharpCompletionProvider
                     let! sourceText = document.GetTextAsync(cancellationToken)
                     let textWithItemCommitted = sourceText.WithChanges(TextChange(item.Span, nameInCode))
                     let line = sourceText.Lines.GetLineFromPosition(item.Span.Start)
-                    let! parseResults = document.GetFSharpParseResultsAsync(nameof(FSharpCompletionProvider)) |> liftAsync
+                    let! parseResults = document.GetFSharpParseResultsAsync(nameof(FSharpCompletionProvider)) |> Async.AwaitTask |> liftAsync
                     let fullNameIdents = fullName |> Option.map (fun x -> x.Split '.') |> Option.defaultValue [||]
                     
                     let insertionPoint = 

@@ -115,7 +115,7 @@ module private ExternalSymbol =
 
 // TODO: Uncomment code when VS has a fix for updating the status bar.
 type StatusBar(statusBar: IVsStatusbar) =
-    let mutable _searchIcon = int16 Microsoft.VisualStudio.Shell.Interop.Constants.SBAI_Find :> obj
+    let mutable _searchIcon = int16 Constants.SBAI_Find :> obj
 
     let _clear() =
         // unfreeze the statusbar
@@ -131,7 +131,7 @@ type StatusBar(statusBar: IVsStatusbar) =
         //// freeze the status bar
         //statusBar.FreezeOutput 1 |> ignore
 
-    member this.TempMessage(_msg: string) =
+    member _.TempMessage(_msg: string) =
         ()
         //this.Message msg
         //async {
@@ -162,7 +162,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
     /// find the corresponding textSpan and INavigableItem for the range
     let rangeToNavigableItem (range: range, document: Document) =
         async {
-            let fileName = try System.IO.Path.GetFullPath range.FileName with _ -> range.FileName
+            let fileName = try Path.GetFullPath range.FileName with _ -> range.FileName
             let refDocumentIds = document.Project.Solution.GetDocumentIdsWithFilePath fileName
             if not refDocumentIds.IsEmpty then
                 let refDocumentId = refDocumentIds.First()
@@ -181,13 +181,13 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
             let userOpName = "FindSymbolHelper"
             let! originTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (sourceText, originRange)
             let position = originTextSpan.Start
-            let! lexerSymbol = originDocument.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false, userOpName)
+            let! lexerSymbol = originDocument.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false, userOpName) |> Async.AwaitTask
             let textLinePos = sourceText.Lines.GetLinePosition position
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
             let lineText = (sourceText.Lines.GetLineFromPosition position).ToString()
             let idRange = lexerSymbol.Ident.idRange
 
-            let! _, checkFileResults = originDocument.GetFSharpParseAndCheckResultsAsync(nameof(GoToDefinition)) |> liftAsync
+            let! _, checkFileResults = originDocument.GetFSharpParseAndCheckResultsAsync(nameof(GoToDefinition)) |> Async.AwaitTask |> liftAsync
             let! fsSymbolUse = checkFileResults.GetSymbolUseAtLocation (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland)
             let symbol = fsSymbolUse.Symbol
             // if the tooltip was spawned in an implementation file and we have a range targeting
@@ -198,7 +198,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                 if not (File.Exists fsfilePath) then return! None else
                 let! implDoc = originDocument.Project.Solution.TryGetDocumentFromPath fsfilePath
                 let! implSourceText = implDoc.GetTextAsync ()
-                let! _, checkFileResults = implDoc.GetFSharpParseAndCheckResultsAsync(userOpName) |> liftAsync
+                let! _, checkFileResults = implDoc.GetFSharpParseAndCheckResultsAsync(userOpName) |> Async.AwaitTask |> liftAsync
                 let symbolUses = checkFileResults.GetUsesOfSymbolInFile symbol
                 let! implSymbol  = symbolUses |> Array.tryHead
                 let! implTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (implSourceText, implSymbol.Range)
@@ -217,7 +217,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
             match targetSymbolUse.Symbol.DeclarationLocation with
             | Some decl when decl.FileName = filePath -> return decl
             | _ ->
-                let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync("FindSymbolDeclarationInDocument") |> liftAsync
+                let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync("FindSymbolDeclarationInDocument") |> Async.AwaitTask |> liftAsync
                 let symbolUses = checkFileResults.GetUsesOfSymbolInFile targetSymbolUse.Symbol
                 let! implSymbol  = symbolUses |> Array.tryHead
                 return implSymbol.Range
@@ -235,10 +235,10 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
 
             let preferSignature = isSignatureFile originDocument.FilePath
 
-            let! lexerSymbol = originDocument.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false, userOpName)
+            let! lexerSymbol = originDocument.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false, userOpName) |> Async.AwaitTask
             let idRange = lexerSymbol.Ident.idRange
 
-            let! _, checkFileResults = originDocument.GetFSharpParseAndCheckResultsAsync(userOpName) |> liftAsync
+            let! _, checkFileResults = originDocument.GetFSharpParseAndCheckResultsAsync(userOpName) |> Async.AwaitTask |> liftAsync
             let declarations = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLineString, lexerSymbol.FullIsland, preferSignature)
             let! targetSymbolUse = checkFileResults.GetSymbolUseAtLocation (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland)
 
@@ -418,7 +418,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                 | Some tmpShownDoc ->
                     let goToAsync =
                         asyncMaybe {
-                            let! _, checkResults = tmpShownDoc.GetFSharpParseAndCheckResultsAsync("NavigateToExternalDeclaration") |> liftAsync
+                            let! _, checkResults = tmpShownDoc.GetFSharpParseAndCheckResultsAsync("NavigateToExternalDeclaration") |> Async.AwaitTask |> liftAsync
                             let! r =
                                 let rec areTypesEqual (ty1: FSharpType) (ty2: FSharpType) =
                                     let ty1 = ty1.StripAbbreviations()
@@ -525,8 +525,8 @@ module internal FSharpQuickInfo =
             let extLineText = (extSourceText.Lines.GetLineFromPosition extSpan.Start).ToString()
 
             // project options need to be retrieved because the signature file could be in another project
-            let! extLexerSymbol = extDocument.TryFindFSharpLexerSymbolAsync(extSpan.Start, SymbolLookupKind.Greedy, true, true, userOpName)
-            let! _, extCheckFileResults = extDocument.GetFSharpParseAndCheckResultsAsync(userOpName) |> liftAsync
+            let! extLexerSymbol = extDocument.TryFindFSharpLexerSymbolAsync(extSpan.Start, SymbolLookupKind.Greedy, true, true, userOpName) |> Async.AwaitTask
+            let! _, extCheckFileResults = extDocument.GetFSharpParseAndCheckResultsAsync(userOpName) |> Async.AwaitTask |> liftAsync
 
             let extQuickInfoText =
                 extCheckFileResults.GetToolTip
@@ -557,8 +557,8 @@ module internal FSharpQuickInfo =
 
         asyncMaybe {
             let userOpName = "getQuickInfo"
-            let! lexerSymbol = document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, true, true, userOpName)
-            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(userOpName) |> liftAsync
+            let! lexerSymbol = document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, true, true, userOpName) |> Async.AwaitTask
+            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(userOpName) |> Async.AwaitTask |> liftAsync
             let! sourceText = document.GetTextAsync cancellationToken
             let idRange = lexerSymbol.Ident.idRange
             let textLinePos = sourceText.Lines.GetLinePosition position

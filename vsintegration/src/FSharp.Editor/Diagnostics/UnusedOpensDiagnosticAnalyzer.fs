@@ -26,7 +26,7 @@ type internal UnusedOpensDiagnosticAnalyzer
         asyncMaybe {
             do! Option.guard document.Project.IsFSharpCodeFixesUnusedOpensEnabled
             let! sourceText = document.GetTextAsync()
-            let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync(nameof(UnusedOpensDiagnosticAnalyzer)) |> liftAsync
+            let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync(nameof(UnusedOpensDiagnosticAnalyzer)) |> Async.AwaitTask |> liftAsync
             let! unusedOpens = UnusedOpens.getUnusedOpens(checkResults, fun lineNumber -> sourceText.Lines.[Line.toZ lineNumber].ToString()) |> liftAsync
             return unusedOpens
         } 

@@ -147,9 +147,9 @@ type internal FSharpEditorFormattingService
         }
 
     member _.GetFormattingChangesAsync (document: Document, position: int, cancellationToken: CancellationToken) =
-        async {
-            let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-            let! options = document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
+        backgroundTask {
+            let! sourceText = document.GetTextAsync(cancellationToken)
+            let! options = document.GetOptionsAsync(cancellationToken)
             let indentStyle = options.GetOption(FormattingOptions.SmartIndent, FSharpConstants.FSharpLanguageName)
             let parsingOptions = document.GetFSharpQuickParsingOptions()
             let! textChange = FSharpEditorFormattingService.GetFormattingChanges(document.Id, sourceText, document.FilePath, document.GetFSharpChecker(), indentStyle, parsingOptions, position)
@@ -196,8 +196,6 @@ type internal FSharpEditorFormattingService
 
         override this.GetFormattingChangesAsync (document, _typedChar, position, cancellationToken) =
             this.GetFormattingChangesAsync (document, position, cancellationToken)
-            |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
         override this.GetFormattingChangesOnReturnAsync (document, position, cancellationToken) =
             this.GetFormattingChangesAsync (document, position, cancellationToken)
-            |> RoslynHelpers.StartAsyncAsTask cancellationToken

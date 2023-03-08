@@ -37,13 +37,14 @@ type internal FSharpNavigableSymbolSource(metadataAsSource, serviceProvider: ISe
     interface INavigableSymbolSource with
         member _.GetNavigableSymbolAsync(triggerSpan: SnapshotSpan, cancellationToken: CancellationToken) =
             // Yes, this is a code smell. But this is how the editor API accepts what we would treat as None.
-            if disposed then null
+            if disposed then
+                null
             else
-                asyncMaybe {
+                backgroundTask {
                     let snapshot = triggerSpan.Snapshot
                     let position = triggerSpan.Start.Position
                     let document = snapshot.GetOpenDocumentInCurrentContextWithChanges()
-                    let! sourceText = document.GetTextAsync(cancellationToken) |> liftTaskAsync
+                    let! sourceText = document.GetTextAsync(cancellationToken)
                     
                     statusBar.Message(SR.LocatingSymbol())
                     use _ = statusBar.Animate()
@@ -93,8 +94,6 @@ type internal FSharpNavigableSymbolSource(metadataAsSource, serviceProvider: ISe
                         // The NavigableSymbols API accepts 'null' when there's nothing to navigate to.
                         return null
                 }
-                |> Async.map Option.toObj
-                |> RoslynHelpers.StartAsyncAsTask cancellationToken
         
         member _.Dispose() =
             disposed <- true

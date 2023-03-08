@@ -19,12 +19,10 @@ type internal FSharpNavigationBarItemService
     (
     ) =
     
-    static let emptyResult: IList<FSharpNavigationBarItem> = upcast [||]
-
     interface IFSharpNavigationBarItemService with
         member _.GetItemsAsync(document, cancellationToken) : Task<IList<FSharpNavigationBarItem>> = 
-            asyncMaybe {
-                let! parseResults = document.GetFSharpParseResultsAsync(nameof(FSharpNavigationBarItemService)) |> liftAsync
+            backgroundTask {
+                let! parseResults = document.GetFSharpParseResultsAsync(nameof(FSharpNavigationBarItemService))
                 let navItems = Navigation.getNavigation parseResults.ParseTree
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let rangeToTextSpan range = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range)
@@ -42,6 +40,4 @@ type internal FSharpNavigationBarItemService
                             
                             NavigationBarSymbolItem(topLevelDecl.Declaration.LogicalName, topLevelDecl.Declaration.RoslynGlyph, [| topLevelTextSpan |], childItems)
                             :> FSharpNavigationBarItem)) :> IList<_>
-            } 
-            |> Async.map (Option.defaultValue emptyResult)
-            |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
+            }

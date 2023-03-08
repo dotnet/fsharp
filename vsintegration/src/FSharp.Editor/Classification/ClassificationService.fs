@@ -6,18 +6,14 @@ open System
 open System.Composition
 open System.Collections.Generic
 open System.Collections.Immutable
-open System.Diagnostics
 open System.Threading
 open System.Runtime.Caching
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Classification
-open Microsoft.CodeAnalysis.Editor
-open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Classification
 
-open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Tokenization
 
@@ -41,24 +37,26 @@ type DocumentCache<'Value when 'Value : not struct>() =
     let cache = new MemoryCache("fsharp-cache")
     let policy = CacheItemPolicy(SlidingExpiration = TimeSpan.FromSeconds slidingExpirationSeconds)
 
-    member _.TryGetValueAsync(doc: Document) = async {
-        let! ct = Async.CancellationToken
-        let! currentVersion = doc.GetTextVersionAsync ct |> Async.AwaitTask
+    member _.TryGetValueAsync(doc: Document, ct: CancellationToken) = 
+        backgroundTask {
+            let! currentVersion = doc.GetTextVersionAsync ct
 
-        match cache.Get(doc.Id.ToString()) with
-        | null -> return ValueNone
-        | :? (VersionStamp * 'Value) as value ->
-            if fst value = currentVersion then
-                return ValueSome(snd value)
-            else
-                return ValueNone
-        | _ ->
-            return ValueNone }
+            match cache.Get(doc.Id.ToString()) with
+            | null -> return ValueNone
+            | :? (VersionStamp * 'Value) as value ->
+                if fst value = currentVersion then
+                    return ValueSome(snd value)
+                else
+                    return ValueNone
+            | _ ->
+                return ValueNone 
+        }
 
-    member _.SetAsync(doc: Document, value: 'Value) = async {
-            let! ct = Async.CancellationToken
-            let! currentVersion = doc.GetTextVersionAsync ct |> Async.AwaitTask
-            cache.Set(doc.Id.ToString(), (currentVersion, value), policy) }
+    member _.SetAsync(doc: Document, value: 'Value, ct: CancellationToken) =
+        backgroundTask {
+            let! currentVersion = doc.GetTextVersionAsync ct
+            cache.Set(doc.Id.ToString(), (currentVersion, value), policy)
+        }
 
     interface IDisposable with
 
@@ -115,7 +113,7 @@ type internal FSharpClassificationService
             | _ -> ()
 
     static let toSemanticClassificationLookup (d: SemanticClassificationData) =
-        let lookup = System.Collections.Generic.Dictionary<int, ResizeArray<SemanticClassificationItem>>()
+        let lookup = Dictionary<int, ResizeArray<SemanticClassificationItem>>()
         let f (dataItem: SemanticClassificationItem) =
             let items =
                 match lookup.TryGetValue dataItem.Range.StartLine with
@@ -129,7 +127,7 @@ type internal FSharpClassificationService
 
         d.ForEach(f)
                     
-        System.Collections.ObjectModel.ReadOnlyDictionary lookup :> IReadOnlyDictionary<_, _>
+        Collections.ObjectModel.ReadOnlyDictionary lookup :> IReadOnlyDictionary<_, _>
 
     let semanticClassificationCache = new DocumentCache<SemanticClassificationLookup>()
 
@@ -138,11 +136,11 @@ type internal FSharpClassificationService
         member _.AddLexicalClassifications(_: SourceText, _: TextSpan, _: List<ClassifiedSpan>, _: CancellationToken) = ()
         
         member _.AddSyntacticClassificationsAsync(document: Document, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
-            async {
+            backgroundTask {
                 use _logBlock = Logger.LogBlock(LogEditorFunctionId.Classification_Syntactic)
 
                 let defines = document.GetFSharpQuickDefines()
-                let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                let! sourceText = document.GetTextAsync(cancellationToken)
 
                 // For closed documents, only get classification for the text within the span.
                 // This may be inaccurate for multi-line tokens such as string literals, but this is ok for now
@@ -151,34 +149,32 @@ type internal FSharpClassificationService
                     result.AddRange(getLexicalClassifications(document.FilePath, defines, sourceText, textSpan, cancellationToken))
                 else
                     result.AddRange(Tokenizer.getClassifiedSpans(document.Id, sourceText, textSpan, Some(document.FilePath), defines, cancellationToken))
-            } 
-            |> RoslynHelpers.StartAsyncUnitAsTask cancellationToken
+            }
 
-        member this.AddSemanticClassificationsAsync(document: Document, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
-            async {
+        member _.AddSemanticClassificationsAsync(document: Document, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
+            backgroundTask {
                 use _logBlock = Logger.LogBlock(LogEditorFunctionId.Classification_Semantic)
 
-                let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                let! sourceText = document.GetTextAsync(cancellationToken)
 
                 // If we are trying to get semantic classification for a document that is not open, get the results from the background and cache it.
                 // We do this for find all references when it is populating results. 
                 // We cache it temporarily so we do not have to continously call into the checker and perform a background operation.
                 if not (document.Project.Solution.Workspace.IsDocumentOpen document.Id) then
-                    match! semanticClassificationCache.TryGetValueAsync document with
+                    match! semanticClassificationCache.TryGetValueAsync( document, cancellationToken) with
                     | ValueSome classificationDataLookup ->
                         addSemanticClassificationByLookup sourceText textSpan classificationDataLookup result
                     | _ ->
                         let! classificationData = document.GetFSharpSemanticClassificationAsync(nameof(FSharpClassificationService))
                         let classificationDataLookup = toSemanticClassificationLookup classificationData
-                        do! semanticClassificationCache.SetAsync(document, classificationDataLookup)
+                        do! semanticClassificationCache.SetAsync(document, classificationDataLookup, cancellationToken)
                         addSemanticClassificationByLookup sourceText textSpan classificationDataLookup result
                 else
                     let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync(nameof(IFSharpClassificationService))
                     let targetRange = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, textSpan, sourceText)
                     let classificationData = checkResults.GetSemanticClassification (Some targetRange)
                     addSemanticClassification sourceText textSpan classificationData result
-            } 
-            |> Async.Ignore |> RoslynHelpers.StartAsyncUnitAsTask cancellationToken
+            }
 
         // Do not perform classification if we don't have project options (#defines matter)
         member _.AdjustStaleClassification(_: SourceText, classifiedSpan: ClassifiedSpan) : ClassifiedSpan = classifiedSpan

@@ -6,6 +6,7 @@ open FSharp.Compiler.Text
 
 module Hints =
     
+    [<RequireQualifiedAccess>]
     type HintKind = 
         | TypeHint
         | ParameterNameHint

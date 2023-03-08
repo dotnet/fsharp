@@ -35,7 +35,7 @@ type internal FSharpGoToDefinitionService
         /// Try to navigate to the definiton of the symbol at the symbolRange in the originDocument
         member _.TryGoToDefinition(document: Document, position: int, cancellationToken: CancellationToken) =
             statusBar.Message(SR.LocatingSymbol())
-            use __ = statusBar.Animate()
+            use _ = statusBar.Animate()
 
             let navigation = FSharpNavigation(statusBar, metadataAsSource, document, rangeStartup)
             navigation.TryGoToDefinition(position, cancellationToken)

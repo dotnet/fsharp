@@ -2,7 +2,6 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-open System
 open System.Composition
 open System.Collections.Generic
 open System.Threading
@@ -44,14 +43,13 @@ type internal FSharpLanguageDebugInfoService [<ImportingConstructor>]() =
     interface IFSharpLanguageDebugInfoService with
         
         // FSROSLYNTODO: This is used to get function names in breakpoint window. It should return fully qualified function name and line offset from the start of the function.
-        member this.GetLocationInfoAsync(_, _, _): Task<FSharpDebugLocationInfo> =
+        member _.GetLocationInfoAsync(_, _, _): Task<FSharpDebugLocationInfo> =
             Task.FromResult(Unchecked.defaultof<FSharpDebugLocationInfo>)
 
-        member this.GetDataTipInfoAsync(document: Document, position: int, cancellationToken: CancellationToken): Task<FSharpDebugDataTipInfo> =
-            async {
+        member _.GetDataTipInfoAsync(document: Document, position: int, cancellationToken: CancellationToken): Task<FSharpDebugDataTipInfo> =
+            backgroundTask {
                 let defines = document.GetFSharpQuickDefines() 
-                let! cancellationToken = Async.CancellationToken
-                let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                let! sourceText = document.GetTextAsync(cancellationToken)
                 let textSpan = TextSpan.FromBounds(0, sourceText.Length)
                 let classifiedSpans = Tokenizer.getClassifiedSpans(document.Id, sourceText, textSpan, Some(document.Name), defines, cancellationToken)
                 let result = 
@@ -60,6 +58,5 @@ type internal FSharpLanguageDebugInfoService [<ImportingConstructor>]() =
                      | Some textSpan -> FSharpDebugDataTipInfo(textSpan, sourceText.GetSubText(textSpan).ToString())
                 return result
             }
-            |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
             
             

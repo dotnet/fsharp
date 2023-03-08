@@ -42,7 +42,7 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>]
             match cache.TryGetValue document.Id with
             | true, (version, items) when version = currentVersion -> return items
             | _ ->
-                let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpNavigateToSearchService))
+                let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpNavigateToSearchService)) |> Async.AwaitTask
                 let items = parseResults.ParseTree |> NavigateTo.GetNavigableItems
                 cache[document.Id] <- currentVersion, items
                 return items
@@ -185,9 +185,9 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>]
                 _priorityDocuments,
                 searchPattern,
                 kinds,
-                cancellationToken
+                _cancellationToken
             ) : Task<ImmutableArray<FSharpNavigateToSearchResult>> =
-            async {
+            backgroundTask {
                 let tryMatch = createMatcherFor searchPattern
 
                 let! results =
@@ -197,20 +197,18 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>]
 
                 return results |> Array.concat |> Array.toImmutableArray
             }
-            |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
         member _.SearchDocumentAsync
             (
                 document: Document,
                 searchPattern,
                 kinds,
-                cancellationToken
+                _cancellationToken
             ) : Task<ImmutableArray<FSharpNavigateToSearchResult>> =
-            async {
+            backgroundTask {
                 let! result = processDocument (createMatcherFor searchPattern) kinds document
                 return result |> Array.toImmutableArray
             }
-            |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
         member _.KindsProvided = kindsProvided
 

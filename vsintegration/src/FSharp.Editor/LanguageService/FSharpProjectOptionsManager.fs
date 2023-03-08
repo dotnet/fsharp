@@ -173,11 +173,11 @@ type private FSharpProjectOptionsReactor (checker: FSharpChecker) =
             fsRefProj
 
     let rec tryComputeOptionsBySingleScriptOrFile (document: Document) (ct: CancellationToken) userOpName =
-        async {
-            let! fileStamp = document.GetTextVersionAsync(ct) |> Async.AwaitTask
+        backgroundTask {
+            let! fileStamp = document.GetTextVersionAsync(ct)
             match singleFileCache.TryGetValue(document.Id) with
             | false, _ ->
-                let! sourceText = document.GetTextAsync(ct) |> Async.AwaitTask
+                let! sourceText = document.GetTextAsync(ct)
                 
                 let! scriptProjectOptions, _ =
                     checker.GetProjectOptionsFromScript(document.FilePath,
@@ -368,7 +368,7 @@ type private FSharpProjectOptionsReactor (checker: FSharpChecker) =
                             if document.Project.Solution.Workspace.Kind = WorkspaceKind.MiscellaneousFiles then
                                 reply.Reply None
                             elif document.Project.IsFSharpMiscellaneousOrMetadata then
-                                let! options = tryComputeOptionsBySingleScriptOrFile document ct userOpName
+                                let! options = tryComputeOptionsBySingleScriptOrFile document ct userOpName |> Async.AwaitTask
                                 if ct.IsCancellationRequested then
                                     reply.Reply None
                                 else

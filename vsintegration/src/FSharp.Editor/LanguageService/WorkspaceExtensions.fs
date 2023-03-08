@@ -107,7 +107,7 @@ type Document with
 
     /// Get the FSharpParsingOptions and FSharpProjectOptions from the F# project that is associated with the given F# document.
     member this.GetFSharpCompilationOptionsAsync(userOpName) =
-        async {
+        backgroundTask {
             if this.Project.IsFSharp then
                 match ProjectCache.Projects.TryGetValue(this.Project) with
                 | true, result -> return result
@@ -126,7 +126,7 @@ type Document with
 
     /// Get the compilation defines from F# project that is associated with the given F# document.
     member this.GetFSharpCompilationDefinesAsync(userOpName) =
-        async {
+        backgroundTask {
             let! _, _, parsingOptions, _ = this.GetFSharpCompilationOptionsAsync(userOpName)
             return CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions
         }
@@ -155,14 +155,14 @@ type Document with
     
     /// Parses the given F# document.
     member this.GetFSharpParseResultsAsync(userOpName) =
-        async {
+        backgroundTask {
             let! checker, _, parsingOptions, _ = this.GetFSharpCompilationOptionsAsync(userOpName)
             return! checker.ParseDocument(this, parsingOptions, userOpName)
         }
 
     /// Parses and checks the given F# document.
     member this.GetFSharpParseAndCheckResultsAsync(userOpName) =
-        async {
+        backgroundTask {
             let! checker, _, _, projectOptions = this.GetFSharpCompilationOptionsAsync(userOpName)
             match! checker.ParseAndCheckDocument(this, projectOptions, userOpName, allowStaleResults = false) with
             | Some(parseResults, _, checkResults) ->
@@ -173,7 +173,7 @@ type Document with
 
     /// Get the semantic classifications of the given F# document.
     member this.GetFSharpSemanticClassificationAsync(userOpName) =
-        async {
+        backgroundTask {
             let! checker, _, _, projectOptions = this.GetFSharpCompilationOptionsAsync(userOpName)
             match! checker.GetBackgroundSemanticClassificationForFile(this.FilePath, projectOptions) with
             | Some results -> return results
@@ -181,8 +181,8 @@ type Document with
         }
 
     /// Find F# references in the given F# document.
-    member this.FindFSharpReferencesAsync(symbol, onFound, userOpName) =
-        async {
+    member this.FindFSharpReferencesAsync(symbol, onFound, userOpName) : Task<unit> =
+        backgroundTask {
             let! checker, _, _, projectOptions = this.GetFSharpCompilationOptionsAsync(userOpName)
             let! symbolUses = checker.FindBackgroundReferencesInFile(this.FilePath, projectOptions, symbol,
                                 canInvalidateProject = false,
@@ -199,7 +199,7 @@ type Document with
 
     /// Try to find a F# lexer/token symbol of the given F# document and position.
     member this.TryFindFSharpLexerSymbolAsync(position, lookupKind, wholeActivePattern, allowStringToken, userOpName) =
-        async {
+        backgroundTask {
             let! defines = this.GetFSharpCompilationDefinesAsync(userOpName)
             let! ct = Async.CancellationToken
             let! sourceText = this.GetTextAsync(ct) |> Async.AwaitTask
@@ -209,34 +209,30 @@ type Document with
 type Project with
 
     /// Find F# references in the given project.
-    member this.FindFSharpReferencesAsync(symbol: FSharpSymbol, onFound, userOpName, ct) : Task = backgroundTask {
+    member this.FindFSharpReferencesAsync(symbol: FSharpSymbol, onFound, userOpName, _ct) : Task =
+        backgroundTask {
 
-        let declarationLocation = symbol.SignatureLocation |> Option.map Some |> Option.defaultValue symbol.DeclarationLocation
-        let declarationDocument = declarationLocation |> Option.bind this.Solution.TryGetDocumentFromFSharpRange
+            let declarationLocation = symbol.SignatureLocation |> Option.map Some |> Option.defaultValue symbol.DeclarationLocation
+            let declarationDocument = declarationLocation |> Option.bind this.Solution.TryGetDocumentFromFSharpRange
 
-        let! canSkipDocuments =
-            match declarationDocument with
-            | Some document when this.IsFastFindReferencesEnabled && document.Project = this ->
-                backgroundTask {
-                    let! _, _, _, options = document.GetFSharpCompilationOptionsAsync(userOpName) |> RoslynHelpers.StartAsyncAsTask ct
-                    return options.SourceFiles |> Seq.takeWhile ((<>) document.FilePath) |> Set
-                }
-            | _ -> Task.FromResult Set.empty
+            let! canSkipDocuments =
+                match declarationDocument with
+                | Some document when this.IsFastFindReferencesEnabled && document.Project = this ->
+                    backgroundTask {
+                        let! _, _, _, options = document.GetFSharpCompilationOptionsAsync(userOpName)
+                        return options.SourceFiles |> Seq.takeWhile ((<>) document.FilePath) |> Set
+                    }
+                | _ -> Task.FromResult Set.empty
 
-        let documents = this.Documents |> Seq.filter (fun document -> not (canSkipDocuments.Contains document.FilePath))
+            let documents = this.Documents |> Seq.filter (fun document -> not (canSkipDocuments.Contains document.FilePath))
 
-        if this.IsFastFindReferencesEnabled then
-            do! documents
-                |> Seq.map (fun doc ->
-                    Task.Run(fun () ->
-                        doc.FindFSharpReferencesAsync(symbol, (fun textSpan range -> onFound doc textSpan range), userOpName)
-                        |> RoslynHelpers.StartAsyncUnitAsTask ct))
-                |> Task.WhenAll
-        else
-            for doc in documents do
-                do! doc.FindFSharpReferencesAsync(symbol, (fun textSpan range -> onFound doc textSpan range), userOpName)
-                    |> RoslynHelpers.StartAsyncAsTask ct
-    }
+            if this.IsFastFindReferencesEnabled then
+                let tasks = documents |> Seq.map (fun doc -> Task.Run<unit>(fun () -> doc.FindFSharpReferencesAsync(symbol, (fun textSpan range -> onFound doc textSpan range), userOpName)) : Task)
+                do! Task.WhenAll tasks
+            else
+                for doc in documents do
+                    do! doc.FindFSharpReferencesAsync(symbol, (fun textSpan range -> onFound doc textSpan range), userOpName)
+        }
     
     member this.GetFSharpCompilationOptionsAsync(ct: CancellationToken) =
         backgroundTask {

@@ -27,7 +27,7 @@ type internal UnusedDeclarationsAnalyzer
                 do! Option.guard document.Project.IsFSharpCodeFixesUnusedDeclarationsEnabled
 
                 do Trace.TraceInformation("{0:n3} (start) UnusedDeclarationsAnalyzer", DateTime.Now.TimeOfDay.TotalSeconds)
-                let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync(nameof(UnusedDeclarationsAnalyzer)) |> liftAsync
+                let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync(nameof(UnusedDeclarationsAnalyzer)) |> Async.AwaitTask |> liftAsync
                 let! unusedRanges = UnusedDeclarations.getUnusedDeclarations( checkResults, (isScriptFile document.FilePath)) |> liftAsync
                 let! sourceText = document.GetTextAsync()
                 return

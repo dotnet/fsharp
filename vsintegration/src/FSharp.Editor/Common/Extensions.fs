@@ -312,3 +312,8 @@ type Async with
                 cancellationToken)
             task.Result
         | _ -> Async.RunSynchronously(computation, ?cancellationToken=cancellationToken)
+
+[<AutoOpen>]
+module BackgroundTaskOptionExtensions =
+    type BackgroundTaskBuilder with
+        member _.Foo() = ()

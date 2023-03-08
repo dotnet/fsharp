@@ -47,7 +47,7 @@ type internal SimplifyNameDiagnosticAnalyzer
                     | :? PerDocumentSavedData as data when data.Hash = textVersionHash -> return data.Diagnostics
                     | _ ->
                         let! sourceText = document.GetTextAsync()
-                        let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync(nameof(SimplifyNameDiagnosticAnalyzer)) |> liftAsync
+                        let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync(nameof(SimplifyNameDiagnosticAnalyzer)) |> Async.AwaitTask |> liftAsync
                         let! result = SimplifyNames.getSimplifiableNames(checkResults, fun lineNumber -> sourceText.Lines.[Line.toZ lineNumber].ToString()) |> liftAsync
                         let mutable diag = ResizeArray()
                         for r in result do

@@ -11,8 +11,6 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.DocumentHighlighting
 
-open FSharp.Compiler
-open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
 
 type internal FSharpHighlightSpan =
@@ -59,7 +57,7 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] () =
             let textLinePos = sourceText.Lines.GetLinePosition(position)
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
 
-            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpDocumentHighlightsService)) |> liftAsync
+            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpDocumentHighlightsService)) |> Async.AwaitTask |> liftAsync
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland)
             let symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol)
             return 
@@ -73,17 +71,16 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] () =
         }
 
     interface IFSharpDocumentHighlightsService with
-        member _.GetDocumentHighlightsAsync(document, position, _documentsToSearch, cancellationToken) : Task<ImmutableArray<FSharpDocumentHighlights>> =
-            asyncMaybe {
+        member _.GetDocumentHighlightsAsync(document, position, _documentsToSearch, _cancellationToken) : Task<ImmutableArray<FSharpDocumentHighlights>> =
+            backgroundTask {
                 let! spans = FSharpDocumentHighlightsService.GetDocumentHighlights(document, position)
-                let highlightSpans = 
-                    spans 
+                let highlightSpans =
+                    spans
+                    |> Option.defaultValue Array.empty
                     |> Array.map (fun span ->
                         let kind = if span.IsDefinition then FSharpHighlightSpanKind.Definition else FSharpHighlightSpanKind.Reference
                         FSharpHighlightSpan(span.TextSpan, kind))
                     |> Seq.toImmutableArray
                 
                 return ImmutableArray.Create(FSharpDocumentHighlights(document, highlightSpans))
-            }   
-            |> Async.map (Option.defaultValue ImmutableArray<FSharpDocumentHighlights>.Empty)
-            |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
+            }

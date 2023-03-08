@@ -13,7 +13,6 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.Implementation.Debugging
 
-open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 
@@ -37,7 +36,7 @@ type internal FSharpBreakpointResolutionService
             else
                 let textLineColumn = textLinePos.Character
                 let fcsTextLineNumber = Line.fromZ textLinePos.Line // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
-                let! parseResults = document.GetFSharpParseResultsAsync(nameof(FSharpBreakpointResolutionService)) |> liftAsync
+                let! parseResults = document.GetFSharpParseResultsAsync(nameof(FSharpBreakpointResolutionService)) |> Async.AwaitTask |> liftAsync
                 match parseResults with
                 | Some parseResults -> return parseResults.ValidateBreakpointLocation(mkPos fcsTextLineNumber textLineColumn)
                 | _ -> return None
