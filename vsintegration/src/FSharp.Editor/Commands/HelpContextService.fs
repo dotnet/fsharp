@@ -24,7 +24,7 @@ type internal FSharpHelpContextService
 
     static member GetHelpTerm(document: Document, span: TextSpan, tokens: List<ClassifiedSpan>) : Async<string option> = 
         asyncMaybe {
-            let! _, check = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpHelpContextService)) |> liftAsync
+            let! _, check = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpHelpContextService)) |> Async.AwaitTask |> liftAsync
             let! sourceText = document.GetTextAsync() |> liftTaskAsync
             let textLines = sourceText.Lines
             let lineInfo = textLines.GetLineFromPosition(span.Start)

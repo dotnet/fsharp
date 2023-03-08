@@ -43,7 +43,7 @@ type internal FSharpAddMissingRecToMutuallyRecFunctionsCodeFixProvider
 
     override _.RegisterCodeFixesAsync context =
         asyncMaybe {
-            let! defines = context.Document.GetFSharpCompilationDefinesAsync(nameof(FSharpAddMissingRecToMutuallyRecFunctionsCodeFixProvider)) |> liftAsync
+            let! defines = context.Document.GetFSharpCompilationDefinesAsync(nameof(FSharpAddMissingRecToMutuallyRecFunctionsCodeFixProvider)) |> Async.AwaitTask |> liftAsync
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
 
             let funcStartPos =

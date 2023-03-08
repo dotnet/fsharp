@@ -41,9 +41,9 @@ type internal FSharpAddTypeAnnotationToObjectOfIndeterminateTypeFixProvider
             let textLine = sourceText.Lines.GetLineFromPosition position
             let textLinePos = sourceText.Lines.GetLinePosition position
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
-            let! lexerSymbol = document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false, nameof(FSharpAddTypeAnnotationToObjectOfIndeterminateTypeFixProvider))
+            let! lexerSymbol = document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false, nameof(FSharpAddTypeAnnotationToObjectOfIndeterminateTypeFixProvider)) |> Async.AwaitTask
 
-            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpAddTypeAnnotationToObjectOfIndeterminateTypeFixProvider)) |> liftAsync
+            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpAddTypeAnnotationToObjectOfIndeterminateTypeFixProvider)) |> Async.AwaitTask |> liftAsync
             let decl = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, false)
 
             match decl with

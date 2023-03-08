@@ -31,7 +31,7 @@ type internal RemoveSuperflousCaptureForUnionCaseWithNoDataProvider
 
             let document = context.Document      
             let! sourceText = document.GetTextAsync(context.CancellationToken)
-            let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync(nameof(RemoveSuperflousCaptureForUnionCaseWithNoDataProvider)) |> liftAsync
+            let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync(nameof(RemoveSuperflousCaptureForUnionCaseWithNoDataProvider)) |> Async.AwaitTask |> liftAsync
             let m = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)
             let classifications = checkResults.GetSemanticClassification(Some m)
             let unionCaseItem = 

@@ -21,7 +21,7 @@ type internal FSharpMakeOuterBindingRecursiveCodeFixProvider
 
     override _.RegisterCodeFixesAsync context =
         asyncMaybe {
-            let! parseResults = context.Document.GetFSharpParseResultsAsync(nameof(FSharpMakeOuterBindingRecursiveCodeFixProvider)) |> liftAsync
+            let! parseResults = context.Document.GetFSharpParseResultsAsync(nameof(FSharpMakeOuterBindingRecursiveCodeFixProvider)) |> Async.AwaitTask |> liftAsync
 
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
             let diagnosticRange = RoslynHelpers.TextSpanToFSharpRange(context.Document.FilePath, context.Span, sourceText)

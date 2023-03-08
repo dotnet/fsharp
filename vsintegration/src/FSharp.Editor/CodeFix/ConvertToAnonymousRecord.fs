@@ -24,7 +24,7 @@ type internal FSharpConvertToAnonymousRecordCodeFixProvider
     override _.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
             let document = context.Document
-            let! parseResults = document.GetFSharpParseResultsAsync(nameof(FSharpConvertToAnonymousRecordCodeFixProvider)) |> liftAsync
+            let! parseResults = document.GetFSharpParseResultsAsync(nameof(FSharpConvertToAnonymousRecordCodeFixProvider)) |> Async.AwaitTask |> liftAsync
 
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
             let errorRange = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)

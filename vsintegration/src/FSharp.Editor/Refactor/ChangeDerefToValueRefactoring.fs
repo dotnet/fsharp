@@ -27,7 +27,7 @@ type internal FSharpChangeDerefToValueRefactoring
         asyncMaybe {
             let document = context.Document
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
-            let! parseResults = document.GetFSharpParseResultsAsync(nameof(FSharpChangeDerefToValueRefactoring)) |> liftAsync
+            let! parseResults = document.GetFSharpParseResultsAsync(nameof(FSharpChangeDerefToValueRefactoring)) |> Async.AwaitTask |> liftAsync
 
             let selectionRange = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)
             let! derefRange = parseResults.TryRangeOfRefCellDereferenceContainingPos selectionRange.Start

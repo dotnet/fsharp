@@ -146,7 +146,7 @@ type internal FSharpBlockStructureService [<ImportingConstructor>] () =
         member _.GetBlockStructureAsync(document, cancellationToken) : Task<FSharpBlockStructure> =
             asyncMaybe {
                 let! sourceText = document.GetTextAsync(cancellationToken)
-                let! parseResults = document.GetFSharpParseResultsAsync(nameof(FSharpBlockStructureService)) |> liftAsync
+                let! parseResults = document.GetFSharpParseResultsAsync(nameof(FSharpBlockStructureService)) |> Async.AwaitTask |> liftAsync
                 return createBlockSpans document.Project.IsFSharpBlockStructureEnabled sourceText parseResults.ParseTree |> Seq.toImmutableArray
             } 
             |> Async.map (Option.defaultValue ImmutableArray<_>.Empty)

@@ -20,7 +20,7 @@ type internal FSharpUseTripleQuotedInterpolationCodeFixProvider
 
     override _.RegisterCodeFixesAsync context =
         asyncMaybe {
-            let! parseResults = context.Document.GetFSharpParseResultsAsync(nameof(FSharpUseTripleQuotedInterpolationCodeFixProvider)) |> liftAsync
+            let! parseResults = context.Document.GetFSharpParseResultsAsync(nameof(FSharpUseTripleQuotedInterpolationCodeFixProvider)) |> Async.AwaitTask |> liftAsync
 
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
             let errorRange = RoslynHelpers.TextSpanToFSharpRange(context.Document.FilePath, context.Span, sourceText)

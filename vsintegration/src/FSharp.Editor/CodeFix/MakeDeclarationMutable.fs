@@ -36,12 +36,12 @@ type internal FSharpMakeDeclarationMutableFixProvider
             do! Option.guard (not(isSignatureFile document.FilePath))
             let position = context.Span.Start
 
-            let! lexerSymbol = document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false, nameof(FSharpMakeDeclarationMutableFixProvider))
+            let! lexerSymbol = document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false, nameof(FSharpMakeDeclarationMutableFixProvider)) |> Async.AwaitTask
             let! sourceText = document.GetTextAsync () |> liftTaskAsync
             let textLine = sourceText.Lines.GetLineFromPosition position
             let textLinePos = sourceText.Lines.GetLinePosition position
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
-            let! parseFileResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpMakeDeclarationMutableFixProvider)) |> liftAsync
+            let! parseFileResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpMakeDeclarationMutableFixProvider)) |> Async.AwaitTask |> liftAsync
             let decl = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, false)
 
             match decl with

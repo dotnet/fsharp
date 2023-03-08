@@ -31,7 +31,7 @@ type internal FSharpAddMissingFunKeywordCodeFixProvider
             // Only trigger when failing to parse `->`, which arises when `fun` is missing
             do! Option.guard (textOfError = "->")
 
-            let! defines = document.GetFSharpCompilationDefinesAsync(nameof(FSharpAddMissingFunKeywordCodeFixProvider)) |> liftAsync
+            let! defines = document.GetFSharpCompilationDefinesAsync(nameof(FSharpAddMissingFunKeywordCodeFixProvider)) |> Async.AwaitTask |> liftAsync
 
             let adjustedPosition =
                 let rec loop ch pos =

@@ -22,7 +22,7 @@ type internal FSharpChangeRefCellDerefToNotExpressionCodeFixProvider
     override this.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
             let document = context.Document
-            let! parseResults = document.GetFSharpParseResultsAsync(nameof(FSharpChangeRefCellDerefToNotExpressionCodeFixProvider)) |> liftAsync
+            let! parseResults = document.GetFSharpParseResultsAsync(nameof(FSharpChangeRefCellDerefToNotExpressionCodeFixProvider)) |> Async.AwaitTask |> liftAsync
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
 
             let errorRange = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)

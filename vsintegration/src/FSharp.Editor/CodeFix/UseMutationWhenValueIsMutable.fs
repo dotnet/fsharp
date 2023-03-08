@@ -50,8 +50,8 @@ type internal FSharpUseMutationWhenValueIsMutableFixProvider
             let textLine = sourceText.Lines.GetLineFromPosition adjustedPosition
             let textLinePos = sourceText.Lines.GetLinePosition adjustedPosition
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
-            let! lexerSymbol = document.TryFindFSharpLexerSymbolAsync(adjustedPosition, SymbolLookupKind.Greedy, false, false, nameof(FSharpUseMutationWhenValueIsMutableFixProvider))
-            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpUseMutationWhenValueIsMutableFixProvider)) |> liftAsync
+            let! lexerSymbol = document.TryFindFSharpLexerSymbolAsync(adjustedPosition, SymbolLookupKind.Greedy, false, false, nameof(FSharpUseMutationWhenValueIsMutableFixProvider)) |> Async.AwaitTask
+            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpUseMutationWhenValueIsMutableFixProvider)) |> Async.AwaitTask |> liftAsync
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland)
 
             match symbolUse.Symbol with

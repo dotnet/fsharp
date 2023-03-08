@@ -82,7 +82,7 @@ type internal FSharpFindUsagesService
 
             let onFound =
                 fun (doc: Document) (textSpan: TextSpan) (symbolUse: range) ->
-                    async {
+                    backgroundTask {
                         match declarationRange with
                         | Some declRange when Range.equals declRange symbolUse -> ()
                         | _ ->
@@ -106,7 +106,7 @@ type internal FSharpFindUsagesService
                 for symbolUse in symbolUses do
                     match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range) with
                     | Some textSpan ->
-                        do! onFound document textSpan symbolUse.Range |> liftAsync
+                        do! onFound document textSpan symbolUse.Range |> Async.AwaitTask |> liftAsync
                     | _ ->
                         ()
             | scope ->

@@ -31,7 +31,7 @@ type internal FSharpReplaceWithSuggestionCodeFixProvider
             do! Option.guard settings.CodeFixes.SuggestNamesForErrors
 
             let document = context.Document
-            let! parseFileResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpReplaceWithSuggestionCodeFixProvider)) |> liftAsync
+            let! parseFileResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpReplaceWithSuggestionCodeFixProvider)) |> Async.AwaitTask |> liftAsync
 
             // This is all needed to get a declaration list
             let! sourceText = document.GetTextAsync(context.CancellationToken)

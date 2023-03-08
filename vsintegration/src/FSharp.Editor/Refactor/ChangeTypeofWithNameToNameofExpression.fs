@@ -27,7 +27,7 @@ type internal FSharpChangeTypeofWithNameToNameofExpressionRefactoring
         asyncMaybe {
             let document = context.Document
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
-            let! parseResults = document.GetFSharpParseResultsAsync(nameof(FSharpChangeTypeofWithNameToNameofExpressionRefactoring)) |> liftAsync
+            let! parseResults = document.GetFSharpParseResultsAsync(nameof(FSharpChangeTypeofWithNameToNameofExpressionRefactoring)) |> Async.AwaitTask |> liftAsync
 
             let selectionRange = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)
             let! namedTypeOfResults = parseResults.TryRangeOfTypeofWithNameAndTypeExpr(selectionRange.Start)

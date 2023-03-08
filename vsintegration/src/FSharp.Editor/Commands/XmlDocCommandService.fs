@@ -63,7 +63,7 @@ type internal XmlDocCommandFilter
                                 let! document = document.Value
                                 let! cancellationToken = Async.CancellationToken |> liftAsync
                                 let! sourceText = document.GetTextAsync(cancellationToken)
-                                let! parseResults = document.GetFSharpParseResultsAsync(nameof(XmlDocCommandFilter)) |> liftAsync
+                                let! parseResults = document.GetFSharpParseResultsAsync(nameof(XmlDocCommandFilter)) |> Async.AwaitTask |> liftAsync
                                 let xmlDocables = XmlDocParser.GetXmlDocables (sourceText.ToFSharpSourceText(), parseResults.ParseTree) 
                                 let xmlDocablesBelowThisLine = 
                                     // +1 because looking below current line for e.g. a 'member'
