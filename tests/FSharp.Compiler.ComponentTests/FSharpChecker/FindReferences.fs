@@ -3,6 +3,7 @@
 open Xunit
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Test.ProjectGeneration
+open FSharp.Test.ProjectGeneration.Helpers
 
 type Occurence = Definition | InType | Use
 
@@ -198,7 +199,7 @@ let foo x = 5""" })
         }
 
 [<Fact>]
-let ``We find a type that has been aliased`` () =
+let ``We find values of a type that has been aliased`` () =
 
     let project = SyntheticProject.Create("TypeAliasTest",
         { sourceFile "First" [] with
@@ -218,6 +219,27 @@ let ``We find a type that has been aliased`` () =
             "FileSecond.fs", 6, 12, 29
         ])
     }
+
+[<Fact>]
+let ``We don't find type aliases for a type`` () =
+
+    let source = """
+type MyType =
+    member _.foo = "boo"
+    member x.this : mytype = x
+and mytype = MyType
+"""
+
+    let fileName, options, checker = singleFileChecker source
+
+    let symbolUse = getSymbolUse fileName source "MyType" options checker |> Async.RunSynchronously
+
+    checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol, fastCheck = true)
+    |> Async.RunSynchronously
+    |> expectToFind [
+        fileName, 2, 5, 11
+        fileName, 5, 13, 19
+    ]
 
 /// https://github.com/dotnet/fsharp/issues/14396
 [<Fact>]
