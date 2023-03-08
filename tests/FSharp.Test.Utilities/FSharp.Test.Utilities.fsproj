@@ -12,7 +12,7 @@
     <Tailcalls>false</Tailcalls>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
   </PropertyGroup>
- 
+
   <ItemGroup>
     <Compile Include="..\scripts\scriptlib.fsx">
       <Link>scriptlib.fsx</Link>
