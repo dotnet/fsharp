@@ -67,6 +67,7 @@
     <Compile Include="Conformance\DeclarationElements\MemberDefinitions\OverloadingMembers\OverloadingMembers.fs" />
     <Compile Include="Conformance\DeclarationElements\ModuleAbbreviations\ModuleAbbreviations.fs" />
     <Compile Include="Conformance\DeclarationElements\UseBindings\UseBindings.fs" />
+    <Compile Include="Conformance\EntryPoint\EntryPoint.fs" />
     <Compile Include="Conformance\Expressions\ApplicationExpressions\BasicApplication\BasicApplication.fs" />
     <Compile Include="Conformance\Expressions\BindingExpressions\BindingExpressions.fs" />
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\PatternMatching\PatternMatching.fs" />
@@ -207,6 +208,7 @@
     <Compile Include="CompilerOptions\fsc\codepage\codepage.fs" />
     <Compile Include="CompilerOptions\fsc\debug.fs" />
     <Compile Include="CompilerOptions\fsc\langversion.fs" />
+    <Compile Include="CompilerOptions\fsc\misc\misc.fs" />
     <Compile Include="CompilerOptions\fsc\noframework\noframework.fs" />
     <Compile Include="CompilerOptions\fsc\platform\platform.fs" />
     <Compile Include="CompilerOptions\fsc\times\times.fs" />

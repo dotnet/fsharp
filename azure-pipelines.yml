@@ -124,7 +124,7 @@ stages:
           - script: eng\CIBuild.cmd
                     -configuration $(_BuildConfig)
                     -prepareMachine
-                    -testAll
+                    -testAllButIntegration
                     -officialSkipTests $(SkipTests)
                     /p:SignType=$(_SignType)
                     /p:DotNetSignType=$(_SignType)
@@ -346,12 +346,18 @@ stages:
               vs_release:
                 _configuration: Release
                 _testKind: testVs
-              inttests_release:
-                _configuration: Release
-                _testKind: testIntegration
+              ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
+                inttests_release:
+                  _configuration: Release
+                  _testKind: testIntegration
           steps:
           - checkout: self
             clean: true
+
+          - powershell: eng\SetupVSHive.ps1
+            displayName: Setup VS Hive
+            condition: or(eq(variables['_testKind'], 'testVs'), eq(variables['_testKind'], 'testIntegration'))
+
           - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
             displayName: Build / Test
           - task: PublishTestResults@2

@@ -51,25 +51,17 @@ module times =
 
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"error_01.fs"|])>]
     let ``times - to console`` compilation =
-        let oldConsole = Console.Out
-        let sw = new StringWriter()
-        Console.SetOut(sw)
-        use _ = {new IDisposable with
-                     member this.Dispose() = Console.SetOut(oldConsole) }
-
         compilation
         |> asFsx
+        |> withBufferWidth 120
         |> withOptions ["--times"]
         |> ignoreWarnings
         |> compile        
-        |> shouldSucceed  
-        |> ignore<CompilationResult>
-
-        let consoleContents = sw.ToString()
-        Assert.Contains("Parse inputs",consoleContents)
-        Assert.Contains("Typecheck",consoleContents)
-        Assert.Contains("GC0",consoleContents)
-        Assert.Contains("Duration",consoleContents)
+        |> verifyOutputContains [|
+            "Parse inputs"
+            "Typecheck"
+            "GC0"
+            "Duration"|]
 
 
     [<Theory(Skip="Flaky in CI due to file being locked, disabling for now until file closure is resolved."); Directory(__SOURCE_DIRECTORY__, Includes=[|"error_01.fs"|])>]

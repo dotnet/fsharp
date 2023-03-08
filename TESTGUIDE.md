@@ -7,7 +7,6 @@ Where this guide mentions the command `build` it means either `build.cmd` in the
 * [Quick start: Running Tests](#quick-start-running-tests)
 * [Prerequisites](#prerequisites)
 * [Test Suites](#test-suites)
-* [More details](#more-details)
 * [Other Tips and gotchas](#other-tips-and-gotchas)
 * [Solving common errors](#solving-common-errors)
 * [Approximate running times](#approximate-running-times)
@@ -42,6 +41,7 @@ build -testAll -c Release
 | testScripting | Windows | Runs scripting fsx and fsi commandline tests |
 | test          | Windows | Same as testDesktop |
 | testAll       | Windows | Runs all above tests |
+| testAllButIntegration       | Windows | Runs all minus integration tests |
 
 Some test groups can only be run in `CI` configuration, for that, you need to pass the `-ci -bl` or `-ci -nobl` arguments. Some test groups can only be run in Release mode, this is indicated below. Some tests can only be run on Windows.
 
@@ -92,7 +92,7 @@ The prerequisites are the same as for building the `FSharp.sln`, plus, at a mini
   * Between switching git branches
   * When merging with latest `main` upstream branch.
 
-## More Details
+## Test suites
 
 The F# tests are split as follows:
 
