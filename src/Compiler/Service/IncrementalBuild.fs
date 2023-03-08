@@ -38,7 +38,6 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.BuildGraph
 
-
 [<AutoOpen>]
 module internal IncrementalBuild =
 
@@ -731,11 +730,8 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, generate
 module IncrementalBuilderHelpers =
 
     /// Get the timestamp of the given file name.
-    let StampFileNameTask (cache: TimeStampCache) (fileInfo: FSharpFile) useChangeNotifications =
-        if useChangeNotifications then
-            fileInfo.Source.TimeStamp
-        else
-            cache.GetFileTimeStamp fileInfo.Source.FilePath
+    let StampFileNameTask (cache: TimeStampCache) (fileInfo: FSharpFile) isLiveBuffer =
+        if isLiveBuffer then fileInfo.Source.TimeStamp else cache.GetFileTimeStamp fileInfo.Source.FilePath
 
     /// Timestamps of referenced assemblies are taken from the file's timestamp.
     let StampReferencedAssemblyTask (cache: TimeStampCache) (_ref, timeStamper) =
@@ -1070,21 +1066,25 @@ module IncrementalBuilderStateHelpers =
         })
 
     and computeStampedFileName (initialState: IncrementalBuilderInitialState) (state: IncrementalBuilderState) (cache: TimeStampCache) slot fileInfo =
+        let isLiveBuffer slot = state.sources[slot] <> initialState.fileNames[slot]
+
         let currentStamp = state.stampedFileNames[slot]
-        let stamp = StampFileNameTask cache fileInfo initialState.useChangeNotifications
+        let stamp = StampFileNameTask cache fileInfo (isLiveBuffer slot)
 
         if currentStamp <> stamp then
 
-            if not initialState.useChangeNotifications then
+            // invalidate manually when not using live buffers
+            if not (isLiveBuffer slot) then
                 SyntaxTree.Invalidate fileInfo.Source
 
             match state.boundModels[slot].TryPeekValue() with
             // This prevents an implementation file that has a backing signature file from invalidating the rest of the build.
             | ValueSome(boundModel) when initialState.enablePartialTypeChecking && boundModel.BackingSignature.IsSome ->
+                SyntaxTree.Invalidate fileInfo.Source
                 let newBoundModel = boundModel.ClearTcInfoExtras()
                 { state with
-                    boundModels = state.boundModels.RemoveAt(slot).Insert(slot, GraphNode(node.Return newBoundModel))
-                    stampedFileNames = state.stampedFileNames.SetItem(slot, StampFileNameTask cache fileInfo initialState.useChangeNotifications)
+                    boundModels = state.boundModels.SetItem(slot, GraphNode(node.Return newBoundModel))
+                    stampedFileNames = state.stampedFileNames.SetItem(slot, stamp)
                 }
             | _ ->
 
@@ -1095,7 +1095,7 @@ module IncrementalBuilderStateHelpers =
                 // Invalidate the file and all files below it.
                 for j = slot to stampedFileNames.Count - 1 do
                     let file = state.sources[j]
-                    let stamp = StampFileNameTask cache file initialState.useChangeNotifications
+                    let stamp = StampFileNameTask cache file (isLiveBuffer j)
                     stampedFileNames[j] <- stamp
                     logicalStampedFileNames[j] <- stamp
                     boundModels[j] <- createBoundModelGraphNode initialState file state.initialBoundModel boundModels j
