@@ -759,6 +759,7 @@ module CoreTests =
     type SigningType =
         | DelaySigned
         | PublicSigned
+        | FullSigned
         | NotSigned
 
     let signedtest(programId:string, args:string, expectedSigning:SigningType) =
@@ -782,6 +783,11 @@ module CoreTests =
             | true, false -> failwith "unreachable"
             | false, true -> SigningType.DelaySigned
             | false, false -> SigningType.NotSigned
+
+        exeStream.Dispose()
+        if isSigned then
+            // We think the assembly is signed let's run sn -vr to vberify the hashes
+            sn cfg " %s    -q -vf" "" assemblyPath
 
         Assert.AreEqual(expectedSigning, actualSigning)
 
@@ -838,6 +844,11 @@ module CoreTests =
     // Test SHA 1024 bit key fully signed  Attributes
     [<Test; Category("signedtest")>]
     let ``signedtest-16`` () = signedtest("test-sha1024-full-attributes", "--define:SHA1024", SigningType.PublicSigned)
+
+    // Test fully signed with pdb generation
+    [<Test; Category("signedtest")>]
+    let ``signedtest-17`` () = signedtest("test-sha1-full-cl", "-g --keyfile:sha1full.snk", SigningType.PublicSigned)
+
 #endif
 
 #if !NETCOREAPP
