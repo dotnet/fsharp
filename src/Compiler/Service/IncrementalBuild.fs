@@ -7,7 +7,6 @@ open System.Collections.Generic
 open System.Collections.Immutable
 open System.Diagnostics
 open System.IO
-open System.IO.Compression
 open System.Threading
 open Internal.Utilities.Library
 open Internal.Utilities.Collections
@@ -18,7 +17,6 @@ open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
-open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.CreateILModule
@@ -30,7 +28,6 @@ open FSharp.Compiler.IO
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseAndCheckInputs
-open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
@@ -120,50 +117,46 @@ module IncrementalBuildSyntaxTree =
         static let cache = ConditionalWeakTable<FSharpSource, _>()
 
         let fileName = fileInfo.Source.FilePath
+        let sourceRange = fileInfo.Range
+        let source = fileInfo.Source
+        let isLastCompiland = fileInfo.Flags
 
-        let parse(sigNameOpt: QualifiedNameOfFile option) =
-            let sourceRange = fileInfo.Range
-            let source = fileInfo.Source
-            let isLastCompiland = fileInfo.Flags
+        let implStub (sigNameOpt: QualifiedNameOfFile option) =
+            if sigNameOpt.IsSome && FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
+                Some (
+                    ParsedInput.ImplFile(
+                        ParsedImplFileInput(
+                            fileName,
+                            false,
+                            sigNameOpt.Value,
+                            [],
+                            [],
+                            [],
+                            isLastCompiland,
+                            { ConditionalDirectives = []; CodeComments = [] },
+                            Set.empty
+                        )
+                    ), sourceRange, fileName, [||]
+                )
+            else
+                None
 
+        let parse _ =
             let diagnosticsLogger = CompilationDiagnosticLogger("Parse", tcConfig.diagnosticsOptions)
             // Return the disposable object that cleans up
             use _holder = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parse)
 
             try
-                IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBEParsed fileName)
-                let canSkip = sigNameOpt.IsSome && FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName)
-                use act =
-                    Activity.start "IncrementalBuildSyntaxTree.parse"
-                        [|
-                            Activity.Tags.fileName, source.FilePath
-                            "buildPhase", BuildPhase.Parse.ToString()
-                            "canSkip", canSkip.ToString()
-                        |]             
-                let input =
-                    if canSkip then
-                        ParsedInput.ImplFile(
-                            ParsedImplFileInput(
-                                fileName,
-                                false,
-                                sigNameOpt.Value,
-                                [],
-                                [],
-                                [],
-                                isLastCompiland,
-                                { ConditionalDirectives = []; CodeComments = [] },
-                                Set.empty
-                            )
-                        )
-                    else
-                        use text = source.GetTextContainer()
-                        match text with
-                        | TextContainer.Stream(stream) ->
-                            ParseOneInputStream(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, false, stream)
-                        | TextContainer.SourceText(sourceText) ->
-                            ParseOneInputSourceText(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, sourceText)
-                        | TextContainer.OnDisk ->
-                            ParseOneInputFile(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, true)
+                IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBEParsed fileName)            
+                use text = source.GetTextContainer()
+                let input = 
+                    match text with
+                    | TextContainer.Stream(stream) ->
+                        ParseOneInputStream(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, false, stream)
+                    | TextContainer.SourceText(sourceText) ->
+                        ParseOneInputSourceText(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, sourceText)
+                    | TextContainer.OnDisk ->
+                        ParseOneInputFile(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, true)
 
                 fileParsed.Trigger fileName
 
@@ -175,7 +168,17 @@ module IncrementalBuildSyntaxTree =
                 failwith msg
 
         /// Parse the given file and return the given input.
-        member _.Parse(sigNameOpt) = cache.GetValue(fileInfo.Source, fun _ -> parse sigNameOpt)
+        member _.Parse(sigNameOpt) =
+            //use act =
+            //    Activity.start "IncrementalBuildSyntaxTree.parse"
+            //        [|
+            //            Activity.Tags.fileName, source.FilePath
+            //            "buildPhase", BuildPhase.Parse.ToString()
+            //            "canSkip", canSkip.ToString()
+            //        |] 
+            match implStub sigNameOpt with
+            | Some result -> result
+            | _ -> cache.GetValue(fileInfo.Source, parse)
         
         static member Invalidate(source) = cache.Remove(source) |> ignore
 
@@ -946,8 +949,7 @@ module IncrementalBuilderHelpers =
         return ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, finalBoundModelWithErrors
     }
 
-    let GetSyntaxTree tcConfig fileParsed lexResourceManager fileInfo =
-        SyntaxTree(tcConfig, fileParsed, lexResourceManager, fileInfo)
+    let GetSyntaxTree tcConfig fileParsed lexResourceManager fileInfo = SyntaxTree(tcConfig, fileParsed, lexResourceManager, fileInfo)
 
 [<NoComparison;NoEquality>]
 type IncrementalBuilderInitialState =
@@ -1076,6 +1078,9 @@ module IncrementalBuilderStateHelpers =
         let stamp = StampFileNameTask cache fileInfo initialState.useChangeNotifications
 
         if currentStamp <> stamp then
+
+            SyntaxTree.Invalidate fileInfo.Source
+
             match state.boundModels[slot].TryPeekValue() with
             // This prevents an implementation file that has a backing signature file from invalidating the rest of the build.
             | ValueSome(boundModel) when initialState.enablePartialTypeChecking && boundModel.BackingSignature.IsSome ->
@@ -1091,11 +1096,12 @@ module IncrementalBuilderStateHelpers =
                 let boundModels = state.boundModels.ToBuilder()
 
                 // Invalidate the file and all files below it.
-                for j = 0 to stampedFileNames.Count - slot - 1 do
-                    let stamp = StampFileNameTask cache state.sources[slot + j] initialState.useChangeNotifications
-                    stampedFileNames[slot + j] <- stamp
-                    logicalStampedFileNames[slot + j] <- stamp
-                    boundModels[slot + j] <- createBoundModelGraphNode initialState state.sources[slot + j] state.initialBoundModel boundModels (slot + j)
+                for j = slot to stampedFileNames.Count - 1 do
+                    let file = state.sources[j]
+                    let stamp = StampFileNameTask cache file initialState.useChangeNotifications
+                    stampedFileNames[j] <- stamp
+                    logicalStampedFileNames[j] <- stamp
+                    boundModels[j] <- createBoundModelGraphNode initialState file state.initialBoundModel boundModels j
 
                 { state with
                     // Something changed, the finalized view of the project must be invalidated.
@@ -1416,7 +1422,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
     member builder.GetParseResultsForFile fileName =
         let slotOfFile = builder.GetSlotOfFileName fileName
-        let fileInfo = fileNames[slotOfFile]
+        let fileInfo = currentState.sources[slotOfFile]
         // use cached parse results if possible
         let syntaxTree = GetSyntaxTree initialState.tcConfig initialState.fileParsed initialState.lexResourceManager fileInfo
         syntaxTree.Parse None
@@ -1426,7 +1432,6 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             let slotOfFile = builder.GetSlotOfFileName fileName
 
             let fileInfo = currentState.sources[slotOfFile]
-            SyntaxTree.Invalidate fileInfo.Source
             let source = FSharpSource.Create(fileInfo.Source.FilePath, (fun () -> timeStamp), (fun () -> getSource fileInfo.Source.FilePath))
             let newState =
                 { currentState with 
@@ -1437,7 +1442,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             setCurrentState newState cache  ct
         }
 
-    member _.SourceFiles  = fileNames |> Seq.map (fun f -> f.Source.FilePath) |> List.ofSeq
+    member _.SourceFiles = fileNames |> Seq.map (fun f -> f.Source.FilePath) |> List.ofSeq
 
     /// CreateIncrementalBuilder (for background type checking). Note that fsc.fs also
     /// creates an incremental builder used by the command line compiler.
@@ -1674,8 +1679,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             let getFSharpSource fileName =
                 getSource
                 |> Option.map(fun getSource ->
-                    let now = DateTime.UtcNow
-                    let getTimeStamp = fun () -> now
+                    let timeStamp = DateTime.UtcNow
+                    let getTimeStamp = fun () -> timeStamp
                     let getSourceText() = getSource fileName
                     FSharpSource.Create(fileName, getTimeStamp, getSourceText))
                 |> Option.defaultWith(fun () -> FSharpSource.CreateFromFile(fileName))
