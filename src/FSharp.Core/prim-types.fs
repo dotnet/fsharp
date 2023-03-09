@@ -559,8 +559,8 @@ namespace Microsoft.FSharp.Core
             // needs to be public to be visible from inline function 'average' and others
             [<ValueAsStaticProperty>]
             let InputMustBeNonNegativeString = SR.GetString(SR.inputMustBeNonNegative)
-            
-        module IntrinsicOperators =        
+
+        module IntrinsicOperators =
             //-------------------------------------------------------------------------
             // Lazy and/or.  Laziness added by the F# compiler.
             
@@ -4554,7 +4554,9 @@ namespace Microsoft.FSharp.Core
              // According to the somewhat subtle rules of static optimizations,
              // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
              when ^T : ^T = (^T : (static member op_Explicit: ^T -> byte) (value))
-            
+
+        let inline uint8 value = byte value
+
         [<NoDynamicInvocation(isLegacy=true)>]
         [<CompiledName("ToSByte")>]
         let inline sbyte (value: ^T) = 
@@ -4576,6 +4578,8 @@ namespace Microsoft.FSharp.Core
              // According to the somewhat subtle rules of static optimizations,
              // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
              when ^T : ^T = (^T : (static member op_Explicit: ^T -> sbyte) (value))
+
+        let inline int8 value = sbyte value
 
         [<NoDynamicInvocation(isLegacy=true)>]
         [<CompiledName("ToUInt16")>]
@@ -4757,6 +4761,8 @@ namespace Microsoft.FSharp.Core
              when ^T : byte     = (# "conv.r.un conv.r4" value  : float32 #)
              when ^T : ^T = (^T : (static member op_Explicit: ^T -> float32) (value))
 
+        let inline single value = float32 value
+
         [<NoDynamicInvocation(isLegacy=true)>]
         [<CompiledName("ToDouble")>]
         let inline float (value: ^T) = 
@@ -4778,6 +4784,8 @@ namespace Microsoft.FSharp.Core
              when ^T : byte      = (# "conv.r.un conv.r8" value  : float #)
              when ^T : decimal   = (Convert.ToDouble((# "" value : decimal #))) 
              when ^T : ^T = (^T : (static member op_Explicit: ^T -> float) (value))
+
+        let inline double value = float value
 
         [<NoDynamicInvocation(isLegacy=true)>]
         [<CompiledName("ToDecimal")>]
@@ -5309,6 +5317,8 @@ namespace Microsoft.FSharp.Core
                  when ^T : byte       = (# "" value  : byte #)
                  when ^T : ^T = (^T : (static member op_Explicit: ^T -> byte) (value))
 
+            let inline uint8 value = byte value
+
             [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToSByte")>]
             let inline sbyte (value: ^T) = 
@@ -5328,6 +5338,8 @@ namespace Microsoft.FSharp.Core
                  when ^T : unativeint = (# "conv.ovf.i1.un" value  : sbyte #)
                  when ^T : byte       = (# "conv.ovf.i1.un" value  : sbyte #)
                  when ^T : ^T = (^T : (static member op_Explicit: ^T -> sbyte) (value))
+
+            let inline int8 value = sbyte value
 
             [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToUInt16")>]
@@ -6964,7 +6976,12 @@ namespace Microsoft.FSharp.Control
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.Operators
 
-    module LazyExtensions = 
+    module LazyExtensions =
+
+        [<CompiledName("LazyPattern")>]
+        let (|Lazy|) (input: Lazy<_>) =
+            input.Value
+
         type System.Lazy<'T> with
             [<CompiledName("Create")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
             static member Create(creator : unit -> 'T) : Lazy<'T> =
@@ -6989,7 +7006,7 @@ namespace Microsoft.FSharp.Control
 
             [<CompiledName("UnsynchronizedForceDeprecated")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
             member x.UnsynchronizedForce() = x.Value
-            
+
     type Lazy<'T> = System.Lazy<'T>
 
     type 'T ``lazy`` = Lazy<'T>       
@@ -7013,4 +7030,14 @@ namespace Microsoft.FSharp.Control
 
     type IEvent<'Args> = IEvent<Handler<'Args>, 'Args>
 
-    do()
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+
+namespace Microsoft.FSharp.Core
+
+// We can't do this in prim-types.fs, so it goes here instead.
+[<assembly: AutoOpen("Microsoft.FSharp")>]
+[<assembly: AutoOpen("Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators")>]
+[<assembly: AutoOpen("Microsoft.FSharp.Core")>]
+[<assembly: AutoOpen("Microsoft.FSharp.Collections")>]
+[<assembly: AutoOpen("Microsoft.FSharp.Control")>]
+do ()

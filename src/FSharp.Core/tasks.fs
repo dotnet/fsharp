@@ -463,3 +463,10 @@ module MediumPriority =
 
         member inline this.ReturnFrom(computation: Async<'T>) : TaskCode<'T, 'T> =
             this.ReturnFrom(Async.StartImmediateAsTask computation)
+
+namespace Microsoft.FSharp.Core
+
+[<assembly: AutoOpen("Microsoft.FSharp.Control.TaskBuilderExtensions.LowPriority")>]
+[<assembly: AutoOpen("Microsoft.FSharp.Control.TaskBuilderExtensions.MediumPriority")>]
+[<assembly: AutoOpen("Microsoft.FSharp.Control.TaskBuilderExtensions.HighPriority")>]
+do ()

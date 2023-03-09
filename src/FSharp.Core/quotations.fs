@@ -2978,3 +2978,20 @@ module ExprShape =
             | HoleTerm _ -> invalidArg "expr" (SR.GetString(SR.QunexpectedHole))
 
         loop (input :> Expr)
+
+namespace Microsoft.FSharp.Core
+
+open System
+
+[<AutoOpen>]
+module QuotationsGlobalOperators =
+
+    [<CompiledName("SpliceExpression")>]
+    let (~%) (expression: Microsoft.FSharp.Quotations.Expr<'T>) : 'T =
+        ignore expression
+        raise (InvalidOperationException(SR.GetString(SR.firstClassUsesOfSplice)))
+
+    [<CompiledName("SpliceUntypedExpression")>]
+    let (~%%) (expression: Microsoft.FSharp.Quotations.Expr) : 'T =
+        ignore expression
+        raise (InvalidOperationException(SR.GetString(SR.firstClassUsesOfSplice)))

@@ -2276,3 +2276,36 @@ module ExprShape =
     ///
     /// <example-tbd></example-tbd>
     val RebuildShapeCombination: shape: obj * arguments: Expr list -> Expr
+
+namespace Microsoft.FSharp.Core
+
+open Microsoft.FSharp.Quotations
+
+[<AutoOpen>]
+module QuotationsGlobalOperators =
+
+    /// <summary>Special prefix operator for splicing typed expressions into quotation holes.</summary>
+    ///
+    /// <example id="splice-1">
+    /// <code lang="fsharp">
+    /// let f v = &lt;@ %v + %v @>
+    ///
+    /// f &lt;@ 5 + 5 @>;;
+    /// </code>
+    /// Evaluates to a quotation equivalent to <c>&lt;@ (5 + 5) + (5 + 5) @> </c>
+    /// </example>
+    [<CompiledName("SpliceExpression")>]
+    val (~%): expression: Expr<'T> -> 'T
+
+    /// <summary>Special prefix operator for splicing untyped expressions into quotation holes.</summary>
+    ///
+    /// <example id="rawsplice-1">
+    /// <code lang="fsharp">
+    /// let f v = &lt;@@ (%%v: int) + (%%v: int) @@>
+    ///
+    /// f &lt;@@ 5 + 5 @@>;;
+    /// </code>
+    /// Evaluates to an untyped quotation equivalent to <c>&lt;@@ (5 + 5) + (5 + 5) @@> </c>
+    /// </example>
+    [<CompiledName("SpliceUntypedExpression")>]
+    val (~%%): expression: Expr -> 'T

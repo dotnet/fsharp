@@ -53,9 +53,7 @@ let ValRefForIntrinsic (IntrinsicValRef(mvr, _, _, _, key))  = mkNonLocalValRef 
 module FSharpLib =
 
     let Root                       = "Microsoft.FSharp"
-    let RootPath                   = splitNamespace Root
     let Core                       = Root + ".Core"
-    let CorePath                   = splitNamespace Core
     let CoreOperatorsCheckedName   = Root + ".Core.Operators.Checked"
     let ControlName                = Root + ".Control"
     let LinqName                   = Root + ".Linq"
@@ -66,23 +64,37 @@ module FSharpLib =
     let RuntimeHelpersName         = Root + ".Core.CompilerServices.RuntimeHelpers"
     let ExtraTopLevelOperatorsName = Root + ".Core.ExtraTopLevelOperators"
     let NativeInteropName          = Root + ".NativeInterop"
-
     let QuotationsName             = Root + ".Quotations"
+    let SeqGlobalOperatorsName     = Root + ".Core.SeqGlobalOperators"
+    let SetGlobalOperatorsName     = Root + ".Core.SetGlobalOperators"
+    let PrintfGlobalOperatorsName  = Root + ".Core.PrintfGlobalOperators"
+    let AsyncGlobalOperatorsName   = Root + ".Core.AsyncGlobalOperators"
+    let QueryGlobalOperatorsName   = Root + ".Core.QueryGlobalOperators"
+    let QuotationsGlobalOperatorsName = Root + ".Core.QuotationsGlobalOperators"
 
-    let ControlPath                = splitNamespace ControlName
-    let LinqPath                   = splitNamespace LinqName
-    let CollectionsPath            = splitNamespace CollectionsName
-    let NativeInteropPath          = splitNamespace NativeInteropName |> Array.ofList
-    let CompilerServicesPath       = splitNamespace CompilerServicesName |> Array.ofList
-    let LinqRuntimeHelpersPath     = splitNamespace LinqRuntimeHelpersName |> Array.ofList
-    let RuntimeHelpersPath         = splitNamespace RuntimeHelpersName |> Array.ofList
-    let QuotationsPath             = splitNamespace QuotationsName |> Array.ofList
+    let RootPath = splitNamespace Root
+    let CorePath = splitNamespace Core
+    let ControlPath = splitNamespace ControlName
+    let LinqPath = splitNamespace LinqName
+    let CollectionsPath = splitNamespace CollectionsName
+    let NativeInteropPath = splitNamespace NativeInteropName |> Array.ofList
+    let CompilerServicesPath = splitNamespace CompilerServicesName |> Array.ofList
+    let LinqRuntimeHelpersPath = splitNamespace LinqRuntimeHelpersName |> Array.ofList
+    let RuntimeHelpersPath = splitNamespace RuntimeHelpersName |> Array.ofList
+    let ExtraTopLevelOperatorsPath = splitNamespace ExtraTopLevelOperatorsName
+    let QuotationsPath = splitNamespace QuotationsName |> Array.ofList
+    let MFSeqGlobalOperatorsPath = splitNamespace SeqGlobalOperatorsName
+    let MFSetGlobalOperatorsPath = splitNamespace SetGlobalOperatorsName
+    let MFPrintfGlobalOperatorsPath = splitNamespace PrintfGlobalOperatorsName
+    let MFAsyncGlobalOperatorsPath = splitNamespace AsyncGlobalOperatorsName
+    let MFQueryGlobalOperatorsPath = splitNamespace QueryGlobalOperatorsName
+    let MFQuotationsGlobalOperatorsPath = splitNamespace QuotationsGlobalOperatorsName
 
-    let RootPathArray              = RootPath |> Array.ofList
-    let CorePathArray              = CorePath |> Array.ofList
-    let LinqPathArray              = LinqPath |> Array.ofList
-    let ControlPathArray           = ControlPath |> Array.ofList
-    let CollectionsPathArray       = CollectionsPath |> Array.ofList
+    let RootPathArray = RootPath |> Array.ofList
+    let CorePathArray = CorePath |> Array.ofList
+    let LinqPathArray = LinqPath |> Array.ofList
+    let ControlPathArray = ControlPath |> Array.ofList
+    let CollectionsPathArray = CollectionsPath |> Array.ofList
 
 //-------------------------------------------------------------------------
 // Access the initial environment: helpers to build references
@@ -95,13 +107,13 @@ let private mkNonGenericTy tcref = TType_app(tcref, [], v_knownWithoutNull)
 
 let mkNonLocalTyconRef2 ccu path n = mkNonLocalTyconRef (mkNonLocalEntityRef ccu path) n
 
-let mk_MFCore_tcref             ccu n = mkNonLocalTyconRef2 ccu CorePathArray n
-let mk_MFQuotations_tcref       ccu n = mkNonLocalTyconRef2 ccu QuotationsPath n
-let mk_MFLinq_tcref             ccu n = mkNonLocalTyconRef2 ccu LinqPathArray n
-let mk_MFCollections_tcref      ccu n = mkNonLocalTyconRef2 ccu CollectionsPathArray n
+let mk_MFCore_tcref ccu n = mkNonLocalTyconRef2 ccu CorePathArray n
+let mk_MFQuotations_tcref ccu n = mkNonLocalTyconRef2 ccu QuotationsPath n
+let mk_MFLinq_tcref ccu n = mkNonLocalTyconRef2 ccu LinqPathArray n
+let mk_MFCollections_tcref ccu n = mkNonLocalTyconRef2 ccu CollectionsPathArray n
 let mk_MFCompilerServices_tcref ccu n = mkNonLocalTyconRef2 ccu CompilerServicesPath n
-let mk_MFRuntimeHelpers_tcref   ccu n = mkNonLocalTyconRef2 ccu RuntimeHelpersPath n
-let mk_MFControl_tcref          ccu n = mkNonLocalTyconRef2 ccu ControlPathArray n
+let mk_MFRuntimeHelpers_tcref ccu n = mkNonLocalTyconRef2 ccu RuntimeHelpersPath n
+let mk_MFControl_tcref ccu n = mkNonLocalTyconRef2 ccu ControlPathArray n
 
 type
     [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
@@ -523,17 +535,24 @@ type TcGlobals(
   let fslib_MFIntrinsicFunctions_nleref        = mkNestedNonLocalEntityRef fslib_MFLanguagePrimitives_nleref "IntrinsicFunctions"
   let fslib_MFHashCompare_nleref               = mkNestedNonLocalEntityRef fslib_MFLanguagePrimitives_nleref "HashCompare"
   let fslib_MFOperators_nleref                 = mkNestedNonLocalEntityRef fslib_MFCore_nleref "Operators"
-  let fslib_MFByRefKinds_nleref                 = mkNestedNonLocalEntityRef fslib_MFCore_nleref "ByRefKinds"
+  let fslib_MFByRefKinds_nleref                = mkNestedNonLocalEntityRef fslib_MFCore_nleref "ByRefKinds"
   let fslib_MFOperatorIntrinsics_nleref        = mkNestedNonLocalEntityRef fslib_MFOperators_nleref "OperatorIntrinsics"
   let fslib_MFOperatorsUnchecked_nleref        = mkNestedNonLocalEntityRef fslib_MFOperators_nleref "Unchecked"
-  let fslib_MFOperatorsChecked_nleref        = mkNestedNonLocalEntityRef fslib_MFOperators_nleref "Checked"
+  let fslib_MFOperatorsChecked_nleref          = mkNestedNonLocalEntityRef fslib_MFOperators_nleref "Checked"
+  let fslib_MFSeqGlobalOperators_nleref           = mkRelocatedNestedNonLocalEntityRef fslib_MFCore_nleref "SeqGlobalOperators" "ExtraTopLevelOperators"
+  let fslib_MFSetGlobalOperators_nleref           = mkRelocatedNestedNonLocalEntityRef fslib_MFCore_nleref "SetGlobalOperators" "ExtraTopLevelOperators"
+  let fslib_MFPrintfGlobalOperators_nleref        = mkRelocatedNestedNonLocalEntityRef fslib_MFCore_nleref "PrintfGlobalOperators" "ExtraTopLevelOperators"
+  let fslib_MFAsyncGlobalOperators_nleref         = mkRelocatedNestedNonLocalEntityRef fslib_MFCore_nleref "AsyncGlobalOperators" "ExtraTopLevelOperators"
+  let fslib_MFQueryGlobalOperators_nleref         = mkRelocatedNestedNonLocalEntityRef fslib_MFCore_nleref "QueryGlobalOperators" "ExtraTopLevelOperators"
+  let fslib_MFQuotationsGlobalOperators_nleref    = mkRelocatedNestedNonLocalEntityRef fslib_MFCore_nleref "QuotationsGlobalOperators" "ExtraTopLevelOperators"
+  
   let fslib_MFExtraTopLevelOperators_nleref    = mkNestedNonLocalEntityRef fslib_MFCore_nleref "ExtraTopLevelOperators"
   let fslib_MFNullableOperators_nleref         = mkNestedNonLocalEntityRef fslib_MFLinq_nleref "NullableOperators"
   let fslib_MFQueryRunExtensions_nleref              = mkNestedNonLocalEntityRef fslib_MFLinq_nleref "QueryRunExtensions"
   let fslib_MFQueryRunExtensionsLowPriority_nleref   = mkNestedNonLocalEntityRef fslib_MFQueryRunExtensions_nleref "LowPriority"
   let fslib_MFQueryRunExtensionsHighPriority_nleref  = mkNestedNonLocalEntityRef fslib_MFQueryRunExtensions_nleref "HighPriority"
 
-  let fslib_MFPrintfModule_nleref                 = mkNestedNonLocalEntityRef fslib_MFCore_nleref "PrintfModule"
+  let fslib_MFPrintfModule_nleref              = mkNestedNonLocalEntityRef fslib_MFCore_nleref "PrintfModule"
   let fslib_MFSeqModule_nleref                 = mkNestedNonLocalEntityRef fslib_MFCollections_nleref "SeqModule"
   let fslib_MFListModule_nleref                = mkNestedNonLocalEntityRef fslib_MFCollections_nleref "ListModule"
   let fslib_MFArrayModule_nleref               = mkNestedNonLocalEntityRef fslib_MFCollections_nleref "ArrayModule"
@@ -593,12 +612,17 @@ type TcGlobals(
                             fslib_MFOperatorIntrinsics_nleref
                             fslib_MFOperatorsUnchecked_nleref
                             fslib_MFOperatorsChecked_nleref
+                            fslib_MFSeqGlobalOperators_nleref
+                            fslib_MFSetGlobalOperators_nleref
+                            fslib_MFPrintfGlobalOperators_nleref
+                            fslib_MFAsyncGlobalOperators_nleref
+                            fslib_MFQueryGlobalOperators_nleref
+                            fslib_MFQuotationsGlobalOperators_nleref
                             fslib_MFExtraTopLevelOperators_nleref
                             fslib_MFNullableOperators_nleref
                             fslib_MFQueryRunExtensions_nleref
                             fslib_MFQueryRunExtensionsLowPriority_nleref
                             fslib_MFQueryRunExtensionsHighPriority_nleref
-
                             fslib_MFPrintfModule_nleref
                             fslib_MFSeqModule_nleref
                             fslib_MFListModule_nleref
@@ -778,7 +802,7 @@ type TcGlobals(
   let v_invalid_arg_info           = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "invalidArg"                           , None                 , Some "InvalidArg" , [vara], ([[v_string_ty]; [v_string_ty]], varaTy))
   let v_null_arg_info              = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "nullArg"                              , None                 , Some "NullArg" , [vara],    ([[v_string_ty]], varaTy))
   let v_invalid_op_info            = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "invalidOp"                            , None                 , Some "InvalidOp" , [vara],  ([[v_string_ty]], varaTy))
-  let v_failwithf_info             = makeIntrinsicValRef(fslib_MFExtraTopLevelOperators_nleref,                "failwithf"                            , None                 , Some "PrintFormatToStringThenFail" , [vara;varb], ([[mk_format4_ty varaTy v_unit_ty v_string_ty v_string_ty]], varaTy))
+  let v_failwithf_info             = makeIntrinsicValRef(fslib_MFPrintfGlobalOperators_nleref,                 "failwithf"                            , None                 , Some "PrintFormatToStringThenFail" , [vara;varb], ([[mk_format4_ty varaTy v_unit_ty v_string_ty v_string_ty]], varaTy))
 
   let v_reraise_info               = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "reraise"                              , None                 , Some "Reraise", [vara],     ([[v_unit_ty]], varaTy))
   let v_typeof_info                = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "typeof"                               , None                 , Some "TypeOf" , [vara],     ([], v_system_Type_ty))
@@ -827,14 +851,14 @@ type TcGlobals(
   let v_seq_singleton_info         = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "singleton"                            , None                 , Some "Singleton"              , [vara],     ([[varaTy]], mkSeqTy varaTy))
   let v_seq_empty_info             = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "empty"                                , None                 , Some "Empty"                  , [vara],     ([], mkSeqTy varaTy))
   let v_new_format_info            = makeIntrinsicValRef(fslib_MFCore_nleref,                                  ".ctor"                                , Some "PrintfFormat`5", None                          , [vara;varb;varc;vard;vare], ([[v_string_ty]], mkPrintfFormatTy varaTy varbTy varcTy vardTy vareTy))
-  let v_sprintf_info               = makeIntrinsicValRef(fslib_MFExtraTopLevelOperators_nleref,                "sprintf"                              , None                 , Some "PrintFormatToStringThen", [vara],     ([[mk_format4_ty varaTy v_unit_ty v_string_ty v_string_ty]], varaTy))
+  let v_sprintf_info               = makeIntrinsicValRef(fslib_MFPrintfGlobalOperators_nleref,                 "sprintf"                              , None                 , Some "PrintFormatToStringThen", [vara],     ([[mk_format4_ty varaTy v_unit_ty v_string_ty v_string_ty]], varaTy))
   let v_lazy_force_info            = makeIntrinsicValRef(fslib_MFLazyExtensions_nleref,                        "Force"                                , Some "Lazy`1"        , None                          , [vara],     ([[mkLazyTy varaTy]; []], varaTy))
   let v_lazy_create_info           = makeIntrinsicValRef(fslib_MFLazyExtensions_nleref,                        "Create"                               , Some "Lazy`1"        , None                          , [vara],     ([[v_unit_ty --> varaTy]], mkLazyTy varaTy))
 
   let v_seq_info                   = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "seq"                                  , None                 , Some "CreateSequence"         , [vara],     ([[mkSeqTy varaTy]], mkSeqTy varaTy))
   let v_refcell_info               = makeIntrinsicValRef(fslib_MFCore_nleref,                                  "ref"                                  , Some "FSharpRef`1"   , None                          , [vara],     ([[mkRefCellTy varaTy]; []], varaTy))
-  let v_splice_expr_info           = makeIntrinsicValRef(fslib_MFExtraTopLevelOperators_nleref,                "op_Splice"                            , None                 , None                          , [vara],     ([[mkQuotedExprTy varaTy]], varaTy))
-  let v_splice_raw_expr_info       = makeIntrinsicValRef(fslib_MFExtraTopLevelOperators_nleref,                "op_SpliceUntyped"                     , None                 , None                          , [vara],     ([[mkRawQuotedExprTy]], varaTy))
+  let v_splice_expr_info           = makeIntrinsicValRef(fslib_MFQuotationsGlobalOperators_nleref,             "op_Splice"                            , None                 , None                          , [vara],     ([[mkQuotedExprTy varaTy]], varaTy))
+  let v_splice_raw_expr_info       = makeIntrinsicValRef(fslib_MFQuotationsGlobalOperators_nleref,             "op_SpliceUntyped"                     , None                 , None                          , [vara],     ([[mkRawQuotedExprTy]], varaTy))
   let v_new_decimal_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "MakeDecimal"                          , None                 , None                          , [],         ([[v_int_ty]; [v_int_ty]; [v_int_ty]; [v_bool_ty]; [v_byte_ty]], v_decimal_ty))
   let v_deserialize_quoted_FSharp_20_plus_info    = makeIntrinsicValRef(fslib_MFQuotations_nleref,             "Deserialize"                          , Some "Expr"          , None                          , [],          ([[v_system_Type_ty ;mkListTy v_system_Type_ty ;mkListTy mkRawQuotedExprTy ; mkArrayType 1 v_byte_ty]], mkRawQuotedExprTy ))
   let v_deserialize_quoted_FSharp_40_plus_info    = makeIntrinsicValRef(fslib_MFQuotations_nleref,             "Deserialize40"                        , Some "Expr"          , None                          , [],          ([[v_system_Type_ty ;mkArrayType 1 v_system_Type_ty; mkArrayType 1 v_system_Type_ty; mkArrayType 1 mkRawQuotedExprTy; mkArrayType 1 v_byte_ty]], mkRawQuotedExprTy ))
@@ -843,7 +867,7 @@ type TcGlobals(
   let v_lift_value_info            = makeIntrinsicValRef(fslib_MFQuotations_nleref,                            "Value"                                , Some "Expr"          , None                          , [vara],      ([[varaTy]], mkRawQuotedExprTy))
   let v_lift_value_with_name_info  = makeIntrinsicValRef(fslib_MFQuotations_nleref,                            "ValueWithName"                        , Some "Expr"          , None                          , [vara],      ([[varaTy; v_string_ty]], mkRawQuotedExprTy))
   let v_lift_value_with_defn_info  = makeIntrinsicValRef(fslib_MFQuotations_nleref,                            "WithValue"                            , Some "Expr"          , None                          , [vara],      ([[varaTy; mkQuotedExprTy varaTy]], mkQuotedExprTy varaTy))
-  let v_query_value_info           = makeIntrinsicValRef(fslib_MFExtraTopLevelOperators_nleref,                "query"                                , None                 , None                          , [],      ([], mkQueryBuilderTy) )
+  let v_query_value_info           = makeIntrinsicValRef(fslib_MFQueryGlobalOperators_nleref,                  "query"                                , None                 , None                          , [],      ([], mkQueryBuilderTy) )
   let v_query_run_value_info       = makeIntrinsicValRef(fslib_MFQueryRunExtensionsLowPriority_nleref,         "Run"                                  , Some "QueryBuilder"  , None                          , [vara],      ([[mkQueryBuilderTy];[mkQuotedExprTy varaTy]], varaTy) )
   let v_query_run_enumerable_info  = makeIntrinsicValRef(fslib_MFQueryRunExtensionsHighPriority_nleref,        "Run"                                  , Some "QueryBuilder"  , None                          , [vara],      ([[mkQueryBuilderTy];[mkQuotedExprTy (mkQuerySourceTy varaTy (mkNonGenericTy v_tcref_System_Collections_IEnumerable)) ]], mkSeqTy varaTy) )
   let v_query_for_value_info       = makeIntrinsicValRef(fslib_MFLinq_nleref,                                  "For"                                  , Some "QueryBuilder"  , None                          , [vara; vard; varb; vare], ([[mkQueryBuilderTy];[mkQuerySourceTy varaTy vardTy;varaTy --> mkQuerySourceTy varbTy vareTy]], mkQuerySourceTy varbTy vardTy) )

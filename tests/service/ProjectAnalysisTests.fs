@@ -1500,12 +1500,12 @@ let ``Test project 5 all symbols`` () =
             ("val input", "input", "file1", ((8, 9), (8, 14)), []);
             ("symbol Even", "ActivePatterns.(|Even|Odd|).Even", "file1",
              ((9, 5), (9, 9)), ["pattern"]);
-            ("val printfn", "Microsoft.FSharp.Core.ExtraTopLevelOperators.printfn",
+            ("val printfn", "Microsoft.FSharp.Core.PrintfGlobalOperators.printfn",
              "file1", ((9, 13), (9, 20)), []);
             ("val input", "input", "file1", ((9, 34), (9, 39)), []);
             ("symbol Odd", "ActivePatterns.(|Even|Odd|).Odd", "file1",
              ((10, 5), (10, 8)), ["pattern"]);
-            ("val printfn", "Microsoft.FSharp.Core.ExtraTopLevelOperators.printfn",
+            ("val printfn", "Microsoft.FSharp.Core.PrintfGlobalOperators.printfn",
              "file1", ((10, 12), (10, 19)), []);
             ("val input", "input", "file1", ((10, 32), (10, 37)), []);
             ("val TestNumber", "ActivePatterns.TestNumber", "file1", ((7, 4), (7, 14)),
@@ -1531,10 +1531,10 @@ let ``Test project 5 all symbols`` () =
             ("symbol Float", "ActivePatterns.(|Float|_|).Float", "file1",
              ((21, 5), (21, 10)), ["pattern"]);
             ("val f", "f", "file1", ((21, 11), (21, 12)), ["defn"]);
-            ("val printfn", "Microsoft.FSharp.Core.ExtraTopLevelOperators.printfn",
+            ("val printfn", "Microsoft.FSharp.Core.PrintfGlobalOperators.printfn",
              "file1", ((21, 16), (21, 23)), []);
             ("val f", "f", "file1", ((21, 46), (21, 47)), []);
-            ("val printfn", "Microsoft.FSharp.Core.ExtraTopLevelOperators.printfn",
+            ("val printfn", "Microsoft.FSharp.Core.PrintfGlobalOperators.printfn",
              "file1", ((22, 10), (22, 17)), []);
             ("val str", "str", "file1", ((22, 38), (22, 41)), []);
             ("val parseNumeric", "ActivePatterns.parseNumeric", "file1",

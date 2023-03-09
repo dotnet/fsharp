@@ -1903,3 +1903,51 @@ module Seq =
             if i < index then
                 invalidArg "index" "index must be within bounds of the array"
         }
+
+/// <summary>Contains operations specific to the Array2d collection class.</summary>
+[<AutoOpen>]
+module SeqGlobalOperators =
+
+    let inline checkNonNullNullArg argName arg =
+        match box arg with
+        | null -> nullArg argName
+        | _ -> ()
+
+    let inline checkNonNullInvalidArg argName message arg =
+        match box arg with
+        | null -> invalidArg argName message
+        | _ -> ()
+
+    let getArray (vals: seq<'T>) =
+        match vals with
+        | :? ('T[]) as arr -> arr
+        | _ -> Seq.toArray vals
+
+    [<CompiledName("CreateArray2D")>]
+    let array2D (rows: seq<#seq<'T>>) =
+        checkNonNullNullArg "rows" rows
+        let rowsArr = getArray rows
+        let m = rowsArr.Length
+
+        if m = 0 then
+            Array2D.zeroCreate<'T> 0 0
+        else
+            checkNonNullInvalidArg "rows" (SR.GetString(SR.nullsNotAllowedInArray)) rowsArr.[0]
+            let firstRowArr = getArray rowsArr.[0]
+            let n = firstRowArr.Length
+            let res = Array2D.zeroCreate<'T> m n
+
+            for j in 0 .. (n - 1) do
+                res.[0, j] <- firstRowArr.[j]
+
+            for i in 1 .. (m - 1) do
+                checkNonNullInvalidArg "rows" (SR.GetString(SR.nullsNotAllowedInArray)) rowsArr.[i]
+                let rowiArr = getArray rowsArr.[i]
+
+                if rowiArr.Length <> n then
+                    invalidArg "vals" (SR.GetString(SR.arraysHadDifferentLengths))
+
+                for j in 0 .. (n - 1) do
+                    res.[i, j] <- rowiArr.[j]
+
+            res

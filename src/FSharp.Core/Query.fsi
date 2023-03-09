@@ -446,3 +446,28 @@ namespace Microsoft.FSharp.Linq.QueryRunExtensions
             /// </summary>
             [<CompiledName("RunQueryAsEnumerable")>]
             member Run: Microsoft.FSharp.Quotations.Expr<Microsoft.FSharp.Linq.QuerySource<'T,System.Collections.IEnumerable>> -> Microsoft.FSharp.Collections.seq<'T>
+
+namespace Microsoft.FSharp.Core
+
+[<AutoOpen>]
+module QueryGlobalOperators =
+
+    /// <summary>Builds a query using query syntax and operators.</summary>
+    /// 
+    /// <example id="query-1">
+    /// <code lang="fsharp">
+    /// let findEvensAndSortAndDouble(xs: System.Linq.IQueryable&lt;int>) =
+    ///     query {
+    ///         for x in xs do
+    ///         where (x % 2 = 0)
+    ///         sortBy x
+    ///         select (x+x)
+    ///      }
+    ///
+    /// let data = [1; 2; 6; 7; 3; 6; 2; 1]
+    ///
+    /// findEvensAndSortAndDouble (data.AsQueryable()) |> Seq.toList
+    /// </code>
+    /// Evaluates to <c>[4; 4; 12; 12]</c>.
+    /// </example>
+    val query: Microsoft.FSharp.Linq.QueryBuilder

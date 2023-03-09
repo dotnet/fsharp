@@ -142,6 +142,23 @@ let mkNonLocalEntityRef ccu mp = NonLocalEntityRef(ccu, mp)
 let mkNestedNonLocalEntityRef (nleref: NonLocalEntityRef) id =
     mkNonLocalEntityRef nleref.Ccu (Array.append nleref.Path [| id |])
 
+// If the topleveloperator has been moved to a new module
+// attempt to find the newmodule
+//     if the new module is fould all is good.
+//     otherwise look for the original location
+//     if the originallocationis not found then return the new location so the error message
+//     is mnodernised, otherwise return the fould old location
+let mkRelocatedNestedNonLocalEntityRef nleref newId originalId =
+    let newnleref = mkNestedNonLocalEntityRef nleref newId
+    match newnleref.TryDeref(false) with
+    | ValueNone ->
+        let originalnlref = mkNestedNonLocalEntityRef nleref originalId
+        match originalnlref.TryDeref(false) with
+        | ValueNone -> newnleref
+        | ValueSome _ -> originalnlref
+
+    | ValueSome _ ->newnleref
+
 let mkNonLocalTyconRef nleref id = ERefNonLocal (mkNestedNonLocalEntityRef nleref id)
 
 let mkNonLocalTyconRefPreResolved x nleref id =

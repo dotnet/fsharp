@@ -3117,7 +3117,13 @@ type DisplayEnv =
               FSharpLib.CorePath
               CollectionsPath
               ControlPath
-              (splitNamespace ExtraTopLevelOperatorsName) ]
+              MFSeqGlobalOperatorsPath
+              MFSetGlobalOperatorsPath
+              MFPrintfGlobalOperatorsPath
+              MFAsyncGlobalOperatorsPath
+              MFQueryGlobalOperatorsPath
+              ExtraTopLevelOperatorsPath
+              ]
 
 let (+.+) s1 s2 = if s1 = "" then s2 else s1+"."+s2
 

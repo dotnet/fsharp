@@ -47,9 +47,9 @@ module internal FSharpEnvironment =
 
     val getCompilerToolsDesignTimeAssemblyPaths: compilerToolPaths: seq<string> -> seq<string>
 
-    val fsiLibraryName: string
-
     val getFSharpCoreLibraryName: string
+
+    val getFsiLibraryName: string
 
     val isWindows: bool
 

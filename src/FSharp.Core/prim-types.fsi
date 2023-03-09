@@ -4257,7 +4257,19 @@ namespace Microsoft.FSharp.Core
         ///  
         [<CompiledName("ToByte")>]
         val inline byte: value: ^T -> byte when ^T: (static member op_Explicit: ^T -> byte) and default ^T: int        
-        
+
+        /// <summary>Converts the argument to byte.</summary>
+        /// <remarks>This is a direct conversion for all 
+        /// primitive numeric types. For strings, the input is converted using <c>Byte.Parse()</c> on strings and otherwise requires a <c>ToByte</c> method on the input type.</remarks>
+        /// 
+        /// <example id="uint8-1">
+        /// <code lang="fsharp">
+        /// uint8 12
+        /// </code>
+        /// Evaluates to <c>12uy</c>.
+        /// </example>
+        val inline uint8: value: ^T -> uint8 when ^T : (static member op_Explicit : ^T -> uint8) and default ^T : int        
+
         /// <summary>Converts the argument to signed byte. This is a direct conversion for all 
         /// primitive numeric types. For strings, the input is converted using <c>SByte.Parse()</c>  
         /// with InvariantCulture settings. Otherwise the operation requires an appropriate
@@ -4277,7 +4289,27 @@ namespace Microsoft.FSharp.Core
         ///  
         [<CompiledName("ToSByte")>]
         val inline sbyte: value:^T -> sbyte when ^T: (static member op_Explicit: ^T -> sbyte) and default ^T: int
-        
+
+        /// <summary>Converts the argument to signed byte.</summary>
+        /// <remarks>This is a direct conversion for all 
+        /// primitive numeric types. For strings, the input is converted using <c>SByte.Parse()</c>  with InvariantCulture settings.
+        /// Otherwise the operation requires and invokes a <c>ToSByte</c> method on the input type.</remarks>
+        /// 
+        /// <example id="int8-1">
+        /// <code lang="fsharp">
+        /// int8 -12
+        /// </code>
+        /// Evaluates to <c>-12y</c>.
+        /// </example>
+        /// 
+        /// <example id="int8-2">
+        /// <code lang="fsharp">
+        /// int8 "3"
+        /// </code>
+        /// Evaluates to <c>3y</c>.
+        /// </example>
+        val inline int8: value: ^T -> int8 when ^T : (static member op_Explicit : ^T -> int8) and default ^T : int
+
         /// <summary>Converts the argument to signed 16-bit integer. This is a direct conversion for all 
         /// primitive numeric types. For strings, the input is converted using <c>Int16.Parse()</c>  
         /// with InvariantCulture settings. Otherwise the operation requires an appropriate
@@ -4294,10 +4326,10 @@ namespace Microsoft.FSharp.Core
         /// int16 -10  // evaluates to -10s
         /// </code>
         /// </example>
-        ///  
+        ///
         [<CompiledName("ToInt16")>]
         val inline int16: value: ^T -> int16 when ^T: (static member op_Explicit: ^T -> int16) and default ^T: int
-        
+
         /// <summary>Converts the argument to unsigned 16-bit integer. This is a direct conversion for all 
         /// primitive numeric types. For strings, the input is converted using <c>UInt16.Parse()</c>  
         /// with InvariantCulture settings. Otherwise the operation requires an appropriate
@@ -4477,6 +4509,19 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("ToSingle")>]
         val inline float32: value: ^T -> float32 when ^T: (static member op_Explicit: ^T -> float32) and default ^T: int
 
+        /// <summary>Converts the argument to 32-bit float.</summary>
+        ///
+        /// <remarks>This is a direct conversion for all 
+        /// primitive numeric types. For strings, the input is converted using <c>Single.Parse()</c>  with InvariantCulture settings. Otherwise the operation requires and invokes a <c>ToSingle</c> method on the input type.</remarks>
+        /// 
+        /// <example id="single-1">
+        /// <code lang="fsharp">
+        /// single 45
+        /// </code>
+        /// Evaluates to <c>45.0f</c>.
+        /// </example>
+        val inline single: value: ^T -> single when ^T : (static member op_Explicit : ^T -> single) and default ^T : int
+
         /// <summary>Converts the argument to 64-bit float. This is a direct conversion for all 
         /// primitive numeric types. For strings, the input is converted using <c>Double.Parse()</c>  
         /// with InvariantCulture settings. Otherwise the operation requires an appropriate
@@ -4496,6 +4541,26 @@ namespace Microsoft.FSharp.Core
         ///  
         [<CompiledName("ToDouble")>]
         val inline float: value: ^T -> float when ^T: (static member op_Explicit: ^T -> float) and default ^T: int
+
+        /// <summary>Converts the argument to 64-bit float.</summary>
+        ///
+        /// <remarks>This is a direct conversion for all 
+        /// primitive numeric types. For strings, the input is converted using <c>Double.Parse()</c>  with InvariantCulture settings. Otherwise the operation requires and invokes a <c>ToDouble</c> method on the input type.</remarks>
+        /// 
+        /// <example id="double-1">
+        /// <code lang="fsharp">
+        /// double 45
+        /// </code>
+        /// Evaluates to <c>45.0</c>.
+        /// </example>
+        /// 
+        /// <example id="double-2">
+        /// <code lang="fsharp">
+        /// double 12.3f
+        /// </code>
+        /// Evaluates to <c>12.30000019</c>.
+        /// </example>
+        val inline double: value: ^T -> double when ^T : (static member op_Explicit : ^T -> double) and default ^T : int
 
         /// <summary>Converts the argument to signed native integer. This is a direct conversion for all 
         /// primitive numeric types. Otherwise the operation requires an appropriate
@@ -5729,6 +5794,25 @@ namespace Microsoft.FSharp.Core
             [<CompiledName("ToByte")>]
             val inline byte: value: ^T -> byte when ^T: (static member op_Explicit: ^T -> byte) and default ^T: int
 
+            /// <summary>Converts the argument to byte.</summary>
+            /// <remarks>This is a direct, checked conversion for all 
+            /// primitive numeric types. For strings, the input is converted using <c>Byte.Parse()</c> on strings and otherwise requires a <c>ToByte</c> method on the input type.</remarks>
+            /// 
+            /// <example id="uint8-1">
+            /// <code lang="fsharp">
+            /// Checked.uint8 12
+            /// </code>
+            /// Evaluates to <c>-12y</c>.
+            /// </example>
+            /// 
+            /// <example id="uint8-2">
+            /// <code lang="fsharp">
+            /// Checked.uint8 -12
+            /// </code>
+            /// Throws <c>System.OverflowException</c>.
+            /// </example>
+            val inline uint8: value: ^T -> byte when ^T : (static member op_Explicit : ^T -> uint8) and default ^T : int        
+    
             /// <summary>Converts the argument to <c>sbyte</c>. This is a direct, checked conversion for all 
             /// primitive numeric types. For strings, the input is converted using <see cref="M:System.SByte.Parse"/> 
             /// with InvariantCulture settings. Otherwise the operation requires an appropriate
@@ -5742,6 +5826,46 @@ namespace Microsoft.FSharp.Core
             /// 
             [<CompiledName("ToSByte")>]
             val inline sbyte: value: ^T -> sbyte when ^T: (static member op_Explicit: ^T -> sbyte) and default ^T: int
+
+            /// <summary>Converts the argument to signed byte.</summary>
+            /// <remarks>This is a direct conversion for all 
+            /// primitive numeric types. For strings, the input is converted using <c>SByte.Parse()</c>  with InvariantCulture settings.
+            /// Otherwise the operation requires and invokes a <c>ToSByte</c> method on the input type.</remarks>
+            /// 
+            /// <example id="int8-1">
+            /// <code lang="fsharp">
+            /// int8 -12
+            /// </code>
+            /// Evaluates to <c>-12y</c>.
+            /// </example>
+            /// 
+            /// <example id="int8-2">
+            /// <code lang="fsharp">
+            /// int8 "3"
+            /// </code>
+            /// Evaluates to <c>3y</c>.
+            /// </example>
+            val inline int8: value: ^T -> int8 when ^T : (static member op_Explicit : ^T -> int8) and default ^T : int
+
+            /// <summary>Converts the argument to signed byte.</summary>
+            /// <remarks>This is a direct, checked conversion for all 
+            /// primitive numeric types. For strings, the input is converted using <c>SByte.Parse()</c>  with InvariantCulture settings.
+            /// Otherwise the operation requires and invokes a <c>ToSByte</c> method on the input type.</remarks>
+            /// 
+            /// <example id="int8-1">
+            /// <code lang="fsharp">
+            /// Checked.int8 -12
+            /// </code>
+            /// Evaluates to <c>-12y</c>.
+            /// </example>
+            /// 
+            /// <example id="int8-2">
+            /// <code lang="fsharp">
+            /// Checked.int8 "129"
+            /// </code>
+            /// Throws <c>System.OverflowException</c>.
+            /// </example>
+            val inline int8: value: ^T -> sbyte when ^T : (static member op_Explicit : ^T -> int8) and default ^T : int
 
             /// <summary>Converts the argument to <c>int16</c>. This is a direct, checked conversion for all 
             /// primitive numeric types. For strings, the input is converted using <see cref="M:System.Int16.Parse"/> 
@@ -5891,6 +6015,22 @@ namespace Microsoft.FSharp.Control
     [<AutoOpen>]
     module LazyExtensions =
 
+        /// <summary>An active pattern to force the execution of values of type <c>Lazy&lt;_&gt;</c>.</summary>
+        /// 
+        /// <example id="lazy-1">
+        /// <code lang="fsharp">
+        /// let f (Lazy v) = v + v
+        ///
+        /// let v = lazy (printf "eval!"; 5+5)
+        ///
+        /// f v
+        /// f v
+        /// </code>
+        /// Evaluates to <c>10</c>. The text <c>eval!</c> is printed once on the first invocation of <c>f</c>.
+        /// </example>
+        [<CompiledName("LazyPattern")>]
+        val (|Lazy|): input: System.Lazy<'T> -> 'T
+
         type System.Lazy<'T> with
 
             /// <summary>Creates a lazy computation that evaluates to the result of the given function when forced.</summary>
@@ -5914,7 +6054,7 @@ namespace Microsoft.FSharp.Control
             /// <returns>The value of the Lazy object.</returns>
             [<CompiledName("Force")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
             member Force: unit -> 'T
-            
+
     /// <summary>The type of delayed computations.</summary>
     /// 
     /// <remarks>Use the values in the <c>Lazy</c> module to manipulate 

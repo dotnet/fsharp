@@ -970,7 +970,7 @@ module M2 =
     Ext
 """
 
-        VerifyCompletionList(fileContents, "    Ext", [ "Extensions"; "ExtraTopLevelOperators" ], [])
+        VerifyCompletionList(fileContents, "    Ext", [ "Extensions" ], [])
 
     [<Fact>]
     let ``Custom operations should be at the top of completion list inside computation expression`` () =

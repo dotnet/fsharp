@@ -1462,3 +1462,38 @@ module Printf =
     [<CompiledName("PrintFormatLineToError")>]
     let eprintfn format =
         fprintfn Console.Error format
+
+[<AutoOpen>]
+module PrintfGlobalOperators =
+
+    [<CompiledName("PrintFormatToString")>]
+    let sprintf format =
+        Printf.sprintf format
+
+    [<CompiledName("PrintFormatToStringThenFail")>]
+    let failwithf format =
+        Printf.failwithf format
+
+    [<CompiledName("PrintFormatToTextWriter")>]
+    let fprintf (textWriter: TextWriter) format =
+        Printf.fprintf textWriter format
+
+    [<CompiledName("PrintFormatLineToTextWriter")>]
+    let fprintfn (textWriter: TextWriter) format =
+        Printf.fprintfn textWriter format
+
+    [<CompiledName("PrintFormat")>]
+    let printf format =
+        Printf.printf format
+
+    [<CompiledName("PrintFormatToError")>]
+    let eprintf format =
+        Printf.eprintf format
+
+    [<CompiledName("PrintFormatLine")>]
+    let printfn format =
+        Printf.printfn format
+
+    [<CompiledName("PrintFormatLineToError")>]
+    let eprintfn format =
+        Printf.eprintfn format

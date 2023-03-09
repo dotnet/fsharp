@@ -703,7 +703,7 @@
       
       .maxstack  4
       .locals init (class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder V_0)
-      IL_0000:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_DefaultAsyncBuilder()
+      IL_0000:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder [FSharp.Core]Microsoft.FSharp.Core.AsyncGlobalOperators::get_DefaultAsyncBuilder()
       IL_0005:  stloc.0
       IL_0006:  ldloc.0
       IL_0007:  ldloc.0
@@ -719,7 +719,7 @@
       
       .maxstack  4
       .locals init (class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder V_0)
-      IL_0000:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_DefaultAsyncBuilder()
+      IL_0000:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder [FSharp.Core]Microsoft.FSharp.Core.AsyncGlobalOperators::get_DefaultAsyncBuilder()
       IL_0005:  stloc.0
       IL_0006:  ldloc.0
       IL_0007:  ldloc.0

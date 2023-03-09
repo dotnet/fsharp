@@ -1384,7 +1384,7 @@
     IL_0005:  dup
     IL_0006:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> '<StartupCode$assembly>'.$assembly::products@8
     IL_000b:  stloc.0
-    IL_000c:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
+    IL_000c:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.QueryGlobalOperators::get_query()
     IL_0011:  stloc.s    V_8
     IL_0013:  ldloc.s    V_8
     IL_0015:  ldloc.s    V_8
@@ -1436,7 +1436,7 @@
     IL_00a3:  dup
     IL_00a4:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$assembly>'.$assembly::strings@18
     IL_00a9:  stloc.2
-    IL_00aa:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
+    IL_00aa:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.QueryGlobalOperators::get_query()
     IL_00af:  stloc.s    V_9
     IL_00b1:  ldloc.s    V_9
     IL_00b3:  ldloc.s    V_9
@@ -1456,7 +1456,7 @@
     IL_00d7:  stloc.3
     IL_00d8:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> assembly::get_numbers()
     IL_00dd:  stloc.s    V_4
-    IL_00df:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
+    IL_00df:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.QueryGlobalOperators::get_query()
     IL_00e4:  ldnull
     IL_00e5:  ldc.i4.0
     IL_00e6:  ldc.i4.0
@@ -1502,7 +1502,7 @@
     IL_0140:  dup
     IL_0141:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$assembly>'.$assembly::numbers2@48
     IL_0146:  stloc.s    V_6
-    IL_0148:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
+    IL_0148:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.QueryGlobalOperators::get_query()
     IL_014d:  stloc.s    V_10
     IL_014f:  ldloc.s    V_10
     IL_0151:  ldloc.s    V_10

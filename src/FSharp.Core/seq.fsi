@@ -2930,3 +2930,19 @@ module Seq =
     /// </example>
     [<CompiledName("InsertManyAt")>]
     val insertManyAt: index: int -> values: seq<'T> -> source: seq<'T> -> seq<'T>
+
+
+/// <summary>Contains operations specific to the Seq collection class.</summary>
+[<AutoOpen>]
+module SeqGlobalOperators =
+
+    /// <summary>Builds a 2D array from a sequence of sequences of elements.</summary>
+    /// 
+    /// <example id="array2d-1">
+    /// <code lang="fsharp">
+    /// array2D [ [ 1.0; 2.0 ]; [ 3.0; 4.0 ] ]
+    /// </code>
+    /// Evaluates to a 2x2 zero-based array with contents <c>[[1.0; 2.0]; [3.0; 4.0]]</c>
+    /// </example>
+    [<CompiledName("CreateArray2D")>]
+    val array2D: rows: seq<#seq<'T>> -> 'T[,]

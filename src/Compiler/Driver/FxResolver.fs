@@ -260,10 +260,6 @@ type internal FxResolver
 
     let getImplementationAssemblyDir () = implementationAssemblyDir.Force()
 
-    let getFSharpCoreLibraryName = "FSharp.Core"
-
-    let getFsiLibraryName = "FSharp.Compiler.Interactive.Settings"
-
     // Use the FSharp.Core that is executing with the compiler as a backup reference
     let getFSharpCoreImplementationReference () =
         Path.Combine(getFSharpCompilerLocation (), getFSharpCoreLibraryName + ".dll")
@@ -586,7 +582,7 @@ type internal FxResolver
 
             getFSharpCoreLibraryName
             if useFsiAuxLib then
-                fsiLibraryName
+                getFsiLibraryName
 
             // always include a default reference to System.ValueTuple.dll in scripts and out-of-project sources
             match getSystemValueTupleImplementationReference () with

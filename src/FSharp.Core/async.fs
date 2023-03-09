@@ -2370,3 +2370,13 @@ module WebExtensions =
                 start = (fun userToken -> this.DownloadFileAsync(address, fileName, userToken)),
                 result = (fun _ -> ())
             )
+
+namespace Microsoft.FSharp.Core
+
+open Microsoft.FSharp.Control
+
+[<AutoOpen>]
+module AsyncGlobalOperators =
+
+    [<CompiledName("DefaultAsyncBuilder")>]
+    let async = AsyncBuilder()

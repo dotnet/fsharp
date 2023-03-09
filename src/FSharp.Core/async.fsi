@@ -1547,3 +1547,26 @@ namespace Microsoft.FSharp.Control
     module internal AsyncBuilderImpl = 
         val async : AsyncBuilder
 
+namespace Microsoft.FSharp.Core
+
+[<AutoOpen>]
+module AsyncGlobalOperators =
+
+    /// <summary>Builds an asynchronous workflow using computation expression syntax.</summary>
+    /// 
+    /// <example id="async-1">
+    /// <code lang="fsharp">
+    /// let sleepExample() =
+    ///     async {
+    ///         printfn "sleeping"
+    ///         do! Async.Sleep 10
+    ///         printfn "waking up"
+    ///         return 6
+    ///      }
+    ///
+    /// sleepExample() |> Async.RunSynchronously
+    /// </code>
+    /// </example>
+    [<CompiledName("DefaultAsyncBuilder")>]
+    val async: Microsoft.FSharp.Control.AsyncBuilder  
+

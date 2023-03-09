@@ -1929,4 +1929,14 @@ module Query =
                 member _.EliminateNestedQueries e = EliminateNestedQueries e
         }
 
+namespace Microsoft.FSharp.Core
 
+[<AutoOpen>]
+module QueryGlobalOperators =
+
+    let query = Microsoft.FSharp.Linq.QueryBuilder()
+
+
+[<assembly: AutoOpen("Microsoft.FSharp.Linq.QueryRunExtensions.LowPriority")>]
+[<assembly: AutoOpen("Microsoft.FSharp.Linq.QueryRunExtensions.HighPriority")>]
+do ()
