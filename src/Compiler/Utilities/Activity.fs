@@ -75,6 +75,10 @@ module internal Activity =
 
     let startNoTags (name: string) : IDisposable = activitySource.StartActivity(name)
 
+    let addEvent name =
+        if Activity.Current <> null then
+            Activity.Current.AddEvent(ActivityEvent(name)) |> ignore
+
     module Profiling =
 
         module Tags =

@@ -141,7 +141,7 @@ module IncrementalBuildSyntaxTree =
                 )
             | _ -> None
 
-        let parse _ = 
+        let parse _ =
             let diagnosticsLogger = CompilationDiagnosticLogger("Parse", tcConfig.diagnosticsOptions)
             // Return the disposable object that cleans up
             use _holder = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parse)
@@ -167,19 +167,24 @@ module IncrementalBuildSyntaxTree =
 
         let parseOrSkip sigNameOpt =
             IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBEParsed fileName)
-
-            let implStub = tryImplStubWhenHasSig sigNameOpt
-
             use _ =
-                Activity.start "IncrementalBuildSyntaxTree.parse"
-                    [| Activity.Tags.fileName, source.FilePath                       
-                       "buildPhase", BuildPhase.Parse.ToString()
-                       "canSkip", implStub.IsSome.ToString() |]
+                Activity.start "IncrementalBuildSyntaxTree.parseOrSkip"
+                    [|
+                        Activity.Tags.fileName, fileName                       
+                        "buildPhase", BuildPhase.Parse.ToString()
+                    |]
 
-            match implStub with
-            | Some result -> result
-            | _ ->
-                if useCache then cache.GetValue(fileInfo, parse) else parse fileInfo
+            match tryImplStubWhenHasSig sigNameOpt with
+            | Some result ->
+                Activity.addEvent "ImplementationSkipped"
+                result
+            | _ when useCache ->
+                match cache.TryGetValue fileInfo with
+                | true, result ->
+                    Activity.addEvent "CacheHit"
+                    result
+                | _ -> cache.GetValue(fileInfo, parse)
+            | _ -> parse fileInfo
 
         /// Parse the given file and return the given input.
         member _.Parse(sigNameOpt) = parseOrSkip sigNameOpt

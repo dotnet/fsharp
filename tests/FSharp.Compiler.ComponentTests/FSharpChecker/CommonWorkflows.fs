@@ -132,3 +132,51 @@ let ``Using getSource and notifications instead of filesystem`` () =
         checkFile middle expectSignatureChanged
         checkFile last expectSignatureChanged
     }
+
+[<Fact>]
+let ``Using getSource and notifications instead of filesystem with parse caching`` () =
+
+    let size = 20
+
+    let project =
+        { SyntheticProject.Create() with
+            SourceFiles = [
+                sourceFile $"File%03d{0}" []
+                for i in 1..size do
+                    sourceFile $"File%03d{i}" [$"File%03d{i-1}"]
+            ]
+        }
+
+    let first = "File001"
+    let middle = $"File%03d{size / 2}"
+    let last = $"File%03d{size}"
+
+    ProjectWorkflowBuilder(project, useGetSource = true, useChangeNotifications = true, useSyntaxTreeCache = true) {
+        updateFile first updatePublicSurface
+        checkFile first expectSignatureChanged
+        checkFile last expectSignatureChanged
+        updateFile middle updatePublicSurface
+        checkFile last expectSignatureChanged
+        addFileAbove middle (sourceFile "addedFile" [first])
+        updateFile middle (addDependency "addedFile")
+        checkFile middle expectSignatureChanged
+        checkFile last expectSignatureChanged
+    }
+
+[<Fact>]
+let ``Edit file, check it, then check dependent file with parse caching`` () =
+    ProjectWorkflowBuilder(makeTestProject(), useSyntaxTreeCache = true) {
+        updateFile "First" breakDependentFiles
+        checkFile "First" expectSignatureChanged
+        saveFile "First"
+        checkFile "Second" expectErrors
+    }
+
+[<Fact>]
+let ``Edit file, don't check it, check dependent file with parse caching `` () =
+    ProjectWorkflowBuilder(makeTestProject(), useSyntaxTreeCache = true) {
+        updateFile "First" breakDependentFiles
+        saveFile "First"
+        checkFile "Second" expectErrors
+    }
+

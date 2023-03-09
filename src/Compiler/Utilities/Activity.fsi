@@ -21,6 +21,8 @@ module internal Activity =
 
     val start: name: string -> tags: (string * string) seq -> IDisposable
 
+    val addEvent: name: string -> unit
+
     module Profiling =
         val startAndMeasureEnvironmentStats: name: string -> IDisposable
         val addConsoleListener: unit -> IDisposable
