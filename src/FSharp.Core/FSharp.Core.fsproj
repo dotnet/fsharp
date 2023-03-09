@@ -66,9 +66,9 @@
     <Compile Include="prim-types.fs">
       <Link>Primitives/prim-types.fs</Link>
     </Compile>
-    <CompileBefore Include="prim-types-epilog.fs">
+    <Compile Include="prim-types-epilog.fs">
       <Link>Primitives/prim-types-epilog.fs</Link>
-    </CompileBefore>
+    </Compile>
     <Compile Include="local.fsi">
       <Link>Collections/local.fsi</Link>
     </Compile>
