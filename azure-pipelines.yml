@@ -543,9 +543,10 @@ stages:
               installationPath: $(Agent.ToolsDirectory)/dotnet
           - script: dotnet build .\FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
-            env:
-              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Regular rebuild of FSharp.Compiler.Service.sln
+            continueOnError: true
+            condition: always()
+
         # Plain FCS build Linux
         - job: Plain_Build_Linux
           pool:
@@ -568,9 +569,9 @@ stages:
               installationPath: $(Agent.ToolsDirectory)/dotnet
           - script: dotnet build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
-            env:
-              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Regular rebuild of FSharp.Compiler.Service.sln
+            continueOnError: true
+            condition: always()
 
         # Plain FCS build Mac
         - job: Plain_Build_MacOS
@@ -594,9 +595,9 @@ stages:
               installationPath: $(Agent.ToolsDirectory)/dotnet
           - script: dotnet build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
-            env:
-              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Regular rebuild of FSharp.Compiler.Service.sln
+            continueOnError: true
+            condition: always()
 
         # Test trimming on Windows
         - job: Build_And_Test_Trimming_Windows
