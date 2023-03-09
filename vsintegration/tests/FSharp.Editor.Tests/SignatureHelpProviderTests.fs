@@ -38,6 +38,7 @@ module SignatureHelpProvider =
 
             let parseResults, checkFileResults =
                 document.GetFSharpParseAndCheckResultsAsync("GetSignatureHelp")
+                |> Async.AwaitTask
                 |> Async.RunSynchronously
 
             let paramInfoLocations =
@@ -105,6 +106,7 @@ module SignatureHelpProvider =
 
         let parseResults, checkFileResults =
             document.GetFSharpParseAndCheckResultsAsync("assertSignatureHelpForMethodCalls")
+            |> Async.AwaitTask
             |> Async.RunSynchronously
 
         let actual =
@@ -152,6 +154,7 @@ module SignatureHelpProvider =
 
         let parseResults, checkFileResults =
             document.GetFSharpParseAndCheckResultsAsync("assertSignatureHelpForFunctionApplication")
+            |> Async.AwaitTask
             |> Async.RunSynchronously
 
         let adjustedColumnInSource =
@@ -493,6 +496,7 @@ M.f
 
         let parseResults, checkFileResults =
             document.GetFSharpParseAndCheckResultsAsync("function application in single pipeline with no additional args")
+            |> Async.AwaitTask
             |> Async.RunSynchronously
 
         let adjustedColumnInSource =

@@ -18,8 +18,7 @@ type SemanticClassificationServiceTests() =
                 RoslynTestHelpers.CreateSolution(source) |> RoslynTestHelpers.GetSingleDocument
 
             let! _, checkFileResults =
-                document.GetFSharpParseAndCheckResultsAsync("SemanticClassificationServiceTests")
-                |> liftAsync
+                document.GetFSharpParseAndCheckResultsAsync("SemanticClassificationServiceTests") |> Async.AwaitTask |> liftAsync
 
             return checkFileResults.GetSemanticClassification(None)
         }

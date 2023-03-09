@@ -34,6 +34,7 @@ module GoToDefinitionServiceTests =
 
             let _, checkFileResults =
                 document.GetFSharpParseAndCheckResultsAsync(nameof (userOpName))
+                |> Async.AwaitTask
                 |> Async.RunSynchronously
 
             let declarations =

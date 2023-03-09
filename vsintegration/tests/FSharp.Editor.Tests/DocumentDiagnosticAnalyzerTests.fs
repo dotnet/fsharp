@@ -7,6 +7,7 @@ open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Editor.Tests.Helpers
 open FSharp.Test
+open System.Threading
 
 type DocumentDiagnosticAnalyzerTests() =
     let startMarker = "(*start*)"
@@ -18,8 +19,8 @@ type DocumentDiagnosticAnalyzerTests() =
                 RoslynTestHelpers.CreateSolution(fileContents)
                 |> RoslynTestHelpers.GetSingleDocument
 
-            let! syntacticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax)
-            let! semanticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic)
+            let! syntacticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax, CancellationToken.None) |> Async.AwaitTask
+            let! semanticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic, CancellationToken.None) |> Async.AwaitTask
             return syntacticDiagnostics.AddRange(semanticDiagnostics)
         }
         |> Async.RunSynchronously
