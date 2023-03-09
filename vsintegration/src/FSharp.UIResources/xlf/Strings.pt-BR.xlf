@@ -217,6 +217,11 @@
         <target state="translated">Sugerir nomes para identificadores não resolvidos</target>
         <note />
       </trans-unit>
+      <trans-unit id="Use_syntax_tree_cache">
+        <source>Cache parsing results (Experimental)</source>
+        <target state="new">Cache parsing results (Experimental)</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

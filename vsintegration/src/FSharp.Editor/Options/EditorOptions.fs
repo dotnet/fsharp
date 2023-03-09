@@ -64,13 +64,15 @@ type LanguageServicePerformanceOptions =
       AllowStaleCompletionResults: bool
       TimeUntilStaleCompletion: int
       EnableParallelReferenceResolution: bool
-      EnableFastFindReferences: bool }
+      EnableFastFindReferences: bool
+      UseSyntaxTreeCache: bool }
     static member Default =
       { EnableInMemoryCrossProjectReferences = true
         AllowStaleCompletionResults = true
         TimeUntilStaleCompletion = 2000 // In ms, so this is 2 seconds
         EnableParallelReferenceResolution = false
-        EnableFastFindReferences = FSharpExperimentalFeaturesEnabledAutomatically }
+        EnableFastFindReferences = FSharpExperimentalFeaturesEnabledAutomatically
+        UseSyntaxTreeCache = FSharpExperimentalFeaturesEnabledAutomatically }
 
 [<CLIMutable>]
 type AdvancedOptions =
