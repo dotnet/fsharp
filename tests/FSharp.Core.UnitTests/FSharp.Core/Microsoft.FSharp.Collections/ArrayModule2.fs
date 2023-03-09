@@ -1022,7 +1022,6 @@ type ArrayModule2() =
 
         ()
 
-    [<Fact>]
     member private _.TryFindIndexTester tryFindIdxInt tryFindIdxString =
         // integer array  
         let resultInt = [|1..10|] |> tryFindIdxInt (fun x -> x%7 = 0)  
