@@ -39,7 +39,7 @@ function Run-Build([string]$rootDir, [string]$logFileName) {
   $stopWatch.Stop()
   Write-Host "Cleaning took $($stopWatch.Elapsed)"
 
-  $solution = Join-Path $rootDir "FSharp.sln"
+  $solution = Join-Path $rootDir "Microsoft.FSharp.Compiler.sln"
 
   if ($logFileName -eq "") {
     $logFileName = [IO.Path]::GetFileNameWithoutExtension($projectFilePath)
