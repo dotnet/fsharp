@@ -110,7 +110,8 @@ module IncrementalBuildSyntaxTree =
             tcConfig: TcConfig,
             fileParsed: Event<string>,
             lexResourceManager,
-            fileInfo: FSharpFile
+            fileInfo: FSharpFile,
+            useCache
         ) =
 
         static let cache = ConditionalWeakTable<FSharpFile, _>()
@@ -177,7 +178,8 @@ module IncrementalBuildSyntaxTree =
 
             match implStub with
             | Some result -> result
-            | _ -> cache.GetValue(fileInfo, parse)
+            | _ ->
+                if useCache then cache.GetValue(fileInfo, parse) else parse fileInfo
 
         /// Parse the given file and return the given input.
         member _.Parse(sigNameOpt) = parseOrSkip sigNameOpt
@@ -943,7 +945,7 @@ module IncrementalBuilderHelpers =
         return ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, finalBoundModelWithErrors
     }
 
-    let GetSyntaxTree tcConfig fileParsed lexResourceManager fileInfo = SyntaxTree(tcConfig, fileParsed, lexResourceManager, fileInfo)
+    let GetSyntaxTree tcConfig fileParsed lexResourceManager fileInfo useCache = SyntaxTree(tcConfig, fileParsed, lexResourceManager, fileInfo, useCache)
 
 [<NoComparison;NoEquality>]
 type IncrementalBuilderInitialState =
@@ -968,26 +970,30 @@ type IncrementalBuilderInitialState =
         defaultTimeStamp: DateTime
         mutable isImportsInvalidated: bool
         useChangeNotifications: bool
+        useSyntaxTreeCache: bool
     }
 
-    static member Create(
-                            initialBoundModel: BoundModel,
-                            tcGlobals,
-                            nonFrameworkAssemblyInputs,
-                            tcConfig: TcConfig,
-                            outfile,
-                            assemblyName,
-                            lexResourceManager,
-                            sourceFiles,
-                            enablePartialTypeChecking,
-                            beforeFileChecked: Event<string>,
-                            fileChecked: Event<string>,
+    static member Create
+        (
+            initialBoundModel: BoundModel,
+            tcGlobals,
+            nonFrameworkAssemblyInputs,
+            tcConfig: TcConfig,
+            outfile,
+            assemblyName,
+            lexResourceManager,
+            sourceFiles,
+            enablePartialTypeChecking,
+            beforeFileChecked: Event<string>,
+            fileChecked: Event<string>,
 #if !NO_TYPEPROVIDERS
-                            importsInvalidatedByTypeProvider: Event<unit>,
+            importsInvalidatedByTypeProvider: Event<unit>,
 #endif
-                            allDependencies,
-                            defaultTimeStamp: DateTime,
-                            useChangeNotifications: bool) =
+            allDependencies,
+            defaultTimeStamp: DateTime,
+            useChangeNotifications: bool,
+            useSyntaxTreeCache
+        ) =
 
         let initialState =
             {
@@ -1011,6 +1017,7 @@ type IncrementalBuilderInitialState =
                 defaultTimeStamp = defaultTimeStamp
                 isImportsInvalidated = false
                 useChangeNotifications = useChangeNotifications
+                useSyntaxTreeCache = useSyntaxTreeCache
             }
 #if !NO_TYPEPROVIDERS
         importsInvalidatedByTypeProvider.Publish.Add(fun () -> initialState.isImportsInvalidated <- true)
@@ -1041,7 +1048,7 @@ module IncrementalBuilderStateHelpers =
             match i with
             | 0 (* first file *) -> initialBoundModel
             | _ -> boundModels[i - 1]
-        let syntaxTree = GetSyntaxTree initialState.tcConfig initialState.fileParsed initialState.lexResourceManager fileInfo
+        let syntaxTree = GetSyntaxTree initialState.tcConfig initialState.fileParsed initialState.lexResourceManager fileInfo initialState.useSyntaxTreeCache
         GraphNode(node {
             let! prevBoundModel = prevBoundModelGraphNode.GetOrComputeValue()
             return! TypeCheckTask initialState.enablePartialTypeChecking prevBoundModel syntaxTree
@@ -1423,8 +1430,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
     member builder.GetParseResultsForFile fileName =
         let slotOfFile = builder.GetSlotOfFileName fileName
         let fileInfo = initialState.fileNames[slotOfFile]
-        // use cached parse results if possible
-        let syntaxTree = GetSyntaxTree initialState.tcConfig initialState.fileParsed initialState.lexResourceManager fileInfo
+        let syntaxTree = GetSyntaxTree initialState.tcConfig initialState.fileParsed initialState.lexResourceManager fileInfo initialState.useSyntaxTreeCache
         syntaxTree.Parse None
 
     member builder.NotifyFileChanged(fileName, timeStamp) =
@@ -1462,7 +1468,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             parallelReferenceResolution,
             captureIdentifiersWhenParsing,
             getSource,
-            useChangeNotifications
+            useChangeNotifications,
+            useSyntaxTreeCache
         ) =
 
       let useSimpleResolutionSwitch = "--simpleresolution"
@@ -1702,7 +1709,9 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 #endif
                     allDependencies,
                     defaultTimeStamp,
-                    useChangeNotifications)
+                    useChangeNotifications,
+                    useSyntaxTreeCache
+                )
 
             let builder = IncrementalBuilder(initialState, IncrementalBuilderState.Create(initialState))
             return Some builder

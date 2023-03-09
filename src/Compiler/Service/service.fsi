@@ -53,7 +53,8 @@ type public FSharpChecker =
         ?enablePartialTypeChecking: bool *
         ?parallelReferenceResolution: bool *
         ?captureIdentifiersWhenParsing: bool *
-        [<Experimental "This parameter is experimental and likely to be removed in the future.">] ?documentSource: DocumentSource ->
+        [<Experimental "This parameter is experimental and likely to be removed in the future.">] ?documentSource: DocumentSource *
+        [<Experimental "This parameter is experimental and likely to be removed in the future.">] ?useSyntaxTreeCache: bool ->
             FSharpChecker
 
     /// <summary>
