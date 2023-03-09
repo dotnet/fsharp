@@ -738,23 +738,27 @@ open type System.Ma
 
     [<Fact>]
     let ``No completion on nested module identifier, incomplete`` () =
-        let fileContents = """
+        let fileContents =
+            """
     module Namespace.Top
 
     module Nest
 
     let a = ()
     """
+
         VerifyNoCompletionList(fileContents, "Nest")
 
     [<Fact>]
     let ``No completion on nested module identifier`` () =
-        let fileContents = """
+        let fileContents =
+            """
     namespace N
 
     module Nested =
         do ()
     """
+
         VerifyNoCompletionList(fileContents, "Nested")
 
     [<Fact>]
