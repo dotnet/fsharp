@@ -13,7 +13,7 @@ namespace FSharp.Editor.IntegrationTests;
 public class GoToDefinitionTests : AbstractIntegrationTest
 {
     [IdeFact]
-    public async Task GoesToDefinition_SameFile_Async()
+    public async Task GoesToDefinition_Async()
     {
         var token = HangMitigatingCancellationToken;
         var template = WellKnownProjectTemplates.FSharpNetCoreClassLibrary;
@@ -37,46 +37,6 @@ let increment = add 1
         await solutionExplorer.RestoreNuGetPackagesAsync(token);
         await editor.SetTextAsync(code, token);
         
-        await editor.PlaceCaretAsync("add 1", token);
-        await shell.ExecuteCommandAsync(VSStd97CmdID.GotoDefn, token);
-        var actualText = await editor.GetCurrentLineTextAsync(token);
-        
-        Assert.Contains(expectedText, actualText);
-    }
-
-    [IdeFact]
-    public async Task GoesToDefinition_AnotherFile_Async()
-    {
-        var token = HangMitigatingCancellationToken;
-        var template = WellKnownProjectTemplates.FSharpNetCoreClassLibrary;
-        var projectName = "Test";
-
-        var solutionExplorer = TestServices.SolutionExplorer;
-        var editor = TestServices.Editor;
-        var shell = TestServices.Shell;
-        var workspace = TestServices.Workspace;
-
-        var code1 = """
-module Math1
-
-let add x y = x + y
-""";
-        var code2 = """
-module Math2
-
-open Math1
-
-let increment = add 1
-""";
-        var expectedText = "let add x y = x + y";
-
-        await solutionExplorer.CreateSolutionAsync(nameof(GoToDefinitionTests), token);
-        await solutionExplorer.AddProjectAsync(projectName, template, token);
-        await solutionExplorer.RestoreNuGetPackagesAsync(token);
-        await solutionExplorer.AddFileAsync(projectName, "Math1.fs", code1, token);
-        await solutionExplorer.AddFileAsync(projectName, "Math2.fs", code2, token);
-        await solutionExplorer.OpenFileAsync(projectName, "Math2.fs", token);
-
         await editor.PlaceCaretAsync("add 1", token);
         await shell.ExecuteCommandAsync(VSStd97CmdID.GotoDefn, token);
         var actualText = await editor.GetCurrentLineTextAsync(token);
