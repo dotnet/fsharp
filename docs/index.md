@@ -71,7 +71,7 @@ Welcome to [the F# compiler and tools repository](https://github.com/dotnet/fsha
 
 * [sharplab.io](https://sharplab.io/) can be used to decompile code.
 
-* [fantomas-tools](https://fsprojects.github.io/fantomas-tools/#/ast) can be used to view the Untyped & Typed Abstract Syntax Tree.
+* [fantomas-tools](https://fsprojects.github.io/fantomas-tools/#/ast) can be used to view the Untyped Abstract Syntax Tree.
 
 ## Attribution
 

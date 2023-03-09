@@ -25,6 +25,11 @@ module HeyHo =
     let two'' = 2
 
     type CamelCaseLongName = class end
+
+    module Alpha =
+        module Beta =
+            type Gamma() =
+                member val Delta = 3
 """
 
     let sourceText = SourceText.From(fileContents)
@@ -58,7 +63,7 @@ module HeyHo =
     let ``capitalized camel case`` () =
         assertResultsContain "CLN" "CamelCaseLongName"
 
-    [<Fact(Skip = "Old pattern matcher matches only capital letters to camel case.")>]
+    [<Fact>]
     let ``lower camel case`` () =
         assertResultsContain "cln" "CamelCaseLongName"
 
@@ -69,5 +74,9 @@ module HeyHo =
     let ``backticked identifier`` () =
         assertResultsContain "a few words" "a few words"
 
-    [<Fact(Skip = "Operators show logical name instead of display name.")>]
+    [<Fact>]
     let ``operator`` () = assertResultsContain "+>" "+>"
+
+    [<Fact>]
+    let ``nested containers`` () =
+        assertResultsContain "hh.a.b.g.d" "Delta"
