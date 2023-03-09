@@ -3328,6 +3328,7 @@ module Array =
         /// Evaluates to <c>[| 1; 1 3; 4; 6; 8 |]</c>.
         /// </example>
         [<CompiledName("Sort")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val sort: array:'T[] -> 'T[] when 'T : comparison 
 
         /// <summary>Sorts the elements of an array in parallel, using the given projection for the keys and returning a new array. 
@@ -3353,6 +3354,7 @@ module Array =
         /// </example>
 
         [<CompiledName("SortBy")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val sortBy: projection:('T -> 'Key) -> array:'T[] -> 'T[] when 'Key : comparison 
 
         /// <summary>Sorts the elements of an array in parallel, using the given comparison function as the order, returning a new array.</summary>
@@ -3381,6 +3383,7 @@ module Array =
         /// Evaluates to <c>[|(0, "aa"); (2, "cc"); (3, "dd"); (1, "bbb")|]</c>.
         /// </example>
         [<CompiledName("SortWith")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val sortWith: comparer:('T -> 'T -> int) -> array:'T[] -> 'T[]
 
         /// <summary>Sorts the elements of an array by mutating the array in-place in parallel, using the given projection for the keys. 
@@ -3403,6 +3406,7 @@ module Array =
         /// After evaluation <c>array</c> contains <c>[|"a"; "dd"; "bbb"; "cccc"|]</c>.
         /// </example>
         [<CompiledName("SortInPlaceBy")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val sortInPlaceBy: projection:('T -> 'Key) -> array:'T[] -> unit when 'Key : comparison 
 
         /// <summary>Sorts the elements of an array by mutating the array in-place in parallel, using the given comparison function as the order.</summary>
@@ -3426,6 +3430,7 @@ module Array =
         /// After evaluation <c>array</c> contains <c>[|(0, "aa"); (2, "cc"); (3, "dd"); (1, "bbb")|]</c>.
         /// </example>
         [<CompiledName("SortInPlaceWith")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val sortInPlaceWith: comparer:('T -> 'T -> int) -> array:'T[] -> unit
 
         /// <summary>Sorts the elements of an array by mutating the array in-place in parallel, using the given comparison function. 
@@ -3444,6 +3449,7 @@ module Array =
         /// After evaluation <c>array</c> contains <c>[| 1; 1; 3; 4; 6; 8 |]</c>.
         /// </example>
         [<CompiledName("SortInPlace")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val sortInPlace: array:'T[] -> unit when 'T : comparison 
 
         /// <summary>Sorts the elements of an array in parallel, in descending order, returning a new array. Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>. </summary>
@@ -3464,6 +3470,7 @@ module Array =
         /// Evaluates to <c>[| 8; 6; 4; 3; 1; 1 |]</c>.
         /// </example>
         [<CompiledName("SortDescending")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val inline sortDescending: array:'T[] -> 'T[] when 'T : comparison
 
         /// <summary>Sorts the elements of an array in parallel, in descending order, using the given projection for the keys and returning a new array. 
@@ -3486,4 +3493,5 @@ module Array =
         /// Evaluates to <c>[|"cccc"; "bbb"; "dd"; "a"|]</c>.
         /// </example>
         [<CompiledName("SortByDescending")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val inline sortByDescending: projection:('T -> 'Key) -> array:'T[] -> 'T[] when 'Key : comparison
