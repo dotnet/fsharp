@@ -19,8 +19,14 @@ type DocumentDiagnosticAnalyzerTests() =
                 RoslynTestHelpers.CreateSolution(fileContents)
                 |> RoslynTestHelpers.GetSingleDocument
 
-            let! syntacticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax, CancellationToken.None) |> Async.AwaitTask
-            let! semanticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic, CancellationToken.None) |> Async.AwaitTask
+            let! syntacticDiagnostics =
+                FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax, CancellationToken.None)
+                |> Async.AwaitTask
+
+            let! semanticDiagnostics =
+                FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic, CancellationToken.None)
+                |> Async.AwaitTask
+
             return syntacticDiagnostics.AddRange(semanticDiagnostics)
         }
         |> Async.RunSynchronously

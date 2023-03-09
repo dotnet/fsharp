@@ -58,7 +58,11 @@ module HintTestFramework =
         async {
             let! ct = Async.CancellationToken
             let! sourceText = document.GetTextAsync ct |> Async.AwaitTask
-            let! hints = HintService.getHintsForDocument sourceText document hintKinds "test" ct |> Async.AwaitTask
+
+            let! hints =
+                HintService.getHintsForDocument sourceText document hintKinds "test" ct
+                |> Async.AwaitTask
+
             return hints |> Seq.map convert
         }
         |> Async.RunSynchronously
