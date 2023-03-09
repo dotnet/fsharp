@@ -1314,7 +1314,7 @@ module ArrayParallelVsArray =
         let pa = xs |> Array.Parallel.sort
 
         let opName = "sort"
-        (a = pa) |@ (sprintf  "Array.%s = '%A', Array.%s = '%A'" opName a name pa)
+        (a = pa) |@ (sprintf  "Array.%s = '%A', Array.%s = '%A'" opName a opName pa)
 
     [<Fact>]
     let ``sort is consistent`` () =
@@ -1365,7 +1365,7 @@ module ArrayParallelVsArray =
         let a = xs |> Array.sortDescending
         let pa = xs |> Array.Parallel.sortDescending
         let opName = "sortDescending"
-        (a = pa) |@ (sprintf  "Array.%s = '%A', Array.%s = '%A'" opName a name pa)
+        (a = pa) |@ (sprintf  "Array.%s = '%A', Array.%s = '%A'" opName a opName pa)
 
     [<Fact>]
     let ``sortDescending is consistent`` () =
@@ -1377,7 +1377,7 @@ module ArrayParallelVsArray =
         let a = xs |> Array.sortByDescending f
         let pa = xs |> Array.Parallel.sortByDescending f
 
-        isSorted (Array.map pa l |> Array.rev) && isSorted (Array.map f a |> Array.rev) &&
+        isSorted (Array.map f pa |> Array.rev) && isSorted (Array.map f a |> Array.rev) &&
           haveSameElements pa xs && haveSameElements a xs &&
           a.Length = pa.Length && a.Length = xs.Length
 

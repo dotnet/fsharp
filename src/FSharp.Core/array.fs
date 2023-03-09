@@ -2122,33 +2122,46 @@ module Array =
 
             partitions
 
-        let inline swap leftIdx rightIdx (array: 'T[]) =
-            let temp = array[leftIdx]
-            array[leftIdx] <- array[rightIdx]
-            array[rightIdx] <- temp
+        //let inline swap leftIdx rightIdx (array: 'T[]) =
+        //    let temp = array[leftIdx]
+        //    array[leftIdx] <- array[rightIdx]
+        //    array[rightIdx] <- temp
 
         let private mergeTwoSortedConsequtiveSegmentsInPlaceByKeys
             (keysArray: 'TKey[])
             (left: ArraySegment<'T>)
             (right: ArraySegment<'T>)
             =
-            let mutable leftIdx = left.Offset
-            let leftMax, rightMax = left.Offset + left.Count, right.Offset + right.Count
+            assert(left.Offset + left.Count = right.Offset)
+            assert(Object.ReferenceEquals(left.Array,right.Array))
+            assert(right.Offset + right.Count <= keysArray.Length)
 
-            while leftIdx < leftMax do
-                while (leftIdx < leftMax) && (compare keysArray[leftIdx] keysArray[right.Offset]) <= 0 do
-                    leftIdx <- leftIdx + 1
+            let mutable leftIdx,rightIdx = left.Offset, right.Offset
+            let rightMax,fullArray = right.Offset + right.Count, left.Array
 
-                let leftMostUnprocessed = keysArray[leftIdx]
-                let mutable writableRightIdx = right.Offset
+            if keysArray[rightIdx-1] <= keysArray[rightIdx] then
+                ()
+            else
+                while leftIdx < rightIdx && rightIdx < rightMax do
+                    if keysArray[leftIdx] <= keysArray[rightIdx] then
+                        leftIdx <- leftIdx + 1
+                    else
+                        let rightKey,rightValue = keysArray[rightIdx],fullArray[rightIdx]                 
+                        let mutable whereShouldFirstOfRightGo = rightIdx
 
-                while (writableRightIdx < rightMax)
-                      && (compare leftMostUnprocessed keysArray[writableRightIdx]) > 0 do
-                    keysArray |> swap leftIdx writableRightIdx
-                    left.Array |> swap leftIdx writableRightIdx
-                    writableRightIdx <- writableRightIdx + 1
-                    leftIdx <- leftIdx + 1
+                        // Bubble-down the 1st element of right segment to its correct position
+                        while whereShouldFirstOfRightGo <> leftIdx do
+                            keysArray[whereShouldFirstOfRightGo] <- keysArray[whereShouldFirstOfRightGo - 1]
+                            fullArray[whereShouldFirstOfRightGo] <- fullArray[whereShouldFirstOfRightGo - 1]
+                            whereShouldFirstOfRightGo <- whereShouldFirstOfRightGo - 1
 
+                        keysArray[leftIdx] <- rightKey
+                        fullArray[leftIdx] <- rightValue
+
+                        leftIdx <- leftIdx + 1
+                        rightIdx <- rightIdx + 1
+
+       
             new ArraySegment<'T>(left.Array, left.Offset, left.Count + right.Count)
 
         let private mergeTwoSortedConsequtiveSegmentsInPlaceWith
@@ -2156,24 +2169,31 @@ module Array =
             (left: ArraySegment<'T>)
             (right: ArraySegment<'T>)
             =
-            let mutable leftIdx = left.Offset
+            assert(left.Offset + left.Count = right.Offset)
+            assert(Object.ReferenceEquals(left.Array,right.Array))   
 
-            let leftMax, rightMax, fullArray =
-                left.Offset + left.Count, right.Offset + right.Count, left.Array
+            let mutable leftIdx,rightIdx = left.Offset, right.Offset
+            let rightMax,fullArray = right.Offset + right.Count, left.Array
 
-            while leftIdx < leftMax do
-                while (leftIdx < leftMax)
-                      && comparer.Compare(fullArray[leftIdx], fullArray[right.Offset]) <= 0 do
-                    leftIdx <- leftIdx + 1
+            if comparer.Compare(fullArray[rightIdx-1], fullArray[rightIdx]) <= 0 then
+                ()
+            else
+                while leftIdx < rightIdx && rightIdx < rightMax do
+                    if comparer.Compare(fullArray[leftIdx], fullArray[rightIdx]) <= 0 then
+                        leftIdx <- leftIdx + 1
+                    else
+                        let rightValue = fullArray[rightIdx]                 
+                        let mutable whereShouldFirstOfRightGo = rightIdx
 
-                let leftMostUnprocessed = fullArray[leftIdx]
-                let mutable writableRightIdx = right.Offset
+                        // Bubble-down the 1st element of right segment to its correct position
+                        while whereShouldFirstOfRightGo <> leftIdx do                          
+                            fullArray[whereShouldFirstOfRightGo] <- fullArray[whereShouldFirstOfRightGo - 1]
+                            whereShouldFirstOfRightGo <- whereShouldFirstOfRightGo - 1
+                       
+                        fullArray[leftIdx] <- rightValue
 
-                while (writableRightIdx < rightMax)
-                      && comparer.Compare(leftMostUnprocessed, fullArray[writableRightIdx]) > 0 do
-                    fullArray |> swap leftIdx writableRightIdx
-                    writableRightIdx <- writableRightIdx + 1
-                    leftIdx <- leftIdx + 1
+                        leftIdx <- leftIdx + 1
+                        rightIdx <- rightIdx + 1           
 
             new ArraySegment<'T>(left.Array, left.Offset, left.Count + right.Count)
 

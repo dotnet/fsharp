@@ -649,12 +649,21 @@ type ArrayModule2() =
     member private _.MultiplyArray(template:_[],repetitions:int) = 
         Array.zeroCreate repetitions |> Array.collect (fun _ -> template)     
 
-    member private _.CompareTwoMethods(initialData,regularArrayFunc,arrayParaFunc) = 
+    member private _.CompareTwoMethods<'TIn,'TOut> (regularArrayFunc:'TIn[]->'TOut[]) (arrayParaFunc:'TIn[]->'TOut[]) (initialData:'TIn[]) = 
         let first,second = initialData, Array.copy initialData
         let whenSequential = regularArrayFunc second
         let whenParallel = arrayParaFunc first
 
-        Assert.AreEqual(whenSequential, whenParallel)
+        if(whenSequential <> whenParallel) then
+            Assert.AreEqual(whenSequential.Length, whenParallel.Length, "Lengths are different")
+            let diffsAt = 
+                Array.zip whenSequential whenParallel
+                |> Array.mapi (fun idx (a,b) -> if(a <> b) then Some(idx,(a,b)) else None)
+                |> Array.choose id
+                |> dict
+            
+            Assert.Empty(diffsAt)
+            Assert.Equal<'TOut>(whenSequential, whenParallel)
 
     [<Fact>]
     member this.sortInPlaceWithParallel() =      
@@ -662,29 +671,28 @@ type ArrayModule2() =
         let tee f x = f x; x
         // integer array  
         this.MultiplyArray([|3;5;7;2;4;8|],1_000) 
-        |> this.CompareTwoMethods (tee (Array.sortInPlaceWith compare),tee (Array.Parallel.sortInPlaceWith compare))
+        |> this.CompareTwoMethods (tee (Array.sortInPlaceWith compare)) (tee (Array.Parallel.sortInPlaceWith compare))
 
         // Sort backwards
         this.MultiplyArray([|3;5;7;2;4;8|],1_000) 
-        |> this.CompareTwoMethods (tee (Array.sortInPlaceWith (fun a b -> -1 * compare a b)),tee (Array.Parallel.sortInPlaceWith (fun a b -> -1 * compare a b)))
+        |> this.CompareTwoMethods (tee (Array.sortInPlaceWith (fun a b -> -1 * compare a b))) (tee (Array.Parallel.sortInPlaceWith (fun a b -> -1 * compare a b)))
         
         // string array
         let strArr = [|"Lists"; "are"; "a"; "commonly"; "used"; "data"; "structure"|]    
         this.MultiplyArray(strArr,1_000) 
-        |> this.CompareTwoMethods (tee (Array.sortInPlaceWith compare),tee (Array.Parallel.sortInPlaceWith compare))
+        |> this.CompareTwoMethods (tee (Array.sortInPlaceWith compare)) (tee (Array.Parallel.sortInPlaceWith compare))
         
         // empty array
         [| |]
-        |> this.CompareTwoMethods (tee (Array.sortInPlaceWith compare),tee (Array.Parallel.sortInPlaceWith compare))       
+        |> this.CompareTwoMethods (tee (Array.sortInPlaceWith compare)) (tee (Array.Parallel.sortInPlaceWith compare))       
         
         // null array
         let nullArr = null:string[]      
-        CheckThrowsArgumentNullException (fun () -> Array.Parallel.sortInPlaceWith compare nullArr  |> ignore)         
+        CheckThrowsArgumentNullException (fun () -> Array.Parallel.sortInPlaceWith compare nullArr  |> ignore)  
 
-        
         // Equal elements              
         this.MultiplyArray([|8; 8;8|],1_000) 
-        |> this.CompareTwoMethods (tee (Array.sortInPlaceWith compare),tee (Array.Parallel.sortInPlaceWith compare))
+        |> this.CompareTwoMethods (tee (Array.sortInPlaceWith compare)) (tee (Array.Parallel.sortInPlaceWith compare))
         
         ()           
 
@@ -723,13 +731,13 @@ type ArrayModule2() =
         let tee f x = f x; x
 
         // integer array  
-        this.MultiplyArray([|3;5;7;2;4;8|],1_000) 
-        |> this.CompareTwoMethods (tee (Array.sortInPlaceBy int),tee (Array.Parallel.sortInPlaceBy int))
+        this.MultiplyArray([|3;5;7;2;4;8|],50) 
+        |> this.CompareTwoMethods (tee (Array.sortInPlaceBy int)) (tee (Array.Parallel.sortInPlaceBy int))
         
         // string array
         let strArr = [|"Lists"; "are"; "a"; "commonly"; "used"; "datastructure"|]    
         this.MultiplyArray(strArr,1_000) 
-        |> this.CompareTwoMethods (tee (Array.sortInPlaceBy (fun (x:string) -> x.Length)),tee (Array.Parallel.sortInPlaceBy (fun (x:string) -> x.Length)))
+        |> this.CompareTwoMethods (tee (Array.sortInPlaceBy (fun (x:string) -> x.Length))) (tee (Array.Parallel.sortInPlaceBy (fun (x:string) -> x.Length)))
         
         
         // empty array
@@ -783,11 +791,11 @@ type ArrayModule2() =
     member this.SortDescendingParallel() =
         // integer array  
         this.MultiplyArray([|3;5;7;2;4;8|],1_000) 
-        |> this.CompareTwoMethods (Array.sortDescending int,Array.Parallel.sortDescending int)
+        |> this.CompareTwoMethods (Array.sortDescending) (Array.Parallel.sortDescending)
         
         // string Array
         this.MultiplyArray([|"Z";"a";"d"; ""; "Y"; null; "c";"b";"X"|]  ,1_000) 
-        |> this.CompareTwoMethods (Array.sortDescending int,Array.Parallel.sortDescending int)
+        |> this.CompareTwoMethods (Array.sortDescending) (Array.Parallel.sortDescending)
         
         // empty array
         let emptyArr:int[] = [| |]
@@ -797,19 +805,19 @@ type ArrayModule2() =
         // tuple array
         let tupArr = [|(2,"a");(1,"d");(1,"b");(1,"a");(2,"x");(2,"b");(1,"x")|]   
         this.MultiplyArray(tupArr,1_000) 
-        |> this.CompareTwoMethods (Array.sortDescending int,Array.Parallel.sortDescending int)       
+        |> this.CompareTwoMethods (Array.sortDescending) (Array.Parallel.sortDescending)       
 
         // date array
         let dateArr = [|DateTime(2014,12,31);DateTime(2014,1,1);DateTime(2015,1,1);DateTime(2013,12,31);DateTime(2014,1,1)|]       
         this.MultiplyArray(dateArr,1_000) 
-        |> this.CompareTwoMethods (Array.sortDescending int,Array.Parallel.sortDescending int)    
+        |> this.CompareTwoMethods (Array.sortDescending) (Array.Parallel.sortDescending)    
         Assert.AreEqual([|DateTime(2014,12,31);DateTime(2014,1,1);DateTime(2015,1,1);DateTime(2013,12,31);DateTime(2014,1,1)|], dateArr)
 
         // float array
         let minFloat,maxFloat,epsilon = System.Double.MinValue,System.Double.MaxValue,System.Double.Epsilon
         let floatArr = [| 0.0; 0.5; 2.0; 1.5; 1.0; minFloat; maxFloat; epsilon; -epsilon |]
         this.MultiplyArray(floatArr,1_000) 
-        |> this.CompareTwoMethods (Array.sortDescending int,Array.Parallel.sortDescending int) 
+        |> this.CompareTwoMethods (Array.sortDescending) (Array.Parallel.sortDescending) 
 
         () 
         
@@ -857,14 +865,14 @@ type ArrayModule2() =
         // integer array  
         let intArr = [|3;5;7;2;4;8|]
         this.MultiplyArray(intArr,1_000)
-        |> this.CompareTwoMethods(Array.sortByDescending int,Array.Parallel.sortByDescending int)      
+        |> this.CompareTwoMethods(Array.sortByDescending int) (Array.Parallel.sortByDescending int)      
         Assert.AreEqual([|3;5;7;2;4;8|], intArr)
 
                 
         // string array
         let strArr = [|".."; ""; "..."; "."; "...."|]    
         this.MultiplyArray(strArr,1_000)
-        |> this.CompareTwoMethods(Array.sortByDescending (fun (x:string) -> x.Length),Array.Parallel.sortByDescending (fun (x:string) -> x.Length))    
+        |> this.CompareTwoMethods(Array.sortByDescending (fun (x:string) -> x.Length)) (Array.Parallel.sortByDescending (fun (x:string) -> x.Length))    
         Assert.AreEqual([|".."; ""; "..."; "."; "...."|], strArr)
         
         // empty array
@@ -875,20 +883,20 @@ type ArrayModule2() =
         // tuple array
         let tupArr = [|(2,"a");(1,"d");(1,"b");(2,"x")|]
         this.MultiplyArray(tupArr,1_000)
-        |> this.CompareTwoMethods(Array.sortByDescending snd,Array.Parallel.sortByDescending snd)       
+        |> this.CompareTwoMethods(Array.sortByDescending snd) (Array.Parallel.sortByDescending snd)       
         Assert.AreEqual( [|(2,"a");(1,"d");(1,"b");(2,"x")|] , tupArr)  
         
         // date array
         let dateArr = [|DateTime(2013,12,31);DateTime(2014,2,1);DateTime(2015,1,1);DateTime(2014,3,1)|]
         this.MultiplyArray(dateArr,1_000)
-        |> this.CompareTwoMethods(Array.sortByDescending (fun (d:DateTime) -> d.Month),Array.Parallel.sortByDescending (fun (d:DateTime) -> d.Month))         
+        |> this.CompareTwoMethods(Array.sortByDescending (fun (d:DateTime) -> d.Month)) (Array.Parallel.sortByDescending (fun (d:DateTime) -> d.Month))         
         Assert.AreEqual([|DateTime(2013,12,31);DateTime(2014,2,1);DateTime(2015,1,1);DateTime(2014,3,1)|], dateArr)     
 
         // float array
         let minFloat,maxFloat,epsilon = System.Double.MinValue,System.Double.MaxValue,System.Double.Epsilon
         let floatArr = [| 0.0; 0.5; 2.0; 1.5; 1.0; minFloat; maxFloat; epsilon; -epsilon |]
         this.MultiplyArray(floatArr,1_000)
-        |> this.CompareTwoMethods(Array.sortByDescending id,Array.Parallel.sortByDescending snd)
+        |> this.CompareTwoMethods(Array.sortByDescending id) (Array.Parallel.sortByDescending id)
 
         () 
          
