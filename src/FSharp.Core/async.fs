@@ -2371,9 +2371,9 @@ module WebExtensions =
                 result = (fun _ -> ())
             )
 
-namespace Microsoft.FSharp.Core
+namespace Microsoft.FSharp.Control
 
-open Microsoft.FSharp.Control
+open Microsoft.FSharp.Core
 
 [<AutoOpen>]
 module AsyncGlobalOperators =

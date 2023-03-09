@@ -94,7 +94,7 @@ val mkNonLocalEntityRef: ccu: CcuThunk -> mp: string[] -> NonLocalEntityRef
 val mkNestedNonLocalEntityRef: nleref: NonLocalEntityRef -> id: string -> NonLocalEntityRef
 
 val mkRelocatedNestedNonLocalEntityRef:
-    nleref: NonLocalEntityRef -> newId: string -> originalId: string -> NonLocalEntityRef
+    nleref: NonLocalEntityRef -> newId: string -> fallbacknlref: NonLocalEntityRef -> NonLocalEntityRef
 
 val mkNonLocalTyconRef: nleref: NonLocalEntityRef -> id: string -> EntityRef
 

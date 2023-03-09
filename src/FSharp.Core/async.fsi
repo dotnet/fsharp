@@ -1547,7 +1547,9 @@ namespace Microsoft.FSharp.Control
     module internal AsyncBuilderImpl = 
         val async : AsyncBuilder
 
-namespace Microsoft.FSharp.Core
+namespace Microsoft.FSharp.Control
+
+open Microsoft.FSharp.Core
 
 [<AutoOpen>]
 module AsyncGlobalOperators =

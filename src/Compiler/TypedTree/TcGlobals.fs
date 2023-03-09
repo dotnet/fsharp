@@ -68,7 +68,7 @@ module FSharpLib =
     let SeqGlobalOperatorsName     = Root + ".Core.SeqGlobalOperators"
     let SetGlobalOperatorsName     = Root + ".Core.SetGlobalOperators"
     let PrintfGlobalOperatorsName  = Root + ".Core.PrintfGlobalOperators"
-    let AsyncGlobalOperatorsName   = Root + ".Core.AsyncGlobalOperators"
+    let AsyncGlobalOperatorsName   = Root + ".Control.AsyncGlobalOperators"
     let QueryGlobalOperatorsName   = Root + ".Core.QueryGlobalOperators"
     let QuotationsGlobalOperatorsName = Root + ".Core.QuotationsGlobalOperators"
 
@@ -539,14 +539,15 @@ type TcGlobals(
   let fslib_MFOperatorIntrinsics_nleref        = mkNestedNonLocalEntityRef fslib_MFOperators_nleref "OperatorIntrinsics"
   let fslib_MFOperatorsUnchecked_nleref        = mkNestedNonLocalEntityRef fslib_MFOperators_nleref "Unchecked"
   let fslib_MFOperatorsChecked_nleref          = mkNestedNonLocalEntityRef fslib_MFOperators_nleref "Checked"
-  let fslib_MFSeqGlobalOperators_nleref           = mkRelocatedNestedNonLocalEntityRef fslib_MFCore_nleref "SeqGlobalOperators" "ExtraTopLevelOperators"
-  let fslib_MFSetGlobalOperators_nleref           = mkRelocatedNestedNonLocalEntityRef fslib_MFCore_nleref "SetGlobalOperators" "ExtraTopLevelOperators"
-  let fslib_MFPrintfGlobalOperators_nleref        = mkRelocatedNestedNonLocalEntityRef fslib_MFCore_nleref "PrintfGlobalOperators" "ExtraTopLevelOperators"
-  let fslib_MFAsyncGlobalOperators_nleref         = mkRelocatedNestedNonLocalEntityRef fslib_MFCore_nleref "AsyncGlobalOperators" "ExtraTopLevelOperators"
-  let fslib_MFQueryGlobalOperators_nleref         = mkRelocatedNestedNonLocalEntityRef fslib_MFCore_nleref "QueryGlobalOperators" "ExtraTopLevelOperators"
-  let fslib_MFQuotationsGlobalOperators_nleref    = mkRelocatedNestedNonLocalEntityRef fslib_MFCore_nleref "QuotationsGlobalOperators" "ExtraTopLevelOperators"
-  
+
   let fslib_MFExtraTopLevelOperators_nleref    = mkNestedNonLocalEntityRef fslib_MFCore_nleref "ExtraTopLevelOperators"
+  let fslib_MFSeqGlobalOperators_nleref        = mkRelocatedNestedNonLocalEntityRef fslib_MFCore_nleref "SeqGlobalOperators" fslib_MFExtraTopLevelOperators_nleref
+  let fslib_MFSetGlobalOperators_nleref        = mkRelocatedNestedNonLocalEntityRef fslib_MFCore_nleref "SetGlobalOperators" fslib_MFExtraTopLevelOperators_nleref
+  let fslib_MFPrintfGlobalOperators_nleref     = mkRelocatedNestedNonLocalEntityRef fslib_MFCore_nleref "PrintfGlobalOperators" fslib_MFExtraTopLevelOperators_nleref
+  let fslib_MFAsyncGlobalOperators_nleref      = mkRelocatedNestedNonLocalEntityRef fslib_MFControl_nleref  "AsyncGlobalOperators" fslib_MFExtraTopLevelOperators_nleref
+  let fslib_MFQueryGlobalOperators_nleref      = mkRelocatedNestedNonLocalEntityRef fslib_MFCore_nleref "QueryGlobalOperators" fslib_MFExtraTopLevelOperators_nleref
+  let fslib_MFQuotationsGlobalOperators_nleref = mkRelocatedNestedNonLocalEntityRef fslib_MFCore_nleref "QuotationsGlobalOperators" fslib_MFExtraTopLevelOperators_nleref
+  
   let fslib_MFNullableOperators_nleref         = mkNestedNonLocalEntityRef fslib_MFLinq_nleref "NullableOperators"
   let fslib_MFQueryRunExtensions_nleref              = mkNestedNonLocalEntityRef fslib_MFLinq_nleref "QueryRunExtensions"
   let fslib_MFQueryRunExtensionsLowPriority_nleref   = mkNestedNonLocalEntityRef fslib_MFQueryRunExtensions_nleref "LowPriority"
