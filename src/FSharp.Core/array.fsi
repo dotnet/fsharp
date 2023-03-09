@@ -3122,6 +3122,7 @@ module Array =
         /// Evaluates to <c>None</c>
         /// </example>
         [<CompiledName("TryFind")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val tryFind: predicate:('T -> bool) -> array:'T[] -> 'T option
 
 
@@ -3153,6 +3154,7 @@ module Array =
         /// Evaluates to <c>None</c>
         /// </example>
         [<CompiledName("TryFindIndex")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val tryFindIndex : predicate:('T -> bool) -> array:'T[] -> int option
 
         /// <summary>Applies the given function to successive elements, returning the first
@@ -3185,6 +3187,7 @@ module Array =
         /// </example>
         ///
         [<CompiledName("TryPick")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val tryPick: chooser:('T -> 'U option) -> array:'T[] -> 'U option
 
         /// <summary>Apply the given function to each element of the array. Return
