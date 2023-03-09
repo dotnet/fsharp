@@ -123,7 +123,7 @@ type internal FSharpWorkspaceServiceFactory
                                 getOption (fun options -> options.Advanced.IsLiveBuffersEnabled) false
 
                             let useSyntaxTreeCache =
-                                getOption (fun options -> options.Advanced.IsLiveBuffersEnabled) LanguageServicePerformanceOptions.Default.UseSyntaxTreeCache
+                                getOption (fun options -> options.LanguageServicePerformance.UseSyntaxTreeCache) LanguageServicePerformanceOptions.Default.UseSyntaxTreeCache
 
                             let checker =
                                 FSharpChecker.Create(

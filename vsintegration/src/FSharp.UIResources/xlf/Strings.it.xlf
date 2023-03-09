@@ -218,8 +218,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Use_syntax_tree_cache">
-        <source>Cache parsing results (Experimental)</source>
-        <target state="new">Cache parsing results (Experimental)</target>
+        <source>Cache parsing results (experimental)</source>
+        <target state="new">Cache parsing results (experimental)</target>
         <note />
       </trans-unit>
     </body>
