@@ -9,6 +9,8 @@ open System
 [<RequireQualifiedAccess>]
 module internal Activity =
 
+    val FscSourceName: string
+
     module Tags =
         val fileName: string
         val qualifiedNameOfFile: string
@@ -16,6 +18,9 @@ module internal Activity =
         val userOpName: string
         val length: string
         val cache: string
+
+    module Events =
+        val cacheHit: string
 
     val startNoTags: name: string -> IDisposable
 

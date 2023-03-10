@@ -98,7 +98,7 @@ type internal FSharpFile = {
         Source: FSharpSource
         Flags: bool * bool
     }
-
+ 
 // This module is only here to contain the SyntaxTree type as to avoid ambiguity with the module FSharp.Compiler.Syntax.
 [<AutoOpen>]
 module IncrementalBuildSyntaxTree =
@@ -181,7 +181,7 @@ module IncrementalBuildSyntaxTree =
             | _ when useCache ->
                 match cache.TryGetValue fileInfo with
                 | true, result ->
-                    Activity.addEvent "CacheHit"
+                    Activity.addEvent Activity.Events.cacheHit
                     result
                 | _ -> cache.GetValue(fileInfo, parse)
             | _ -> parse fileInfo
