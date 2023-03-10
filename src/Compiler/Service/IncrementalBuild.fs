@@ -110,36 +110,33 @@ module IncrementalBuildSyntaxTree =
             tcConfig: TcConfig,
             fileParsed: Event<string>,
             lexResourceManager,
-            fileInfo: FSharpFile,
+            file: FSharpFile,
             useCache
         ) =
 
         static let cache = ConditionalWeakTable<FSharpFile, _>()
 
-        let fileName = fileInfo.Source.FilePath
-        let sourceRange = fileInfo.Range
-        let source = fileInfo.Source
-        let isLastCompiland = fileInfo.Flags
+        let fileName = file.Source.FilePath
+        let sourceRange = file.Range
+        let source = file.Source
+        let isLastCompiland = file.Flags
 
-        let tryImplStubWhenHasSig =
-            function
-            | Some sigName when FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) ->
-                Some (
-                    ParsedInput.ImplFile(
-                        ParsedImplFileInput(
-                            fileName,
-                            false,
-                            sigName,
-                            [],
-                            [],
-                            [],
-                            isLastCompiland,
-                            { ConditionalDirectives = []; CodeComments = [] },
-                            Set.empty
-                        )
-                    ), sourceRange, fileName, [||]
+        let isImplFile = FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName)
+
+        let ImplStubFor sigName =
+            ParsedInput.ImplFile(
+                ParsedImplFileInput(
+                    fileName,
+                    false,
+                    sigName,
+                    [],
+                    [],
+                    [],
+                    isLastCompiland,
+                    { ConditionalDirectives = []; CodeComments = [] },
+                    Set.empty
                 )
-            | _ -> None
+            ), sourceRange, fileName, [||]
 
         let parse _ =
             let diagnosticsLogger = CompilationDiagnosticLogger("Parse", tcConfig.diagnosticsOptions)
@@ -172,19 +169,18 @@ module IncrementalBuildSyntaxTree =
                     [|
                         Activity.Tags.fileName, fileName                       
                         "buildPhase", BuildPhase.Parse.ToString()
+                        "canSkip", (isImplFile && sigNameOpt |> Option.isSome).ToString()
                     |]
 
-            match tryImplStubWhenHasSig sigNameOpt with
-            | Some result ->
-                Activity.addEvent "ImplementationSkipped"
-                result
+            match  sigNameOpt with
+            | Some sigName -> ImplStubFor sigName
             | _ when useCache ->
-                match cache.TryGetValue fileInfo with
+                match cache.TryGetValue file with
                 | true, result ->
                     Activity.addEvent Activity.Events.cacheHit
                     result
-                | _ -> cache.GetValue(fileInfo, parse)
-            | _ -> parse fileInfo
+                | _ -> cache.GetValue(file, parse)
+            | _ -> parse file
 
         /// Parse the given file and return the given input.
         member _.Parse(sigNameOpt) = parseOrSkip sigNameOpt
@@ -950,7 +946,7 @@ module IncrementalBuilderHelpers =
         return ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, finalBoundModelWithErrors
     }
 
-    let GetSyntaxTree tcConfig fileParsed lexResourceManager fileInfo useCache = SyntaxTree(tcConfig, fileParsed, lexResourceManager, fileInfo, useCache)
+    let GetSyntaxTree tcConfig fileParsed lexResourceManager file useCache = SyntaxTree(tcConfig, fileParsed, lexResourceManager, file, useCache)
 
 [<NoComparison;NoEquality>]
 type IncrementalBuilderInitialState =
@@ -1048,12 +1044,12 @@ type IncrementalBuilderState =
 module IncrementalBuilderStateHelpers =
 
     let createBoundModelGraphNode (initialState: IncrementalBuilderInitialState) initialBoundModel (boundModels: ImmutableArray<GraphNode<BoundModel>>.Builder) i =
-        let fileInfo = initialState.fileNames[i]
+        let file = initialState.fileNames[i]
         let prevBoundModelGraphNode =
             match i with
             | 0 (* first file *) -> initialBoundModel
             | _ -> boundModels[i - 1]
-        let syntaxTree = GetSyntaxTree initialState.tcConfig initialState.fileParsed initialState.lexResourceManager fileInfo initialState.useSyntaxTreeCache
+        let syntaxTree = GetSyntaxTree initialState.tcConfig initialState.fileParsed initialState.lexResourceManager file initialState.useSyntaxTreeCache
         GraphNode(node {
             let! prevBoundModel = prevBoundModelGraphNode.GetOrComputeValue()
             return! TypeCheckTask initialState.enablePartialTypeChecking prevBoundModel syntaxTree
@@ -1434,8 +1430,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
     member builder.GetParseResultsForFile fileName =
         let slotOfFile = builder.GetSlotOfFileName fileName
-        let fileInfo = initialState.fileNames[slotOfFile]
-        let syntaxTree = GetSyntaxTree initialState.tcConfig initialState.fileParsed initialState.lexResourceManager fileInfo initialState.useSyntaxTreeCache
+        let file = initialState.fileNames[slotOfFile]
+        let syntaxTree = GetSyntaxTree initialState.tcConfig initialState.fileParsed initialState.lexResourceManager file initialState.useSyntaxTreeCache
         syntaxTree.Parse None
 
     member builder.NotifyFileChanged(fileName, timeStamp) =
