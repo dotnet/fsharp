@@ -6,6 +6,7 @@ namespace Microsoft.FSharp.Reflection
 
 open System
 open System.Reflection
+open System.Diagnostics.CodeAnalysis
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Primitives.Basics
 open Microsoft.FSharp.Collections
@@ -299,7 +300,7 @@ type FSharpValue =
     /// <returns>A ConstructorInfo for the given record type.</returns>
     ///
     /// <example-tbd></example-tbd>
-    static member PreComputeRecordConstructorInfo: recordType: Type * ?bindingFlags: BindingFlags -> ConstructorInfo
+    static member PreComputeRecordConstructorInfo: (*[<System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All)>]*)recordType: Type * ?bindingFlags: BindingFlags -> ConstructorInfo
 
     /// <summary>Create a union case value.</summary>
     ///
