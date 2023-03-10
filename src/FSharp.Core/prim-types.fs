@@ -374,6 +374,7 @@ namespace Microsoft.FSharp.Core
     type NoCompilerInliningAttribute() =
         inherit Attribute()
 
+#if !NET5_0_OR_GREATER
 namespace System.Diagnostics.CodeAnalysis
 
     open System
@@ -424,6 +425,7 @@ namespace Microsoft.FSharp.Core
     open System.Globalization
     open System.Reflection
     open System.Text
+#endif
 
     [<MeasureAnnotatedAbbreviation>] type float<[<Measure>] 'Measure> = float 
     [<MeasureAnnotatedAbbreviation>] type float32<[<Measure>] 'Measure> = float32
