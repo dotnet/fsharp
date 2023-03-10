@@ -1474,6 +1474,12 @@ module ParsedInput =
                             Some(CompletionContext.OpenDeclaration isOpenType)
                         else
                             None
+
+                    // module Namespace.Top
+                    // module Neste|
+                    | SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = [ ident ])) when rangeContainsPos ident.idRange pos ->
+                        Some CompletionContext.Invalid
+
                     | _ -> defaultTraverse decl
 
                 member _.VisitType(_, defaultTraverse, ty) =
