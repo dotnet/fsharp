@@ -123,7 +123,7 @@ module IncrementalBuildSyntaxTree =
 
         let isImplFile = FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName)
 
-        let ImplStubFor sigName =
+        let parsedImplFileStub sigName =
             ParsedInput.ImplFile(
                 ParsedImplFileInput(
                     fileName,
@@ -173,7 +173,7 @@ module IncrementalBuildSyntaxTree =
                     |]
 
             match  sigNameOpt with
-            | Some sigName -> ImplStubFor sigName
+            | Some sigName -> parsedImplFileStub sigName
             | _ when useCache ->
                 match cache.TryGetValue file with
                 | true, result ->
