@@ -173,7 +173,7 @@ module IncrementalBuildSyntaxTree =
                     |]
 
             match  sigNameOpt with
-            | Some sigName -> parsedImplFileStub sigName
+            | Some sigName when isImplFile -> parsedImplFileStub sigName
             | _ when useCache ->
                 match cache.TryGetValue file with
                 | true, result ->
