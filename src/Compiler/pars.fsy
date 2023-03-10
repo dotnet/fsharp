@@ -665,6 +665,17 @@ moduleSpfn:
         let trivia: SynModuleSigDeclNestedModuleTrivia = { ModuleKeyword = Some mModule; EqualsRange = $4 }
         SynModuleSigDecl.NestedModule(info, isRec, $5, m, trivia) }
 
+  | opt_attributes opt_access moduleIntro error
+      { let mModule, isRec, path, vis, attribs2 = $3
+        let xmlDoc = grabXmlDoc(parseState, $1, 1)
+        if not (isSingleton path) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleDefnMustBeSimpleName())
+        if isRec then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsInvalidUseOfRec())
+        let info = SynComponentInfo($1 @ attribs2, None, [], path, xmlDoc, false, vis, rhs parseState 3)
+        if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
+        let mWhole = rhs2 parseState 1 3 |> unionRangeWithXmlDoc xmlDoc
+        let trivia: SynModuleSigDeclNestedModuleTrivia = { ModuleKeyword = Some mModule; EqualsRange = None }
+        SynModuleSigDecl.NestedModule(info, isRec, [], mWhole, trivia) }
+
   | opt_attributes opt_access typeKeyword tyconSpfn tyconSpfnList
       { if Option.isSome $2 then errorR (Error (FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
         let leadingKeyword = SynTypeDefnLeadingKeyword.Type (rhs parseState 3)
@@ -1284,6 +1295,15 @@ moduleDefn:
                 |> unionRangeWithXmlDoc xmlDoc
             let m = match mEndOpt with | None -> m | Some mEnd -> unionRanges m mEnd
             [ SynModuleDecl.NestedModule(info, isRec, def, false, m, trivia) ] }
+
+  /* incomplete 'module' definitions */
+  | opt_attributes opt_access moduleIntro error
+      { let xmlDoc = grabXmlDoc(parseState, $1, 1)
+        let mWhole = rhs2 parseState 1 3 |> unionRangeWithXmlDoc xmlDoc
+        let attribs, (mModule, isRec, path, vis, attribs2) = $1, $3
+        let info = SynComponentInfo(attribs @ attribs2, None, [], path, xmlDoc, false, vis, rhs parseState 3)
+        let trivia: SynModuleDeclNestedModuleTrivia = { ModuleKeyword = Some mModule; EqualsRange = None }
+        [ SynModuleDecl.NestedModule(info, isRec, [], false, mWhole, trivia) ] }
 
   /* unattached custom attributes */
   | attributes recover
