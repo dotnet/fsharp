@@ -3094,8 +3094,8 @@ module Array =
     /// <summary>Provides parallel operations on arrays </summary>
     module Parallel =
 
-        /// <summary>Returns the first element for which the given function returns True.
-        /// Return None if no such element exists.</summary>
+        /// <summary>Returns the first element for which the given function returns <c>True</c>.
+        /// Returns None if no such element exists.</summary>
         ///
         /// <param name="predicate">The function to test the input elements.</param>
         /// <param name="array">The input array.</param>
@@ -3110,7 +3110,7 @@ module Array =
         ///
         /// inputs |> Array.Parallel.tryFind (fun elm -> elm % 2 = 0)
         /// </code>
-        /// Evaluates to <c>Some 2</c>
+        /// Evaluates to <c>Some 2</c>.
         /// </example>
         ///
         /// <example id="para-tryfind-2">Try to find the first even number:
@@ -3128,7 +3128,7 @@ module Array =
 
         /// <summary>Returns the index of the first element in the array
         /// that satisfies the given predicate.</summary>
-        ///
+        /// Returns <c>None</c> if no such element exists.</summary>
         /// <param name="predicate">The function to test the input elements.</param>
         /// <param name="array">The input array.</param>
         ///
@@ -3174,7 +3174,7 @@ module Array =
         ///
         /// input |> Array.Parallel.tryPick (fun n -> if n % 2 = 0 then Some (string n) else None)
         /// </code>
-        /// Evaluates to <c>Some "2"</c>.
+        /// Evaluates to <c>Some 2</c>.
         /// </example>
         ///
         /// <example id="para-trypick-2">

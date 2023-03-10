@@ -1951,7 +1951,7 @@ module Array =
 
         [<CompiledName("TryFind")>]
         let tryFind predicate (array: _[]) =
-            array |> tryFindIndex predicate |> Option.map (fun i -> array.[i])
+            array |> tryFindIndex predicate |> Option.map (fun i -> array[i])
 
         [<CompiledName("TryPick")>]
         let tryPick chooser (array: _[]) =

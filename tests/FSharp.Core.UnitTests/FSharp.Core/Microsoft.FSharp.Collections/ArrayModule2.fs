@@ -1046,8 +1046,6 @@ type ArrayModule2() =
 
     [<Fact>]
     member this.ParallelTryFindIndex() = this.TryFindIndexTester Array.Parallel.tryFindIndex Array.Parallel.tryFindIndex
-
-
     [<Fact>]
     member this.TryFindIndexBack() =
         // integer array
