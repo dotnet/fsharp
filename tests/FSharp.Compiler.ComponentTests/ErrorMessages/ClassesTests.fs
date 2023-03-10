@@ -687,3 +687,50 @@ type X =
         |> withLangVersionPreview
         |> compile
         |> shouldSucceed
+
+    [<Fact>]
+    let ``No matching overload error uses an accurate range range``() =
+        FSharp """
+type T() =
+    static member Instance = T()
+
+    member _.Method(_: double) = ()
+    member _.Method(_: int) = ()
+
+T.Instance.Method("")
+        """
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic 
+            (Error 41, Line 8, Col 12, Line 8, Col 18, "No overloads match for method 'Method'.
+
+Known type of argument: string
+
+Available overloads:
+ - member T.Method: double -> unit // Argument at index 1 doesn't match
+ - member T.Method: int -> unit // Argument at index 1 doesn't match")
+
+    [<Fact>]
+    let ``No overloads match for method in member constraint``() =
+        FSharp """
+let inline meh<'a
+    when 'a : (member Plus: int -> int) > (_ : 'a) = ()
+
+type C() =
+    member self.Plus (x: float) = 0
+    member self.Plus (x: string) : string = ""
+
+let x = meh (C())
+        """
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic
+            (Error 193, Line 9, Col 14, Line 9, Col 17, "No overloads match for method 'Plus'.
+
+Known return type: int
+
+Known type parameter: < int >
+
+Available overloads:
+ - member C.Plus: x: float -> int // Argument 'x' doesn't match
+ - member C.Plus: x: string -> string // Argument 'x' doesn't match")
