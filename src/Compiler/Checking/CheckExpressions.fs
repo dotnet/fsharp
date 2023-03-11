@@ -1888,11 +1888,6 @@ let TransformAstForNestedUpdates cenv env overallTy (lid: LongIdent) exprBeingAs
                     let h = ident(h.idText, h.idRange.MakeSynthetic())
                     if equals h.idRange id.idRange then h :: res else buildLid (h :: res) id t
 
-            let rec combineIds =
-                function
-                | [] | [_] -> []
-                | id1 :: id2 :: rest -> (id1, id2) :: (id2 :: rest |> combineIds)
-
             let calcLidSeparatorRanges origSepRng lid =
                 match lid with
                 | [] | [_] -> [ origSepRng ]
@@ -1900,7 +1895,7 @@ let TransformAstForNestedUpdates cenv env overallTy (lid: LongIdent) exprBeingAs
 
             let lid = buildLid [] id lidwd |> List.rev
 
-            (lid, lid |> combineIds |> calcLidSeparatorRanges origSepRng)
+            (lid, List.pairwise lid |> calcLidSeparatorRanges origSepRng)
 
         let totalRange (origId: Ident) (id: Ident) =
             mkRange origId.idRange.FileName origId.idRange.End id.idRange.Start
