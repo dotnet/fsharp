@@ -209,7 +209,7 @@ let main _ =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            Error 810, Line 9, Col 5, Line 9, Col 21, "Cannot call 'set_GetInit' - a setter for init-only property, please use object initialization instead. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization"
+            Error 810, Line 9, Col 10, Line 9, Col 21, "Cannot call 'set_GetInit' - a setter for init-only property, please use object initialization instead. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization"
         ]
 
     [<FactForNETCOREAPP>]

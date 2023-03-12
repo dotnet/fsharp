@@ -68,7 +68,7 @@ c.Update()
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 101, Line 9, Col 1, Line 9, Col 9, "This construct is deprecated. Use B instead")
+            (Error 101, Line 9, Col 3, Line 9, Col 9, "This construct is deprecated. Use B instead")
         ]
 
     [<Fact>]
@@ -88,7 +88,7 @@ c.Update()
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 8, Col 9, Line 8, Col 10, "This construct is deprecated. Use B instead");
-            (Error 101, Line 9, Col 1, Line 9, Col 9, "This construct is deprecated. Use B instead")
+            (Error 101, Line 9, Col 3, Line 9, Col 9, "This construct is deprecated. Use B instead")
         ]
 
     [<Fact>]
@@ -109,7 +109,7 @@ c.Update()
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 9, Col 9, Line 9, Col 10, "This construct is deprecated. Use B instead");
-            (Error 101, Line 10, Col 1, Line 10, Col 9, "This construct is deprecated. Use B instead")
+            (Error 101, Line 10, Col 3, Line 10, Col 9, "This construct is deprecated. Use B instead")
         ]
 
     [<Fact>]
@@ -148,7 +148,7 @@ c.Update()
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 101, Line 10, Col 1, Line 10, Col 9, "This construct is deprecated. Use B instead")
+            (Error 101, Line 10, Col 3, Line 10, Col 9, "This construct is deprecated. Use B instead")
         ]
 
     [<Fact>]
@@ -593,7 +593,7 @@ b.text("Hello 2") |> ignore
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 101, Line 16, Col 1, Line 16, Col 7, "This construct is deprecated. Use B instead")
+            (Error 101, Line 16, Col 3, Line 16, Col 7, "This construct is deprecated. Use B instead")
         ]
     
     [<Fact>]

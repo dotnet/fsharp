@@ -1,4 +1,4 @@
-typecheck/constructors/neg_invalid_constructor.fs (3,29)-(3,56) typecheck error A unique overload for method 'ImmutableStack`1' could not be determined based on type information prior to this program point. A type annotation may be needed.
+typecheck/constructors/neg_invalid_constructor.fs (3,29)-(3,43) typecheck error A unique overload for method 'ImmutableStack`1' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
 Known type of argument: 'a list
 
