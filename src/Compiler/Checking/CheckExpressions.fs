@@ -1933,8 +1933,7 @@ let TransformAstForNestedUpdates cenv env overallTy (lid: LongIdent) exprBeingAs
     let access, fields = ResolveNestedField cenv.tcSink cenv.nameResolver env.eNameResEnv env.eAccessRights overallTy lid
 
     match access, fields with
-    | [], [] -> failwith "unreachable"
-    | accessIds, [] -> List.frontAndBack accessIds, Some exprBeingAssigned
+    | _, [] -> failwith "unreachable"
     | accessIds, [ (fieldId, _) ] -> List.frontAndBack (accessIds @ [ fieldId ]), Some exprBeingAssigned
     | accessIds, (fieldId, _) :: rest ->
         checkLanguageFeatureAndRecover cenv.g.langVersion LanguageFeature.NestedCopyAndUpdate (rangeOfLid lid)
@@ -6657,7 +6656,7 @@ and TcRecordConstruction (cenv: cenv) (overallTy: TType) env tpenv withExprInfoO
         if not (Zset.subset ns2 ns1) then
             error(MissingFields(Zset.elements (Zset.diff ns2 ns1), m))
     | _ ->
-        // `TransformAstForNestedUpdates` crates record constructions with synthetic ranges.
+        // `TransformAstForNestedUpdates` creates record constructions with synthetic ranges.
         // Don't emit the warning for nested field updates, because it does not really make sense.
         if oldFldsList.IsEmpty && not m.IsSynthetic then
             let enabledByLangFeature = g.langVersion.SupportsFeature LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields

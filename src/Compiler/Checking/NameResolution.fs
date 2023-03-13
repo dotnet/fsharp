@@ -3730,15 +3730,14 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
                     let errorText = FSComp.SR.nrRecordDoesNotContainSuchLabel(typeName,id.idText)
                     raze (ErrorWithSuggestions(errorText, m, id.idText, suggestLabels))
             else 
-                let frefs = 
-                    match Map.tryFind id.idText nenv.eFieldLabels with
-                    | Some fields -> success fields
-                    | None -> raze (SuggestLabelsOfRelatedRecords g nenv id (otherRecordFields ty))
-
-                // Eliminate duplicates arising from multiple 'open' 
-                frefs 
-                |?> ListSet.setify (fun fref1 fref2 -> tyconRefEq g fref1.TyconRef fref2.TyconRef)
-                |?> List.map Choice1Of2
+                match Map.tryFind id.idText nenv.eFieldLabels with
+                | Some fields ->
+                    // Eliminate duplicates arising from multiple 'open' 
+                    fields 
+                    |> ListSet.setify (fun fref1 fref2 -> tyconRefEq g fref1.TyconRef fref2.TyconRef)
+                    |> List.map Choice1Of2
+                    |> success
+                | None -> raze (SuggestLabelsOfRelatedRecords g nenv id (otherRecordFields ty))
 
     let anonRecdInfoF field =
         match field with
@@ -3811,8 +3810,8 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
         match rest with
         | [] -> idsBeforeField, [ (fieldId, anonRecdInfo) ]
         | _ ->  
-            let rec nestedFieldSearch fields ty =
-                function
+            let rec nestedFieldSearch fields ty lid =
+                match lid with
                 | [] -> fields
                 | id :: rest ->
                     let resolved = lookupField ty id |> ForceRaise
