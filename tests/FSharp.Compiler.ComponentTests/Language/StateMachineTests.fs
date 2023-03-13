@@ -23,7 +23,41 @@ task {
 }
 |> fun f -> f.Wait()
 """
+        Fsx code
+        |> withNoOptimize
+        |> compile
+        |> shouldFail
+        |> withWarningCode 3511
+        |> ignore
 
+        Fsx code
+        |> withNoOptimize
+        |> withOptions ["--nowarn:3511"]
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    
+    [<Fact>] // https://github.com/dotnet/fsharp/issues/14806
+    let ``Specifying returns types and setting constraints on generics``() = 
+        let code = """
+module Foo
+
+open System.Threading.Tasks
+
+let run2(): Task =
+    task {
+        return ()
+    }
+
+let run() =
+    task {
+        let a = null
+        do! run2()
+    }
+
+run()
+|> fun f -> f.Wait()
+"""
         Fsx code
         |> withNoOptimize
         |> compile
