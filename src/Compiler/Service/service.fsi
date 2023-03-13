@@ -385,7 +385,6 @@ type public FSharpChecker =
     member ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients: unit -> unit
 
     /// Notify the checker that given file has changed. This needs to be used when checker is created with documentSource = Custom.
-    /// Although it is not mandatory when the changed file is the next thing requested to be checked.
     [<Experimental "This FCS API is experimental and likely to be removed in the future.">]
     member NotifyFileChanged: fileName: string * options: FSharpProjectOptions * ?userOpName: string -> Async<unit>
 
