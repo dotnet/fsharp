@@ -2095,7 +2095,8 @@ module Array =
                 yield new ArraySegment<'T>(array, offset, maxIdxExclusive - offset)
             |]
 
-        let private createPartitions (array: 'T[]) = createPartitionsUpTo array.Length array         
+        let private createPartitions (array: 'T[]) =
+            createPartitionsUpTo array.Length array
 
         let inline pickPivot
             ([<InlineIfLambda>] cmpAtIndex: int -> int -> int)
@@ -2316,25 +2317,29 @@ module Array =
             sortInPlace result
             result
 
-        let reverseInPlace (array:'T[]) =          
-            let segments = createPartitionsUpTo (array.Length/2) array  
+        let reverseInPlace (array: 'T[]) =
+            let segments = createPartitionsUpTo (array.Length / 2) array
             let lastIdx = array.Length - 1
-            Parallel.For(0,segments.Length, fun idx ->
-                let s = segments[idx]
-                for i=s.Offset to (s.Offset+s.Count-1) do
-                    let tmp = array[i]
-                    array[i] <- array[lastIdx-i]
-                    array[lastIdx-i] <- tmp ) |> ignore
+
+            Parallel.For(
+                0,
+                segments.Length,
+                fun idx ->
+                    let s = segments[idx]
+
+                    for i = s.Offset to (s.Offset + s.Count - 1) do
+                        let tmp = array[i]
+                        array[i] <- array[lastIdx - i]
+                        array[lastIdx - i] <- tmp
+            )
+            |> ignore
+
             array
 
         [<CompiledName("SortByDescending")>]
         let sortByDescending projection array =
-            array
-            |> sortBy projection
-            |> reverseInPlace
+            array |> sortBy projection |> reverseInPlace
 
         [<CompiledName("SortDescending")>]
         let sortDescending array =
-            array
-            |> sort 
-            |> reverseInPlace
+            array |> sort |> reverseInPlace
