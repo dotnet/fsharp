@@ -8,7 +8,7 @@ open FSharp.Test.Compiler
 module StateMachineTests =
 
     [<Fact>] // https://github.com/dotnet/fsharp/issues/13067
-    let ``Declaring a local function with a flexible type``() = 
+    let ``Local function with a flexible type``() = 
         let code = """
 task {
     let m1 f s = Seq.map f s
@@ -38,7 +38,7 @@ task {
 
     
     [<Fact>] // https://github.com/dotnet/fsharp/issues/14806
-    let ``Specifying returns types and setting constraints on generics``() = 
+    let ``Explicit returns types + constraints on generics``() = 
         let code = """
 module Foo
 
@@ -56,6 +56,37 @@ let run() =
     }
 
 run()
+|> fun f -> f.Wait()
+"""
+        Fsx code
+        |> withNoOptimize
+        |> compile
+        |> shouldFail
+        |> withWarningCode 3511
+        |> ignore
+
+        Fsx code
+        |> withNoOptimize
+        |> withOptions ["--nowarn:3511"]
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>] // https://github.com/dotnet/fsharp/issues/14807
+    let ``let _ = null``() = 
+        let code = """
+module TestProject1
+
+let bar() = task {
+    let! _ = async { return [| 1 |] } |> Async.StartAsTask
+    ()
+}
+
+let foo() = task {
+    let _ = null
+    do! bar()
+}
+
+foo()
 |> fun f -> f.Wait()
 """
         Fsx code
