@@ -6,6 +6,7 @@ open System.Runtime.CompilerServices
 open System.Threading
 open System.Threading.Tasks
 open Microsoft.CodeAnalysis
+open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
@@ -226,6 +227,7 @@ type Project with
         let documents = this.Documents |> Seq.filter (fun document -> not (canSkipDocuments.Contains document.FilePath))
 
         if this.IsFastFindReferencesEnabled then
+            TelemetryReporter.reportEvent "fastfindreferences" []
             do! documents
                 |> Seq.map (fun doc ->
                     Task.Run(fun () ->

@@ -27,6 +27,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 open Microsoft.CodeAnalysis.Host
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.VisualStudio.FSharp.Editor.WorkspaceExtensions
+open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 open System.Threading.Tasks
 
 #nowarn "9" // NativePtr.toNativeInt
@@ -93,6 +94,7 @@ type internal FSharpWorkspaceServiceFactory
                     None
 
             let getSource filename =
+                TelemetryReporter.reportEvent "livebuffers" []
                 workspace.CurrentSolution.TryGetDocumentFromPath(filename)
                 |> Option.map(fun document ->
                     let text = document.GetTextAsync().Result

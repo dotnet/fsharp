@@ -16,3 +16,7 @@ module Hints =
         Range: range
         Parts: TaggedText list
     }
+
+    let serialize = function
+        | TypeHint -> "type"
+        | ParameterNameHint -> "parameterName"
