@@ -14,6 +14,7 @@ public class CreateProjectTests : AbstractIntegrationTest
     public async Task ClassLibrary()
     {
         var template = WellKnownProjectTemplates.FSharpNetCoreClassLibrary;
+
         var expectedCode = """
 namespace Library
 
@@ -22,7 +23,7 @@ module Say =
         printfn "Hello %s" name
 
 """;
-        await SolutionExplorer.CreateSingleProjectSolutionAsync(template, TestToken);
+        await SolutionExplorer.CreateSingleProjectSolutionAsync("Library", template, TestToken);
 
         var actualCode = await Editor.GetTextAsync(TestToken);
 
@@ -33,12 +34,13 @@ module Say =
     public async Task ConsoleApp()
     {
         var template = WellKnownProjectTemplates.FSharpNetCoreConsoleApplication;
+
         var expectedCode = """
 // For more information see https://aka.ms/fsharp-console-apps
 printfn "Hello from F#"
 
 """;
-        await SolutionExplorer.CreateSingleProjectSolutionAsync(template, TestToken);
+        await SolutionExplorer.CreateSingleProjectSolutionAsync("ConsoleApp", template, TestToken);
 
         var actualCode = await Editor.GetTextAsync(TestToken);
 
@@ -49,6 +51,7 @@ printfn "Hello from F#"
     public async Task XUnitTestProject()
     {
         var template = WellKnownProjectTemplates.FSharpNetCoreXUnitTest;
+
         var expectedCode = """
 module Tests
 
@@ -60,7 +63,7 @@ let ``My test`` () =
     Assert.True(true)
 
 """;
-        await SolutionExplorer.CreateSingleProjectSolutionAsync(template, TestToken);
+        await SolutionExplorer.CreateSingleProjectSolutionAsync("Tests", template, TestToken);
 
         var actualCode = await Editor.GetTextAsync(TestToken);
 

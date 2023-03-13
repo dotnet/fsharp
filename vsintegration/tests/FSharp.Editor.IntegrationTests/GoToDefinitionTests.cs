@@ -15,6 +15,7 @@ public class GoToDefinitionTests : AbstractIntegrationTest
     public async Task GoesToDefinition()
     {
         var template = WellKnownProjectTemplates.FSharpNetCoreClassLibrary;
+
         var code = """
 module Test
 
@@ -24,7 +25,7 @@ let increment = add 1
 """;
         var expectedText = "let add x y = x + y";
 
-        await SolutionExplorer.CreateSingleProjectSolutionAsync(template, TestToken);
+        await SolutionExplorer.CreateSingleProjectSolutionAsync("Library", template, TestToken);
         await SolutionExplorer.RestoreNuGetPackagesAsync(TestToken);
         await Editor.SetTextAsync(code, TestToken);
         

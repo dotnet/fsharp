@@ -22,7 +22,7 @@ let answer = 42
 """;
         var expectedBuildSummary = "========== Build: 1 succeeded, 0 failed, 0 up-to-date, 0 skipped ==========";
 
-        await SolutionExplorer.CreateSingleProjectSolutionAsync(template, TestToken);
+        await SolutionExplorer.CreateSingleProjectSolutionAsync("Library", template, TestToken);
         await SolutionExplorer.RestoreNuGetPackagesAsync(TestToken);
         await Editor.SetTextAsync(code, TestToken);
 
@@ -43,7 +43,7 @@ let answer =
         var expectedBuildSummary = "========== Build: 0 succeeded, 1 failed, 0 up-to-date, 0 skipped ==========";
         var expectedError = "(Compiler) Library.fs(3, 1): error FS0010: Incomplete structured construct at or before this point in binding";
 
-        await SolutionExplorer.CreateSingleProjectSolutionAsync(template, TestToken);
+        await SolutionExplorer.CreateSingleProjectSolutionAsync("Library", template, TestToken);
         await SolutionExplorer.RestoreNuGetPackagesAsync(TestToken);
         await Editor.SetTextAsync(code, TestToken);
 
