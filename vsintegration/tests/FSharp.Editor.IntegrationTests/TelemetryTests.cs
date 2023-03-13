@@ -12,8 +12,7 @@ public class TelemetryTests : AbstractIntegrationTest
         var template = WellKnownProjectTemplates.FSharpNetCoreClassLibrary;
 
         await using var telemetryChannel = await Telemetry.EnableTestTelemetryChannelAsync(TestToken);
-        await SolutionExplorer.CreateSolutionAsync(nameof(TelemetryTests), TestToken);
-        await SolutionExplorer.AddProjectAsync("Library", template, TestToken);
+        await SolutionExplorer.CreateSingleProjectSolutionAsync("Library", template, TestToken);
         await SolutionExplorer.BuildSolutionAsync(TestToken);
         
         var eventName = "vs/projectsystem/cps/loadcpsproject";

@@ -25,8 +25,7 @@ let increment = add 1
 """;
         var expectedText = "let add x y = x + y";
 
-        await SolutionExplorer.CreateSolutionAsync(nameof(GoToDefinitionTests), TestToken);
-        await SolutionExplorer.AddProjectAsync("Library", template, TestToken);
+        await SolutionExplorer.CreateSingleProjectSolutionAsync("Library", template, TestToken);
         await SolutionExplorer.RestoreNuGetPackagesAsync(TestToken);
         await Editor.SetTextAsync(code, TestToken);
         

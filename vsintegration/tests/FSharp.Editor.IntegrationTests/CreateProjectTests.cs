@@ -23,8 +23,7 @@ module Say =
         printfn "Hello %s" name
 
 """;
-        await SolutionExplorer.CreateSolutionAsync(nameof(CreateProjectTests), TestToken);
-        await SolutionExplorer.AddProjectAsync("Library", template, TestToken);
+        await SolutionExplorer.CreateSingleProjectSolutionAsync("Library", template, TestToken);
 
         var actualCode = await Editor.GetTextAsync(TestToken);
 
@@ -41,8 +40,7 @@ module Say =
 printfn "Hello from F#"
 
 """;
-        await SolutionExplorer.CreateSolutionAsync(nameof(CreateProjectTests), TestToken);
-        await SolutionExplorer.AddProjectAsync("ConsoleApp", template, TestToken);
+        await SolutionExplorer.CreateSingleProjectSolutionAsync("ConsoleApp", template, TestToken);
 
         var actualCode = await Editor.GetTextAsync(TestToken);
 
@@ -65,8 +63,7 @@ let ``My test`` () =
     Assert.True(true)
 
 """;
-        await SolutionExplorer.CreateSolutionAsync(nameof(CreateProjectTests), TestToken);
-        await SolutionExplorer.AddProjectAsync("ConsoleApp", template, TestToken);
+        await SolutionExplorer.CreateSingleProjectSolutionAsync("Tests", template, TestToken);
 
         var actualCode = await Editor.GetTextAsync(TestToken);
 
