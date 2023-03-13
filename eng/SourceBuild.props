@@ -3,6 +3,7 @@
   <PropertyGroup>
     <GitHubRepositoryName>fsharp</GitHubRepositoryName>
     <SourceBuildManagedOnly>true</SourceBuildManagedOnly>
+    <SourceBuildTrimNetFrameworkTargets>true</SourceBuildTrimNetFrameworkTargets>
   </PropertyGroup>
 
   <!--
