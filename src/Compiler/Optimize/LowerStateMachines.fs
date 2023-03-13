@@ -494,10 +494,14 @@ type LowerStateMachine(g: TcGlobals) =
 
             // Non-control-flow let binding can appear as part of state machine. The body is considered state-machine code,
             // the expression being bound is not.
-            | Expr.Let (bind, bodyExpr, m, _)
-                  // Restriction: compilation of sequence expressions containing non-toplevel constrained generic functions is not supported
-                  when  bind.Var.IsCompiledAsTopLevel || not (IsGenericValWithGenericConstraints g bind.Var) ->
-                ConvertResumableLet env pcValInfo (bind, bodyExpr, m)
+            | Expr.Let (bind, bodyExpr, m, _) ->
+                // Restriction: compilation of state machines containing non-toplevel constrained generic functions is not supported
+                if not bind.Var.IsCompiledAsTopLevel && IsGenericValWithGenericConstraints g bind.Var then
+                    if sm_verbose then 
+                        printfn " --> Failing state machine compilation, state machine contains non-toplevel constrained generic function"
+                    Result.Error (FSComp.SR.reprResumableCodeContainsConstrainedGenericLet())
+                else
+                    ConvertResumableLet env pcValInfo (bind, bodyExpr, m)
 
             | Expr.LetRec _ ->
                 Result.Error (FSComp.SR.reprResumableCodeContainsLetRec())
