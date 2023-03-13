@@ -12,19 +12,18 @@ public class TelemetryTests : AbstractIntegrationTest
     [IdeFact]
     public async Task BasicFSharpTelemetry()
     {
-        var token = HangMitigatingCancellationToken;
         var template = WellKnownProjectTemplates.FSharpNetCoreClassLibrary;
         var solutionExplorer = TestServices.SolutionExplorer;
         var editor = TestServices.Editor;
         var telemetry = TestServices.Telemetry;
 
-        await using var telemetryChannel = await telemetry.EnableTestTelemetryChannelAsync(token);
-        await solutionExplorer.CreateSolutionAsync(nameof(TelemetryTests), token);
-        await solutionExplorer.AddProjectAsync("Library", template, token);
-        await solutionExplorer.BuildSolutionAsync(token);
+        await using var telemetryChannel = await telemetry.EnableTestTelemetryChannelAsync(TestToken);
+        await solutionExplorer.CreateSolutionAsync(nameof(TelemetryTests), TestToken);
+        await solutionExplorer.AddProjectAsync("Library", template, TestToken);
+        await solutionExplorer.BuildSolutionAsync(TestToken);
         
         var eventName = "vs/projectsystem/cps/loadcpsproject";
-        var @event = await telemetryChannel.GetEventAsync(eventName, token);
+        var @event = await telemetryChannel.GetEventAsync(eventName, TestToken);
 
         var propKey = "VS.ProjectSystem.Cps.Project.Extension";
         Assert.True(@event.Properties.ContainsKey(propKey));

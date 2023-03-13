@@ -14,7 +14,6 @@ public class CreateProjectTests : AbstractIntegrationTest
     [IdeFact]
     public async Task ClassLibrary()
     {
-        var token = HangMitigatingCancellationToken;
         var template = WellKnownProjectTemplates.FSharpNetCoreClassLibrary;
         var solutionExplorer = TestServices.SolutionExplorer;
         var editor = TestServices.Editor;
@@ -28,10 +27,10 @@ module Say =
 
 """;
 
-        await solutionExplorer.CreateSolutionAsync(nameof(CreateProjectTests), token);
-        await solutionExplorer.AddProjectAsync("Library", template, token);
+        await solutionExplorer.CreateSolutionAsync(nameof(CreateProjectTests), TestToken);
+        await solutionExplorer.AddProjectAsync("Library", template, TestToken);
 
-        var actualCode = await editor.GetTextAsync(token);
+        var actualCode = await editor.GetTextAsync(TestToken);
 
         Assert.Equal(expectedCode, actualCode);
     }
@@ -39,7 +38,6 @@ module Say =
     [IdeFact]
     public async Task ConsoleApp()
     {
-        var token = HangMitigatingCancellationToken;
         var template = WellKnownProjectTemplates.FSharpNetCoreConsoleApplication;
         var solutionExplorer = TestServices.SolutionExplorer;
         var editor = TestServices.Editor;
@@ -50,10 +48,10 @@ printfn "Hello from F#"
 
 """;
 
-        await solutionExplorer.CreateSolutionAsync(nameof(CreateProjectTests), token);
-        await solutionExplorer.AddProjectAsync("ConsoleApp", template, token);
+        await solutionExplorer.CreateSolutionAsync(nameof(CreateProjectTests), TestToken);
+        await solutionExplorer.AddProjectAsync("ConsoleApp", template, TestToken);
 
-        var actualCode = await editor.GetTextAsync(token);
+        var actualCode = await editor.GetTextAsync(TestToken);
 
         Assert.Equal(expectedCode, actualCode);
     }
@@ -61,7 +59,6 @@ printfn "Hello from F#"
     [IdeFact]
     public async Task XUnitTestProject()
     {
-        var token = HangMitigatingCancellationToken;
         var template = WellKnownProjectTemplates.FSharpNetCoreXUnitTest;
         var solutionExplorer = TestServices.SolutionExplorer;
         var editor = TestServices.Editor;
@@ -78,10 +75,10 @@ let ``My test`` () =
 
 """;
 
-        await solutionExplorer.CreateSolutionAsync(nameof(CreateProjectTests), token);
-        await solutionExplorer.AddProjectAsync("ConsoleApp", template, token);
+        await solutionExplorer.CreateSolutionAsync(nameof(CreateProjectTests), TestToken);
+        await solutionExplorer.AddProjectAsync("ConsoleApp", template, TestToken);
 
-        var actualCode = await editor.GetTextAsync(token);
+        var actualCode = await editor.GetTextAsync(TestToken);
 
         Assert.Equal(expectedCode, actualCode);
     }

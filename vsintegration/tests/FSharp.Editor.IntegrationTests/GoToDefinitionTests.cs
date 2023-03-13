@@ -15,7 +15,6 @@ public class GoToDefinitionTests : AbstractIntegrationTest
     [IdeFact]
     public async Task GoesToDefinition()
     {
-        var token = HangMitigatingCancellationToken;
         var template = WellKnownProjectTemplates.FSharpNetCoreClassLibrary;
 
         var solutionExplorer = TestServices.SolutionExplorer;
@@ -32,14 +31,14 @@ let increment = add 1
 """;
         var expectedText = "let add x y = x + y";
 
-        await solutionExplorer.CreateSolutionAsync(nameof(GoToDefinitionTests), token);
-        await solutionExplorer.AddProjectAsync("Library", template, token);
-        await solutionExplorer.RestoreNuGetPackagesAsync(token);
-        await editor.SetTextAsync(code, token);
+        await solutionExplorer.CreateSolutionAsync(nameof(GoToDefinitionTests), TestToken);
+        await solutionExplorer.AddProjectAsync("Library", template, TestToken);
+        await solutionExplorer.RestoreNuGetPackagesAsync(TestToken);
+        await editor.SetTextAsync(code, TestToken);
         
-        await editor.PlaceCaretAsync("add 1", token);
-        await shell.ExecuteCommandAsync(VSStd97CmdID.GotoDefn, token);
-        var actualText = await editor.GetCurrentLineTextAsync(token);
+        await editor.PlaceCaretAsync("add 1", TestToken);
+        await shell.ExecuteCommandAsync(VSStd97CmdID.GotoDefn, TestToken);
+        var actualText = await editor.GetCurrentLineTextAsync(TestToken);
         
         Assert.Contains(expectedText, actualText);
     }

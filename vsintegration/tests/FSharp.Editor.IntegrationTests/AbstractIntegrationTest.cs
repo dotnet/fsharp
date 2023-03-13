@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 using Microsoft.VisualStudio.Extensibility.Testing;
+using System.Threading;
 using Xunit;
 
 namespace Microsoft.CodeAnalysis.Testing
@@ -10,5 +11,6 @@ namespace Microsoft.CodeAnalysis.Testing
     [IdeSettings(MinVersion = VisualStudioVersion.VS2022)]
     public abstract class AbstractIntegrationTest : AbstractIdeIntegrationTest
     {
+        protected CancellationToken TestToken => HangMitigatingCancellationToken;
     }
 }
