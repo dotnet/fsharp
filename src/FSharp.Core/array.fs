@@ -2078,22 +2078,24 @@ module Array =
         let private maxPartitions = Environment.ProcessorCount // The maximum number of partitions to use
         let private minChunkSize = 256 // The minimum size of a chunk to be sorted in parallel
 
-        let private createPartitions (array: 'T[]) =
+        let private createPartitionsUpTo maxIdxExclusive (array: 'T[]) =
             [|
                 let chunkSize =
-                    match array.Length with
+                    match maxIdxExclusive with
                     | smallSize when smallSize < minChunkSize -> smallSize
                     | biggerSize when biggerSize % maxPartitions = 0 -> biggerSize / maxPartitions
                     | biggerSize -> (biggerSize / maxPartitions) + 1
 
                 let mutable offset = 0
 
-                while (offset + chunkSize) < array.Length do
+                while (offset + chunkSize) < maxIdxExclusive do
                     yield new ArraySegment<'T>(array, offset, chunkSize)
                     offset <- offset + chunkSize
 
-                yield new ArraySegment<'T>(array, offset, array.Length - offset)
+                yield new ArraySegment<'T>(array, offset, maxIdxExclusive - offset)
             |]
+
+        let private createPartitions (array: 'T[]) = createPartitionsUpTo array.Length array         
 
         let inline pickPivot
             ([<InlineIfLambda>] cmpAtIndex: int -> int -> int)
@@ -2314,16 +2316,25 @@ module Array =
             sortInPlace result
             result
 
-        [<CompiledName("SortByDescending")>]
-        let inline sortByDescending projection array =
-            let inline compareDescending a b =
-                compare (projection b) (projection a)
+        let reverseInPlace (array:'T[]) =          
+            let segments = createPartitionsUpTo (array.Length/2) array  
+            let lastIdx = array.Length - 1
+            Parallel.For(0,segments.Length, fun idx ->
+                let s = segments[idx]
+                for i=s.Offset to (s.Offset+s.Count-1) do
+                    let tmp = array[i]
+                    array[i] <- array[lastIdx-i]
+                    array[lastIdx-i] <- tmp ) |> ignore
+            array
 
-            sortWith compareDescending array
+        [<CompiledName("SortByDescending")>]
+        let sortByDescending projection array =
+            array
+            |> sortBy projection
+            |> reverseInPlace
 
         [<CompiledName("SortDescending")>]
-        let inline sortDescending array =
-            let inline compareDescending a b =
-                compare b a
-
-            sortWith compareDescending array
+        let sortDescending array =
+            array
+            |> sort 
+            |> reverseInPlace

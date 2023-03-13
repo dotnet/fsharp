@@ -3471,7 +3471,7 @@ module Array =
         /// </example>
         [<CompiledName("SortDescending")>]
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        val inline sortDescending: array:'T[] -> 'T[] when 'T : comparison
+        val sortDescending: array:'T[] -> 'T[] when 'T : comparison
 
         /// <summary>Sorts the elements of an array in parallel, in descending order, using the given projection for the keys and returning a new array. 
         /// Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
@@ -3494,4 +3494,4 @@ module Array =
         /// </example>
         [<CompiledName("SortByDescending")>]
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        val inline sortByDescending: projection:('T -> 'Key) -> array:'T[] -> 'T[] when 'Key : comparison
+        val sortByDescending: projection:('T -> 'Key) -> array:'T[] -> 'T[] when 'Key : comparison
