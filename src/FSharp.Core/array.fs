@@ -2075,7 +2075,7 @@ module Array =
 
         // The following two parameters were benchmarked and found to be optimal.
         // Benchmark was run using: 11th Gen Intel Core i9-11950H 2.60GHz, 1 CPU, 16 logical and 8 physical cores
-        let private maxPartitions = Environment.ProcessorCount // The maximum number of partitions to use  
+        let private maxPartitions = Environment.ProcessorCount // The maximum number of partitions to use
         let private minChunkSize = 256 // The minimum size of a chunk to be sorted in parallel
 
         let private createPartitions (array: 'T[]) =
@@ -2088,72 +2088,85 @@ module Array =
 
                 let mutable offset = 0
 
-                while (offset + chunkSize) <= array.Length do
+                while (offset + chunkSize) < array.Length do
                     yield new ArraySegment<'T>(array, offset, chunkSize)
                     offset <- offset + chunkSize
 
-                if (offset <> array.Length) then
-                    yield new ArraySegment<'T>(array, offset, array.Length - offset)
+                yield new ArraySegment<'T>(array, offset, array.Length - offset)
             |]
 
-        let inline pickPivot ([<InlineIfLambda>]cmpAtIndex:int->int->int) ([<InlineIfLambda>]swapAtIndex:int->int->unit) (orig:ArraySegment<'T>) =
-            let inline swapIfGreater (i:int) (j:int) =                
+        let inline pickPivot
+            ([<InlineIfLambda>] cmpAtIndex: int -> int -> int)
+            ([<InlineIfLambda>] swapAtIndex: int -> int -> unit)
+            (orig: ArraySegment<'T>)
+            =
+            let inline swapIfGreater (i: int) (j: int) =
                 if cmpAtIndex i j > 0 then
                     swapAtIndex i j
 
             // Set pivot to be a median of {first,mid,last}
-    
+
             let firstIdx = orig.Offset
             let lastIDx = orig.Offset + orig.Count - 1
-            let midIdx = orig.Offset + orig.Count/2
-    
+            let midIdx = orig.Offset + orig.Count / 2
+
             swapIfGreater firstIdx midIdx
-            swapIfGreater firstIdx lastIDx  
-            swapIfGreater midIdx lastIDx      
+            swapIfGreater firstIdx lastIDx
+            swapIfGreater midIdx lastIDx
             midIdx
 
-        let inline partitionIntoTwo ([<InlineIfLambda>]cmpWithPivot:int->int) ([<InlineIfLambda>]swapAtIndex:int->int->unit) (orig:ArraySegment<'T>) =
-            let mutable leftIdx = orig.Offset+1  // Leftmost is already < pivot
+        let inline partitionIntoTwo
+            ([<InlineIfLambda>] cmpWithPivot: int -> int)
+            ([<InlineIfLambda>] swapAtIndex: int -> int -> unit)
+            (orig: ArraySegment<'T>)
+            =
+            let mutable leftIdx = orig.Offset + 1 // Leftmost is already < pivot
             let mutable rightIdx = orig.Offset + orig.Count - 2 // Rightmost is already > pivot
 
             while leftIdx < rightIdx do
-                while cmpWithPivot leftIdx  < 0 do
+                while cmpWithPivot leftIdx < 0 do
                     leftIdx <- leftIdx + 1
 
                 while cmpWithPivot rightIdx > 0 do
                     rightIdx <- rightIdx - 1
 
                 if leftIdx < rightIdx then
-                    swapAtIndex leftIdx rightIdx     
+                    swapAtIndex leftIdx rightIdx
                     leftIdx <- leftIdx + 1
                     rightIdx <- rightIdx - 1
 
-
             let lastIdx = orig.Offset + orig.Count - 1
             // There might be more elements being (=)pivot. Exclude them from further work
-            while cmpWithPivot leftIdx  >= 0 && leftIdx>orig.Offset do   
+            while cmpWithPivot leftIdx >= 0 && leftIdx > orig.Offset do
                 leftIdx <- leftIdx - 1
-            while cmpWithPivot rightIdx <= 0 && rightIdx<lastIdx do    
+
+            while cmpWithPivot rightIdx <= 0 && rightIdx < lastIdx do
                 rightIdx <- rightIdx + 1
 
-            new ArraySegment<_>(orig.Array, offset=orig.Offset, count=leftIdx - orig.Offset + 1), 
-            new ArraySegment<_>(orig.Array, offset=rightIdx, count=lastIdx - rightIdx + 1)
+            new ArraySegment<_>(orig.Array, offset = orig.Offset, count = leftIdx - orig.Offset + 1),
+            new ArraySegment<_>(orig.Array, offset = rightIdx, count = lastIdx - rightIdx + 1)
 
-        let partitionIntoTwoUsingComparer (cmp:'T->'T->int) (orig:ArraySegment<'T>): ArraySegment<'T> * ArraySegment<'T> =
+        let partitionIntoTwoUsingComparer
+            (cmp: 'T -> 'T -> int)
+            (orig: ArraySegment<'T>)
+            : ArraySegment<'T> * ArraySegment<'T> =
             let array = orig.Array
+
             let inline swap i j =
                 let tmp = array[i]
                 array[i] <- array[j]
                 array[j] <- tmp
 
-            let pivotIdx = pickPivot (fun i j -> cmp array[i] array[j]) (fun i j -> swap i j) orig
+            let pivotIdx =
+                pickPivot (fun i j -> cmp array[i] array[j]) (fun i j -> swap i j) orig
+
             let pivotItem = array[pivotIdx]
             partitionIntoTwo (fun idx -> cmp array[idx] pivotItem) (fun i j -> swap i j) orig
 
-
-        let partitionIntoTwoUsingKeys  (keys:'A[]) (orig:ArraySegment<'T>): ArraySegment<'T> * ArraySegment<'T> =
+        let partitionIntoTwoUsingKeys (keys: 'A[]) (orig: ArraySegment<'T>) : ArraySegment<'T> * ArraySegment<'T> =
             let array = orig.Array
-            let inline swap i j = 
+
+            let inline swap i j =
                 let tmpKey = keys[i]
                 keys[i] <- keys[j]
                 keys[j] <- tmpKey
@@ -2162,58 +2175,93 @@ module Array =
                 array.[i] <- array.[j]
                 array.[j] <- tmp
 
-            let pivotIdx = pickPivot (fun i j -> compare keys[i] keys[j]) (fun i j -> swap i j) orig
+            let pivotIdx =
+                pickPivot (fun i j -> compare keys[i] keys[j]) (fun i j -> swap i j) orig
+
             let pivotKey = keys[pivotIdx]
             partitionIntoTwo (fun idx -> compare keys[idx] pivotKey) (fun i j -> swap i j) orig
 
-        let inline sortInPlaceHelper (array:'T[]) ([<InlineIfLambda>]partitioningFunc:ArraySegment<'T> -> ArraySegment<'T> * ArraySegment<'T>) ([<InlineIfLambda>]sortingFunc:ArraySegment<'T>->unit) =   
-            let rec sortChunk (segment: ArraySegment<_>) freeWorkers =      
-                match freeWorkers with        
+        let inline sortInPlaceHelper
+            (array: 'T[])
+            ([<InlineIfLambda>] partitioningFunc: ArraySegment<'T> -> ArraySegment<'T> * ArraySegment<'T>)
+            ([<InlineIfLambda>] sortingFunc: ArraySegment<'T> -> unit)
+            =
+            let rec sortChunk (segment: ArraySegment<_>) freeWorkers =
+                match freeWorkers with
                 // Really small arrays are not worth creating a Task for, sort them immediately as well
-                | 0 | 1 | _ when segment.Count <= minChunkSize ->    
-                    sortingFunc segment                    
-                | _ -> 
-                    let left,right = partitioningFunc segment 
-                    // Pivot-based partitions might be inbalanced. Split  free workers for left/right proportional to their size
-                    let itemsPerWorker = Operators.max  ((left.Count + right.Count) / freeWorkers) 1
-                    let workersForLeftTask = 
-                        left.Count / itemsPerWorker 
-                        |> Operators.max 1 
-                        |> Operators.min (freeWorkers-1)                    
-                    let leftTask = Task.Run(fun () -> sortChunk left workersForLeftTask)
-                    sortChunk right (freeWorkers - workersForLeftTask)
-                    leftTask.Wait()  
-        
+                | 0
+                | 1 -> sortingFunc segment
+                | _ when segment.Count <= minChunkSize -> sortingFunc segment
+                | _ ->
+                    let left, right = partitioningFunc segment
+                    // If either of the two is too small, sort small segments straight away.
+                    // If the other happens to be big, leave it with all workes in it's recursive step
+                    if left.Count <= minChunkSize || right.Count <= minChunkSize then
+                        sortChunk left freeWorkers
+                        sortChunk right freeWorkers
+                    else
+                        // Pivot-based partitions might be inbalanced. Split  free workers for left/right proportional to their size
+                        let itemsPerWorker = Operators.max ((left.Count + right.Count) / freeWorkers) 1
+
+                        let workersForLeftTask =
+                            (left.Count / itemsPerWorker)
+                            |> Operators.max 1
+                            |> Operators.min (freeWorkers - 1)
+
+                        let leftTask = Task.Run(fun () -> sortChunk left workersForLeftTask)
+                        sortChunk right (freeWorkers - workersForLeftTask)
+                        leftTask.Wait()
+
             let bigSegment = new ArraySegment<_>(array, 0, array.Length)
             sortChunk bigSegment maxPartitions
 
-        let sortInPlaceWithHelper (partitioningComparer: 'T->'T->int) (sortingComparer: IComparer<'T>) (inputArray: 'T[]) =   
+        let sortInPlaceWithHelper
+            (partitioningComparer: 'T -> 'T -> int)
+            (sortingComparer: IComparer<'T>)
+            (inputArray: 'T[])
+            =
             let partitioningFunc = partitionIntoTwoUsingComparer partitioningComparer
-            let sortingFunc = fun (s:ArraySegment<'T>) -> Array.Sort<'T>(inputArray,s.Offset,s.Count,sortingComparer)
+
+            let sortingFunc =
+                fun (s: ArraySegment<'T>) -> Array.Sort<'T>(inputArray, s.Offset, s.Count, sortingComparer)
+
             sortInPlaceHelper inputArray partitioningFunc sortingFunc
 
-        let sortKeysAndValuesInPlace (inputKeys:'TKey[]) (values:'TValue[]) = 
+        let sortKeysAndValuesInPlace (inputKeys: 'TKey[]) (values: 'TValue[]) =
             let partitioningFunc = partitionIntoTwoUsingKeys inputKeys
             let sortingComparer = LanguagePrimitives.FastGenericComparerCanBeNull<'TKey>
-            let sortingFunc = fun (s:ArraySegment<'T>) -> Array.Sort<'TKey,'TValue>(inputKeys,values,s.Offset,s.Count,sortingComparer)  
+
+            let sortingFunc =
+                fun (s: ArraySegment<'T>) ->
+                    Array.Sort<'TKey, 'TValue>(inputKeys, values, s.Offset, s.Count, sortingComparer)
+
             sortInPlaceHelper values partitioningFunc sortingFunc
-            
 
         [<CompiledName("SortInPlaceWith")>]
         let sortInPlaceWith comparer (array: 'T[]) =
             checkNonNull "array" array
             let sortingComparer = ComparisonIdentity.FromFunction(comparer)
-            sortInPlaceWithHelper comparer sortingComparer array          
+            sortInPlaceWithHelper comparer sortingComparer array
 
         [<CompiledName("SortInPlaceBy")>]
         let sortInPlaceBy (projection: 'T -> 'U) (array: 'T[]) =
             checkNonNull "array" array
-            let inputKeys : 'U[] = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked array.Length 
+
+            let inputKeys: 'U[] =
+                Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked array.Length
+
             let partitions = createPartitions array
-            Parallel.For(0,partitions.Length, fun i ->
-                let segment = partitions.[i]
-                for idx = segment.Offset to (segment.Offset+segment.Count-1) do                  
-                    inputKeys[idx] <- projection array[idx]) |> ignore
+
+            Parallel.For(
+                0,
+                partitions.Length,
+                fun i ->
+                    let segment = partitions.[i]
+
+                    for idx = segment.Offset to (segment.Offset + segment.Count - 1) do
+                        inputKeys[idx] <- projection array[idx]
+            )
+            |> ignore
 
             sortKeysAndValuesInPlace inputKeys array
 
@@ -2221,9 +2269,11 @@ module Array =
         let sortInPlace (array: 'T[]) =
             checkNonNull "array" array
 
-            let sortingComparer : IComparer<'T> = LanguagePrimitives.FastGenericComparerCanBeNull<'T>
+            let sortingComparer: IComparer<'T> =
+                LanguagePrimitives.FastGenericComparerCanBeNull<'T>
+
             let partioningFunc = compare
-            sortInPlaceWithHelper partioningFunc sortingComparer array           
+            sortInPlaceWithHelper partioningFunc sortingComparer array
 
         [<CompiledName("SortWith")>]
         let sortWith (comparer: 'T -> 'T -> int) (array: 'T[]) =
@@ -2234,14 +2284,26 @@ module Array =
         [<CompiledName("SortBy")>]
         let sortBy projection (array: 'T[]) =
             checkNonNull "array" array
-            let inputKeys = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked array.Length 
-            let clone = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked  array.Length  
+
+            let inputKeys =
+                Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked array.Length
+
+            let clone =
+                Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked array.Length
+
             let partitions = createPartitions clone
-            Parallel.For(0,partitions.Length, fun i ->
-                let segment = partitions.[i]
-                for idx = segment.Offset to (segment.Offset+segment.Count-1) do     
-                    clone[idx] <- array[idx]
-                    inputKeys.[idx] <- projection array[idx]) |> ignore
+
+            Parallel.For(
+                0,
+                partitions.Length,
+                fun i ->
+                    let segment = partitions.[i]
+
+                    for idx = segment.Offset to (segment.Offset + segment.Count - 1) do
+                        clone[idx] <- array[idx]
+                        inputKeys.[idx] <- projection array[idx]
+            )
+            |> ignore
 
             sortKeysAndValuesInPlace inputKeys clone
             clone

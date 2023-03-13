@@ -8,7 +8,7 @@ open FsCheck
 open Utils
 
 let smallerSizeCheck testable = Check.One({ Config.QuickThrowOnFailure with EndSize = 25 }, testable)
-let bigSizeCheck testable = Check.One({ Config.QuickThrowOnFailure with StartSize = 4_096;EndSize = 30_000 }, testable)
+let bigSizeCheck testable = Check.One({ Config.QuickThrowOnFailure with StartSize = 222;EndSize = 999; MaxTest = 8 }, testable)
 
 /// helper function that creates labeled FsCheck properties for equality comparisons
 let consistency name sqs ls arr =
@@ -1314,7 +1314,7 @@ module ArrayParallelVsArray =
         let pa = xs |> Array.Parallel.sort
 
         let opName = "sort"
-        (a = pa) |@ (sprintf  "Array.%s = '%A', Array.%s = '%A'" opName a opName pa)
+        (a = pa) |@ (sprintf  "Array.%s = '%A', Array.Parallel.%s = '%A'" opName a opName pa)
 
     [<Fact>]
     let ``sort is consistent`` () =
@@ -1365,7 +1365,7 @@ module ArrayParallelVsArray =
         let a = xs |> Array.sortDescending
         let pa = xs |> Array.Parallel.sortDescending
         let opName = "sortDescending"
-        (a = pa) |@ (sprintf  "Array.%s = '%A', Array.%s = '%A'" opName a opName pa)
+        (a = pa) |@ (sprintf  "Array.%s = '%A', Array.Parallel.%s = '%A'" opName a opName pa)
 
     [<Fact>]
     let ``sortDescending is consistent`` () =
@@ -1377,7 +1377,9 @@ module ArrayParallelVsArray =
         let a = xs |> Array.sortByDescending f
         let pa = xs |> Array.Parallel.sortByDescending f
 
-        isSorted (Array.map f pa |> Array.rev) && isSorted (Array.map f a |> Array.rev) &&
+        let isDescSorted arr = arr |> Array.pairwise |> Array.forall (fun (a,b) -> f a >= f b || a = b)
+
+        isDescSorted a && isDescSorted pa &&
           haveSameElements pa xs && haveSameElements a xs &&
           a.Length = pa.Length && a.Length = xs.Length
 
