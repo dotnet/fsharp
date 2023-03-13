@@ -3127,7 +3127,7 @@ module Array =
 
 
         /// <summary>Returns the index of the first element in the array
-        /// that satisfies the given predicate.</summary>
+        /// that satisfies the given predicate.
         /// Returns <c>None</c> if no such element exists.</summary>
         /// <param name="predicate">The function to test the input elements.</param>
         /// <param name="array">The input array.</param>
