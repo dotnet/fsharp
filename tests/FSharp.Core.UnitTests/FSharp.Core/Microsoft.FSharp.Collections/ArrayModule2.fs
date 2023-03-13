@@ -649,7 +649,7 @@ type ArrayModule2() =
     member private _.MultiplyArray(template:_[],repetitions:int) = 
         Array.zeroCreate repetitions |> Array.collect (fun _ -> template)     
 
-    member private _.CompareTwoMethods<'TIn,'TOut> (regularArrayFunc:'TIn[]->'TOut[]) (arrayParaFunc:'TIn[]->'TOut[]) (initialData:'TIn[]) = 
+    member private _.CompareTwoMethods<'TIn,'TOut when 'TOut: equality> (regularArrayFunc:'TIn[]->'TOut[]) (arrayParaFunc:'TIn[]->'TOut[]) (initialData:'TIn[]) = 
         let first,second = initialData, Array.copy initialData
         let whenSequential = regularArrayFunc second
         let whenParallel = arrayParaFunc first
