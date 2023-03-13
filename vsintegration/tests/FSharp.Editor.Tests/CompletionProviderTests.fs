@@ -737,6 +737,31 @@ open type System.Ma
         VerifyCompletionList(fileContents, "System.Ma", expected, [])
 
     [<Fact>]
+    let ``No completion on nested module identifier, incomplete`` () =
+        let fileContents =
+            """
+    module Namespace.Top
+
+    module Nest
+
+    let a = ()
+    """
+
+        VerifyNoCompletionList(fileContents, "Nest")
+
+    [<Fact>]
+    let ``No completion on nested module identifier`` () =
+        let fileContents =
+            """
+    namespace N
+
+    module Nested =
+        do ()
+    """
+
+        VerifyNoCompletionList(fileContents, "Nested")
+
+    [<Fact>]
     let ``No completion on type name at declaration site`` () =
         let fileContents =
             """
