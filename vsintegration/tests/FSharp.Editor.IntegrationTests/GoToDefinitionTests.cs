@@ -13,7 +13,7 @@ namespace FSharp.Editor.IntegrationTests;
 public class GoToDefinitionTests : AbstractIntegrationTest
 {
     [IdeFact]
-    public async Task GoesToDefinition_Async()
+    public async Task GoesToDefinition()
     {
         var token = HangMitigatingCancellationToken;
         var template = WellKnownProjectTemplates.FSharpNetCoreClassLibrary;

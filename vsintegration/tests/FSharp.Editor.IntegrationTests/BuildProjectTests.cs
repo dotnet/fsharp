@@ -13,7 +13,7 @@ namespace FSharp.Editor.IntegrationTests;
 public class BuildProjectTests : AbstractIntegrationTest
 {
     [IdeFact]
-    public async Task SuccessfulBuild_Async()
+    public async Task SuccessfulBuild()
     {
         var token = HangMitigatingCancellationToken;
         var template = WellKnownProjectTemplates.FSharpNetCoreClassLibrary;
@@ -38,7 +38,7 @@ let answer = 42
     }
 
     [IdeFact]
-    public async Task FailedBuild_Async()
+    public async Task FailedBuild()
     {
         var token = HangMitigatingCancellationToken;
         var template = WellKnownProjectTemplates.FSharpNetCoreClassLibrary;

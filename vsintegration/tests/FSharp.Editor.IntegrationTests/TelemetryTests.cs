@@ -10,7 +10,7 @@ namespace FSharp.Editor.IntegrationTests;
 public class TelemetryTests : AbstractIntegrationTest
 {
     [IdeFact]
-    public async Task BasicFSharpTelemetry_Async()
+    public async Task BasicFSharpTelemetry()
     {
         var token = HangMitigatingCancellationToken;
         var template = WellKnownProjectTemplates.FSharpNetCoreClassLibrary;

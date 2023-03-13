@@ -12,7 +12,7 @@ namespace FSharp.Editor.IntegrationTests;
 public class CreateProjectTests : AbstractIntegrationTest
 {
     [IdeFact]
-    public async Task ClassLibrary_Async()
+    public async Task ClassLibrary()
     {
         var token = HangMitigatingCancellationToken;
         var template = WellKnownProjectTemplates.FSharpNetCoreClassLibrary;
@@ -37,7 +37,7 @@ module Say =
     }
 
     [IdeFact]
-    public async Task ConsoleApp_Async()
+    public async Task ConsoleApp()
     {
         var token = HangMitigatingCancellationToken;
         var template = WellKnownProjectTemplates.FSharpNetCoreConsoleApplication;
@@ -59,7 +59,7 @@ printfn "Hello from F#"
     }
 
     [IdeFact]
-    public async Task XUnitTestProject_Async()
+    public async Task XUnitTestProject()
     {
         var token = HangMitigatingCancellationToken;
         var template = WellKnownProjectTemplates.FSharpNetCoreXUnitTest;
