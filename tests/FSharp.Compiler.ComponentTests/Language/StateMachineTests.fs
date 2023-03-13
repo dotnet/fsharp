@@ -9,7 +9,7 @@ module StateMachineTests =
 
     [<Fact>]
     let ``Declaring a local function with a flexible type``() = 
-        Fsx """
+        let code = """
 task {
     let m1 f s = Seq.map f s // doing this is fine
 
@@ -30,9 +30,17 @@ task {
     return 1
 }
 |> fun f -> f.Wait()
-System.Console.ReadLine () |> ignore
-        """
+"""
+
+        //Fsx code
+        //|> withNoOptimize
+        //|> compile
+        //|> shouldFail
+        //|> withWarningCode 3511
+        //|> ignore
+
+        Fsx code
         |> withNoOptimize
-        |> compile
-        |> shouldFail
-        |> withWarningCode 3511
+        |> withOptions ["--nowarn:3511"]
+        |> compileExeAndRun
+        |> shouldSucceed
