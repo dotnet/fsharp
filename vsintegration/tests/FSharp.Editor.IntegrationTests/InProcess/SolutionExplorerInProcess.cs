@@ -20,6 +20,14 @@ namespace Microsoft.VisualStudio.Extensibility.Testing;
 
 internal partial class SolutionExplorerInProcess
 {
+    public async Task CreateSingleProjectSolutionAsync(string name, string template, CancellationToken cancellationToken)
+    {
+        await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+
+        await CreateSolutionAsync(name, cancellationToken);
+        await AddProjectAsync(name, template, cancellationToken);
+    }
+
     public async Task CreateSolutionAsync(string solutionName, CancellationToken cancellationToken)
     {
         await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
