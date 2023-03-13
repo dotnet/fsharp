@@ -3,7 +3,6 @@
 // See the LICENSE file in the project root for more information.
 
 using Microsoft.CodeAnalysis.Testing;
-using Microsoft.VisualStudio.Extensibility.Testing;
 using System.Threading.Tasks;
 using Xunit;
 using static Microsoft.VisualStudio.VSConstants;
@@ -17,11 +16,6 @@ public class GoToDefinitionTests : AbstractIntegrationTest
     {
         var template = WellKnownProjectTemplates.FSharpNetCoreClassLibrary;
 
-        var solutionExplorer = TestServices.SolutionExplorer;
-        var editor = TestServices.Editor;
-        var shell = TestServices.Shell;
-        var workspace = TestServices.Workspace;
-
         var code = """
 module Test
 
@@ -31,14 +25,14 @@ let increment = add 1
 """;
         var expectedText = "let add x y = x + y";
 
-        await solutionExplorer.CreateSolutionAsync(nameof(GoToDefinitionTests), TestToken);
-        await solutionExplorer.AddProjectAsync("Library", template, TestToken);
-        await solutionExplorer.RestoreNuGetPackagesAsync(TestToken);
-        await editor.SetTextAsync(code, TestToken);
+        await SolutionExplorer.CreateSolutionAsync(nameof(GoToDefinitionTests), TestToken);
+        await SolutionExplorer.AddProjectAsync("Library", template, TestToken);
+        await SolutionExplorer.RestoreNuGetPackagesAsync(TestToken);
+        await Editor.SetTextAsync(code, TestToken);
         
-        await editor.PlaceCaretAsync("add 1", TestToken);
-        await shell.ExecuteCommandAsync(VSStd97CmdID.GotoDefn, TestToken);
-        var actualText = await editor.GetCurrentLineTextAsync(TestToken);
+        await Editor.PlaceCaretAsync("add 1", TestToken);
+        await Shell.ExecuteCommandAsync(VSStd97CmdID.GotoDefn, TestToken);
+        var actualText = await Editor.GetCurrentLineTextAsync(TestToken);
         
         Assert.Contains(expectedText, actualText);
     }

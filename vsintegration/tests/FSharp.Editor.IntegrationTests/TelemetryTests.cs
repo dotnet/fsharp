@@ -1,7 +1,4 @@
 ﻿using Microsoft.CodeAnalysis.Testing;
-using System;
-using System.Diagnostics;
-using System.IO;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -13,14 +10,11 @@ public class TelemetryTests : AbstractIntegrationTest
     public async Task BasicFSharpTelemetry()
     {
         var template = WellKnownProjectTemplates.FSharpNetCoreClassLibrary;
-        var solutionExplorer = TestServices.SolutionExplorer;
-        var editor = TestServices.Editor;
-        var telemetry = TestServices.Telemetry;
 
-        await using var telemetryChannel = await telemetry.EnableTestTelemetryChannelAsync(TestToken);
-        await solutionExplorer.CreateSolutionAsync(nameof(TelemetryTests), TestToken);
-        await solutionExplorer.AddProjectAsync("Library", template, TestToken);
-        await solutionExplorer.BuildSolutionAsync(TestToken);
+        await using var telemetryChannel = await Telemetry.EnableTestTelemetryChannelAsync(TestToken);
+        await SolutionExplorer.CreateSolutionAsync(nameof(TelemetryTests), TestToken);
+        await SolutionExplorer.AddProjectAsync("Library", template, TestToken);
+        await SolutionExplorer.BuildSolutionAsync(TestToken);
         
         var eventName = "vs/projectsystem/cps/loadcpsproject";
         var @event = await telemetryChannel.GetEventAsync(eventName, TestToken);

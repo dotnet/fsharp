@@ -3,7 +3,6 @@
 // See the LICENSE file in the project root for more information.
 
 using Microsoft.CodeAnalysis.Testing;
-using Microsoft.VisualStudio.Extensibility.Testing;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -15,8 +14,6 @@ public class CreateProjectTests : AbstractIntegrationTest
     public async Task ClassLibrary()
     {
         var template = WellKnownProjectTemplates.FSharpNetCoreClassLibrary;
-        var solutionExplorer = TestServices.SolutionExplorer;
-        var editor = TestServices.Editor;
 
         var expectedCode = """
 namespace Library
@@ -26,11 +23,10 @@ module Say =
         printfn "Hello %s" name
 
 """;
+        await SolutionExplorer.CreateSolutionAsync(nameof(CreateProjectTests), TestToken);
+        await SolutionExplorer.AddProjectAsync("Library", template, TestToken);
 
-        await solutionExplorer.CreateSolutionAsync(nameof(CreateProjectTests), TestToken);
-        await solutionExplorer.AddProjectAsync("Library", template, TestToken);
-
-        var actualCode = await editor.GetTextAsync(TestToken);
+        var actualCode = await Editor.GetTextAsync(TestToken);
 
         Assert.Equal(expectedCode, actualCode);
     }
@@ -39,19 +35,16 @@ module Say =
     public async Task ConsoleApp()
     {
         var template = WellKnownProjectTemplates.FSharpNetCoreConsoleApplication;
-        var solutionExplorer = TestServices.SolutionExplorer;
-        var editor = TestServices.Editor;
 
         var expectedCode = """
 // For more information see https://aka.ms/fsharp-console-apps
 printfn "Hello from F#"
 
 """;
+        await SolutionExplorer.CreateSolutionAsync(nameof(CreateProjectTests), TestToken);
+        await SolutionExplorer.AddProjectAsync("ConsoleApp", template, TestToken);
 
-        await solutionExplorer.CreateSolutionAsync(nameof(CreateProjectTests), TestToken);
-        await solutionExplorer.AddProjectAsync("ConsoleApp", template, TestToken);
-
-        var actualCode = await editor.GetTextAsync(TestToken);
+        var actualCode = await Editor.GetTextAsync(TestToken);
 
         Assert.Equal(expectedCode, actualCode);
     }
@@ -60,8 +53,6 @@ printfn "Hello from F#"
     public async Task XUnitTestProject()
     {
         var template = WellKnownProjectTemplates.FSharpNetCoreXUnitTest;
-        var solutionExplorer = TestServices.SolutionExplorer;
-        var editor = TestServices.Editor;
 
         var expectedCode = """
 module Tests
@@ -74,11 +65,10 @@ let ``My test`` () =
     Assert.True(true)
 
 """;
+        await SolutionExplorer.CreateSolutionAsync(nameof(CreateProjectTests), TestToken);
+        await SolutionExplorer.AddProjectAsync("ConsoleApp", template, TestToken);
 
-        await solutionExplorer.CreateSolutionAsync(nameof(CreateProjectTests), TestToken);
-        await solutionExplorer.AddProjectAsync("ConsoleApp", template, TestToken);
-
-        var actualCode = await editor.GetTextAsync(TestToken);
+        var actualCode = await Editor.GetTextAsync(TestToken);
 
         Assert.Equal(expectedCode, actualCode);
     }
