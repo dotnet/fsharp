@@ -7,9 +7,22 @@ open FSharp.Test.Compiler
 
 module StateMachineTests =
 
+    let verify3511AndRun code = 
+        Fsx code
+        |> withNoOptimize
+        |> compile
+        |> shouldFail
+        |> withWarningCode 3511
+        |> ignore
+
+        Fsx code
+        |> withNoOptimize
+        |> withOptions ["--nowarn:3511"]
+        |> compileExeAndRun
+
     [<Fact>] // https://github.com/dotnet/fsharp/issues/13067
     let ``Local function with a flexible type``() = 
-        let code = """
+        """
 task {
     let m1 f s = Seq.map f s
     do! Async.Sleep 1
@@ -23,23 +36,12 @@ task {
 }
 |> fun f -> f.Wait()
 """
-        Fsx code
-        |> withNoOptimize
-        |> compile
-        |> shouldFail
-        |> withWarningCode 3511
-        |> ignore
-
-        Fsx code
-        |> withNoOptimize
-        |> withOptions ["--nowarn:3511"]
-        |> compileExeAndRun
+        |> verify3511AndRun
         |> shouldSucceed
 
-    
     [<Fact>] // https://github.com/dotnet/fsharp/issues/14806
     let ``Explicit returns types + constraints on generics``() = 
-        let code = """
+        """
 module Foo
 
 open System.Threading.Tasks
@@ -58,22 +60,13 @@ let run() =
 run()
 |> fun f -> f.Wait()
 """
-        Fsx code
-        |> withNoOptimize
-        |> compile
-        |> shouldFail
-        |> withWarningCode 3511
-        |> ignore
-
-        Fsx code
-        |> withNoOptimize
-        |> withOptions ["--nowarn:3511"]
-        |> compileExeAndRun
+        |> verify3511AndRun
         |> shouldSucceed
+        
 
     [<Fact>] // https://github.com/dotnet/fsharp/issues/14807
     let ``let _ = null``() = 
-        let code = """
+        """
 module TestProject1
 
 let bar() = task {
@@ -89,15 +82,5 @@ let foo() = task {
 foo()
 |> fun f -> f.Wait()
 """
-        Fsx code
-        |> withNoOptimize
-        |> compile
-        |> shouldFail
-        |> withWarningCode 3511
-        |> ignore
-
-        Fsx code
-        |> withNoOptimize
-        |> withOptions ["--nowarn:3511"]
-        |> compileExeAndRun
+        |> verify3511AndRun
         |> shouldSucceed
