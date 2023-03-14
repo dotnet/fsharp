@@ -214,17 +214,20 @@ type TestHostServices() =
                 { AdvancedOptions.Default with
                     IsLiveBuffersEnabled = false
                     IsBlockStructureEnabled = false
-                })
+                }
+            )
             .WithEditorOptions(
                 { LanguageServicePerformanceOptions.Default with
                     AllowStaleCompletionResults = false
                     TimeUntilStaleCompletion = 0
-                })
+                }
+            )
             .WithEditorOptions(
                 { CodeFixesOptions.Default with
                     UnusedDeclarations = false
                     UnusedOpens = false
-                })
+                }
+            )
 
 [<AbstractClass; Sealed>]
 type RoslynTestHelpers private () =
