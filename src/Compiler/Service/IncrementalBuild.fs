@@ -1058,11 +1058,17 @@ module IncrementalBuilderStateHelpers =
     let rec createFinalizeBoundModelGraphNode (initialState: IncrementalBuilderInitialState) (boundModels: ImmutableArray<GraphNode<BoundModel>>.Builder) =
         GraphNode(node {
             use _ = Activity.start "GetCheckResultsAndImplementationsForProject" [|Activity.Tags.project, initialState.outfile|]
-            // Compute last bound model then get all the evaluated models.
+
+            // Compute last bound model then get all the evaluated models*.
             let! _ = boundModels[boundModels.Count - 1].GetOrComputeValue()
-            let boundModels =
-                boundModels.ToImmutable()
-                |> ImmutableArray.map (fun x -> x.TryPeekValue().Value)
+            let! boundModels =
+                boundModels
+                |> Seq.map (fun x ->
+                    match x.TryPeekValue() with
+                    | ValueSome v -> node.Return v
+                    // *Evaluating the last bound model doesn't always guarantee that all the other bound models are evaluated.
+                    | _ -> node.ReturnFrom(x.GetOrComputeValue()))
+                |> NodeCode.Sequential
 
             let! result = 
                 FinalizeTypeCheckTask 
@@ -1071,7 +1077,7 @@ module IncrementalBuilderStateHelpers =
                     initialState.enablePartialTypeChecking 
                     initialState.assemblyName 
                     initialState.outfile 
-                    boundModels
+                    (boundModels.ToImmutableArray())
             let result = (result, DateTime.UtcNow)
             return result
         })
