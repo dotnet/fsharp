@@ -121,8 +121,7 @@ type internal FSharpWorkspaceServiceFactory
                                     enablePartialTypeChecking = true,
                                     parallelReferenceResolution = enableParallelReferenceResolution,
                                     captureIdentifiersWhenParsing = true,
-                                    documentSource = (if enableLiveBuffers then DocumentSource.Custom getSource else DocumentSource.FileSystem)
-                                )
+                                    documentSource = (if enableLiveBuffers then DocumentSource.Custom getSource else DocumentSource.FileSystem))
 
                             if enableLiveBuffers then
                                 workspace.WorkspaceChanged.Add(fun args ->
