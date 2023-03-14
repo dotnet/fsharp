@@ -17,6 +17,7 @@ module Hints =
         Parts: TaggedText list
     }
 
-    let serialize = function
+    let serialize kind =
+        match kind with
         | TypeHint -> "type"
         | ParameterNameHint -> "parameterName"
