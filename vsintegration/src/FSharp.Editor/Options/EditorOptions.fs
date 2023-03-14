@@ -196,7 +196,7 @@ module EditorOptionsExtensions =
             this.EditorOptions.LanguageServicePerformance.TimeUntilStaleCompletion
             
         member this.IsFSharpCodeFixesSimplifyNameEnabled =
-           this.EditorOptions.CodeFixes.SimplifyName
+            this.EditorOptions.CodeFixes.SimplifyName
 
         member this.IsFSharpCodeFixesUnusedOpensEnabled =
             this.EditorOptions.CodeFixes.UnusedOpens
