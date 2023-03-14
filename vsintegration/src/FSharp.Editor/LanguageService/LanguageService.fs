@@ -27,6 +27,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 open Microsoft.CodeAnalysis.Host
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.VisualStudio.FSharp.Editor.WorkspaceExtensions
+open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 open System.Threading.Tasks
 
 #nowarn "9" // NativePtr.toNativeInt
@@ -104,6 +105,8 @@ type internal FSharpWorkspaceServiceFactory
                 | _ ->
                     let checker =
                         lazy
+                            TelemetryReporter.reportEvent "languageservicestarted" []
+                            
                             let editorOptions = workspace.Services.GetService<EditorOptions>()
 
                             let enableParallelReferenceResolution = editorOptions.LanguageServicePerformance.EnableParallelReferenceResolution

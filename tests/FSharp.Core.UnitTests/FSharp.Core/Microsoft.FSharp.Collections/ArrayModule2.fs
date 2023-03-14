@@ -972,25 +972,31 @@ type ArrayModule2() =
 
         ()
 
-    [<Fact>]
-    member this.TryFind() =
+    member private _.TryFindTester tryFindInts tryFindStrings =
         // integer array  
-        let resultInt = [|1..10|] |> Array.tryFind (fun x -> x%7 = 0)  
+        let resultInt = [|1..10|] |> tryFindInts (fun x -> x%7 = 0)  
         if resultInt <> Some 7 then Assert.Fail()
         
         // string array    
-        let resultStr = [|"Lists"; "are";  "commonly" ; "list" |] |> Array.tryFind (fun (x:string) -> x.Length > 4)
+        let resultStr = [|"Lists"; "are";  "commonly" ; "list" |] |> tryFindStrings (fun (x:string) -> x.Length > 4)
         if resultStr <> Some "Lists" then Assert.Fail()
         
         // empty array     
-        let resultEpt =[||] |> Array.tryFind  (fun x -> x%7 = 0)  
+        let resultEpt =[||] |> tryFindInts (fun x -> x%7 = 0)  
         if resultEpt <> None  then Assert.Fail()
 
         // null array
         let nullArr = null:string[]      
-        CheckThrowsArgumentNullException (fun () -> Array.tryFind (fun (x:string) -> x.Length > 4)  nullArr  |> ignore)  
+        CheckThrowsArgumentNullException (fun () -> tryFindStrings (fun (x:string) -> x.Length > 4)  nullArr  |> ignore)  
         
         ()
+
+    [<Fact>]
+    member this.TryFind() = this.TryFindTester Array.tryFind Array.tryFind
+
+    [<Fact>]
+    member this.ParallelTryFind() = this.TryFindTester Array.Parallel.tryFind Array.Parallel.tryFind
+      
         
     [<Fact>]
     member this.TryFindBack() =
@@ -1016,26 +1022,30 @@ type ArrayModule2() =
 
         ()
 
-    [<Fact>]
-    member this.TryFindIndex() =
+    member private _.TryFindIndexTester tryFindIdxInt tryFindIdxString =
         // integer array  
-        let resultInt = [|1..10|] |> Array.tryFindIndex (fun x -> x%7 = 0)  
+        let resultInt = [|1..10|] |> tryFindIdxInt (fun x -> x%7 = 0)  
         if resultInt <> Some 6 then Assert.Fail()
         
         // string array    
-        let resultStr = [|"Lists"; "are";  "commonly" ; "list" |] |> Array.tryFindIndex (fun (x:string) -> x.Length > 4)
+        let resultStr = [|"Lists"; "are";  "commonly" ; "list" |] |> tryFindIdxString (fun (x:string) -> x.Length > 4)
         if resultStr <> Some 0 then Assert.Fail()
         
         // empty array     
-        let resultEpt =[||] |> Array.tryFindIndex  (fun x -> x % 7 = 0)  
+        let resultEpt =[||] |> tryFindIdxInt  (fun x -> x % 7 = 0)  
         if resultEpt <> None  then Assert.Fail()
 
         // null array
         let nullArr = null:string[]      
-        CheckThrowsArgumentNullException (fun () -> Array.tryFindIndex (fun (x:string) -> x.Length > 4)  nullArr  |> ignore)  
+        CheckThrowsArgumentNullException (fun () -> tryFindIdxString (fun (x:string) -> x.Length > 4)  nullArr  |> ignore)  
         
         ()
 
+    [<Fact>]
+    member this.TryFindIndex() = this.TryFindIndexTester Array.tryFindIndex Array.tryFindIndex
+
+    [<Fact>]
+    member this.ParallelTryFindIndex() = this.TryFindIndexTester Array.Parallel.tryFindIndex Array.Parallel.tryFindIndex
     [<Fact>]
     member this.TryFindIndexBack() =
         // integer array
