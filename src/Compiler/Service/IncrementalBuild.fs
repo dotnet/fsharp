@@ -1615,7 +1615,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                     let fileName = r.resolvedPath
                     yield (Choice1Of2 fileName, (fun (cache: TimeStampCache) -> cache.GetFileTimeStamp fileName))
 
-                    for pr in projectReferences  do
+                  for pr in projectReferences  do
                     yield Choice2Of2 pr, (fun (cache: TimeStampCache) -> cache.GetProjectReferenceTimeStamp pr) ]
 
             // Start importing
