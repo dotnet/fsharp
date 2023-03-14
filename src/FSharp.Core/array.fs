@@ -1932,7 +1932,9 @@ module Array =
             result
 
     module Parallel =
+        open System.Threading
         open System.Threading.Tasks
+        open System.Collections.Concurrent
 
         [<CompiledName("Choose")>]
         let choose chooser (array: 'T[]) =
@@ -2013,6 +2015,126 @@ module Array =
             |> ignore
 
             result
+
+        // The following two parameters were benchmarked and found to be optimal.
+        // Benchmark was run using: 11th Gen Intel Core i9-11950H 2.60GHz, 1 CPU, 16 logical and 8 physical cores
+        let private maxPartitions = Environment.ProcessorCount // The maximum number of partitions to use
+        let private minChunkSize = 256 // The minimum size of a chunk to be sorted in parallel
+
+        let private createPartitionsUpTo maxIdxExclusive (array: 'T[]) =
+            [|
+                let chunkSize =
+                    match maxIdxExclusive with
+                    | smallSize when smallSize < minChunkSize -> smallSize
+                    | biggerSize when biggerSize % maxPartitions = 0 -> biggerSize / maxPartitions
+                    | biggerSize -> (biggerSize / maxPartitions) + 1
+
+                let mutable offset = 0
+
+                while (offset + chunkSize) < maxIdxExclusive do
+                    yield new ArraySegment<'T>(array, offset, chunkSize)
+                    offset <- offset + chunkSize
+
+                yield new ArraySegment<'T>(array, offset, maxIdxExclusive - offset)
+            |]
+
+        let inline groupByImplParallel
+            (comparer: IEqualityComparer<'SafeKey>)
+            ([<InlineIfLambda>] keyf: 'T -> 'SafeKey)
+            ([<InlineIfLambda>] getKey: 'SafeKey -> 'Key)
+            (array: 'T[])
+            =
+            let counts =
+                new ConcurrentDictionary<_, _>(
+                    concurrencyLevel = maxPartitions,
+                    capacity = Operators.min (array.Length) 1_000,
+                    comparer = comparer
+                )
+
+            let valueFactory = new Func<_, _>(fun _ -> ref 0)
+
+            let projectedValues =
+                Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked array.Length
+
+            let inputChunks = createPartitionsUpTo array.Length array
+
+            Parallel.For(
+                0,
+                inputChunks.Length,
+                fun chunkIdx ->
+                    let chunk = inputChunks[chunkIdx]
+
+                    for elemIdx = chunk.Offset to (chunk.Offset + chunk.Count - 1) do
+                        let projected = keyf array[elemIdx]
+                        projectedValues[elemIdx] <- projected
+                        let counter = counts.GetOrAdd(projected, valueFactory = valueFactory)
+                        Interlocked.Increment(counter) |> ignore
+            )
+            |> ignore
+
+            let finalResults =
+                Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked counts.Count
+
+            let mutable finalIdx = 0
+
+            let finalResultsLookup =
+                new Dictionary<'SafeKey, int ref * 'T[]>(capacity = counts.Count, comparer = comparer)
+
+            for kvp in counts do
+                let arrayForThisGroup =
+                    Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked kvp.Value.Value
+
+                finalResults.[finalIdx] <- getKey kvp.Key, arrayForThisGroup
+                finalResultsLookup[kvp.Key] <- kvp.Value, arrayForThisGroup
+                finalIdx <- finalIdx + 1
+
+            Parallel.For(
+                0,
+                inputChunks.Length,
+                fun chunkIdx ->
+                    let chunk = inputChunks[chunkIdx]
+
+                    for elemIdx = chunk.Offset to (chunk.Offset + chunk.Count - 1) do
+                        let key = projectedValues[elemIdx]
+                        let (counter, arrayForThisGroup) = finalResultsLookup[key]
+                        let idxToWrite = Interlocked.Decrement(counter)
+                        arrayForThisGroup[idxToWrite] <- array[elemIdx]
+            )
+            |> ignore
+
+            finalResults
+
+        let groupByValueTypeParallel (keyf: 'T -> 'Key) (array: 'T[]) =
+            // Is it a bad idea to put floating points as keys for grouping? Yes
+            // But would the implementation fail with KeyNotFound "nan" if we just leave it? Also yes
+            // Here we  enforce nan=nan equality to prevent throwing
+            if typeof<'Key> = typeof<float> || typeof<'Key> = typeof<float32> then
+                let genericCmp =
+                    HashIdentity.FromFunctions<'Key>
+                        (LanguagePrimitives.GenericHash)
+                        (LanguagePrimitives.GenericEqualityER)
+
+                groupByImplParallel genericCmp keyf id array
+            else
+                groupByImplParallel HashIdentity.Structural<'Key> keyf id array
+
+        // Just like in regular Array.groupBy: Wrap a StructBox around all keys in order to avoid nulls
+        // (dotnet doesn't allow null keys in dictionaries)
+        let groupByRefTypeParallel (keyf: 'T -> 'Key) (array: 'T[]) =
+            groupByImplParallel
+                RuntimeHelpers.StructBox<'Key>.Comparer
+                (fun t -> RuntimeHelpers.StructBox(keyf t))
+                (fun sb -> sb.Value)
+                array
+
+        [<CompiledName("GroupBy")>]
+        let groupBy (projection: 'T -> 'Key) (array: 'T[]) =
+            checkNonNull "array" array
+
+            if typeof<'Key>.IsValueType then
+                groupByValueTypeParallel projection array
+            else
+                groupByRefTypeParallel projection array
 
         [<CompiledName("Iterate")>]
         let iter action (array: 'T[]) =
