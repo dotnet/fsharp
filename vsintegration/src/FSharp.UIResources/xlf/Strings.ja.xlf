@@ -217,6 +217,11 @@
         <target state="translated">未解決の識別子の名前を提案します</target>
         <note />
       </trans-unit>
+      <trans-unit id="Use_syntax_tree_cache">
+        <source>Cache parsing results (experimental)</source>
+        <target state="new">Cache parsing results (experimental)</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

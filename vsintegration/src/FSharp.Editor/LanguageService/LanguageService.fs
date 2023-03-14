@@ -27,6 +27,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 open Microsoft.CodeAnalysis.Host
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.VisualStudio.FSharp.Editor.WorkspaceExtensions
+open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 open System.Threading.Tasks
 
 #nowarn "9" // NativePtr.toNativeInt
@@ -104,6 +105,8 @@ type internal FSharpWorkspaceServiceFactory
                 | _ ->
                     let checker =
                         lazy
+                            TelemetryReporter.reportEvent "languageservicestarted" []
+
                             let editorOptions =
                                 let editorOptions = workspace.Services.GetService<EditorOptions>()
 
@@ -122,6 +125,9 @@ type internal FSharpWorkspaceServiceFactory
                             let enableLiveBuffers =
                                 getOption (fun options -> options.Advanced.IsLiveBuffersEnabled) false
 
+                            let useSyntaxTreeCache =
+                                getOption (fun options -> options.LanguageServicePerformance.UseSyntaxTreeCache) LanguageServicePerformanceOptions.Default.UseSyntaxTreeCache
+
                             let checker =
                                 FSharpChecker.Create(
                                     projectCacheSize = 5000, // We do not care how big the cache is. VS will actually tell FCS to clear caches, so this is fine.
@@ -133,7 +139,8 @@ type internal FSharpWorkspaceServiceFactory
                                     enablePartialTypeChecking = true,
                                     parallelReferenceResolution = enableParallelReferenceResolution,
                                     captureIdentifiersWhenParsing = true,
-                                    documentSource = (if enableLiveBuffers then DocumentSource.Custom getSource else DocumentSource.FileSystem))
+                                    documentSource = (if enableLiveBuffers then DocumentSource.Custom getSource else DocumentSource.FileSystem),
+                                    useSyntaxTreeCache = useSyntaxTreeCache)
 
                             if enableLiveBuffers then
                                 workspace.WorkspaceChanged.Add(fun args ->

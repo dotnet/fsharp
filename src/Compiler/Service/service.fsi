@@ -41,6 +41,7 @@ type public FSharpChecker =
     /// <param name="parallelReferenceResolution">Indicates whether to resolve references in parallel.</param>
     /// <param name="captureIdentifiersWhenParsing">When set to true we create a set of all identifiers for each parsed file which can be used to speed up finding references.</param>
     /// <param name="documentSource">Default: FileSystem. You can use Custom source to provide a function that will return the source for a given file path instead of reading it from the file system. Note that with this option the FSharpChecker will also not monitor the file system for file changes. It will expect to be notified of changes via the NotifyFileChanged method.</param>
+    /// <param name="useSyntaxTreeCache">Default: true. Indicates whether to keep parsing results in a cache.</param>
     static member Create:
         ?projectCacheSize: int *
         ?keepAssemblyContents: bool *
@@ -53,7 +54,8 @@ type public FSharpChecker =
         ?enablePartialTypeChecking: bool *
         ?parallelReferenceResolution: bool *
         ?captureIdentifiersWhenParsing: bool *
-        [<Experimental "This parameter is experimental and likely to be removed in the future.">] ?documentSource: DocumentSource ->
+        [<Experimental "This parameter is experimental and likely to be removed in the future.">] ?documentSource: DocumentSource *
+        [<Experimental "This parameter is experimental and likely to be removed in the future.">] ?useSyntaxTreeCache: bool ->
             FSharpChecker
 
     /// <summary>
@@ -383,7 +385,6 @@ type public FSharpChecker =
     member ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients: unit -> unit
 
     /// Notify the checker that given file has changed. This needs to be used when checker is created with documentSource = Custom.
-    /// Although it is not mandatory when the changed file is the next thing requested to be checked.
     [<Experimental "This FCS API is experimental and likely to be removed in the future.">]
     member NotifyFileChanged: fileName: string * options: FSharpProjectOptions * ?userOpName: string -> Async<unit>
 
