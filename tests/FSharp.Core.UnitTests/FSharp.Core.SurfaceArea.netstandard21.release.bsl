@@ -40,6 +40,7 @@ Microsoft.FSharp.Collections.Array4DModule: T[,,,] Create[T](Int32, Int32, Int32
 Microsoft.FSharp.Collections.Array4DModule: T[,,,] Initialize[T](Int32, Int32, Int32, Int32, Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,T]]]])
 Microsoft.FSharp.Collections.Array4DModule: T[,,,] ZeroCreate[T](Int32, Int32, Int32, Int32)
 Microsoft.FSharp.Collections.Array4DModule: Void Set[T](T[,,,], Int32, Int32, Int32, Int32, T)
+Microsoft.FSharp.Collections.ArrayModule+Parallel: System.Tuple`2[TKey,T[]][] GroupBy[T,TKey](Microsoft.FSharp.Core.FSharpFunc`2[T,TKey], T[])
 Microsoft.FSharp.Collections.ArrayModule+Parallel: System.Tuple`2[T[],T[]] Partition[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], T[])
 Microsoft.FSharp.Collections.ArrayModule+Parallel: TResult[] Choose[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpOption`1[TResult]], T[])
 Microsoft.FSharp.Collections.ArrayModule+Parallel: TResult[] Collect[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,TResult[]], T[])
