@@ -6,6 +6,7 @@ open System.Collections.Immutable
 open System.ComponentModel.Composition
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.InlineHints
 open Microsoft.VisualStudio.FSharp.Editor
+open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
 // So the Roslyn interface is called IFSharpInlineHintsService
 // but our implementation is called just HintsService.
@@ -27,6 +28,9 @@ type internal RoslynAdapter
                 if hintKinds.IsEmpty then
                     return ImmutableArray.Empty
                 else
+                    let hintKindsSerialized = hintKinds |> Set.map Hints.serialize |> String.concat ","
+                    TelemetryReporter.reportEvent "hints" [("hints.kinds", hintKindsSerialized)]
+
                     let! sourceText = document.GetTextAsync cancellationToken |> Async.AwaitTask
                     let! nativeHints =
                         HintService.getHintsForDocument 
