@@ -1949,7 +1949,7 @@ let TransformAstForNestedUpdates cenv env overallTy (lid: LongIdent) exprBeingAs
 
     match access, fields with
     | _, [] -> failwith "unreachable"
-    | accessIds, [ (fieldId, _) ] -> List.frontAndBack (accessIds @ [ fieldId ]), Some exprBeingAssigned
+    | accessIds, [ (fieldId, _) ] -> (accessIds, fieldId), Some exprBeingAssigned
     | accessIds, (fieldId, _) :: rest ->
         checkLanguageFeatureAndRecover cenv.g.langVersion LanguageFeature.NestedCopyAndUpdate (rangeOfLid lid)
 
@@ -7427,8 +7427,9 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
                     // we assume that parse errors were already reported
                     raise (ReportedError None)
 
-                match withExprOpt, exprBeingAssigned with
-                | Some withExpr, Some exprBeingAssigned -> TransformAstForNestedUpdates cenv env overallTy synLongId.LongIdent exprBeingAssigned withExpr
+                match withExprOpt, synLongId.LongIdent, exprBeingAssigned with
+                | _, [ id ], _ -> ([], id), exprBeingAssigned
+                | Some withExpr, lid, Some exprBeingAssigned -> TransformAstForNestedUpdates cenv env overallTy lid exprBeingAssigned withExpr
                 | _ -> List.frontAndBack synLongId.LongIdent, exprBeingAssigned)
 
         let flds = if hasOrigExpr then GroupUpdatesToNestedFields flds else flds
