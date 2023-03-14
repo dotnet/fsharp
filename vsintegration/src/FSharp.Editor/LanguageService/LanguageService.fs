@@ -115,6 +115,14 @@ type internal FSharpWorkspaceServiceFactory
 
                             let useSyntaxTreeCache = editorOptions.LanguageServicePerformance.UseSyntaxTreeCache
 
+                            let enableInMemoryCrossProjectReferences = editorOptions.LanguageServicePerformance.EnableInMemoryCrossProjectReferences
+
+                            let enableFastFindReferences = editorOptions.LanguageServicePerformance.EnableFastFindReferences
+
+                            let isInlineParameterNameHintsEnabled = editorOptions.Advanced.IsInlineParameterNameHintsEnabled
+
+                            let isInlineTypeHintsEnabled = editorOptions.Advanced.IsInlineTypeHintsEnabled
+
                             let checker =
                                 FSharpChecker.Create(
                                     projectCacheSize = 5000, // We do not care how big the cache is. VS will actually tell FCS to clear caches, so this is fine.
