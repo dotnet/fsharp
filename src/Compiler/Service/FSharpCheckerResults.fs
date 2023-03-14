@@ -350,7 +350,11 @@ type internal TypeCheckInfo
     // Is not keyed on 'Names' collection because this is invariant for the current position in
     // this unchanged file. Keyed on lineStr though to prevent a change to the currently line
     // being available against a stale scope.
-    let getToolTipTextCache = AgedLookup<AnyCallerThreadToken, int * int * string * int option, ToolTipText>(getToolTipTextSize, areSimilar = (fun (x, y) -> x = y))
+    let getToolTipTextCache =
+        AgedLookup<AnyCallerThreadToken, int * int * string * int option, ToolTipText>(
+            getToolTipTextSize,
+            areSimilar = (fun (x, y) -> x = y)
+        )
 
     let amap = tcImports.GetImportMap()
     let infoReader = InfoReader(g, amap)
@@ -1643,6 +1647,7 @@ type internal TypeCheckInfo
             | [ resolved ] ->
                 let tip =
                     wordL (TaggedText.tagStringLiteral ((resolved.prepareToolTip ()).TrimEnd([| '\n' |])))
+
                 let tip = PrintUtilities.squashToWidth width tip
 
                 let tip = LayoutRender.toArray tip
@@ -1720,7 +1725,8 @@ type internal TypeCheckInfo
                     | Some (items, denv, _, m) ->
                         ToolTipText(
                             items
-                            |> List.map (fun x -> FormatStructuredDescriptionOfItem false infoReader tcAccessRights m denv x.ItemWithInst width)
+                            |> List.map (fun x ->
+                                FormatStructuredDescriptionOfItem false infoReader tcAccessRights m denv x.ItemWithInst width)
                         ))
 
                 (fun err ->
@@ -2686,7 +2692,7 @@ type FSharpCheckFileResults
                         yield ToolTipElement.Group [ kwTip; descTip ]
             ]
 
-        /// Resolve the names at the given location to give a data tip
+    /// Resolve the names at the given location to give a data tip
     member _.GetToolTip(line, colAtEndOfNames, lineText, names, tokenTag, width) =
         match tokenTagToTokenId tokenTag with
         | TOKEN_IDENT ->
