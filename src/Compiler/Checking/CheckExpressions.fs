@@ -1851,7 +1851,20 @@ let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ((Ident list * Ident) * '
                 | _ -> error(Error(FSComp.SR.tcRecordFieldInconsistentTypes(), m)))
     tinst, tcref, fldsmap, List.rev rfldsList
 
-/// Merges updates to nested record fields on the same level in record copy-and-update
+/// Merges updates to nested record fields on the same level in record copy-and-update.
+///
+/// `TransformAstForNestedUpdates` expands `{ x with A.B = 10; A.C = "" }`
+///
+/// into
+///
+/// { x with
+///        A = { x.A with B = 10 };
+///        A = { x.A with C = "" }
+/// }
+///
+/// which we here convert to
+///
+/// { x with A = { x.A with B = 10; C = "" } }
 let GroupUpdatesToNestedFields (fields: ((Ident list * Ident) * SynExpr option) list) =
     let rec groupIfNested res xs =
         match xs with
@@ -1875,7 +1888,9 @@ let GroupUpdatesToNestedFields (fields: ((Ident list * Ident) * SynExpr option) 
         else
             groupIfNested [] fields)
 
-/// Expands a long identifier into nested copy-and-update expressions
+/// Expands a long identifier into nested copy-and-update expressions.
+///
+/// `{ x with A.B = 0 }` becomes `{ x with A = { x.A with B = 0 } }`
 let TransformAstForNestedUpdates cenv env overallTy (lid: LongIdent) exprBeingAssigned withExpr =
     let recdExprCopyInfo ids withExpr id =
         let upToId origSepRng id lidwd =
@@ -7412,9 +7427,8 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
                     // we assume that parse errors were already reported
                     raise (ReportedError None)
 
-                match withExprOpt, synLongId.LongIdent, exprBeingAssigned with
-                | _, [ id ], _ -> ([], id), exprBeingAssigned
-                | Some withExpr, lid, Some exprBeingAssigned -> TransformAstForNestedUpdates cenv env overallTy lid exprBeingAssigned withExpr
+                match withExprOpt, exprBeingAssigned with
+                | Some withExpr, Some exprBeingAssigned -> TransformAstForNestedUpdates cenv env overallTy synLongId.LongIdent exprBeingAssigned withExpr
                 | _ -> List.frontAndBack synLongId.LongIdent, exprBeingAssigned)
 
         let flds = if hasOrigExpr then GroupUpdatesToNestedFields flds else flds

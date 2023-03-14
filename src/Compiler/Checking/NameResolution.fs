@@ -3692,7 +3692,12 @@ let ResolveField sink ncenv nenv ad ty mp id allFields =
         ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.UseInType, ad, resInfo, checker)
         rfref)
 
-/// Resolve a long identifier representing a nested record field
+/// Resolve a long identifier representing a nested record field.
+///
+/// Fields in copy-and-update expressions are specified using long identifiers - `{ x with A.B.C.D.E = 0 }`.
+/// The name of the field to update may be prefixed by namespaces, modules and record type, and be suffixed by field
+/// names of records nested within. Here we split the long identifier into a list of 0 or more identifiers
+/// which act as the qualifiers, and a list of 1 or more identifiers which refer to actual record fields.
 let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
     let typeNameResInfo = TypeNameResolutionInfo.Default
     let g = ncenv.g
