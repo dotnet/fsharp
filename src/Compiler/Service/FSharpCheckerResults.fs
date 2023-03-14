@@ -11,6 +11,7 @@ open System.IO
 open System.Reflection
 open System.Threading
 open FSharp.Compiler.IO
+open FSharp.Compiler.NicePrint
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Core.Printf
@@ -349,8 +350,7 @@ type internal TypeCheckInfo
     // Is not keyed on 'Names' collection because this is invariant for the current position in
     // this unchanged file. Keyed on lineStr though to prevent a change to the currently line
     // being available against a stale scope.
-    let getToolTipTextCache =
-        AgedLookup<AnyCallerThreadToken, int * int * string, ToolTipText>(getToolTipTextSize, areSimilar = (fun (x, y) -> x = y))
+    let getToolTipTextCache = AgedLookup<AnyCallerThreadToken, int * int * string * int option, ToolTipText>(getToolTipTextSize, areSimilar = (fun (x, y) -> x = y))
 
     let amap = tcImports.GetImportMap()
     let infoReader = InfoReader(g, amap)
@@ -1614,7 +1614,7 @@ type internal TypeCheckInfo
                 [])
 
     /// Get the "reference resolution" tooltip for at a location
-    member _.GetReferenceResolutionStructuredToolTipText(line, col) =
+    member _.GetReferenceResolutionStructuredToolTipText(line, col, width) =
 
         let pos = mkPos line col
 
@@ -1643,6 +1643,7 @@ type internal TypeCheckInfo
             | [ resolved ] ->
                 let tip =
                     wordL (TaggedText.tagStringLiteral ((resolved.prepareToolTip ()).TrimEnd([| '\n' |])))
+                let tip = PrintUtilities.squashToWidth width tip
 
                 let tip = LayoutRender.toArray tip
                 ToolTipText.ToolTipText [ ToolTipElement.Single(tip, FSharpXmlDoc.None) ]
@@ -1666,6 +1667,7 @@ type internal TypeCheckInfo
                         [
                             for line in lines ->
                                 let tip = wordL (TaggedText.tagStringLiteral line)
+                                let tip = PrintUtilities.squashToWidth width tip
                                 let tip = LayoutRender.toArray tip
                                 ToolTipElement.Single(tip, FSharpXmlDoc.None)
                         ]
@@ -1688,12 +1690,12 @@ type internal TypeCheckInfo
             }
 
         let toolTipElement =
-            FormatStructuredDescriptionOfItem displayFullName infoReader accessorDomain m denv itemWithInst
+            FormatStructuredDescriptionOfItem displayFullName infoReader accessorDomain m denv itemWithInst None
 
         ToolTipText [ toolTipElement ]
 
     // GetToolTipText: return the "pop up" (or "Quick Info") text given a certain context.
-    member _.GetStructuredToolTipText(line, lineStr, colAtEndOfNames, names) =
+    member _.GetStructuredToolTipText(line, lineStr, colAtEndOfNames, names, width) =
         let Compute () =
             DiagnosticsScope.Protect
                 range0
@@ -1718,7 +1720,7 @@ type internal TypeCheckInfo
                     | Some (items, denv, _, m) ->
                         ToolTipText(
                             items
-                            |> List.map (fun x -> FormatStructuredDescriptionOfItem false infoReader tcAccessRights m denv x.ItemWithInst)
+                            |> List.map (fun x -> FormatStructuredDescriptionOfItem false infoReader tcAccessRights m denv x.ItemWithInst width)
                         ))
 
                 (fun err ->
@@ -1726,7 +1728,7 @@ type internal TypeCheckInfo
                     ToolTipText [ ToolTipElement.CompositionError err ])
 
         // See devdiv bug 646520 for rationale behind truncating and caching these quick infos (they can be big!)
-        let key = line, colAtEndOfNames, lineStr
+        let key = line, colAtEndOfNames, lineStr, width
 
         match getToolTipTextCache.TryGet(AnyCallerThread, key) with
         | Some res -> res
@@ -2684,18 +2686,18 @@ type FSharpCheckFileResults
                         yield ToolTipElement.Group [ kwTip; descTip ]
             ]
 
-    /// Resolve the names at the given location to give a data tip
-    member _.GetToolTip(line, colAtEndOfNames, lineText, names, tokenTag) =
+        /// Resolve the names at the given location to give a data tip
+    member _.GetToolTip(line, colAtEndOfNames, lineText, names, tokenTag, width) =
         match tokenTagToTokenId tokenTag with
         | TOKEN_IDENT ->
             match details with
             | None -> emptyToolTip
-            | Some (scope, _builderOpt) -> scope.GetStructuredToolTipText(line, lineText, colAtEndOfNames, names)
+            | Some (scope, _builderOpt) -> scope.GetStructuredToolTipText(line, lineText, colAtEndOfNames, names, width)
         | TOKEN_STRING
         | TOKEN_STRING_TEXT ->
             match details with
             | None -> emptyToolTip
-            | Some (scope, _builderOpt) -> scope.GetReferenceResolutionStructuredToolTipText(line, colAtEndOfNames)
+            | Some (scope, _builderOpt) -> scope.GetReferenceResolutionStructuredToolTipText(line, colAtEndOfNames, width)
         | _ -> emptyToolTip
 
     member _.GetDescription(symbol: FSharpSymbol, inst: (FSharpGenericParameter * FSharpType) list, displayFullName, range: range) =

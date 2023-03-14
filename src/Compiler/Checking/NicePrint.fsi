@@ -16,6 +16,8 @@ open FSharp.Compiler.TypedTreeOps
 
 module PrintUtilities =
     val layoutBuiltinAttribute: denv: DisplayEnv -> attrib: BuiltinAttribInfo -> Layout
+    
+    val squashToWidth: width: int option -> Layout -> Layout
 
 val layoutTyparConstraint: denv: DisplayEnv -> Typar * TyparConstraint -> Layout
 
