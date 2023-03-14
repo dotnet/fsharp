@@ -446,5 +446,14 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
                 return ResourceManager.GetString("Unused_opens_code_fix", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cache parsing results (experimental).
+        /// </summary>
+        public static string Use_syntax_tree_cache {
+            get {
+                return ResourceManager.GetString("Use_syntax_tree_cache", resourceCulture);
+            }
+        }
     }
 }

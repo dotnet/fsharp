@@ -195,7 +195,8 @@ type BackgroundCompiler
         parallelReferenceResolution,
         captureIdentifiersWhenParsing,
         getSource: (string -> ISourceText option) option,
-        useChangeNotifications
+        useChangeNotifications,
+        useSyntaxTreeCache
     ) as self =
 
     let beforeFileChecked = Event<string * FSharpProjectOptions>()
@@ -329,7 +330,8 @@ type BackgroundCompiler
                     parallelReferenceResolution,
                     captureIdentifiersWhenParsing,
                     getSource,
-                    useChangeNotifications
+                    useChangeNotifications,
+                    useSyntaxTreeCache
                 )
 
             match builderOpt with
@@ -636,9 +638,6 @@ type BackgroundCompiler
         ) =
 
         node {
-            if useChangeNotifications then
-                do! builder.NotifyFileChanged(fileName, DateTime.UtcNow)
-
             match! bc.GetCachedCheckFileResult(builder, fileName, sourceText, options) with
             | Some (_, results) -> return FSharpCheckFileAnswer.Succeeded results
             | _ ->
@@ -1263,7 +1262,8 @@ type FSharpChecker
         parallelReferenceResolution,
         captureIdentifiersWhenParsing,
         getSource,
-        useChangeNotifications
+        useChangeNotifications,
+        useSyntaxTreeCache
     ) =
 
     let backgroundCompiler =
@@ -1280,7 +1280,8 @@ type FSharpChecker
             parallelReferenceResolution,
             captureIdentifiersWhenParsing,
             getSource,
-            useChangeNotifications
+            useChangeNotifications,
+            useSyntaxTreeCache
         )
 
     static let globalInstance = lazy FSharpChecker.Create()
@@ -1324,7 +1325,8 @@ type FSharpChecker
             ?enablePartialTypeChecking,
             ?parallelReferenceResolution: bool,
             ?captureIdentifiersWhenParsing: bool,
-            ?documentSource: DocumentSource
+            ?documentSource: DocumentSource,
+            ?useSyntaxTreeCache: bool
         ) =
 
         use _ = Activity.startNoTags "FSharpChecker.Create"
@@ -1352,6 +1354,8 @@ type FSharpChecker
             | Some (DocumentSource.Custom _) -> true
             | _ -> false
 
+        let useSyntaxTreeCache = defaultArg useSyntaxTreeCache true
+
         if keepAssemblyContents && enablePartialTypeChecking then
             invalidArg "enablePartialTypeChecking" "'keepAssemblyContents' and 'enablePartialTypeChecking' cannot be both enabled."
 
@@ -1372,7 +1376,8 @@ type FSharpChecker
             (match documentSource with
              | Some (DocumentSource.Custom f) -> Some f
              | _ -> None),
-            useChangeNotifications
+            useChangeNotifications,
+            useSyntaxTreeCache
         )
 
     member _.ReferenceResolver = legacyReferenceResolver
