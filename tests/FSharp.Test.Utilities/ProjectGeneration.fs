@@ -502,7 +502,8 @@ type ProjectWorkflowBuilder
         ?initialContext,
         ?checker: FSharpChecker,
         ?useGetSource,
-        ?useChangeNotifications
+        ?useChangeNotifications,
+        ?useSyntaxTreeCache
     ) =
 
     let useGetSource = defaultArg useGetSource false
@@ -533,7 +534,8 @@ type ProjectWorkflowBuilder
                 enableBackgroundItemKeyStoreAndSemanticClassification = true,
                 enablePartialTypeChecking = true,
                 captureIdentifiersWhenParsing = true,
-                documentSource = (if useGetSource then DocumentSource.Custom getSource else DocumentSource.FileSystem)
+                documentSource = (if useGetSource then DocumentSource.Custom getSource else DocumentSource.FileSystem),
+                useSyntaxTreeCache = defaultArg useSyntaxTreeCache false
             ))
 
     let mapProjectAsync f workflow =
