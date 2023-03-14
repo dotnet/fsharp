@@ -92,11 +92,10 @@ type FormattingOptions =
     static member Default =
         { FormatOnPaste = false }
 
-[<Shared; Export; Export(typeof<Settings.IPersistSettings>)>]
+[<Shared; Export>]
 type EditorOptions() =
     // we use in-memory store when outside of VS, e.g. in unit tests
-    let store = Settings.CreateStore()
-        
+    let store = SettingsStore.Create()
     do
         store.Register QuickInfoOptions.Default
         store.Register CodeFixesOptions.Default
@@ -112,11 +111,10 @@ type EditorOptions() =
     member _.Advanced: AdvancedOptions = store.Get()
     member _.Formatting : FormattingOptions = store.Get()
 
-    interface Microsoft.CodeAnalysis.Host.IWorkspaceService
+    [<Export(typeof<SettingsStore.ISettingsStore>)>]
+    member private _.SettingsStore = store
 
-    interface Settings.IPersistSettings with
-        member _.LoadSettings() = store.LoadSettings()
-        member _.SaveSettings(settings) = store.SaveSettings(settings)
+    interface Microsoft.CodeAnalysis.Host.IWorkspaceService
 
 module internal OptionsUI =
 
