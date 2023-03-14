@@ -41,6 +41,7 @@ build -testAll -c Release
 | testScripting | Windows | Runs scripting fsx and fsi commandline tests |
 | test          | Windows | Same as testDesktop |
 | testAll       | Windows | Runs all above tests |
+| testAllButIntegration       | Windows | Runs all minus integration tests |
 
 Some test groups can only be run in `CI` configuration, for that, you need to pass the `-ci -bl` or `-ci -nobl` arguments. Some test groups can only be run in Release mode, this is indicated below. Some tests can only be run on Windows.
 
