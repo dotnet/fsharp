@@ -3094,6 +3094,102 @@ module Array =
     /// <summary>Provides parallel operations on arrays </summary>
     module Parallel =
 
+        /// <summary>Returns the first element for which the given function returns <c>True</c>.
+        /// Returns None if no such element exists.</summary>
+        ///
+        /// <param name="predicate">The function to test the input elements.</param>
+        /// <param name="array">The input array.</param>
+        ///
+        /// <returns>The first element that satisfies the predicate, or None.</returns>
+        ///
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        ///
+        /// <example id="para-tryfind-1">Try to find the first even number:
+        /// <code lang="fsharp">
+        /// let inputs = [| 1; 2; 3 |]
+        ///
+        /// inputs |> Array.Parallel.tryFind (fun elm -> elm % 2 = 0)
+        /// </code>
+        /// Evaluates to <c>Some 2</c>.
+        /// </example>
+        ///
+        /// <example id="para-tryfind-2">Try to find the first even number:
+        /// <code lang="fsharp">
+        /// let inputs = [| 1; 5; 3 |]
+        ///
+        /// inputs |> Array.Parallel.tryFind (fun elm -> elm % 2 = 0)
+        /// </code>
+        /// Evaluates to <c>None</c>
+        /// </example>
+        [<CompiledName("TryFind")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val tryFind: predicate:('T -> bool) -> array:'T[] -> 'T option
+
+
+        /// <summary>Returns the index of the first element in the array
+        /// that satisfies the given predicate.
+        /// Returns <c>None</c> if no such element exists.</summary>
+        /// <param name="predicate">The function to test the input elements.</param>
+        /// <param name="array">The input array.</param>
+        ///
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        ///
+        /// <returns>The index of the first element that satisfies the predicate, or None.</returns>
+        ///
+        /// <example id="para-tryfindindex-1">Try to find the index of the first even number:
+        /// <code lang="fsharp">
+        /// let inputs = [| 1; 2; 3; 4; 5 |]
+        ///
+        /// inputs |> Array.Parallel.tryFindIndex (fun elm -> elm % 2 = 0)
+        /// </code>
+        /// Evaluates to <c>Some 1</c>
+        /// </example>
+        ///
+        /// <example id="para-tryfindindex-2">Try to find the index of the first even number:
+        /// <code lang="fsharp">
+        /// let inputs = [| 1; 3; 5; 7 |]
+        ///
+        /// inputs |> Array.Parallel.tryFindIndex (fun elm -> elm % 2 = 0)
+        /// </code>
+        /// Evaluates to <c>None</c>
+        /// </example>
+        [<CompiledName("TryFindIndex")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val tryFindIndex : predicate:('T -> bool) -> array:'T[] -> int option
+
+        /// <summary>Applies the given function to successive elements, returning the first
+        /// result where the function returns <c>Some(x)</c> for some <c>x</c>. If the function 
+        /// never returns <c>Some(x)</c> then <c>None</c> is returned.</summary>
+        ///
+        /// <param name="chooser">The function to transform the array elements into options.</param>
+        /// <param name="array">The input array.</param>
+        ///
+        /// <returns>The first transformed element that is <c>Some(x)</c>.</returns>
+        ///
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        ///
+        /// <example id="para-trypick-1">
+        /// <code lang="fsharp">
+        /// let input = [| 1; 2; 3 |]
+        ///
+        /// input |> Array.Parallel.tryPick (fun n -> if n % 2 = 0 then Some (string n) else None)
+        /// </code>
+        /// Evaluates to <c>Some 2</c>.
+        /// </example>
+        ///
+        /// <example id="para-trypick-2">
+        /// <code lang="fsharp">
+        /// let input = [| 1; 2; 3 |]
+        ///
+        /// input |> Array.Parallel.tryPick (fun n -> if n > 3 = 0 then Some (string n) else None)
+        /// </code>
+        /// Evaluates to <c>None</c>.
+        /// </example>
+        ///
+        [<CompiledName("TryPick")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val tryPick: chooser:('T -> 'U option) -> array:'T[] -> 'U option
+
         /// <summary>Apply the given function to each element of the array. Return
         /// the array comprised of the results <c>x</c> for each element where
         /// the function returns <c>Some(x)</c>.</summary>

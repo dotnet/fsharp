@@ -955,17 +955,16 @@ type ArrayModule() =
         let intArr = [| 1..10 |]
         let seq = Array.toSeq intArr
         let sum = Seq.sum seq
-        Assert.AreEqual(55, sum)
-        
-    [<Fact>]
-    member this.TryPick() =
+        Assert.AreEqual(55, sum)        
+
+    member private _.TryPickTester tryPickInt tryPickString =
         // integer array
         let intArr = [| 1..10 |]    
         let funcInt x = 
                 match x with
                 | _ when x % 3 = 0 -> Some (x.ToString())            
                 | _ -> None
-        let resultInt = Array.tryPick funcInt intArr
+        let resultInt = tryPickInt funcInt intArr
         if resultInt <> Some "3" then Assert.Fail()
         
         // string array
@@ -974,19 +973,25 @@ type ArrayModule() =
                 match x with
                 | "good" -> Some (x.ToString())            
                 | _ -> None
-        let resultStr = Array.tryPick funcStr strArr
+        let resultStr = tryPickString funcStr strArr
         if resultStr <> None then Assert.Fail()
         
         // empty array
         let emptyArr:int[] = [| |]
-        let resultEpt = Array.tryPick funcInt emptyArr
+        let resultEpt = tryPickInt funcInt emptyArr
         if resultEpt <> None then Assert.Fail()
 
         // null array
         let nullArr = null:string[]  
-        CheckThrowsArgumentNullException (fun () -> Array.tryPick funcStr nullArr |> ignore)  
+        CheckThrowsArgumentNullException (fun () -> tryPickString funcStr nullArr |> ignore)  
         
         ()
+
+    [<Fact>]
+    member this.TryPick() = this.TryPickTester Array.tryPick Array.tryPick
+
+    [<Fact>]
+    member this.ParallelTryPick() = this.TryPickTester Array.Parallel.tryPick Array.Parallel.tryPick
 
     [<Fact>]
     member this.Fold() =

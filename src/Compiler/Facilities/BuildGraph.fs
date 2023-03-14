@@ -228,14 +228,14 @@ module GraphNode =
         | None -> ()
 
 [<Sealed>]
-type GraphNode<'T>(retryCompute: bool, computation: NodeCode<'T>) =
+type GraphNode<'T> private (retryCompute: bool, computation: NodeCode<'T>, cachedResult: Task<'T>, cachedResultNode: NodeCode<'T>) =
 
     let gate = obj ()
     let mutable computation = computation
     let mutable requestCount = 0
 
-    let mutable cachedResult: Task<'T> = Unchecked.defaultof<_>
-    let mutable cachedResultNode: NodeCode<'T> = Unchecked.defaultof<_>
+    let mutable cachedResult: Task<'T> = cachedResult
+    let mutable cachedResultNode: NodeCode<'T> = cachedResultNode
 
     let isCachedResultNodeNotNull () =
         not (obj.ReferenceEquals(cachedResultNode, null))
@@ -429,4 +429,9 @@ type GraphNode<'T>(retryCompute: bool, computation: NodeCode<'T>) =
 
     member _.IsComputing = requestCount > 0
 
+    static member FromResult(result: 'T) =
+        let nodeResult = node.Return result
+        GraphNode(true, nodeResult, Task.FromResult(result), nodeResult)
+
+    new(retryCompute: bool, computation) = GraphNode(retryCompute, computation, Unchecked.defaultof<_>, Unchecked.defaultof<_>)
     new(computation) = GraphNode(retryCompute = true, computation = computation)
