@@ -129,6 +129,16 @@ type internal FSharpWorkspaceServiceFactory
                                     documentSource = (if enableLiveBuffers then DocumentSource.Custom getSource else DocumentSource.FileSystem),
                                     useSyntaxTreeCache = useSyntaxTreeCache)
 
+                            TelemetryReporter.reportEvent "languageservicestarted" [
+                                nameof enableLiveBuffers, enableLiveBuffers
+                                nameof useSyntaxTreeCache, useSyntaxTreeCache
+                                nameof enableParallelReferenceResolution, enableParallelReferenceResolution
+                                nameof enableInMemoryCrossProjectReferences, enableInMemoryCrossProjectReferences
+                                nameof enableFastFindReferences, enableFastFindReferences
+                                nameof isInlineParameterNameHintsEnabled, isInlineParameterNameHintsEnabled
+                                nameof isInlineTypeHintsEnabled, isInlineTypeHintsEnabled
+                            ]
+
                             if enableLiveBuffers then
                                 workspace.WorkspaceChanged.Add(fun args ->
                                     if args.DocumentId <> null then
