@@ -275,7 +275,7 @@ type TcInfoNode =
     static member FromState(state: TcInfoState) =
         let tcInfo = state.TcInfo
         let tcInfoExtras = state.TcInfoExtras
-        TcInfoNode(GraphNode(node.Return tcInfo), GraphNode(node.Return (tcInfo, defaultArg tcInfoExtras emptyTcInfoExtras)))
+        TcInfoNode(GraphNode.FromResult tcInfo, GraphNode.FromResult (tcInfo, defaultArg tcInfoExtras emptyTcInfoExtras))
 
 /// Bound model of an underlying syntax and typed tree.
 [<Sealed>]
@@ -1098,7 +1098,7 @@ module IncrementalBuilderStateHelpers =
             | ValueSome(boundModel) when initialState.enablePartialTypeChecking && boundModel.BackingSignature.IsSome ->
                 let newBoundModel = boundModel.ClearTcInfoExtras()
                 { state with
-                    boundModels = state.boundModels.SetItem(slot, GraphNode(node.Return newBoundModel))
+                    boundModels = state.boundModels.SetItem(slot, GraphNode.FromResult newBoundModel)
                     stampedFileNames = state.stampedFileNames.SetItem(slot, stamp)
                 }
             | _ ->
@@ -1165,7 +1165,7 @@ type IncrementalBuilderState with
         let referencedAssemblies = initialState.referencedAssemblies
 
         let cache = TimeStampCache(defaultTimeStamp)
-        let initialBoundModel = GraphNode(node.Return initialBoundModel)
+        let initialBoundModel = GraphNode.FromResult initialBoundModel
         let boundModels = ImmutableArrayBuilder.create fileNames.Length
 
         for slot = 0 to fileNames.Length - 1 do

@@ -410,7 +410,7 @@ type BackgroundCompiler
     let createBuilderNode (options, userOpName, ct: CancellationToken) =
         lock gate (fun () ->
             if ct.IsCancellationRequested then
-                GraphNode(node.Return(None, [||]))
+                GraphNode.FromResult (None, [||])
             else
                 let getBuilderNode = GraphNode(CreateOneIncrementalBuilder(options, userOpName))
                 incrementalBuildersCache.Set(AnyCallerThread, options, getBuilderNode)
