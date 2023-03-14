@@ -23,6 +23,9 @@
                                   IsChecked="{Binding EnableInMemoryCrossProjectReferences}"
                                   Content="{x:Static local:Strings.Enable_in_memory_cross_project_references}"
                                   ToolTip="{x:Static local:Strings.Tooltip_in_memory_cross_project_references}"/>
+                        <CheckBox x:Name="enableSyntaxTreeCache"
+                                  IsChecked="{Binding UseSyntaxTreeCache}"
+                                  Content="{x:Static local:Strings.Use_syntax_tree_cache}" />
                     </StackPanel>
                 </GroupBox>
                 <GroupBox Header="{x:Static local:Strings.IntelliSense_Performance}">
