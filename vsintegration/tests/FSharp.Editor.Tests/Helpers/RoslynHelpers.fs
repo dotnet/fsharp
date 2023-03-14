@@ -175,7 +175,9 @@ type TestHostWorkspaceServices(hostServices: HostServices, workspace: Workspace)
         TestHostLanguageServices(this, LanguageNames.FSharp, exportProvider)
 
     member this.SetEditorEptions(value) =
-        exportProvider.GetExportedValue<SettingsStore.ISettingsStore>().SaveSettings(value)
+        exportProvider
+            .GetExportedValue<SettingsStore.ISettingsStore>()
+            .SaveSettings(value)
 
     member this.WithEditorOptions(value) =
         this.SetEditorEptions(value)
