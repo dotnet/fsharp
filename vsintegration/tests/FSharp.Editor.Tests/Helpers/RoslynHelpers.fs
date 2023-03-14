@@ -15,7 +15,6 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.CodeAnalysis.Host.Mef
 open FSharp.Compiler.CodeAnalysis
-open System.Threading
 
 [<AutoOpen>]
 module MefHelpers =
@@ -175,6 +174,13 @@ type TestHostWorkspaceServices(hostServices: HostServices, workspace: Workspace)
     let langServices =
         TestHostLanguageServices(this, LanguageNames.FSharp, exportProvider)
 
+    member this.SetEditorEptions(value) =
+        exportProvider.GetExportedValue<Settings.IPersistSettings>().SaveSettings(value)
+
+    member this.WithEditorOptions(value) =
+        this.SetEditorEptions(value)
+        this
+
     override _.Workspace = workspace
 
     override this.GetService<'T when 'T :> IWorkspaceService>() : 'T =
@@ -201,7 +207,24 @@ type TestHostServices() =
     inherit HostServices()
 
     override this.CreateWorkspaceServices(workspace) =
-        TestHostWorkspaceServices(this, workspace) :> HostWorkspaceServices
+        TestHostWorkspaceServices(this, workspace)
+            // Default editor options for tests differ from Visual Studio defaults.
+            // This can be later customized per test.
+            .WithEditorOptions(
+                { AdvancedOptions.Default with
+                    IsLiveBuffersEnabled = false
+                    IsBlockStructureEnabled = false
+                })
+            .WithEditorOptions(
+                { LanguageServicePerformanceOptions.Default with
+                    AllowStaleCompletionResults = false
+                    TimeUntilStaleCompletion = 0
+                })
+            .WithEditorOptions(
+                { CodeFixesOptions.Default with
+                    UnusedDeclarations = false
+                    UnusedOpens = false
+                })
 
 [<AbstractClass; Sealed>]
 type RoslynTestHelpers private () =

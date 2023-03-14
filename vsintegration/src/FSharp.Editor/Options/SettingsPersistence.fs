@@ -2,83 +2,95 @@
 
 open System
 open System.Collections.Concurrent
-open System.Runtime.InteropServices
 
 open Microsoft.VisualStudio.Settings
+open Microsoft.VisualStudio.Shell
 
 open Newtonsoft.Json
 
-type IPersistSettings =
-    abstract member LoadSettings : unit -> 't
-    abstract member SaveSettings : 't -> unit
+module Settings =
+    type IPersistSettings =
+        abstract member LoadSettings : unit -> 't
+        abstract member SaveSettings : 't -> unit
 
-[<Guid(Guids.svsSettingsPersistenceManagerIdString)>]
-type SVsSettingsPersistenceManager = class end
-
-type SettingsStore(serviceProvider: IServiceProvider) =
-
-    let settingsManager = serviceProvider.GetService(typeof<SVsSettingsPersistenceManager>) :?> ISettingsManager
-
-    let storageKeyVersions (typ: Type) =
-        // "TextEditor" prefix seems to be required for settings changes to be synced between IDE instances
-        [ "TextEditor.FSharp." + typ.Namespace + "." + typ.Name
-          // we keep this old storage key to upgrade without reverting user changes
-          typ.Namespace + "." + typ.Name ]
-        
-    let storageKey (typ: Type) = storageKeyVersions typ |> List.head
+    type SettingsStore =
+        inherit IPersistSettings
+        abstract member Register : 't -> unit
+        abstract member Get : unit -> 't
 
     // Each group of settings is a value of some named type, for example 'IntelliSenseOptions', 'QuickInfoOptions'
     // and it is usually representing one separate option page in the UI.
     // We cache exactly one immutable value of each type.
-    // This cache is updated by the SettingsStore when the user makes changes in the Options dialog
-    // or when a change is propagated from another VS IDE instance by SVsSettingsPersistenceManager. 
-    let cache = ConcurrentDictionary<Type, obj>()
+    // This cache is updated by the PersistentStore when the user makes changes in the Options dialog
+    // or when a change is propagated from another VS IDE instance by ISettingsManager.
+    type Cache = ConcurrentDictionary<string, obj>
 
-    let getCached() =
-        match cache.TryGetValue(typeof<'t>) with
+    let storageKey (t: Type) = $"TextEditor.FSharp.{t.Namespace}.{t.Name}"
+
+    let storageKeyOf settings = settings.GetType() |> storageKey
+
+    let getValue (cache: Cache) =
+        match cache.TryGetValue(storageKey (typeof<'t>)) with
         | true, (:? 't as value) -> value
         | _ -> failwithf "Settings %s are not registered." typeof<'t>.Name
 
-    let keepInCache settings = cache.[settings.GetType()] <- settings
+    let setValue (cache: Cache) settings = cache.[storageKeyOf settings] <- settings
 
     // The settings record, even though immutable, is being effectively mutated in two instances:
     //   when it is passed to the UI (provided it is marked with CLIMutable attribute);
     //   when it is being populated from JSON using JsonConvert.PopulateObject;
-    // We make a deep copy in these instances to isolate and contain the mutation
+    // We make a deep copy in these instances to isolate and contain the mutation.
     let clone (v: 't) = JsonConvert.SerializeObject v |> JsonConvert.DeserializeObject<'t>
 
-    let updateFromStore settings =
-        // make a deep copy so that PopulateObject does not alter the original
-        let copy = clone settings
-        // if the new key is not found by ISettingsManager, we try the old keys
-        // so that user settings are not lost
-        settings.GetType() |> storageKeyVersions 
-        |> Seq.map (settingsManager.TryGetValue)
-        |> Seq.tryPick ( function GetValueResult.Success, json -> Some json | _ -> None )
-        |> Option.iter (fun json -> try JsonConvert.PopulateObject(json, copy) with _ -> ())
-        copy
+    type TestStore() =
+        // When running without Visual Studio, i.e. unit tests, we use only this in-memory store.
+        let cache = Cache() 
+        interface SettingsStore with
+            member this.Get() = getValue cache
+            member this.LoadSettings() = cache |> getValue |> clone
+            member this.Register(defaultSettings) = defaultSettings |> setValue cache
+            member this.SaveSettings(settings) = settings |> setValue cache
 
-    member _.Get() = getCached()
+    type PersistentStore(settingsManager: ISettingsManager) =
+        let cache = Cache()  
+    
+        let updateFromStore settings =
+            // Make a deep copy so that PopulateObject does not alter the original.
+            let copy = clone settings
+            match settingsManager.TryGetValue(storageKeyOf settings) with
+            | GetValueResult.Success, json ->
+                // In case this fails, we just return current version.
+                try JsonConvert.PopulateObject(json, copy) with _ -> ()
+                copy
+            | _ -> copy
 
-    // Used by the AbstractOptionPage to populate dialog controls.
-    // We always have the latest value in the cache so we just return
-    // cloned value here because it may be altered by the UI if declared with [<CLIMutable>]
-    member _.LoadSettings() = getCached() |> clone
+        interface SettingsStore with
+            member _.Get() = getValue cache
 
-    member _.SaveSettings settings =
-        // We replace default serialization with Newtonsoft.Json for easy schema evolution.
-        // For example, if we add a new bool field to the record, representing another checkbox in Options dialog
-        // deserialization will still work fine. When we pass default value to JsonConvert.PopulateObject it will
-        // fill just the known fields.
-        settingsManager.SetValueAsync(settings.GetType() |> storageKey, JsonConvert.SerializeObject settings, false)
-        |> Async.AwaitTask |> Async.Start
+            // Used by the AbstractOptionPage to populate dialog controls.
+            // We always have the latest value in the cache so we just return
+            // cloned value here because it may be altered by the UI if declared with [<CLIMutable>]
+            member _.LoadSettings() = cache |> getValue |> clone
 
-    // This is the point we retrieve the initial value and subscribe to watch for changes
-    member _.Register (defaultSettings : 'options) =
-        defaultSettings |> updateFromStore |> keepInCache
-        let subset = defaultSettings.GetType() |> storageKey |> settingsManager.GetSubset
-        // this event is also raised when a setting change occurs in another VS instance, so we can keep everything in sync
-        PropertyChangedAsyncEventHandler ( fun _ _ ->
-            (getCached(): 'options) |> updateFromStore |> keepInCache
-            System.Threading.Tasks.Task.CompletedTask )
-        |> subset.add_SettingChangedAsync
+            member _.SaveSettings settings =
+                // We replace default serialization with Newtonsoft.Json for easy schema evolution.
+                // For example, if we add a new bool field to the record, representing another checkbox in Options dialog
+                // deserialization will still work fine. When we pass default value to JsonConvert.PopulateObject it will
+                // fill just the known fields.
+                settingsManager.SetValueAsync(storageKeyOf settings, JsonConvert.SerializeObject settings, false) |> ignore
+
+            // This is the point we retrieve the initial value and subscribe to watch for changes.
+            member _.Register defaultSettings =
+                defaultSettings |> updateFromStore |> setValue cache
+                let subset = storageKeyOf defaultSettings |> settingsManager.GetSubset
+                // This event is also raised when a setting change occurs in another VS instance, so we can keep everything in sync.
+                // Note: In experimental VS instance it only picks up local changes.
+                subset.add_SettingChangedAsync(
+                    PropertyChangedAsyncEventHandler( fun _ _ ->
+                        backgroundTask { cache |> getValue |> updateFromStore |> setValue cache } )
+                )
+
+    let CreateStore() : SettingsStore =          
+        match ServiceProvider.GlobalProvider.GetService(Guids.svsSettingsPersistenceManagerId) with
+        | :? ISettingsManager as settingsManager -> PersistentStore(settingsManager)
+        | _ -> TestStore()

@@ -104,23 +104,11 @@ type internal FSharpWorkspaceServiceFactory
                 | _ ->
                     let checker =
                         lazy
-                            let editorOptions =
-                                let editorOptions = workspace.Services.GetService<EditorOptions>()
+                            let editorOptions = workspace.Services.GetService<EditorOptions>()
 
-                                match box editorOptions with
-                                | null -> None
-                                | _ -> Some editorOptions
+                            let enableParallelReferenceResolution = editorOptions.LanguageServicePerformance.EnableParallelReferenceResolution
 
-                            let getOption f defaultValue =
-                                editorOptions
-                                |> Option.map f
-                                |> Option.defaultValue defaultValue
-
-                            let enableParallelReferenceResolution =
-                                getOption (fun options -> options.LanguageServicePerformance.EnableParallelReferenceResolution) false
-
-                            let enableLiveBuffers =
-                                getOption (fun options -> options.Advanced.IsLiveBuffersEnabled) false
+                            let enableLiveBuffers = editorOptions.Advanced.IsLiveBuffersEnabled
 
                             let checker =
                                 FSharpChecker.Create(
@@ -133,7 +121,8 @@ type internal FSharpWorkspaceServiceFactory
                                     enablePartialTypeChecking = true,
                                     parallelReferenceResolution = enableParallelReferenceResolution,
                                     captureIdentifiersWhenParsing = true,
-                                    documentSource = (if enableLiveBuffers then DocumentSource.Custom getSource else DocumentSource.FileSystem))
+                                    documentSource = (if enableLiveBuffers then DocumentSource.Custom getSource else DocumentSource.FileSystem)
+                                )
 
                             if enableLiveBuffers then
                                 workspace.WorkspaceChanged.Add(fun args ->
