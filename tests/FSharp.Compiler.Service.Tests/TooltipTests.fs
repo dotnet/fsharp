@@ -126,7 +126,7 @@ let testToolTipSquashing source line colAtEndOfNames lineText names tokenTag =
 
 
 [<Test>]
-let ``Squashed tooltip of long function signature should have newlines added2`` () =
+let ``Squashed tooltip of long function signature should have newlines added`` () =
     let source =
         """
 module Foo
