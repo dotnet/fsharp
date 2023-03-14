@@ -246,4 +246,7 @@
   <data name="LiveBuffers" xml:space="preserve">
     <value>Live Buffers (experimental)</value>
   </data>
+  <data name="Use_syntax_tree_cache" xml:space="preserve">
+    <value>Cache parsing results (experimental)</value>
+  </data>
 </root>
