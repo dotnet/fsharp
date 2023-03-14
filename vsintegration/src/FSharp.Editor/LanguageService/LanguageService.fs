@@ -110,8 +110,7 @@ type internal FSharpWorkspaceServiceFactory
 
                             let enableLiveBuffers = editorOptions.Advanced.IsLiveBuffersEnabled
 
-                            let useSyntaxTreeCache =
-                                getOption (fun options -> options.LanguageServicePerformance.UseSyntaxTreeCache) LanguageServicePerformanceOptions.Default.UseSyntaxTreeCache
+                            let useSyntaxTreeCache = editorOptions.LanguageServicePerformance.UseSyntaxTreeCache
 
                             let checker =
                                 FSharpChecker.Create(
