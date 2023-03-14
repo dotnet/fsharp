@@ -94,7 +94,6 @@ type internal FSharpWorkspaceServiceFactory
                     None
 
             let getSource filename =
-                TelemetryReporter.reportEvent "livebuffers" []
                 workspace.CurrentSolution.TryGetDocumentFromPath(filename)
                 |> Option.map(fun document ->
                     let text = document.GetTextAsync().Result
@@ -106,6 +105,8 @@ type internal FSharpWorkspaceServiceFactory
                 | _ ->
                     let checker =
                         lazy
+                            TelemetryReporter.reportEvent "languageservicestarted" []
+
                             let editorOptions =
                                 let editorOptions = workspace.Services.GetService<EditorOptions>()
 
