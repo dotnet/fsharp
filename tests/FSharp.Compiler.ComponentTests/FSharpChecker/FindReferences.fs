@@ -306,7 +306,7 @@ let x = MyType()
 """
     SyntheticProject.Create(
         { sourceFile "Program" [] with
-            SignatureFile = Custom "module Moo"
+            SignatureFile = Custom ""
             Source = source } ).Workflow {
 
         placeCursor "Program" "MyType"
@@ -335,7 +335,7 @@ let x = MyType()
 """
     let project = SyntheticProject.Create(
         { sourceFile "Program" [] with
-            SignatureFile = Custom "module Moo"
+            SignatureFile = Custom ""
             Source = source } )
 
     ProjectWorkflowBuilder(project, useGetSource = true, useChangeNotifications = true) {
