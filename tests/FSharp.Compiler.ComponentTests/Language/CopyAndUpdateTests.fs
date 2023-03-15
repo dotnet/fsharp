@@ -111,6 +111,66 @@ if actual2 <> expected2 then
     |> shouldSucceed
 
 [<Fact>]
+let ``Nested copy-and-update correctly updates fields in nominal generic record``() =
+    FSharp """
+module CopyAndUpdateTests
+
+type AnotherNestedRecTy = { A: int }
+
+type NestdRecTy<'b> = { B: 'b; C: AnotherNestedRecTy }
+
+type RecTy<'b, 'e> = { D: NestdRecTy<'b>; E: 'e option; F: int }
+
+let t1 = { D = { B = "t1"; C = { A = 1 } }; E = Option<string>.None; F = 42 }
+
+let actual1 = { t1 with D.B = "t2" }
+let expected1 = { D = { B = "t2"; C = { A = 1 } }; E = None; F = 42 }
+
+let actual2 = { t1 with D.C.A = 3; E = Some "a" }
+let expected2 = { D = { B = "t1"; C = { A = 3 } }; E = Some "a"; F = 42 }
+
+if actual1 <> expected1 then
+    failwith "actual1 does not equal expected1"
+
+if actual2 <> expected2 then
+    failwith "actual2 does not equal expected2"
+    """
+    |> withLangVersionPreview
+    |> compileExeAndRun
+    |> shouldSucceed
+
+[<Fact>]
+let ``Nested copy-and-update correctly updates fields in nominal struct record``() =
+    FSharp """
+module CopyAndUpdateTests
+
+[<Struct>]
+type AnotherNestedRecTy = { A: int }
+
+type NestdRecTy = { B: string; C: AnotherNestedRecTy }
+
+[<Struct>]
+type RecTy = { D: NestdRecTy; E: string option; F: int }
+
+let t1 = { D = { B = "t1"; C = { A = 1 } }; E = None; F = 42 }
+
+let actual1 = { t1 with D.B = "t2" }
+let expected1 = { D = { B = "t2"; C = { A = 1 } }; E = None; F = 42 }
+
+let actual2 = { t1 with D.C.A = 3; E = Some "a" }
+let expected2 = { D = { B = "t1"; C = { A = 3 } }; E = Some "a"; F = 42 }
+
+if actual1 <> expected1 then
+    failwith "actual1 does not equal expected1"
+
+if actual2 <> expected2 then
+    failwith "actual2 does not equal expected2"
+    """
+    |> withLangVersionPreview
+    |> compileExeAndRun
+    |> shouldSucceed
+
+[<Fact>]
 let ``Nested copy-and-update correctly updates fields in anonymous record``() =
     FSharp """
 module CopyAndUpdateTests
@@ -175,7 +235,7 @@ let ``Nested copy-and-update works correctly on recursive records``() =
     FSharp """
 module CopyAndUpdateTests
 
-type G = { T: string; U: {| a: G |}; I: int }
+type G<'t> = { T: 't; U: {| a: G<'t> |}; I: int }
 
 let f x = { x with U.a.U.a.I = 0; I = -1 }
 
@@ -190,6 +250,51 @@ if actual <> expected then
     |> withLangVersionPreview
     |> compileExeAndRun
     |> shouldSucceed
+
+[<Fact>]
+let ``Nested copy-and-update does not compile when assigning values of the wrong type``() =
+    FSharp """
+module CopyAndUpdateTests
+
+type AnotherNestedRecTy = { A: int }
+
+type NestdRecTy<'b> = { B: 'b; C: AnotherNestedRecTy }
+
+type RecTy<'b, 'e> = { D: NestdRecTy<'b>; E: 'e option; F: int }
+
+let t1 = { D = { B = "t1"; C = { A = 1 } }; E = Option<string>.None; F = 42 }
+
+let actual1 = { t1 with D.B = 1 }
+
+let actual2 = { t1 with D.C.A = 3; E = Some 1.0 }
+    """
+    |> withLangVersionPreview
+    |> typecheck
+    |> shouldFail
+    |> withResults [
+        {
+            Error = Error 1
+            Range = { StartLine = 12
+                      StartColumn = 31
+                      EndLine = 12
+                      EndColumn = 32 }
+            Message = @"This expression was expected to have type
+    'string'    
+but here has type
+    'int'    "
+        }
+        {
+            Error = Error 1
+            Range = { StartLine = 14
+                      StartColumn = 45
+                      EndLine = 14
+                      EndColumn = 48 }
+            Message = @"This expression was expected to have type
+    'string'    
+but here has type
+    'float'    "
+        }
+    ]
 
 [<Fact>]
 let ``Anonymous record with nested copy-and-update can change shape``() =
