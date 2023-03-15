@@ -188,8 +188,8 @@
         <note />
       </trans-unit>
       <trans-unit id="featureArithmeticInLiterals">
-        <source>Allow arithmetic and logical operations in literals</source>
-        <target state="translated">允許常值中的算術和邏輯運算</target>
+        <source>Arithmetic and logical operations in literals, enum definitions and attributes</source>
+        <target state="needs-review-translation">允許常值中的算術和邏輯運算</target>
         <note />
       </trans-unit>
       <trans-unit id="featureAttributesToRightOfModuleKeyword">
@@ -775,6 +775,11 @@
       <trans-unit id="optsUnknownChecksumAlgorithm">
         <source>Algorithm '{0}' is not supported</source>
         <target state="translated">不支援演算法 '{0}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="reprResumableCodeContainsConstrainedGenericLet">
+        <source>A constrained generic construct occured in the resumable code specification</source>
+        <target state="new">A constrained generic construct occured in the resumable code specification</target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsDynamicResumeAtInBody">
