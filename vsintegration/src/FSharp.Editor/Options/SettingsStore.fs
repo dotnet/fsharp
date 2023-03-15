@@ -37,7 +37,8 @@ module SettingsStore =
     // We make a deep copy in these instances to isolate and contain the mutation.
     let clone (v: 't) = JsonConvert.SerializeObject v |> JsonConvert.DeserializeObject<'t>
 
-    type PersistentStore(cache: Cache, settingsManager: ISettingsManager) = 
+    type PersistentStore(settingsManager: ISettingsManager) =
+        let cache = Cache()
         let updateFromStore settings =
             // Make a deep copy so that PopulateObject does not alter the original.
             let copy = clone settings
@@ -76,15 +77,17 @@ module SettingsStore =
             member _.Register defaultSettings = register defaultSettings
             member _.Get() = cache |> getValue
 
-    let Create () : ISettingsStore = 
+    type InMemorySettingsStore() =
         let cache = Cache()
+        interface ISettingsStore with
+            member _.LoadSettings() = cache |> getValue |> clone
+            member _.SaveSettings(settings) = settings |> setValue cache
+            member _.Register(defaultSettings) = defaultSettings |> setValue cache
+            member _.Get() = cache |> getValue
 
+    let Create () : ISettingsStore = 
         match ServiceProvider.GlobalProvider.GetService(Guids.svsSettingsPersistenceManagerId) with
-        | :? ISettingsManager as settingsManager -> PersistentStore(cache, settingsManager)
+        | :? ISettingsManager as settingsManager -> PersistentStore(settingsManager)
         | _ ->
             // When running without Visual Studio, i.e. unit tests, we use this in-memory store.
-            { new ISettingsStore with
-                member _.LoadSettings() = cache |> getValue |> clone
-                member _.SaveSettings(settings) = settings |> setValue cache
-                member _.Register(defaultSettings) = defaultSettings |> setValue cache
-                member _.Get() = cache |> getValue }
+            InMemorySettingsStore()
