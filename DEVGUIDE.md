@@ -108,6 +108,7 @@ You can find all test options as separate flags. For example `build -testAll`:
 
 ```shell
   -testAll                  Run all tests
+  -testAllButIntegration    Run all but integration tests
   -testCambridge            Run Cambridge tests
   -testCompiler             Run FSharpCompiler unit tests
   -testCompilerService      Run FSharpCompilerService unit tests

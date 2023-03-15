@@ -206,6 +206,9 @@ module Commands =
     let ilasm exec ilasmExe flags assembly =
         exec ilasmExe (sprintf "%s %s" flags (quotepath assembly))
 
+    let sn exec snExe flags assembly =
+        exec snExe (sprintf "%s %s" flags (quotepath assembly))
+
     let peverify exec peverifyExe flags path =
         exec peverifyExe (sprintf "%s %s" (quotepath path) flags)
 
@@ -229,6 +232,7 @@ type TestConfig =
 #if !NETCOREAPP
       FSIANYCPU : string
       FSCANYCPU : string
+      SN: string
 #endif
       DOTNETFSCCOMPILERPATH : string
       FSI_FOR_SCRIPTS : string
@@ -356,6 +360,9 @@ let config configurationName envVars =
 #else
     let FSC = requireArtifact ("fsc" ++ configurationName ++ fscArchitecture ++ "fsc.dll")
 #endif
+#if !NETCOREAPP
+    let SN = requirePackage ("sn" ++ "1.0.0" ++ "sn.exe")
+#endif
     let FSCOREDLLPATH = requireArtifact ("FSharp.Core" ++ configurationName ++ fsharpCoreArchitecture ++ "FSharp.Core.dll")
     let DOTNETFSCCOMPILERPATH = requireArtifact ("fsc" ++ configurationName ++ dotnetArchitecture ++ "fsc.dll")
     let defaultPlatform =
@@ -378,6 +385,7 @@ let config configurationName envVars =
 #if !NETCOREAPP
       FSCANYCPU = FSCANYCPU
       FSIANYCPU = FSIANYCPU
+      SN = SN
 #endif
       DOTNETFSCCOMPILERPATH = DOTNETFSCCOMPILERPATH
       FSI_FOR_SCRIPTS = FSI_FOR_SCRIPTS
@@ -411,6 +419,7 @@ let logConfig (cfg: TestConfig) =
 #else
     log "FSIANYCPU                = %s" cfg.FSIANYCPU
     log "FSCANYCPU                = %s" cfg.FSCANYCPU
+    log "SN                       = %s" cfg.SN
 #endif
     log "FSI_FOR_SCRIPTS          = %s" cfg.FSI_FOR_SCRIPTS
     log "fsi_flags                = %s" cfg.fsi_flags
@@ -623,6 +632,7 @@ let peverifyWithArgs _cfg _args _test = printfn "PEVerify is disabled, need to m
 let fsi cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI)
 #if !NETCOREAPP
 let fsiAnyCpu cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSIANYCPU)
+let sn cfg = Printf.ksprintf (Commands.sn (exec cfg) cfg.SN)
 #endif
 let fsi_script cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI_FOR_SCRIPTS)
 let fsiExpectFail cfg = Printf.ksprintf (Commands.fsi (execExpectFail cfg) cfg.FSI)

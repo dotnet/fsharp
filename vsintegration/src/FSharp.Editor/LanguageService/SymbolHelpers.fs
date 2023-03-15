@@ -14,7 +14,8 @@ open Microsoft.CodeAnalysis.Text
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
-open Microsoft.VisualStudio.FSharp.Editor.Symbols 
+open Microsoft.VisualStudio.FSharp.Editor.Symbols
+open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
 module internal SymbolHelpers =
     /// Used for local code fixes in a document, e.g. to rename local parameters
@@ -37,10 +38,19 @@ module internal SymbolHelpers =
         }
 
     let getSymbolUsesInProjects (symbol: FSharpSymbol, projects: Project list, onFound: Document -> range -> Async<unit>, ct: CancellationToken) =
-        projects
-        |> Seq.map (fun project ->
-            Task.Run(fun () -> project.FindFSharpReferencesAsync(symbol, onFound, "getSymbolUsesInProjects", ct)))
-        |> Task.WhenAll
+        match projects with
+        | [] -> Task.CompletedTask
+        | firstProject::_ ->
+            let isFastFindReferencesEnabled = firstProject.IsFastFindReferencesEnabled
+            let props = [ nameof isFastFindReferencesEnabled, isFastFindReferencesEnabled :> obj ]
+            backgroundTask {
+                TelemetryReporter.reportEvent "getSymbolUsesInProjectsStarted" props
+                do! projects
+                    |> Seq.map (fun project ->
+                        Task.Run(fun () -> project.FindFSharpReferencesAsync(symbol, onFound, "getSymbolUsesInProjects", ct)))
+                    |> Task.WhenAll
+                TelemetryReporter.reportEvent "getSymbolUsesInProjectsFinished" props
+            }
 
     let findSymbolUses (symbolUse: FSharpSymbolUse) (currentDocument: Document) (checkFileResults: FSharpCheckFileResults) onFound =
         async {

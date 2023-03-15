@@ -3,6 +3,7 @@
 open Xunit
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Test.ProjectGeneration
+open FSharp.Test.ProjectGeneration.Helpers
 
 type Occurence = Definition | InType | Use
 
@@ -253,7 +254,7 @@ let foo x = 5""" })
         }
 
 [<Fact>]
-let ``We find a type that has been aliased`` () =
+let ``We find values of a type that has been aliased`` () =
 
     let project = SyntheticProject.Create(
         { sourceFile "First" [] with
@@ -270,5 +271,88 @@ let ``We find a type that has been aliased`` () =
             "FileFirst.fs", 7, 4, 9
             "FileFirst.fsi", 3, 4, 9
             "FileSecond.fs", 6, 12, 29
+        ])
+    }
+
+[<Fact>]
+let ``We don't find type aliases for a type`` () =
+
+    let source = """
+type MyType =
+    member _.foo = "boo"
+    member x.this : mytype = x
+and mytype = MyType
+"""
+
+    let fileName, options, checker = singleFileChecker source
+
+    let symbolUse = getSymbolUse fileName source "MyType" options checker |> Async.RunSynchronously
+
+    checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol, fastCheck = true)
+    |> Async.RunSynchronously
+    |> expectToFind [
+        fileName, 2, 5, 11
+        fileName, 5, 13, 19
+    ]
+
+/// https://github.com/dotnet/fsharp/issues/14396
+[<Fact>]
+let ``itemKeyStore disappearance`` () =
+
+    let source = """
+type MyType() = class end
+
+let x = MyType()
+"""
+    SyntheticProject.Create(
+        { sourceFile "Program" [] with
+            SignatureFile = Custom "module Moo"
+            Source = source } ).Workflow {
+
+        placeCursor "Program" "MyType"
+
+        findAllReferences (expectToFind [
+            "FileProgram.fs", 3, 5, 11
+            "FileProgram.fs", 5, 8, 14
+        ])
+
+        updateFile "Program" (fun f -> { f with Source = "\n" + f.Source })
+        saveFile "Program"
+
+        findAllReferences (expectToFind [
+            "FileProgram.fs", 4, 5, 11
+            "FileProgram.fs", 6, 8, 14
+        ])
+    }
+
+[<Fact>]
+let ``itemKeyStore disappearance with live buffers`` () =
+
+    let source = """
+type MyType() = class end
+
+let x = MyType()
+"""
+    let project = SyntheticProject.Create(
+        { sourceFile "Program" [] with
+            SignatureFile = Custom "module Moo"
+            Source = source } )
+
+    ProjectWorkflowBuilder(project, useGetSource = true, useChangeNotifications = true) {
+
+        placeCursor "Program" "MyType"
+
+        findAllReferences (expectToFind [
+            "FileProgram.fs", 3, 5, 11
+            "FileProgram.fs", 5, 8, 14
+        ])
+
+        updateFile "Program" (fun f -> { f with Source = "\n" + f.Source })
+
+        placeCursor "Program" "MyType"
+
+        findAllReferences (expectToFind [
+            "FileProgram.fs", 4, 5, 11
+            "FileProgram.fs", 6, 8, 14
         ])
     }

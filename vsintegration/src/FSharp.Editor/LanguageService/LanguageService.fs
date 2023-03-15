@@ -27,6 +27,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 open Microsoft.CodeAnalysis.Host
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.VisualStudio.FSharp.Editor.WorkspaceExtensions
+open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 open System.Threading.Tasks
 
 #nowarn "9" // NativePtr.toNativeInt
@@ -104,23 +105,23 @@ type internal FSharpWorkspaceServiceFactory
                 | _ ->
                     let checker =
                         lazy
-                            let editorOptions =
-                                let editorOptions = workspace.Services.GetService<EditorOptions>()
+                            TelemetryReporter.reportEvent "languageservicestarted" []
+                            
+                            let editorOptions = workspace.Services.GetService<EditorOptions>()
 
-                                match box editorOptions with
-                                | null -> None
-                                | _ -> Some editorOptions
+                            let enableParallelReferenceResolution = editorOptions.LanguageServicePerformance.EnableParallelReferenceResolution
 
-                            let getOption f defaultValue =
-                                editorOptions
-                                |> Option.map f
-                                |> Option.defaultValue defaultValue
+                            let enableLiveBuffers = editorOptions.Advanced.IsLiveBuffersEnabled
 
-                            let enableParallelReferenceResolution =
-                                getOption (fun options -> options.LanguageServicePerformance.EnableParallelReferenceResolution) false
+                            let useSyntaxTreeCache = editorOptions.LanguageServicePerformance.UseSyntaxTreeCache
 
-                            let enableLiveBuffers =
-                                getOption (fun options -> options.Advanced.IsLiveBuffersEnabled) false
+                            let enableInMemoryCrossProjectReferences = editorOptions.LanguageServicePerformance.EnableInMemoryCrossProjectReferences
+
+                            let enableFastFindReferences = editorOptions.LanguageServicePerformance.EnableFastFindReferences
+
+                            let isInlineParameterNameHintsEnabled = editorOptions.Advanced.IsInlineParameterNameHintsEnabled
+
+                            let isInlineTypeHintsEnabled = editorOptions.Advanced.IsInlineTypeHintsEnabled
 
                             let checker =
                                 FSharpChecker.Create(
@@ -133,7 +134,18 @@ type internal FSharpWorkspaceServiceFactory
                                     enablePartialTypeChecking = true,
                                     parallelReferenceResolution = enableParallelReferenceResolution,
                                     captureIdentifiersWhenParsing = true,
-                                    documentSource = (if enableLiveBuffers then DocumentSource.Custom getSource else DocumentSource.FileSystem))
+                                    documentSource = (if enableLiveBuffers then DocumentSource.Custom getSource else DocumentSource.FileSystem),
+                                    useSyntaxTreeCache = useSyntaxTreeCache)
+
+                            TelemetryReporter.reportEvent "languageservicestarted" [
+                                nameof enableLiveBuffers, enableLiveBuffers
+                                nameof useSyntaxTreeCache, useSyntaxTreeCache
+                                nameof enableParallelReferenceResolution, enableParallelReferenceResolution
+                                nameof enableInMemoryCrossProjectReferences, enableInMemoryCrossProjectReferences
+                                nameof enableFastFindReferences, enableFastFindReferences
+                                nameof isInlineParameterNameHintsEnabled, isInlineParameterNameHintsEnabled
+                                nameof isInlineTypeHintsEnabled, isInlineTypeHintsEnabled
+                            ]
 
                             if enableLiveBuffers then
                                 workspace.WorkspaceChanged.Add(fun args ->

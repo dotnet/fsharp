@@ -139,7 +139,7 @@ module internal RoslynHelpers =
                       | :? OperationCanceledException -> 
                           tcs.TrySetCanceled(cancellationToken)  |> ignore
                       | exn ->
-                          System.Diagnostics.Trace.WriteLine("Visual F# Tools: exception swallowed and not passed to Roslyn: {0}", exn.Message)
+                          System.Diagnostics.Trace.TraceError("Visual F# Tools: exception swallowed and not passed to Roslyn: {0}", exn)
                           let res = Unchecked.defaultof<_>
                           tcs.TrySetResult(res) |> ignore
                   ),

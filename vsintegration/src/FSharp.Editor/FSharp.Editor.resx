@@ -207,7 +207,7 @@ Time until stale results are used (in milliseconds);
 Parallelization (requires restart);
 Enable parallel type checking with signature files;
 Enable parallel reference resolution;
-Enable fast find references &amp; rename (experimental)</value>
+Enable fast find references &amp; rename (experimental);Cache parsing results (experimental)</value>
   </data>
   <data name="6012" xml:space="preserve">
     <value>Advanced</value>
