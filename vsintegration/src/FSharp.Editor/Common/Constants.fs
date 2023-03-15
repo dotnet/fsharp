@@ -65,9 +65,8 @@ module internal FSharpProviderConstants =
 [<RequireQualifiedAccess>]
 module internal Guids =
     
-    [<Literal>]
     /// "9B164E40-C3A2-4363-9BC5-EB4039DEF653"
-    let svsSettingsPersistenceManagerIdString = "9B164E40-C3A2-4363-9BC5-EB4039DEF653"
+    let svsSettingsPersistenceManagerId = Guid "{9B164E40-C3A2-4363-9BC5-EB4039DEF653}"
 
     [<Literal>]
     /// "9b3c6b8a-754a-461d-9ebe-de1a682d57c1"
