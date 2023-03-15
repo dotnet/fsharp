@@ -23,7 +23,7 @@ module internal OptionsUIHelpers =
             // lazy, so GetService is called from UI thread
             lazy
                 let scm = this.Site.GetService(typeof<SComponentModel>) :?> IComponentModel
-                scm.GetService<IPersistSettings>()
+                scm.GetService<SettingsStore.ISettingsStore>()
 
         abstract CreateView : unit -> FrameworkElement
 
