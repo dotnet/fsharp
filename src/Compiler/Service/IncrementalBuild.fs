@@ -1041,29 +1041,34 @@ type IncrementalBuilderInitialState =
 #endif
         initialState
 
+// stampedFileNames represent the real stamps of the files.
+// notifiedStampedFileNames represent the stamps of when we got notified about file changes
+// logicalStampedFileNames represent the stamps of the files that are used to calculate the project's logical timestamp.
+type Slot =
+    {
+        File: FSharpFile
+        SyntaxTree: SyntaxTree
+        Stamp: DateTime
+        ModifiedStamp: DateTime option
+        LogicalStamp: DateTime
+        Node: GraphNode<BoundModel>
+    } 
+    with member this.Modified =
+            match this.ModifiedStamp with
+            | Some stamp when stamp <> this.Stamp -> true
+            |  _ -> false
+
 [<NoComparison;NoEquality>]
 type IncrementalBuilderState =
     {
-        // stampedFileNames represent the real stamps of the files.
-        // notifiedStampedFileNames represent the stamps of when we got notified about file changes
-        // logicalStampedFileNames represent the stamps of the files that are used to calculate the project's logical timestamp.
-        stampedFileNames: ImmutableArray<DateTime>
-        notifiedStampedFileNames: ImmutableArray<DateTime>
-        logicalStampedFileNames: ImmutableArray<DateTime>
+        slots: Slot list
         stampedReferencedAssemblies: ImmutableArray<DateTime>
         initialBoundModel: GraphNode<BoundModel>
-        boundModels: ImmutableArray<GraphNode<BoundModel>>
         finalizedBoundModel: GraphNode<(ILAssemblyRef * ProjectAssemblyDataResult * CheckedImplFile list option * BoundModel) * DateTime>
     }
-
-type Slot = {
-    File: FSharpFile
-    SyntaxTree: SyntaxTree
-    Stamp: DateTime
-    ModifiedStamp: DateTime option
-    LogicalStamp: DateTime
-    Node: GraphNode<BoundModel> }
-    with member this.Modified = this.ModifiedStamp.IsSome
+    member this.stampedFileNames = this.slots |> List.map (fun s -> s.Stamp)
+    member this.logicalStampedFileNames = this.slots |> List.map (fun s -> s.LogicalStamp)
+    member this.boundModels = this.slots |> List.map (fun s -> s.Node)
 
 [<AutoOpen>]
 module IncrementalBuilderStateHelpers =
@@ -1103,27 +1108,12 @@ module IncrementalBuilderStateHelpers =
         })
 
     and computeStampedFileNames (initialState: IncrementalBuilderInitialState) (state: IncrementalBuilderState) (cache: TimeStampCache) =
-
-        let getStamp slot =
-            if initialState.useChangeNotifications then 
-                state.notifiedStampedFileNames[slot]
+        let slots = 
+            if initialState.useChangeNotifications then
+                state.slots
             else
-                cache.GetFileTimeStamp initialState.fileNames[slot].Source.FilePath
-
-        let slots : Slot list =
-          [
-            for i, f in initialState.fileNames |> Seq.indexed do
-                let stamp = getStamp i
-                let current = state.stampedFileNames[i]
-                {
-                    File = f
-                    SyntaxTree = initialState.syntaxTrees[i]
-                    Stamp = current
-                    ModifiedStamp = if current <> stamp then Some stamp else None
-                    LogicalStamp = state.logicalStampedFileNames[i]
-                    Node = state.boundModels[i]
-                }
-          ]
+               [ for slot in state.slots ->
+                    { slot with ModifiedStamp = Some (cache.GetFileTimeStamp slot.File.Source.FilePath) } ]
 
         for slot in slots do if slot.Modified then slot.SyntaxTree.Invalidate()
 
@@ -1154,13 +1144,8 @@ module IncrementalBuilderStateHelpers =
         let  slots, (_, invalidated) = slots |> List.mapFold processSlots (GraphNode.FromResult initialState.initialBoundModel, None)
 
         if invalidated.IsSome then
-            { state with
-                // Something changed, the finalized view of the project must be invalidated.
-                finalizedBoundModel = createFinalizeBoundModelGraphNode initialState (slots |> List.map (fun slot -> slot.Node))
-                stampedFileNames = slots |> List.map (fun slot -> slot.Stamp) |> ImmutableArray.ofSeq
-                logicalStampedFileNames = slots |> List.map (fun slot -> slot.LogicalStamp) |> ImmutableArray.ofSeq
-                boundModels = slots |> List.map (fun slot -> slot.Node) |> ImmutableArray.ofSeq
-            }
+            let state = { state with slots = slots }
+            { state with finalizedBoundModel = createFinalizeBoundModelGraphNode initialState state.boundModels }
         else
             state
 
@@ -1201,22 +1186,30 @@ type IncrementalBuilderState with
         let initialBoundModel = initialState.initialBoundModel
         let fileNames = initialState.fileNames
         let referencedAssemblies = initialState.referencedAssemblies
-
         let cache = TimeStampCache(defaultTimeStamp)
         let initialBoundModel = GraphNode.FromResult initialBoundModel
         let boundModels = 
             initialState.syntaxTrees
             |> Seq.scan (createBoundModelGraphNode initialState.enablePartialTypeChecking) initialBoundModel
-            |> ImmutableArray.ofSeq
+
+        let slots =
+            [
+                for i, m in boundModels |> Seq.indexed do
+                    {
+                        File = fileNames[i]
+                        Stamp = defaultTimeStamp
+                        LogicalStamp = defaultTimeStamp
+                        ModifiedStamp = None
+                        SyntaxTree = initialState.syntaxTrees[i]
+                        Node = m
+                    }
+            ]
 
         let state =
             {
-                stampedFileNames = ImmutableArray.init fileNames.Length (fun _ -> DateTime.MinValue)
-                notifiedStampedFileNames = ImmutableArray.init fileNames.Length (fun _ -> DateTime.MinValue)
-                logicalStampedFileNames = ImmutableArray.init fileNames.Length (fun _ -> DateTime.MinValue)
+                slots = slots
                 stampedReferencedAssemblies = ImmutableArray.init referencedAssemblies.Length (fun _ -> DateTime.MinValue)
                 initialBoundModel = initialBoundModel
-                boundModels = boundModels
                 finalizedBoundModel = createFinalizeBoundModelGraphNode initialState boundModels
             }
         let state = computeStampedReferencedAssemblies initialState state false cache
@@ -1474,10 +1467,13 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
     member builder.NotifyFileChanged(fileName, timeStamp) =
         node {
             let slotOfFile = builder.GetSlotOfFileName fileName
-            let newState = { currentState with notifiedStampedFileNames = currentState.notifiedStampedFileNames.SetItem(slotOfFile, timeStamp) }
+            let slots = 
+                currentState.slots
+                |> List.updateAt slotOfFile 
+                    { currentState.slots[slotOfFile] with ModifiedStamp = Some timeStamp }
             let cache = TimeStampCache defaultTimeStamp
             let! ct = NodeCode.CancellationToken
-            setCurrentState newState cache ct
+            setCurrentState { currentState with slots = slots } cache ct
         }
 
     member _.SourceFiles = fileNames |> Seq.map (fun f -> f.Source.FilePath) |> List.ofSeq
