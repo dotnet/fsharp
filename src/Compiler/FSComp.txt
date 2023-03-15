@@ -1639,6 +1639,7 @@ forFormatInvalidForInterpolated4,"Interpolated strings used as type IFormattable
 3514,ilxGenUnknownDebugPoint,"Unknown debug point '%s'. The available debug points are '%s'."
 reprResumableCodeInvokeNotReduced,"A resumable code invocation at '%s' could not be reduced"
 reprResumableCodeContainsLetRec,"A 'let rec' occured in the resumable code specification"
+reprResumableCodeContainsConstrainedGenericLet,"A constrained generic construct occured in the resumable code specification"
 reprResumableCodeContainsDynamicResumeAtInBody,"A target label for __resumeAt was not statically determined. A __resumeAt with a non-static target label may only appear at the start of a resumable code method"
 reprResumableCodeContainsResumptionInTryFinally,"A try/finally may not contain resumption points"
 reprResumableCodeContainsResumptionInHandlerOrFilter,"The 'with' block of a try/with may not contain resumption points"

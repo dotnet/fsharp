@@ -27,6 +27,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 open Microsoft.CodeAnalysis.Host
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.VisualStudio.FSharp.Editor.WorkspaceExtensions
+open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 open System.Threading.Tasks
 
 #nowarn "9" // NativePtr.toNativeInt
@@ -122,6 +123,21 @@ type internal FSharpWorkspaceServiceFactory
                             let enableLiveBuffers =
                                 getOption (fun options -> options.Advanced.IsLiveBuffersEnabled) false
 
+                            let useSyntaxTreeCache =
+                                getOption (fun options -> options.LanguageServicePerformance.UseSyntaxTreeCache) LanguageServicePerformanceOptions.Default.UseSyntaxTreeCache
+
+                            let enableInMemoryCrossProjectReferences =
+                                getOption (fun options -> options.LanguageServicePerformance.EnableInMemoryCrossProjectReferences) false
+
+                            let enableFastFindReferences =
+                                getOption (fun options -> options.LanguageServicePerformance.EnableFastFindReferences) false
+
+                            let isInlineParameterNameHintsEnabled =
+                                getOption (fun options -> options.Advanced.IsInlineParameterNameHintsEnabled) false
+
+                            let isInlineTypeHintsEnabled =
+                                getOption (fun options -> options.Advanced.IsInlineTypeHintsEnabled) false
+
                             let checker =
                                 FSharpChecker.Create(
                                     projectCacheSize = 5000, // We do not care how big the cache is. VS will actually tell FCS to clear caches, so this is fine.
@@ -133,7 +149,18 @@ type internal FSharpWorkspaceServiceFactory
                                     enablePartialTypeChecking = true,
                                     parallelReferenceResolution = enableParallelReferenceResolution,
                                     captureIdentifiersWhenParsing = true,
-                                    documentSource = (if enableLiveBuffers then DocumentSource.Custom getSource else DocumentSource.FileSystem))
+                                    documentSource = (if enableLiveBuffers then DocumentSource.Custom getSource else DocumentSource.FileSystem),
+                                    useSyntaxTreeCache = useSyntaxTreeCache)
+
+                            TelemetryReporter.reportEvent "languageservicestarted" [
+                                nameof enableLiveBuffers, enableLiveBuffers
+                                nameof useSyntaxTreeCache, useSyntaxTreeCache
+                                nameof enableParallelReferenceResolution, enableParallelReferenceResolution
+                                nameof enableInMemoryCrossProjectReferences, enableInMemoryCrossProjectReferences
+                                nameof enableFastFindReferences, enableFastFindReferences
+                                nameof isInlineParameterNameHintsEnabled, isInlineParameterNameHintsEnabled
+                                nameof isInlineTypeHintsEnabled, isInlineTypeHintsEnabled
+                            ]
 
                             if enableLiveBuffers then
                                 workspace.WorkspaceChanged.Add(fun args ->

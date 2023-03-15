@@ -102,6 +102,9 @@ type internal GraphNode<'T> =
     /// By default, 'retryCompute' is 'true'.
     new: computation: NodeCode<'T> -> GraphNode<'T>
 
+    /// Creates a GraphNode with given result already cached.
+    static member FromResult: 'T -> GraphNode<'T>
+
     /// Return NodeCode which, when executed, will get the value of the computation if already computed, or
     /// await an existing in-progress computation for the node if one exists, or else will synchronously
     /// start the computation on the current thread.
