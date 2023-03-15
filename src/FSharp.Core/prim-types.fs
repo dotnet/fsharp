@@ -387,7 +387,7 @@ namespace System.Diagnostics.CodeAnalysis
     /// bitwise combination of its member values.
     /// </summary>
     [<Flags; RequireQualifiedAccessAttribute>]
-    type internal DynamicallyAccessedMemberTypes =
+    type internal DynamicallyAccessedMemberTypes = (*
         | None = 0
         | PublicParameterlessConstructor = 0x0001
         | PublicConstructors = 0x0003
@@ -401,7 +401,7 @@ namespace System.Diagnostics.CodeAnalysis
         | PublicProperties = 0x0200
         | NonPublicProperties = 0x0400
         | PublicEvents = 0x0800
-        | NonPublicEvents = 0x1000
+        | NonPublicEvents = 0x1000 *)
         | All = 0xffffffff
 
     [<AttributeUsage(
