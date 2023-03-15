@@ -1257,18 +1257,18 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             let t2 = MaxTimeStampInDependencies state.logicalStampedFileNames fileSlot
             max t1 t2
 
-    let semapthore = new SemaphoreSlim(1,1)
+    let semaphore = new SemaphoreSlim(1,1)
 
     let mutable currentState = state 
 
     let setCurrentState state cache (ct: CancellationToken) =
         node {
             try
-                do! semapthore.WaitAsync(ct) |> NodeCode.AwaitTask
+                do! semaphore.WaitAsync(ct) |> NodeCode.AwaitTask
                 ct.ThrowIfCancellationRequested()
                 currentState <- computeStampedFileNames initialState state cache
             finally
-                semapthore.Release() |> ignore
+                semaphore.Release() |> ignore
         }
 
     let checkFileTimeStamps (cache: TimeStampCache) =
