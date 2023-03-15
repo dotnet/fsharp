@@ -641,8 +641,9 @@ type FrameworkImportsCache(size) =
 
             let! ct = NodeCode.CancellationToken
 
+            do! semaphore.WaitAsync(ct) |> NodeCode.AwaitTask
+
             try
-                do! semaphore.WaitAsync(ct) |> NodeCode.AwaitTask
                 match frameworkTcImportsCache.TryGet (AnyCallerThread, key) with
                 | Some lazyWork ->
                     return lazyWork
@@ -1263,8 +1264,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
     let setCurrentState state cache (ct: CancellationToken) =
         node {
+            do! semaphore.WaitAsync(ct) |> NodeCode.AwaitTask
             try
-                do! semaphore.WaitAsync(ct) |> NodeCode.AwaitTask
                 ct.ThrowIfCancellationRequested()
                 currentState <- computeStampedFileNames initialState state cache
             finally
