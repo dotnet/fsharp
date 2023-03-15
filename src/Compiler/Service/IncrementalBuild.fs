@@ -608,7 +608,7 @@ type FrameworkImportsCacheKey = FrameworkImportsCacheKey of resolvedpath: string
 /// Represents a cache of 'framework' references that can be shared between multiple incremental builds
 type FrameworkImportsCache(size) =
 
-    let gate = obj()
+    let semaphore = new SemaphoreSlim(1, 1)
 
     // Mutable collection protected via CompilationThreadToken
     let frameworkTcImportsCache = AgedLookup<AnyCallerThreadToken, FrameworkImportsCacheKey, GraphNode<TcGlobals * TcImports>>(size, areSimilar=(fun (x, y) -> x = y))
@@ -621,43 +621,49 @@ type FrameworkImportsCache(size) =
 
     /// This function strips the "System" assemblies from the tcConfig and returns a age-cached TcImports for them.
     member _.GetNode(tcConfig: TcConfig, frameworkDLLs: AssemblyResolution list, nonFrameworkResolutions: AssemblyResolution list) =
-        let frameworkDLLsKey =
-            frameworkDLLs
-            |> List.map (fun ar->ar.resolvedPath) // The cache key. Just the minimal data.
-            |> List.sort  // Sort to promote cache hits.
+        node {
+            let frameworkDLLsKey =
+                frameworkDLLs
+                |> List.map (fun ar->ar.resolvedPath) // The cache key. Just the minimal data.
+                |> List.sort  // Sort to promote cache hits.
 
-        // Prepare the frameworkTcImportsCache
-        //
-        // The data elements in this key are very important. There should be nothing else in the TcConfig that logically affects
-        // the import of a set of framework DLLs into F# CCUs. That is, the F# CCUs that result from a set of DLLs (including
-        // FSharp.Core.dll and mscorlib.dll) must be logically invariant of all the other compiler configuration parameters.
-        let key =
-            FrameworkImportsCacheKey(frameworkDLLsKey,
-                    tcConfig.primaryAssembly.Name,
-                    tcConfig.GetTargetFrameworkDirectories(),
-                    tcConfig.fsharpBinariesDir,
-                    tcConfig.langVersion.SpecifiedVersion)
+            // Prepare the frameworkTcImportsCache
+            //
+            // The data elements in this key are very important. There should be nothing else in the TcConfig that logically affects
+            // the import of a set of framework DLLs into F# CCUs. That is, the F# CCUs that result from a set of DLLs (including
+            // FSharp.Core.dll and mscorlib.dll) must be logically invariant of all the other compiler configuration parameters.
+            let key =
+                FrameworkImportsCacheKey(frameworkDLLsKey,
+                        tcConfig.primaryAssembly.Name,
+                        tcConfig.GetTargetFrameworkDirectories(),
+                        tcConfig.fsharpBinariesDir,
+                        tcConfig.langVersion.SpecifiedVersion)
 
-        let node =
-            lock gate (fun () ->
+            let! ct = NodeCode.CancellationToken
+
+            try
+                do! semaphore.WaitAsync(ct) |> NodeCode.AwaitTask
                 match frameworkTcImportsCache.TryGet (AnyCallerThread, key) with
-                | Some lazyWork -> lazyWork
+                | Some lazyWork ->
+                    return lazyWork
                 | None ->
                     let lazyWork = GraphNode(node {
                         let tcConfigP = TcConfigProvider.Constant tcConfig
                         return! TcImports.BuildFrameworkTcImports (tcConfigP, frameworkDLLs, nonFrameworkResolutions)
                     })
                     frameworkTcImportsCache.Put(AnyCallerThread, key, lazyWork)
-                    lazyWork
-            )
-        node
+                    return lazyWork
+            finally
+                do semaphore.Release() |> ignore
+                
+        }
 
     /// This function strips the "System" assemblies from the tcConfig and returns a age-cached TcImports for them.
     member this.Get(tcConfig: TcConfig) =
       node {
         // Split into installed and not installed.
         let frameworkDLLs, nonFrameworkResolutions, unresolved = TcAssemblyResolutions.SplitNonFoundationalResolutions(tcConfig)
-        let node = this.GetNode(tcConfig, frameworkDLLs, nonFrameworkResolutions)
+        let! node = this.GetNode(tcConfig, frameworkDLLs, nonFrameworkResolutions)
         let! tcGlobals, frameworkTcImports = node.GetOrComputeValue()
         return tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolved
       }
@@ -1251,19 +1257,24 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             let t2 = MaxTimeStampInDependencies state.logicalStampedFileNames fileSlot
             max t1 t2
 
-    let gate = obj()
+    let semapthore = new SemaphoreSlim(1,1)
+
     let mutable currentState = state 
 
     let setCurrentState state cache (ct: CancellationToken) =
-        lock gate (fun () ->
-            ct.ThrowIfCancellationRequested()
-            currentState <- computeStampedFileNames initialState state cache
-        )
+        node {
+            try
+                do! semapthore.WaitAsync(ct) |> NodeCode.AwaitTask
+                ct.ThrowIfCancellationRequested()
+                currentState <- computeStampedFileNames initialState state cache
+            finally
+                semapthore.Release() |> ignore
+        }
 
     let checkFileTimeStamps (cache: TimeStampCache) =
         node {
             let! ct = NodeCode.CancellationToken
-            setCurrentState currentState cache ct
+            do! setCurrentState currentState cache ct
         }
 
     do IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBECreated)
@@ -1446,7 +1457,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             let newState = { currentState with notifiedStampedFileNames = currentState.notifiedStampedFileNames.SetItem(slotOfFile, timeStamp) }
             let cache = TimeStampCache defaultTimeStamp
             let! ct = NodeCode.CancellationToken
-            setCurrentState newState cache ct
+            do! setCurrentState newState cache ct
         }
 
     member _.SourceFiles = fileNames |> Seq.map (fun f -> f.Source.FilePath) |> List.ofSeq

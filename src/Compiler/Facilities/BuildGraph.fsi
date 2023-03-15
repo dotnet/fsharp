@@ -70,6 +70,10 @@ type NodeCode =
 
     static member Parallel: computations: (NodeCode<'T> seq) -> NodeCode<'T[]>
 
+    static member AwaitTask: task: Task<'T> -> NodeCode<'T>
+
+    static member AwaitTask: task: Task -> NodeCode<unit>
+
     /// Execute the cancellable computation synchronously using the ambient cancellation token of
     /// the NodeCode.
     static member FromCancellable: computation: Cancellable<'T> -> NodeCode<'T>
