@@ -646,8 +646,7 @@ type FSharpType =
     /// <returns>The type representing the tuple containing the input elements.</returns>
     ///
     /// <example-tbd></example-tbd>
-    static member MakeTupleType:
-        [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] types: Type[] -> Type
+    static member MakeTupleType: types: Type[] -> Type
 
     /// <summary>Returns a <see cref="T:System.Type"/> representing an F# tuple type with the given element types</summary>
     ///
@@ -657,8 +656,7 @@ type FSharpType =
     /// <returns>The type representing the tuple containing the input elements.</returns>
     ///
     /// <example-tbd></example-tbd>
-    static member MakeTupleType:
-        asm: Assembly * [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] types: Type[] -> Type
+    static member MakeTupleType: asm: Assembly * types: Type[] -> Type
 
     /// <summary>Returns a <see cref="T:System.Type"/> representing an F# struct tuple type with the given element types</summary>
     ///
@@ -668,8 +666,7 @@ type FSharpType =
     /// <returns>The type representing the struct tuple containing the input elements.</returns>
     ///
     /// <example-tbd></example-tbd>
-    static member MakeStructTupleType:
-        asm: Assembly * [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] types: Type[] -> Type
+    static member MakeStructTupleType: asm: Assembly * types: Type[] -> Type
 
     /// <summary>Returns a <see cref="T:System.Type"/> representing an F# struct tuple type with the given element types</summary>
     ///
@@ -678,9 +675,7 @@ type FSharpType =
     /// <returns>The type representing the struct tuple containing the input elements.</returns>
     ///
     /// <example-tbd></example-tbd>
-    /// @@@@ TBD: Needs testing Surely it handles arrays of type objects !!!! Maybe
-    static member MakeStructTupleType:
-        [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] types: Type[] -> Type
+    static member MakeStructTupleType: types: Type[] -> Type
 
     /// <summary>Return true if the <c>typ</c> is a representation of an F# tuple type </summary>
     ///
@@ -834,7 +829,6 @@ module FSharpReflectionExtensions =
         /// <returns>The constructed union case.</returns>
         ///
         /// <example-tbd></example-tbd>
-        /// @@@@@ TBD: UnionCaseInfo contains a Type
         static member MakeUnion:
             unionCase: UnionCaseInfo * args: obj[] * ?allowAccessToPrivateRepresentation: bool -> obj
 
