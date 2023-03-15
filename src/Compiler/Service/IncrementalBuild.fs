@@ -608,7 +608,7 @@ type FrameworkImportsCacheKey = FrameworkImportsCacheKey of resolvedpath: string
 /// Represents a cache of 'framework' references that can be shared between multiple incremental builds
 type FrameworkImportsCache(size) =
 
-    let semaphore = new SemaphoreSlim(1, 1)
+    let gate = obj()
 
     // Mutable collection protected via CompilationThreadToken
     let frameworkTcImportsCache = AgedLookup<AnyCallerThreadToken, FrameworkImportsCacheKey, GraphNode<TcGlobals * TcImports>>(size, areSimilar=(fun (x, y) -> x = y))
@@ -621,50 +621,44 @@ type FrameworkImportsCache(size) =
 
     /// This function strips the "System" assemblies from the tcConfig and returns a age-cached TcImports for them.
     member _.GetNode(tcConfig: TcConfig, frameworkDLLs: AssemblyResolution list, nonFrameworkResolutions: AssemblyResolution list) =
-        node {
-            let frameworkDLLsKey =
-                frameworkDLLs
-                |> List.map (fun ar->ar.resolvedPath) // The cache key. Just the minimal data.
-                |> List.sort  // Sort to promote cache hits.
+        let frameworkDLLsKey =
+            frameworkDLLs
+            |> List.map (fun ar->ar.resolvedPath) // The cache key. Just the minimal data.
+            |> List.sort  // Sort to promote cache hits.
 
-            // Prepare the frameworkTcImportsCache
-            //
-            // The data elements in this key are very important. There should be nothing else in the TcConfig that logically affects
-            // the import of a set of framework DLLs into F# CCUs. That is, the F# CCUs that result from a set of DLLs (including
-            // FSharp.Core.dll and mscorlib.dll) must be logically invariant of all the other compiler configuration parameters.
-            let key =
-                FrameworkImportsCacheKey(frameworkDLLsKey,
-                        tcConfig.primaryAssembly.Name,
-                        tcConfig.GetTargetFrameworkDirectories(),
-                        tcConfig.fsharpBinariesDir,
-                        tcConfig.langVersion.SpecifiedVersion)
+        // Prepare the frameworkTcImportsCache
+        //
+        // The data elements in this key are very important. There should be nothing else in the TcConfig that logically affects
+        // the import of a set of framework DLLs into F# CCUs. That is, the F# CCUs that result from a set of DLLs (including
+        // FSharp.Core.dll and mscorlib.dll) must be logically invariant of all the other compiler configuration parameters.
+        let key =
+            FrameworkImportsCacheKey(frameworkDLLsKey,
+                    tcConfig.primaryAssembly.Name,
+                    tcConfig.GetTargetFrameworkDirectories(),
+                    tcConfig.fsharpBinariesDir,
+                    tcConfig.langVersion.SpecifiedVersion)
 
-            let! ct = NodeCode.CancellationToken
-
-            do! semaphore.WaitAsync(ct) |> NodeCode.AwaitTask
-
-            try
+        let node =
+            lock gate (fun () ->
                 match frameworkTcImportsCache.TryGet (AnyCallerThread, key) with
-                | Some lazyWork ->
-                    return lazyWork
+                | Some lazyWork -> lazyWork
                 | None ->
                     let lazyWork = GraphNode(node {
                         let tcConfigP = TcConfigProvider.Constant tcConfig
                         return! TcImports.BuildFrameworkTcImports (tcConfigP, frameworkDLLs, nonFrameworkResolutions)
                     })
                     frameworkTcImportsCache.Put(AnyCallerThread, key, lazyWork)
-                    return lazyWork
-            finally
-                do semaphore.Release() |> ignore
+                    lazyWork
+            )
+        node
                 
-        }
 
     /// This function strips the "System" assemblies from the tcConfig and returns a age-cached TcImports for them.
     member this.Get(tcConfig: TcConfig) =
       node {
         // Split into installed and not installed.
         let frameworkDLLs, nonFrameworkResolutions, unresolved = TcAssemblyResolutions.SplitNonFoundationalResolutions(tcConfig)
-        let! node = this.GetNode(tcConfig, frameworkDLLs, nonFrameworkResolutions)
+        let node = this.GetNode(tcConfig, frameworkDLLs, nonFrameworkResolutions)
         let! tcGlobals, frameworkTcImports = node.GetOrComputeValue()
         return tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolved
       }
