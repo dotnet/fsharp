@@ -2089,13 +2089,16 @@ module Array =
 
             let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len1
             let inputChunks = createPartitionsUpTo array1.Length array1
+
             Parallel.For(
                 0,
                 inputChunks.Length,
                 fun chunkIdx ->
                     let chunk = inputChunks[chunkIdx]
+
                     for elemIdx = chunk.Offset to (chunk.Offset + chunk.Count - 1) do
-                        res.[i] <- (array1.[i], array2.[i]))
+                        res.[i] <- (array1.[i], array2.[i])
+            )
             |> ignore
 
             res
