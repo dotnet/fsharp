@@ -103,7 +103,8 @@ module FindReferences =
         if foundDefinitions.Count <> 1 then
             failwith $"Expected 1 definition but found {foundDefinitions.Count}"
 
-        if foundReferences.Count <> 2 // One in signature file, one in function body
+        if
+            foundReferences.Count <> 2 // One in signature file, one in function body
         then
             failwith $"Expected 2 references but found {foundReferences.Count}"
 
@@ -124,6 +125,7 @@ module FindReferences =
         if foundDefinitions.Count <> 1 then
             failwith $"Expected 1 definition but found {foundDefinitions.Count}"
 
-        if foundReferences.Count <> 2 // One in signature file, one in Third file
+        if
+            foundReferences.Count <> 2 // One in signature file, one in Third file
         then
             failwith $"Expected 2 references but found {foundReferences.Count}"
