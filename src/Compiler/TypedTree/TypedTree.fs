@@ -2264,7 +2264,7 @@ type Typar
     /// Creates a type variable that contains empty data, and is not yet linked. Only used during unpickling of F# metadata.
     static member NewUnlinked() : Typar =
         Typar(
-          Unchecked.defaultof<_>,
+          TyparId.Initial(Unchecked.defaultof<_>),
           Unchecked.defaultof<_>,
           -1L,
           Unchecked.defaultof<_>,
