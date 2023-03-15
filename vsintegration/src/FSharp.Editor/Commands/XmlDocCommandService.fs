@@ -27,9 +27,7 @@ type internal XmlDocCommandFilter
     let getLastDocument () =
         // There may be multiple documents with the same file path, due to versioning .
         // However, for the purpose of generating XmlDoc comments, it is ok to keep only the last document, since they're versioned.
-        match workspace.CurrentSolution.GetDocumentIdsWithFilePath(filePath) |> Seq.toList |> List.rev with
-            | [] -> None
-            | documentId :: _ -> Some (workspace.CurrentSolution.GetDocument documentId)
+        workspace.CurrentSolution.GetDocumentIdsWithFilePath(filePath) |> Seq.tryLast |> Option.map workspace.CurrentSolution.GetDocument
 
     /// Get the char for a <see cref="VSConstants.VSStd2KCmdID.TYPECHAR"/> command.
     let getTypedChar(pvaIn: IntPtr) = 
@@ -46,7 +44,7 @@ type internal XmlDocCommandFilter
 
     interface IOleCommandTarget with
         member _.Exec(pguidCmdGroup: byref<Guid>, nCmdID: uint32, nCmdexecopt: uint32, pvaIn: IntPtr, pvaOut: IntPtr) =
-            let mutable commitCharacter = true
+            let mutable shouldCommitCharacter = true
             if pguidCmdGroup = VSConstants.VSStd2K && nCmdID = uint32 VSConstants.VSStd2KCmdID.TYPECHAR then
                 match getTypedChar pvaIn with
                 | ('/' | '<') as lastChar ->
@@ -88,7 +86,7 @@ type internal XmlDocCommandFilter
                                     let lastLine = wpfTextView.Caret.Position.BufferPosition.GetContainingLine()
                                     let middleSummaryLine = wpfTextView.TextSnapshot.GetLineFromLineNumber(lastLine.LineNumber - 1 - paramNames.Length)
                                     wpfTextView.Caret.MoveTo(wpfTextView.GetTextViewLineContainingBufferPosition(middleSummaryLine.Start)) |> ignore
-                                    commitCharacter <- false
+                                    shouldCommitCharacter <- false
                             with ex ->
                               Assert.Exception ex
                               ()
@@ -99,7 +97,7 @@ type internal XmlDocCommandFilter
                     | None -> ()
                 | _ -> ()
             if not (isNull nextTarget) then
-                if not commitCharacter then
+                if not shouldCommitCharacter then
                     VSConstants.S_OK
                 else
                     nextTarget.Exec(&pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut)

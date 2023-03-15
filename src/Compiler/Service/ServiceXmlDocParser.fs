@@ -234,7 +234,7 @@ module XmlDocComment =
         | "" -> Some("", pos)
         | _ -> None
 
-    let inline (>=>) ([<InlineIfLambda>]f) g = f >> Option.bind g
+    let inline (>=>) ([<InlineIfLambda>] f) g = f >> Option.bind g
 
     // if it's a blank XML comment with trailing "<", returns Some (index of the "<"), otherwise returns None
     let inline IsBlank (s: string) =
