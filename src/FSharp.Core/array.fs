@@ -2078,6 +2078,28 @@ module Array =
                 yield new ArraySegment<'T>(array, offset, maxIdxExclusive - offset)
             |]
 
+        [<CompiledName("Zip")>]
+        let zip (array1: _[]) (array2: _[]) =
+            checkNonNull "array1" array1
+            checkNonNull "array2" array2
+            let len1 = array1.Length
+
+            if len1 <> array2.Length then
+                invalidArgDifferentArrayLength "array1" array1.Length "array2" array2.Length
+
+            let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len1
+            let inputChunks = createPartitionsUpTo array1.Length array1
+            Parallel.For(
+                0,
+                inputChunks.Length,
+                fun chunkIdx ->
+                    let chunk = inputChunks[chunkIdx]
+                    for elemIdx = chunk.Offset to (chunk.Offset + chunk.Count - 1) do
+                        res.[i] <- (array1.[i], array2.[i]))
+            |> ignore
+
+            res
+
         let inline groupByImplParallel
             (comparer: IEqualityComparer<'SafeKey>)
             ([<InlineIfLambda>] keyf: 'T -> 'SafeKey)
