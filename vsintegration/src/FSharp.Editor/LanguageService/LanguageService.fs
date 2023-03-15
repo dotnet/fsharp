@@ -106,27 +106,22 @@ type internal FSharpWorkspaceServiceFactory
                     let checker =
                         lazy
                             TelemetryReporter.reportEvent "languageservicestarted" []
+                            
+                            let editorOptions = workspace.Services.GetService<EditorOptions>()
 
-                            let editorOptions =
-                                let editorOptions = workspace.Services.GetService<EditorOptions>()
+                            let enableParallelReferenceResolution = editorOptions.LanguageServicePerformance.EnableParallelReferenceResolution
 
-                                match box editorOptions with
-                                | null -> None
-                                | _ -> Some editorOptions
+                            let enableLiveBuffers = editorOptions.Advanced.IsLiveBuffersEnabled
 
-                            let getOption f defaultValue =
-                                editorOptions
-                                |> Option.map f
-                                |> Option.defaultValue defaultValue
+                            let useSyntaxTreeCache = editorOptions.LanguageServicePerformance.UseSyntaxTreeCache
 
-                            let enableParallelReferenceResolution =
-                                getOption (fun options -> options.LanguageServicePerformance.EnableParallelReferenceResolution) false
+                            let enableInMemoryCrossProjectReferences = editorOptions.LanguageServicePerformance.EnableInMemoryCrossProjectReferences
 
-                            let enableLiveBuffers =
-                                getOption (fun options -> options.Advanced.IsLiveBuffersEnabled) false
+                            let enableFastFindReferences = editorOptions.LanguageServicePerformance.EnableFastFindReferences
 
-                            let useSyntaxTreeCache =
-                                getOption (fun options -> options.LanguageServicePerformance.UseSyntaxTreeCache) LanguageServicePerformanceOptions.Default.UseSyntaxTreeCache
+                            let isInlineParameterNameHintsEnabled = editorOptions.Advanced.IsInlineParameterNameHintsEnabled
+
+                            let isInlineTypeHintsEnabled = editorOptions.Advanced.IsInlineTypeHintsEnabled
 
                             let checker =
                                 FSharpChecker.Create(
@@ -141,6 +136,16 @@ type internal FSharpWorkspaceServiceFactory
                                     captureIdentifiersWhenParsing = true,
                                     documentSource = (if enableLiveBuffers then DocumentSource.Custom getSource else DocumentSource.FileSystem),
                                     useSyntaxTreeCache = useSyntaxTreeCache)
+
+                            TelemetryReporter.reportEvent "languageservicestarted" [
+                                nameof enableLiveBuffers, enableLiveBuffers
+                                nameof useSyntaxTreeCache, useSyntaxTreeCache
+                                nameof enableParallelReferenceResolution, enableParallelReferenceResolution
+                                nameof enableInMemoryCrossProjectReferences, enableInMemoryCrossProjectReferences
+                                nameof enableFastFindReferences, enableFastFindReferences
+                                nameof isInlineParameterNameHintsEnabled, isInlineParameterNameHintsEnabled
+                                nameof isInlineTypeHintsEnabled, isInlineTypeHintsEnabled
+                            ]
 
                             if enableLiveBuffers then
                                 workspace.WorkspaceChanged.Add(fun args ->
