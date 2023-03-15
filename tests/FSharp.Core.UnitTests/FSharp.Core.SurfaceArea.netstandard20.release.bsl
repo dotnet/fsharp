@@ -40,6 +40,8 @@ Microsoft.FSharp.Collections.Array4DModule: T[,,,] Create[T](Int32, Int32, Int32
 Microsoft.FSharp.Collections.Array4DModule: T[,,,] Initialize[T](Int32, Int32, Int32, Int32, Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,T]]]])
 Microsoft.FSharp.Collections.Array4DModule: T[,,,] ZeroCreate[T](Int32, Int32, Int32, Int32)
 Microsoft.FSharp.Collections.Array4DModule: Void Set[T](T[,,,], Int32, Int32, Int32, Int32, T)
+Microsoft.FSharp.Collections.ArrayModule+Parallel: Boolean Exists[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], T[])
+Microsoft.FSharp.Collections.ArrayModule+Parallel: Boolean ForAll[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], T[])
 Microsoft.FSharp.Collections.ArrayModule+Parallel: Microsoft.FSharp.Core.FSharpOption`1[System.Int32] TryFindIndex[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], T[])
 Microsoft.FSharp.Collections.ArrayModule+Parallel: Microsoft.FSharp.Core.FSharpOption`1[TResult] TryPick[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpOption`1[TResult]], T[])
 Microsoft.FSharp.Collections.ArrayModule+Parallel: Microsoft.FSharp.Core.FSharpOption`1[T] TryFind[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], T[])

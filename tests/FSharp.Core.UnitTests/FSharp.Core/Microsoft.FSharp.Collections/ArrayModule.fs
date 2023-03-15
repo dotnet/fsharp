@@ -1120,6 +1120,41 @@ type ArrayModule() =
         CheckThrowsArgumentNullException (fun () -> Array.forall (fun x -> true) nullArr |> ignore)  
         
         ()
+
+    [<Fact>]
+    member this.ParallelForAll() =
+        let inline assertSame predicate array =
+            let seq = Array.forall predicate array
+            let para = Array.Parallel.forall predicate array    
+            Assert.AreEqual(seq, para, sprintf "%A" array)
+
+        [| 3..2..10 |] |> assertSame (fun x -> x > 15)
+        [| 3..2..10 |] |> assertSame (fun x -> x < 15)
+        [|"Lists"; "are";  "commonly" ; "list" |] |> assertSame (fun (x:string) -> x.Contains("a")) 
+        [||] |> assertSame (fun (x:string) -> x.Contains("a"))
+        [||] |> assertSame (fun (x:string) -> x.Contains("a") |> not)
+       
+        let nullArr = null:string[] 
+        CheckThrowsArgumentNullException (fun () -> Array.Parallel.forall (fun x -> true) nullArr |> ignore)  
+        
+        ()
+
+    [<Fact>]
+    member this.ParallelExists() =
+        let inline assertSame predicate array =
+            let seq = Array.exists predicate array
+            let para = Array.Parallel.exists predicate array    
+            Assert.AreEqual(seq, para, sprintf "%A" array)
+
+        [| 3..2..10 |] |> assertSame (fun x -> x > 2)
+        [|"Lists"; "are";  "commonly" ; "list" |] |> assertSame (fun (x:string) -> x.Contains("a")) 
+        [||] |> assertSame (fun (x:string) -> x.Contains("a"))
+        [||] |> assertSame (fun (x:string) -> x.Contains("a") |> not)
+       
+        let nullArr = null:string[] 
+        CheckThrowsArgumentNullException (fun () -> Array.Parallel.exists (fun x -> true) nullArr |> ignore)  
+        
+        ()
         
     [<Fact>]
     member this.ForAll2() =
