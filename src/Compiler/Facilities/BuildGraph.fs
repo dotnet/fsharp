@@ -303,4 +303,4 @@ type GraphNode<'T> private (computation: NodeCode<'T>, cachedResult: ValueOption
         let nodeResult = node.Return result
         GraphNode(nodeResult, ValueSome result, nodeResult)
 
-    new(computation) = GraphNode(computation, Unchecked.defaultof<_>, Unchecked.defaultof<_>)
+    new(computation) = GraphNode(computation, ValueNone, Unchecked.defaultof<_>)
