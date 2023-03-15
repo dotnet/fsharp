@@ -105,6 +105,8 @@ type internal FSharpWorkspaceServiceFactory
                 | _ ->
                     let checker =
                         lazy
+                            TelemetryReporter.reportEvent "languageservicestarted" []
+
                             let editorOptions =
                                 let editorOptions = workspace.Services.GetService<EditorOptions>()
 
