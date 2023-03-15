@@ -1118,9 +1118,18 @@ module IncrementalBuilderStateHelpers =
         for slot in slots do if slot.Modified then slot.SyntaxTree.Invalidate()
 
         let processSlots (prevNode: GraphNode<BoundModel>, invalidated: DateTime option) (slot: Slot) =
-            match slot.ModifiedStamp, invalidated with
-            | Some stamp, _
-            | _, Some stamp -> 
+            let invalidate () =
+                let graphNode = createBoundModelGraphNode initialState.enablePartialTypeChecking prevNode slot.SyntaxTree
+                let stamp = defaultArg slot.ModifiedStamp slot.Stamp
+                { slot with
+                    Stamp = stamp
+                    LogicalStamp = stamp
+                    ModifiedStamp = None
+                    Node = graphNode },
+                (graphNode, Some stamp)
+
+            match invalidated, slot.ModifiedStamp with
+            | None, Some stamp ->
                 match slot.Node.TryPeekValue() with
                 // This prevents an implementation file that has a backing signature file from invalidating the rest of the build.
                 | ValueSome(boundModel) when initialState.enablePartialTypeChecking && boundModel.BackingSignature.IsSome ->
@@ -1129,17 +1138,10 @@ module IncrementalBuilderStateHelpers =
                         Node = newNode
                         Stamp = stamp
                         ModifiedStamp = None },
-                    (newNode, Some stamp)
-                | _ ->
-                    let graphNode = createBoundModelGraphNode initialState.enablePartialTypeChecking prevNode slot.SyntaxTree
-                    {
-                        slot with
-                            Stamp = stamp
-                            LogicalStamp = stamp
-                            ModifiedStamp = None
-                            Node = graphNode },
-                    (graphNode, Some stamp)
-            | _ -> {slot with ModifiedStamp = None }, (slot.Node, None)
+                    (newNode, None)
+                | _ -> invalidate ()
+            | Some _, _ -> invalidate ()
+            | _ -> { slot with ModifiedStamp = None }, (slot.Node, None)
 
         let  slots, (_, invalidated) = slots |> List.mapFold processSlots (GraphNode.FromResult initialState.initialBoundModel, None)
 
