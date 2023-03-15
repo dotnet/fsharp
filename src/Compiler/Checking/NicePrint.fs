@@ -315,6 +315,11 @@ module internal PrintUtilities =
         else
             restL
 
+    let squashToWidth width layout =
+        match width with
+        | Some w -> Display.squashTo w layout
+        | None -> layout
+        
 module PrintIL = 
 
     let fullySplitILTypeRef (tref: ILTypeRef) = 
