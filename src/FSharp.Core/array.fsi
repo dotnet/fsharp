@@ -3118,6 +3118,7 @@ module Array =
         /// </code>
         /// </example>
         [<CompiledName("ForAll")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val forall: predicate:('T -> bool) -> array:'T[] -> bool
 
         /// <summary>Tests if any element of the array satisfies the given predicate.</summary>
@@ -3151,6 +3152,7 @@ module Array =
         /// Evaluates to <c>false</c>
         /// </example>
         [<CompiledName("Exists")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val exists: predicate:('T -> bool) -> array:'T[] -> bool
 
         /// <summary>Returns the first element for which the given function returns <c>True</c>.
