@@ -1191,14 +1191,15 @@ type IncrementalBuilderState with
         let boundModels = 
             initialState.syntaxTrees
             |> Seq.scan (createBoundModelGraphNode initialState.enablePartialTypeChecking) initialBoundModel
+            |> Seq.skip 1
 
         let slots =
             [
                 for i, m in boundModels |> Seq.indexed do
                     {
                         File = fileNames[i]
-                        Stamp = defaultTimeStamp
-                        LogicalStamp = defaultTimeStamp
+                        Stamp = DateTime.MinValue
+                        LogicalStamp = DateTime.MinValue
                         ModifiedStamp = None
                         SyntaxTree = initialState.syntaxTrees[i]
                         Node = m
