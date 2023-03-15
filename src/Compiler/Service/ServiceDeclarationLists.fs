@@ -7,6 +7,7 @@
 
 namespace FSharp.Compiler.EditorServices
 
+open FSharp.Compiler.NicePrint
 open Internal.Utilities.Library  
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler 
@@ -92,7 +93,7 @@ module DeclarationListHelpers =
     let emptyToolTip = ToolTipText []
 
     /// Generate the structured tooltip for a method info
-    let FormatOverloadsToList (infoReader: InfoReader) m denv (item: ItemWithInst) minfos : ToolTipElement = 
+    let FormatOverloadsToList (infoReader: InfoReader) m denv (item: ItemWithInst) minfos (width: int option) : ToolTipElement =
         ToolTipFault |> Option.iter (fun msg -> 
            let exn = Error((0, msg), range.Zero)
            let ph = PhasedDiagnostic.Create(exn, BuildPhase.TypeCheck)
@@ -103,6 +104,7 @@ module DeclarationListHelpers =
                 let prettyTyparInst, layout = NicePrint.prettyLayoutOfMethInfoFreeStyle infoReader m denv item.TyparInstantiation minfo
                 let xml = GetXmlCommentForMethInfoItem infoReader m item.Item minfo
                 let tpsL = FormatTyparMapping denv prettyTyparInst
+                let layout = PrintUtilities.squashToWidth width layout
                 let layout = toArray layout
                 let tpsL = List.map toArray tpsL
                 ToolTipElementData.Create(layout, xml, tpsL) ]
@@ -147,7 +149,7 @@ module DeclarationListHelpers =
     let pubpathOfTyconRef (x: TyconRef) = x.PublicPath
 
     /// Output the quick info information of a language item
-    let rec FormatItemDescriptionToToolTipElement displayFullName (infoReader: InfoReader) ad m denv (item: ItemWithInst) = 
+    let rec FormatItemDescriptionToToolTipElement displayFullName (infoReader: InfoReader) ad m denv (item: ItemWithInst) (width: int option) = 
         let g = infoReader.g
         let amap = infoReader.amap
         let denv = SimplerDisplayEnv denv 
@@ -155,13 +157,14 @@ module DeclarationListHelpers =
         match item.Item with
         | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(vref=vref)) }) -> 
             // operator with solution
-            FormatItemDescriptionToToolTipElement displayFullName infoReader ad m denv { item with Item = Item.Value vref }
+            FormatItemDescriptionToToolTipElement displayFullName infoReader ad m denv { item with Item = Item.Value vref } width
 
         | Item.Value vref | Item.CustomBuilder (_, vref) ->            
             let prettyTyparInst, resL = NicePrint.layoutQualifiedValOrMember denv infoReader item.TyparInstantiation vref
             let remarks = OutputFullName displayFullName pubpathOfValRef fullDisplayTextOfValRefAsLayout vref
             let tpsL = FormatTyparMapping denv prettyTyparInst
             let tpsL = List.map toArray tpsL
+            let resL = PrintUtilities.squashToWidth width resL
             let resL = toArray resL
             let remarks = toArray remarks
             ToolTipElement.Single(resL, xml, tpsL, remarks=remarks)
@@ -179,6 +182,7 @@ module DeclarationListHelpers =
                 RightL.colon ^^
                 (if List.isEmpty recd then emptyL else NicePrint.layoutUnionCases denv infoReader ucinfo.TyconRef recd ^^ WordL.arrow) ^^
                 NicePrint.layoutType denv unionTy
+            let layout = PrintUtilities.squashToWidth width layout
             let layout = toArray layout
             ToolTipElement.Single (layout, xml)
 
@@ -190,6 +194,7 @@ module DeclarationListHelpers =
                 wordL (tagActivePatternResult (List.item idx items) |> mkNav apinfo.Range) ^^
                 RightL.colon ^^
                 NicePrint.layoutType denv ty
+            let layout = PrintUtilities.squashToWidth width layout
             let layout = toArray layout
             ToolTipElement.Single (layout, xml)
 
@@ -205,6 +210,7 @@ module DeclarationListHelpers =
                 wordL (tagActivePatternCase apref.DisplayName |> mkNav v.DefinitionRange) ^^
                 RightL.colon ^^
                 NicePrint.layoutType denv prettyTy
+            let layout = PrintUtilities.squashToWidth width layout
 
             let tpsL = FormatTyparMapping denv prettyTyparInst
 
@@ -216,6 +222,7 @@ module DeclarationListHelpers =
         // F# exception names
         | Item.ExnCase ecref -> 
             let layout = NicePrint.layoutExnDef denv infoReader ecref
+            let layout = PrintUtilities.squashToWidth width layout
             let remarks = OutputFullName displayFullName pubpathOfTyconRef fullDisplayTextOfExnRefAsLayout ecref
             let layout = toArray layout
             let remarks = toArray remarks
@@ -229,6 +236,7 @@ module DeclarationListHelpers =
                 wordL (tagParameter id) ^^
                 RightL.colon ^^
                 NicePrint.layoutType denv ty
+            let layout = PrintUtilities.squashToWidth width layout
             let layout = toArray layout
             ToolTipElement.Single (layout, xml, paramName = id)
 
@@ -247,6 +255,7 @@ module DeclarationListHelpers =
                     | None -> emptyL
                     | Some lit -> try WordL.equals ^^  NicePrint.layoutConst denv.g ty lit with _ -> emptyL
                 )
+            let layout = PrintUtilities.squashToWidth width layout
             let layout = toArray layout
             ToolTipElement.Single (layout, xml)
 
@@ -259,6 +268,7 @@ module DeclarationListHelpers =
                 wordL (tagParameter id.idText) ^^
                 RightL.colon ^^
                 NicePrint.layoutType denv fieldTy
+            let layout = PrintUtilities.squashToWidth width layout
             let layout = toArray layout
             ToolTipElement.Single (layout, xml, paramName = id.idText)
 
@@ -267,6 +277,7 @@ module DeclarationListHelpers =
             let layout = 
                 wordL (tagText (FSComp.SR.typeInfoPatternVariable())) ^^
                 wordL (tagUnknownEntity id.idText)
+            let layout = PrintUtilities.squashToWidth width layout
             let layout = toArray layout
             ToolTipElement.Single (layout, xml)
 
@@ -286,6 +297,7 @@ module DeclarationListHelpers =
                         WordL.equals ^^
                         try NicePrint.layoutConst denv.g (finfo.FieldType(infoReader.amap, m)) (CheckExpressions.TcFieldInit m v) with _ -> emptyL
                 )
+            let layout = PrintUtilities.squashToWidth width layout
             let layout = toArray layout
             ToolTipElement.Single (layout, xml)
 
@@ -300,12 +312,14 @@ module DeclarationListHelpers =
                 wordL (tagEvent einfo.EventName) ^^
                 RightL.colon ^^
                 NicePrint.layoutType denv eventTy
+            let layout = PrintUtilities.squashToWidth width layout
             let layout = toArray layout
             ToolTipElement.Single (layout, xml)
 
         // F# and .NET properties
         | Item.Property(_, pinfo :: _) -> 
             let layout = NicePrint.prettyLayoutOfPropInfoFreeStyle  g amap m denv pinfo
+            let layout = PrintUtilities.squashToWidth width layout
             let layout = toArray layout
             ToolTipElement.Single (layout, xml)
 
@@ -332,13 +346,14 @@ module DeclarationListHelpers =
                 SepL.dot ^^
                 wordL (tagMethod minfo.DisplayName)
 
+            let layout = PrintUtilities.squashToWidth width layout
             let layout = toArray layout
             ToolTipElement.Single (layout, xml)
 
         // F# constructors and methods
         | Item.CtorGroup(_, minfos) 
         | Item.MethodGroup(_, minfos, _) ->
-            FormatOverloadsToList infoReader m denv item minfos
+            FormatOverloadsToList infoReader m denv item minfos width
         
         // The 'fake' zero-argument constructors of .NET interfaces.
         // This ideally should never appear in intellisense, but we do get here in repros like:
@@ -348,6 +363,7 @@ module DeclarationListHelpers =
         | Item.FakeInterfaceCtor ty ->
            let ty, _ = PrettyTypes.PrettifyType g ty
            let layout = NicePrint.layoutTyconRef denv (tcrefOfAppTy g ty)
+           let layout = PrintUtilities.squashToWidth width layout
            let layout = toArray layout
            ToolTipElement.Single(layout, xml)
         
@@ -360,6 +376,7 @@ module DeclarationListHelpers =
                LeftL.leftParen ^^
                NicePrint.layoutType denv delFuncTy ^^
                RightL.rightParen
+           let layout = PrintUtilities.squashToWidth width layout
            let layout = toArray layout
            ToolTipElement.Single(layout, xml)
 
@@ -374,6 +391,7 @@ module DeclarationListHelpers =
                             // be shown in the tip.
                             showDocumentation = false  }
             let layout = NicePrint.layoutTyconDefn denv infoReader ad m (* width *) tcref.Deref
+            let layout = PrintUtilities.squashToWidth width layout
             let remarks = OutputFullName displayFullName pubpathOfTyconRef fullDisplayTextOfTyconRefAsLayout tcref
             let layout = toArray layout
             let remarks = toArray remarks
@@ -382,12 +400,14 @@ module DeclarationListHelpers =
         // Type variables
         | Item.TypeVar (_, typar) ->
             let layout = NicePrint.prettyLayoutOfTypar denv typar
+            let layout = PrintUtilities.squashToWidth width layout
             ToolTipElement.Single (toArray layout, xml)
 
         // Traits
         | Item.Trait traitInfo ->
             let denv = { denv with shortConstraints = false}
             let layout = NicePrint.prettyLayoutOfTrait denv traitInfo
+            let layout = PrintUtilities.squashToWidth width layout
             ToolTipElement.Single (toArray layout, xml)
 
         // F# Modules and namespaces
@@ -427,9 +447,11 @@ module DeclarationListHelpers =
                         else 
                             emptyL
                     )
+                let layout = PrintUtilities.squashToWidth width layout
                 let layout = toArray layout
                 ToolTipElement.Single (layout, xml)
             else
+                let layout = PrintUtilities.squashToWidth width layout
                 let layout = toArray layout
                 ToolTipElement.Single (layout, xml)
 
@@ -442,6 +464,7 @@ module DeclarationListHelpers =
                 wordL (tagRecordField nm) ^^
                 RightL.colon ^^
                 NicePrint.layoutType denv argTy
+            let layout = PrintUtilities.squashToWidth width layout
             let layout = toArray layout
             ToolTipElement.Single (layout, FSharpXmlDoc.None)
             
@@ -453,11 +476,12 @@ module DeclarationListHelpers =
                 wordL (tagParameter id.idText) ^^
                 RightL.colon ^^
                 NicePrint.layoutType denv argTy
+            let layout = PrintUtilities.squashToWidth width layout
             let layout = toArray layout
             ToolTipElement.Single (layout, xml, paramName = id.idText)
             
         | Item.SetterArg (_, item) -> 
-            FormatItemDescriptionToToolTipElement displayFullName infoReader ad m denv (ItemWithNoInst item)
+            FormatItemDescriptionToToolTipElement displayFullName infoReader ad m denv (ItemWithNoInst item) width
 
         | Item.ArgName (None, _, _, _)
     
@@ -499,9 +523,9 @@ module DeclarationListHelpers =
         | Item.CustomOperation (_, _, None) ->  ToolTipElement.None 
 
     /// Format the structured version of a tooltip for an item
-    let FormatStructuredDescriptionOfItem isDecl infoReader ad m denv item = 
+    let FormatStructuredDescriptionOfItem isDecl infoReader ad m denv item width = 
         DiagnosticsScope.Protect m 
-            (fun () -> FormatItemDescriptionToToolTipElement isDecl infoReader ad m denv item)
+            (fun () -> FormatItemDescriptionToToolTipElement isDecl infoReader ad m denv item width)
             (fun err -> ToolTipElement.CompositionError err)
 
 /// Represents one parameter for one method (or other item) in a group.
@@ -1010,7 +1034,7 @@ type DeclarationListItem(textInDeclList: string, textInCode: string, fullName: s
     member _.Description = 
         match info with
         | Choice1Of2 (items: CompletionItem list, infoReader, ad, m, denv) -> 
-            ToolTipText(items |> List.map (fun x -> FormatStructuredDescriptionOfItem true infoReader ad m denv x.ItemWithInst))
+            ToolTipText(items |> List.map (fun x -> FormatStructuredDescriptionOfItem true infoReader ad m denv x.ItemWithInst None))
         | Choice2Of2 result -> 
             result
 
@@ -1273,7 +1297,7 @@ type MethodGroup( name: string, unsortedMethods: MethodGroupItem[] ) =
                                 (fun () -> PrettyParamsAndReturnTypeOfItem infoReader m denv  { item with Item = flatItem })
                                 (fun err -> [], wordL (tagText err))
                             
-                        let description = ToolTipText [FormatStructuredDescriptionOfItem true infoReader ad m denv { item with Item = flatItem }]
+                        let description = ToolTipText [FormatStructuredDescriptionOfItem true infoReader ad m denv { item with Item = flatItem } None]
 
                         let hasParamArrayArg = 
                             match flatItem with 
