@@ -22,6 +22,7 @@ module SettingsStore =
     // or when a change is propagated from another VS IDE instance by ISettingsManager.
     type Cache = ConcurrentDictionary<string, obj>
 
+    // "TextEditor" prefix seems to be required for settings changes to be synced between IDE instances
     let storageKey (t: Type) = $"TextEditor.FSharp.{t.Namespace}.{t.Name}"
 
     let storageKeyOf settings = settings.GetType() |> storageKey
