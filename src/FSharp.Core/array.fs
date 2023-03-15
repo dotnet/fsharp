@@ -2218,8 +2218,7 @@ module Array =
             Parallel.For(0, count, (fun i -> result.[i] <- initializer i)) |> ignore
             result
 
-        [<CompiledName("Partition")>]
-        let partition predicate (array: 'T[]) =
+        let countAndCollectTrueItems predicate (array: 'T[]) =
             checkNonNull "array" array
             let inputLength = array.Length
 
@@ -2242,10 +2241,28 @@ module Array =
             )
             |> ignore
 
+            trueLength, isTrue
+
+        [<CompiledName("Filter")>]
+        let filter predicate (array: 'T[]) =
+            let trueLength, isTrue = countAndCollectTrueItems predicate array
+            let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked trueLength
+            let mutable resIdx = 0
+
+            for i = 0 to isTrue.Length - 1 do
+                if isTrue.[i] then
+                    res.[resIdx] <- array.[i]
+                    resIdx <- resIdx + 1
+
+            res
+
+        [<CompiledName("Partition")>]
+        let partition predicate (array: 'T[]) =
+            let trueLength, isTrue = countAndCollectTrueItems predicate array
             let res1 = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked trueLength
 
             let res2 =
-                Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked (inputLength - trueLength)
+                Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked (array.Length - trueLength)
 
             let mutable iTrue = 0
             let mutable iFalse = 0
