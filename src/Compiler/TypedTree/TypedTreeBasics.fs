@@ -197,18 +197,15 @@ let mkTyparTy (tp: Typar) =
 // For fresh type variables clear the StaticReq when copying because the requirement will be re-established through the
 // process of type inference.
 let copyTypar clearStaticReq (tp: Typar) = 
-    let optData = tp.typar_opt_data |> Option.map (fun tg -> { typar_il_name = tg.typar_il_name; typar_xmldoc = tg.typar_xmldoc; typar_constraints = tg.typar_constraints; typar_attribs = tg.typar_attribs })
-    let flags = if clearStaticReq then tp.typar_flags.WithStaticReq(TyparStaticReq.None) else tp.typar_flags
-    Typar.New { typar_id = tp.typar_id
-                typar_flags = flags
-                typar_stamp = newStamp()
-                typar_solution = tp.typar_solution
-                typar_astype = Unchecked.defaultof<_>
-                // Be careful to clone the mutable optional data too
-                typar_opt_data = optData
-                id_suggestions = tp.id_suggestions } 
+    let optData = tp.OptionalData |> Option.map (fun tg -> { typar_il_name = tg.typar_il_name; typar_xmldoc = tg.typar_xmldoc; typar_constraints = tg.typar_constraints; typar_attribs = tg.typar_attribs })
+    let flags = if clearStaticReq then tp.Flags.WithStaticReq(TyparStaticReq.None) else tp.Flags
+    Typar.New (
+        Typar(tp.TyparId, flags, newStamp(), tp.Solution, Unchecked.defaultof<_>,
+              // Be careful to clone the mutable optional data too
+              optData)
+    )
 
-let copyTypars clearStaticReq tps = List.map (copyTypar clearStaticReq) tps
+let copyTypars clearStaticReq (tps: Typars) = List.map (copyTypar clearStaticReq) tps
 
 //--------------------------------------------------------------------------
 // Inference variables
@@ -223,8 +220,7 @@ let tryShortcutSolvedUnitPar canShortcut (r: Typar) =
             | Measure.Var r2 -> 
                match r2.Solution with
                | None -> ()
-               | Some _ as soln -> 
-                  r.typar_solution <- soln
+               | Some soln -> r.SetSolution soln
             | _ -> () 
         unt
     | _ -> 
@@ -249,8 +245,7 @@ let rec stripTyparEqnsAux canShortcut ty =
                 | TType_var (r2, _) when r2.Constraints.IsEmpty -> 
                    match r2.Solution with
                    | None -> ()
-                   | Some _ as soln2 -> 
-                      r.typar_solution <- soln2
+                   | Some soln2 -> r.SetSolution soln2
                 | _ -> () 
             stripTyparEqnsAux canShortcut soln
         | None -> 

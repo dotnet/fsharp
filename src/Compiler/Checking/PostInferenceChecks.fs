@@ -116,23 +116,20 @@ let BindTypar env (tp: Typar) =
          boundTyparNames = tp.Name :: env.boundTyparNames
          boundTypars = env.boundTypars.Add (tp, ()) } 
 
-let BindTypars g env (tps: Typar list) = 
+let BindTypars g env (tps: Typars) = 
     let tps = NormalizeDeclaredTyparsForEquiRecursiveInference g tps
     if isNil tps then env else
     // Here we mutate to provide better names for generalized type parameters 
     let nms = PrettyTypes.PrettyTyparNames (fun _ -> true) env.boundTyparNames tps
     (tps, nms)
     ||> List.iter2 (fun tp nm ->
+        let typar_id = ident (nm, tp.Range)
         if PrettyTypes.NeedsPrettyTyparName tp then
-            let typar_id = ident (nm, tp.Range)
             match env.fileIndex with
             | None ->
-                tp.typar_id <- typar_id
+                tp.SetIdent(TyparId.Initial(typar_id))
             | Some idx ->
-                if tp.id_suggestions.ContainsKey idx then
-                    tp.id_suggestions.[idx] <- typar_id
-                else
-                    tp.id_suggestions.Add(idx, typar_id)
+                tp.SetIdent(TyparId.PrettyTyparName(typar_id, idx, typar_id))
     )
     List.fold BindTypar env tps 
 

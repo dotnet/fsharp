@@ -1442,35 +1442,37 @@ type TyparOptionalData =
 
 type TyparData = Typar
 
-/// A declared generic type/measure parameter, or a type/measure inference variable.
+/// Wrapper around Ident to deal with various Typar.Id updates.
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
+type TyparId =
+    /// Used for new creations, when unpickling or when we use the same id in the signature during conformance.
+    | Initial of Ident
+    /// PrettyTyparName
+    | PrettyTyparName of originalIdent: Ident * currentIndex: int * currentIdent: Ident
+
+/// <summary>A declared generic type/measure parameter, or a type/measure inference variable.</summary>
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type Typar =
-    {
-
-        /// MUTABILITY: we set the names of generalized inference type parameters to make the look nice for IL code generation
-        /// The identifier for the type parameter
-        mutable typar_id: Syntax.Ident
-
-        /// The flag data for the type parameter
-        mutable typar_flags: TyparFlags
-
-        /// The unique stamp of the type parameter
-        /// MUTABILITY: for linking when unpickling
-        mutable typar_stamp: Stamp
-
-        /// An inferred equivalence for a type inference variable.
-        mutable typar_solution: TType option
-
-        /// A cached TAST type used when this type variable is used as type.
-        mutable typar_astype: TType
-
-        /// The optional data for the type parameter
-        mutable typar_opt_data: TyparOptionalData option
-
-        /// When type-checking using the graph method, multiple proposals for the typar_id can be found concurrently.
-        /// We would pick the ident with the lowest file index value (int), as that is the name the sequential type-checking would pick.
-        id_suggestions: Dictionary<int, Ident>
-    }
+    /// <param name="typar_id">
+    /// MUTABILITY: we set the names of generalized inference type parameters to make the look nice for IL code generation.
+    /// The identifier for the type parameter.
+    /// </param>
+    /// <param name="typar_flags">The flag data for the type parameter.</param>
+    /// <param name="typar_stamp">
+    /// The unique stamp of the type parameter
+    /// MUTABILITY: for linking when unpickling
+    /// </param>
+    /// <param name="typar_solution">An inferred equivalence for a type inference variable.</param>
+    /// <param name="typar_astype">A cached TAST type used when this type variable is used as type.</param>
+    /// <param name="typar_opt_data">The optional data for the type parameter.</param>
+    new:
+        typar_id: TyparId *
+        typar_flags: TyparFlags *
+        typar_stamp: Stamp *
+        typar_solution: TType option *
+        typar_astype: TType *
+        typar_opt_data: TyparOptionalData option ->
+            Typar
 
     /// Creates a type variable based on the given data. Only used during unpickling of F# metadata.
     static member New: data: TyparData -> Typar
@@ -1503,7 +1505,7 @@ type Typar =
     member SetILName: il_name: string option -> unit
 
     /// Sets the identifier associated with a type variable
-    member SetIdent: id: Syntax.Ident -> unit
+    member SetIdent: id: TyparId -> unit
 
     /// Set whether this type parameter is a compat-flex type parameter (i.e. where "expr :> tp" only emits an optional warning)
     member SetIsCompatFlex: b: bool -> unit
@@ -1513,6 +1515,10 @@ type Typar =
 
     /// Sets whether a type variable has a static requirement
     member SetStaticReq: b: Syntax.TyparStaticReq -> unit
+
+    member SetSolution: solution: TType -> unit
+
+    member ClearSolution: unit -> unit
 
     override ToString: unit -> string
 
@@ -1545,6 +1551,12 @@ type Typar =
 
     /// The identifier for a type parameter definition
     member Id: Syntax.Ident
+
+    member TyparId: TyparId
+
+    member Flags: TyparFlags
+
+    member OptionalData: TyparOptionalData option
 
     /// Indicates that whether this type parameter is a compat-flex type parameter (i.e. where "expr :> tp" only emits an optional warning)
     member IsCompatFlex: bool

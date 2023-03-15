@@ -979,7 +979,7 @@ module PrettyTypes =
 
     val NewPrettyTypars: TyparInstantiation -> Typars -> string list -> Typars * TyparInstantiation
 
-    val PrettyTyparNames: (Typar -> bool) -> string list -> Typars -> string list
+    val PrettyTyparNames: pred: (Typar -> bool) -> alreadyInUse: string list -> tps: Typars -> string list
 
     val PrettifyType: TcGlobals -> TType -> TType * TyparConstraintsWithTypars
 

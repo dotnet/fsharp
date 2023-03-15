@@ -11967,7 +11967,7 @@ and FixupLetrecBind (cenv: cenv) denv generalizedTyparsForRecursiveBlock (bind: 
 // TcLetrecBindings - for both expressions and class-let-rec-declarations
 //------------------------------------------------------------------------
 
-and unionGeneralizedTypars typarSets = List.foldBack (ListSet.unionFavourRight typarEq) typarSets []
+and unionGeneralizedTypars (typarSets: Typars list) = List.foldBack (ListSet.unionFavourRight typarEq) typarSets []
 
 and TcLetrecBindings overridesOK (cenv: cenv) env tpenv (binds, bindsm, scopem) =
 
