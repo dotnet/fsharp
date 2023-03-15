@@ -360,7 +360,7 @@ type BoundModel private (tcConfig: TcConfig,
         // If partial checking is enabled and we have a backing sig file, then use the partial state. The partial state contains the sig state.
         if enablePartialTypeChecking && hasSig then
             match tcInfoNode.TryGetFull() with
-            | ValueSome (tcInfo, _) when enablePartialTypeChecking && hasSig ->
+            | ValueSome (tcInfo, _) ->
                 BoundModel(
                     tcConfig,
                     tcGlobals,
