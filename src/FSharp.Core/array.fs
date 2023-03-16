@@ -2097,7 +2097,7 @@ module Array =
                     let chunk = inputChunks[chunkIdx]
 
                     for elemIdx = chunk.Offset to (chunk.Offset + chunk.Count - 1) do
-                        res.[i] <- (array1.[i], array2.[i])
+                        res[elemIdx] <- (array1[elemIdx], array2[elemIdx])
             )
             |> ignore
 

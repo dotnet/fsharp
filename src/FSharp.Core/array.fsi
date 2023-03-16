@@ -3430,3 +3430,47 @@ module Array =
         /// </example>
         [<CompiledName("Partition")>]
         val partition: predicate:('T -> bool) -> array:'T[] -> 'T[] * 'T[]
+
+        /// <summary>Combines the two arrays into an array of pairs. The two arrays must have equal lengths, otherwise an <c>ArgumentException</c> is
+        /// raised.</summary>
+        ///
+        /// <param name="array1">The first input array.</param>
+        /// <param name="array2">The second input array.</param>
+        ///
+        /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input arrays differ in length.</exception>
+        ///
+        /// <returns>The array of tupled elements.</returns>
+        ///
+        /// <example id="para-zip-1">
+        /// <code lang="fsharp">
+        /// let numbers = [|1; 2|]
+        /// let names = [|"one"; "two"|]
+        ///
+        /// Array.Parallel.zip numbers names
+        /// </code>
+        /// Evaluates to <c>[| (1, "one"); (2, "two") |]</c>.
+        /// </example>
+        [<CompiledName("Zip")>]
+        val zip: array1:'T1[] -> array2:'T2[] -> ('T1 * 'T2)[]
+
+        /// <summary>Returns a new collection containing only the elements of the collection
+        /// for which the given predicate returns "true".</summary>
+        ///
+        /// <param name="predicate">The function to test the input elements.</param>
+        /// <param name="array">The input array.</param>
+        ///
+        /// <returns>An array containing the elements for which the given predicate returns true.</returns>
+        ///
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        ///
+        /// <example id="para-filter-1">
+        /// <code lang="fsharp">
+        /// let inputs = [| 1; 2; 3; 4 |]
+        ///
+        /// inputs |> Array.Parallel.filter (fun elm -> elm % 2 = 0)
+        /// </code>
+        /// Evaluates to <c>[| 2; 4 |]</c>
+        /// </example>
+        [<CompiledName("Filter")>]
+        val filter: predicate:('T -> bool) -> array:'T[] -> 'T[]

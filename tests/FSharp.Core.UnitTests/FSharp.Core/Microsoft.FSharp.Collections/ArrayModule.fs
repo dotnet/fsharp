@@ -708,6 +708,20 @@ type ArrayModule() =
         CheckThrowsArgumentNullException (fun () ->  Array.filter funcStr nullArr |> ignore) 
         
         ()
+
+    [<Fact>]
+    member this.ParallelFilter () = 
+        let assertSameBehavior predicate arr =
+            let sequentialZip = Array.filter predicate arr
+            let paraZip = Array.Parallel.filter predicate arr
+            Assert.AreEqual(sequentialZip, paraZip)
+
+        [| 1..20 |] |> assertSameBehavior (fun x -> x%5 = 0)
+        [|"Lists"; "are"; "a"; "commonly"; "data";"structor" |] |> assertSameBehavior  (fun x -> x.Length > 4) 
+        [| |] |> assertSameBehavior  (fun x -> x%5 = 0)
+        let nullArr = null:int[] 
+        CheckThrowsArgumentNullException (fun () ->  Array.Parallel.filter (fun x -> x%5 = 0) nullArr |> ignore) 
+
         
     [<Fact>]
     member this.Filter2 () =
