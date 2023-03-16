@@ -1007,10 +1007,6 @@ type IncrementalBuilderInitialState =
             useSyntaxTreeCache
         ) =
 
-        let fileParsed = Event<string>()
-
-
-
         let initialState =
             {
                 initialBoundModel = initialBoundModel
@@ -1024,7 +1020,7 @@ type IncrementalBuilderInitialState =
                 enablePartialTypeChecking = enablePartialTypeChecking
                 beforeFileChecked = beforeFileChecked
                 fileChecked = fileChecked
-                fileParsed = fileParsed
+                fileParsed = Event<string>()
                 projectChecked = Event<unit>()
 #if !NO_TYPEPROVIDERS
                 importsInvalidatedByTypeProvider = importsInvalidatedByTypeProvider
