@@ -1721,7 +1721,11 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                     create head true ::
                     [
                         for prev, curr in  sourceFiles |> List.pairwise do
-                            let eager = not (SyntaxTree.isBackingSignature curr.Source.FilePath prev.Source.FilePath)
+                            let eager =
+                                if enablePartialTypeChecking then
+                                    not (SyntaxTree.isBackingSignature curr.Source.FilePath prev.Source.FilePath)
+                                else
+                                    true
                             create curr eager
                     ]
                 | _ -> []
