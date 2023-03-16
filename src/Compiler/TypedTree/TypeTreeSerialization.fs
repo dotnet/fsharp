@@ -11,6 +11,7 @@ type TypedTreeNode =
         Kind: string
         Name: string
         Children: TypedTreeNode list
+        Flags: int64 option
     }
 
 let rec visitEntity (entity: Entity) : TypedTreeNode =
@@ -32,6 +33,7 @@ let rec visitEntity (entity: Entity) : TypedTreeNode =
         Kind = kind
         Name = entity.CompiledName
         Children = Seq.toList children
+        Flags = Some entity.entity_flags.PickledBits
     }
 
 and visitVal (v: Val) : TypedTreeNode =
@@ -49,6 +51,7 @@ and visitVal (v: Val) : TypedTreeNode =
                                 Name = argInfo.Name |> Option.map (fun i -> i.idText) |> Option.defaultValue ""
                                 Kind = "ArgInfo"
                                 Children = []
+                                Flags = None
                             }))
 
             yield!
@@ -58,6 +61,7 @@ and visitVal (v: Val) : TypedTreeNode =
                         Name = typar.Name
                         Kind = "Typar"
                         Children = []
+                        Flags = Some typar.Flags.PickledBits
                     })
         }
 
@@ -65,6 +69,7 @@ and visitVal (v: Val) : TypedTreeNode =
         Name = v.CompiledName None
         Kind = "val"
         Children = Seq.toList children
+        Flags = Some v.val_flags.PickledBits
     }
 
 let rec serializeNode (writer: IndentedTextWriter) (addTrailingComma: bool) (node: TypedTreeNode) =
@@ -74,6 +79,9 @@ let rec serializeNode (writer: IndentedTextWriter) (addTrailingComma: bool) (nod
 
     writer.WriteLine($"\"name\": \"{node.Name}\",")
     writer.WriteLine($"\"kind\": \"{node.Kind}\",")
+
+    node.Flags
+    |> Option.iter (fun flags -> writer.WriteLine($"\"flags\":%i{flags},"))
 
     if node.Children.IsEmpty then
         writer.WriteLine("\"children\": []")
