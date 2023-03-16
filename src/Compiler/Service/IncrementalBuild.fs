@@ -184,7 +184,7 @@ module IncrementalBuildSyntaxTree =
                     parse result
                 | _ -> cache.GetValue(source, getParseTask) |> parse
             else
-                getValue source |> parse
+                getParseTask source |> parse
 
         member _.Skip sigName =
             IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBEParsed fileName)
@@ -199,7 +199,7 @@ module IncrementalBuildSyntaxTree =
       
         member _.Invalidate() =
             cache.Remove(source) |> ignore
-            if eagerParsing && useCache then getValue source |> ignore
+            if useCache then getValue source |> ignore
 
         member _.FileName = fileName
 
@@ -1019,7 +1019,7 @@ type Slot =
         LogicalStamp: DateTime
         SyntaxTree: SyntaxTree
         Notified: bool
-        Node: GraphNode<BoundModel>
+        Model: GraphNode<BoundModel>
     }
     member this.Notify timeStamp =
         if this.Stamp <> timeStamp then { this with Stamp = timeStamp; Notified = true } else this
@@ -1034,7 +1034,7 @@ type IncrementalBuilderState =
     }
     member this.stampedFileNames = this.slots |> List.map (fun s -> s.Stamp)
     member this.logicalStampedFileNames = this.slots |> List.map (fun s -> s.LogicalStamp)
-    member this.boundModels = this.slots |> List.map (fun s -> s.Node)
+    member this.boundModels = this.slots |> List.map (fun s -> s.Model)
 
 [<AutoOpen>]
 module IncrementalBuilderStateHelpers =
@@ -1087,11 +1087,11 @@ module IncrementalBuilderStateHelpers =
         let processSlots status (slot: Slot) =
             let invalidate prevNode =
                 let graphNode = createBoundModelGraphNode initialState.enablePartialTypeChecking prevNode slot.SyntaxTree
-                { slot with LogicalStamp = slot.Stamp; Notified = false; Node = graphNode }, Invalidated graphNode
+                { slot with LogicalStamp = slot.Stamp; Notified = false; Model = graphNode }, Invalidated graphNode
 
             match status, slot.Notified with
             | (Good prevNode | Invalidated prevNode) as status, true ->
-                match slot.Node.TryPeekValue() with
+                match slot.Model.TryPeekValue() with
                 // This prevents an implementation file that has a backing signature file from invalidating the rest of the build.
                 | ValueSome(boundModel) when initialState.enablePartialTypeChecking && boundModel.BackingSignature.IsSome ->
                     let slot, _ = invalidate prevNode
@@ -1099,12 +1099,12 @@ module IncrementalBuilderStateHelpers =
                     slot, status
                 | _ -> invalidate prevNode
             | Invalidated prevNode, _ -> invalidate prevNode
-            | _ -> slot, Good (slot.Node)
+            | _ -> slot, Good (slot.Model)
 
         match  slots |> List.mapFold processSlots (Good (GraphNode.FromResult initialState.initialBoundModel)) with
         | slots, Good _ -> { state with slots = slots }
         | slots, Invalidated _ ->
-            let boundModels = slots |> Seq.map (fun s -> s.Node)
+            let boundModels = slots |> Seq.map (fun s -> s.Model)
             { state with slots = slots; finalizedBoundModel = createFinalizeBoundModelGraphNode initialState boundModels }
 
     and computeStampedReferencedAssemblies (initialState: IncrementalBuilderInitialState) state canTriggerInvalidation (cache: TimeStampCache) =
@@ -1178,7 +1178,7 @@ type IncrementalBuilderState with
                         LogicalStamp = DateTime.MinValue
                         Notified = false
                         SyntaxTree = syntaxTree
-                        Node = model
+                        Model = model
                     }
             ]
 
