@@ -164,7 +164,9 @@ module IncrementalBuildSyntaxTree =
                 System.Diagnostics.Debug.Assert(false, msg)
                 failwith msg
 
-        do if eagerParsing then cache.GetValue(source, getParseTask) |> ignore
+        let getValue source = lock source <| fun () -> cache.GetValue(source, getParseTask)
+
+        do if eagerParsing then getValue source |> ignore
 
         /// Parse the given file and return the given input.
         member _.Parse() =
@@ -182,7 +184,7 @@ module IncrementalBuildSyntaxTree =
                     parse result
                 | _ -> cache.GetValue(source, getParseTask) |> parse
             else
-                getParseTask source |> parse
+                getValue source |> parse
 
         member _.Skip sigName =
             IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBEParsed fileName)
@@ -197,7 +199,7 @@ module IncrementalBuildSyntaxTree =
       
         member _.Invalidate() =
             cache.Remove(source) |> ignore
-            if eagerParsing then cache.GetValue(source, getParseTask) |> ignore
+            if eagerParsing then getValue source |> ignore
 
         member _.FileName = fileName
 
