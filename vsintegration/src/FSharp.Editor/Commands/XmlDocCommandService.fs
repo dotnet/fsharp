@@ -24,12 +24,10 @@ type internal XmlDocCommandFilter
         workspace: VisualStudioWorkspace
      ) =
 
-    let document =
-        // There may be multiple documents with the same file path.
-        // However, for the purpose of generating XmlDoc comments, it is ok to keep only the first document.
-        lazy(match workspace.CurrentSolution.GetDocumentIdsWithFilePath(filePath) |> Seq.toList with
-             | [] -> None
-             | documentId :: _ -> Some (workspace.CurrentSolution.GetDocument documentId))
+    let getLastDocument () =
+        // There may be multiple documents with the same file path, due to versioning .
+        // However, for the purpose of generating XmlDoc comments, it is ok to keep only the last document, since they're versioned.
+        workspace.CurrentSolution.GetDocumentIdsWithFilePath(filePath) |> Seq.tryLast |> Option.map workspace.CurrentSolution.GetDocument
 
     /// Get the char for a <see cref="VSConstants.VSStd2KCmdID.TYPECHAR"/> command.
     let getTypedChar(pvaIn: IntPtr) = 
@@ -46,6 +44,7 @@ type internal XmlDocCommandFilter
 
     interface IOleCommandTarget with
         member _.Exec(pguidCmdGroup: byref<Guid>, nCmdID: uint32, nCmdexecopt: uint32, pvaIn: IntPtr, pvaOut: IntPtr) =
+            let mutable shouldCommitCharacter = true
             if pguidCmdGroup = VSConstants.VSStd2K && nCmdID = uint32 VSConstants.VSStd2KCmdID.TYPECHAR then
                 match getTypedChar pvaIn with
                 | ('/' | '<') as lastChar ->
@@ -59,22 +58,23 @@ type internal XmlDocCommandFilter
                         asyncMaybe {
                             try
                                 // XmlDocable line #1 are 1-based, editor is 0-based
-                                let curLineNum = wpfTextView.Caret.Position.BufferPosition.GetContainingLine().LineNumber + 1
-                                let! document = document.Value
+                                let curEditorLineNum = wpfTextView.Caret.Position.BufferPosition.GetContainingLine().LineNumber
+                                let! document = getLastDocument()
                                 let! cancellationToken = Async.CancellationToken |> liftAsync
                                 let! sourceText = document.GetTextAsync(cancellationToken)
                                 let! parseResults = document.GetFSharpParseResultsAsync(nameof(XmlDocCommandFilter)) |> liftAsync
                                 let xmlDocables = XmlDocParser.GetXmlDocables (sourceText.ToFSharpSourceText(), parseResults.ParseTree) 
                                 let xmlDocablesBelowThisLine = 
-                                    // +1 because looking below current line for e.g. a 'member'
-                                    xmlDocables |> List.filter (fun (XmlDocable(line,_indent,_paramNames)) -> line = curLineNum+1) 
+                                    // +1 because looking below current line for e.g. a 'member' or 'let'
+                                    xmlDocables |> List.filter (fun (XmlDocable(line,_indent,_paramNames)) -> line = curEditorLineNum + 1) 
                                 match xmlDocablesBelowThisLine with
                                 | [] -> ()
                                 | XmlDocable(_line,indent,paramNames)::_xs ->
                                     // delete the slashes the user typed (they may be indented wrong)
-                                    wpfTextView.TextBuffer.Delete(wpfTextView.Caret.Position.BufferPosition.GetContainingLine().Extent.Span) |> ignore
+                                    let editorLineToDelete = wpfTextView.TextBuffer.CurrentSnapshot.GetLineFromLineNumber(wpfTextView.Caret.Position.BufferPosition.GetContainingLine().LineNumber)
+                                    wpfTextView.TextBuffer.Delete(editorLineToDelete.Extent.Span) |> ignore
                                     // add the new xmldoc comment
-                                    let toInsert = new System.Text.StringBuilder()
+                                    let toInsert = new Text.StringBuilder()
                                     toInsert.Append(' ', indent).AppendLine("/// <summary>")
                                             .Append(' ', indent).AppendLine("/// ")
                                             .Append(' ', indent).Append("/// </summary>") |> ignore
@@ -86,6 +86,7 @@ type internal XmlDocCommandFilter
                                     let lastLine = wpfTextView.Caret.Position.BufferPosition.GetContainingLine()
                                     let middleSummaryLine = wpfTextView.TextSnapshot.GetLineFromLineNumber(lastLine.LineNumber - 1 - paramNames.Length)
                                     wpfTextView.Caret.MoveTo(wpfTextView.GetTextViewLineContainingBufferPosition(middleSummaryLine.Start)) |> ignore
+                                    shouldCommitCharacter <- false
                             with ex ->
                               Assert.Exception ex
                               ()
@@ -96,7 +97,10 @@ type internal XmlDocCommandFilter
                     | None -> ()
                 | _ -> ()
             if not (isNull nextTarget) then
-                nextTarget.Exec(&pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut)
+                if not shouldCommitCharacter then
+                    VSConstants.S_OK
+                else
+                    nextTarget.Exec(&pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut)
             else
                 VSConstants.E_FAIL
 
