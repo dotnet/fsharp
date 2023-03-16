@@ -1277,6 +1277,77 @@ type ArrayModule() =
         CheckThrowsArgumentNullException(fun () -> Array.groupBy funcInt (null : int array) |> ignore)
         ()
 
+    [<Fact>]
+    member _.ParallelGroupBy() =
+
+        let assertEqualityOfGroupings opName (seqGroup: ('TKey * 'TVal[])[]) (paraGroup: ('TKey * 'TVal[])[]) =
+            seqGroup |> Array.sortInPlaceBy fst
+            paraGroup |> Array.sortInPlaceBy fst
+
+            seqGroup |> Array.iter (snd >> Array.sortInPlace)
+            paraGroup |> Array.iter (snd >> Array.sortInPlace)
+
+            if seqGroup.Length <> paraGroup.Length then                
+                Assert.Fail($"{opName} produced different lengths of results. Seq={seqGroup.Length};Para={paraGroup.Length}.")
+            
+            let seqKeys = seqGroup |> Array.map fst
+            let paraKeys = paraGroup |> Array.map fst
+            if(seqKeys <> paraKeys) then
+                Assert.Fail($"{opName} produced different keys. Seq=%A{seqKeys};Para=%A{paraKeys}.")
+
+            Array.zip seqGroup paraGroup
+            |> Array.iter (fun ((seqKey,seqGroup), (paraKey,paraGroup)) ->
+                Assert.AreEqual(seqKey,paraKey,opName)
+                if seqGroup <> paraGroup then
+                    Assert.Fail($"{opName} produced different results for key={seqKey}. Seq=%A{seqGroup};Para=%A{paraGroup}."))
+
+            Assert.True((seqGroup=paraGroup), $"{opName} produced different results. Seq=%A{seqGroup};Para=%A{paraGroup}.")
+            
+
+        let compareAndAssert opName array projection =
+            let seqGroup = array |> Array.groupBy projection
+            let paraGroup = array |> Array.Parallel.groupBy projection
+            assertEqualityOfGroupings opName seqGroup paraGroup
+
+        // int array
+        let funcInt x = x%5             
+        let IntArray = [| 0 .. 250 |]
+        compareAndAssert "Int grouping" IntArray funcInt  
+
+             
+        // string array
+        let funcStr (x:string) = x.Length
+        let strArray = Array.init 177 (fun i -> string i)     
+        compareAndAssert "String grouping" strArray funcStr        
+
+
+        // Empty array
+        compareAndAssert "Empty group" [||] funcInt
+
+        // Reference key which can be null
+        let sampleStringsCanBeNull = [|"a";null;"abc";String.Empty|]
+        let pickStringByIdx idx = sampleStringsCanBeNull[idx % sampleStringsCanBeNull.Length]
+        compareAndAssert "Key can be null" IntArray pickStringByIdx
+
+        //String array w/ null keys and values
+        let strArray = Array.init 222 (fun i -> if i%3=0 then String.Empty else null )
+        compareAndAssert "String grouping w/ nulls" strArray id
+
+        // Keys being special floats. Array.groupBy does not work here, we test results manually
+        let specialFloats = [|infinity; -infinity;-0.0; 0.0; 1.0; -1.0; -0.0/0.0; -nan|]
+        let pickSpecialFloatByIdx idx = specialFloats[idx % specialFloats.Length]
+
+        let paraGroup = IntArray |> Array.Parallel.groupBy pickSpecialFloatByIdx
+        Assert.AreEqual(6, paraGroup.Length, "There should be 6 special floats!")
+        let (nan,nansGroup) = paraGroup |> Array.find (fun (k,_) -> Double.IsNaN(k))
+        // Both -0.0/0.0; -nan are a Nan. => 2/8 => every 4th elements goes to the NaN bucket
+        Assert.AreEqual((IntArray.Length / 4), nansGroup.Length, $"There should be {(IntArray.Length / 4)} NaNs!")
+
+
+
+        CheckThrowsArgumentNullException(fun () -> Array.Parallel.groupBy funcInt (null : int array) |> ignore)
+        ()
+
     member private this.InitTester initInt initString = 
         // integer array
         let resultInt : int[] = initInt 3 (fun x -> x + 3) 

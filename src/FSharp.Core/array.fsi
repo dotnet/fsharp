@@ -3368,6 +3368,33 @@ module Array =
         [<CompiledName("MapIndexed")>]
         val mapi: mapping:(int -> 'T -> 'U) -> array:'T[] -> 'U[]
 
+        /// <summary>Applies a key-generating function to each element of an array in parallel and yields an array of 
+        /// unique keys. Each unique key contains an array of all elements that match 
+        /// to this key.</summary>
+        ///
+        /// <remarks>Performs the operation in parallel using <see cref="M:System.Threading.Tasks.Parallel.For" />.
+        /// The order in which the given function is applied to elements of the input array is not specified.
+        /// The order of the keys and values in the result is also not specified</remarks>
+
+        /// <param name="projection">A function that transforms an element of the array into a comparable key.</param>
+        /// <param name="array">The input array.</param>
+        ///
+        /// <returns>The result array.</returns>
+        ///
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        ///
+        /// <example id="group-by-para-1">
+        /// <code lang="fsharp">
+        /// let inputs = [| 1; 2; 3; 4; 5 |]
+        ///
+        /// inputs |> Array.Parallel.groupBy (fun n -> n % 2)
+        /// </code>
+        /// Evaluates to <c>[| (1, [| 1; 3; 5 |]); (0, [| 2; 4 |]) |]</c>
+        /// </example>
+        [<CompiledName("GroupBy")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val groupBy: projection:('T -> 'Key) -> array:'T[] -> ('Key * 'T[])[]  when 'Key : equality
+
         /// <summary>Apply the given function to each element of the array. </summary>
         ///
         /// <remarks>Performs the operation in parallel using <see cref="M:System.Threading.Tasks.Parallel.For" />.
