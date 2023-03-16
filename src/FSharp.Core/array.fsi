@@ -3190,6 +3190,205 @@ module Array =
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val tryPick: chooser:('T -> 'U option) -> array:'T[] -> 'U option
 
+
+
+        /// <summary>Applies a function to each element of the array in parallel, threading an accumulator argument
+        /// through the computation for each thread involved in the computation. After processing entire input, results from all threads are reduced together.
+        /// Raises ArgumentException if the array is empty.</summary>
+
+        /// <remarks>The order of processing is not guaranteed. For that reason, the 'reduce' function argument should be commutative. 
+        /// (That is, changing the order of execution must not affect the result)
+        /// Also, compared the non-parallel version of Array.reduce, the 'reduce' function may be invoked more times due to the resulting reduction from participating threads.</remarks>
+        ///
+        /// <param name="reduction">The function to reduce a pair of elements to a single element.</param>
+        /// <param name="array">The input array.</param>
+        ///
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input array is empty.</exception>
+        ///
+        /// <returns>The final result of the reductions.</returns>
+        /// 
+        /// <example id="para-reduce-1">
+        /// <code lang="fsharp">
+        /// let inputs = [| 1; 3; 4; 2 |]
+        ///
+        /// inputs |> Array.Parallel.reduce (fun a b -> a + b)
+        /// </code>
+        /// Evaluates to <c>1 + 3 + 4 + 2</c>. However, the system could have decided to compute (1+3) and (4+2) first, and then put them together.</c>
+        /// </example>
+        [<CompiledName("Reduce")>]
+        val reduce: reduction:('T -> 'T -> 'T) -> array:'T[] -> 'T
+    
+        /// <summary>Returns the greatest of all elements of the array, compared via Operators.max on the function result.</summary>
+        ///
+        /// <remarks>Throws ArgumentException for empty arrays.</remarks>
+        ///
+        /// <param name="array">The input array.</param>
+        ///
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input array is empty.</exception>
+        ///
+        /// <returns>The maximum element.</returns>
+        ///
+        /// <example id="max-1">
+        /// <code lang="fsharp">
+        /// let inputs = [| 10; 12; 11 |]
+        ///
+        /// inputs |> Array.Parallel.max
+        /// </code>
+        /// Evaluates to <c>12</c>
+        /// </example>
+        ///
+        /// <example id="max-2">
+        /// <code lang="fsharp">
+        /// let inputs: int[]= [| |]
+        ///
+        /// inputs |> Array.Parallel.max
+        /// </code>
+        /// Throws <c>System.ArgumentException</c>.
+        /// </example>
+        [<CompiledName("Max")>]
+        val inline max: array:'T[] -> 'T  when 'T : comparison 
+
+        /// <summary>Returns the greatest of all elements of the array, compared via Operators.max on the function result.</summary>
+        ///
+        /// <remarks>Throws ArgumentException for empty arrays.</remarks>
+        ///
+        /// <param name="projection">The function to transform the elements into a type supporting comparison.</param>
+        /// <param name="array">The input array.</param>
+        ///
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input array is empty.</exception>
+        ///
+        /// <returns>The maximum element.</returns>
+        ///
+        /// <example id="maxby-1">
+        /// <code lang="fsharp">
+        /// let inputs = [| "aaa"; "b"; "cccc" |]
+        ///
+        /// inputs |> Array.maxBy (fun s -> s.Length)
+        /// </code>
+        /// Evaluates to <c>"cccc"</c>
+        /// </example>
+        ///
+        /// <example id="maxby-2">
+        /// <code lang="fsharp">
+        /// let inputs: string[]= [| |]
+        ///
+        /// inputs |> Array.maxBy (fun s -> s.Length)
+        /// </code>
+        /// Throws <c>System.ArgumentException</c>.
+        /// </example>
+        [<CompiledName("MaxBy")>]
+        val inline maxBy  : projection:('T -> 'U) -> array:'T[] -> 'T when 'U : comparison 
+
+        /// <summary>Returns the lowest of all elements of the array, compared via Operators.min.</summary>
+        ///
+        /// <remarks>Throws ArgumentException for empty arrays</remarks>
+        ///
+        /// <param name="array">The input array.</param>
+        ///
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input array is empty.</exception>
+        ///
+        /// <returns>The minimum element.</returns>
+        ///
+        /// <example id="min-1">
+        /// <code lang="fsharp">
+        /// let inputs = [| 10; 12; 11 |]
+        ///
+        /// inputs |> Array.min
+        /// </code>
+        /// Evaluates to <c>10</c>
+        /// </example>
+        ///
+        /// <example id="min-2">
+        /// <code lang="fsharp">
+        /// let inputs: int[]= [| |]
+        ///
+        /// inputs |> Array.min
+        /// </code>
+        /// Throws <c>System.ArgumentException</c>.
+        /// </example>
+        [<CompiledName("Min")>]
+        val inline min: array:'T[] -> 'T  when 'T : comparison 
+
+        /// <summary>Returns the lowest of all elements of the array, compared via Operators.min on the function result.</summary>
+        ///
+        /// <remarks>Throws ArgumentException for empty arrays.</remarks>
+        ///
+        /// <param name="projection">The function to transform the elements into a type supporting comparison.</param>
+        /// <param name="array">The input array.</param>
+        ///
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input array is empty.</exception>
+        ///
+        /// <returns>The minimum element.</returns>
+        ///
+        /// <example id="minby-1">
+        /// <code lang="fsharp">
+        /// let inputs = [| "aaa"; "b"; "cccc" |]
+        ///
+        /// inputs |> Array.minBy (fun s -> s.Length)
+        /// </code>
+        /// Evaluates to <c>"b"</c>
+        /// </example>
+        ///
+        /// <example id="minby-2">
+        /// <code lang="fsharp">
+        /// let inputs: string[]= [| |]
+        ///
+        /// inputs |> Array.minBy (fun s -> s.Length)
+        /// </code>
+        /// Throws <c>System.ArgumentException</c>.
+        /// </example>
+        [<CompiledName("MinBy")>]
+        val inline minBy  : projection:('T -> 'U) -> array:'T[] -> 'T when 'U : comparison 
+
+        /// <summary>Returns the sum of the elements in the array.</summary>
+        ///
+        /// <param name="array">The input array.</param>
+        ///
+        /// <returns>The resulting sum.</returns>
+        ///
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// 
+        /// <example id="sum-1">
+        /// <code lang="fsharp">
+        /// let input = [| 1; 5; 3; 2 |]
+        ///
+        /// input |> Array.sum
+        /// </code>
+        /// Evaluates to <c>11</c>.
+        /// </example>
+        [<CompiledName("Sum")>]
+        val inline sum: array: ^T[] -> ^T 
+                            when ^T : (static member ( + ) : ^T * ^T -> ^T) 
+                            and  ^T : (static member Zero : ^T)
+
+
+        /// <summary>Returns the sum of the results generated by applying the function to each element of the array.</summary>
+        ///
+        /// <param name="projection">The function to transform the array elements into the type to be summed.</param>
+        /// <param name="array">The input array.</param>
+        ///
+        /// <returns>The resulting sum.</returns>
+        ///
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// 
+        /// <example id="sumby-1">
+        /// <code lang="fsharp">
+        /// let input = [| "aa"; "bbb"; "cc" |]
+        ///
+        /// input |> Array.sumBy (fun s -> s.Length)
+        /// </code>
+        /// Evaluates to <c>7</c>.
+        /// </example>
+        [<CompiledName("SumBy")>]
+        val inline sumBy: projection:('T -> ^U) -> array:'T[] -> ^U 
+                            when ^U : (static member ( + ) : ^U * ^U -> ^U) 
+                            and  ^U : (static member Zero : ^U)
+
         /// <summary>Apply the given function to each element of the array. Return
         /// the array comprised of the results <c>x</c> for each element where
         /// the function returns <c>Some(x)</c>.</summary>
