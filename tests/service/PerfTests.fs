@@ -18,7 +18,7 @@ open FSharp.Compiler.Service.Tests.Common
 open TestFramework
 
 // Create an interactive checker instance
-let internal checker = FSharpChecker.Create()
+let internal checker = FSharpChecker.Create(useSyntaxTreeCache  = false)
 
 module internal Project1 =
 
@@ -63,7 +63,7 @@ let ``Test request for parse and check doesn't check whole project`` () =
     let pD, tD = FSharpChecker.ActualParseFileCount, FSharpChecker.ActualCheckFileCount
 
     printfn "checking background parsing happened...., backgroundParseCount.Value = %d" backgroundParseCount.Value
-    (backgroundParseCount.Value  >= 0) |> shouldEqual true // but note, the project does not get reparsed
+    (backgroundParseCount.Value  >= 5) |> shouldEqual true // but note, the project does not get reparsed
     printfn "checking background typechecks happened...., backgroundCheckCount.Value = %d" backgroundCheckCount.Value
     (backgroundCheckCount.Value  >= 5) |> shouldEqual true // only two extra typechecks of files
 

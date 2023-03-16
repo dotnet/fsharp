@@ -166,7 +166,7 @@ module IncrementalBuildSyntaxTree =
 
         let getValue source = lock source <| fun () -> cache.GetValue(source, getParseTask)
 
-        do if eagerParsing then getValue source |> ignore
+        do if eagerParsing && useCache then getValue source |> ignore
 
         /// Parse the given file and return the given input.
         member _.Parse() =
@@ -199,7 +199,7 @@ module IncrementalBuildSyntaxTree =
       
         member _.Invalidate() =
             cache.Remove(source) |> ignore
-            if eagerParsing then getValue source |> ignore
+            if eagerParsing && useCache then getValue source |> ignore
 
         member _.FileName = fileName
 
