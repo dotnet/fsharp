@@ -370,33 +370,6 @@ type BoundModel private (tcConfig: TcConfig,
             | _ -> None
         | _ -> None
 
-    /// If partial type-checking is enabled,
-    ///     this will create a new bound-model that will only have the partial state if the
-    ///     the current bound-model has the full state.
-    member this.ClearTcInfoExtras() =
-        let hasSig = this.BackingSignature.IsSome
-
-        // If partial checking is enabled and we have a backing sig file, then use the partial state. The partial state contains the sig state.
-        if enablePartialTypeChecking && hasSig then
-            match tcInfoNode.TryGetFull() with
-            | ValueSome (tcInfo, _) ->
-                BoundModel(
-                    tcConfig,
-                    tcGlobals,
-                    tcImports,
-                    keepAssemblyContents, keepAllBackgroundResolutions,
-                    keepAllBackgroundSymbolUses,
-                    enableBackgroundItemKeyStoreAndSemanticClassification,
-                    enablePartialTypeChecking,
-                    beforeFileChecked,
-                    fileChecked,
-                    prevTcInfo,
-                    syntaxTreeOpt,
-                    tcInfoStateOpt = Some (PartialState tcInfo))
-            | _ -> this
-        else
-            this
-
     member _.Next(syntaxTree, tcInfo) =
         BoundModel(
             tcConfig,
