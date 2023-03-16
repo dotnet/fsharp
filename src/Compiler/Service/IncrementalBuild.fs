@@ -1044,16 +1044,14 @@ type IncrementalBuilderInitialState =
 type Slot =
     {
         File: FSharpFile
-        SyntaxTree: SyntaxTree
         Stamp: DateTime
-        ModifiedStamp: DateTime option
         LogicalStamp: DateTime
+        SyntaxTree: SyntaxTree
+        Notified: bool
         Node: GraphNode<BoundModel>
-    } 
-    with member this.Modified =
-            match this.ModifiedStamp with
-            | Some stamp when stamp <> this.Stamp -> true
-            |  _ -> false
+    }
+    member this.Notify timeStamp =
+        if this.Stamp <> timeStamp then { this with Stamp = timeStamp; Notified = true } else this
 
 [<NoComparison;NoEquality>]
 type IncrementalBuilderState =
@@ -1069,6 +1067,8 @@ type IncrementalBuilderState =
 
 [<AutoOpen>]
 module IncrementalBuilderStateHelpers =
+
+    type SlotStatus = Invalidated of GraphNode<BoundModel> | Good of GraphNode<BoundModel>
 
     let createBoundModelGraphNode enablePartialTypeChecking (prevBoundModel: GraphNode<BoundModel>) syntaxTree =
         GraphNode(node {
@@ -1109,44 +1109,32 @@ module IncrementalBuilderStateHelpers =
             if initialState.useChangeNotifications then
                 state.slots
             else
-               [ for slot in state.slots ->
-                    { slot with ModifiedStamp = Some (cache.GetFileTimeStamp slot.File.Source.FilePath) } ]
+               [ for slot in state.slots -> cache.GetFileTimeStamp slot.File.Source.FilePath |> slot.Notify ]
 
-        for slot in slots do if slot.Modified then slot.SyntaxTree.Invalidate()
+        for slot in slots do if slot.Notified then slot.SyntaxTree.Invalidate()
 
-        let processSlots (prevNode: GraphNode<BoundModel>, invalidated: DateTime option) (slot: Slot) =
-            let invalidate () =
+        let processSlots status (slot: Slot) =
+            let invalidate prevNode =
                 let graphNode = createBoundModelGraphNode initialState.enablePartialTypeChecking prevNode slot.SyntaxTree
-                let stamp = defaultArg slot.ModifiedStamp slot.Stamp
-                { slot with
-                    Stamp = stamp
-                    LogicalStamp = stamp
-                    ModifiedStamp = None
-                    Node = graphNode },
-                (graphNode, Some stamp)
+                { slot with LogicalStamp = slot.Stamp; Notified = false; Node = graphNode }, Invalidated graphNode
 
-            match invalidated, slot.ModifiedStamp with
-            | None, Some stamp ->
+            match status, slot.Notified with
+            | Good prevNode, true
+            | Invalidated prevNode, true ->
                 match slot.Node.TryPeekValue() with
                 // This prevents an implementation file that has a backing signature file from invalidating the rest of the build.
                 | ValueSome(boundModel) when initialState.enablePartialTypeChecking && boundModel.BackingSignature.IsSome ->
                     let newNode = GraphNode.FromResult (boundModel.ClearTcInfoExtras())
-                    { slot with
-                        Node = newNode
-                        Stamp = stamp
-                        ModifiedStamp = None },
-                    (newNode, None)
-                | _ -> invalidate ()
-            | Some _, _ -> invalidate ()
-            | _ -> { slot with ModifiedStamp = None }, (slot.Node, None)
+                    { slot with Node = newNode; Notified = false }, Good newNode
+                | _ -> invalidate prevNode
+            | Invalidated prevNode, _ -> invalidate prevNode
+            | _ -> slot, Good (slot.Node)
 
-        let  slots, (_, invalidated) = slots |> List.mapFold processSlots (GraphNode.FromResult initialState.initialBoundModel, None)
-
-        if invalidated.IsSome then
-            let state = { state with slots = slots }
-            { state with finalizedBoundModel = createFinalizeBoundModelGraphNode initialState state.boundModels }
-        else
-            state
+        match  slots |> List.mapFold processSlots (Good (GraphNode.FromResult initialState.initialBoundModel)) with
+        | slots, Good _ -> { state with slots = slots }
+        | slots, Invalidated _ ->
+            let boundModels = slots |> Seq.map (fun s -> s.Node)
+            { state with slots = slots; finalizedBoundModel = createFinalizeBoundModelGraphNode initialState boundModels }
 
     and computeStampedReferencedAssemblies (initialState: IncrementalBuilderInitialState) state canTriggerInvalidation (cache: TimeStampCache) =
         let stampedReferencedAssemblies = state.stampedReferencedAssemblies.ToBuilder()
@@ -1199,7 +1187,7 @@ type IncrementalBuilderState with
                         File = fileNames[i]
                         Stamp = DateTime.MinValue
                         LogicalStamp = DateTime.MinValue
-                        ModifiedStamp = None
+                        Notified = false
                         SyntaxTree = initialState.syntaxTrees[i]
                         Node = m
                     }
@@ -1466,14 +1454,13 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
     member builder.NotifyFileChanged(fileName, timeStamp) =
         node {
-            let slotOfFile = builder.GetSlotOfFileName fileName
-            let slots = 
-                currentState.slots
-                |> List.updateAt slotOfFile 
-                    { currentState.slots[slotOfFile] with ModifiedStamp = Some timeStamp }
+            let slotOfFile = builder.GetSlotOfFileName fileName        
             let cache = TimeStampCache defaultTimeStamp
             let! ct = NodeCode.CancellationToken
-            setCurrentState { currentState with slots = slots } cache ct
+            setCurrentState
+                { currentState with 
+                    slots = currentState.slots |> List.updateAt slotOfFile (currentState.slots[slotOfFile].Notify timeStamp) }
+                cache ct
         }
 
     member _.SourceFiles = fileNames |> Seq.map (fun f -> f.Source.FilePath) |> List.ofSeq
