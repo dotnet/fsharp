@@ -332,8 +332,10 @@ type public FSharpCheckFileResults =
     /// <param name="lineText">The text of the line where the information is being requested.</param>
     /// <param name="names">The identifiers at the location where the information is being requested.</param>
     /// <param name="tokenTag">Used to discriminate between 'identifiers', 'strings' and others. For strings, an attempt is made to give a tooltip for a #r "..." location. Use a value from FSharpTokenInfo.Tag, or FSharpTokenTag.Identifier, unless you have other information available.</param>
+    /// <param name="width">The optional width that the layout gets squashed to.</param>
     member GetToolTip:
-        line: int * colAtEndOfNames: int * lineText: string * names: string list * tokenTag: int -> ToolTipText
+        line: int * colAtEndOfNames: int * lineText: string * names: string list * tokenTag: int * ?width: int ->
+            ToolTipText
 
     /// <summary>Compute a formatted tooltip for the given symbol at position</summary>
     ///
