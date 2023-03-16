@@ -200,11 +200,6 @@ type NodeCode private () =
         |> Node
 
 [<RequireQualifiedAccess>]
-type private GraphNodeAction<'T> =
-    | GetValue
-    | CachedValue of 'T
-
-[<RequireQualifiedAccess>]
 module GraphNode =
 
     // We need to store the culture for the VS thread that is executing now,
