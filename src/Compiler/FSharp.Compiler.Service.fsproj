@@ -283,6 +283,8 @@
     <Compile Include="TypedTree\TypedTreeOps.fs" />
     <Compile Include="TypedTree\TypedTreePickle.fsi" />
     <Compile Include="TypedTree\TypedTreePickle.fs" />
+    <Compile Include="TypedTree\TypeTreeSerialization.fsi" />
+    <Compile Include="TypedTree\TypeTreeSerialization.fs" />
     <Compile Include="Checking\import.fsi" />
     <Compile Include="Checking\import.fs" />
     <Compile Include="Checking\TypeHierarchy.fsi" />

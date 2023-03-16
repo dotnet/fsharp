@@ -143,7 +143,7 @@ let WriteSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, ccu: Ccu
         |> Option.iter (fun outputFile ->
             let outputFile = FileSystem.GetFullPathShim(outputFile)
             let signatureDataFile = FileSystem.ChangeExtensionShim(outputFile, ".signature-data.json")
-            serializeEntity signatureDataFile mspec)
+            TypeTreeSerialization.serializeEntity signatureDataFile mspec)
     
     // For historical reasons, we use a different resource name for FSharp.Core, so older F# compilers
     // don't complain when they see the resource.

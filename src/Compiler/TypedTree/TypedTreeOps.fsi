@@ -2695,6 +2695,3 @@ val (|EmptyModuleOrNamespaces|_|):
 /// Add an System.Runtime.CompilerServices.ExtensionAttribute to the Entity if found via predicate and not already present.
 val tryAddExtensionAttributeIfNotAlreadyPresent:
     tryFindExtensionAttributeIn: ((Attrib list -> Attrib option) -> Attrib option) -> entity: Entity -> Entity
-
-/// Serialize an entity to a very basic json structure.
-val serializeEntity: path: string -> entity: Entity -> unit
