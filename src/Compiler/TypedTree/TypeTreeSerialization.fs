@@ -14,22 +14,33 @@ type TypedTreeNode =
         Children: TypedTreeNode list
         Flags: int64 option
         Range: range option
+        CompilationPath: CompilationPath option
     }
 
 let rec visitEntity (entity: Entity) : TypedTreeNode =
     let kind =
         if entity.IsModule then "module"
         elif entity.IsNamespace then "namespace"
+        elif entity.IsUnionTycon then "union"
+        elif entity.IsRecordTycon then "record"
+        elif entity.IsFSharpClassTycon then "class"
+        elif entity.IsErased then "erased"
+        elif entity.IsEnumTycon then "enum"
+        elif entity.IsTypeAbbrev then "abbreviation"
+        elif entity.IsFSharpObjectModelTycon then "objectModel"
+        elif entity.IsFSharpException then "exception"
+        elif entity.IsFSharpDelegateTycon then "delegate"
+        elif entity.IsFSharpInterfaceTycon then "interface"
         else "other"
 
     let children =
-        if not entity.IsModuleOrNamespace then
-            Seq.empty
-        else
-            seq {
+        seq {
+            if entity.IsModuleOrNamespace then
                 yield! Seq.map visitEntity entity.ModuleOrNamespaceType.AllEntities
                 yield! Seq.map visitVal entity.ModuleOrNamespaceType.AllValsAndMembers
-            }
+
+            yield! visitAttributes entity.Attribs
+        }
 
     {
         Kind = kind
@@ -37,11 +48,14 @@ let rec visitEntity (entity: Entity) : TypedTreeNode =
         Children = Seq.toList children
         Flags = Some entity.entity_flags.PickledBits
         Range = Some entity.Range
+        CompilationPath = Some entity.CompilationPath
     }
 
 and visitVal (v: Val) : TypedTreeNode =
     let children =
         seq {
+            yield! visitAttributes v.Attribs
+
             match v.ValReprInfo with
             | None -> ()
             | Some reprInfo ->
@@ -56,6 +70,7 @@ and visitVal (v: Val) : TypedTreeNode =
                                 Children = []
                                 Flags = None
                                 Range = None
+                                CompilationPath = None
                             }))
 
             yield!
@@ -67,6 +82,7 @@ and visitVal (v: Val) : TypedTreeNode =
                         Children = []
                         Flags = Some typar.Flags.PickledBits
                         Range = Some typar.Range
+                        CompilationPath = None
                     })
         }
 
@@ -76,7 +92,21 @@ and visitVal (v: Val) : TypedTreeNode =
         Children = Seq.toList children
         Flags = Some v.val_flags.PickledBits
         Range = Some v.Range
+        CompilationPath = None
     }
+
+and visitAttribute (a: Attrib) : TypedTreeNode =
+    {
+        Kind = "attribute"
+        Name = a.TyconRef.CompiledName
+        Children = List.empty
+        Flags = None
+        Range = Some a.Range
+        // I don't think the tycon ComplicationPath is relevant here.
+        CompilationPath = None
+    }
+
+and visitAttributes (attribs: Attribs) : TypedTreeNode seq = List.map visitAttribute attribs
 
 let write (writer: IndentedTextWriter) key value =
     writer.WriteLine($"\"%s{key}\": \"{value}\",")
@@ -90,8 +120,10 @@ let rec serializeNode (writer: IndentedTextWriter) (addTrailingComma: bool) (nod
     write writer "kind" node.Kind
 
     node.Flags |> Option.iter (write writer "flags")
-
     node.Range |> Option.iter (write writer "range")
+
+    node.CompilationPath
+    |> Option.iter (fun cp -> cp.MangledPath |> String.concat "," |> write writer "compilationPath")
 
     if node.Children.IsEmpty then
         writer.WriteLine("\"children\": []")
