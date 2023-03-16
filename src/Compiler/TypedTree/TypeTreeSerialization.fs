@@ -1,6 +1,7 @@
 ﻿module FSharp.Compiler.TypeTreeSerialization
 
 open System.CodeDom.Compiler
+open FSharp.Compiler.Text
 open Internal.Utilities.Library
 
 open FSharp.Compiler.IO
@@ -12,6 +13,7 @@ type TypedTreeNode =
         Name: string
         Children: TypedTreeNode list
         Flags: int64 option
+        Range: range option
     }
 
 let rec visitEntity (entity: Entity) : TypedTreeNode =
@@ -34,6 +36,7 @@ let rec visitEntity (entity: Entity) : TypedTreeNode =
         Name = entity.CompiledName
         Children = Seq.toList children
         Flags = Some entity.entity_flags.PickledBits
+        Range = Some entity.Range
     }
 
 and visitVal (v: Val) : TypedTreeNode =
@@ -52,6 +55,7 @@ and visitVal (v: Val) : TypedTreeNode =
                                 Kind = "ArgInfo"
                                 Children = []
                                 Flags = None
+                                Range = None
                             }))
 
             yield!
@@ -62,6 +66,7 @@ and visitVal (v: Val) : TypedTreeNode =
                         Kind = "Typar"
                         Children = []
                         Flags = Some typar.Flags.PickledBits
+                        Range = Some typar.Range
                     })
         }
 
@@ -70,18 +75,23 @@ and visitVal (v: Val) : TypedTreeNode =
         Kind = "val"
         Children = Seq.toList children
         Flags = Some v.val_flags.PickledBits
+        Range = Some v.Range
     }
+
+let write (writer: IndentedTextWriter) key value =
+    writer.WriteLine($"\"%s{key}\": \"{value}\",")
 
 let rec serializeNode (writer: IndentedTextWriter) (addTrailingComma: bool) (node: TypedTreeNode) =
     writer.WriteLine("{")
     // Add indent after opening {
     writer.Indent <- writer.Indent + 1
 
-    writer.WriteLine($"\"name\": \"{node.Name}\",")
-    writer.WriteLine($"\"kind\": \"{node.Kind}\",")
+    write writer "name" node.Name
+    write writer "kind" node.Kind
 
-    node.Flags
-    |> Option.iter (fun flags -> writer.WriteLine($"\"flags\":%i{flags},"))
+    node.Flags |> Option.iter (write writer "flags")
+
+    node.Range |> Option.iter (write writer "range")
 
     if node.Children.IsEmpty then
         writer.WriteLine("\"children\": []")
