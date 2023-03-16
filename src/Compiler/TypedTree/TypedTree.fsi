@@ -353,6 +353,9 @@ type EntityOptionalData =
         /// The declared documentation for the type or module
         mutable entity_xmldoc: XmlDoc
 
+        /// the signature xml doc for an item in an implementation file.
+        mutable entity_other_xmldoc: XmlDoc option
+
         /// The XML document signature for this entity
         mutable entity_xmldocsig: string
 
@@ -459,6 +462,8 @@ type Entity =
     member SetIsStructRecordOrUnion: b: bool -> unit
 
     member SetOtherRange: m: (range * bool) -> unit
+
+    member SetOtherXmlDoc: xmlDoc: XmlDoc -> unit
 
     member SetTypeAbbrev: tycon_abbrev: TType option -> unit
 
@@ -1114,7 +1119,10 @@ type UnionCase =
         ReturnType: TType
 
         /// Documentation for the case
-        XmlDoc: XmlDoc
+        OwnXmlDoc: XmlDoc
+
+        /// Documentation for the case from signature file
+        mutable OtherXmlDoc: XmlDoc
 
         /// XML documentation signature for the case
         mutable XmlDocSig: string
@@ -1132,6 +1140,8 @@ type UnionCase =
         /// Attributes, attached to the generated static method to make instances of the case
         mutable Attribs: Attribs
     }
+
+    member XmlDoc: XmlDoc
 
     /// Get a field of the union case by position
     member GetFieldByIndex: n: int -> RecdField
@@ -1183,6 +1193,8 @@ type UnionCase =
 
     /// Get the signature location of the union case
     member SigRange: range
+
+    member SetOtherXmlDoc: xmlDoc: XmlDoc -> unit
 
 /// Represents a class, struct, record or exception field in an F# type, exception or union-case definition.
 /// This may represent a "field" in either a struct, class, record or union.

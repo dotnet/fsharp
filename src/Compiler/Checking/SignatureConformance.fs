@@ -166,6 +166,8 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
         and checkTypeDef (aenv: TypeEquivEnv) (infoReader: InfoReader) (implTycon: Tycon) (sigTycon: Tycon) =
             let m = implTycon.Range
             
+            implTycon.SetOtherXmlDoc(sigTycon.XmlDoc)
+            
             // Propagate defn location information from implementation to signature . 
             sigTycon.SetOtherRange (implTycon.Range, true)
             implTycon.SetOtherRange (sigTycon.Range, false)
@@ -365,7 +367,9 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             | _ -> 
                 (errorR (err FSComp.SR.ExceptionDefsNotCompatibleExceptionDeclarationsDiffer); false)
 
-        and checkUnionCase aenv infoReader (enclosingTycon: Tycon) implUnionCase sigUnionCase =
+        and checkUnionCase aenv infoReader (enclosingTycon: Tycon) (implUnionCase: UnionCase) (sigUnionCase: UnionCase) =
+            implUnionCase.SetOtherXmlDoc(sigUnionCase.XmlDoc)
+            
             let err f = errorR(UnionCaseNotContained(denv, infoReader, enclosingTycon, implUnionCase, sigUnionCase, f));false
             sigUnionCase.OtherRangeOpt <- Some (implUnionCase.Range, true)
             implUnionCase.OtherRangeOpt <- Some (sigUnionCase.Range, false)

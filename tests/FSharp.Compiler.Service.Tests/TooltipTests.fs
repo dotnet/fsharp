@@ -11,7 +11,7 @@ open FSharp.Compiler.Symbols
 open NUnit.Framework
 
 [<Test>]
-let ``Display XML doc of signature file if implementation doesn't have one`` () =
+let ``Display XML doc of signature file for let if implementation doesn't have one`` () =
     let files =
         Map.ofArray
             [| "A.fsi",
@@ -68,6 +68,177 @@ let bar a b = a - b
     | _ -> Assert.Fail "Expected checking to succeed."
     
     
+[<Test>]
+let ``Display XML doc of signature file for partial AP if implementation doesn't have one`` () =
+    let files =
+        Map.ofArray
+            [| "A.fsi",
+               SourceText.ofString
+                   """
+module Foo
+
+/// Some Sig Doc on IsThree
+val (|IsThree|_|): x: int -> int option
+"""
+
+               "A.fs",
+               SourceText.ofString
+                   """
+module Foo
+
+// No XML doc here because the signature file has one right?
+let (|IsThree|_|) x = if x = 3 then Some x else None
+""" |]
+
+    let documentSource fileName = Map.tryFind fileName files
+
+    let projectOptions =
+        let _, projectOptions = mkTestFileAndOptions "" Array.empty
+
+        { projectOptions with
+            SourceFiles = [| "A.fsi"; "A.fs" |] }
+
+    let checker =
+        FSharpChecker.Create(documentSource = DocumentSource.Custom documentSource)
+
+    let checkResult =
+        checker.ParseAndCheckFileInProject("A.fs", 0, Map.find "A.fs" files, projectOptions)
+        |> Async.RunImmediate
+
+    match checkResult with
+    | _, FSharpCheckFileAnswer.Succeeded(checkResults) ->
+        // Get the tooltip for `IsThree` in the implementation file
+        let (ToolTipText tooltipElements) =
+            checkResults.GetToolTip(4, 4, "let (|IsThree|_|) x = if x = 3 then Some x else None", [ "IsThree" ], FSharpTokenTag.Identifier)
+
+        match tooltipElements with
+        | [ ToolTipElement.Group [ element ] ] ->
+            match element.XmlDoc with
+            | FSharpXmlDoc.FromXmlText xmlDoc ->
+                Assert.True xmlDoc.NonEmpty
+                Assert.True (xmlDoc.UnprocessedLines[0].Contains("Some Sig Doc on IsThree"))
+            | xmlDoc -> Assert.Fail $"Expected FSharpXmlDoc.FromXmlText, got {xmlDoc}"
+        | elements -> Assert.Fail $"Expected a single tooltip group element, got {elements}"
+    | _ -> Assert.Fail "Expected checking to succeed."
+    
+
+[<Test>]
+let ``Display XML doc of signature file for DU if implementation doesn't have one`` () =
+    let files =
+        Map.ofArray
+            [| "A.fsi",
+               SourceText.ofString
+                   """
+module Foo
+
+/// Some sig comment on the disc union type
+type Bar =
+    | Case1 of int * string
+    | Case2 of string
+"""
+
+               "A.fs",
+               SourceText.ofString
+                   """
+module Foo
+
+// No XML doc here because the signature file has one right?
+type Bar =
+    | Case1 of int * string
+    | Case2 of string
+""" |]
+
+    let documentSource fileName = Map.tryFind fileName files
+
+    let projectOptions =
+        let _, projectOptions = mkTestFileAndOptions "" Array.empty
+
+        { projectOptions with
+            SourceFiles = [| "A.fsi"; "A.fs" |] }
+
+    let checker =
+        FSharpChecker.Create(documentSource = DocumentSource.Custom documentSource)
+
+    let checkResult =
+        checker.ParseAndCheckFileInProject("A.fs", 0, Map.find "A.fs" files, projectOptions)
+        |> Async.RunImmediate
+
+    match checkResult with
+    | _, FSharpCheckFileAnswer.Succeeded(checkResults) ->
+        // Get the tooltip for `Bar` in the implementation file
+        let (ToolTipText tooltipElements) =
+            checkResults.GetToolTip(4, 7, "type Bar =", [ "Bar" ], FSharpTokenTag.Identifier)
+
+        match tooltipElements with
+        | [ ToolTipElement.Group [ element ] ] ->
+            match element.XmlDoc with
+            | FSharpXmlDoc.FromXmlText xmlDoc ->
+                Assert.True xmlDoc.NonEmpty
+                Assert.True (xmlDoc.UnprocessedLines[0].Contains("Some sig comment on the disc union type"))
+            | xmlDoc -> Assert.Fail $"Expected FSharpXmlDoc.FromXmlText, got {xmlDoc}"
+        | elements -> Assert.Fail $"Expected a single tooltip group element, got {elements}"
+    | _ -> Assert.Fail "Expected checking to succeed."
+
+
+[<Test>]
+let ``Display XML doc of signature file for DU case if implementation doesn't have one`` () =
+    let files =
+        Map.ofArray
+            [| "A.fsi",
+               SourceText.ofString
+                   """
+module Foo
+
+type Bar =
+    | BarCase1 of int * string
+    /// Some sig comment on the disc union case
+    | BarCase2 of string
+"""
+
+               "A.fs",
+               SourceText.ofString
+                    """
+module Foo
+
+type Bar =
+    | BarCase1 of int * string
+    // No XML doc here because the signature file has one right?
+    | BarCase2 of string
+""" |]
+
+    let documentSource fileName = Map.tryFind fileName files
+
+    let projectOptions =
+        let _, projectOptions = mkTestFileAndOptions "" Array.empty
+
+        { projectOptions with
+            SourceFiles = [| "A.fsi"; "A.fs" |] }
+
+    let checker =
+        FSharpChecker.Create(documentSource = DocumentSource.Custom documentSource)
+
+    let checkResult =
+        checker.ParseAndCheckFileInProject("A.fs", 0, Map.find "A.fs" files, projectOptions)
+        |> Async.RunImmediate
+
+    match checkResult with
+    | _, FSharpCheckFileAnswer.Succeeded(checkResults) ->
+        let barSymbol = findSymbolByName "BarCase2" checkResults
+        // Get the tooltip for `BarCase2` in the implementation file
+        let (ToolTipText tooltipElements) =
+            checkResults.GetToolTip(7, 14, "    | BarCase2 of string", [ "BarCase2" ], FSharpTokenTag.Identifier)   // ToDo: Why line 7?
+
+        match tooltipElements with
+        | [ ToolTipElement.Group [ element ] ] ->
+            match element.XmlDoc with
+            | FSharpXmlDoc.FromXmlText xmlDoc ->
+                Assert.True xmlDoc.NonEmpty
+                Assert.True (xmlDoc.UnprocessedLines[0].Contains("Some sig comment on the disc union case"))
+            | xmlDoc -> Assert.Fail $"Expected FSharpXmlDoc.FromXmlText, got {xmlDoc}"
+        | elements -> Assert.Fail $"Expected a single tooltip group element, got {elements}"
+    | _ -> Assert.Fail "Expected checking to succeed."
+
+
 let testToolTipSquashing source line colAtEndOfNames lineText names tokenTag =
     let files =
         Map.ofArray
