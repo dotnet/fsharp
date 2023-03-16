@@ -969,8 +969,7 @@ type IncrementalBuilderInitialState =
         outfile: string
         assemblyName: string
         lexResourceManager: Lexhelp.LexResourceManager
-        fileNames: ImmutableArray<FSharpFile>
-        syntaxTrees: ImmutableArray<SyntaxTree>
+        fileNames: FSharpFile list
         enablePartialTypeChecking: bool
         beforeFileChecked: Event<string>
         fileChecked: Event<string>
@@ -996,11 +995,9 @@ type IncrementalBuilderInitialState =
             assemblyName,
             lexResourceManager,
             sourceFiles,
-            syntaxTrees,
             enablePartialTypeChecking,
             beforeFileChecked: Event<string>,
             fileChecked: Event<string>,
-            fileParsed: Event<string>,
 #if !NO_TYPEPROVIDERS
             importsInvalidatedByTypeProvider: Event<unit>,
 #endif
@@ -1009,6 +1006,10 @@ type IncrementalBuilderInitialState =
             useChangeNotifications: bool,
             useSyntaxTreeCache
         ) =
+
+        let fileParsed = Event<string>()
+
+
 
         let initialState =
             {
@@ -1019,8 +1020,7 @@ type IncrementalBuilderInitialState =
                 outfile = outfile
                 assemblyName = assemblyName
                 lexResourceManager = lexResourceManager
-                fileNames = sourceFiles |> ImmutableArray.ofSeq
-                syntaxTrees = syntaxTrees |> ImmutableArray.ofSeq
+                fileNames = sourceFiles
                 enablePartialTypeChecking = enablePartialTypeChecking
                 beforeFileChecked = beforeFileChecked
                 fileChecked = fileChecked
@@ -1173,25 +1173,43 @@ type IncrementalBuilderState with
     static member Create(initialState: IncrementalBuilderInitialState) =
         let defaultTimeStamp = initialState.defaultTimeStamp
         let initialBoundModel = initialState.initialBoundModel
-        let fileNames = initialState.fileNames
+        let sourceFiles = initialState.fileNames
         let referencedAssemblies = initialState.referencedAssemblies
         let cache = TimeStampCache(defaultTimeStamp)
         let initialBoundModel = GraphNode.FromResult initialBoundModel
+
+        let syntaxTrees =
+            let create sourceFile eagerParsing =
+                SyntaxTree(initialState.tcConfig, initialState.fileParsed, initialState.lexResourceManager, sourceFile, initialState.useSyntaxTreeCache, eagerParsing)
+            match sourceFiles with
+            | head :: _ ->
+                create head true ::
+                [
+                    for prev, curr in  sourceFiles |> List.pairwise do
+                        let eager =
+                            if initialState.enablePartialTypeChecking then
+                                not (SyntaxTree.isBackingSignature curr.Source.FilePath prev.Source.FilePath)
+                            else
+                                true
+                        create curr eager
+                ]
+            | _ -> []
+
         let boundModels = 
-            initialState.syntaxTrees
+            syntaxTrees
             |> Seq.scan (createBoundModelGraphNode initialState.enablePartialTypeChecking) initialBoundModel
             |> Seq.skip 1
 
         let slots =
             [
-                for i, m in boundModels |> Seq.indexed do
+                for model, file, syntaxTree in  Seq.zip3 boundModels sourceFiles syntaxTrees do
                     {
-                        File = fileNames[i]
+                        File = file
                         Stamp = DateTime.MinValue
                         LogicalStamp = DateTime.MinValue
                         Notified = false
-                        SyntaxTree = initialState.syntaxTrees[i]
-                        Node = m
+                        SyntaxTree = syntaxTree
+                        Node = model
                     }
             ]
 
@@ -1435,7 +1453,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                    String.Compare(fileName, f.Source.FilePath, StringComparison.CurrentCultureIgnoreCase)=0
                 || String.Compare(FileSystem.GetFullPathShim fileName, FileSystem.GetFullPathShim f.Source.FilePath, StringComparison.CurrentCultureIgnoreCase)=0
             result
-        match fileNames |> ImmutableArray.tryFindIndex CompareFileNames with
+        match fileNames |> List.tryFindIndex CompareFileNames with
         | Some slot -> Some slot
         | None -> None
 
@@ -1451,7 +1469,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
     member builder.GetParseResultsForFile fileName =
         let slotOfFile = builder.GetSlotOfFileName fileName
-        let syntaxTree = initialState.syntaxTrees[slotOfFile]
+        let syntaxTree = currentState.slots[slotOfFile].SyntaxTree
         syntaxTree.Parse()
 
     member builder.NotifyFileChanged(fileName, timeStamp) =
@@ -1714,24 +1732,6 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                 |> List.map (fun (m, fileName, isLastCompiland) -> 
                     { Range = m; Source = getFSharpSource fileName; Flags = isLastCompiland } )
 
-            let fileParsed = Event<string>()
-
-            let syntaxTrees =
-                let create sourceFile eagerParsing = SyntaxTree(tcConfig, fileParsed, resourceManager, sourceFile, useSyntaxTreeCache, eagerParsing)
-                match sourceFiles with
-                | head :: _ ->
-                    create head true ::
-                    [
-                        for prev, curr in  sourceFiles |> List.pairwise do
-                            let eager =
-                                if enablePartialTypeChecking then
-                                    not (SyntaxTree.isBackingSignature curr.Source.FilePath prev.Source.FilePath)
-                                else
-                                    true
-                            create curr eager
-                    ]
-                | _ -> []
-
             let initialState =
                 IncrementalBuilderInitialState.Create(
                     initialBoundModel,
@@ -1742,11 +1742,9 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                     assemblyName,
                     resourceManager,
                     sourceFiles,
-                    syntaxTrees,
                     enablePartialTypeChecking,
                     beforeFileChecked,
                     fileChecked,
-                    fileParsed,
 #if !NO_TYPEPROVIDERS
                     importsInvalidatedByTypeProvider,
 #endif
