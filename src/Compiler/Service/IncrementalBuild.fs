@@ -1117,13 +1117,13 @@ module IncrementalBuilderStateHelpers =
                 { slot with LogicalStamp = slot.Stamp; Notified = false; Node = graphNode }, Invalidated graphNode
 
             match status, slot.Notified with
-            | Good prevNode, true
-            | Invalidated prevNode, true ->
+            | (Good prevNode | Invalidated prevNode) as status, true ->
                 match slot.Node.TryPeekValue() with
                 // This prevents an implementation file that has a backing signature file from invalidating the rest of the build.
                 | ValueSome(boundModel) when initialState.enablePartialTypeChecking && boundModel.BackingSignature.IsSome ->
-                    let newNode = GraphNode.FromResult (boundModel.ClearTcInfoExtras())
-                    { slot with Node = newNode; Notified = false }, Good newNode
+                    let slot, _ = invalidate prevNode
+                    // We return previous status because implementation files don't invalidate build.
+                    slot, status
                 | _ -> invalidate prevNode
             | Invalidated prevNode, _ -> invalidate prevNode
             | _ -> slot, Good (slot.Node)
@@ -1507,7 +1507,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             getSource,
             useChangeNotifications,
             useSyntaxTreeCache
-        ) =       
+        ) =
 
       let useSimpleResolutionSwitch = "--simpleresolution"
 
