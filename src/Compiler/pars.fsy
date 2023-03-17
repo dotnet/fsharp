@@ -643,14 +643,17 @@ moduleSpfn:
 
   | opt_attributes opt_access moduleIntro colonOrEquals namedModuleAbbrevBlock 
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-        let _mModule, isRec, path, vis, attribs2 = $3
+        let mModule, isRec, path, vis, attribs2 = $3
         if isRec then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsInvalidUseOfRec())
         if not (isSingleton path) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleAbbreviationMustBeSimpleName())
         if not (isNil $1) then raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsIgnoreAttributesOnModuleAbbreviation())
         if not (isNil attribs2) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsIgnoreAttributesOnModuleAbbreviation())
         match vis with
         | Some vis -> raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsIgnoreVisibilityOnModuleAbbreviationAlwaysPrivate(vis.ToString()))
-        | _ -> SynModuleSigDecl.ModuleAbbrev(List.head path, $5, rhs2 parseState 1 5) } 
+        | _ ->
+            let lid: SynLongIdent = $5
+            let m = unionRanges mModule lid.Range
+            SynModuleSigDecl.ModuleAbbrev(List.head path, lid.LongIdent, m) } 
 
   | opt_attributes opt_access moduleIntro colonOrEquals moduleSpecBlock
       { let mModule, isRec, path, vis, attribs2 = $3
@@ -664,6 +667,17 @@ moduleSpfn:
                 |> unionRangeWithXmlDoc xmlDoc
         let trivia: SynModuleSigDeclNestedModuleTrivia = { ModuleKeyword = Some mModule; EqualsRange = $4 }
         SynModuleSigDecl.NestedModule(info, isRec, $5, m, trivia) }
+
+  | opt_attributes opt_access moduleIntro error
+      { let mModule, isRec, path, vis, attribs2 = $3
+        let xmlDoc = grabXmlDoc(parseState, $1, 1)
+        if not (isSingleton path) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleDefnMustBeSimpleName())
+        if isRec then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsInvalidUseOfRec())
+        let info = SynComponentInfo($1 @ attribs2, None, [], path, xmlDoc, false, vis, rhs parseState 3)
+        if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
+        let mWhole = rhs2 parseState 1 3 |> unionRangeWithXmlDoc xmlDoc
+        let trivia: SynModuleSigDeclNestedModuleTrivia = { ModuleKeyword = Some mModule; EqualsRange = None }
+        SynModuleSigDecl.NestedModule(info, isRec, [], mWhole, trivia) }
 
   | opt_attributes opt_access typeKeyword tyconSpfn tyconSpfnList
       { if Option.isSome $2 then errorR (Error (FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
@@ -1285,6 +1299,15 @@ moduleDefn:
             let m = match mEndOpt with | None -> m | Some mEnd -> unionRanges m mEnd
             [ SynModuleDecl.NestedModule(info, isRec, def, false, m, trivia) ] }
 
+  /* incomplete 'module' definitions */
+  | opt_attributes opt_access moduleIntro error
+      { let xmlDoc = grabXmlDoc(parseState, $1, 1)
+        let mWhole = rhs2 parseState 1 3 |> unionRangeWithXmlDoc xmlDoc
+        let attribs, (mModule, isRec, path, vis, attribs2) = $1, $3
+        let info = SynComponentInfo(attribs @ attribs2, None, [], path, xmlDoc, false, vis, rhs parseState 3)
+        let trivia: SynModuleDeclNestedModuleTrivia = { ModuleKeyword = Some mModule; EqualsRange = None }
+        [ SynModuleDecl.NestedModule(info, isRec, [], false, mWhole, trivia) ] }
+
   /* unattached custom attributes */
   | attributes recover
       { errorR(Error(FSComp.SR.parsAttributeOnIncompleteCode(), rhs parseState 1))
@@ -1307,10 +1330,10 @@ openDecl:
 /* We don't use it in signature files */
 namedModuleAbbrevBlock:
   | OBLOCKBEGIN path oblockend 
-     { $2.LongIdent }
+     { $2 }
 
   | path 
-     { $1.LongIdent  }
+     { $1  }
        
 
 /* The right-hand-side of a module definition */ 

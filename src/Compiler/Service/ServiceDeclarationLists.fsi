@@ -226,7 +226,7 @@ type public MethodGroup =
     static member internal Empty: MethodGroup
 
 module internal DeclarationListHelpers =
-    val FormatStructuredDescriptionOfItem: isDecl:bool -> InfoReader -> AccessorDomain -> range -> DisplayEnv -> ItemWithInst -> ToolTipElement
+    val FormatStructuredDescriptionOfItem: isDecl:bool -> InfoReader -> AccessorDomain -> range -> DisplayEnv -> ItemWithInst -> int option -> ToolTipElement
 
     val RemoveDuplicateCompletionItems: TcGlobals -> CompletionItem list -> CompletionItem list
 
