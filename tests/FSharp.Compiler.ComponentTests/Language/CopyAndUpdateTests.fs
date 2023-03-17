@@ -111,6 +111,27 @@ if actual2 <> expected2 then
     |> shouldSucceed
 
 [<Fact>]
+let ``Nested copy-and-update correctly updates fields in nominal record with dotted field``() =
+    FSharp """
+module CopyAndUpdateTests
+
+type A = { B: string }
+
+type Foo = { ``A.B``: string; A: A; C: int }
+
+let t1 = { ``A.B`` = "fooAB"; A = { B = "fooB" }; C = 42 }
+
+let actual = { t1 with Foo.``A.B`` = "barAB"; Foo.A.B = "barB" }
+let expected = { ``A.B`` = "barAB"; A = { B = "barB" }; C = 42 }
+
+if actual <> expected then
+    failwith "actual does not equal expected"
+    """
+    |> withLangVersionPreview
+    |> compileExeAndRun
+    |> shouldSucceed
+
+[<Fact>]
 let ``Nested copy-and-update correctly updates fields in nominal generic record``() =
     FSharp """
 module CopyAndUpdateTests
