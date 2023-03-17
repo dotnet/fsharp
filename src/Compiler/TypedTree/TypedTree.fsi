@@ -2657,6 +2657,8 @@ type EntityRef =
     /// an XML file).
     member XmlDoc: XmlDoc
 
+    member SetOtherXmlDoc: XmlDoc -> unit
+
     /// The XML documentation sig-string of the entity, if any, to use to lookup an .xml doc file. This also acts
     /// as a cache for this sig-string computation.
     member XmlDocSig: string

@@ -3530,7 +3530,15 @@ type EntityRef =
     /// then this _does_ include this documentation. If the entity is backed by Abstract IL metadata
     /// or comes from another F# assembly then it does not (because the documentation will get read from 
     /// an XML file).
-    member x.XmlDoc = x.Deref.XmlDoc
+    member x.XmlDoc =
+        if not (x.Deref.XmlDoc.IsEmpty) then
+                x.Deref.XmlDoc
+        else
+            x.Deref.entity_opt_data
+            |> Option.bind (fun d -> d.entity_other_xmldoc)
+            |> Option.defaultValue XmlDoc.Empty
+    
+    member x.SetOtherXmlDoc (xmlDoc: XmlDoc) = x.Deref.SetOtherXmlDoc(xmlDoc)
 
     /// The XML documentation sig-string of the entity, if any, to use to lookup an .xml doc file. This also acts
     /// as a cache for this sig-string computation.

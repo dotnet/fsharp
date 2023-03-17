@@ -652,7 +652,8 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                              allPairsOk && not someNotOk)
 
 
-        and checkModuleOrNamespace aenv (infoReader: InfoReader) implModRef sigModRef = 
+        and checkModuleOrNamespace aenv (infoReader: InfoReader) implModRef sigModRef =
+            implModRef.SetOtherXmlDoc(sigModRef.XmlDoc)
             // Propagate defn location information from implementation to signature . 
             sigModRef.SetOtherRange (implModRef.Range, true)
             implModRef.Deref.SetOtherRange (sigModRef.Range, false)
