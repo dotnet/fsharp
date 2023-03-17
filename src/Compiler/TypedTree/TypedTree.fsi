@@ -1308,7 +1308,7 @@ type RecdField =
 
     /// Get or set the XML documentation signature for the field
     member XmlDocSig: string with get, set
-    
+
     member SetOtherXmlDoc: xmlDoc: XmlDoc -> unit
 
 /// Represents the implementation of an F# exception definition.
