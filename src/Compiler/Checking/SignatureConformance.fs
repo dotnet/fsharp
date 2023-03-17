@@ -380,6 +380,8 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             else checkAttribs aenv implUnionCase.Attribs sigUnionCase.Attribs (fun attribs -> implUnionCase.Attribs <- attribs)
 
         and checkField aenv infoReader (enclosingTycon: Tycon) implField sigField =
+            implField.SetOtherXmlDoc(sigField.XmlDoc)
+            
             let err f = errorR(FieldNotContained(denv, infoReader, enclosingTycon, implField, sigField, f)); false
             sigField.rfield_other_range <- Some (implField.Range, true)
             implField.rfield_other_range <- Some (sigField.Range, false)

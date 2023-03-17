@@ -1780,6 +1780,9 @@ type RecdField =
 
       /// Documentation for the field 
       rfield_xmldoc: XmlDoc
+      
+      /// Documentation for the field from signature file 
+      mutable rfield_otherxmldoc: XmlDoc
 
       /// XML Documentation signature for the field
       mutable rfield_xmldocsig: string
@@ -1872,7 +1875,14 @@ type RecdField =
     member v.FormalType = v.rfield_type
 
     /// XML Documentation signature for the field
-    member v.XmlDoc = v.rfield_xmldoc
+    member v.XmlDoc =
+        if not v.rfield_xmldoc.IsEmpty then
+            v.rfield_xmldoc
+        else
+            v.rfield_otherxmldoc
+    
+    member v.SetOtherXmlDoc (xmlDoc: XmlDoc) =
+        v.rfield_otherxmldoc <- xmlDoc        
 
     /// Get or set the XML documentation signature for the field
     member v.XmlDocSig
@@ -5913,7 +5923,8 @@ type Construct() =
           rfield_const = konst
           rfield_access = access
           rfield_secret = secret
-          rfield_xmldoc = docOption 
+          rfield_xmldoc = docOption
+          rfield_otherxmldoc = XmlDoc.Empty
           rfield_xmldocsig = ""
           rfield_id = id
           rfield_name_generated = nameGenerated

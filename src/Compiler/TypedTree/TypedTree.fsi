@@ -1208,6 +1208,9 @@ type RecdField =
         /// Documentation for the field
         rfield_xmldoc: XmlDoc
 
+        /// Documentation for the field from signature file
+        mutable rfield_otherxmldoc: XmlDoc
+
         /// XML Documentation signature for the field
         mutable rfield_xmldocsig: string
 
@@ -1305,6 +1308,8 @@ type RecdField =
 
     /// Get or set the XML documentation signature for the field
     member XmlDocSig: string with get, set
+    
+    member SetOtherXmlDoc: xmlDoc: XmlDoc -> unit
 
 /// Represents the implementation of an F# exception definition.
 [<NoEquality; NoComparison>]

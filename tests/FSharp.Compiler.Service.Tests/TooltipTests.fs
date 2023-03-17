@@ -223,7 +223,6 @@ type Bar =
 
     match checkResult with
     | _, FSharpCheckFileAnswer.Succeeded(checkResults) ->
-        let barSymbol = findSymbolByName "BarCase2" checkResults
         // Get the tooltip for `BarCase2` in the implementation file
         let (ToolTipText tooltipElements) =
             checkResults.GetToolTip(7, 14, "    | BarCase2 of string", [ "BarCase2" ], FSharpTokenTag.Identifier)   // ToDo: Why line 7?
@@ -234,6 +233,120 @@ type Bar =
             | FSharpXmlDoc.FromXmlText xmlDoc ->
                 Assert.True xmlDoc.NonEmpty
                 Assert.True (xmlDoc.UnprocessedLines[0].Contains("Some sig comment on the disc union case"))
+            | xmlDoc -> Assert.Fail $"Expected FSharpXmlDoc.FromXmlText, got {xmlDoc}"
+        | elements -> Assert.Fail $"Expected a single tooltip group element, got {elements}"
+    | _ -> Assert.Fail "Expected checking to succeed."
+
+
+[<Test>]
+let ``Display XML doc of signature file for record type if implementation doesn't have one`` () =
+    let files =
+        Map.ofArray
+            [| "A.fsi",
+               SourceText.ofString
+                   """
+module Foo
+
+/// Some sig comment on record type
+type Bar = {
+    SomeField: int
+}
+"""
+
+               "A.fs",
+               SourceText.ofString
+                    """
+module Foo
+
+type Bar = {
+    SomeField: int
+}
+""" |]
+
+    let documentSource fileName = Map.tryFind fileName files
+
+    let projectOptions =
+        let _, projectOptions = mkTestFileAndOptions "" Array.empty
+
+        { projectOptions with
+            SourceFiles = [| "A.fsi"; "A.fs" |] }
+
+    let checker =
+        FSharpChecker.Create(documentSource = DocumentSource.Custom documentSource)
+
+    let checkResult =
+        checker.ParseAndCheckFileInProject("A.fs", 0, Map.find "A.fs" files, projectOptions)
+        |> Async.RunImmediate
+
+    match checkResult with
+    | _, FSharpCheckFileAnswer.Succeeded(checkResults) ->
+        // Get the tooltip for `Bar` in the implementation file
+        let (ToolTipText tooltipElements) =
+            checkResults.GetToolTip(3, 9, "type Bar = {", [ "Bar" ], FSharpTokenTag.Identifier)
+
+        match tooltipElements with
+        | [ ToolTipElement.Group [ element ] ] ->
+            match element.XmlDoc with
+            | FSharpXmlDoc.FromXmlText xmlDoc ->
+                Assert.True xmlDoc.NonEmpty
+                Assert.True (xmlDoc.UnprocessedLines[0].Contains("Some sig comment on record type"))
+            | xmlDoc -> Assert.Fail $"Expected FSharpXmlDoc.FromXmlText, got {xmlDoc}"
+        | elements -> Assert.Fail $"Expected a single tooltip group element, got {elements}"
+    | _ -> Assert.Fail "Expected checking to succeed."
+
+
+[<Test>]
+let ``Display XML doc of signature file for record field if implementation doesn't have one`` () =
+    let files =
+        Map.ofArray
+            [| "A.fsi",
+               SourceText.ofString
+                   """
+module Foo
+
+type Bar = {
+    /// Some sig comment on record field
+    SomeField: int
+}
+"""
+
+               "A.fs",
+               SourceText.ofString
+                    """
+module Foo
+
+type Bar = {
+    SomeField: int
+}
+""" |]
+
+    let documentSource fileName = Map.tryFind fileName files
+
+    let projectOptions =
+        let _, projectOptions = mkTestFileAndOptions "" Array.empty
+
+        { projectOptions with
+            SourceFiles = [| "A.fsi"; "A.fs" |] }
+
+    let checker =
+        FSharpChecker.Create(documentSource = DocumentSource.Custom documentSource)
+
+    let checkResult =
+        checker.ParseAndCheckFileInProject("A.fs", 0, Map.find "A.fs" files, projectOptions)
+        |> Async.RunImmediate
+
+    match checkResult with
+    | _, FSharpCheckFileAnswer.Succeeded(checkResults) ->
+        // Get the tooltip for `Bar` in the implementation file
+        let (ToolTipText tooltipElements) =
+            checkResults.GetToolTip(5, 9, "    SomeField: int", [ "SomeField" ], FSharpTokenTag.Identifier) // ToDo: Why ling 5?
+
+        match tooltipElements with
+        | [ ToolTipElement.Group [ element ] ] ->
+            match element.XmlDoc with
+            | FSharpXmlDoc.FromXmlText xmlDoc ->
+                Assert.True xmlDoc.NonEmpty
+                Assert.True (xmlDoc.UnprocessedLines[0].Contains("Some sig comment on record field"))
             | xmlDoc -> Assert.Fail $"Expected FSharpXmlDoc.FromXmlText, got {xmlDoc}"
         | elements -> Assert.Fail $"Expected a single tooltip group element, got {elements}"
     | _ -> Assert.Fail "Expected checking to succeed."
