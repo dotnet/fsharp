@@ -2061,7 +2061,7 @@ module Array =
         let private maxPartitions = Environment.ProcessorCount // The maximum number of partitions to use
         let private minChunkSize = 256 // The minimum size of a chunk to be sorted in parallel
 
-        let private createPartitionsUpTo maxIdxExclusive (array: 'T[]) =
+        let private createPartitionsUpToWithMinChunkSize maxIdxExclusive minChunkSize (array: 'T[]) =
             [|
                 let chunkSize =
                     match maxIdxExclusive with
@@ -2077,6 +2077,94 @@ module Array =
 
                 yield new ArraySegment<'T>(array, offset, maxIdxExclusive - offset)
             |]
+
+        let private createPartitionsUpTo maxIdxExclusive (array: 'T[]) =
+            createPartitionsUpToWithMinChunkSize maxIdxExclusive minChunkSize array
+
+        let chunkNonEmptyArrayAndPrepareEmptyResults (array: 'T[]) = 
+            checkNonNull "array" array
+            if array.Length = 0 then
+                invalidArg "array" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
+
+            let chunks = createPartitionsUpToWithMinChunkSize array.Length 1 array
+            chunks,Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked chunks.Length
+
+
+        [<CompiledName("ReduceBy")>]
+        let reduceBy (projection:'T -> 'U) (reduction:'U -> 'U ->'U) (array: 'T[]) =
+        (* This function is there also as a support vehicle for other aggregations. 
+           It is a public in order to be called from inlined functions, the benefit of inlining call into it is significant *)
+
+            let chunks,chunkResults = chunkNonEmptyArrayAndPrepareEmptyResults array
+
+            Parallel.For(
+                0,
+                chunks.Length,
+                fun chunkIdx ->
+                    let chunk = chunks[chunkIdx]
+                    let mutable res = projection array[chunk.Offset]
+                    let lastIdx = chunk.Offset + chunk.Count - 1
+
+                    for i = chunk.Offset + 1 to lastIdx do
+                        let projected = projection array[i]
+                        res <- reduction res projected
+
+                    chunkResults[chunkIdx] <- res
+            ) |> ignore
+
+            let mutable finalResult = chunkResults[0]
+
+            for i = 1 to chunkResults.Length - 1 do
+                finalResult <- reduction finalResult chunkResults[i]
+
+            finalResult
+
+        [<CompiledName("Reduce")>]
+        let inline reduce ([<InlineIfLambda>] reduction) (array: _[]) = array |> reduceBy id reduction           
+
+        [<CompiledName("MinBy")>]
+        let inline minBy ([<InlineIfLambda>] projection) (array: _[]) =
+            let inline vFst struct(a,_) = a
+            let inline vSnd struct(_,b) = b
+            array 
+            |> reduceBy (fun x -> struct(projection x, x)) (fun a b -> if vFst a < vFst b then a else b)
+            |> vSnd
+
+        [<CompiledName("Min")>]
+        let inline min (array: _[]) =
+            array |> reduce (fun a b -> if a < b then a else b)
+
+        [<CompiledName("SumBy")>]
+        let inline sumBy ([<InlineIfLambda>] projection: 'T -> ^U) (array: 'T[]) : ^U =
+            if array.Length = 0 then
+                LanguagePrimitives.GenericZero
+            else
+                array |> reduceBy projection Operators.Checked.(+) 
+
+        [<CompiledName("Sum")>]
+        let inline sum (array: ^T[]) : ^T =
+            array |> sumBy id
+
+        [<CompiledName("MaxBy")>]
+        let inline maxBy projection (array: _[]) =
+            let inline vFst struct(a,_) = a
+            let inline vSnd struct(_,b) = b
+            array 
+            |> reduceBy (fun x -> struct(projection x, x)) (fun a b -> if vFst a > vFst b then a else b)
+            |> vSnd
+
+        [<CompiledName("Max")>]
+        let inline max (array: _[]) =
+            array |> reduce (fun a b -> if a > b then a else b)
+
+        [<CompiledName("AverageBy")>]
+        let inline averageBy ([<InlineIfLambda>] projection: 'T -> ^U) (array: 'T[]) : ^U =
+            let sum = array |> sumBy projection
+            LanguagePrimitives.DivideByInt sum (array.Length)
+
+        [<CompiledName("Average")>]
+        let inline average (array: 'T[]) =
+            array |> averageBy id
 
         let inline groupByImplParallel
             (comparer: IEqualityComparer<'SafeKey>)

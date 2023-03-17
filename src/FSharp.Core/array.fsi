@@ -3190,8 +3190,6 @@ module Array =
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val tryPick: chooser:('T -> 'U option) -> array:'T[] -> 'U option
 
-
-
         /// <summary>Applies a function to each element of the array in parallel, threading an accumulator argument
         /// through the computation for each thread involved in the computation. After processing entire input, results from all threads are reduced together.
         /// Raises ArgumentException if the array is empty.</summary>
@@ -3214,10 +3212,37 @@ module Array =
         ///
         /// inputs |> Array.Parallel.reduce (fun a b -> a + b)
         /// </code>
-        /// Evaluates to <c>1 + 3 + 4 + 2</c>. However, the system could have decided to compute (1+3) and (4+2) first, and then put them together.</c>
+        /// Evaluates to <c>1 + 3 + 4 + 2</c>. However, the system could have decided to compute (1+3) and (4+2) first, and then put them together.
         /// </example>
         [<CompiledName("Reduce")>]
-        val reduce: reduction:('T -> 'T -> 'T) -> array:'T[] -> 'T
+        val inline reduce: reduction:('T -> 'T -> 'T) -> array:'T[] -> 'T
+
+        /// <summary>Applies a projection function to each element of the array in parallel, reducing elements in each thread with a dedicated 'reduction' function.
+        /// After processing entire input, results from all threads are reduced together.
+        /// Raises ArgumentException if the array is empty.</summary>
+
+        /// <remarks>The order of processing is not guaranteed. For that reason, the 'reduction' function argument should be commutative. 
+        /// (That is, changing the order of execution must not affect the result)        
+        ///
+        /// <param name="projection">The function to project from elements of the input array</param>
+        /// <param name="reduction">The function to reduce a pair of projected elements to a single element.</param>
+        /// <param name="array">The input array.</param>
+        ///
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input array is empty.</exception>
+        ///
+        /// <returns>The final result of the reductions.</returns>
+        /// 
+        /// <example id="para-reduceBy-1">
+        /// <code lang="fsharp">
+        /// let inputs = [| "1"; "3"; "4"; "2" |]
+        ///
+        /// inputs |> Array.Parallel.reduceBy  (fun x -> int x) (+) 
+        /// </code>
+        /// Evaluates to <c>1 + 3 + 4 + 2</c>. However, the system could have decided to compute (1+3) and (4+2) first, and then put them together.
+        /// </example>
+        [<CompiledName("ReduceBy")>]
+        val inline reduceBy: projection:('T -> 'U) -> reduction:('U -> 'U ->'U) -> array:'T[] -> 'U
     
         /// <summary>Returns the greatest of all elements of the array, compared via Operators.max on the function result.</summary>
         ///
@@ -3230,7 +3255,7 @@ module Array =
         ///
         /// <returns>The maximum element.</returns>
         ///
-        /// <example id="max-1">
+        /// <example id="para-max-1">
         /// <code lang="fsharp">
         /// let inputs = [| 10; 12; 11 |]
         ///
@@ -3239,7 +3264,7 @@ module Array =
         /// Evaluates to <c>12</c>
         /// </example>
         ///
-        /// <example id="max-2">
+        /// <example id="para-max-2">
         /// <code lang="fsharp">
         /// let inputs: int[]= [| |]
         ///
@@ -3262,20 +3287,20 @@ module Array =
         ///
         /// <returns>The maximum element.</returns>
         ///
-        /// <example id="maxby-1">
+        /// <example id="para-maxby-1">
         /// <code lang="fsharp">
         /// let inputs = [| "aaa"; "b"; "cccc" |]
         ///
-        /// inputs |> Array.maxBy (fun s -> s.Length)
+        /// inputs |> Array.Parallel.maxBy (fun s -> s.Length)
         /// </code>
         /// Evaluates to <c>"cccc"</c>
         /// </example>
         ///
-        /// <example id="maxby-2">
+        /// <example id="para-maxby-2">
         /// <code lang="fsharp">
         /// let inputs: string[]= [| |]
         ///
-        /// inputs |> Array.maxBy (fun s -> s.Length)
+        /// inputs |> Array.Parallel.maxBy (fun s -> s.Length)
         /// </code>
         /// Throws <c>System.ArgumentException</c>.
         /// </example>
@@ -3293,11 +3318,11 @@ module Array =
         ///
         /// <returns>The minimum element.</returns>
         ///
-        /// <example id="min-1">
+        /// <example id="para-min-1">
         /// <code lang="fsharp">
         /// let inputs = [| 10; 12; 11 |]
         ///
-        /// inputs |> Array.min
+        /// inputs |> Array.Parallel.min
         /// </code>
         /// Evaluates to <c>10</c>
         /// </example>
@@ -3306,7 +3331,7 @@ module Array =
         /// <code lang="fsharp">
         /// let inputs: int[]= [| |]
         ///
-        /// inputs |> Array.min
+        /// inputs |> Array.Parallel.min
         /// </code>
         /// Throws <c>System.ArgumentException</c>.
         /// </example>
@@ -3325,20 +3350,20 @@ module Array =
         ///
         /// <returns>The minimum element.</returns>
         ///
-        /// <example id="minby-1">
+        /// <example id="para-minby-1">
         /// <code lang="fsharp">
         /// let inputs = [| "aaa"; "b"; "cccc" |]
         ///
-        /// inputs |> Array.minBy (fun s -> s.Length)
+        /// inputs |> Array.Parallel.minBy (fun s -> s.Length)
         /// </code>
         /// Evaluates to <c>"b"</c>
         /// </example>
         ///
-        /// <example id="minby-2">
+        /// <example id="para-minby-2">
         /// <code lang="fsharp">
         /// let inputs: string[]= [| |]
         ///
-        /// inputs |> Array.minBy (fun s -> s.Length)
+        /// inputs |> Array.Parallel.minBy (fun s -> s.Length)
         /// </code>
         /// Throws <c>System.ArgumentException</c>.
         /// </example>
@@ -3353,11 +3378,11 @@ module Array =
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         /// 
-        /// <example id="sum-1">
+        /// <example id="para-sum-1">
         /// <code lang="fsharp">
         /// let input = [| 1; 5; 3; 2 |]
         ///
-        /// input |> Array.sum
+        /// input |> Array.Parallel.sum
         /// </code>
         /// Evaluates to <c>11</c>.
         /// </example>
@@ -3376,11 +3401,11 @@ module Array =
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         /// 
-        /// <example id="sumby-1">
+        /// <example id="para-sumby-1">
         /// <code lang="fsharp">
         /// let input = [| "aa"; "bbb"; "cc" |]
         ///
-        /// input |> Array.sumBy (fun s -> s.Length)
+        /// input |> Array.Parallel.sumBy (fun s -> s.Length)
         /// </code>
         /// Evaluates to <c>7</c>.
         /// </example>
@@ -3388,6 +3413,72 @@ module Array =
         val inline sumBy: projection:('T -> ^U) -> array:'T[] -> ^U 
                             when ^U : (static member ( + ) : ^U * ^U -> ^U) 
                             and  ^U : (static member Zero : ^U)
+
+        /// <summary>Returns the average of the elements in the array.</summary>
+        ///
+        /// <param name="array">The input array.</param>
+        ///
+        /// <exception cref="T:System.ArgumentException">Thrown when <c>array</c> is empty.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        ///
+        /// <returns>The average of the elements in the array.</returns>
+        ///
+        /// <example id="para-average-1">
+        /// <code lang="fsharp">
+        /// [| 1.0; 2.0; 6.0 |] |> Array.Parallel.average
+        /// </code>
+        /// Evaluates to <c>3.0</c>
+        /// </example>
+        ///
+        /// <example id="para-average-2">
+        /// <code lang="fsharp">
+        /// [| |] |> Array.Parallel.average
+        /// </code>
+        /// Throws <c>ArgumentException</c>
+        /// </example>
+        [<CompiledName("Average")>]
+        val inline average   : array:^T[] -> ^T   
+                                 when ^T : (static member ( + ) : ^T * ^T -> ^T) 
+                                 and  ^T : (static member DivideByInt : ^T*int -> ^T) 
+                                 and  ^T : (static member Zero : ^T)
+
+        /// <summary>Returns the average of the elements generated by applying the function to each element of the array.</summary>
+        ///
+        /// <param name="projection">The function to transform the array elements before averaging.</param>
+        /// <param name="array">The input array.</param>
+        ///
+        /// <exception cref="T:System.ArgumentException">Thrown when <c>array</c> is empty.</exception>
+        ///
+        /// <returns>The computed average.</returns>
+        ///
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        ///
+        /// <example id="para-average-by-1">
+        /// <code lang="fsharp">
+        /// type Foo = { Bar: float }
+        ///
+        /// let input = [| {Bar = 2.0}; {Bar = 4.0} |]
+        ///
+        /// input |> Array.Parallel.averageBy (fun foo -> foo.Bar)
+        /// </code>
+        /// Evaluates to <c>3.0</c>
+        /// </example>
+        ///
+        /// <example id="para-average-by-2">
+        /// <code lang="fsharp">
+        /// type Foo = { Bar: float }
+        ///
+        /// let input : Foo[] = [| |]
+        ///
+        /// input |> Array.Parallel.averageBy (fun foo -> foo.Bar)
+        /// </code>
+        /// Throws <c>ArgumentException</c>
+        /// </example>
+        [<CompiledName("AverageBy")>]
+        val inline averageBy   : projection:('T -> ^U) -> array:'T[] -> ^U   
+                                    when ^U : (static member ( + ) : ^U * ^U -> ^U) 
+                                    and  ^U : (static member DivideByInt : ^U*int -> ^U) 
+                                    and  ^U : (static member Zero : ^U)
 
         /// <summary>Apply the given function to each element of the array. Return
         /// the array comprised of the results <c>x</c> for each element where
