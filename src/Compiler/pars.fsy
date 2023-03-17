@@ -643,14 +643,17 @@ moduleSpfn:
 
   | opt_attributes opt_access moduleIntro colonOrEquals namedModuleAbbrevBlock 
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-        let _mModule, isRec, path, vis, attribs2 = $3
+        let mModule, isRec, path, vis, attribs2 = $3
         if isRec then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsInvalidUseOfRec())
         if not (isSingleton path) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleAbbreviationMustBeSimpleName())
         if not (isNil $1) then raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsIgnoreAttributesOnModuleAbbreviation())
         if not (isNil attribs2) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsIgnoreAttributesOnModuleAbbreviation())
         match vis with
         | Some vis -> raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsIgnoreVisibilityOnModuleAbbreviationAlwaysPrivate(vis.ToString()))
-        | _ -> SynModuleSigDecl.ModuleAbbrev(List.head path, $5, rhs2 parseState 1 5) } 
+        | _ ->
+            let lid: SynLongIdent = $5
+            let m = unionRanges mModule lid.Range
+            SynModuleSigDecl.ModuleAbbrev(List.head path, lid.LongIdent, m) } 
 
   | opt_attributes opt_access moduleIntro colonOrEquals moduleSpecBlock
       { let mModule, isRec, path, vis, attribs2 = $3
@@ -1327,10 +1330,10 @@ openDecl:
 /* We don't use it in signature files */
 namedModuleAbbrevBlock:
   | OBLOCKBEGIN path oblockend 
-     { $2.LongIdent }
+     { $2 }
 
   | path 
-     { $1.LongIdent  }
+     { $1  }
        
 
 /* The right-hand-side of a module definition */ 
