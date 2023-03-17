@@ -98,18 +98,21 @@ type NavigableContainerType =
     | Type
     | Exception
 
+[<Sealed>]
 type NavigableContainer =
-    {
-        /// The kind of container.
-        Type: NavigableContainerType
+    /// The kind of container.
+    member Type: NavigableContainerType
 
-        /// If Type = File, this is the name of the file
-        /// In other cases it is the logical name of the entity.
-        LogicalName: string
-    }
+    /// The fully qualified name of the container.
+    /// For files it returns empty string.
+    member FullName: string
+
+    /// The name of the container or file
+    member Name: string
 
 type NavigableItem =
-    { LogicalName: string
+    { Name: string
+      NeedsBackticks: bool
       Range: range
       IsSignature: bool
       Kind: NavigableItemKind

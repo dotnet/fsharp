@@ -233,7 +233,10 @@ and [<Sealed>] ItemKeyStoreBuilder() =
         match stripTyparEqns ty with
         | TType_forall (_, ty) -> writeType false ty
 
-        | TType_app (tcref, _, _) -> writeEntityRef tcref
+        | TType_app (tcref, _, _) ->
+            match isStandalone, tcref.TypeAbbrev with
+            | false, Some ty -> writeType false ty
+            | _ -> writeEntityRef tcref
 
         | TType_tuple (_, tinst) ->
             writeString ItemKeyTags.typeTuple

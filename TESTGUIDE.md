@@ -7,7 +7,6 @@ Where this guide mentions the command `build` it means either `build.cmd` in the
 * [Quick start: Running Tests](#quick-start-running-tests)
 * [Prerequisites](#prerequisites)
 * [Test Suites](#test-suites)
-* [More details](#more-details)
 * [Other Tips and gotchas](#other-tips-and-gotchas)
 * [Solving common errors](#solving-common-errors)
 * [Approximate running times](#approximate-running-times)
@@ -42,6 +41,7 @@ build -testAll -c Release
 | testScripting | Windows | Runs scripting fsx and fsi commandline tests |
 | test          | Windows | Same as testDesktop |
 | testAll       | Windows | Runs all above tests |
+| testAllButIntegration       | Windows | Runs all minus integration tests |
 
 Some test groups can only be run in `CI` configuration, for that, you need to pass the `-ci -bl` or `-ci -nobl` arguments. Some test groups can only be run in Release mode, this is indicated below. Some tests can only be run on Windows.
 
@@ -92,7 +92,7 @@ The prerequisites are the same as for building the `FSharp.sln`, plus, at a mini
   * Between switching git branches
   * When merging with latest `main` upstream branch.
 
-## More Details
+## Test suites
 
 The F# tests are split as follows:
 
@@ -228,7 +228,7 @@ When you switch branches, certain temporary files, as well as the .NET version (
 git clean -xdf -e .vs
 ```
 
-If you get "file in use" errors during cleaning, make sure to close Visual Studio and any running `dotnet.exe` and `VBCSCompiler.exe`, esp those that show up at the bottom of [Process Explorer](https://docs.microsoft.com/en-us/sysinternals/downloads/process-explorer) without parent process.
+If you get "file in use" errors during cleaning, make sure to close Visual Studio and any running `dotnet.exe` and `VBCSCompiler.exe`, esp those that show up at the bottom of [Process Explorer](https://learn.microsoft.com/sysinternals/downloads/process-explorer) without parent process.
 
 #### Running tests on release/dev16.6 etc branches
 
@@ -250,7 +250,7 @@ The following are common errors that users have encountered while running tests 
 
 ### Error that a file cannot be accessed
 
-The build often leaves dangling processes like `HostedCompilerServer.exe`, `VBCSCompiler.exe` or `MSBuild.exe`. In [Process Explorer](https://docs.microsoft.com/en-us/sysinternals/downloads/process-explorer) you can see these processes having no parent process anymore. You can also use this to kill such processes. A typical error looks like and contains the process IDs (here 23152, 25252 and 24704):
+The build often leaves dangling processes like `HostedCompilerServer.exe`, `VBCSCompiler.exe` or `MSBuild.exe`. In [Process Explorer](https://learn.microsoft.com/sysinternals/downloads/process-explorer) you can see these processes having no parent process anymore. You can also use this to kill such processes. A typical error looks like and contains the process IDs (here 23152, 25252 and 24704):
 
 > C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin\Microsoft.Common.CurrentVersion.targets(4364,5): error MSB3026: Could not copy "D:\Projects\FSharp\artifacts\bin\FSharp.Core\Debug\net45\FSharp.Core.dll" to "D:\Projects\FSharp\tests\fsharpqa\testenv\bin\FSharp.Core.dll". Beginning retry 1 in 1000ms. The process cannot access the file 'D:\Projects\FSharp\tests\fsharpqa\testenv\bin\FSharp.Core.dll' because it is being used by another process. The file is locked by: "HostedCompilerServer (23152), HostedCompilerServer (25252), HostedCompilerServer (24704)" [D:\Projects\OpenSource\FSharp\tests\fsharpqa\testenv\src\ILComparer\ILComparer.fsproj]
 

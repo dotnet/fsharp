@@ -192,11 +192,11 @@ type BackgroundCompiler
         keepAllBackgroundSymbolUses,
         enableBackgroundItemKeyStoreAndSemanticClassification,
         enablePartialTypeChecking,
-        enableParallelCheckingWithSignatureFiles,
         parallelReferenceResolution,
         captureIdentifiersWhenParsing,
         getSource: (string -> ISourceText option) option,
-        useChangeNotifications
+        useChangeNotifications,
+        useSyntaxTreeCache
     ) as self =
 
     let beforeFileChecked = Event<string * FSharpProjectOptions>()
@@ -326,12 +326,12 @@ type BackgroundCompiler
                     keepAllBackgroundSymbolUses,
                     enableBackgroundItemKeyStoreAndSemanticClassification,
                     enablePartialTypeChecking,
-                    enableParallelCheckingWithSignatureFiles,
                     dependencyProvider,
                     parallelReferenceResolution,
                     captureIdentifiersWhenParsing,
                     getSource,
-                    useChangeNotifications
+                    useChangeNotifications,
+                    useSyntaxTreeCache
                 )
 
             match builderOpt with
@@ -410,7 +410,7 @@ type BackgroundCompiler
     let createBuilderNode (options, userOpName, ct: CancellationToken) =
         lock gate (fun () ->
             if ct.IsCancellationRequested then
-                GraphNode(node.Return(None, [||]))
+                GraphNode.FromResult(None, [||])
             else
                 let getBuilderNode = GraphNode(CreateOneIncrementalBuilder(options, userOpName))
                 incrementalBuildersCache.Set(AnyCallerThread, options, getBuilderNode)
@@ -638,9 +638,6 @@ type BackgroundCompiler
         ) =
 
         node {
-            if useChangeNotifications then
-                do! builder.NotifyFileChanged(fileName, DateTime.UtcNow)
-
             match! bc.GetCachedCheckFileResult(builder, fileName, sourceText, options) with
             | Some (_, results) -> return FSharpCheckFileAnswer.Succeeded results
             | _ ->
@@ -1262,11 +1259,11 @@ type FSharpChecker
         keepAllBackgroundSymbolUses,
         enableBackgroundItemKeyStoreAndSemanticClassification,
         enablePartialTypeChecking,
-        enableParallelCheckingWithSignatureFiles,
         parallelReferenceResolution,
         captureIdentifiersWhenParsing,
         getSource,
-        useChangeNotifications
+        useChangeNotifications,
+        useSyntaxTreeCache
     ) =
 
     let backgroundCompiler =
@@ -1280,11 +1277,11 @@ type FSharpChecker
             keepAllBackgroundSymbolUses,
             enableBackgroundItemKeyStoreAndSemanticClassification,
             enablePartialTypeChecking,
-            enableParallelCheckingWithSignatureFiles,
             parallelReferenceResolution,
             captureIdentifiersWhenParsing,
             getSource,
-            useChangeNotifications
+            useChangeNotifications,
+            useSyntaxTreeCache
         )
 
     static let globalInstance = lazy FSharpChecker.Create()
@@ -1326,10 +1323,10 @@ type FSharpChecker
             ?keepAllBackgroundSymbolUses,
             ?enableBackgroundItemKeyStoreAndSemanticClassification,
             ?enablePartialTypeChecking,
-            ?enableParallelCheckingWithSignatureFiles,
             ?parallelReferenceResolution: bool,
             ?captureIdentifiersWhenParsing: bool,
-            ?documentSource: DocumentSource
+            ?documentSource: DocumentSource,
+            ?useSyntaxTreeCache: bool
         ) =
 
         use _ = Activity.startNoTags "FSharpChecker.Create"
@@ -1350,13 +1347,14 @@ type FSharpChecker
             defaultArg enableBackgroundItemKeyStoreAndSemanticClassification false
 
         let enablePartialTypeChecking = defaultArg enablePartialTypeChecking false
-        let enableParallelCheckingWithSignatureFiles = defaultArg enableParallelCheckingWithSignatureFiles false
         let captureIdentifiersWhenParsing = defaultArg captureIdentifiersWhenParsing false
 
         let useChangeNotifications =
             match documentSource with
             | Some (DocumentSource.Custom _) -> true
             | _ -> false
+
+        let useSyntaxTreeCache = defaultArg useSyntaxTreeCache true
 
         if keepAssemblyContents && enablePartialTypeChecking then
             invalidArg "enablePartialTypeChecking" "'keepAssemblyContents' and 'enablePartialTypeChecking' cannot be both enabled."
@@ -1373,13 +1371,13 @@ type FSharpChecker
             keepAllBackgroundSymbolUses,
             enableBackgroundItemKeyStoreAndSemanticClassification,
             enablePartialTypeChecking,
-            enableParallelCheckingWithSignatureFiles,
             parallelReferenceResolution,
             captureIdentifiersWhenParsing,
             (match documentSource with
              | Some (DocumentSource.Custom f) -> Some f
              | _ -> None),
-            useChangeNotifications
+            useChangeNotifications,
+            useSyntaxTreeCache
         )
 
     member _.ReferenceResolver = legacyReferenceResolver

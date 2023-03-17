@@ -28,6 +28,7 @@
     </EmbeddedText>
     <Compile Include="$(MSBuildThisFileDirectory)..\..\..\src\LegacyMSBuildResolver\LegacyMSBuildReferenceResolver.fsi" />
     <Compile Include="$(MSBuildThisFileDirectory)..\..\..\src\LegacyMSBuildResolver\LegacyMSBuildReferenceResolver.fs" />
+    <Compile Include="Telemetry\TelemetryReporter.fs" />
     <Compile Include="Common\AssemblyInfo.fs" />
     <Compile Include="Common\Logger.fsi" />
     <Compile Include="Common\Logger.fs" />
@@ -40,7 +41,7 @@
     <Compile Include="Common\FSharpCodeAnalysisExtensions.fs" />
     <Compile Include="Common\CodeAnalysisExtensions.fs" />
     <Compile Include="Common\Vs.fs" />
-    <Compile Include="Options\SettingsPersistence.fs" />
+    <Compile Include="Options\SettingsStore.fs" />
     <Compile Include="Options\UIHelpers.fs" />
     <Compile Include="Options\EditorOptions.fs" />
     <Compile Include="LanguageService\ProvideBraceCompletionAttribute.fs" />
@@ -86,6 +87,7 @@
     <Compile Include="Navigation\NavigationBarItemService.fs" />
     <Compile Include="Navigation\NavigateToSearchService.fs" />
     <Compile Include="Navigation\FindUsagesService.fs" />
+    <Compile Include="Navigation\FindDefinitionService.fs" />
     <Compile Include="QuickInfo\NavigableTextRun.fs" />
     <Compile Include="QuickInfo\WpfNagivableTextRunViewElementFactory.fs" />
     <Compile Include="QuickInfo\Views.fs" />
@@ -145,7 +147,6 @@
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\Compiler\FSharp.Compiler.Service.fsproj" />
-    <ProjectReference Include="..\FSharp.PatternMatcher\FSharp.PatternMatcher.csproj" />
     <ProjectReference Include="..\FSharp.UIResources\FSharp.UIResources.csproj" />
     <ProjectReference Include="..\FSharp.VS.FSI\FSharp.VS.FSI.fsproj" />
   </ItemGroup>

@@ -1,9 +1,8 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.ComponentModel.Composition
+open System.Composition
 open System.Runtime.InteropServices
-open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.FSharp.UIResources
 open Microsoft.CodeAnalysis
 
@@ -30,7 +29,6 @@ type IntelliSenseOptions =
         IncludeSymbolsFromUnopenedNamespacesOrModules = false
         EnterKeySetting = EnterKeySetting.NeverNewline}
 
-
 [<RequireQualifiedAccess>]
 type QuickInfoUnderlineStyle = Dot | Dash | Solid
 
@@ -54,7 +52,7 @@ type CodeFixesOptions =
         // See https://github.com/dotnet/fsharp/pull/3238#issue-237699595
         SimplifyName = false 
         AlwaysPlaceOpensAtTopLevel = true
-        UnusedOpens = true 
+        UnusedOpens = true
         UnusedDeclarations = true
         SuggestNamesForErrors = true }
 
@@ -63,16 +61,16 @@ type LanguageServicePerformanceOptions =
     { EnableInMemoryCrossProjectReferences: bool
       AllowStaleCompletionResults: bool
       TimeUntilStaleCompletion: int
-      EnableParallelCheckingWithSignatureFiles: bool
       EnableParallelReferenceResolution: bool
-      EnableFastFindReferences: bool }
+      EnableFastFindReferences: bool
+      UseSyntaxTreeCache: bool }
     static member Default =
       { EnableInMemoryCrossProjectReferences = true
         AllowStaleCompletionResults = true
         TimeUntilStaleCompletion = 2000 // In ms, so this is 2 seconds
-        EnableParallelCheckingWithSignatureFiles = false
         EnableParallelReferenceResolution = false
-        EnableFastFindReferences = FSharpExperimentalFeaturesEnabledAutomatically }
+        EnableFastFindReferences = FSharpExperimentalFeaturesEnabledAutomatically
+        UseSyntaxTreeCache = FSharpExperimentalFeaturesEnabledAutomatically }
 
 [<CLIMutable>]
 type AdvancedOptions =
@@ -94,16 +92,10 @@ type FormattingOptions =
     static member Default =
         { FormatOnPaste = false }
 
-[<Export>]
-[<Export(typeof<IPersistSettings>)>]
-type EditorOptions 
-    [<ImportingConstructor>] 
-    (
-        [<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider
-    ) =
-
-    let store = SettingsStore(serviceProvider)
-        
+[<Shared; Export>]
+type EditorOptions() =
+    // we use in-memory store when outside of VS, e.g. in unit tests
+    let store = SettingsStore.Create()
     do
         store.Register QuickInfoOptions.Default
         store.Register CodeFixesOptions.Default
@@ -119,11 +111,10 @@ type EditorOptions
     member _.Advanced: AdvancedOptions = store.Get()
     member _.Formatting : FormattingOptions = store.Get()
 
-    interface Microsoft.CodeAnalysis.Host.IWorkspaceService
+    [<Export(typeof<SettingsStore.ISettingsStore>)>]
+    member private _.SettingsStore = store
 
-    interface IPersistSettings with
-        member _.LoadSettings() = store.LoadSettings()
-        member _.SaveSettings(settings) = store.SaveSettings(settings)
+    interface Microsoft.CodeAnalysis.Host.IWorkspaceService
 
 module internal OptionsUI =
 
@@ -184,36 +175,32 @@ module EditorOptionsExtensions =
 
     type Project with
 
-        member private this.GetEditorOptions f fallback =
-            let editorOptions = this.Solution.Workspace.Services.GetService<EditorOptions>()
-
-            match box editorOptions with
-            | null -> fallback
-            | _ -> f editorOptions
+        member private this.EditorOptions =
+            this.Solution.Workspace.Services.GetService<EditorOptions>()
 
         member this.AreFSharpInMemoryCrossProjectReferencesEnabled =
-            this.GetEditorOptions (fun o -> o.LanguageServicePerformance.EnableInMemoryCrossProjectReferences) true
+            this.EditorOptions.LanguageServicePerformance.EnableInMemoryCrossProjectReferences
 
         member this.IsFSharpCodeFixesAlwaysPlaceOpensAtTopLevelEnabled =
-            this.GetEditorOptions (fun o -> o.CodeFixes.AlwaysPlaceOpensAtTopLevel) false
+            this.EditorOptions.CodeFixes.AlwaysPlaceOpensAtTopLevel
 
         member this.IsFSharpCodeFixesUnusedDeclarationsEnabled =
-            this.GetEditorOptions (fun o -> o.CodeFixes.UnusedDeclarations) false
+            this.EditorOptions.CodeFixes.UnusedDeclarations
 
         member this.IsFSharpStaleCompletionResultsEnabled =
-            this.GetEditorOptions (fun o -> o.LanguageServicePerformance.AllowStaleCompletionResults) false
+            this.EditorOptions.LanguageServicePerformance.AllowStaleCompletionResults
 
         member this.FSharpTimeUntilStaleCompletion =
-            this.GetEditorOptions (fun o -> o.LanguageServicePerformance.TimeUntilStaleCompletion) 0
-
+            this.EditorOptions.LanguageServicePerformance.TimeUntilStaleCompletion
+            
         member this.IsFSharpCodeFixesSimplifyNameEnabled =
-            this.GetEditorOptions (fun o -> o.CodeFixes.SimplifyName) false
+            this.EditorOptions.CodeFixes.SimplifyName
 
         member this.IsFSharpCodeFixesUnusedOpensEnabled =
-            this.GetEditorOptions (fun o -> o.CodeFixes.UnusedOpens) false
+            this.EditorOptions.CodeFixes.UnusedOpens
 
         member this.IsFSharpBlockStructureEnabled =
-            this.GetEditorOptions (fun o -> o.Advanced.IsBlockStructureEnabled) false
+            this.EditorOptions.Advanced.IsBlockStructureEnabled
 
         member this.IsFastFindReferencesEnabled =
-            this.GetEditorOptions (fun o -> o.LanguageServicePerformance.EnableFastFindReferences) false
+            this.EditorOptions.LanguageServicePerformance.EnableFastFindReferences

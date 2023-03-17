@@ -141,7 +141,9 @@ System.Console.WriteLine(x + y)
                     IntelliSenseOptions.Default
                 )
 
-            triggered |> Assert.shouldBeEqualWith shouldBeTriggered 
+            triggered
+            |> Assert.shouldBeEqualWith
+                shouldBeTriggered
                 "FSharpCompletionProvider.ShouldTriggerCompletionAux() should compute the correct result"
 
     [<Fact>]
@@ -242,7 +244,9 @@ let z = $"abc  {System.Console.WriteLine(x + y)} def"
                     IntelliSenseOptions.Default
                 )
 
-            triggered |> Assert.shouldBeEqualWith shouldBeTriggered 
+            triggered
+            |> Assert.shouldBeEqualWith
+                shouldBeTriggered
                 $"FSharpCompletionProvider.ShouldTriggerCompletionAux() should compute the correct result for marker '{marker}"
 
     [<Fact>]
@@ -731,6 +735,31 @@ open type System.Ma
 
         let expected = [ "Management"; "Math" ] // both namespace and static type
         VerifyCompletionList(fileContents, "System.Ma", expected, [])
+
+    [<Fact>]
+    let ``No completion on nested module identifier, incomplete`` () =
+        let fileContents =
+            """
+    module Namespace.Top
+
+    module Nest
+
+    let a = ()
+    """
+
+        VerifyNoCompletionList(fileContents, "Nest")
+
+    [<Fact>]
+    let ``No completion on nested module identifier`` () =
+        let fileContents =
+            """
+    namespace N
+
+    module Nested =
+        do ()
+    """
+
+        VerifyNoCompletionList(fileContents, "Nested")
 
     [<Fact>]
     let ``No completion on type name at declaration site`` () =
@@ -1266,3 +1295,47 @@ let inline f_StaticProperty_SRTP<'T when 'T : (static member StaticProperty: 'T)
 """
 
         VerifyCompletionListWithOptions(fileContents, "'T.", [ "StaticProperty" ], [], [| "/langversion:preview" |])
+
+    [<Fact>]
+    let ``Completion list for attribute application contains settable members and ctor parameters`` () =
+        let fileContents =
+            """
+type LangAttribute (langParam: int) =
+    inherit System.Attribute ()
+
+    member val LangMember1 = 0 with get, set
+    member val LangMember2 = 0 with get, set
+
+[<Lang(1)>]
+module X =
+    [< Lang(2, LangMember1 = 2)>]
+    let a = ()
+
+[<  Lang(3, LangMember1 = 3, L)>]
+type B () =
+    [<   Lang(la)>]
+    member _.M = ""
+
+type G = { [<Lang(l)>] f: string }
+
+type A =
+    | [<Lang(l)>] A = 1
+"""
+
+        // Attribute on module, completing attribute name - settable properties omitted
+        VerifyCompletionList(fileContents, "[<La", [ "Lang" ], [ "LangMember1"; "langParam" ])
+
+        // Attribute on let-bound value - LangMember2 is already set, so it's omitted
+        VerifyCompletionList(fileContents, "[< Lang(2", [ "langParam"; "LangMember2" ], [ "LangMember1" ])
+
+        // Attribute on type - LangMember1 is already set, so it's omitted
+        VerifyCompletionList(fileContents, "[<  Lang(3, LangMember1 = 3, L", [ "LangMember2" ], [ "LangMember1" ])
+
+        // Attribute on member - All settable properties available
+        VerifyCompletionList(fileContents, "[<   Lang(l", [ "langParam"; "LangMember1"; "LangMember2" ], [])
+
+        // Attribute on record field - All settable properties available
+        VerifyCompletionList(fileContents, "{ [<Lang(l", [ "langParam"; "LangMember1"; "LangMember2" ], [])
+
+        // Attribute on enum case - All settable properties available
+        VerifyCompletionList(fileContents, "| [<Lang(l", [ "langParam"; "LangMember1"; "LangMember2" ], [])

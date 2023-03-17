@@ -10,7 +10,7 @@ open System.Collections.Generic
 /// <summary>Contains operations for working with arrays.</summary>
 ///
 /// <remarks>
-///  See also <a href="https://docs.microsoft.com/dotnet/fsharp/language-reference/arrays">F# Language Guide - Arrays</a>.
+///  See also <a href="https://learn.microsoft.com/dotnet/fsharp/language-reference/arrays">F# Language Guide - Arrays</a>.
 /// </remarks>
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 [<RequireQualifiedAccess>]
@@ -3094,6 +3094,102 @@ module Array =
     /// <summary>Provides parallel operations on arrays </summary>
     module Parallel =
 
+        /// <summary>Returns the first element for which the given function returns <c>True</c>.
+        /// Returns None if no such element exists.</summary>
+        ///
+        /// <param name="predicate">The function to test the input elements.</param>
+        /// <param name="array">The input array.</param>
+        ///
+        /// <returns>The first element that satisfies the predicate, or None.</returns>
+        ///
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        ///
+        /// <example id="para-tryfind-1">Try to find the first even number:
+        /// <code lang="fsharp">
+        /// let inputs = [| 1; 2; 3 |]
+        ///
+        /// inputs |> Array.Parallel.tryFind (fun elm -> elm % 2 = 0)
+        /// </code>
+        /// Evaluates to <c>Some 2</c>.
+        /// </example>
+        ///
+        /// <example id="para-tryfind-2">Try to find the first even number:
+        /// <code lang="fsharp">
+        /// let inputs = [| 1; 5; 3 |]
+        ///
+        /// inputs |> Array.Parallel.tryFind (fun elm -> elm % 2 = 0)
+        /// </code>
+        /// Evaluates to <c>None</c>
+        /// </example>
+        [<CompiledName("TryFind")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val tryFind: predicate:('T -> bool) -> array:'T[] -> 'T option
+
+
+        /// <summary>Returns the index of the first element in the array
+        /// that satisfies the given predicate.
+        /// Returns <c>None</c> if no such element exists.</summary>
+        /// <param name="predicate">The function to test the input elements.</param>
+        /// <param name="array">The input array.</param>
+        ///
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        ///
+        /// <returns>The index of the first element that satisfies the predicate, or None.</returns>
+        ///
+        /// <example id="para-tryfindindex-1">Try to find the index of the first even number:
+        /// <code lang="fsharp">
+        /// let inputs = [| 1; 2; 3; 4; 5 |]
+        ///
+        /// inputs |> Array.Parallel.tryFindIndex (fun elm -> elm % 2 = 0)
+        /// </code>
+        /// Evaluates to <c>Some 1</c>
+        /// </example>
+        ///
+        /// <example id="para-tryfindindex-2">Try to find the index of the first even number:
+        /// <code lang="fsharp">
+        /// let inputs = [| 1; 3; 5; 7 |]
+        ///
+        /// inputs |> Array.Parallel.tryFindIndex (fun elm -> elm % 2 = 0)
+        /// </code>
+        /// Evaluates to <c>None</c>
+        /// </example>
+        [<CompiledName("TryFindIndex")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val tryFindIndex : predicate:('T -> bool) -> array:'T[] -> int option
+
+        /// <summary>Applies the given function to successive elements, returning the first
+        /// result where the function returns <c>Some(x)</c> for some <c>x</c>. If the function 
+        /// never returns <c>Some(x)</c> then <c>None</c> is returned.</summary>
+        ///
+        /// <param name="chooser">The function to transform the array elements into options.</param>
+        /// <param name="array">The input array.</param>
+        ///
+        /// <returns>The first transformed element that is <c>Some(x)</c>.</returns>
+        ///
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        ///
+        /// <example id="para-trypick-1">
+        /// <code lang="fsharp">
+        /// let input = [| 1; 2; 3 |]
+        ///
+        /// input |> Array.Parallel.tryPick (fun n -> if n % 2 = 0 then Some (string n) else None)
+        /// </code>
+        /// Evaluates to <c>Some 2</c>.
+        /// </example>
+        ///
+        /// <example id="para-trypick-2">
+        /// <code lang="fsharp">
+        /// let input = [| 1; 2; 3 |]
+        ///
+        /// input |> Array.Parallel.tryPick (fun n -> if n > 3 = 0 then Some (string n) else None)
+        /// </code>
+        /// Evaluates to <c>None</c>.
+        /// </example>
+        ///
+        [<CompiledName("TryPick")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val tryPick: chooser:('T -> 'U option) -> array:'T[] -> 'U option
+
         /// <summary>Apply the given function to each element of the array. Return
         /// the array comprised of the results <c>x</c> for each element where
         /// the function returns <c>Some(x)</c>.</summary>
@@ -3210,6 +3306,33 @@ module Array =
         /// </example>
         [<CompiledName("MapIndexed")>]
         val mapi: mapping:(int -> 'T -> 'U) -> array:'T[] -> 'U[]
+
+        /// <summary>Applies a key-generating function to each element of an array in parallel and yields an array of 
+        /// unique keys. Each unique key contains an array of all elements that match 
+        /// to this key.</summary>
+        ///
+        /// <remarks>Performs the operation in parallel using <see cref="M:System.Threading.Tasks.Parallel.For" />.
+        /// The order in which the given function is applied to elements of the input array is not specified.
+        /// The order of the keys and values in the result is also not specified</remarks>
+
+        /// <param name="projection">A function that transforms an element of the array into a comparable key.</param>
+        /// <param name="array">The input array.</param>
+        ///
+        /// <returns>The result array.</returns>
+        ///
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        ///
+        /// <example id="group-by-para-1">
+        /// <code lang="fsharp">
+        /// let inputs = [| 1; 2; 3; 4; 5 |]
+        ///
+        /// inputs |> Array.Parallel.groupBy (fun n -> n % 2)
+        /// </code>
+        /// Evaluates to <c>[| (1, [| 1; 3; 5 |]); (0, [| 2; 4 |]) |]</c>
+        /// </example>
+        [<CompiledName("GroupBy")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val groupBy: projection:('T -> 'Key) -> array:'T[] -> ('Key * 'T[])[]  when 'Key : equality
 
         /// <summary>Apply the given function to each element of the array. </summary>
         ///

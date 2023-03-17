@@ -61,6 +61,10 @@ type LanguageFeature =
     | EscapeDotnetFormattableStrings
     | ArithmeticInLiterals
     | ErrorReportingOnStaticClasses
+    | TryWithInSeqExpression
+    | WarningWhenCopyAndUpdateRecordChangesAllFields
+    | StaticMembersInInterfaces
+    | NonInlineLiteralsAsPrintfFormat
  
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -138,6 +142,10 @@ type LanguageVersion(versionText) =
                 LanguageFeature.EscapeDotnetFormattableStrings, previewVersion
                 LanguageFeature.ArithmeticInLiterals, previewVersion
                 LanguageFeature.ErrorReportingOnStaticClasses, previewVersion
+                LanguageFeature.TryWithInSeqExpression, previewVersion
+                LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields, previewVersion
+                LanguageFeature.StaticMembersInInterfaces, previewVersion
+                LanguageFeature.NonInlineLiteralsAsPrintfFormat, previewVersion
 
             ]
 
@@ -252,6 +260,10 @@ type LanguageVersion(versionText) =
         | LanguageFeature.EscapeDotnetFormattableStrings -> FSComp.SR.featureEscapeBracesInFormattableString ()
         | LanguageFeature.ArithmeticInLiterals -> FSComp.SR.featureArithmeticInLiterals ()
         | LanguageFeature.ErrorReportingOnStaticClasses -> FSComp.SR.featureErrorReportingOnStaticClasses ()
+        | LanguageFeature.TryWithInSeqExpression -> FSComp.SR.featureTryWithInSeqExpressions ()
+        | LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields -> FSComp.SR.featureWarningWhenCopyAndUpdateRecordChangesAllFields ()
+        | LanguageFeature.StaticMembersInInterfaces -> FSComp.SR.featureStaticMembersInInterfaces ()
+        | LanguageFeature.NonInlineLiteralsAsPrintfFormat -> FSComp.SR.featureNonInlineLiteralsAsPrintfFormat ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

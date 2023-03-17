@@ -315,6 +315,11 @@ module internal PrintUtilities =
         else
             restL
 
+    let squashToWidth width layout =
+        match width with
+        | Some w -> Display.squashTo w layout
+        | None -> layout
+        
 module PrintIL = 
 
     let fullySplitILTypeRef (tref: ILTypeRef) = 
@@ -2112,9 +2117,10 @@ module TastDefinitionPrinting =
 
             | _ when isNil allDecls ->
                 lhsL
-
+#if !NO_TYPEPROVIDERS
             | TProvidedNamespaceRepr _
             | TProvidedTypeRepr _
+#endif
             | TNoRepr -> 
                 allDecls
                 |> applyMaxMembers denv.maxMembers

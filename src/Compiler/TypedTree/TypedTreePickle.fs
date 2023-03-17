@@ -29,7 +29,9 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 
+#if !NO_TYPEPROVIDERS
 let verbose = false
+#endif
 
 let ffailwith fileName str =
     let msg = FSComp.SR.pickleErrorReadingWritingMetadata(fileName, str)
@@ -2262,6 +2264,7 @@ and u_ValData st =
                      val_const            = x14
                      val_access           = x13
                      val_xmldoc           = defaultArg x15 XmlDoc.Empty
+                     val_other_xmldoc     = None
                      val_member_info      = x8
                      val_declaring_entity = x13b
                      val_xmldocsig        = x12

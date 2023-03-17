@@ -113,6 +113,9 @@ exception DiagnosticWithSuggestions of number: int * message: string * range: ra
         | DiagnosticWithSuggestions (_, msg, _, _, _) -> msg
         | _ -> "impossible"
 
+/// A diagnostic that is raised when enabled manually, or by default with a language feature
+exception DiagnosticEnabledWithLanguageFeature of number: int * message: string * range: range * enabledByLangFeature: bool
+
 /// The F# compiler code currently uses 'Error(...)' in many places to create
 /// an DiagnosticWithText as an exception even if it's a warning.
 ///
@@ -125,6 +128,9 @@ let Error ((n, text), m) = DiagnosticWithText(n, text, m)
 /// We will eventually rename this to remove this use of "Error"
 let ErrorWithSuggestions ((n, message), m, id, suggestions) =
     DiagnosticWithSuggestions(n, message, m, id, suggestions)
+
+let ErrorEnabledWithLanguageFeature ((n, message), m, enabledByLangFeature) =
+    DiagnosticEnabledWithLanguageFeature (n, message, m, enabledByLangFeature)
 
 let inline protectAssemblyExploration dflt f =
     try
@@ -803,6 +809,13 @@ let NormalizeErrorString (text: string MaybeNull) =
         i <- i + delta
 
     buf.ToString()
+
+/// Indicates whether a language feature check should be skipped. Typically used in recursive functions
+/// where we don't want repeated recursive calls to raise the same diagnostic multiple times.
+[<RequireQualifiedAccess>]
+type internal SuppressLanguageFeatureCheck =
+    | Yes
+    | No
 
 let private tryLanguageFeatureErrorAux (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: range) =
     if not (langVersion.SupportsFeature langFeature) then

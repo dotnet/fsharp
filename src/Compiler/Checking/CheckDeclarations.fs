@@ -362,7 +362,7 @@ let ImplicitlyOpenOwnNamespace tcSink g amap scopem enclosingNamespacePath (env:
         match enclosingNamespacePathToOpen with
         | id :: rest ->
             let ad = env.AccessRights
-            match ResolveLongIdentAsModuleOrNamespace tcSink ResultCollectionSettings.AllResults amap scopem true OpenQualified env.eNameResEnv ad id rest true with 
+            match ResolveLongIdentAsModuleOrNamespace tcSink amap scopem true OpenQualified env.eNameResEnv ad id rest true with 
             | Result modrefs -> 
                 let modrefs = List.map p23 modrefs
                 let lid = SynLongIdent(enclosingNamespacePathToOpen, [] , [])
@@ -579,15 +579,13 @@ module TcRecdUnionAndEnumDeclarations =
         | SynExpr.Const (synConst, _) -> 
             let konst = TcConst cenv fieldTy valueRange env synConst
             MakeEnumCaseSpec cenv env parent attrs thisTy caseRange id xmldoc konst
-        | _ when cenv.g.langVersion.SupportsFeature LanguageFeature.ArithmeticInLiterals ->
+        | _ ->
             let expr, actualTy, _ = TcExprOfUnknownType cenv env tpenv valueExpr
             UnifyTypes cenv env valueRange fieldTy actualTy
             
             match EvalLiteralExprOrAttribArg cenv.g expr with
             | Expr.Const (konst, _, _) -> MakeEnumCaseSpec cenv env parent attrs thisTy caseRange id xmldoc konst
             | _ -> error(Error(FSComp.SR.tcInvalidEnumerationLiteral(), valueRange))
-        | _ ->
-            error(Error(FSComp.SR.tcInvalidEnumerationLiteral(), valueRange))
 
     let TcEnumDecls (cenv: cenv) env tpenv parent thisTy enumCases =
         let g = cenv.g
@@ -637,7 +635,7 @@ let TcOpenLidAndPermitAutoResolve tcSink (env: TcEnv) amap (longId : Ident list)
     | [] -> []
     | id :: rest ->
         let m = longId |> List.map (fun id -> id.idRange) |> List.reduce unionRanges
-        match ResolveLongIdentAsModuleOrNamespace tcSink ResultCollectionSettings.AllResults amap m true OpenQualified env.NameEnv ad id rest true with 
+        match ResolveLongIdentAsModuleOrNamespace tcSink amap m true OpenQualified env.NameEnv ad id rest true with 
         | Result res -> res
         | Exception err ->
             errorR(err); []
@@ -870,7 +868,7 @@ module MutRecBindingChecking =
                             error(Error(FSComp.SR.tcEnumerationsMayNotHaveMembers(), (trimRangeToLine m))) 
 
                         match classMemberDef, containerInfo with
-                        | SynMemberDefn.ImplicitCtor (vis, Attributes attrs, SynSimplePats.SimplePats(spats, _), thisIdOpt, xmlDoc, m), ContainerInfo(_, Some(MemberOrValContainerInfo(tcref, _, baseValOpt, safeInitInfo, _))) ->
+                        | SynMemberDefn.ImplicitCtor (vis, Attributes attrs, SynSimplePats.SimplePats(spats, _), thisIdOpt, xmlDoc, m, _), ContainerInfo(_, Some(MemberOrValContainerInfo(tcref, _, baseValOpt, safeInitInfo, _))) ->
                             if tcref.TypeOrMeasureKind = TyparKind.Measure then
                                 error(Error(FSComp.SR.tcMeasureDeclarationsRequireStaticMembers(), m))
 
@@ -1440,7 +1438,7 @@ module MutRecBindingChecking =
         let resolved =
             match p with
             | [] -> Result []
-            | id :: rest -> ResolveLongIdentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m true OpenQualified env.NameEnv ad id rest false
+            | id :: rest -> ResolveLongIdentAsModuleOrNamespace cenv.tcSink cenv.amap m true OpenQualified env.NameEnv ad id rest false
 
         let mvvs = ForceRaise resolved
 
@@ -3028,6 +3026,17 @@ module EstablishTypeDefinitionCores =
                     let kind = if hasMeasureAttr then TyparKind.Measure else TyparKind.Type
                     let ty, _ = TcTypeOrMeasureAndRecover (Some kind) cenv NoNewTypars checkConstraints ItemOccurence.UseInType WarnOnIWSAM.No envinner tpenv rhsType
 
+                    // Give a warning if `AutoOpenAttribute` is being aliased.
+                    // If the user were to alias the `Microsoft.FSharp.Core.AutoOpenAttribute` type, it would not be detected by the project graph dependency resolution algorithm.
+                    match stripTyEqns g ty with
+                    | AppTy g (tcref, _) when not tcref.IsErased ->
+                        match tcref.CompiledRepresentation with
+                        | CompiledTypeRepr.ILAsmOpen _ -> ()
+                        | CompiledTypeRepr.ILAsmNamed _ ->
+                            if tcref.CompiledRepresentationForNamedType.FullName = g.attrib_AutoOpenAttribute.TypeRef.FullName then
+                                warning(Error(FSComp.SR.chkAutoOpenAttributeInTypeAbbrev(), tycon.Id.idRange))
+                    | _ -> ()
+                    
                     if not firstPass then 
                         let ftyvs = freeInTypeLeftToRight g false ty 
                         let typars = tycon.Typars m
@@ -4211,13 +4220,13 @@ module TcDeclarations =
 
             let hasSelfReferentialCtor = 
                 members |> List.exists (function 
-                    | SynMemberDefn.ImplicitCtor (_, _, _, thisIdOpt, _, _) 
+                    | SynMemberDefn.ImplicitCtor (selfIdentifier = thisIdOpt) 
                     | SynMemberDefn.Member(memberDefn=SynBinding(valData=SynValData(thisIdOpt=thisIdOpt))) -> thisIdOpt.IsSome
                     | _ -> false)
 
             let implicitCtorSynPats = 
                 members |> List.tryPick (function 
-                    | SynMemberDefn.ImplicitCtor (_, _, (SynSimplePats.SimplePats _ as spats), _, _, _) -> Some spats
+                    | SynMemberDefn.ImplicitCtor (ctorArgs = SynSimplePats.SimplePats _ as spats) -> Some spats
                     | _ -> None)
 
             // An ugly bit of code to pre-determine if a type has a nullary constructor, prior to establishing the 
@@ -4226,7 +4235,7 @@ module TcDeclarations =
                 members |> List.exists (function 
                     | SynMemberDefn.Member(memberDefn=SynBinding(valData=SynValData(memberFlags=Some memberFlags); headPat = SynPatForConstructorDecl SynPatForNullaryArgs)) -> 
                         memberFlags.MemberKind=SynMemberKind.Constructor 
-                    | SynMemberDefn.ImplicitCtor (_, _, SynSimplePats.SimplePats(spats, _), _, _, _) -> isNil spats
+                    | SynMemberDefn.ImplicitCtor (ctorArgs = SynSimplePats.SimplePats(spats, _)) -> isNil spats
                     | _ -> false)
             let repr = SynTypeDefnSimpleRepr.General(kind, inherits, slotsigs, fields, isConcrete, isIncrClass, implicitCtorSynPats, m)
             let isAtOriginalTyconDefn = not (isAugmentationTyconDefnRepr repr)
@@ -4278,7 +4287,7 @@ module TcDeclarations =
 
                 if not (isNil members) && tcref.IsTypeAbbrev then 
                     errorR(Error(FSComp.SR.tcTypeAbbreviationsCannotHaveAugmentations(), tyDeclRange))
-
+                
                 let (SynComponentInfo (attributes, _, _, _, _, _, _, _)) = synTyconInfo
                 if not (List.isEmpty attributes) && (declKind = ExtrinsicExtensionBinding || declKind = IntrinsicExtensionBinding) then
                     let attributeRange = (List.head attributes).Range
@@ -4564,7 +4573,7 @@ let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcE
             let resolved =
                 match p with
                 | [] -> Result []
-                | id :: rest -> ResolveLongIdentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m true OpenQualified env.NameEnv ad id rest false
+                | id :: rest -> ResolveLongIdentAsModuleOrNamespace cenv.tcSink cenv.amap m true OpenQualified env.NameEnv ad id rest false
             let mvvs = ForceRaise resolved
             let scopem = unionRanges m endm
             let unfilteredModrefs = mvvs |> List.map p23

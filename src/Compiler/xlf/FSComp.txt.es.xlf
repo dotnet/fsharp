@@ -32,6 +32,11 @@
         <target state="translated">Si un tipo usa los atributos [&lt;Sealed&gt;] y [&lt;AbstractClass&gt;], significa que es estático. No se permite un constructor adicional.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkAutoOpenAttributeInTypeAbbrev">
+        <source>FSharp.Core.AutoOpenAttribute should not be aliased.</source>
+        <target state="new">FSharp.Core.AutoOpenAttribute should not be aliased.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkConstructorWithArgumentsOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Constructor with arguments is not allowed.</source>
         <target state="translated">Si un tipo usa los atributos [&lt;Sealed&gt;] y [&lt;AbstractClass&gt;], significa que es estático. No se permite un constructor con argumentos.</target>
@@ -183,8 +188,8 @@
         <note />
       </trans-unit>
       <trans-unit id="featureArithmeticInLiterals">
-        <source>Allow arithmetic and logical operations in literals</source>
-        <target state="translated">Permitir operaciones aritméticas y lógicas en literales</target>
+        <source>Arithmetic and logical operations in literals, enum definitions and attributes</source>
+        <target state="needs-review-translation">Permitir operaciones aritméticas y lógicas en literales</target>
         <note />
       </trans-unit>
       <trans-unit id="featureAttributesToRightOfModuleKeyword">
@@ -302,6 +307,11 @@
         <target state="translated">nameof</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureNonInlineLiteralsAsPrintfFormat">
+        <source>String values marked as literals and IL constants as printf format</source>
+        <target state="new">String values marked as literals and IL constants as printf format</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureNonVariablePatternsToRightOfAsPatterns">
         <source>non-variable patterns to the right of 'as' patterns</source>
         <target state="translated">patrones no variables a la derecha de los patrones "as"</target>
@@ -372,6 +382,11 @@
         <target state="translated">patrón de subrayado simple</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureStaticMembersInInterfaces">
+        <source>Static members in interfaces</source>
+        <target state="new">Static members in interfaces</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureStringInterpolation">
         <source>string interpolation</source>
         <target state="translated">interpolación de cadena</target>
@@ -380,6 +395,16 @@
       <trans-unit id="featureStructActivePattern">
         <source>struct representation for active patterns</source>
         <target state="translated">representación de struct para modelos activos</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureTryWithInSeqExpressions">
+        <source>Support for try-with in sequence expressions</source>
+        <target state="new">Support for try-with in sequence expressions</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
+        <source>Raises warnings when an copy-and-update record expression changes all fields of a record.</source>
+        <target state="new">Raises warnings when an copy-and-update record expression changes all fields of a record.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
@@ -752,6 +777,11 @@
         <target state="translated">No se admite el algoritmo '{0}'</target>
         <note />
       </trans-unit>
+      <trans-unit id="reprResumableCodeContainsConstrainedGenericLet">
+        <source>A constrained generic construct occured in the resumable code specification</source>
+        <target state="new">A constrained generic construct occured in the resumable code specification</target>
+        <note />
+      </trans-unit>
       <trans-unit id="reprResumableCodeContainsDynamicResumeAtInBody">
         <source>A target label for __resumeAt was not statically determined. A __resumeAt with a non-static target label may only appear at the start of a resumable code method</source>
         <target state="translated">No se determinó estáticamente una etiqueta de destino para __resumeAt. Si __resumeAt tiene una etiqueta de destino no estática, solo podrá aparecer al principio de un método de código reanudable</target>
@@ -870,6 +900,11 @@
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
         <target state="translated">Los atributos no se pueden aplicar a las extensiones de tipo.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">
+        <source>This copy-and-update record expression changes all fields of record type '{0}'. Consider using the record construction syntax instead.</source>
+        <target state="new">This copy-and-update record expression changes all fields of record type '{0}'. Consider using the record construction syntax instead.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
@@ -1135,6 +1170,11 @@
       <trans-unit id="typrelInterfaceWithConcreteAndVariableObjectExpression">
         <source>You cannot implement the interface '{0}' with the two instantiations '{1}' and '{2}' because they may unify.</source>
         <target state="translated">No se puede implementar la interfaz "{0}" con ambas creaciones de instancias, "{1}" y "{2}", porque pueden unificarse.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="typrelNeverRefinedAwayFromTop">
+        <source>A type has been implicitly inferred as 'obj', which may be unintended. Consider adding explicit type annotations. You can disable this warning by using '#nowarn \"3559\"' or '--nowarn:3559'.</source>
+        <target state="new">A type has been implicitly inferred as 'obj', which may be unintended. Consider adding explicit type annotations. You can disable this warning by using '#nowarn \"3559\"' or '--nowarn:3559'.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
@@ -4603,8 +4643,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcConcreteMembersIllegalInInterface">
-        <source>Interfaces cannot contain definitions of concrete members. You may need to define a constructor on your type to indicate that the type is a class.</source>
-        <target state="translated">Las interfaces no pueden contener definiciones de miembros concretos. Puede ser necesario definir un constructor en el tipo para indicar que el tipo es una clase.</target>
+        <source>Interfaces cannot contain definitions of concrete instance members. You may need to define a constructor on your type to indicate that the type is a class.</source>
+        <target state="needs-review-translation">Las interfaces no pueden contener definiciones de miembros concretos. Puede ser necesario definir un constructor en el tipo para indicar que el tipo es una clase.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcConstructorsDisallowedInExceptionAugmentation">
