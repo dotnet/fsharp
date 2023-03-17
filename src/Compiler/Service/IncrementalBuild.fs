@@ -268,9 +268,9 @@ type TcInfoState =
 type TcInfoNode =
     | TcInfoNode of partial: GraphNode<TcInfo> * full: GraphNode<TcInfo * TcInfoExtras>
 
-    member this.HasFull =
+    member this.TryGetFull =
         match this with
-        | TcInfoNode(_, full) -> full.HasValue
+        | TcInfoNode(_, full) -> full.TryPeekValue
 
     static member FromState(state: TcInfoState) =
         let tcInfo = state.TcInfo
@@ -358,26 +358,23 @@ type BoundModel private (tcConfig: TcConfig,
         let hasSig = this.BackingSignature.IsSome
 
         // If partial checking is enabled and we have a backing sig file, then use the partial state. The partial state contains the sig state.
-        if tcInfoNode.HasFull && enablePartialTypeChecking && hasSig then
-            let newTcInfoStateOpt =
-                match tcInfoNode with
-                | TcInfoNode(_, fullGraphNode) -> 
-                    let tcInfo, _ = fullGraphNode.TryPeekValue().Value
-                    Some(PartialState tcInfo)
-
-            BoundModel(
-                tcConfig,
-                tcGlobals,
-                tcImports,
-                keepAssemblyContents, keepAllBackgroundResolutions,
-                keepAllBackgroundSymbolUses,
-                enableBackgroundItemKeyStoreAndSemanticClassification,
-                enablePartialTypeChecking,
-                beforeFileChecked,
-                fileChecked,
-                prevTcInfo,
-                syntaxTreeOpt,
-                newTcInfoStateOpt)
+        if enablePartialTypeChecking && hasSig then
+            match tcInfoNode.TryGetFull() with
+            | ValueSome (tcInfo, _) ->
+                BoundModel(
+                    tcConfig,
+                    tcGlobals,
+                    tcImports,
+                    keepAssemblyContents, keepAllBackgroundResolutions,
+                    keepAllBackgroundSymbolUses,
+                    enableBackgroundItemKeyStoreAndSemanticClassification,
+                    enablePartialTypeChecking,
+                    beforeFileChecked,
+                    fileChecked,
+                    prevTcInfo,
+                    syntaxTreeOpt,
+                    tcInfoStateOpt = Some (PartialState tcInfo))
+            | _ -> this
         else
             this
 
