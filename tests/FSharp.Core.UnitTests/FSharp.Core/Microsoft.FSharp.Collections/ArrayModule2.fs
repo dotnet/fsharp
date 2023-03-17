@@ -443,9 +443,30 @@ type ArrayModule2() =
         // null array
         let nullArr = null:string[]      
         CheckThrowsArgumentNullException (fun () -> Array.reduce (fun (x:string) (y:string) -> x.Remove(0,y.Length))  nullArr  |> ignore)   
-        
-        ()
 
+    [<Fact>]
+    member this.ParallelReduce() =
+        let assertSameBehavior reduction arr = 
+            Assert.AreEqual(Array.reduce reduction arr, Array.Parallel.reduce reduction arr)
+
+        [|5*4*3*2; 4;3;2;1|] |> assertSameBehavior (fun x y -> x/y)
+        [|"A"; "B";  "C" ; "D" |] |> assertSameBehavior (fun x y -> if x < y then x else y)
+
+        CheckThrowsArgumentException (fun () -> Array.Parallel.reduce (fun x y -> x/y)  [||] |> ignore)     
+        let nullArr = null:string[]      
+        CheckThrowsArgumentNullException (fun () -> Array.Parallel.reduce (fun (x:string) (y:string) -> x.Remove(0,y.Length))  nullArr  |> ignore)  
+
+    [<Fact>]
+    member this.ParallelReduceBy() =
+        let assertSameBehavior projection reduction arr = 
+            Assert.AreEqual(arr |> Array.map projection |> Array.reduce reduction, Array.Parallel.reduceBy projection reduction arr)
+
+        [|5*4*3*2; 4;3;2;1|] |> assertSameBehavior (fun x -> x * 2)(fun x y -> x/y)
+        [|"ABCD"; "B";  "C" ; "D" |] |> assertSameBehavior (fun x -> x.Length) (Operators.Checked.(+))
+
+        CheckThrowsArgumentException (fun () -> Array.Parallel.reduceBy id (fun x y -> x/y)  [||] |> ignore)     
+        let nullArr = null:string[]      
+        CheckThrowsArgumentNullException (fun () -> Array.Parallel.reduceBy id (fun (x:string) (y:string) -> x.Remove(0,y.Length))  nullArr  |> ignore)  
         
     [<Fact>]
     member this.ReduceBack() =
@@ -864,6 +885,76 @@ type ArrayModule2() =
         let nullArr = null:double[]
         CheckThrowsArgumentNullException (fun () -> Array.sumBy float32 nullArr |> ignore)
         ()
+
+    member private _.TestOperation opName (actual:'T) (expected:'T) = 
+        Assert.AreEqual(expected, actual, sprintf "%s: should be %A but is %A" opName expected actual)
+
+    [<Fact>]
+    member this.ParallelSum() =
+        this.TestOperation "sum empty" (Array.Parallel.sum [||]) (0)
+        this.TestOperation "sum single" (Array.Parallel.sum [|42|]) (42)
+        this.TestOperation "sum two" (Array.Parallel.sum [|42;-21|]) (21)
+        this.TestOperation "sum many" (Array.Parallel.sum [|1..1000|]) ((1000*1001) / 2)
+        this.TestOperation "sum floats" (Array.Parallel.sum [|1.;2.;3.|]) (6.)
+        this.TestOperation "sum infinity" (Array.Parallel.sum [|1.;2.;infinity;3.|]) (infinity)
+        this.TestOperation "sum nan" (Array.Parallel.sum [|infinity;nan|] |> Double.IsNaN) (true)
+
+    [<Fact>]
+    member this.ParallelSumBy() = 
+        this.TestOperation "sum_by empty" (Array.Parallel.sumBy int [||]) (0)
+        this.TestOperation "sum_by single" (Array.Parallel.sumBy int [|42|]) (42)
+        this.TestOperation "sum_by two" (Array.Parallel.sumBy int [|42;-21|]) (21)
+        this.TestOperation "sum_by many" (Array.Parallel.sumBy int [|1..1000|]) ((1000*1001) / 2)
+        this.TestOperation "sum_by floats" (Array.Parallel.sumBy float [|1.;2.;3.|]) (6.)
+        this.TestOperation "sum_by infinity" (Array.Parallel.sumBy float [|1.;2.;infinity;3.|]) (infinity)
+        this.TestOperation "sum_by abs" (Array.Parallel.sumBy abs [|1; -2; 3; -4|]) (10)
+        this.TestOperation "sum_by string.Length" (Array.Parallel.sumBy String.length [|"abcd";"efg";"hi";"j";""|]) (10)
+
+    [<Fact>]
+    member this.ParallelAverage() =
+        CheckThrowsArgumentException (fun () -> Array.Parallel.average<float32> [||] |> ignore)
+        this.TestOperation "average of 0" (Array.Parallel.average [|0.|]) (0.)
+        this.TestOperation "average of single" (Array.Parallel.average [|4.|]) (4.)
+        this.TestOperation "average of two" (Array.Parallel.average [|4.;6.|]) (5.)
+
+    [<Fact>]
+    member this.ParallelAverageBy() = 
+        CheckThrowsArgumentException (fun () -> Array.Parallel.averageBy float [||] |> ignore)
+        this.TestOperation "average_by of 0" (Array.Parallel.averageBy id [|0.|]) (0.)
+        this.TestOperation "average_by of single" (Array.Parallel.averageBy id [|4.|]) (4.)
+        this.TestOperation "average_by of two" (Array.Parallel.averageBy id [|4.;6.|]) (5.)
+        this.TestOperation "average_by int>float" (Array.Parallel.averageBy float [|0..1000|]) (500.)
+        this.TestOperation "average_by string.Length" (Array.Parallel.averageBy (String.length >> float) [|"ab";"cdef"|]) (3.)
+
+    [<Fact>]
+    member this.ParallelMin() = 
+        CheckThrowsArgumentException (fun () -> Array.Parallel.min [||] |> ignore)
+        this.TestOperation "min single" (Array.Parallel.min [|42|]) (42)
+        this.TestOperation "min many" (Array.Parallel.min [|1..100|]) (1)
+        this.TestOperation "min floats" (Array.Parallel.min [|1.0;-1.0;nan;infinity;-infinity|]) (-infinity)
+
+    [<Fact>]
+    member this.ParallelMax() = 
+        CheckThrowsArgumentException (fun () -> Array.Parallel.max [||] |> ignore)
+        this.TestOperation "max single" (Array.Parallel.max [|42|]) (42)
+        this.TestOperation "max many" (Array.Parallel.max [|1..100|]) (100)
+        this.TestOperation "max floats" (Array.Parallel.max [|1.0;-1.0;nan;infinity;-infinity|]) (infinity)
+
+    [<Fact>]
+    member this.ParallelMinBy() = 
+        CheckThrowsArgumentException (fun () -> Array.Parallel.minBy string [||] |> ignore)
+        this.TestOperation "minBy single" (Array.Parallel.minBy string [|42|]) (42)
+        this.TestOperation "minBy int->string" (Array.Parallel.minBy string [|5..25|]) (10)
+        this.TestOperation "minBy many" (Array.Parallel.minBy (fun x -> -x) [|1..100|]) (100)
+        this.TestOperation "minBy floats" (Array.Parallel.minBy (fun x -> 1./float x) [|1..100|]) (100)
+
+    [<Fact>]
+    member this.ParallelMaxBy() = 
+        CheckThrowsArgumentException (fun () -> Array.Parallel.maxBy int [||] |> ignore)
+        this.TestOperation "maxBy single" (Array.Parallel.maxBy string [|42|]) (42)
+        this.TestOperation "maxBy many" (Array.Parallel.maxBy (fun x -> -x) [|1..100|]) (1)
+        this.TestOperation "maxBy floats" (Array.Parallel.maxBy (fun x -> 1./float x) [|1..100|]) (1)
+
 
     [<Fact>]
     member this.Tl() =

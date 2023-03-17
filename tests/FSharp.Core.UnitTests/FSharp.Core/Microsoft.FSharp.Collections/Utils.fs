@@ -4,28 +4,23 @@ module FSharp.Core.UnitTests.Collections.Utils
 
 open Xunit
 
-type Result<'a> = 
-| Success of 'a
-| Error of string
-
 let run f = 
     try
-        Success(f())
+        Ok(f())
     with
     | exn -> Error(exn.Message)
 
 let runAndCheckErrorType f = 
     try
-        Success(f())
+        Ok(f())
     with
     | exn -> Error(exn.GetType().ToString())
 
 let runAndCheckIfAnyError f = 
     try
-        Success(f())
+        Ok(f())
     with
     | exn -> Error("")
-
 
 let isStable sorted = sorted |> Seq.pairwise |> Seq.forall (fun ((ia, a),(ib, b)) -> if a = b then ia < ib else true)
 

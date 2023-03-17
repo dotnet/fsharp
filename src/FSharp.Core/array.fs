@@ -2081,21 +2081,19 @@ module Array =
         let private createPartitionsUpTo maxIdxExclusive (array: 'T[]) =
             createPartitionsUpToWithMinChunkSize maxIdxExclusive minChunkSize array
 
-        let chunkNonEmptyArrayAndPrepareEmptyResults (array: 'T[]) = 
+        (* This function is there also as a support vehicle for other aggregations. 
+           It is a public in order to be called from inlined functions, the benefit of inlining call into it is significant *)
+        [<CompiledName("ReduceBy")>]
+        let reduceBy (projection: 'T -> 'U) (reduction: 'U -> 'U -> 'U) (array: 'T[]) =
             checkNonNull "array" array
+
             if array.Length = 0 then
                 invalidArg "array" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
 
-            let chunks = createPartitionsUpToWithMinChunkSize array.Length 1 array
-            chunks,Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked chunks.Length
+            let chunks = createPartitionsUpToWithMinChunkSize array.Length 2 array // We need at least 2 elements/chunk for 'reduction'
 
-
-        [<CompiledName("ReduceBy")>]
-        let reduceBy (projection:'T -> 'U) (reduction:'U -> 'U ->'U) (array: 'T[]) =
-        (* This function is there also as a support vehicle for other aggregations. 
-           It is a public in order to be called from inlined functions, the benefit of inlining call into it is significant *)
-
-            let chunks,chunkResults = chunkNonEmptyArrayAndPrepareEmptyResults array
+            let chunkResults =
+                Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked chunks.Length
 
             Parallel.For(
                 0,
@@ -2110,7 +2108,8 @@ module Array =
                         res <- reduction res projected
 
                     chunkResults[chunkIdx] <- res
-            ) |> ignore
+            )
+            |> ignore
 
             let mutable finalResult = chunkResults[0]
 
@@ -2120,14 +2119,19 @@ module Array =
             finalResult
 
         [<CompiledName("Reduce")>]
-        let inline reduce ([<InlineIfLambda>] reduction) (array: _[]) = array |> reduceBy id reduction           
+        let inline reduce ([<InlineIfLambda>] reduction) (array: _[]) =
+            array |> reduceBy id reduction
 
         [<CompiledName("MinBy")>]
         let inline minBy ([<InlineIfLambda>] projection) (array: _[]) =
-            let inline vFst struct(a,_) = a
-            let inline vSnd struct(_,b) = b
-            array 
-            |> reduceBy (fun x -> struct(projection x, x)) (fun a b -> if vFst a < vFst b then a else b)
+            let inline vFst struct (a, _) =
+                a
+
+            let inline vSnd struct (_, b) =
+                b
+
+            array
+            |> reduceBy (fun x -> struct (projection x, x)) (fun a b -> if vFst a < vFst b then a else b)
             |> vSnd
 
         [<CompiledName("Min")>]
@@ -2139,7 +2143,7 @@ module Array =
             if array.Length = 0 then
                 LanguagePrimitives.GenericZero
             else
-                array |> reduceBy projection Operators.Checked.(+) 
+                array |> reduceBy projection Operators.Checked.(+)
 
         [<CompiledName("Sum")>]
         let inline sum (array: ^T[]) : ^T =
@@ -2147,10 +2151,14 @@ module Array =
 
         [<CompiledName("MaxBy")>]
         let inline maxBy projection (array: _[]) =
-            let inline vFst struct(a,_) = a
-            let inline vSnd struct(_,b) = b
-            array 
-            |> reduceBy (fun x -> struct(projection x, x)) (fun a b -> if vFst a > vFst b then a else b)
+            let inline vFst struct (a, _) =
+                a
+
+            let inline vSnd struct (_, b) =
+                b
+
+            array
+            |> reduceBy (fun x -> struct (projection x, x)) (fun a b -> if vFst a > vFst b then a else b)
             |> vSnd
 
         [<CompiledName("Max")>]
@@ -2159,7 +2167,7 @@ module Array =
 
         [<CompiledName("AverageBy")>]
         let inline averageBy ([<InlineIfLambda>] projection: 'T -> ^U) (array: 'T[]) : ^U =
-            let sum = array |> sumBy projection
+            let sum = array |> reduceBy projection Operators.Checked.(+)
             LanguagePrimitives.DivideByInt sum (array.Length)
 
         [<CompiledName("Average")>]
