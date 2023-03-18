@@ -41,7 +41,7 @@ val ParseInput:
     fileName: string *
     isLastCompiland: (bool * bool) *
     identCapture: bool *
-    userOpName : string option ->
+    userOpName: string option ->
         ParsedInput
 
 /// A general routine to process hash directives

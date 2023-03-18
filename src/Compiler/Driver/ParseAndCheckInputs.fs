@@ -418,15 +418,16 @@ let ParseInput
         identCapture,
         userOpName
     ) =
-    
+
     use _ =
-        Activity.start "ParseAndCheckFile.parseFile"
+        Activity.start
+            "ParseAndCheckFile.parseFile"
             [|
                 Activity.Tags.fileName, fileName
                 Activity.Tags.buildPhase, BuildPhase.Parse.ToString()
                 Activity.Tags.userOpName, userOpName |> Option.defaultValue ""
             |]
-    
+
     // The assert below is almost ok, but it fires in two cases:
     //  - fsi.exe sometimes passes "stdin" as a dummy file name
     //  - if you have a #line directive, e.g.
