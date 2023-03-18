@@ -1,16 +1,14 @@
 {
   "sdk": {
-    "version": "7.0.200",
+    "version": "7.0.202",
     "allowPrerelease": true,
     "rollForward": "latestPatch"
   },
   "tools": {
-    "dotnet": "7.0.200",
+    "dotnet": "7.0.202",
     "vs": {
-      "version": "17.4",
-      "components": [
-        "Microsoft.VisualStudio.Component.FSharp"
-      ]
+      "version": "17.5",
+      "components": ["Microsoft.VisualStudio.Component.FSharp"]
     },
     "xcopy-msbuild": "17.4.1"
   },
