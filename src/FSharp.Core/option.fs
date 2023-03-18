@@ -8,7 +8,7 @@ open Microsoft.FSharp.Core.Operators
 module Option =
 
     [<CompiledName("GetValue")>]
-    let inline get option =
+    let get option =
         match option with
         | None -> invalidArg "option" (SR.GetString(SR.optionValueWasNone))
         | Some x -> x

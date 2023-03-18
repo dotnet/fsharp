@@ -127,7 +127,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("GetValue")>]
-    val inline get: option: 'T option -> 'T
+    val get: option: 'T option -> 'T
 
     /// <summary><c>count inp</c> evaluates to <c>match inp with None -> 0 | Some _ -> 1</c>.</summary>
     ///
