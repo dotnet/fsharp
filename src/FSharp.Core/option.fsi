@@ -56,7 +56,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("DefaultValue")>]
-    val defaultValue: value: 'T -> option: 'T option -> 'T
+    val inline defaultValue: value: 'T -> option: 'T option -> 'T
 
     /// <summary>Gets the value of the option if the option is <c>Some</c>, otherwise evaluates <paramref name="defThunk"/> and returns the result.</summary>
     ///
@@ -73,7 +73,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("DefaultWith")>]
-    val defaultWith: defThunk: (unit -> 'T) -> option: 'T option -> 'T
+    val inline defaultWith: defThunk: (unit -> 'T) -> option: 'T option -> 'T
 
     /// <summary>Returns <paramref name="option"/> if it is <c>Some</c>, otherwise returns <paramref name="ifNone"/>.</summary>
     ///
@@ -91,7 +91,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("OrElse")>]
-    val orElse: ifNone: 'T option -> option: 'T option -> 'T option
+    val inline orElse: ifNone: 'T option -> option: 'T option -> 'T option
 
     /// <summary>Returns <paramref name="option"/> if it is <c>Some</c>, otherwise evaluates <paramref name="ifNoneThunk"/> and returns the result.</summary>
     ///
@@ -110,7 +110,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("OrElseWith")>]
-    val orElseWith: ifNoneThunk: (unit -> 'T option) -> option: 'T option -> 'T option
+    val inline orElseWith: ifNoneThunk: (unit -> 'T option) -> option: 'T option -> 'T option
 
     /// <summary>Gets the value associated with the option.</summary>
     ///
@@ -127,7 +127,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("GetValue")>]
-    val get: option: 'T option -> 'T
+    val inline get: option: 'T option -> 'T
 
     /// <summary><c>count inp</c> evaluates to <c>match inp with None -> 0 | Some _ -> 1</c>.</summary>
     ///
@@ -142,7 +142,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("Count")>]
-    val count: option: 'T option -> int
+    val inline count: option: 'T option -> int
 
     /// <summary><c>fold f s inp</c> evaluates to <c>match inp with None -> s | Some x -> f s x</c>.</summary>
     ///
@@ -161,7 +161,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("Fold")>]
-    val fold<'T, 'State> : folder: ('State -> 'T -> 'State) -> state: 'State -> option: 'T option -> 'State
+    val inline fold<'T, 'State> : folder: ('State -> 'T -> 'State) -> state: 'State -> option: 'T option -> 'State
 
     /// <summary><c>fold f inp s</c> evaluates to <c>match inp with None -> s | Some x -> f x s</c>.</summary>
     ///
@@ -180,7 +180,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("FoldBack")>]
-    val foldBack<'T, 'State> : folder: ('T -> 'State -> 'State) -> option: 'T option -> state: 'State -> 'State
+    val inline foldBack<'T, 'State> : folder: ('T -> 'State -> 'State) -> option: 'T option -> state: 'State -> 'State
 
     /// <summary><c>exists p inp</c> evaluates to <c>match inp with None -> false | Some x -> p x</c>.</summary>
     ///
@@ -198,7 +198,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("Exists")>]
-    val exists: predicate: ('T -> bool) -> option: 'T option -> bool
+    val inline exists: predicate: ('T -> bool) -> option: 'T option -> bool
 
     /// <summary><c>forall p inp</c> evaluates to <c>match inp with None -> true | Some x -> p x</c>.</summary>
     ///
@@ -216,7 +216,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("ForAll")>]
-    val forall: predicate: ('T -> bool) -> option: 'T option -> bool
+    val inline forall: predicate: ('T -> bool) -> option: 'T option -> bool
 
     /// <summary>Evaluates to true if <paramref name="option"/> is <c>Some</c> and its value is equal to <paramref name="value"/>.</summary>
     ///
@@ -247,7 +247,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("Iterate")>]
-    val iter: action: ('T -> unit) -> option: 'T option -> unit
+    val inline iter: action: ('T -> unit) -> option: 'T option -> unit
 
     /// <summary><c>map f inp</c> evaluates to <c>match inp with None -> None | Some x -> Some (f x)</c>.</summary>
     ///
@@ -263,7 +263,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("Map")>]
-    val map: mapping: ('T -> 'U) -> option: 'T option -> 'U option
+    val inline map: mapping: ('T -> 'U) -> option: 'T option -> 'U option
 
     /// <summary><c>map f option1 option2</c> evaluates to <c>match option1, option2 with Some x, Some y -> Some (f x y) | _ -> None</c>.</summary>
     ///
@@ -282,7 +282,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("Map2")>]
-    val map2: mapping: ('T1 -> 'T2 -> 'U) -> option1: 'T1 option -> option2: 'T2 option -> 'U option
+    val inline map2: mapping: ('T1 -> 'T2 -> 'U) -> option1: 'T1 option -> option2: 'T2 option -> 'U option
 
     /// <summary><c>map f option1 option2 option3</c> evaluates to <c>match option1, option2, option3 with Some x, Some y, Some z -> Some (f x y z) | _ -> None</c>.</summary>
     ///
@@ -303,7 +303,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("Map3")>]
-    val map3:
+    val inline map3:
         mapping: ('T1 -> 'T2 -> 'T3 -> 'U) ->
         option1: 'T1 option ->
         option2: 'T2 option ->
@@ -330,7 +330,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("Bind")>]
-    val bind: binder: ('T -> 'U option) -> option: 'T option -> 'U option
+    val inline bind: binder: ('T -> 'U option) -> option: 'T option -> 'U option
 
     /// <summary><c>flatten inp</c> evaluates to <c>match inp with None -> None | Some x -> x</c></summary>
     ///
@@ -348,7 +348,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("Flatten")>]
-    val flatten: option: 'T option option -> 'T option
+    val inline flatten: option: 'T option option -> 'T option
 
     /// <summary><c>filter f inp</c> evaluates to <c>match inp with None -> None | Some x -> if f x then Some x else None</c>.</summary>
     ///
@@ -365,7 +365,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("Filter")>]
-    val filter: predicate: ('T -> bool) -> option: 'T option -> 'T option
+    val inline filter: predicate: ('T -> bool) -> option: 'T option -> 'T option
 
     /// <summary>Convert the option to an array of length 0 or 1.</summary>
     ///
@@ -380,7 +380,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("ToArray")>]
-    val toArray: option: 'T option -> 'T[]
+    val inline toArray: option: 'T option -> 'T[]
 
     /// <summary>Convert the option to a list of length 0 or 1.</summary>
     ///
@@ -395,7 +395,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("ToList")>]
-    val toList: option: 'T option -> 'T list
+    val inline toList: option: 'T option -> 'T list
 
     /// <summary>Convert the option to a Nullable value.</summary>
     ///
@@ -410,7 +410,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("ToNullable")>]
-    val toNullable: option: 'T option -> Nullable<'T>
+    val inline toNullable: option: 'T option -> Nullable<'T>
 
     /// <summary>Convert a Nullable value to an option.</summary>
     ///
@@ -425,7 +425,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("OfNullable")>]
-    val ofNullable: value: Nullable<'T> -> 'T option
+    val inline ofNullable: value: Nullable<'T> -> 'T option
 
     /// <summary>Convert a potentially null value to an option.</summary>
     ///
@@ -440,7 +440,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("OfObj")>]
-    val ofObj: value: 'T -> 'T option when 'T: null
+    val inline ofObj: value: 'T -> 'T option when 'T: null
 
     /// <summary>Convert an option to a potentially null value.</summary>
     ///
@@ -455,7 +455,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("ToObj")>]
-    val toObj: value: 'T option -> 'T when 'T: null
+    val inline toObj: value: 'T option -> 'T when 'T: null
 
 /// <summary>Contains operations for working with value options.</summary>
 ///
