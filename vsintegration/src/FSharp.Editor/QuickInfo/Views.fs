@@ -51,10 +51,11 @@ module internal QuickInfoViewProvider =
 
     let (|TaggedText|) (tt: TaggedText) = tt.Tag, tt.Text
 
-    let (|DocSeparator|_|) (text: TaggedText list) =
-        match text with
-        | TaggedText (TextTag.Text, "-------------") :: TaggedText (TextTag.LineBreak, _) :: rest -> Some rest
-        | _ -> None
+    let (|LineBreak|_|) =
+        function TaggedText (TextTag.LineBreak, _) -> Some () | _ -> None
+
+    let (|DocSeparator|_|) =
+        function LineBreak :: TaggedText (TextTag.Text, "-------------") :: LineBreak :: rest -> Some rest | _ -> None
 
     let wrapContent (elements: obj list) =
         ContainerElement(ContainerElementStyle.Wrapped, elements |> Seq.map box)
@@ -62,8 +63,9 @@ module internal QuickInfoViewProvider =
     let stackContent (elements: obj list) =
         ContainerElement(ContainerElementStyle.Stacked, elements |> Seq.map box)
 
-    let emptyRun = ClassifiedTextRun(ClassificationTypeNames.WhiteSpace, "") |> box
     let encloseRuns runs = wrapContent (runs |> List.rev) |> box
+
+    let emptyLine = wrapContent [ ClassifiedTextRun(ClassificationTypeNames.WhiteSpace, "") |> box ]
 
     let provideContent
         (
@@ -77,10 +79,10 @@ module internal QuickInfoViewProvider =
             let rec loop text runs stack =
                 match (text: TaggedText list) with
                 | [] -> stackContent (encloseRuns runs :: stack |> List.rev)
-                | DocSeparator rest -> loop rest runs (box Separator :: emptyRun :: stack)
-                | TaggedText (TextTag.LineBreak, _) :: rest ->
-                    let runs = if runs |> List.isEmpty then [ emptyRun ] else runs
-                    loop rest [] (encloseRuns runs :: stack)
+                | DocSeparator (LineBreak :: rest)
+                | DocSeparator rest -> loop rest [] (box Separator :: encloseRuns runs :: stack)
+                | LineBreak :: rest when runs |> List.isEmpty -> loop rest [] (emptyLine :: stack)
+                | LineBreak :: rest -> loop rest [] (encloseRuns runs :: stack)
                 | :? NavigableTaggedText as item :: rest when navigation.IsTargetValid item.Range ->
                     let classificationTag = layoutTagToClassificationTag item.Tag
                     let action = fun () -> navigation.NavigateTo(item.Range, CancellationToken.None)

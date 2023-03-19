@@ -56,5 +56,5 @@ type WpfSeparatorFactory() =
     interface IViewElementFactory with
         member _.CreateViewElement(_, model: obj) =
             match model with
-            | :? Separator -> Controls.Separator(Opacity = 0.4) |> box :?> _
+            | :? Separator -> Controls.Separator(Opacity = 0.4, Margin = Thickness(0, 10, 0, 10)) |> box :?> _
             | _ -> failwith $"Invalid type conversion.  Supported conversion is {typeof<Separator>.Name} to {typeof<UIElement>.Name}."
