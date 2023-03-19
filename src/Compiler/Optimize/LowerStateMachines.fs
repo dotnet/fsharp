@@ -313,11 +313,14 @@ type LowerStateMachine(g: TcGlobals) =
             | Some innerExpr2 -> Some (Expr.DebugPoint (dp, innerExpr2))
             | None -> None
 
+        | Expr.App _ ->
+            TryReduceExpr env expr args id
+
         | _ -> 
             None
 
     // Apply a single expansion of resumable code at the outermost position in an arbitrary expression
-    let rec TryReduceExpr (env: env) expr args remake = 
+    and TryReduceExpr (env: env) expr args remake = 
         if sm_verbose then printfn "expanding defns and reducing %A..." expr
         //if sm_verbose then printfn "checking %A for possible resumable code application..." expr
         match expr with
