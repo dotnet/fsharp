@@ -3,6 +3,7 @@
 namespace Microsoft.VisualStudio.FSharp.Editor.QuickInfo
 
 open System
+open System.IO
 open System.Threading
 open System.Threading.Tasks
 open System.ComponentModel.Composition
@@ -19,6 +20,7 @@ open Microsoft.VisualStudio.Utilities
 open Microsoft.VisualStudio.FSharp.Editor
 
 open FSharp.Compiler.Text
+open Microsoft.IO
 
 type internal FSharpAsyncQuickInfoSource
     (
@@ -55,6 +57,14 @@ type internal FSharpAsyncQuickInfoSource
                 asyncMaybe {
                     let document = textBuffer.CurrentSnapshot.GetOpenDocumentInCurrentContextWithChanges()
                     let! symbolUseRange, sigQuickInfo, targetQuickInfo = FSharpQuickInfo.getQuickInfo(document, triggerPoint.Position, cancellationToken)
+                    
+                    let getTooltip filePath =
+                        let solutionDir = Path.GetDirectoryName(document.Project.Solution.FilePath)
+                        let projectDir = Path.GetDirectoryName(document.Project.FilePath)
+                        [ Path.GetRelativePath(projectDir, filePath)
+                          Path.GetRelativePath(solutionDir, filePath) ]
+                        |> List.minBy String.length
+
                     let getTrackingSpan (span:TextSpan) =
                         textBuffer.CurrentSnapshot.CreateTrackingSpan(span.Start, span.Length, SpanTrackingMode.EdgeInclusive)
 
@@ -66,7 +76,7 @@ type internal FSharpAsyncQuickInfoSource
                         let mainDescription, docs = FSharpAsyncQuickInfoSource.BuildSingleQuickInfoItem documentationBuilder quickInfo
                         let imageId = Tokenizer.GetImageIdForSymbol(quickInfo.Symbol, quickInfo.SymbolKind)
                         let navigation = FSharpNavigation(statusBar, metadataAsSource, document, symbolUseRange)
-                        let content = QuickInfoViewProvider.provideContent(imageId, mainDescription |> List.ofSeq, [docs |> List.ofSeq], navigation)
+                        let content = QuickInfoViewProvider.provideContent(imageId, mainDescription |> List.ofSeq, [docs |> List.ofSeq], navigation, getTooltip)
                         let span = getTrackingSpan quickInfo.Span
                         return QuickInfoItem(span, content)
 
@@ -96,8 +106,8 @@ type internal FSharpAsyncQuickInfoSource
                               RoslynHelpers.joinWithLineBreaks [typeParameterMap; usage; exceptions] |> List.ofSeq
                             ]
                         let imageId = Tokenizer.GetImageIdForSymbol(targetQuickInfo.Symbol, targetQuickInfo.SymbolKind)
-                        let navigation = FSharpNavigation(statusBar, metadataAsSource, document, symbolUseRange)
-                        let content = QuickInfoViewProvider.provideContent(imageId, mainDescription |> List.ofSeq, documentationParts, navigation)
+                        let navigation = FSharpNavigation(statusBar, metadataAsSource, document, symbolUseRange)                           
+                        let content = QuickInfoViewProvider.provideContent(imageId, mainDescription |> List.ofSeq, documentationParts, navigation, getTooltip)
                         let span = getTrackingSpan targetQuickInfo.Span
                         return QuickInfoItem(span, content)
                 }   |> Async.map Option.toObj

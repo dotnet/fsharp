@@ -72,7 +72,8 @@ module internal QuickInfoViewProvider =
             imageId: ImageId option,
             description: TaggedText list,
             documentation: TaggedText list list,
-            navigation: FSharpNavigation
+            navigation: FSharpNavigation,
+            getTooltip
         ) =
 
         let encloseText text =
@@ -86,8 +87,7 @@ module internal QuickInfoViewProvider =
                 | :? NavigableTaggedText as item :: rest when navigation.IsTargetValid item.Range ->
                     let classificationTag = layoutTagToClassificationTag item.Tag
                     let action = fun () -> navigation.NavigateTo(item.Range, CancellationToken.None)
-                    let toolTip = item.Range.FileName
-                    let run = ClassifiedTextRun(classificationTag, item.Text, action, toolTip)
+                    let run = ClassifiedTextRun(classificationTag, item.Text, action, getTooltip item.Range.FileName)
                     loop rest (run :: runs) stack
                 | item :: rest ->
                     let run = ClassifiedTextRun(layoutTagToClassificationTag item.Tag, item.Text)
