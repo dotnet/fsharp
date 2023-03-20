@@ -15,6 +15,9 @@ let consistency name sqs ls arr =
     (sqs = arr) |@ (sprintf  "Seq.%s = '%A', Array.%s = '%A'" name sqs name arr) .&. 
     (ls  = arr) |@ (sprintf "List.%s = '%A', Array.%s = '%A'" name ls name arr)
 
+let consistencyIncludingParallel name sqs ls arr paraArr = 
+    consistency name sqs ls arr .&.
+    (paraArr = arr) |@ (sprintf "Parallel.%s = '%A', Array.%s = '%A'" name paraArr name arr)
 
 let allPairs<'a when 'a : equality> (xs : list<'a>) (xs2 : list<'a>) =
     let s = xs |> Seq.allPairs xs2 |> Seq.toArray
@@ -1106,7 +1109,8 @@ let tryFind<'a when 'a : equality> (xs : 'a []) predicate =
     let s = xs |> Seq.tryFind predicate
     let l = xs |> List.ofArray |> List.tryFind predicate
     let a = xs |> Array.tryFind predicate
-    consistency "tryFind" s l a
+    let pa = xs |> Array.Parallel.tryFind predicate
+    consistencyIncludingParallel "tryFind" s l a pa
 
 [<Fact>]
 let ``tryFind is consistent`` () =
@@ -1130,7 +1134,8 @@ let tryFindIndex<'a when 'a : equality> (xs : 'a []) predicate =
     let s = xs |> Seq.tryFindIndex predicate
     let l = xs |> List.ofArray |> List.tryFindIndex predicate
     let a = xs |> Array.tryFindIndex predicate
-    consistency "tryFindIndex" s l a
+    let pa = xs |> Array.Parallel.tryFindIndex predicate
+    consistencyIncludingParallel "tryFindIndex" s l a pa
 
 [<Fact>]
 let ``tryFindIndex is consistent`` () =
@@ -1190,7 +1195,8 @@ let tryPick<'a when 'a : comparison> (xs : 'a []) f =
     let s = xs |> Seq.tryPick f
     let l = xs |> List.ofArray |> List.tryPick f
     let a = xs |> Array.tryPick f
-    consistency "tryPick" s l a
+    let pa = xs |> Array.Parallel.tryPick f
+    consistencyIncludingParallel "tryPick" s l a pa
 
 [<Fact>]
 let ``tryPick is consistent`` () =
