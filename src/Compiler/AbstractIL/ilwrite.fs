@@ -1075,6 +1075,7 @@ exception MethodDefNotFound
 let private MethodDefIdxExists cenv (mref: ILMethodRef) = 
     let tref = mref.DeclaringTypeRef
     if not (isTypeRefLocal tref) then
+        // Method referred to by method impl, event or property is not in a type defined in this module.
         false
     else
         let tidx = GetIdxForTypeDef cenv (TdKey(tref.Enclosing, tref.Name))
@@ -1173,7 +1174,7 @@ let canGenEventDef cenv (ev: ILEventDef) =
     else
         // If we have AddMethod or RemoveMethod set (i.e. not None), try and see if we have MethodDefs for them.
         // NOTE: They can be not-None and missing MethodDefs if we skip generating them for reference assembly in the earlier pass.
-        // Only generate event if we have at least getter or setter, otherwise, we skip.
+        // Only generate event if we have at least add or remove, otherwise, we skip.
         [| ev.AddMethod; ev.RemoveMethod |]
         |> Array.exists (MethodDefIdxExists cenv)
 
