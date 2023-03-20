@@ -16,9 +16,9 @@ open Microsoft.FSharp.Control
 open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Primitives.Basics
 
-module Internal = 
+module Internal =
 
-    [<Literal>] 
+    [<Literal>]
     let arrayBuilderStartingSize = 4
 
     [<Struct>]
@@ -30,7 +30,7 @@ module Internal =
             mutable currentArray: 'T array
         }
 
-    let inline addToBuilder (item: 'T) (builder:byref<ArrayBuilder<'T>>) = 
+    let inline addToBuilder (item: 'T) (builder: byref<ArrayBuilder<'T>>) =
         match builder.currentCount = builder.currentArray.Length with
         | false ->
             builder.currentArray[ builder.currentCount ] <- item
@@ -42,7 +42,7 @@ module Internal =
             newArr[builder.currentCount] <- item
             builder.currentCount <- builder.currentCount + 1
 
-    let inline builderToArray (builder:inref<ArrayBuilder<'T>>) = 
+    let inline builderToArray (builder: inref<ArrayBuilder<'T>>) =
         match builder.currentCount = builder.currentArray.Length with
         | true -> builder.currentArray
         | false -> builder.currentArray |> Array.subUnchecked 0 builder.currentCount
@@ -1030,7 +1030,7 @@ module Seq =
                 let mutable builder = { currentCount = 1; currentArray = arr }
 
                 while e.MoveNext() do
-                    addToBuilder e.Current &builder               
+                    addToBuilder e.Current &builder
 
                 builderToArray &builder
             else
