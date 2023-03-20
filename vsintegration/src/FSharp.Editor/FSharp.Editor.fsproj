@@ -18,7 +18,7 @@
     <InternalsVisibleTo Include="VisualFSharp.Salsa" />
   </ItemGroup>
 
-  <ItemGroup>
+  <ItemGroup>    
     <EmbeddedResource Include="FSharp.Editor.resx">
       <GenerateSource>true</GenerateSource>
       <GeneratedModuleName>Microsoft.VisualStudio.FSharp.Editor.SR</GeneratedModuleName>
@@ -73,6 +73,7 @@
     <Compile Include="Diagnostics\UnusedDeclarationsAnalyzer.fs" />
     <Compile Include="Diagnostics\UnusedOpensDiagnosticAnalyzer.fs" />
     <Compile Include="DocComments\XMLDocumentation.fs" />
+	<Compile Include="TaskList\TaskListService.fs" />
     <Compile Include="Completion\CompletionUtils.fs" />
     <Compile Include="Completion\CompletionProvider.fs" />
     <Compile Include="Completion\PathCompletionUtilities.fs" />

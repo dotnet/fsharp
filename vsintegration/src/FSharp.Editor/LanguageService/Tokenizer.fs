@@ -39,6 +39,7 @@ type internal LexerSymbolKind =
     | String = 6
     | Other = 7
     | Keyword = 8
+    | Comment = 9
 
 type internal LexerSymbol =
     { Kind: LexerSymbolKind
@@ -358,6 +359,8 @@ module internal Tokenizer =
         member token.IsOperator = (token.ColorClass = FSharpTokenColorKind.Operator)
         member token.IsPunctuation = (token.ColorClass = FSharpTokenColorKind.Punctuation)
         member token.IsString = (token.ColorClass = FSharpTokenColorKind.String)
+        member token.IsComment = (token.ColorClass = FSharpTokenColorKind.Comment)
+        member token.IsKeyWord = (token.ColorClass = FSharpTokenColorKind.Keyword)
     
     /// This is the information we save for each token in a line for each active document.
     /// It is a memory-critical data structure - do not make larger. This used to be ~100 bytes class, is now 8-byte struct
@@ -389,7 +392,8 @@ module internal Tokenizer =
                 elif token.IsIdentifier then LexerSymbolKind.Ident 
                 elif token.IsPunctuation then LexerSymbolKind.Punctuation
                 elif token.IsString then LexerSymbolKind.String
-                elif token.ColorClass = FSharpTokenColorKind.Keyword then LexerSymbolKind.Keyword
+                elif token.IsKeyWord then LexerSymbolKind.Keyword
+                elif token.IsComment then LexerSymbolKind.Comment
                 else LexerSymbolKind.Other
             Debug.Assert(uint32 token.Tag < 0xFFFFu)
             Debug.Assert(uint32 kind < 0xFFu)
