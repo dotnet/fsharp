@@ -127,7 +127,7 @@ module internal OptionsUI =
             let view = IntelliSenseOptionControl()
             view.charTyped.Unchecked.Add <| fun _ -> view.charDeleted.IsChecked <- System.Nullable false
 
-            let path = "EnterKeySetting"
+            let path = nameof EnterKeySetting
             bindRadioButton view.nevernewline path EnterKeySetting.NeverNewline 
             bindRadioButton view.newlinecompleteline path EnterKeySetting.NewlineOnCompleteWord 
             bindRadioButton view.alwaysnewline path EnterKeySetting.AlwaysNewline
@@ -139,11 +139,11 @@ module internal OptionsUI =
         inherit AbstractOptionPage<QuickInfoOptions>()
         override this.CreateView() = 
             let view = QuickInfoOptionControl()
-            let path = "UnderlineStyle"
+            let path = nameof QuickInfoOptions.Default.UnderlineStyle
             bindRadioButton view.solid path QuickInfoUnderlineStyle.Solid
             bindRadioButton view.dot path QuickInfoUnderlineStyle.Dot
             bindRadioButton view.dash path QuickInfoUnderlineStyle.Dash
-            bindCheckBox view.displayLinks "DisplayLinks"
+            bindCheckBox view.displayLinks (nameof QuickInfoOptions.Default.DisplayLinks)
             upcast view
 
     [<Guid(Guids.codeFixesOptionPageIdString)>]

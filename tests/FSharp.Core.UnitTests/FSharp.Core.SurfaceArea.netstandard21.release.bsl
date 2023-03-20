@@ -657,6 +657,7 @@ Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Microsoft.FSharp.Contro
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Microsoft.FSharp.Core.FSharpOption`1[TReply] TryPostAndReply[TReply](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Control.FSharpAsyncReplyChannel`1[TReply],TMsg], Microsoft.FSharp.Core.FSharpOption`1[System.Int32])
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: TReply PostAndReply[TReply](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Control.FSharpAsyncReplyChannel`1[TReply],TMsg], Microsoft.FSharp.Core.FSharpOption`1[System.Int32])
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Void .ctor(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg],Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit]], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
+Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Void Dispose()
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Void Post(TMsg)
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Void Start()
 Microsoft.FSharp.Control.FSharpMailboxProcessor`1[TMsg]: Void add_Error(Microsoft.FSharp.Control.FSharpHandler`1[System.Exception])
