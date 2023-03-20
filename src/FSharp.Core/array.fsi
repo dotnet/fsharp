@@ -3452,6 +3452,7 @@ module Array =
         /// Evaluates to <c>[| (1, "one"); (2, "two") |]</c>.
         /// </example>
         [<CompiledName("Zip")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val zip: array1:'T1[] -> array2:'T2[] -> ('T1 * 'T2)[]
 
         /// <summary>Returns a new collection containing only the elements of the collection
@@ -3473,4 +3474,5 @@ module Array =
         /// Evaluates to <c>[| 2; 4 |]</c>
         /// </example>
         [<CompiledName("Filter")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val filter: predicate:('T -> bool) -> array:'T[] -> 'T[]
