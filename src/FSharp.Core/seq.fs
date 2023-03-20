@@ -18,6 +18,32 @@ open Microsoft.FSharp.Primitives.Basics
 
 module Internal =
 
+    [<Struct>]
+    [<NoEquality>]
+    [<NoComparison>]
+    type ArrayBuilder<'T> =
+        {
+            mutable currentCount: int
+            mutable currentArray: 'T array
+        }
+
+        member inline this.Add(item: 'T) =
+            match this.currentCount with
+            | x when x < this.currentArray.Length ->
+                this.currentArray[ this.currentCount ] <- item
+                this.currentCount <- this.currentCount + 1
+            | _ ->
+                let newArr = Array.zeroCreateUnchecked (this.currentArray.Length * 2)
+                this.currentArray.CopyTo(newArr, 0)
+                this.currentArray <- newArr
+                newArr[this.currentCount] <- item
+                this.currentCount <- this.currentCount + 1
+
+        member inline this.ToArray() =
+            match this.currentCount = this.currentArray.Length with
+            | true -> this.currentArray
+            | false -> this.currentArray |> Array.subUnchecked 0 this.currentCount
+
     module IEnumerator =
 
         open Microsoft.FSharp.Collections.IEnumerator
@@ -988,13 +1014,24 @@ module Seq =
         | :? ('T list) as res -> List.toArray res
         | :? ICollection<'T> as res ->
             // Directly create an array and copy ourselves.
-            // This avoids an extra copy if using ResizeArray in fallback below.
+            // This avoids copies if using ArrayBuilder in fallback below.
             let arr = Array.zeroCreateUnchecked res.Count
             res.CopyTo(arr, 0)
             arr
         | _ ->
-            let res = ResizeArray<_>(source)
-            res.ToArray()
+            use e = source.GetEnumerator()
+
+            if e.MoveNext() then
+                let arr = Array.zeroCreateUnchecked 4
+                arr[0] <- e.Current
+                let builder = { currentCount = 1; currentArray = arr }
+
+                while e.MoveNext() do
+                    builder.Add(e.Current)
+
+                builder.ToArray()
+            else
+                [||]
 
     let foldArraySubRight (f: OptimizedClosures.FSharpFunc<'T, _, _>) (arr: 'T[]) start fin acc =
         let mutable state = acc
