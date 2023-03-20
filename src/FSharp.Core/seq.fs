@@ -16,7 +16,10 @@ open Microsoft.FSharp.Control
 open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Primitives.Basics
 
-module Internal =
+module Internal = 
+
+    [<Literal>] 
+    let arrayBuilderStartingSize = 4
 
     [<Struct>]
     [<NoEquality>]
@@ -27,22 +30,22 @@ module Internal =
             mutable currentArray: 'T array
         }
 
-        member inline this.Add(item: 'T) =
-            match this.currentCount with
-            | x when x < this.currentArray.Length ->
-                this.currentArray[ this.currentCount ] <- item
-                this.currentCount <- this.currentCount + 1
-            | _ ->
-                let newArr = Array.zeroCreateUnchecked (this.currentArray.Length * 2)
-                this.currentArray.CopyTo(newArr, 0)
-                this.currentArray <- newArr
-                newArr[this.currentCount] <- item
-                this.currentCount <- this.currentCount + 1
+    let inline addToBuilder (item: 'T) (builder:byref<ArrayBuilder<'T>>) = 
+        match builder.currentCount = builder.currentArray.Length with
+        | false ->
+            builder.currentArray[ builder.currentCount ] <- item
+            builder.currentCount <- builder.currentCount + 1
+        | true ->
+            let newArr = Array.zeroCreateUnchecked (builder.currentArray.Length * 2)
+            builder.currentArray.CopyTo(newArr, 0)
+            builder.currentArray <- newArr
+            newArr[builder.currentCount] <- item
+            builder.currentCount <- builder.currentCount + 1
 
-        member inline this.ToArray() =
-            match this.currentCount = this.currentArray.Length with
-            | true -> this.currentArray
-            | false -> this.currentArray |> Array.subUnchecked 0 this.currentCount
+    let inline builderToArray (builder:inref<ArrayBuilder<'T>>) = 
+        match builder.currentCount = builder.currentArray.Length with
+        | true -> builder.currentArray
+        | false -> builder.currentArray |> Array.subUnchecked 0 builder.currentCount
 
     module IEnumerator =
 
@@ -1022,14 +1025,14 @@ module Seq =
             use e = source.GetEnumerator()
 
             if e.MoveNext() then
-                let arr = Array.zeroCreateUnchecked 4
+                let arr = Array.zeroCreateUnchecked arrayBuilderStartingSize
                 arr[0] <- e.Current
-                let builder = { currentCount = 1; currentArray = arr }
+                let mutable builder = { currentCount = 1; currentArray = arr }
 
                 while e.MoveNext() do
-                    builder.Add(e.Current)
+                    addToBuilder e.Current &builder               
 
-                builder.ToArray()
+                builderToArray &builder
             else
                 [||]
 
