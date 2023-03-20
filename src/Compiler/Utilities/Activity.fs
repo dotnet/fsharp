@@ -10,6 +10,8 @@ open System.Text
 [<RequireQualifiedAccess>]
 module internal Activity =
 
+    let FscSourceName = "fsc"
+
     module Tags =
         let fileName = "fileName"
         let project = "project"
@@ -23,6 +25,7 @@ module internal Activity =
         let gc1 = "gc1"
         let gc2 = "gc2"
         let outputDllFile = "outputDllFile"
+        let buildPhase = "buildPhase"
 
         let AllKnownTags =
             [|
@@ -38,9 +41,13 @@ module internal Activity =
                 gc1
                 gc2
                 outputDllFile
+                buildPhase
             |]
 
-    let private activitySourceName = "fsc"
+    module Events =
+        let cacheHit = "cacheHit"
+
+    let private activitySourceName = FscSourceName
     let private profiledSourceName = "fsc_with_env_stats"
 
     type System.Diagnostics.Activity with
@@ -74,6 +81,10 @@ module internal Activity =
         activity
 
     let startNoTags (name: string) : IDisposable = activitySource.StartActivity(name)
+
+    let addEvent name =
+        if Activity.Current <> null && Activity.Current.Source = activitySource then
+            Activity.Current.AddEvent(ActivityEvent(name)) |> ignore
 
     module Profiling =
 
