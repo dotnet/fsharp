@@ -25,6 +25,7 @@ module internal Activity =
         let gc1 = "gc1"
         let gc2 = "gc2"
         let outputDllFile = "outputDllFile"
+        let buildPhase = "buildPhase"
 
         let AllKnownTags =
             [|
@@ -40,6 +41,7 @@ module internal Activity =
                 gc1
                 gc2
                 outputDllFile
+                buildPhase
             |]
 
     module Events =
