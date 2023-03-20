@@ -3123,9 +3123,9 @@ module Array =
 
         /// <summary>Tests if any element of the array satisfies the given predicate.</summary>
         ///
-        /// <remarks>The predicate is applied to the elements of the input array in paralll. If any application 
+        /// <remarks>The predicate is applied to the elements of the input array in parallel. If any application 
         /// returns true then the overall result is true and testing of other elements in all threads is stopped at system's earliest convenience.
-        /// Otherwise, false is returned.</remarks>
+        /// Otherwise, <c>false</c> is returned.</remarks>
         ///
         /// <param name="predicate">The function to test the input elements.</param>
         /// <param name="array">The input array.</param>
