@@ -647,24 +647,54 @@ type internal TypeCheckInfo
         let thereWereSomeQuals = not (Array.isEmpty quals)
         thereWereSomeQuals, quals
 
-    /// obtains captured typing for the given position
-    /// if type of captured typing is record - returns list of record fields
-    let GetRecdFieldsForExpr (r: range) =
-        let _, quals = GetExprTypingForPosition(r.End)
+    /// Returns the list of available record fields, taking into account potential nesting
+    let GetRecdFieldsForCopyAndUpdateExpr (identRange: range, plid: string list) =
+        let rec dive ty (denv: DisplayEnv) ad m plid isPastTypePrefix wasPathEmpty =
+            if isRecdTy denv.g ty then
+                let fields =
+                    ncenv.InfoReader.GetRecordOrClassFieldsOfType(None, ad, m, ty)
+                    |> List.filter (fun rfref -> not rfref.IsStatic && IsFieldInfoAccessible ad rfref)
 
-        let bestQual =
-            match quals with
-            | [||] -> None
-            | quals ->
-                quals
-                |> Array.tryFind (fun (_, _, _, rq) ->
-                    ignore (r) // for breakpoint
-                    posEq r.Start rq.Start)
+                match plid with
+                | [] ->
+                    if wasPathEmpty || isPastTypePrefix then
+                        Some(fields |> List.map Item.RecdField, denv, m)
+                    else
+                        None
+                | id :: rest ->
+                    match fields |> List.tryFind (fun f -> f.LogicalName = id) with
+                    | Some f -> dive f.RecdField.FormalType denv ad m rest true wasPathEmpty
+                    | _ ->
+                        // Field name can be optionally qualified.
+                        // If we haven't matched a field name yet, keep peeling off the prefix.
+                        if isPastTypePrefix then
+                            Some([], denv, m)
+                        else
+                            dive ty denv ad m rest false wasPathEmpty
+            else
+                match tryDestAnonRecdTy denv.g ty with
+                | ValueSome (anonInfo, tys) ->
+                    match plid with
+                    | [] ->
+                        let items =
+                            [
+                                for i in 0 .. anonInfo.SortedIds.Length - 1 do
+                                    Item.AnonRecdField(anonInfo, tys, i, anonInfo.SortedIds[i].idRange)
+                            ]
 
-        match bestQual with
-        | Some (ty, nenv, ad, m) when isRecdTy nenv.DisplayEnv.g ty ->
-            let items = ResolveRecordOrClassFieldsOfType ncenv m ad ty false
-            Some(items, nenv.DisplayEnv, m)
+                        Some(items, denv, m)
+                    | id :: rest ->
+                        match anonInfo.SortedNames |> Array.tryFindIndex (fun x -> x = id) with
+                        | Some i -> dive tys[i] denv ad m rest true wasPathEmpty
+                        | _ -> Some([], denv, m)
+                | ValueNone -> Some([], denv, m)
+
+        match
+            GetExprTypingForPosition identRange.End
+            |> snd
+            |> Array.tryFind (fun (_, _, _, rq) -> posEq identRange.Start rq.Start)
+        with
+        | Some (ty, nenv, ad, m) -> dive ty nenv.DisplayEnv ad m plid false plid.IsEmpty
         | _ -> None
 
     /// Looks at the exact expression types at the position to the left of the
@@ -1251,8 +1281,8 @@ type internal TypeCheckInfo
                 GetEnvironmentLookupResolutionsIncludingRecordFieldsAtPosition cursorPos [] envItems
 
             // Completion at ' { XXX = ... with ... } "
-            | Some (CompletionContext.RecordField (RecordContext.CopyOnUpdate (r, (plid, _)))) ->
-                match GetRecdFieldsForExpr(r) with
+            | Some (CompletionContext.RecordField (RecordContext.CopyOnUpdate (identRange, (plid, _)))) ->
+                match GetRecdFieldsForCopyAndUpdateExpr(identRange, plid) with
                 | None ->
                     Some(GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid, false))
                     |> Option.map toCompletionItems
@@ -1260,8 +1290,9 @@ type internal TypeCheckInfo
 
             // Completion at ' { XXX = ... with ... } "
             | Some (CompletionContext.RecordField (RecordContext.Constructor (typeName))) ->
-                Some(GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, [ typeName ], false))
-                |> Option.map toCompletionItems
+                GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, [ typeName ], false)
+                |> toCompletionItems
+                |> Some
 
             // No completion at '...: string'
             | Some (CompletionContext.RecordField (RecordContext.Declaration true)) -> None
@@ -2392,7 +2423,8 @@ module internal ParseAndCheckFile =
                         None,
                         fileName,
                         (isLastCompiland, isExe),
-                        identCapture
+                        identCapture,
+                        Some userOpName
                     )
                 with e ->
                     errHandler.DiagnosticsLogger.StopProcessingRecovery e range0 // don't re-raise any exceptions, we must return None.

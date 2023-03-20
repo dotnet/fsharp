@@ -887,6 +887,20 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef) =
 
             let infoReader = cenv.infoReader
 
+            let assemblyInfoL =
+                Layout.aboveListL
+                    [
+                        (Layout.(^^)
+                            (Layout.wordL (TaggedText.tagUnknownEntity "// "))
+                            (Layout.wordL (TaggedText.tagUnknownEntity this.Assembly.QualifiedName)))
+                        match this.Assembly.FileName with
+                        | Some fn ->
+                            (Layout.(^^)
+                                (Layout.wordL (TaggedText.tagUnknownEntity "// "))
+                                (Layout.wordL (TaggedText.tagUnknownEntity fn)))
+                        | None -> Layout.emptyL
+                    ]
+
             let openPathL =
                 extraOpenPath
                 |> List.map (fun x -> Layout.wordL (TaggedText.tagUnknownEntity x))
@@ -920,7 +934,8 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef) =
                         pathL
 
             Layout.aboveListL
-                [
+                [   
+                    (Layout.(^^) assemblyInfoL (Layout.sepL TaggedText.lineBreak))
                     (Layout.(^^) headerL (Layout.sepL TaggedText.lineBreak))
                     (Layout.(^^) openL (Layout.sepL TaggedText.lineBreak))
                     (NicePrint.layoutEntityDefn denv infoReader AccessibleFromSomewhere range0 entity)
