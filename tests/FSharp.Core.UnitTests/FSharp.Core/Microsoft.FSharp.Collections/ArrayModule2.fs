@@ -793,7 +793,7 @@ type ArrayModule2() =
         this.MultiplyArray([|3;5;7;2;4;8|],1_000) 
         |> this.CompareTwoMethods (Array.sortDescending) (Array.Parallel.sortDescending)
         
-        // string Array
+        // string array
         this.MultiplyArray([|"Z";"a";"d"; ""; "Y"; null; "c";"b";"X"|]  ,1_000) 
         |> this.CompareTwoMethods (Array.sortDescending) (Array.Parallel.sortDescending)
         
