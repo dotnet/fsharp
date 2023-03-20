@@ -493,7 +493,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
         else
             statusBar.TempMessage (SR.CannotNavigateUnknown())
 
-type internal QuickInfo =
+type internal FSharpQuickInfo =
     { StructuredText: ToolTipText
       Span: TextSpan
       Symbol: FSharpSymbol option
@@ -512,7 +512,7 @@ module internal FSharpQuickInfo =
             declRange: range,
             cancellationToken: CancellationToken
         )
-        : Async<QuickInfo option> =
+        : Async<FSharpQuickInfo option> =
 
         asyncMaybe {
             let userOpName = "getQuickInfoFromRange"
@@ -553,7 +553,7 @@ module internal FSharpQuickInfo =
             position: int,
             cancellationToken: CancellationToken
         )
-        : Async<(range * QuickInfo option * QuickInfo option) option> =
+        : Async<(range * FSharpQuickInfo option * FSharpQuickInfo option) option> =
 
         asyncMaybe {
             let userOpName = "getQuickInfo"

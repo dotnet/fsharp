@@ -175,7 +175,7 @@ module IncrementalBuildSyntaxTree =
                 Activity.start "IncrementalBuildSyntaxTree.parseOrSkip"
                     [|
                         Activity.Tags.fileName, fileName                       
-                        "buildPhase", BuildPhase.Parse.ToString()
+                        Activity.Tags.buildPhase, BuildPhase.Parse.ToString()
                     |]
             if useCache then
                 match cache.TryGetValue source with

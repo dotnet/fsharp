@@ -3,6 +3,7 @@
 namespace FSharp.Editor.Tests
 
 open Microsoft.VisualStudio.FSharp.Editor
+open Microsoft.VisualStudio.FSharp.Editor.QuickInfo
 open Xunit
 open FSharp.Editor.Tests.Helpers
 
