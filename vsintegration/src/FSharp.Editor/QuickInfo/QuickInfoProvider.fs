@@ -106,7 +106,7 @@ type internal FSharpAsyncQuickInfoSource
                               RoslynHelpers.joinWithLineBreaks [typeParameterMap; usage; exceptions] |> List.ofSeq
                             ]
                         let imageId = Tokenizer.GetImageIdForSymbol(targetQuickInfo.Symbol, targetQuickInfo.SymbolKind)
-                        let navigation = FSharpNavigation(statusBar, metadataAsSource, document, symbolUseRange)                           
+                        let navigation = FSharpNavigation(statusBar, metadataAsSource, document, symbolUseRange)
                         let content = QuickInfoViewProvider.provideContent(imageId, mainDescription |> List.ofSeq, documentationParts, navigation, getTooltip)
                         let span = getTrackingSpan targetQuickInfo.Span
                         return QuickInfoItem(span, content)
