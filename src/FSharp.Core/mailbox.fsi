@@ -213,4 +213,9 @@ type MailboxProcessor<'Msg> =
     /// <example-tbd></example-tbd>
     member CurrentQueueLength: int
 
+    /// <summary>Disposes the agent's internal resources.</summary>
+    ///
+    /// <example-tbd></example-tbd>
+    member Dispose: unit -> unit
+
     interface System.IDisposable
