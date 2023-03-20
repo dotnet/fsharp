@@ -323,9 +323,6 @@ stages:
 
         # Windows With Compressed Metadata
         - job: WindowsCompressedMetadata
-          variables:
-          - name: XUNIT_LOGS
-            value: $(Build.SourcesDirectory)\artifacts\TestResults\$(_configuration)
           pool:
             # The PR build definition sets this variable:
             #   WindowsMachineQueueName=Windows.vs2022.amd64.open
