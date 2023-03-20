@@ -318,6 +318,8 @@
     <Compile Include="Checking\PostInferenceChecks.fs" />
     <Compile Include="Checking\CheckBasics.fsi" />
     <Compile Include="Checking\CheckBasics.fs" />
+    <Compile Include="Checking\CheckRecordSyntaxHelpers.fsi" />
+    <Compile Include="Checking\CheckRecordSyntaxHelpers.fs" />
     <Compile Include="Checking\CheckExpressions.fsi" />
     <Compile Include="Checking\CheckExpressions.fs" />
     <Compile Include="Checking\CheckPatterns.fsi" />
