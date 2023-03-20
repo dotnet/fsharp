@@ -449,7 +449,7 @@ type ArrayModule2() =
         let assertSameBehavior reduction arr = 
             Assert.AreEqual(Array.reduce reduction arr, Array.Parallel.reduce reduction arr)
 
-        [|5*4*3*2; 4;3;2;1|] |> assertSameBehavior (fun x y -> x/y)
+        [|5;4;3;2;1|] |> assertSameBehavior (fun x y -> x+y)
         [|"A"; "B";  "C" ; "D" |] |> assertSameBehavior (fun x y -> if x < y then x else y)
 
         CheckThrowsArgumentException (fun () -> Array.Parallel.reduce (fun x y -> x/y)  [||] |> ignore)     
@@ -461,7 +461,7 @@ type ArrayModule2() =
         let assertSameBehavior projection reduction arr = 
             Assert.AreEqual(arr |> Array.map projection |> Array.reduce reduction, Array.Parallel.reduceBy projection reduction arr)
 
-        [|5*4*3*2; 4;3;2;1|] |> assertSameBehavior (fun x -> x * 2)(fun x y -> x/y)
+        [|5;4;3;2;1|] |> assertSameBehavior (fun x -> x * 2)(fun x y -> x+y)
         [|"ABCD"; "B";  "C" ; "D" |] |> assertSameBehavior (fun x -> x.Length) (Operators.Checked.(+))
 
         CheckThrowsArgumentException (fun () -> Array.Parallel.reduceBy id (fun x y -> x/y)  [||] |> ignore)     
