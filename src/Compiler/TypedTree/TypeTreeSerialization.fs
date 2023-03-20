@@ -37,8 +37,8 @@ let rec visitEntity (entity: Entity) : TypedTreeNode =
         seq {
             if entity.IsModuleOrNamespace then
                 yield! Seq.map visitEntity entity.ModuleOrNamespaceType.AllEntities
-                yield! Seq.map visitVal entity.ModuleOrNamespaceType.AllValsAndMembers
 
+            yield! Seq.map visitVal entity.ModuleOrNamespaceType.AllValsAndMembers
             yield! visitAttributes entity.Attribs
         }
 
@@ -58,27 +58,29 @@ and visitVal (v: Val) : TypedTreeNode =
 
             match v.ValReprInfo with
             | None -> ()
-            | Some reprInfo ->
+            | Some (ValReprInfo (typars, args, result)) ->
+                yield! args |> Seq.collect id |> Seq.map visitArgReprInfo
+
+                yield visitArgReprInfo result
+
                 yield!
-                    reprInfo.ArgInfos
-                    |> Seq.collect (fun argInfos ->
-                        argInfos
-                        |> Seq.map (fun argInfo ->
-                            {
-                                Name = argInfo.Name |> Option.map (fun i -> i.idText) |> Option.defaultValue ""
-                                Kind = "ArgInfo"
-                                Children = []
-                                Flags = None
-                                Range = None
-                                CompilationPath = None
-                            }))
+                    typars
+                    |> List.map (fun (TyparReprInfo (ident, _kind)) ->
+                        {
+                            Name = ident.idText
+                            Kind = "typar"
+                            Children = []
+                            Flags = None
+                            Range = Some ident.idRange
+                            CompilationPath = None
+                        })
 
             yield!
                 v.Typars
                 |> Seq.map (fun typar ->
                     {
                         Name = typar.Name
-                        Kind = "Typar"
+                        Kind = "typar"
                         Children = []
                         Flags = Some typar.Flags.PickledBits
                         Range = Some typar.Range
@@ -107,6 +109,16 @@ and visitAttribute (a: Attrib) : TypedTreeNode =
     }
 
 and visitAttributes (attribs: Attribs) : TypedTreeNode seq = List.map visitAttribute attribs
+
+and visitArgReprInfo (argReprInfo: ArgReprInfo) =
+    {
+        Name = argReprInfo.Name |> Option.map (fun i -> i.idText) |> Option.defaultValue ""
+        Kind = "ArgInfo"
+        Children = []
+        Flags = None
+        Range = None
+        CompilationPath = None
+    }
 
 let write (writer: IndentedTextWriter) key value =
     writer.WriteLine($"\"%s{key}\": \"{value}\",")
