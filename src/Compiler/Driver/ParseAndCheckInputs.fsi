@@ -40,7 +40,8 @@ val ParseInput:
     defaultNamespace: string option *
     fileName: string *
     isLastCompiland: (bool * bool) *
-    identCapture: bool ->
+    identCapture: bool *
+    userOpName: string option ->
         ParsedInput
 
 /// A general routine to process hash directives
