@@ -3456,14 +3456,14 @@ module Array =
         val zip: array1:'T1[] -> array2:'T2[] -> ('T1 * 'T2)[]
 
         /// <summary>Returns a new collection containing only the elements of the collection
-        /// for which the given predicate returns "true".</summary>
+        /// for which the given predicate returns <c>true</c>.</summary>
         ///
         /// <param name="predicate">The function to test the input elements.</param>
         /// <param name="array">The input array.</param>
         ///
         /// <returns>An array containing the elements for which the given predicate returns true.</returns>
         ///
-        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is <c>null</c>.</exception>
         ///
         /// <example id="para-filter-1">
         /// <code lang="fsharp">

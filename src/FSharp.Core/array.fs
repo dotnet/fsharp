@@ -2085,7 +2085,7 @@ module Array =
             let len1 = array1.Length
 
             if len1 <> array2.Length then
-                invalidArgDifferentArrayLength "array1" array1.Length "array2" array2.Length
+                invalidArgDifferentArrayLength "array1" len1 "array2" array2.Length
 
             let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len1
             let inputChunks = createPartitionsUpTo array1.Length array1
