@@ -389,6 +389,7 @@ type MetadataTable<'T> =
         | true, res -> res
         | _ -> tbl.AddSharedEntry x
 
+    member tbl.Contains x  = tbl.dict.ContainsKey x
 
     /// This is only used in one special place - see further below.
     member tbl.SetRowsOfTable t =
@@ -1070,6 +1071,16 @@ let GetMemberAccessFlags access =
     | ILMemberAccess.Assembly -> 0x00000003
 
 exception MethodDefNotFound
+
+let private MethodDefIdxExists cenv (mref: ILMethodRef) = 
+    let tref = mref.DeclaringTypeRef
+    if not (isTypeRefLocal tref) then
+        false
+    else
+        let tidx = GetIdxForTypeDef cenv (TdKey(tref.Enclosing, tref.Name))
+        let mdkey = MethodDefKey (cenv.ilg, tidx, mref.GenericArity, mref.Name, mref.ReturnType, mref.ArgTypes, mref.CallingConv.IsStatic)
+        cenv.methodDefIdxsByKey.Contains mdkey
+
 let FindMethodDefIdx cenv mdkey =
     try cenv.methodDefIdxsByKey.GetTableEntry mdkey
     with :? KeyNotFoundException ->
@@ -1160,12 +1171,11 @@ let canGenEventDef cenv (ev: ILEventDef) =
     if not cenv.referenceAssemblyOnly then
         true
     else
-        // If we have GetMethod or SetMethod set (i.e. not None), try and see if we have MethodDefs for them.
+        // If we have AddMethod or RemoveMethod set (i.e. not None), try and see if we have MethodDefs for them.
         // NOTE: They can be not-None and missing MethodDefs if we skip generating them for reference assembly in the earlier pass.
-        // Only generate property if we have at least getter or setter, otherwise, we skip.
+        // Only generate event if we have at least getter or setter, otherwise, we skip.
         [| ev.AddMethod; ev.RemoveMethod |]
-        |> Array.map (TryGetMethodRefAsMethodDefIdx cenv)
-        |> Array.exists (function | Ok _ -> true | _ -> false)
+        |> Array.exists (MethodDefIdxExists cenv)
 
 let canGenPropertyDef cenv (prop: ILPropertyDef) =
     if not cenv.referenceAssemblyOnly then
@@ -1176,8 +1186,7 @@ let canGenPropertyDef cenv (prop: ILPropertyDef) =
         // Only generate property if we have at least getter or setter, otherwise, we skip.
         [| prop.GetMethod; prop.SetMethod |]      
         |> Array.choose id
-        |> Array.map (TryGetMethodRefAsMethodDefIdx cenv)
-        |> Array.exists (function | Ok _ -> true | _ -> false)
+        |> Array.exists (MethodDefIdxExists cenv)
 
 let rec GetTypeDefAsRow cenv env _enc (tdef: ILTypeDef) =
     let nselem, nelem = GetTypeNameAsElemPair cenv tdef.Name
