@@ -1,18 +1,18 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.VisualStudio.FSharp.Editor
+namespace Microsoft.VisualStudio.FSharp.Editor.QuickInfo
 
-open System.Collections.Generic
 open System.Threading
 open FSharp.Compiler.Text
 open Microsoft.CodeAnalysis.Classification
 open Microsoft.VisualStudio.Core.Imaging
-open Microsoft.VisualStudio.Language.StandardClassification
 open Microsoft.VisualStudio.Text.Adornments
+
+open Microsoft.VisualStudio.FSharp.Editor
 
 module internal QuickInfoViewProvider =
 
-    let layoutTagToClassificationTag (layoutTag:TextTag) =
+    let layoutTagToClassificationTag (layoutTag: TextTag) =
         match layoutTag with
         | TextTag.ActivePatternCase
         | TextTag.ActivePatternResult
@@ -49,54 +49,57 @@ module internal QuickInfoViewProvider =
         | TextTag.UnknownEntity
         | TextTag.Text -> ClassificationTypeNames.Text
 
+    let (|TaggedText|) (tt: TaggedText) = tt.Tag, tt.Text
+
+    let (|LineBreak|_|) =
+        function TaggedText (TextTag.LineBreak, _) -> Some () | _ -> None
+
+    let (|DocSeparator|_|) =
+        function LineBreak :: TaggedText (TextTag.Text, "-------------") :: LineBreak :: rest -> Some rest | _ -> None
+
+    let wrapContent (elements: obj list) =
+        ContainerElement(ContainerElementStyle.Wrapped, elements |> Seq.map box)
+
+    let stackContent (elements: obj list) =
+        ContainerElement(ContainerElementStyle.Stacked, elements |> Seq.map box)
+
+    let encloseRuns runs = wrapContent (runs |> List.rev) |> box
+
+    let emptyLine = wrapContent [ ClassifiedTextRun(ClassificationTypeNames.WhiteSpace, "") |> box ]
+
     let provideContent
         (
-            imageId:ImageId option,
-            description: seq<TaggedText>,
-            documentation: seq<TaggedText>,
-            navigation:FSharpNavigation
+            imageId: ImageId option,
+            description: TaggedText list,
+            documentation: TaggedText list list,
+            navigation: FSharpNavigation,
+            getTooltip
         ) =
 
-        let buildContainerElement (itemGroup: seq<TaggedText>) =
-            let finalCollection = List<ContainerElement>()
-            let currentContainerItems = List<obj>()
-            let runsCollection = List<ClassifiedTextRun>()
-            let flushRuns() =
-                if runsCollection.Count > 0 then
-                    let element = ClassifiedTextElement(runsCollection)
-                    currentContainerItems.Add(element :> obj)
-                    runsCollection.Clear()
-            let flushContainer() =
-                if currentContainerItems.Count > 0 then
-                    let element = ContainerElement(ContainerElementStyle.Wrapped, currentContainerItems)
-                    finalCollection.Add(element)
-                    currentContainerItems.Clear()
-            for item in itemGroup do
-                let classificationTag = layoutTagToClassificationTag item.Tag
-                match item with
-                | :? NavigableTaggedText as nav when navigation.IsTargetValid nav.Range ->
-                    flushRuns()
-                    let navigableTextRun = NavigableTextRun(classificationTag, item.Text, fun () -> navigation.NavigateTo(nav.Range, CancellationToken.None))
-                    currentContainerItems.Add(navigableTextRun :> obj)
-                | _ when item.Tag = TextTag.LineBreak ->
-                    flushRuns()
-                    // preserve succesive linebreaks
-                    if currentContainerItems.Count = 0 then
-                        runsCollection.Add(ClassifiedTextRun(PredefinedClassificationTypeNames.Other, System.String.Empty))
-                        flushRuns()
-                    flushContainer()
-                | _ -> 
-                    let newRun = ClassifiedTextRun(classificationTag, item.Text)
-                    runsCollection.Add(newRun)   
-            flushRuns()
-            flushContainer()
-            ContainerElement(ContainerElementStyle.Stacked, finalCollection |> Seq.map box)
+        let encloseText text =
+            let rec loop text runs stack =
+                match (text: TaggedText list) with
+                | [] -> stackContent (encloseRuns runs :: stack |> List.rev)
+                | DocSeparator (LineBreak :: rest)
+                | DocSeparator rest -> loop rest [] (box Separator :: encloseRuns runs :: stack)
+                | LineBreak :: rest when runs |> List.isEmpty -> loop rest [] (emptyLine :: stack)
+                | LineBreak :: rest -> loop rest [] (encloseRuns runs :: stack)
+                | :? NavigableTaggedText as item :: rest when navigation.IsTargetValid item.Range ->
+                    let classificationTag = layoutTagToClassificationTag item.Tag
+                    let action = fun () -> navigation.NavigateTo(item.Range, CancellationToken.None)
+                    let run = ClassifiedTextRun(classificationTag, item.Text, action, getTooltip item.Range.FileName)
+                    loop rest (run :: runs) stack
+                | item :: rest ->
+                    let run = ClassifiedTextRun(layoutTagToClassificationTag item.Tag, item.Text)
+                    loop rest (run :: runs) stack
+
+            loop text [] [] |> box
 
         let innerElement =
             match imageId with
-            | Some imageId ->
-                ContainerElement(ContainerElementStyle.Wrapped, ImageElement(imageId), buildContainerElement description)
-            | None ->
-                ContainerElement(ContainerElementStyle.Wrapped, buildContainerElement description)
+            | Some imageId -> wrapContent [ stackContent [ ImageElement(imageId) ]; encloseText description ]
+            | None -> ContainerElement(ContainerElementStyle.Wrapped, encloseText description)
 
-        ContainerElement(ContainerElementStyle.Stacked, innerElement, buildContainerElement documentation)
+        let separated = stackContent (documentation |> List.map encloseText)
+
+        wrapContent [ stackContent [ innerElement; separated ] ]
