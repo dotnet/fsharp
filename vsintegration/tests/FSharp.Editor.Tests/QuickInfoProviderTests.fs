@@ -7,6 +7,7 @@ open Xunit
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
+open Microsoft.VisualStudio.FSharp.Editor.QuickInfo
 open FSharp.Editor.Tests.Helpers
 open FSharp.Test
 
