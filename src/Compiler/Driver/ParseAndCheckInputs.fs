@@ -1204,18 +1204,8 @@ let AddCheckResultsToTcState
 
 type PartialResult = TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType
 
-
-/// Return stub result for skipped implementation files 
-let ImplStubForSig
-    (
-        tcConfig: TcConfig,
-        tcImports: TcImports,
-        tcGlobals,
-        prefixPathOpt,
-        tcSink,
-        tcState,
-        input: ParsedInput
-    ) =
+/// Return stub result for skipped implementation files
+let ImplStubForSig (tcConfig: TcConfig, tcImports: TcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input: ParsedInput) =
     use _ =
         Activity.start "ParseAndCheckInputs.CheckOneInput" [| Activity.Tags.fileName, input.FileName |]
 
@@ -1250,9 +1240,11 @@ let ImplStubForSig
                     (tcGlobals, amap, hadSig, prefixPathOpt, tcSink, tcState.tcsTcImplEnv, qualNameOfFile, rootSigTy)
                     tcState
 
-            let emptyImplFile = CheckedImplFile(qualNameOfFile, [], rootSigTy, ModuleOrNamespaceContents.TMDefs [], false, false, StampMap [], Map.empty)
+            let emptyImplFile =
+                CheckedImplFile(qualNameOfFile, [], rootSigTy, ModuleOrNamespaceContents.TMDefs [], false, false, StampMap [], Map.empty)
+
             let tcEnvAtEnd = tcStateForImplFile.TcEnvFromImpls
-            Some ((tcEnvAtEnd, EmptyTopAttrs, Some emptyImplFile, ccuSigForFile), tcState)
+            Some((tcEnvAtEnd, EmptyTopAttrs, Some emptyImplFile, ccuSigForFile), tcState)
 
         | _ -> None
     | _ -> None
