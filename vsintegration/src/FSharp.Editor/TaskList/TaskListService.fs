@@ -19,7 +19,7 @@ open System.Diagnostics
 type internal FSharpTaskListService 
     [<ImportingConstructor>]
     (
-    ) =
+    ) as this=
 
     let getDefines (doc:Microsoft.CodeAnalysis.Document) = 
         asyncMaybe { 
@@ -27,19 +27,16 @@ type internal FSharpTaskListService
             return CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions }
         |> Async.map (Option.defaultValue [])
 
-
-    interface IFSharpTaskListService with
-        member _.GetTaskListItemsAsync(doc,desc,cancellationToken) = 
+    member _.GetTaskListItems(doc:Microsoft.CodeAnalysis.Document, descriptors: (string*'T)[], ct) = 
             backgroundTask{
                 let foundTaskItems = ImmutableArray.CreateBuilder(initialCapacity=0)
-                let! sourceText = doc.GetTextAsync(cancellationToken)             
+                let! sourceText = doc.GetTextAsync(ct)             
                 let! defines = doc |> getDefines
                
                 for line in sourceText.Lines do  
                  
-                    let granularTokens = 
-                        Tokenizer.tokenizeLine(doc.Id, sourceText, line.Span.Start, doc.FilePath, defines) 
-                        |> Array.filter(fun t -> t.Kind = LexerSymbolKind.Comment)
+                    let unfilteredTokens = Tokenizer.tokenizeLine(doc.Id, sourceText, line.Span.Start, doc.FilePath, defines) 
+                    let granularTokens = unfilteredTokens |> Array.filter(fun t -> t.Kind = LexerSymbolKind.Comment)               
 
                     let contractedTokens = 
                         ([],granularTokens) 
@@ -54,13 +51,14 @@ type internal FSharpTaskListService
                         let lineTxt = line.ToString()
                         let tokenSize = 1+(ct.Right - ct.Left)
 
-                        for d in desc do                     
-                            let idx = lineTxt.IndexOf(d.Text, ct.Left, tokenSize, StringComparison.OrdinalIgnoreCase)  
+                        for (dText,d) in descriptors do                     
+                            let idx = lineTxt.IndexOf(dText, ct.Left, tokenSize, StringComparison.OrdinalIgnoreCase)  
                             
                             if idx > -1 then 
-                                let taskLength = 1+ct.Right-idx                
+                                let taskLength = 1+ct.Right-idx
+                                let idxAfterDesc = idx + dText.Length
                                 // A descriptor followed by another letter is not a todocomment, like todoabc. But TODO, TODO2 or TODO: should be.
-                                if (idx+taskLength) >= lineTxt.Length || not (Char.IsLetter(lineTxt.[idx+taskLength])) then
+                                if idxAfterDesc >= lineTxt.Length || not (Char.IsLetter(lineTxt.[idxAfterDesc])) then
                                     let taskText = lineTxt.Substring(idx,taskLength).TrimEnd([|'*';')'|])
                                     let taskSpan = new TextSpan(line.Span.Start+idx, taskText.Length)
                                     foundTaskItems.Add(new FSharpTaskListItem(d, taskText, doc, taskSpan))                         
@@ -68,3 +66,8 @@ type internal FSharpTaskListService
     
                 return foundTaskItems.ToImmutable()
             } 
+
+    interface IFSharpTaskListService with
+        member _.GetTaskListItemsAsync(doc,desc,cancellationToken) = 
+            let descriptors = desc |> Seq.map (fun d -> d.Text, d) |> Array.ofSeq
+            this.GetTaskListItems(doc, descriptors, cancellationToken)

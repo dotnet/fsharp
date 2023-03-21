@@ -740,15 +740,14 @@ module internal Tokenizer =
 
     let private getCachedSourceLineData(documentKey: DocumentId, sourceText: SourceText, position: int, fileName: string, defines: string list) = 
         let textLine = sourceText.Lines.GetLineFromPosition(position)
-        let textLinePos = sourceText.Lines.GetLinePosition(position)
-        let lineNumber = textLinePos.Line + 1 // FCS line number
+        let textLinePos = sourceText.Lines.GetLinePosition(position)      
         let sourceTokenizer = FSharpSourceTokenizer(defines, Some fileName)
         let lines = sourceText.Lines
         // We keep incremental data per-document. When text changes we correlate text line-by-line (by hash codes of lines)
         let sourceTextData = getSourceTextData(documentKey, defines, lines.Count)
         // Go backwards to find the last cached scanned line that is valid
         let scanStartLine = 
-            let mutable i = min (lines.Count - 1) lineNumber
+            let mutable i = min (lines.Count - 1) textLinePos.Line
             while i > 0 &&
                 (match sourceTextData.[i] with 
                 | Some data -> not (data.IsValid(lines.[i])) 
@@ -763,13 +762,23 @@ module internal Tokenizer =
         //   1. the line starts at the same overall position
         //   2. the hash codes match
         //   3. the start-of-line lex states are the same
-        match sourceTextData.[lineNumber] with 
+        match sourceTextData.[textLinePos.Line] with 
         | Some data when data.IsValid(textLine) && data.LexStateAtStartOfLine = lexState -> 
             data, textLinePos, lineContents
         | _ -> 
+            System.Diagnostics.Debug.WriteLine($"Tokenizer cache miss. Line {textLinePos.Line}, has to start from {scanStartLine}.")
             // Otherwise, we recompute
-            let newData = scanSourceLine(sourceTokenizer, textLine, lineContents, lexState)
-            sourceTextData.[lineNumber] <- Some newData
+            // LexState can flow between lines (#if blocks, multiline comments, multiline strings), we have to recompute from last known line
+            let mutable lastState = lexState
+            for i=scanStartLine to textLinePos.Line - 1 do
+                let line = lines.[i]
+                let lineContents = line.Text.ToString(line.Span)
+                let newData = scanSourceLine(sourceTokenizer, line, lineContents, lastState)
+                sourceTextData.[i] <- Some newData
+                lastState <- newData.LexStateAtEndOfLine
+
+            let newData = scanSourceLine(sourceTokenizer, textLine, lineContents, lastState)
+            sourceTextData.[textLinePos.Line] <- Some newData
             newData, textLinePos, lineContents
            
     let tokenizeLine (documentKey, sourceText, position, fileName, defines) =
