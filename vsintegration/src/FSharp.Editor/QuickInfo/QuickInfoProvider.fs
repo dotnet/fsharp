@@ -1,8 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.VisualStudio.FSharp.Editor
+namespace Microsoft.VisualStudio.FSharp.Editor.QuickInfo
 
 open System
+open System.IO
 open System.Threading
 open System.Threading.Tasks
 open System.ComponentModel.Composition
@@ -16,21 +17,17 @@ open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Utilities
+open Microsoft.VisualStudio.FSharp.Editor
 
-open FSharp.Compiler
-open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.EditorServices
-open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
-open FSharp.Compiler.Tokenization
+open Microsoft.IO
 
 type internal FSharpAsyncQuickInfoSource
     (
         statusBar: StatusBar,
         xmlMemberIndexService: IVsXMLMemberIndexService,
         metadataAsSource: FSharpMetadataAsSourceService,
-        textBuffer:ITextBuffer,
-        _settings: EditorOptions
+        textBuffer: ITextBuffer
     ) =
 
     // test helper
@@ -40,7 +37,7 @@ type internal FSharpAsyncQuickInfoSource
             return! sigQuickInfo |> Option.orElse targetQuickInfo
         }
 
-    static member BuildSingleQuickInfoItem (documentationBuilder:IDocumentationBuilder) (quickInfo:QuickInfo) =
+    static member BuildSingleQuickInfoItem (documentationBuilder:IDocumentationBuilder) (quickInfo:FSharpQuickInfo) =
         let mainDescription, documentation, typeParameterMap, usage, exceptions = ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray()
         XmlDocumentation.BuildDataTipText(documentationBuilder, mainDescription.Add, documentation.Add, typeParameterMap.Add, usage.Add, exceptions.Add, quickInfo.StructuredText)
         let docs = RoslynHelpers.joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions]
@@ -60,6 +57,14 @@ type internal FSharpAsyncQuickInfoSource
                 asyncMaybe {
                     let document = textBuffer.CurrentSnapshot.GetOpenDocumentInCurrentContextWithChanges()
                     let! symbolUseRange, sigQuickInfo, targetQuickInfo = FSharpQuickInfo.getQuickInfo(document, triggerPoint.Position, cancellationToken)
+                    
+                    let getTooltip filePath =
+                        let solutionDir = Path.GetDirectoryName(document.Project.Solution.FilePath)
+                        let projectDir = Path.GetDirectoryName(document.Project.FilePath)
+                        [ Path.GetRelativePath(projectDir, filePath)
+                          Path.GetRelativePath(solutionDir, filePath) ]
+                        |> List.minBy String.length
+
                     let getTrackingSpan (span:TextSpan) =
                         textBuffer.CurrentSnapshot.CreateTrackingSpan(span.Start, span.Length, SpanTrackingMode.EdgeInclusive)
 
@@ -71,7 +76,7 @@ type internal FSharpAsyncQuickInfoSource
                         let mainDescription, docs = FSharpAsyncQuickInfoSource.BuildSingleQuickInfoItem documentationBuilder quickInfo
                         let imageId = Tokenizer.GetImageIdForSymbol(quickInfo.Symbol, quickInfo.SymbolKind)
                         let navigation = FSharpNavigation(statusBar, metadataAsSource, document, symbolUseRange)
-                        let content = QuickInfoViewProvider.provideContent(imageId, mainDescription, docs, navigation)
+                        let content = QuickInfoViewProvider.provideContent(imageId, mainDescription |> List.ofSeq, [docs |> List.ofSeq], navigation, getTooltip)
                         let span = getTrackingSpan quickInfo.Span
                         return QuickInfoItem(span, content)
 
@@ -88,20 +93,21 @@ type internal FSharpAsyncQuickInfoSource
                                 |> string
                             if String.IsNullOrWhiteSpace text then None else Some text
 
-                        let documentation =
+                        let documentationParts: TaggedText list list =
                             [ match getText targetDocumentation, getText sigDocumentation with
                               | None, None -> ()
-                              | None, Some _ -> yield! sigDocumentation
-                              | Some _, None -> yield! targetDocumentation
+                              | None, Some _ -> sigDocumentation |> List.ofSeq
+                              | Some _, None -> targetDocumentation  |> List.ofSeq
                               | Some implText, Some sigText when implText.Equals (sigText, StringComparison.OrdinalIgnoreCase) ->
-                                    yield! sigDocumentation
+                                    sigDocumentation |> List.ofSeq
                               | Some _  , Some _ ->
-                                    yield! RoslynHelpers.joinWithLineBreaks [ sigDocumentation; [ TaggedText.tagText "-------------" ]; targetDocumentation ]
-                            ] |> ResizeArray
-                        let docs = RoslynHelpers.joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions]
+                                    sigDocumentation  |> List.ofSeq
+                                    targetDocumentation  |> List.ofSeq
+                              RoslynHelpers.joinWithLineBreaks [typeParameterMap; usage; exceptions] |> List.ofSeq
+                            ]
                         let imageId = Tokenizer.GetImageIdForSymbol(targetQuickInfo.Symbol, targetQuickInfo.SymbolKind)
                         let navigation = FSharpNavigation(statusBar, metadataAsSource, document, symbolUseRange)
-                        let content = QuickInfoViewProvider.provideContent(imageId, mainDescription, docs, navigation)
+                        let content = QuickInfoViewProvider.provideContent(imageId, mainDescription |> List.ofSeq, documentationParts, navigation, getTooltip)
                         let span = getTrackingSpan targetQuickInfo.Span
                         return QuickInfoItem(span, content)
                 }   |> Async.map Option.toObj
@@ -115,8 +121,7 @@ type internal FSharpAsyncQuickInfoSourceProvider
     [<ImportingConstructor>]
     (
         [<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider,
-        metadataAsSource: FSharpMetadataAsSourceService,
-        settings: EditorOptions
+        metadataAsSource: FSharpMetadataAsSourceService
     ) =
 
     interface IAsyncQuickInfoSourceProvider with
@@ -125,4 +130,4 @@ type internal FSharpAsyncQuickInfoSourceProvider
             // It is safe to do it here (see #4713)
             let statusBar = StatusBar(serviceProvider.GetService<SVsStatusbar,IVsStatusbar>())
             let xmlMemberIndexService = serviceProvider.XMLMemberIndexService
-            new FSharpAsyncQuickInfoSource(statusBar, xmlMemberIndexService, metadataAsSource, textBuffer, settings) :> IAsyncQuickInfoSource
+            new FSharpAsyncQuickInfoSource(statusBar, xmlMemberIndexService, metadataAsSource, textBuffer) :> IAsyncQuickInfoSource

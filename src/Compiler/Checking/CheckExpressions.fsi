@@ -892,7 +892,7 @@ val BuildFieldMap:
     env: TcEnv ->
     isPartial: bool ->
     ty: TType ->
-    ((Ident list * Ident) * 'T) list ->
+    flds: ((Ident list * Ident) * 'T) list ->
     m: range ->
         TypeInst * TyconRef * Map<string, 'T> * (string * 'T) list
 
