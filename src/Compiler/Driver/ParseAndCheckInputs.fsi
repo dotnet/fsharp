@@ -134,6 +134,17 @@ type TcState =
 /// Get the initial type checking state for a set of inputs
 val GetInitialTcState: range * string * TcConfig * TcGlobals * TcImports * TcEnv * OpenDeclaration list -> TcState
 
+///ImplStubForSig
+val ImplStubForSig:
+    tcConfig: TcConfig *
+    tcImports: TcImports *
+    tcGlobals: TcGlobals *
+    prefixPathOpt: LongIdent option *
+    tcSink: NameResolution.TcResultsSink *
+    tcState: TcState *
+    input: ParsedInput ->
+        ((TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType) * TcState) option
+
 /// Check one input, returned as an Eventually computation
 val CheckOneInput:
     checkForErrors: (unit -> bool) *

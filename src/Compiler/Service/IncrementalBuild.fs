@@ -479,17 +479,26 @@ type BoundModel private (tcConfig: TcConfig,
                 let sink = TcResultsSinkImpl(tcGlobals)
                 let hadParseErrors = not (Array.isEmpty parseErrors)
                 let input, moduleNamesDict = DeduplicateParsedInputModuleName prevModuleNamesDict input
-                        
-                let! (tcEnvAtEndOfFile, topAttribs, implFile, ccuSigForFile), tcState =
-                    CheckOneInput
-                        ((fun () -> hadParseErrors || diagnosticsLogger.ErrorCount > 0),
-                            tcConfig, tcImports,
-                            tcGlobals,
-                            None,
-                            TcResultsSink.WithSink sink,
-                            prevTcState, input)
-                    |> NodeCode.FromCancellable
 
+                let check = 
+                    CheckOneInput(
+                        (fun () -> hadParseErrors || diagnosticsLogger.ErrorCount > 0),
+                        tcConfig, tcImports,
+                        tcGlobals,
+                        None,
+                        TcResultsSink.WithSink sink,
+                        prevTcState, input)
+
+                let partial, result =
+                    if partial then
+                        ImplStubForSig(tcConfig, tcImports, tcGlobals, None, TcResultsSink.WithSink sink, prevTcState, input)
+                        |> Option.map (fun v -> true, node { return v})
+                        |> Option.defaultValue (false, check |> NodeCode.FromCancellable)
+                    else
+                        false, check |> NodeCode.FromCancellable
+
+                let! (tcEnvAtEndOfFile, topAttribs, implFile, ccuSigForFile), tcState = result
+                    
                 fileChecked.Trigger fileName
                 let newErrors = Array.append parseErrors (capturingDiagnosticsLogger.Diagnostics |> List.toArray)
                 let tcEnvAtEndOfFile = if keepAllBackgroundResolutions then tcEnvAtEndOfFile else tcState.TcEnvFromImpls

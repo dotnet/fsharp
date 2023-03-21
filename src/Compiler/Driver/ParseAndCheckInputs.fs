@@ -1204,6 +1204,59 @@ let AddCheckResultsToTcState
 
 type PartialResult = TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType
 
+
+/// Return stub result for skipped implementation files 
+let ImplStubForSig
+    (
+        tcConfig: TcConfig,
+        tcImports: TcImports,
+        tcGlobals,
+        prefixPathOpt,
+        tcSink,
+        tcState,
+        input: ParsedInput
+    ) =
+    use _ =
+        Activity.start "ParseAndCheckInputs.CheckOneInput" [| Activity.Tags.fileName, input.FileName |]
+
+    CheckSimulateException tcConfig
+
+    let m = input.Range
+    let amap = tcImports.GetImportMap()
+
+    match input with
+    | ParsedInput.ImplFile file ->
+        let qualNameOfFile = file.QualifiedName
+
+        // Check if we've got an interface for this fragment
+        let rootSigOpt = tcState.tcsRootSigs.TryFind qualNameOfFile
+
+        // Check if we've already seen an implementation for this fragment
+        if Zset.contains qualNameOfFile tcState.tcsRootImpls then
+            errorR (Error(FSComp.SR.buildImplementationAlreadyGiven (qualNameOfFile.Text), m))
+
+        let hadSig = rootSigOpt.IsSome
+
+        match rootSigOpt with
+        | Some rootSigTy ->
+            // Delay the typecheck the implementation file until the second phase of parallel processing.
+            // Adjust the TcState as if it has been checked, which makes the signature for the file available later
+            // in the compilation order.
+            let tcStateForImplFile = tcState
+            let qualNameOfFile = file.QualifiedName
+
+            let ccuSigForFile, tcState =
+                AddCheckResultsToTcState
+                    (tcGlobals, amap, hadSig, prefixPathOpt, tcSink, tcState.tcsTcImplEnv, qualNameOfFile, rootSigTy)
+                    tcState
+
+            let emptyImplFile = CheckedImplFile(qualNameOfFile, [], rootSigTy, ModuleOrNamespaceContents.TMDefs [], false, false, StampMap [], Map.empty)
+            let tcEnvAtEnd = tcStateForImplFile.TcEnvFromImpls
+            Some ((tcEnvAtEnd, EmptyTopAttrs, Some emptyImplFile, ccuSigForFile), tcState)
+
+        | _ -> None
+    | _ -> None
+
 /// Typecheck a single file (or interactive entry into F# Interactive). If skipImplIfSigExists is set to true
 /// then implementations with signature files give empty results.
 let CheckOneInput
