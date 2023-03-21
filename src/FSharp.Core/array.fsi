@@ -3215,6 +3215,7 @@ module Array =
         /// Evaluates to <c>1 + 3 + 4 + 2</c>. However, the system could have decided to compute (1+3) and (4+2) first, and then put them together.
         /// </example>
         [<CompiledName("Reduce")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val inline reduce: reduction:('T -> 'T -> 'T) -> array:'T[] -> 'T
 
         /// <summary>Applies a projection function to each element of the array in parallel, reducing elements in each thread with a dedicated 'reduction' function.
@@ -3242,6 +3243,7 @@ module Array =
         /// Evaluates to <c>1 + 3 + 4 + 2</c>. However, the system could have decided to compute (1+3) and (4+2) first, and then put them together.
         /// </example>
         [<CompiledName("ReduceBy")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val reduceBy: projection:('T -> 'U) -> reduction:('U -> 'U ->'U) -> array:'T[] -> 'U
     
         /// <summary>Returns the greatest of all elements of the array, compared via Operators.max on the function result.</summary>
@@ -3273,6 +3275,7 @@ module Array =
         /// Throws <c>System.ArgumentException</c>.
         /// </example>
         [<CompiledName("Max")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val inline max: array:'T[] -> 'T  when 'T : comparison 
 
         /// <summary>Returns the greatest of all elements of the array, compared via Operators.max on the function result.</summary>
@@ -3305,6 +3308,7 @@ module Array =
         /// Throws <c>System.ArgumentException</c>.
         /// </example>
         [<CompiledName("MaxBy")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val inline maxBy  : projection:('T -> 'U) -> array:'T[] -> 'T when 'U : comparison 
 
         /// <summary>Returns the lowest of all elements of the array, compared via Operators.min.</summary>
@@ -3336,6 +3340,7 @@ module Array =
         /// Throws <c>System.ArgumentException</c>.
         /// </example>
         [<CompiledName("Min")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val inline min: array:'T[] -> 'T  when 'T : comparison 
 
         /// <summary>Returns the lowest of all elements of the array, compared via Operators.min on the function result.</summary>
@@ -3368,6 +3373,7 @@ module Array =
         /// Throws <c>System.ArgumentException</c>.
         /// </example>
         [<CompiledName("MinBy")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val inline minBy  : projection:('T -> 'U) -> array:'T[] -> 'T when 'U : comparison 
 
         /// <summary>Returns the sum of the elements in the array.</summary>
@@ -3387,6 +3393,7 @@ module Array =
         /// Evaluates to <c>11</c>.
         /// </example>
         [<CompiledName("Sum")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val inline sum: array: ^T[] -> ^T 
                             when ^T : (static member ( + ) : ^T * ^T -> ^T) 
                             and  ^T : (static member Zero : ^T)
@@ -3410,6 +3417,7 @@ module Array =
         /// Evaluates to <c>7</c>.
         /// </example>
         [<CompiledName("SumBy")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val inline sumBy: projection:('T -> ^U) -> array:'T[] -> ^U 
                             when ^U : (static member ( + ) : ^U * ^U -> ^U) 
                             and  ^U : (static member Zero : ^U)
@@ -3437,6 +3445,7 @@ module Array =
         /// Throws <c>ArgumentException</c>
         /// </example>
         [<CompiledName("Average")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val inline average   : array:^T[] -> ^T   
                                  when ^T : (static member ( + ) : ^T * ^T -> ^T) 
                                  and  ^T : (static member DivideByInt : ^T*int -> ^T)                     
@@ -3474,6 +3483,7 @@ module Array =
         /// Throws <c>ArgumentException</c>
         /// </example>
         [<CompiledName("AverageBy")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val inline averageBy   : projection:('T -> ^U) -> array:'T[] -> ^U   
                                     when ^U : (static member ( + ) : ^U * ^U -> ^U) 
                                     and  ^U : (static member DivideByInt : ^U*int -> ^U)                              
