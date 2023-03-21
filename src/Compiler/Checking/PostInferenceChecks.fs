@@ -102,11 +102,6 @@ type env =
 
       /// Are we expecting a  resumable code block etc
       resumableCode: Resumable
-      
-      /// Do we know the current file index?
-      /// If we do this means we are processing type-checking files using the parallel graph mode,
-      /// and should account for naming the typars according to the lowest file index.
-      fileIndex: int option
     } 
 
     override _.ToString() = "<env>"
@@ -116,21 +111,14 @@ let BindTypar env (tp: Typar) =
          boundTyparNames = tp.Name :: env.boundTyparNames
          boundTypars = env.boundTypars.Add (tp, ()) } 
 
-let BindTypars g env (tps: Typars) = 
+let BindTypars g env (tps: Typar list) = 
     let tps = NormalizeDeclaredTyparsForEquiRecursiveInference g tps
     if isNil tps then env else
     // Here we mutate to provide better names for generalized type parameters 
     let nms = PrettyTypes.PrettyTyparNames (fun _ -> true) env.boundTyparNames tps
-    (tps, nms)
-    ||> List.iter2 (fun tp nm ->
-        let typar_id = ident (nm, tp.Range)
-        if PrettyTypes.NeedsPrettyTyparName tp then
-            match env.fileIndex with
-            | None ->
-                tp.SetIdent(TyparId.Initial(typar_id))
-            | Some idx ->
-                tp.SetIdent(TyparId.PrettyTyparName(typar_id, idx, typar_id))
-    )
+    (tps, nms) ||> List.iter2 (fun tp nm -> 
+            if PrettyTypes.NeedsPrettyTyparName tp  then 
+                tp.typar_id <- ident (nm, tp.Range))      
     List.fold BindTypar env tps 
 
 /// Set the set of vals which are arguments in the active lambda. We are allowed to return 
@@ -2611,7 +2599,7 @@ let CheckImplFileContents cenv env implFileTy implFileContents  =
     let env = { env with sigToImplRemapInfo = (mkRepackageRemapping rpi, mhi) :: env.sigToImplRemapInfo }
     CheckDefnInModule cenv env implFileContents
     
-let CheckImplFile (g, amap, reportErrors, infoReader, internalsVisibleToPaths, viewCcu, tcValF, denv, implFileTy, implFileContents, extraAttribs, fileIndex, isLastCompiland: bool*bool, isInternalTestSpanStackReferring) =
+let CheckImplFile (g, amap, reportErrors, infoReader, internalsVisibleToPaths, viewCcu, tcValF, denv, implFileTy, implFileContents, extraAttribs, isLastCompiland: bool*bool, isInternalTestSpanStackReferring) =
     let cenv = 
         { g = g  
           reportErrors = reportErrors 
@@ -2652,8 +2640,7 @@ let CheckImplFile (g, amap, reportErrors, infoReader, internalsVisibleToPaths, v
           external=false 
           returnScope = 0
           isInAppExpr = false
-          resumableCode = Resumable.None
-          fileIndex = fileIndex }
+          resumableCode = Resumable.None }
 
     CheckImplFileContents cenv env implFileTy implFileContents
     CheckAttribs cenv env extraAttribs

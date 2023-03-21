@@ -2116,189 +2116,167 @@ type TyparOptionalData =
 
 type TyparData = Typar
 
-[<NoEquality; NoComparison>]
-type TyparId =
-    | Initial of Ident
-    | PrettyTyparName of originalIdent: Ident * currentIndex: int * currentIdent: Ident
-
-/// <summary>A declared generic type/measure parameter, or a type/measure inference variable.</summary>
-/// <param name="typar_id">
-/// MUTABILITY: we set the names of generalized inference type parameters to make the look nice for IL code generation.
-/// The identifier for the type parameter.
-/// </param>
-/// <param name="typar_flags">The flag data for the type parameter.</param>
-/// <param name="typar_stamp">
-/// The unique stamp of the type parameter
-/// MUTABILITY: for linking when unpickling
-/// </param>
-/// <param name="typar_solution">An inferred equivalence for a type inference variable.</param>
-/// <param name="typar_astype">A cached TAST type used when this type variable is used as type.</param>
-/// <param name="typar_opt_data">The optional data for the type parameter.</param>
+/// A declared generic type/measure parameter, or a type/measure inference variable.
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
-type Typar
-    (
-        typar_id: TyparId,
-        typar_flags: TyparFlags,
-        typar_stamp: Stamp,
-        typar_solution: TType option,
-        typar_astype: TType,
-        typar_opt_data: TyparOptionalData option
-    ) =
-    let mutable typar_id: TyparId = typar_id
-    let mutable typar_flags: TyparFlags = typar_flags
-    let mutable typar_stamp: Stamp = typar_stamp
-    let mutable typar_solution: TType option = typar_solution
-    let mutable typar_astype: TType = typar_astype
-    let mutable typar_opt_data: TyparOptionalData option = typar_opt_data
-    let lockObj = obj()
+type Typar = 
+    {
+      /// MUTABILITY: we set the names of generalized inference type parameters to make the look nice for IL code generation 
+      /// The identifier for the type parameter
+      mutable typar_id: Ident 
+       
+      /// The flag data for the type parameter
+      mutable typar_flags: TyparFlags
+       
+      /// The unique stamp of the type parameter
+      /// MUTABILITY: for linking when unpickling
+      mutable typar_stamp: Stamp       
+       
+       /// An inferred equivalence for a type inference variable. 
+      mutable typar_solution: TType option
+
+      /// A cached TAST type used when this type variable is used as type.
+      mutable typar_astype: TType
+      
+      /// The optional data for the type parameter
+      mutable typar_opt_data: TyparOptionalData option
+    }
 
     /// The name of the type parameter 
-    member x.Name = x.Id.idText
+    member x.Name = x.typar_id.idText
 
     /// The range of the identifier for the type parameter definition
-    member x.Range = x.Id.idRange
+    member x.Range = x.typar_id.idRange
 
     /// The identifier for a type parameter definition
-    member x.Id : Ident =
-        match typar_id with
-        | Initial(ident)
-        | PrettyTyparName(currentIdent = ident) -> ident
-
-    member x.TyparId = typar_id
-    
-    member x.Flags = typar_flags
-    
-    member x.OptionalData = typar_opt_data
+    member x.Id = x.typar_id
 
     /// The unique stamp of the type parameter
-    member x.Stamp = typar_stamp
+    member x.Stamp = x.typar_stamp
 
     /// The inferred equivalence for the type inference variable, if any.
-    member x.Solution = typar_solution
+    member x.Solution = x.typar_solution
 
     /// The inferred constraints for the type inference variable, if any
     member x.Constraints = 
-        match typar_opt_data with
+        match x.typar_opt_data with
         | Some optData -> optData.typar_constraints
         | _ -> []
 
     /// Indicates if the type variable is compiler generated, i.e. is an implicit type inference variable 
-    member x.IsCompilerGenerated = typar_flags.IsCompilerGenerated
+    member x.IsCompilerGenerated = x.typar_flags.IsCompilerGenerated
 
     /// Indicates if the type variable can be solved or given new constraints. The status of a type variable
     /// generally always evolves towards being either rigid or solved. 
-    member x.Rigidity = typar_flags.Rigidity
+    member x.Rigidity = x.typar_flags.Rigidity
 
     /// Indicates if a type parameter is needed at runtime and may not be eliminated
-    member x.DynamicReq = typar_flags.DynamicReq
+    member x.DynamicReq = x.typar_flags.DynamicReq
 
     /// Indicates that whether or not a generic type definition satisfies the equality constraint is dependent on whether this type variable satisfies the equality constraint.
-    member x.EqualityConditionalOn = typar_flags.EqualityConditionalOn
+    member x.EqualityConditionalOn = x.typar_flags.EqualityConditionalOn
 
     /// Indicates that whether or not a generic type definition satisfies the comparison constraint is dependent on whether this type variable satisfies the comparison constraint.
-    member x.ComparisonConditionalOn = typar_flags.ComparisonConditionalOn
+    member x.ComparisonConditionalOn = x.typar_flags.ComparisonConditionalOn
 
     /// Indicates if the type variable has a static "head type" requirement, i.e. ^a variables used in FSharp.Core and member constraints.
-    member x.StaticReq = typar_flags.StaticReq
+    member x.StaticReq = x.typar_flags.StaticReq
 
     /// Indicates if the type inference variable was generated after an error when type checking expressions or patterns
-    member x.IsFromError = typar_flags.IsFromError
+    member x.IsFromError = x.typar_flags.IsFromError
 
     /// Indicates that whether this type parameter is a compat-flex type parameter (i.e. where "expr :> tp" only emits an optional warning)
-    member x.IsCompatFlex = typar_flags.IsCompatFlex
+    member x.IsCompatFlex = x.typar_flags.IsCompatFlex
 
     /// Set whether this type parameter is a compat-flex type parameter (i.e. where "expr :> tp" only emits an optional warning)
-    member x.SetIsCompatFlex b = typar_flags <- typar_flags.WithCompatFlex b
+    member x.SetIsCompatFlex b = x.typar_flags <- x.typar_flags.WithCompatFlex b
 
     /// Indicates whether a type variable can be instantiated by types or units-of-measure.
-    member x.Kind = typar_flags.Kind
+    member x.Kind = x.typar_flags.Kind
 
     /// Indicates whether a type variable is erased in compiled .NET IL code, i.e. whether it is a unit-of-measure variable
     member x.IsErased = match x.Kind with TyparKind.Type -> false | _ -> true
 
     /// The declared attributes of the type parameter. Empty for type inference variables and parameters from .NET.
     member x.Attribs = 
-        match typar_opt_data with
+        match x.typar_opt_data with
         | Some optData -> optData.typar_attribs
         | _ -> []
 
     /// Set the attributes on the type parameter
     member x.SetAttribs attribs = 
-        match attribs, typar_opt_data with
+        match attribs, x.typar_opt_data with
         | [], None -> ()
         | [], Some { typar_il_name = None; typar_xmldoc = doc; typar_constraints = [] } when doc.IsEmpty ->
-            typar_opt_data <- None
+            x.typar_opt_data <- None
         | _, Some optData -> optData.typar_attribs <- attribs
-        | _ -> typar_opt_data <- Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = attribs }
+        | _ -> x.typar_opt_data <- Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = attribs }
 
     /// Get the XML documetnation for the type parameter
     member x.XmlDoc =
-        match typar_opt_data with
+        match x.typar_opt_data with
         | Some optData -> optData.typar_xmldoc
         | _ -> XmlDoc.Empty
 
     /// Get the IL name of the type parameter
     member x.ILName =
-        match typar_opt_data with
+        match x.typar_opt_data with
         | Some optData -> optData.typar_il_name
         | _ -> None
 
     /// Set the IL name of the type parameter
     member x.SetILName il_name =
-        match typar_opt_data with
+        match x.typar_opt_data with
         | Some optData -> optData.typar_il_name <- il_name
-        | _ -> typar_opt_data <- Some { typar_il_name = il_name; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = [] }
+        | _ -> x.typar_opt_data <- Some { typar_il_name = il_name; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = [] }
 
     /// Indicates the display name of a type variable
     member x.DisplayName = if x.Name = "?" then "?"+string x.Stamp else x.Name
 
     /// Adjusts the constraints associated with a type variable
     member x.SetConstraints cs =
-        match cs, typar_opt_data with
+        match cs, x.typar_opt_data with
         | [], None -> ()
         | [], Some { typar_il_name = None; typar_xmldoc = doc; typar_attribs = [] } when doc.IsEmpty ->
-            typar_opt_data <- None
+            x.typar_opt_data <- None
         | _, Some optData -> optData.typar_constraints <- cs
-        | _ -> typar_opt_data <- Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = cs; typar_attribs = [] }
+        | _ -> x.typar_opt_data <- Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = cs; typar_attribs = [] }
 
     /// Creates a type variable that contains empty data, and is not yet linked. Only used during unpickling of F# metadata.
-    static member NewUnlinked() : Typar =
-        Typar(
-          TyparId.Initial(Unchecked.defaultof<_>),
-          Unchecked.defaultof<_>,
-          -1L,
-          Unchecked.defaultof<_>,
-          Unchecked.defaultof<_>,
-          Unchecked.defaultof<_>
-        )
+    static member NewUnlinked() : Typar = 
+        { typar_id = Unchecked.defaultof<_>
+          typar_flags = Unchecked.defaultof<_>
+          typar_stamp = -1L
+          typar_solution = Unchecked.defaultof<_>
+          typar_astype = Unchecked.defaultof<_>
+          typar_opt_data = Unchecked.defaultof<_> }
 
     /// Creates a type variable based on the given data. Only used during unpickling of F# metadata.
     static member New (data: TyparData) : Typar = data
 
     /// Links a previously unlinked type variable to the given data. Only used during unpickling of F# metadata.
-    member x.Link (tg: TyparData) =
-        typar_id <- tg.TyparId
-        typar_flags <- tg.Flags
-        typar_stamp <- tg.Stamp
-        typar_solution <- tg.Solution
-        match tg.OptionalData with
+    member x.Link (tg: TyparData) = 
+        x.typar_id <- tg.typar_id
+        x.typar_flags <- tg.typar_flags
+        x.typar_stamp <- tg.typar_stamp
+        x.typar_solution <- tg.typar_solution
+        match tg.typar_opt_data with
         | Some tg -> 
             let optData = { typar_il_name = tg.typar_il_name; typar_xmldoc = tg.typar_xmldoc; typar_constraints = tg.typar_constraints; typar_attribs = tg.typar_attribs }
-            typar_opt_data <- Some optData
+            x.typar_opt_data <- Some optData
         | None -> ()
 
     /// Links a previously unlinked type variable to the given data. Only used during unpickling of F# metadata.
     member x.AsType = 
-        let ty = typar_astype
+        let ty = x.typar_astype
         match box ty with 
         | null -> 
             let ty2 = TType_var (x, 0uy)
-            typar_astype <- ty2
+            x.typar_astype <- ty2
             ty2
         | _ -> ty
 
     /// Indicates if a type variable has been linked. Only used during unpickling of F# metadata.
-    member x.IsLinked = typar_stamp <> -1L
+    member x.IsLinked = x.typar_stamp <> -1L
 
     /// Indicates if a type variable has been solved.
     member x.IsSolved = 
@@ -2307,53 +2285,36 @@ type Typar
         | _ -> true
 
     /// Sets the identifier associated with a type variable
-    member x.SetIdent id =
-        // BindTypars from PostInferenceChecks can be called by multiple threads (when graph based type-checking is enabled).
-        lock lockObj (fun () ->
-            match typar_id, id with
-            | TyparId.PrettyTyparName(originalIdent, oldIndex, _),
-              TyparId.PrettyTyparName(_, newIndex, newIdent) when newIndex < oldIndex ->
-                // Overwrite the ident when a file with a lower index tries to use a pretty name.
-                // This is to match the behaviour of sequential type-checking in graph based type-checking.
-                typar_id <- TyparId.PrettyTyparName(originalIdent, newIndex, newIdent)
-            | TyparId.PrettyTyparName _, TyparId.PrettyTyparName _ -> ()
-            | _ ->
-                typar_id <- id
-        )
+    member x.SetIdent id = x.typar_id <- id
 
-    member _.SetSolution solution =
-        typar_solution <- Some solution
-        
-    member _.ClearSolution() = typar_solution <- None
-    
     /// Sets the rigidity of a type variable
     member x.SetRigidity b =
-        let flags = typar_flags
-        typar_flags <- TyparFlags(flags.Kind, b, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, flags.ComparisonConditionalOn) 
+        let flags = x.typar_flags
+        x.typar_flags <- TyparFlags(flags.Kind, b, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, flags.ComparisonConditionalOn) 
 
     /// Sets whether a type variable is compiler generated
     member x.SetCompilerGenerated b =
-        let flags = typar_flags
-        typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, b, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, flags.ComparisonConditionalOn) 
+        let flags = x.typar_flags
+        x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, b, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, flags.ComparisonConditionalOn) 
 
     /// Sets whether a type variable has a static requirement
     member x.SetStaticReq b =
-        typar_flags <- typar_flags.WithStaticReq(b)
+        x.typar_flags <- x.typar_flags.WithStaticReq(b)
 
     /// Sets whether a type variable is required at runtime
     member x.SetDynamicReq b =
-        let flags = typar_flags
-        typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, b, flags.EqualityConditionalOn, flags.ComparisonConditionalOn) 
+        let flags = x.typar_flags
+        x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, b, flags.EqualityConditionalOn, flags.ComparisonConditionalOn) 
 
     /// Sets whether the equality constraint of a type definition depends on this type variable 
     member x.SetEqualityDependsOn b =
-        let flags = typar_flags
-        typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, b, flags.ComparisonConditionalOn) 
+        let flags = x.typar_flags
+        x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, b, flags.ComparisonConditionalOn) 
 
     /// Sets whether the comparison constraint of a type definition depends on this type variable 
     member x.SetComparisonDependsOn b =
-        let flags = typar_flags
-        typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, b) 
+        let flags = x.typar_flags
+        x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, b) 
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -5865,18 +5826,16 @@ type Construct() =
 
     /// Create a new type parameter node
     static member NewTypar (kind, rigid, SynTypar(id, staticReq, isCompGen), isFromError, dynamicReq, attribs, eqDep, compDep) = 
-        Typar.New (
-            Typar(
-                TyparId.Initial id,
-                TyparFlags(kind, rigid, isFromError, isCompGen, staticReq, dynamicReq, eqDep, compDep),
-                newStamp(),
-                None,
-                Unchecked.defaultof<_>,
+        Typar.New
+          { typar_id = id 
+            typar_stamp = newStamp() 
+            typar_flags= TyparFlags(kind, rigid, isFromError, isCompGen, staticReq, dynamicReq, eqDep, compDep) 
+            typar_solution = None
+            typar_astype = Unchecked.defaultof<_>
+            typar_opt_data =
                 match attribs with
                 | [] -> None
-                | _ -> Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = attribs }
-            )    
-        )
+                | _ -> Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = attribs } } 
 
     /// Create a new type parameter node for a declared type parameter
     static member NewRigidTypar nm m =

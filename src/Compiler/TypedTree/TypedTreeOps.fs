@@ -155,7 +155,7 @@ let mkTyparInst (typars: Typars) tyargs =
     (List.zip typars tyargs: TyparInstantiation)
 
 let generalizeTypar tp = mkTyparTy tp
-let generalizeTypars (tps: Typars) = List.map generalizeTypar tps
+let generalizeTypars tps = List.map generalizeTypar tps
 
 let rec remapTypeAux (tyenv: Remap) (ty: TType) =
   let ty = stripTyparEqns ty
@@ -567,7 +567,7 @@ let tryNormalizeMeasureInType g ty =
     | TType_measure (Measure.Var v) ->
         match v.Solution with
         | Some (TType_measure ms) ->
-            v.SetSolution(TType_measure (normalizeMeasure g ms))
+            v.typar_solution <- Some (TType_measure (normalizeMeasure g ms))
             ty
         | _ -> ty
     | _ -> ty
@@ -938,10 +938,10 @@ type TypeEquivEnv with
     member aenv.BindTyparsToTypes tps1 tys2 =
         { aenv with EquivTypars = (tps1, tys2, aenv.EquivTypars) |||> List.foldBack2 (fun tp ty tpmap -> tpmap.Add(tp, ty)) }
 
-    member aenv.BindEquivTypars (tps1: Typars) (tps2: Typars) =
+    member aenv.BindEquivTypars tps1 tps2 =
         aenv.BindTyparsToTypes tps1 (List.map mkTyparTy tps2) 
 
-    static member FromTyparInst (tpinst: TyparInstantiation) =
+    static member FromTyparInst tpinst =
         let tps, tys = List.unzip tpinst
         TypeEquivEnv.Empty.BindTyparsToTypes tps tys 
 
@@ -2324,7 +2324,7 @@ and accFreeInVal opts (v: Val) acc = accFreeInType opts v.val_type acc
 let freeInTypes opts tys = accFreeInTypes opts tys emptyFreeTyvars
 let freeInVal opts v = accFreeInVal opts v emptyFreeTyvars
 let freeInTyparConstraints opts v = accFreeInTyparConstraints opts v emptyFreeTyvars
-let accFreeInTypars opts (tps: Typars) acc = List.foldBack (accFreeTyparRef opts) tps acc
+let accFreeInTypars opts tps acc = List.foldBack (accFreeTyparRef opts) tps acc
         
 let rec addFreeInModuleTy (mtyp: ModuleOrNamespaceType) acc =
     QueueList.foldBack (typeOfVal >> accFreeInType CollectAllNoCaching) mtyp.AllValsAndMembers
@@ -2791,10 +2791,8 @@ module PrettyTypes =
     // Finally, we skip any names already in use
     let NeedsPrettyTyparName (tp: Typar) = 
         tp.IsCompilerGenerated && 
-        tp.ILName.IsNone &&
-        match tp.TyparId with
-        | TyparId.PrettyTyparName _ -> true
-        | _ -> tp.Name = unassignedTyparName
+        tp.ILName.IsNone && 
+        (tp.typar_id.idText = unassignedTyparName) 
 
     let PrettyTyparNames pred alreadyInUse tps = 
         let rec choose (tps: Typar list) (typeIndex, measureIndex) acc = 
@@ -8705,7 +8703,7 @@ and tyargsEnc g (gtpsType, gtpsMethod) args =
     | [a] when (match (stripTyEqns g a) with TType_measure _ -> true | _ -> false) -> ""  // float<m> should appear as just "float" in the generated .XML xmldoc file
     | _ -> angleEnc (commaEncs (List.map (typeEnc g (gtpsType, gtpsMethod)) args)) 
 
-let XmlDocArgsEnc g (gtpsType: Typars, gtpsMethod: Typars) argTys =
+let XmlDocArgsEnc g (gtpsType, gtpsMethod) argTys =
     if isNil argTys then "" 
     else "(" + String.concat "," (List.map (typeEnc g (gtpsType, gtpsMethod)) argTys) + ")"
 

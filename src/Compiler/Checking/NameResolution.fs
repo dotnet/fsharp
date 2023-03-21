@@ -4045,7 +4045,7 @@ let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameRes
 //-------------------------------------------------------------------------
 
 /// A generator of type instantiations used when no more specific type instantiation is known.
-let FakeInstantiationGenerator (_m: range) (gps: Typars) = List.map mkTyparTy gps
+let FakeInstantiationGenerator (_m: range) gps = List.map mkTyparTy gps
 
 // note: using local refs is ok since it is only used by VS
 let ItemForModuleOrNamespaceRef v = Item.ModuleOrNamespaces [v]

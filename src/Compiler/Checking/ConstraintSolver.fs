@@ -693,8 +693,8 @@ let SubstMeasure (r: Typar) ms =
     if r.Rigidity = TyparRigidity.Rigid then error(InternalError("SubstMeasure: rigid", r.Range))
     if r.Kind = TyparKind.Type then error(InternalError("SubstMeasure: kind=type", r.Range))
 
-    match r.Solution with
-    | None -> r.SetSolution(TType_measure ms)
+    match r.typar_solution with
+    | None -> r.typar_solution <- Some (TType_measure ms)
     | Some _ -> error(InternalError("already solved", r.Range))
 
 let rec TransactStaticReq (csenv: ConstraintSolverEnv) (trace: OptionalTrace) (tpr: Typar) req = 
@@ -993,7 +993,7 @@ let rec SolveTyparEqualsTypePart1 (csenv: ConstraintSolverEnv) m2 (trace: Option
     // Record the solution before we solve the constraints, since 
     // We may need to make use of the equation when solving the constraints. 
     // Record a entry in the undo trace if one is provided 
-    trace.Exec (fun () -> r.SetSolution(ty)) (fun () -> r.ClearSolution())
+    trace.Exec (fun () -> r.typar_solution <- Some ty) (fun () -> r.typar_solution <- None)
  }  
 
 and SolveTyparEqualsTypePart2 (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) (r: Typar) ty = trackErrors {
@@ -3695,7 +3695,7 @@ let ChooseTyparSolutionAndSolve css denv tp =
         (fun err -> ErrorD(ErrorFromApplyingDefault(g, denv, tp, max, err, m)))
     |> RaiseOperationResult
 
-let CheckDeclaredTypars denv css m (typars1: Typars) (typars2: Typars) = 
+let CheckDeclaredTypars denv css m typars1 typars2 = 
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
     PostponeOnFailedMemberConstraintResolution csenv NoTrace
         (fun csenv -> 
@@ -3707,7 +3707,7 @@ let CheckDeclaredTypars denv css m (typars1: Typars) (typars2: Typars) =
             ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
-let CanonicalizePartialInferenceProblem css denv m (tps: Typars) =
+let CanonicalizePartialInferenceProblem css denv m tps =
     // Canonicalize constraints prior to generalization 
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
     let csenv = { csenv with ErrorOnFailedMemberConstraintResolution = true }

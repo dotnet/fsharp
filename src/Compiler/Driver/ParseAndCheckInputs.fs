@@ -1333,7 +1333,6 @@ let CheckOneInputAux
                             tcState.tcsTcImplEnv,
                             rootSigOpt,
                             file,
-                            None,
                             tcConfig.diagnosticsOptions
                         )
 
@@ -1482,7 +1481,7 @@ let CheckOneInputWithCallback
       tcSink,
       tcState: TcState,
       inp: ParsedInput,
-      idx: FileIndex): (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcResultsSink * TcState * ParsedInput * FileIndex)
+      _skipImplIfSigExists: bool): (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcResultsSink * TcState * ParsedInput * bool)
     : Cancellable<Finisher<TcState, PartialResult>> =
     cancellable {
         try
@@ -1572,7 +1571,6 @@ let CheckOneInputWithCallback
                         tcState.tcsTcImplEnv,
                         rootSigOpt,
                         file,
-                        Some idx,
                         tcConfig.diagnosticsOptions
                     )
 
@@ -1720,7 +1718,6 @@ let CheckMultipleInputsUsingGraphMode
             partialResult, (nextTcState, currentPriorErrors))
 
     let processFile
-        (idx: FileIndex)
         ((input, logger): ParsedInput * DiagnosticsLogger)
         ((currentTcState, _currentPriorErrors): State)
         : Finisher<State, PartialResult> =
@@ -1729,7 +1726,7 @@ let CheckMultipleInputsUsingGraphMode
         let tcSink = TcResultsSink.NoSink
 
         let finisher =
-            CheckOneInputWithCallback(checkForErrors2, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, currentTcState, input, idx)
+            CheckOneInputWithCallback(checkForErrors2, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, currentTcState, input, false)
             |> Cancellable.runWithoutCancellation
 
         Finisher(fun (state: State) ->
@@ -1756,7 +1753,7 @@ let CheckMultipleInputsUsingGraphMode
                 processArtificialImplFile parsedInput state
             | NodeToTypeCheck.PhysicalFile idx ->
                 let parsedInput, logger = inputsWithLoggers[idx]
-                processFile idx (parsedInput, logger) state
+                processFile (parsedInput, logger) state
 
         let state: State = tcState, priorErrors
 
@@ -1786,7 +1783,7 @@ let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tc
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions
     let results, tcState =
         match tcConfig.typeCheckingConfig.Mode with
-        | TypeCheckingMode.Graph when (not tcConfig.isInteractive) ->
+        | TypeCheckingMode.Graph when (not tcConfig.isInteractive && not tcConfig.deterministic) ->
             CheckMultipleInputsUsingGraphMode(
                 ctok,
                 checkForErrors,

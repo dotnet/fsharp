@@ -5365,7 +5365,6 @@ let CheckOneImplFile
         env,
         rootSigOpt: ModuleOrNamespaceType option,
         synImplFile,
-        fileIdx,
         diagnosticOptions) =
 
     let (ParsedImplFileInput (fileName, isScript, qualNameOfFile, scopedPragmas, _, implFileFrags, isLastCompiland, _, _)) = synImplFile
@@ -5469,7 +5468,7 @@ let CheckOneImplFile
                     PostTypeCheckSemanticChecks.CheckImplFile 
                        (g, cenv.amap, reportErrors, cenv.infoReader, 
                         env.eInternalsVisibleCompPaths, cenv.thisCcu, tcVal, envAtEnd.DisplayEnv, 
-                        implFileTy, implFileContents, extraAttribs, fileIdx, isLastCompiland, 
+                        implFileTy, implFileContents, extraAttribs, isLastCompiland, 
                         isInternalTestSpanStackReferring)
 
                 with exn -> 

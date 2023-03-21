@@ -133,7 +133,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                       errorR (Error(FSComp.SR.typrelSigImplNotCompatibleCompileTimeRequirementsDiffer(), m))
                 
                   // Adjust the actual type parameter name to look like the signature
-                  implTypar.SetIdent (TyparId.Initial(mkSynId implTypar.Range sigTypar.Id.idText))
+                  implTypar.SetIdent (mkSynId implTypar.Range sigTypar.Id.idText)     
 
                   // Mark it as "not compiler generated", now that we've got a good name for it
                   implTypar.SetCompilerGenerated false 

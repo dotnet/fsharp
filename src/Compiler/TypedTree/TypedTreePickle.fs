@@ -1596,7 +1596,7 @@ let p_tyar_spec_data (x: Typar) st =
       p_int64
       p_tyar_constraints
       p_xmldoc
-      (x.Id, x.Attribs, int64 x.Flags.PickledBits, x.Constraints, x.XmlDoc) st
+      (x.typar_id, x.Attribs, int64 x.typar_flags.PickledBits, x.Constraints, x.XmlDoc) st
 
 let p_tyar_spec (x: Typar) st =
     //Disabled, workaround for bug 2721: if x.Rigidity <> TyparRigidity.Rigid then warning(Error(sprintf "p_tyar_spec: typar#%d is not rigid" x.Stamp, x.Range))
@@ -1607,16 +1607,15 @@ let p_tyar_specs = (p_list p_tyar_spec)
 
 let u_tyar_spec_data st =
     let a, c, d, e, g = u_tup5 u_ident u_attribs u_int64 u_tyar_constraints u_xmldoc st
-    Typar(
-        TyparId.Initial a,
-        TyparFlags(int32 d),
-        newStamp(),
-        None,
-        Unchecked.defaultof<_>,
+    { typar_id=a
+      typar_stamp=newStamp()
+      typar_flags=TyparFlags(int32 d)
+      typar_solution=None
+      typar_astype= Unchecked.defaultof<_>
+      typar_opt_data=
         match g, e, c with
         | doc, [], [] when doc.IsEmpty -> None
-        | _ -> Some { typar_il_name = None; typar_xmldoc = g; typar_constraints = e; typar_attribs = c }
-    )
+        | _ -> Some { typar_il_name = None; typar_xmldoc = g; typar_constraints = e; typar_attribs = c } }
 
 let u_tyar_spec st =
     u_osgn_decl st.itypars u_tyar_spec_data st
