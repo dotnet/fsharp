@@ -56,7 +56,7 @@ type internal FSharpTaskListService
                                 let taskLength = 1+ct.Right-idx                
                                 // A descriptor followed by another letter is not a todocomment, like todoabc. But TODO, TODO2 or TODO: should be.
                                 if (idx+taskLength) >= lineTxt.Length || not (Char.IsLetter(lineTxt.[idx+taskLength])) then
-                                    foundTaskItems.Add(new FSharpTaskListItem(d, lineTxt.Substring(idx,taskLength), doc, new TextSpan(line.Span.Start+idx, taskLength)))
+                                    foundTaskItems.Add(new FSharpTaskListItem(d, lineTxt.Substring(idx,taskLength).TrimEnd([|'*';')'|]), doc, new TextSpan(line.Span.Start+idx, taskLength)))
                                 else Debug.WriteLine($"Failed terminating criteria: idx= {idx}, len = {taskLength}, %A{ct}")
                        
                 return foundTaskItems.ToImmutable()
