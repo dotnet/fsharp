@@ -1207,15 +1207,16 @@ type PartialResult = TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNames
 /// Typecheck a single file (or interactive entry into F# Interactive). If skipImplIfSigExists is set to true
 /// then implementations with signature files give empty results.
 let CheckOneInput
-    (checkForErrors,
-      tcConfig: TcConfig,
-      tcImports: TcImports,
-      tcGlobals: TcGlobals,
-      prefixPathOpt: LongIdent option,
-      tcSink: TcResultsSink,
-      tcState: TcState,
-      input: ParsedInput)
-    : Cancellable<PartialResult * TcState> =
+    (
+        checkForErrors,
+        tcConfig: TcConfig,
+        tcImports: TcImports,
+        tcGlobals: TcGlobals,
+        prefixPathOpt: LongIdent option,
+        tcSink: TcResultsSink,
+        tcState: TcState,
+        input: ParsedInput
+    ) : Cancellable<PartialResult * TcState> =
     cancellable {
         try
             use _ =
