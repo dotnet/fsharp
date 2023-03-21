@@ -44,6 +44,8 @@ open FSharp.Compiler.TypeRelations
 
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
+open System.Collections.Concurrent
+
 #endif
 
 //-------------------------------------------------------------------------
@@ -912,6 +914,8 @@ let AdjustValSynInfoInSignature g ty (SynValInfo(argsData, retData) as sigMD) =
     | _ ->
         sigMD
 
+let argDataCache = new ConcurrentDictionary<(string * range), ArgReprInfo>()
+
 let TranslateTopArgSynInfo isArg m tcAttributes (SynArgInfo(Attributes attrs, isOpt, nm)) =
     // Synthesize an artificial "OptionalArgument" attribute for the parameter
     let optAttrs =
@@ -921,7 +925,7 @@ let TranslateTopArgSynInfo isArg m tcAttributes (SynArgInfo(Attributes attrs, is
                   Target=None
                   AppliesToGetterAndSetter=false
                   Range=m} : SynAttribute) ]
-         else
+        else
             []
 
     if isArg && not (isNil attrs) && Option.isNone nm then
@@ -932,7 +936,21 @@ let TranslateTopArgSynInfo isArg m tcAttributes (SynArgInfo(Attributes attrs, is
 
     // Call the attribute checking function
     let attribs = tcAttributes (optAttrs@attrs)
-    ({ Attribs = attribs; Name = nm; OtherRange = None } : ArgReprInfo)
+
+    let key = nm |> Option.map (fun id -> (id.idText, id.idRange))
+
+    let argInfo =
+        key
+        |> Option.map argDataCache.TryGetValue
+        |> Option.bind (fun (found, info) -> if found then Some info else None)
+        |> Option.defaultValue ({ Attribs = attribs; Name = nm; OtherRange = None }: ArgReprInfo)
+
+    match key with
+    | Some k -> argDataCache.[k] <- argInfo
+    | None -> ()
+
+    argInfo
+    //({ Attribs = attribs; Name = nm; OtherRange = None } : ArgReprInfo)
 
 /// Members have an arity inferred from their syntax. This "valSynData" is not quite the same as the arities
 /// used in the middle and backends of the compiler ("valReprInfo").
