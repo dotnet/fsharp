@@ -58,22 +58,9 @@ and visitVal (v: Val) : TypedTreeNode =
 
             match v.ValReprInfo with
             | None -> ()
-            | Some (ValReprInfo (typars, args, result)) ->
+            | Some (ValReprInfo (_, args, result)) ->
                 yield! args |> Seq.collect id |> Seq.map visitArgReprInfo
-
                 yield visitArgReprInfo result
-
-                yield!
-                    typars
-                    |> List.map (fun (TyparReprInfo (ident, _kind)) ->
-                        {
-                            Name = ident.idText
-                            Kind = "typar"
-                            Children = []
-                            Flags = None
-                            Range = Some ident.idRange
-                            CompilationPath = None
-                        })
 
             yield!
                 v.Typars
@@ -82,7 +69,7 @@ and visitVal (v: Val) : TypedTreeNode =
                         Name = typar.Name
                         Kind = "typar"
                         Children = []
-                        Flags = Some typar.Flags.PickledBits
+                        Flags = Some typar.typar_flags.PickledBits
                         Range = Some typar.Range
                         CompilationPath = None
                     })
