@@ -1936,6 +1936,26 @@ module Array =
         open System.Threading.Tasks
         open System.Collections.Concurrent
 
+        [<CompiledName("Exists")>]
+        let exists (predicate: 'T -> bool) (array: 'T[]) =
+            checkNonNull "array" array
+
+            Parallel
+                .For(
+                    0,
+                    array.Length,
+                    (fun i pState ->
+                        if predicate array[i] then
+                            pState.Stop())
+                )
+                .IsCompleted
+            |> not
+
+        [<CompiledName("ForAll")>]
+        let forall (predicate: 'T -> bool) (array: 'T[]) =
+            // Not exists $condition <==> (opposite of $condition is true forall)
+            exists (predicate >> not) array |> not
+
         [<CompiledName("TryFindIndex")>]
         let tryFindIndex predicate (array: _[]) =
             checkNonNull "array" array
