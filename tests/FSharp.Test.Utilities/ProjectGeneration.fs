@@ -471,14 +471,14 @@ type WorkflowContext =
       Signatures: Map<string, string>
       Cursor: FSharpSymbolUse option }
 
-let SaveAndCheckProject project checker =
+let SaveAndCheckProject project checker allowErrors =
     async {
 
         do! saveProject project true checker
 
         let! results = checker.ParseAndCheckProject(project.GetProjectOptions checker)
 
-        if not (Array.isEmpty results.Diagnostics) then
+        if not (allowErrors || Array.isEmpty results.Diagnostics) then
             failwith $"Project {project.Name} failed initial check: \n%A{results.Diagnostics}"
 
         let! signatures =
@@ -501,6 +501,7 @@ type ProjectWorkflowBuilder
         initialProject: SyntheticProject,
         ?initialContext,
         ?checker: FSharpChecker,
+        ?allowErrors,
         ?useGetSource,
         ?useChangeNotifications,
         ?useSyntaxTreeCache
@@ -566,7 +567,7 @@ type ProjectWorkflowBuilder
     member this.Yield _ =
         match initialContext with
         | Some ctx -> async.Return ctx
-        | _ -> SaveAndCheckProject initialProject checker
+        | _ -> SaveAndCheckProject initialProject checker (defaultArg allowErrors false)
 
     member this.DeleteProjectDir() =
         if Directory.Exists initialProject.ProjectDir then
