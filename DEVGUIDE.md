@@ -149,7 +149,7 @@ sh build.sh -c Release
 
 ## Updating baselines in tests
 
-Some tests use "baseline" files.  There is sometimes a way to update these baselines en-masse in your local build,
+Some tests use "baseline" (.bsl) files.  There is sometimes a way to update these baselines en-masse in your local build,
 useful when some change affects many baselines.  For example, in the `fsharpqa` and `FSharp.Compiler.ComponentTests` tests the baselines
 are updated using scripts or utilities that allow the following environment variable to be set:
 
@@ -182,7 +182,7 @@ or
 `./Build.cmd -c Release -testDesktop` to update Release .NET Framework baselines.
 
 > **Note**
-> Please note, that by default, **Release** version of IL baseline baseline tests will be running in CI, so when updating baseline files, make sure to add `-c Release` flag to the build command.
+> Please note, that by default, **Release** version of IL baseline tests will be running in CI, so when updating baseline (.bsl) files, make sure to add `-c Release` flag to the build command.
 
 ## Automated Source Code Formatting
 
