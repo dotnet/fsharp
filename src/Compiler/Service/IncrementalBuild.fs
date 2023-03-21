@@ -320,7 +320,7 @@ type BoundModel private (tcConfig: TcConfig,
         | _ ->
             let fullGraphNode =
                 GraphNode(node {
-                    match! this.TypeCheck(partial) with
+                    match! this.TypeCheck(false) with
                     | FullState(tcInfo, tcInfoExtras) -> return tcInfo, tcInfoExtras
                     | PartialState(tcInfo) -> 
                         return tcInfo, emptyTcInfoExtras
