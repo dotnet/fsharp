@@ -264,7 +264,6 @@ type internal IncrementalBuilder =
         suggestNamesForErrors: bool *
         keepAllBackgroundSymbolUses: bool *
         enableBackgroundItemKeyStoreAndSemanticClassification: bool *
-        enablePartialTypeChecking: bool *
         dependencyProvider: DependencyProvider option *
         parallelReferenceResolution: ParallelReferenceResolution *
         captureIdentifiersWhenParsing: bool *

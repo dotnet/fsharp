@@ -168,7 +168,7 @@ let ``Using getSource and notifications instead of filesystem with parse caching
     let middle = $"File%03d{size / 2}"
     let last = $"File%03d{size}"
 
-    use _ = expectCacheHits 113
+    use _ = expectCacheHits 112
     ProjectWorkflowBuilder(project, useGetSource = true, useChangeNotifications = true, useSyntaxTreeCache = true) {
         updateFile first updatePublicSurface
         checkFile first expectSignatureChanged
@@ -183,7 +183,7 @@ let ``Using getSource and notifications instead of filesystem with parse caching
 
 [<Fact>]
 let ``Edit file, check it, then check dependent file with parse caching`` () =
-    use _ = expectCacheHits 6
+    use _ = expectCacheHits 5
     ProjectWorkflowBuilder(makeTestProject(), useSyntaxTreeCache = true) {
         updateFile "First" breakDependentFiles
         checkFile "First" expectSignatureChanged
@@ -193,7 +193,7 @@ let ``Edit file, check it, then check dependent file with parse caching`` () =
 
 [<Fact>]
 let ``Edit file, don't check it, check dependent file with parse caching `` () =
-    use _ = expectCacheHits 6
+    use _ = expectCacheHits 5
     ProjectWorkflowBuilder(makeTestProject(), useSyntaxTreeCache = true) {
         updateFile "First" breakDependentFiles
         saveFile "First"

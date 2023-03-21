@@ -143,8 +143,7 @@ val CheckOneInput:
     prefixPathOpt: LongIdent option *
     tcSink: NameResolution.TcResultsSink *
     tcState: TcState *
-    input: ParsedInput *
-    skipImplIfSigExists: bool ->
+    input: ParsedInput ->
         Cancellable<(TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType) * TcState>
 
 /// Finish the checking of multiple inputs
