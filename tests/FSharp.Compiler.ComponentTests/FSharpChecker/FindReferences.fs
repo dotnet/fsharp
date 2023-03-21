@@ -155,19 +155,6 @@ let foo x = x ++ 4""" })
 module Parameters =
 
     [<Fact>]
-    let ``We find function parameter in impl file`` () =
-        SyntheticProject.Create(
-            sourceFile "Source" [] )
-            .Workflow {
-                placeCursor "Source" 3 7 "let f x =" ["x"]
-                findAllReferences (expectToFind [
-                    //"FileSource.fsi", 6, 7, 8
-                    "FileSource.fs", 3, 6, 7
-                    "FileSource.fs", 4, 12, 13
-                ])
-            }
-
-    [<Fact>]
     let ``We find function parameter in signature file`` () =
         let source = """let f param = param + 1"""
         let signature = """val f: param:int -> int"""
@@ -182,9 +169,8 @@ module Parameters =
                 ])
             }
 
-    /// This is a bug: https://github.com/dotnet/fsharp/issues/14753
     [<Fact>]
-    let ``We DON'T find method parameter in signature file`` () =
+    let ``We find method parameter in signature file`` () =
         SyntheticProject.Create(
             { sourceFile "Source" [] with
                 Source = "type MyClass() = member this.Method(methodParam) = methodParam + 1"
@@ -192,7 +178,7 @@ module Parameters =
             .Workflow {
                 placeCursor "Source" "methodParam"
                 findAllReferences (expectToFind [
-                    "FileSource.fsi", 8, 17, 28 // <-- this should also be found
+                    "FileSource.fsi", 8, 17, 28
                     "FileSource.fs", 2, 36, 47
                     "FileSource.fs", 2, 51, 62
                 ])

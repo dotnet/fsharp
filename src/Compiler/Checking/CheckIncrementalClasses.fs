@@ -130,7 +130,7 @@ let TcImplicitCtorLhs_Phase2A(cenv: cenv, env, tpenv, tcref: TyconRef, vis, attr
 
         CheckForNonAbstractInterface g ModuleOrMemberBinding tcref memberFlags false id.idRange
         let memberInfo = MakeMemberDataAndMangledNameForMemberVal(g, tcref, false, attribs, [], memberFlags, valSynData, id, false)
-        let prelimValReprInfo = TranslateSynValInfo m (TcAttributes cenv env) valSynData
+        let prelimValReprInfo = TranslateSynValInfo env m (TcAttributes cenv env) valSynData
         let prelimTyschemeG = GeneralizedType(copyOfTyconTypars, ctorTy)
         let isComplete = ComputeIsComplete copyOfTyconTypars [] ctorTy
         let varReprInfo = InferGenericArityFromTyScheme prelimTyschemeG prelimValReprInfo
@@ -154,7 +154,7 @@ let TcImplicitCtorLhs_Phase2A(cenv: cenv, env, tpenv, tcref: TyconRef, vis, attr
             let id = ident ("cctor", m)
             CheckForNonAbstractInterface g ModuleOrMemberBinding tcref ClassCtorMemberFlags false id.idRange
             let memberInfo = MakeMemberDataAndMangledNameForMemberVal(g, tcref, false, [], [], ClassCtorMemberFlags, valSynData, id, false)
-            let prelimValReprInfo = TranslateSynValInfo m (TcAttributes cenv env) valSynData
+            let prelimValReprInfo = TranslateSynValInfo env m (TcAttributes cenv env) valSynData
             let prelimTyschemeG = GeneralizedType(copyOfTyconTypars, cctorTy)
             let valReprInfo = InferGenericArityFromTyScheme prelimTyschemeG prelimValReprInfo
             let cctorValScheme = ValScheme(id, prelimTyschemeG, Some valReprInfo, None, Some memberInfo, false, ValInline.Never, NormalVal, Some (SynAccess.Private Range.Zero), false, true, false, false)

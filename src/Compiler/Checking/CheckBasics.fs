@@ -242,6 +242,8 @@ type TcEnv =
 
       // Do we lay down an implicit debug point?
       eIsControlFlow: bool
+
+      eArgInfoCache: Dictionary<string * range, ArgReprInfo>
     }
 
     member tenv.DisplayEnv = tenv.eNameResEnv.DisplayEnv

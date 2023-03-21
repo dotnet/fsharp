@@ -127,6 +127,11 @@ type TcEnv =
         eLambdaArgInfos: ArgReprInfo list list
 
         eIsControlFlow: bool
+
+        /// A cache for ArgReprInfos which get created multiple times for the same values
+        /// Since they need to be later mutated with updates from signature files this should make sure
+        /// we're always dealing with the same instance and the updates don't get lost
+        eArgInfoCache: Dictionary<string * range, ArgReprInfo>
     }
 
     member DisplayEnv: DisplayEnv

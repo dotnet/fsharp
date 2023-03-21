@@ -66,7 +66,7 @@ val f: x: 'a -> TFirstV_1<'a>
                 Assert.False(symbolUse.IsPrivateToFileAndSignatureFile))
         }
 
-    [<Fact(Skip="This fails in compressed metadata builds")>]
+    [<Fact>]
     let ``Function parameter, with signature file, part 1`` () =
         SyntheticProject.Create(sourceFile "First" [] |> addSignatureFile).Workflow {
             checkFile "First" (fun (typeCheckResult: FSharpCheckFileResults) ->
@@ -74,7 +74,7 @@ val f: x: 'a -> TFirstV_1<'a>
                 Assert.False(symbolUse.IsPrivateToFile))
         }
 
-    [<Fact(Skip="This fails in compressed metadata builds")>]
+    [<Fact>]
     let ``Function parameter, with signature file, part 2`` () =
         SyntheticProject.Create(sourceFile "First" [] |> addSignatureFile).Workflow {
             checkFile "First" (fun (typeCheckResult: FSharpCheckFileResults) ->
@@ -82,7 +82,7 @@ val f: x: 'a -> TFirstV_1<'a>
                 Assert.True(symbolUse.IsPrivateToFileAndSignatureFile))
         }
 
-    [<Fact(Skip="This fails in compressed metadata builds")>]
+    [<Fact>]
     let ``Function parameter, with signature file, part 3`` () =
 
         for attempt in 1 .. 20 do
