@@ -121,7 +121,7 @@ This is compiled using [tests\fsharp\FSharp.Tests.FSharpSuite.fsproj](tests/fsha
 Tests are grouped in folders per area. Each test compiles and executes a `test.fsx|fs` file in its folder using some combination of compiler or FSI flags specified in the FSharpSuite test project.  
 If the compilation and execution encounter no errors, the test is considered to have passed. 
 
-There are also negative tests checking code expected to fail compilation. See note about baseline under "Other Tips" bellow for tests checking expectations against "baseline" files.
+There are also negative tests checking code expected to fail compilation. See note about baseline under "Other Tips" bellow for tests checking expectations against "baseline" (.bsl) files.
 
 ### FSharpQA Suite
 
