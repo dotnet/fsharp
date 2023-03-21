@@ -1074,8 +1074,8 @@ module IncrementalBuilderStateHelpers =
                     { slot with LogicalStamp = slot.Stamp; Notified = false; Model = graphNode }, graphNode
                 else
                     slot, slot.Model
-
-            updatedSlot, if propagate then Invalidated, nextNode else Good, nextNode
+            let updatedStatus = if propagate then Invalidated, nextNode else Good, nextNode
+            updatedSlot, updatedStatus
 
         match  slots |> List.mapFold mapping (Good, (GraphNode.FromResult initialState.initialBoundModel)) with
         | slots, (Good, _) -> { state with slots = slots }
