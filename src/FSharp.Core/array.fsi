@@ -3094,6 +3094,67 @@ module Array =
     /// <summary>Provides parallel operations on arrays </summary>
     module Parallel =
 
+
+        /// <summary>Tests if all elements of the array satisfy the given predicate.</summary>
+        ///
+        /// <remarks>The predicate is applied to the elements of the input collection in parallel. If any application 
+        /// returns false then the overall result is false and testing of other elements in all threads is stopped at system's earliest convenience.
+        /// Otherwise, true is returned.</remarks>
+        ///
+        /// <param name="predicate">The function to test the input elements.</param>
+        /// <param name="array">The input array.</param>
+        ///
+        /// <returns>True if all of the array elements satisfy the predicate.</returns>
+        ///
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        ///
+        /// <example id="para-forall-1">
+        /// <code lang="fsharp">
+        /// let isEven a = a % 2 = 0
+        ///
+        /// [2; 42] |> Array.Parallel.forall isEven // evaluates to true
+        ///
+        /// [1; 2] |> Array.Parallel.forall isEven // evaluates to false
+        /// </code>
+        /// </example>
+        [<CompiledName("ForAll")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val forall: predicate:('T -> bool) -> array:'T[] -> bool
+
+        /// <summary>Tests if any element of the array satisfies the given predicate.</summary>
+        ///
+        /// <remarks>The predicate is applied to the elements of the input array in parallel. If any application 
+        /// returns true then the overall result is true and testing of other elements in all threads is stopped at system's earliest convenience.
+        /// Otherwise, <c>false</c> is returned.</remarks>
+        ///
+        /// <param name="predicate">The function to test the input elements.</param>
+        /// <param name="array">The input array.</param>
+        ///
+        /// <returns>True if any result from <c>predicate</c> is true.</returns>
+        ///
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        ///
+        /// <example id="para-exists-1">
+        /// <code lang="fsharp">
+        /// let input = [| 1; 2; 3; 4; 5 |]
+        ///
+        /// input |> Array.Parallel.exists (fun elm -> elm % 4 = 0)
+        /// </code>
+        /// Evaluates to <c>true</c>
+        /// </example>
+        ///
+        /// <example id="para-exists-2">
+        /// <code lang="fsharp">
+        /// let input = [| 1; 2; 3; 4; 5 |]
+        ///
+        /// input |> Array.Parallel.exists (fun elm -> elm % 6 = 0)
+        /// </code>
+        /// Evaluates to <c>false</c>
+        /// </example>
+        [<CompiledName("Exists")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val exists: predicate:('T -> bool) -> array:'T[] -> bool
+
         /// <summary>Returns the first element for which the given function returns <c>True</c>.
         /// Returns None if no such element exists.</summary>
         ///

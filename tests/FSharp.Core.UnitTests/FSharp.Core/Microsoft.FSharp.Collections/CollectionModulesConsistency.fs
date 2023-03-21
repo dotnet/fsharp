@@ -227,7 +227,8 @@ let exists<'a when 'a : equality> (xs : 'a []) f =
     let s = xs |> Seq.exists f
     let l = xs |> List.ofArray |> List.exists f
     let a = xs |> Array.exists f
-    consistency "exists" s l a
+    let pa = xs |> Array.Parallel.exists f
+    consistencyIncludingParallel "exists" s l a pa
 
 [<Fact>]
 let ``exists is consistent`` () =
@@ -374,7 +375,8 @@ let forall<'a when 'a : equality> (xs : 'a []) f =
     let s = xs |> Seq.forall f
     let l = xs |> List.ofArray |> List.forall f
     let a = xs |> Array.forall f
-    consistency "forall" s l a
+    let pa = xs |> Array.Parallel.forall f
+    consistencyIncludingParallel "forall" s l a pa
 
 [<Fact>]
 let ``forall is consistent`` () =
