@@ -306,7 +306,6 @@ type BoundModel private (tcConfig: TcConfig,
                          beforeFileChecked: Event<string>,
                          fileChecked: Event<string>,
                          prevTcInfo: TcInfo,
-                         partial: bool,
                          syntaxTreeOpt: SyntaxTree option,
                          tcInfoStateOpt: TcInfoState option) as this =
 
@@ -363,7 +362,7 @@ type BoundModel private (tcConfig: TcConfig,
     //        | _ -> None
     //    | _ -> None
 
-    member _.Next(syntaxTree, tcInfo, partial) =
+    member _.Next(syntaxTree, tcInfo) =
         BoundModel(
             tcConfig,
             tcGlobals,
@@ -375,7 +374,6 @@ type BoundModel private (tcConfig: TcConfig,
             beforeFileChecked,
             fileChecked,
             tcInfo,
-            partial,
             Some syntaxTree,
             None)
 
@@ -410,7 +408,6 @@ type BoundModel private (tcConfig: TcConfig,
                     beforeFileChecked,
                     fileChecked,
                     prevTcInfo,
-                    false,
                     syntaxTreeOpt,
                     Some finishState)
         }
@@ -565,7 +562,6 @@ type BoundModel private (tcConfig: TcConfig,
                          beforeFileChecked: Event<string>,
                          fileChecked: Event<string>,
                          prevTcInfo: TcInfo,
-                         partial,
                          syntaxTreeOpt: SyntaxTree option) =
         BoundModel(tcConfig, tcGlobals, tcImports,
                       keepAssemblyContents, keepAllBackgroundResolutions,
@@ -574,7 +570,6 @@ type BoundModel private (tcConfig: TcConfig,
                       beforeFileChecked,
                       fileChecked,
                       prevTcInfo,
-                      partial,
                       syntaxTreeOpt,
                       None)
 
@@ -811,14 +806,13 @@ module IncrementalBuilderHelpers =
                 beforeFileChecked,
                 fileChecked,
                 tcInfo,
-                false,
                 None) }
 
     /// Type check all files eagerly.
-    let TypeCheckTask (prevBoundModel: BoundModel) syntaxTree partial : NodeCode<BoundModel> =
+    let TypeCheckTask (prevBoundModel: BoundModel) syntaxTree : NodeCode<BoundModel> =
         node {
             let! tcInfo = prevBoundModel.GetOrComputeTcInfo()
-            let boundModel = prevBoundModel.Next(syntaxTree, tcInfo, partial)
+            let boundModel = prevBoundModel.Next(syntaxTree, tcInfo)
 
             // Eagerly type check
             // We need to do this to keep the expected behavior of events (namely fileChecked) when checking a file/project.
@@ -1020,10 +1014,10 @@ module IncrementalBuilderStateHelpers =
 
     type SlotStatus = Invalidated | Good
 
-    let createBoundModelGraphNode partial (prevBoundModel: GraphNode<BoundModel>) syntaxTree =
+    let createBoundModelGraphNode (prevBoundModel: GraphNode<BoundModel>) syntaxTree =
         GraphNode(node {
             let! prevBoundModel = prevBoundModel.GetOrComputeValue()
-            return! TypeCheckTask prevBoundModel syntaxTree partial  
+            return! TypeCheckTask prevBoundModel syntaxTree  
         })
 
     let rec createFinalizeBoundModelGraphNode (initialState: IncrementalBuilderInitialState) (boundModels: GraphNode<BoundModel> seq) =
@@ -1067,8 +1061,7 @@ module IncrementalBuilderStateHelpers =
             let invalidate = slot.Notified || status = Invalidated
             let updatedSlot, nextNode =
                 if invalidate then
-                    let partial = slot.HasSignature && not slot.Notified
-                    let graphNode = createBoundModelGraphNode partial prevNode slot.SyntaxTree
+                    let graphNode = createBoundModelGraphNode prevNode slot.SyntaxTree
                     { slot with LogicalStamp = slot.Stamp; Notified = false; Model = graphNode }, graphNode
                 else
                     slot, slot.Model
@@ -1136,7 +1129,7 @@ type IncrementalBuilderState with
 
         let boundModels = 
             syntaxTrees
-            |> Seq.scan (createBoundModelGraphNode true) initialBoundModel
+            |> Seq.scan createBoundModelGraphNode initialBoundModel
             |> Seq.skip 1
 
         let slots =
