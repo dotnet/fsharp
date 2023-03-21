@@ -1779,11 +1779,33 @@ let CheckMultipleInputsUsingGraphMode
 
         partialResults, tcState)
 
+/// The Typars of a Val can be determined by the call site.
+/// As the type-checking can now happen in parallel, the naming is no longer deterministic.
+/// Overall this only seems to affect the pickled signature data later on.
+/// But in order to regain deterministic names, we re-do the pretty naming for all typars of Vals.
+let rec updatePrettyNamesForTyparsInEntity (entity: Entity) =
+    for e in entity.ModuleOrNamespaceType.AllEntities do
+        updatePrettyNamesForTyparsInEntity e
+
+    for v in entity.ModuleOrNamespaceType.AllValsAndMembers do
+        updatePrettyNamesForTyparsInVal v
+
+and updatePrettyNamesForTyparsInVal (v: Val) =
+    if not (List.isEmpty v.Typars) then
+        // Reset typar name to ?
+        for typar in v.Typars do
+            typar.typar_id <- Ident(unassignedTyparName, typar.typar_id.idRange)
+
+        let nms = PrettyTypes.PrettyTyparNames (fun _ -> true) List.empty v.Typars
+
+        (v.Typars, nms)
+        ||> List.iter2 (fun tp nm -> tp.typar_id <- ident (nm, tp.Range))
+
 let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs) =
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions
     let results, tcState =
         match tcConfig.typeCheckingConfig.Mode with
-        | TypeCheckingMode.Graph when (not tcConfig.isInteractive && not tcConfig.deterministic) ->
+        | TypeCheckingMode.Graph when (not tcConfig.isInteractive) ->
             CheckMultipleInputsUsingGraphMode(
                 ctok,
                 checkForErrors,
@@ -1802,6 +1824,8 @@ let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tc
 
     let tcState, declaredImpls, ccuContents =
         CheckClosedInputSetFinish(implFiles, tcState)
+
+    updatePrettyNamesForTyparsInEntity ccuContents
 
     tcState.Ccu.Deref.Contents <- ccuContents
     tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
