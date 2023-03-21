@@ -31,7 +31,7 @@ type internal FSharpTaskListService
     interface IFSharpTaskListService with
         member _.GetTaskListItemsAsync(doc,desc,cancellationToken) = 
             backgroundTask{
-                let foundTaskItems = ImmutableArray.CreateBuilder()
+                let foundTaskItems = ImmutableArray.CreateBuilder(initialCapacity=0)
                 let! sourceText = doc.GetTextAsync(cancellationToken)             
                 let! defines = doc |> getDefines
                
@@ -63,7 +63,8 @@ type internal FSharpTaskListService
                                 if (idx+taskLength) >= lineTxt.Length || not (Char.IsLetter(lineTxt.[idx+taskLength])) then
                                     let taskText = lineTxt.Substring(idx,taskLength).TrimEnd([|'*';')'|])
                                     let taskSpan = new TextSpan(line.Span.Start+idx, taskText.Length)
-                                    foundTaskItems.Add(new FSharpTaskListItem(d, taskText, doc, taskSpan))                          
+                                    foundTaskItems.Add(new FSharpTaskListItem(d, taskText, doc, taskSpan))                         
                        
+    
                 return foundTaskItems.ToImmutable()
             } 
