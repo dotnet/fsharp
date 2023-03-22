@@ -27,25 +27,31 @@ type internal FSharpTaskListService
             return CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions }
         |> Async.map (Option.defaultValue [])
 
-    member _.GetTaskListItems(doc:Microsoft.CodeAnalysis.Document, descriptors: (string*'T)[], ct) = 
+    let extractContractedComments (tokens:Tokenizer.SavedTokenInfo[]) = 
+        let granularTokens = tokens |> Array.filter(fun t -> t.Kind = LexerSymbolKind.Comment)               
+
+        let contractedTokens = 
+            ([],granularTokens) 
+            ||> Array.fold (fun acc token -> 
+                let token = {|Left = token.LeftColumn; Right = token.RightColumn|} 
+                match acc with
+                | [] -> [token]
+                | head :: tail when token.Left-head.Right <= 1   -> {|token with Left = head.Left|} :: tail
+                | _  -> token :: acc )
+        contractedTokens
+        
+
+    member _.GetTaskListItems(doc:Microsoft.CodeAnalysis.Document, descriptors: (string*FSharpTaskListDescriptor)[], cancellationToken) = 
             backgroundTask{
                 let foundTaskItems = ImmutableArray.CreateBuilder(initialCapacity=0)
-                let! sourceText = doc.GetTextAsync(ct)             
+                let! sourceText = doc.GetTextAsync(cancellationToken)             
                 let! defines = doc |> getDefines
                
                 for line in sourceText.Lines do  
-                 
-                    let unfilteredTokens = Tokenizer.tokenizeLine(doc.Id, sourceText, line.Span.Start, doc.FilePath, defines) 
-                    let granularTokens = unfilteredTokens |> Array.filter(fun t -> t.Kind = LexerSymbolKind.Comment)               
 
                     let contractedTokens = 
-                        ([],granularTokens) 
-                        ||> Array.fold (fun acc token -> 
-                            let token = {|Left = token.LeftColumn; Right = token.RightColumn|} 
-                            match acc with
-                            | [] -> [token]
-                            | head :: tail when token.Left-head.Right <= 1   -> {|token with Left = head.Left|} :: tail
-                            | _  -> token :: acc )
+                        Tokenizer.tokenizeLine(doc.Id, sourceText, line.Span.Start, doc.FilePath, defines, cancellationToken)
+                        |> extractContractedComments                      
 
                     for ct in contractedTokens do    
                         let lineTxt = line.ToString()
@@ -61,6 +67,7 @@ type internal FSharpTaskListService
                                 if idxAfterDesc >= lineTxt.Length || not (Char.IsLetter(lineTxt.[idxAfterDesc])) then
                                     let taskText = lineTxt.Substring(idx,taskLength).TrimEnd([|'*';')'|])
                                     let taskSpan = new TextSpan(line.Span.Start+idx, taskText.Length)
+
                                     foundTaskItems.Add(new FSharpTaskListItem(d, taskText, doc, taskSpan))                         
                        
     

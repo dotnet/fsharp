@@ -27,7 +27,7 @@ type internal FSharpIndentationService
     static member IndentShouldFollow (documentId: DocumentId, sourceText: SourceText, filePath: string, position: int, parsingOptions: FSharpParsingOptions) =
         let lastTokenOpt =
            let defines = CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions
-           let tokens = Tokenizer.tokenizeLine(documentId, sourceText, position, filePath, defines)
+           let tokens = Tokenizer.tokenizeLine(documentId, sourceText, position, filePath, defines, CancellationToken.None)
 
            tokens
            |> Array.rev

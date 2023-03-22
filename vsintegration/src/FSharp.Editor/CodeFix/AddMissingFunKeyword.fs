@@ -42,7 +42,7 @@ type internal FSharpAddMissingFunKeywordCodeFixProvider
 
                 loop sourceText.[context.Span.Start - 1] context.Span.Start
 
-            let! intendedArgLexerSymbol = Tokenizer.getSymbolAtPosition (document.Id, sourceText, adjustedPosition, document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
+            let! intendedArgLexerSymbol = Tokenizer.getSymbolAtPosition (document.Id, sourceText, adjustedPosition, document.FilePath, defines, SymbolLookupKind.Greedy, false, false, context.CancellationToken)
             let! intendedArgSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, intendedArgLexerSymbol.Range)
 
             let diagnostics =

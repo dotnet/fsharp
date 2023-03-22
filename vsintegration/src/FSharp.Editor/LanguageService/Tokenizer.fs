@@ -360,7 +360,7 @@ module internal Tokenizer =
         member token.IsPunctuation = (token.ColorClass = FSharpTokenColorKind.Punctuation)
         member token.IsString = (token.ColorClass = FSharpTokenColorKind.String)
         member token.IsComment = (token.ColorClass = FSharpTokenColorKind.Comment)
-        member token.IsKeyWord = (token.ColorClass = FSharpTokenColorKind.Keyword)
+        member token.IsKeyword = (token.ColorClass = FSharpTokenColorKind.Keyword)
     
     /// This is the information we save for each token in a line for each active document.
     /// It is a memory-critical data structure - do not make larger. This used to be ~100 bytes class, is now 8-byte struct
@@ -392,7 +392,7 @@ module internal Tokenizer =
                 elif token.IsIdentifier then LexerSymbolKind.Ident 
                 elif token.IsPunctuation then LexerSymbolKind.Punctuation
                 elif token.IsString then LexerSymbolKind.String
-                elif token.IsKeyWord then LexerSymbolKind.Keyword
+                elif token.IsKeyword then LexerSymbolKind.Keyword
                 elif token.IsComment then LexerSymbolKind.Comment
                 else LexerSymbolKind.Other
             Debug.Assert(uint32 token.Tag < 0xFFFFu)
@@ -562,66 +562,82 @@ module internal Tokenizer =
             dict.TryAdd(defines, data) |> ignore
             data
 
+    let private getFromRefreshedTokenCache
+        (lines: TextLineCollection, 
+        startLine: int,
+        endLine: int,
+        sourceTokenizer: FSharpSourceTokenizer, 
+        sourceTextDataCache : SourceTextData, 
+        ct: CancellationToken) = 
+        [
+            // Go backwards to find the last cached scanned line that is valid
+            let scanStartLine = 
+                let mutable i = startLine
+                while i > 0 && (match sourceTextDataCache.[i] with Some data -> not (data.IsValid(lines.[i])) | None -> true)  do
+                    i <- i - 1
+                i
+            // Rescan the lines if necessary and report the information           
+            let mutable lexState = if scanStartLine = 0 then FSharpTokenizerLexState.Initial else sourceTextDataCache.[scanStartLine - 1].Value.LexStateAtEndOfLine
+ 
+            for i = scanStartLine to endLine do
+                ct.ThrowIfCancellationRequested()
+                let textLine = lines.[i]
+                let lineContents = textLine.Text.ToString(textLine.Span)
+ 
+                let lineData = 
+                    // We can reuse the old data when 
+                    //   1. the line starts at the same overall position
+                    //   2. the hash codes match
+                    //   3. the start-of-line lex states are the same
+                    match sourceTextDataCache.[i] with 
+                    | Some data when data.IsValid(textLine) && data.LexStateAtStartOfLine.Equals(lexState) -> 
+                        data
+                    | _ -> 
+                        // Otherwise, we recompute
+                        let newData = scanSourceLine(sourceTokenizer, textLine, lineContents, lexState)
+                        sourceTextDataCache.[i] <- Some newData
+                        newData
+                     
+                lexState <- lineData.LexStateAtEndOfLine
+                if i >= startLine then 
+                    yield lineData, lineContents
+
+
+            // If necessary, invalidate all subsequent lines after endLine
+            if endLine < lines.Count - 1 then 
+                match sourceTextDataCache.[endLine+1] with 
+                | Some data  -> 
+                    if not (data.LexStateAtStartOfLine.Equals(lexState)) then
+                        sourceTextDataCache.ClearFrom (endLine+1)
+                | None -> ()
+        ]
+     
+
     /// Generates a list of Classified Spans for tokens which undergo syntactic classification (i.e., are not typechecked).
     let getClassifiedSpans(documentKey: DocumentId, sourceText: SourceText, textSpan: TextSpan, fileName: string option, defines: string list, 
-                             cancellationToken: CancellationToken) : List<ClassifiedSpan> =
-            try
+                             cancellationToken: CancellationToken) : ResizeArray<ClassifiedSpan> =
+            let result = new ResizeArray<ClassifiedSpan>()
+            try               
                 let sourceTokenizer = FSharpSourceTokenizer(defines, fileName)
                 let lines = sourceText.Lines
                 let sourceTextData = getSourceTextData(documentKey, defines, lines.Count)
  
                 let startLine = lines.GetLineFromPosition(textSpan.Start).LineNumber
                 let endLine = lines.GetLineFromPosition(textSpan.End).LineNumber
-                // Go backwards to find the last cached scanned line that is valid
-                let scanStartLine = 
-                    let mutable i = startLine
-                    while i > 0 && (match sourceTextData.[i] with Some data -> not (data.IsValid(lines.[i])) | None -> true)  do
-                        i <- i - 1
-                    i
-                // Rescan the lines if necessary and report the information
-                let result = new List<ClassifiedSpan>()
-                let mutable lexState = if scanStartLine = 0 then FSharpTokenizerLexState.Initial else sourceTextData.[scanStartLine - 1].Value.LexStateAtEndOfLine
- 
-                for i = scanStartLine to endLine do
-                    cancellationToken.ThrowIfCancellationRequested()
-                    let textLine = lines.[i]
-                    let lineContents = textLine.Text.ToString(textLine.Span)
- 
-                    let lineData = 
-                        // We can reuse the old data when 
-                        //   1. the line starts at the same overall position
-                        //   2. the hash codes match
-                        //   3. the start-of-line lex states are the same
-                        match sourceTextData.[i] with 
-                        | Some data when data.IsValid(textLine) && data.LexStateAtStartOfLine.Equals(lexState) -> 
-                            data
-                        | _ -> 
-                            // Otherwise, we recompute
-                            let newData = scanSourceLine(sourceTokenizer, textLine, lineContents, lexState)
-                            sourceTextData.[i] <- Some newData
-                            newData
-                     
-                    lexState <- lineData.LexStateAtEndOfLine
- 
-                    if startLine <= i then
-                        result.AddRange(lineData.ClassifiedSpans |> Array.filter(fun token ->
-                            textSpan.Contains(token.TextSpan.Start) ||
-                            textSpan.Contains(token.TextSpan.End - 1) ||
-                            (token.TextSpan.Start <= textSpan.Start && textSpan.End <= token.TextSpan.End)))
 
-                // If necessary, invalidate all subsequent lines after endLine
-                if endLine < lines.Count - 1 then 
-                    match sourceTextData.[endLine+1] with 
-                    | Some data  -> 
-                        if not (data.LexStateAtStartOfLine.Equals(lexState)) then
-                            sourceTextData.ClearFrom (endLine+1)
-                    | None -> ()
-                result
+                let lineDataResults = getFromRefreshedTokenCache(lines, startLine, endLine, sourceTokenizer, sourceTextData, cancellationToken)              
+                
+                for lineData,_ in lineDataResults do 
+                    result.AddRange(lineData.ClassifiedSpans |> Array.filter(fun token ->
+                        textSpan.Contains(token.TextSpan.Start) ||
+                        textSpan.Contains(token.TextSpan.End - 1) ||
+                        (token.TextSpan.Start <= textSpan.Start && textSpan.End <= token.TextSpan.End)))
+
             with 
             | :? System.OperationCanceledException -> reraise()
-            |  ex -> 
-                Assert.Exception(ex)
-                List<ClassifiedSpan>()
+            |  ex -> Assert.Exception(ex)
+
+            result
 
     /// Returns symbol at a given position.
     let private getSymbolFromSavedTokens 
@@ -738,52 +754,20 @@ module internal Tokenizer =
                             (Position.mkPos (linePos.Line + 1) (token.RightColumn + 1))) 
                 FullIsland = partialName.QualifyingIdents @ [identStr] })
 
-    let private getCachedSourceLineData(documentKey: DocumentId, sourceText: SourceText, position: int, fileName: string, defines: string list) = 
-        let textLine = sourceText.Lines.GetLineFromPosition(position)
+    let private getCachedSourceLineData(documentKey: DocumentId, sourceText: SourceText, position: int, fileName: string, defines: string list, cancellationToken) =          
         let textLinePos = sourceText.Lines.GetLinePosition(position)      
-        let sourceTokenizer = FSharpSourceTokenizer(defines, Some fileName)
-        let lines = sourceText.Lines
+        let sourceTokenizer = FSharpSourceTokenizer(defines, Some fileName) 
         // We keep incremental data per-document. When text changes we correlate text line-by-line (by hash codes of lines)
-        let sourceTextData = getSourceTextData(documentKey, defines, lines.Count)
-        // Go backwards to find the last cached scanned line that is valid
-        let scanStartLine = 
-            let mutable i = min (lines.Count - 1) textLinePos.Line
-            while i > 0 &&
-                (match sourceTextData.[i] with 
-                | Some data -> not (data.IsValid(lines.[i])) 
-                | None -> true
-                ) do  
-                i <- i - 1
-            i
-        let lexState = if scanStartLine = 0 then FSharpTokenizerLexState.Initial else sourceTextData.[scanStartLine - 1].Value.LexStateAtEndOfLine
-        let lineContents = textLine.Text.ToString(textLine.Span)
-        
-        // We can reuse the old data when 
-        //   1. the line starts at the same overall position
-        //   2. the hash codes match
-        //   3. the start-of-line lex states are the same
-        match sourceTextData.[textLinePos.Line] with 
-        | Some data when data.IsValid(textLine) && data.LexStateAtStartOfLine = lexState -> 
-            data, textLinePos, lineContents
-        | _ -> 
-            System.Diagnostics.Debug.WriteLine($"Tokenizer cache miss. Line {textLinePos.Line}, has to start from {scanStartLine}.")
-            // Otherwise, we recompute
-            // LexState can flow between lines (#if blocks, multiline comments, multiline strings), we have to recompute from last known line
-            let mutable lastState = lexState
-            for i=scanStartLine to textLinePos.Line - 1 do
-                let line = lines.[i]
-                let lineContents = line.Text.ToString(line.Span)
-                let newData = scanSourceLine(sourceTokenizer, line, lineContents, lastState)
-                sourceTextData.[i] <- Some newData
-                lastState <- newData.LexStateAtEndOfLine
-
-            let newData = scanSourceLine(sourceTokenizer, textLine, lineContents, lastState)
-            sourceTextData.[textLinePos.Line] <- Some newData
-            newData, textLinePos, lineContents
+        let sourceTextData = getSourceTextData(documentKey, defines, sourceText.Lines.Count)
+        let lineNo = textLinePos.Line
+        let lineData, contents = 
+            getFromRefreshedTokenCache(sourceText.Lines, lineNo, lineNo, sourceTokenizer, sourceTextData, cancellationToken) 
+            |> List.exactlyOne
+        lineData, textLinePos, contents       
            
-    let tokenizeLine (documentKey, sourceText, position, fileName, defines) =
+    let tokenizeLine (documentKey, sourceText, position, fileName, defines, cancellationToken) =
         try
-            let lineData, _, _ = getCachedSourceLineData(documentKey, sourceText, position, fileName, defines)
+            let lineData, _, _ = getCachedSourceLineData(documentKey, sourceText, position, fileName, defines, cancellationToken)
             lineData.SavedTokens   
         with 
         |  ex -> 
@@ -799,12 +783,13 @@ module internal Tokenizer =
             defines: string list, 
             lookupKind: SymbolLookupKind,
             wholeActivePatterns: bool,
-            allowStringToken: bool
+            allowStringToken: bool,
+            cancellationToken
         ) 
         : LexerSymbol option =
         
         try
-            let lineData, textLinePos, lineContents = getCachedSourceLineData(documentKey, sourceText, position, fileName, defines)
+            let lineData, textLinePos, lineContents = getCachedSourceLineData(documentKey, sourceText, position, fileName, defines, cancellationToken)
             getSymbolFromSavedTokens(fileName, lineData.SavedTokens, textLinePos, lineContents, lookupKind, wholeActivePatterns, allowStringToken)
         with 
         | :? System.OperationCanceledException -> reraise()
