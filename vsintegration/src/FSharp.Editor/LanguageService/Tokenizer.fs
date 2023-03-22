@@ -412,7 +412,7 @@ module internal Tokenizer =
                 elif token.IsKeyword then
                     LexerSymbolKind.Keyword
                 elif token.IsComment then
-                    then LexerSymbolKind.Comment
+                    LexerSymbolKind.Comment
                 else
                     LexerSymbolKind.Other
 
