@@ -17,13 +17,10 @@ open FSharp.Compiler.Symbols
 open Microsoft.CodeAnalysis.CodeActions
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "AddTypeAnnotationToObjectOfIndeterminateType"); Shared>]
-type internal FSharpAddTypeAnnotationToObjectOfIndeterminateTypeFixProvider
-    [<ImportingConstructor>]
-    (
-    ) =
+type internal FSharpAddTypeAnnotationToObjectOfIndeterminateTypeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
-    let fixableDiagnosticIds = set ["FS0072"; "FS3245"]
+    let fixableDiagnosticIds = set [ "FS0072"; "FS3245" ]
 
     override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
@@ -41,16 +38,42 @@ type internal FSharpAddTypeAnnotationToObjectOfIndeterminateTypeFixProvider
             let textLine = sourceText.Lines.GetLineFromPosition position
             let textLinePos = sourceText.Lines.GetLinePosition position
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
-            let! lexerSymbol = document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false, nameof(FSharpAddTypeAnnotationToObjectOfIndeterminateTypeFixProvider))
 
-            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpAddTypeAnnotationToObjectOfIndeterminateTypeFixProvider)) |> liftAsync
-            let decl = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, false)
+            let! lexerSymbol =
+                document.TryFindFSharpLexerSymbolAsync(
+                    position,
+                    SymbolLookupKind.Greedy,
+                    false,
+                    false,
+                    nameof (FSharpAddTypeAnnotationToObjectOfIndeterminateTypeFixProvider)
+                )
+
+            let! _, checkFileResults =
+                document.GetFSharpParseAndCheckResultsAsync(nameof (FSharpAddTypeAnnotationToObjectOfIndeterminateTypeFixProvider))
+                |> liftAsync
+
+            let decl =
+                checkFileResults.GetDeclarationLocation(
+                    fcsTextLineNumber,
+                    lexerSymbol.Ident.idRange.EndColumn,
+                    textLine.ToString(),
+                    lexerSymbol.FullIsland,
+                    false
+                )
 
             match decl with
             | FindDeclResult.DeclFound declRange when declRange.FileName = document.FilePath ->
                 let! declSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, declRange)
                 let declTextLine = sourceText.Lines.GetLineFromPosition declSpan.Start
-                let! symbolUse = checkFileResults.GetSymbolUseAtLocation(declRange.StartLine, declRange.EndColumn, declTextLine.ToString(), lexerSymbol.FullIsland)
+
+                let! symbolUse =
+                    checkFileResults.GetSymbolUseAtLocation(
+                        declRange.StartLine,
+                        declRange.EndColumn,
+                        declTextLine.ToString(),
+                        lexerSymbol.FullIsland
+                    )
+
                 match symbolUse.Symbol with
                 | :? FSharpMemberOrFunctionOrValue as mfv ->
                     let typeString = mfv.FullType.FormatWithConstraints symbolUse.DisplayContext
@@ -71,15 +94,17 @@ type internal FSharpAddTypeAnnotationToObjectOfIndeterminateTypeFixProvider
                         let hasLeftParen = leftLoop sourceText.[declSpan.Start - 1] (declSpan.Start - 1)
                         let hasRightParen = rightLoop sourceText.[declSpan.End] declSpan.End
                         hasLeftParen && hasRightParen
-                            
+
                     let getChangedText (sourceText: SourceText) =
                         if alreadyWrappedInParens then
                             sourceText.WithChanges(TextChange(TextSpan(declSpan.End, 0), ": " + typeString))
                         else
-                            sourceText.WithChanges(TextChange(TextSpan(declSpan.Start, 0), "("))
-                                        .WithChanges(TextChange(TextSpan(declSpan.End + 1, 0), ": " + typeString + ")"))
+                            sourceText
+                                .WithChanges(TextChange(TextSpan(declSpan.Start, 0), "("))
+                                .WithChanges(TextChange(TextSpan(declSpan.End + 1, 0), ": " + typeString + ")"))
 
                     let title = SR.AddTypeAnnotation()
+
                     let codeAction =
                         CodeAction.Create(
                             title,
@@ -87,11 +112,13 @@ type internal FSharpAddTypeAnnotationToObjectOfIndeterminateTypeFixProvider
                                 async {
                                     let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                                     return context.Document.WithText(getChangedText sourceText)
-                                } |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
-                            title)
+                                }
+                                |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
+                            title
+                        )
 
                     context.RegisterCodeFix(codeAction, diagnostics)
-                |_ -> ()
+                | _ -> ()
             | _ -> ()
         }
         |> Async.Ignore

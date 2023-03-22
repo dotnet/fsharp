@@ -22,7 +22,7 @@ type internal MissingReferenceCodeFixProvider() =
     inherit CodeFixProvider()
 
     let fixableDiagnosticId = "FS0074"
-        
+
     let createCodeFix (title: string, context: CodeFixContext, addReference: ReferenceType) =
         CodeAction.Create(
             title,
@@ -32,27 +32,27 @@ type internal MissingReferenceCodeFixProvider() =
                     let solution = project.Solution
 
                     match addReference with
-                    | AddProjectRef projectRef -> 
+                    | AddProjectRef projectRef ->
                         let references = project.AllProjectReferences
-                        let newReferences = references |> Seq.append [projectRef]
+                        let newReferences = references |> Seq.append [ projectRef ]
                         return solution.WithProjectReferences(project.Id, newReferences)
 
                     | AddMetadataRef metadataRef ->
                         let references = project.MetadataReferences
-                        let newReferences = references |> Seq.append [metadataRef]
+                        let newReferences = references |> Seq.append [ metadataRef ]
                         return solution.WithProjectMetadataReferences(project.Id, newReferences)
                 }
-                |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
-                ),
-            title)
+                |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
+            title
+        )
 
-    override _.FixableDiagnosticIds = Seq.toImmutableArray [fixableDiagnosticId]
+    override _.FixableDiagnosticIds = Seq.toImmutableArray [ fixableDiagnosticId ]
 
     override _.RegisterCodeFixesAsync context : Task =
-        async { 
+        async {
             let solution = context.Document.Project.Solution
 
-            context.Diagnostics 
+            context.Diagnostics
             |> Seq.filter (fun x -> x.Id = fixableDiagnosticId)
             |> Seq.iter (fun diagnostic ->
                 let message = diagnostic.GetMessage()
@@ -64,41 +64,33 @@ type internal MissingReferenceCodeFixProvider() =
                     let exactProjectMatches =
                         solution.Projects
                         |> Seq.tryFind (fun project ->
-                            String.Compare(project.AssemblyName, assemblyName, StringComparison.OrdinalIgnoreCase) = 0
-                            )
-                
+                            String.Compare(project.AssemblyName, assemblyName, StringComparison.OrdinalIgnoreCase) = 0)
+
                     match exactProjectMatches with
                     | Some refProject ->
-                        let codefix = 
-                            createCodeFix(
+                        let codefix =
+                            createCodeFix (
                                 String.Format(SR.AddProjectReference(), refProject.Name),
                                 context,
-                                AddProjectRef (ProjectReference refProject.Id)
-                                )
+                                AddProjectRef(ProjectReference refProject.Id)
+                            )
 
-                        context.RegisterCodeFix (codefix, ImmutableArray.Create diagnostic)
+                        context.RegisterCodeFix(codefix, ImmutableArray.Create diagnostic)
                     | None ->
                         let metadataReferences =
                             solution.Projects
                             |> Seq.collect (fun project -> project.MetadataReferences)
                             |> Seq.tryFind (fun ref ->
                                 let referenceAssemblyName = Path.GetFileNameWithoutExtension(ref.Display)
-                                String.Compare(referenceAssemblyName, assemblyName, StringComparison.OrdinalIgnoreCase) = 0
-                                )
-                        
+                                String.Compare(referenceAssemblyName, assemblyName, StringComparison.OrdinalIgnoreCase) = 0)
+
                         match metadataReferences with
                         | Some metadataRef ->
-                            let codefix = 
-                                createCodeFix(
-                                    String.Format(SR.AddAssemblyReference(), assemblyName),
-                                    context,
-                                    AddMetadataRef metadataRef
-                                    )
+                            let codefix =
+                                createCodeFix (String.Format(SR.AddAssemblyReference(), assemblyName), context, AddMetadataRef metadataRef)
 
-                            context.RegisterCodeFix (codefix, ImmutableArray.Create diagnostic)
-                        | None ->
-                            ()
-                | _ -> ()
-                )
+                            context.RegisterCodeFix(codefix, ImmutableArray.Create diagnostic)
+                        | None -> ()
+                | _ -> ())
         }
         |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
