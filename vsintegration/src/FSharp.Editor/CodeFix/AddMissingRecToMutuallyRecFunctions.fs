@@ -78,7 +78,19 @@ type internal FSharpAddMissingRecToMutuallyRecFunctionsCodeFixProvider [<Importi
                     false
                 )
 
-            let! funcLexerSymbol = Tokenizer.getSymbolAtPosition (context.Document.Id, sourceText, funcStartPos, context.Document.FilePath, defines, SymbolLookupKind.Greedy, false, false, context.CancellationToken)
+            let! funcLexerSymbol =
+                Tokenizer.getSymbolAtPosition (
+                    context.Document.Id,
+                    sourceText,
+                    funcStartPos,
+                    context.Document.FilePath,
+                    defines,
+                    SymbolLookupKind.Greedy,
+                    false,
+                    false,
+                    context.CancellationToken
+                )
+
             let! funcNameSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, funcLexerSymbol.Range)
             let funcName = sourceText.GetSubText(funcNameSpan).ToString()
 

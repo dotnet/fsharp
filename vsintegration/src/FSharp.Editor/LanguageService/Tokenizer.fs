@@ -365,7 +365,7 @@ module internal Tokenizer =
         member token.IsString = (token.ColorClass = FSharpTokenColorKind.String)
         member token.IsComment = (token.ColorClass = FSharpTokenColorKind.Comment)
         member token.IsKeyword = (token.ColorClass = FSharpTokenColorKind.Keyword)
-    
+
     /// This is the information we save for each token in a line for each active document.
     /// It is a memory-critical data structure - do not make larger. This used to be ~100 bytes class, is now 8-byte struct
     [<Literal>]
@@ -401,20 +401,13 @@ module internal Tokenizer =
 
         static member inline Create(token: FSharpTokenInfo) =
             let kind =
-                if token.IsOperator then
-                    LexerSymbolKind.Operator
-                elif token.IsIdentifier then
-                    LexerSymbolKind.Ident
-                elif token.IsPunctuation then
-                    LexerSymbolKind.Punctuation
-                elif token.IsString then
-                    LexerSymbolKind.String
-                elif token.IsKeyword then
-                    LexerSymbolKind.Keyword
-                elif token.IsComment then
-                    LexerSymbolKind.Comment
-                else
-                    LexerSymbolKind.Other
+                if token.IsOperator then LexerSymbolKind.Operator
+                elif token.IsIdentifier then LexerSymbolKind.Ident
+                elif token.IsPunctuation then LexerSymbolKind.Punctuation
+                elif token.IsString then LexerSymbolKind.String
+                elif token.IsKeyword then LexerSymbolKind.Keyword
+                elif token.IsComment then LexerSymbolKind.Comment
+                else LexerSymbolKind.Other
 
             Debug.Assert(uint32 token.Tag < 0xFFFFu)
             Debug.Assert(uint32 kind < 0xFFu)
@@ -635,82 +628,102 @@ module internal Tokenizer =
             data
 
     let private getFromRefreshedTokenCache
-        (lines: TextLineCollection, 
-        startLine: int,
-        endLine: int,
-        sourceTokenizer: FSharpSourceTokenizer, 
-        sourceTextDataCache : SourceTextData, 
-        ct: CancellationToken) = 
+        (
+            lines: TextLineCollection,
+            startLine: int,
+            endLine: int,
+            sourceTokenizer: FSharpSourceTokenizer,
+            sourceTextDataCache: SourceTextData,
+            ct: CancellationToken
+        ) =
         [
             // Go backwards to find the last cached scanned line that is valid
-            let scanStartLine = 
+            let scanStartLine =
                 let mutable i = startLine
-                while i > 0 && (match sourceTextDataCache.[i] with Some data -> not (data.IsValid(lines.[i])) | None -> true)  do
+
+                while i > 0
+                      && (match sourceTextDataCache.[i] with
+                          | Some data -> not (data.IsValid(lines.[i]))
+                          | None -> true) do
                     i <- i - 1
+
                 i
-            // Rescan the lines if necessary and report the information           
-            let mutable lexState = if scanStartLine = 0 then FSharpTokenizerLexState.Initial else sourceTextDataCache.[scanStartLine - 1].Value.LexStateAtEndOfLine
- 
+            // Rescan the lines if necessary and report the information
+            let mutable lexState =
+                if scanStartLine = 0 then
+                    FSharpTokenizerLexState.Initial
+                else
+                    sourceTextDataCache.[scanStartLine - 1].Value.LexStateAtEndOfLine
+
             for i = scanStartLine to endLine do
                 ct.ThrowIfCancellationRequested()
                 let textLine = lines.[i]
                 let lineContents = textLine.Text.ToString(textLine.Span)
- 
-                let lineData = 
-                    // We can reuse the old data when 
+
+                let lineData =
+                    // We can reuse the old data when
                     //   1. the line starts at the same overall position
                     //   2. the hash codes match
                     //   3. the start-of-line lex states are the same
-                    match sourceTextDataCache.[i] with 
-                    | Some data when data.IsValid(textLine) && data.LexStateAtStartOfLine.Equals(lexState) -> 
-                        data
-                    | _ -> 
+                    match sourceTextDataCache.[i] with
+                    | Some data when data.IsValid(textLine) && data.LexStateAtStartOfLine.Equals(lexState) -> data
+                    | _ ->
                         // Otherwise, we recompute
-                        let newData = scanSourceLine(sourceTokenizer, textLine, lineContents, lexState)
+                        let newData = scanSourceLine (sourceTokenizer, textLine, lineContents, lexState)
                         sourceTextDataCache.[i] <- Some newData
                         newData
-                     
+
                 lexState <- lineData.LexStateAtEndOfLine
-                if i >= startLine then 
+
+                if i >= startLine then
                     yield lineData, lineContents
 
-
             // If necessary, invalidate all subsequent lines after endLine
-            if endLine < lines.Count - 1 then 
-                match sourceTextDataCache.[endLine+1] with 
-                | Some data  -> 
+            if endLine < lines.Count - 1 then
+                match sourceTextDataCache.[endLine + 1] with
+                | Some data ->
                     if not (data.LexStateAtStartOfLine.Equals(lexState)) then
-                        sourceTextDataCache.ClearFrom (endLine+1)
+                        sourceTextDataCache.ClearFrom(endLine + 1)
                 | None -> ()
         ]
-     
 
     /// Generates a list of Classified Spans for tokens which undergo syntactic classification (i.e., are not typechecked).
-    let getClassifiedSpans(documentKey: DocumentId, sourceText: SourceText, textSpan: TextSpan, fileName: string option, defines: string list, 
-                             cancellationToken: CancellationToken) : ResizeArray<ClassifiedSpan> =
-            let result = new ResizeArray<ClassifiedSpan>()
-            try               
-                let sourceTokenizer = FSharpSourceTokenizer(defines, fileName)
-                let lines = sourceText.Lines
-                let sourceTextData = getSourceTextData(documentKey, defines, lines.Count)
- 
-                let startLine = lines.GetLineFromPosition(textSpan.Start).LineNumber
-                let endLine = lines.GetLineFromPosition(textSpan.End).LineNumber
+    let getClassifiedSpans
+        (
+            documentKey: DocumentId,
+            sourceText: SourceText,
+            textSpan: TextSpan,
+            fileName: string option,
+            defines: string list,
+            cancellationToken: CancellationToken
+        ) : ResizeArray<ClassifiedSpan> =
+        let result = new ResizeArray<ClassifiedSpan>()
 
-                let lineDataResults = getFromRefreshedTokenCache(lines, startLine, endLine, sourceTokenizer, sourceTextData, cancellationToken)              
-                
-                for lineData,_ in lineDataResults do 
-                    result.AddRange(lineData.ClassifiedSpans |> Array.filter(fun token ->
-                        textSpan.Contains(token.TextSpan.Start) ||
-                        textSpan.Contains(token.TextSpan.End - 1) ||
-                        (token.TextSpan.Start <= textSpan.Start && textSpan.End <= token.TextSpan.End)))
+        try
+            let sourceTokenizer = FSharpSourceTokenizer(defines, fileName)
+            let lines = sourceText.Lines
+            let sourceTextData = getSourceTextData (documentKey, defines, lines.Count)
 
-            with 
-            | :? System.OperationCanceledException -> reraise()
-            |  ex -> Assert.Exception(ex)
+            let startLine = lines.GetLineFromPosition(textSpan.Start).LineNumber
+            let endLine = lines.GetLineFromPosition(textSpan.End).LineNumber
 
-            result
+            let lineDataResults =
+                getFromRefreshedTokenCache (lines, startLine, endLine, sourceTokenizer, sourceTextData, cancellationToken)
 
+            for lineData, _ in lineDataResults do
+                result.AddRange(
+                    lineData.ClassifiedSpans
+                    |> Array.filter (fun token ->
+                        textSpan.Contains(token.TextSpan.Start)
+                        || textSpan.Contains(token.TextSpan.End - 1)
+                        || (token.TextSpan.Start <= textSpan.Start && textSpan.End <= token.TextSpan.End))
+                )
+
+        with
+        | :? System.OperationCanceledException -> reraise ()
+        | ex -> Assert.Exception(ex)
+
+        result
 
     /// Returns symbol at a given position.
     let private getSymbolFromSavedTokens
@@ -876,23 +889,36 @@ module internal Tokenizer =
                 FullIsland = partialName.QualifyingIdents @ [ identStr ]
             })
 
-    let private getCachedSourceLineData(documentKey: DocumentId, sourceText: SourceText, position: int, fileName: string, defines: string list, cancellationToken) =          
-        let textLinePos = sourceText.Lines.GetLinePosition(position)      
-        let sourceTokenizer = FSharpSourceTokenizer(defines, Some fileName) 
+    let private getCachedSourceLineData
+        (
+            documentKey: DocumentId,
+            sourceText: SourceText,
+            position: int,
+            fileName: string,
+            defines: string list,
+            cancellationToken
+        ) =
+        let textLinePos = sourceText.Lines.GetLinePosition(position)
+        let sourceTokenizer = FSharpSourceTokenizer(defines, Some fileName)
         // We keep incremental data per-document. When text changes we correlate text line-by-line (by hash codes of lines)
-        let sourceTextData = getSourceTextData(documentKey, defines, sourceText.Lines.Count)
+        let sourceTextData =
+            getSourceTextData (documentKey, defines, sourceText.Lines.Count)
+
         let lineNo = textLinePos.Line
-        let lineData, contents = 
-            getFromRefreshedTokenCache(sourceText.Lines, lineNo, lineNo, sourceTokenizer, sourceTextData, cancellationToken) 
+
+        let lineData, contents =
+            getFromRefreshedTokenCache (sourceText.Lines, lineNo, lineNo, sourceTokenizer, sourceTextData, cancellationToken)
             |> List.exactlyOne
-        lineData, textLinePos, contents       
-           
+
+        lineData, textLinePos, contents
+
     let tokenizeLine (documentKey, sourceText, position, fileName, defines, cancellationToken) =
         try
-            let lineData, _, _ = getCachedSourceLineData(documentKey, sourceText, position, fileName, defines, cancellationToken)
-            lineData.SavedTokens   
-        with 
-        |  ex -> 
+            let lineData, _, _ =
+                getCachedSourceLineData (documentKey, sourceText, position, fileName, defines, cancellationToken)
+
+            lineData.SavedTokens
+        with ex ->
             Assert.Exception(ex)
             [||]
 
@@ -907,15 +933,24 @@ module internal Tokenizer =
             wholeActivePatterns: bool,
             allowStringToken: bool,
             cancellationToken
-        ) 
-        : LexerSymbol option =
-        
+        ) : LexerSymbol option =
+
         try
-            let lineData, textLinePos, lineContents = getCachedSourceLineData(documentKey, sourceText, position, fileName, defines, cancellationToken)
-            getSymbolFromSavedTokens(fileName, lineData.SavedTokens, textLinePos, lineContents, lookupKind, wholeActivePatterns, allowStringToken)
-        with 
-        | :? System.OperationCanceledException -> reraise()
-        |  ex -> 
+            let lineData, textLinePos, lineContents =
+                getCachedSourceLineData (documentKey, sourceText, position, fileName, defines, cancellationToken)
+
+            getSymbolFromSavedTokens (
+                fileName,
+                lineData.SavedTokens,
+                textLinePos,
+                lineContents,
+                lookupKind,
+                wholeActivePatterns,
+                allowStringToken
+            )
+        with
+        | :? System.OperationCanceledException -> reraise ()
+        | ex ->
             Assert.Exception(ex)
             None
 
