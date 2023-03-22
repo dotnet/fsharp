@@ -137,6 +137,9 @@ type internal FSharpWorkspaceServiceFactory [<System.Composition.ImportingConstr
 
                             let isInlineTypeHintsEnabled = editorOptions.Advanced.IsInlineTypeHintsEnabled
 
+                            let enablePartialTypeChecking =
+                                editorOptions.LanguageServicePerformance.EnablePartialTypeChecking
+
                             let checker =
                                 FSharpChecker.Create(
                                     projectCacheSize = 5000, // We do not care how big the cache is. VS will actually tell FCS to clear caches, so this is fine.
@@ -145,7 +148,7 @@ type internal FSharpWorkspaceServiceFactory [<System.Composition.ImportingConstr
                                     tryGetMetadataSnapshot = tryGetMetadataSnapshot,
                                     keepAllBackgroundSymbolUses = false,
                                     enableBackgroundItemKeyStoreAndSemanticClassification = true,
-                                    enablePartialTypeChecking = true,
+                                    enablePartialTypeChecking = enablePartialTypeChecking,
                                     parallelReferenceResolution = enableParallelReferenceResolution,
                                     captureIdentifiersWhenParsing = true,
                                     documentSource =
@@ -166,6 +169,7 @@ type internal FSharpWorkspaceServiceFactory [<System.Composition.ImportingConstr
                                     nameof enableFastFindReferences, enableFastFindReferences
                                     nameof isInlineParameterNameHintsEnabled, isInlineParameterNameHintsEnabled
                                     nameof isInlineTypeHintsEnabled, isInlineTypeHintsEnabled
+                                    nameof enablePartialTypeChecking, enablePartialTypeChecking
                                 ]
 
                             if enableLiveBuffers then
@@ -239,9 +243,7 @@ type internal FSharpSettingsFactory [<Composition.ImportingConstructor>] (settin
 [<Guid(FSharpConstants.packageGuidString)>]
 [<ProvideOptionPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>, "F# Tools", "F# Interactive", 6000s, 6001s, true)>] // true = supports automation
 
-
 [<ProvideKeyBindingTable("{dee22b65-9761-4a26-8fb2-759b971d6dfc}", 6001s)>] // <-- resource ID for localised name
-
 
 [<ProvideToolWindow(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiToolWindow>,
                     Orientation = ToolWindowOrientation.Bottom,
