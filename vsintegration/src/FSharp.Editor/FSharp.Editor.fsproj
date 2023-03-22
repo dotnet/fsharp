@@ -73,7 +73,7 @@
     <Compile Include="Diagnostics\UnusedDeclarationsAnalyzer.fs" />
     <Compile Include="Diagnostics\UnusedOpensDiagnosticAnalyzer.fs" />
     <Compile Include="DocComments\XMLDocumentation.fs" />
-	<Compile Include="TaskList\TaskListService.fs" />
+    <Compile Include="TaskList\TaskListService.fs" />
     <Compile Include="Completion\CompletionUtils.fs" />
     <Compile Include="Completion\CompletionProvider.fs" />
     <Compile Include="Completion\PathCompletionUtilities.fs" />
