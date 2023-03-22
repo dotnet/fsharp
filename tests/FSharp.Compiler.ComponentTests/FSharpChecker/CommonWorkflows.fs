@@ -12,12 +12,13 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.CodeAnalysis
 
 module FcsDiagnostics = FSharp.Compiler.Diagnostics.Activity
+module FscActivityNames = FSharp.Compiler.Diagnostics.ActivityNames
 
 let expectCacheHits n =
     let events = ResizeArray()
     let listener = 
         new ActivityListener(
-            ShouldListenTo = (fun s -> s.Name = FcsDiagnostics.FscSourceName),
+            ShouldListenTo = (fun s -> s.Name = FscActivityNames.FscSourceName),
             Sample = (fun _ -> ActivitySamplingResult.AllData),
             ActivityStopped = (fun a -> events.AddRange a.Events)
         )
