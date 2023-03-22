@@ -224,6 +224,7 @@ let keywordsWithDescription: (string * string) list =
         "rec", FSComp.SR.keywordDescriptionRec ()
         "return", FSComp.SR.keywordDescriptionReturn ()
         "return!", FSComp.SR.keywordDescriptionReturnBang ()
+        "sig", FSComp.SR.keywordDescriptionSig ()
         "static", FSComp.SR.keywordDescriptionStatic ()
         "struct", FSComp.SR.keywordDescriptionStruct ()
         "then", FSComp.SR.keywordDescriptionThen ()
