@@ -16,35 +16,42 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.EditorServices
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "RemoveSuperflousCapture"); Shared>]
-type internal RemoveSuperflousCaptureForUnionCaseWithNoDataProvider
-    [<ImportingConstructor>]
-    (
-    ) =
-    
-    inherit CodeFixProvider()    
+type internal RemoveSuperflousCaptureForUnionCaseWithNoDataProvider [<ImportingConstructor>] () =
 
-    override _.FixableDiagnosticIds = Seq.toImmutableArray ["FS0725";"FS3548"]
+    inherit CodeFixProvider()
+
+    override _.FixableDiagnosticIds = Seq.toImmutableArray [ "FS0725"; "FS3548" ]
 
     override this.RegisterCodeFixesAsync context : Task =
-        asyncMaybe {           
+        asyncMaybe {
             do! Option.guard context.Document.Project.IsFSharpCodeFixesUnusedDeclarationsEnabled
 
-            let document = context.Document      
+            let document = context.Document
             let! sourceText = document.GetTextAsync(context.CancellationToken)
-            let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync(nameof(RemoveSuperflousCaptureForUnionCaseWithNoDataProvider)) |> liftAsync
-            let m = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)
+
+            let! _, checkResults =
+                document.GetFSharpParseAndCheckResultsAsync(nameof (RemoveSuperflousCaptureForUnionCaseWithNoDataProvider))
+                |> liftAsync
+
+            let m =
+                RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)
+
             let classifications = checkResults.GetSemanticClassification(Some m)
-            let unionCaseItem = 
+
+            let unionCaseItem =
                 classifications
-                |> Array.tryFind (fun c -> c.Type = SemanticClassificationType.UnionCase)           
+                |> Array.tryFind (fun c -> c.Type = SemanticClassificationType.UnionCase)
 
             match unionCaseItem with
             | None -> ()
             | Some unionCaseItem ->
                 // The error/warning captures entire pattern match, like "Ns.Type.DuName bindingName". We want to keep type info when suggesting a replacement, and only remove "bindingName".
                 let typeInfoLength = unionCaseItem.Range.EndColumn - m.StartColumn
-                let reminderSpan = new TextSpan(context.Span.Start + typeInfoLength, context.Span.Length - typeInfoLength)                   
-                this.RegisterFix(context, SR.RemoveUnusedBinding(), TextChange(reminderSpan, ""))              
-        } 
+
+                let reminderSpan =
+                    new TextSpan(context.Span.Start + typeInfoLength, context.Span.Length - typeInfoLength)
+
+                this.RegisterFix(context, SR.RemoveUnusedBinding(), TextChange(reminderSpan, ""))
+        }
         |> Async.Ignore
         |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
