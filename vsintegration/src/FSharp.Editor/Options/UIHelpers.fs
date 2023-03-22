@@ -25,7 +25,7 @@ module internal OptionsUIHelpers =
                 let scm = this.Site.GetService(typeof<SComponentModel>) :?> IComponentModel
                 scm.GetService<SettingsStore.ISettingsStore>()
 
-        abstract CreateView : unit -> FrameworkElement
+        abstract CreateView: unit -> FrameworkElement
 
         override this.Child = upcast view.Value
 
@@ -36,7 +36,7 @@ module internal OptionsUIHelpers =
                 view.Value.DataContext <- optionService.Value.LoadSettings<'options>()
                 needsLoadOnNextActivate <- false
 
-        override this.SaveSettingsToStorage() = 
+        override this.SaveSettingsToStorage() =
             downcast view.Value.DataContext |> optionService.Value.SaveSettings<'options>
             // Make sure we load the next time the page is activated, in case if options changed
             // programmatically between now and the next time the page is activated
@@ -54,23 +54,26 @@ module internal OptionsUIHelpers =
             // This second one is tricky, because we don't actually want to update our controls
             // right then, because they'd be wrong the next time the page opens -- it's possible
             // they may have been changed programmatically. Therefore, we'll set a flag so we load
-            // next time         
+            // next time
             needsLoadOnNextActivate <- true
 
-        member this.GetService<'T when 'T : not struct>() =
+        member this.GetService<'T when 'T: not struct>() =
             let scm = this.Site.GetService(typeof<SComponentModel>) :?> IComponentModel
             scm.GetService<'T>()
 
     //data binding helpers
     let radioButtonCoverter =
-      { new IValueConverter with
-            member this.Convert(value, _, parameter, _) =
-                upcast value.Equals(parameter)
+        { new IValueConverter with
+            member this.Convert(value, _, parameter, _) = upcast value.Equals(parameter)
+
             member this.ConvertBack(value, _, parameter, _) =
-                if value.Equals(true) then parameter else Binding.DoNothing }
-                
+                if value.Equals(true) then parameter else Binding.DoNothing
+        }
+
     let bindRadioButton (radioButton: RadioButton) path value =
-        let binding = Binding (path, Converter = radioButtonCoverter, ConverterParameter = value)
+        let binding =
+            Binding(path, Converter = radioButtonCoverter, ConverterParameter = value)
+
         radioButton.SetBinding(RadioButton.IsCheckedProperty, binding) |> ignore
 
     let bindCheckBox (checkBox: CheckBox) (path: string) =

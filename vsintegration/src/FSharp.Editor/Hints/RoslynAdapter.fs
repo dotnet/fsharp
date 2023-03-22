@@ -14,9 +14,7 @@ open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 // e.g. signature hints above the line, pipeline hints on the side and so on.
 
 [<Export(typeof<IFSharpInlineHintsService>)>]
-type internal RoslynAdapter 
-    [<ImportingConstructor>]
-    (settings: EditorOptions) =
+type internal RoslynAdapter [<ImportingConstructor>] (settings: EditorOptions) =
 
     static let userOpName = "Hints"
 
@@ -29,20 +27,14 @@ type internal RoslynAdapter
                     return ImmutableArray.Empty
                 else
                     let hintKindsSerialized = hintKinds |> Set.map Hints.serialize |> String.concat ","
-                    TelemetryReporter.reportEvent "hints" [("hints.kinds", hintKindsSerialized)]
+                    TelemetryReporter.reportEvent "hints" [ ("hints.kinds", hintKindsSerialized) ]
 
                     let! sourceText = document.GetTextAsync cancellationToken |> Async.AwaitTask
-                    let! nativeHints =
-                        HintService.getHintsForDocument 
-                            sourceText
-                            document 
-                            hintKinds
-                            userOpName 
-                            cancellationToken
-                    
-                    let roslynHints = 
-                        nativeHints 
-                        |> Seq.map (NativeToRoslynHintConverter.convert sourceText)
-                    
+                    let! nativeHints = HintService.getHintsForDocument sourceText document hintKinds userOpName cancellationToken
+
+                    let roslynHints =
+                        nativeHints |> Seq.map (NativeToRoslynHintConverter.convert sourceText)
+
                     return roslynHints.ToImmutableArray()
-            } |> RoslynHelpers.StartAsyncAsTask cancellationToken
+            }
+            |> RoslynHelpers.StartAsyncAsTask cancellationToken
