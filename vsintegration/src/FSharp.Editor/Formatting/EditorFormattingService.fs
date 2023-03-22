@@ -32,7 +32,7 @@ type internal FSharpEditorFormattingService [<ImportingConstructor>] (settings: 
             checker: FSharpChecker,
             indentStyle: FormattingOptions.IndentStyle,
             parsingOptions: FSharpParsingOptions,
-            position: int
+            position: int,
             cancellationToken
         ) =
         // Logic for determining formatting changes:
