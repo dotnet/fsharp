@@ -313,7 +313,7 @@ let parseFormatStringInternal
 
     and parseSpecifier acc (i, fragLine, fragCol) fragments =
         let startFragCol = fragCol
-        let nPercent =
+        let nPercentSigns =
             fmt[i..]
             |> Seq.takeWhile (fun c -> c = '%')
             |> Seq.length
@@ -327,15 +327,15 @@ let parseFormatStringInternal
             | None -> ()
             appendToDotnetFormatString "%"
             parseLoop acc (i+2, fragLine, fragCol+2) fragments
-        elif delimLen > 1 && nPercent < delimLen then
-            appendToDotnetFormatString fmt[i..(i+nPercent-1)]
-            parseLoop acc (i + nPercent, fragLine, fragCol + nPercent) fragments
+        elif delimLen > 1 && nPercentSigns < delimLen then
+            appendToDotnetFormatString fmt[i..(i+nPercentSigns-1)]
+            parseLoop acc (i + nPercentSigns, fragLine, fragCol + nPercentSigns) fragments
         else
             let fragCol, i =
                 if delimLen > 1 then
-                    if nPercent > delimLen then
-                        "%" |> String.replicate (nPercent - delimLen) |> appendToDotnetFormatString
-                    fragCol + nPercent, i + nPercent
+                    if nPercentSigns > delimLen then
+                        "%" |> String.replicate (nPercentSigns - delimLen) |> appendToDotnetFormatString
+                    fragCol + nPercentSigns, i + nPercentSigns
                 else
                     fragCol + 1, i + 1
             if i >= len then failwith (FSComp.SR.forMissingFormatSpecifier())
