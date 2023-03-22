@@ -1794,7 +1794,8 @@ and updatePrettyNamesForTyparsInVal (v: Val) =
     if not (List.isEmpty v.Typars) then
         // Reset typar name to ?
         for typar in v.Typars do
-            typar.typar_id <- Ident(unassignedTyparName, typar.typar_id.idRange)
+            if typar.IsCompilerGenerated && typar.ILName.IsNone then
+                typar.typar_id <- Ident(unassignedTyparName, typar.typar_id.idRange)
 
         let nms = PrettyTypes.PrettyTyparNames (fun _ -> true) List.empty v.Typars
 
