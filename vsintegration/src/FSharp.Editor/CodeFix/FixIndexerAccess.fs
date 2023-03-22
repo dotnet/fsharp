@@ -11,7 +11,7 @@ open Microsoft.CodeAnalysis.CodeFixes
 open FSharp.Compiler.Diagnostics
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "FixIndexerAccess"); Shared>]
-type internal FSharpFixIndexerAccessCodeFixProvider() =
+type internal LegacyFsharpFixAddDotToIndexerAccess() =
     inherit CodeFixProvider()
     let fixableDiagnosticIds = set ["FS3217"]
         
@@ -53,3 +53,21 @@ type internal FSharpFixIndexerAccessCodeFixProvider() =
 
                     context.RegisterCodeFix(codefix, diagnostics))
         } |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "RemoveIndexerDotBeforeBracket"); Shared>]
+type internal FsharpFixRemoveDotFromIndexerAccessOptIn() as this =
+    inherit CodeFixProvider()
+    let fixableDiagnosticIds = set ["FS3366"]
+
+    static let fixName = CompilerDiagnostics.GetErrorMessage FSharpDiagnosticKind.RemoveIndexerDot
+        
+    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+
+    override _.RegisterCodeFixesAsync context : Task =
+        backgroundTask {
+            let relevantDiagnostics = this.GetPrunedDiagnostics(context)
+            if not relevantDiagnostics.IsEmpty then
+                this.RegisterFix(context, fixName, TextChange(context.Span, ""))
+        }
+                
+               
