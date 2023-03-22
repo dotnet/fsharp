@@ -16,7 +16,7 @@ type LogEditorFunctionId =
     | Completion_GetChangeAsync = 9
 
 /// This is for ETW tracing across FSharp.Editor.
-[<Sealed;EventSource(Name = "FSharpEditor")>]
+[<Sealed; EventSource(Name = "FSharpEditor")>]
 type FSharpEditorEventSource() =
     inherit EventSource()
 
@@ -56,16 +56,16 @@ type FSharpEditorEventSource() =
 [<RequireQualifiedAccess>]
 module Logger =
 
-    let Log(functionId) = 
+    let Log (functionId) =
         FSharpEditorEventSource.Instance.Log(functionId)
 
-    let LogMessage message functionId = 
+    let LogMessage message functionId =
         FSharpEditorEventSource.Instance.LogMessage(message, functionId)
 
-    let LogBlockStart(functionId) = 
+    let LogBlockStart (functionId) =
         FSharpEditorEventSource.Instance.BlockStart(functionId)
 
-    let LogBlockStop(functionId) = 
+    let LogBlockStop (functionId) =
         FSharpEditorEventSource.Instance.BlockStop(functionId)
 
     let LogBlockMessageStart message functionId =
@@ -74,15 +74,18 @@ module Logger =
     let LogBlockMessageStop message functionId =
         FSharpEditorEventSource.Instance.BlockMessageStop(message, functionId)
 
-    let LogBlock(functionId) =
+    let LogBlock (functionId) =
         FSharpEditorEventSource.Instance.BlockStart(functionId)
+
         { new IDisposable with
             member _.Dispose() =
-                FSharpEditorEventSource.Instance.BlockStop(functionId) }
+                FSharpEditorEventSource.Instance.BlockStop(functionId)
+        }
 
     let LogBlockMessage message functionId =
         FSharpEditorEventSource.Instance.BlockMessageStart(message, functionId)
+
         { new IDisposable with
             member _.Dispose() =
-                FSharpEditorEventSource.Instance.BlockMessageStop(message, functionId) }
-    
+                FSharpEditorEventSource.Instance.BlockMessageStop(message, functionId)
+        }

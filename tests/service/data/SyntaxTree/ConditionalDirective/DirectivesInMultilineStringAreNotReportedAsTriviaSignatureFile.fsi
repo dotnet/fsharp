@@ -1,9 +1,9 @@
 
 namespace Foobar
 
-let v : string = \"\"\"
+let v : string = """
 #if DEBUG
 ()
 #endif
 42
-\"\"\"
+"""

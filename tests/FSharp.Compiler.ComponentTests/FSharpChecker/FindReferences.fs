@@ -201,12 +201,11 @@ let foo x = 5""" })
 [<Fact>]
 let ``We find values of a type that has been aliased`` () =
 
-    let project = SyntheticProject.Create("TypeAliasTest",
+    let project = SyntheticProject.Create(
         { sourceFile "First" [] with
             ExtraSource = "type MyInt = int32\n" +
                           "let myNum = 7"
-            SignatureFile = Custom ("module TypeAliasTest.ModuleFirst\n" +
-                                    "type MyInt = int32\n" +
+            SignatureFile = Custom ("type MyInt = int32\n" +
                                     "val myNum: MyInt") },
         { sourceFile "Second" [] with
             ExtraSource = "let goo x = ModuleFirst.myNum + x"})
@@ -252,7 +251,7 @@ let x = MyType()
 """
     SyntheticProject.Create(
         { sourceFile "Program" [] with
-            SignatureFile = Custom "module Moo"
+            SignatureFile = Custom ""
             Source = source } ).Workflow {
 
         placeCursor "Program" "MyType"
@@ -281,7 +280,7 @@ let x = MyType()
 """
     let project = SyntheticProject.Create(
         { sourceFile "Program" [] with
-            SignatureFile = Custom "module Moo"
+            SignatureFile = Custom ""
             Source = source } )
 
     ProjectWorkflowBuilder(project, useGetSource = true, useChangeNotifications = true) {
