@@ -819,21 +819,25 @@ module IncrementalBuilderHelpers =
                 None) }
 
     /// Type check all files eagerly.
-    let TypeCheckTask (prevBoundModel: BoundModel) syntaxTree : NodeCode<BoundModel> =
+    let TypeCheckTask partialCheck (prevBoundModel: BoundModel) syntaxTree : NodeCode<BoundModel> =
         node {
             let! tcInfo = prevBoundModel.GetOrComputeTcInfo()
             let boundModel = prevBoundModel.Next(syntaxTree, tcInfo)
 
             // Eagerly type check
             // We need to do this to keep the expected behavior of events (namely fileChecked) when checking a file/project.
-            let! _ = boundModel.GetOrComputeTcInfoWithExtras()
-            ()
+            if partialCheck then
+                let! _ = boundModel.GetOrComputeTcInfo()
+                ()
+            else
+                let! _ = boundModel.GetOrComputeTcInfoWithExtras()
+                ()
 
             return boundModel
         }
 
     /// Finish up the typechecking to produce outputs for the rest of the compilation process
-    let FinalizeTypeCheckTask (tcConfig: TcConfig) tcGlobals assemblyName outfile (graphNodes: GraphNode<BoundModel> seq) =
+    let FinalizeTypeCheckTask (tcConfig: TcConfig) tcGlobals partialCheck assemblyName outfile (graphNodes: GraphNode<BoundModel> seq) =
       node {
         let diagnosticsLogger = CompilationDiagnosticLogger("FinalizeTypeCheckTask", tcConfig.diagnosticsOptions)
         use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.TypeCheck)
@@ -842,8 +846,12 @@ module IncrementalBuilderHelpers =
             graphNodes 
             |> Seq.map (fun graphNode -> node {
                 let! boundModel = graphNode.GetOrComputeValue()
-                let! tcInfo, tcInfoExtras = boundModel.GetOrComputeTcInfoWithExtras()
-                return tcInfo, tcInfoExtras.latestImplFile
+                if partialCheck then
+                    let! tcInfo = boundModel.GetOrComputeTcInfo()
+                    return tcInfo, None
+                else
+                    let! tcInfo, tcInfoExtras = boundModel.GetOrComputeTcInfoWithExtras()
+                    return tcInfo, tcInfoExtras.latestImplFile
             })
             |> Seq.map (fun work ->
                 node {
@@ -931,6 +939,7 @@ type IncrementalBuilderInitialState =
         assemblyName: string
         lexResourceManager: Lexhelp.LexResourceManager
         fileNames: FSharpFile list
+        enablePartialTypeChecking: bool
         beforeFileChecked: Event<string>
         fileChecked: Event<string>
         fileParsed: Event<string>
@@ -955,6 +964,7 @@ type IncrementalBuilderInitialState =
             assemblyName,
             lexResourceManager,
             sourceFiles,
+            enablePartialTypeChecking,
             beforeFileChecked: Event<string>,
             fileChecked: Event<string>,
 #if !NO_TYPEPROVIDERS
@@ -976,6 +986,7 @@ type IncrementalBuilderInitialState =
                 assemblyName = assemblyName
                 lexResourceManager = lexResourceManager
                 fileNames = sourceFiles
+                enablePartialTypeChecking = enablePartialTypeChecking
                 beforeFileChecked = beforeFileChecked
                 fileChecked = fileChecked
                 fileParsed = Event<string>()
@@ -1027,10 +1038,10 @@ module IncrementalBuilderStateHelpers =
 
     type SlotStatus = Invalidated | Good
 
-    let createBoundModelGraphNode (prevBoundModel: GraphNode<BoundModel>) syntaxTree =
+    let createBoundModelGraphNode partialCheck (prevBoundModel: GraphNode<BoundModel>) syntaxTree =
         GraphNode(node {
             let! prevBoundModel = prevBoundModel.GetOrComputeValue()
-            return! TypeCheckTask prevBoundModel syntaxTree  
+            return! TypeCheckTask partialCheck prevBoundModel syntaxTree  
         })
 
     let rec createFinalizeBoundModelGraphNode (initialState: IncrementalBuilderInitialState) (boundModels: GraphNode<BoundModel> seq) =
@@ -1039,7 +1050,8 @@ module IncrementalBuilderStateHelpers =
             let! result = 
                 FinalizeTypeCheckTask 
                     initialState.tcConfig 
-                    initialState.tcGlobals 
+                    initialState.tcGlobals
+                    initialState.enablePartialTypeChecking
                     initialState.assemblyName 
                     initialState.outfile 
                     boundModels
@@ -1055,9 +1067,11 @@ module IncrementalBuilderStateHelpers =
 
         for slot in slots do if slot.Notified then slot.SyntaxTree.Invalidate()
 
+        let partialCheck = initialState.enablePartialTypeChecking
+
         let mapping (status, prevNode) slot =
             let update invalidate =
-                let graphNode = createBoundModelGraphNode prevNode slot.SyntaxTree
+                let graphNode = createBoundModelGraphNode partialCheck prevNode slot.SyntaxTree
                 let newStatus = if invalidate then Invalidated else status
                 { slot with LogicalStamp = slot.Stamp; Notified = false; Model = graphNode }, (newStatus, graphNode)
 
@@ -1133,7 +1147,7 @@ type IncrementalBuilderState with
 
         let boundModels = 
             syntaxTrees
-            |> Seq.scan createBoundModelGraphNode initialBoundModel
+            |> Seq.scan (createBoundModelGraphNode initialState.enablePartialTypeChecking) initialBoundModel
             |> Seq.skip 1
 
         let slots =
@@ -1441,6 +1455,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             suggestNamesForErrors,
             keepAllBackgroundSymbolUses,
             enableBackgroundItemKeyStoreAndSemanticClassification,
+            enablePartialTypeChecking,
             dependencyProvider,
             parallelReferenceResolution,
             captureIdentifiersWhenParsing,
@@ -1677,6 +1692,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                     assemblyName,
                     resourceManager,
                     sourceFiles,
+                    enablePartialTypeChecking,
                     beforeFileChecked,
                     fileChecked,
 #if !NO_TYPEPROVIDERS

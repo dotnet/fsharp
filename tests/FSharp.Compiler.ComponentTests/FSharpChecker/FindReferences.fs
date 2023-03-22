@@ -255,7 +255,7 @@ let x = MyType()
             SignatureFile = Custom "module Moo"
             Source = source } )
 
-    ProjectWorkflowBuilder(project, allowErrors = true) {
+    ProjectWorkflowBuilder(project) {
 
         placeCursor "Program" "MyType"
 
@@ -286,7 +286,7 @@ let x = MyType()
             SignatureFile = Custom "module Moo"
             Source = source } )
 
-    ProjectWorkflowBuilder(project, allowErrors = true, useGetSource = true, useChangeNotifications = true) {
+    ProjectWorkflowBuilder(project, useGetSource = true, useChangeNotifications = true) {
 
         placeCursor "Program" "MyType"
 
@@ -304,3 +304,4 @@ let x = MyType()
             "FileProgram.fs", 6, 8, 14
         ])
     }
+
