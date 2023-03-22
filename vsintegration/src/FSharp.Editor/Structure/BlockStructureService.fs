@@ -15,10 +15,11 @@ open FSharp.Compiler.EditorServices.Structure
 open FSharp.Compiler.Syntax
 
 module internal BlockStructure =
-    let scopeToBlockType = function
+    let scopeToBlockType =
+        function
         | Scope.Open -> FSharpBlockTypes.Imports
         | Scope.Namespace
-        | Scope.Module -> FSharpBlockTypes.Namespace 
+        | Scope.Module -> FSharpBlockTypes.Namespace
         | Scope.Record
         | Scope.Interface
         | Scope.TypeExtension
@@ -46,7 +47,7 @@ module internal BlockStructure =
         | Scope.TryFinally
         | Scope.TryInTryFinally
         | Scope.FinallyInTryFinally
-        | Scope.IfThenElse-> FSharpBlockTypes.Conditional
+        | Scope.IfThenElse -> FSharpBlockTypes.Conditional
         | Scope.Tuple
         | Scope.ArrayOrList
         | Scope.Quote
@@ -64,7 +65,8 @@ module internal BlockStructure =
         | Scope.Comment
         | Scope.XmlDocComment -> FSharpBlockTypes.Comment
 
-    let isAutoCollapsible = function
+    let isAutoCollapsible =
+        function
         | Scope.New
         | Scope.Attribute
         | Scope.Member
@@ -114,41 +116,55 @@ module internal BlockStructure =
         | Scope.While
         | Scope.For -> false
 
-    let createBlockSpans isBlockStructureEnabled (sourceText:SourceText) (parsedInput:ParsedInput) =
+    let createBlockSpans isBlockStructureEnabled (sourceText: SourceText) (parsedInput: ParsedInput) =
         let linetext = sourceText.Lines |> Seq.map (fun x -> x.ToString()) |> Seq.toArray
-        
+
         Structure.getOutliningRanges linetext parsedInput
         |> Seq.distinctBy (fun x -> x.Range.StartLine)
-        |> Seq.choose (fun scopeRange -> 
+        |> Seq.choose (fun scopeRange ->
             // the range of text to collapse
-            let textSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, scopeRange.CollapseRange)
+            let textSpan =
+                RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, scopeRange.CollapseRange)
             // the range of the entire expression
             let hintSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, scopeRange.Range)
-            match textSpan,hintSpan with
+
+            match textSpan, hintSpan with
             | Some textSpan, Some hintSpan ->
                 let line = sourceText.Lines.GetLineFromPosition textSpan.Start
+
                 let bannerText =
                     match Option.ofNullable (line.Span.Intersection textSpan) with
-                    | Some span -> sourceText.GetSubText(span).ToString()+"..."
+                    | Some span -> sourceText.GetSubText(span).ToString() + "..."
                     | None -> "..."
-                let blockType = if isBlockStructureEnabled then scopeToBlockType scopeRange.Scope else FSharpBlockTypes.Nonstructural
-                Some (FSharpBlockSpan(blockType, true, textSpan, hintSpan, bannerText, autoCollapse = isAutoCollapsible scopeRange.Scope))
-            | _, _ -> None
-        )
+
+                let blockType =
+                    if isBlockStructureEnabled then
+                        scopeToBlockType scopeRange.Scope
+                    else
+                        FSharpBlockTypes.Nonstructural
+
+                Some(FSharpBlockSpan(blockType, true, textSpan, hintSpan, bannerText, autoCollapse = isAutoCollapsible scopeRange.Scope))
+            | _, _ -> None)
 
 open BlockStructure
- 
+
 [<Export(typeof<IFSharpBlockStructureService>)>]
 type internal FSharpBlockStructureService [<ImportingConstructor>] () =
 
     interface IFSharpBlockStructureService with
- 
+
         member _.GetBlockStructureAsync(document, cancellationToken) : Task<FSharpBlockStructure> =
             asyncMaybe {
                 let! sourceText = document.GetTextAsync(cancellationToken)
-                let! parseResults = document.GetFSharpParseResultsAsync(nameof(FSharpBlockStructureService)) |> liftAsync
-                return createBlockSpans document.Project.IsFSharpBlockStructureEnabled sourceText parseResults.ParseTree |> Seq.toImmutableArray
-            } 
+
+                let! parseResults =
+                    document.GetFSharpParseResultsAsync(nameof (FSharpBlockStructureService))
+                    |> liftAsync
+
+                return
+                    createBlockSpans document.Project.IsFSharpBlockStructureEnabled sourceText parseResults.ParseTree
+                    |> Seq.toImmutableArray
+            }
             |> Async.map (Option.defaultValue ImmutableArray<_>.Empty)
             |> Async.map FSharpBlockStructure
             |> RoslynHelpers.StartAsyncAsTask(cancellationToken)

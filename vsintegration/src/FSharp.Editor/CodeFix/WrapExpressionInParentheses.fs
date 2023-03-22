@@ -14,17 +14,18 @@ open Microsoft.CodeAnalysis.CodeActions
 type internal FSharpWrapExpressionInParenthesesFixProvider() =
     inherit CodeFixProvider()
 
-    let fixableDiagnosticIds = set ["FS0597"]
-        
+    let fixableDiagnosticIds = set [ "FS0597" ]
+
     override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
-    
+
     override this.RegisterCodeFixesAsync context : Task =
         async {
             let title = SR.WrapExpressionInParentheses()
 
             let getChangedText (sourceText: SourceText) =
-                sourceText.WithChanges(TextChange(TextSpan(context.Span.Start, 0), "("))
-                          .WithChanges(TextChange(TextSpan(context.Span.End + 1, 0), ")"))
+                sourceText
+                    .WithChanges(TextChange(TextSpan(context.Span.Start, 0), "("))
+                    .WithChanges(TextChange(TextSpan(context.Span.End + 1, 0), ")"))
 
             context.RegisterCodeFix(
                 CodeAction.Create(
@@ -33,6 +34,13 @@ type internal FSharpWrapExpressionInParenthesesFixProvider() =
                         async {
                             let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                             return context.Document.WithText(getChangedText sourceText)
-                        } |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
-                    title), context.Diagnostics |> Seq.filter (fun x -> this.FixableDiagnosticIds.Contains x.Id) |> Seq.toImmutableArray)
-        } |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+                        }
+                        |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
+                    title
+                ),
+                context.Diagnostics
+                |> Seq.filter (fun x -> this.FixableDiagnosticIds.Contains x.Id)
+                |> Seq.toImmutableArray
+            )
+        }
+        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
