@@ -303,6 +303,7 @@ type BoundModel private (tcConfig: TcConfig,
                          keepAssemblyContents, keepAllBackgroundResolutions,
                          keepAllBackgroundSymbolUses,
                          enableBackgroundItemKeyStoreAndSemanticClassification,
+                         enablePartialTypeChecking,
                          beforeFileChecked: Event<string>,
                          fileChecked: Event<string>,
                          prevTcInfo: TcInfo,
@@ -327,16 +328,20 @@ type BoundModel private (tcConfig: TcConfig,
 
             let partialGraphNode =
                 GraphNode(node {
-                    // Optimization so we have less of a chance to duplicate work.
-                    if fullGraphNode.IsComputing then
+                    if enablePartialTypeChecking then
+                        // Optimization so we have less of a chance to duplicate work.
+                        if fullGraphNode.IsComputing then
+                            let! tcInfo, _ = fullGraphNode.GetOrComputeValue()
+                            return tcInfo
+                        else
+                            match fullGraphNode.TryPeekValue() with
+                            | ValueSome(tcInfo, _) -> return tcInfo
+                            | _ ->
+                                let! tcInfoState = this.TypeCheck(true)
+                                return tcInfoState.TcInfo
+                    else
                         let! tcInfo, _ = fullGraphNode.GetOrComputeValue()
                         return tcInfo
-                    else
-                        match fullGraphNode.TryPeekValue() with
-                        | ValueSome(tcInfo, _) -> return tcInfo
-                        | _ ->
-                            let! tcInfoState = this.TypeCheck(true)
-                            return tcInfoState.TcInfo
                     })
 
             TcInfoNode(partialGraphNode, fullGraphNode)
@@ -363,6 +368,7 @@ type BoundModel private (tcConfig: TcConfig,
             keepAllBackgroundResolutions,
             keepAllBackgroundSymbolUses,
             enableBackgroundItemKeyStoreAndSemanticClassification,
+            enablePartialTypeChecking,
             beforeFileChecked,
             fileChecked,
             tcInfo,
@@ -397,6 +403,7 @@ type BoundModel private (tcConfig: TcConfig,
                     keepAllBackgroundResolutions,
                     keepAllBackgroundSymbolUses,
                     enableBackgroundItemKeyStoreAndSemanticClassification,
+                    enablePartialTypeChecking,
                     beforeFileChecked,
                     fileChecked,
                     prevTcInfo,
@@ -569,6 +576,7 @@ type BoundModel private (tcConfig: TcConfig,
                          keepAssemblyContents, keepAllBackgroundResolutions,
                          keepAllBackgroundSymbolUses,
                          enableBackgroundItemKeyStoreAndSemanticClassification,
+                         enablePartialTypeChecking,
                          beforeFileChecked: Event<string>,
                          fileChecked: Event<string>,
                          prevTcInfo: TcInfo,
@@ -577,6 +585,7 @@ type BoundModel private (tcConfig: TcConfig,
                       keepAssemblyContents, keepAllBackgroundResolutions,
                       keepAllBackgroundSymbolUses,
                       enableBackgroundItemKeyStoreAndSemanticClassification,
+                      enablePartialTypeChecking,
                       beforeFileChecked,
                       fileChecked,
                       prevTcInfo,
@@ -739,6 +748,7 @@ module IncrementalBuilderHelpers =
         keepAllBackgroundResolutions,
         keepAllBackgroundSymbolUses,
         enableBackgroundItemKeyStoreAndSemanticClassification,
+        enablePartialTypeChecking,
         beforeFileChecked,
         fileChecked
 #if !NO_TYPEPROVIDERS
@@ -813,6 +823,7 @@ module IncrementalBuilderHelpers =
                 keepAllBackgroundResolutions,
                 keepAllBackgroundSymbolUses,
                 enableBackgroundItemKeyStoreAndSemanticClassification,
+                enablePartialTypeChecking,
                 beforeFileChecked,
                 fileChecked,
                 tcInfo,
@@ -1661,6 +1672,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                     keepAllBackgroundResolutions,
                     keepAllBackgroundSymbolUses,
                     enableBackgroundItemKeyStoreAndSemanticClassification,
+                    enablePartialTypeChecking,
                     beforeFileChecked,
                     fileChecked
 #if !NO_TYPEPROVIDERS
