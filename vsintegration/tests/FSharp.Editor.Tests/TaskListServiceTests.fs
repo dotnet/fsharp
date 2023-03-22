@@ -23,7 +23,8 @@ let private descriptors =
 
 let assertTasks expectedTasks fileContents =
     let doc = createDocument fileContents
-    let t = service.GetTaskListItems(doc, descriptors, ct).Result
+    let sourceText = doc.GetTextAsync().Result
+    let t = service.GetTaskListItems(doc, sourceText, [], descriptors, ct)
     let tasks = t |> Seq.map (fun t -> t.Message) |> List.ofSeq
     Assert.Equal<string list>(expectedTasks |> List.sort, tasks |> List.sort)
 
