@@ -12,7 +12,7 @@ open Microsoft.CodeAnalysis.CodeFixes
 type internal FSharpConvertToSingleEqualsEqualityExpressionCodeFixProvider() =
     inherit CodeFixProvider()
 
-    let fixableDiagnosticIds = set ["FS0043"]
+    let fixableDiagnosticIds = set [ "FS0043" ]
 
     override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
@@ -33,10 +33,7 @@ type internal FSharpConvertToSingleEqualsEqualityExpressionCodeFixProvider() =
                 |> Seq.toImmutableArray
 
             let codeFix =
-                CodeFixHelpers.createTextChangeCodeFix(
-                    title,
-                    context,
-                    (fun () -> asyncMaybe.Return [| TextChange(context.Span, "=") |]))
+                CodeFixHelpers.createTextChangeCodeFix (title, context, (fun () -> asyncMaybe.Return [| TextChange(context.Span, "=") |]))
 
             context.RegisterCodeFix(codeFix, diagnostics)
         }

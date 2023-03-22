@@ -1259,7 +1259,22 @@ type ArrayModule2() =
         // len1 <> len2
         CheckThrowsArgumentException(fun () -> Array.zip [|1..10|] [|2..20|] |> ignore)
         
-        ()
+    [<Fact>]
+    member this.ParallelZip() =
+        let assertSameBehaviour arr1 arr2 =
+            let sequentialZip = Array.zip arr1 arr2
+            let paraZip = Array.Parallel.zip arr1 arr2
+            Assert.AreEqual(sequentialZip, paraZip)
+      
+        assertSameBehaviour [|1..3|] [|2..2..6|] 
+        assertSameBehaviour[|"A"; "B";  "C" ; "D" |] [|"a";"b";"c";"d"|]
+        assertSameBehaviour[||] [||]   
+
+        // null array
+        let nullArr = null:string[]      
+        CheckThrowsArgumentNullException (fun () -> Array.Parallel.zip nullArr   nullArr  |> ignore)          
+        // len1 <> len2
+        CheckThrowsArgumentException(fun () -> Array.Parallel.zip [|1..10|] [|2..20|] |> ignore)
 
     [<Fact>]
     member this.Zip3() =

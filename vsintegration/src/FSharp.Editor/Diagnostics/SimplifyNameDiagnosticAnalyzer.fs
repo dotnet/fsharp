@@ -14,13 +14,14 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 
-type private PerDocumentSavedData = { Hash: int; Diagnostics: ImmutableArray<Diagnostic> }
+type private PerDocumentSavedData =
+    {
+        Hash: int
+        Diagnostics: ImmutableArray<Diagnostic>
+    }
 
 [<Export(typeof<IFSharpSimplifyNameDiagnosticAnalyzer>)>]
-type internal SimplifyNameDiagnosticAnalyzer
-    [<ImportingConstructor>]
-    (
-    ) =
+type internal SimplifyNameDiagnosticAnalyzer [<ImportingConstructor>] () =
 
     static let userOpName = "SimplifyNameDiagnosticAnalyzer"
     static let cache = new MemoryCache("FSharp.Editor." + userOpName)
@@ -32,38 +33,67 @@ type internal SimplifyNameDiagnosticAnalyzer
     interface IFSharpSimplifyNameDiagnosticAnalyzer with
 
         member _.AnalyzeSemanticsAsync(descriptor, document: Document, cancellationToken: CancellationToken) =
-            if document.Project.IsFSharpMiscellaneousOrMetadata && not document.IsFSharpScript then Tasks.Task.FromResult(ImmutableArray.Empty)
+            if document.Project.IsFSharpMiscellaneousOrMetadata && not document.IsFSharpScript then
+                Tasks.Task.FromResult(ImmutableArray.Empty)
             else
 
-            asyncMaybe {
-                do! Option.guard document.Project.IsFSharpCodeFixesSimplifyNameEnabled
-                do Trace.TraceInformation("{0:n3} (start) SimplifyName", DateTime.Now.TimeOfDay.TotalSeconds)
-                let! textVersion = document.GetTextVersionAsync(cancellationToken)
-                let textVersionHash = textVersion.GetHashCode()
-                let! _ = guard.WaitAsync(cancellationToken) |> Async.AwaitTask |> liftAsync
-                try
-                    let key = document.Id.ToString()
-                    match cache.Get(key) with
-                    | :? PerDocumentSavedData as data when data.Hash = textVersionHash -> return data.Diagnostics
-                    | _ ->
-                        let! sourceText = document.GetTextAsync()
-                        let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync(nameof(SimplifyNameDiagnosticAnalyzer)) |> liftAsync
-                        let! result = SimplifyNames.getSimplifiableNames(checkResults, fun lineNumber -> sourceText.Lines.[Line.toZ lineNumber].ToString()) |> liftAsync
-                        let mutable diag = ResizeArray()
-                        for r in result do
-                            diag.Add(
-                                Diagnostic.Create(
-                                   descriptor,
-                                   RoslynHelpers.RangeToLocation(r.Range, sourceText, document.FilePath),
-                                   properties = (dict [SimplifyNameDiagnosticAnalyzer.LongIdentPropertyKey, r.RelativeName]).ToImmutableDictionary()))
-                        let diagnostics = diag.ToImmutableArray()
-                        cache.Remove(key) |> ignore
-                        let data = { Hash = textVersionHash; Diagnostics=diagnostics }
-                        let cacheItem = CacheItem(key, data)
-                        let policy = CacheItemPolicy(SlidingExpiration=DefaultTuning.PerDocumentSavedDataSlidingWindow)
-                        cache.Set(cacheItem, policy)
-                        return diagnostics
-                finally guard.Release() |> ignore
-            } 
-            |> Async.map (Option.defaultValue ImmutableArray.Empty)
-            |> RoslynHelpers.StartAsyncAsTask cancellationToken
+                asyncMaybe {
+                    do! Option.guard document.Project.IsFSharpCodeFixesSimplifyNameEnabled
+                    do Trace.TraceInformation("{0:n3} (start) SimplifyName", DateTime.Now.TimeOfDay.TotalSeconds)
+                    let! textVersion = document.GetTextVersionAsync(cancellationToken)
+                    let textVersionHash = textVersion.GetHashCode()
+                    let! _ = guard.WaitAsync(cancellationToken) |> Async.AwaitTask |> liftAsync
+
+                    try
+                        let key = document.Id.ToString()
+
+                        match cache.Get(key) with
+                        | :? PerDocumentSavedData as data when data.Hash = textVersionHash -> return data.Diagnostics
+                        | _ ->
+                            let! sourceText = document.GetTextAsync()
+
+                            let! _, checkResults =
+                                document.GetFSharpParseAndCheckResultsAsync(nameof (SimplifyNameDiagnosticAnalyzer))
+                                |> liftAsync
+
+                            let! result =
+                                SimplifyNames.getSimplifiableNames (
+                                    checkResults,
+                                    fun lineNumber -> sourceText.Lines.[Line.toZ lineNumber].ToString()
+                                )
+                                |> liftAsync
+
+                            let mutable diag = ResizeArray()
+
+                            for r in result do
+                                diag.Add(
+                                    Diagnostic.Create(
+                                        descriptor,
+                                        RoslynHelpers.RangeToLocation(r.Range, sourceText, document.FilePath),
+                                        properties =
+                                            (dict [ SimplifyNameDiagnosticAnalyzer.LongIdentPropertyKey, r.RelativeName ])
+                                                .ToImmutableDictionary()
+                                    )
+                                )
+
+                            let diagnostics = diag.ToImmutableArray()
+                            cache.Remove(key) |> ignore
+
+                            let data =
+                                {
+                                    Hash = textVersionHash
+                                    Diagnostics = diagnostics
+                                }
+
+                            let cacheItem = CacheItem(key, data)
+
+                            let policy =
+                                CacheItemPolicy(SlidingExpiration = DefaultTuning.PerDocumentSavedDataSlidingWindow)
+
+                            cache.Set(cacheItem, policy)
+                            return diagnostics
+                    finally
+                        guard.Release() |> ignore
+                }
+                |> Async.map (Option.defaultValue ImmutableArray.Empty)
+                |> RoslynHelpers.StartAsyncAsTask cancellationToken

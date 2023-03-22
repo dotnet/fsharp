@@ -8,6 +8,7 @@ scripts/
 setup/
 tests/
 vsintegration/*
+!vsintegration/src/FSharp.Editor
 !vsintegration/tests/FSharp.Editor.Tests
 artifacts/
 
