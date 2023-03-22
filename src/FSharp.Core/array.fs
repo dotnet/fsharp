@@ -2098,6 +2098,31 @@ module Array =
                 yield new ArraySegment<'T>(array, offset, maxIdxExclusive - offset)
             |]
 
+        [<CompiledName("Zip")>]
+        let zip (array1: _[]) (array2: _[]) =
+            checkNonNull "array1" array1
+            checkNonNull "array2" array2
+            let len1 = array1.Length
+
+            if len1 <> array2.Length then
+                invalidArgDifferentArrayLength "array1" len1 "array2" array2.Length
+
+            let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len1
+            let inputChunks = createPartitionsUpTo array1.Length array1
+
+            Parallel.For(
+                0,
+                inputChunks.Length,
+                fun chunkIdx ->
+                    let chunk = inputChunks[chunkIdx]
+
+                    for elemIdx = chunk.Offset to (chunk.Offset + chunk.Count - 1) do
+                        res[elemIdx] <- (array1[elemIdx], array2[elemIdx])
+            )
+            |> ignore
+
+            res
+
         let inline groupByImplParallel
             (comparer: IEqualityComparer<'SafeKey>)
             ([<InlineIfLambda>] keyf: 'T -> 'SafeKey)
@@ -2213,8 +2238,7 @@ module Array =
             Parallel.For(0, count, (fun i -> result.[i] <- initializer i)) |> ignore
             result
 
-        [<CompiledName("Partition")>]
-        let partition predicate (array: 'T[]) =
+        let countAndCollectTrueItems predicate (array: 'T[]) =
             checkNonNull "array" array
             let inputLength = array.Length
 
@@ -2237,10 +2261,28 @@ module Array =
             )
             |> ignore
 
+            trueLength, isTrue
+
+        [<CompiledName("Filter")>]
+        let filter predicate (array: 'T[]) =
+            let trueLength, isTrue = countAndCollectTrueItems predicate array
+            let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked trueLength
+            let mutable resIdx = 0
+
+            for i = 0 to isTrue.Length - 1 do
+                if isTrue.[i] then
+                    res.[resIdx] <- array.[i]
+                    resIdx <- resIdx + 1
+
+            res
+
+        [<CompiledName("Partition")>]
+        let partition predicate (array: 'T[]) =
+            let trueLength, isTrue = countAndCollectTrueItems predicate array
             let res1 = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked trueLength
 
             let res2 =
-                Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked (inputLength - trueLength)
+                Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked (array.Length - trueLength)
 
             let mutable iTrue = 0
             let mutable iFalse = 0
