@@ -507,6 +507,11 @@
         <target state="translated">Tür Sağlayıcılarında tür parametresi bağımsız değişkeni olarak sabit değişmez değeri belirtmek için anahtar sözcük.</target>
         <note />
       </trans-unit>
+      <trans-unit id="keywordDescriptionSig">
+        <source>Keyword reserved for ML-compatibility.</source>
+        <target state="new">Keyword reserved for ML-compatibility.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="keywordDescriptionTypeTest">
         <source>Used to check if an object is of the given type in a pattern or binding.</source>
         <target state="translated">Bir nesnenin desende veya bağlamada verilen türde olup olmadığını kontrol etmek için kullanılır.</target>
