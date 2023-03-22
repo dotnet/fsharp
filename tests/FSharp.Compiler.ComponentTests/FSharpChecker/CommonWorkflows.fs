@@ -7,7 +7,6 @@ open System.Diagnostics
 open Xunit
 
 open FSharp.Test.ProjectGeneration
-open FSharp.Test.ProjectGeneration.Internal
 open FSharp.Compiler.Text
 open FSharp.Compiler.CodeAnalysis
 

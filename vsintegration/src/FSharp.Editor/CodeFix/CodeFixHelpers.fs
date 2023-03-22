@@ -16,24 +16,25 @@ module internal CodeFixHelpers =
             (fun (cancellationToken: CancellationToken) ->
                 async {
                     let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                    let! changesOpt = computeTextChanges()
+                    let! changesOpt = computeTextChanges ()
+
                     match changesOpt with
                     | None -> return context.Document
                     | Some textChanges -> return context.Document.WithText(sourceText.WithChanges(textChanges))
-                } |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
-            title)
+                }
+                |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
+            title
+        )
 
 [<AutoOpen>]
 module internal CodeFixExtensions =
     type CodeFixProvider with
-        member this.GetPrunedDiagnostics(context: CodeFixContext) = 
+
+        member this.GetPrunedDiagnostics(context: CodeFixContext) =
             context.Diagnostics.RemoveAll(fun x -> this.FixableDiagnosticIds.Contains(x.Id) |> not)
-            
+
         member this.RegisterFix(context: CodeFixContext, fixName, fixChange) =
             let replaceCodeFix =
-                CodeFixHelpers.createTextChangeCodeFix(
-                    fixName,
-                    context,
-                    (fun () -> asyncMaybe.Return [| fixChange |]))
+                CodeFixHelpers.createTextChangeCodeFix (fixName, context, (fun () -> asyncMaybe.Return [| fixChange |]))
+
             context.RegisterCodeFix(replaceCodeFix, this.GetPrunedDiagnostics(context))
-                 
