@@ -40,13 +40,12 @@ module IsPrivateToFile =
 
     [<Fact>]
     let ``Function definition not in signature file`` () =
-        let projectName = "IsPrivateToFileTest1"
         let signature = $"""
 type TFirstV_1<'a> = | TFirst of 'a
 val f: x: 'a -> TFirstV_1<'a>
 // no f2 here
 """
-        let project = SyntheticProject.Create(projectName,
+        let project = SyntheticProject.Create(
             { sourceFile "First" [] with SignatureFile = Custom signature },
             sourceFile "Second" ["First"])
 
