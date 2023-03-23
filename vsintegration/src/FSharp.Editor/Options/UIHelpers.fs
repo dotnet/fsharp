@@ -65,9 +65,9 @@ module internal OptionsUIHelpers =
     //data binding helpers
     let radioButtonCoverter =
         { new IValueConverter with
-            member this.Convert(value, _, parameter, _) = upcast value.Equals(parameter)
+            member _.Convert(value, _, parameter, _) = upcast value.Equals(parameter)
 
-            member this.ConvertBack(value, _, parameter, _) =
+            member _.ConvertBack(value, _, parameter, _) =
                 if value.Equals(true) then parameter else Binding.DoNothing
         }
 
@@ -83,13 +83,13 @@ module internal OptionsUIHelpers =
     let bindDescriptionWidthTextBox (tb: TextBox) path =
         let intOptionConverter =
             { new IValueConverter with
-                member this.Convert(value, _, _, _) =
+                member _.Convert(value, _, _, _) =
                     value :?> int option
                     |> Option.map Convert.ToString
                     |> Option.defaultValue ""
                     |> box
 
-                member this.ConvertBack(value, _, _, _) =
+                member _.ConvertBack(value, _, _, _) =
                     try
                         Convert.ToInt32(value) |> Some |> box
                     with _ ->
@@ -106,12 +106,9 @@ module internal OptionsUIHelpers =
                         if String.IsNullOrWhiteSpace(downcast value) then
                             ValidationResult.ValidResult
                         else
-                            let n = Convert.ToInt32(value)
-
-                            if n >= 20 && n < 400 then
-                                ValidationResult.ValidResult
-                            else
-                                ValidationResult(false, "")
+                            match Convert.ToInt32(value) with
+                            | n when n >= 20 -> ValidationResult.ValidResult
+                            | _ -> ValidationResult(false, "")
                     with _ ->
                         ValidationResult(false, "")
             }
