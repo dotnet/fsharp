@@ -8,24 +8,26 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "ConvertCSharpLambdaToFSharpLambda"); Shared>]
-type internal FSharpConvertCSharpLambdaToFSharpLambdaCodeFixProvider
-    [<ImportingConstructor>]
-    (
-    ) =
+type internal FSharpConvertCSharpLambdaToFSharpLambdaCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
-    let fixableDiagnosticIds = set ["FS0039"; "FS0043"]
+    let fixableDiagnosticIds = set [ "FS0039"; "FS0043" ]
 
     override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
     override _.RegisterCodeFixesAsync context =
         asyncMaybe {
-            let! parseResults = context.Document.GetFSharpParseResultsAsync(nameof(FSharpConvertCSharpLambdaToFSharpLambdaCodeFixProvider)) |> liftAsync
+            let! parseResults =
+                context.Document.GetFSharpParseResultsAsync(nameof (FSharpConvertCSharpLambdaToFSharpLambdaCodeFixProvider))
+                |> liftAsync
 
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
-            let errorRange = RoslynHelpers.TextSpanToFSharpRange(context.Document.FilePath, context.Span, sourceText)
 
-            let! fullParenRange, lambdaArgRange, lambdaBodyRange = parseResults.TryRangeOfParenEnclosingOpEqualsGreaterUsage errorRange.Start
+            let errorRange =
+                RoslynHelpers.TextSpanToFSharpRange(context.Document.FilePath, context.Span, sourceText)
+
+            let! fullParenRange, lambdaArgRange, lambdaBodyRange =
+                parseResults.TryRangeOfParenEnclosingOpEqualsGreaterUsage errorRange.Start
 
             let! fullParenSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, fullParenRange)
             let! lambdaArgSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, lambdaArgRange)
@@ -44,12 +46,9 @@ type internal FSharpConvertCSharpLambdaToFSharpLambdaCodeFixProvider
             let title = SR.UseFSharpLambda()
 
             let codeFix =
-                CodeFixHelpers.createTextChangeCodeFix(
-                    title,
-                    context,
-                    (fun () -> asyncMaybe.Return [| replacement |]))
+                CodeFixHelpers.createTextChangeCodeFix (title, context, (fun () -> asyncMaybe.Return [| replacement |]))
 
             context.RegisterCodeFix(codeFix, diagnostics)
         }
         |> Async.Ignore
-        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken) 
+        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

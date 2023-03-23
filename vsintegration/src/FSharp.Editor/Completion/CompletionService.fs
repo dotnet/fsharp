@@ -22,15 +22,21 @@ type internal FSharpCompletionService
     ) =
     inherit FSharpCompletionServiceWithProviders(workspace)
 
-    let projectInfoManager = workspace.Services.GetRequiredService<IFSharpWorkspaceService>().FSharpProjectOptionsManager
+    let projectInfoManager =
+        workspace
+            .Services
+            .GetRequiredService<IFSharpWorkspaceService>()
+            .FSharpProjectOptionsManager
 
-    let builtInProviders = 
+    let builtInProviders =
         ImmutableArray.Create<CompletionProvider>(
             FSharpCompletionProvider(workspace, serviceProvider, assemblyContentProvider),
-            FSharpCommonCompletionProvider.Create(HashDirectiveCompletionProvider.Create(workspace, projectInfoManager)))
+            FSharpCommonCompletionProvider.Create(HashDirectiveCompletionProvider.Create(workspace, projectInfoManager))
+        )
 
     override _.Language = FSharpConstants.FSharpLanguageName
     override _.GetBuiltInProviders() = builtInProviders
+
     override _.GetRulesImpl() =
         let enterKeyRule =
             match settings.IntelliSense.EnterKeySetting with
@@ -38,7 +44,8 @@ type internal FSharpCompletionService
             | NewlineOnCompleteWord -> EnterKeyRule.AfterFullyTypedWord
             | AlwaysNewline -> EnterKeyRule.Always
 
-        CompletionRules.Default
+        CompletionRules
+            .Default
             .WithDismissIfEmpty(true)
             .WithDismissIfLastCharacterDeleted(true)
             .WithDefaultEnterKeyRule(enterKeyRule)
@@ -48,12 +55,11 @@ type internal FSharpCompletionService
         let documentId = workspace.GetDocumentIdInCurrentContext(sourceText.Container)
         let document = workspace.CurrentSolution.GetDocument(documentId)
         let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)
-        CompletionUtils.getDefaultCompletionListSpan(sourceText, caretIndex, documentId, document.FilePath, defines)
+        CompletionUtils.getDefaultCompletionListSpan (sourceText, caretIndex, documentId, document.FilePath, defines)
 
 [<Shared>]
 [<ExportLanguageServiceFactory(typeof<CompletionService>, FSharpConstants.FSharpLanguageName)>]
-type internal FSharpCompletionServiceFactory 
-    [<ImportingConstructor>] 
+type internal FSharpCompletionServiceFactory [<ImportingConstructor>]
     (
         serviceProvider: SVsServiceProvider,
         assemblyContentProvider: AssemblyContentProvider,
@@ -61,6 +67,10 @@ type internal FSharpCompletionServiceFactory
     ) =
     interface ILanguageServiceFactory with
         member _.CreateLanguageService(hostLanguageServices: HostLanguageServices) : ILanguageService =
-            upcast new FSharpCompletionService(hostLanguageServices.WorkspaceServices.Workspace, serviceProvider, assemblyContentProvider, settings)
-
-
+            upcast
+                new FSharpCompletionService(
+                    hostLanguageServices.WorkspaceServices.Workspace,
+                    serviceProvider,
+                    assemblyContentProvider,
+                    settings
+                )
