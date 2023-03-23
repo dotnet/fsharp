@@ -12,24 +12,26 @@ open Microsoft.CodeAnalysis.CodeFixes
 type internal FSharpAddNewKeywordCodeFixProvider() =
     inherit CodeFixProvider()
 
-    static let fixableDiagnosticIds = set ["FS0760"]
+    static let fixableDiagnosticIds = set [ "FS0760" ]
 
     override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
     override _.RegisterCodeFixesAsync context : Task =
         async {
             let title = SR.AddNewKeyword()
+
             let diagnostics =
                 context.Diagnostics
                 |> Seq.filter (fun x -> fixableDiagnosticIds |> Set.contains x.Id)
                 |> Seq.toImmutableArray
 
             let codeFix =
-                CodeFixHelpers.createTextChangeCodeFix(
+                CodeFixHelpers.createTextChangeCodeFix (
                     title,
                     context,
-                    (fun () -> asyncMaybe.Return [| TextChange(TextSpan(context.Span.Start, 0), "new ") |]))
+                    (fun () -> asyncMaybe.Return [| TextChange(TextSpan(context.Span.Start, 0), "new ") |])
+                )
 
             context.RegisterCodeFix(codeFix, diagnostics)
-        } |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
- 
+        }
+        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

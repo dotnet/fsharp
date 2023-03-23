@@ -228,7 +228,8 @@ let exists<'a when 'a : equality> (xs : 'a []) f =
     let s = xs |> Seq.exists f
     let l = xs |> List.ofArray |> List.exists f
     let a = xs |> Array.exists f
-    consistency "exists" s l a
+    let pa = xs |> Array.Parallel.exists f
+    consistencyIncludingParallel "exists" s l a pa
 
 [<Fact>]
 let ``exists is consistent`` () =
@@ -254,7 +255,8 @@ let filter<'a when 'a : equality> (xs : 'a []) predicate =
     let s = xs |> Seq.filter predicate
     let l = xs |> List.ofArray |> List.filter predicate
     let a = xs |> Array.filter predicate
-    Seq.toArray s = a && List.toArray l = a
+    let pa = xs |> Array.Parallel.filter predicate
+    pa = a && Seq.toArray s = a && List.toArray l = a
 
 [<Fact>]
 let ``filter is consistent`` () =
@@ -374,7 +376,8 @@ let forall<'a when 'a : equality> (xs : 'a []) f =
     let s = xs |> Seq.forall f
     let l = xs |> List.ofArray |> List.forall f
     let a = xs |> Array.forall f
-    consistency "forall" s l a
+    let pa = xs |> Array.Parallel.forall f
+    consistencyIncludingParallel "forall" s l a pa
 
 [<Fact>]
 let ``forall is consistent`` () =
@@ -1288,9 +1291,10 @@ let zip<'a when 'a : equality> (xs':('a*'a) []) =
     let xs = Array.map fst xs'
     let xs2 = Array.map snd xs'
     let s = runAndCheckErrorType (fun () -> Seq.zip xs xs2 |> Seq.toArray)
-    let l = runAndCheckErrorType (fun () -> List.zip (List.ofSeq xs) (List.ofSeq xs2) |> List.toArray)
-    let a = runAndCheckErrorType (fun () -> Array.zip (Array.ofSeq xs) (Array.ofSeq xs2))
-    consistency "zip" s l a
+    let l = runAndCheckErrorType (fun () -> List.zip (List.ofArray xs) (List.ofArray xs2) |> List.toArray)
+    let a = runAndCheckErrorType (fun () -> Array.zip xs xs2)
+    let pa = runAndCheckErrorType (fun () -> Array.Parallel.zip xs xs2)
+    consistencyIncludingParallel "zip" s l a pa
     
 [<Fact>]
 let ``zip is consistent for collections with equal length`` () =

@@ -11,45 +11,67 @@ open Microsoft.CodeAnalysis.CodeFixes
 open FSharp.Compiler.Diagnostics
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "FixIndexerAccess"); Shared>]
-type internal FSharpFixIndexerAccessCodeFixProvider() =
+type internal LegacyFsharpFixAddDotToIndexerAccess() =
     inherit CodeFixProvider()
-    let fixableDiagnosticIds = set ["FS3217"]
-        
+    let fixableDiagnosticIds = set [ "FS3217" ]
+
     override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
     override _.RegisterCodeFixesAsync context : Task =
         async {
-            let diagnostics = 
-                context.Diagnostics 
+            let diagnostics =
+                context.Diagnostics
                 |> Seq.filter (fun x -> fixableDiagnosticIds |> Set.contains x.Id)
                 |> Seq.toList
+
             if not (List.isEmpty diagnostics) then
                 let! sourceText = context.Document.GetTextAsync() |> Async.AwaitTask
 
                 diagnostics
                 |> Seq.iter (fun diagnostic ->
                     let diagnostics = ImmutableArray.Create diagnostic
-                    let span,replacement =
+
+                    let span, replacement =
                         try
                             let mutable span = context.Span
 
                             let notStartOfBracket (span: TextSpan) =
                                 let t = sourceText.GetSubText(TextSpan(span.Start, span.Length + 1))
-                                t.[t.Length-1] <> '['
+                                t.[t.Length - 1] <> '['
 
                             // skip all braces and blanks until we find [
                             while span.End < sourceText.Length && notStartOfBracket span do
                                 span <- TextSpan(span.Start, span.Length + 1)
 
-                            span,sourceText.GetSubText(span).ToString()
-                        with
-                        | _ -> context.Span,sourceText.GetSubText(context.Span).ToString()
+                            span, sourceText.GetSubText(span).ToString()
+                        with _ ->
+                            context.Span, sourceText.GetSubText(context.Span).ToString()
 
-                    let codefix = 
-                        CodeFixHelpers.createTextChangeCodeFix(
-                            CompilerDiagnostics.GetErrorMessage FSharpDiagnosticKind.AddIndexerDot, 
+                    let codefix =
+                        CodeFixHelpers.createTextChangeCodeFix (
+                            CompilerDiagnostics.GetErrorMessage FSharpDiagnosticKind.AddIndexerDot,
                             context,
-                            (fun () -> asyncMaybe.Return [| TextChange(span, replacement.TrimEnd() + ".") |]))
+                            (fun () -> asyncMaybe.Return [| TextChange(span, replacement.TrimEnd() + ".") |])
+                        )
 
                     context.RegisterCodeFix(codefix, diagnostics))
-        } |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+        }
+        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "RemoveIndexerDotBeforeBracket"); Shared>]
+type internal FsharpFixRemoveDotFromIndexerAccessOptIn() as this =
+    inherit CodeFixProvider()
+    let fixableDiagnosticIds = set [ "FS3366" ]
+
+    static let fixName =
+        CompilerDiagnostics.GetErrorMessage FSharpDiagnosticKind.RemoveIndexerDot
+
+    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+
+    override _.RegisterCodeFixesAsync context : Task =
+        backgroundTask {
+            let relevantDiagnostics = this.GetPrunedDiagnostics(context)
+
+            if not relevantDiagnostics.IsEmpty then
+                this.RegisterFix(context, fixName, TextChange(context.Span, ""))
+        }
