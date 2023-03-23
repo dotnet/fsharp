@@ -304,9 +304,13 @@ and [<Sealed>] ItemKeyStoreBuilder() =
 
     let writeActivePatternCase (apInfo: ActivePatternInfo) index =
         writeString ItemKeyTags.itemActivePattern
-        let name, range = apInfo.ActiveTagsWithRanges[index]
-        writeString name
-        writeRange range
+        match apInfo.ActiveTagsWithRanges with
+        | (_, m)::_ -> m.FileName |> Path.GetFileNameWithoutExtension |> writeString
+        | _ -> ()
+        for tag in apInfo.ActiveTags do
+            writeChar '|'
+            writeString tag
+        writeInt32 index
 
     member _.Write(m: range, item: Item) =
         writeRange m

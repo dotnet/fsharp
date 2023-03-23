@@ -339,7 +339,6 @@ module One =
     | Even -> ()
     | Odd -> ()
 
-
 module Two =
 
     let (|Even|Steven|) v =
@@ -362,6 +361,28 @@ module Two =
         ]
 
     [<Fact>]
+    let ``We don't find references to cases the same active pattern defined in a different file`` () =
+
+        let source = """
+let (|Even|Odd|) v =
+    if v % 2 = 0 then Even else Odd
+match 2 with
+| Even -> ()
+| Odd -> ()
+"""
+        SyntheticProject.Create(
+            { sourceFile "First" [] with Source = source },
+            { sourceFile "Second" [] with Source = source }
+        ).Workflow {
+            placeCursor "First" "Even"
+            findAllReferences (expectToFind [
+                "FileFirst.fs", 3, 6, 10
+                "FileFirst.fs", 4, 22, 26
+                "FileFirst.fs", 6, 2, 6
+            ])
+        }
+
+    [<Fact>]
     let ``We find active patterns in other files when there are signature files`` () =
 
         SyntheticProject.Create(
@@ -376,7 +397,7 @@ match 2 with | Even -> () | Odd -> ()
         ).Workflow {
             placeCursor "Second" "Even"
             findAllReferences (expectToFind [
-                "FileFirst.fs", 2, 6, 9
+                "FileFirst.fs", 2, 6, 10
                 "FileFirst.fs", 2, 39, 43
                 "FileSecond.fs", 4, 15, 19
             ])
