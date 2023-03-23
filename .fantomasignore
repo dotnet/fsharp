@@ -42,8 +42,8 @@ src/Compiler/Checking/TypeRelations.fs
 
 # Incorrectly formatted: https://github.com/dotnet/fsharp/pull/14645/commits/49443a67ea8a17670c8a7c80c8bdf91f82231e91 or https://github.com/fsprojects/fantomas/issues/2733
 ### Should be fixed, lets test this
-# 
-# src/Compiler/Driver/CompilerImports.fs
+# This CompilerImports.fs behavior is not fixed yet, following up in  https://github.com/fsprojects/fantomas/issues/2733
+src/Compiler/Driver/CompilerImports.fs
 # 
 # src/Compiler/DependencyManager/AssemblyResolveHandler.fs
 # src/Compiler/DependencyManager/DependencyProvider.fs
@@ -67,33 +67,33 @@ src/Compiler/Checking/TypeRelations.fs
 # 
 # src/Compiler/Legacy/LegacyHostedCompilerForTesting.fs
 # src/Compiler/Legacy/LegacyMSBuildReferenceResolver.fs
-# 
-# src/Compiler/Optimize/DetupleArgs.fs
-# src/Compiler/Optimize/InnerLambdasToTopLevelFuncs.fs
-# src/Compiler/Optimize/LowerCalls.fs
-# src/Compiler/Optimize/LowerComputedCollections.fs
-# src/Compiler/Optimize/LowerLocalMutables.fs
-# src/Compiler/Optimize/LowerSequences.fs
-# src/Compiler/Optimize/LowerStateMachines.fs
-# src/Compiler/Optimize/Optimizer.fs
-# 
-# src/Compiler/Symbols/Exprs.fs
-# src/Compiler/Symbols/FSharpDiagnostic.fs
-# src/Compiler/Symbols/SymbolHelpers.fs
-# src/Compiler/Symbols/SymbolPatterns.fs
-# src/Compiler/Symbols/Symbols.fs
-# 
-# src/Compiler/TypedTree/CompilerGlobalState.fs
-# src/Compiler/TypedTree/QuotationPickler.fs
-# src/Compiler/TypedTree/tainted.fs
-# src/Compiler/TypedTree/TcGlobals.fs
-# src/Compiler/TypedTree/TypedTree.fs
-# src/Compiler/TypedTree/TypedTreeBasics.fs
-# src/Compiler/TypedTree/TypedTreeOps.fs
-# src/Compiler/TypedTree/TypedTreePickle.fs
-# src/Compiler/TypedTree/TypeProviders.fs
 
+# The following files were formatted, but the "format, --check" loop is not stable.
+# Fantomas formats them, but still thinks they need formatting
+src/Compiler/Optimize/DetupleArgs.fs
+src/Compiler/Optimize/InnerLambdasToTopLevelFuncs.fs
+src/Compiler/Optimize/LowerCalls.fs
+src/Compiler/Optimize/LowerComputedCollections.fs
+src/Compiler/Optimize/LowerLocalMutables.fs
+src/Compiler/Optimize/LowerSequences.fs
+src/Compiler/Optimize/LowerStateMachines.fs
+src/Compiler/Optimize/Optimizer.fs
 
+src/Compiler/Symbols/Exprs.fs
+src/Compiler/Symbols/FSharpDiagnostic.fs
+src/Compiler/Symbols/SymbolHelpers.fs
+src/Compiler/Symbols/SymbolPatterns.fs
+src/Compiler/Symbols/Symbols.fs
+
+src/Compiler/TypedTree/CompilerGlobalState.fs
+src/Compiler/TypedTree/QuotationPickler.fs
+src/Compiler/TypedTree/tainted.fs
+src/Compiler/TypedTree/TcGlobals.fs
+src/Compiler/TypedTree/TypedTree.fs
+src/Compiler/TypedTree/TypedTreeBasics.fs
+src/Compiler/TypedTree/TypedTreeOps.fs
+src/Compiler/TypedTree/TypedTreePickle.fs
+src/Compiler/TypedTree/TypeProviders.fs
 # Explicitly unformatted file that needs more care to get it to format well
 
 src/Compiler/SyntaxTree/LexFilter.fs
