@@ -12,7 +12,7 @@ open Microsoft.CodeAnalysis.CodeFixes
 type internal FSharpChangeToUpcastCodeFixProvider() =
     inherit CodeFixProvider()
 
-    let fixableDiagnosticIds = set ["FS3198"]
+    let fixableDiagnosticIds = set [ "FS3198" ]
 
     override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
@@ -24,7 +24,12 @@ type internal FSharpChangeToUpcastCodeFixProvider() =
             // Only works if it's one or the other
             let isDowncastOperator = text.Contains(":?>")
             let isDowncastKeyword = text.Contains("downcast")
-            do! Option.guard ((isDowncastOperator || isDowncastKeyword) && not (isDowncastOperator && isDowncastKeyword))
+
+            do!
+                Option.guard (
+                    (isDowncastOperator || isDowncastKeyword)
+                    && not (isDowncastOperator && isDowncastKeyword)
+                )
 
             let replacement =
                 if isDowncastOperator then
@@ -44,12 +49,13 @@ type internal FSharpChangeToUpcastCodeFixProvider() =
                 |> Seq.toImmutableArray
 
             let codeFix =
-                CodeFixHelpers.createTextChangeCodeFix(
+                CodeFixHelpers.createTextChangeCodeFix (
                     title,
                     context,
-                    (fun () -> asyncMaybe.Return [| TextChange(context.Span, replacement) |]))
+                    (fun () -> asyncMaybe.Return [| TextChange(context.Span, replacement) |])
+                )
 
             context.RegisterCodeFix(codeFix, diagnostics)
         }
         |> Async.Ignore
-        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken) 
+        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

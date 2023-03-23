@@ -12,8 +12,8 @@ module TelemetryReporter =
     let getFullEventName name = eventPrefix + name
     let getFullPropName name = propPrefix + name
 
-    let createEvent name (props: (string * obj) list) = 
-        let event = TelemetryEvent (getFullEventName name)
+    let createEvent name (props: (string * obj) list) =
+        let event = TelemetryEvent(getFullEventName name)
 
         props
         |> List.map (fun (k, v) -> getFullPropName k, v)
@@ -25,4 +25,3 @@ module TelemetryReporter =
         let session = TelemetryService.DefaultSession
         let event = createEvent name props
         session.PostEvent event
-

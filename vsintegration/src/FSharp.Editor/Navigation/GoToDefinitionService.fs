@@ -17,18 +17,17 @@ open Microsoft.VisualStudio.Shell.Interop
 
 [<Export(typeof<IFSharpGoToDefinitionService>)>]
 [<Export(typeof<FSharpGoToDefinitionService>)>]
-type internal FSharpGoToDefinitionService 
-    [<ImportingConstructor>]
-    (
-        metadataAsSource: FSharpMetadataAsSourceService
-    ) =
+type internal FSharpGoToDefinitionService [<ImportingConstructor>] (metadataAsSource: FSharpMetadataAsSourceService) =
 
-    let statusBar = StatusBar(ServiceProvider.GlobalProvider.GetService<SVsStatusbar,IVsStatusbar>())
-   
+    let statusBar =
+        StatusBar(ServiceProvider.GlobalProvider.GetService<SVsStatusbar, IVsStatusbar>())
+
     interface IFSharpGoToDefinitionService with
         /// Invoked with Peek Definition.
-        member _.FindDefinitionsAsync (document: Document, position: int, cancellationToken: CancellationToken) =
-            let navigation = FSharpNavigation(statusBar, metadataAsSource, document, rangeStartup)
+        member _.FindDefinitionsAsync(document: Document, position: int, cancellationToken: CancellationToken) =
+            let navigation =
+                FSharpNavigation(statusBar, metadataAsSource, document, rangeStartup)
+
             navigation.FindDefinitions(position, cancellationToken) |> Task.FromResult
 
         /// Invoked with Go to Definition.
@@ -37,5 +36,7 @@ type internal FSharpGoToDefinitionService
             statusBar.Message(SR.LocatingSymbol())
             use __ = statusBar.Animate()
 
-            let navigation = FSharpNavigation(statusBar, metadataAsSource, document, rangeStartup)
+            let navigation =
+                FSharpNavigation(statusBar, metadataAsSource, document, rangeStartup)
+
             navigation.TryGoToDefinition(position, cancellationToken)
