@@ -215,12 +215,7 @@ internal partial class SolutionExplorerInProcess
         var solution = dte.Solution;
         Assumes.Present(solution);
 
-        var project = solution.Projects.Cast<EnvDTE.Project>().FirstOrDefault(x => x.Name == projectName);
-        if (project is null)
-        {
-            throw new NotImplementedException("Prevent null fallthrough");
-        }
-
+        var project = solution.Projects.Cast<EnvDTE.Project>().First(x => x.Name == projectName);
         var projectPath = Path.GetDirectoryName(project.FullName);
         return Path.Combine(projectPath, relativeFilePath);
     }
