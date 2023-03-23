@@ -40,7 +40,8 @@ module internal SymbolHelpers =
                     defines,
                     SymbolLookupKind.Greedy,
                     false,
-                    false
+                    false,
+                    cancellationToken
                 )
 
             let! symbolUse =

@@ -32,7 +32,8 @@ type internal FSharpEditorFormattingService [<ImportingConstructor>] (settings: 
             checker: FSharpChecker,
             indentStyle: FormattingOptions.IndentStyle,
             parsingOptions: FSharpParsingOptions,
-            position: int
+            position: int,
+            cancellationToken
         ) =
         // Logic for determining formatting changes:
         // If first token on the current line is a closing brace,
@@ -49,7 +50,7 @@ type internal FSharpEditorFormattingService [<ImportingConstructor>] (settings: 
             let defines = CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions
 
             let tokens =
-                Tokenizer.tokenizeLine (documentId, sourceText, line.Start, filePath, defines)
+                Tokenizer.tokenizeLine (documentId, sourceText, line.Start, filePath, defines, cancellationToken)
 
             let! firstMeaningfulToken =
                 tokens
@@ -192,7 +193,8 @@ type internal FSharpEditorFormattingService [<ImportingConstructor>] (settings: 
                     document.GetFSharpChecker(),
                     indentStyle,
                     parsingOptions,
-                    position
+                    position,
+                    cancellationToken
                 )
 
             return textChange |> Option.toList |> toIList
