@@ -83,6 +83,7 @@ type LanguageServicePerformanceOptions =
         TimeUntilStaleCompletion: int
         EnableParallelReferenceResolution: bool
         EnableFastFindReferences: bool
+        EnablePartialTypeChecking: bool
         UseSyntaxTreeCache: bool
     }
 
@@ -93,6 +94,7 @@ type LanguageServicePerformanceOptions =
             TimeUntilStaleCompletion = 2000 // In ms, so this is 2 seconds
             EnableParallelReferenceResolution = false
             EnableFastFindReferences = FSharpExperimentalFeaturesEnabledAutomatically
+            EnablePartialTypeChecking = true
             UseSyntaxTreeCache = FSharpExperimentalFeaturesEnabledAutomatically
         }
 

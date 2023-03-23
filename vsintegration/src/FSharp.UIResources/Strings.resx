@@ -249,6 +249,9 @@
   <data name="Use_syntax_tree_cache" xml:space="preserve">
     <value>Cache parsing results (experimental)</value>
   </data>
+  <data name="Enable_partial_type_checking" xml:space="preserve">
+    <value>Enable partial type checking</value>
+  </data>
   <data name="Formatting" xml:space="preserve">
     <value>Formatting</value>
   </data>
