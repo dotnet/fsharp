@@ -8,6 +8,7 @@ open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.ComponentModelHost
 
 module internal OptionsUIHelpers =
+    open System
 
     [<AbstractClass>]
     type AbstractOptionPage<'options>() as this =
@@ -78,3 +79,42 @@ module internal OptionsUIHelpers =
 
     let bindCheckBox (checkBox: CheckBox) (path: string) =
         checkBox.SetBinding(CheckBox.IsCheckedProperty, path) |> ignore
+
+    let bindDescriptionWidthTextBox (tb: TextBox) path =
+        let intOptionConverter =
+            { new IValueConverter with
+                member this.Convert(value, _, _, _) =
+                    value :?> int option
+                    |> Option.map Convert.ToString
+                    |> Option.defaultValue ""
+                    |> box
+
+                member this.ConvertBack(value, _, _, _) =
+                    try
+                        Convert.ToInt32(value) |> Some |> box
+                    with _ ->
+                        None
+            }
+
+        let binding =
+            Binding(path, Converter = intOptionConverter, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged)
+
+        binding.ValidationRules.Add(
+            { new ValidationRule() with
+                member _.Validate(value, _) =
+                    try
+                        if String.IsNullOrWhiteSpace(downcast value) then
+                            ValidationResult.ValidResult
+                        else
+                            let n = Convert.ToInt32(value)
+
+                            if n >= 20 && n < 400 then
+                                ValidationResult.ValidResult
+                            else
+                                ValidationResult(false, "")
+                    with _ ->
+                        ValidationResult(false, "")
+            }
+        )
+
+        tb.SetBinding(TextBox.TextProperty, binding) |> ignore

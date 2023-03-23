@@ -29,6 +29,12 @@
                         </StackPanel>
                     </StackPanel>
                 </GroupBox>
+                <GroupBox Header="Formatting">
+                    <StackPanel Orientation="Horizontal">
+                        <Label>Maximum description width</Label>
+                        <TextBox x:Name="descriptionWidth" Width="40" VerticalContentAlignment="Center" />
+                    </StackPanel>
+                </GroupBox>
             </StackPanel>
         </ScrollViewer>
     </Grid>
