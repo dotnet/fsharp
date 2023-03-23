@@ -75,18 +75,6 @@ type internal FSharpAddMissingRecToMutuallyRecFunctionsCodeFixProvider [<Importi
                     defines,
                     SymbolLookupKind.Greedy,
                     false,
-                    false
-                )
-
-            let! funcLexerSymbol =
-                Tokenizer.getSymbolAtPosition (
-                    context.Document.Id,
-                    sourceText,
-                    funcStartPos,
-                    context.Document.FilePath,
-                    defines,
-                    SymbolLookupKind.Greedy,
-                    false,
                     false,
                     context.CancellationToken
                 )

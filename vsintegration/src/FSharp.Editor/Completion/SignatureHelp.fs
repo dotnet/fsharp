@@ -308,6 +308,8 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
                         return adjustedColumnInSource
                 }
 
+            let! ct = Async.CancellationToken |> liftAsync
+
             let! lexerSymbol =
                 Tokenizer.getSymbolAtPosition (
                     documentId,
