@@ -15,6 +15,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.Syntax.PrettyNaming
 
 #nowarn "9"
 #nowarn "51"
@@ -301,6 +302,12 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             | ParentNone -> writeChar '%'
             | Parent eref -> writeEntityRef eref
 
+    let writeActivePatternCase (apInfo: ActivePatternInfo) index =
+        writeString ItemKeyTags.itemActivePattern
+        let name, range = apInfo.ActiveTagsWithRanges[index]
+        writeString name
+        writeRange range
+
     member _.Write(m: range, item: Item) =
         writeRange m
 
@@ -325,13 +332,11 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             writeEntityRef info.TyconRef
             writeString info.LogicalName
 
-        | Item.ActivePatternResult (info, _, _, _) ->
-            writeString ItemKeyTags.itemActivePattern
-            info.ActiveTags |> List.iter writeString
+        | Item.ActivePatternResult(info, _, index, _) ->
+            writeActivePatternCase info index
 
         | Item.ActivePatternCase elemRef ->
-            writeString ItemKeyTags.itemActivePattern
-            elemRef.ActivePatternInfo.ActiveTags |> List.iter writeString
+            writeActivePatternCase elemRef.ActivePatternInfo elemRef.CaseIndex
 
         | Item.ExnCase tcref ->
             writeString ItemKeyTags.itemExnCase
