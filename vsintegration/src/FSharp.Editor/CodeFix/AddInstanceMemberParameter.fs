@@ -12,7 +12,7 @@ open Microsoft.CodeAnalysis.CodeFixes
 type internal FSharpAddInstanceMemberParameterCodeFixProvider() =
     inherit CodeFixProvider()
 
-    let fixableDiagnosticIds = set ["FS0673"]
+    let fixableDiagnosticIds = set [ "FS0673" ]
 
     override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
@@ -26,10 +26,11 @@ type internal FSharpAddInstanceMemberParameterCodeFixProvider() =
             let title = SR.AddMissingInstanceMemberParameter()
 
             let codeFix =
-                CodeFixHelpers.createTextChangeCodeFix(
+                CodeFixHelpers.createTextChangeCodeFix (
                     title,
                     context,
-                    (fun () -> asyncMaybe.Return [| TextChange(TextSpan(context.Span.Start, 0), "x.") |]))
+                    (fun () -> asyncMaybe.Return [| TextChange(TextSpan(context.Span.Start, 0), "x.") |])
+                )
 
             context.RegisterCodeFix(codeFix, diagnostics)
         }

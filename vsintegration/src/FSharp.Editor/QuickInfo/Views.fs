@@ -52,10 +52,14 @@ module internal QuickInfoViewProvider =
     let (|TaggedText|) (tt: TaggedText) = tt.Tag, tt.Text
 
     let (|LineBreak|_|) =
-        function TaggedText (TextTag.LineBreak, _) -> Some () | _ -> None
+        function
+        | TaggedText (TextTag.LineBreak, _) -> Some()
+        | _ -> None
 
     let (|DocSeparator|_|) =
-        function LineBreak :: TaggedText (TextTag.Text, "-------------") :: LineBreak :: rest -> Some rest | _ -> None
+        function
+        | LineBreak :: TaggedText (TextTag.Text, "-------------") :: LineBreak :: rest -> Some rest
+        | _ -> None
 
     let wrapContent (elements: obj list) =
         ContainerElement(ContainerElementStyle.Wrapped, elements |> Seq.map box)
@@ -65,7 +69,8 @@ module internal QuickInfoViewProvider =
 
     let encloseRuns runs = wrapContent (runs |> List.rev) |> box
 
-    let emptyLine = wrapContent [ ClassifiedTextRun(ClassificationTypeNames.WhiteSpace, "") |> box ]
+    let emptyLine =
+        wrapContent [ ClassifiedTextRun(ClassificationTypeNames.WhiteSpace, "") |> box ]
 
     let provideContent
         (
@@ -87,7 +92,10 @@ module internal QuickInfoViewProvider =
                 | :? NavigableTaggedText as item :: rest when navigation.IsTargetValid item.Range ->
                     let classificationTag = layoutTagToClassificationTag item.Tag
                     let action = fun () -> navigation.NavigateTo(item.Range, CancellationToken.None)
-                    let run = ClassifiedTextRun(classificationTag, item.Text, action, getTooltip item.Range.FileName)
+
+                    let run =
+                        ClassifiedTextRun(classificationTag, item.Text, action, getTooltip item.Range.FileName)
+
                     loop rest (run :: runs) stack
                 | item :: rest ->
                     let run = ClassifiedTextRun(layoutTagToClassificationTag item.Tag, item.Text)
