@@ -1783,24 +1783,41 @@ let CheckMultipleInputsUsingGraphMode
 /// As the type-checking can now happen in parallel, the naming is no longer deterministic.
 /// Overall this only seems to affect the pickled signature data later on.
 /// But in order to regain deterministic names, we re-do the pretty naming for all typars of Vals.
-let rec updatePrettyNamesForTyparsInEntity (entity: Entity) =
-    for e in entity.ModuleOrNamespaceType.AllEntities do
-        updatePrettyNamesForTyparsInEntity e
+module UpdatePrettyNames =
+    let rec updateEntity (entity: Entity) =
+        for e in entity.ModuleOrNamespaceType.AllEntities do
+            updateEntity e
 
-    for v in entity.ModuleOrNamespaceType.AllValsAndMembers do
-        updatePrettyNamesForTyparsInVal v
+        for v in entity.ModuleOrNamespaceType.AllValsAndMembers do
+            updateVal v
 
-and updatePrettyNamesForTyparsInVal (v: Val) =
-    if not (List.isEmpty v.Typars) then
-        // Reset typar name to ?
-        for typar in v.Typars do
-            if typar.IsCompilerGenerated && typar.ILName.IsNone then
-                typar.typar_id <- Ident(unassignedTyparName, typar.typar_id.idRange)
+    and private updateVal (v: Val) =
+        if not (List.isEmpty v.Typars) then
+            // Reset typar name to ?
+            for typar in v.Typars do
+                if typar.IsCompilerGenerated && typar.ILName.IsNone then
+                    typar.typar_id <- Ident(unassignedTyparName, typar.typar_id.idRange)
 
-        let nms = PrettyTypes.PrettyTyparNames (fun _ -> true) List.empty v.Typars
+            let nms = PrettyTypes.PrettyTyparNames (fun _ -> true) List.empty v.Typars
 
-        (v.Typars, nms)
-        ||> List.iter2 (fun tp nm -> tp.typar_id <- ident (nm, tp.Range))
+            (v.Typars, nms)
+            ||> List.iter2 (fun tp nm -> tp.typar_id <- ident (nm, tp.Range))
+
+    and updateModuleOrNamespaceContent (contents: ModuleOrNamespaceContents) =
+        match contents with
+        | ModuleOrNamespaceContents.TMDefs defs ->
+            for def in defs do
+                updateModuleOrNamespaceContent def
+        | ModuleOrNamespaceContents.TMDefDo _
+        | ModuleOrNamespaceContents.TMDefOpens _ -> ()
+        | ModuleOrNamespaceContents.TMDefLet (binding, _) -> updateBinding binding
+        | ModuleOrNamespaceContents.TMDefRec (bindings = bindings) ->
+            for binding in bindings do
+                match binding with
+                | ModuleOrNamespaceBinding.Binding binding -> updateBinding binding
+                | ModuleOrNamespaceBinding.Module (_, moduleOrNamespaceContents) -> updateModuleOrNamespaceContent moduleOrNamespaceContents
+
+    and private updateBinding (binding: Binding) = updateVal binding.Var
 
 let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs) =
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions
@@ -1826,7 +1843,10 @@ let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tc
     let tcState, declaredImpls, ccuContents =
         CheckClosedInputSetFinish(implFiles, tcState)
 
-    updatePrettyNamesForTyparsInEntity ccuContents
+    for declImpl in declaredImpls do
+        UpdatePrettyNames.updateModuleOrNamespaceContent declImpl.Contents
+
+    UpdatePrettyNames.updateEntity ccuContents
 
     tcState.Ccu.Deref.Contents <- ccuContents
     tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
