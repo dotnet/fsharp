@@ -109,8 +109,8 @@ src/FSharp.Core/Query.fs
 src/FSharp.Core/seqcore.fs
 
 # Fantomas limitation https://github.com/fsprojects/fantomas/issues/2264
-
-src/FSharp.Core/SI.fs
+# This should be resolved
+# src/FSharp.Core/SI.fs
 
 # Fantomas limitations on implementation files  (to investigate)
 
