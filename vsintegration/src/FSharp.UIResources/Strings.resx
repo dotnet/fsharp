@@ -252,7 +252,7 @@
   <data name="Formatting" xml:space="preserve">
     <value>Formatting</value>
   </data>
-  <data name="Maximum_description_width" xml:space="preserve">
-    <value>Maximum description width</value>
+  <data name="Maximum_description_width_in_characters" xml:space="preserve">
+    <value>Maximum description width in characters</value>
   </data>
 </root>

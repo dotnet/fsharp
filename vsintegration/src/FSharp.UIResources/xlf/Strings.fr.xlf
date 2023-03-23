@@ -77,9 +77,9 @@
         <target state="new">Live Buffers (experimental)</target>
         <note />
       </trans-unit>
-      <trans-unit id="Maximum_description_width">
-        <source>Maximum description width</source>
-        <target state="new">Maximum description width</target>
+      <trans-unit id="Maximum_description_width_in_characters">
+        <source>Maximum description width in characters</source>
+        <target state="new">Maximum description width in characters</target>
         <note />
       </trans-unit>
       <trans-unit id="Navigation_links">

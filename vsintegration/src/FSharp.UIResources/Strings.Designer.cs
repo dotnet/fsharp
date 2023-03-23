@@ -277,11 +277,11 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Maximum description width.
+        ///   Looks up a localized string similar to Maximum description width in characters.
         /// </summary>
-        public static string Maximum_description_width {
+        public static string Maximum_description_width_in_characters {
             get {
-                return ResourceManager.GetString("Maximum_description_width", resourceCulture);
+                return ResourceManager.GetString("Maximum_description_width_in_characters", resourceCulture);
             }
         }
         

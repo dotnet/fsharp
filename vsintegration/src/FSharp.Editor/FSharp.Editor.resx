@@ -174,7 +174,7 @@ Always add new line on enter;</value>
   </data>
   <data name="QuickInfoPageKeywords" xml:space="preserve">
     <value>Formatting;
-Maximum description width;
+Maximum description width in characters;
 Navigation links;
 Show navigation links as;
 Solid underline;

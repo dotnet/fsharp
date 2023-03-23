@@ -31,7 +31,7 @@
                 </GroupBox>
                 <GroupBox Header="{x:Static local:Strings.Formatting}">
                     <StackPanel Orientation="Horizontal">
-                        <Label Content="{x:Static local:Strings.Maximum_description_width}" />
+                        <Label Content="{x:Static local:Strings.Maximum_description_width_in_characters}" />
                         <TextBox x:Name="descriptionWidth" Width="40" VerticalContentAlignment="Center" />
                     </StackPanel>
                 </GroupBox>
