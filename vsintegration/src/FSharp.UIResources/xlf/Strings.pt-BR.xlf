@@ -22,6 +22,11 @@
         <target state="translated">Opções de Localizar Referências de Desempenho</target>
         <note />
       </trans-unit>
+      <trans-unit id="Formatting">
+        <source>Formatting</source>
+        <target state="new">Formatting</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Inline_Hints">
         <source>Inline Hints</source>
         <target state="translated">Dicas Embutidas</target>
@@ -70,6 +75,11 @@
       <trans-unit id="LiveBuffers">
         <source>Live Buffers (experimental)</source>
         <target state="new">Live Buffers (experimental)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Maximum_description_width">
+        <source>Maximum description width</source>
+        <target state="new">Maximum description width</target>
         <note />
       </trans-unit>
       <trans-unit id="Navigation_links">

@@ -249,4 +249,10 @@
   <data name="Use_syntax_tree_cache" xml:space="preserve">
     <value>Cache parsing results (experimental)</value>
   </data>
+  <data name="Formatting" xml:space="preserve">
+    <value>Formatting</value>
+  </data>
+  <data name="Maximum_description_width" xml:space="preserve">
+    <value>Maximum description width</value>
+  </data>
 </root>

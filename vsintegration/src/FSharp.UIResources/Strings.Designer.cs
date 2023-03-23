@@ -232,6 +232,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Formatting.
+        /// </summary>
+        public static string Formatting {
+            get {
+                return ResourceManager.GetString("Formatting", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Inline Hints.
         /// </summary>
         public static string Inline_Hints {
@@ -264,6 +273,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string LiveBuffers {
             get {
                 return ResourceManager.GetString("LiveBuffers", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Maximum description width.
+        /// </summary>
+        public static string Maximum_description_width {
+            get {
+                return ResourceManager.GetString("Maximum_description_width", resourceCulture);
             }
         }
         

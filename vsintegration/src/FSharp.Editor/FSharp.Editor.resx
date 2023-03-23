@@ -173,7 +173,9 @@ Always add new line on enter;</value>
     <value>QuickInfo</value>
   </data>
   <data name="QuickInfoPageKeywords" xml:space="preserve">
-    <value>Navigation links;
+    <value>Formatting;
+Maximum description width;
+Navigation links;
 Show navigation links as;
 Solid underline;
 Dot underline;
