@@ -304,12 +304,15 @@ and [<Sealed>] ItemKeyStoreBuilder() =
 
     let writeActivePatternCase (apInfo: ActivePatternInfo) index =
         writeString ItemKeyTags.itemActivePattern
+
         match apInfo.ActiveTagsWithRanges with
-        | (_, m)::_ -> m.FileName |> Path.GetFileNameWithoutExtension |> writeString
+        | (_, m) :: _ -> m.FileName |> Path.GetFileNameWithoutExtension |> writeString
         | _ -> ()
+
         for tag in apInfo.ActiveTags do
             writeChar '|'
             writeString tag
+
         writeInt32 index
 
     member _.Write(m: range, item: Item) =
@@ -336,11 +339,9 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             writeEntityRef info.TyconRef
             writeString info.LogicalName
 
-        | Item.ActivePatternResult(info, _, index, _) ->
-            writeActivePatternCase info index
+        | Item.ActivePatternResult (info, _, index, _) -> writeActivePatternCase info index
 
-        | Item.ActivePatternCase elemRef ->
-            writeActivePatternCase elemRef.ActivePatternInfo elemRef.CaseIndex
+        | Item.ActivePatternCase elemRef -> writeActivePatternCase elemRef.ActivePatternInfo elemRef.CaseIndex
 
         | Item.ExnCase tcref ->
             writeString ItemKeyTags.itemExnCase
