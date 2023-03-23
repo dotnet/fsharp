@@ -17,14 +17,15 @@ open System.Threading.Tasks
 
 [<Export(typeof<IFSharpFindDefinitionService>)>]
 [<Export(typeof<FSharpFindDefinitionService>)>]
-type internal FSharpFindDefinitionService 
-    [<ImportingConstructor>]
-    (metadataAsSource: FSharpMetadataAsSourceService) =
+type internal FSharpFindDefinitionService [<ImportingConstructor>] (metadataAsSource: FSharpMetadataAsSourceService) =
 
-    let statusBar = StatusBar(ServiceProvider.GlobalProvider.GetService<SVsStatusbar,IVsStatusbar>())
- 
+    let statusBar =
+        StatusBar(ServiceProvider.GlobalProvider.GetService<SVsStatusbar, IVsStatusbar>())
+
     interface IFSharpFindDefinitionService with
-        member _.FindDefinitionsAsync (document: Document, position: int, cancellationToken: CancellationToken) =
-            let navigation = FSharpNavigation(statusBar, metadataAsSource, document, rangeStartup)
+        member _.FindDefinitionsAsync(document: Document, position: int, cancellationToken: CancellationToken) =
+            let navigation =
+                FSharpNavigation(statusBar, metadataAsSource, document, rangeStartup)
+
             let definitions = navigation.FindDefinitions(position, cancellationToken)
             ImmutableArray.CreateRange(definitions) |> Task.FromResult

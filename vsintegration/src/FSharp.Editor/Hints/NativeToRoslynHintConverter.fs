@@ -11,12 +11,12 @@ open Hints
 
 module NativeToRoslynHintConverter =
 
-    let rangeToSpan range sourceText = 
+    let rangeToSpan range sourceText =
         let symbolSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, range)
         let overshadowLength = 0 // anything >0 means overlaying the code
         TextSpan(symbolSpan.End, overshadowLength)
 
-    let nativeToRoslynText (taggedText: TaggedText) = 
+    let nativeToRoslynText (taggedText: TaggedText) =
         let tag = RoslynHelpers.roslynTag taggedText.Tag
         let text = taggedText.Text
         RoslynTaggedText(tag, text)
