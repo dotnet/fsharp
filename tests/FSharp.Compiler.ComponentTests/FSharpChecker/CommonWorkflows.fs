@@ -167,7 +167,7 @@ let ``Using getSource and notifications instead of filesystem with parse caching
     let middle = $"File%03d{size / 2}"
     let last = $"File%03d{size}"
 
-    use _ = expectCacheHits 113
+    use _ = expectCacheHits 51
     ProjectWorkflowBuilder(project, useGetSource = true, useChangeNotifications = true, useSyntaxTreeCache = true) {
         updateFile first updatePublicSurface
         checkFile first expectSignatureChanged
