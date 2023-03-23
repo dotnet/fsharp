@@ -1205,14 +1205,11 @@ let AddCheckResultsToTcState
 type PartialResult = TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType
 
 /// Return stub result for skipped implementation files
-let ImplStubForSig (tcConfig: TcConfig, tcImports: TcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input: ParsedInput) =
+let SkippedImplFilePlaceholder (tcConfig: TcConfig, tcImports: TcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input: ParsedInput) =
     use _ =
         Activity.start "ParseAndCheckInputs.CheckOneInput" [| Activity.Tags.fileName, input.FileName |]
 
     CheckSimulateException tcConfig
-
-    let m = input.Range
-    let amap = tcImports.GetImportMap()
 
     match input with
     | ParsedInput.ImplFile file ->
@@ -1223,7 +1220,7 @@ let ImplStubForSig (tcConfig: TcConfig, tcImports: TcImports, tcGlobals, prefixP
 
         // Check if we've already seen an implementation for this fragment
         if Zset.contains qualNameOfFile tcState.tcsRootImpls then
-            errorR (Error(FSComp.SR.buildImplementationAlreadyGiven (qualNameOfFile.Text), m))
+            errorR (Error(FSComp.SR.buildImplementationAlreadyGiven (qualNameOfFile.Text), input.Range))
 
         let hadSig = rootSigOpt.IsSome
 
@@ -1234,6 +1231,7 @@ let ImplStubForSig (tcConfig: TcConfig, tcImports: TcImports, tcGlobals, prefixP
             // in the compilation order.
             let tcStateForImplFile = tcState
             let qualNameOfFile = file.QualifiedName
+            let amap = tcImports.GetImportMap()
 
             let ccuSigForFile, tcState =
                 AddCheckResultsToTcState

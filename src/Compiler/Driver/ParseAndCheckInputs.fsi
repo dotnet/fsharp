@@ -135,7 +135,7 @@ type TcState =
 val GetInitialTcState: range * string * TcConfig * TcGlobals * TcImports * TcEnv * OpenDeclaration list -> TcState
 
 ///ImplStubForSig
-val ImplStubForSig:
+val SkippedImplFilePlaceholder:
     tcConfig: TcConfig *
     tcImports: TcImports *
     tcGlobals: TcGlobals *

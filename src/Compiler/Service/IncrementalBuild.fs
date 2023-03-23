@@ -124,7 +124,7 @@ module IncrementalBuildSyntaxTree =
         let source = file.Source
         let isLastCompiland = file.Flags
 
-        let parsedImplFileStub sigName =
+        let skippedImplFilePlaceholder sigName =
             ParsedInput.ImplFile(
                 ParsedImplFileInput(
                     fileName,
@@ -139,24 +139,25 @@ module IncrementalBuildSyntaxTree =
                 )
             ), sourceRange, fileName, [||]
 
-        let getParseTask (source: FSharpSource) = backgroundTask {
-            let diagnosticsLogger = CompilationDiagnosticLogger("Parse", tcConfig.diagnosticsOptions)
-            // Return the disposable object that cleans up
-            use _holder = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parse)          
-            use text = source.GetTextContainer()
-            let input = 
-                match text with
-                | TextContainer.Stream(stream) ->
-                    ParseOneInputStream(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, false, stream)
-                | TextContainer.SourceText(sourceText) ->
-                    ParseOneInputSourceText(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, sourceText)
-                | TextContainer.OnDisk ->
-                    ParseOneInputFile(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, true)
+        let getParseTask (source: FSharpSource) =
+            backgroundTask {
+                let diagnosticsLogger = CompilationDiagnosticLogger("Parse", tcConfig.diagnosticsOptions)
+                // Return the disposable object that cleans up
+                use _holder = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parse)          
+                use text = source.GetTextContainer()
+                let input = 
+                    match text with
+                    | TextContainer.Stream(stream) ->
+                        ParseOneInputStream(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, false, stream)
+                    | TextContainer.SourceText(sourceText) ->
+                        ParseOneInputSourceText(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, sourceText)
+                    | TextContainer.OnDisk ->
+                        ParseOneInputFile(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, true)
 
-            fileParsed.Trigger fileName
+                fileParsed.Trigger fileName
 
-            return input, sourceRange, fileName, diagnosticsLogger.GetDiagnostics()
-        }
+                return input, sourceRange, fileName, diagnosticsLogger.GetDiagnostics()
+            } //|> Async.StartAsTask
 
         let parse (parseTask: Threading.Tasks.Task<_>) =
             try
@@ -167,8 +168,6 @@ module IncrementalBuildSyntaxTree =
                 failwith msg
 
         let getValue source = lock source <| fun () -> cache.GetValue(source, getParseTask)
-
-        do if useCache && not hasSignature then getValue source |> ignore
 
         /// Parse the given file and return the given input.
         member _.Parse() =
@@ -190,11 +189,11 @@ module IncrementalBuildSyntaxTree =
 
         member _.HasSignature = hasSignature
 
-        member _.GetImplStub = parsedImplFileStub
+        member _.Skip = skippedImplFilePlaceholder
       
-        member _.Invalidate() =
+        member _.Invalidate(partialCheck) =
             cache.Remove(source) |> ignore
-            if useCache then getValue source |> ignore
+            if useCache && not (hasSignature && partialCheck) then getValue source |> ignore
 
         member _.FileName = fileName
 
@@ -462,7 +461,7 @@ type BoundModel private (tcConfig: TcConfig,
                 use _ = Activity.start "BoundModel.TypeCheck" [|Activity.Tags.fileName, syntaxTree.FileName|]
                 let input, _sourceRange, fileName, parseErrors =
                     match this.QualifiedSigNameOfFile with
-                    | Some sigNameOpt when partialCheck -> syntaxTree.GetImplStub sigNameOpt
+                    | Some sigNameOpt when partialCheck -> syntaxTree.Skip sigNameOpt
                     | _ -> syntaxTree.Parse()
 
 
@@ -486,7 +485,7 @@ type BoundModel private (tcConfig: TcConfig,
                     | ParsedInput.SigFile sigFile -> Some(sigFile.FileName, sigFile.QualifiedName)
                     | _ -> None
 
-                match ImplStubForSig(tcConfig, tcImports, tcGlobals, None, TcResultsSink.NoSink, prevTcState, input) with
+                match SkippedImplFilePlaceholder(tcConfig, tcImports, tcGlobals, None, TcResultsSink.NoSink, prevTcState, input) with
                 | Some ((_, topAttribs, _, ccuSigForFile), tcState) when partialCheck ->
                     return PartialState {
                         tcState = tcState
@@ -848,15 +847,15 @@ module IncrementalBuilderHelpers =
         }
 
     /// Finish up the typechecking to produce outputs for the rest of the compilation process
-    let FinalizeTypeCheckTask (tcConfig: TcConfig) tcGlobals partialCheck assemblyName outfile (graphNodes: GraphNode<BoundModel> seq) =
+    let FinalizeTypeCheckTask (tcConfig: TcConfig) tcGlobals partialCheck assemblyName outfile (boundModels: GraphNode<BoundModel> seq) =
       node {
         let diagnosticsLogger = CompilationDiagnosticLogger("FinalizeTypeCheckTask", tcConfig.diagnosticsOptions)
         use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.TypeCheck)
 
+        let! computedBoundModels = boundModels |> Seq.map (fun g -> g.GetOrComputeValue()) |> NodeCode.Parallel
         let! results =
-            graphNodes 
-            |> Seq.map (fun graphNode -> node {
-                let! boundModel = graphNode.GetOrComputeValue()
+            computedBoundModels 
+            |> Seq.map (fun boundModel -> node {
                 if partialCheck then
                     let! tcInfo = boundModel.GetOrComputeTcInfo()
                     return tcInfo, None
@@ -870,14 +869,12 @@ module IncrementalBuilderHelpers =
                     return (tcInfo.tcEnvAtEndOfFile, defaultArg tcInfo.topAttribs EmptyTopAttrs, latestImplFile, tcInfo.latestCcuSigForFile)
                 }
             )
-            |> NodeCode.Parallel
+            |> NodeCode.Parallel          
 
-        let results = results |> List.ofSeq
-
-        let! boundModels = graphNodes |> Seq.map (fun g -> g.GetOrComputeValue()) |> NodeCode.Parallel
+        let results = results |> Array.toList
 
         // Get the state at the end of the type-checking of the last file
-        let finalBoundModel = Array.last boundModels
+        let finalBoundModel = Array.last computedBoundModels
 
         let! finalInfo = finalBoundModel.GetOrComputeTcInfo()
 
@@ -1016,9 +1013,9 @@ type IncrementalBuilderInitialState =
 #endif
         initialState
 
-// stampedFileNames represent the real stamps of the files.
-// notifiedStampedFileNames represent the stamps of when we got notified about file changes
-// logicalStampedFileNames represent the stamps of the files that are used to calculate the project's logical timestamp.
+// Stamp represent the real stamp of the file.
+// Notified indicates that there is pending file change.
+// LogicalStamp represent the stamp of the file that is used to calculate the project's logical timestamp.
 type Slot =
     {
         File: FSharpFile
@@ -1027,7 +1024,7 @@ type Slot =
         LogicalStamp: DateTime
         SyntaxTree: SyntaxTree
         Notified: bool
-        Model: GraphNode<BoundModel>
+        BoundModel: GraphNode<BoundModel>
     }
     member this.Notify timeStamp =
         if this.Stamp <> timeStamp then { this with Stamp = timeStamp; Notified = true } else this
@@ -1042,12 +1039,13 @@ type IncrementalBuilderState =
     }
     member this.stampedFileNames = this.slots |> List.map (fun s -> s.Stamp)
     member this.logicalStampedFileNames = this.slots |> List.map (fun s -> s.LogicalStamp)
-    member this.boundModels = this.slots |> List.map (fun s -> s.Model)
+    member this.boundModels = this.slots |> List.map (fun s -> s.BoundModel)
 
 [<AutoOpen>]
 module IncrementalBuilderStateHelpers =
 
-    type SlotStatus = Invalidated | Good
+    // Used to thread the status of the build in computeStampedFileNames mapFold.
+    type BuildStatus = Invalidated | Good
 
     let createBoundModelGraphNode partialCheck (prevBoundModel: GraphNode<BoundModel>) syntaxTree =
         GraphNode(node {
@@ -1076,31 +1074,27 @@ module IncrementalBuilderStateHelpers =
             else
                [ for slot in state.slots -> cache.GetFileTimeStamp slot.File.Source.FilePath |> slot.Notify ]
 
-        for slot in slots do if slot.Notified then slot.SyntaxTree.Invalidate()
-
         let partialCheck = initialState.enablePartialTypeChecking
 
+        for slot in slots do if slot.Notified then slot.SyntaxTree.Invalidate(partialCheck)
+
         let mapping (status, prevNode) slot =
-            let update invalidate =
-                let graphNode = createBoundModelGraphNode partialCheck prevNode slot.SyntaxTree
-                let newStatus = if invalidate then Invalidated else status
-                { slot with LogicalStamp = slot.Stamp; Notified = false; Model = graphNode }, (newStatus, graphNode)
+            let update newStatus =
+                let boundModel = createBoundModelGraphNode partialCheck prevNode slot.SyntaxTree
+                { slot with LogicalStamp = slot.Stamp; Notified = false; BoundModel = boundModel }, (newStatus, boundModel)
 
-            if slot.HasSignature then
-                match status with
-                | _ when slot.Notified -> update false
-                | Invalidated -> update true
-                | _ -> slot, (Good, slot.Model)
-            else
-                match status with
-                | Good when slot.Notified -> update true
-                | Invalidated -> update true
-                | _ -> slot, (Good, slot.Model)
+            let noChange = slot, (Good, slot.BoundModel)
 
-        match  slots |> List.mapFold mapping (Good, (GraphNode.FromResult initialState.initialBoundModel)) with
+            match status with
+            | status when slot.Notified && slot.HasSignature -> update status
+            | Invalidated -> update Invalidated
+            | Good when slot.Notified -> update Invalidated
+            | _ -> noChange
+
+        match slots |> List.mapFold mapping (Good, GraphNode.FromResult initialState.initialBoundModel) with
         | slots, (Good, _) -> { state with slots = slots }
         | slots, (Invalidated, _) ->
-            let boundModels = slots |> Seq.map (fun s -> s.Model)
+            let boundModels = slots |> Seq.map (fun s -> s.BoundModel)
             { state with slots = slots; finalizedBoundModel = createFinalizeBoundModelGraphNode initialState boundModels }
 
     and computeStampedReferencedAssemblies (initialState: IncrementalBuilderInitialState) state canTriggerInvalidation (cache: TimeStampCache) =
@@ -1137,11 +1131,10 @@ type IncrementalBuilderState with
     *)
     static member Create(initialState: IncrementalBuilderInitialState) =
         let defaultTimeStamp = initialState.defaultTimeStamp
-        let initialBoundModel = initialState.initialBoundModel
         let sourceFiles = initialState.fileNames
         let referencedAssemblies = initialState.referencedAssemblies
         let cache = TimeStampCache(defaultTimeStamp)
-        let initialBoundModel = GraphNode.FromResult initialBoundModel
+        let initialBoundModel = GraphNode.FromResult initialState.initialBoundModel
 
         let syntaxTrees =
             let create sourceFile hasSignature =
@@ -1171,7 +1164,7 @@ type IncrementalBuilderState with
                         LogicalStamp = DateTime.MinValue
                         Notified = false
                         SyntaxTree = syntaxTree
-                        Model = model
+                        BoundModel = model
                     }
             ]
 
