@@ -29,7 +29,8 @@ module GoToDefinitionServiceTests =
                     defines,
                     SymbolLookupKind.Greedy,
                     false,
-                    false
+                    false,
+                    System.Threading.CancellationToken.None
                 )
 
             let _, checkFileResults =

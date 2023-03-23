@@ -50,7 +50,8 @@ type internal FSharpAddMissingFunKeywordCodeFixProvider [<ImportingConstructor>]
                     defines,
                     SymbolLookupKind.Greedy,
                     false,
-                    false
+                    false,
+                    context.CancellationToken
                 )
 
             let! intendedArgSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, intendedArgLexerSymbol.Range)

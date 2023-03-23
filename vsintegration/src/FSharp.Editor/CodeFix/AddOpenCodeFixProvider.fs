@@ -113,7 +113,8 @@ type internal FSharpAddOpenCodeFixProvider [<ImportingConstructor>] (assemblyCon
                             defines,
                             SymbolLookupKind.Greedy,
                             false,
-                            false
+                            false,
+                            context.CancellationToken
                         )
 
                     return

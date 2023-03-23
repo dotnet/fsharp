@@ -813,7 +813,6 @@ let rec synExprContainsError inpExpr =
         | SynExpr.ComputationExpr (_, e, _)
         | SynExpr.ArrayOrListComputed (_, e, _)
         | SynExpr.Typed (e, _, _)
-        | SynExpr.FromParseError (e, _)
         | SynExpr.Do (e, _)
         | SynExpr.Assert (e, _)
         | SynExpr.DotGet (e, _, _, _)
