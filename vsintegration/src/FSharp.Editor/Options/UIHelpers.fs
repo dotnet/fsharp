@@ -84,10 +84,13 @@ module internal OptionsUIHelpers =
         let intOptionConverter =
             { new IValueConverter with
                 member _.Convert(value, _, _, _) =
-                    value :?> int option
-                    |> Option.map Convert.ToString
-                    |> Option.defaultValue ""
-                    |> box
+                    try
+                        value :?> int option
+                        |> Option.map Convert.ToString
+                        |> Option.defaultValue ""
+                        |> box
+                    with _ ->
+                        Binding.DoNothing
 
                 member _.ConvertBack(value, _, _, _) =
                     try

@@ -178,14 +178,14 @@ Enable fast find references &amp; rename (experimental);Cache parsing results (e
       </trans-unit>
       <trans-unit id="QuickInfoPageKeywords">
         <source>Formatting;
-Maximum description width;
+Maximum description width in characters;
 Navigation links;
 Show navigation links as;
 Solid underline;
 Dot underline;
 Dash underline;</source>
         <target state="new">Formatting;
-Maximum description width;
+Maximum description width in characters;
 Navigation links;
 Show navigation links as;
 Solid underline;
