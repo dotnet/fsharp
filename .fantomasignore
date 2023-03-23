@@ -141,7 +141,7 @@ src/FSharp.Core/resumable.fsi
 src/FSharp.Core/async.fsi
 
 # Fantomas limitations on signature files in FSharp.Core (https://github.com/fsprojects/fantomas/issues/2230)
-
-src/FSharp.Core/array.fsi
-src/FSharp.Core/tasks.fsi
-src/FSharp.Core/seq.fsi
+# should be resolved
+# src/FSharp.Core/array.fsi
+# src/FSharp.Core/tasks.fsi
+# src/FSharp.Core/seq.fsi
