@@ -3094,6 +3094,67 @@ module Array =
     /// <summary>Provides parallel operations on arrays </summary>
     module Parallel =
 
+
+        /// <summary>Tests if all elements of the array satisfy the given predicate.</summary>
+        ///
+        /// <remarks>The predicate is applied to the elements of the input collection in parallel. If any application 
+        /// returns false then the overall result is false and testing of other elements in all threads is stopped at system's earliest convenience.
+        /// Otherwise, true is returned.</remarks>
+        ///
+        /// <param name="predicate">The function to test the input elements.</param>
+        /// <param name="array">The input array.</param>
+        ///
+        /// <returns>True if all of the array elements satisfy the predicate.</returns>
+        ///
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        ///
+        /// <example id="para-forall-1">
+        /// <code lang="fsharp">
+        /// let isEven a = a % 2 = 0
+        ///
+        /// [2; 42] |> Array.Parallel.forall isEven // evaluates to true
+        ///
+        /// [1; 2] |> Array.Parallel.forall isEven // evaluates to false
+        /// </code>
+        /// </example>
+        [<CompiledName("ForAll")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val forall: predicate:('T -> bool) -> array:'T[] -> bool
+
+        /// <summary>Tests if any element of the array satisfies the given predicate.</summary>
+        ///
+        /// <remarks>The predicate is applied to the elements of the input array in parallel. If any application 
+        /// returns true then the overall result is true and testing of other elements in all threads is stopped at system's earliest convenience.
+        /// Otherwise, <c>false</c> is returned.</remarks>
+        ///
+        /// <param name="predicate">The function to test the input elements.</param>
+        /// <param name="array">The input array.</param>
+        ///
+        /// <returns>True if any result from <c>predicate</c> is true.</returns>
+        ///
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        ///
+        /// <example id="para-exists-1">
+        /// <code lang="fsharp">
+        /// let input = [| 1; 2; 3; 4; 5 |]
+        ///
+        /// input |> Array.Parallel.exists (fun elm -> elm % 4 = 0)
+        /// </code>
+        /// Evaluates to <c>true</c>
+        /// </example>
+        ///
+        /// <example id="para-exists-2">
+        /// <code lang="fsharp">
+        /// let input = [| 1; 2; 3; 4; 5 |]
+        ///
+        /// input |> Array.Parallel.exists (fun elm -> elm % 6 = 0)
+        /// </code>
+        /// Evaluates to <c>false</c>
+        /// </example>
+        [<CompiledName("Exists")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val exists: predicate:('T -> bool) -> array:'T[] -> bool
+
         /// <summary>Returns the first element for which the given function returns <c>True</c>.
         /// Returns None if no such element exists.</summary>
         ///
@@ -3728,3 +3789,237 @@ module Array =
         /// </example>
         [<CompiledName("Partition")>]
         val partition: predicate:('T -> bool) -> array:'T[] -> 'T[] * 'T[]
+
+        /// <summary>Sorts the elements of an array in parallel, returning a new array. Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>. </summary>
+        ///
+        /// <remarks>This is not a stable sort, i.e. the original order of equal elements is not necessarily preserved. 
+        /// For a stable sort, consider using <see cref="M:Microsoft.FSharp.Collections.SeqModule.Sort"/>.</remarks>
+        ///
+        /// <param name="array">The input array.</param>
+        ///
+        /// <returns>The sorted array.</returns>
+        ///
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// 
+        /// <example id="para-sort-1">
+        /// <code lang="fsharp">
+        /// let input = [| 8; 4; 3; 1; 6; 1 |]
+        ///
+        /// Array.Parallel.sort input
+        /// </code>
+        /// Evaluates to <c>[| 1; 1 3; 4; 6; 8 |]</c>.
+        /// </example>
+        [<CompiledName("Sort")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val sort: array:'T[] -> 'T[] when 'T : comparison 
+
+        /// <summary>Sorts the elements of an array in parallel, using the given projection for the keys and returning a new array. 
+        /// Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
+        ///
+        /// <remarks>This is not a stable sort, i.e. the original order of equal elements is not necessarily preserved. 
+        /// For a stable sort, consider using <see cref="M:Microsoft.FSharp.Collections.SeqModule.Sort"/>.</remarks>
+        ///
+        /// <param name="projection">The function to transform array elements into the type that is compared.</param>
+        /// <param name="array">The input array.</param>
+        ///
+        /// <returns>The sorted array.</returns>
+        ///
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// 
+        /// <example id="para-sortby-1">
+        /// <code lang="fsharp">
+        /// let input = [| "a"; "bbb"; "cccc"; "dd" |]
+        ///
+        /// input |> Array.Parallel.sortBy (fun s -> s.Length)
+        /// </code>
+        /// Evaluates to <c>[|"a"; "dd"; "bbb"; "cccc"|]</c>.
+        /// </example>
+
+        [<CompiledName("SortBy")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val sortBy: projection:('T -> 'Key) -> array:'T[] -> 'T[] when 'Key : comparison 
+
+        /// <summary>Sorts the elements of an array in parallel, using the given comparison function as the order, returning a new array.</summary>
+        ///
+        /// <remarks>This is not a stable sort, i.e. the original order of equal elements is not necessarily preserved. 
+        /// For a stable sort, consider using <see cref="M:Microsoft.FSharp.Collections.SeqModule.Sort"/>.</remarks>
+        ///
+        /// <param name="comparer">The function to compare pairs of array elements.</param>
+        /// <param name="array">The input array.</param>
+        ///
+        /// <returns>The sorted array.</returns>
+        ///
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// 
+        /// <example id="para-sortwith-1">Sort an array of pairs using a comparison function that compares string lengths then index numbers:
+        /// <code lang="fsharp">
+        /// let compareEntries (n1: int, s1: string) (n2: int, s2: string) =
+        ///     let c = compare s1.Length s2.Length
+        ///     if c &lt;> 0 then c else
+        ///     compare n1 n2
+        ///
+        /// let input = [| (0,"aa"); (1,"bbb"); (2,"cc"); (3,"dd") |]
+        ///
+        /// input |> Array.Parallel.sortWith compareEntries
+        /// </code>
+        /// Evaluates to <c>[|(0, "aa"); (2, "cc"); (3, "dd"); (1, "bbb")|]</c>.
+        /// </example>
+        [<CompiledName("SortWith")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val sortWith: comparer:('T -> 'T -> int) -> array:'T[] -> 'T[]
+
+        /// <summary>Sorts the elements of an array by mutating the array in-place in parallel, using the given projection for the keys. 
+        /// Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
+        ///
+        /// <remarks>This is not a stable sort, i.e. the original order of equal elements is not necessarily preserved. 
+        /// For a stable sort, consider using <see cref="M:Microsoft.FSharp.Collections.SeqModule.Sort"/>.</remarks>
+        ///
+        /// <param name="projection">The function to transform array elements into the type that is compared.</param>
+        /// <param name="array">The input array.</param>
+        ///
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// 
+        /// <example id="para-sortinplaceby-1">
+        /// <code lang="fsharp">
+        /// let array = [| "a"; "bbb"; "cccc"; "dd" |]
+        ///
+        /// array |> Array.Parallel.sortInPlaceBy (fun s -> s.Length)
+        /// </code>
+        /// After evaluation <c>array</c> contains <c>[|"a"; "dd"; "bbb"; "cccc"|]</c>.
+        /// </example>
+        [<CompiledName("SortInPlaceBy")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val sortInPlaceBy: projection:('T -> 'Key) -> array:'T[] -> unit when 'Key : comparison 
+
+        /// <summary>Sorts the elements of an array by mutating the array in-place in parallel, using the given comparison function as the order.</summary>
+        ///
+        /// <param name="comparer">The function to compare pairs of array elements.</param>
+        /// <param name="array">The input array.</param>
+        ///
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// 
+        /// <example id="para-sortinplacewith-1"> The following sorts entries using a comparison function that compares string lengths then index numbers:
+        /// <code lang="fsharp">
+        /// let compareEntries (n1: int, s1: string) (n2: int, s2: string) =
+        ///     let c = compare s1.Length s2.Length
+        ///     if c &lt;> 0 then c else
+        ///     compare n1 n2
+        ///
+        /// let array = [| (0,"aa"); (1,"bbb"); (2,"cc"); (3,"dd") |]
+        ///
+        /// array |> Array.Parallel.sortInPlaceWith compareEntries
+        /// </code>
+        /// After evaluation <c>array</c> contains <c>[|(0, "aa"); (2, "cc"); (3, "dd"); (1, "bbb")|]</c>.
+        /// </example>
+        [<CompiledName("SortInPlaceWith")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val sortInPlaceWith: comparer:('T -> 'T -> int) -> array:'T[] -> unit
+
+        /// <summary>Sorts the elements of an array by mutating the array in-place in parallel, using the given comparison function. 
+        /// Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
+        ///
+        /// <param name="array">The input array.</param>
+        ///
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// 
+        /// <example id="para-sortinplace-1">
+        /// <code lang="fsharp">
+        /// let array = [| 8; 4; 3; 1; 6; 1 |]
+        ///
+        /// Array.sortInPlace array
+        /// </code>
+        /// After evaluation <c>array</c> contains <c>[| 1; 1; 3; 4; 6; 8 |]</c>.
+        /// </example>
+        [<CompiledName("SortInPlace")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val sortInPlace: array:'T[] -> unit when 'T : comparison 
+
+        /// <summary>Sorts the elements of an array in parallel, in descending order, returning a new array. Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>. </summary>
+        ///
+        /// <remarks>This is not a stable sort, i.e. the original order of equal elements is not necessarily preserved. 
+        /// For a stable sort, consider using <see cref="M:Microsoft.FSharp.Collections.SeqModule.Sort"/>.</remarks>
+        ///
+        /// <param name="array">The input array.</param>
+        ///
+        /// <returns>The sorted array.</returns>
+        /// 
+        /// <example id="para-sortdescending-1">
+        /// <code lang="fsharp">
+        /// let input = [| 8; 4; 3; 1; 6; 1 |]
+        ///
+        /// input |> Array.Parallel.sortDescending
+        /// </code>
+        /// Evaluates to <c>[| 8; 6; 4; 3; 1; 1 |]</c>.
+        /// </example>
+        [<CompiledName("SortDescending")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val sortDescending: array:'T[] -> 'T[] when 'T : comparison
+
+        /// <summary>Sorts the elements of an array in parallel, in descending order, using the given projection for the keys and returning a new array. 
+        /// Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
+        ///
+        /// <remarks>This is not a stable sort, i.e. the original order of equal elements is not necessarily preserved. 
+        /// For a stable sort, consider using <see cref="M:Microsoft.FSharp.Collections.SeqModule.Sort"/>.</remarks>
+        ///
+        /// <param name="projection">The function to transform array elements into the type that is compared.</param>
+        /// <param name="array">The input array.</param>
+        ///
+        /// <returns>The sorted array.</returns>
+        /// 
+        /// <example id="para-sortbydescending-1">
+        /// <code lang="fsharp">
+        /// let input = [| "a"; "bbb"; "cccc"; "dd" |]
+        ///
+        /// input |> Array.Parallel.sortByDescending (fun s -> s.Length)
+        /// </code>
+        /// Evaluates to <c>[|"cccc"; "bbb"; "dd"; "a"|]</c>.
+        /// </example>
+        [<CompiledName("SortByDescending")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val sortByDescending: projection:('T -> 'Key) -> array:'T[] -> 'T[] when 'Key : comparison
+
+        /// <summary>Combines the two arrays into an array of pairs. The two arrays must have equal lengths, otherwise an <c>ArgumentException</c> is
+        /// raised.</summary>
+        ///
+        /// <param name="array1">The first input array.</param>
+        /// <param name="array2">The second input array.</param>
+        ///
+        /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input arrays differ in length.</exception>
+        ///
+        /// <returns>The array of tupled elements.</returns>
+        ///
+        /// <example id="para-zip-1">
+        /// <code lang="fsharp">
+        /// let numbers = [|1; 2|]
+        /// let names = [|"one"; "two"|]
+        ///
+        /// Array.Parallel.zip numbers names
+        /// </code>
+        /// Evaluates to <c>[| (1, "one"); (2, "two") |]</c>.
+        /// </example>
+        [<CompiledName("Zip")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val zip: array1:'T1[] -> array2:'T2[] -> ('T1 * 'T2)[]
+
+        /// <summary>Returns a new collection containing only the elements of the collection
+        /// for which the given predicate returns <c>true</c>.</summary>
+        ///
+        /// <param name="predicate">The function to test the input elements.</param>
+        /// <param name="array">The input array.</param>
+        ///
+        /// <returns>An array containing the elements for which the given predicate returns true.</returns>
+        ///
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is <c>null</c>.</exception>
+        ///
+        /// <example id="para-filter-1">
+        /// <code lang="fsharp">
+        /// let inputs = [| 1; 2; 3; 4 |]
+        ///
+        /// inputs |> Array.Parallel.filter (fun elm -> elm % 2 = 0)
+        /// </code>
+        /// Evaluates to <c>[| 2; 4 |]</c>
+        /// </example>
+        [<CompiledName("Filter")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val filter: predicate:('T -> bool) -> array:'T[] -> 'T[]

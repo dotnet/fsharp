@@ -563,6 +563,9 @@ type EntityOptionalData =
       // MUTABILITY: only for unpickle linkage
       mutable entity_xmldoc: XmlDoc
       
+      /// the signature xml doc for an item in an implementation file.
+      mutable entity_other_xmldoc : XmlDoc option
+      
       /// The XML document signature for this entity
       mutable entity_xmldocsig: string
 
@@ -651,7 +654,8 @@ type Entity =
         { entity_compiled_name = None 
           entity_other_range = None
           entity_kind = TyparKind.Type
-          entity_xmldoc = XmlDoc.Empty 
+          entity_xmldoc = XmlDoc.Empty
+          entity_other_xmldoc = None
           entity_xmldocsig = ""
           entity_tycon_abbrev = None
           entity_tycon_repr_accessibility = TAccess []
@@ -764,6 +768,11 @@ type Entity =
         match x.entity_opt_data with 
         | Some optData -> optData.entity_other_range <- Some m
         | _ -> x.entity_opt_data <- Some { Entity.NewEmptyEntityOptData() with entity_other_range = Some m }
+        
+    member x.SetOtherXmlDoc xmlDoc =
+        match x.entity_opt_data with
+        | Some optData -> optData.entity_other_xmldoc <- Some xmlDoc
+        | _ -> x.entity_opt_data <- Some { Entity.NewEmptyEntityOptData() with entity_other_xmldoc = Some xmlDoc }
 
     /// A unique stamp for this module, namespace or type definition within the context of this compilation. 
     /// Note that because of signatures, there are situations where in a single compilation the "same" 
@@ -787,7 +796,13 @@ type Entity =
         | _ -> 
 #endif
         match x.entity_opt_data with
-        | Some optData -> optData.entity_xmldoc
+        | Some optData ->
+            if not optData.entity_xmldoc.IsEmpty then
+                optData.entity_xmldoc
+            else
+                match optData.entity_other_xmldoc with
+                | Some xmlDoc -> xmlDoc
+                | None -> XmlDoc.Empty
         | _ -> XmlDoc.Empty
 
     /// The XML documentation sig-string of the entity, if any, to use to lookup an .xml doc file. This also acts
@@ -1046,6 +1061,7 @@ type Entity =
                        entity_kind = tg.entity_kind
                        entity_xmldoc = tg.entity_xmldoc
                        entity_xmldocsig = tg.entity_xmldocsig
+                       entity_other_xmldoc = tg.entity_other_xmldoc 
                        entity_tycon_abbrev = tg.entity_tycon_abbrev
                        entity_tycon_repr_accessibility = tg.entity_tycon_repr_accessibility
                        entity_accessibility = tg.entity_accessibility
@@ -1659,7 +1675,10 @@ type UnionCase =
       ReturnType: TType
 
       /// Documentation for the case 
-      XmlDoc: XmlDoc
+      OwnXmlDoc: XmlDoc
+      
+      /// Documentation for the case from signature file
+      mutable OtherXmlDoc: XmlDoc
 
       /// XML documentation signature for the case
       mutable XmlDocSig: string
@@ -1679,7 +1698,14 @@ type UnionCase =
       // MUTABILITY: used when propagating signature attributes into the implementation.
       mutable Attribs: Attribs
     }
-
+    
+    /// Documentation for the case 
+    member uc.XmlDoc: XmlDoc =
+        if not uc.OwnXmlDoc.IsEmpty then
+            uc.OwnXmlDoc
+        else
+            uc.OtherXmlDoc
+      
     /// Get the declaration location of the union case
     member uc.Range = uc.Id.idRange
 
@@ -1695,6 +1721,9 @@ type UnionCase =
         | Some (m, false) -> m
         | _ -> uc.Range 
 
+    member x.SetOtherXmlDoc xmlDoc =
+        x.OtherXmlDoc <- xmlDoc
+    
     /// Get the logical name of the union case
     member uc.LogicalName = uc.Id.idText
 
@@ -1751,6 +1780,9 @@ type RecdField =
 
       /// Documentation for the field 
       rfield_xmldoc: XmlDoc
+      
+      /// Documentation for the field from signature file 
+      mutable rfield_otherxmldoc: XmlDoc
 
       /// XML Documentation signature for the field
       mutable rfield_xmldocsig: string
@@ -1843,7 +1875,14 @@ type RecdField =
     member v.FormalType = v.rfield_type
 
     /// XML Documentation signature for the field
-    member v.XmlDoc = v.rfield_xmldoc
+    member v.XmlDoc =
+        if not v.rfield_xmldoc.IsEmpty then
+            v.rfield_xmldoc
+        else
+            v.rfield_otherxmldoc
+    
+    member v.SetOtherXmlDoc (xmlDoc: XmlDoc) =
+        v.rfield_otherxmldoc <- xmlDoc        
 
     /// Get or set the XML documentation signature for the field
     member v.XmlDocSig
@@ -3491,7 +3530,15 @@ type EntityRef =
     /// then this _does_ include this documentation. If the entity is backed by Abstract IL metadata
     /// or comes from another F# assembly then it does not (because the documentation will get read from 
     /// an XML file).
-    member x.XmlDoc = x.Deref.XmlDoc
+    member x.XmlDoc =
+        if not (x.Deref.XmlDoc.IsEmpty) then
+                x.Deref.XmlDoc
+        else
+            x.Deref.entity_opt_data
+            |> Option.bind (fun d -> d.entity_other_xmldoc)
+            |> Option.defaultValue XmlDoc.Empty
+    
+    member x.SetOtherXmlDoc (xmlDoc: XmlDoc) = x.Deref.SetOtherXmlDoc(xmlDoc)
 
     /// The XML documentation sig-string of the entity, if any, to use to lookup an .xml doc file. This also acts
     /// as a cache for this sig-string computation.
@@ -5844,7 +5891,8 @@ type Construct() =
     /// Create a new union case node
     static member NewUnionCase id tys retTy attribs docOption access: UnionCase = 
         { Id = id
-          XmlDoc = docOption
+          OwnXmlDoc = docOption
+          OtherXmlDoc = XmlDoc.Empty
           XmlDocSig = ""
           Accessibility = access
           FieldTable = Construct.MakeRecdFieldsTable tys
@@ -5883,7 +5931,8 @@ type Construct() =
           rfield_const = konst
           rfield_access = access
           rfield_secret = secret
-          rfield_xmldoc = docOption 
+          rfield_xmldoc = docOption
+          rfield_otherxmldoc = XmlDoc.Empty
           rfield_xmldocsig = ""
           rfield_id = id
           rfield_name_generated = nameGenerated
