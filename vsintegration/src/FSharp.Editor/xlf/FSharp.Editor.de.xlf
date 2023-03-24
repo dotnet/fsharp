@@ -153,22 +153,26 @@ Nach Eingabe immer eine neue Zeile hinzufügen;</target>
       <trans-unit id="PerformancePageKeywords">
         <source>F# Project and Caching Performance Options;
 Enable in-memory cross project references;
+Enable_partial_type_checking;
 IntelliSense Performance Options;
 Enable stale data for IntelliSense features;
 Time until stale results are used (in milliseconds);
 Parallelization (requires restart);
 Enable parallel type checking with signature files;
 Enable parallel reference resolution;
-Enable fast find references &amp; rename (experimental);Cache parsing results (experimental)</source>
+Enable fast find references &amp; rename (experimental);
+Cache parsing results (experimental)</source>
         <target state="new">F# Project and Caching Performance Options;
 Enable in-memory cross project references;
+Enable_partial_type_checking;
 IntelliSense Performance Options;
 Enable stale data for IntelliSense features;
 Time until stale results are used (in milliseconds);
 Parallelization (requires restart);
 Enable parallel type checking with signature files;
 Enable parallel reference resolution;
-Enable fast find references &amp; rename (experimental);Cache parsing results (experimental)</target>
+Enable fast find references &amp; rename (experimental);
+Cache parsing results (experimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">

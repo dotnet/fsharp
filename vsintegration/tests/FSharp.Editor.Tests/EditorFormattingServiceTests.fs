@@ -77,7 +77,8 @@ marker4"""
                 checker,
                 indentStyle,
                 parsingOptions,
-                position
+                position,
+                System.Threading.CancellationToken.None
             )
             |> Async.RunSynchronously
 

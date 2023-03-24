@@ -75,7 +75,8 @@ type internal FSharpAddMissingRecToMutuallyRecFunctionsCodeFixProvider [<Importi
                     defines,
                     SymbolLookupKind.Greedy,
                     false,
-                    false
+                    false,
+                    context.CancellationToken
                 )
 
             let! funcNameSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, funcLexerSymbol.Range)
