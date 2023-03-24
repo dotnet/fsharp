@@ -89,12 +89,12 @@
       </trans-unit>
       <trans-unit id="Show_Inline_Parameter_Name_Hints">
         <source>Display inline parameter name hints (preview)</source>
-        <target state="needs-review-translation">顯示內嵌參數名稱提示 (實驗性)</target>
+        <target state="new">Display inline parameter name hints (preview)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Type_Hints">
         <source>Display inline type hints (preview)</source>
-        <target state="needs-review-translation">顯示內嵌類型提示 (實驗性)</target>
+        <target state="new">Display inline type hints (preview)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_all_symbols">
