@@ -17,6 +17,11 @@
         <target state="new">Use live (unsaved) buffers for checking (restart required)</target>
         <note />
       </trans-unit>
+      <trans-unit id="Enable_partial_type_checking">
+        <source>Enable partial type checking</source>
+        <target state="new">Enable partial type checking</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Find_References_Performance">
         <source>Find References Performance Options</source>
         <target state="translated">尋找參考效能選項</target>

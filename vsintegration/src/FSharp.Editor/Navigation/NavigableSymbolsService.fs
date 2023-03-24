@@ -29,22 +29,23 @@ type internal FSharpNavigableSymbol(item: FSharpNavigableItem, span: SnapshotSpa
         member _.SymbolSpan = span
 
 type internal FSharpNavigableSymbolSource(metadataAsSource, serviceProvider: IServiceProvider) =
-    
+
     let mutable disposed = false
     let gtd = GoToDefinition(metadataAsSource)
-    let statusBar = StatusBar(serviceProvider.GetService<SVsStatusbar,IVsStatusbar>())
+    let statusBar = StatusBar(serviceProvider.GetService<SVsStatusbar, IVsStatusbar>())
 
     interface INavigableSymbolSource with
         member _.GetNavigableSymbolAsync(triggerSpan: SnapshotSpan, cancellationToken: CancellationToken) =
             // Yes, this is a code smell. But this is how the editor API accepts what we would treat as None.
-            if disposed then null
+            if disposed then
+                null
             else
                 asyncMaybe {
                     let snapshot = triggerSpan.Snapshot
                     let position = triggerSpan.Start.Position
                     let document = snapshot.GetOpenDocumentInCurrentContextWithChanges()
                     let! sourceText = document.GetTextAsync(cancellationToken) |> liftTaskAsync
-                    
+
                     statusBar.Message(SR.LocatingSymbol())
                     use _ = statusBar.Animate()
 
@@ -65,10 +66,10 @@ type internal FSharpNavigableSymbolSource(metadataAsSource, serviceProvider: ISe
                             let symbolSpan = SnapshotSpan(snapshot, declarationSpan)
 
                             match result with
-                            | FSharpGoToDefinitionResult.NavigableItem(navItem) ->
+                            | FSharpGoToDefinitionResult.NavigableItem (navItem) ->
                                 return FSharpNavigableSymbol(navItem, symbolSpan, gtd, statusBar) :> INavigableSymbol
 
-                            | FSharpGoToDefinitionResult.ExternalAssembly(targetSymbolUse, metadataReferences) ->
+                            | FSharpGoToDefinitionResult.ExternalAssembly (targetSymbolUse, metadataReferences) ->
                                 let nav =
                                     { new INavigableSymbol with
                                         member _.Navigate(_: INavigableRelationship) =
@@ -80,9 +81,11 @@ type internal FSharpNavigableSymbolSource(metadataAsSource, serviceProvider: ISe
 
                                         member _.Relationships = seq { yield PredefinedNavigableRelationships.Definition }
 
-                                        member _.SymbolSpan = symbolSpan }
+                                        member _.SymbolSpan = symbolSpan
+                                    }
+
                                 return nav
-                        else 
+                        else
                             statusBar.TempMessage(SR.CannotDetermineSymbol())
 
                             // The NavigableSymbols API accepts 'null' when there's nothing to navigate to.
@@ -95,16 +98,14 @@ type internal FSharpNavigableSymbolSource(metadataAsSource, serviceProvider: ISe
                 }
                 |> Async.map Option.toObj
                 |> RoslynHelpers.StartAsyncAsTask cancellationToken
-        
-        member _.Dispose() =
-            disposed <- true
+
+        member _.Dispose() = disposed <- true
 
 [<Export(typeof<INavigableSymbolSourceProvider>)>]
 [<Name("F# Navigable Symbol Service")>]
 [<ContentType(Constants.FSharpContentType)>]
 [<Order>]
-type internal FSharpNavigableSymbolService
-    [<ImportingConstructor>]
+type internal FSharpNavigableSymbolService [<ImportingConstructor>]
     (
         [<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider,
         metadataAsSource: FSharpMetadataAsSourceService

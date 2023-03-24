@@ -5,7 +5,10 @@ ImplFile
       [],
       [SynModuleOrNamespace
          ([RegularStringAsParsedHashDirectiveArgument], false, AnonModule,
-          [HashDirective (ParsedHashDirective ("I", [], (2,0--2,2)), (2,0--2,4))],
-          PreXmlDocEmpty, [], None, (2,0--2,4), { LeadingKeyword = None })],
-      (true, false), { ConditionalDirectives = []
-                       CodeComments = [] }, set []))
+          [HashDirective
+             (ParsedHashDirective
+                ("I", [String ("/tmp", Regular, (2,3--2,9))], (2,0--2,9)),
+              (2,0--2,9))], PreXmlDocEmpty, [], None, (2,0--2,9),
+          { LeadingKeyword = None })], (true, false),
+      { ConditionalDirectives = []
+        CodeComments = [] }, set []))
