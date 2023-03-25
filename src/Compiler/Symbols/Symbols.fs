@@ -2427,6 +2427,13 @@ type FSharpType(cenv, ty:TType) =
          | TType_app _ | TType_measure (Measure.Const _ | Measure.Prod _ | Measure.Inv _ | Measure.One) -> true 
          | _ -> false
 
+    member _.IsMeasureType =
+       isResolved() &&
+       protect <| fun () ->
+        match stripTyparEqns ty with
+        | TType_measure _ -> true
+        | _ -> false
+
     member _.IsTupleType = 
        isResolved() &&
        protect <| fun () -> 
