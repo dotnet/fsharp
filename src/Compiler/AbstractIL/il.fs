@@ -3008,7 +3008,7 @@ type ILModuleDef =
         MetadataIndex: int32
         TimeDateStamp: int32
         ImageSize: int32
-        Mvid: Guid
+        Mvid: System.Guid
     }
 
     member x.ManifestOfAssembly =
