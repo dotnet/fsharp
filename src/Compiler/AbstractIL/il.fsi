@@ -1751,6 +1751,11 @@ type ILModuleDef =
         NativeResources: ILNativeResource list
         CustomAttrsStored: ILAttributesStored
         MetadataIndex: int32
+        /// The low 32 bits of the number of seconds since 00:00 January 1, 1970, that indicates when the file was created.
+        TimeDateStamp: int32
+        /// The size of the module in memory (from the PE32 optional header)
+        ImageSize: int32
+        Mvid: System.Guid
     }
 
     member ManifestOfAssembly: ILAssemblyManifest
@@ -2216,6 +2221,9 @@ val mkILSimpleModule:
     int ->
     ILExportedTypesAndForwarders ->
     string ->
+    timeDateStamp: int ->
+    imageSize: int ->
+    mvid: System.Guid ->
         ILModuleDef
 
 /// Generate references to existing type definitions, method definitions

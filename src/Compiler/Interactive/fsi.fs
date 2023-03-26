@@ -1419,6 +1419,11 @@ type internal FsiDynamicCompiler(
         if progress then fprintfn fsiConsoleOutput.Out "Creating main module..."
         let mainModule =
             mkILSimpleModule dynamicCcuName (GetGeneratedILModuleName tcConfigB.target dynamicCcuName) (tcConfigB.target = CompilerTarget.Dll) tcConfigB.subsystemVersion tcConfigB.useHighEntropyVA (mkILTypeDefs codegenResults.ilTypeDefs) None None 0x0 (mkILExportedTypes []) ""
+                //TODO: validate these two values
+                0
+                0
+                Guid.Empty
+
         { mainModule
           with Manifest =
                 (let man = mainModule.ManifestOfAssembly
@@ -1470,6 +1475,9 @@ type internal FsiDynamicCompiler(
             referenceAssemblyOnly = false
             referenceAssemblyAttribOpt = None
             pathMap = tcConfig.pathMap
+            // TODO: should FSI flow through compilation references/option metadata?
+            compilationReferences = []
+            compilationOptions = []
         }
 
         let assemblyBytes, pdbBytes = WriteILBinaryInMemory (opts, ilxMainModule, id)

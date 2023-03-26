@@ -25,7 +25,9 @@ type options =
       dumpDebugInfo: bool
       referenceAssemblyOnly: bool
       referenceAssemblyAttribOpt: ILAttribute option
-      pathMap: PathMap }
+      pathMap: PathMap
+      compilationReferences: PdbMetadataReferenceInfo list
+      compilationOptions: (string * string) list }
 
 /// Write a binary to the file system.
 val WriteILBinaryFile: options: options * inputModule: ILModuleDef * (ILAssemblyRef -> ILAssemblyRef) -> unit

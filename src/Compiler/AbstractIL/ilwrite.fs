@@ -3799,7 +3799,9 @@ type options =
      dumpDebugInfo: bool
      referenceAssemblyOnly: bool
      referenceAssemblyAttribOpt: ILAttribute option
-     pathMap: PathMap }
+     pathMap: PathMap
+     compilationReferences: PdbMetadataReferenceInfo list
+     compilationOptions: (string * string) list }
 
 let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRefs) =
 
@@ -3962,7 +3964,7 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
             match options.pdbfile, options.portablePDB with
             | Some _, true ->
                 let pdbInfo =
-                    generatePortablePdb options.embedAllSource options.embedSourceList options.sourceLink options.checksumAlgorithm pdbData options.pathMap
+                    generatePortablePdb options.embedAllSource options.embedSourceList options.sourceLink options.checksumAlgorithm pdbData options.pathMap options.compilationReferences options.compilationOptions
 
                 if options.embeddedPDB then
                     let (uncompressedLength, contentId, stream, algorithmName, checkSum) = pdbInfo

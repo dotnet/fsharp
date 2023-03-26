@@ -1044,6 +1044,31 @@ let main5
     // Pass on only the minimum information required for the next phase
     Args(ctok, tcConfig, tcImports, tcGlobals, diagnosticsLogger, ilxMainModule, outfile, pdbfile, signingInfo, exiter, ilSourceDocs)
 
+let private createCompilationReferences (imports: TcImports): ILPdbWriter.PdbMetadataReferenceInfo list = 
+    [ for import in imports.GetImportedAssemblies() do 
+        match import.ILScopeRef with
+        | IL.ILScopeRef.Assembly a ->
+            match import.FSharpViewOfMetadata.TryGetILModuleDef() with
+            | Some moduleDef ->
+                let isAssembly = 0b1uy
+                let embedInteropTypes = false //TODO: read this flag from moduleDef/properties?
+                yield {
+                        FileName = a.Name
+                        Aliases = [| |] //TODO: does F# support `extern alias`?
+                        Flags =  isAssembly ||| (if embedInteropTypes then 0b10uy else 0b0uy) 
+                        TimeStamp = uint32 moduleDef.TimeDateStamp
+                        FileSize = uint32 moduleDef.ImageSize
+                        MVID = moduleDef.Mvid
+                      }
+            | None -> ()
+        | _ -> ()
+    ]
+    
+    
+
+let private createCompilationOptions (_config: TcConfig): (string * string) list = 
+    []
+
 /// Sixth phase of compilation.
 ///   -  write the binaries
 let main6
@@ -1114,6 +1139,8 @@ let main6
                             referenceAssemblyOnly = true
                             referenceAssemblyAttribOpt = referenceAssemblyAttribOpt
                             pathMap = tcConfig.pathMap
+                            compilationReferences = [] // no need to read references or options if not writing the PDB
+                            compilationOptions = []
                         },
                         ilxMainModule,
                         normalizeAssemblyRefs
@@ -1125,6 +1152,8 @@ let main6
             | MetadataAssemblyGeneration.ReferenceOnly -> ()
             | _ ->
                 try
+                    let compilationReferences = createCompilationReferences tcImports
+                    let compilationOptions = createCompilationOptions tcConfig
                     ILBinaryWriter.WriteILBinaryFile(
                         {
                             ilg = tcGlobals.ilg
@@ -1144,6 +1173,8 @@ let main6
                             referenceAssemblyOnly = false
                             referenceAssemblyAttribOpt = None
                             pathMap = tcConfig.pathMap
+                            compilationReferences = compilationReferences
+                            compilationOptions = compilationOptions
                         },
                         ilxMainModule,
                         normalizeAssemblyRefs

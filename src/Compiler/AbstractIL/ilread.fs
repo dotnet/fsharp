@@ -263,6 +263,10 @@ let seekReadBytes (mdv: BinaryView) addr len = mdv.ReadBytes(addr, len)
 let seekReadInt32 (mdv: BinaryView) addr = mdv.ReadInt32 addr
 let seekReadUInt16 (mdv: BinaryView) addr = mdv.ReadUInt16 addr
 
+let seekReadUtf8String (mdv: BinaryView) addr len = 
+    let b = mdv.ReadBytes(addr, len)
+    System.Text.Encoding.UTF8.GetString(b)
+
 let seekReadByteAsInt32 mdv addr = int32 (seekReadByte mdv addr)
 
 let seekReadInt64 mdv addr =
@@ -1865,7 +1869,10 @@ let rec seekReadModule (ctxt: ILMetadataReader) canReduceMemory (pectxtEager: PE
          isDll,
          alignVirt,
          alignPhys,
-         imageBaseReal) =
+         imageBaseReal,
+         timeDateStamp,
+         imageSize,
+         mvid) =
         peinfo
 
     let mdv = ctxt.mdfile.GetView()
@@ -1902,6 +1909,9 @@ let rec seekReadModule (ctxt: ILMetadataReader) canReduceMemory (pectxtEager: PE
         ImageBase = imageBaseReal
         MetadataVersion = ilMetadataVersion
         Resources = seekReadManifestResources ctxt canReduceMemory mdv pectxtEager pevEager
+        TimeDateStamp = timeDateStamp
+        ImageSize = imageSize
+        Mvid = mvid
     }
 
 and seekReadAssemblyManifest (ctxt: ILMetadataReader) pectxt idx =
@@ -4528,6 +4538,7 @@ let openPEFileReader (fileName, pefile: BinaryFile, noFileOnDisk) =
     (* PE SIGNATURE *)
     let machine = seekReadUInt16AsInt32 pev (peFileHeaderPhysLoc + 0)
     let numSections = seekReadUInt16AsInt32 pev (peFileHeaderPhysLoc + 2)
+    let timeDateStamp = seekReadInt32 pev (peFileHeaderPhysLoc + 4)
     let headerSizeOpt = seekReadUInt16AsInt32 pev (peFileHeaderPhysLoc + 16)
 
     if headerSizeOpt <> 0xe0 && headerSizeOpt <> 0xf0 then
@@ -4595,7 +4606,7 @@ let openPEFileReader (fileName, pefile: BinaryFile, noFileOnDisk) =
     let subsysMajor = seekReadUInt16AsInt32 pev (peOptionalHeaderPhysLoc + 48) // SubSys Major Always 4 (see Section 23.1).
     let subsysMinor = seekReadUInt16AsInt32 pev (peOptionalHeaderPhysLoc + 50) // SubSys Minor Always 0 (see Section 23.1).
     (* x86: 000000d0 *)
-    let _imageEndAddr = seekReadInt32 pev (peOptionalHeaderPhysLoc + 56) // Image Size: Size, in bytes, of image, including all headers and padding
+    let imageSize = seekReadInt32 pev (peOptionalHeaderPhysLoc + 56) // Image Size: Size, in bytes, of image, including all headers and padding
     let _headerPhysSize = seekReadInt32 pev (peOptionalHeaderPhysLoc + 60) // Header Size Combined size of MS-DOS Header, PE Header, PE Optional Header and padding
     let subsys = seekReadUInt16 pev (peOptionalHeaderPhysLoc + 68) // SubSystem Subsystem required to run this image.
 
@@ -4654,13 +4665,17 @@ let openPEFileReader (fileName, pefile: BinaryFile, noFileOnDisk) =
 
     (* Crack section headers *)
 
+    let mutable mvid = Guid.Empty
+
     let sectionHeaders =
         [
             for i in 0 .. numSections - 1 do
                 let pos = sectionHeadersStartPhysLoc + i * 0x28
+                let name = seekReadUtf8String pev pos 8
                 let virtSize = seekReadInt32 pev (pos + 8)
                 let virtAddr = seekReadInt32 pev (pos + 12)
                 let physLoc = seekReadInt32 pev (pos + 20)
+                if (name = ".mvid") then mvid <- seekReadBytes pev physLoc 16 |> Guid
                 yield (virtAddr, virtSize, physLoc)
         ]
 
@@ -4811,7 +4826,10 @@ let openPEFileReader (fileName, pefile: BinaryFile, noFileOnDisk) =
          isDll,
          alignVirt,
          alignPhys,
-         imageBaseReal)
+         imageBaseReal,
+         timeDateStamp,
+         imageSize,
+         mvid)
 
     (metadataPhysLoc, metadataSize, peinfo, pectxt, pev)
 

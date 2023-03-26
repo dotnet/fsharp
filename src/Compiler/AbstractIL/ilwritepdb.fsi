@@ -67,6 +67,17 @@ type PdbMethodData =
       DebugRange: (PdbSourceLoc * PdbSourceLoc) option
       DebugPoints: PdbDebugPoint[] }
 
+/// maps to the layout of the `MetadataReferenceInfo` from the PortablePdb spec
+type PdbMetadataReferenceInfo =
+    {
+        FileName: string
+        Aliases: string[]
+        Flags: byte
+        TimeStamp: uint32
+        FileSize: uint32
+        MVID: System.Guid
+    }
+
 [<NoEquality; NoComparison>]
 type PdbData =
     {
@@ -109,6 +120,8 @@ val generatePortablePdb:
     checksumAlgorithm: HashAlgorithm ->
     info: PdbData ->
     pathMap: PathMap ->
+    references: PdbMetadataReferenceInfo list ->
+    options: (string * string) list ->
         int64 * BlobContentId * MemoryStream * string * byte[]
 
 val compressPortablePdbStream: stream: MemoryStream -> MemoryStream
