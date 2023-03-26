@@ -1055,7 +1055,7 @@ let private createCompilationReferences (imports: TcImports): ILPdbWriter.PdbMet
                     let isAssembly = 0b1uy
                     let embedInteropTypes = false //TODO: read this flag from moduleDef/properties?
                     {
-                        FileName = dll.FileName
+                        FileName = Path.GetFileName dll.FileName
                         Aliases = [| |] //TODO: does F# support `extern alias`?
                         Flags =  isAssembly ||| (if embedInteropTypes then 0b10uy else 0b0uy) 
                         TimeStamp = uint32 moduleDef.TimeDateStamp

@@ -263,10 +263,6 @@ let seekReadBytes (mdv: BinaryView) addr len = mdv.ReadBytes(addr, len)
 let seekReadInt32 (mdv: BinaryView) addr = mdv.ReadInt32 addr
 let seekReadUInt16 (mdv: BinaryView) addr = mdv.ReadUInt16 addr
 
-let seekReadUtf8String (mdv: BinaryView) addr len = 
-    let b = mdv.ReadBytes(addr, len)
-    System.Text.Encoding.UTF8.GetString(b)
-
 let seekReadByteAsInt32 mdv addr = int32 (seekReadByte mdv addr)
 
 let seekReadInt64 mdv addr =
