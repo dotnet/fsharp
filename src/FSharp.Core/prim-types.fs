@@ -19,7 +19,7 @@ namespace Microsoft.FSharp.Core
     open System.Globalization
     open System.Reflection
     open System.Text
-    
+
     type Unit() =
         override _.GetHashCode() = 0
 
@@ -373,6 +373,59 @@ namespace Microsoft.FSharp.Core
     [<Sealed>]
     type NoCompilerInliningAttribute() =
         inherit Attribute()
+
+#if !NET5_0_OR_GREATER
+namespace System.Diagnostics.CodeAnalysis
+
+    open System
+    open Microsoft.FSharp.Core
+
+    /// <summary>
+    /// Specifies the types of members that are dynamically accessed.
+    ///
+    /// This enumeration has a <see cref="FlagsAttribute"/> attribute that allows a
+    /// bitwise combination of its member values.
+    /// </summary>
+    [<Flags; RequireQualifiedAccessAttribute>]
+    type internal DynamicallyAccessedMemberTypes = (*
+        | None = 0
+        | PublicParameterlessConstructor = 0x0001
+        | PublicConstructors = 0x0003
+        | NonPublicConstructors = 0x0004
+        | PublicMethods = 0x0008
+        | NonPublicMethods = 0x0010
+        | PublicFields = 0x0020
+        | NonPublicFields = 0x0040
+        | PublicNestedTypes = 0x0080
+        | NonPublicNestedTypes = 0x0100
+        | PublicProperties = 0x0200
+        | NonPublicProperties = 0x0400
+        | PublicEvents = 0x0800
+        | NonPublicEvents = 0x1000 *)
+        | All = 0xffffffff
+
+    [<AttributeUsage(
+        AttributeTargets.Field ||| AttributeTargets.ReturnValue ||| AttributeTargets.GenericParameter |||
+        AttributeTargets.Parameter ||| AttributeTargets.Property ||| AttributeTargets.Method,
+        Inherited = false)>]
+    type internal DynamicallyAccessedMembersAttribute (memberTypes: DynamicallyAccessedMemberTypes) =
+        inherit Attribute ()
+
+        member val MemberTypes = memberTypes with get, set
+
+        member this.DynamicallyAccessedMembersAttribute(memberTypes: DynamicallyAccessedMemberTypes) =
+            this.MemberTypes <- memberTypes
+
+
+namespace Microsoft.FSharp.Core
+    open System
+    open System.Collections
+    open System.Collections.Generic
+    open System.Diagnostics
+    open System.Globalization
+    open System.Reflection
+    open System.Text
+#endif
 
     [<MeasureAnnotatedAbbreviation>] type float<[<Measure>] 'Measure> = float 
     [<MeasureAnnotatedAbbreviation>] type float32<[<Measure>] 'Measure> = float32

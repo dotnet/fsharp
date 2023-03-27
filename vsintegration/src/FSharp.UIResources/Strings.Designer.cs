@@ -169,6 +169,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Enable partial type checking.
+        /// </summary>
+        public static string Enable_partial_type_checking {
+            get {
+                return ResourceManager.GetString("Enable_partial_type_checking", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Enable stale data for IntelliSense features.
         /// </summary>
         public static string Enable_Stale_IntelliSense_Results {
@@ -232,6 +241,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Formatting.
+        /// </summary>
+        public static string Formatting {
+            get {
+                return ResourceManager.GetString("Formatting", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Inline Hints.
         /// </summary>
         public static string Inline_Hints {
@@ -291,6 +309,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Parallelization {
             get {
                 return ResourceManager.GetString("Parallelization", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Preferred description width in characters.
+        /// </summary>
+        public static string Preferred_description_width_in_characters {
+            get {
+                return ResourceManager.GetString("Preferred_description_width_in_characters", resourceCulture);
             }
         }
         
@@ -426,6 +453,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Tooltip_in_memory_cross_project_references {
             get {
                 return ResourceManager.GetString("Tooltip_in_memory_cross_project_references", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Format signature to the given width by adding line breaks conforming with F# syntax rules. .
+        /// </summary>
+        public static string Tooltip_preferred_description_width_in_characters {
+            get {
+                return ResourceManager.GetString("Tooltip_preferred_description_width_in_characters", resourceCulture);
             }
         }
         

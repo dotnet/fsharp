@@ -507,6 +507,11 @@
         <target state="translated">상수 리터럴을 형식 공급자의 형식 매개 변수 인수로 지정하는 키워드입니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="keywordDescriptionSig">
+        <source>Keyword reserved for ML-compatibility.</source>
+        <target state="new">Keyword reserved for ML-compatibility.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="keywordDescriptionTypeTest">
         <source>Used to check if an object is of the given type in a pattern or binding.</source>
         <target state="translated">개체가 패턴 또는 바인딩에서 지정된 형식인지 확인하는 데 사용됩니다.</target>
@@ -765,6 +770,11 @@
       <trans-unit id="parsNewExprMemberAccess">
         <source>This member access is ambiguous. Please use parentheses around the object creation, e.g. '(new SomeType(args)).MemberName'</source>
         <target state="translated">이 구성원 액세스가 모호합니다. 개체 생성 주위에 괄호를 사용하세요. 예: '(새로운 SomeType(인수)).MemberName'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsUnexpectedEndOfFileElif">
+        <source>Unexpected end of input in 'else if' or 'elif' branch of conditional expression. Expected 'elif &lt;expr&gt; then &lt;expr&gt;' or 'else if &lt;expr&gt; then &lt;expr&gt;'.</source>
+        <target state="new">Unexpected end of input in 'else if' or 'elif' branch of conditional expression. Expected 'elif &lt;expr&gt; then &lt;expr&gt;' or 'else if &lt;expr&gt; then &lt;expr&gt;'.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">

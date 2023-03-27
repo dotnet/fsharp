@@ -75,6 +75,7 @@
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\Type-relatedExpressions\Type-relatedExpressions.fs" />
     <Compile Include="Conformance\InferenceProcedures\ByrefSafetyAnalysis\ByrefSafetyAnalysis.fs" />
     <Compile Include="Conformance\InferenceProcedures\RecursiveSafetyAnalysis\RecursiveSafetyAnalysis.fs" />
+    <Compile Include="Conformance\LexicalAnalysis\ElseIfBug14761.fs" />
     <Compile Include="Conformance\LexicalAnalysis\Comments.fs" />
     <Compile Include="Conformance\LexicalAnalysis\NumericLiterals.fs" />
     <Compile Include="Conformance\LexicalAnalysis\Shift\Generics.fs" />

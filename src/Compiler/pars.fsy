@@ -4207,8 +4207,9 @@ ifExprElifs:
         else
             None, Some ($3 $2 mElif true) }
 
-  | ELIF declExpr recover 
-      { None, Some (exprFromParseError $2) }
+  | ELIF declExpr recover      
+      { if not $3 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileElif())
+        None, Some (exprFromParseError $2) }
 
 tupleExpr:
   | tupleExpr COMMA declExpr

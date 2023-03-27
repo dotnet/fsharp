@@ -11,29 +11,33 @@ open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "ConvertToAnonymousRecord"); Shared>]
-type internal FSharpConvertToAnonymousRecordCodeFixProvider
-    [<ImportingConstructor>]
-    (
-    ) =
+type internal FSharpConvertToAnonymousRecordCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
-    let fixableDiagnosticIds = set ["FS0039"]
+    let fixableDiagnosticIds = set [ "FS0039" ]
 
     override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
     override _.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
             let document = context.Document
-            let! parseResults = document.GetFSharpParseResultsAsync(nameof(FSharpConvertToAnonymousRecordCodeFixProvider)) |> liftAsync
+
+            let! parseResults =
+                document.GetFSharpParseResultsAsync(nameof (FSharpConvertToAnonymousRecordCodeFixProvider))
+                |> liftAsync
 
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
-            let errorRange = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)
+
+            let errorRange =
+                RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)
+
             let! recordRange = parseResults.TryRangeOfRecordExpressionContainingPos errorRange.Start
             let! recordSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, recordRange)
 
             let getChangedText () =
-                sourceText.WithChanges(TextChange(TextSpan(recordSpan.Start + 1, 0), "|"))
-                          .WithChanges(TextChange(TextSpan(recordSpan.End, 0), "|"))
+                sourceText
+                    .WithChanges(TextChange(TextSpan(recordSpan.Start + 1, 0), "|"))
+                    .WithChanges(TextChange(TextSpan(recordSpan.End, 0), "|"))
 
             let diagnostics =
                 context.Diagnostics
@@ -46,11 +50,11 @@ type internal FSharpConvertToAnonymousRecordCodeFixProvider
                 CodeAction.Create(
                     title,
                     (fun (cancellationToken: CancellationToken) ->
-                        async {
-                            return context.Document.WithText(getChangedText())
-                        } |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
-                    title)
-                    
+                        async { return context.Document.WithText(getChangedText ()) }
+                        |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
+                    title
+                )
+
             context.RegisterCodeFix(codeFix, diagnostics)
         }
         |> Async.Ignore

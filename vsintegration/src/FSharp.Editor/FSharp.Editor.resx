@@ -173,7 +173,10 @@ Always add new line on enter;</value>
     <value>QuickInfo</value>
   </data>
   <data name="QuickInfoPageKeywords" xml:space="preserve">
-    <value>Navigation links;
+    <value>Formatting;
+Preferred description width in characters;
+Format signature to the given width by adding line breaks conforming with F# syntax rules;
+Navigation links;
 Show navigation links as;
 Solid underline;
 Dot underline;
@@ -201,13 +204,15 @@ Suggest names for unresolved identifiers;</value>
   <data name="PerformancePageKeywords" xml:space="preserve">
     <value>F# Project and Caching Performance Options;
 Enable in-memory cross project references;
+Enable_partial_type_checking;
 IntelliSense Performance Options;
 Enable stale data for IntelliSense features;
 Time until stale results are used (in milliseconds);
 Parallelization (requires restart);
 Enable parallel type checking with signature files;
 Enable parallel reference resolution;
-Enable fast find references &amp; rename (experimental);Cache parsing results (experimental)</value>
+Enable fast find references &amp; rename (experimental);
+Cache parsing results (experimental)</value>
   </data>
   <data name="6012" xml:space="preserve">
     <value>Advanced</value>
