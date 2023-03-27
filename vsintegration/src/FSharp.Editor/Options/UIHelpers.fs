@@ -8,6 +8,7 @@ open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.ComponentModelHost
 
 module internal OptionsUIHelpers =
+    open System
 
     [<AbstractClass>]
     type AbstractOptionPage<'options>() as this =
@@ -64,9 +65,9 @@ module internal OptionsUIHelpers =
     //data binding helpers
     let radioButtonCoverter =
         { new IValueConverter with
-            member this.Convert(value, _, parameter, _) = upcast value.Equals(parameter)
+            member _.Convert(value, _, parameter, _) = upcast value.Equals(parameter)
 
-            member this.ConvertBack(value, _, parameter, _) =
+            member _.ConvertBack(value, _, parameter, _) =
                 if value.Equals(true) then parameter else Binding.DoNothing
         }
 
@@ -78,3 +79,42 @@ module internal OptionsUIHelpers =
 
     let bindCheckBox (checkBox: CheckBox) (path: string) =
         checkBox.SetBinding(CheckBox.IsCheckedProperty, path) |> ignore
+
+    let bindDescriptionWidthTextBox (tb: TextBox) path =
+        let intOptionConverter =
+            { new IValueConverter with
+                member _.Convert(value, _, _, _) =
+                    try
+                        value :?> int option
+                        |> Option.map Convert.ToString
+                        |> Option.defaultValue ""
+                        |> box
+                    with _ ->
+                        Binding.DoNothing
+
+                member _.ConvertBack(value, _, _, _) =
+                    try
+                        Convert.ToInt32(value) |> Some |> box
+                    with _ ->
+                        None
+            }
+
+        let binding =
+            Binding(path, Converter = intOptionConverter, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged)
+
+        binding.ValidationRules.Add(
+            { new ValidationRule() with
+                member _.Validate(value, _) =
+                    try
+                        if String.IsNullOrWhiteSpace(downcast value) then
+                            ValidationResult.ValidResult
+                        else
+                            match Convert.ToInt32(value) with
+                            | n when n >= 20 -> ValidationResult.ValidResult
+                            | _ -> ValidationResult(false, "")
+                    with _ ->
+                        ValidationResult(false, "")
+            }
+        )
+
+        tb.SetBinding(TextBox.TextProperty, binding) |> ignore
