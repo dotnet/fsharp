@@ -174,7 +174,8 @@ Always add new line on enter;</value>
   </data>
   <data name="QuickInfoPageKeywords" xml:space="preserve">
     <value>Formatting;
-Maximum description width in characters;
+Preferred description width in characters;
+Format signature to the given width by adding line breaks conforming with F# syntax rules;
 Navigation links;
 Show navigation links as;
 Solid underline;
