@@ -1258,3 +1258,15 @@ type SyntacticClassificationServiceTests() =
             defines = [],
             classificationType = ClassificationTypeNames.NumericLiteral
         )
+
+    [<Theory>]
+    [<InlineData("10+1", ClassificationTypeNames.NumericLiteral)>]
+    [<InlineData("20+2", ClassificationTypeNames.StringLiteral)>]
+    [<InlineData("30+3", ClassificationTypeNames.NumericLiteral)>]
+    member public this.InterpolatedString_1DollarNestedIn2Dollars(marker: string, classificationType: string) =
+        this.VerifyColorizerAtEndOfMarker(
+            fileContents = "$$\"\"\"{{ $\"{10+1}\" }} {20+2} {{30+3}}\"\"\"",
+            marker = marker,
+            defines = [],
+            classificationType = classificationType
+        )
