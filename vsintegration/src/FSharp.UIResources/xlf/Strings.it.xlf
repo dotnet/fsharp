@@ -82,11 +82,6 @@
         <target state="new">Live Buffers (experimental)</target>
         <note />
       </trans-unit>
-      <trans-unit id="Maximum_description_width_in_characters">
-        <source>Maximum description width in characters</source>
-        <target state="new">Maximum description width in characters</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Navigation_links">
         <source>Navigation links</source>
         <target state="translated">Collegamenti di navigazione</target>
@@ -95,6 +90,11 @@
       <trans-unit id="Parallelization">
         <source>Parallelization (requires restart)</source>
         <target state="translated">Parallelizzazione (richiede il riavvio)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Preferred_description_width_in_characters">
+        <source>Preferred description width in characters</source>
+        <target state="new">Preferred description width in characters</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Parameter_Name_Hints">
@@ -145,6 +145,11 @@
       <trans-unit id="Text_hover">
         <source>Text hover</source>
         <target state="translated">Passaggio del puntatore sul testo</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Tooltip_preferred_description_width_in_characters">
+        <source>Format signature to the given width by adding line breaks conforming with F# syntax rules. </source>
+        <target state="new">Format signature to the given width by adding line breaks conforming with F# syntax rules. </target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">

@@ -255,7 +255,10 @@
   <data name="Formatting" xml:space="preserve">
     <value>Formatting</value>
   </data>
-  <data name="Maximum_description_width_in_characters" xml:space="preserve">
-    <value>Maximum description width in characters</value>
+  <data name="Preferred_description_width_in_characters" xml:space="preserve">
+    <value>Preferred description width in characters</value>
+  </data>
+  <data name="Tooltip_preferred_description_width_in_characters" xml:space="preserve">
+    <value>Format signature to the given width by adding line breaks conforming with F# syntax rules. </value>
   </data>
 </root>

@@ -286,15 +286,6 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Maximum description width in characters.
-        /// </summary>
-        public static string Maximum_description_width_in_characters {
-            get {
-                return ResourceManager.GetString("Maximum_description_width_in_characters", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Navigation links.
         /// </summary>
         public static string Navigation_links {
@@ -318,6 +309,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Parallelization {
             get {
                 return ResourceManager.GetString("Parallelization", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Preferred description width in characters.
+        /// </summary>
+        public static string Preferred_description_width_in_characters {
+            get {
+                return ResourceManager.GetString("Preferred_description_width_in_characters", resourceCulture);
             }
         }
         
@@ -453,6 +453,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Tooltip_in_memory_cross_project_references {
             get {
                 return ResourceManager.GetString("Tooltip_in_memory_cross_project_references", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Format signature to the given width by adding line breaks conforming with F# syntax rules. .
+        /// </summary>
+        public static string Tooltip_preferred_description_width_in_characters {
+            get {
+                return ResourceManager.GetString("Tooltip_preferred_description_width_in_characters", resourceCulture);
             }
         }
         
