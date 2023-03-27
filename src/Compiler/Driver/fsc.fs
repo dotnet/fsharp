@@ -1095,6 +1095,7 @@ let private createCompilationOptions (config: TcConfig) (imports: TcImports) (ct
         "compiler-target", config.target.ToString()
         // TODO: optimization options?
         match config.platform with | Some platform -> "platform", platform.ToString() | None -> ()
+        "version", "2" // TODO: determinism validation in NuGet Package Explorer is C#-specific: https://github.com/NuGetPackageExplorer/NuGetPackageExplorer/blob/ae4f65fa7e1f000dc5843d6ecc9200147dbf3bfc/Core/AssemblyMetadata/AssemblyDebugData.cs#L14
     ]
 
 /// Sixth phase of compilation.
