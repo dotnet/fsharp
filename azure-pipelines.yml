@@ -379,14 +379,10 @@ stages:
             condition: always()
             continueOnError: true
             inputs:
-                PathToPublish: '$(Build.SourcesDirectory)/artifacts/log/$(_configuration)/Build.VisualFSharp.sln.binlog'
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/$(_configuration)\Build.VisualFSharp.sln.binlog'
                 ArtifactName: 'Windows $(_configuration) $(_testKind) test binlogs'
                 ArtifactType: Container
                 parallel: true
-          - powershell: ./eng/FinishDumpCollectionForHangingBuilds.ps1 '$(Build.SourcesDirectory)/artifacts/log/$(_configuration)/Build.VisualFSharp.sln.binlog'
-            displayName: Finish background dump collection
-            continueOnError: true
-            condition: always()
           - task: PublishBuildArtifacts@1
             displayName: Publish Test Logs
             inputs:
