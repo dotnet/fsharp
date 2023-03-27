@@ -1087,7 +1087,7 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
     // Make a 'Declarations' object for a set of selected items
     static member Create(infoReader:InfoReader, ad, m: range, denv, getAccessibility: Item -> FSharpAccessibility, items: CompletionItem list, currentNamespace: string[] option, isAttributeApplicationContext: bool) = 
         let g = infoReader.g
-        let isForType = items |> List.exists (fun x -> x.Type.IsSome)
+        let isForType = items |> List.exists (fun x -> x.Type.IsSome || (x.Item |> function Item.AnonRecdField _ -> true | _ -> false))
         let items = items |> RemoveExplicitlySuppressedCompletionItems g
         
         let tyconRefOptEq tref1 tref2 =

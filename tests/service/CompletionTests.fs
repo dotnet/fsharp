@@ -17,6 +17,12 @@ let assertHasItemWithNames names (completionInfo: DeclarationListInfo) =
     for name in names do
         Assert.That(Set.contains name itemNames, name)
 
+let assertHasExactlyNamesAndNothingElse names (completionInfo: DeclarationListInfo) =
+    let itemNames = getCompletionItemNames completionInfo |> set
+    let expectedNames = Set.ofList names
+
+    Assert.That(itemNames, Is.EqualTo expectedNames)
+
 
 [<Test>]
 let ``Expr - record - field 01 - anon module`` () =
@@ -57,3 +63,11 @@ let record = { Field = 1 }
 {  }
 """
     assertHasItemWithNames ["Field"; "record"] info
+
+[<Test>]
+let ``Expr - array of anonymous records`` () =
+    let info = getCompletionInfo "x[0]." (3, 6) """
+let x = [ {| Name = "foo" |} ]
+x[0].
+"""  
+    assertHasExactlyNamesAndNothingElse ["Name"; "Equals"; "GetHashCode"; "GetType"; "ToString"] info

@@ -252,4 +252,13 @@
   <data name="Enable_partial_type_checking" xml:space="preserve">
     <value>Enable partial type checking</value>
   </data>
+  <data name="Formatting" xml:space="preserve">
+    <value>Formatting</value>
+  </data>
+  <data name="Preferred_description_width_in_characters" xml:space="preserve">
+    <value>Preferred description width in characters</value>
+  </data>
+  <data name="Tooltip_preferred_description_width_in_characters" xml:space="preserve">
+    <value>Format signature to the given width by adding line breaks conforming with F# syntax rules. </value>
+  </data>
 </root>
