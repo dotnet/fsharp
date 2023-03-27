@@ -1086,7 +1086,7 @@ let private createCompilationOptions (config: TcConfig) (imports: TcImports) (ct
         "language","FSharp"
         "compiler-version", compilerVersion
         "runtime-version", runtimeVersion
-        "language-version", config.langVersion.ToString()
+        "language-version", config.langVersion.SpecifiedVersionString
         "checked", config.checkOverflow.ToString()
         match config.conditionalDefines with
         | [] -> ()
@@ -1094,7 +1094,9 @@ let private createCompilationOptions (config: TcConfig) (imports: TcImports) (ct
         "source-file-count", config.loadedSources.Length.ToString()
         "compiler-target", config.target.ToString()
         // TODO: optimization options?
-        match config.platform with | Some platform -> "platform", platform.ToString() | None -> ()
+        match config.platform with
+        | None -> ()
+        | Some platform -> "platform", platform.ToString()
         "version", "2" // TODO: determinism validation in NuGet Package Explorer is C#-specific: https://github.com/NuGetPackageExplorer/NuGetPackageExplorer/blob/ae4f65fa7e1f000dc5843d6ecc9200147dbf3bfc/Core/AssemblyMetadata/AssemblyDebugData.cs#L14
     ]
 
