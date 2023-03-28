@@ -66,6 +66,9 @@ module HintTestFramework =
     let getTypeHints document =
         getHints document (Set.empty.Add(HintKind.TypeHint))
 
+    let getReturnTypeHints document =
+        getHints document (Set.empty.Add(HintKind.ReturnTypeHint))
+
     let getParameterNameHints document =
         getHints document (Set.empty.Add(HintKind.ParameterNameHint))
 

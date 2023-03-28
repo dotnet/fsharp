@@ -186,6 +186,21 @@ let zip4 (l1: 'a list) (l2: 'b list) (l3: 'c list) (l4: 'd list) =
         actual |> Assert.shouldBeEquivalentTo expected
 
     [<Fact>]
+    let ``Hints are shown for let-bound function return types`` () =
+        let code =
+            """
+    let func () = 3
+    let func2 x = x + 1
+    let setConsoleOut = System.Console.SetOut
+    """
+
+        let document = getFsDocument code
+
+        let result = getReturnTypeHints document
+
+        Assert.Empty(result)
+
+    [<Fact>]
     let ``Hints are not shown for lambda return types`` () =
         let code =
             """
