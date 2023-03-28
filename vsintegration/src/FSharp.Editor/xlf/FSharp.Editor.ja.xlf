@@ -182,14 +182,16 @@ Cache parsing results (experimental)</target>
       </trans-unit>
       <trans-unit id="QuickInfoPageKeywords">
         <source>Formatting;
-Maximum description width in characters;
+Preferred description width in characters;
+Format signature to the given width by adding line breaks conforming with F# syntax rules;
 Navigation links;
 Show navigation links as;
 Solid underline;
 Dot underline;
 Dash underline;</source>
         <target state="new">Formatting;
-Maximum description width in characters;
+Preferred description width in characters;
+Format signature to the given width by adding line breaks conforming with F# syntax rules;
 Navigation links;
 Show navigation links as;
 Solid underline;
