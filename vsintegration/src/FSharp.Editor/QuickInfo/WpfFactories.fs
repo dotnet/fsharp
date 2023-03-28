@@ -12,7 +12,13 @@ open Microsoft.VisualStudio.Utilities
 
 open Microsoft.VisualStudio.FSharp.Editor
 
-type Separator = Separator
+type Separator =
+    | Separator of visible: bool
+    // preserve old behavior on mac
+    override this.ToString() =
+        match this with
+        | Separator true -> XmlDocumentation.separatorText
+        | _ -> System.Environment.NewLine
 
 [<Export(typeof<IViewElementFactory>)>]
 [<Name("QuickInfoElement to UIElement")>]
@@ -56,5 +62,11 @@ type WpfSeparatorFactory() =
     interface IViewElementFactory with
         member _.CreateViewElement(_, model: obj) =
             match model with
-            | :? Separator -> Controls.Separator(Opacity = 0.4, Margin = Thickness(0, 10, 0, 10)) |> box :?> _
+            | :? Separator as Separator visible ->
+                if visible then
+                    Controls.Separator(Opacity = 0.3, Margin = Thickness(0, 8, 0, 8))
+                else
+                    Controls.Separator(Opacity = 0)
+                |> box
+                :?> _
             | _ -> failwith $"Invalid type conversion.  Supported conversion is {typeof<Separator>.Name} to {typeof<UIElement>.Name}."

@@ -3,11 +3,9 @@
 namespace Microsoft.VisualStudio.FSharp.Editor.QuickInfo
 
 open System
-open System.IO
 open System.Threading
 open System.Threading.Tasks
 open System.ComponentModel.Composition
-open System.Text
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
@@ -21,6 +19,7 @@ open Microsoft.VisualStudio.FSharp.Editor
 
 open FSharp.Compiler.Text
 open Microsoft.IO
+open FSharp.Compiler.EditorServices
 
 type internal FSharpAsyncQuickInfoSource
     (
@@ -31,165 +30,101 @@ type internal FSharpAsyncQuickInfoSource
         editorOptions: EditorOptions
     ) =
 
-    // test helper
-    static member ProvideQuickInfo(document: Document, position: int, ?width: int) =
+    let tryGetQuickInfoItem (session: IAsyncQuickInfoSession) =
         asyncMaybe {
-            let! _, sigQuickInfo, targetQuickInfo = FSharpQuickInfo.getQuickInfo (document, position, width, CancellationToken.None)
-            return! sigQuickInfo |> Option.orElse targetQuickInfo
+            let userOpName = "getQuickInfo"
+
+            let! triggerPoint = session.GetTriggerPoint(textBuffer.CurrentSnapshot) |> Option.ofNullable
+            let position = triggerPoint.Position
+
+            let document =
+                textBuffer.CurrentSnapshot.GetOpenDocumentInCurrentContextWithChanges()
+
+            let! lexerSymbol = document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, true, true, userOpName)
+            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(userOpName) |> liftAsync
+            let! cancellationToken = Async.CancellationToken |> liftAsync
+            let! sourceText = document.GetTextAsync cancellationToken
+            let idRange = lexerSymbol.Ident.idRange
+            let textLinePos = sourceText.Lines.GetLinePosition position
+            let fcsTextLineNumber = Line.fromZ textLinePos.Line
+            let lineText = (sourceText.Lines.GetLineFromPosition position).ToString()
+
+            let getLinkTooltip filePath =
+                let solutionDir = Path.GetDirectoryName(document.Project.Solution.FilePath)
+                let projectDir = Path.GetDirectoryName(document.Project.FilePath)
+
+                [
+                    Path.GetRelativePath(projectDir, filePath)
+                    Path.GetRelativePath(solutionDir, filePath)
+                ]
+                |> List.minBy String.length
+
+            let symbolUseRange =
+                maybe {
+                    let! symbolUse =
+                        checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland)
+
+                    return symbolUse.Range
+                }
+
+            let tryGetSingleContent (data: ToolTipElement) =
+                maybe {
+                    let documentationBuilder =
+                        XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService)
+
+                    let symbol, description, documentation =
+                        XmlDocumentation.BuildSingleTipText(documentationBuilder, data)
+
+                    return
+                        QuickInfoViewProvider.provideContent (
+                            Tokenizer.GetImageIdForSymbol(symbol, lexerSymbol.Kind),
+                            description,
+                            documentation,
+                            FSharpNavigation(statusBar, metadataAsSource, document, defaultArg symbolUseRange range.Zero),
+                            getLinkTooltip
+                        )
+                }
+
+            let (ToolTipText elements) =
+                match lexerSymbol.Kind with
+                | LexerSymbolKind.Keyword -> checkFileResults.GetKeywordTooltip(lexerSymbol.FullIsland)
+                | LexerSymbolKind.String ->
+                    checkFileResults.GetToolTip(
+                        fcsTextLineNumber,
+                        idRange.EndColumn,
+                        lineText,
+                        lexerSymbol.FullIsland,
+                        FSharp.Compiler.Tokenization.FSharpTokenTag.String,
+                        ?width = editorOptions.QuickInfo.DescriptionWidth
+                    )
+                | _ ->
+                    checkFileResults.GetToolTip(
+                        fcsTextLineNumber,
+                        idRange.EndColumn,
+                        lineText,
+                        lexerSymbol.FullIsland,
+                        FSharp.Compiler.Tokenization.FSharpTokenTag.IDENT,
+                        ?width = editorOptions.QuickInfo.DescriptionWidth
+                    )
+
+            let content = elements |> List.choose tryGetSingleContent
+            do! Option.guard (not content.IsEmpty)
+
+            let! textSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, lexerSymbol.Range)
+
+            let trackingSpan =
+                textBuffer.CurrentSnapshot.CreateTrackingSpan(textSpan.Start, textSpan.Length, SpanTrackingMode.EdgeInclusive)
+
+            return QuickInfoItem(trackingSpan, QuickInfoViewProvider.stackWithSeparators content)
         }
-
-    static member BuildSingleQuickInfoItem (documentationBuilder: IDocumentationBuilder) (quickInfo: FSharpQuickInfo) =
-        let mainDescription, documentation, typeParameterMap, usage, exceptions =
-            ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray()
-
-        XmlDocumentation.BuildDataTipText(
-            documentationBuilder,
-            mainDescription.Add,
-            documentation.Add,
-            typeParameterMap.Add,
-            usage.Add,
-            exceptions.Add,
-            quickInfo.StructuredText
-        )
-
-        let docs =
-            RoslynHelpers.joinWithLineBreaks [ documentation; typeParameterMap; usage; exceptions ]
-
-        (mainDescription, docs)
 
     interface IAsyncQuickInfoSource with
         override _.Dispose() = () // no cleanup necessary
 
-        // This method can be called from the background thread.
-        // Do not call IServiceProvider.GetService here.
         override _.GetQuickInfoItemAsync(session: IAsyncQuickInfoSession, cancellationToken: CancellationToken) : Task<QuickInfoItem> =
-            let triggerPoint = session.GetTriggerPoint(textBuffer.CurrentSnapshot)
-
-            match triggerPoint.HasValue with
-            | false -> Task.FromResult<QuickInfoItem>(null)
-            | true ->
-                let triggerPoint = triggerPoint.GetValueOrDefault()
-
-                let width = editorOptions.QuickInfo.DescriptionWidth
-
-                asyncMaybe {
-                    let document =
-                        textBuffer.CurrentSnapshot.GetOpenDocumentInCurrentContextWithChanges()
-
-                    let! symbolUseRange, sigQuickInfo, targetQuickInfo =
-                        FSharpQuickInfo.getQuickInfo (document, triggerPoint.Position, width, cancellationToken)
-
-                    let getTooltip filePath =
-                        let solutionDir = Path.GetDirectoryName(document.Project.Solution.FilePath)
-                        let projectDir = Path.GetDirectoryName(document.Project.FilePath)
-
-                        [
-                            Path.GetRelativePath(projectDir, filePath)
-                            Path.GetRelativePath(solutionDir, filePath)
-                        ]
-                        |> List.minBy String.length
-
-                    let getTrackingSpan (span: TextSpan) =
-                        textBuffer.CurrentSnapshot.CreateTrackingSpan(span.Start, span.Length, SpanTrackingMode.EdgeInclusive)
-
-                    let documentationBuilder =
-                        XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService)
-
-                    match sigQuickInfo, targetQuickInfo with
-                    | None, None -> return null
-                    | Some quickInfo, None
-                    | None, Some quickInfo ->
-                        let mainDescription, docs =
-                            FSharpAsyncQuickInfoSource.BuildSingleQuickInfoItem documentationBuilder quickInfo
-
-                        let imageId = Tokenizer.GetImageIdForSymbol(quickInfo.Symbol, quickInfo.SymbolKind)
-
-                        let navigation =
-                            FSharpNavigation(statusBar, metadataAsSource, document, symbolUseRange)
-
-                        let content =
-                            QuickInfoViewProvider.provideContent (
-                                imageId,
-                                mainDescription |> List.ofSeq,
-                                [ docs |> List.ofSeq ],
-                                navigation,
-                                getTooltip
-                            )
-
-                        let span = getTrackingSpan quickInfo.Span
-                        return QuickInfoItem(span, content)
-
-                    | Some sigQuickInfo, Some targetQuickInfo ->
-                        let mainDescription, targetDocumentation, sigDocumentation, typeParameterMap, exceptions, usage =
-                            ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray()
-
-                        XmlDocumentation.BuildDataTipText(
-                            documentationBuilder,
-                            ignore,
-                            sigDocumentation.Add,
-                            ignore,
-                            ignore,
-                            ignore,
-                            sigQuickInfo.StructuredText
-                        )
-
-                        XmlDocumentation.BuildDataTipText(
-                            documentationBuilder,
-                            mainDescription.Add,
-                            targetDocumentation.Add,
-                            typeParameterMap.Add,
-                            exceptions.Add,
-                            usage.Add,
-                            targetQuickInfo.StructuredText
-                        )
-                        // get whitespace nomalized documentation text
-                        let getText (tts: seq<TaggedText>) =
-                            let text =
-                                (StringBuilder(), tts)
-                                ||> Seq.fold (fun sb tt ->
-                                    if String.IsNullOrWhiteSpace tt.Text then
-                                        sb
-                                    else
-                                        sb.Append tt.Text)
-                                |> string
-
-                            if String.IsNullOrWhiteSpace text then None else Some text
-
-                        let documentationParts: TaggedText list list =
-                            [
-                                match getText targetDocumentation, getText sigDocumentation with
-                                | None, None -> ()
-                                | None, Some _ -> sigDocumentation |> List.ofSeq
-                                | Some _, None -> targetDocumentation |> List.ofSeq
-                                | Some implText, Some sigText when implText.Equals(sigText, StringComparison.OrdinalIgnoreCase) ->
-                                    sigDocumentation |> List.ofSeq
-                                | Some _, Some _ ->
-                                    sigDocumentation |> List.ofSeq
-                                    targetDocumentation |> List.ofSeq
-                                RoslynHelpers.joinWithLineBreaks [ typeParameterMap; usage; exceptions ]
-                                |> List.ofSeq
-                            ]
-
-                        let imageId =
-                            Tokenizer.GetImageIdForSymbol(targetQuickInfo.Symbol, targetQuickInfo.SymbolKind)
-
-                        let navigation =
-                            FSharpNavigation(statusBar, metadataAsSource, document, symbolUseRange)
-
-                        let content =
-                            QuickInfoViewProvider.provideContent (
-                                imageId,
-                                mainDescription |> List.ofSeq,
-                                documentationParts,
-                                navigation,
-                                getTooltip
-                            )
-
-                        let span = getTrackingSpan targetQuickInfo.Span
-                        return QuickInfoItem(span, content)
-                }
-                |> Async.map Option.toObj
-                |> RoslynHelpers.StartAsyncAsTask cancellationToken
+            tryGetQuickInfoItem session
+            |> Async.map Option.toObj
+            |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
 [<Export(typeof<IAsyncQuickInfoSourceProvider>)>]
 [<Name("F# Quick Info Provider")>]
@@ -210,4 +145,3 @@ type internal FSharpAsyncQuickInfoSourceProvider [<ImportingConstructor>]
             let xmlMemberIndexService = serviceProvider.XMLMemberIndexService
 
             new FSharpAsyncQuickInfoSource(statusBar, xmlMemberIndexService, metadataAsSource, textBuffer, editorOptions)
-            :> IAsyncQuickInfoSource

@@ -11,7 +11,6 @@ open Microsoft.VisualStudio.Text.Adornments
 open Microsoft.VisualStudio.FSharp.Editor
 
 module internal QuickInfoViewProvider =
-
     let layoutTagToClassificationTag (layoutTag: TextTag) =
         match layoutTag with
         | TextTag.ActivePatternCase
@@ -56,11 +55,6 @@ module internal QuickInfoViewProvider =
         | TaggedText (TextTag.LineBreak, _) -> Some()
         | _ -> None
 
-    let (|DocSeparator|_|) =
-        function
-        | LineBreak :: TaggedText (TextTag.Text, "-------------") :: LineBreak :: rest -> Some rest
-        | _ -> None
-
     let wrapContent (elements: obj list) =
         ContainerElement(ContainerElementStyle.Wrapped, elements |> Seq.map box)
 
@@ -69,14 +63,11 @@ module internal QuickInfoViewProvider =
 
     let encloseRuns runs = wrapContent (runs |> List.rev) |> box
 
-    let emptyLine =
-        wrapContent [ ClassifiedTextRun(ClassificationTypeNames.WhiteSpace, "") |> box ]
-
     let provideContent
         (
             imageId: ImageId option,
             description: TaggedText list,
-            documentation: TaggedText list list,
+            documentation: TaggedText list,
             navigation: FSharpNavigation,
             getTooltip
         ) =
@@ -85,9 +76,8 @@ module internal QuickInfoViewProvider =
             let rec loop text runs stack =
                 match (text: TaggedText list) with
                 | [] -> stackContent (encloseRuns runs :: stack |> List.rev)
-                | DocSeparator (LineBreak :: rest)
-                | DocSeparator rest -> loop rest [] (box Separator :: encloseRuns runs :: stack)
-                | LineBreak :: rest when runs |> List.isEmpty -> loop rest [] (emptyLine :: stack)
+                // smaller gap instead of huge double line break
+                | LineBreak :: rest when runs |> List.isEmpty -> loop rest [] (box (Separator false) :: stack)
                 | LineBreak :: rest -> loop rest [] (encloseRuns runs :: stack)
                 | :? NavigableTaggedText as item :: rest when navigation.IsTargetValid item.Range ->
                     let classificationTag = layoutTagToClassificationTag item.Tag
@@ -108,6 +98,10 @@ module internal QuickInfoViewProvider =
             | Some imageId -> wrapContent [ stackContent [ ImageElement(imageId) ]; encloseText description ]
             | None -> ContainerElement(ContainerElementStyle.Wrapped, encloseText description)
 
-        let separated = stackContent (documentation |> List.map encloseText)
+        wrapContent [ stackContent [ innerElement; encloseText documentation ] ]
 
-        wrapContent [ stackContent [ innerElement; separated ] ]
+    let stackWithSeparators elements =
+        elements
+        |> List.map box
+        |> List.intersperse (box (Separator true))
+        |> stackContent
