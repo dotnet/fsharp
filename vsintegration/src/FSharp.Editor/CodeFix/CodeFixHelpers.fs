@@ -12,16 +12,17 @@ open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 [<RequireQualifiedAccess>]
 module internal CodeFixHelpers =
     let createTextChangeCodeFix (title: string, context: CodeFixContext, computeTextChanges: unit -> Async<TextChange[] option>) =
-        let props: (string * obj) list = [
-            "title", title
+        let props: (string * obj) list =
+            [
+                "title", title
 
-            // The following can help building a unique but anonymized codefix target:
-            // #projectid#documentid#span
-            // Then we can check if the codefix was actually activated after its creation.
-            "context.document.project.id", context.Document.Project.Id.Id.ToString()
-            "context.document.id", context.Document.Id.Id.ToString()
-            "context.span", context.Span.ToString()
-        ]
+                // The following can help building a unique but anonymized codefix target:
+                // #projectid#documentid#span
+                // Then we can check if the codefix was actually activated after its creation.
+                "context.document.project.id", context.Document.Project.Id.Id.ToString()
+                "context.document.id", context.Document.Id.Id.ToString()
+                "context.span", context.Span.ToString()
+            ]
 
         TelemetryReporter.reportEvent "codefixregistered" props
 
@@ -36,7 +37,7 @@ module internal CodeFixHelpers =
                     | None -> return context.Document
                     | Some textChanges ->
                         // Note: "activated" doesn't mean "applied".
-                        // It's one step prior to that: 
+                        // It's one step prior to that:
                         // e.g. when one clicks (Ctrl + .) and looks at the potential change.
                         TelemetryReporter.reportEvent "codefixactivated" props
                         return context.Document.WithText(sourceText.WithChanges(textChanges))
