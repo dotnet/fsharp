@@ -181,16 +181,20 @@ Cache parsing results (experimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="QuickInfoPageKeywords">
-        <source>Navigation links;
+        <source>Formatting;
+Maximum description width in characters;
+Navigation links;
 Show navigation links as;
 Solid underline;
 Dot underline;
 Dash underline;</source>
-        <target state="translated">Gezinti bağlantıları;
-Gezinti bağlantılarını gösterme biçimi;
-Altı düz çizili;
-Altı noktalı çizili;
-Çizgi altı çizili;</target>
+        <target state="new">Formatting;
+Maximum description width in characters;
+Navigation links;
+Show navigation links as;
+Solid underline;
+Dot underline;
+Dash underline;</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">

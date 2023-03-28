@@ -27,6 +27,11 @@
         <target state="translated">Buscar opciones de rendimiento de referencias</target>
         <note />
       </trans-unit>
+      <trans-unit id="Formatting">
+        <source>Formatting</source>
+        <target state="new">Formatting</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Inline_Hints">
         <source>Inline Hints</source>
         <target state="translated">Sugerencias insertadas</target>
@@ -87,6 +92,11 @@
         <target state="translated">Paralelización (requiere reiniciar)</target>
         <note />
       </trans-unit>
+      <trans-unit id="Preferred_description_width_in_characters">
+        <source>Preferred description width in characters</source>
+        <target state="new">Preferred description width in characters</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Show_Inline_Parameter_Name_Hints">
         <source>Display inline parameter name hints (preview)</source>
         <target state="new">Display inline parameter name hints (preview)</target>
@@ -135,6 +145,11 @@
       <trans-unit id="Text_hover">
         <source>Text hover</source>
         <target state="translated">Texto al pasar el puntero</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Tooltip_preferred_description_width_in_characters">
+        <source>Format signature to the given width by adding line breaks conforming with F# syntax rules. </source>
+        <target state="new">Format signature to the given width by adding line breaks conforming with F# syntax rules. </target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
