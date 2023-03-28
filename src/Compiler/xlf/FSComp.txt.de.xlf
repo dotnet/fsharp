@@ -757,6 +757,11 @@
         <target state="translated">Muster wird erwartet</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsIncompleteNamedPatPair">
+        <source>Incomplete named pattern pair. Expected 'name = pattern'.</source>
+        <target state="new">Incomplete named pattern pair. Expected 'name = pattern'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr1">
         <source>Incomplete character literal (example: 'Q') or qualified type invocation (example: 'T.Name)</source>
         <target state="translated">Unvollständiges Zeichenliteral (Beispiel: „Q“) oder qualifizierter Typaufruf (Beispiel: „T.Name“)</target>

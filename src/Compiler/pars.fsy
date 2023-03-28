@@ -3133,7 +3133,14 @@ namePatPairs:
 namePatPair:
    | ident EQUALS parenPattern
      { let mEquals = rhs parseState 2
-       ($1, mEquals, $3) }
+       ($1, Some mEquals, $3) }
+   | ident EQUALS recover
+     { let mEquals = rhs parseState 2
+       reportParseErrorAt mEquals.EndRange (FSComp.SR.parsIncompleteNamedPatPair())
+       ($1, Some mEquals, patFromParseError (SynPat.Wild mEquals.EndRange)) }
+   | ident recover
+     { reportParseErrorAt $1.idRange.EndRange (FSComp.SR.parsIncompleteNamedPatPair())
+       ($1, None, patFromParseError (SynPat.Wild $1.idRange.EndRange)) }
 
 constrPattern:
   | atomicPatternLongIdent explicitValTyparDecls
