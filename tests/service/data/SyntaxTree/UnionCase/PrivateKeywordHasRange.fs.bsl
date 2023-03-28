@@ -28,7 +28,7 @@ ImplFile
                   { LeadingKeyword = Type (2,0--2,4)
                     EqualsRange = Some (2,14--2,15)
                     WithKeyword = None })], (2,0--9,20))], PreXmlDocEmpty, [],
-          None, (2,0--10,0), { LeadingKeyword = None })], (true, false),
+          None, (2,0--10,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives =
          [If (Not (Ident "FABLE_COMPILER"), (6,0--6,19)); EndIf (8,0--8,6)]
         CodeComments = [LineComment (3,4--3,67); LineComment (4,4--4,56)] },

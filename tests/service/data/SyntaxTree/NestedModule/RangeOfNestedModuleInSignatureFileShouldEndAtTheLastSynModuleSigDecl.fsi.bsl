@@ -388,19 +388,19 @@ SigFile
                                      Paren
                                        (Const
                                           (String
-                                             ("Length1", Regular, (50,23--50,32)),
-                                           (50,23--50,32)), (50,22--50,23),
-                                        Some (50,32--50,33), (50,22--50,33))
+                                             ("Length1", Regular, (51,23--51,32)),
+                                           (51,23--51,32)), (51,22--51,23),
+                                        Some (51,32--51,33), (51,22--51,33))
                                     Target = None
                                     AppliesToGetterAndSetter = false
-                                    Range = (50,10--50,33) }]
-                                Range = (50,8--50,35) }],
+                                    Range = (51,10--51,33) }]
+                                Range = (51,8--51,35) }],
                              SynIdent (Length1, None),
                              SynValTyparDecls (None, true),
                              LongIdent (SynLongIdent ([int], [], [None])),
                              SynValInfo ([], SynArgInfo ([], false, None)),
                              false, false,
-                             PreXmlDoc ((50,8), FSharp.Compiler.Xml.XmlDocCollector),
+                             PreXmlDoc ((51,8), FSharp.Compiler.Xml.XmlDocCollector),
                              None, None, (50,8--52,28),
                              { LeadingKeyword = Member (52,8--52,14)
                                InlineKeyword = None
@@ -422,19 +422,19 @@ SigFile
                                      Paren
                                        (Const
                                           (String
-                                             ("Length2", Regular, (53,23--53,32)),
-                                           (53,23--53,32)), (53,22--53,23),
-                                        Some (53,32--53,33), (53,22--53,33))
+                                             ("Length2", Regular, (54,23--54,32)),
+                                           (54,23--54,32)), (54,22--54,23),
+                                        Some (54,32--54,33), (54,22--54,33))
                                     Target = None
                                     AppliesToGetterAndSetter = false
-                                    Range = (53,10--53,33) }]
-                                Range = (53,8--53,35) }],
+                                    Range = (54,10--54,33) }]
+                                Range = (54,8--54,35) }],
                              SynIdent (Length2, None),
                              SynValTyparDecls (None, true),
                              LongIdent (SynLongIdent ([int], [], [None])),
                              SynValInfo ([], SynArgInfo ([], false, None)),
                              false, false,
-                             PreXmlDoc ((53,8), FSharp.Compiler.Xml.XmlDocCollector),
+                             PreXmlDoc ((54,8), FSharp.Compiler.Xml.XmlDocCollector),
                              None, None, (53,8--55,28),
                              { LeadingKeyword = Member (55,8--55,14)
                                InlineKeyword = None
@@ -456,18 +456,18 @@ SigFile
                                      Paren
                                        (Const
                                           (String
-                                             ("Base1", Regular, (56,23--56,30)),
-                                           (56,23--56,30)), (56,22--56,23),
-                                        Some (56,30--56,31), (56,22--56,31))
+                                             ("Base1", Regular, (57,23--57,30)),
+                                           (57,23--57,30)), (57,22--57,23),
+                                        Some (57,30--57,31), (57,22--57,31))
                                     Target = None
                                     AppliesToGetterAndSetter = false
-                                    Range = (56,10--56,31) }]
-                                Range = (56,8--56,33) }], SynIdent (Base1, None),
+                                    Range = (57,10--57,31) }]
+                                Range = (57,8--57,33) }], SynIdent (Base1, None),
                              SynValTyparDecls (None, true),
                              LongIdent (SynLongIdent ([int], [], [None])),
                              SynValInfo ([], SynArgInfo ([], false, None)),
                              false, false,
-                             PreXmlDoc ((56,8), FSharp.Compiler.Xml.XmlDocCollector),
+                             PreXmlDoc ((57,8), FSharp.Compiler.Xml.XmlDocCollector),
                              None, None, (56,8--58,26),
                              { LeadingKeyword = Member (58,8--58,14)
                                InlineKeyword = None
@@ -489,18 +489,18 @@ SigFile
                                      Paren
                                        (Const
                                           (String
-                                             ("Base2", Regular, (59,23--59,30)),
-                                           (59,23--59,30)), (59,22--59,23),
-                                        Some (59,30--59,31), (59,22--59,31))
+                                             ("Base2", Regular, (60,23--60,30)),
+                                           (60,23--60,30)), (60,22--60,23),
+                                        Some (60,30--60,31), (60,22--60,31))
                                     Target = None
                                     AppliesToGetterAndSetter = false
-                                    Range = (59,10--59,31) }]
-                                Range = (59,8--59,33) }], SynIdent (Base2, None),
+                                    Range = (60,10--60,31) }]
+                                Range = (60,8--60,33) }], SynIdent (Base2, None),
                              SynValTyparDecls (None, true),
                              LongIdent (SynLongIdent ([int], [], [None])),
                              SynValInfo ([], SynArgInfo ([], false, None)),
                              false, false,
-                             PreXmlDoc ((59,8), FSharp.Compiler.Xml.XmlDocCollector),
+                             PreXmlDoc ((60,8), FSharp.Compiler.Xml.XmlDocCollector),
                              None, None, (59,8--61,26),
                              { LeadingKeyword = Member (61,8--61,14)
                                InlineKeyword = None
@@ -521,6 +521,4 @@ SigFile
           PreXmlDocEmpty, [], None, (2,0--61,26),
           { LeadingKeyword = Namespace (2,0--2,9) })],
       { ConditionalDirectives = []
-        CodeComments =
-         [LineComment (51,8--51,82); LineComment (54,8--54,84);
-          LineComment (57,8--57,88); LineComment (60,8--60,89)] }, set []))
+        CodeComments = [] }, set []))
