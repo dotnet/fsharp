@@ -25,6 +25,6 @@ ImplFile
                                  Ident a, (4,16--5,21)), Ident b, (4,16--6,21)),
                            Ident c, (4,16--7,21))), None)], (2,0--7,23)),
               (2,0--7,23))], PreXmlDocEmpty, [], None, (2,0--7,23),
-          { LeadingKeyword = None })], (true, false),
+          { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [LineComment (3,13--3,28)] }, set []))

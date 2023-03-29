@@ -35,6 +35,6 @@ ImplFile
                      Named (SynIdent (c, None), false, None, (2,13--2,14))],
                     Ident x), (2,0--2,19), { ArrowRange = Some (2,15--2,17) }),
               (2,0--2,19))], PreXmlDocEmpty, [], None, (2,0--3,0),
-          { LeadingKeyword = None })], (true, false),
+          { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

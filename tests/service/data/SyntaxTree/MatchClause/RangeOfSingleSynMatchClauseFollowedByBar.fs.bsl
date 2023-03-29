@@ -36,6 +36,8 @@ ImplFile
                                                    WithKeyword = (5,0--5,4)
                                                    WithToEndRange = (5,0--8,1) }),
               (2,0--8,1))], PreXmlDocEmpty, [], None, (2,0--9,0),
-          { LeadingKeyword = None })], (true, false),
+          { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
+
+(9,0)-(9,0) parse error Incomplete structured construct at or before this point in pattern matching

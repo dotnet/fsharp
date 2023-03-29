@@ -648,6 +648,7 @@ type FrameworkImportsCache(size) =
                     lazyWork
             )
         node
+                
 
     /// This function strips the "System" assemblies from the tcConfig and returns a age-cached TcImports for them.
     member this.Get(tcConfig: TcConfig) =
@@ -1248,19 +1249,24 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             let t2 = MaxTimeStampInDependencies state.logicalStampedFileNames fileSlot
             max t1 t2
 
-    let gate = obj()
+    let semaphore = new SemaphoreSlim(1,1)
+
     let mutable currentState = state 
 
     let setCurrentState state cache (ct: CancellationToken) =
-        lock gate (fun () ->
-            ct.ThrowIfCancellationRequested()
-            currentState <- computeStampedFileNames initialState state cache
-        )
+        node {
+            do! semaphore.WaitAsync(ct) |> NodeCode.AwaitTask
+            try
+                ct.ThrowIfCancellationRequested()
+                currentState <- computeStampedFileNames initialState state cache
+            finally
+                semaphore.Release() |> ignore
+        }
 
     let checkFileTimeStamps (cache: TimeStampCache) =
         node {
             let! ct = NodeCode.CancellationToken
-            setCurrentState currentState cache ct
+            do! setCurrentState currentState cache ct
         }
 
     do IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBECreated)
@@ -1443,7 +1449,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             let newState = { currentState with notifiedStampedFileNames = currentState.notifiedStampedFileNames.SetItem(slotOfFile, timeStamp) }
             let cache = TimeStampCache defaultTimeStamp
             let! ct = NodeCode.CancellationToken
-            setCurrentState newState cache ct
+            do! setCurrentState newState cache ct
         }
 
     member _.SourceFiles = fileNames |> Seq.map (fun f -> f.Source.FilePath) |> List.ofSeq

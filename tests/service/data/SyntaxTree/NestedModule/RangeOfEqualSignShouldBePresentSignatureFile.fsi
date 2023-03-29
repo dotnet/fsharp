@@ -2,4 +2,4 @@
 namespace Foo
 
 module X =
-val bar : int
+    val bar : int

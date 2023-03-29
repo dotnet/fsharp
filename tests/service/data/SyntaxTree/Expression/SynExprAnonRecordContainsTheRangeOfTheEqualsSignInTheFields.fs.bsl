@@ -18,5 +18,5 @@ ImplFile
                    Const (Int32 7, (4,14--4,15)))], (2,0--4,18),
                  { OpeningBraceRange = (2,0--2,2) }), (2,0--4,18))],
           PreXmlDocEmpty, [], None, (2,0--4,18), { LeadingKeyword = None })],
-      (true, false), { ConditionalDirectives = []
-                       CodeComments = [] }, set []))
+      (true, true), { ConditionalDirectives = []
+                      CodeComments = [] }, set []))
