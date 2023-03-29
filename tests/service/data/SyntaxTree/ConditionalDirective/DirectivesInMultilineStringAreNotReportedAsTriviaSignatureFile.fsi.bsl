@@ -19,13 +19,13 @@ SigFile
 ()
 #endif
 42
-", TripleQuote,
-                          (4,17--9,3)), (4,17--9,3))), (4,0--9,3),
-                 { LeadingKeyword = Val (4,0--4,3)
-                   InlineKeyword = None
-                   WithKeyword = None
-                   EqualsRange = Some (4,15--4,16) }), (4,0--9,3))],
-          PreXmlDocEmpty, [], None, (2,0--9,3),
+................",
+                          TripleQuote, (4,17--9,19)), (4,17--9,19))),
+                 (4,0--9,19), { LeadingKeyword = Val (4,0--4,3)
+                                InlineKeyword = None
+                                WithKeyword = None
+                                EqualsRange = Some (4,15--4,16) }), (4,0--9,19))],
+          PreXmlDocEmpty, [], None, (2,0--9,19),
           { LeadingKeyword = Namespace (2,0--2,9) })],
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
