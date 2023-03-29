@@ -54,16 +54,16 @@ Always place open statements at the top level;
 Remove unused open statements;
 Analyze and suggest fixes for unused values;
 Suggest names for unresolved identifiers;</source>
-        <target state="new">Simplify names (remove unnecessary qualifiers);
-Always place open statements at the top level;
-Remove unused open statements;
-Analyze and suggest fixes for unused values;
-Suggest names for unresolved identifiers;</target>
+        <target state="translated">이름 간소화(불필요한 한정자 제거),
+항상 최상위 수준에 open 문 배치,
+사용되지 않는 열린 문을 제거,
+사용되지 않는 값에 대한 수정 사항 분석 및 제안,
+확인되지 않은 식별자의 이름 제안,</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertCSharpUsingToFSharpOpen">
         <source>Convert C# 'using' to F# 'open'</source>
-        <target state="new">Convert C# 'using' to F# 'open'</target>
+        <target state="translated">C# 'using'을 F# 'open'으로 변환</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertToAnonymousRecord">
@@ -108,7 +108,7 @@ Suggest names for unresolved identifiers;</target>
       </trans-unit>
       <trans-unit id="FormattingPageKeywords">
         <source>Re-format indentation on paste (Experimental)</source>
-        <target state="new">Re-format indentation on paste (Experimental)</target>
+        <target state="translated">붙여넣을 때 들여쓰기 서식 다시 지정(실험적)</target>
         <note />
       </trans-unit>
       <trans-unit id="ImplementInterface">
@@ -130,14 +130,14 @@ Enter key behavior;
 Never add new line on enter;
 Only add new line on enter after end of fully typed word;
 Always add new line on enter;</source>
-        <target state="new">Completion Lists;
-Show completion list after a character is deleted;
-Show completion list after a character is typed;
-Show symbols in unopened namespaces;
-Enter key behavior;
-Never add new line on enter;
-Only add new line on enter after end of fully typed word;
-Always add new line on enter;</target>
+        <target state="translated">완료 목록,
+문자가 삭제된 후 완성 목록 표시,
+문자를 입력한 후 완성 목록 표시,
+열지 않은 네임스페이스에 기호 표시,
+키 동작 입력,
+&lt;Enter&gt; 키를 누를 때 새 줄을 추가하지 않음,
+완전히 입력된 단어의 끝 뒤에 Enter 키를 누를 때만 새 줄 추가,
+Enter 키를 누를 때 항상 새 줄 추가,</target>
         <note />
       </trans-unit>
       <trans-unit id="MakeDeclarationMutable">
@@ -264,7 +264,7 @@ Dash underline;</target>
       </trans-unit>
       <trans-unit id="6008">
         <source>IntelliSense</source>
-        <target state="needs-review-translation">IntelliSense</target>
+        <target state="translated">IntelliSense</target>
         <note />
       </trans-unit>
       <trans-unit id="6009">
