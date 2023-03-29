@@ -5,87 +5,67 @@ namespace Microsoft.VisualStudio.FSharp.Editor.Hints
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
-open FSharp.Compiler.Text
-open FSharp.Compiler.Text.Position
-open Hints
 open FSharp.Compiler.Syntax
-
+open FSharp.Compiler.Text
+open Hints
+open InlineTypeHints
 
 type ReturnTypeHints(parseFileResults: FSharpParseFileResults, symbol: FSharpMemberOrFunctionOrValue) =
 
-
     let getHintParts (symbolUse: FSharpSymbolUse) =
+        symbol.GetReturnTypeLayout symbolUse.DisplayContext
+        |> Option.map (fun typeInfo ->
+            [
+                TaggedText(TextTag.Text, ": ")
+                yield! typeInfo |> Array.toList
+                TaggedText(TextTag.Space, " ")
+            ])
 
-        match symbol.GetReturnTypeLayout symbolUse.DisplayContext with
-        | Some typeInfo ->
-            let colon = TaggedText(TextTag.Text, ": ")
-            colon :: (typeInfo |> Array.toList)
+    let getHint symbolUse range =
+        getHintParts symbolUse
+        |> Option.map (fun parts ->
+            {
+                Kind = HintKind.ReturnTypeHint
+                Range = range
+                Parts = parts
+            })
 
-        // not sure when this can happen
-        | None -> []
+    let isSolved = isSolved symbol
 
-
-    let getHint (symbolUse: FSharpSymbolUse) =
-        {
-            Kind = HintKind.TypeHint
-            Range = symbolUse.Range.EndRange
-            Parts = getHintParts symbolUse
-        }
-
-    let isSolved =
-        if symbol.GenericParameters.Count > 0 then
-            symbol.GenericParameters |> Seq.forall (fun p -> p.IsSolveAtCompileTime)
-
-        elif symbol.FullType.IsGenericParameter then
-            symbol.FullType.GenericParameter.DisplayNameCore <> "?"
-
-        else
-            true
-
-    let findBindingEqualsPosition (symbolUse: FSharpSymbolUse) =
-        let visitor =
+    let findEqualsPositionIfValid (symbolUse: FSharpSymbolUse) =
+        SyntaxTraversal.Traverse(
+            symbolUse.Range.End,
+            parseFileResults.ParseTree,
             { new SyntaxVisitorBase<_>() with
-
-                override _.VisitExpr(_, _, defaultTraverse, expr) = defaultTraverse expr
-
                 override _.VisitBinding(_path, defaultTraverse, binding) =
                     match binding with
-                    | SynBinding (trivia = trivia; range = range) when range = symbolUse.Range ->
-                        trivia.EqualsRange
+                    // Skip lambdas
+                    | SynBinding(expr = SynExpr.Lambda _) -> defaultTraverse binding
+
+                    // Let binding
+                    | SynBinding (trivia = { EqualsRange = Some equalsRange }; range = range; returnInfo = None) when
+                        range.Start = symbolUse.Range.Start
+                        ->
+                        Some equalsRange.StartRange
+
+                    // Member binding
+                    | SynBinding (headPat = SynPat.LongIdent(longDotId = SynLongIdent(id = _ :: ident :: _))
+                                  trivia = { EqualsRange = Some equalsRange }
+                                  returnInfo = None) when
+
+                        ident.idRange.Start = symbolUse.Range.Start
+                        ->
+                        Some equalsRange.StartRange
+
                     | _ -> defaultTraverse binding
             }
-        SyntaxTraversal.Traverse(symbolUse.Range.End, parseFileResults.ParseTree, visitor)
+        )
 
-
-    member _.isValidForReturnTypeHint (symbolUse: FSharpSymbolUse) =
-
-
-        let adjustedRangeStart =
-
-                symbolUse.Range.Start
-
-        let isNotAnnotatedManually =
-            not (parseFileResults.IsTypeAnnotationGivenAtPosition adjustedRangeStart)
-
-        let isNotAfterDot = symbolUse.IsFromDefinition && not symbol.IsMemberThisValue
-
-        let isNotTypeAlias = not symbol.IsConstructorThisValue
-
-        symbol.IsValue // we'll be adding other stuff gradually here
-        && isSolved
-        && isNotAnnotatedManually
-        && isNotAfterDot
-        && isNotTypeAlias
-
-    member _.getHints (symbolUse: FSharpSymbolUse) = [
-        if symbol.IsFunction && isSolved then
-
-            match findBindingEqualsPosition symbolUse with
-            | Some equalsRange ->
-
-                let _adjustedRangeStart = equalsRange.Start
-
-                getHint symbolUse
-            | None -> ()
-
-    ]
+    member _.getHints symbolUse =
+        [
+            if symbol.IsFunction && isSolved then
+                yield!
+                    findEqualsPositionIfValid symbolUse
+                    |> Option.bind (getHint symbolUse)
+                    |> Option.toList
+        ]

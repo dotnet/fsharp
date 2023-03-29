@@ -28,6 +28,8 @@
                     <StackPanel>
                         <CheckBox x:Name="toggleInlineTypeHints" IsChecked="{Binding IsInlineTypeHintsEnabled}"
                                   Content="{x:Static local:Strings.Show_Inline_Type_Hints}"/>
+                        <CheckBox x:Name="toggleReturnTypeHints" IsChecked="{Binding IsReturnTypeHintsEnabled}"
+                                  Content="{x:Static local:Strings.Show_Return_Type_Hints}"/>
                         <CheckBox x:Name="toggleParameterNameHints" IsChecked="{Binding IsInlineParameterNameHintsEnabled}"
                                   Content="{x:Static local:Strings.Show_Inline_Parameter_Name_Hints}"/>
                     </StackPanel>

@@ -403,6 +403,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Display return type hints (preview).
+        /// </summary>
+        public static string Show_Return_Type_Hints {
+            get {
+                return ResourceManager.GetString("Show_Return_Type_Hints", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Simplify names (remove unnecessary qualifiers).
         /// </summary>
         public static string Simplify_name_code_fix {

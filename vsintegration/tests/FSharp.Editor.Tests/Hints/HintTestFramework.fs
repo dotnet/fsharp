@@ -64,14 +64,16 @@ module HintTestFramework =
         |> Async.RunSynchronously
 
     let getTypeHints document =
-        getHints document (Set.empty.Add(HintKind.TypeHint))
+        getHints document (set [ HintKind.TypeHint ])
 
     let getReturnTypeHints document =
-        getHints document (Set.empty.Add(HintKind.ReturnTypeHint))
+        getHints document (set [ HintKind.ReturnTypeHint ])
 
     let getParameterNameHints document =
-        getHints document (Set.empty.Add(HintKind.ParameterNameHint))
+        getHints document (set [ HintKind.ParameterNameHint ])
 
     let getAllHints document =
-        let hintKinds = Set.empty.Add(HintKind.TypeHint).Add(HintKind.ParameterNameHint)
+        let hintKinds =
+            set [ HintKind.TypeHint; HintKind.ParameterNameHint; HintKind.ReturnTypeHint ]
+
         getHints document hintKinds

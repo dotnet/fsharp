@@ -16,6 +16,6 @@ module OptionParser =
                 if options.IsInlineParameterNameHintsEnabled then
                     HintKind.ParameterNameHint
 
-                // TODO: options
-                HintKind.ReturnTypeHint
+                if options.IsReturnTypeHintsEnabled then
+                    HintKind.ReturnTypeHint
             ]
