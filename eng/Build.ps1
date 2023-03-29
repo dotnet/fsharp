@@ -261,6 +261,7 @@ function BuildSolution([string] $solutionName) {
         /p:TestTargetFrameworks=$testTargetFrameworks `
         /p:DotNetBuildFromSource=$sourceBuild `
         /p:CompressAllMetadata=$CompressAllMetadata `
+        /p:BUILDING_USING_DOTNET=false `
         /v:$verbosity `
         $suppressExtensionDeployment `
         @properties
