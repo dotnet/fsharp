@@ -33,6 +33,6 @@ ImplFile
                                            InlineKeyword = None
                                            EqualsRange = Some (2,14--2,15) })],
               (2,0--2,31))], PreXmlDocEmpty, [], None, (2,0--3,0),
-          { LeadingKeyword = None })], (true, false),
+          { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

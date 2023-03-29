@@ -86,5 +86,5 @@ ImplFile
                                  EqualsRange = Some (2,9--2,10)
                                  WithKeyword = None })], (2,0--2,46))],
           PreXmlDocEmpty, [], None, (2,0--3,0), { LeadingKeyword = None })],
-      (true, false), { ConditionalDirectives = []
-                       CodeComments = [] }, set []))
+      (true, true), { ConditionalDirectives = []
+                      CodeComments = [] }, set []))

@@ -30,6 +30,6 @@ ImplFile
                        YieldOrReturn ((false, true), Ident bar, (7,4--7,14)),
                        (3,4--7,14), { EqualsRange = Some (3,13--3,14) }),
                     (2,6--8,1)), (2,0--8,1)), (2,0--8,1))], PreXmlDocEmpty, [],
-          None, (2,0--8,1), { LeadingKeyword = None })], (true, false),
+          None, (2,0--8,1), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
