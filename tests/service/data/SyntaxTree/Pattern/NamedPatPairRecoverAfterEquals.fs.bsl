@@ -20,5 +20,7 @@ ImplFile
                  (1,0--2,15), { MatchKeyword = (1,0--1,5)
                                 WithKeyword = (1,8--1,12) }), (1,0--2,15))],
           PreXmlDocEmpty, [], None, (1,0--3,0), { LeadingKeyword = None })],
-      (true, false), { ConditionalDirectives = []
-                       CodeComments = [] }, set []))
+      (true, true), { ConditionalDirectives = []
+                      CodeComments = [] }, set []))
+
+(2,8)-(2,9) parse error Unexpected symbol ')' in pattern
