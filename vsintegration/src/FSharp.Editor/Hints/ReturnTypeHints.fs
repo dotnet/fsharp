@@ -8,7 +8,6 @@ open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open Hints
-open InlineTypeHints
 
 type ReturnTypeHints(parseFileResults: FSharpParseFileResults, symbol: FSharpMemberOrFunctionOrValue) =
 
@@ -29,8 +28,6 @@ type ReturnTypeHints(parseFileResults: FSharpParseFileResults, symbol: FSharpMem
                 Range = range
                 Parts = parts
             })
-
-    let isSolved = isSolved symbol
 
     let findEqualsPositionIfValid (symbolUse: FSharpSymbolUse) =
         SyntaxTraversal.Traverse(
@@ -63,7 +60,7 @@ type ReturnTypeHints(parseFileResults: FSharpParseFileResults, symbol: FSharpMem
 
     member _.getHints symbolUse =
         [
-            if symbol.IsFunction && isSolved then
+            if symbol.IsFunction then
                 yield!
                     findEqualsPositionIfValid symbolUse
                     |> Option.bind (getHint symbolUse)

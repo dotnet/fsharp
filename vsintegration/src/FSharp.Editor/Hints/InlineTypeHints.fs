@@ -28,7 +28,7 @@ module InlineTypeHints =
             Parts = getHintParts symbol symbolUse
         }
 
-    let isSolved (symbol: FSharpMemberOrFunctionOrValue) =
+    let private isSolved (symbol: FSharpMemberOrFunctionOrValue) =
         if symbol.GenericParameters.Count > 0 then
             symbol.GenericParameters |> Seq.forall (fun p -> p.IsSolveAtCompileTime)
 

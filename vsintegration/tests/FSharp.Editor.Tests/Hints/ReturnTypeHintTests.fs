@@ -60,6 +60,24 @@ type Test() =
     Assert.Equal(expected, result)
 
 [<Fact>]
+let ``Hints are shown for generic functions`` () =
+    let code = "let func _a = 5"
+
+    let document = getFsDocument code
+
+    let result = getReturnTypeHints document
+
+    let expected =
+        [
+            {
+                Content = ": int "
+                Location = (0, 13)
+            }
+        ]
+
+    Assert.Equal(expected, result)
+
+[<Fact>]
 let ``Hints are not shown for lambda bindings`` () =
     let code = "let func = fun () -> 3"
 
