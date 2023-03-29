@@ -30,6 +30,6 @@ ImplFile
                              AppliesToGetterAndSetter = false
                              Range = (2,4--2,7) }]
              Range = (2,0--2,11) }], None, (2,0--5,20),
-          { LeadingKeyword = Module (3,0--3,6) })], (true, false),
+          { LeadingKeyword = Module (3,0--3,6) })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
