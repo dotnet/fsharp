@@ -45,12 +45,14 @@ type QuickInfoOptions =
     {
         DisplayLinks: bool
         UnderlineStyle: QuickInfoUnderlineStyle
+        DescriptionWidth: int option
     }
 
     static member Default =
         {
             DisplayLinks = true
             UnderlineStyle = QuickInfoUnderlineStyle.Solid
+            DescriptionWidth = None
         }
 
 [<CLIMutable>]
@@ -81,6 +83,7 @@ type LanguageServicePerformanceOptions =
         TimeUntilStaleCompletion: int
         EnableParallelReferenceResolution: bool
         EnableFastFindReferences: bool
+        EnablePartialTypeChecking: bool
         UseSyntaxTreeCache: bool
     }
 
@@ -91,6 +94,7 @@ type LanguageServicePerformanceOptions =
             TimeUntilStaleCompletion = 2000 // In ms, so this is 2 seconds
             EnableParallelReferenceResolution = false
             EnableFastFindReferences = FSharpExperimentalFeaturesEnabledAutomatically
+            EnablePartialTypeChecking = true
             UseSyntaxTreeCache = FSharpExperimentalFeaturesEnabledAutomatically
         }
 
@@ -178,6 +182,7 @@ module internal OptionsUI =
             bindRadioButton view.dot path QuickInfoUnderlineStyle.Dot
             bindRadioButton view.dash path QuickInfoUnderlineStyle.Dash
             bindCheckBox view.displayLinks (nameof QuickInfoOptions.Default.DisplayLinks)
+            bindDescriptionWidthTextBox view.descriptionWidth (nameof QuickInfoOptions.Default.DescriptionWidth)
             upcast view
 
     [<Guid(Guids.codeFixesOptionPageIdString)>]

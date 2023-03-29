@@ -256,7 +256,8 @@ type Document with
                     defines,
                     lookupKind,
                     wholeActivePattern,
-                    allowStringToken
+                    allowStringToken,
+                    ct
                 )
         }
 
