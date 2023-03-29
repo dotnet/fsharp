@@ -25,3 +25,6 @@ SigFile
           (2,0--4,10), { LeadingKeyword = Namespace (2,0--2,9) })],
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
+
+(4,0)-(4,3) parse warning Possible incorrect indentation: this token is offside of context started at position (3:1). Try indenting this token further or using standard formatting conventions.
+(4,0)-(4,3) parse warning Possible incorrect indentation: this token is offside of context started at position (3:1). Try indenting this token further or using standard formatting conventions.

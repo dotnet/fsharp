@@ -8,6 +8,6 @@ ImplFile
              (App
                 (Atomic, false, Ident foo, Const (Unit, (3,3--3,5)), (3,0--3,5)),
               (3,0--3,5))], PreXmlDocEmpty, [], None, (3,0--3,5),
-          { LeadingKeyword = None })], (true, false),
+          { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [LineComment (2,0--2,11)] }, set []))
