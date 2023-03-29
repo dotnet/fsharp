@@ -17,6 +17,7 @@
     },
     "FSharp.suggestGitignore": false,
     "FSharp.enableMSBuildProjectGraph": true,
+    "FSharp.enableAdaptiveLspServer": false,
     "FSharp.workspacePath": "FSharp.Compiler.Service.sln",
     "FSharp.workspaceModePeekDeepLevel": 1,
     "FSharp.enableBackgroundServices": false,
