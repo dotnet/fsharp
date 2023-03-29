@@ -140,7 +140,7 @@ module IncrementalBuildSyntaxTree =
             ), sourceRange, fileName, [||]
 
         let getParseTask (source: FSharpSource) =
-            backgroundTask {
+            Threading.Tasks.Task.Run( fun () ->
                 let diagnosticsLogger = CompilationDiagnosticLogger("Parse", tcConfig.diagnosticsOptions)
                 // Return the disposable object that cleans up
                 use _holder = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parse)          
@@ -156,8 +156,8 @@ module IncrementalBuildSyntaxTree =
 
                 fileParsed.Trigger fileName
 
-                return input, sourceRange, fileName, diagnosticsLogger.GetDiagnostics()
-            } //|> Async.StartAsTask
+                input, sourceRange, fileName, diagnosticsLogger.GetDiagnostics()
+            )
 
         let parse (parseTask: Threading.Tasks.Task<_>) =
             try
