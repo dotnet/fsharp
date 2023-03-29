@@ -1204,7 +1204,7 @@ let AddCheckResultsToTcState
 
 type PartialResult = TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType
 
-/// Return stub result for skipped implementation files
+/// Returns empty result for skipped implementation files. This function is used when enablePartialTypeChecking is true.
 let SkippedImplFilePlaceholder (tcConfig: TcConfig, tcImports: TcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input: ParsedInput) =
     use _ =
         Activity.start "ParseAndCheckInputs.CheckOneInput" [| Activity.Tags.fileName, input.FileName |]
@@ -1247,8 +1247,7 @@ let SkippedImplFilePlaceholder (tcConfig: TcConfig, tcImports: TcImports, tcGlob
         | _ -> None
     | _ -> None
 
-/// Typecheck a single file (or interactive entry into F# Interactive). If skipImplIfSigExists is set to true
-/// then implementations with signature files give empty results.
+/// Typecheck a single file (or interactive entry into F# Interactive).
 let CheckOneInput
     (
         checkForErrors,

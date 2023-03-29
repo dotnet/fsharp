@@ -134,7 +134,7 @@ type TcState =
 /// Get the initial type checking state for a set of inputs
 val GetInitialTcState: range * string * TcConfig * TcGlobals * TcImports * TcEnv * OpenDeclaration list -> TcState
 
-///ImplStubForSig
+/// Returns empty result for skipped implementation files. This function is used when enablePartialTypeChecking is true.
 val SkippedImplFilePlaceholder:
     tcConfig: TcConfig *
     tcImports: TcImports *
