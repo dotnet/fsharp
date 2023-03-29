@@ -1094,6 +1094,8 @@ module IncrementalBuilderStateHelpers =
             let noChange = slot, (Good, slot.BoundModel)
 
             match status with
+            // Modifying implementation file that has signature file does not invalidate the build.
+            // So we just pass along previous status.
             | status when slot.Notified && slot.HasSignature -> update status
             | Invalidated -> update Invalidated
             | Good when slot.Notified -> update Invalidated
