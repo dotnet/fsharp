@@ -1448,10 +1448,10 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             let slotOfFile = builder.GetSlotOfFileName fileName        
             let cache = TimeStampCache defaultTimeStamp
             let! ct = NodeCode.CancellationToken
-            setCurrentState
-                { currentState with 
-                    slots = currentState.slots |> List.updateAt slotOfFile (currentState.slots[slotOfFile].Notify timeStamp) }
-                cache ct
+            do! setCurrentState
+                    { currentState with 
+                        slots = currentState.slots |> List.updateAt slotOfFile (currentState.slots[slotOfFile].Notify timeStamp) }
+                    cache ct
         }
 
     member _.SourceFiles = fileNames |> Seq.map (fun f -> f.Source.FilePath) |> List.ofSeq
