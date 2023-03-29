@@ -37,21 +37,18 @@ type ReturnTypeHints(parseFileResults: FSharpParseFileResults, symbol: FSharpMem
                 override _.VisitBinding(_path, defaultTraverse, binding) =
                     match binding with
                     // Skip lambdas
-                    | SynBinding(expr = SynExpr.Lambda _) -> defaultTraverse binding
+                    | SynBinding(expr = SynExpr.Lambda _)
+
+                    // Skip manually type-annotated bindings
+                    | SynBinding(returnInfo = Some (SynBindingReturnInfo(typeName = SynType.LongIdent _))) -> defaultTraverse binding
 
                     // Let binding
-                    | SynBinding (trivia = { EqualsRange = Some equalsRange }; range = range; returnInfo = None) when
-                        range.Start = symbolUse.Range.Start
-                        ->
+                    | SynBinding (trivia = { EqualsRange = Some equalsRange }; range = range) when range.Start = symbolUse.Range.Start ->
                         Some equalsRange.StartRange
 
                     // Member binding
                     | SynBinding (headPat = SynPat.LongIdent(longDotId = SynLongIdent(id = _ :: ident :: _))
-                                  trivia = { EqualsRange = Some equalsRange }
-                                  returnInfo = None) when
-
-                        ident.idRange.Start = symbolUse.Range.Start
-                        ->
+                                  trivia = { EqualsRange = Some equalsRange }) when ident.idRange.Start = symbolUse.Range.Start ->
                         Some equalsRange.StartRange
 
                     | _ -> defaultTraverse binding
