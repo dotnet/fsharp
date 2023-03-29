@@ -3,12 +3,10 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.Collections.Immutable
 open System.Runtime.CompilerServices
 open System.Text.RegularExpressions
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
-open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
@@ -562,5 +560,6 @@ module internal XmlDocumentation =
     let documentationBuilderCache =
         ConditionalWeakTable<IVsXMLMemberIndexService, IDocumentationBuilder>()
 
-    let CreateDocumentationBuilder (xmlIndexService: IVsXMLMemberIndexService) =
+    let CreateDocumentationBuilder () =
+        let xmlIndexService = GlobalProvider.XMLMemberIndexService
         documentationBuilderCache.GetValue(xmlIndexService, (fun _ -> Provider(xmlIndexService) :> IDocumentationBuilder))

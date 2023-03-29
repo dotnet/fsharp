@@ -24,8 +24,6 @@ open Microsoft.IO
 
 type internal FSharpAsyncQuickInfoSource
     (
-        statusBar: StatusBar,
-        xmlMemberIndexService: IVsXMLMemberIndexService,
         metadataAsSource: FSharpMetadataAsSourceService,
         textBuffer: ITextBuffer,
         editorOptions: EditorOptions
@@ -92,8 +90,7 @@ type internal FSharpAsyncQuickInfoSource
                     let getTrackingSpan (span: TextSpan) =
                         textBuffer.CurrentSnapshot.CreateTrackingSpan(span.Start, span.Length, SpanTrackingMode.EdgeInclusive)
 
-                    let documentationBuilder =
-                        XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService)
+                    let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder()
 
                     match sigQuickInfo, targetQuickInfo with
                     | None, None -> return null
@@ -104,8 +101,7 @@ type internal FSharpAsyncQuickInfoSource
 
                         let imageId = Tokenizer.GetImageIdForSymbol(quickInfo.Symbol, quickInfo.SymbolKind)
 
-                        let navigation =
-                            FSharpNavigation(statusBar, metadataAsSource, document, symbolUseRange)
+                        let navigation = FSharpNavigation(metadataAsSource, document, symbolUseRange)
 
                         let content =
                             QuickInfoViewProvider.provideContent (
@@ -173,8 +169,7 @@ type internal FSharpAsyncQuickInfoSource
                         let imageId =
                             Tokenizer.GetImageIdForSymbol(targetQuickInfo.Symbol, targetQuickInfo.SymbolKind)
 
-                        let navigation =
-                            FSharpNavigation(statusBar, metadataAsSource, document, symbolUseRange)
+                        let navigation = FSharpNavigation(metadataAsSource, document, symbolUseRange)
 
                         let content =
                             QuickInfoViewProvider.provideContent (
@@ -197,17 +192,10 @@ type internal FSharpAsyncQuickInfoSource
 [<Order>]
 type internal FSharpAsyncQuickInfoSourceProvider [<ImportingConstructor>]
     (
-        [<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider,
         metadataAsSource: FSharpMetadataAsSourceService,
         editorOptions: EditorOptions
     ) =
 
     interface IAsyncQuickInfoSourceProvider with
         override _.TryCreateQuickInfoSource(textBuffer: ITextBuffer) : IAsyncQuickInfoSource =
-            // GetService calls must be made on the UI thread
-            // It is safe to do it here (see #4713)
-            let statusBar = StatusBar(serviceProvider.GetService<SVsStatusbar, IVsStatusbar>())
-            let xmlMemberIndexService = serviceProvider.XMLMemberIndexService
-
-            new FSharpAsyncQuickInfoSource(statusBar, xmlMemberIndexService, metadataAsSource, textBuffer, editorOptions)
-            :> IAsyncQuickInfoSource
+            new FSharpAsyncQuickInfoSource(metadataAsSource, textBuffer, editorOptions) :> IAsyncQuickInfoSource

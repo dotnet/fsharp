@@ -13,8 +13,6 @@ open Microsoft.CodeAnalysis.Completion
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Completion
 
-open Microsoft.VisualStudio.Shell
-
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax
@@ -23,12 +21,7 @@ open FSharp.Compiler.Tokenization
 
 module Logger = Microsoft.VisualStudio.FSharp.Editor.Logger
 
-type internal FSharpCompletionProvider
-    (
-        workspace: Workspace,
-        serviceProvider: SVsServiceProvider,
-        assemblyContentProvider: AssemblyContentProvider
-    ) =
+type internal FSharpCompletionProvider(workspace: Workspace, assemblyContentProvider: AssemblyContentProvider) =
 
     inherit FSharpCompletionProviderBase()
 
@@ -92,8 +85,7 @@ type internal FSharpCompletionProvider
 
     let settings: EditorOptions = workspace.Services.GetService()
 
-    let documentationBuilder =
-        XmlDocumentation.CreateDocumentationBuilder(serviceProvider.XMLMemberIndexService)
+    let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder()
 
     static let mruItems = Dictionary< (* Item.FullName *) string (* hints *) , int>()
 

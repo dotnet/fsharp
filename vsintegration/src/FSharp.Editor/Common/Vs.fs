@@ -6,6 +6,7 @@ open System
 open System.Runtime.InteropServices
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Editor
+open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.TextManager.Interop
 
@@ -89,16 +90,21 @@ module internal VsRunningDocumentTable =
             if IntPtr.Zero <> unkData then
                 Marshal.Release(unkData) |> ignore
 
-[<AutoOpen>]
-module internal ServiceProviderExtensions =
-    type internal System.IServiceProvider with
+type internal GlobalProvider =
 
-        member sp.GetService<'S, 'T>() = sp.GetService(typeof<'S>) :?> 'T
+    static member GetServiceAsync<'S, 'T when 'S: not struct and 'T: not struct>() =
+        task {
+            do! ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync()
+            return! ServiceProvider.GetGlobalServiceAsync<'S, 'T>(swallowExceptions = false)
+        }
 
-        member sp.TextManager = sp.GetService<SVsTextManager, IVsTextManager>()
+    static member GetService<'S, 'T when 'S: not struct and 'T: not struct>() =
+        ThreadHelper.JoinableTaskFactory.Run(GlobalProvider.GetServiceAsync<'S, 'T>)
 
-        member sp.RunningDocumentTable =
-            sp.GetService<SVsRunningDocumentTable, IVsRunningDocumentTable>()
+    static member TextManager = GlobalProvider.GetService<SVsTextManager, IVsTextManager>()
 
-        member sp.XMLMemberIndexService =
-            sp.GetService<SVsXMLMemberIndexService, IVsXMLMemberIndexService>()
+    static member RunningDocumentTable =
+        GlobalProvider.GetService<SVsRunningDocumentTable, IVsRunningDocumentTable>()
+
+    static member XMLMemberIndexService =
+        GlobalProvider.GetService<SVsXMLMemberIndexService, IVsXMLMemberIndexService>()
