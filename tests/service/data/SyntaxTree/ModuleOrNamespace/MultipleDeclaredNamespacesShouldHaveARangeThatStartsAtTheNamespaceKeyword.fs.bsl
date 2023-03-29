@@ -33,6 +33,6 @@ ImplFile
                     InlineKeyword = None
                     EqualsRange = Some (9,6--9,7) })], (9,0--9,10))],
           PreXmlDocEmpty, [], None, (7,0--9,10),
-          { LeadingKeyword = Namespace (7,0--7,9) })], (true, false),
+          { LeadingKeyword = Namespace (7,0--7,9) })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

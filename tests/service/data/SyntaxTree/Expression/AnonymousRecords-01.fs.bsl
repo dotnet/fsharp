@@ -27,5 +27,9 @@ ImplFile
            Expr (ArbitraryAfterError ("braceBarExpr", (5,0--5,10)), (5,0--5,10));
            Expr (ArbitraryAfterError ("braceBarExpr", (6,0--6,17)), (6,0--6,17))],
           PreXmlDocEmpty, [], None, (1,0--6,17), { LeadingKeyword = None })],
-      (true, false), { ConditionalDirectives = []
-                       CodeComments = [] }, set []))
+      (true, true), { ConditionalDirectives = []
+                      CodeComments = [] }, set []))
+
+(5,8)-(5,10) parse error Unexpected symbol '|}' in definition
+(6,15)-(6,17) parse error Unexpected symbol '|}' in expression
+(1,0)-(2,0) parse warning The declarations in this file will be placed in an implicit module 'AnonymousRecords-01' based on the file name 'AnonymousRecords-01.fs'. However this is not a valid F# identifier, so the contents will not be accessible from other files. Consider renaming the file or adding a 'module' or 'namespace' declaration at the top of the file.

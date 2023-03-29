@@ -10,4 +10,4 @@ open FsAutoComplete.UntypedAstUtils
 open FSharp.Compiler.CodeAnalysis
 
 module internal SynExprAppLocationsImpl =
-let a = 42
+    let a = 42
