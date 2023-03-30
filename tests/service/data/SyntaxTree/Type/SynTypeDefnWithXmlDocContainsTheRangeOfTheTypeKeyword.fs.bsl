@@ -32,6 +32,6 @@ ImplFile
                   { LeadingKeyword = And (5,0--5,3)
                     EqualsRange = Some (5,6--5,7)
                     WithKeyword = None })], (2,0--5,9))], PreXmlDocEmpty, [],
-          None, (4,0--6,0), { LeadingKeyword = None })], (true, false),
+          None, (4,0--6,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [LineComment (3,0--3,8)] }, set []))

@@ -488,6 +488,11 @@
     </None>
   </ItemGroup>
 
+  <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
+    <OutputPath>$(ArtifactsDir)/bin/$(MSBuildProjectName)/$(Configuration)/</OutputPath>
+    <IntermediateOutputPath>$(ArtifactsDir)obj/$(MSBuildProjectName)/$(Configuration)/</IntermediateOutputPath>
+  </PropertyGroup>
+
   <ItemGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
     <!-- We are setting TFM explicitly here, since we are only using fslexyacc's dlls in msbuild -->
     <ProjectReference Include="$(RepoRoot)\buildtools\fslex\fslex.fsproj" ReferenceOutputAssembly="False">

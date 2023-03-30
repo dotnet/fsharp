@@ -21,6 +21,6 @@ ImplFile
                      Some (Const (Int32 1, (2,30--2,31))),
                      Some ((2,31--2,32), Some (2,32)))], (2,0--2,34)),
               (2,0--2,34))], PreXmlDocEmpty, [], None, (2,0--2,34),
-          { LeadingKeyword = None })], (true, false),
+          { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

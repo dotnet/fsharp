@@ -295,6 +295,7 @@ function BuildSolution {
       /p:QuietRestore=$quiet_restore \
       /p:QuietRestoreBinaryLog="$binary_log" \
       /p:ArcadeBuildFromSource=$source_build \
+      /p:BUILDING_USING_DOTNET=false \
       $properties
   fi
 }

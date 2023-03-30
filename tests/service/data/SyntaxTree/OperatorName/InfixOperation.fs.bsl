@@ -16,6 +16,6 @@ ImplFile
                        None, (2,2--2,3)), Const (Int32 1, (2,0--2,1)),
                     (2,0--2,3)), Const (Int32 1, (2,4--2,5)), (2,0--2,5)),
               (2,0--2,5))], PreXmlDocEmpty, [], None, (2,0--2,5),
-          { LeadingKeyword = None })], (true, false),
+          { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

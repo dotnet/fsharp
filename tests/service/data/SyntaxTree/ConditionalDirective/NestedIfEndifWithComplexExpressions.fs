@@ -7,3 +7,5 @@ let v =
             #endif
         #endif
     #endif
+
+    ()
