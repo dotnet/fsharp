@@ -3,7 +3,6 @@
 open System
 open System.Diagnostics
 open System.ComponentModel.Composition
-open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.FSharp.Editor
 
@@ -30,9 +29,9 @@ module Config =
 open Config
 
 [<Export>]
-type Logger [<ImportingConstructor>] ([<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider) =
+type Logger() =
     let outputWindow =
-        serviceProvider.GetService<SVsOutputWindow, IVsOutputWindow>() |> Option.ofObj
+        GlobalProvider.GetService<SVsOutputWindow, IVsOutputWindow>() |> Option.ofObj
 
     let createPane () =
         outputWindow
@@ -48,14 +47,6 @@ type Logger [<ImportingConstructor>] ([<Import(typeof<SVsServiceProvider>)>] ser
             pane.Activate() |> ignore
             Some pane
         | _ -> None
-
-    static let mutable globalServiceProvider: IServiceProvider option = None
-
-    static member GlobalServiceProvider
-        with get () =
-            globalServiceProvider
-            |> Option.defaultValue (ServiceProvider.GlobalProvider :> IServiceProvider)
-        and set v = globalServiceProvider <- Some v
 
     member _.FSharpLoggingPane =
         getPane ()
@@ -92,7 +83,7 @@ module Logging =
 
     let inline debug msg = Printf.kprintf Debug.WriteLine msg
 
-    let private logger = lazy Logger(Logger.GlobalServiceProvider)
+    let private logger = lazy Logger()
     let private log logType msg = logger.Value.Log(logType, msg)
 
     let logMsg msg = log LogType.Message msg

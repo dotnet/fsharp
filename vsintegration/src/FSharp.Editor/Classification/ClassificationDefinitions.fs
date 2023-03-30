@@ -17,7 +17,6 @@ open Microsoft.VisualStudio.Text.Classification
 open Microsoft.VisualStudio.Utilities
 open Microsoft.CodeAnalysis.Classification
 
-open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 
 [<RequireQualifiedAccess>]
@@ -88,8 +87,7 @@ module internal ClassificationDefinitions =
     type internal ThemeColors [<ImportingConstructor>]
         (
             classificationformatMapService: IClassificationFormatMapService,
-            classificationTypeRegistry: IClassificationTypeRegistryService,
-            [<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider
+            classificationTypeRegistry: IClassificationTypeRegistryService
         ) =
 
         let (|LightTheme|DarkTheme|UnknownTheme|) id =
@@ -106,7 +104,7 @@ module internal ClassificationDefinitions =
 
         let getCurrentThemeId () =
             let themeService =
-                serviceProvider.GetService(typeof<SVsColorThemeService>) :?> IVsColorThemeService
+                GlobalProvider.GetService<SVsColorThemeService, IVsColorThemeService>()
 
             themeService.CurrentTheme.ThemeId
 
@@ -146,10 +144,10 @@ module internal ClassificationDefinitions =
 
         let setColors _ =
             let fontAndColorStorage =
-                serviceProvider.GetService(typeof<SVsFontAndColorStorage>) :?> IVsFontAndColorStorage
+                GlobalProvider.GetService<SVsFontAndColorStorage, IVsFontAndColorStorage>()
 
             let fontAndColorCacheManager =
-                serviceProvider.GetService(typeof<SVsFontAndColorCacheManager>) :?> IVsFontAndColorCacheManager
+                GlobalProvider.GetService<SVsFontAndColorCacheManager, IVsFontAndColorCacheManager>()
 
             fontAndColorCacheManager.CheckCache(ref DefGuidList.guidTextEditorFontCategory)
             |> ignore

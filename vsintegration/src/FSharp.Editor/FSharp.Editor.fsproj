@@ -36,11 +36,11 @@
     <Compile Include="Common\Constants.fs" />
     <Compile Include="Common\Extensions.fs" />
     <Compile Include="Common\Error.fs" />
+    <Compile Include="Common\Vs.fs" />
     <Compile Include="Common\Logging.fs" />
     <Compile Include="Common\RoslynHelpers.fs" />
     <Compile Include="Common\FSharpCodeAnalysisExtensions.fs" />
     <Compile Include="Common\CodeAnalysisExtensions.fs" />
-    <Compile Include="Common\Vs.fs" />
     <Compile Include="Options\SettingsStore.fs" />
     <Compile Include="Options\UIHelpers.fs" />
     <Compile Include="Options\EditorOptions.fs" />
