@@ -9,6 +9,7 @@ open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open Hints
+open Microsoft.VisualStudio.FSharp.Editor
 
 module InlineParameterNameHints =
 
@@ -56,10 +57,8 @@ module InlineParameterNameHints =
         >> Seq.contains range
 
     let private getSourceTextAtRange (sourceText: SourceText) (range: range) =
-
-        let line = sourceText.Lines[ range.Start.Line - 1 ].ToString()
-        let length = range.EndColumn - range.StartColumn
-        line.Substring(range.Start.Column, length)
+        (RoslynHelpers.FSharpRangeToTextSpan(sourceText, range) |> sourceText.GetSubText)
+            .ToString()
 
     let isMemberOrFunctionOrValueValidForHint (symbol: FSharpMemberOrFunctionOrValue) (symbolUse: FSharpSymbolUse) =
 
