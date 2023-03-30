@@ -24,6 +24,8 @@ ImplFile
                     InlineKeyword = None
                     EqualsRange = Some (5,6--5,7) })], (5,0--5,10))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
-          (1,0--5,10), { LeadingKeyword = Module (1,0--1,6) })], (true, false),
+          (1,0--5,10), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
+
+(5,0)-(5,3) parse error Unexpected keyword 'let' or 'use' in definition. Expected '=' or other token.

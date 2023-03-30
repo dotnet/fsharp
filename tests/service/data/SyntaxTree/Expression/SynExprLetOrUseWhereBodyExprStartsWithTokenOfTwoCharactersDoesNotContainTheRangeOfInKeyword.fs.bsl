@@ -42,6 +42,6 @@ ImplFile
                            (4,8--4,16))], [(4,6--4,7)], (4,0--4,16)),
                     (3,0--4,16), { InKeyword = None }), (2,0--4,16)),
               (2,0--4,16))], PreXmlDocEmpty, [], None, (2,0--5,0),
-          { LeadingKeyword = None })], (true, false),
+          { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

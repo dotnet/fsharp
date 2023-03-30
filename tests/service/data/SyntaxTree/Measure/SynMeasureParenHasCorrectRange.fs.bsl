@@ -17,6 +17,6 @@ ImplFile
                                   Named ([weeks], (2,16--2,21))], (2,10--2,21)),
                               (2,9--2,22))], (2,9--2,22)), (2,4--2,22))),
                  (2,0--2,23)), (2,0--2,23))], PreXmlDocEmpty, [], None,
-          (2,0--2,23), { LeadingKeyword = None })], (true, false),
+          (2,0--2,23), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
