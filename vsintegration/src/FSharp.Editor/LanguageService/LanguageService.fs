@@ -137,7 +137,8 @@ type internal FSharpWorkspaceServiceFactory [<System.Composition.ImportingConstr
 
                             let isInlineTypeHintsEnabled = editorOptions.Advanced.IsInlineTypeHintsEnabled
 
-                            let isInlineReturnTypeHintsEnabled = editorOptions.Advanced.IsInlineReturnTypeHintsEnabled
+                            let isInlineReturnTypeHintsEnabled =
+                                editorOptions.Advanced.IsInlineReturnTypeHintsEnabled
 
                             let enablePartialTypeChecking =
                                 editorOptions.LanguageServicePerformance.EnablePartialTypeChecking
