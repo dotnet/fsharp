@@ -33,9 +33,7 @@ type internal RoslynAdapter [<ImportingConstructor>] (settings: EditorOptions) =
                     let! nativeHints = HintService.getHintsForDocument sourceText document hintKinds userOpName cancellationToken
 
                     let roslynHints =
-                        nativeHints
-                        |> Seq.filter (fun hint -> not hint.Parts.IsEmpty)
-                        |> Seq.map (NativeToRoslynHintConverter.convert sourceText)
+                        nativeHints |> Seq.map (NativeToRoslynHintConverter.convert sourceText)
 
                     return roslynHints.ToImmutableArray()
             }
