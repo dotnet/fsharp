@@ -115,3 +115,28 @@ let someGenericFunction (_ : #exn list) = ()
         getGenericParametersNamesFor signatureFile "A" "someGenericFunction" implementationFile
 
     Assert.Equal<string array>([| "a" |], names)
+
+[<Fact>]
+let ``Hash constraint with generic type parameter should have pretty name`` () =
+    let signatureFile =
+        Fsi
+            """
+module A
+
+val array2D: rows: seq<#seq<'T>> -> 'T[,]
+"""
+        |> withFileName "A.fsi"
+
+    let implementationFile =
+        ("""
+module A
+
+let array2D (rows: seq<#seq<'T>>) : 'T[,] = failwith "todo"
+"""
+         |> FsSource)
+            .WithFileName("A.fs")
+
+    let names =
+        getGenericParametersNamesFor signatureFile "A" "array2D" implementationFile
+
+    Assert.Equal<string array>([| "a"; "T" |], names)
