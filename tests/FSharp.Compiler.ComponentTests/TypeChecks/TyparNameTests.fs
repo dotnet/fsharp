@@ -14,6 +14,8 @@ let private getGenericParametersNamesFor
     let typeCheckResult =
         cUnit |> withAdditionalSourceFile additionalFile |> typecheckProject
 
+    assert (Array.isEmpty typeCheckResult.Diagnostics)
+
     typeCheckResult.AssemblySignature.Entities
     |> Seq.tryPick (fun (entity: FSharpEntity) ->
         if entity.DisplayName <> entityDisplayName then
@@ -88,3 +90,28 @@ let someGenericFunction _ = ()
         getGenericParametersNamesFor signatureFile "A" "someGenericFunction" implementationFile
 
     Assert.Equal<string array>([| "x" |], names)
+
+[<Fact>]
+let ``Hashconstraint typar in signature file gets pretty name`` () =
+    let signatureFile =
+        Fsi
+            """
+module A
+
+val someGenericFunction: #exn list -> unit
+"""
+        |> withFileName "A.fsi"
+
+    let implementationFile =
+        ("""
+module A
+
+let someGenericFunction (_ : #exn list) = ()
+"""
+         |> FsSource)
+            .WithFileName("A.fs")
+
+    let names =
+        getGenericParametersNamesFor signatureFile "A" "someGenericFunction" implementationFile
+
+    Assert.Equal<string array>([| "a" |], names)
