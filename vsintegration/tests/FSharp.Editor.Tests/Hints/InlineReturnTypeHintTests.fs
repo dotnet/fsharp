@@ -78,6 +78,28 @@ let ``Hints are shown for generic functions`` () =
     Assert.Equal(expected, result)
 
 [<Fact>]
+let ``Hints are shown for functions within expressions`` () =
+    let code =
+        """
+    let _ =
+        let func () = 2
+"""
+
+    let document = getFsDocument code
+
+    let result = getReturnTypeHints document
+
+    let expected =
+        [
+            {
+                Content = ": int "
+                Location = (2, 21)
+            }
+        ]
+
+    Assert.Equal(expected, result)
+
+[<Fact>]
 let ``Hints are not shown for lambda bindings`` () =
     let code = "let func = fun () -> 3"
 

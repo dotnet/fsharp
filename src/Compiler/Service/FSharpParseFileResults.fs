@@ -405,6 +405,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
             symbolUseStart,
             input,
             { new SyntaxVisitorBase<_>() with
+                member _.VisitExpr(_path, _traverseSynExpr, defaultTraverse, expr) = defaultTraverse expr
+
                 override _.VisitBinding(_path, defaultTraverse, binding) =
                     match binding with
                     | SynBinding(expr = SynExpr.Lambda _) when skipLambdas -> defaultTraverse binding
