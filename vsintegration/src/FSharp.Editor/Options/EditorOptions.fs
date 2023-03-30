@@ -105,7 +105,7 @@ type AdvancedOptions =
         IsOutliningEnabled: bool
         IsInlineTypeHintsEnabled: bool
         IsInlineParameterNameHintsEnabled: bool
-        IsReturnTypeHintsEnabled: bool
+        IsInlineReturnTypeHintsEnabled: bool
         IsLiveBuffersEnabled: bool
     }
 
@@ -115,7 +115,7 @@ type AdvancedOptions =
             IsOutliningEnabled = true
             IsInlineTypeHintsEnabled = false
             IsInlineParameterNameHintsEnabled = false
-            IsReturnTypeHintsEnabled = false
+            IsInlineReturnTypeHintsEnabled = false
             IsLiveBuffersEnabled = FSharpExperimentalFeaturesEnabledAutomatically
         }
 
