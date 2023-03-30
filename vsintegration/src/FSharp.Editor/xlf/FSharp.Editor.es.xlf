@@ -54,16 +54,16 @@ Always place open statements at the top level;
 Remove unused open statements;
 Analyze and suggest fixes for unused values;
 Suggest names for unresolved identifiers;</source>
-        <target state="new">Simplify names (remove unnecessary qualifiers);
-Always place open statements at the top level;
-Remove unused open statements;
-Analyze and suggest fixes for unused values;
-Suggest names for unresolved identifiers;</target>
+        <target state="translated">Simplificar nombres (quitar calificadores innecesarios);
+Colocar siempre las instrucciones abiertas en el nivel superior;
+Quitar instrucciones abiertas sin usar;
+Analizar y sugerir correcciones para valores no usados;
+Sugerir nombres para identificadores sin resolver;</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertCSharpUsingToFSharpOpen">
         <source>Convert C# 'using' to F# 'open'</source>
-        <target state="new">Convert C# 'using' to F# 'open'</target>
+        <target state="translated">Convertir C# 'using' en F# 'open'</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertToAnonymousRecord">
@@ -108,7 +108,7 @@ Suggest names for unresolved identifiers;</target>
       </trans-unit>
       <trans-unit id="FormattingPageKeywords">
         <source>Re-format indentation on paste (Experimental)</source>
-        <target state="new">Re-format indentation on paste (Experimental)</target>
+        <target state="translated">Volver a aplicar formato a la sangría al pegar (experimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="ImplementInterface">
@@ -130,14 +130,14 @@ Enter key behavior;
 Never add new line on enter;
 Only add new line on enter after end of fully typed word;
 Always add new line on enter;</source>
-        <target state="new">Completion Lists;
-Show completion list after a character is deleted;
-Show completion list after a character is typed;
-Show symbols in unopened namespaces;
-Enter key behavior;
-Never add new line on enter;
-Only add new line on enter after end of fully typed word;
-Always add new line on enter;</target>
+        <target state="translated">Listas de finalización;
+Mostrar lista de finalización después de eliminar un carácter;
+Mostrar lista de finalización después de escribir un carácter;
+Mostrar símbolos en espacios de nombres sin abrir;
+Escribir el comportamiento de la tecla;
+No agregar nunca una nueva línea al pulsar Intro;
+Agregar solo una nueva línea al pulsar Intro después del final de la palabra totalmente escrita;
+Agregar siempre una nueva línea al pulsar Intro;</target>
         <note />
       </trans-unit>
       <trans-unit id="MakeDeclarationMutable">
@@ -266,7 +266,7 @@ Dash underline;</target>
       </trans-unit>
       <trans-unit id="6008">
         <source>IntelliSense</source>
-        <target state="needs-review-translation">IntelliSense</target>
+        <target state="translated">IntelliSense</target>
         <note />
       </trans-unit>
       <trans-unit id="6009">
