@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module FSharp.Editor.Tests.Hints.ReturnTypeHintTests
+module FSharp.Editor.Tests.Hints.InlineReturnTypeHintTests
 
 open Xunit
 open HintTestFramework

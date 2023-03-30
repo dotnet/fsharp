@@ -18,7 +18,7 @@ module HintService =
         >> Seq.collect (InlineTypeHints.getHints symbol)
 
     let inline private getReturnTypeHints parseResults symbol =
-        Seq.collect (ReturnTypeHints(parseResults, symbol).getHints)
+        Seq.collect (InlineReturnTypeHints(parseResults, symbol).getHints)
 
     let inline private getHintsForMemberOrFunctionOrValue (sourceText: SourceText) parseResults symbol : NativeHintResolver =
         Seq.filter (InlineParameterNameHints.isMemberOrFunctionOrValueValidForHint symbol)

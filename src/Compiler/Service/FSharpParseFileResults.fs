@@ -398,6 +398,33 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
 
         SyntaxTraversal.Traverse(expressionPos, input, visitor)
 
+    member _.TryRangeOfReturnTypeHint(symbolUseStart: pos, ?skipLambdas) =
+        let skipLambdas = defaultArg skipLambdas true
+
+        SyntaxTraversal.Traverse(
+            symbolUseStart,
+            input,
+            { new SyntaxVisitorBase<_>() with
+                override _.VisitBinding(_path, defaultTraverse, binding) =
+                    match binding with
+                    | SynBinding(expr = SynExpr.Lambda _) when skipLambdas -> defaultTraverse binding
+
+                    // Skip manually type-annotated bindings
+                    | SynBinding(returnInfo = Some (SynBindingReturnInfo(typeName = SynType.LongIdent _))) -> defaultTraverse binding
+
+                    // Let binding
+                    | SynBinding (trivia = { EqualsRange = Some equalsRange }; range = range) when range.Start = symbolUseStart ->
+                        Some equalsRange.StartRange
+
+                    // Member binding
+                    | SynBinding (headPat = SynPat.LongIdent(longDotId = SynLongIdent(id = _ :: ident :: _))
+                                  trivia = { EqualsRange = Some equalsRange }) when ident.idRange.Start = symbolUseStart ->
+                        Some equalsRange.StartRange
+
+                    | _ -> defaultTraverse binding
+            }
+        )
+
     member _.FindParameterLocations pos = ParameterLocations.Find(pos, input)
 
     member _.IsPositionContainedInACurriedParameter pos =
