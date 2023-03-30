@@ -106,6 +106,26 @@ type env =
 
     override _.ToString() = "<env>"
 
+/// The Typars of a Val in the signature data should also be pretty named.
+/// This will happen for the implementation file contents, but not for the signature data.
+/// In this module some helpers will traverse the ModuleOrNamespaceType and update all the typars of each found Val.
+module UpdatePrettyTyparNames =
+    let rec private updateEntity (entity: Entity) =
+        for e in entity.ModuleOrNamespaceType.AllEntities do
+            updateEntity e
+        for v in entity.ModuleOrNamespaceType.AllValsAndMembers do
+            updateVal v
+
+    and private updateVal (v: Val) =
+        if not (List.isEmpty v.Typars) then
+            let nms = PrettyTypes.PrettyTyparNames (fun _ -> true) List.empty v.Typars
+            (v.Typars, nms)
+            ||> List.iter2 (fun tp nm -> tp.typar_id <- ident (nm, tp.Range))
+
+    and updateModuleOrNamespaceType (signatureData: ModuleOrNamespaceType) =
+        for e in signatureData.ModuleAndNamespaceDefinitions do
+            updateEntity e
+
 let BindTypar env (tp: Typar) = 
     { env with 
          boundTyparNames = tp.Name :: env.boundTyparNames
@@ -2597,6 +2617,7 @@ and CheckModuleSpec cenv env mbind =
 let CheckImplFileContents cenv env implFileTy implFileContents  = 
     let rpi, mhi = ComputeRemappingFromImplementationToSignature cenv.g implFileContents implFileTy
     let env = { env with sigToImplRemapInfo = (mkRepackageRemapping rpi, mhi) :: env.sigToImplRemapInfo }
+    UpdatePrettyTyparNames.updateModuleOrNamespaceType implFileTy
     CheckDefnInModule cenv env implFileContents
     
 let CheckImplFile (g, amap, reportErrors, infoReader, internalsVisibleToPaths, viewCcu, tcValF, denv, implFileTy, implFileContents, extraAttribs, isLastCompiland: bool*bool, isInternalTestSpanStackReferring) =

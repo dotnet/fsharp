@@ -5,6 +5,26 @@ open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
 
+let private getGenericParametersNamesFor
+    (cUnit: CompilationUnit)
+    (entityDisplayName: string)
+    (valueDisplayName: string)
+    (additionalFile: SourceCodeFileKind)
+    : string array =
+    let typeCheckResult =
+        cUnit |> withAdditionalSourceFile additionalFile |> typecheckProject
+
+    typeCheckResult.AssemblySignature.Entities
+    |> Seq.tryPick (fun (entity: FSharpEntity) ->
+        if entity.DisplayName <> entityDisplayName then
+            None
+        else
+            entity.MembersFunctionsAndValues
+            |> Seq.tryFind (fun mfv -> mfv.DisplayName = valueDisplayName)
+            |> Option.map (fun (mfv: FSharpMemberOrFunctionOrValue) ->
+                mfv.GenericParameters |> Seq.map (fun gp -> gp.DisplayName) |> Seq.toArray))
+    |> Option.defaultValue Array.empty
+
 [<Fact>]
 let ``The call site of a generic function should have no influence on the name of the type parameters`` () =
     let definitionFile =
@@ -26,26 +46,8 @@ let otherGenericFunction _ _ _ =
          |> FsSource)
             .WithFileName("B.fs")
 
-    let getGenericParametersNamesFor
-        (entityDisplayName: string)
-        (valueDisplayName: string)
-        (additionalFile: SourceCodeFileKind)
-        : string array =
-        let typeCheckResult =
-            definitionFile |> withAdditionalSourceFile additionalFile |> typecheckProject
-
-        typeCheckResult.AssemblySignature.Entities
-        |> Seq.tryPick (fun (entity: FSharpEntity) ->
-            if entity.DisplayName <> entityDisplayName then
-                None
-            else
-                entity.MembersFunctionsAndValues
-                |> Seq.tryFind (fun mfv -> mfv.DisplayName = valueDisplayName)
-                |> Option.map (fun (mfv: FSharpMemberOrFunctionOrValue) ->
-                    mfv.GenericParameters |> Seq.map (fun gp -> gp.DisplayName) |> Seq.toArray))
-        |> Option.defaultValue Array.empty
-
-    let namesForB = getGenericParametersNamesFor "A" "someGenericFunction" usageFile
+    let namesForB =
+        getGenericParametersNamesFor definitionFile "A" "someGenericFunction" usageFile
 
     let alternativeUsageFile =
         ("""
@@ -58,6 +60,31 @@ let alternateGenericFunction _ =
             .WithFileName("C.fs")
 
     let namesForC =
-        getGenericParametersNamesFor "A" "someGenericFunction" alternativeUsageFile
+        getGenericParametersNamesFor definitionFile "A" "someGenericFunction" alternativeUsageFile
 
     Assert.Equal<string array>(namesForB, namesForC)
+
+[<Fact>]
+let ``Fixed typar name in signature file is still respected`` () =
+    let signatureFile =
+        Fsi
+            """
+module A
+
+val someGenericFunction: 'x -> unit
+"""
+        |> withFileName "A.fsi"
+
+    let implementationFile =
+        ("""
+module A
+
+let someGenericFunction _ = ()
+"""
+         |> FsSource)
+            .WithFileName("A.fs")
+
+    let names =
+        getGenericParametersNamesFor signatureFile "A" "someGenericFunction" implementationFile
+
+    Assert.Equal<string array>([| "x" |], names)
