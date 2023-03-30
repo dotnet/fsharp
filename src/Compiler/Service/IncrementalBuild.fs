@@ -168,14 +168,8 @@ module IncrementalBuildSyntaxTree =
                 failwith msg
 
         // We control access to the cache to prevent theoretical possibility of starting the same parse job more than once.
-        // The semaphore instance here locks single particular cache key, not everything. 
-        let semaphore = new SemaphoreSlim(1)
-        let getValue source =
-            try
-                semaphore.Wait()
-                cache.GetValue(source, getParseTask)
-            finally
-                semaphore.Release() |> ignore
+        // We lock only a single particular cache key, just to start the task, not for the duration of the task.
+        let getValue source = lock source <| fun () -> cache.GetValue(source, getParseTask)
 
         /// Parse the given file and return the given input.
         member _.Parse() =
