@@ -319,29 +319,38 @@ type BoundModel private (tcConfig: TcConfig,
             tcInfoState.TcInfoExtras.IsSome || not enableBackgroundItemKeyStoreAndSemanticClassification ->
             TcInfoNode.FromState(tcInfoState)
         | _ ->
-            match syntaxTreeOpt with
-            | Some syntaxTree ->
-                let fullGraphNode =
-                    GraphNode(node {
-                        match! this.TypeCheck(syntaxTree, false) with
-                        | FullState(tcInfo, tcInfoExtras) -> return tcInfo, tcInfoExtras
-                        | PartialState(tcInfo) -> 
-                            return tcInfo, emptyTcInfoExtras
-                    })
+            let fullGraphNode =
+                GraphNode(node {
+                    match! this.TypeCheck(false) with
+                    | FullState(tcInfo, tcInfoExtras) -> return tcInfo, tcInfoExtras
+                    | PartialState(tcInfo) -> 
+                        return tcInfo, emptyTcInfoExtras
+                })
 
-                let partialGraphNode =
-                    GraphNode(node {
-                        if syntaxTree.HasSignature then
-                            let! tcInfoState = this.TypeCheck(syntaxTree, true)
-                            return tcInfoState.TcInfo
-                        else
+            let partialGraphNode =
+                GraphNode(node {
+                    if enablePartialTypeChecking then
+                        // Optimization so we have less of a chance to duplicate work.
+                        if fullGraphNode.IsComputing then
                             let! tcInfo, _ = fullGraphNode.GetOrComputeValue()
                             return tcInfo
+                        else
+                            match fullGraphNode.TryPeekValue() with
+                            | ValueSome(tcInfo, _) -> return tcInfo
+                            | _ ->
+                                let! tcInfoState = this.TypeCheck(true)
+                                return tcInfoState.TcInfo
+                    else
+                        let! tcInfo, _ = fullGraphNode.GetOrComputeValue()
+                        return tcInfo
                     })
 
-                TcInfoNode(partialGraphNode, fullGraphNode)
+            TcInfoNode(partialGraphNode, fullGraphNode)
 
-            | None -> TcInfoNode(GraphNode.FromResult prevTcInfo, GraphNode.FromResult (prevTcInfo, emptyTcInfoExtras))
+    let defaultTypeCheck () =
+        node {
+            return PartialState(prevTcInfo)
+        }
 
     member _.QualifiedSigNameOfFile = prevTcInfo.sigNameOpt |> Option.map snd
 
@@ -438,7 +447,7 @@ type BoundModel private (tcConfig: TcConfig,
         | TcInfoNode(_, fullGraphNode) ->
             fullGraphNode.GetOrComputeValue()
 
-    member private this.TypeCheck (syntaxTree: SyntaxTree, partialCheck: bool) : NodeCode<TcInfoState> =
+    member private this.TypeCheck (partialCheck: bool) : NodeCode<TcInfoState> =
         match partialCheck, tcInfoStateOpt with
         | true, Some (PartialState _ as state)
         | true, Some (FullState _ as state) -> node.Return state
@@ -446,6 +455,11 @@ type BoundModel private (tcConfig: TcConfig,
         | _ ->
 
         node {
+            match syntaxTreeOpt with
+            | None -> 
+                let! res = defaultTypeCheck ()
+                return res
+            | Some syntaxTree ->
                 use _ = Activity.start "BoundModel.TypeCheck" [|Activity.Tags.fileName, syntaxTree.FileName|]
                 let input, _sourceRange, fileName, parseErrors =
                     match this.QualifiedSigNameOfFile with
@@ -825,9 +839,13 @@ module IncrementalBuilderHelpers =
 
             // Eagerly type check
             // We need to do this to keep the expected behavior of events (namely fileChecked) when checking a file/project.
-            boundModel.GetOrComputeTcInfo() |> ignore
-            if not partialCheck then
-                boundModel.GetOrComputeTcInfoWithExtras() |> ignore
+            if partialCheck then
+                let! _ = boundModel.GetOrComputeTcInfo()
+                ()
+            else
+                let! _ = boundModel.GetOrComputeTcInfoWithExtras()
+                ()
+
             return boundModel
         }
 
