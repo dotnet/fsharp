@@ -1,3 +1,4 @@
+namespace Foo
 
 type Foo() =
     // A read-only property.

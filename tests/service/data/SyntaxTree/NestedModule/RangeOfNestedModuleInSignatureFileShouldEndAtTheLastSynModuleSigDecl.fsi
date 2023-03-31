@@ -47,15 +47,15 @@ module Choice =
 module Operators =
 
     type ``[,]``<'T> with
-        [<CompiledName("Length1")>]
         /// <summary>Get the length of an array in the first dimension  </summary>
+        [<CompiledName("Length1")>]
         member Length1 : int
-        [<CompiledName("Length2")>]
         /// <summary>Get the length of the array in the second dimension  </summary>
+        [<CompiledName("Length2")>]        
         member Length2 : int
-        [<CompiledName("Base1")>]
         /// <summary>Get the lower bound of the array in the first dimension  </summary>
+        [<CompiledName("Base1")>]
         member Base1 : int
-        [<CompiledName("Base2")>]
         /// <summary>Get the lower bound of the array in the second dimension  </summary>
+        [<CompiledName("Base2")>]
         member Base2 : int

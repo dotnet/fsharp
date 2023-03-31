@@ -25,6 +25,6 @@ ImplFile
                   (5,8--5,17))], false, (3,0--6,7),
               { ModuleKeyword = Some (3,0--3,6)
                 EqualsRange = Some (3,9--3,10) })], PreXmlDocEmpty, [], None,
-          (1,0--6,7), { LeadingKeyword = Namespace (1,0--1,9) })], (true, false),
+          (1,0--6,7), { LeadingKeyword = Namespace (1,0--1,9) })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

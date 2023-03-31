@@ -5,5 +5,5 @@ ImplFile
       [SynModuleOrNamespace
          ([CommentAtEndOfFile], false, AnonModule, [Expr (Ident x, (2,0--2,1))],
           PreXmlDocEmpty, [], None, (2,0--2,1), { LeadingKeyword = None })],
-      (true, false), { ConditionalDirectives = []
-                       CodeComments = [LineComment (2,2--2,6)] }, set []))
+      (true, true), { ConditionalDirectives = []
+                      CodeComments = [LineComment (2,2--2,6)] }, set []))

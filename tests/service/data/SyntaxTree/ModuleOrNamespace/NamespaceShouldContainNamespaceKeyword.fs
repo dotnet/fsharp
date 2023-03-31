@@ -1,4 +1,4 @@
 
 namespace Foo
 module Bar =
-let a = 42
+    let a = 42

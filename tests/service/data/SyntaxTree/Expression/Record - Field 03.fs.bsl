@@ -1,16 +1,19 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/Expression/Record - Field 03.fs", false,
-      QualifiedNameOfFile Record - Field 03, [], [],
+     ("/root/Expression/Record - Field 03.fs", false, QualifiedNameOfFile Foo,
+      [], [],
       [SynModuleOrNamespace
-         ([Record - Field 03], false, AnonModule,
+         ([Foo], false, NamedModule,
           [Expr
              (Record
                 (None, None,
                  [SynExprRecordField
-                    ((SynLongIdent ([A], [(1,3--1,4)], [None]), true),
-                     Some (1,5--1,6), Some (Const (Int32 1, (1,7--1,8))), None)],
-                 (1,0--1,10)), (1,0--1,10))], PreXmlDocEmpty, [], None,
-          (1,0--1,10), { LeadingKeyword = None })], (true, false),
+                    ((SynLongIdent ([A], [(3,3--3,4)], [None]), true),
+                     Some (3,5--3,6), Some (Const (Int32 1, (3,7--3,8))), None)],
+                 (3,0--3,10)), (3,0--3,10))],
+          PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
+          (1,0--3,10), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
+
+(3,3)-(3,4) parse error Missing qualification after '.'

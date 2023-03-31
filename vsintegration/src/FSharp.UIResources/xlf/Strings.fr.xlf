@@ -27,6 +27,11 @@
         <target state="translated">Options de performances de recherche de références</target>
         <note />
       </trans-unit>
+      <trans-unit id="Formatting">
+        <source>Formatting</source>
+        <target state="new">Formatting</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Inline_Hints">
         <source>Inline Hints</source>
         <target state="translated">Indicateurs inline</target>
@@ -87,6 +92,11 @@
         <target state="translated">Parallélisation (Nécessite un redémarrage)</target>
         <note />
       </trans-unit>
+      <trans-unit id="Preferred_description_width_in_characters">
+        <source>Preferred description width in characters</source>
+        <target state="new">Preferred description width in characters</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Show_Inline_Parameter_Name_Hints">
         <source>Display inline parameter name hints (preview)</source>
         <target state="needs-review-translation">Afficher les indicateurs de nom de paramètre en ligne (expérimental)</target>
@@ -95,6 +105,11 @@
       <trans-unit id="Show_Inline_Type_Hints">
         <source>Display inline type hints (preview)</source>
         <target state="needs-review-translation">Afficher les indicateurs de type inline (expérimental)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Return_Type_Hints">
+        <source>Display return type hints (preview)</source>
+        <target state="new">Display return type hints (preview)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_all_symbols">
@@ -135,6 +150,11 @@
       <trans-unit id="Text_hover">
         <source>Text hover</source>
         <target state="translated">Survol du texte</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Tooltip_preferred_description_width_in_characters">
+        <source>Format signature to the given width by adding line breaks conforming with F# syntax rules. </source>
+        <target state="new">Format signature to the given width by adding line breaks conforming with F# syntax rules. </target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">

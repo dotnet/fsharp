@@ -34,6 +34,7 @@ Outlining;
 Show outlining and collapsible nodes for F# code;
 Inline hints;
 Display inline type hints (preview);
+Display return type hints (preview);
 Display inline parameter name hints (preview);Beer;
 Live Buffers;
 Use live (unsaved) buffers for checking</source>
@@ -43,6 +44,7 @@ Outlining;
 Show outlining and collapsible nodes for F# code;
 Inline hints;
 Display inline type hints (preview);
+Display return type hints (preview);
 Display inline parameter name hints (preview);Beer;
 Live Buffers;
 Use live (unsaved) buffers for checking</target>
@@ -181,12 +183,18 @@ Cache parsing results (experimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="QuickInfoPageKeywords">
-        <source>Navigation links;
+        <source>Formatting;
+Preferred description width in characters;
+Format signature to the given width by adding line breaks conforming with F# syntax rules;
+Navigation links;
 Show navigation links as;
 Solid underline;
 Dot underline;
 Dash underline;</source>
-        <target state="new">Navigation links;
+        <target state="new">Formatting;
+Preferred description width in characters;
+Format signature to the given width by adding line breaks conforming with F# syntax rules;
+Navigation links;
 Show navigation links as;
 Solid underline;
 Dot underline;

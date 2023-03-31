@@ -21,5 +21,5 @@ ImplFile
                  Const (Unit, (2,13--2,15)), (2,0--2,15),
                  { InKeyword = Some (2,10--2,12) }), (2,0--2,15))],
           PreXmlDocEmpty, [], None, (2,0--2,15), { LeadingKeyword = None })],
-      (true, false), { ConditionalDirectives = []
-                       CodeComments = [] }, set []))
+      (true, true), { ConditionalDirectives = []
+                      CodeComments = [] }, set []))

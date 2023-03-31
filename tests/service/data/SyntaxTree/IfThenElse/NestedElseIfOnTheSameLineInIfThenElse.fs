@@ -1,5 +1,5 @@
 
 if a then
-b
+    b
 else if c then
-d
+    d

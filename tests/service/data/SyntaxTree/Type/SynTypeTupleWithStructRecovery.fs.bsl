@@ -33,5 +33,8 @@ ImplFile
                     InlineKeyword = None
                     EqualsRange = Some (2,25--2,26) })], (2,0--2,29))],
           PreXmlDocEmpty, [], None, (2,0--3,0), { LeadingKeyword = None })],
-      (true, false), { ConditionalDirectives = []
-                       CodeComments = [] }, set []))
+      (true, true), { ConditionalDirectives = []
+                      CodeComments = [] }, set []))
+
+(2,25)-(2,26) parse error Unexpected symbol '=' in binding. Expected ')' or other token.
+(2,14)-(2,15) parse error Unmatched '('
