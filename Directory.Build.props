@@ -30,7 +30,6 @@
     <IntermediateOutputPath>$(ArtifactsDir)obj/$(MSBuildProjectName)/$(Configuration)/</IntermediateOutputPath>
     <FsLexPath>$(ArtifactsDir)/bin/fslex/$(Configuration)/net7.0/fslex.dll</FsLexPath>
     <FsYaccPath>$(ArtifactsDir)/bin/fsyacc/$(Configuration)/net7.0/fsyacc.dll</FsYaccPath>
-    <OtherFlags>$(OtherFlags) --test:ParallelCheckingWithSignatureFilesOn</OtherFlags>
   </PropertyGroup>
 
   <Import Project="$(MSBuildThisFileDirectory)/eng/Versions.props" Condition="'$(DISABLE_ARCADE)' == 'true'"/>
