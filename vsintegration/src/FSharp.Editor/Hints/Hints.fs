@@ -9,6 +9,7 @@ module Hints =
     type HintKind =
         | TypeHint
         | ParameterNameHint
+        | ReturnTypeHint
 
     // Relatively convenient for testing
     type NativeHint =
@@ -22,3 +23,4 @@ module Hints =
         match kind with
         | TypeHint -> "type"
         | ParameterNameHint -> "parameterName"
+        | ReturnTypeHint -> "returnType"

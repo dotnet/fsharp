@@ -261,4 +261,7 @@
   <data name="Tooltip_preferred_description_width_in_characters" xml:space="preserve">
     <value>Format signature to the given width by adding line breaks conforming with F# syntax rules. </value>
   </data>
+  <data name="Show_Return_Type_Hints" xml:space="preserve">
+    <value>Display return type hints (preview)</value>
+  </data>
 </root>
