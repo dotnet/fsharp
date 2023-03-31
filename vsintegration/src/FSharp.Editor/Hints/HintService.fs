@@ -17,6 +17,9 @@ module HintService =
         Seq.filter (InlineTypeHints.isValidForHint parseResults symbol)
         >> Seq.collect (InlineTypeHints.getHints symbol)
 
+    let inline private getReturnTypeHints parseResults symbol =
+        Seq.collect (InlineReturnTypeHints(parseResults, symbol).getHints)
+
     let inline private getHintsForMemberOrFunctionOrValue (sourceText: SourceText) parseResults symbol : NativeHintResolver =
         Seq.filter (InlineParameterNameHints.isMemberOrFunctionOrValueValidForHint symbol)
         >> Seq.collect (InlineParameterNameHints.getHintsForMemberOrFunctionOrValue sourceText parseResults symbol)
@@ -35,6 +38,10 @@ module HintService =
                     match symbol with
                     | :? FSharpMemberOrFunctionOrValue as symbol -> getTypeHints parseResults symbol |> Some
                     | _ -> None
+                | HintKind.ReturnTypeHint ->
+                    match symbol with
+                    | :? FSharpMemberOrFunctionOrValue as symbol -> getReturnTypeHints parseResults symbol |> Some
+                    | _ -> None
                 | HintKind.ParameterNameHint ->
                     match symbol with
                     | :? FSharpMemberOrFunctionOrValue as symbol ->
@@ -45,7 +52,7 @@ module HintService =
                 :: resolvers
                 |> resolve hintKinds
 
-         in resolve hintKinds []
+        resolve hintKinds []
 
     let private getHintsForSymbol (sourceText: SourceText) parseResults hintKinds (symbol: FSharpSymbol, symbolUses: FSharpSymbolUse seq) =
         symbol

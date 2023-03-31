@@ -107,6 +107,11 @@
         <target state="needs-review-translation">인라인 유형 힌트 표시(실험적)</target>
         <note />
       </trans-unit>
+      <trans-unit id="Show_Return_Type_Hints">
+        <source>Display return type hints (preview)</source>
+        <target state="new">Display return type hints (preview)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Show_all_symbols">
         <source>Show s_ymbols in unopened namespaces</source>
         <target state="translated">열려 있지 않은 네임스페이스에 기호 표시(_Y)</target>
