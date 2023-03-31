@@ -9059,19 +9059,31 @@ let func8000()=
     test "test8736" (lazy(sprintf "09-00%d09-01%d09-02%d09-03%d09-04%d09-05%d09-06%d09-07%d09-08%d09-09%a19-10%d19-11%d19-12%d19-13%d19-14%d19-15%d19-16%d19-17%d19-18%d19-19%a29-20%d29-21%d29-22%d29-23%d29-24%d29-25%d29-26%d29-27%d29-28%d29-29%a39-30%d39-31%d39-32%d39-33%d39-34%d39-35%d39-36%d39-37%d39-38%d39-39%a49-40%d49-41%d49-42%d49-43%d49-44%d49-45%d49-46%d49-47%d49-48%d49-49%a59-50%d59-51%d59-52%d59-53%d59-54%d59-55%d59-56%d59-57%d59-58%d59-59%a69-60%d69-61%d69-62%d69-63%d69-64%d69-65%d69-66%d69-67%d69-68%d69-69%a79-70%d79-71%d79-72%d79-73%d79-74%d79-75%d79-76%d79-77%d79-78%d79-79%a89-80%d89-81%d89-82%d89-83%d89-84%d89-85%d89-86%d89-87%d89-88%d89-89%a99-90%d99-91%d99-92%d99-93%d99-94%d99-95%d99-96%d99-97%d99-98%d99-99" 0 1 2 3 4 5 6 7 8  (fun _ v -> (string v) + "X") 1  10 11 12 13 14 15 16 17 18  (fun _ v -> (string v) + "X") 2  20 21 22 23 24 25 26 27 28  (fun _ v -> (string v) + "X") 3  30 31 32 33 34 35 36 37 38  (fun _ v -> (string v) + "X") 4  40 41 42 43 44 45 46 47 48  (fun _ v -> (string v) + "X") 5  50 51 52 53 54 55 56 57 58  (fun _ v -> (string v) + "X") 6  60 61 62 63 64 65 66 67 68  (fun _ v -> (string v) + "X") 7  70 71 72 73 74 75 76 77 78  (fun _ v -> (string v) + "X") 8  80 81 82 83 84 85 86 87 88  (fun _ v -> (string v) + "X") 9  90 91 92 93 94 95 96 97 98 )) "09-00009-01109-02209-03309-04409-05509-06609-07709-08809-091X19-101019-111119-121219-131319-141419-151519-161619-171719-181819-192X29-202029-212129-222229-232329-242429-252529-262629-272729-282829-293X39-303039-313139-323239-333339-343439-353539-363639-373739-383839-394X49-404049-414149-424249-434349-444449-454549-464649-474749-484849-495X59-505059-515159-525259-535359-545459-555559-565659-575759-585859-596X69-606069-616169-626269-636369-646469-656569-666669-676769-686869-697X79-707079-717179-727279-737379-747479-757579-767679-777779-787879-798X89-808089-818189-828289-838389-848489-858589-868689-878789-888889-899X99-909099-919199-929299-939399-949499-959599-969699-979799-989899-99"
     test "test8737" (lazy(sprintf "09-00%d09-01%d09-02%d09-03%d09-04%d09-05%d09-06%d09-07%d09-08%d09-09%a19-10%d19-11%d19-12%d19-13%d19-14%d19-15%d19-16%d19-17%d19-18%d19-19%a29-20%d29-21%d29-22%d29-23%d29-24%d29-25%d29-26%d29-27%d29-28%d29-29%a39-30%d39-31%d39-32%d39-33%d39-34%d39-35%d39-36%d39-37%d39-38%d39-39%a49-40%d49-41%d49-42%d49-43%d49-44%d49-45%d49-46%d49-47%d49-48%d49-49%a59-50%d59-51%d59-52%d59-53%d59-54%d59-55%d59-56%d59-57%d59-58%d59-59%a69-60%d69-61%d69-62%d69-63%d69-64%d69-65%d69-66%d69-67%d69-68%d69-69%a79-70%d79-71%d79-72%d79-73%d79-74%d79-75%d79-76%d79-77%d79-78%d79-79%a89-80%d89-81%d89-82%d89-83%d89-84%d89-85%d89-86%d89-87%d89-88%d89-89%a99-90%d99-91%d99-92%d99-93%d99-94%d99-95%d99-96%d99-97%d99-98%d99-99%a_TAIL" 0 1 2 3 4 5 6 7 8  (fun _ v -> (string v) + "X") 1  10 11 12 13 14 15 16 17 18  (fun _ v -> (string v) + "X") 2  20 21 22 23 24 25 26 27 28  (fun _ v -> (string v) + "X") 3  30 31 32 33 34 35 36 37 38  (fun _ v -> (string v) + "X") 4  40 41 42 43 44 45 46 47 48  (fun _ v -> (string v) + "X") 5  50 51 52 53 54 55 56 57 58  (fun _ v -> (string v) + "X") 6  60 61 62 63 64 65 66 67 68  (fun _ v -> (string v) + "X") 7  70 71 72 73 74 75 76 77 78  (fun _ v -> (string v) + "X") 8  80 81 82 83 84 85 86 87 88  (fun _ v -> (string v) + "X") 9  90 91 92 93 94 95 96 97 98 (fun _ v -> (string v) + "X") System.IO.FileShare.Read  )) "09-00009-01109-02209-03309-04409-05509-06609-07709-08809-091X19-101019-111119-121219-131319-141419-151519-161619-171719-181819-192X29-202029-212129-222229-232329-242429-252529-262629-272729-282829-293X39-303039-313139-323239-333339-343439-353539-363639-373739-383839-394X49-404049-414149-424249-434349-444449-454549-464649-474749-484849-495X59-505059-515159-525259-535359-545459-555559-565659-575759-585859-596X69-606069-616169-626269-636369-646469-656569-666669-676769-686869-697X79-707079-717179-727279-737379-747479-757579-767679-777779-787879-798X89-808089-818189-828289-838389-848489-858589-868689-878789-888889-899X99-909099-919199-929299-939399-949499-959599-969699-979799-989899-99ReadX_TAIL"
 
-
 module PresenceOfReflectionApi =
     type MyRecord = {
         A: string
-        B: string
+        B: decimal
     }
 
     let testPresenceOfReflectionApi () =
         test "test8800" (lazy(Microsoft.FSharp.Reflection.FSharpValue.PreComputeRecordConstructorInfo typeof<MyRecord> |> ignore; "Done")) "Done"
 
-module TrimPercentAtests =
+module PercentaPublicTests =
+    type MyRecord =
+        {
+            A: string
+            B: decimal
+            C: int
+            D: float
+        }
 
-    type internal MyRecord =
+    let testPercentA () =
+        let data = { A = "Hello, World!"; B = 1.027m; C = 1028; D = 1.029 }
+        test "test8900" (lazy (sprintf "%A" data).Replace("\n", ";"))  """{ A = "Hello, World!";  B = 1.027M;  C = 1028;  D = 1.029 }"""
+
+module PercentaInternalTests =
+
+    type internal MyInternalRecord =
         {
             A: string
             B: decimal
@@ -9080,15 +9092,15 @@ module TrimPercentAtests =
         }
         override this.ToString() = $"Hidden by ToString()"
 
-    let testRecordPercentA () =
+    let testPercentA () =
 
         let data = { A = "Hello, World!"; B = 1.027m; C = 1028; D = 1.029 }
-        test "test8900" (lazy (sprintf "%+A" data).Replace("\n", ";"))  """{ A = "Hello, World!";  B = 1.027M;  C = 1028;  D = 1.029 }"""
+        test "test9000" (lazy (sprintf "%A" data).Replace("\n", ";"))  "Hidden by ToString()"
 
-    let testRecordPercentPlusA () =
+    let testPercentPlusA () =
 
         let data = { A = "Hello, World!"; B = 1.027m; C = 1028; D = 1.029 }
-        test "test8910" (lazy (sprintf "%A" data).Replace("\n", ";"))  "Hidden by ToString()"
+        test "test9100" (lazy (sprintf "%+A" data).Replace("\n", ";"))  """{ A = "Hello, World!";  B = 1.027M;  C = 1028;  D = 1.029 }"""
 
 [<EntryPoint>]
 let main _ =
@@ -9103,8 +9115,10 @@ let main _ =
     func7000()
     func8000()
     PresenceOfReflectionApi.testPresenceOfReflectionApi ()
-    TrimPercentAtests.testRecordPercentA ()
-    TrimPercentAtests.testRecordPercentPlusA ()
+    PercentaPublicTests.testPercentA ()
+    PercentaInternalTests.testPercentA ()
+    PercentaInternalTests.testPercentPlusA ()
+
     match !failures with 
     | [] -> 
         stdout.WriteLine "All tests passed"
