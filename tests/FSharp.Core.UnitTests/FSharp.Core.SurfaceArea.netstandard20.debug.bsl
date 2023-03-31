@@ -987,7 +987,7 @@ Microsoft.FSharp.Core.ExtraTopLevelOperators: T PrintFormatToTextWriter[T](Syste
 Microsoft.FSharp.Core.ExtraTopLevelOperators: T PrintFormat[T](Microsoft.FSharp.Core.PrintfFormat`4[T,System.IO.TextWriter,Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit])
 Microsoft.FSharp.Core.ExtraTopLevelOperators: T SpliceExpression[T](Microsoft.FSharp.Quotations.FSharpExpr`1[T])
 Microsoft.FSharp.Core.ExtraTopLevelOperators: T SpliceUntypedExpression[T](Microsoft.FSharp.Quotations.FSharpExpr)
-Microsoft.FSharp.Core.ExtraTopLevelOperators: T[,] CreateArray2D[?,T](System.Collections.Generic.IEnumerable`1[?])
+Microsoft.FSharp.Core.ExtraTopLevelOperators: T[,] CreateArray2D[a,T](System.Collections.Generic.IEnumerable`1[a])
 Microsoft.FSharp.Core.FSharpChoice`2+Choice1Of2[T1,T2]: T1 Item
 Microsoft.FSharp.Core.FSharpChoice`2+Choice1Of2[T1,T2]: T1 get_Item()
 Microsoft.FSharp.Core.FSharpChoice`2+Choice2Of2[T1,T2]: T2 Item
