@@ -571,7 +571,13 @@ module internal FSharpQuickInfo =
     // when a construct has been declared in a signature file the documentation comments that are
     // written in that file are the ones that go into the generated xml when the project is compiled
     // therefore we should include these doccoms in our design time quick info
-    let getQuickInfoFromRange (document: Document, declRange: range, cancellationToken: CancellationToken) : Async<FSharpQuickInfo option> =
+    let getQuickInfoFromRange
+        (
+            document: Document,
+            declRange: range,
+            width: int option,
+            cancellationToken: CancellationToken
+        ) : Async<FSharpQuickInfo option> =
 
         asyncMaybe {
             let userOpName = "getQuickInfoFromRange"
@@ -593,7 +599,8 @@ module internal FSharpQuickInfo =
                     extLexerSymbol.Ident.idRange.EndColumn,
                     extLineText,
                     extLexerSymbol.FullIsland,
-                    FSharpTokenTag.IDENT
+                    FSharpTokenTag.IDENT,
+                    ?width = width
                 )
 
             match extQuickInfoText with
@@ -624,6 +631,7 @@ module internal FSharpQuickInfo =
         (
             document: Document,
             position: int,
+            width: int option,
             cancellationToken: CancellationToken
         ) : Async<(range * FSharpQuickInfo option * FSharpQuickInfo option) option> =
 
@@ -643,7 +651,15 @@ module internal FSharpQuickInfo =
                     let targetQuickInfo =
                         match lexerSymbol.Kind with
                         | LexerSymbolKind.Keyword -> checkFileResults.GetKeywordTooltip(lexerSymbol.FullIsland)
-                        | _ -> checkFileResults.GetToolTip(fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland, tag)
+                        | _ ->
+                            checkFileResults.GetToolTip(
+                                fcsTextLineNumber,
+                                idRange.EndColumn,
+                                lineText,
+                                lexerSymbol.FullIsland,
+                                tag,
+                                ?width = width
+                            )
 
                     match targetQuickInfo with
                     | ToolTipText []
@@ -693,7 +709,7 @@ module internal FSharpQuickInfo =
                         match findSigDeclarationResult with
                         | FindDeclResult.DeclFound declRange when isSignatureFile declRange.FileName ->
                             asyncMaybe {
-                                let! sigQuickInfo = getQuickInfoFromRange (document, declRange, cancellationToken)
+                                let! sigQuickInfo = getQuickInfoFromRange (document, declRange, width, cancellationToken)
 
                                 // if the target was declared in a signature file, and the current file
                                 // is not the corresponding module implementation file for that signature,
@@ -712,7 +728,7 @@ module internal FSharpQuickInfo =
                                 | FindDeclResult.DeclNotFound _
                                 | FindDeclResult.ExternalDecl _ -> return symbolUse.Range, Some sigQuickInfo, None
                                 | FindDeclResult.DeclFound declRange ->
-                                    let! implQuickInfo = getQuickInfoFromRange (document, declRange, cancellationToken)
+                                    let! implQuickInfo = getQuickInfoFromRange (document, declRange, width, cancellationToken)
 
                                     return
                                         symbolUse.Range,

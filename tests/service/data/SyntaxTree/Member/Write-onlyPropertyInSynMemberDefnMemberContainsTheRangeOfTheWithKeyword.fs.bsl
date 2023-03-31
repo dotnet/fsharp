@@ -6,27 +6,26 @@ ImplFile
         Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword,
       [], [],
       [SynModuleOrNamespace
-         ([Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword],
-          false, AnonModule,
+         ([Foo], false, DeclaredNamespace,
           [Types
              ([SynTypeDefn
                  (SynComponentInfo
                     ([], None, [], [Foo],
-                     PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (2,5--2,8)),
+                     PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
+                     false, None, (3,5--3,8)),
                   ObjectModel
                     (Unspecified,
                      [ImplicitCtor
-                        (None, [], SimplePats ([], (2,8--2,10)), None,
-                         PreXmlDoc ((2,8), FSharp.Compiler.Xml.XmlDocCollector),
-                         (2,5--2,8), { AsKeyword = None });
+                        (None, [], SimplePats ([], (3,8--3,10)), None,
+                         PreXmlDoc ((3,8), FSharp.Compiler.Xml.XmlDocCollector),
+                         (3,5--3,8), { AsKeyword = None });
                       GetSetMember
                         (None,
                          Some
                            (SynBinding
                               (None, Normal, false, false, [],
                                PreXmlMerge
-  (PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector), PreXmlDocEmpty),
+  (PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector), PreXmlDocEmpty),
                                SynValData
                                  (Some
                                     { IsInstance = true
@@ -41,35 +40,35 @@ ImplFile
                                      SynArgInfo ([], false, None)), None),
                                LongIdent
                                  (SynLongIdent
-                                    ([this; MyWriteOnlyProperty], [(4,15--4,16)],
+                                    ([this; MyWriteOnlyProperty], [(5,15--5,16)],
                                      [None; None]), Some set, None,
                                   Pats
                                     [Paren
                                        (Named
                                           (SynIdent (value, None), false, None,
-                                           (4,46--4,51)), (4,45--4,52))], None,
-                                  (4,41--4,52)), None,
+                                           (5,46--5,51)), (5,45--5,52))], None,
+                                  (5,41--5,52)), None,
                                LongIdentSet
                                  (SynLongIdent ([myInternalValue], [], [None]),
-                                  Ident value, (4,55--4,79)), (4,41--4,52),
+                                  Ident value, (5,55--5,79)), (5,41--5,52),
                                NoneAtInvisible,
-                               { LeadingKeyword = Member (4,4--4,10)
+                               { LeadingKeyword = Member (5,4--5,10)
                                  InlineKeyword = None
-                                 EqualsRange = Some (4,53--4,54) })),
-                         (4,4--4,79), { InlineKeyword = None
-                                        WithKeyword = (4,36--4,40)
+                                 EqualsRange = Some (5,53--5,54) })),
+                         (5,4--5,79), { InlineKeyword = None
+                                        WithKeyword = (5,36--5,40)
                                         GetKeyword = None
                                         AndKeyword = None
-                                        SetKeyword = Some (4,41--4,44) })],
-                     (4,4--4,79)), [],
+                                        SetKeyword = Some (5,41--5,44) })],
+                     (5,4--5,79)), [],
                   Some
                     (ImplicitCtor
-                       (None, [], SimplePats ([], (2,8--2,10)), None,
-                        PreXmlDoc ((2,8), FSharp.Compiler.Xml.XmlDocCollector),
-                        (2,5--2,8), { AsKeyword = None })), (2,5--4,79),
-                  { LeadingKeyword = Type (2,0--2,4)
-                    EqualsRange = Some (2,11--2,12)
-                    WithKeyword = None })], (2,0--4,79))], PreXmlDocEmpty, [],
-          None, (2,0--5,0), { LeadingKeyword = None })], (true, false),
-      { ConditionalDirectives = []
-        CodeComments = [LineComment (3,4--3,29)] }, set []))
+                       (None, [], SimplePats ([], (3,8--3,10)), None,
+                        PreXmlDoc ((3,8), FSharp.Compiler.Xml.XmlDocCollector),
+                        (3,5--3,8), { AsKeyword = None })), (3,5--5,79),
+                  { LeadingKeyword = Type (3,0--3,4)
+                    EqualsRange = Some (3,11--3,12)
+                    WithKeyword = None })], (3,0--5,79))], PreXmlDocEmpty, [],
+          None, (1,0--5,79), { LeadingKeyword = Namespace (1,0--1,9) })],
+      (true, true), { ConditionalDirectives = []
+                      CodeComments = [LineComment (4,4--4,29)] }, set []))

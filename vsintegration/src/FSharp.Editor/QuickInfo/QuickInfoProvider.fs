@@ -27,13 +27,14 @@ type internal FSharpAsyncQuickInfoSource
         statusBar: StatusBar,
         xmlMemberIndexService: IVsXMLMemberIndexService,
         metadataAsSource: FSharpMetadataAsSourceService,
-        textBuffer: ITextBuffer
+        textBuffer: ITextBuffer,
+        editorOptions: EditorOptions
     ) =
 
     // test helper
-    static member ProvideQuickInfo(document: Document, position: int) =
+    static member ProvideQuickInfo(document: Document, position: int, ?width: int) =
         asyncMaybe {
-            let! _, sigQuickInfo, targetQuickInfo = FSharpQuickInfo.getQuickInfo (document, position, CancellationToken.None)
+            let! _, sigQuickInfo, targetQuickInfo = FSharpQuickInfo.getQuickInfo (document, position, width, CancellationToken.None)
             return! sigQuickInfo |> Option.orElse targetQuickInfo
         }
 
@@ -69,12 +70,14 @@ type internal FSharpAsyncQuickInfoSource
             | true ->
                 let triggerPoint = triggerPoint.GetValueOrDefault()
 
+                let width = editorOptions.QuickInfo.DescriptionWidth
+
                 asyncMaybe {
                     let document =
                         textBuffer.CurrentSnapshot.GetOpenDocumentInCurrentContextWithChanges()
 
                     let! symbolUseRange, sigQuickInfo, targetQuickInfo =
-                        FSharpQuickInfo.getQuickInfo (document, triggerPoint.Position, cancellationToken)
+                        FSharpQuickInfo.getQuickInfo (document, triggerPoint.Position, width, cancellationToken)
 
                     let getTooltip filePath =
                         let solutionDir = Path.GetDirectoryName(document.Project.Solution.FilePath)
@@ -195,7 +198,8 @@ type internal FSharpAsyncQuickInfoSource
 type internal FSharpAsyncQuickInfoSourceProvider [<ImportingConstructor>]
     (
         [<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider,
-        metadataAsSource: FSharpMetadataAsSourceService
+        metadataAsSource: FSharpMetadataAsSourceService,
+        editorOptions: EditorOptions
     ) =
 
     interface IAsyncQuickInfoSourceProvider with
@@ -204,4 +208,6 @@ type internal FSharpAsyncQuickInfoSourceProvider [<ImportingConstructor>]
             // It is safe to do it here (see #4713)
             let statusBar = StatusBar(serviceProvider.GetService<SVsStatusbar, IVsStatusbar>())
             let xmlMemberIndexService = serviceProvider.XMLMemberIndexService
-            new FSharpAsyncQuickInfoSource(statusBar, xmlMemberIndexService, metadataAsSource, textBuffer) :> IAsyncQuickInfoSource
+
+            new FSharpAsyncQuickInfoSource(statusBar, xmlMemberIndexService, metadataAsSource, textBuffer, editorOptions)
+            :> IAsyncQuickInfoSource

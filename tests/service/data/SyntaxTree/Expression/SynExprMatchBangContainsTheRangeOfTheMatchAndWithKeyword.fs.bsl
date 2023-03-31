@@ -17,5 +17,5 @@ ImplFile
                  (2,0--3,8), { MatchBangKeyword = (2,0--2,6)
                                WithKeyword = (2,9--2,13) }), (2,0--3,8))],
           PreXmlDocEmpty, [], None, (2,0--4,0), { LeadingKeyword = None })],
-      (true, false), { ConditionalDirectives = []
-                       CodeComments = [] }, set []))
+      (true, true), { ConditionalDirectives = []
+                      CodeComments = [] }, set []))

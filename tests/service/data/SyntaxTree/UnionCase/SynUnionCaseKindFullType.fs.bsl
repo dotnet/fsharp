@@ -35,6 +35,8 @@ ImplFile
                   { LeadingKeyword = Type (2,0--2,4)
                     EqualsRange = Some (2,7--2,8)
                     WithKeyword = None })], (2,0--3,20))], PreXmlDocEmpty, [],
-          None, (2,0--4,0), { LeadingKeyword = None })], (true, false),
+          None, (2,0--4,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
+
+(3,6)-(3,20) parse warning This construct is deprecated: it is only for use in the F# library

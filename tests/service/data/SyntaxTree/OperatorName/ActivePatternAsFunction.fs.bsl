@@ -14,6 +14,6 @@ ImplFile
                        [Some (HasParenthesis ((2,0--2,1), (2,11--2,12)))]), None,
                     (2,0--2,12)), Const (Int32 4, (2,13--2,14)), (2,0--2,14)),
               (2,0--2,14))], PreXmlDocEmpty, [], None, (2,0--2,14),
-          { LeadingKeyword = None })], (true, false),
+          { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
