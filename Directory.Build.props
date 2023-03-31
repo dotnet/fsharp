@@ -11,7 +11,12 @@
    All settings below can be overriden via CLI switches if needed. -->
 
   <PropertyGroup Condition="'$(SolutionName)' == 'FSharp.Compiler.Service' and '$(BUILDING_USING_DOTNET)' != 'false'">
-      <BUILDING_USING_DOTNET Condition="'$(BUILDING_USING_DOTNET)' == ''">true</BUILDING_USING_DOTNET>
+      <BUILDING_USING_DOTNET>true</BUILDING_USING_DOTNET>
+  </PropertyGroup>
+
+  <!-- Temporary workaround if proj-info is used, allows Ionide's evaluation to work correctly. -->
+  <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' != 'false' and '$(DotnetProjInfo)' == 'true'">
+      <BUILDING_USING_DOTNET>true</BUILDING_USING_DOTNET>
   </PropertyGroup>
 
   <Import Project="$(RepoRoot)/Directory.Build.props.user" Condition = "Exists('$(RepoRoot)/Directory.Build.props.user')" />
