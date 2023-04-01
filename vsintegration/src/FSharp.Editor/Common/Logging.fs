@@ -112,3 +112,35 @@ module Logging =
 
     let logExceptionWithContext (ex: Exception, context) =
         logErrorf "Context: %s\nException Message: %s\nStack Trace: %s" context ex.Message ex.StackTrace
+
+module Activity =
+    let listen filter =
+
+        let indent (activity: Activity) =
+            let rec loop (activity: Activity) n =
+                if activity.Parent <> null then
+                    loop (activity.Parent) (n + 1)
+                else
+                    n
+
+            String.replicate (loop activity 0) "    "
+
+        let collectTags (activity: Activity) =
+            [ for tag in activity.Tags -> $"{tag.Key}: %A{tag.Value}" ]
+            |> String.concat ", "
+
+        let listener =
+            new ActivityListener(
+                ShouldListenTo = (fun source -> source.Name = FSharp.Compiler.Diagnostics.ActivityNames.FscSourceName),
+                Sample =
+                    (fun context ->
+                        if context.Name.Contains(filter) then
+                            ActivitySamplingResult.AllDataAndRecorded
+                        else
+                            ActivitySamplingResult.None),
+                ActivityStarted = (fun a -> logMsg $"{indent a}{a.OperationName}     {collectTags a}")
+            )
+
+        ActivitySource.AddActivityListener(listener)
+
+    let listenToAll () = listen ""
