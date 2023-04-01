@@ -56,16 +56,16 @@ Always place open statements at the top level;
 Remove unused open statements;
 Analyze and suggest fixes for unused values;
 Suggest names for unresolved identifiers;</source>
-        <target state="new">Simplify names (remove unnecessary qualifiers);
-Always place open statements at the top level;
-Remove unused open statements;
-Analyze and suggest fixes for unused values;
-Suggest names for unresolved identifiers;</target>
+        <target state="translated">Adları basitleştir (gereksiz niteleyicileri kaldır);
+Açık deyimleri her zaman en üst düzeye yerleştir;
+Kullanılmayan açık deyimleri kaldır;
+Kullanılmayan değerleri analiz et ve bunlara düzeltmeler öner;
+Çözümlenmemiş tanımlayıcılar için ad öner;</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertCSharpUsingToFSharpOpen">
         <source>Convert C# 'using' to F# 'open'</source>
-        <target state="new">Convert C# 'using' to F# 'open'</target>
+        <target state="translated">C# 'using' sözcüğünü F# 'open' sözcüğüne dönüştür</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertToAnonymousRecord">
@@ -110,7 +110,7 @@ Suggest names for unresolved identifiers;</target>
       </trans-unit>
       <trans-unit id="FormattingPageKeywords">
         <source>Re-format indentation on paste (Experimental)</source>
-        <target state="new">Re-format indentation on paste (Experimental)</target>
+        <target state="translated">Yapıştırırken girintiyi yeniden biçimlendir (Deneysel)</target>
         <note />
       </trans-unit>
       <trans-unit id="ImplementInterface">
@@ -132,14 +132,14 @@ Enter key behavior;
 Never add new line on enter;
 Only add new line on enter after end of fully typed word;
 Always add new line on enter;</source>
-        <target state="new">Completion Lists;
-Show completion list after a character is deleted;
-Show completion list after a character is typed;
-Show symbols in unopened namespaces;
-Enter key behavior;
-Never add new line on enter;
-Only add new line on enter after end of fully typed word;
-Always add new line on enter;</target>
+        <target state="translated">Tamamlama Listeleri;
+Bir karakter silindikten sonra tamamlama listesini göster;
+Bir karakter yazıldıktan sonra tamamlama listesini göster;
+Açılmamış ad alanlarında simgeleri göster;
+Enter tuşu davranışı;
+Enter tuşunda hiçbir zaman yeni satır ekleme;
+Yalnızca tam olarak yazılan sözcükten sonra basılan Enter tuşunda için yeni satır ekle;
+Enter tuşunda her zaman yeni satır ekle;</target>
         <note />
       </trans-unit>
       <trans-unit id="MakeDeclarationMutable">
@@ -268,7 +268,7 @@ Dash underline;</target>
       </trans-unit>
       <trans-unit id="6008">
         <source>IntelliSense</source>
-        <target state="needs-review-translation">IntelliSense</target>
+        <target state="translated">IntelliSense</target>
         <note />
       </trans-unit>
       <trans-unit id="6009">
