@@ -24,7 +24,7 @@
       </trans-unit>
       <trans-unit id="chkAbstractMembersDeclarationsOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Abstract member declarations are not allowed.</source>
-        <target state="translated">Jeśli typ używa atrybutów [&lt;Sealed&gt;] i [&lt;AbstractClass&gt;], oznacza to, że jest statyczny. Abstrakcyjne deklaracje składowych są niedozwolone.</target>
+        <target state="translated">Jeśli typ używa obu atrybutów [&lt;Sealed&gt;] i [&lt; AbstractClass&gt;], oznacza to, że jest on statyczny. Abstrakcyjne deklaracje elementów członkowskich są niedozwolone.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkAdditionalConstructorOnStaticClasses">
@@ -49,7 +49,7 @@
       </trans-unit>
       <trans-unit id="chkExplicitFieldsDeclarationsOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Explicit field declarations are not allowed.</source>
-        <target state="translated">Jeśli typ używa atrybutów [&lt;Sealed&gt;] i [&lt;AbstractClass&gt;], oznacza to, że jest statyczny. Jawne deklaracje pól są niedozwolone.</target>
+        <target state="translated">Jeśli typ używa obu atrybutów [&lt;Sealed&gt;] i [&lt; AbstractClass&gt;], oznacza to, że jest on statyczny. Jawne deklaracje pól są niedozwolone.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
@@ -69,7 +69,7 @@
       </trans-unit>
       <trans-unit id="chkImplementingInterfacesOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Implementing interfaces is not allowed.</source>
-        <target state="translated">Jeśli typ używa atrybutów [&lt;Sealed&gt;] i [&lt;AbstractClass&gt;], oznacza to, że jest statyczny. Implementowanie interfejsów jest niedozwolone.</target>
+        <target state="translated">Jeśli typ używa obu atrybutów [&lt;Sealed&gt;] i [&lt; AbstractClass&gt;], oznacza to, że jest on statyczny. Wdrażanie interfejsów jest niedozwolone.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInfoRefcellAssign">
@@ -94,7 +94,7 @@
       </trans-unit>
       <trans-unit id="chkInstanceLetBindingOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance let bindings are not allowed.</source>
-        <target state="translated">Jeśli typ używa atrybutów [&lt;Sealed&gt;] i [&lt;AbstractClass&gt;], oznacza to, że jest statyczny. Powiązania let wystąpienia są niedozwolone.</target>
+        <target state="translated">Jeśli typ używa obu atrybutów [&lt;Sealed&gt;] i [&lt; AbstractClass&gt;], oznacza to, że jest on statyczny. Połączenia let wystąpienia są niedozwolone.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInstanceMemberOnStaticClasses">
@@ -309,7 +309,7 @@
       </trans-unit>
       <trans-unit id="featureNestedCopyAndUpdate">
         <source>Nested record field copy-and-update</source>
-        <target state="translated">Kopiowanie i aktualizowanie zagnieżdżonego pola rekordu</target>
+        <target state="translated">Kopiowanie i aktualizowanie zagnieżdżonego pól rekordu</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNonInlineLiteralsAsPrintfFormat">
@@ -509,7 +509,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionSig">
         <source>Keyword reserved for ML-compatibility.</source>
-        <target state="translated">Słowo kluczowe zarezerwowane na potrzeby zgodności z uczeniem maszynowym.</target>
+        <target state="translated">Słowo kluczowe zarezerwowane na potrzeby zgodności uczenia maszynowego.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionTypeTest">
@@ -774,7 +774,7 @@
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileElif">
         <source>Unexpected end of input in 'else if' or 'elif' branch of conditional expression. Expected 'elif &lt;expr&gt; then &lt;expr&gt;' or 'else if &lt;expr&gt; then &lt;expr&gt;'.</source>
-        <target state="translated">Nieoczekiwany koniec danych wejściowych w gałęzi "else if" lub "elif" wyrażenia warunkowego. Oczekiwano instrukcji "elif &lt;expr&gt; then &lt;expr&gt;" lub "else if &lt;expr&gt; then &lt;expr&gt;".</target>
+        <target state="translated">Nieoczekiwane zakończenie danych wejściowych w gałęzi „else” wyrażenia warunkowego. Oczekiwano konstrukcji „elif &lt;expr&gt; then &lt;expr&gt;” lub „else if &lt;expr&gt; then &lt;expr&gt;”.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -919,7 +919,7 @@
       </trans-unit>
       <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">
         <source>This copy-and-update record expression changes all fields of record type '{0}'. Consider using the record construction syntax instead.</source>
-        <target state="translated">To wyrażenie rekordu kopiowania i aktualizacji zmienia wszystkie pola typu rekordu '{0}'. Zamiast tego rozważ użycie składni konstrukcji rekordu.</target>
+        <target state="translated">To wyrażenie rekordu kopiowania i aktualizacji zmienia wszystkie pola typu rekordu „{0}”. Zamiast tego rozważ użycie składni konstrukcji rekordu.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
@@ -1189,7 +1189,7 @@
       </trans-unit>
       <trans-unit id="typrelNeverRefinedAwayFromTop">
         <source>A type has been implicitly inferred as 'obj', which may be unintended. Consider adding explicit type annotations. You can disable this warning by using '#nowarn \"3559\"' or '--nowarn:3559'.</source>
-        <target state="translated">Typ został niejawnie wywnioskowany jako "obj", co może być niezamierzone. Rozważ dodanie jawnych adnotacji typu. Możesz wyłączyć to ostrzeżenie, używając polecenia "#nowarn "3559" lub "--nowarn:3559".</target>
+        <target state="translated">Typ został niejawnie wywnioskowany jako „obj”, co może być niezamierzone. Rozważ dodanie jawnych adnotacji typu. Możesz wyłączyć to ostrzeżenie, używając polecenia „#nowarn \"3559\"” lub „--nowarn:3559”.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
@@ -4659,7 +4659,7 @@
       </trans-unit>
       <trans-unit id="tcConcreteMembersIllegalInInterface">
         <source>Interfaces cannot contain definitions of concrete instance members. You may need to define a constructor on your type to indicate that the type is a class.</source>
-        <target state="new">Interfaces cannot contain definitions of concrete instance members. You may need to define a constructor on your type to indicate that the type is a class.</target>
+        <target state="translated">Interfejsy nie mogą zawierać definicji konkretnych elementów członkowskich wystąpienia. Może być konieczne zdefiniowanie konstruktora w przypadku typu, aby określić, że dany typ to klasa.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcConstructorsDisallowedInExceptionAugmentation">

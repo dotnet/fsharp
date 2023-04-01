@@ -191,14 +191,14 @@ Show navigation links as;
 Solid underline;
 Dot underline;
 Dash underline;</source>
-        <target state="new">Formatting;
-Preferred description width in characters;
-Format signature to the given width by adding line breaks conforming with F# syntax rules;
-Navigation links;
-Show navigation links as;
-Solid underline;
-Dot underline;
-Dash underline;</target>
+        <target state="translated">Форматирование;
+Предпочитаемая ширина описания в символах;
+Форматирование подписи до заданной ширины путем добавления разрывов строк в соответствии с правилами синтаксиса F#;
+Ссылки навигации;
+Показать ссылки навигации как;
+Сплошное подчеркивание;
+Пунктирное подчеркивание;
+Штриховое подчеркивание;</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">

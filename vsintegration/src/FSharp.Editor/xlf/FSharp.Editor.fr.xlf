@@ -164,17 +164,17 @@ Enable parallel type checking with signature files;
 Enable parallel reference resolution;
 Enable fast find references &amp; rename (experimental);
 Cache parsing results (experimental)</source>
-        <target state="new">F# Project and Caching Performance Options;
-Enable in-memory cross project references;
-Enable_partial_type_checking;
-IntelliSense Performance Options;
-Enable stale data for IntelliSense features;
-Time until stale results are used (in milliseconds);
-Parallelization (requires restart);
-Enable parallel type checking with signature files;
-Enable parallel reference resolution;
-Enable fast find references &amp; rename (experimental);
-Cache parsing results (experimental)</target>
+        <target state="translated">Options de performances du projet F # et de la mise en cache ;
+Activer les références de projets croisés en mémoire ;
+Enable_partial_type_checking ;
+Options de performances IntelliSense ;
+Activer les données obsolètes pour les fonctionnalités IntelliSense ;
+Temps jusqu'à ce que les résultats obsolètes soient utilisés (en millisecondes) ;
+Parallélisation (nécessite un redémarrage) ;
+Activer la vérification de type parallèle avec les fichiers de signature ;
+Activer la résolution de référence parallèle ;
+Activer les références de recherche rapide et renommer (expérimental) ;
+Résultats de l'analyse du cache (expérimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
@@ -191,14 +191,14 @@ Show navigation links as;
 Solid underline;
 Dot underline;
 Dash underline;</source>
-        <target state="new">Formatting;
-Preferred description width in characters;
-Format signature to the given width by adding line breaks conforming with F# syntax rules;
-Navigation links;
-Show navigation links as;
-Solid underline;
-Dot underline;
-Dash underline;</target>
+        <target state="translated">Formatage;
+Largeur de description préférée en caractères ;
+Mettre en forme la signature à la largeur donnée en ajoutant des sauts de ligne conformes aux règles de syntaxe F# ;
+Liens de navigation ;
+Afficher les liens de navigation en tant que ;
+Soulignement uni ;
+Soulignement pointé ;
+Soulignement en tirets ;</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">

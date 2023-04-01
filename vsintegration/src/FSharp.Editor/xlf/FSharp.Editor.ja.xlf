@@ -191,14 +191,14 @@ Show navigation links as;
 Solid underline;
 Dot underline;
 Dash underline;</source>
-        <target state="new">Formatting;
-Preferred description width in characters;
-Format signature to the given width by adding line breaks conforming with F# syntax rules;
-Navigation links;
-Show navigation links as;
-Solid underline;
-Dot underline;
-Dash underline;</target>
+        <target state="translated">書式 設定;
+希望の説明の幅 (文字数);
+F# 構文規則に準拠するよう、改行を追加して指定された幅に署名を書式設定します;
+ナビゲーション リンク;
+ナビゲーション リンクを次のように表示します:
+塗りつぶしの下線;
+ドットの下線;
+ダッシュ下線;</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">
