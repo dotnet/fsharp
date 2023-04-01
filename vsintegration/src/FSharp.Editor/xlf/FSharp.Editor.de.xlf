@@ -164,17 +164,17 @@ Enable parallel type checking with signature files;
 Enable parallel reference resolution;
 Enable fast find references &amp; rename (experimental);
 Cache parsing results (experimental)</source>
-        <target state="new">F# Project and Caching Performance Options;
-Enable in-memory cross project references;
+        <target state="translated">F#-Projekt- und Cacheleistungsoptionen;
+Projektübergreifende Verweise im Arbeitsspeicher aktivieren;
 Enable_partial_type_checking;
-IntelliSense Performance Options;
-Enable stale data for IntelliSense features;
-Time until stale results are used (in milliseconds);
-Parallelization (requires restart);
-Enable parallel type checking with signature files;
-Enable parallel reference resolution;
-Enable fast find references &amp; rename (experimental);
-Cache parsing results (experimental)</target>
+IntelliSense-Leistungsoptionen;
+Veraltete Daten für IntelliSense-Features aktivieren;
+Zeit bis zur Verwendung veralteter Ergebnisse (in Millisekunden);
+Parallelisierung (Neustart erforderlich);
+Parallele Typüberprüfung mit Signaturdateien aktivieren;
+Parallele Verweisauflösung aktivieren;
+Schnellsuche und Umbenennen von Verweisen aktivieren (experimentell);
+Cacheanalyseergebnisse (experimentell)</target>
         <note />
       </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
@@ -191,14 +191,14 @@ Show navigation links as;
 Solid underline;
 Dot underline;
 Dash underline;</source>
-        <target state="new">Formatting;
-Preferred description width in characters;
-Format signature to the given width by adding line breaks conforming with F# syntax rules;
-Navigation links;
-Show navigation links as;
-Solid underline;
-Dot underline;
-Dash underline;</target>
+        <target state="translated">Formatierung;
+Bevorzugte Beschreibungsbreite in Zeichen;
+Signatur in der angegebenen Breite formatieren, indem Zeilenumbrüche hinzugefügt werden, die den F#-Syntaxregeln entsprechen;
+Navigationslinks;
+Navigationslinks anzeigen als;
+Unterstreichung einfarbig;
+Punkt unterstrichen;
+Strich unterstrichen;</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">

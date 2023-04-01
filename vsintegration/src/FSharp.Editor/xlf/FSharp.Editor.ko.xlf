@@ -164,17 +164,17 @@ Enable parallel type checking with signature files;
 Enable parallel reference resolution;
 Enable fast find references &amp; rename (experimental);
 Cache parsing results (experimental)</source>
-        <target state="new">F# Project and Caching Performance Options;
-Enable in-memory cross project references;
+        <target state="translated">F# 프로젝트 및 캐싱 성능 옵션;
+메모리 내 프로젝트 간 참조 활성화;
 Enable_partial_type_checking;
-IntelliSense Performance Options;
-Enable stale data for IntelliSense features;
-Time until stale results are used (in milliseconds);
-Parallelization (requires restart);
-Enable parallel type checking with signature files;
-Enable parallel reference resolution;
-Enable fast find references &amp; rename (experimental);
-Cache parsing results (experimental)</target>
+IntelliSense 성능 옵션;
+IntelliSense 기능에 부실 데이터 사용;
+부실 결과가 사용될 때까지의 시간(밀리초);
+병렬화(다시 시작 필요);
+서명 파일과 함께 병렬 형식 검사 사용;
+병렬 참조 확인 사용;
+빠른 찾기 참조 및 이름 바꾸기 사용(실험적);
+캐시 구문 분석 결과(실험적)</target>
         <note />
       </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
