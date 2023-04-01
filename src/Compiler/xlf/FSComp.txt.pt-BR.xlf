@@ -24,7 +24,7 @@
       </trans-unit>
       <trans-unit id="chkAbstractMembersDeclarationsOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Abstract member declarations are not allowed.</source>
-        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Abstract member declarations are not allowed.</target>
+        <target state="translated">Se um tipo usar os atributos [&lt;Sealed&gt;] e [&lt;AbstractClass&gt;], isso significará que ele é estático. Declarações de membro abstratas não são permitidas.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkAdditionalConstructorOnStaticClasses">
@@ -49,7 +49,7 @@
       </trans-unit>
       <trans-unit id="chkExplicitFieldsDeclarationsOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Explicit field declarations are not allowed.</source>
-        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Explicit field declarations are not allowed.</target>
+        <target state="translated">Se um tipo usar os atributos [&lt;Sealed&gt;] e [&lt;AbstractClass&gt;], isso significará que ele é estático. Declarações de campo explícitas não são permitidas.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
@@ -69,7 +69,7 @@
       </trans-unit>
       <trans-unit id="chkImplementingInterfacesOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Implementing interfaces is not allowed.</source>
-        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Implementing interfaces is not allowed.</target>
+        <target state="translated">Se um tipo usar os atributos [&lt;Sealed&gt;] e [&lt;AbstractClass&gt;], isso significará que ele é estático. A implementação de interfaces não é permitida.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInfoRefcellAssign">
@@ -94,7 +94,7 @@
       </trans-unit>
       <trans-unit id="chkInstanceLetBindingOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance let bindings are not allowed.</source>
-        <target state="new">If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance let bindings are not allowed.</target>
+        <target state="translated">Se um tipo usar os atributos [&lt;Sealed&gt;] e [&lt;AbstractClass&gt;], isso significará que ele é estático. Associações de permissão de instância não são permitidas.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInstanceMemberOnStaticClasses">
@@ -409,7 +409,7 @@
       </trans-unit>
       <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
         <source>Raises warnings when an copy-and-update record expression changes all fields of a record.</source>
-        <target state="translated">Dispara avisos quando uma expressão de registro de cópia e atualização altera todos os campos de um registro.</target>
+        <target state="translated">Gera avisos quando uma expressão de registro de cópia e atualização altera todos os campos de um registro.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWarningWhenInliningMethodImplNoInlineMarkedFunction">
@@ -509,7 +509,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionSig">
         <source>Keyword reserved for ML-compatibility.</source>
-        <target state="translated">Palavra-chave reservada para compatibilidade com ML.</target>
+        <target state="translated">Palavra-chave reservada para compatibilidade de ML.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionTypeTest">
@@ -774,7 +774,7 @@
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileElif">
         <source>Unexpected end of input in 'else if' or 'elif' branch of conditional expression. Expected 'elif &lt;expr&gt; then &lt;expr&gt;' or 'else if &lt;expr&gt; then &lt;expr&gt;'.</source>
-        <target state="translated">Fim inesperado de entrada no branch 'else if' ou 'elif' da expressão condicional. Esperado 'elif &lt;expr&gt; então &lt;expr&gt;' ou 'else se &lt;expr&gt; em seguida &lt;expr&gt;'.</target>
+        <target state="translated">Fim inesperado de entrada no branch 'else if' ou 'elif' da expressão condicional. Esperado 'elif &lt;expr&gt; em seguida, &lt;expr&gt;' ou 'else if &lt;expr&gt; then &lt;expr&gt;'.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -794,7 +794,7 @@
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsConstrainedGenericLet">
         <source>A constrained generic construct occured in the resumable code specification</source>
-        <target state="translated">Uma construção genérica restrita ocorreu na especificação de código retomável</target>
+        <target state="translated">Um constructo genérico restrito ocorreu na especificação de código retomável</target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsDynamicResumeAtInBody">
@@ -919,7 +919,7 @@
       </trans-unit>
       <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">
         <source>This copy-and-update record expression changes all fields of record type '{0}'. Consider using the record construction syntax instead.</source>
-        <target state="translated">Esta expressão de registro de cópia e atualização altera todos os campos do tipo de registro '{0}'. Considere usar a sintaxe de construção de registro.</target>
+        <target state="translated">Essa expressão de registro copiar e atualizar altera todos os campos do tipo de registro '{0}'. Considere usar a sintaxe de construção de registro em vez disso.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
@@ -1189,7 +1189,7 @@
       </trans-unit>
       <trans-unit id="typrelNeverRefinedAwayFromTop">
         <source>A type has been implicitly inferred as 'obj', which may be unintended. Consider adding explicit type annotations. You can disable this warning by using '#nowarn \"3559\"' or '--nowarn:3559'.</source>
-        <target state="translated">Um tipo foi implicitamente inferido como 'obj', que pode não ser solicitado. Considere adicionar anotações de tipo explícitas. Você pode desabilitar este aviso usando '#nowarn \"3559\"' ou '--nowarn:3559'.</target>
+        <target state="translated">Um tipo foi implicitamente inferido como 'obj', que pode não ser intencional. Considere adicionar anotações de tipo explícitas. Você pode desabilitar esse aviso usando '#nowarn \"3559\"' ou '--nowarn:3559'.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
@@ -4659,7 +4659,7 @@
       </trans-unit>
       <trans-unit id="tcConcreteMembersIllegalInInterface">
         <source>Interfaces cannot contain definitions of concrete instance members. You may need to define a constructor on your type to indicate that the type is a class.</source>
-        <target state="new">Interfaces cannot contain definitions of concrete instance members. You may need to define a constructor on your type to indicate that the type is a class.</target>
+        <target state="translated">Interfaces não podem conter definições de membros de instância concreta. Talvez seja necessário definir um construtor em seu tipo para indicar que o tipo é uma classe.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcConstructorsDisallowedInExceptionAugmentation">
