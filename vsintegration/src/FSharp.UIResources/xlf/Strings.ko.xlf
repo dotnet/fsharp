@@ -14,12 +14,12 @@
       </trans-unit>
       <trans-unit id="Enable_Live_Buffers">
         <source>Use live (unsaved) buffers for checking (restart required)</source>
-        <target state="translated">확인에 라이브(저장되지 않은) 버퍼 사용(다시 시작해야 함)</target>
+        <target state="translated">확인에 라이브(저장되지 않은) 버퍼 사용(다시 시작 필요)</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_partial_type_checking">
         <source>Enable partial type checking</source>
-        <target state="translated">부분 유형 검사 사용</target>
+        <target state="translated">부분 형식 검사 사용</target>
         <note />
       </trans-unit>
       <trans-unit id="Find_References_Performance">
@@ -99,12 +99,12 @@
       </trans-unit>
       <trans-unit id="Show_Inline_Parameter_Name_Hints">
         <source>Display inline parameter name hints (preview)</source>
-        <target state="new">Display inline parameter name hints (preview)</target>
+        <target state="translated">인라인 매개 변수 이름 힌트 표시(미리 보기)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Type_Hints">
         <source>Display inline type hints (preview)</source>
-        <target state="new">Display inline type hints (preview)</target>
+        <target state="translated">인라인 형식 힌트 표시(미리 보기)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Return_Type_Hints">

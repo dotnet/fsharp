@@ -94,17 +94,17 @@
       </trans-unit>
       <trans-unit id="Preferred_description_width_in_characters">
         <source>Preferred description width in characters</source>
-        <target state="translated">Upřednostňovaná šířka popisu ve zznacích</target>
+        <target state="translated">Upřednostňovaná šířka popisu ve znacích</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Parameter_Name_Hints">
         <source>Display inline parameter name hints (preview)</source>
-        <target state="new">Display inline parameter name hints (preview)</target>
+        <target state="translated">Zobrazit nápovědy k názvům vložených parametrů (preview)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Type_Hints">
         <source>Display inline type hints (preview)</source>
-        <target state="new">Display inline type hints (preview)</target>
+        <target state="translated">Zobrazovat vložené nápovědy k typům (preview)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Return_Type_Hints">

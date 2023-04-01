@@ -99,12 +99,12 @@
       </trans-unit>
       <trans-unit id="Show_Inline_Parameter_Name_Hints">
         <source>Display inline parameter name hints (preview)</source>
-        <target state="new">Display inline parameter name hints (preview)</target>
+        <target state="translated">Satır içi parametre adı ipuçlarını görüntüle (önizleme)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Type_Hints">
         <source>Display inline type hints (preview)</source>
-        <target state="new">Display inline type hints (preview)</target>
+        <target state="translated">Satır içi tür ipuçlarını görüntüle (önizleme)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Return_Type_Hints">
@@ -154,7 +154,7 @@
       </trans-unit>
       <trans-unit id="Tooltip_preferred_description_width_in_characters">
         <source>Format signature to the given width by adding line breaks conforming with F# syntax rules. </source>
-        <target state="translated">F# söz dizimi kurallarına uyan satır sonları ekleyerek imzayı verilen genişliğe biçimlendirin. </target>
+        <target state="translated">F# söz dizimi kurallarına uyan satır sonları ekleyerek imzayı belirtilen genişliğe biçimlendirin. </target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
@@ -244,7 +244,7 @@
       </trans-unit>
       <trans-unit id="Use_syntax_tree_cache">
         <source>Cache parsing results (experimental)</source>
-        <target state="translated">Önbellek ayrıştırma sonuçları (deneysel)</target>
+        <target state="translated">Ayrıştırma sonuçlarını önbelleğe al (deneysel)</target>
         <note />
       </trans-unit>
     </body>

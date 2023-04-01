@@ -99,12 +99,12 @@
       </trans-unit>
       <trans-unit id="Show_Inline_Parameter_Name_Hints">
         <source>Display inline parameter name hints (preview)</source>
-        <target state="new">Display inline parameter name hints (preview)</target>
+        <target state="translated">Exibir dicas de nome de parâmetro embutido (versão prévia)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Type_Hints">
         <source>Display inline type hints (preview)</source>
-        <target state="new">Display inline type hints (preview)</target>
+        <target state="translated">Exibir dicas de tipo embutido (versão prévia)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Return_Type_Hints">
@@ -154,7 +154,7 @@
       </trans-unit>
       <trans-unit id="Tooltip_preferred_description_width_in_characters">
         <source>Format signature to the given width by adding line breaks conforming with F# syntax rules. </source>
-        <target state="translated">Formatar assinatura para a largura fornecida adicionando quebras de linha de acordo com as regras de sintaxe F#. </target>
+        <target state="translated">Formate a assinatura para a largura fornecida adicionando quebras de linha em conformidade com as regras de sintaxe F#. </target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
@@ -244,7 +244,7 @@
       </trans-unit>
       <trans-unit id="Use_syntax_tree_cache">
         <source>Cache parsing results (experimental)</source>
-        <target state="translated">Resultados da análise do cache (experimental)</target>
+        <target state="translated">Resultados da análise de cache (experimental)</target>
         <note />
       </trans-unit>
     </body>
