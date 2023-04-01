@@ -58,6 +58,7 @@
     <Compile Include="LanguageService\LegacyProjectWorkspaceMap.fs" />
     <Compile Include="LanguageService\FSharpAnalysisSaveFileCommandHandler.fs" />
     <Compile Include="LanguageService\WorkspaceExtensions.fs" />
+    <Compile Include="LanguageService\ActivityLogger.fs" />
     <Compile Include="LanguageService\LanguageService.fs" />
     <Compile Include="LanguageService\AssemblyContentProvider.fs" />
     <Compile Include="LanguageService\SymbolHelpers.fs" />

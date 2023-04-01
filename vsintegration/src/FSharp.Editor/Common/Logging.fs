@@ -71,19 +71,19 @@ type Logger [<ImportingConstructor>] ([<Import(typeof<SVsServiceProvider>)>] ser
         match self.FSharpLoggingPane, msgType with
         | None, _ -> ()
         | Some pane, LogType.Message ->
-            String.Format("[F#][{0}{1}] {2}{3}", "", time, msg, Environment.NewLine)
+            String.Format("[{0}{1}] {2}{3}", "", time, msg, Environment.NewLine)
             |> pane.OutputString
             |> ignore
         | Some pane, LogType.Info ->
-            String.Format("[F#][{0}{1}] {2}{3}", "INFO ", time, msg, Environment.NewLine)
+            String.Format("[{0}{1}] {2}{3}", "INFO ", time, msg, Environment.NewLine)
             |> pane.OutputString
             |> ignore
         | Some pane, LogType.Warn ->
-            String.Format("[F#][{0}{1}] {2}{3}", "WARN ", time, msg, Environment.NewLine)
+            String.Format("[{0}{1}] {2}{3}", "WARN ", time, msg, Environment.NewLine)
             |> pane.OutputString
             |> ignore
         | Some pane, LogType.Error ->
-            String.Format("[F#][{0}{1}] {2}{3}", "ERROR ", time, msg, Environment.NewLine)
+            String.Format("[{0}{1}] {2}{3}", "ERROR ", time, msg, Environment.NewLine)
             |> pane.OutputString
             |> ignore
 

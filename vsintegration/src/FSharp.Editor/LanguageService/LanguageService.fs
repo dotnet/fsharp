@@ -321,6 +321,8 @@ type internal FSharpPackage() as this =
 
     let mutable solutionEventsOpt = None
 
+    let _logger = ActivityLogger.startListening()
+
     // FSI-LINKAGE-POINT: unsited init
     do Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageCtorUnsited (this :> Package)
 
