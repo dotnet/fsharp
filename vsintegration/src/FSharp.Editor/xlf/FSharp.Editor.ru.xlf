@@ -34,18 +34,20 @@ Outlining;
 Show outlining and collapsible nodes for F# code;
 Inline hints;
 Display inline type hints (preview);
+Display return type hints (preview);
 Display inline parameter name hints (preview);Beer;
 Live Buffers;
 Use live (unsaved) buffers for checking</source>
-        <target state="translated">Руководства по блочной структуре;
-Показать рекомендации по структуре для кода F#;
-Структурирование;
-Показать структурные и сворачиваемые узлы для кода F#;
-Встроенные подсказки;
-Отображение подсказок встроенного типа (предварительная версия);
-Отображение встроенных подсказок имени параметра (предварительная версия);Beer;
-живые буферы;
-Использовать динамические (несохраненные) буферы для проверки</target>
+        <target state="new">Block Structure Guides;
+Show structure guidelines for F# code;
+Outlining;
+Show outlining and collapsible nodes for F# code;
+Inline hints;
+Display inline type hints (preview);
+Display return type hints (preview);
+Display inline parameter name hints (preview);Beer;
+Live Buffers;
+Use live (unsaved) buffers for checking</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeFixesPageKeywords">
