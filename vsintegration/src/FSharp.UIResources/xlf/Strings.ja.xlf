@@ -107,6 +107,11 @@
         <target state="needs-review-translation">インライン型のヒントを表示する (試験段階)</target>
         <note />
       </trans-unit>
+      <trans-unit id="Show_Return_Type_Hints">
+        <source>Display return type hints (preview)</source>
+        <target state="new">Display return type hints (preview)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Show_all_symbols">
         <source>Show s_ymbols in unopened namespaces</source>
         <target state="translated">開かれていない名前空間の記号を表示する(_Y)</target>

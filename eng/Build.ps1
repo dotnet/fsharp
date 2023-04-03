@@ -674,14 +674,14 @@ try {
         $exitCode = Exec-Process "$dotnetExe" "restore $RepoRoot\buildtools\checkpackages\FSharp.Compiler.Service_notshipped.fsproj"
         if ($exitCode -eq 0) {
             Write-Host -ForegroundColor Red "Command succeeded but was expected to fail: this means that the fsharp.compiler.service nuget package is already published"
-            Write-Host -ForegroundColor Red "Modify the version number of FSharp.Compiler.Servoce to be published"
+            Write-Host -ForegroundColor Red "Modify the version number of FSharp.Compiler.Service to be published"
             $verifypackageshipstatusFailed = $True
         }
 
         $exitCode = Exec-Process "$dotnetExe" "restore $RepoRoot\buildtools\checkpackages\FSharp.Core_notshipped.fsproj"
         if ($exitCode -eq 0) {
             Write-Host -ForegroundColor Red "Command succeeded but was expected to fail: this means that the fsharp.core nuget package is already published"
-            Write-Host -ForegroundColor Red "Modify the version number of FSharp.Compiler.Servoce to be published"
+            Write-Host -ForegroundColor Red "Modify the version number of FSharp.Compiler.Service to be published"
             $verifypackageshipstatusFailed = $True
         }
         if (-not $verifypackageshipstatusFailed)
