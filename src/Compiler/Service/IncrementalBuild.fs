@@ -169,7 +169,7 @@ module IncrementalBuildSyntaxTree =
 
         let resultNode =
             if eagerParse then
-                Threading.Tasks.Task.Run( fun () -> parse source)
+                Threading.Tasks.Task.Run(fun () -> parse source)
                 |> NodeCode.AwaitTask
                 |> GraphNode
             else
@@ -180,7 +180,7 @@ module IncrementalBuildSyntaxTree =
         member val ParseNode : GraphNode<ParseResult> = resultNode
 
         member _.Invalidate() =
-            SyntaxTree(tcConfig, fileParsed, lexResourceManager, file, hasSignature, eagerParse)
+            SyntaxTree(tcConfig, fileParsed, lexResourceManager, file, hasSignature, eagerParse = false)
 
         member _.Skip = skippedImplFilePlaceholder
 
@@ -961,13 +961,14 @@ module IncrementalBuilderStateHelpers =
             | Good when slot.Notified -> update Invalidated
             | _ -> noChange
 
-        match slots |> List.mapFold mapping (Good, GraphNode.FromResult initialState.initialBoundModel) with
-        | slots, (Good, _) -> { state with slots = slots }
-        | slots, (Invalidated, _) ->
+        if slots |> List.exists (fun s -> s.Notified) then
+            let slots, _ = slots |> List.mapFold mapping (Good, GraphNode.FromResult initialState.initialBoundModel)
             let boundModels = slots |> Seq.map (fun s -> s.BoundModel)
             { state with
                 slots = slots
                 finalizedBoundModel = createFinalizeBoundModelGraphNode initialState boundModels }
+        else
+            state
 
     and computeStampedReferencedAssemblies (initialState: IncrementalBuilderInitialState) state canTriggerInvalidation (cache: TimeStampCache) =
         let stampedReferencedAssemblies = state.stampedReferencedAssemblies.ToBuilder()
@@ -1022,7 +1023,7 @@ type IncrementalBuilderState with
         let syntaxTrees =
             [
                 for sourceFile, hasSignature in Seq.zip initialState.fileNames hasSignature ->
-                    SyntaxTree(initialState.tcConfig, initialState.fileParsed, initialState.lexResourceManager, sourceFile, hasSignature, eagerParse = not hasSignature)
+                    SyntaxTree(initialState.tcConfig, initialState.fileParsed, initialState.lexResourceManager, sourceFile, hasSignature, false)
             ]
 
         let boundModels = 

@@ -19,7 +19,7 @@ let expectParseCount n =
         new ActivityListener(
             ShouldListenTo = (fun s -> s.Name = FscActivityNames.FscSourceName),
             Sample = (fun _ -> ActivitySamplingResult.AllData),
-            ActivityStopped = (fun a -> if a.OperationName = "IncrementalBuildSyntaxTree.parse" then count <- count + 1)
+            ActivityStarted = (fun a -> if a.OperationName = "IncrementalBuildSyntaxTree.parse" then count <- count + 1)
         )
     ActivitySource.AddActivityListener listener
     { new IDisposable with 
@@ -151,7 +151,7 @@ let ``Using getSource and notifications instead of filesystem`` () =
     }
 
 [<Fact>]
-let ``Using getSource and notifications instead of filesystem with parse caching`` () =
+let ``Using getSource and notifications instead of filesystem, count parses`` () =
 
     let size = 20
 
@@ -169,7 +169,7 @@ let ``Using getSource and notifications instead of filesystem with parse caching
     let last = $"File%03d{size}"
 
     use _ = expectParseCount 44
-    ProjectWorkflowBuilder(project, useGetSource = true, useChangeNotifications = true, useSyntaxTreeCache = true) {
+    ProjectWorkflowBuilder(project, useGetSource = true, useChangeNotifications = true) {
         updateFile first updatePublicSurface
         checkFile first expectSignatureChanged
         checkFile last expectSignatureChanged
@@ -182,9 +182,9 @@ let ``Using getSource and notifications instead of filesystem with parse caching
     }
 
 [<Fact>]
-let ``Edit file, check it, then check dependent file with parse caching`` () =
+let ``Edit file, check it, then check dependent file, count parses`` () =
     use _ = expectParseCount 5
-    ProjectWorkflowBuilder(makeTestProject(), useSyntaxTreeCache = true) {
+    ProjectWorkflowBuilder(makeTestProject()) {
         updateFile "First" breakDependentFiles
         checkFile "First" expectSignatureChanged
         saveFile "First"
@@ -192,9 +192,9 @@ let ``Edit file, check it, then check dependent file with parse caching`` () =
     }
 
 [<Fact>]
-let ``Edit file, don't check it, check dependent file with parse caching`` () =
+let ``Edit file, don't check it, check dependent file, count parses`` () =
     use _ = expectParseCount 5
-    ProjectWorkflowBuilder(makeTestProject(), useSyntaxTreeCache = true) {
+    ProjectWorkflowBuilder(makeTestProject()) {
         updateFile "First" breakDependentFiles
         saveFile "First"
         checkFile "Second" expectErrors
