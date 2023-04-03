@@ -243,6 +243,10 @@ function BuildSolution([string] $solutionName) {
     # Do not set the property to true explicitly, since that would override value projects might set.
     $suppressExtensionDeployment = if (!$deployExtensions) { "/p:DeployExtension=false" } else { "" }
 
+    $BUILDING_USING_DOTNET_ORIG = $env:BUILDING_USING_DOTNET
+
+    $env:BUILDING_USING_DOTNET="false"
+
     MSBuild $toolsetBuildProj `
         $bl `
         /p:Configuration=$configuration `
@@ -261,10 +265,11 @@ function BuildSolution([string] $solutionName) {
         /p:TestTargetFrameworks=$testTargetFrameworks `
         /p:DotNetBuildFromSource=$sourceBuild `
         /p:CompressAllMetadata=$CompressAllMetadata `
-        /p:BUILDING_USING_DOTNET=false `
         /v:$verbosity `
         $suppressExtensionDeployment `
         @properties
+        
+    $env:BUILDING_USING_DOTNET=$BUILDING_USING_DOTNET_ORIG
 }
 
 function TestAndAddToPath([string] $testPath) {
