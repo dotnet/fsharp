@@ -136,11 +136,7 @@ val GetInitialTcState: range * string * TcConfig * TcGlobals * TcImports * TcEnv
 
 /// Returns empty result for skipped implementation files. This function is used when enablePartialTypeChecking is true.
 val SkippedImplFilePlaceholder:
-    tcConfig: TcConfig *
-    tcImports: TcImports *
-    tcGlobals: TcGlobals *
-    tcState: TcState *
-    input: ParsedInput ->
+    tcConfig: TcConfig * tcImports: TcImports * tcGlobals: TcGlobals * tcState: TcState * input: ParsedInput ->
         ((TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType) * TcState) option
 
 /// Check one input, returned as an Eventually computation
