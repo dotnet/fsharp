@@ -38,16 +38,16 @@ Display return type hints (preview);
 Display inline parameter name hints (preview);Beer;
 Live Buffers;
 Use live (unsaved) buffers for checking</source>
-        <target state="new">Block Structure Guides;
-Show structure guidelines for F# code;
-Outlining;
-Show outlining and collapsible nodes for F# code;
-Inline hints;
-Display inline type hints (preview);
-Display return type hints (preview);
-Display inline parameter name hints (preview);Beer;
-Live Buffers;
-Use live (unsaved) buffers for checking</target>
+        <target state="translated">Guias de Estrutura de Bloco;
+Mostrar diretrizes de estrutura para código F#;
+Estrutura de tópicos;
+Mostrar nós de estrutura de tópicos e recolhíveis para código F#;
+Dicas embutidas;
+Exibir dicas de tipo embutido (versão prévia);
+Exibir dicas de tipo de retorno (versão prévia);
+Exibir dicas de nome de parâmetro embutido (versão prévia);Cerveja;
+Buffers Dinâmicos;
+Usar buffers dinâmicos (não salvos) para verificação</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeFixesPageKeywords">
@@ -191,14 +191,14 @@ Show navigation links as;
 Solid underline;
 Dot underline;
 Dash underline;</source>
-        <target state="new">Formatting;
-Preferred description width in characters;
-Format signature to the given width by adding line breaks conforming with F# syntax rules;
-Navigation links;
-Show navigation links as;
-Solid underline;
-Dot underline;
-Dash underline;</target>
+        <target state="translated">Formatação;
+Largura da descrição preferida em caracteres;
+Formate a assinatura para a largura especificada adicionando quebras de linha em conformidade com as regras de sintaxe do F#;
+Links de navegação;
+Mostrar links de navegação como;
+Sublinhado sólido;
+Ponto sublinhado;
+Traço sublinhado;</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">
