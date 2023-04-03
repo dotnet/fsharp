@@ -139,8 +139,6 @@ val SkippedImplFilePlaceholder:
     tcConfig: TcConfig *
     tcImports: TcImports *
     tcGlobals: TcGlobals *
-    prefixPathOpt: LongIdent option *
-    tcSink: NameResolution.TcResultsSink *
     tcState: TcState *
     input: ParsedInput ->
         ((TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType) * TcState) option

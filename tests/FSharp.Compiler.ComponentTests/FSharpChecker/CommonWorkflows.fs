@@ -12,19 +12,19 @@ open FSharp.Compiler.CodeAnalysis
 
 module FcsDiagnostics = FSharp.Compiler.Diagnostics.Activity
 
-let expectCacheHits n =
-    let events = ResizeArray()
+let expectParseCount n =
+    let mutable count = 0
     let listener = 
         new ActivityListener(
             ShouldListenTo = (fun s -> s.Name = FcsDiagnostics.FscSourceName),
             Sample = (fun _ -> ActivitySamplingResult.AllData),
-            ActivityStopped = (fun a -> events.AddRange a.Events)
+            ActivityStopped = (fun a -> if a.OperationName = "IncrementalBuildSyntaxTree.parse" then count <- count + 1)
         )
     ActivitySource.AddActivityListener listener
     { new IDisposable with 
         member this.Dispose() =
             listener.Dispose()
-            Assert.Equal(n, events |> Seq.filter (fun e -> e.Name = FcsDiagnostics.Events.cacheHit) |> Seq.length) }
+            Assert.Equal(n, count) }
 
 let makeTestProject () =
     SyntheticProject.Create(
@@ -167,7 +167,7 @@ let ``Using getSource and notifications instead of filesystem with parse caching
     let middle = $"File%03d{size / 2}"
     let last = $"File%03d{size}"
 
-    use _ = expectCacheHits 50
+    use _ = expectParseCount 44
     ProjectWorkflowBuilder(project, useGetSource = true, useChangeNotifications = true, useSyntaxTreeCache = true) {
         updateFile first updatePublicSurface
         checkFile first expectSignatureChanged
@@ -182,7 +182,7 @@ let ``Using getSource and notifications instead of filesystem with parse caching
 
 [<Fact>]
 let ``Edit file, check it, then check dependent file with parse caching`` () =
-    use _ = expectCacheHits 5
+    use _ = expectParseCount 5
     ProjectWorkflowBuilder(makeTestProject(), useSyntaxTreeCache = true) {
         updateFile "First" breakDependentFiles
         checkFile "First" expectSignatureChanged
@@ -191,18 +191,9 @@ let ``Edit file, check it, then check dependent file with parse caching`` () =
     }
 
 [<Fact>]
-let ``Edit file, don't check it, check dependent file with parse caching `` () =
-    use _ = expectCacheHits 5
+let ``Edit file, don't check it, check dependent file with parse caching`` () =
+    use _ = expectParseCount 5
     ProjectWorkflowBuilder(makeTestProject(), useSyntaxTreeCache = true) {
-        updateFile "First" breakDependentFiles
-        saveFile "First"
-        checkFile "Second" expectErrors
-    }
-
-[<Fact>]
-let ``Parse cache not used when not enabled`` () =
-    use _ = expectCacheHits 0
-    ProjectWorkflowBuilder(makeTestProject(), useSyntaxTreeCache = false) {
         updateFile "First" breakDependentFiles
         saveFile "First"
         checkFile "Second" expectErrors

@@ -102,7 +102,6 @@ type internal FSharpFile = {
 // This module is only here to contain the SyntaxTree type as to avoid ambiguity with the module FSharp.Compiler.Syntax.
 [<AutoOpen>]
 module IncrementalBuildSyntaxTree =
-    open System.Runtime.CompilerServices
 
     type ParseResult = ParsedInput * range * string * (PhasedDiagnostic * FSharpDiagnosticSeverity) array
 
@@ -113,11 +112,8 @@ module IncrementalBuildSyntaxTree =
             fileParsed: Event<string>,
             lexResourceManager,
             file: FSharpFile,
-            useCache,
-            hasSignature
+            eagerParse
         ) =
-
-        static let cache = ConditionalWeakTable<FSharpSource, _>()
 
         let fileName = file.Source.FilePath
         let sourceRange = file.Range
@@ -139,8 +135,16 @@ module IncrementalBuildSyntaxTree =
                 )
             ), sourceRange, fileName, [||]
 
-        let getParseTask (source: FSharpSource) =
-            Threading.Tasks.Task.Run( fun () ->
+        let parse (source: FSharpSource) =
+            IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBEParsed fileName)
+            use _ =
+                Activity.start "IncrementalBuildSyntaxTree.parse"
+                    [|
+                        Activity.Tags.fileName, fileName                       
+                        Activity.Tags.buildPhase, BuildPhase.Parse.ToString()
+                    |]
+
+            try 
                 let diagnosticsLogger = CompilationDiagnosticLogger("Parse", tcConfig.diagnosticsOptions)
                 // Return the disposable object that cleans up
                 use _holder = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parse)
@@ -157,57 +161,31 @@ module IncrementalBuildSyntaxTree =
                 fileParsed.Trigger fileName
 
                 input, sourceRange, fileName, diagnosticsLogger.GetDiagnostics()
-            )
-
-        let parse (parseTask: Threading.Tasks.Task<_>) =
-            try
-                parseTask.Result
-            with exn ->
+            with exn -> 
                 let msg = sprintf "unexpected failure in SyntaxTree.parse\nerror = %s" (exn.ToString())
                 System.Diagnostics.Debug.Assert(false, msg)
                 failwith msg
 
-        // We control access to the cache to prevent theoretical possibility of starting the same parse job more than once.
-        // We lock only a single particular cache key, just to start the task, not for the duration of the task.
-        let getValue source = lock source <| fun () -> cache.GetValue(source, getParseTask)
+        let resultNode =
+            if eagerParse then
+                Threading.Tasks.Task.Run( fun () -> parse source)
+                |> NodeCode.AwaitTask
+                |> GraphNode
+            else
+                node { return parse source }
+                |> GraphNode
 
         /// Parse the given file and return the given input.
-        member _.Parse() =
-            IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBEParsed fileName)
-            use _ =
-                Activity.start "IncrementalBuildSyntaxTree.parseOrSkip"
-                    [|
-                        Activity.Tags.fileName, fileName                       
-                        Activity.Tags.buildPhase, BuildPhase.Parse.ToString()
-                    |]
-            if useCache then
-                match cache.TryGetValue source with
-                | true, result ->
-                    Activity.addEvent Activity.Events.cacheHit
-                    parse result
-                | _ -> cache.GetValue(source, getParseTask) |> parse
-            else
-                getParseTask source |> parse
+        member val ParseNode : GraphNode<ParseResult> = resultNode
 
-        member _.HasSignature = hasSignature
+        member _.Invalidate() =
+            SyntaxTree(tcConfig, fileParsed, lexResourceManager, file, eagerParse)
 
         member _.Skip = skippedImplFilePlaceholder
-      
-        member _.Invalidate() =
-            if useCache then
-                cache.Remove(source) |> ignore
-                getValue source |> ignore
 
         member _.FileName = fileName
 
-        member _.IsBackingSignature sigName = SyntaxTree.isBackingSignature fileName sigName
-
-        static member isImplFile fileName = FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName)
-
-        static member isBackingSignature fileName sigName =
-            SyntaxTree.isImplFile fileName &&
-            FSharpSigFileSuffixes |> List.exists (FileSystemUtils.checkSuffix sigName) &&
-            FileSystemUtils.fileNameWithoutExtension sigName = FileSystemUtils.fileNameWithoutExtension fileName
+        member _.SourceRange = sourceRange
 
 /// Accumulated results of type checking. The minimum amount of state in order to continue type-checking following files.
 [<NoEquality; NoComparison>]
@@ -280,8 +258,8 @@ type BoundModel private (
 
     let getTypeCheck (syntaxTree: SyntaxTree) : TypeCheckNode =
         node {
-            use _ = Activity.start "BoundModel.TypeCheck" [|Activity.Tags.fileName, syntaxTree.FileName|]
-            let input, _sourceRange, fileName, parseErrors = syntaxTree.Parse()
+            let! input, _sourceRange, fileName, parseErrors = syntaxTree.ParseNode.GetOrComputeValue()
+            use _ = Activity.start "BoundModel.TypeCheck" [|Activity.Tags.fileName, fileName|]
 
             IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBETypechecked fileName)
             let capturingDiagnosticsLogger = CapturingDiagnosticsLogger("TypeCheck")
@@ -331,9 +309,9 @@ type BoundModel private (
 
     let skippedImplemetationTypeCheck =
         match syntaxTreeOpt, prevTcInfo.sigNameOpt with
-        | Some syntaxTree, Some (_, sigName) when syntaxTree.HasSignature ->
-            let input, _, fileName, _ = syntaxTree.Skip sigName
-            SkippedImplFilePlaceholder(tcConfig, tcImports, tcGlobals, None, TcResultsSink.NoSink, prevTcInfo.tcState, input)
+        | Some syntaxTree, Some (_, qualifiedName) ->
+            let input, _, fileName, _ = syntaxTree.Skip qualifiedName
+            SkippedImplFilePlaceholder(tcConfig, tcImports, tcGlobals, prevTcInfo.tcState, input)
             |> Option.map (fun ((_, topAttribs, _, ccuSigForFile), tcState) ->
                     {
                         tcState = tcState
@@ -343,7 +321,7 @@ type BoundModel private (
                         tcDiagnosticsRev = prevTcInfo.tcDiagnosticsRev
                         topAttribs = Some topAttribs
                         tcDependencyFiles = fileName :: prevTcInfo.tcDependencyFiles
-                        sigNameOpt = Some(fileName, sigName)
+                        sigNameOpt = Some(fileName, qualifiedName)
                     })
         | _ -> None
 
@@ -900,7 +878,6 @@ type IncrementalBuilderInitialState =
 // LogicalStamp represent the stamp of the file that is used to calculate the project's logical timestamp.
 type Slot =
     {
-        File: FSharpFile
         HasSignature: bool
         Stamp: DateTime
         LogicalStamp: DateTime
@@ -954,14 +931,20 @@ module IncrementalBuilderStateHelpers =
             if initialState.useChangeNotifications then
                 state.slots
             else
-               [ for slot in state.slots -> cache.GetFileTimeStamp slot.File.Source.FilePath |> slot.Notify ]
+               [ for slot in state.slots -> cache.GetFileTimeStamp slot.SyntaxTree.FileName |> slot.Notify ]
 
-        for slot in slots do if slot.Notified then slot.SyntaxTree.Invalidate()
+        let slots =
+            [ for slot in slots do
+                if slot.Notified then { slot with SyntaxTree = slot.SyntaxTree.Invalidate() } else slot ]
 
         let mapping (status, prevNode) slot =
             let update newStatus =
                 let boundModel = createBoundModelGraphNode prevNode slot.SyntaxTree
-                { slot with LogicalStamp = slot.Stamp; Notified = false; BoundModel = boundModel }, (newStatus, boundModel)
+                { slot with
+                    LogicalStamp = slot.Stamp
+                    Notified = false
+                    BoundModel = boundModel },
+                (newStatus, boundModel)
 
             let noChange = slot, (Good, slot.BoundModel)
 
@@ -977,7 +960,9 @@ module IncrementalBuilderStateHelpers =
         | slots, (Good, _) -> { state with slots = slots }
         | slots, (Invalidated, _) ->
             let boundModels = slots |> Seq.map (fun s -> s.BoundModel)
-            { state with slots = slots; finalizedBoundModel = createFinalizeBoundModelGraphNode initialState boundModels }
+            { state with
+                slots = slots
+                finalizedBoundModel = createFinalizeBoundModelGraphNode initialState boundModels }
 
     and computeStampedReferencedAssemblies (initialState: IncrementalBuilderInitialState) state canTriggerInvalidation (cache: TimeStampCache) =
         let stampedReferencedAssemblies = state.stampedReferencedAssemblies.ToBuilder()
@@ -1013,23 +998,27 @@ type IncrementalBuilderState with
     *)
     static member Create(initialState: IncrementalBuilderInitialState) =
         let defaultTimeStamp = initialState.defaultTimeStamp
-        let sourceFiles = initialState.fileNames
         let referencedAssemblies = initialState.referencedAssemblies
         let cache = TimeStampCache(defaultTimeStamp)
         let initialBoundModel = GraphNode.FromResult initialState.initialBoundModel
 
+        let hasSignature =
+            let isImplFile fileName = FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName)
+            let isSigFile fileName = FSharpSigFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName)
+            let isBackingSignature fileName sigName =
+                isImplFile fileName && isSigFile sigName &&
+                    FileSystemUtils.fileNameWithoutExtension sigName = FileSystemUtils.fileNameWithoutExtension fileName
+            [
+                false
+                for prev, file in initialState.fileNames |> List.pairwise do
+                    isBackingSignature file.Source.FilePath prev.Source.FilePath
+            ]
+
         let syntaxTrees =
-            let create sourceFile hasSignature =
-                SyntaxTree(initialState.tcConfig, initialState.fileParsed, initialState.lexResourceManager, sourceFile, initialState.useSyntaxTreeCache, hasSignature)
-            match sourceFiles with
-            | head :: _ ->
-                create head false ::
-                [
-                    for prev, curr in  sourceFiles |> List.pairwise do
-                        let hasSignature = SyntaxTree.isBackingSignature curr.Source.FilePath prev.Source.FilePath
-                        create curr hasSignature
-                ]
-            | _ -> []
+            [
+                for sourceFile, canSkip in Seq.zip initialState.fileNames hasSignature ->
+                    SyntaxTree(initialState.tcConfig, initialState.fileParsed, initialState.lexResourceManager, sourceFile, eagerParse = not canSkip)
+            ]
 
         let boundModels = 
             syntaxTrees
@@ -1038,10 +1027,9 @@ type IncrementalBuilderState with
 
         let slots =
             [
-                for model, file, syntaxTree in  Seq.zip3 boundModels sourceFiles syntaxTrees do
+                for model, syntaxTree, hasSignature in Seq.zip3 boundModels syntaxTrees hasSignature do
                     {
-                        File = file
-                        HasSignature = syntaxTree.HasSignature
+                        HasSignature = hasSignature
                         Stamp = DateTime.MinValue
                         LogicalStamp = DateTime.MinValue
                         Notified = false
@@ -1312,7 +1300,9 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
     member builder.GetParseResultsForFile fileName =
         let slotOfFile = builder.GetSlotOfFileName fileName
         let syntaxTree = currentState.slots[slotOfFile].SyntaxTree
-        syntaxTree.Parse()
+        syntaxTree.ParseNode.GetOrComputeValue()
+        |> Async.AwaitNodeCode
+        |> Async.RunSynchronously
 
     member builder.NotifyFileChanged(fileName, timeStamp) =
         node {
