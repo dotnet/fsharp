@@ -137,6 +137,7 @@
     <Compile Include="AutomaticCompletion\BraceCompletionSessionProvider.fs" />
     <Compile Include="Hints\Hints.fs" />
     <Compile Include="Hints\InlineTypeHints.fs" />
+    <Compile Include="hints\InlineReturnTypeHints.fs" />
     <Compile Include="Hints\InlineParameterNameHints.fs" />
     <Compile Include="Hints\HintService.fs" />
     <Compile Include="Hints\NativeToRoslynHintConverter.fs" />

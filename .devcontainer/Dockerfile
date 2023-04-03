@@ -23,4 +23,4 @@ RUN apt-get update \
 ENV DEBIAN_FRONTEND=dialog
 
 # Make sure we can build using plain dotnet
-ENV BUILDING_USING_DOTNET=true
+ENV BUILDING_USING_DOTNET="true"
