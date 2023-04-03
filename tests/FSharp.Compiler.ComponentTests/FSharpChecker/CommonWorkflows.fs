@@ -11,12 +11,13 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.CodeAnalysis
 
 module FcsDiagnostics = FSharp.Compiler.Diagnostics.Activity
+module FscActivityNames = FSharp.Compiler.Diagnostics.ActivityNames
 
 let expectParseCount n =
     let mutable count = 0
     let listener = 
         new ActivityListener(
-            ShouldListenTo = (fun s -> s.Name = FcsDiagnostics.FscSourceName),
+            ShouldListenTo = (fun s -> s.Name = FscActivityNames.FscSourceName),
             Sample = (fun _ -> ActivitySamplingResult.AllData),
             ActivityStopped = (fun a -> if a.OperationName = "IncrementalBuildSyntaxTree.parse" then count <- count + 1)
         )
