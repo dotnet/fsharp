@@ -4,7 +4,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFrameworks>net472;net7.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net7.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix' or '$(BUILDING_USING_DOTNET)' == 'true'">net7.0</TargetFrameworks>
     <!-- Workaround to get rid of:
         error NU1505: Duplicate 'PackageDownload' items found.
         Remove the duplicate items or use the Update functionality to ensure a consistent restore behavior.

@@ -23,6 +23,6 @@ ImplFile
                 (NonAtomic, false,
                  App (NonAtomic, false, Ident op_Addition, Ident a, (3,0--3,13)),
                  Ident b, (3,0--3,15)), (3,0--3,15))], PreXmlDocEmpty, [], None,
-          (2,0--3,15), { LeadingKeyword = None })], (true, false),
+          (2,0--3,15), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

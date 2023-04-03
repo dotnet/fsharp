@@ -98,6 +98,6 @@ ImplFile
                        AndKeyword = None
                        SetKeyword = Some (7,48--7,51) })], [], (6,2--6,12),
                  (6,0--7,69)), (6,0--7,69))], PreXmlDocEmpty, [], None,
-          (2,0--7,69), { LeadingKeyword = None })], (true, false),
+          (2,0--7,69), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
