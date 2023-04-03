@@ -191,14 +191,14 @@ Show navigation links as;
 Solid underline;
 Dot underline;
 Dash underline;</source>
-        <target state="new">Formatting;
-Preferred description width in characters;
-Format signature to the given width by adding line breaks conforming with F# syntax rules;
-Navigation links;
-Show navigation links as;
-Solid underline;
-Dot underline;
-Dash underline;</target>
+        <target state="translated">格式化；
+慣用描述寬度 (以字元為單位)；
+透過新增符合 F# 語法規則的分行符號，將簽章格式設定為指定寬度；
+瀏覽連結；
+將瀏覽連結顯示為；
+實心底線；
+點底線；
+虛線底線；</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">
