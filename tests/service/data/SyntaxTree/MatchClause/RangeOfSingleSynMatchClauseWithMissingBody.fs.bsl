@@ -36,6 +36,9 @@ ImplFile
                    TryToWithRange = (2,0--5,4)
                    WithKeyword = (5,0--5,4)
                    WithToEndRange = (5,0--6,4) }), (2,0--6,4))], PreXmlDocEmpty,
-          [], None, (2,0--7,0), { LeadingKeyword = None })], (true, false),
+          [], None, (2,0--7,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
+
+(7,0)-(7,0) parse warning Possible incorrect indentation: this token is offside of context started at position (2:1). Try indenting this token further or using standard formatting conventions.
+(7,0)-(7,0) parse error Incomplete structured construct at or before this point in pattern matching

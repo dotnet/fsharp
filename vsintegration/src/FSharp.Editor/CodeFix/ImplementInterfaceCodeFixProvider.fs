@@ -209,7 +209,14 @@ type internal FSharpImplementInterfaceCodeFixProvider [<ImportingConstructor>] (
             // Notice that context.Span doesn't return reliable ranges to find tokens at exact positions.
             // That's why we tokenize the line and try to find the last successive identifier token
             let tokens =
-                Tokenizer.tokenizeLine (context.Document.Id, sourceText, context.Span.Start, context.Document.FilePath, defines)
+                Tokenizer.tokenizeLine (
+                    context.Document.Id,
+                    sourceText,
+                    context.Span.Start,
+                    context.Document.FilePath,
+                    defines,
+                    context.CancellationToken
+                )
 
             let startLeftColumn = context.Span.Start - textLine.Start
 
@@ -245,7 +252,8 @@ type internal FSharpImplementInterfaceCodeFixProvider [<ImportingConstructor>] (
                     defines,
                     SymbolLookupKind.Greedy,
                     false,
-                    false
+                    false,
+                    context.CancellationToken
                 )
 
             let fcsTextLineNumber = textLine.LineNumber + 1

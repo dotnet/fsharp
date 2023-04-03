@@ -3133,7 +3133,12 @@ namePatPairs:
 namePatPair:
    | ident EQUALS parenPattern
      { let mEquals = rhs parseState 2
-       ($1, mEquals, $3) }
+       ($1, Some mEquals, $3) }
+   | ident EQUALS recover
+     { let mEquals = rhs parseState 2
+       ($1, Some mEquals, patFromParseError (SynPat.Wild mEquals.EndRange)) }
+   | ident recover
+     { ($1, None, patFromParseError (SynPat.Wild $1.idRange.EndRange)) }
 
 constrPattern:
   | atomicPatternLongIdent explicitValTyparDecls
@@ -4207,8 +4212,9 @@ ifExprElifs:
         else
             None, Some ($3 $2 mElif true) }
 
-  | ELIF declExpr recover 
-      { None, Some (exprFromParseError $2) }
+  | ELIF declExpr recover      
+      { if not $3 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileElif())
+        None, Some (exprFromParseError $2) }
 
 tupleExpr:
   | tupleExpr COMMA declExpr

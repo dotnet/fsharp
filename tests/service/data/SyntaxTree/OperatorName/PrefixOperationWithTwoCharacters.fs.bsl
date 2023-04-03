@@ -13,5 +13,5 @@ ImplFile
                       ([op_SpliceUntyped], [], [Some (OriginalNotation "%%")]),
                     None, (2,0--2,2)), Ident arg, (2,0--2,5)), (2,0--2,5))],
           PreXmlDocEmpty, [], None, (2,0--2,5), { LeadingKeyword = None })],
-      (true, false), { ConditionalDirectives = []
-                       CodeComments = [] }, set []))
+      (true, true), { ConditionalDirectives = []
+                      CodeComments = [] }, set []))

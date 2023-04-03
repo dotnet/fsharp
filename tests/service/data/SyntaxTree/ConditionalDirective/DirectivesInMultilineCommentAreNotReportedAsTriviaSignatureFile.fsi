@@ -7,4 +7,4 @@ val v : int =
 ()
 #endif
 *)
-42
+    42

@@ -137,6 +137,12 @@ type internal FSharpWorkspaceServiceFactory [<System.Composition.ImportingConstr
 
                             let isInlineTypeHintsEnabled = editorOptions.Advanced.IsInlineTypeHintsEnabled
 
+                            let isInlineReturnTypeHintsEnabled =
+                                editorOptions.Advanced.IsInlineReturnTypeHintsEnabled
+
+                            let enablePartialTypeChecking =
+                                editorOptions.LanguageServicePerformance.EnablePartialTypeChecking
+
                             let checker =
                                 FSharpChecker.Create(
                                     projectCacheSize = 5000, // We do not care how big the cache is. VS will actually tell FCS to clear caches, so this is fine.
@@ -145,7 +151,7 @@ type internal FSharpWorkspaceServiceFactory [<System.Composition.ImportingConstr
                                     tryGetMetadataSnapshot = tryGetMetadataSnapshot,
                                     keepAllBackgroundSymbolUses = false,
                                     enableBackgroundItemKeyStoreAndSemanticClassification = true,
-                                    enablePartialTypeChecking = true,
+                                    enablePartialTypeChecking = enablePartialTypeChecking,
                                     parallelReferenceResolution = enableParallelReferenceResolution,
                                     captureIdentifiersWhenParsing = true,
                                     documentSource =
@@ -166,6 +172,8 @@ type internal FSharpWorkspaceServiceFactory [<System.Composition.ImportingConstr
                                     nameof enableFastFindReferences, enableFastFindReferences
                                     nameof isInlineParameterNameHintsEnabled, isInlineParameterNameHintsEnabled
                                     nameof isInlineTypeHintsEnabled, isInlineTypeHintsEnabled
+                                    nameof isInlineReturnTypeHintsEnabled, isInlineReturnTypeHintsEnabled
+                                    nameof enablePartialTypeChecking, enablePartialTypeChecking
                                 ]
 
                             if enableLiveBuffers then

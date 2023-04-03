@@ -25,3 +25,5 @@ SigFile
           (1,0--5,11), { LeadingKeyword = Module (1,0--1,6) })],
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
+
+(5,0)-(5,3) parse error Unexpected keyword 'val' in signature file. Expected ':', '=' or other token.

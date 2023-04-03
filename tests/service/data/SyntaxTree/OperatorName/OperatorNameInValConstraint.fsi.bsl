@@ -79,3 +79,5 @@ SigFile
           { LeadingKeyword = Module (3,4--3,10) })],
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
+
+(12,79)-(12,94) parse error This construct is deprecated: it is only for use in the F# library
