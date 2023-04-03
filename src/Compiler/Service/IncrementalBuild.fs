@@ -112,6 +112,7 @@ module IncrementalBuildSyntaxTree =
             fileParsed: Event<string>,
             lexResourceManager,
             file: FSharpFile,
+            hasSignature,
             eagerParse
         ) =
 
@@ -179,11 +180,13 @@ module IncrementalBuildSyntaxTree =
         member val ParseNode : GraphNode<ParseResult> = resultNode
 
         member _.Invalidate() =
-            SyntaxTree(tcConfig, fileParsed, lexResourceManager, file, eagerParse)
+            SyntaxTree(tcConfig, fileParsed, lexResourceManager, file, hasSignature, eagerParse)
 
         member _.Skip = skippedImplFilePlaceholder
 
         member _.FileName = fileName
+
+        member _.HasSignature  = hasSignature
 
         member _.SourceRange = sourceRange
 
@@ -309,7 +312,7 @@ type BoundModel private (
 
     let skippedImplemetationTypeCheck =
         match syntaxTreeOpt, prevTcInfo.sigNameOpt with
-        | Some syntaxTree, Some (_, qualifiedName) ->
+        | Some syntaxTree, Some (_, qualifiedName) when syntaxTree.HasSignature ->
             let input, _, fileName, _ = syntaxTree.Skip qualifiedName
             SkippedImplFilePlaceholder(tcConfig, tcImports, tcGlobals, prevTcInfo.tcState, input)
             |> Option.map (fun ((_, topAttribs, _, ccuSigForFile), tcState) ->
@@ -702,7 +705,9 @@ module IncrementalBuilderHelpers =
                 beforeFileChecked,
                 fileChecked,
                 tcInfo,
-                None) }
+                None
+            )
+      }
 
     /// Finish up the typechecking to produce outputs for the rest of the compilation process
     let FinalizeTypeCheckTask (tcConfig: TcConfig) tcGlobals partialCheck assemblyName outfile (boundModels: GraphNode<BoundModel> seq) =
@@ -1016,8 +1021,8 @@ type IncrementalBuilderState with
 
         let syntaxTrees =
             [
-                for sourceFile, canSkip in Seq.zip initialState.fileNames hasSignature ->
-                    SyntaxTree(initialState.tcConfig, initialState.fileParsed, initialState.lexResourceManager, sourceFile, eagerParse = not canSkip)
+                for sourceFile, hasSignature in Seq.zip initialState.fileNames hasSignature ->
+                    SyntaxTree(initialState.tcConfig, initialState.fileParsed, initialState.lexResourceManager, sourceFile, hasSignature, eagerParse = not hasSignature)
             ]
 
         let boundModels = 
