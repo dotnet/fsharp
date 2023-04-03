@@ -1051,6 +1051,13 @@ type TcGlobals(
 
   member _.embeddedTypeDefs = embeddedILTypeDefs.Values |> Seq.toList
 
+  member _.tryRemoveEmbeddedILTypeDefs () = [
+      for key in embeddedILTypeDefs.Keys do
+        match (embeddedILTypeDefs.TryRemove(key)) with
+        | true, ilTypeDef -> yield ilTypeDef
+        | false, _ -> ()
+      ]
+
   // A table of all intrinsics that the compiler cares about
   member _.knownIntrinsics = v_knownIntrinsics
 

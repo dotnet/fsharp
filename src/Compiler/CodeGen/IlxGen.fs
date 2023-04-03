@@ -777,7 +777,8 @@ let GetDynamicallyAccessedMemberTypes cenv =
 
     if not (cenv.g.compilingFSharpCore) then
         cenv.g.TryEmbedILType(
-            tref, (fun () ->
+            tref,
+            (fun () ->
                 let values =
                     [|
                         ("All", -1)
@@ -798,7 +799,8 @@ let GetDynamicallyAccessedMemberTypes cenv =
                         ("Interfaces", 8192)
                     |]
 
-                mkLocalPrivateInt32Enum (cenv, tref, values)))
+                mkLocalPrivateInt32Enum (cenv, tref, values))
+        )
 
     ILType.Value(mkILNonGenericTySpec (tref))
 
@@ -806,15 +808,27 @@ let GetDynamicDependencyAttribute cenv memberTypes ilType =
     let tref = cenv.g.attrib_DynamicDependencyAttribute.TypeRef
 
     cenv.g.TryEmbedILType(
-        tref, (
-            fun () ->
-            let properties = Some [ "MemberType", GetDynamicallyAccessedMemberTypes cenv; "Type", cenv.g.ilg.typ_Type ]
-            mkLocalPrivateAttributeWithPropertyConstructors (cenv, tref.Name, properties)))
+        tref,
+        (fun () ->
+            let properties =
+                Some
+                    [
+                        "MemberType", GetDynamicallyAccessedMemberTypes cenv
+                        "Type", cenv.g.ilg.typ_Type
+                    ]
+
+            mkLocalPrivateAttributeWithPropertyConstructors (cenv, tref.Name, properties))
+    )
 
     let typIlMemberTypes =
         ILType.Value(mkILNonGenericTySpec (cenv.g.enum_DynamicallyAccessedMemberTypes.TypeRef))
 
-    mkILCustomAttribute (tref, [ typIlMemberTypes; cenv.g.ilg.typ_Type ], [ ILAttribElem.Int32 memberTypes; ILAttribElem.Type (Some ilType) ], [])
+    mkILCustomAttribute (
+        tref,
+        [ typIlMemberTypes; cenv.g.ilg.typ_Type ],
+        [ ILAttribElem.Int32 memberTypes; ILAttribElem.Type(Some ilType) ],
+        []
+    )
 
 /// Generate "modreq([mscorlib]System.Runtime.InteropServices.InAttribute)" on inref types.
 let GenReadOnlyModReqIfNecessary (g: TcGlobals) ty ilTy =
@@ -11244,7 +11258,17 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                                 reprAccess,
                                 None,
                                 eenv.imports
-                            )).With(customAttrs = mkILCustomAttrs [ GetDynamicDependencyAttribute cenv 0x660 (*Public and NonPublic Fields and Properties*) ilThisTy ])
+                            ))
+                                .With(
+                                    customAttrs =
+                                        mkILCustomAttrs
+                                            [
+                                                GetDynamicDependencyAttribute
+                                                    cenv
+                                                    0x660 (*Public and NonPublic Fields and Properties*)
+                                                    ilThisTy
+                                            ]
+                                )
 
                         yield ilMethodDef
                         // FSharp 1.0 bug 1988: Explicitly setting the ComVisible(true) attribute on an F# type causes an F# record to be emitted in a way that enables mutation for COM interop scenarios
