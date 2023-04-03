@@ -92,7 +92,7 @@ let someGenericFunction _ = ()
     Assert.Equal<string array>([| "x" |], names)
 
 [<Fact>]
-let ``Hashconstraint typar in signature file gets pretty name`` () =
+let ``Hash constraint typar in signature file gets pretty name`` () =
     let signatureFile =
         Fsi
             """
