@@ -26,7 +26,7 @@ let a = Square 1
 let b = Rectangle (1, 2)
 
 type C (blahFirst: int) =
-    member _.Normal (what: string) = 1 
+    member _.Normal (what: string) = 1
 
 let a = C 1
 let cc = a.Normal "hmm"
@@ -39,6 +39,10 @@ let cc = a.Normal "hmm"
                 {
                     Content = ": Song"
                     Location = (2, 18)
+                }
+                {
+                    Content = ": string "
+                    Location = (2, 19)
                 }
                 {
                     Content = "song = "
@@ -67,6 +71,10 @@ let cc = a.Normal "hmm"
                 {
                     Content = ": Shape"
                     Location = (11, 6)
+                }
+                {
+                    Content = ": int "
+                    Location = (14, 36)
                 }
                 {
                     Content = "blahFirst = "

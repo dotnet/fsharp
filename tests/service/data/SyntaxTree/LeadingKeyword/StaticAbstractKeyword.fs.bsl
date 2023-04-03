@@ -41,5 +41,7 @@ ImplFile
                                  EqualsRange = Some (2,7--2,8)
                                  WithKeyword = None })], (2,0--3,34))],
           PreXmlDocEmpty, [], None, (2,0--4,0), { LeadingKeyword = None })],
-      (true, false), { ConditionalDirectives = []
-                       CodeComments = [] }, set []))
+      (true, true), { ConditionalDirectives = []
+                      CodeComments = [] }, set []))
+
+(3,4)-(3,19) parse warning Declaring "interfaces with static abstract methods" is an advanced feature. See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn "3535"' or '--nowarn:3535'.

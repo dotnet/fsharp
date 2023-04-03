@@ -31,5 +31,5 @@ ImplFile
                  Range = (2,0--2,34) }], (2,0--2,34));
            Expr (Do (Const (Unit, (3,3--3,5)), (3,0--3,5)), (3,0--3,5))],
           PreXmlDocEmpty, [], None, (2,0--4,0), { LeadingKeyword = None })],
-      (true, false), { ConditionalDirectives = []
-                       CodeComments = [] }, set []))
+      (true, true), { ConditionalDirectives = []
+                      CodeComments = [] }, set []))

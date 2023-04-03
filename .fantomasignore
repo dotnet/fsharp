@@ -12,8 +12,7 @@ vsintegration/*
 !vsintegration/tests/FSharp.Editor.Tests
 artifacts/
 
-# Explicitly unformatted implementation files
-
+# Explicitly unformatted implementation 
 src/Compiler/Checking/AccessibilityLogic.fs
 src/Compiler/Checking/AttributeChecking.fs
 src/Compiler/Checking/AugmentWithHashCompare.fs

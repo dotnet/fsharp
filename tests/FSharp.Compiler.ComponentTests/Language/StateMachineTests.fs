@@ -84,3 +84,25 @@ foo()
 """
         |> verify3511AndRun
         |> shouldSucceed
+
+    [<FSharp.Test.FactForNETCOREAPP>] // https://github.com/dotnet/fsharp/issues/13386
+    let ``SkipLocalsInit does not cause an exception``() =
+        FSharp """
+module TestProject1
+
+[<System.Runtime.CompilerServices.SkipLocalsInit>]
+let compute () =
+    task {
+        try
+            do! System.Threading.Tasks.Task.Delay 10
+        with e ->
+            printfn "%s" (e.ToString())
+    }
+
+// multiple invocations to trigger tiered compilation
+for i in 1 .. 100 do
+    compute().Wait ()
+"""
+        |> withOptimize
+        |> compileExeAndRun
+        |> shouldSucceed

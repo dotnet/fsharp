@@ -243,6 +243,10 @@ function BuildSolution([string] $solutionName) {
     # Do not set the property to true explicitly, since that would override value projects might set.
     $suppressExtensionDeployment = if (!$deployExtensions) { "/p:DeployExtension=false" } else { "" }
 
+    $BUILDING_USING_DOTNET_ORIG = $env:BUILDING_USING_DOTNET
+
+    $env:BUILDING_USING_DOTNET="false"
+
     MSBuild $toolsetBuildProj `
         $bl `
         /p:Configuration=$configuration `
@@ -264,6 +268,8 @@ function BuildSolution([string] $solutionName) {
         /v:$verbosity `
         $suppressExtensionDeployment `
         @properties
+        
+    $env:BUILDING_USING_DOTNET=$BUILDING_USING_DOTNET_ORIG
 }
 
 function TestAndAddToPath([string] $testPath) {
@@ -673,14 +679,14 @@ try {
         $exitCode = Exec-Process "$dotnetExe" "restore $RepoRoot\buildtools\checkpackages\FSharp.Compiler.Service_notshipped.fsproj"
         if ($exitCode -eq 0) {
             Write-Host -ForegroundColor Red "Command succeeded but was expected to fail: this means that the fsharp.compiler.service nuget package is already published"
-            Write-Host -ForegroundColor Red "Modify the version number of FSharp.Compiler.Servoce to be published"
+            Write-Host -ForegroundColor Red "Modify the version number of FSharp.Compiler.Service to be published"
             $verifypackageshipstatusFailed = $True
         }
 
         $exitCode = Exec-Process "$dotnetExe" "restore $RepoRoot\buildtools\checkpackages\FSharp.Core_notshipped.fsproj"
         if ($exitCode -eq 0) {
             Write-Host -ForegroundColor Red "Command succeeded but was expected to fail: this means that the fsharp.core nuget package is already published"
-            Write-Host -ForegroundColor Red "Modify the version number of FSharp.Compiler.Servoce to be published"
+            Write-Host -ForegroundColor Red "Modify the version number of FSharp.Compiler.Service to be published"
             $verifypackageshipstatusFailed = $True
         }
         if (-not $verifypackageshipstatusFailed)

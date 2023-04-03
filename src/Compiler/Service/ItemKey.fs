@@ -15,6 +15,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.Syntax.PrettyNaming
 
 #nowarn "9"
 #nowarn "51"
@@ -301,6 +302,19 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             | ParentNone -> writeChar '%'
             | Parent eref -> writeEntityRef eref
 
+    let writeActivePatternCase (apInfo: ActivePatternInfo) index =
+        writeString ItemKeyTags.itemActivePattern
+
+        match apInfo.ActiveTagsWithRanges with
+        | (_, m) :: _ -> m.FileName |> Path.GetFileNameWithoutExtension |> writeString
+        | _ -> ()
+
+        for tag in apInfo.ActiveTags do
+            writeChar '|'
+            writeString tag
+
+        writeInt32 index
+
     member _.Write(m: range, item: Item) =
         writeRange m
 
@@ -325,13 +339,9 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             writeEntityRef info.TyconRef
             writeString info.LogicalName
 
-        | Item.ActivePatternResult (info, _, _, _) ->
-            writeString ItemKeyTags.itemActivePattern
-            info.ActiveTags |> List.iter writeString
+        | Item.ActivePatternResult (info, _, index, _) -> writeActivePatternCase info index
 
-        | Item.ActivePatternCase elemRef ->
-            writeString ItemKeyTags.itemActivePattern
-            elemRef.ActivePatternInfo.ActiveTags |> List.iter writeString
+        | Item.ActivePatternCase elemRef -> writeActivePatternCase elemRef.ActivePatternInfo elemRef.CaseIndex
 
         | Item.ExnCase tcref ->
             writeString ItemKeyTags.itemExnCase

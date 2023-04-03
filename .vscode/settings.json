@@ -16,7 +16,8 @@
         "*.fs": "${capture}.fsi"
     },
     "FSharp.suggestGitignore": false,
-    "FSharp.enableMSBuildProjectGraph": true,
+    "FSharp.enableMSBuildProjectGraph": false,
+    "FSharp.enableAdaptiveLspServer": true,
     "FSharp.workspacePath": "FSharp.Compiler.Service.sln",
     "FSharp.workspaceModePeekDeepLevel": 1,
     "FSharp.enableBackgroundServices": false,
@@ -34,7 +35,7 @@
     "csharp.suppressDotnetInstallWarning": true,
     "csharp.suppressDotnetRestoreNotification": true,
     "csharp.suppressHiddenDiagnostics": true,
-    "omnisharp.autoStart": true,
+    "omnisharp.autoStart": false,
     "omnisharp.defaultLaunchSolution": "FSharp.Compiler.Service.sln",
     "omnisharp.enableMsBuildLoadProjectsOnDemand": true,
     "omnisharp.disableMSBuildDiagnosticWarning": true,
