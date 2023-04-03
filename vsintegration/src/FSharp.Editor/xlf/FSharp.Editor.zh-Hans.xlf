@@ -56,16 +56,16 @@ Always place open statements at the top level;
 Remove unused open statements;
 Analyze and suggest fixes for unused values;
 Suggest names for unresolved identifiers;</source>
-        <target state="new">Simplify names (remove unnecessary qualifiers);
-Always place open statements at the top level;
-Remove unused open statements;
-Analyze and suggest fixes for unused values;
-Suggest names for unresolved identifiers;</target>
+        <target state="translated">简化名称(移除不必要的限定符)；
+始终将 open 语句置于顶层；
+移除未使用的 open 语句；
+分析未使用的值并提出修复建议；
+建议适用于未解析标识符的名称；</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertCSharpUsingToFSharpOpen">
         <source>Convert C# 'using' to F# 'open'</source>
-        <target state="new">Convert C# 'using' to F# 'open'</target>
+        <target state="translated">将 C# “using” 转换为 F# “open”</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertToAnonymousRecord">
@@ -110,7 +110,7 @@ Suggest names for unresolved identifiers;</target>
       </trans-unit>
       <trans-unit id="FormattingPageKeywords">
         <source>Re-format indentation on paste (Experimental)</source>
-        <target state="new">Re-format indentation on paste (Experimental)</target>
+        <target state="translated">粘贴时重新设置缩进格式(实验)</target>
         <note />
       </trans-unit>
       <trans-unit id="ImplementInterface">
@@ -132,14 +132,14 @@ Enter key behavior;
 Never add new line on enter;
 Only add new line on enter after end of fully typed word;
 Always add new line on enter;</source>
-        <target state="new">Completion Lists;
-Show completion list after a character is deleted;
-Show completion list after a character is typed;
-Show symbols in unopened namespaces;
-Enter key behavior;
-Never add new line on enter;
-Only add new line on enter after end of fully typed word;
-Always add new line on enter;</target>
+        <target state="translated">完成列表；
+删除字符后显示完成列表；
+键入字符后显示完成列表；
+在未打开的命名空间中显示符号；
+Enter 键行为；
+从不在 Enter 上添加新行；
+仅在完全键入的单词结尾后在 Enter 上添加新行；
+始终在 Enter 上添加新行；</target>
         <note />
       </trans-unit>
       <trans-unit id="MakeDeclarationMutable">
@@ -164,17 +164,17 @@ Enable parallel type checking with signature files;
 Enable parallel reference resolution;
 Enable fast find references &amp; rename (experimental);
 Cache parsing results (experimental)</source>
-        <target state="new">F# Project and Caching Performance Options;
-Enable in-memory cross project references;
-Enable_partial_type_checking;
-IntelliSense Performance Options;
-Enable stale data for IntelliSense features;
-Time until stale results are used (in milliseconds);
-Parallelization (requires restart);
-Enable parallel type checking with signature files;
-Enable parallel reference resolution;
-Enable fast find references &amp; rename (experimental);
-Cache parsing results (experimental)</target>
+        <target state="translated">F# 项目和缓存性能选项;
+启用内存中的跨项目引用;
+启用部分类型检查;
+IntelliSense 性能选项;
+为智能感知功能启用旧数据;
+使用陈旧结果的时间(以毫秒为单位);
+并行处理(需要重新启动);
+使用签名文件进行并行类型检查;
+启用并行引用解析;
+启用快速查找参考和重命名(实验性);
+缓存解析结果(实验性)。</target>
         <note />
       </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
@@ -191,14 +191,14 @@ Show navigation links as;
 Solid underline;
 Dot underline;
 Dash underline;</source>
-        <target state="new">Formatting;
-Preferred description width in characters;
-Format signature to the given width by adding line breaks conforming with F# syntax rules;
-Navigation links;
-Show navigation links as;
-Solid underline;
-Dot underline;
-Dash underline;</target>
+        <target state="translated">格式设置；
+首选描述宽度 (以字符为单位)；
+通过添加符合 F# 语法规则的换行符，将签名格式设置为指定宽度；
+导航链接；
+将导航链接显示为；
+实心下划线；
+点下划线；
+短划线下划线；</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">
@@ -268,7 +268,7 @@ Dash underline;</target>
       </trans-unit>
       <trans-unit id="6008">
         <source>IntelliSense</source>
-        <target state="needs-review-translation">IntelliSense</target>
+        <target state="translated">IntelliSense</target>
         <note />
       </trans-unit>
       <trans-unit id="6009">
