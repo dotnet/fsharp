@@ -191,14 +191,14 @@ Show navigation links as;
 Solid underline;
 Dot underline;
 Dash underline;</source>
-        <target state="new">Formatting;
-Preferred description width in characters;
-Format signature to the given width by adding line breaks conforming with F# syntax rules;
-Navigation links;
-Show navigation links as;
-Solid underline;
-Dot underline;
-Dash underline;</target>
+        <target state="translated">서식;
+기본 설정 문자 설명 너비;
+F# 구문 규칙에 맞는 줄바꿈을 추가하여 지정된 너비에 서명 서식 지정;
+탐색 링크;
+탐색 링크 표시 형식;
+실선 밑줄;
+점선 밑줄;
+대시 밑줄;</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">
