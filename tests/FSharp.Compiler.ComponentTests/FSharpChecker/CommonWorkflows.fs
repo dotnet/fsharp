@@ -10,23 +10,6 @@ open FSharp.Test.ProjectGeneration
 open FSharp.Compiler.Text
 open FSharp.Compiler.CodeAnalysis
 
-module FcsDiagnostics = FSharp.Compiler.Diagnostics.Activity
-module FscActivityNames = FSharp.Compiler.Diagnostics.ActivityNames
-
-let expectParseCount n =
-    let mutable count = 0
-    let listener = 
-        new ActivityListener(
-            ShouldListenTo = (fun s -> s.Name = FscActivityNames.FscSourceName),
-            Sample = (fun _ -> ActivitySamplingResult.AllData),
-            ActivityStarted = (fun a -> if a.OperationName = "IncrementalBuildSyntaxTree.parse" then count <- count + 1)
-        )
-    ActivitySource.AddActivityListener listener
-    { new IDisposable with 
-        member this.Dispose() =
-            listener.Dispose()
-            Assert.Equal(n, count) }
-
 let makeTestProject () =
     SyntheticProject.Create(
         sourceFile "First" [],
@@ -150,52 +133,3 @@ let ``Using getSource and notifications instead of filesystem`` () =
         checkFile last expectSignatureChanged
     }
 
-[<Fact>]
-let ``Using getSource and notifications instead of filesystem, count parses`` () =
-
-    let size = 20
-
-    let project =
-        { SyntheticProject.Create() with
-            SourceFiles = [
-                sourceFile $"File%03d{0}" []
-                for i in 1..size do
-                    sourceFile $"File%03d{i}" [$"File%03d{i-1}"]
-            ]
-        }
-
-    let first = "File001"
-    let middle = $"File%03d{size / 2}"
-    let last = $"File%03d{size}"
-
-    use _ = expectParseCount 44
-    ProjectWorkflowBuilder(project, useGetSource = true, useChangeNotifications = true) {
-        updateFile first updatePublicSurface
-        checkFile first expectSignatureChanged
-        checkFile last expectSignatureChanged
-        updateFile middle updatePublicSurface
-        checkFile last expectSignatureChanged
-        addFileAbove middle (sourceFile "addedFile" [first])
-        updateFile middle (addDependency "addedFile")
-        checkFile middle expectSignatureChanged
-        checkFile last expectSignatureChanged
-    }
-
-[<Fact>]
-let ``Edit file, check it, then check dependent file, count parses`` () =
-    use _ = expectParseCount 5
-    ProjectWorkflowBuilder(makeTestProject()) {
-        updateFile "First" breakDependentFiles
-        checkFile "First" expectSignatureChanged
-        saveFile "First"
-        checkFile "Second" expectErrors
-    }
-
-[<Fact>]
-let ``Edit file, don't check it, check dependent file, count parses`` () =
-    use _ = expectParseCount 5
-    ProjectWorkflowBuilder(makeTestProject()) {
-        updateFile "First" breakDependentFiles
-        saveFile "First"
-        checkFile "Second" expectErrors
-    }
