@@ -112,8 +112,7 @@ module IncrementalBuildSyntaxTree =
             fileParsed: Event<string>,
             lexResourceManager,
             file: FSharpFile,
-            hasSignature,
-            eagerParse
+            hasSignature
         ) =
 
         let fileName = file.Source.FilePath
@@ -167,20 +166,11 @@ module IncrementalBuildSyntaxTree =
                 System.Diagnostics.Debug.Assert(false, msg)
                 failwith msg
 
-        let resultNode =
-            if eagerParse then
-                Threading.Tasks.Task.Run(fun () -> parse source)
-                |> NodeCode.AwaitTask
-                |> GraphNode
-            else
-                node { return parse source }
-                |> GraphNode
-
         /// Parse the given file and return the given input.
-        member val ParseNode : GraphNode<ParseResult> = resultNode
+        member val ParseNode : GraphNode<ParseResult> = node { return parse source } |> GraphNode
 
         member _.Invalidate() =
-            SyntaxTree(tcConfig, fileParsed, lexResourceManager, file, hasSignature, eagerParse = not hasSignature)
+            SyntaxTree(tcConfig, fileParsed, lexResourceManager, file, hasSignature)
 
         member _.Skip = skippedImplFilePlaceholder
 
@@ -1023,7 +1013,7 @@ type IncrementalBuilderState with
         let syntaxTrees =
             [
                 for sourceFile, hasSignature in Seq.zip initialState.fileNames hasSignature ->
-                    SyntaxTree(initialState.tcConfig, initialState.fileParsed, initialState.lexResourceManager, sourceFile, hasSignature, eagerParse = false)
+                    SyntaxTree(initialState.tcConfig, initialState.fileParsed, initialState.lexResourceManager, sourceFile, hasSignature)
             ]
 
         let boundModels = 
