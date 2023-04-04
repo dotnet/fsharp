@@ -734,3 +734,18 @@ Known type parameter: < int >
 Available overloads:
  - member C.Plus: x: float -> int // Argument 'x' doesn't match
  - member C.Plus: x: string -> string // Argument 'x' doesn't match")
+
+    [<Fact>]
+    let ``No overloads match for method in member constraint when using op_Implicit``() =
+        FSharp """
+type X() =
+    static member M1(x:X) = 1
+type Y() =
+    static member op_Implicit(y:Y) = X()
+let x = X.M1(Y())
+        """
+        |> withLangVersionPreview
+        |> withOptions ["--warnon:3388";"--warnon:3389";"--warnon:3395";"--warnaserror+"]
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic ((Error 3395, Line 6, Col 14, Line 6, Col 17, "This expression uses the implicit conversion 'static member Y.op_Implicit: y: Y -> X' to convert type 'Y' to type 'X'."))

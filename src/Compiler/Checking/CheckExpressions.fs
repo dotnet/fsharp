@@ -9780,7 +9780,12 @@ and TcMethodApplication
             CanonicalizePartialInferenceProblem cenv.css denv mItem
                  (unnamedCurriedCallerArgs |> List.collectSquared (fun callerArg -> freeInTypeLeftToRight g false callerArg.CallerArgumentType))
 
-        let result, errors = ResolveOverloadingForCall denv cenv.css mItem methodName callerArgs ad postArgumentTypeCheckingCalledMethGroup true returnTy
+        let m =
+            match returnTy with
+            | MustConvertTo _ when g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions -> mMethExpr
+            | _ -> mItem
+
+        let result, errors = ResolveOverloadingForCall denv cenv.css m methodName callerArgs ad postArgumentTypeCheckingCalledMethGroup true returnTy
 
         match afterResolution, result with
         | AfterResolution.DoNothing, _ -> ()
