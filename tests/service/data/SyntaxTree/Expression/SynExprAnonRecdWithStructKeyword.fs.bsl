@@ -14,6 +14,6 @@ ImplFile
              (AnonRecd
                 (true, None, [], (7,0--7,12), { OpeningBraceRange = (7,7--7,9) }),
               (7,0--7,12))], PreXmlDocEmpty, [], None, (2,0--7,12),
-          { LeadingKeyword = None })], (true, false),
+          { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [LineComment (4,4--4,11)] }, set []))

@@ -34,6 +34,7 @@ Outlining;
 Show outlining and collapsible nodes for F# code;
 Inline hints;
 Display inline type hints (preview);
+Display return type hints (preview);
 Display inline parameter name hints (preview);Beer;
 Live Buffers;
 Use live (unsaved) buffers for checking</source>
@@ -43,6 +44,7 @@ Outlining;
 Show outlining and collapsible nodes for F# code;
 Inline hints;
 Display inline type hints (preview);
+Display return type hints (preview);
 Display inline parameter name hints (preview);Beer;
 Live Buffers;
 Use live (unsaved) buffers for checking</target>
@@ -54,16 +56,16 @@ Always place open statements at the top level;
 Remove unused open statements;
 Analyze and suggest fixes for unused values;
 Suggest names for unresolved identifiers;</source>
-        <target state="new">Simplify names (remove unnecessary qualifiers);
-Always place open statements at the top level;
-Remove unused open statements;
-Analyze and suggest fixes for unused values;
-Suggest names for unresolved identifiers;</target>
+        <target state="translated">簡化名稱 (移除不必要的辨識符號);
+一律將開啟語句放置在最上層;
+移除未使用的開啟語句;
+分析並建議未使用值的修正;
+建議未解析識別碼的名稱;</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertCSharpUsingToFSharpOpen">
         <source>Convert C# 'using' to F# 'open'</source>
-        <target state="new">Convert C# 'using' to F# 'open'</target>
+        <target state="translated">將 C# 'using' 轉換為 F# 'open'</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertToAnonymousRecord">
@@ -108,7 +110,7 @@ Suggest names for unresolved identifiers;</target>
       </trans-unit>
       <trans-unit id="FormattingPageKeywords">
         <source>Re-format indentation on paste (Experimental)</source>
-        <target state="new">Re-format indentation on paste (Experimental)</target>
+        <target state="translated">在貼上時重新格式化縮排 (實驗性)</target>
         <note />
       </trans-unit>
       <trans-unit id="ImplementInterface">
@@ -130,14 +132,14 @@ Enter key behavior;
 Never add new line on enter;
 Only add new line on enter after end of fully typed word;
 Always add new line on enter;</source>
-        <target state="new">Completion Lists;
-Show completion list after a character is deleted;
-Show completion list after a character is typed;
-Show symbols in unopened namespaces;
-Enter key behavior;
-Never add new line on enter;
-Only add new line on enter after end of fully typed word;
-Always add new line on enter;</target>
+        <target state="translated">完成清單; 
+刪除字元後顯示完成清單; 
+輸入字元後顯示完成清單; 
+在未開啟的命名空間中顯示符號; 
+輸入金鑰行為; 
+在按 ENTER 時永不新增新行; 
+只在完整輸入文字的結尾之後才在按 ENTER 時新增新行; 
+按 ENTER 時一律新增新行;</target>
         <note />
       </trans-unit>
       <trans-unit id="MakeDeclarationMutable">
@@ -162,17 +164,17 @@ Enable parallel type checking with signature files;
 Enable parallel reference resolution;
 Enable fast find references &amp; rename (experimental);
 Cache parsing results (experimental)</source>
-        <target state="new">F# Project and Caching Performance Options;
-Enable in-memory cross project references;
-Enable_partial_type_checking;
-IntelliSense Performance Options;
-Enable stale data for IntelliSense features;
-Time until stale results are used (in milliseconds);
-Parallelization (requires restart);
-Enable parallel type checking with signature files;
-Enable parallel reference resolution;
-Enable fast find references &amp; rename (experimental);
-Cache parsing results (experimental)</target>
+        <target state="translated">F# 專案和快取效能選項；
+啟用記憶體內跨專案參考；
+Enable_partial_type_checking；
+IntelliSense 效能選項；
+啟用 IntelliSense 功能的過時資料；
+使用過時結果之前的時間 (毫秒)；
+平行化 (需要重新開機)；
+啟用平行類型檢查與簽章檔案；
+啟用平行參考解析；
+啟用快速尋找參考和重新命名 (實驗性)；
+快取剖析結果 (實驗性)</target>
         <note />
       </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
@@ -182,19 +184,21 @@ Cache parsing results (experimental)</target>
       </trans-unit>
       <trans-unit id="QuickInfoPageKeywords">
         <source>Formatting;
-Maximum description width in characters;
+Preferred description width in characters;
+Format signature to the given width by adding line breaks conforming with F# syntax rules;
 Navigation links;
 Show navigation links as;
 Solid underline;
 Dot underline;
 Dash underline;</source>
-        <target state="new">Formatting;
-Maximum description width in characters;
-Navigation links;
-Show navigation links as;
-Solid underline;
-Dot underline;
-Dash underline;</target>
+        <target state="translated">格式化；
+慣用描述寬度 (以字元為單位)；
+透過新增符合 F# 語法規則的分行符號，將簽章格式設定為指定寬度；
+瀏覽連結；
+將瀏覽連結顯示為；
+實心底線；
+點底線；
+虛線底線；</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">
@@ -264,7 +268,7 @@ Dash underline;</target>
       </trans-unit>
       <trans-unit id="6008">
         <source>IntelliSense</source>
-        <target state="needs-review-translation">IntelliSense</target>
+        <target state="translated">IntelliSense</target>
         <note />
       </trans-unit>
       <trans-unit id="6009">

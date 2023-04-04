@@ -22,5 +22,5 @@ ImplFile
                     EqualsRange = None
                     WithKeyword = None })], (4,0--5,8))], PreXmlDocEmpty, [],
           None, (2,0--5,8), { LeadingKeyword = Namespace (2,0--2,9) })],
-      (true, false), { ConditionalDirectives = []
-                       CodeComments = [] }, set []))
+      (true, true), { ConditionalDirectives = []
+                      CodeComments = [] }, set []))
