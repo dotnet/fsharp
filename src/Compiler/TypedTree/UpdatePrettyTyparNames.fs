@@ -9,14 +9,7 @@ open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
-let rec updateEntity (entity: Entity) =
-    for e in entity.ModuleOrNamespaceType.AllEntities do
-        updateEntity e
-
-    for v in entity.ModuleOrNamespaceType.AllValsAndMembers do
-        updateVal v
-
-and updateVal (v: Val) =
+let updateVal (v: Val) =
     if not (List.isEmpty v.Typars) then
         let nms = PrettyTypes.PrettyTyparNames (fun _ -> true) List.empty v.Typars
 
@@ -25,6 +18,13 @@ and updateVal (v: Val) =
             if tp.typar_id.idText = unassignedTyparName then
                 tp.typar_id <- ident (nm, tp.Range))
 
-and updateModuleOrNamespaceType (signatureData: ModuleOrNamespaceType) =
+let rec updateEntity (entity: Entity) =
+    for e in entity.ModuleOrNamespaceType.AllEntities do
+        updateEntity e
+
+    for v in entity.ModuleOrNamespaceType.AllValsAndMembers do
+        updateVal v
+
+let updateModuleOrNamespaceType (signatureData: ModuleOrNamespaceType) =
     for e in signatureData.ModuleAndNamespaceDefinitions do
         updateEntity e
