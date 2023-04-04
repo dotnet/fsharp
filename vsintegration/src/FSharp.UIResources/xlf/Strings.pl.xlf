@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="Show_Return_Type_Hints">
         <source>Display return type hints (preview)</source>
-        <target state="new">Display return type hints (preview)</target>
+        <target state="translated">Wyświetlaj wskazówki dotyczące typu zwrotu (wersja zapoznawcza)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Return_Type_Hints">
