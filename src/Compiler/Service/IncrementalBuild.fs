@@ -180,7 +180,7 @@ module IncrementalBuildSyntaxTree =
         member val ParseNode : GraphNode<ParseResult> = resultNode
 
         member _.Invalidate() =
-            SyntaxTree(tcConfig, fileParsed, lexResourceManager, file, hasSignature, eagerParse = false)
+            SyntaxTree(tcConfig, fileParsed, lexResourceManager, file, hasSignature, eagerParse = not hasSignature)
 
         member _.Skip = skippedImplFilePlaceholder
 
@@ -1023,7 +1023,7 @@ type IncrementalBuilderState with
         let syntaxTrees =
             [
                 for sourceFile, hasSignature in Seq.zip initialState.fileNames hasSignature ->
-                    SyntaxTree(initialState.tcConfig, initialState.fileParsed, initialState.lexResourceManager, sourceFile, hasSignature, false)
+                    SyntaxTree(initialState.tcConfig, initialState.fileParsed, initialState.lexResourceManager, sourceFile, hasSignature, eagerParse = false)
             ]
 
         let boundModels = 
