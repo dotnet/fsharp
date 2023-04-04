@@ -1204,7 +1204,7 @@ let AddCheckResultsToTcState
 
 type PartialResult = TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType
 
-/// Returns empty result for skipped implementation files. This function is used when enablePartialTypeChecking is true.
+/// Returns partial type check result for skipped implementation files.
 let SkippedImplFilePlaceholder (tcConfig: TcConfig, tcImports: TcImports, tcGlobals, tcState, input: ParsedInput) =
     use _ =
         Activity.start "ParseAndCheckInputs.SkippedImplFilePlaceholder" [| Activity.Tags.fileName, input.FileName |]

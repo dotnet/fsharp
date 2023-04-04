@@ -18,7 +18,7 @@ open FSharp.Compiler.Service.Tests.Common
 open TestFramework
 
 // Create an interactive checker instance
-let internal checker = FSharpChecker.Create(useSyntaxTreeCache  = false)
+let internal checker = FSharpChecker.Create()
 
 module internal Project1 =
 
