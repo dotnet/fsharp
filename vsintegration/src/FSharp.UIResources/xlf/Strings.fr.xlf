@@ -112,11 +112,6 @@
         <target state="new">Display return type hints (preview)</target>
         <note />
       </trans-unit>
-      <trans-unit id="Show_Return_Type_Hints">
-        <source>Display return type hints (preview)</source>
-        <target state="new">Display return type hints (preview)</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Show_all_symbols">
         <source>Show s_ymbols in unopened namespaces</source>
         <target state="translated">Afficher les sym_boles dans les espaces de noms non ouverts</target>
