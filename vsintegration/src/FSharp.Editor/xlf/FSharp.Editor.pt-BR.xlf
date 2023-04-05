@@ -34,18 +34,20 @@ Outlining;
 Show outlining and collapsible nodes for F# code;
 Inline hints;
 Display inline type hints (preview);
+Display return type hints (preview);
 Display inline parameter name hints (preview);Beer;
 Live Buffers;
 Use live (unsaved) buffers for checking</source>
-        <target state="new">Block Structure Guides;
-Show structure guidelines for F# code;
-Outlining;
-Show outlining and collapsible nodes for F# code;
-Inline hints;
-Display inline type hints (preview);
-Display inline parameter name hints (preview);Beer;
-Live Buffers;
-Use live (unsaved) buffers for checking</target>
+        <target state="translated">Guias de Estrutura de Bloco;
+Mostrar diretrizes de estrutura para código F#;
+Estrutura de tópicos;
+Mostrar nós de estrutura de tópicos e recolhíveis para código F#;
+Dicas embutidas;
+Exibir dicas de tipo embutido (versão prévia);
+Exibir dicas de tipo de retorno (versão prévia);
+Exibir dicas de nome de parâmetro embutido (versão prévia);Cerveja;
+Buffers Dinâmicos;
+Usar buffers dinâmicos (não salvos) para verificação</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeFixesPageKeywords">
@@ -54,16 +56,16 @@ Always place open statements at the top level;
 Remove unused open statements;
 Analyze and suggest fixes for unused values;
 Suggest names for unresolved identifiers;</source>
-        <target state="new">Simplify names (remove unnecessary qualifiers);
-Always place open statements at the top level;
-Remove unused open statements;
-Analyze and suggest fixes for unused values;
-Suggest names for unresolved identifiers;</target>
+        <target state="translated">Simplificar nomes (remover qualificadores desnecessários);
+Sempre colocar instruções abertas no nível superior;
+Remover instruções abertas não utilizadas;
+Analisar e sugerir correções para valores não utilizados;
+Sugerir nomes para identificadores não resolvidos;</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertCSharpUsingToFSharpOpen">
         <source>Convert C# 'using' to F# 'open'</source>
-        <target state="new">Convert C# 'using' to F# 'open'</target>
+        <target state="translated">Converter 'using' de C# em 'open' de F#</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertToAnonymousRecord">
@@ -108,7 +110,7 @@ Suggest names for unresolved identifiers;</target>
       </trans-unit>
       <trans-unit id="FormattingPageKeywords">
         <source>Re-format indentation on paste (Experimental)</source>
-        <target state="new">Re-format indentation on paste (Experimental)</target>
+        <target state="translated">Reformatar o recuo na pasta (Experimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="ImplementInterface">
@@ -130,14 +132,14 @@ Enter key behavior;
 Never add new line on enter;
 Only add new line on enter after end of fully typed word;
 Always add new line on enter;</source>
-        <target state="new">Completion Lists;
-Show completion list after a character is deleted;
-Show completion list after a character is typed;
-Show symbols in unopened namespaces;
-Enter key behavior;
-Never add new line on enter;
-Only add new line on enter after end of fully typed word;
-Always add new line on enter;</target>
+        <target state="translated">Listas de Conclusão;
+Mostrar a lista de conclusão após a exclusão de um caractere;
+Mostrar a lista de conclusão depois que um caractere for digitado;
+Mostrar símbolos em namespaces não abertos;
+Inserir o comportamento da tecla;
+Nunca adicionar uma nova linha ao pressionar Enter;
+Somente adicionar uma nova linha ao pressionar Enter após digitar toda a palavra;
+Sempre adicionar uma nova linha ao pressionar Enter;</target>
         <note />
       </trans-unit>
       <trans-unit id="MakeDeclarationMutable">
@@ -162,17 +164,17 @@ Enable parallel type checking with signature files;
 Enable parallel reference resolution;
 Enable fast find references &amp; rename (experimental);
 Cache parsing results (experimental)</source>
-        <target state="new">F# Project and Caching Performance Options;
-Enable in-memory cross project references;
-Enable_partial_type_checking;
-IntelliSense Performance Options;
-Enable stale data for IntelliSense features;
-Time until stale results are used (in milliseconds);
-Parallelization (requires restart);
-Enable parallel type checking with signature files;
-Enable parallel reference resolution;
-Enable fast find references &amp; rename (experimental);
-Cache parsing results (experimental)</target>
+        <target state="translated">Opções de desempenho de projeto e cache do F#;
+ Habilitar referências de projeto cruzado na memória;
+ Enable_partial_type_checking;
+ Opções de desempenho do IntelliSense;
+ Habilitar dados obsoletos para recursos do IntelliSense;
+ Tempo até que os resultados obsoletos sejam usados (em milissegundos);
+ Paralelização (requer reinicialização);
+ Habilitar a verificação de tipo paralelo com arquivos de assinatura;
+ Habilitar resolução de referência paralela;
+ Habilitar referências de localização rápida e renomear (experimental);
+ Resultados da análise de cache (experimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
@@ -181,16 +183,22 @@ Cache parsing results (experimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="QuickInfoPageKeywords">
-        <source>Navigation links;
+        <source>Formatting;
+Preferred description width in characters;
+Format signature to the given width by adding line breaks conforming with F# syntax rules;
+Navigation links;
 Show navigation links as;
 Solid underline;
 Dot underline;
 Dash underline;</source>
-        <target state="new">Navigation links;
-Show navigation links as;
-Solid underline;
-Dot underline;
-Dash underline;</target>
+        <target state="translated">Formatação;
+Largura da descrição preferida em caracteres;
+Formate a assinatura para a largura especificada adicionando quebras de linha em conformidade com as regras de sintaxe do F#;
+Links de navegação;
+Mostrar links de navegação como;
+Sublinhado sólido;
+Ponto sublinhado;
+Traço sublinhado;</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">
@@ -260,7 +268,7 @@ Dash underline;</target>
       </trans-unit>
       <trans-unit id="6008">
         <source>IntelliSense</source>
-        <target state="needs-review-translation">IntelliSense</target>
+        <target state="translated">IntelliSense</target>
         <note />
       </trans-unit>
       <trans-unit id="6009">

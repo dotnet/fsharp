@@ -70,7 +70,7 @@ ImplFile
                                  EqualsRange = Some (4,12--4,13)
                                  WithKeyword = None })], (2,0--8,13))],
           PreXmlDocEmpty, [], None, (2,0--9,0), { LeadingKeyword = None })],
-      (true, false),
+      (true, true),
       { ConditionalDirectives = []
         CodeComments =
          [LineComment (3,0--3,23); LineComment (5,0--5,7);

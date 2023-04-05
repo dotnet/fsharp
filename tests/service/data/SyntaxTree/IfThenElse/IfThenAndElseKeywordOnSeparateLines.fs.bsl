@@ -13,5 +13,5 @@ ImplFile
                                ElseKeyword = Some (4,0--4,4)
                                IfToThenRange = (2,0--3,4) }), (2,0--4,6))],
           PreXmlDocEmpty, [], None, (2,0--5,0), { LeadingKeyword = None })],
-      (true, false), { ConditionalDirectives = []
-                       CodeComments = [] }, set []))
+      (true, true), { ConditionalDirectives = []
+                      CodeComments = [] }, set []))

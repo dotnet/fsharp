@@ -137,6 +137,9 @@ type internal FSharpWorkspaceServiceFactory [<System.Composition.ImportingConstr
 
                             let isInlineTypeHintsEnabled = editorOptions.Advanced.IsInlineTypeHintsEnabled
 
+                            let isInlineReturnTypeHintsEnabled =
+                                editorOptions.Advanced.IsInlineReturnTypeHintsEnabled
+
                             let enablePartialTypeChecking =
                                 editorOptions.LanguageServicePerformance.EnablePartialTypeChecking
 
@@ -169,6 +172,7 @@ type internal FSharpWorkspaceServiceFactory [<System.Composition.ImportingConstr
                                     nameof enableFastFindReferences, enableFastFindReferences
                                     nameof isInlineParameterNameHintsEnabled, isInlineParameterNameHintsEnabled
                                     nameof isInlineTypeHintsEnabled, isInlineTypeHintsEnabled
+                                    nameof isInlineReturnTypeHintsEnabled, isInlineReturnTypeHintsEnabled
                                     nameof enablePartialTypeChecking, enablePartialTypeChecking
                                 ]
 

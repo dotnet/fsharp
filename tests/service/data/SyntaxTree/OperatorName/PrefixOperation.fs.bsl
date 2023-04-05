@@ -13,6 +13,6 @@ ImplFile
                       ([op_UnaryPlus], [], [Some (OriginalNotation "+")]), None,
                     (2,0--2,1)), Const (Int32 -86, (2,2--2,5)), (2,0--2,5)),
               (2,0--2,5))], PreXmlDocEmpty, [], None, (2,0--2,5),
-          { LeadingKeyword = None })], (true, false),
+          { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

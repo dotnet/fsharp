@@ -1,4 +1,4 @@
 
 namespace Meh
 // comment!
-foo()
+val a: int

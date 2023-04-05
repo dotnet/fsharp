@@ -45,12 +45,14 @@ type QuickInfoOptions =
     {
         DisplayLinks: bool
         UnderlineStyle: QuickInfoUnderlineStyle
+        DescriptionWidth: int option
     }
 
     static member Default =
         {
             DisplayLinks = true
             UnderlineStyle = QuickInfoUnderlineStyle.Solid
+            DescriptionWidth = None
         }
 
 [<CLIMutable>]
@@ -103,6 +105,7 @@ type AdvancedOptions =
         IsOutliningEnabled: bool
         IsInlineTypeHintsEnabled: bool
         IsInlineParameterNameHintsEnabled: bool
+        IsInlineReturnTypeHintsEnabled: bool
         IsLiveBuffersEnabled: bool
     }
 
@@ -112,6 +115,7 @@ type AdvancedOptions =
             IsOutliningEnabled = true
             IsInlineTypeHintsEnabled = false
             IsInlineParameterNameHintsEnabled = false
+            IsInlineReturnTypeHintsEnabled = false
             IsLiveBuffersEnabled = FSharpExperimentalFeaturesEnabledAutomatically
         }
 
@@ -180,6 +184,7 @@ module internal OptionsUI =
             bindRadioButton view.dot path QuickInfoUnderlineStyle.Dot
             bindRadioButton view.dash path QuickInfoUnderlineStyle.Dash
             bindCheckBox view.displayLinks (nameof QuickInfoOptions.Default.DisplayLinks)
+            bindDescriptionWidthTextBox view.descriptionWidth (nameof QuickInfoOptions.Default.DescriptionWidth)
             upcast view
 
     [<Guid(Guids.codeFixesOptionPageIdString)>]

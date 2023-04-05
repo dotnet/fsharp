@@ -32,5 +32,5 @@ ImplFile
                    WithKeyword = (4,0--4,4)
                    WithToEndRange = (4,0--8,10) }), (2,0--8,10))],
           PreXmlDocEmpty, [], None, (2,0--9,0), { LeadingKeyword = None })],
-      (true, false), { ConditionalDirectives = []
-                       CodeComments = [LineComment (6,4--6,19)] }, set []))
+      (true, true), { ConditionalDirectives = []
+                      CodeComments = [LineComment (6,4--6,19)] }, set []))
