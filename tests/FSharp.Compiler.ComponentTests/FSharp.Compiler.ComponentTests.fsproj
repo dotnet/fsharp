@@ -221,7 +221,11 @@
     <Compile Include="CompilerOptions\fsc\reflectionfree.fs" />
     <Compile Include="CompilerOptions\fsc\refonlyrefout.fs" />
 	<Compile Include="CompilerOptions\fsc\sourceFiles.fs" />
-    <Compile Include="CompilerService\RangeModule.fs" />
+	  <Compile Include="CompilerService\RangeModule.fs" />
+	  <Compile Include="CompilerService\AsyncMemoize.fs" />
+    <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
+      <Link>%(RelativeDir)TestSource\%(Filename)%(Extension)</Link>
+    </None>
     <Compile Include="Debugger\PortablePdbs.fs" />
     <Compile Include="Diagnostics\async.fs" />
     <Compile Include="Diagnostics\General.fs" />
@@ -247,11 +251,7 @@
     <Compile Include="FSharpChecker\FindReferences.fs" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
-      <Link>%(RelativeDir)TestSource\%(Filename)%(Extension)</Link>
-    </None>
-  </ItemGroup>
+  <ItemGroup />
 
   <ItemGroup>
     <None Include="**\*.bsl">

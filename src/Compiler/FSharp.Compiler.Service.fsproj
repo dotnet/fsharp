@@ -153,6 +153,7 @@
     <Compile Include="Facilities\CompilerLocation.fs" />
     <Compile Include="Facilities\BuildGraph.fsi" />
     <Compile Include="Facilities\BuildGraph.fs" />
+    <Compile Include="Facilities\AsyncMemoize.fs" />
     <FsLex Include="AbstractIL\illex.fsl">
       <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
       <Link>AbstractIL\illex.fsl</Link>
