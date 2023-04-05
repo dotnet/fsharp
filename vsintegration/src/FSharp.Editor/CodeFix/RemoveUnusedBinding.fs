@@ -9,7 +9,7 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "RemoveUnusedBinding"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.RemoveUnusedBinding); Shared>]
 type internal FSharpRemoveUnusedBindingCodeFixProvider [<ImportingConstructor>] () =
 
     inherit CodeFixProvider()
@@ -57,7 +57,12 @@ type internal FSharpRemoveUnusedBindingCodeFixProvider [<ImportingConstructor>] 
             let prefixTitle = SR.RemoveUnusedBinding()
 
             let removalCodeFix =
-                CodeFixHelpers.createTextChangeCodeFix (prefixTitle, context, (fun () -> asyncMaybe.Return [| TextChange(fullSpan, "") |]))
+                CodeFixHelpers.createTextChangeCodeFix (
+                    CodeFix.RemoveUnusedBinding,
+                    prefixTitle,
+                    context,
+                    (fun () -> asyncMaybe.Return [| TextChange(fullSpan, "") |])
+                )
 
             context.RegisterCodeFix(removalCodeFix, diagnostics)
         }
