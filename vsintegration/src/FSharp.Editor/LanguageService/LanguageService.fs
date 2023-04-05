@@ -323,8 +323,8 @@ type internal FSharpPackage() as this =
 
 #if DEBUG
     let _logger =
-        // Logging.Activity.listen "IncrementalBuildSyntaxTree"
-        Logging.Activity.listen "IncrementalBuild"
+        Logging.Activity.listenToAll ()
+        // Logging.Activity.listen "IncrementalBuild"
 #endif
 
     // FSI-LINKAGE-POINT: unsited init
