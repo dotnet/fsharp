@@ -89,10 +89,8 @@ module Basic =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 10, Line 7, Col 13, Line 7, Col 14, "Unexpected reserved keyword in pattern")
-            (Error 583, Line 7, Col 8, Line 7, Col 9, "Unmatched '('")
-            (Error 10, Line 7, Col 25, Line 7, Col 26, "Unexpected reserved keyword in binding")
-            (Error 583, Line 7, Col 19, Line 7, Col 20, "Unmatched '('")
+            (Error 3563, Line 7, Col 13, Line 7, Col 14, "This is not a valid identifier")
+            (Error 3563, Line 7, Col 25, Line 7, Col 26, "This is not a valid identifier")
         ]
 
     // SOURCE=E_InvalidInnerRecursiveBinding.fs SCFLAGS="--test:ErrorRanges"   # E_InvalidInnerRecursiveBinding.fs
