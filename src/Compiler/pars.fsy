@@ -4343,6 +4343,9 @@ atomicExpr:
         let lhsm = rhs2 parseState 1 2
         SynExpr.Typar(typar, lhsm), false }
 
+  | RESERVED
+      { arbExpr ("unfinished identifier", rhs parseState 1), false }
+
   | atomicExpr DOT atomicExprQualification 
       { let arg1, hpa1 = $1 
         $3 arg1 (lhs parseState) (rhs parseState 2), hpa1 }

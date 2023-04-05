@@ -701,8 +701,12 @@ rule token args skip = parse
        if not skip then WHITESPACE (LexCont.Token(args.ifdefStack, args.stringNest))
        else token args skip lexbuf }
 
- | '`' '`' ([^'`' '\n' '\r' '\t'] | '`' [^'`''\n' '\r' '\t']) + '`' '`'
+ | '`' '`' ([^'`' '\n' '\r' '\t'] | '`' [^'`''\n' '\r' '\t'])+ '`' '`'
      { Keywords.IdentifierToken args lexbuf (lexemeTrimBoth lexbuf 2 2) }
+
+ | ('`' '`' (([^'`' '\n' '\r' '\t'] | ("`"[^'`' '\n' '\r' '\t']))+)'`'?) | "````" | "```" | "``" | "`"
+     { errorR(Error(FSComp.SR.lexInvalidIdentifier(), lexbuf.LexemeRange))
+       RESERVED }
 
  | ('#' anywhite* | "#line" anywhite+ ) digit+ anywhite* ('@'? "\"" [^'\n''\r''"']+ '"')? anywhite* newline
      {  let pos = lexbuf.EndPos
@@ -897,8 +901,6 @@ rule token args skip = parse
  | "-" { MINUS }
 
  | "~" { RESERVED }
-
- | "`" { RESERVED }
 
  | ignored_op_char* '*' '*'                    op_char* { checkExprOp lexbuf; INFIX_STAR_STAR_OP(lexeme lexbuf) }
 
