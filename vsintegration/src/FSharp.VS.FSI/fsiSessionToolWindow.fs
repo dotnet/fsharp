@@ -534,15 +534,27 @@ type internal FsiToolWindow() as this =
             executeTextNoHistory null text
         with _ -> ()
 
+    let hide =
+        if sessions.SupportsInteractivePrompt then
+            """#interactiveprompt "hide" """
+        else
+            ""
+
+    let show =
+        if sessions.SupportsInteractivePrompt then
+            """#interactiveprompt "hide" """
+        else
+            ""
+
     let executeInteraction dbgBreak dir filename topLine (text:string) =
         let interaction = $"""
-#interactiveprompt "hide"
+{hide.ToString()}
 #silentCd @"{dir}";;
 {if dbgBreak then "#dbgbreak" else ""}
 #{topLine} @"{filename}"
 {text.ToString()}
 #1 "stdin"
-#interactiveprompt "show";;
+{show.ToString()}
 """
         executeTextNoHistory filename interaction
 

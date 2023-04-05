@@ -307,6 +307,7 @@ type FsiSession(sourceFile: string) =
 
     let mutable cmdProcessPid = cmdProcess.Id
     let mutable trueProcessPid = if usingNetCore then None else Some cmdProcessPid
+    let mutable trueFrameworkVersion = None
     let trueProcessIdFile = Path.GetTempFileName() + ".pid"
 
     let mutable seenPidJunkOutput = false
@@ -348,7 +349,7 @@ type FsiSession(sourceFile: string) =
             })
 
     do if usingNetCore then
-        inputQueue.Post($"""System.IO.File.WriteAllText(@"{trueProcessIdFile}", string (System.Diagnostics.Process.GetCurrentProcess().Id));;""")
+        inputQueue.Post($"""System.IO.File.WriteAllLines(@"{trueProcessIdFile}", [| string (System.Diagnostics.Process.GetCurrentProcess().Id); System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription|]);;""")
 
     do cmdProcess.EnableRaisingEvents <- true
 
@@ -360,6 +361,49 @@ type FsiSession(sourceFile: string) =
     /// interrupt timeout in miliseconds
     let interruptTimeoutMS = 1000
 
+    let splitPidFile () =
+        let getTfmNumber (v: string) =
+            let arr = v.Split([| '.' |], 3)
+            match Single.TryParse(arr[0] + "." + arr[1]) with
+            | true, value -> Some value
+            | _ -> None
+
+        let frameworkVersion (frameworkDescription: string) =
+            let arr = frameworkDescription.Split([| ' ' |], 3)
+
+            match arr[0], arr[1] with
+            | ".NET", "Core" when arr.Length >= 3 -> getTfmNumber arr[2]
+            | ".NET", "Framework" when arr.Length >= 3 ->
+                if arr[ 2 ].StartsWith("4.8") then
+                    Some 4.8f
+                else
+                    Some 4.72f
+            | ".NET", "Native" -> None
+            | ".NET", _ when arr.Length >= 2 -> getTfmNumber arr[1]
+            | _ -> None
+
+        // When using .NET Core, allow up to 2 seconds to allow detection of process ID
+        // of inner process to complete on startup.  The only scenario where we ask for the process ID immediately after
+        // process startup is when the user clicks "Start Debugging" before the process has started.
+        for i in 0..10 do
+            if SessionsProperties.fsiUseNetCore && trueProcessPid.IsNone then
+                if File.Exists(trueProcessIdFile) then
+                    let lines = File.ReadAllLines trueProcessIdFile
+                    trueProcessPid <-
+                        if lines.Length <= 0 then
+                            None
+                        else
+                            Some (File.ReadAllText lines[0] |> int)
+                    trueFrameworkVersion <-
+                        if lines.Length <= 0 then
+                            None
+                        else
+                            Some (File.ReadAllText lines[0] |> float32)
+
+                    File.Delete(trueProcessIdFile)
+                else
+                    System.Threading.Thread.Sleep(200)
+                
     // Create session object 
     member _.Interrupt() = 
         match timeoutApp "VFSI interrupt" interruptTimeoutMS (fun () -> client.Interrupt()) () with
@@ -379,20 +423,16 @@ type FsiSession(sourceFile: string) =
     member _.SupportsInterrupt = not cmdProcess.HasExited
 
     member _.ProcessID   =
-        // When using .NET Core, allow up to 2 seconds to allow detection of process ID
-        // of inner process to complete on startup.  The only scenario where we ask for the process ID immediately after
-        // process startup is when the user clicks "Start Debugging" before the process has started.
-        for i in 0..10 do
-            if SessionsProperties.fsiUseNetCore && trueProcessPid.IsNone then
-                if File.Exists(trueProcessIdFile) then 
-                    trueProcessPid <- Some (File.ReadAllText trueProcessIdFile |> int)
-                    File.Delete(trueProcessIdFile)
-                else
-                    System.Threading.Thread.Sleep(200)
-                
+        splitPidFile ()
         match trueProcessPid with 
         | None -> cmdProcessPid
         | Some pid -> pid
+
+    member _.SupportsInteractivePrompt =
+        splitPidFile ()
+        match trueFrameworkVersion with 
+        | None -> false
+        | Some frameworkVersion -> frameworkVersion >= 7.0f
 
     member _.ProcessArgs = procInfo.Arguments
 
@@ -463,6 +503,11 @@ type FsiSessions() =
         match sessionR with
         | None -> -1 (* -1 assumed to never be a valid process ID *)
         | Some session -> session.ProcessID
+
+    member _.SupportsInteractivePrompt =
+        match sessionR with
+        | None -> false
+        | Some session -> session.SupportsInteractivePrompt
 
     member _.ProcessArgs    = 
         match sessionR with
