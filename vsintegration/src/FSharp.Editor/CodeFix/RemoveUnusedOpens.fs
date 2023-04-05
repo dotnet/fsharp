@@ -3,49 +3,42 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
+open System.Threading
 open System.Threading.Tasks
+open System.Collections.Immutable
 
+open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
+open Microsoft.CodeAnalysis.CodeActions
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
-
-open FSharp.Compiler.Text
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "RemoveUnusedOpens"); Shared>]
 type internal FSharpRemoveUnusedOpensCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
-    let fixableDiagnosticIds =
-        [ FSharpIDEDiagnosticIds.RemoveUnnecessaryImportsDiagnosticId ]
+    static let title = SR.RemoveUnusedOpens()
 
-    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = ImmutableArray.Create FSharpIDEDiagnosticIds.RemoveUnnecessaryImportsDiagnosticId
 
-    override _.RegisterCodeFixesAsync context : Task =
-        asyncMaybe {
-            let document = context.Document
-            let! sourceText = document.GetTextAsync()
-            let! unusedOpens = UnusedOpensDiagnosticAnalyzer.GetUnusedOpenRanges(document)
-
-            let changes =
-                unusedOpens
-                |> List.map (fun m ->
-                    let span = sourceText.Lines.[Line.toZ m.StartLine].SpanIncludingLineBreak
-                    TextChange(span, ""))
-                |> List.toArray
-
-            let diagnostics =
-                context.Diagnostics
-                |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id)
-                |> Seq.toImmutableArray
-
-            let title = SR.RemoveUnusedOpens()
-
-            let codefix =
-                CodeFixHelpers.createTextChangeCodeFix (title, context, (fun () -> asyncMaybe.Return changes))
-
-            context.RegisterCodeFix(codefix, diagnostics)
+    member this.GetChangedDocument(document : Document, diagnostics : ImmutableArray<Diagnostic>, ct : CancellationToken ) = 
+        task{
+            let! sourceText = document.GetTextAsync(ct)
+            let changes = 
+                diagnostics 
+                |> Seq.map (fun d -> sourceText.Lines.GetLineFromPosition(d.Location.SourceSpan.Start).SpanIncludingLineBreak)
+                |> Seq.map (fun span -> TextChange(span, ""))
+             
+            return document.WithText(sourceText.WithChanges(changes))
         }
-        |> Async.Ignore
-        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
 
-    override _.GetFixAllProvider() = WellKnownFixAllProviders.BatchFixer
+    override this.RegisterCodeFixesAsync ctx : Task =
+        task {     
+            let codeAction = CodeAction.Create(title, (fun ct -> 
+                this.GetChangedDocument(ctx.Document,ctx.Diagnostics, ct))
+                , title)
+            ctx.RegisterCodeFix(codeAction, this.GetPrunedDiagnostics(ctx))
+        }
+
+    override this.GetFixAllProvider() = FixAllProvider.Create(fun fixAllCtx doc allDiagnostics -> 
+        this.GetChangedDocument(doc,allDiagnostics, fixAllCtx.CancellationToken) )

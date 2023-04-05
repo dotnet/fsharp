@@ -75,3 +75,10 @@ type internal FsharpFixRemoveDotFromIndexerAccessOptIn() as this =
             if not relevantDiagnostics.IsEmpty then
                 this.RegisterFix(context, fixName, TextChange(context.Span, ""))
         }
+
+    override this.GetFixAllProvider() = FixAllProvider.Create(fun fixAllCtx doc allDiagnostics -> 
+        task{
+            let changes = allDiagnostics |> Seq.map (fun x -> TextChange(x.Location.SourceSpan,""))
+            let! text = doc.GetTextAsync(fixAllCtx.CancellationToken)
+            return doc.WithText(text.WithChanges(changes))
+        } )

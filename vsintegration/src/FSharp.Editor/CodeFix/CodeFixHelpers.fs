@@ -3,7 +3,9 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Threading
+open System.Threading.Tasks
 
+open Microsoft
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
