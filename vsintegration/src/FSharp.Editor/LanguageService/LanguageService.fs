@@ -322,9 +322,8 @@ type internal FSharpPackage() as this =
     let mutable solutionEventsOpt = None
 
 #if DEBUG
-    let _logger =
-        Logging.Activity.listenToAll ()
-        // Logging.Activity.listen "IncrementalBuild"
+    let _logger = Logging.Activity.listenToAll ()
+    // Logging.Activity.listen "IncrementalBuild"
 #endif
 
     // FSI-LINKAGE-POINT: unsited init
