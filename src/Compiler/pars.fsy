@@ -5795,7 +5795,10 @@ nameop:
 
 identExpr:
   | ident
-     { SynExpr.Ident($1) }
+     { if $1.idText = "" then
+           SynExpr.FromParseError(SynExpr.Ident($1), $1.idRange)
+       else
+           SynExpr.Ident($1) }
 
   | opName
      { let m = lhs parseState

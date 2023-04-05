@@ -704,9 +704,17 @@ rule token args skip = parse
  | '`' '`' ([^'`' '\n' '\r' '\t'] | '`' [^'`''\n' '\r' '\t'])+ '`' '`'
      { Keywords.IdentifierToken args lexbuf (lexemeTrimBoth lexbuf 2 2) }
 
- | ('`' '`' (([^'`' '\n' '\r' '\t'] | ("`"[^'`' '\n' '\r' '\t']))+)'`'?) | "````" | "```" | "``" | "`"
+ | '`' '`' (([^'`' '\n' '\r' '\t'] | ('`' [^'`' '\n' '\r' '\t']))+)'`'
      { errorR(Error(FSComp.SR.lexInvalidIdentifier(), lexbuf.LexemeRange))
-       RESERVED }
+       Keywords.IdentifierToken args lexbuf (lexemeTrimBoth lexbuf 2 1) }
+
+ | '`' '`' (([^'`' '\n' '\r' '\t'] | ('`'[^'`' '\n' '\r' '\t']))+)
+     { errorR(Error(FSComp.SR.lexInvalidIdentifier(), lexbuf.LexemeRange))
+       Keywords.IdentifierToken args lexbuf (lexemeTrimLeft lexbuf 2) }
+
+ | "````" | "```" | "``" | "`"
+     { errorR(Error(FSComp.SR.lexInvalidIdentifier(), lexbuf.LexemeRange))
+       Keywords.IdentifierToken args lexbuf "" }
 
  | ('#' anywhite* | "#line" anywhite+ ) digit+ anywhite* ('@'? "\"" [^'\n''\r''"']+ '"')? anywhite* newline
      {  let pos = lexbuf.EndPos
