@@ -1317,6 +1317,12 @@ let AddStorageForLocalWitness eenv (w, s) =
 let AddStorageForLocalWitnesses witnesses eenv =
     (eenv, witnesses) ||> List.fold AddStorageForLocalWitness
 
+let ForceInitLocals eenv =
+    if eenv.initLocals then
+        eenv
+    else
+        { eenv with initLocals = true }
+
 //--------------------------------------------------------------------------
 // Lookup eenv
 //--------------------------------------------------------------------------
@@ -5933,6 +5939,9 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
 
     let eenvinner =
         AddTemplateReplacement eenvinner (templateTyconRef, ilCloTypeRef, cloinfo.cloFreeTyvars, templateTypeInst)
+
+    // In MoveNext we're relying on default initialization of locals, so force it in spite of the presence of any SkipLocalsInit
+    let eenvinner = ForceInitLocals eenvinner
 
     let infoReader = InfoReader.InfoReader(g, cenv.amap)
 

@@ -15,6 +15,6 @@ ImplFile
                           (OriginalNotationWithParen
                              ((2,6--2,7), "+", (2,8--2,9)))]), None, (2,6--2,9)),
                  (2,0--2,9)), (2,0--2,9))], PreXmlDocEmpty, [], None, (2,0--2,9),
-          { LeadingKeyword = None })], (true, false),
+          { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

@@ -34,6 +34,7 @@ Outlining;
 Show outlining and collapsible nodes for F# code;
 Inline hints;
 Display inline type hints (preview);
+Display return type hints (preview);
 Display inline parameter name hints (preview);Beer;
 Live Buffers;
 Use live (unsaved) buffers for checking</source>
@@ -43,6 +44,7 @@ Outlining;
 Show outlining and collapsible nodes for F# code;
 Inline hints;
 Display inline type hints (preview);
+Display return type hints (preview);
 Display inline parameter name hints (preview);Beer;
 Live Buffers;
 Use live (unsaved) buffers for checking</target>
@@ -54,16 +56,16 @@ Always place open statements at the top level;
 Remove unused open statements;
 Analyze and suggest fixes for unused values;
 Suggest names for unresolved identifiers;</source>
-        <target state="new">Simplify names (remove unnecessary qualifiers);
-Always place open statements at the top level;
-Remove unused open statements;
-Analyze and suggest fixes for unused values;
-Suggest names for unresolved identifiers;</target>
+        <target state="translated">Uprość nazwy (usuń niepotrzebne kwalifikatory);
+Zawsze umieszczaj otwarte instrukcje na najwyższym poziomie;
+Usuń nieużywane otwarte instrukcje;
+Analizuj i sugeruj poprawki dla nieużywanych wartości;
+Sugeruj nazwy dla nierozpoznanych identyfikatorów;</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertCSharpUsingToFSharpOpen">
         <source>Convert C# 'using' to F# 'open'</source>
-        <target state="new">Convert C# 'using' to F# 'open'</target>
+        <target state="translated">Konwertuj „using” języka C# na „open” języka F#</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertToAnonymousRecord">
@@ -108,7 +110,7 @@ Suggest names for unresolved identifiers;</target>
       </trans-unit>
       <trans-unit id="FormattingPageKeywords">
         <source>Re-format indentation on paste (Experimental)</source>
-        <target state="new">Re-format indentation on paste (Experimental)</target>
+        <target state="translated">Ponowne formatowanie wcięcia przy wklejeniu (eksperymentalne)</target>
         <note />
       </trans-unit>
       <trans-unit id="ImplementInterface">
@@ -130,14 +132,14 @@ Enter key behavior;
 Never add new line on enter;
 Only add new line on enter after end of fully typed word;
 Always add new line on enter;</source>
-        <target state="new">Completion Lists;
-Show completion list after a character is deleted;
-Show completion list after a character is typed;
-Show symbols in unopened namespaces;
-Enter key behavior;
-Never add new line on enter;
-Only add new line on enter after end of fully typed word;
-Always add new line on enter;</target>
+        <target state="translated">Listy uzupełniania;
+Pokaż listę uzupełniania po usunięciu znaku;
+Pokaż listę uzupełniania po wpisaniu znaku;
+Pokaż symbole w nieotwartych przestrzeniach nazw;
+Wprowadź zachowanie klucza;
+Nigdy nie dodawaj nowego wiersza przy wprowadzaniu;
+Dodaj nowy wiersz w enterie tylko po zakończeniu w pełni wpisanego wyrazu;
+Zawsze dodawaj nowy wiersz przy wprowadzaniu;</target>
         <note />
       </trans-unit>
       <trans-unit id="MakeDeclarationMutable">
@@ -162,17 +164,17 @@ Enable parallel type checking with signature files;
 Enable parallel reference resolution;
 Enable fast find references &amp; rename (experimental);
 Cache parsing results (experimental)</source>
-        <target state="new">F# Project and Caching Performance Options;
-Enable in-memory cross project references;
+        <target state="translated">Opcje wydajności projektów i buforowania języka F#;
+Włącz odwołania między projektami w pamięci;
 Enable_partial_type_checking;
-IntelliSense Performance Options;
-Enable stale data for IntelliSense features;
-Time until stale results are used (in milliseconds);
-Parallelization (requires restart);
-Enable parallel type checking with signature files;
-Enable parallel reference resolution;
-Enable fast find references &amp; rename (experimental);
-Cache parsing results (experimental)</target>
+Opcje wydajności funkcji IntelliSense;
+Włącz nieaktualne dane dla funkcji IntelliSense;
+Czas do użycia nieaktualnych wyników (w milisekundach);
+Równoległość (wymaga ponownego uruchomienia);
+Włącz kontrolę typów równoległych za pomocą plików podpisu;
+Włącz rozpoznawanie odwołań równoległych;
+Włącz szybkie znajdowanie odwołań i zmianę nazwy (eksperymentalne);
+Wyniki analizowania pamięci podręcznej (eksperymentalne)</target>
         <note />
       </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
@@ -181,16 +183,22 @@ Cache parsing results (experimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="QuickInfoPageKeywords">
-        <source>Navigation links;
+        <source>Formatting;
+Preferred description width in characters;
+Format signature to the given width by adding line breaks conforming with F# syntax rules;
+Navigation links;
 Show navigation links as;
 Solid underline;
 Dot underline;
 Dash underline;</source>
-        <target state="new">Navigation links;
-Show navigation links as;
-Solid underline;
-Dot underline;
-Dash underline;</target>
+        <target state="translated">Formatowanie;
+Preferowana szerokość opisu w znakach;
+Sformatuj sygnaturę na daną szerokość, dodając podziały wierszy zgodne z regułami składni języka F#;
+Linki nawigacji;
+Pokaż linki nawigacji jako;
+Pełne podkreślenie;
+Podkreślenie kropką;
+Podkreślenie kreską;</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">
@@ -260,7 +268,7 @@ Dash underline;</target>
       </trans-unit>
       <trans-unit id="6008">
         <source>IntelliSense</source>
-        <target state="needs-review-translation">IntelliSense</target>
+        <target state="translated">IntelliSense</target>
         <note />
       </trans-unit>
       <trans-unit id="6009">

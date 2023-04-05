@@ -29,16 +29,35 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Benchmarks", "Benchmarks", 
 		tests\benchmarks\FCSBenchmarks\SmokeTestAllBenchmarks.ps1 = tests\benchmarks\FCSBenchmarks\SmokeTestAllBenchmarks.ps1
 	EndProjectSection
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "HistoricalBenchmark", "tests\benchmarks\FCSBenchmarks\BenchmarkComparison\HistoricalBenchmark.fsproj", "{35F5F1C5-AE4F-4B5A-8D94-1AF708724FD5}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "HistoricalBenchmark", "tests\benchmarks\FCSBenchmarks\BenchmarkComparison\HistoricalBenchmark.fsproj", "{35F5F1C5-AE4F-4B5A-8D94-1AF708724FD5}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Compiler.Benchmarks", "tests\benchmarks\FCSBenchmarks\CompilerServiceBenchmarks\FSharp.Compiler.Benchmarks.fsproj", "{C1950E28-1CB7-4DEC-BB3A-8A0443A17282}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Benchmarks", "tests\benchmarks\FCSBenchmarks\CompilerServiceBenchmarks\FSharp.Compiler.Benchmarks.fsproj", "{C1950E28-1CB7-4DEC-BB3A-8A0443A17282}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "HistoricalBenchmark.Runner", "tests\benchmarks\FCSBenchmarks\BenchmarkComparison\HistoricalBenchmark.Runner\HistoricalBenchmark.Runner.fsproj", "{07CD957A-3C31-4F75-A735-16CE72E1BD71}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "HistoricalBenchmark.Runner", "tests\benchmarks\FCSBenchmarks\BenchmarkComparison\HistoricalBenchmark.Runner\HistoricalBenchmark.Runner.fsproj", "{07CD957A-3C31-4F75-A735-16CE72E1BD71}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{DD4D4A7E-D519-4409-89DA-16DCA3EF80AA}"
 	ProjectSection(SolutionItems) = preProject
 		src\Compiler\FSComp.txt = src\Compiler\FSComp.txt
+		Directory.Build.props = Directory.Build.props
+		Directory.Build.targets = Directory.Build.targets
+		global.json = global.json
 	EndProjectSection
+EndProject
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "fsc", "src\fsc\fscProject\fsc.fsproj", "{A6995088-3C1D-42BC-B3DD-72B1EEAB23F4}"
+EndProject
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "fsi", "src\fsi\fsiProject\fsi.fsproj", "{9858ED8A-3889-4B89-BF31-3105B594CB45}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "fslex", "buildtools\fslex\fslex.fsproj", "{E7D145CD-ACE4-492D-B9A1-1B4F8560BB3B}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "fsyacc", "buildtools\fsyacc\fsyacc.fsproj", "{D63BBEE6-DA15-44B6-95DC-CCC50737A441}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "AssemblyCheck", "buildtools\AssemblyCheck\AssemblyCheck.fsproj", "{D7428217-FC36-4754-9AC1-85402C0940EF}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Build", "src\FSharp.Build\FSharp.Build.fsproj", "{F7A87089-C02E-4EF1-B9AE-6C4EC6407BD1}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Core", "src\FSharp.Core\FSharp.Core.fsproj", "{6A61305F-9C5A-4FC1-869A-2CFFBA45A328}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Compiler.Interactive.Settings", "src\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj", "{AF887C2E-640D-4CD6-A0BD-88AE1517797D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -86,6 +105,38 @@ Global
 		{07CD957A-3C31-4F75-A735-16CE72E1BD71}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{07CD957A-3C31-4F75-A735-16CE72E1BD71}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{07CD957A-3C31-4F75-A735-16CE72E1BD71}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A6995088-3C1D-42BC-B3DD-72B1EEAB23F4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A6995088-3C1D-42BC-B3DD-72B1EEAB23F4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A6995088-3C1D-42BC-B3DD-72B1EEAB23F4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A6995088-3C1D-42BC-B3DD-72B1EEAB23F4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9858ED8A-3889-4B89-BF31-3105B594CB45}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9858ED8A-3889-4B89-BF31-3105B594CB45}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9858ED8A-3889-4B89-BF31-3105B594CB45}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9858ED8A-3889-4B89-BF31-3105B594CB45}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E7D145CD-ACE4-492D-B9A1-1B4F8560BB3B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E7D145CD-ACE4-492D-B9A1-1B4F8560BB3B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E7D145CD-ACE4-492D-B9A1-1B4F8560BB3B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E7D145CD-ACE4-492D-B9A1-1B4F8560BB3B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D63BBEE6-DA15-44B6-95DC-CCC50737A441}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D63BBEE6-DA15-44B6-95DC-CCC50737A441}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D63BBEE6-DA15-44B6-95DC-CCC50737A441}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D63BBEE6-DA15-44B6-95DC-CCC50737A441}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D7428217-FC36-4754-9AC1-85402C0940EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D7428217-FC36-4754-9AC1-85402C0940EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D7428217-FC36-4754-9AC1-85402C0940EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D7428217-FC36-4754-9AC1-85402C0940EF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F7A87089-C02E-4EF1-B9AE-6C4EC6407BD1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F7A87089-C02E-4EF1-B9AE-6C4EC6407BD1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F7A87089-C02E-4EF1-B9AE-6C4EC6407BD1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F7A87089-C02E-4EF1-B9AE-6C4EC6407BD1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6A61305F-9C5A-4FC1-869A-2CFFBA45A328}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6A61305F-9C5A-4FC1-869A-2CFFBA45A328}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6A61305F-9C5A-4FC1-869A-2CFFBA45A328}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6A61305F-9C5A-4FC1-869A-2CFFBA45A328}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AF887C2E-640D-4CD6-A0BD-88AE1517797D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AF887C2E-640D-4CD6-A0BD-88AE1517797D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AF887C2E-640D-4CD6-A0BD-88AE1517797D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AF887C2E-640D-4CD6-A0BD-88AE1517797D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
