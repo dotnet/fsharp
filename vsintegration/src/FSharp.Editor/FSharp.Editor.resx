@@ -224,6 +224,7 @@ Outlining;
 Show outlining and collapsible nodes for F# code;
 Inline hints;
 Display inline type hints (preview);
+Display return type hints (preview);
 Display inline parameter name hints (preview);Beer;
 Live Buffers;
 Use live (unsaved) buffers for checking</value>

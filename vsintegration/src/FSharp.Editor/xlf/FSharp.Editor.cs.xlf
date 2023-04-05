@@ -34,18 +34,22 @@ Outlining;
 Show outlining and collapsible nodes for F# code;
 Inline hints;
 Display inline type hints (preview);
+Display return type hints (preview);
 Display inline parameter name hints (preview);Beer;
 Live Buffers;
 Use live (unsaved) buffers for checking</source>
-        <target state="new">Block Structure Guides;
-Show structure guidelines for F# code;
-Outlining;
-Show outlining and collapsible nodes for F# code;
-Inline hints;
-Display inline type hints (preview);
-Display inline parameter name hints (preview);Beer;
-Live Buffers;
-Use live (unsaved) buffers for checking</target>
+        <target state="translated">Vodítka struktury bloků; 
+
+Zobrazit pokyny pro strukturu kódu F#;
+Osnova;
+Zobrazit sbalitelné a sbalitelné uzly pro kód F#;
+Vložené tipy;
+Zobrazovat pomocné parametry vloženého typu (Preview);
+Zobrazit pomocné parametry návratového typu (Preview);
+Zobrazit vložené nápovědy k názvům parametrů (Preview); Pivo;
+ 
+Živé vyrovnávací paměti;
+Pro kontrolu použijte živé (neuložené) vyrovnávací paměti.</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeFixesPageKeywords">
@@ -54,16 +58,16 @@ Always place open statements at the top level;
 Remove unused open statements;
 Analyze and suggest fixes for unused values;
 Suggest names for unresolved identifiers;</source>
-        <target state="new">Simplify names (remove unnecessary qualifiers);
-Always place open statements at the top level;
-Remove unused open statements;
-Analyze and suggest fixes for unused values;
-Suggest names for unresolved identifiers;</target>
+        <target state="translated">Zjednodušení názvů (odebrání nepotřebných kvalifikátorů);
+Vždy umístit otevřené příkazy na nejvyšší úrovni;
+Odebrat nepoužívané otevřené příkazy;
+Analyzovat a navrhovat opravy pro nepoužívané hodnoty;
+Navrhnout názvy pro nerozpoznané identifikátory;</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertCSharpUsingToFSharpOpen">
         <source>Convert C# 'using' to F# 'open'</source>
-        <target state="new">Convert C# 'using' to F# 'open'</target>
+        <target state="translated">Převést C# „using“ na F# „open“</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertToAnonymousRecord">
@@ -108,7 +112,7 @@ Suggest names for unresolved identifiers;</target>
       </trans-unit>
       <trans-unit id="FormattingPageKeywords">
         <source>Re-format indentation on paste (Experimental)</source>
-        <target state="new">Re-format indentation on paste (Experimental)</target>
+        <target state="translated">Znovu naformátovat odsazení při vložení (experimentální)</target>
         <note />
       </trans-unit>
       <trans-unit id="ImplementInterface">
@@ -130,14 +134,14 @@ Enter key behavior;
 Never add new line on enter;
 Only add new line on enter after end of fully typed word;
 Always add new line on enter;</source>
-        <target state="new">Completion Lists;
-Show completion list after a character is deleted;
-Show completion list after a character is typed;
-Show symbols in unopened namespaces;
-Enter key behavior;
-Never add new line on enter;
-Only add new line on enter after end of fully typed word;
-Always add new line on enter;</target>
+        <target state="translated">Seznamy pro doplňování;
+Zobrazit seznam pro doplňování po odstranění znaku;
+Zobrazit seznam pro doplňování po zadání znaku;
+Zobrazit symboly v neotevřených názvových prostorech;
+Zadejte chování kláves;
+Nikdy nepřidávat nový řádek při stisknutí klávesy Enter;
+Přidat nový řádek pouze po zadání za konec plně zadaného slova;
+Vždy přidat nový řádek při stisknutí klávesy Enter;</target>
         <note />
       </trans-unit>
       <trans-unit id="MakeDeclarationMutable">
@@ -162,17 +166,17 @@ Enable parallel type checking with signature files;
 Enable parallel reference resolution;
 Enable fast find references &amp; rename (experimental);
 Cache parsing results (experimental)</source>
-        <target state="new">F# Project and Caching Performance Options;
-Enable in-memory cross project references;
+        <target state="translated">Možnosti výkonu projektu F# a ukládání do mezipaměti;
+Povolit odkazy mezi projekty v paměti;
 Enable_partial_type_checking;
-IntelliSense Performance Options;
-Enable stale data for IntelliSense features;
-Time until stale results are used (in milliseconds);
-Parallelization (requires restart);
-Enable parallel type checking with signature files;
-Enable parallel reference resolution;
-Enable fast find references &amp; rename (experimental);
-Cache parsing results (experimental)</target>
+Možnosti výkonu IntelliSense;
+Povolit zastaralá data pro funkce IntelliSense;
+Doba, než se použijí zastaralé výsledky (v milisekundách);
+Paralelizace (vyžaduje restartování);
+Povolit paralelní kontrolu typů pomocí souborů podpisu;
+Povolit paralelní referenční rozlišení;
+Povolit odkazy rychlého hledání a přejmenování (experimentální)
+Výsledky analýzy mezipaměti (experimentální)</target>
         <note />
       </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
@@ -189,14 +193,14 @@ Show navigation links as;
 Solid underline;
 Dot underline;
 Dash underline;</source>
-        <target state="new">Formatting;
-Preferred description width in characters;
-Format signature to the given width by adding line breaks conforming with F# syntax rules;
-Navigation links;
-Show navigation links as;
-Solid underline;
-Dot underline;
-Dash underline;</target>
+        <target state="translated">Formátování;
+Upřednostňovaná šířka popisu ve znacích;
+Formátování podpisu na danou šířku přidáním konců řádků podle pravidel syntaxe F#;
+Navigační odkazy;
+Zobrazit navigační odkazy jako;
+Plné podtržení;
+Tečkované podtržení;
+Přerušované podtržení;</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">
@@ -266,7 +270,7 @@ Dash underline;</target>
       </trans-unit>
       <trans-unit id="6008">
         <source>IntelliSense</source>
-        <target state="needs-review-translation">IntelliSense</target>
+        <target state="translated">IntelliSense</target>
         <note />
       </trans-unit>
       <trans-unit id="6009">
