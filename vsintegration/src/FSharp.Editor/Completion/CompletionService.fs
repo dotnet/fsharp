@@ -13,7 +13,13 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Completion
 
 open Microsoft.VisualStudio.Shell
 
-type internal FSharpCompletionService(workspace: Workspace, assemblyContentProvider: AssemblyContentProvider, settings: EditorOptions) =
+type internal FSharpCompletionService
+    (
+        workspace: Workspace,
+        serviceProvider: SVsServiceProvider,
+        assemblyContentProvider: AssemblyContentProvider,
+        settings: EditorOptions
+    ) =
     inherit FSharpCompletionServiceWithProviders(workspace)
 
     let projectInfoManager =
@@ -24,7 +30,7 @@ type internal FSharpCompletionService(workspace: Workspace, assemblyContentProvi
 
     let builtInProviders =
         ImmutableArray.Create<CompletionProvider>(
-            FSharpCompletionProvider(workspace, assemblyContentProvider),
+            FSharpCompletionProvider(workspace, serviceProvider, assemblyContentProvider),
             FSharpCommonCompletionProvider.Create(HashDirectiveCompletionProvider.Create(workspace, projectInfoManager))
         )
 
@@ -55,9 +61,16 @@ type internal FSharpCompletionService(workspace: Workspace, assemblyContentProvi
 [<ExportLanguageServiceFactory(typeof<CompletionService>, FSharpConstants.FSharpLanguageName)>]
 type internal FSharpCompletionServiceFactory [<ImportingConstructor>]
     (
+        serviceProvider: SVsServiceProvider,
         assemblyContentProvider: AssemblyContentProvider,
         settings: EditorOptions
     ) =
     interface ILanguageServiceFactory with
         member _.CreateLanguageService(hostLanguageServices: HostLanguageServices) : ILanguageService =
-            upcast new FSharpCompletionService(hostLanguageServices.WorkspaceServices.Workspace, assemblyContentProvider, settings)
+            upcast
+                new FSharpCompletionService(
+                    hostLanguageServices.WorkspaceServices.Workspace,
+                    serviceProvider,
+                    assemblyContentProvider,
+                    settings
+                )

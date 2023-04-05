@@ -9,6 +9,8 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.SignatureHelp
 
+open Microsoft.VisualStudio.Shell
+
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Symbols
@@ -54,9 +56,10 @@ type SignatureHelpData =
 
 [<Shared>]
 [<Export(typeof<IFSharpSignatureHelpProvider>)>]
-type internal FSharpSignatureHelpProvider() =
+type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvider: SVsServiceProvider) =
 
-    let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder()
+    let documentationBuilder =
+        XmlDocumentation.CreateDocumentationBuilder(serviceProvider.XMLMemberIndexService)
 
     static let oneColAfter (lp: LinePosition) = LinePosition(lp.Line, lp.Character + 1)
 

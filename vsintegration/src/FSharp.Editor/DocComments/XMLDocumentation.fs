@@ -560,6 +560,5 @@ module internal XmlDocumentation =
     let documentationBuilderCache =
         ConditionalWeakTable<IVsXMLMemberIndexService, IDocumentationBuilder>()
 
-    let CreateDocumentationBuilder () =
-        let xmlIndexService = GlobalProvider.XMLMemberIndexService
+    let CreateDocumentationBuilder (xmlIndexService: IVsXMLMemberIndexService) =
         documentationBuilderCache.GetValue(xmlIndexService, (fun _ -> Provider(xmlIndexService) :> IDocumentationBuilder))

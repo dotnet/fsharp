@@ -90,21 +90,43 @@ module internal VsRunningDocumentTable =
             if IntPtr.Zero <> unkData then
                 Marshal.Release(unkData) |> ignore
 
-type internal GlobalProvider =
+[<AutoOpen>]
+module internal ServiceProviderExtensions =
+    type internal IAsyncServiceProvider with
 
-    static member GetServiceAsync<'S, 'T when 'S: not struct and 'T: not struct>() =
-        task {
-            do! ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync()
-            return! ServiceProvider.GetGlobalServiceAsync<'S, 'T>(swallowExceptions = false)
-        }
+        member sp.GetServiceAsync<'TService, 'TInterface>() =
+            backgroundTask {
+                match sp with
+                | :? IAsyncServiceProvider2 as sp2 ->
+                    let! service = sp2.GetServiceAsync(typeof<'TService>, swallowExceptions = false)
+                    return service :?> 'TInterface
+                | _ ->
+                    let! service = sp.GetServiceAsync(typeof<'TService>)
 
-    static member GetService<'S, 'T when 'S: not struct and 'T: not struct>() =
-        ThreadHelper.JoinableTaskFactory.Run(GlobalProvider.GetServiceAsync<'S, 'T>)
+                    if service = null then
+                        raise (ServiceUnavailableException(typeof<'TService>))
 
-    static member TextManager = GlobalProvider.GetService<SVsTextManager, IVsTextManager>()
+                    return service :?> 'TInterface
+            }
 
-    static member RunningDocumentTable =
-        GlobalProvider.GetService<SVsRunningDocumentTable, IVsRunningDocumentTable>()
+    type internal IServiceProvider with
 
-    static member XMLMemberIndexService =
-        GlobalProvider.GetService<SVsXMLMemberIndexService, IVsXMLMemberIndexService>()
+        member sp.GetService<'TService, 'TInterface>() =
+            ThreadHelper.JoinableTaskFactory.Run(fun () ->
+                task {
+                    do! ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync()
+                    let service = sp.GetService(typeof<'TService>)
+
+                    if service = null then
+                        raise (ServiceUnavailableException(typeof<'TService>))
+
+                    return service :?> 'TInterface
+                })
+
+        member sp.TextManager = sp.GetService<SVsTextManager, IVsTextManager>()
+
+        member sp.RunningDocumentTable =
+            sp.GetService<SVsRunningDocumentTable, IVsRunningDocumentTable>()
+
+        member sp.XMLMemberIndexService =
+            sp.GetService<SVsXMLMemberIndexService, IVsXMLMemberIndexService>()

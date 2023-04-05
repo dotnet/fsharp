@@ -110,7 +110,8 @@ module private ExternalSymbol =
 
 // TODO: Uncomment code when VS has a fix for updating the status bar.
 type StatusBar() =
-    let statusBar = GlobalProvider.GetService<SVsStatusbar, IVsStatusbar>()
+    let statusBar =
+        ServiceProvider.GlobalProvider.GetService<SVsStatusbar, IVsStatusbar>()
 
     let mutable _searchIcon =
         int16 Microsoft.VisualStudio.Shell.Interop.Constants.SBAI_Find :> obj

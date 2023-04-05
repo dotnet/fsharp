@@ -104,7 +104,7 @@ module internal ClassificationDefinitions =
 
         let getCurrentThemeId () =
             let themeService =
-                GlobalProvider.GetService<SVsColorThemeService, IVsColorThemeService>()
+                ServiceProvider.GlobalProvider.GetService<SVsColorThemeService, IVsColorThemeService>()
 
             themeService.CurrentTheme.ThemeId
 
@@ -144,10 +144,10 @@ module internal ClassificationDefinitions =
 
         let setColors _ =
             let fontAndColorStorage =
-                GlobalProvider.GetService<SVsFontAndColorStorage, IVsFontAndColorStorage>()
+                ServiceProvider.GlobalProvider.GetService<SVsFontAndColorStorage, IVsFontAndColorStorage>()
 
             let fontAndColorCacheManager =
-                GlobalProvider.GetService<SVsFontAndColorCacheManager, IVsFontAndColorCacheManager>()
+                ServiceProvider.GlobalProvider.GetService<SVsFontAndColorCacheManager, IVsFontAndColorCacheManager>()
 
             fontAndColorCacheManager.CheckCache(ref DefGuidList.guidTextEditorFontCategory)
             |> ignore

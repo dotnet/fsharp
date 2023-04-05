@@ -3,6 +3,7 @@
 open System
 open System.Diagnostics
 open System.ComponentModel.Composition
+open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.FSharp.Editor
 
@@ -31,7 +32,8 @@ open Config
 [<Export>]
 type Logger() =
     let outputWindow =
-        GlobalProvider.GetService<SVsOutputWindow, IVsOutputWindow>() |> Option.ofObj
+        ServiceProvider.GlobalProvider.GetService<SVsOutputWindow, IVsOutputWindow>()
+        |> Option.ofObj
 
     let createPane () =
         outputWindow

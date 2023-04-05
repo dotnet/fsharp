@@ -90,7 +90,11 @@ type internal FSharpAsyncQuickInfoSource
                     let getTrackingSpan (span: TextSpan) =
                         textBuffer.CurrentSnapshot.CreateTrackingSpan(span.Start, span.Length, SpanTrackingMode.EdgeInclusive)
 
-                    let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder()
+                    let! xmlIndexService =
+                        AsyncServiceProvider.GlobalProvider.GetServiceAsync<SVsXMLMemberIndexService, IVsXMLMemberIndexService>()
+
+                    let documentationBuilder =
+                        XmlDocumentation.CreateDocumentationBuilder(xmlIndexService)
 
                     match sigQuickInfo, targetQuickInfo with
                     | None, None -> return null
