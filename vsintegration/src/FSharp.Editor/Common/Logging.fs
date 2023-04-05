@@ -96,7 +96,7 @@ module Logging =
     let private log logType msg = logger.Value.Log(logType, msg)
 
     let logMsg msg = log LogType.Message msg
-    let logInfo msg = log LogType.Info msg
+    //let logInfo msg = log LogType.Info msg
     let logWarning msg = log LogType.Warn msg
     let logError msg = log LogType.Error msg
 
@@ -115,14 +115,12 @@ module Logging =
 
 module Activity =
     let listen filter =
-
         let indent (activity: Activity) =
             let rec loop (activity: Activity) n =
                 if activity.Parent <> null then
                     loop (activity.Parent) (n + 1)
                 else
                     n
-
             String.replicate (loop activity 0) "    "
 
         let collectTags (activity: Activity) =
