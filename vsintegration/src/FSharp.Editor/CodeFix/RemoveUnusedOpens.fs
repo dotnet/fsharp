@@ -11,7 +11,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
 open FSharp.Compiler.Text
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "RemoveUnusedOpens"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.RemoveUnusedOpens); Shared>]
 type internal FSharpRemoveUnusedOpensCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
@@ -41,7 +41,7 @@ type internal FSharpRemoveUnusedOpensCodeFixProvider [<ImportingConstructor>] ()
             let title = SR.RemoveUnusedOpens()
 
             let codefix =
-                CodeFixHelpers.createTextChangeCodeFix (title, context, (fun () -> asyncMaybe.Return changes))
+                CodeFixHelpers.createTextChangeCodeFix (CodeFix.RemoveUnusedOpens, title, context, (fun () -> asyncMaybe.Return changes))
 
             context.RegisterCodeFix(codefix, diagnostics)
         }

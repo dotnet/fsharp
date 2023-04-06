@@ -9,7 +9,7 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "ChangePrefixNegationToInfixSubtraction"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.ChangePrefixNegationToInfixSubtraction); Shared>]
 type internal FSharpChangePrefixNegationToInfixSubtractionodeFixProvider() =
     inherit CodeFixProvider()
 
@@ -44,6 +44,7 @@ type internal FSharpChangePrefixNegationToInfixSubtractionodeFixProvider() =
 
             let codeFix =
                 CodeFixHelpers.createTextChangeCodeFix (
+                    CodeFix.ChangePrefixNegationToInfixSubtraction,
                     title,
                     context,
                     (fun () -> asyncMaybe.Return [| TextChange(TextSpan(pos, 1), "- ") |])

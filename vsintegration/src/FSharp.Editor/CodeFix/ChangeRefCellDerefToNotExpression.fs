@@ -8,7 +8,7 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "ChangeRefCellDerefToNotExpression"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.ChangeRefCellDerefToNotExpression); Shared>]
 type internal FSharpChangeRefCellDerefToNotExpressionCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
@@ -40,7 +40,12 @@ type internal FSharpChangeRefCellDerefToNotExpressionCodeFixProvider [<Importing
                 |> Seq.toImmutableArray
 
             let codeFix =
-                CodeFixHelpers.createTextChangeCodeFix (title, context, (fun () -> asyncMaybe.Return [| TextChange(derefSpan, "not ") |]))
+                CodeFixHelpers.createTextChangeCodeFix (
+                    CodeFix.ChangeRefCellDerefToNotExpression,
+                    title,
+                    context,
+                    (fun () -> asyncMaybe.Return [| TextChange(derefSpan, "not ") |])
+                )
 
             context.RegisterCodeFix(codeFix, diagnostics)
         }

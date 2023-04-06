@@ -25,6 +25,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 
 open Internal.Utilities
+open System.Reflection
 
 let internal DummyFileNameForRangesWithoutASpecificLocation = startupFileName
 let private envRange = rangeN DummyFileNameForRangesWithoutASpecificLocation 0
@@ -162,6 +163,8 @@ let tname_ValueType = "System.ValueType"
 [<Literal>]
 let tname_Enum = "System.Enum"
 [<Literal>]
+let tname_FlagsAttribute = "System.FlagsAttribute"
+[<Literal>]
 let tname_Array = "System.Array"
 [<Literal>]
 let tname_RuntimeArgumentHandle = "System.RuntimeArgumentHandle"
@@ -183,7 +186,6 @@ let tname_AsyncCallback = "System.AsyncCallback"
 let tname_IAsyncResult = "System.IAsyncResult"
 [<Literal>]
 let tname_IsByRefLikeAttribute = "System.Runtime.CompilerServices.IsByRefLikeAttribute"
-
 
 
 //-------------------------------------------------------------------------
@@ -860,8 +862,8 @@ type TcGlobals(
   let v_check_this_info            = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "CheckThis"                            , None                 , None                          , [vara],      ([[varaTy]], varaTy))
   let v_quote_to_linq_lambda_info  = makeIntrinsicValRef(fslib_MFLinqRuntimeHelpersQuotationConverter_nleref,  "QuotationToLambdaExpression"          , None                 , None                          , [vara],      ([[mkQuotedExprTy varaTy]], mkLinqExpressionTy varaTy))
 
-  let tref_DebuggableAttribute =         findSysILTypeRef tname_DebuggableAttribute
-  let tref_CompilerGeneratedAttribute  = findSysILTypeRef tname_CompilerGeneratedAttribute
+  let tref_DebuggableAttribute = findSysILTypeRef tname_DebuggableAttribute
+  let tref_CompilerGeneratedAttribute = findSysILTypeRef tname_CompilerGeneratedAttribute
   let tref_InternalsVisibleToAttribute = findSysILTypeRef tname_InternalsVisibleToAttribute
 
   let mutable generatedAttribsCache = []
@@ -911,33 +913,6 @@ type TcGlobals(
   let addFieldNeverAttrs (fdef:ILFieldDef) = fdef.With(customAttrs = addNeverAttrs fdef.CustomAttrs)
 
   let mkDebuggerTypeProxyAttribute (ty : ILType) = mkILCustomAttribute (findSysILTypeRef tname_DebuggerTypeProxyAttribute,  [ilg.typ_Type], [ILAttribElem.TypeRef (Some ty.TypeRef)], [])
-
-  // Todo: Review mkILCustomAttribute throughout fsc/fsi/ fcs to ensure that we use embedable attributes where appropriate
-  let mkLocalPrivateAttributeWithDefaultConstructor (ilg: ILGlobals, name: string) =
-
-    let ctor = addMethodGeneratedAttrs (mkILNonGenericEmptyCtor (ilg.typ_Attribute, None, None))
-
-    mkILGenericClass (
-        name,
-        ILTypeDefAccess.Private,
-        ILGenericParameterDefs.Empty,
-        ilg.typ_Attribute,
-        ILTypes.Empty,
-        mkILMethods [ ctor ],
-        emptyILFields,
-        emptyILTypeDefs,
-        emptyILProperties,
-        emptyILEvents,
-        emptyILCustomAttrs,
-        ILTypeInit.BeforeField
-    )
- 
-  let addEmbeddableCustomAttribute (tref: ILTypeRef, argTys, argvs, propvs) =
-
-    if tref.Scope = ILScopeRef.Local && not(embeddedILTypeDefs.ContainsKey(tref.Name)) then
-        embeddedILTypeDefs.TryAdd(tref.Name, mkLocalPrivateAttributeWithDefaultConstructor (ilg, tref.Name)) |> ignore
-
-    mkILCustomAttribute (tref, argTys, argvs, propvs)
 
   let betterTyconEntries =
      [| "Int32"    , v_int_tcr
@@ -1075,6 +1050,13 @@ type TcGlobals(
   member _.ilg = ilg
 
   member _.embeddedTypeDefs = embeddedILTypeDefs.Values |> Seq.toList
+
+  member _.tryRemoveEmbeddedILTypeDefs () = [
+      for key in embeddedILTypeDefs.Keys do
+        match (embeddedILTypeDefs.TryRemove(key)) with
+        | true, ilTypeDef -> yield ilTypeDef
+        | false, _ -> ()
+      ]
 
   // A table of all intrinsics that the compiler cares about
   member _.knownIntrinsics = v_knownIntrinsics
@@ -1242,7 +1224,9 @@ type TcGlobals(
 
   member val ArrayCollector_tcr = mk_MFCompilerServices_tcref fslibCcu "ArrayCollector`1"
 
-  member g.AddEmbeddableSystemAttribute (tref: ILTypeRef, argTys, argvs, propvs) = addEmbeddableCustomAttribute (tref, argTys, argvs, propvs)
+  member _.TryEmbedILType(tref: ILTypeRef, mkEmbeddableType: unit -> ILTypeDef) =
+    if tref.Scope = ILScopeRef.Local && not(embeddedILTypeDefs.ContainsKey(tref.Name)) then
+        embeddedILTypeDefs.TryAdd(tref.Name, mkEmbeddableType()) |> ignore
 
   member g.mk_GeneratedSequenceBase_ty seqElemTy = TType_app(g.seq_base_tcr,[seqElemTy], v_knownWithoutNull)
 
@@ -1436,6 +1420,9 @@ type TcGlobals(
   // We use 'findSysAttrib' here because lookup on attribute is done by name comparison, and can proceed
   // even if the type is not found in a system assembly.
   member val attrib_IsReadOnlyAttribute = findOrEmbedSysPublicAttribute "System.Runtime.CompilerServices.IsReadOnlyAttribute"
+  member val attrib_DynamicDependencyAttribute = findOrEmbedSysPublicAttribute "System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute"
+  member val enum_DynamicallyAccessedMemberTypes = findOrEmbedSysPublicAttribute "System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes"
+
   member val attrib_SystemObsolete = findSysAttrib "System.ObsoleteAttribute"
   member val attrib_DllImportAttribute = tryFindSysAttrib "System.Runtime.InteropServices.DllImportAttribute"
   member val attrib_StructLayoutAttribute = findSysAttrib "System.Runtime.InteropServices.StructLayoutAttribute"
@@ -1818,6 +1805,8 @@ type TcGlobals(
   member _.FindSysAttrib nm = findSysAttrib nm
 
   member _.TryFindSysAttrib nm = tryFindSysAttrib nm
+
+  member _.AddGeneratedAttributes attrs = addGeneratedAttrs attrs
 
   member _.AddMethodGeneratedAttributes mdef = addMethodGeneratedAttrs mdef
 

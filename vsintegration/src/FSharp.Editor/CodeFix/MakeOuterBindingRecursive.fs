@@ -8,7 +8,7 @@ open System.Composition
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "MakeOuterBindingRecursive"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.MakeOuterBindingRecursive); Shared>]
 type internal FSharpMakeOuterBindingRecursiveCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
@@ -50,6 +50,7 @@ type internal FSharpMakeOuterBindingRecursiveCodeFixProvider [<ImportingConstruc
 
             let codeFix =
                 CodeFixHelpers.createTextChangeCodeFix (
+                    CodeFix.MakeOuterBindingRecursive,
                     title,
                     context,
                     (fun () -> asyncMaybe.Return [| TextChange(TextSpan(outerBindingNameSpan.Start, 0), "rec ") |])
