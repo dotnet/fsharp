@@ -36,3 +36,6 @@ type internal FSharpAddNewKeywordCodeFixProvider() =
             context.RegisterCodeFix(codeFix, diagnostics)
         }
         |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+
+    override this.GetFixAllProvider() = FixAllProvider.Create(fun fixAllCtx doc allDiagnostics -> 
+        this.GetChangedDocument(doc,allDiagnostics, fixAllCtx.CancellationToken) )
