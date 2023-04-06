@@ -398,7 +398,7 @@ type FsiSession(sourceFile: string) =
                         if lines.Length <= 0 then
                             None
                         else
-                            Some (File.ReadAllText lines[0] |> float32)
+                            Some (lines[1] |> float32)
 
                     File.Delete(trueProcessIdFile)
                 else
