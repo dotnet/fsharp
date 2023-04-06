@@ -6,12 +6,10 @@ open System
 open System.Composition
 open System.Threading.Tasks
 
-open Microsoft.VisualStudio.FSharp.Editor.Logging
-
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "AddMissingEqualsToTypeDefinition"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.AddMissingEqualsToTypeDefinition); Shared>]
 type internal FSharpAddMissingEqualsToTypeDefinitionCodeFixProvider() =
     inherit CodeFixProvider()
 
@@ -43,6 +41,7 @@ type internal FSharpAddMissingEqualsToTypeDefinitionCodeFixProvider() =
 
             let codeFix =
                 CodeFixHelpers.createTextChangeCodeFix (
+                    CodeFix.AddMissingEqualsToTypeDefinition,
                     title,
                     context,
                     // 'pos + 1' is here because 'pos' is now the position of the first non-whitespace character.

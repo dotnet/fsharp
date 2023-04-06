@@ -14,7 +14,7 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "RenameUnusedValue"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.RenameUnusedValue); Shared>]
 type internal FSharpRenameUnusedValueCodeFixProvider [<ImportingConstructor>] () =
 
     inherit CodeFixProvider()
@@ -67,6 +67,7 @@ type internal FSharpRenameUnusedValueCodeFixProvider [<ImportingConstructor>] ()
 
                     let prefixCodeFix =
                         CodeFixHelpers.createTextChangeCodeFix (
+                            CodeFix.RenameUnusedValue,
                             prefixTitle,
                             context,
                             (fun () -> asyncMaybe.Return [| TextChange(TextSpan(context.Span.Start, 0), "_") |])
@@ -79,6 +80,7 @@ type internal FSharpRenameUnusedValueCodeFixProvider [<ImportingConstructor>] ()
 
                         let replaceCodeFix =
                             CodeFixHelpers.createTextChangeCodeFix (
+                                CodeFix.RenameUnusedValue,
                                 replaceTitle,
                                 context,
                                 (fun () -> asyncMaybe.Return [| TextChange(context.Span, "_") |])
