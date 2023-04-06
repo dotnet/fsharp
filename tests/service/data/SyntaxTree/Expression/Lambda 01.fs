@@ -1,0 +1,3 @@
+module Module
+
+(fun _ -> ())
