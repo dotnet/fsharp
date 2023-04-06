@@ -346,6 +346,11 @@ module MainModuleBuilder =
                 flags
                 (mkILExportedTypes exportedTypesList)
                 metadataVersion
+                //TODO: validate these next two numbers
+                0
+                0
+                Guid.Empty
+
 
         let disableJitOptimizations = not tcConfig.optSettings.JitOptimizationsEnabled
 

@@ -41,6 +41,17 @@ type BlobBuildingStream() =
 
     member _.WriteInt32(value: int) = builder.WriteInt32 value
 
+    member _.WriteUtf8(value: string) = 
+        let bytes = System.Text.Encoding.UTF8.GetBytes(value)
+        builder.WriteBytes(bytes)
+
+    member x.WriteUtf8Terminated(value: string) = 
+        x.WriteUtf8(value)
+        x.WriteByte(0uy)
+
+    member _.WriteGuid (value: Guid) = 
+        builder.WriteBytes(value.ToByteArray())
+
     member _.ToImmutableArray() = builder.ToImmutableArray()
 
     member _.TryWriteBytes(stream: Stream, length: int) = builder.TryWriteBytes(stream, length)
@@ -119,6 +130,16 @@ type PdbMethodData =
         RootScope: PdbMethodScope option
         DebugRange: (PdbSourceLoc * PdbSourceLoc) option
         DebugPoints: PdbDebugPoint array
+    }
+
+type PdbMetadataReferenceInfo =
+    {
+        FileName: string
+        Aliases: string[]
+        Flags: byte
+        TimeStamp: uint32
+        FileSize: uint32
+        MVID: Guid
     }
 
 module SequencePoint =
@@ -339,6 +360,24 @@ let scopeSorter (scope1: PdbMethodScope) (scope2: PdbMethodScope) =
     else
         0
 
+let private computeMetadataReferences (references: PdbMetadataReferenceInfo list): ImmutableArray<byte> =
+    let builder = new BlobBuildingStream()
+    for reference in references do
+        builder.WriteUtf8Terminated(reference.FileName)
+        builder.WriteUtf8Terminated(String.Join(",", reference.Aliases)) //TODO: sorting?
+        builder.WriteByte(reference.Flags)
+        builder.WriteInt32(int reference.TimeStamp)
+        builder.WriteInt32(int reference.FileSize)
+        builder.WriteGuid(reference.MVID)
+    builder.ToImmutableArray()
+
+let private computeOptions(options: (string*string) list): ImmutableArray<byte> =
+    let builder = new BlobBuildingStream()
+    for (name, value) in options do
+        builder.WriteUtf8Terminated(name)
+        builder.WriteUtf8Terminated(value)
+    builder.ToImmutableArray()
+
 type PortablePdbGenerator
     (
         embedAllSource: bool,
@@ -346,7 +385,9 @@ type PortablePdbGenerator
         sourceLink: string,
         checksumAlgorithm,
         info: PdbData,
-        pathMap: PathMap
+        pathMap: PathMap,
+        compilationReferences: PdbMetadataReferenceInfo list,
+        compilationOptions: (string * string) list
     ) =
 
     let docs =
@@ -387,6 +428,12 @@ type PortablePdbGenerator
 
     let sourceLinkId =
         Guid(0xcc110556u, 0xa091us, 0x4d38us, 0x9fuy, 0xecuy, 0x25uy, 0xabuy, 0x9auy, 0x35uy, 0x1auy, 0x6auy)
+
+    let compilationMetadataReferencesId = 
+        Guid(0x7E4D4708u, 0x096Eus, 0x4C5Cus, 0xAEuy, 0xDAuy, 0xCBuy, 0x10uy, 0xBAuy, 0x6Auy, 0x74uy, 0x0Duy)
+
+    let compilationOptionsId = 
+        Guid(0xB5FEEC05u, 0x8CD0us, 0x4A83us, 0x96uy, 0xDAuy, 0x46uy, 0x62uy, 0x84uy, 0xBBuy, 0x4Buy, 0xD8uy)
 
     /// <summary>
     /// The maximum number of bytes in to write out uncompressed.
@@ -434,6 +481,7 @@ type PortablePdbGenerator
 
         metadata.SetCapacity(TableIndex.Document, docLength)
 
+        // write documents
         for doc in docs do
             // For F# Interactive, file name 'stdin' gets generated for interactive inputs
             let handle =
@@ -468,7 +516,8 @@ type PortablePdbGenerator
                     dbgInfo
 
             index.Add(doc.File, handle)
-
+        
+        // write sourcelink
         if not (String.IsNullOrWhiteSpace sourceLink) then
             use fs = FileSystem.OpenFileForReadShim(sourceLink)
             use ms = new MemoryStream()
@@ -480,6 +529,24 @@ type PortablePdbGenerator
                 metadata.GetOrAddBlob(ms.ToArray())
             )
             |> ignore
+
+        // write metadata references
+        let referencesBlob = computeMetadataReferences compilationReferences
+        metadata.AddCustomDebugInformation(
+            ModuleDefinitionHandle.op_Implicit EntityHandle.ModuleDefinition,
+            metadata.GetOrAddGuid compilationMetadataReferencesId,
+            metadata.GetOrAddBlob(referencesBlob)
+        )
+        |> ignore
+        
+        // write compilation options
+        let optionsBlob = computeOptions compilationOptions
+        metadata.AddCustomDebugInformation(
+            ModuleDefinitionHandle.op_Implicit EntityHandle.ModuleDefinition,
+            metadata.GetOrAddGuid compilationOptionsId,
+            metadata.GetOrAddBlob(optionsBlob)
+        )
+        |> ignore
 
         index
 
@@ -832,9 +899,11 @@ let generatePortablePdb
     checksumAlgorithm
     (info: PdbData)
     (pathMap: PathMap)
+    (references: PdbMetadataReferenceInfo list)
+    (options: (string * string) list)
     =
     let generator =
-        PortablePdbGenerator(embedAllSource, embedSourceList, sourceLink, checksumAlgorithm, info, pathMap)
+        PortablePdbGenerator(embedAllSource, embedSourceList, sourceLink, checksumAlgorithm, info, pathMap, references, options)
 
     generator.Emit()
 

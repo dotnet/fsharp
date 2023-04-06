@@ -515,6 +515,8 @@ type TcConfigBuilder =
         mutable typeCheckingConfig: TypeCheckingConfig
 
         mutable dumpSignatureData: bool
+
+        mutable sourceFiles: string []
     }
 
     static member CreateNew:
@@ -887,6 +889,8 @@ type TcConfig =
     member typeCheckingConfig: TypeCheckingConfig
 
     member dumpSignatureData: bool
+    
+    member sourceFiles: string []
 
 /// Represents a computation to return a TcConfig. Normally this is just a constant immutable TcConfig,
 /// but for F# Interactive it may be based on an underlying mutable TcConfigBuilder.

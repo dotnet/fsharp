@@ -606,6 +606,8 @@ type TcConfigBuilder =
         mutable typeCheckingConfig: TypeCheckingConfig
 
         mutable dumpSignatureData: bool
+        
+        mutable sourceFiles: string []
     }
 
     // Directories to start probing in
@@ -806,6 +808,7 @@ type TcConfigBuilder =
                     DumpGraph = false
                 }
             dumpSignatureData = false
+            sourceFiles = Array.empty
         }
 
     member tcConfigB.FxResolver =
@@ -1347,6 +1350,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.captureIdentifiersWhenParsing = data.captureIdentifiersWhenParsing
     member _.typeCheckingConfig = data.typeCheckingConfig
     member _.dumpSignatureData = data.dumpSignatureData
+    member _.sourceFiles = data.sourceFiles
 
     static member Create(builder, validate) =
         use _ = UseBuildPhase BuildPhase.Parameter

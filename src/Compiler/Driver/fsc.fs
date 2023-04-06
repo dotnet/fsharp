@@ -458,6 +458,8 @@ let getParallelReferenceResolutionFromEnvironment () =
                 Some ParallelReferenceResolution.Off
         | false, _ -> None)
 
+let private compilerVersion = typeof<ConsoleLoggerProvider>.Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion
+
 /// First phase of compilation.
 ///   - Set up console encoding and code page settings
 ///   - Process command line, flags and collect filenames
@@ -536,6 +538,7 @@ let main1
         // Rather than start processing, just collect names, then process them.
         try
             let files = ProcessCommandLineFlags(tcConfigB, lcidFromCodePage, argv)
+            tcConfigB.sourceFiles <- files |> List.toArray
             let files = CheckAndReportSourceFileDuplicates(ResizeArray.ofList files)
             AdjustForScriptCompile(tcConfigB, files, lexResourceManager, dependencyProvider)
         with e ->
@@ -1044,6 +1047,59 @@ let main5
     // Pass on only the minimum information required for the next phase
     Args(ctok, tcConfig, tcImports, tcGlobals, diagnosticsLogger, ilxMainModule, outfile, pdbfile, signingInfo, exiter, ilSourceDocs)
 
+let private createCompilationReferences (imports: TcImports): ILPdbWriter.PdbMetadataReferenceInfo list =
+    [ for import in imports.GetImportedAssemblies() do
+        match import.ILScopeRef with
+        | IL.ILScopeRef.Assembly a ->
+            match import.FSharpViewOfMetadata.TryGetILModuleDef() with
+            | Some moduleDef ->
+                match imports.DllTable.TryFind a.Name with
+                | Some dll ->
+                    let isAssembly = 0b1uy
+                    let embedInteropTypes = false //TODO: read this flag from moduleDef/properties?
+                    {
+                        FileName = Path.GetFileName dll.FileName
+                        Aliases = [| |] //TODO: does F# support `extern alias`?
+                        Flags =  isAssembly ||| (if embedInteropTypes then 0b10uy else 0b0uy)
+                        TimeStamp = uint32 moduleDef.TimeDateStamp
+                        FileSize = uint32 moduleDef.ImageSize
+                        MVID = moduleDef.Mvid
+                    } : ILPdbWriter.PdbMetadataReferenceInfo
+                | None ->
+                    // we seem to not have the runtime assemblies in the `imports.DllTable` - we need to also provide those
+                    // in the final references list.
+                    ()
+            | None -> ()
+        | _ -> ()
+    ]
+
+
+
+let private createCompilationOptions (config: TcConfig) (imports: TcImports) (ctok: CompilationThreadToken): (string * string) list =
+    let runtimeAssy = 
+        config.PrimaryAssemblyDllReference()
+        |> fun a -> imports.FindDllInfo(ctok, a.Range, Path.GetFileNameWithoutExtension a.Text)
+    let runtimeVersion =
+        let attr = (Assembly.ReflectionOnlyLoadFrom runtimeAssy.FileName).GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+        if attr = null then "" else attr.InformationalVersion
+    [
+        "language","FSharp"
+        "compiler-version", compilerVersion
+        "runtime-version", runtimeVersion
+        "language-version", config.langVersion.SpecifiedVersionString
+        "checked", config.checkOverflow.ToString()
+        match config.conditionalDefines with
+        | [] -> ()
+        | defines -> "define", defines |> String.concat ","
+        "source-file-count", config.loadedSources.Length.ToString()
+        "compiler-target", config.target.ToString()
+        // TODO: optimization options?
+        match config.platform with
+        | None -> ()
+        | Some platform -> "platform", platform.ToString()
+        "version", "2" // TODO: determinism validation in NuGet Package Explorer is C#-specific: https://github.com/NuGetPackageExplorer/NuGetPackageExplorer/blob/ae4f65fa7e1f000dc5843d6ecc9200147dbf3bfc/Core/AssemblyMetadata/AssemblyDebugData.cs#L14
+    ]
+
 /// Sixth phase of compilation.
 ///   -  write the binaries
 let main6
@@ -1114,6 +1170,8 @@ let main6
                             referenceAssemblyOnly = true
                             referenceAssemblyAttribOpt = referenceAssemblyAttribOpt
                             pathMap = tcConfig.pathMap
+                            compilationReferences = [] // no need to read references or options if not writing the PDB
+                            compilationOptions = []
                         },
                         ilxMainModule,
                         normalizeAssemblyRefs
@@ -1125,6 +1183,8 @@ let main6
             | MetadataAssemblyGeneration.ReferenceOnly -> ()
             | _ ->
                 try
+                    let compilationReferences = createCompilationReferences tcImports
+                    let compilationOptions = createCompilationOptions tcConfig tcImports ctok
                     ILBinaryWriter.WriteILBinaryFile(
                         {
                             ilg = tcGlobals.ilg
@@ -1144,6 +1204,8 @@ let main6
                             referenceAssemblyOnly = false
                             referenceAssemblyAttribOpt = None
                             pathMap = tcConfig.pathMap
+                            compilationReferences = compilationReferences
+                            compilationOptions = compilationOptions
                         },
                         ilxMainModule,
                         normalizeAssemblyRefs

@@ -3006,6 +3006,9 @@ type ILModuleDef =
         NativeResources: ILNativeResource list
         CustomAttrsStored: ILAttributesStored
         MetadataIndex: int32
+        TimeDateStamp: int32
+        ImageSize: int32
+        Mvid: System.Guid
     }
 
     member x.ManifestOfAssembly =
@@ -4207,6 +4210,9 @@ let mkILSimpleModule
     flags
     exportedTypes
     metadataVersion
+    timeDateStamp
+    imageSize
+    mvid
     =
     let manifest =
         {
@@ -4252,6 +4258,9 @@ let mkILSimpleModule
         MetadataVersion = metadataVersion
         Resources = mkILResources []
         MetadataIndex = NoMetadataIdx
+        TimeDateStamp = timeDateStamp
+        ImageSize = imageSize
+        Mvid = mvid
     }
 
 //-----------------------------------------------------------------------

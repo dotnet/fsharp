@@ -318,6 +318,9 @@ let seekReadUTF8String (mdv: BinaryView) addr =
     let n = seekCountUtf8String mdv addr 0
     mdv.ReadUtf8String(addr, n)
 
+let seekReadGuid (mdv: BinaryView) addr = 
+    mdv.ReadBytes(addr, 16) |> Guid
+
 let seekReadBlob mdv addr =
     let struct (len, addr) = seekReadCompressedUInt32 mdv addr
     seekReadBytes mdv addr len
@@ -1137,6 +1140,7 @@ type ILMetadataReader =
         readUserStringHeap: int32 -> string
         memoizeString: string -> string
         readStringHeap: int32 -> string
+        readGuidHeap: int32 -> System.Guid
         readBlobHeap: int32 -> byte[]
         guidsStreamPhysicalLoc: int32
         rowAddr: TableName -> int -> int32
@@ -1669,7 +1673,14 @@ let readStringHeapUncached ctxtH idx =
     let mdv = ctxt.mdfile.GetView()
     seekReadUTF8String mdv (ctxt.stringsStreamPhysicalLoc + idx)
 
+let readGuidHeapUncached ctxtH idx =
+    let (ctxt: ILMetadataReader) = getHole ctxtH
+    let mdv = ctxt.mdfile.GetView()
+    seekReadGuid mdv (ctxt.guidsStreamPhysicalLoc + idx)
+
 let readStringHeap (ctxt: ILMetadataReader) idx = ctxt.readStringHeap idx
+
+let readGuidHeap (ctxt: ILMetadataReader) idx = ctxt.readGuidHeap idx
 
 let readStringHeapOption (ctxt: ILMetadataReader) idx =
     if idx = 0 then None else Some(readStringHeap ctxt idx)
@@ -1865,14 +1876,16 @@ let rec seekReadModule (ctxt: ILMetadataReader) canReduceMemory (pectxtEager: PE
          isDll,
          alignVirt,
          alignPhys,
-         imageBaseReal) =
+         imageBaseReal,
+         timeDateStamp,
+         imageSize) =
         peinfo
 
     let mdv = ctxt.mdfile.GetView()
 
-    let _generation, nameIdx, _mvidIdx, _encidIdx, _encbaseidIdx =
+    let _generation, nameIdx, mvidIdx, _encidIdx, _encbaseidIdx =
         seekReadModuleRow ctxt mdv idx
-
+    let mvid = readGuidHeap ctxt mvidIdx
     let ilModuleName = readStringHeap ctxt nameIdx
     let nativeResources = readNativeResources pectxtEager
 
@@ -1902,6 +1915,9 @@ let rec seekReadModule (ctxt: ILMetadataReader) canReduceMemory (pectxtEager: PE
         ImageBase = imageBaseReal
         MetadataVersion = ilMetadataVersion
         Resources = seekReadManifestResources ctxt canReduceMemory mdv pectxtEager pevEager
+        TimeDateStamp = timeDateStamp
+        ImageSize = imageSize
+        Mvid = mvid
     }
 
 and seekReadAssemblyManifest (ctxt: ILMetadataReader) pectxt idx =
@@ -4114,7 +4130,7 @@ let openMetadataReader
     let userStringsStreamPhysicalLoc, userStringsStreamSize =
         findStream [| 0x23; 0x55; 0x53 |] (* #US *)
 
-    let guidsStreamPhysicalLoc, _guidsStreamSize =
+    let guidsStreamPhysicalLoc, guidsStreamSize =
         findStream [| 0x23; 0x47; 0x55; 0x49; 0x44 |] (* #GUID *)
 
     let blobsStreamPhysicalLoc, blobsStreamSize =
@@ -4385,6 +4401,9 @@ let openMetadataReader
     let cacheStringHeap =
         mkCacheInt32 false inbase "string heap" (stringsStreamSize / 50 + 1)
 
+    let cacheGuidHeap = 
+        mkCacheInt32 false inbase "guid heap" (guidsStreamSize / 50 + 1)
+
     let cacheBlobHeap =
         mkCacheInt32 reduceMemoryUsage inbase "blob heap" (blobsStreamSize / 50 + 1)
 
@@ -4430,6 +4449,7 @@ let openMetadataReader
             memoizeString = Tables.memoize id
             readUserStringHeap = cacheUserStringHeap (readUserStringHeapUncached ctxtH)
             readStringHeap = cacheStringHeap (readStringHeapUncached ctxtH)
+            readGuidHeap = cacheGuidHeap (readGuidHeapUncached ctxtH)
             readBlobHeap = cacheBlobHeap (readBlobHeapUncached ctxtH)
             seekReadNestedRow = cacheNestedRow (seekReadNestedRowUncached ctxtH)
             seekReadConstantRow = cacheConstantRow (seekReadConstantRowUncached ctxtH)
@@ -4528,6 +4548,7 @@ let openPEFileReader (fileName, pefile: BinaryFile, noFileOnDisk) =
     (* PE SIGNATURE *)
     let machine = seekReadUInt16AsInt32 pev (peFileHeaderPhysLoc + 0)
     let numSections = seekReadUInt16AsInt32 pev (peFileHeaderPhysLoc + 2)
+    let timeDateStamp = seekReadInt32 pev (peFileHeaderPhysLoc + 4)
     let headerSizeOpt = seekReadUInt16AsInt32 pev (peFileHeaderPhysLoc + 16)
 
     if headerSizeOpt <> 0xe0 && headerSizeOpt <> 0xf0 then
@@ -4595,7 +4616,7 @@ let openPEFileReader (fileName, pefile: BinaryFile, noFileOnDisk) =
     let subsysMajor = seekReadUInt16AsInt32 pev (peOptionalHeaderPhysLoc + 48) // SubSys Major Always 4 (see Section 23.1).
     let subsysMinor = seekReadUInt16AsInt32 pev (peOptionalHeaderPhysLoc + 50) // SubSys Minor Always 0 (see Section 23.1).
     (* x86: 000000d0 *)
-    let _imageEndAddr = seekReadInt32 pev (peOptionalHeaderPhysLoc + 56) // Image Size: Size, in bytes, of image, including all headers and padding
+    let imageSize = seekReadInt32 pev (peOptionalHeaderPhysLoc + 56) // Image Size: Size, in bytes, of image, including all headers and padding
     let _headerPhysSize = seekReadInt32 pev (peOptionalHeaderPhysLoc + 60) // Header Size Combined size of MS-DOS Header, PE Header, PE Optional Header and padding
     let subsys = seekReadUInt16 pev (peOptionalHeaderPhysLoc + 68) // SubSystem Subsystem required to run this image.
 
@@ -4653,7 +4674,6 @@ let openPEFileReader (fileName, pefile: BinaryFile, noFileOnDisk) =
     (* 00000170 *)
 
     (* Crack section headers *)
-
     let sectionHeaders =
         [
             for i in 0 .. numSections - 1 do
@@ -4811,7 +4831,9 @@ let openPEFileReader (fileName, pefile: BinaryFile, noFileOnDisk) =
          isDll,
          alignVirt,
          alignPhys,
-         imageBaseReal)
+         imageBaseReal,
+         timeDateStamp,
+         imageSize)
 
     (metadataPhysLoc, metadataSize, peinfo, pectxt, pev)
 
