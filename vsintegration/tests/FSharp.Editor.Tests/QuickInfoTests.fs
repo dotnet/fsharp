@@ -49,7 +49,7 @@ module QuickInfo =
                 }
 
             let _, mainDescription, docs =
-                XmlDocumentation.BuildSingleTipText(documentationBuilder, elements.Head)
+                XmlDocumentation.BuildSingleTipText(documentationBuilder, elements.Head, XmlDocumentation.DefaultLineLimits)
 
             let mainTextItems = mainDescription |> Seq.map (fun x -> x.Text)
             let docTextItems = docs |> Seq.map (fun x -> x.Text)
