@@ -7,7 +7,7 @@ open System.Composition
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "RemoveReturnOrYield"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.RemoveReturnOrYield); Shared>]
 type internal FSharpRemoveReturnOrYieldCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
@@ -44,6 +44,7 @@ type internal FSharpRemoveReturnOrYieldCodeFixProvider [<ImportingConstructor>] 
 
             let codeFix =
                 CodeFixHelpers.createTextChangeCodeFix (
+                    CodeFix.RemoveReturnOrYield,
                     title,
                     context,
                     (fun () -> asyncMaybe.Return [| TextChange(context.Span, sourceText.GetSubText(exprSpan).ToString()) |])
