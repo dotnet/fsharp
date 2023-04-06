@@ -13,7 +13,7 @@ open Microsoft.VisualStudio.FSharp.Editor.SymbolHelpers
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Tokenization.FSharpKeywords
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "FSharpRenameParamToMatchSignature"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.FSharpRenameParamToMatchSignature); Shared>]
 type internal FSharpRenameParamToMatchSignature [<ImportingConstructor>] () =
 
     inherit CodeFixProvider()
@@ -65,7 +65,7 @@ type internal FSharpRenameParamToMatchSignature [<ImportingConstructor>] () =
                         CompilerDiagnostics.GetErrorMessage(FSharpDiagnosticKind.ReplaceWithSuggestion suggestion)
 
                     let codefix =
-                        CodeFixHelpers.createTextChangeCodeFix (title, context, computeChanges)
+                        CodeFixHelpers.createTextChangeCodeFix (CodeFix.FSharpRenameParamToMatchSignature, title, context, computeChanges)
 
                     context.RegisterCodeFix(codefix, diagnostics)
             | _ -> ()

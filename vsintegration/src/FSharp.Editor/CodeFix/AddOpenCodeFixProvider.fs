@@ -17,7 +17,7 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "AddOpen"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.AddOpen); Shared>]
 type internal FSharpAddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentProvider: AssemblyContentProvider) =
     inherit CodeFixProvider()
 
@@ -27,6 +27,7 @@ type internal FSharpAddOpenCodeFixProvider [<ImportingConstructor>] (assemblyCon
 
     let qualifySymbolFix (context: CodeFixContext) (fullName, qualifier) =
         CodeFixHelpers.createTextChangeCodeFix (
+            CodeFix.AddOpen,
             fixUnderscoresInMenuText fullName,
             context,
             (fun () -> asyncMaybe.Return [| TextChange(context.Span, qualifier) |])

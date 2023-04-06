@@ -13,7 +13,9 @@ open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "RemoveUnusedOpens"); Shared>]
+open FSharp.Compiler.Text
+
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.RemoveUnusedOpens); Shared>]
 type internal FSharpRemoveUnusedOpensCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 

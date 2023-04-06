@@ -8,7 +8,7 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "AddInstanceMemberParameter"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.AddInstanceMemberParameter); Shared>]
 type internal FSharpAddInstanceMemberParameterCodeFixProvider() =
     inherit CodeFixProvider()
 
@@ -27,6 +27,7 @@ type internal FSharpAddInstanceMemberParameterCodeFixProvider() =
 
             let codeFix =
                 CodeFixHelpers.createTextChangeCodeFix (
+                    CodeFix.AddInstanceMemberParameter,
                     title,
                     context,
                     (fun () -> asyncMaybe.Return [| TextChange(TextSpan(context.Span.Start, 0), "x.") |])
