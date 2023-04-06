@@ -5066,6 +5066,7 @@ FSharp.Compiler.Symbols.FSharpType: Boolean IsAbbreviation
 FSharp.Compiler.Symbols.FSharpType: Boolean IsAnonRecordType
 FSharp.Compiler.Symbols.FSharpType: Boolean IsFunctionType
 FSharp.Compiler.Symbols.FSharpType: Boolean IsGenericParameter
+FSharp.Compiler.Symbols.FSharpType: Boolean IsMeasureType
 FSharp.Compiler.Symbols.FSharpType: Boolean IsStructTupleType
 FSharp.Compiler.Symbols.FSharpType: Boolean IsTupleType
 FSharp.Compiler.Symbols.FSharpType: Boolean IsUnresolved
@@ -5074,6 +5075,7 @@ FSharp.Compiler.Symbols.FSharpType: Boolean get_IsAbbreviation()
 FSharp.Compiler.Symbols.FSharpType: Boolean get_IsAnonRecordType()
 FSharp.Compiler.Symbols.FSharpType: Boolean get_IsFunctionType()
 FSharp.Compiler.Symbols.FSharpType: Boolean get_IsGenericParameter()
+FSharp.Compiler.Symbols.FSharpType: Boolean get_IsMeasureType()
 FSharp.Compiler.Symbols.FSharpType: Boolean get_IsStructTupleType()
 FSharp.Compiler.Symbols.FSharpType: Boolean get_IsTupleType()
 FSharp.Compiler.Symbols.FSharpType: Boolean get_IsUnresolved()
