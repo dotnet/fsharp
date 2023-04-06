@@ -8,6 +8,7 @@ open Xunit
 open FSharp.Editor.Tests.Helpers
 
 module QuickInfo =
+    open FSharp.Compiler.EditorServices
 
     let private GetCaretPosition (codeWithCaret: string) =
         let caretSentinel = "$$"
@@ -26,11 +27,12 @@ module QuickInfo =
         cursorInfo
 
     let internal GetQuickInfo (code: string) caretPosition =
-        async {
+        asyncMaybe {
             let document =
                 RoslynTestHelpers.CreateSolution(code) |> RoslynTestHelpers.GetSingleDocument
 
-            return! FSharpAsyncQuickInfoSource.ProvideQuickInfo(document, caretPosition)
+            let! _, _, _, tooltip = FSharpAsyncQuickInfoSource.TryGetToolTip(document, caretPosition)
+            return tooltip
         }
         |> Async.RunSynchronously
 
@@ -39,15 +41,15 @@ module QuickInfo =
         let sigHelp = GetQuickInfo code caretPosition
 
         match sigHelp with
-        | Some (quickInfo) ->
+        | Some (ToolTipText elements) when not elements.IsEmpty ->
             let documentationBuilder =
                 { new IDocumentationBuilder with
                     override _.AppendDocumentationFromProcessedXML(_, _, _, _, _, _) = ()
                     override _.AppendDocumentation(_, _, _, _, _, _, _) = ()
                 }
 
-            let mainDescription, docs =
-                FSharpAsyncQuickInfoSource.BuildSingleQuickInfoItem documentationBuilder quickInfo
+            let _, mainDescription, docs =
+                XmlDocumentation.BuildSingleTipText(documentationBuilder, elements.Head)
 
             let mainTextItems = mainDescription |> Seq.map (fun x -> x.Text)
             let docTextItems = docs |> Seq.map (fun x -> x.Text)
