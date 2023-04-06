@@ -52,7 +52,7 @@ type WpfClassifiedTextElementFactory [<ImportingConstructor>]
                     match run.NavigationAction |> Option.ofObj with
                     | Some action ->
                         let link =
-                            { new Documents.Hyperlink(inl) with
+                            { new Documents.Hyperlink(inl, ToolTip = run.Tooltip) with
                                 override _.OnClick() = action.Invoke()
                             }
 
