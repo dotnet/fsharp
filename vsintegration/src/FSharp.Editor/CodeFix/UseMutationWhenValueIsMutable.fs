@@ -4,18 +4,15 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Composition
-open System.Threading
 open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-open FSharp.Compiler
-open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "UseMutationWhenValueIsMutable"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.UseMutationWhenValueIsMutable); Shared>]
 type internal FSharpUseMutationWhenValueIsMutableFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
@@ -83,6 +80,7 @@ type internal FSharpUseMutationWhenValueIsMutableFixProvider [<ImportingConstruc
 
                 let codeFix =
                     CodeFixHelpers.createTextChangeCodeFix (
+                        CodeFix.UseMutationWhenValueIsMutable,
                         title,
                         context,
                         (fun () -> asyncMaybe.Return [| TextChange(TextSpan(pos + 1, 1), "<-") |])

@@ -2326,6 +2326,10 @@ FSharp.Compiler.DependencyManager.ResolvingErrorReport: System.IAsyncResult Begi
 FSharp.Compiler.DependencyManager.ResolvingErrorReport: Void .ctor(System.Object, IntPtr)
 FSharp.Compiler.DependencyManager.ResolvingErrorReport: Void EndInvoke(System.IAsyncResult)
 FSharp.Compiler.DependencyManager.ResolvingErrorReport: Void Invoke(FSharp.Compiler.DependencyManager.ErrorReportType, Int32, System.String)
+FSharp.Compiler.Diagnostics.ActivityNames: System.String FscSourceName
+FSharp.Compiler.Diagnostics.ActivityNames: System.String ProfiledSourceName
+FSharp.Compiler.Diagnostics.ActivityNames: System.String[] AllRelevantNames
+FSharp.Compiler.Diagnostics.ActivityNames: System.String[] get_AllRelevantNames()
 FSharp.Compiler.Diagnostics.CompilerDiagnostics: System.Collections.Generic.IEnumerable`1[System.String] GetSuggestedNames(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.Unit],Microsoft.FSharp.Core.Unit], System.String)
 FSharp.Compiler.Diagnostics.CompilerDiagnostics: System.String GetErrorMessage(FSharp.Compiler.Diagnostics.FSharpDiagnosticKind)
 FSharp.Compiler.Diagnostics.FSharpDiagnostic: FSharp.Compiler.Diagnostics.FSharpDiagnostic Create(FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity, System.String, Int32, FSharp.Compiler.Text.Range, Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.String])
@@ -5062,6 +5066,7 @@ FSharp.Compiler.Symbols.FSharpType: Boolean IsAbbreviation
 FSharp.Compiler.Symbols.FSharpType: Boolean IsAnonRecordType
 FSharp.Compiler.Symbols.FSharpType: Boolean IsFunctionType
 FSharp.Compiler.Symbols.FSharpType: Boolean IsGenericParameter
+FSharp.Compiler.Symbols.FSharpType: Boolean IsMeasureType
 FSharp.Compiler.Symbols.FSharpType: Boolean IsStructTupleType
 FSharp.Compiler.Symbols.FSharpType: Boolean IsTupleType
 FSharp.Compiler.Symbols.FSharpType: Boolean IsUnresolved
@@ -5070,6 +5075,7 @@ FSharp.Compiler.Symbols.FSharpType: Boolean get_IsAbbreviation()
 FSharp.Compiler.Symbols.FSharpType: Boolean get_IsAnonRecordType()
 FSharp.Compiler.Symbols.FSharpType: Boolean get_IsFunctionType()
 FSharp.Compiler.Symbols.FSharpType: Boolean get_IsGenericParameter()
+FSharp.Compiler.Symbols.FSharpType: Boolean get_IsMeasureType()
 FSharp.Compiler.Symbols.FSharpType: Boolean get_IsStructTupleType()
 FSharp.Compiler.Symbols.FSharpType: Boolean get_IsTupleType()
 FSharp.Compiler.Symbols.FSharpType: Boolean get_IsUnresolved()

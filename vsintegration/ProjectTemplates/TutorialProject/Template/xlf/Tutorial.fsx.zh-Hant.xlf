@@ -89,7 +89,7 @@
       </trans-unit>
       <trans-unit id="XmlComments-Line3">
         <source>To learn more, see: https://learn.microsoft.com/dotnet/articles/fsharp/language-reference/xml-documentation</source>
-        <target state="translated">若要深入了解，請參閱: https://learn.microsoft.com/zh-tw/dotnet/articles/fsharp/language-reference/xml-documentation</target>
+        <target state="translated">若要深入了解，請參閱: https://learn.microsoft.com/dotnet/articles/fsharp/language-reference/xml-documentation</target>
         <note />
       </trans-unit>
       <trans-unit id="OpenNamespaces">
@@ -99,7 +99,7 @@
       </trans-unit>
       <trans-unit id="LearnMore">
         <source>To learn more, see: https://learn.microsoft.com/dotnet/articles/fsharp/language-reference/import-declarations-the-open-keyword</source>
-        <target state="translated">若要深入了解，請參閱: https://learn.microsoft.com/zh-tw/dotnet/articles/fsharp/language-reference/import-declarations-the-open-keyword</target>
+        <target state="translated">若要深入了解，請參閱: https://learn.microsoft.com/dotnet/articles/fsharp/language-reference/import-declarations-the-open-keyword</target>
         <note />
       </trans-unit>
       <trans-unit id="Module-Line1">
@@ -114,7 +114,7 @@
       </trans-unit>
       <trans-unit id="Module-Line3">
         <source>To learn more, see: https://learn.microsoft.com/dotnet/articles/fsharp/language-reference/modules</source>
-        <target state="translated">若要深入了解，請參閱: https://learn.microsoft.com/zh-tw/dotnet/articles/fsharp/language-reference/modules</target>
+        <target state="translated">若要深入了解，請參閱: https://learn.microsoft.com/dotnet/articles/fsharp/language-reference/modules</target>
         <note />
       </trans-unit>
       <trans-unit id="SampleInt">
