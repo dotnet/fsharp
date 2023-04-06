@@ -14,7 +14,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "ReplaceWithSuggestion"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.ReplaceWithSuggestion); Shared>]
 type internal FSharpReplaceWithSuggestionCodeFixProvider [<ImportingConstructor>] (settings: EditorOptions) =
     inherit CodeFixProvider()
 
@@ -61,6 +61,7 @@ type internal FSharpReplaceWithSuggestionCodeFixProvider [<ImportingConstructor>
 
                 let codeFix =
                     CodeFixHelpers.createTextChangeCodeFix (
+                        CodeFix.ReplaceWithSuggestion,
                         CompilerDiagnostics.GetErrorMessage(FSharpDiagnosticKind.ReplaceWithSuggestion suggestion),
                         context,
                         (fun () -> asyncMaybe.Return [| TextChange(context.Span, replacement) |])

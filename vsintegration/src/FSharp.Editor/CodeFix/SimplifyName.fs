@@ -10,7 +10,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "SimplifyNames"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.SimplifyName); Shared>]
 type internal FSharpSimplifyNameCodeFixProvider() =
     inherit CodeFixProvider()
     let fixableDiagnosticId = FSharpIDEDiagnosticIds.SimplifyNamesDiagnosticId
@@ -27,6 +27,7 @@ type internal FSharpSimplifyNameCodeFixProvider() =
 
                 let codefix =
                     CodeFixHelpers.createTextChangeCodeFix (
+                        CodeFix.SimplifyName,
                         title,
                         context,
                         (fun () -> asyncMaybe.Return [| TextChange(context.Span, "") |])

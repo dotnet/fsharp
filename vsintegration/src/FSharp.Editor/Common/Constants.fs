@@ -94,3 +94,86 @@ module internal Guids =
     let formattingOptionPageIdString = "9EBEBCE8-A79B-46B0-A8C5-A9818AEED17D"
 
     let blueHighContrastThemeId = Guid "{ce94d289-8481-498b-8ca9-9b6191a315b9}"
+
+[<RequireQualifiedAccess>]
+module internal CodeFix =
+
+    [<Literal>]
+    let AddInstanceMemberParameter = "AddInstanceMemberParameter"
+
+    [<Literal>]
+    let ConvertCSharpLambdaToFSharpLambda = "ConvertCSharpLambdaToFSharpLambda"
+
+    [<Literal>]
+    let ConvertToNotEqualsEqualityExpression = "ConvertToNotEqualsEqualityExpression"
+
+    [<Literal>]
+    let UseTripleQuotedInterpolation = "UseTripleQuotedInterpolation"
+
+    [<Literal>]
+    let SimplifyName = "SimplifyName"
+
+    [<Literal>]
+    let RemoveUnusedBinding = "RemoveUnusedBinding"
+
+    [<Literal>]
+    let ChangeToUpcast = "ChangeToUpcast"
+
+    [<Literal>]
+    let UseMutationWhenValueIsMutable = "UseMutationWhenValueIsMutable"
+
+    [<Literal>]
+    let RenameUnusedValue = "RenameUnusedValue"
+
+    [<Literal>]
+    let FixIndexerAccess = "FixIndexerAccess"
+
+    [<Literal>]
+    let RemoveReturnOrYield = "RemoveReturnOrYield"
+
+    [<Literal>]
+    let ReplaceWithSuggestion = "ReplaceWithSuggestion"
+
+    [<Literal>]
+    let MakeOuterBindingRecursive = "MakeOuterBindingRecursive"
+
+    [<Literal>]
+    let ConvertToSingleEqualsEqualityExpression =
+        "ConvertToSingleEqualsEqualityExpression"
+
+    [<Literal>]
+    let MakeDeclarationMutable = "MakeDeclarationMutable"
+
+    [<Literal>]
+    let ChangePrefixNegationToInfixSubtraction =
+        "ChangePrefixNegationToInfixSubtraction"
+
+    [<Literal>]
+    let AddMissingFunKeyword = "AddMissingFunKeyword"
+
+    [<Literal>]
+    let AddNewKeyword = "AddNewKeyword"
+
+    [<Literal>]
+    let RemoveUnusedOpens = "RemoveUnusedOpens"
+
+    [<Literal>]
+    let AddOpen = "AddOpen"
+
+    [<Literal>]
+    let ConvertCSharpUsingToFSharpOpen = "ConvertCSharpUsingToFSharpOpen"
+
+    [<Literal>]
+    let ChangeRefCellDerefToNotExpression = "ChangeRefCellDerefToNotExpression"
+
+    [<Literal>]
+    let AddMissingEqualsToTypeDefinition = "AddMissingEqualsToTypeDefinition"
+
+    [<Literal>]
+    let FSharpRenameParamToMatchSignature = "FSharpRenameParamToMatchSignature"
+
+    [<Literal>]
+    let RemoveIndexerDotBeforeBracket = "RemoveIndexerDotBeforeBracket"
+
+    [<Literal>]
+    let RemoveSuperfluousCapture = "RemoveSuperfluousCapture"

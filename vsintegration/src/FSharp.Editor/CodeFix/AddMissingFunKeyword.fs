@@ -11,7 +11,7 @@ open Microsoft.CodeAnalysis.CodeFixes
 open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "AddMissingFunKeyword"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.AddMissingFunKeyword); Shared>]
 type internal FSharpAddMissingFunKeywordCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
@@ -65,6 +65,7 @@ type internal FSharpAddMissingFunKeywordCodeFixProvider [<ImportingConstructor>]
 
             let codeFix =
                 CodeFixHelpers.createTextChangeCodeFix (
+                    CodeFix.AddMissingFunKeyword,
                     title,
                     context,
                     (fun () -> asyncMaybe.Return [| TextChange(TextSpan(intendedArgSpan.Start, 0), "fun ") |])
