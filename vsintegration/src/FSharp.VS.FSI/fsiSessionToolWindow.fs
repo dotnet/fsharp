@@ -542,7 +542,7 @@ type internal FsiToolWindow() as this =
 
     let show =
         if sessions.SupportsInteractivePrompt then
-            """#interactiveprompt "hide" """
+            """#interactiveprompt "show" """
         else
             ""
 
