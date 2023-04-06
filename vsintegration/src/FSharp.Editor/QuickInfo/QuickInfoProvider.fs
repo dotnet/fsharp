@@ -35,7 +35,7 @@ type internal FSharpAsyncQuickInfoSource
             let getSingleContent (data: ToolTipElement) =
 
                 let symbol, description, documentation =
-                    XmlDocumentation.BuildSingleTipText(documentationBuilder, data)
+                    XmlDocumentation.BuildSingleTipText(documentationBuilder, data, XmlDocumentation.DefaultLineLimits)
 
                 let getLinkTooltip filePath =
                     let solutionDir = Path.GetDirectoryName(document.Project.Solution.FilePath)

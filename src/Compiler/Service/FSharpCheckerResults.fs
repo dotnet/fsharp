@@ -2717,8 +2717,6 @@ type FSharpCheckFileResults
                     | None -> ()
                     | Some kwDescription ->
                         let kwText = kw |> TaggedText.tagKeyword |> wordL |> LayoutRender.toArray
-                        let _descText = kwDescription |> TaggedText.tagText |> wordL |> LayoutRender.toArray
-
                         yield ToolTipElement.Single(kwText, FSharpXmlDoc.FromXmlText(Xml.XmlDoc([| kwDescription |], range.Zero)))
             ]
 

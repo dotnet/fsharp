@@ -401,24 +401,46 @@ module internal XmlDocumentation =
             collector.Add(tagText separatorText)
             AppendHardLine collector
 
-    let BuildSingleTipText (documentationProvider: IDocumentationBuilder, dataTipElement: ToolTipElement) =
+    type LineLimits =
+        {
+            LineLimit: int
+            TypeParameterLimit: int
+            OverLoadsLimit: int
+        }
+
+    let DefaultLineLimits =
+        {
+            LineLimit = 45
+            TypeParameterLimit = 6
+            OverLoadsLimit = 5
+        }
+
+    let BuildSingleTipText (documentationProvider: IDocumentationBuilder, dataTipElement: ToolTipElement, limits: LineLimits) =
+
+        let {
+                LineLimit = lineLimit
+                TypeParameterLimit = typeParameterLineLimit
+                OverLoadsLimit = overLoadsLimit
+            } =
+            limits
+
         let mainDescription, documentation, typeParameterMap, exceptions, usage =
             ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray()
 
         let textCollector: ITaggedTextCollector =
-            TextSanitizingCollector(mainDescription.Add, lineLimit = 45)
+            TextSanitizingCollector(mainDescription.Add, lineLimit = lineLimit)
 
         let xmlCollector: ITaggedTextCollector =
-            TextSanitizingCollector(documentation.Add, lineLimit = 45)
+            TextSanitizingCollector(documentation.Add, lineLimit = lineLimit)
 
         let typeParameterMapCollector: ITaggedTextCollector =
-            TextSanitizingCollector(typeParameterMap.Add, lineLimit = 6)
+            TextSanitizingCollector(typeParameterMap.Add, lineLimit = typeParameterLineLimit)
 
         let exnCollector: ITaggedTextCollector =
-            TextSanitizingCollector(exceptions.Add, lineLimit = 45)
+            TextSanitizingCollector(exceptions.Add, lineLimit = lineLimit)
 
         let usageCollector: ITaggedTextCollector =
-            TextSanitizingCollector(usage.Add, lineLimit = 45)
+            TextSanitizingCollector(usage.Add, lineLimit = lineLimit)
 
         let ProcessGenericParameters (tps: TaggedText[] list) =
             if not tps.IsEmpty then
@@ -440,14 +462,14 @@ module internal XmlDocumentation =
 
         match dataTipElement with
         | ToolTipElement.Group overloads when not overloads.IsEmpty ->
-            overloads[..4]
+            overloads[.. overLoadsLimit - 1]
             |> List.map (fun item -> item.MainDescription)
             |> List.intersperse [| lineBreak |]
             |> Seq.concat
             |> Seq.iter textCollector.Add
 
-            if not overloads[5..].IsEmpty then
-                AppendOnNewLine textCollector $"({(PrettyNaming.FormatAndOtherOverloadsString overloads[5..].Length)})"
+            if not overloads[overLoadsLimit..].IsEmpty then
+                AppendOnNewLine textCollector $"({(PrettyNaming.FormatAndOtherOverloadsString overloads[overLoadsLimit..].Length)})"
 
             let item0 = overloads.Head
 
