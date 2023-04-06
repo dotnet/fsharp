@@ -395,7 +395,7 @@ type FsiSession(sourceFile: string) =
                         else
                             Some (lines[0] |> int)
                     trueFrameworkVersion <-
-                        if lines.Length <= 0 then
+                        if lines.Length <= 1 then
                             None
                         else
                             Some (lines[1] |> float32)
