@@ -8,7 +8,7 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "AddNewKeyword"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.AddNewKeyword); Shared>]
 type internal FSharpAddNewKeywordCodeFixProvider() =
     inherit CodeFixProvider()
 
@@ -27,6 +27,7 @@ type internal FSharpAddNewKeywordCodeFixProvider() =
 
             let codeFix =
                 CodeFixHelpers.createTextChangeCodeFix (
+                    CodeFix.AddNewKeyword,
                     title,
                     context,
                     (fun () -> asyncMaybe.Return [| TextChange(TextSpan(context.Span.Start, 0), "new ") |])
