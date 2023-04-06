@@ -457,7 +457,7 @@ module internal XmlDocumentation =
                     AppendHardLine usageCollector
                     r |> Seq.iter usageCollector.Add)
 
-            AppendXmlComment(documentationProvider, xmlCollector, exnCollector, item0.XmlDoc, true, true, item0.ParamName)
+            AppendXmlComment(documentationProvider, xmlCollector, exnCollector, item0.XmlDoc, true, false, item0.ParamName)
 
             ProcessGenericParameters item0.TypeMapping
 
