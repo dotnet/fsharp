@@ -37,14 +37,15 @@ ImplFile
                              (NonAtomic, false, Ident isNull, Ident ex,
                               (6,11--6,20)), (6,10--6,11), Some (6,20--6,21),
                            (6,10--6,21))),
-                     ArbitraryAfterError ("patternClauses2", (6,21--6,21)),
-                     (6,2--6,21), Yes, { ArrowRange = None
-                                         BarRange = Some (6,0--6,1) })],
-                 (2,0--6,21), Yes (2,0--2,3), Yes (5,0--5,4),
+                     ArbitraryAfterError
+                       ("typedSequentialExprBlockR", (6,22--6,24)), (6,2--6,24),
+                     Yes, { ArrowRange = Some (6,22--6,24)
+                            BarRange = Some (6,0--6,1) })], (2,0--6,24),
+                 Yes (2,0--2,3), Yes (5,0--5,4),
                  { TryKeyword = (2,0--2,3)
                    TryToWithRange = (2,0--5,4)
                    WithKeyword = (5,0--5,4)
-                   WithToEndRange = (5,0--6,21) }), (2,0--6,21))],
+                   WithToEndRange = (5,0--6,24) }), (2,0--6,24))],
           PreXmlDocEmpty, [], None, (2,0--7,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
                       CodeComments = [] }, set []))

@@ -3440,10 +3440,13 @@ declExprBlock:
 /* for these it only inserts a trailing ORIGHT_BLOCK_END */
 typedSequentialExprBlockR: 
   | typedSequentialExpr ORIGHT_BLOCK_END
-    { $1 }
+    { fun _ -> $1 }
 
   | typedSequentialExpr
-    { $1 }
+    { fun _ -> $1 }
+
+  | recover
+    { fun mStart -> arbExpr ("typedSequentialExprBlockR", mStart) }
 
 typedSequentialExpr: 
   | sequentialExpr COLON typeWithTypeConstraints
@@ -3573,36 +3576,49 @@ declExpr:
       { if not $3 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileMatch())
         // Produce approximate expression during error recovery 
         exprFromParseError $2 }
-      
-  | TRY typedSequentialExprBlockR withClauses              %prec expr_try 
-      { let mTry = (rhs parseState 1)
+
+  | TRY typedSequentialExprBlockR withClauses %prec expr_try 
+      { let mTry = rhs parseState 1
+        let expr = $2 mTry
         let spTry = DebugPointAtTry.Yes mTry
-        let mWith, (clauses, mLast) = $3 
+        let mWith, (clauses, mLast) = $3
         let spWith = DebugPointAtWith.Yes mWith
-        let mTryToWith = unionRanges mTry mWith 
-        let mWithToLast = unionRanges mWith mLast 
+        let mTryToWith = unionRanges mTry mWith
+        let mWithToLast = unionRanges mWith mLast
         let mTryToLast = unionRanges mTry mLast
-        let trivia: SynExprTryWithTrivia = 
+        let trivia: SynExprTryWithTrivia =
             { TryKeyword = mTry
               TryToWithRange = mTryToWith
               WithKeyword = mWith
               WithToEndRange = mWithToLast }
-        SynExpr.TryWith ($2, clauses, mTryToLast, spTry, spWith, trivia) }
+        SynExpr.TryWith (expr, clauses, mTryToLast, spTry, spWith, trivia) }
 
-  | TRY typedSequentialExprBlockR recover              %prec expr_try 
-      { // Produce approximate expression during error recovery 
-        // Include any expressions to make sure they gets type checked in case that generates useful results for intellisense 
-        if not $3 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileTry())
-        exprFromParseError $2 }
+  | TRY typedSequentialExprBlockR recover %prec expr_try
+      { let mTry = rhs parseState 1
+        let spTry = DebugPointAtTry.Yes mTry
+        if not $3 then reportParseErrorAt mTry (FSComp.SR.parsUnexpectedEndOfFileTry ())
+        let expr = $2 mTry
+        let mExpr = expr.Range
+        let mEnd = mExpr.EndRange
+        let spWith = DebugPointAtWith.Yes mEnd
+        let mWhole = unionRanges mTry mEnd
+        let trivia: SynExprTryWithTrivia =
+            { TryKeyword = mTry
+              TryToWithRange = mWhole
+              WithKeyword = mEnd
+              WithToEndRange = mWhole }
+        SynExpr.TryWith (expr, [], mWhole, spTry, spWith, trivia) }
 
-  | TRY typedSequentialExprBlockR FINALLY typedSequentialExprBlock %prec expr_try 
-      { let mTry = rhs parseState 1 
+  | TRY typedSequentialExprBlockR FINALLY typedSequentialExprBlock %prec expr_try
+      { let mTry = rhs parseState 1
+        let tryExpr = $2 mTry
         let spTry = DebugPointAtTry.Yes mTry
         let mFinally = rhs parseState 3
+        let finallyExpr = $4
         let spFinally = DebugPointAtFinally.Yes mFinally
-        let mTryToLast = unionRanges mTry $4.Range 
+        let mTryToLast = unionRanges mTry finallyExpr.Range
         let trivia = { TryKeyword = mTry; FinallyKeyword = mFinally }
-        SynExpr.TryFinally ($2, $4, mTryToLast, spTry, spFinally, trivia) }
+        SynExpr.TryFinally (tryExpr, finallyExpr, mTryToLast, spTry, spFinally, trivia) }
 
   | IF declExpr ifExprCases %prec expr_if 
       { let mIf = rhs parseState 1
@@ -3856,9 +3872,11 @@ declExpr:
   | FIXED declExpr
      { SynExpr.Fixed ($2, (unionRanges (rhs parseState 1) $2.Range)) } 
 
-  | RARROW typedSequentialExprBlockR 
-     { errorR(Error(FSComp.SR.parsArrowUseIsLimited(), lhs parseState))
-       SynExpr.YieldOrReturn ((true, true), $2, (unionRanges (rhs parseState 1) $2.Range)) } 
+  | RARROW typedSequentialExprBlockR
+     { errorR(Error(FSComp.SR.parsArrowUseIsLimited(), lhs parseState)) 
+       let mArrow = rhs parseState 1
+       let expr = $2 mArrow
+       SynExpr.YieldOrReturn ((true, true), expr, (unionRanges mArrow expr.Range)) }
 
   | declExpr COLON_QMARK typ
      { SynExpr.TypeTest ($1, $3, unionRanges $1.Range $3.Range) }
@@ -4142,13 +4160,6 @@ patternClauses:
        fun mBar ->
            [SynMatchClause(pat, guard, resultExpr, m, DebugPointAtTarget.Yes, { ArrowRange = Some mArrow; BarRange = mBar })], m }
 
-  | patternAndGuard recover
-     { let pat, guard = $1
-       let patm = pat.Range
-       let m = guard |> Option.map (fun e -> unionRanges patm e.Range) |> Option.defaultValue patm
-       fun mBar ->
-           [SynMatchClause(pat, guard, arbExpr ("patternClauses2", m.EndRange), m, DebugPointAtTarget.Yes, { ArrowRange = None; BarRange = mBar })], m }
-
 patternGuard: 
   | WHEN declExpr 
      { Some $2 }
@@ -4156,11 +4167,12 @@ patternGuard:
   | /* EMPTY */
      { None }
 
-patternResult: 
-  | RARROW typedSequentialExprBlockR  
-     { let mArrow = rhs parseState 1
-       mArrow, $2 }
-
+patternResult:
+  | RARROW typedSequentialExprBlockR
+      { let mArrow = rhs parseState 1
+        let expr = $2 mArrow
+        mArrow, expr }
+ 
 ifExprCases: 
   | ifExprThen ifExprElifs 
       { let exprThen, mThen = $1
@@ -4667,8 +4679,10 @@ computationExpr:
      { $1.Range, (fun mLhs -> SynExpr.ComputationExpr (false, $1, mLhs)) }
 
 arrowThenExprR:
-  | RARROW typedSequentialExprBlockR 
-     { SynExpr.YieldOrReturn ((true, false), $2, unionRanges (rhs parseState 1) $2.Range) }
+  | RARROW typedSequentialExprBlockR
+      { let mArrow = rhs parseState 1
+        let expr = $2 mArrow
+        SynExpr.YieldOrReturn ((true, false), expr, unionRanges mArrow expr.Range) }
 
 forLoopBinder: 
   | parenPattern IN declExpr 
@@ -5009,15 +5023,17 @@ anonLambdaExpr:
        mkSynFunMatchLambdas parseState.SynArgNameGenerator false mAll $2 mArrow (arbExpr("anonLambdaExpr1", (rhs parseState 4))) }
 
   | OFUN atomicPatterns RARROW typedSequentialExprBlockR OEND
-     { let mAll = unionRanges (rhs parseState 1) $4.Range
-       let mArrow = Some (rhs parseState 3)
-       mkSynFunMatchLambdas parseState.SynArgNameGenerator false mAll $2 mArrow $4 }
+      { let mArrow = rhs parseState 3
+        let expr = $4 mArrow
+        let mAll = unionRanges (rhs parseState 1) expr.Range
+        mkSynFunMatchLambdas parseState.SynArgNameGenerator false mAll $2 (Some mArrow) expr }
 
   | OFUN atomicPatterns RARROW typedSequentialExprBlockR recover
-     { if not $5 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileFunBody());
-       let mAll = unionRanges (rhs parseState 1) $4.Range
-       let mArrow = Some (rhs parseState 3)
-       exprFromParseError (mkSynFunMatchLambdas parseState.SynArgNameGenerator false mAll $2 mArrow $4) }
+     { if not $5 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileFunBody ())
+       let mArrow = rhs parseState 3
+       let expr = $4 mArrow
+       let mAll = unionRanges (rhs parseState 1) expr.Range
+       exprFromParseError (mkSynFunMatchLambdas parseState.SynArgNameGenerator false mAll $2 (Some mArrow) expr) }
 
   | OFUN atomicPatterns RARROW ORIGHT_BLOCK_END OEND
      { let mLambda = rhs2 parseState 1 3
