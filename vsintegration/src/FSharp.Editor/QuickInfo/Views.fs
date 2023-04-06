@@ -61,7 +61,8 @@ module internal QuickInfoViewProvider =
     let stackContent (elements: obj list) =
         ContainerElement(ContainerElementStyle.Stacked, elements |> Seq.map box)
 
-    let encloseRuns runs = wrapContent (runs |> List.rev) |> box
+    let encloseRuns runs =
+        ClassifiedTextElement(runs |> List.rev) |> box
 
     let provideContent
         (
@@ -75,6 +76,7 @@ module internal QuickInfoViewProvider =
         let encloseText text =
             let rec loop text runs stack =
                 match (text: TaggedText list) with
+                | [] when runs |> List.isEmpty -> stackContent (stack |> List.rev)
                 | [] -> stackContent (encloseRuns runs :: stack |> List.rev)
                 // smaller gap instead of huge double line break
                 | LineBreak :: rest when runs |> List.isEmpty -> loop rest [] (box (Separator false) :: stack)
