@@ -4160,6 +4160,14 @@ patternClauses:
        fun mBar ->
            [SynMatchClause(pat, guard, resultExpr, m, DebugPointAtTarget.Yes, { ArrowRange = Some mArrow; BarRange = mBar })], m }
 
+  | patternAndGuard recover
+     { let pat, guard = $1
+       let patm = pat.Range
+       let m = guard |> Option.map (fun e -> unionRanges patm e.Range) |> Option.defaultValue patm
+       fun mBar ->
+           [SynMatchClause(pat, guard, arbExpr ("patternClauses2", m.EndRange), m, DebugPointAtTarget.Yes, { ArrowRange = None; BarRange = mBar })], m }
+
+
 patternGuard: 
   | WHEN declExpr 
      { Some $2 }
