@@ -10,7 +10,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 open FSharp.Compiler.Diagnostics
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "FixIndexerAccess"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.FixIndexerAccess); Shared>]
 type internal LegacyFsharpFixAddDotToIndexerAccess() =
     inherit CodeFixProvider()
     let fixableDiagnosticIds = set [ "FS3217" ]
@@ -49,6 +49,7 @@ type internal LegacyFsharpFixAddDotToIndexerAccess() =
 
                     let codefix =
                         CodeFixHelpers.createTextChangeCodeFix (
+                            CodeFix.FixIndexerAccess,
                             CompilerDiagnostics.GetErrorMessage FSharpDiagnosticKind.AddIndexerDot,
                             context,
                             (fun () -> asyncMaybe.Return [| TextChange(span, replacement.TrimEnd() + ".") |])
@@ -58,12 +59,12 @@ type internal LegacyFsharpFixAddDotToIndexerAccess() =
         }
         |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "RemoveIndexerDotBeforeBracket"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.RemoveIndexerDotBeforeBracket); Shared>]
 type internal FsharpFixRemoveDotFromIndexerAccessOptIn() as this =
     inherit CodeFixProvider()
     let fixableDiagnosticIds = set [ "FS3366" ]
 
-    static let fixName =
+    static let title =
         CompilerDiagnostics.GetErrorMessage FSharpDiagnosticKind.RemoveIndexerDot
 
     override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
@@ -73,5 +74,5 @@ type internal FsharpFixRemoveDotFromIndexerAccessOptIn() as this =
             let relevantDiagnostics = this.GetPrunedDiagnostics(context)
 
             if not relevantDiagnostics.IsEmpty then
-                this.RegisterFix(context, fixName, TextChange(context.Span, ""))
+                this.RegisterFix(CodeFix.RemoveIndexerDotBeforeBracket, title, context, TextChange(context.Span, ""))
         }
