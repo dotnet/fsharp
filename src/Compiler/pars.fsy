@@ -156,6 +156,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %type <ParsedSigFile> signatureFile
 %type <ParsedScriptInteraction> interaction
 %type <Ident> ident
+%type <Ident option> optBaseSpec
 %type <SynType> typ typEOF
 %type <SynTypeDefnSig list> tyconSpfnList
 %type <SynArgPats * Range> atomicPatsOrNamePatPairs
@@ -972,24 +973,36 @@ classMemberSpfn:
      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
        SynMemberSig.Interface($4, unionRanges (rhs parseState 3) ($4).Range) }
 
-  | opt_attributes opt_access INHERIT appType
+  | opt_attributes opt_access interfaceMember recover
      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-       SynMemberSig.Inherit($4, unionRanges (rhs parseState 3) ($4).Range) }
+       let mEnd = (rhs parseState 3).EndRange
+       let ty = SynType.FromParseError(mEnd)
+       SynMemberSig.Interface(ty, rhs parseState 3) }
+
+  | opt_attributes opt_access INHERIT appType
+      { if Option.isSome $2 then errorR (Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
+        SynMemberSig.Inherit($4, unionRanges (rhs parseState 3) $4.Range) }
+
+  | opt_attributes opt_access INHERIT recover 
+      { if Option.isSome $2 then errorR (Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
+        let mEnd = (rhs parseState 3).EndRange
+        let ty = SynType.FromParseError(mEnd)
+        SynMemberSig.Inherit(ty, rhs parseState 3) }
 
   | opt_attributes opt_access VAL fieldDecl
-     { let mWhole = rhs2 parseState 1 4
-       if Option.isSome $2 then errorR (Error (FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
+     { let mStart = rhs parseState 1
+       if Option.isSome $2 then errorR (Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
        let mVal = rhs parseState 3
-       let (SynField(xmlDoc = xmlDoc)) as field = $4 $1 false mWhole (Some(SynLeadingKeyword.Val mVal))
+       let (SynField(xmlDoc = xmlDoc; range = mWhole)) as field = $4 $1 false mStart (Some(SynLeadingKeyword.Val mVal))
        let mWhole = unionRangeWithXmlDoc xmlDoc mWhole
        SynMemberSig.ValField(field, mWhole) }
 
   | opt_attributes opt_access STATIC VAL fieldDecl
-     { let mWhole = rhs2 parseState 1 5
+     { let mStart = rhs parseState 1
        if Option.isSome $2 then errorR (Error (FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
        let mStatic = rhs parseState 3
        let mVal = rhs parseState 4
-       let (SynField(xmlDoc = xmlDoc)) as field = $5 $1 true mWhole (Some(SynLeadingKeyword.StaticVal(mStatic, mVal)))
+       let (SynField(xmlDoc = xmlDoc; range = mWhole)) as field = $5 $1 true mStart (Some(SynLeadingKeyword.StaticVal(mStatic, mVal)))
        let mWhole = unionRangeWithXmlDoc xmlDoc mWhole
        SynMemberSig.ValField(field, mWhole) }
 
@@ -1950,6 +1963,13 @@ classDefnMember:
            | Some(mWithKwd, members, m) -> Some mWithKwd, Some members, unionRanges (rhs2 parseState 1 4) m
        [ SynMemberDefn.Interface($4, mWithKwd, members, mWhole) ] }
 
+  | opt_attributes opt_access interfaceMember recover
+     { let mInterface = rhs parseState 3
+       if not (isNil $1) then errorR(Error(FSComp.SR.parsAttributesAreNotPermittedOnInterfaceImplementations(), rhs parseState 1))
+       if Option.isSome $2 then errorR(Error(FSComp.SR.parsInterfacesHaveSameVisibilityAsEnclosingType(), mInterface))
+       let ty = SynType.FromParseError(mInterface.EndRange)
+       [ SynMemberDefn.Interface(ty, None, None, rhs2 parseState 1 3) ] }
+
   | opt_attributes opt_access abstractMemberFlags opt_inline nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints classMemberSpfnGetSet opt_ODECLEND
      { let ty, arity = $8
        let isInline, doc, id, explicitValTyparDecls = (Option.isSome $4), grabXmlDoc(parseState, $1, 1), $5, $6
@@ -2015,19 +2035,51 @@ classDefnMember:
 /* A 'val' definition in an object type definition */
 valDefnDecl:
   | VAL opt_mutable opt_access ident COLON typ
-     { let mVal = rhs parseState 1
-       let mRhs = rhs2 parseState 4 6
-       let mValDecl = rhs2 parseState 1 6
-       (fun rangeStart attribs mStaticOpt ->
-           let isStatic = Option.isSome mStaticOpt
-           let xmlDoc = grabXmlDocAtRangeStart(parseState, attribs, rangeStart)
-           let mValDecl = unionRanges rangeStart mValDecl |> unionRangeWithXmlDoc xmlDoc
-           let leadingKeyword =
-               match mStaticOpt with
-               | None -> SynLeadingKeyword.Val mVal
-               | Some mStatic -> SynLeadingKeyword.StaticVal(mStatic, mVal)
-           let fld = SynField(attribs, isStatic, Some $4, $6, $2, xmlDoc, $3, mRhs, { LeadingKeyword = Some leadingKeyword })
-           [ SynMemberDefn.ValField(fld, mValDecl) ]) }
+      { let mVal = rhs parseState 1
+        let mRhs = unionRanges (rhs2 parseState 4 5) $6.Range 
+        let mWhole = unionRanges mVal mRhs
+        (fun rangeStart attribs mStaticOpt ->
+            let isStatic = Option.isSome mStaticOpt
+            let xmlDoc = grabXmlDocAtRangeStart (parseState, attribs, rangeStart)
+            let mWhole = unionRanges rangeStart mWhole |> unionRangeWithXmlDoc xmlDoc
+            let leadingKeyword =
+                match mStaticOpt with
+                | None -> SynLeadingKeyword.Val mVal
+                | Some mStatic -> SynLeadingKeyword.StaticVal(mStatic, mVal)
+            let fld = SynField(attribs, isStatic, Some $4, $6, $2, xmlDoc, $3, mRhs, { LeadingKeyword = Some leadingKeyword })
+            [ SynMemberDefn.ValField(fld, mWhole) ]) }
+
+  | VAL opt_mutable opt_access ident COLON recover
+      { let mVal = rhs parseState 1
+        let mRhs = rhs2 parseState 4 5
+        let mWhole = unionRanges mVal mRhs
+        let ty = SynType.FromParseError(mWhole.EndRange)
+        (fun mStart attribs mStaticOpt ->
+            let isStatic = Option.isSome mStaticOpt
+            let xmlDoc = grabXmlDocAtRangeStart (parseState, attribs, mStart)
+            let mWhole = unionRanges mStart mWhole |> unionRangeWithXmlDoc xmlDoc
+            let leadingKeyword =
+                match mStaticOpt with
+                | None -> SynLeadingKeyword.Val mVal
+                | Some mStatic -> SynLeadingKeyword.StaticVal(mStatic, mVal)
+            let fld = SynField(attribs, isStatic, Some $4, ty, $2, xmlDoc, $3, mRhs, { LeadingKeyword = Some leadingKeyword })
+            [ SynMemberDefn.ValField(fld, mWhole) ]) }
+
+  | VAL opt_mutable opt_access ident recover
+      { let mVal = rhs parseState 1
+        let mRhs = rhs parseState 4
+        let mWhole = unionRanges mVal mRhs
+        let ty = SynType.FromParseError(mWhole.EndRange)
+        (fun mStart attribs mStaticOpt ->
+            let isStatic = Option.isSome mStaticOpt
+            let xmlDoc = grabXmlDocAtRangeStart (parseState, attribs, mStart)
+            let mWhole = unionRanges mStart mWhole |> unionRangeWithXmlDoc xmlDoc
+            let leadingKeyword =
+                match mStaticOpt with
+                | None -> SynLeadingKeyword.Val mVal
+                | Some mStatic -> SynLeadingKeyword.StaticVal(mStatic, mVal)
+            let fld = SynField(attribs, isStatic, Some $4, ty, $2, xmlDoc, $3, mRhs, { LeadingKeyword = Some leadingKeyword })
+            [ SynMemberDefn.ValField(fld, mWhole) ]) }
 
 
 /* An auto-property definition in an object type definition */
@@ -2037,7 +2089,7 @@ autoPropsDefnDecl:
        let mWith, (getSet, getSetOpt) = $8
        let mEquals = rhs parseState 6
        if $2 then
-           errorR (Error (FSComp.SR.parsMutableOnAutoPropertyShouldBeGetSet (), rhs parseState 3))
+           errorR (Error(FSComp.SR.parsMutableOnAutoPropertyShouldBeGetSet (), rhs parseState 3))
        (fun attribs flags rangeStart ->
            let xmlDoc = grabXmlDocAtRangeStart(parseState, attribs, rangeStart)
            let memberRange = unionRanges rangeStart $7.Range |> unionRangeWithXmlDoc xmlDoc
@@ -2049,10 +2101,60 @@ autoPropsDefnDecl:
            let trivia = { LeadingKeyword = leadingKeyword; WithKeyword = mWith; EqualsRange = Some mEquals; GetSetKeywords = getSetOpt }
            [ SynMemberDefn.AutoProperty(attribs, isStatic, $4, $5, getSet, memberFlags, memberFlagsForSet, xmlDoc, $3, $7, memberRange, trivia) ]) }
 
+  | VAL opt_mutable opt_access ident opt_typ ends_coming_soon_or_recover
+     { let mVal = rhs parseState 1
+       let mEnd =
+           match $5 with
+           | Some t -> t.Range
+           | _ -> $4.idRange
+       let expr = arbExpr ("autoProp1", mEnd.EndRange)
+       if $2 then
+           errorR (Error(FSComp.SR.parsMutableOnAutoPropertyShouldBeGetSet (), rhs parseState 3))
+       (fun attribs flags rangeStart ->
+           let xmlDoc = grabXmlDocAtRangeStart(parseState, attribs, rangeStart)
+           let memberRange = unionRanges rangeStart mEnd
+           let flags, leadingKeyword = flags
+           let leadingKeyword = appendValToLeadingKeyword mVal leadingKeyword
+           let memberFlags = flags SynMemberKind.Member
+           let memberFlagsForSet = flags SynMemberKind.PropertySet
+           let isStatic = not memberFlags.IsInstance
+           let trivia = { LeadingKeyword = leadingKeyword; WithKeyword = None; EqualsRange = None; GetSetKeywords = None }
+           [ SynMemberDefn.AutoProperty(attribs, isStatic, $4, $5, SynMemberKind.Member, memberFlags, memberFlagsForSet, xmlDoc, $3, expr, memberRange, trivia) ]) }
+
+  | VAL opt_mutable opt_access ident opt_typ OBLOCKSEP
+     { errorR (Error(FSComp.SR.parsMissingMemberBody(), rhs parseState 6))
+       let mVal = rhs parseState 1
+       let mEnd =
+           match $5 with
+           | Some t -> t.Range
+           | _ -> $4.idRange
+       let expr = arbExpr ("autoProp2", mEnd.EndRange)
+       if $2 then
+           errorR (Error(FSComp.SR.parsMutableOnAutoPropertyShouldBeGetSet (), rhs parseState 3))
+       (fun attribs flags rangeStart ->
+           let xmlDoc = grabXmlDocAtRangeStart(parseState, attribs, rangeStart)
+           let memberRange = unionRanges rangeStart mEnd
+           let flags, leadingKeyword = flags
+           let leadingKeyword = appendValToLeadingKeyword mVal leadingKeyword
+           let memberFlags = flags SynMemberKind.Member
+           let memberFlagsForSet = flags SynMemberKind.PropertySet
+           let isStatic = not memberFlags.IsInstance
+           let trivia = { LeadingKeyword = leadingKeyword; WithKeyword = None; EqualsRange = None; GetSetKeywords = None }
+           [ SynMemberDefn.AutoProperty(attribs, isStatic, $4, $5, SynMemberKind.Member, memberFlags, memberFlagsForSet, xmlDoc, $3, expr, memberRange, trivia) ]) }
+
+
 /* An optional type on an auto-property definition */
 opt_typ:
-   | /* EMPTY */ { None }
-   | COLON typ { Some $2 }
+  | /* EMPTY */
+      { None }
+
+  | COLON typ
+      { Some $2 }
+
+  | COLON recover
+      { let mEnd = (rhs parseState 1).EndRange
+        let ty = SynType.FromParseError(mEnd)
+        Some ty }
 
 
 atomicPatternLongIdent:
@@ -2133,17 +2235,34 @@ opt_classDefn:
 /* An 'inherits' definition in an object type definition */
 inheritsDefn:
   | INHERIT atomTypeNonAtomicDeprecated optBaseSpec
-     { let mDecl = unionRanges (rhs parseState 1) (($2): SynType).Range
-       SynMemberDefn.Inherit($2, $3, mDecl) }
+      { let mDecl = unionRanges (rhs parseState 1) (($2): SynType).Range
+        let mWhole =
+            match $3 with
+            | Some id -> unionRanges mDecl id.idRange
+            | _ -> mDecl
+        SynMemberDefn.Inherit($2, $3, mWhole) }
+
+  | INHERIT recover optBaseSpec
+      { let mDecl = rhs parseState 1
+        let ty = SynType.FromParseError(mDecl.EndRange)
+        let mWhole =
+            match $3 with
+            | Some id -> unionRanges mDecl id.idRange
+            | _ -> mDecl
+        SynMemberDefn.Inherit(ty, $3, mWhole) }
 
   | INHERIT atomTypeNonAtomicDeprecated opt_HIGH_PRECEDENCE_APP atomicExprAfterType optBaseSpec
-     { let mDecl = unionRanges (rhs parseState 1) $4.Range
-       SynMemberDefn.ImplicitInherit($2, $4, $5, mDecl) }
+      { let mDecl = unionRanges (rhs parseState 1) $4.Range
+        let mWhole =
+            match $5 with
+            | Some id -> unionRanges mDecl id.idRange
+            | _ -> mDecl
+        SynMemberDefn.ImplicitInherit($2, $4, $5, mWhole) }
 
   | INHERIT ends_coming_soon_or_recover
-     { let mDecl = (rhs parseState 1)
+     { let mDecl = rhs parseState 1
        if not $2 then errorR(Error(FSComp.SR.parsTypeNameCannotBeEmpty(), mDecl))
-       SynMemberDefn.Inherit(SynType.LongIdent(SynLongIdent([], [], [])), None, mDecl) }
+       SynMemberDefn.Inherit(SynType.FromParseError(mDecl.EndRange), None, mDecl) }
 
 optAsSpec:
   | asSpec
@@ -2629,9 +2748,19 @@ unionCaseReprElements:
 
 unionCaseReprElement:
   | ident COLON appType
-     { let xmlDoc = grabXmlDoc(parseState, [], 1)
-       let mWhole = rhs2 parseState 1 3 |> unionRangeWithXmlDoc xmlDoc
-       mkSynNamedField ($1, $3, xmlDoc, mWhole) }
+      { let xmlDoc = grabXmlDoc (parseState, [], 1)
+        let mWhole =
+            rhs2 parseState 1 2
+            |> unionRanges $3.Range
+            |> unionRangeWithXmlDoc xmlDoc
+        mkSynNamedField ($1, $3, xmlDoc, mWhole) }
+
+  | ident COLON recover
+      { let xmlDoc = grabXmlDoc (parseState, [], 1)
+        let mEnd = (rhs parseState 2).EndRange
+        let ty = SynType.FromParseError(mEnd)
+        let mWhole = rhs2 parseState 1 2 |> unionRangeWithXmlDoc xmlDoc
+        mkSynNamedField ($1, ty, xmlDoc, mWhole) }
 
   | appType
      { let xmlDoc = grabXmlDoc(parseState, [], 1)
@@ -2656,8 +2785,8 @@ recdFieldDeclList:
 /* A field declaration in a record type */
 recdFieldDecl:
   | opt_attributes fieldDecl
-     { let mWhole = rhs2 parseState 1 2
-       let fld = $2 $1 false mWhole None
+     { let mStart = rhs parseState 1
+       let fld = $2 $1 false mStart None
        let (SynField (a, b, c, d, e, xmlDoc, vis, mWhole, trivia)) = fld
        if Option.isSome vis then errorR (Error (FSComp.SR.parsRecordFieldsCannotHaveVisibilityDeclarations (), rhs parseState 2))
        let mWhole = unionRangeWithXmlDoc xmlDoc mWhole
@@ -2666,9 +2795,27 @@ recdFieldDecl:
 /* Part of a field or val declaration in a record type or object type */
 fieldDecl:
   | opt_mutable opt_access ident COLON typ
-     { fun attrs stat mWhole leadingKeyword ->
-           let xmlDoc = grabXmlDocAtRangeStart(parseState, attrs, mWhole)
-           SynField(attrs, stat, Some $3, $5, $1, xmlDoc, $2, mWhole, { LeadingKeyword = leadingKeyword }) }
+      { fun attrs stat mStart leadingKeyword ->
+          let xmlDoc = grabXmlDocAtRangeStart (parseState, attrs, mStart)
+          let mWhole = unionRanges mStart $5.Range
+          SynField(attrs, stat, Some $3, $5, $1, xmlDoc, $2, mWhole, { LeadingKeyword = leadingKeyword }) }
+
+  | opt_mutable opt_access ident COLON recover
+      { let mEnd = (rhs parseState 4).EndRange
+        fun attrs stat mStart leadingKeyword ->
+          let xmlDoc = grabXmlDocAtRangeStart (parseState, attrs, mStart)
+          let mWhole = unionRanges mStart mEnd
+          let ty = SynType.FromParseError mEnd
+          SynField(attrs, stat, Some $3, ty, $1, xmlDoc, $2, mWhole, { LeadingKeyword = leadingKeyword }) }
+
+  | opt_mutable opt_access ident recover
+      { let mEnd = (rhs parseState 3).EndRange
+        fun attrs stat mStart leadingKeyword ->
+            let xmlDoc = grabXmlDocAtRangeStart (parseState, attrs, mStart)
+            let mWhole = unionRanges mStart mEnd
+            let ty = SynType.FromParseError mEnd
+            SynField(attrs, stat, Some $3, ty, $1, xmlDoc, $2, mWhole, { LeadingKeyword = leadingKeyword }) }
+
 
 /* An exception definition */
 exconDefn:

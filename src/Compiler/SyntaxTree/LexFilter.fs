@@ -2382,11 +2382,12 @@ type LexFilterImpl (
             returnToken tokenLexbufState OFUN
 
         | INTERFACE, _ ->
-            let lookaheadTokenTup = peekNextTokenTup()
+            let lookaheadTokenTup = peekNextTokenTup ()
             let lookaheadTokenStartPos = startPosOfTokenTup lookaheadTokenTup
             match lookaheadTokenTup.Token with
             // type I = interface .... end
-            | DEFAULT | OVERRIDE | INTERFACE | NEW | TYPE | STATIC | END | MEMBER | ABSTRACT | INHERIT | LBRACK_LESS ->
+            | DEFAULT | OVERRIDE | INTERFACE | NEW | TYPE | STATIC | END | MEMBER | ABSTRACT | INHERIT | LBRACK_LESS when
+                    not strictIndentation || (tokenStartCol < lookaheadTokenStartPos.Column || match lookaheadTokenTup.Token with END -> true | _ -> false) ->
                 if debug then dprintf "INTERFACE, pushing CtxtParen, tokenStartPos = %a, lookaheadTokenStartPos = %a\n" outputPos tokenStartPos outputPos lookaheadTokenStartPos
                 pushCtxt tokenTup (CtxtParen (token, tokenStartPos))
                 pushCtxtSeqBlock tokenTup AddBlockEnd
