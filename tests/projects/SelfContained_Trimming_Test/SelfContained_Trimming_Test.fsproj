@@ -30,7 +30,7 @@
   <Import Project="$(MSBuildThisFileDirectory)../../../eng/Versions.props" />
 
   <ItemGroup>
-      <PackageReference Include="FSharp.Core" Version="$(FSCoreProductVersion).*"/>
+      <PackageReference Include="FSharp.Core" Version="$(FSharpCorePreviewPackageVersionValue)"/>
   </ItemGroup>
 
 </Project>
