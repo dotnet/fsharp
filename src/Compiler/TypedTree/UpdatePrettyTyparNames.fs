@@ -4,19 +4,13 @@
 module internal FSharp.Compiler.UpdatePrettyTyparNames
 
 open Internal.Utilities.Library
-open FSharp.Compiler.Syntax.PrettyNaming
-open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
 let updateVal (v: Val) =
     if not (List.isEmpty v.Typars) then
         let nms = PrettyTypes.PrettyTyparNames (fun _ -> true) List.empty v.Typars
-
-        (v.Typars, nms)
-        ||> List.iter2 (fun tp nm ->
-            if tp.typar_id.idText = unassignedTyparName then
-                tp.typar_id <- ident (nm, tp.Range))
+        PrettyTypes.AssignPrettyTyparNames v.Typars nms
 
 let rec updateEntity (entity: Entity) =
     for e in entity.ModuleOrNamespaceType.AllEntities do

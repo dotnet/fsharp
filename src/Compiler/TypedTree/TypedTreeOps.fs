@@ -2841,6 +2841,12 @@ module PrettyTypes =
                           
         choose tps (0, 0) []
 
+    let AssignPrettyTyparNames typars prettyNames =
+        (typars, prettyNames)
+        ||> List.iter2 (fun tp nm -> 
+            if NeedsPrettyTyparName tp  then 
+                tp.typar_id <- ident (nm, tp.Range))  
+    
     let PrettifyThings g foldTys mapTys things = 
         let ftps = foldTys (accFreeInTypeLeftToRight g true false) emptyFreeTyparsLeftToRight things
         let ftps = List.rev ftps
