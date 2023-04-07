@@ -2,6 +2,8 @@
 
 namespace FSharp.Test
 
+#nowarn "57"
+
 open System
 open System.IO
 open System.Text
@@ -856,6 +858,14 @@ Updated automatically, please check diffs in your pull request, changes must be 
     static member TypeCheckSingleError (source: string) (expectedSeverity: FSharpDiagnosticSeverity) (expectedErrorNumber: int) (expectedErrorRange: int * int * int * int) (expectedErrorMsg: string) =
         CompilerAssert.TypeCheckWithErrors source [| expectedSeverity, expectedErrorNumber, expectedErrorRange, expectedErrorMsg |]
 
+    static member TypeCheckProject(options: string array, sourceFiles: string array, getSourceText: string -> ISourceText option) : FSharpCheckProjectResults =
+        let checker = FSharpChecker.Create(documentSource = DocumentSource.Custom getSourceText)
+        let defaultOptions = defaultProjectOptions TargetFramework.Current
+        let projectOptions = { defaultOptions with OtherOptions = Array.append options defaultOptions.OtherOptions; SourceFiles = sourceFiles }
+
+        checker.ParseAndCheckProject(projectOptions)
+        |> Async.RunImmediate
+    
     static member CompileExeWithOptions(options, (source: SourceCodeFileKind)) =
         compile true options source (fun (errors, _, _) ->
             if errors.Length > 0 then

@@ -5535,5 +5535,7 @@ let CheckOneSigFile (g, amap, thisCcu, checkForErrors, conditionalDefines, tcSin
                 FinalTypeDefinitionChecksAtEndOfInferenceScope(cenv.infoReader, tcEnv.NameEnv, cenv.tcSink, false, tcEnv.DisplayEnv, tycon))
         with exn -> errorRecovery exn sigFile.QualifiedName.Range
 
+    UpdatePrettyTyparNames.updateModuleOrNamespaceType sigFileType
+    
     return (tcEnv, sigFileType, cenv.createsGeneratedProvidedTypes)
  }
