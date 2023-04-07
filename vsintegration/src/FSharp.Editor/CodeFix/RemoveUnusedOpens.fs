@@ -36,6 +36,7 @@ type internal FSharpRemoveUnusedOpensCodeFixProvider [<ImportingConstructor>] ()
 
     override this.RegisterCodeFixesAsync ctx : Task =
         task {     
+            
             let codeAction = CodeAction.Create(title, (fun ct -> 
                 this.GetChangedDocument(ctx.Document,ctx.Diagnostics, ct))
                 , title)
