@@ -2,20 +2,15 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-open System
 open System.Composition
 open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-open FSharp.Compiler
-open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.Symbols
-open FSharp.Compiler.Syntax
 open FSharp.Compiler.EditorServices
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "RemoveSuperflousCapture"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.RemoveSuperfluousCapture); Shared>]
 type internal RemoveSuperflousCaptureForUnionCaseWithNoDataProvider [<ImportingConstructor>] () =
 
     inherit CodeFixProvider()
@@ -51,7 +46,7 @@ type internal RemoveSuperflousCaptureForUnionCaseWithNoDataProvider [<ImportingC
                 let reminderSpan =
                     new TextSpan(context.Span.Start + typeInfoLength, context.Span.Length - typeInfoLength)
 
-                this.RegisterFix(context, SR.RemoveUnusedBinding(), TextChange(reminderSpan, ""))
+                this.RegisterFix(CodeFix.RemoveSuperfluousCapture, SR.RemoveUnusedBinding(), context, TextChange(reminderSpan, ""))
         }
         |> Async.Ignore
         |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

@@ -7,7 +7,7 @@ open System.Composition
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "UseTripleQuotedInterpolation"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.UseTripleQuotedInterpolation); Shared>]
 type internal FSharpUseTripleQuotedInterpolationCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
@@ -41,7 +41,12 @@ type internal FSharpUseTripleQuotedInterpolationCodeFixProvider [<ImportingConst
             let title = SR.UseTripleQuotedInterpolation()
 
             let codeFix =
-                CodeFixHelpers.createTextChangeCodeFix (title, context, (fun () -> asyncMaybe.Return [| replacement |]))
+                CodeFixHelpers.createTextChangeCodeFix (
+                    CodeFix.UseTripleQuotedInterpolation,
+                    title,
+                    context,
+                    (fun () -> asyncMaybe.Return [| replacement |])
+                )
 
             context.RegisterCodeFix(codeFix, diagnostics)
         }
