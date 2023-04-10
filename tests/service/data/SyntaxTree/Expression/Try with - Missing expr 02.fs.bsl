@@ -23,5 +23,5 @@ ImplFile
         CodeComments = [] }, set []))
 
 (4,0)-(4,4) parse error Incomplete structured construct at or before this point in expression
-(4,0)-(4,9) parse warning Possible incorrect indentation: this token is offside of context started at position (3:1). Try indenting this token further or using standard formatting conventions.
-(4,0)-(4,9) parse error Incomplete structured construct at or before this point in pattern matching
+(5,0)-(5,0) parse warning Possible incorrect indentation: this token is offside of context started at position (3:1). Try indenting this token further or using standard formatting conventions.
+(5,0)-(5,0) parse error Incomplete structured construct at or before this point in pattern matching
