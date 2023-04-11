@@ -441,6 +441,8 @@ type SynType =
 
     | Or of lhsType: SynType * rhsType: SynType * range: range * trivia: SynTypeOrTrivia
 
+    | FromParseError of range: range
+
     member x.Range =
         match x with
         | SynType.App (range = m)
@@ -459,7 +461,8 @@ type SynType =
         | SynType.MeasurePower (range = m)
         | SynType.Paren (range = m)
         | SynType.SignatureParameter (range = m)
-        | SynType.Or (range = m) -> m
+        | SynType.Or (range = m)
+        | SynType.FromParseError (range = m) -> m
         | SynType.LongIdent lidwd -> lidwd.Range
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
