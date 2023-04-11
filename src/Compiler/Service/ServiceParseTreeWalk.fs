@@ -849,7 +849,8 @@ module SyntaxTraversal =
                 | SynType.AnonRecd _
                 | SynType.LongIdent _
                 | SynType.Var _
-                | SynType.StaticConstant _ -> None
+                | SynType.StaticConstant _
+                | SynType.FromParseError _ -> None
 
             visitor.VisitType(origPath, defaultTraverse, ty)
 
