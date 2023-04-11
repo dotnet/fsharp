@@ -260,6 +260,7 @@ let visitSynType (t: SynType) : FileContentEntry list =
         | SynType.Or (lhsType, rhsType, _, _) ->
             let continuations = List.map visit [ lhsType; rhsType ]
             Continuation.concatenate continuations continuation
+        | SynType.FromParseError _ -> continuation []
 
     visit t id
 
