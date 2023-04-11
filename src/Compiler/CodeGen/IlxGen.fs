@@ -662,7 +662,7 @@ let mkLocalPrivateAttributeWithPropertyConstructors (cenv, name: string, attrPro
                 mkLdfldMethodDef ($"get_{name}", ILMemberAccess.Public, false, ilTy, fieldName, ilType, [])
             )),
             (cenv.g.AddMethodGeneratedAttributes(
-                mkStsfldMethodDef ($"set_{name}", ILMemberAccess.Private, false, ilTy, fieldName, ilType, [])
+                mkStsfldMethodDef ($"set_{name}", ILMemberAccess.Public, false, ilTy, fieldName, ilType, [])
             )),
             (cenv.g.AddPropertyGeneratedAttributes(
                 mkILNonGenericInstanceProperty (name, ilTypeRef, ilType, PropertyAttributes.None, emptyILCustomAttrs)
