@@ -18,16 +18,13 @@ ImplFile
                             PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector),
                             None, (4,6--4,7), { BarRange = Some (4,4--4,5) });
                          SynUnionCase
-                           ([], SynIdent (, None),
-                            Fields
-                              [SynField
-                                 ([], false, None,
-                                  LongIdent (SynLongIdent ([C], [], [None])),
-                                  false,
-                                  PreXmlDoc ((6,6), FSharp.Compiler.Xml.XmlDocCollector),
-                                  None, (6,6--6,7), { LeadingKeyword = None })],
+                           ([], SynIdent (, None), Fields [],
                             PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, (5,6--6,7), { BarRange = Some (5,4--5,5) });
+                            None, (5,4--5,5), { BarRange = Some (5,4--5,5) });
+                         SynUnionCase
+                           ([], SynIdent (C, None), Fields [],
+                            PreXmlDoc ((6,4), FSharp.Compiler.Xml.XmlDocCollector),
+                            None, (6,6--6,7), { BarRange = Some (6,4--6,5) });
                          SynUnionCase
                            ([], SynIdent (D, None), Fields [],
                             PreXmlDoc ((7,4), FSharp.Compiler.Xml.XmlDocCollector),
@@ -41,4 +38,4 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(5,6)-(5,8) parse error Unexpected keyword 'of' in union case. Expected identifier, '(', '(*)' or other token.
+(6,4)-(6,5) parse error Unexpected symbol '|' in union case

@@ -46,4 +46,4 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(4,4)-(4,6) parse error Unexpected keyword 'of' in type definition
+(4,4)-(4,4) parse error Missing union case name

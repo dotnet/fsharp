@@ -18,16 +18,13 @@ ImplFile
                             PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector),
                             None, (4,6--4,7), { BarRange = Some (4,4--4,5) });
                          SynUnionCase
-                           ([], SynIdent (, None),
-                            Fields
-                              [SynField
-                                 ([], false, None,
-                                  LongIdent (SynLongIdent ([C], [], [None])),
-                                  false,
-                                  PreXmlDoc ((6,6), FSharp.Compiler.Xml.XmlDocCollector),
-                                  None, (6,6--6,7), { LeadingKeyword = None })],
+                           ([], SynIdent (, None), Fields [],
                             PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, (5,6--6,7), { BarRange = Some (5,4--5,5) })],
+                            None, (5,4--5,5), { BarRange = Some (5,4--5,5) });
+                         SynUnionCase
+                           ([], SynIdent (C, None), Fields [],
+                            PreXmlDoc ((6,4), FSharp.Compiler.Xml.XmlDocCollector),
+                            None, (6,6--6,7), { BarRange = Some (6,4--6,5) })],
                         (4,4--6,7)), (4,4--6,7)), [], None, (3,5--6,7),
                   { LeadingKeyword = Type (3,0--3,4)
                     EqualsRange = Some (3,7--3,8)
@@ -37,5 +34,5 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(5,15)-(5,17) parse error Unexpected keyword 'of' in union case. Expected identifier, '(', '(*)' or other token.
+(6,4)-(6,5) parse error Unexpected symbol '|' in union case
 (5,6)-(5,14) parse error Accessibility modifiers are not permitted on union cases. Use 'type U = internal ...' or 'type U = private ...' to give an accessibility to the whole representation.

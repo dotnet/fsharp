@@ -34,4 +34,4 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(6,4)-(6,5) parse error Unexpected symbol '|' in union case. Expected identifier, '(', '(*)' or other token.
+(6,4)-(6,5) parse error Unexpected symbol '|' in union case

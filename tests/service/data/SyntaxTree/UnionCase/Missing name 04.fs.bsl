@@ -41,4 +41,4 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(5,6)-(5,8) parse error Unexpected keyword 'of' in union case. Expected identifier, '(', '(*)' or other token.
+(5,6)-(5,6) parse error Missing union case name
