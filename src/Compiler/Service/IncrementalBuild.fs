@@ -226,7 +226,7 @@ type TcInfoExtras =
     member x.TcSymbolUses =
         x.tcSymbolUses
 
-module private ValueOption =
+module ValueOption =
     let toOption = function
         | ValueSome x -> Some x
         | _ -> None
