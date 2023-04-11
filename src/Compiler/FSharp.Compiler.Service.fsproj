@@ -279,6 +279,8 @@
     <Compile Include="TypedTree\TypedTreeOps.fs" />
     <Compile Include="TypedTree\TypedTreePickle.fsi" />
     <Compile Include="TypedTree\TypedTreePickle.fs" />
+    <Compile Include="TypedTree\UpdatePrettyTyparNames.fsi" />
+    <Compile Include="TypedTree\UpdatePrettyTyparNames.fs" />
     <Compile Include="Checking\import.fsi" />
     <Compile Include="Checking\import.fs" />
     <Compile Include="Checking\TypeHierarchy.fsi" />
