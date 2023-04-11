@@ -3255,8 +3255,7 @@ module Array =
         /// <summary>Applies a function to each element of the array in parallel, threading an accumulator argument
         /// through the computation for each thread involved in the computation. After processing entire input, results from all threads are reduced together.
         /// Raises ArgumentException if the array is empty.</summary>
-
-        /// <remarks>The order of processing is not guaranteed. For that reason, the 'reduce' function argument should be commutative. 
+        /// <remarks>The order of processing is not guaranteed. For that reason, the 'reduce' function argument should be commutative.
         /// (That is, changing the order of execution must not affect the result)
         /// Also, compared the non-parallel version of Array.reduce, the 'reduce' function may be invoked more times due to the resulting reduction from participating threads.</remarks>
         ///
@@ -3267,7 +3266,7 @@ module Array =
         /// <exception cref="T:System.ArgumentException">Thrown when the input array is empty.</exception>
         ///
         /// <returns>The final result of the reductions.</returns>
-        /// 
+        ///
         /// <example id="para-reduce-1">
         /// <code lang="fsharp">
         /// let inputs = [| 1; 3; 4; 2 |]
@@ -3276,16 +3275,16 @@ module Array =
         /// </code>
         /// Evaluates to <c>1 + 3 + 4 + 2</c>. However, the system could have decided to compute (1+3) and (4+2) first, and then put them together.
         /// </example>
+
         [<CompiledName("Reduce")>]
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        val inline reduce: reduction:('T -> 'T -> 'T) -> array:'T[] -> 'T
+        val inline reduce: reduction: ('T -> 'T -> 'T) -> array: 'T[] -> 'T
 
         /// <summary>Applies a projection function to each element of the array in parallel, reducing elements in each thread with a dedicated 'reduction' function.
         /// After processing entire input, results from all threads are reduced together.
         /// Raises ArgumentException if the array is empty.</summary>
-
-        /// <remarks>The order of processing is not guaranteed. For that reason, the 'reduction' function argument should be commutative. 
-        /// (That is, changing the order of execution must not affect the result) </remarks>       
+        /// <remarks>The order of processing is not guaranteed. For that reason, the 'reduction' function argument should be commutative.
+        /// (That is, changing the order of execution must not affect the result) </remarks>
         ///
         /// <param name="projection">The function to project from elements of the input array</param>
         /// <param name="reduction">The function to reduce a pair of projected elements to a single element.</param>
@@ -3295,19 +3294,20 @@ module Array =
         /// <exception cref="T:System.ArgumentException">Thrown when the input array is empty.</exception>
         ///
         /// <returns>The final result of the reductions.</returns>
-        /// 
+        ///
         /// <example id="para-reduceBy-1">
         /// <code lang="fsharp">
         /// let inputs = [| "1"; "3"; "4"; "2" |]
         ///
-        /// inputs |> Array.Parallel.reduceBy  (fun x -> int x) (+) 
+        /// inputs |> Array.Parallel.reduceBy  (fun x -> int x) (+)
         /// </code>
         /// Evaluates to <c>1 + 3 + 4 + 2</c>. However, the system could have decided to compute (1+3) and (4+2) first, and then put them together.
         /// </example>
+
         [<CompiledName("ReduceBy")>]
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        val reduceBy: projection:('T -> 'U) -> reduction:('U -> 'U ->'U) -> array:'T[] -> 'U
-    
+        val reduceBy: projection: ('T -> 'U) -> reduction: ('U -> 'U -> 'U) -> array: 'T[] -> 'U
+
         /// <summary>Returns the greatest of all elements of the array, compared via Operators.max on the function result.</summary>
         ///
         /// <remarks>Throws ArgumentException for empty arrays.</remarks>
@@ -3338,7 +3338,7 @@ module Array =
         /// </example>
         [<CompiledName("Max")>]
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        val inline max: array:'T[] -> 'T  when 'T : comparison 
+        val inline max: array: 'T[] -> 'T when 'T: comparison
 
         /// <summary>Returns the greatest of all elements of the array, compared via Operators.max on the function result.</summary>
         ///
@@ -3371,7 +3371,7 @@ module Array =
         /// </example>
         [<CompiledName("MaxBy")>]
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        val inline maxBy  : projection:('T -> 'U) -> array:'T[] -> 'T when 'U : comparison 
+        val inline maxBy: projection: ('T -> 'U) -> array: 'T[] -> 'T when 'U: comparison
 
         /// <summary>Returns the lowest of all elements of the array, compared via Operators.min.</summary>
         ///
@@ -3403,7 +3403,7 @@ module Array =
         /// </example>
         [<CompiledName("Min")>]
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        val inline min: array:'T[] -> 'T  when 'T : comparison 
+        val inline min: array: 'T[] -> 'T when 'T: comparison
 
         /// <summary>Returns the lowest of all elements of the array, compared via Operators.min on the function result.</summary>
         ///
@@ -3436,7 +3436,7 @@ module Array =
         /// </example>
         [<CompiledName("MinBy")>]
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        val inline minBy  : projection:('T -> 'U) -> array:'T[] -> 'T when 'U : comparison 
+        val inline minBy: projection: ('T -> 'U) -> array: 'T[] -> 'T when 'U: comparison
 
         /// <summary>Returns the sum of the elements in the array.</summary>
         ///
@@ -3445,7 +3445,7 @@ module Array =
         /// <returns>The resulting sum.</returns>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
-        /// 
+        ///
         /// <example id="para-sum-1">
         /// <code lang="fsharp">
         /// let input = [| 1; 5; 3; 2 |]
@@ -3456,10 +3456,7 @@ module Array =
         /// </example>
         [<CompiledName("Sum")>]
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        val inline sum: array: ^T[] -> ^T 
-                            when ^T : (static member ( + ) : ^T * ^T -> ^T) 
-                            and  ^T : (static member Zero : ^T)
-
+        val inline sum: array: ^T[] -> ^T when ^T: (static member (+): ^T * ^T -> ^T) and ^T: (static member Zero: ^T)
 
         /// <summary>Returns the sum of the results generated by applying the function to each element of the array.</summary>
         ///
@@ -3469,7 +3466,7 @@ module Array =
         /// <returns>The resulting sum.</returns>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
-        /// 
+        ///
         /// <example id="para-sumby-1">
         /// <code lang="fsharp">
         /// let input = [| "aa"; "bbb"; "cc" |]
@@ -3480,9 +3477,9 @@ module Array =
         /// </example>
         [<CompiledName("SumBy")>]
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        val inline sumBy: projection:('T -> ^U) -> array:'T[] -> ^U 
-                            when ^U : (static member ( + ) : ^U * ^U -> ^U) 
-                            and  ^U : (static member Zero : ^U)
+        val inline sumBy:
+            projection: ('T -> ^U) -> array: 'T[] -> ^U
+                when ^U: (static member (+): ^U * ^U -> ^U) and ^U: (static member Zero: ^U)
 
         /// <summary>Returns the average of the elements in the array.</summary>
         ///
@@ -3508,9 +3505,9 @@ module Array =
         /// </example>
         [<CompiledName("Average")>]
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        val inline average   : array:^T[] -> ^T   
-                                 when ^T : (static member ( + ) : ^T * ^T -> ^T) 
-                                 and  ^T : (static member DivideByInt : ^T*int -> ^T)                     
+        val inline average:
+            array: ^T[] -> ^T
+                when ^T: (static member (+): ^T * ^T -> ^T) and ^T: (static member DivideByInt: ^T * int -> ^T)
 
         /// <summary>Returns the average of the elements generated by applying the function to each element of the array.</summary>
         ///
@@ -3546,9 +3543,9 @@ module Array =
         /// </example>
         [<CompiledName("AverageBy")>]
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        val inline averageBy   : projection:('T -> ^U) -> array:'T[] -> ^U   
-                                    when ^U : (static member ( + ) : ^U * ^U -> ^U) 
-                                    and  ^U : (static member DivideByInt : ^U*int -> ^U)                              
+        val inline averageBy:
+            projection: ('T -> ^U) -> array: 'T[] -> ^U
+                when ^U: (static member (+): ^U * ^U -> ^U) and ^U: (static member DivideByInt: ^U * int -> ^U)
 
         /// <summary>Apply the given function to each element of the array. Return
         /// the array comprised of the results <c>x</c> for each element where
