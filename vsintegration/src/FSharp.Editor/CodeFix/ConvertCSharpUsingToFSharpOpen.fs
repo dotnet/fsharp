@@ -10,7 +10,7 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "ConvertCSharpUsingToFSharpOpen"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.ConvertCSharpUsingToFSharpOpen); Shared>]
 type internal FSharpConvertCSharpUsingToFSharpOpen [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
@@ -47,7 +47,12 @@ type internal FSharpConvertCSharpUsingToFSharpOpen [<ImportingConstructor>] () =
         let title = SR.ConvertCSharpUsingToFSharpOpen()
 
         let codeFix =
-            CodeFixHelpers.createTextChangeCodeFix (title, context, (fun () -> asyncMaybe.Return [| replacement |]))
+            CodeFixHelpers.createTextChangeCodeFix (
+                CodeFix.ConvertCSharpUsingToFSharpOpen,
+                title,
+                context,
+                (fun () -> asyncMaybe.Return [| replacement |])
+            )
 
         context.RegisterCodeFix(codeFix, diagnostics)
 

@@ -16,6 +16,6 @@ ImplFile
                        Const (String ("%d ", Regular, (3,7--3,12)), (3,7--3,12)),
                        (3,0--3,12)), Ident i, (3,0--3,14)), (2,0--3,14)),
               (2,0--3,14))], PreXmlDocEmpty, [], None, (2,0--4,0),
-          { LeadingKeyword = None })], (true, false),
+          { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

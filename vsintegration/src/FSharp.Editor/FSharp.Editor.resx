@@ -173,7 +173,10 @@ Always add new line on enter;</value>
     <value>QuickInfo</value>
   </data>
   <data name="QuickInfoPageKeywords" xml:space="preserve">
-    <value>Navigation links;
+    <value>Formatting;
+Preferred description width in characters;
+Format signature to the given width by adding line breaks conforming with F# syntax rules;
+Navigation links;
 Show navigation links as;
 Solid underline;
 Dot underline;
@@ -221,6 +224,7 @@ Outlining;
 Show outlining and collapsible nodes for F# code;
 Inline hints;
 Display inline type hints (preview);
+Display return type hints (preview);
 Display inline parameter name hints (preview);Beer;
 Live Buffers;
 Use live (unsaved) buffers for checking</value>

@@ -109,7 +109,10 @@ module private ExternalSymbol =
         | _ -> []
 
 // TODO: Uncomment code when VS has a fix for updating the status bar.
-type StatusBar(statusBar: IVsStatusbar) =
+type StatusBar() =
+    let statusBar =
+        ServiceProvider.GlobalProvider.GetService<SVsStatusbar, IVsStatusbar>()
+
     let mutable _searchIcon =
         int16 Microsoft.VisualStudio.Shell.Interop.Constants.SBAI_Find :> obj
 
@@ -394,7 +397,6 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
         (
             document: Document,
             textSpan: Microsoft.CodeAnalysis.Text.TextSpan,
-            statusBar: StatusBar,
             cancellationToken: CancellationToken
         ) =
         let navigableItem = FSharpGoToDefinitionNavigableItem(document, textSpan)
@@ -407,9 +409,10 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
             navigationService.TryNavigateToSpan(workspace, navigableItem.Document.Id, navigableItem.SourceSpan, cancellationToken)
 
         if not navigationSucceeded then
-            statusBar.TempMessage(SR.CannotNavigateUnknown())
+            StatusBar().TempMessage(SR.CannotNavigateUnknown())
 
-    member _.NavigateToItem(navigableItem: FSharpNavigableItem, statusBar: StatusBar, cancellationToken: CancellationToken) =
+    member _.NavigateToItem(navigableItem: FSharpNavigableItem, cancellationToken: CancellationToken) =
+        let statusBar = StatusBar()
         use __ = statusBar.Animate()
 
         statusBar.Message(SR.NavigatingTo())
@@ -434,12 +437,11 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
             targetDocument: Document,
             targetSourceText: SourceText,
             symbolRange: range,
-            statusBar: StatusBar,
             cancellationToken: CancellationToken
         ) =
         asyncMaybe {
             let! item = this.FindDeclarationOfSymbolAtRange(targetDocument, symbolRange, targetSourceText)
-            return this.NavigateToItem(item, statusBar, cancellationToken)
+            return this.NavigateToItem(item, cancellationToken)
         }
 
     /// Find the definition location (implementation file/.fs) of the target symbol
@@ -448,12 +450,11 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
             targetDocument: Document,
             targetSourceText: SourceText,
             symbolRange: range,
-            statusBar: StatusBar,
             cancellationToken: CancellationToken
         ) =
         asyncMaybe {
             let! item = this.FindDefinitionOfSymbolAtRange(targetDocument, symbolRange, targetSourceText)
-            return this.NavigateToItem(item, statusBar, cancellationToken)
+            return this.NavigateToItem(item, cancellationToken)
         }
 
     member this.NavigateToExternalDeclaration
@@ -546,7 +547,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                         | _ -> TextSpan()
 
                     let navItem = FSharpGoToDefinitionNavigableItem(tmpShownDoc, span)
-                    this.NavigateToItem(navItem, statusBar, cancellationToken)
+                    this.NavigateToItem(navItem, cancellationToken)
                     true
                 | _ -> false
             | _ -> false
@@ -556,185 +557,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
         else
             statusBar.TempMessage(SR.CannotNavigateUnknown())
 
-type internal FSharpQuickInfo =
-    {
-        StructuredText: ToolTipText
-        Span: TextSpan
-        Symbol: FSharpSymbol option
-        SymbolKind: LexerSymbolKind
-    }
-
-module internal FSharpQuickInfo =
-
-    let userOpName = "QuickInfo"
-
-    // when a construct has been declared in a signature file the documentation comments that are
-    // written in that file are the ones that go into the generated xml when the project is compiled
-    // therefore we should include these doccoms in our design time quick info
-    let getQuickInfoFromRange (document: Document, declRange: range, cancellationToken: CancellationToken) : Async<FSharpQuickInfo option> =
-
-        asyncMaybe {
-            let userOpName = "getQuickInfoFromRange"
-            let solution = document.Project.Solution
-            // ascertain the location of the target declaration in the signature file
-            let! extDocId = solution.GetDocumentIdsWithFilePath declRange.FileName |> Seq.tryHead
-            let extDocument = solution.GetProject(extDocId.ProjectId).GetDocument extDocId
-            let! extSourceText = extDocument.GetTextAsync cancellationToken
-            let! extSpan = RoslynHelpers.TryFSharpRangeToTextSpan(extSourceText, declRange)
-            let extLineText = (extSourceText.Lines.GetLineFromPosition extSpan.Start).ToString()
-
-            // project options need to be retrieved because the signature file could be in another project
-            let! extLexerSymbol = extDocument.TryFindFSharpLexerSymbolAsync(extSpan.Start, SymbolLookupKind.Greedy, true, true, userOpName)
-            let! _, extCheckFileResults = extDocument.GetFSharpParseAndCheckResultsAsync(userOpName) |> liftAsync
-
-            let extQuickInfoText =
-                extCheckFileResults.GetToolTip(
-                    declRange.StartLine,
-                    extLexerSymbol.Ident.idRange.EndColumn,
-                    extLineText,
-                    extLexerSymbol.FullIsland,
-                    FSharpTokenTag.IDENT
-                )
-
-            match extQuickInfoText with
-            | ToolTipText []
-            | ToolTipText [ ToolTipElement.None ] -> return! None
-            | extQuickInfoText ->
-                let! extSymbolUse =
-                    extCheckFileResults.GetSymbolUseAtLocation(
-                        declRange.StartLine,
-                        extLexerSymbol.Ident.idRange.EndColumn,
-                        extLineText,
-                        extLexerSymbol.FullIsland
-                    )
-
-                let! span = RoslynHelpers.TryFSharpRangeToTextSpan(extSourceText, extLexerSymbol.Range)
-
-                return
-                    {
-                        StructuredText = extQuickInfoText
-                        Span = span
-                        Symbol = Some extSymbolUse.Symbol
-                        SymbolKind = extLexerSymbol.Kind
-                    }
-        }
-
-    /// Get QuickInfo combined from doccom of Signature and definition
-    let getQuickInfo
-        (
-            document: Document,
-            position: int,
-            cancellationToken: CancellationToken
-        ) : Async<(range * FSharpQuickInfo option * FSharpQuickInfo option) option> =
-
-        asyncMaybe {
-            let userOpName = "getQuickInfo"
-            let! lexerSymbol = document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, true, true, userOpName)
-            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(userOpName) |> liftAsync
-            let! sourceText = document.GetTextAsync cancellationToken
-            let idRange = lexerSymbol.Ident.idRange
-            let textLinePos = sourceText.Lines.GetLinePosition position
-            let fcsTextLineNumber = Line.fromZ textLinePos.Line
-            let lineText = (sourceText.Lines.GetLineFromPosition position).ToString()
-
-            /// Gets the QuickInfo information for the orignal target
-            let getTargetSymbolQuickInfo (symbol, tag) =
-                asyncMaybe {
-                    let targetQuickInfo =
-                        match lexerSymbol.Kind with
-                        | LexerSymbolKind.Keyword -> checkFileResults.GetKeywordTooltip(lexerSymbol.FullIsland)
-                        | _ -> checkFileResults.GetToolTip(fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland, tag)
-
-                    match targetQuickInfo with
-                    | ToolTipText []
-                    | ToolTipText [ ToolTipElement.None ] -> return! None
-                    | _ ->
-                        let! targetTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, lexerSymbol.Range)
-
-                        return
-                            {
-                                StructuredText = targetQuickInfo
-                                Span = targetTextSpan
-                                Symbol = symbol
-                                SymbolKind = lexerSymbol.Kind
-                            }
-                }
-
-            match lexerSymbol.Kind with
-            | LexerSymbolKind.Keyword
-            | LexerSymbolKind.String ->
-                let! targetQuickInfo = getTargetSymbolQuickInfo (None, FSharpTokenTag.STRING)
-                return lexerSymbol.Range, None, Some targetQuickInfo
-
-            | _ ->
-                let! symbolUse =
-                    checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland)
-
-                // if the target is in a signature file, adjusting the quick info is unnecessary
-                if isSignatureFile document.FilePath then
-                    let! targetQuickInfo = getTargetSymbolQuickInfo (Some symbolUse.Symbol, FSharpTokenTag.IDENT)
-                    return symbolUse.Range, None, Some targetQuickInfo
-                else
-                    // find the declaration location of the target symbol, with a preference for signature files
-                    let findSigDeclarationResult =
-                        checkFileResults.GetDeclarationLocation(
-                            idRange.StartLine,
-                            idRange.EndColumn,
-                            lineText,
-                            lexerSymbol.FullIsland,
-                            preferFlag = true
-                        )
-
-                    // it is necessary to retrieve the backup quick info because this acquires
-                    // the textSpan designating where we want the quick info to appear.
-                    let! targetQuickInfo = getTargetSymbolQuickInfo (Some symbolUse.Symbol, FSharpTokenTag.IDENT)
-
-                    let! result =
-                        match findSigDeclarationResult with
-                        | FindDeclResult.DeclFound declRange when isSignatureFile declRange.FileName ->
-                            asyncMaybe {
-                                let! sigQuickInfo = getQuickInfoFromRange (document, declRange, cancellationToken)
-
-                                // if the target was declared in a signature file, and the current file
-                                // is not the corresponding module implementation file for that signature,
-                                // the doccoms from the signature will overwrite any doccoms that might be
-                                // present on the definition/implementation
-                                let findImplDefinitionResult =
-                                    checkFileResults.GetDeclarationLocation(
-                                        idRange.StartLine,
-                                        idRange.EndColumn,
-                                        lineText,
-                                        lexerSymbol.FullIsland,
-                                        preferFlag = false
-                                    )
-
-                                match findImplDefinitionResult with
-                                | FindDeclResult.DeclNotFound _
-                                | FindDeclResult.ExternalDecl _ -> return symbolUse.Range, Some sigQuickInfo, None
-                                | FindDeclResult.DeclFound declRange ->
-                                    let! implQuickInfo = getQuickInfoFromRange (document, declRange, cancellationToken)
-
-                                    return
-                                        symbolUse.Range,
-                                        Some sigQuickInfo,
-                                        Some
-                                            { implQuickInfo with
-                                                Span = targetQuickInfo.Span
-                                            }
-                            }
-                        | _ -> async.Return None
-                        |> liftAsync
-
-                    return result |> Option.defaultValue (symbolUse.Range, None, Some targetQuickInfo)
-        }
-
-type internal FSharpNavigation
-    (
-        statusBar: StatusBar,
-        metadataAsSource: FSharpMetadataAsSourceService,
-        initialDoc: Document,
-        thisSymbolUseRange: range
-    ) =
+type internal FSharpNavigation(metadataAsSource: FSharpMetadataAsSourceService, initialDoc: Document, thisSymbolUseRange: range) =
 
     let workspace = initialDoc.Project.Solution.Workspace
     let solution = workspace.CurrentSolution
@@ -775,15 +598,13 @@ type internal FSharpNavigation
 
             match initialDoc.FilePath, targetPath with
             | Signature, Signature
-            | Implementation, Implementation -> return gtd.TryNavigateToTextSpan(targetDoc, targetTextSpan, statusBar, cancellationToken)
+            | Implementation, Implementation -> return gtd.TryNavigateToTextSpan(targetDoc, targetTextSpan, cancellationToken)
 
             // Adjust the target from signature to implementation.
-            | Implementation, Signature ->
-                return! gtd.NavigateToSymbolDefinitionAsync(targetDoc, targetSource, range, statusBar, cancellationToken)
+            | Implementation, Signature -> return! gtd.NavigateToSymbolDefinitionAsync(targetDoc, targetSource, range, cancellationToken)
 
             // Adjust the target from implmentation to signature.
-            | Signature, Implementation ->
-                return! gtd.NavigateToSymbolDeclarationAsync(targetDoc, targetSource, range, statusBar, cancellationToken)
+            | Signature, Implementation -> return! gtd.NavigateToSymbolDeclarationAsync(targetDoc, targetSource, range, cancellationToken)
         }
         |> Async.Ignore
         |> Async.StartImmediate
@@ -802,6 +623,7 @@ type internal FSharpNavigation
 
     member _.TryGoToDefinition(position, cancellationToken) =
         let gtd = GoToDefinition(metadataAsSource)
+        let statusBar = StatusBar()
         let gtdTask = gtd.FindDefinitionTask(initialDoc, position, cancellationToken)
 
         // Wrap this in a try/with as if the user clicks "Cancel" on the thread dialog, we'll be cancelled.
@@ -813,7 +635,7 @@ type internal FSharpNavigation
             if gtdTask.Status = TaskStatus.RanToCompletion && gtdTask.Result.IsSome then
                 match gtdTask.Result.Value with
                 | FSharpGoToDefinitionResult.NavigableItem (navItem), _ ->
-                    gtd.NavigateToItem(navItem, statusBar, cancellationToken)
+                    gtd.NavigateToItem(navItem, cancellationToken)
                     // 'true' means do it, like Sheev Palpatine would want us to.
                     true
                 | FSharpGoToDefinitionResult.ExternalAssembly (targetSymbolUse, metadataReferences), _ ->
@@ -860,7 +682,7 @@ type internal DocCommentId =
     | Type of EntityPath: string list
     | None
 
-type FSharpNavigableLocation(statusBar: StatusBar, metadataAsSource: FSharpMetadataAsSourceService, symbolRange: range, project: Project) =
+type FSharpNavigableLocation(metadataAsSource: FSharpMetadataAsSourceService, symbolRange: range, project: Project) =
     interface IFSharpNavigableLocation with
         member _.NavigateToAsync(_options: FSharpNavigationOptions2, cancellationToken: CancellationToken) : Task<bool> =
             asyncMaybe {
@@ -876,10 +698,8 @@ type FSharpNavigableLocation(statusBar: StatusBar, metadataAsSource: FSharpMetad
                         Implementation
 
                 match targetPath with
-                | Signature ->
-                    return! gtd.NavigateToSymbolDefinitionAsync(targetDoc, targetSource, symbolRange, statusBar, cancellationToken)
-                | Implementation ->
-                    return! gtd.NavigateToSymbolDeclarationAsync(targetDoc, targetSource, symbolRange, statusBar, cancellationToken)
+                | Signature -> return! gtd.NavigateToSymbolDefinitionAsync(targetDoc, targetSource, symbolRange, cancellationToken)
+                | Implementation -> return! gtd.NavigateToSymbolDeclarationAsync(targetDoc, targetSource, symbolRange, cancellationToken)
             }
             |> Async.map (fun a -> a.IsSome)
             |> RoslynHelpers.StartAsyncAsTask cancellationToken
@@ -891,9 +711,6 @@ type FSharpCrossLanguageSymbolNavigationService() =
         Package.GetGlobalService(typeof<ComponentModelHost.SComponentModel>) :?> ComponentModelHost.IComponentModel
 
     let workspace = componentModel.GetService<VisualStudioWorkspace>()
-
-    let statusBar =
-        StatusBar(ServiceProvider.GlobalProvider.GetService<SVsStatusbar, IVsStatusbar>())
 
     let metadataAsSource =
         componentModel
@@ -1125,7 +942,7 @@ type FSharpCrossLanguageSymbolNavigationService() =
                 // More results can theoretically be returned in case of method overloads, or when we have both signature and implementation files.
                 if locations.Count() >= 1 then
                     let (location, project) = locations.First()
-                    return FSharpNavigableLocation(statusBar, metadataAsSource, location, project) :> IFSharpNavigableLocation
+                    return FSharpNavigableLocation(metadataAsSource, location, project) :> IFSharpNavigableLocation
                 else
                     return Unchecked.defaultof<_> // returning null here, so Roslyn can fallback to default source-as-metadata implementation.
             }

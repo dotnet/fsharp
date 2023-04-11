@@ -9,6 +9,6 @@ ImplFile
              (ParsedHashDirective
                 ("nowarn", [String ("40", TripleQuote, (2,8--2,16))],
                  (2,0--2,16)), (2,0--2,16))], PreXmlDocEmpty, [], None,
-          (2,0--2,16), { LeadingKeyword = None })], (true, false),
+          (2,0--2,16), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

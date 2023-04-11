@@ -12,8 +12,7 @@ vsintegration/*
 !vsintegration/tests/FSharp.Editor.Tests
 artifacts/
 
-# Explicitly unformatted implementation files
-
+# Explicitly unformatted implementation 
 src/Compiler/Checking/AccessibilityLogic.fs
 src/Compiler/Checking/AttributeChecking.fs
 src/Compiler/Checking/AugmentWithHashCompare.fs
@@ -108,9 +107,6 @@ src/FSharp.Core/printf.fs
 src/FSharp.Core/Query.fs
 src/FSharp.Core/seqcore.fs
 
-# Fantomas limitation https://github.com/fsprojects/fantomas/issues/2264
-
-src/FSharp.Core/SI.fs
 
 # Fantomas limitations on implementation files  (to investigate)
 
@@ -140,8 +136,3 @@ src/FSharp.Core/Query.fsi
 src/FSharp.Core/resumable.fsi
 src/FSharp.Core/async.fsi
 
-# Fantomas limitations on signature files in FSharp.Core (https://github.com/fsprojects/fantomas/issues/2230)
-
-src/FSharp.Core/array.fsi
-src/FSharp.Core/tasks.fsi
-src/FSharp.Core/seq.fsi

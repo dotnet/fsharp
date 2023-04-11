@@ -14,7 +14,7 @@ ImplFile
                     (LongIdent
                        (SynLongIdent ([X], [], [None]), None, None,
                         NamePatPairs
-                          ([(Y, (3,7--3,8),
+                          ([(Y, Some (3,7--3,8),
                              Named
                                (SynIdent (y, None), false, None, (3,9--3,10)))],
                            (3,4--3,11), { ParenRange = (3,3--3,11) }), None,
@@ -23,6 +23,6 @@ ImplFile
                        BarRange = Some (3,0--3,1) })], (2,0--3,16),
                  { MatchKeyword = (2,0--2,5)
                    WithKeyword = (2,8--2,12) }), (2,0--3,16))], PreXmlDocEmpty,
-          [], None, (2,0--4,0), { LeadingKeyword = None })], (true, false),
+          [], None, (2,0--4,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

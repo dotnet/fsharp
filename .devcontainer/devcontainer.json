@@ -15,9 +15,6 @@
         "storage": "32gb"
     },
 
-    // Default settings are set in .vscode/settings.json
-    "settings": {},
-
     // Add the IDs of extensions you want installed when the container is created.
     "extensions": [
         "ms-dotnettools.csharp",

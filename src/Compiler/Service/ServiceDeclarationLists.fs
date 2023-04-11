@@ -34,14 +34,16 @@ open FSharp.Compiler.TypedTreeOps
 /// A single data tip display element
 [<RequireQualifiedAccess>]
 type ToolTipElementData = 
-    { MainDescription:  TaggedText[]
+    {
+      Symbol: FSharpSymbol option
+      MainDescription: TaggedText[]
       XmlDoc: FSharpXmlDoc
       TypeMapping: TaggedText[] list
       Remarks: TaggedText[] option
       ParamName : string option }
 
-    static member internal Create(layout, xml, ?typeMapping, ?paramName, ?remarks) = 
-        { MainDescription=layout; XmlDoc=xml; TypeMapping=defaultArg typeMapping []; ParamName=paramName; Remarks=remarks }
+    static member internal Create(layout, xml, ?typeMapping, ?paramName, ?remarks, ?symbol) = 
+        { MainDescription=layout; XmlDoc=xml; TypeMapping=defaultArg typeMapping []; ParamName=paramName; Remarks=remarks; Symbol = symbol }
 
 /// A single data tip display element
 [<RequireQualifiedAccess>]
@@ -54,8 +56,8 @@ type ToolTipElement =
     /// An error occurred formatting this element
     | CompositionError of errorText: string
 
-    static member Single(layout, xml, ?typeMapping, ?paramName, ?remarks) = 
-        Group [ ToolTipElementData.Create(layout, xml, ?typeMapping=typeMapping, ?paramName=paramName, ?remarks=remarks) ]
+    static member Single(layout, xml, ?typeMapping, ?paramName, ?remarks, ?symbol) = 
+        Group [ ToolTipElementData.Create(layout, xml, ?typeMapping=typeMapping, ?paramName=paramName, ?remarks=remarks, ?symbol = symbol) ]
 
 /// Information for building a data tip box.
 type ToolTipText = 
@@ -93,7 +95,7 @@ module DeclarationListHelpers =
     let emptyToolTip = ToolTipText []
 
     /// Generate the structured tooltip for a method info
-    let FormatOverloadsToList (infoReader: InfoReader) m denv (item: ItemWithInst) minfos (width: int option) : ToolTipElement =
+    let FormatOverloadsToList (infoReader: InfoReader) m denv (item: ItemWithInst) minfos symbol (width: int option) : ToolTipElement =
         ToolTipFault |> Option.iter (fun msg -> 
            let exn = Error((0, msg), range.Zero)
            let ph = PhasedDiagnostic.Create(exn, BuildPhase.TypeCheck)
@@ -107,7 +109,7 @@ module DeclarationListHelpers =
                 let layout = PrintUtilities.squashToWidth width layout
                 let layout = toArray layout
                 let tpsL = List.map toArray tpsL
-                ToolTipElementData.Create(layout, xml, tpsL) ]
+                ToolTipElementData.Create(layout, xml, tpsL, ?symbol = symbol) ]
  
         ToolTipElement.Group layouts
         
@@ -149,15 +151,16 @@ module DeclarationListHelpers =
     let pubpathOfTyconRef (x: TyconRef) = x.PublicPath
 
     /// Output the quick info information of a language item
-    let rec FormatItemDescriptionToToolTipElement displayFullName (infoReader: InfoReader) ad m denv (item: ItemWithInst) (width: int option) = 
+    let rec FormatItemDescriptionToToolTipElement displayFullName (infoReader: InfoReader) ad m denv (item: ItemWithInst) symbol (width: int option) = 
         let g = infoReader.g
         let amap = infoReader.amap
         let denv = SimplerDisplayEnv denv 
         let xml = GetXmlCommentForItem infoReader m item.Item
+
         match item.Item with
         | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(vref=vref)) }) -> 
             // operator with solution
-            FormatItemDescriptionToToolTipElement displayFullName infoReader ad m denv { item with Item = Item.Value vref } width
+            FormatItemDescriptionToToolTipElement displayFullName infoReader ad m denv { item with Item = Item.Value vref } symbol width
 
         | Item.Value vref | Item.CustomBuilder (_, vref) ->            
             let prettyTyparInst, resL = NicePrint.layoutQualifiedValOrMember denv infoReader item.TyparInstantiation vref
@@ -167,7 +170,7 @@ module DeclarationListHelpers =
             let resL = PrintUtilities.squashToWidth width resL
             let resL = toArray resL
             let remarks = toArray remarks
-            ToolTipElement.Single(resL, xml, tpsL, remarks=remarks)
+            ToolTipElement.Single(resL, xml, tpsL, remarks=remarks, ?symbol = symbol)
 
         // Union tags (constructors)
         | Item.UnionCase(ucinfo, _) -> 
@@ -184,7 +187,7 @@ module DeclarationListHelpers =
                 NicePrint.layoutType denv unionTy
             let layout = PrintUtilities.squashToWidth width layout
             let layout = toArray layout
-            ToolTipElement.Single (layout, xml)
+            ToolTipElement.Single (layout, xml, ?symbol = symbol)
 
         // Active pattern tag inside the declaration (result)             
         | Item.ActivePatternResult(apinfo, ty, idx, _) ->
@@ -196,7 +199,7 @@ module DeclarationListHelpers =
                 NicePrint.layoutType denv ty
             let layout = PrintUtilities.squashToWidth width layout
             let layout = toArray layout
-            ToolTipElement.Single (layout, xml)
+            ToolTipElement.Single (layout, xml, ?symbol = symbol)
 
         // Active pattern tags 
         | Item.ActivePatternCase apref -> 
@@ -217,7 +220,7 @@ module DeclarationListHelpers =
             let layout = toArray layout
             let tpsL = List.map toArray tpsL
             let remarks = toArray remarks
-            ToolTipElement.Single (layout, xml, tpsL, remarks=remarks)
+            ToolTipElement.Single (layout, xml, tpsL, remarks=remarks, ?symbol = symbol)
 
         // F# exception names
         | Item.ExnCase ecref -> 
@@ -226,7 +229,7 @@ module DeclarationListHelpers =
             let remarks = OutputFullName displayFullName pubpathOfTyconRef fullDisplayTextOfExnRefAsLayout ecref
             let layout = toArray layout
             let remarks = toArray remarks
-            ToolTipElement.Single (layout, xml, remarks=remarks)
+            ToolTipElement.Single (layout, xml, remarks=remarks, ?symbol = symbol)
 
         | Item.RecdField rfinfo when rfinfo.TyconRef.IsFSharpException ->
             let ty, _ = PrettyTypes.PrettifyType g rfinfo.FieldType
@@ -238,7 +241,7 @@ module DeclarationListHelpers =
                 NicePrint.layoutType denv ty
             let layout = PrintUtilities.squashToWidth width layout
             let layout = toArray layout
-            ToolTipElement.Single (layout, xml, paramName = id)
+            ToolTipElement.Single (layout, xml, paramName = id, ?symbol = symbol)
 
         // F# record field names
         | Item.RecdField rfinfo ->
@@ -257,7 +260,7 @@ module DeclarationListHelpers =
                 )
             let layout = PrintUtilities.squashToWidth width layout
             let layout = toArray layout
-            ToolTipElement.Single (layout, xml)
+            ToolTipElement.Single (layout, xml, ?symbol = symbol)
 
         | Item.UnionCaseField (ucinfo, fieldIndex) ->
             let rfield = ucinfo.UnionCase.GetFieldByIndex(fieldIndex)
@@ -270,7 +273,7 @@ module DeclarationListHelpers =
                 NicePrint.layoutType denv fieldTy
             let layout = PrintUtilities.squashToWidth width layout
             let layout = toArray layout
-            ToolTipElement.Single (layout, xml, paramName = id.idText)
+            ToolTipElement.Single (layout, xml, paramName = id.idText, ?symbol = symbol)
 
         // Not used
         | Item.NewDef id -> 
@@ -279,7 +282,7 @@ module DeclarationListHelpers =
                 wordL (tagUnknownEntity id.idText)
             let layout = PrintUtilities.squashToWidth width layout
             let layout = toArray layout
-            ToolTipElement.Single (layout, xml)
+            ToolTipElement.Single (layout, xml, ?symbol = symbol)
 
         // .NET fields
         | Item.ILField finfo ->
@@ -299,7 +302,7 @@ module DeclarationListHelpers =
                 )
             let layout = PrintUtilities.squashToWidth width layout
             let layout = toArray layout
-            ToolTipElement.Single (layout, xml)
+            ToolTipElement.Single (layout, xml, ?symbol = symbol)
 
         // .NET events
         | Item.Event einfo ->
@@ -314,14 +317,14 @@ module DeclarationListHelpers =
                 NicePrint.layoutType denv eventTy
             let layout = PrintUtilities.squashToWidth width layout
             let layout = toArray layout
-            ToolTipElement.Single (layout, xml)
+            ToolTipElement.Single (layout, xml, ?symbol = symbol)
 
         // F# and .NET properties
         | Item.Property(_, pinfo :: _) -> 
             let layout = NicePrint.prettyLayoutOfPropInfoFreeStyle  g amap m denv pinfo
             let layout = PrintUtilities.squashToWidth width layout
             let layout = toArray layout
-            ToolTipElement.Single (layout, xml)
+            ToolTipElement.Single (layout, xml, ?symbol = symbol)
 
         // Custom operations in queries
         | Item.CustomOperation (customOpName, usageText, Some minfo) -> 
@@ -348,12 +351,12 @@ module DeclarationListHelpers =
 
             let layout = PrintUtilities.squashToWidth width layout
             let layout = toArray layout
-            ToolTipElement.Single (layout, xml)
+            ToolTipElement.Single (layout, xml, ?symbol = symbol)
 
         // F# constructors and methods
         | Item.CtorGroup(_, minfos) 
         | Item.MethodGroup(_, minfos, _) ->
-            FormatOverloadsToList infoReader m denv item minfos width
+            FormatOverloadsToList infoReader m denv item minfos symbol width
         
         // The 'fake' zero-argument constructors of .NET interfaces.
         // This ideally should never appear in intellisense, but we do get here in repros like:
@@ -365,7 +368,7 @@ module DeclarationListHelpers =
            let layout = NicePrint.layoutTyconRef denv (tcrefOfAppTy g ty)
            let layout = PrintUtilities.squashToWidth width layout
            let layout = toArray layout
-           ToolTipElement.Single(layout, xml)
+           ToolTipElement.Single(layout, xml, ?symbol = symbol)
         
         // The 'fake' representation of constructors of .NET delegate types
         | Item.DelegateCtor delTy -> 
@@ -378,7 +381,7 @@ module DeclarationListHelpers =
                RightL.rightParen
            let layout = PrintUtilities.squashToWidth width layout
            let layout = toArray layout
-           ToolTipElement.Single(layout, xml)
+           ToolTipElement.Single(layout, xml, ?symbol = symbol)
 
         // Types.
         | Item.Types(_, TType_app(tcref, _, _) :: _)
@@ -395,20 +398,20 @@ module DeclarationListHelpers =
             let remarks = OutputFullName displayFullName pubpathOfTyconRef fullDisplayTextOfTyconRefAsLayout tcref
             let layout = toArray layout
             let remarks = toArray remarks
-            ToolTipElement.Single (layout, xml, remarks=remarks)
+            ToolTipElement.Single (layout, xml, remarks=remarks, ?symbol = symbol)
 
         // Type variables
         | Item.TypeVar (_, typar) ->
             let layout = NicePrint.prettyLayoutOfTypar denv typar
             let layout = PrintUtilities.squashToWidth width layout
-            ToolTipElement.Single (toArray layout, xml)
+            ToolTipElement.Single (toArray layout, xml, ?symbol = symbol)
 
         // Traits
         | Item.Trait traitInfo ->
             let denv = { denv with shortConstraints = false}
             let layout = NicePrint.prettyLayoutOfTrait denv traitInfo
             let layout = PrintUtilities.squashToWidth width layout
-            ToolTipElement.Single (toArray layout, xml)
+            ToolTipElement.Single (toArray layout, xml, ?symbol = symbol)
 
         // F# Modules and namespaces
         | Item.ModuleOrNamespaces(modref :: _ as modrefs) -> 
@@ -449,11 +452,11 @@ module DeclarationListHelpers =
                     )
                 let layout = PrintUtilities.squashToWidth width layout
                 let layout = toArray layout
-                ToolTipElement.Single (layout, xml)
+                ToolTipElement.Single (layout, xml, ?symbol = symbol)
             else
                 let layout = PrintUtilities.squashToWidth width layout
                 let layout = toArray layout
-                ToolTipElement.Single (layout, xml)
+                ToolTipElement.Single (layout, xml, ?symbol = symbol)
 
         | Item.AnonRecdField(anon, argTys, i, _) -> 
             let argTy = argTys[i]
@@ -466,7 +469,7 @@ module DeclarationListHelpers =
                 NicePrint.layoutType denv argTy
             let layout = PrintUtilities.squashToWidth width layout
             let layout = toArray layout
-            ToolTipElement.Single (layout, FSharpXmlDoc.None)
+            ToolTipElement.Single (layout, FSharpXmlDoc.None, ?symbol = symbol)
             
         // Named parameters
         | Item.ArgName (Some id, argTy, _, _) -> 
@@ -478,10 +481,10 @@ module DeclarationListHelpers =
                 NicePrint.layoutType denv argTy
             let layout = PrintUtilities.squashToWidth width layout
             let layout = toArray layout
-            ToolTipElement.Single (layout, xml, paramName = id.idText)
+            ToolTipElement.Single (layout, xml, paramName = id.idText, ?symbol = symbol)
             
         | Item.SetterArg (_, item) -> 
-            FormatItemDescriptionToToolTipElement displayFullName infoReader ad m denv (ItemWithNoInst item) width
+            FormatItemDescriptionToToolTipElement displayFullName infoReader ad m denv (ItemWithNoInst item) symbol width
 
         | Item.ArgName (None, _, _, _)
     
@@ -523,9 +526,9 @@ module DeclarationListHelpers =
         | Item.CustomOperation (_, _, None) ->  ToolTipElement.None 
 
     /// Format the structured version of a tooltip for an item
-    let FormatStructuredDescriptionOfItem isDecl infoReader ad m denv item width = 
+    let FormatStructuredDescriptionOfItem isDecl infoReader ad m denv item symbol width = 
         DiagnosticsScope.Protect m 
-            (fun () -> FormatItemDescriptionToToolTipElement isDecl infoReader ad m denv item width)
+            (fun () -> FormatItemDescriptionToToolTipElement isDecl infoReader ad m denv item symbol width)
             (fun err -> ToolTipElement.CompositionError err)
 
 /// Represents one parameter for one method (or other item) in a group.
@@ -1034,7 +1037,7 @@ type DeclarationListItem(textInDeclList: string, textInCode: string, fullName: s
     member _.Description = 
         match info with
         | Choice1Of2 (items: CompletionItem list, infoReader, ad, m, denv) -> 
-            ToolTipText(items |> List.map (fun x -> FormatStructuredDescriptionOfItem true infoReader ad m denv x.ItemWithInst None))
+            ToolTipText(items |> List.map (fun x -> FormatStructuredDescriptionOfItem true infoReader ad m denv x.ItemWithInst None None))
         | Choice2Of2 result -> 
             result
 
@@ -1087,7 +1090,7 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
     // Make a 'Declarations' object for a set of selected items
     static member Create(infoReader:InfoReader, ad, m: range, denv, getAccessibility: Item -> FSharpAccessibility, items: CompletionItem list, currentNamespace: string[] option, isAttributeApplicationContext: bool) = 
         let g = infoReader.g
-        let isForType = items |> List.exists (fun x -> x.Type.IsSome)
+        let isForType = items |> List.exists (fun x -> x.Type.IsSome || (x.Item |> function Item.AnonRecdField _ -> true | _ -> false))
         let items = items |> RemoveExplicitlySuppressedCompletionItems g
         
         let tyconRefOptEq tref1 tref2 =
@@ -1297,7 +1300,7 @@ type MethodGroup( name: string, unsortedMethods: MethodGroupItem[] ) =
                                 (fun () -> PrettyParamsAndReturnTypeOfItem infoReader m denv  { item with Item = flatItem })
                                 (fun err -> [], wordL (tagText err))
                             
-                        let description = ToolTipText [FormatStructuredDescriptionOfItem true infoReader ad m denv { item with Item = flatItem } None]
+                        let description = ToolTipText [FormatStructuredDescriptionOfItem true infoReader ad m denv { item with Item = flatItem } None None]
 
                         let hasParamArrayArg = 
                             match flatItem with 

@@ -14,17 +14,22 @@
       </trans-unit>
       <trans-unit id="Enable_Live_Buffers">
         <source>Use live (unsaved) buffers for checking (restart required)</source>
-        <target state="new">Use live (unsaved) buffers for checking (restart required)</target>
+        <target state="translated">Denetim için canlı (kaydedilmemiş) arabellekler kullanın (yeniden başlatma gerekir)</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_partial_type_checking">
         <source>Enable partial type checking</source>
-        <target state="new">Enable partial type checking</target>
+        <target state="translated">Kısmi tür denetlemeyi etkinleştir</target>
         <note />
       </trans-unit>
       <trans-unit id="Find_References_Performance">
         <source>Find References Performance Options</source>
         <target state="translated">Başvuruları Bul Performans Seçenekleri</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Formatting">
+        <source>Formatting</source>
+        <target state="translated">Biçimlendirme</target>
         <note />
       </trans-unit>
       <trans-unit id="Inline_Hints">
@@ -74,7 +79,7 @@
       </trans-unit>
       <trans-unit id="LiveBuffers">
         <source>Live Buffers (experimental)</source>
-        <target state="new">Live Buffers (experimental)</target>
+        <target state="translated">Canlı Arabellekler (deneysel)</target>
         <note />
       </trans-unit>
       <trans-unit id="Navigation_links">
@@ -87,14 +92,24 @@
         <target state="translated">Paralelleştirme (yeniden başlatma gerektirir)</target>
         <note />
       </trans-unit>
+      <trans-unit id="Preferred_description_width_in_characters">
+        <source>Preferred description width in characters</source>
+        <target state="translated">Karakter olarak tercih edilen açıklama genişliği</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Show_Inline_Parameter_Name_Hints">
         <source>Display inline parameter name hints (preview)</source>
-        <target state="needs-review-translation">Satır içi parametre adı ipuçlarını göster (deneysel)</target>
+        <target state="translated">Satır içi parametre adı ipuçlarını görüntüle (önizleme)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Type_Hints">
         <source>Display inline type hints (preview)</source>
-        <target state="needs-review-translation">Satır içi tür ipuçlarını göster (deneysel)</target>
+        <target state="translated">Satır içi tür ipuçlarını görüntüle (önizleme)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Return_Type_Hints">
+        <source>Display return type hints (preview)</source>
+        <target state="new">Display return type hints (preview)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_all_symbols">
@@ -135,6 +150,11 @@
       <trans-unit id="Text_hover">
         <source>Text hover</source>
         <target state="translated">Metni vurgulama</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Tooltip_preferred_description_width_in_characters">
+        <source>Format signature to the given width by adding line breaks conforming with F# syntax rules. </source>
+        <target state="translated">F# söz dizimi kurallarına uyan satır sonları ekleyerek imzayı belirtilen genişliğe biçimlendirin. </target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
@@ -224,7 +244,7 @@
       </trans-unit>
       <trans-unit id="Use_syntax_tree_cache">
         <source>Cache parsing results (experimental)</source>
-        <target state="new">Cache parsing results (experimental)</target>
+        <target state="translated">Ayrıştırma sonuçlarını önbelleğe al (deneysel)</target>
         <note />
       </trans-unit>
     </body>
