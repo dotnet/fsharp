@@ -1125,6 +1125,11 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             do! setCurrentState currentState cache ct
         }
 
+    let checkFileTimeStampsSynchronously cache =
+        checkFileTimeStamps cache
+        |> Async.AwaitNodeCode
+        |> Async.RunSynchronously
+
     do IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBECreated)
 
     member _.TcConfig = tcConfig
@@ -1180,10 +1185,10 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
     member builder.TryGetCheckResultsBeforeFileInProject fileName =
         let cache = TimeStampCache defaultTimeStamp
-        let tmpState = computeStampedFileNames initialState currentState cache
+        checkFileTimeStampsSynchronously cache
 
         let slotOfFile = builder.GetSlotOfFileName fileName
-        match tryGetBeforeSlot tmpState slotOfFile with
+        match tryGetBeforeSlot currentState slotOfFile with
         | Some(boundModel, timestamp) ->
             let projectTimeStamp = builder.GetLogicalTimeStampForFileInProject(fileName)
             Some (PartialCheckResults (boundModel, timestamp, projectTimeStamp))
@@ -1265,12 +1270,12 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
     member _.GetLogicalTimeStampForFileInProject(slotOfFile: int) =
         let cache = TimeStampCache defaultTimeStamp
-        let tmpState = computeStampedFileNames initialState currentState cache
-        computeProjectTimeStamp tmpState slotOfFile
+        checkFileTimeStampsSynchronously cache
+        computeProjectTimeStamp currentState slotOfFile
 
     member _.GetLogicalTimeStampForProject(cache) =
-        let tmpState = computeStampedFileNames initialState currentState cache
-        computeProjectTimeStamp tmpState -1
+        checkFileTimeStampsSynchronously cache
+        computeProjectTimeStamp currentState -1
 
     member _.TryGetSlotOfFileName(fileName: string) =
         // Get the slot of the given file and force it to build.
