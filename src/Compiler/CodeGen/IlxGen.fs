@@ -2293,7 +2293,14 @@ type AnonTypeGenerationTable() =
             let ilBaseTySpec = (if isStruct then None else Some ilBaseTy.TypeSpec)
 
             let ilCtorDef =
-                mkILSimpleStorageCtorWithParamNames (ilBaseTySpec, ilTy, [], flds, ILMemberAccess.Public, None, None)
+                (mkILSimpleStorageCtorWithParamNames (
+                    ilBaseTySpec,
+                    ilTy,
+                    [],
+                    flds,
+                    ILMemberAccess.Public,
+                    None, None
+                    )).With(customAttrs = mkILCustomAttrs [GetDynamicDependencyAttribute cenv 0x660 (*Public and NonPublic Fields and Properties*) ilTy])
 
             // Create a tycon that looks exactly like a record definition, to help drive the generation of equality/comparison code
             let m = range0
@@ -11240,17 +11247,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                                 reprAccess,
                                 None,
                                 eenv.imports
-                            ))
-                                .With(
-                                    customAttrs =
-                                        mkILCustomAttrs
-                                            [
-                                                GetDynamicDependencyAttribute
-                                                    cenv
-                                                    0x660 (*Public and NonPublic Fields and Properties*)
-                                                    ilThisTy
-                                            ]
-                                )
+                            )).With(customAttrs = mkILCustomAttrs [GetDynamicDependencyAttribute cenv 0x660 (*Public and NonPublic Fields and Properties*) ilThisTy])
 
                         yield ilMethodDef
                         // FSharp 1.0 bug 1988: Explicitly setting the ComVisible(true) attribute on an F# type causes an F# record to be emitted in a way that enables mutation for COM interop scenarios
