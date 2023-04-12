@@ -441,6 +441,8 @@ type SynType =
 
     | Or of lhsType: SynType * rhsType: SynType * range: range * trivia: SynTypeOrTrivia
 
+    | FromParseError of range: range
+
     member x.Range =
         match x with
         | SynType.App (range = m)
@@ -459,7 +461,8 @@ type SynType =
         | SynType.MeasurePower (range = m)
         | SynType.Paren (range = m)
         | SynType.SignatureParameter (range = m)
-        | SynType.Or (range = m) -> m
+        | SynType.Or (range = m)
+        | SynType.FromParseError (range = m) -> m
         | SynType.LongIdent lidwd -> lidwd.Range
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -482,8 +485,9 @@ type SynExpr =
     | AnonRecd of
         isStruct: bool *
         copyInfo: (SynExpr * BlockSeparator) option *
-        recordFields: (Ident * range option * SynExpr) list *
-        range: range
+        recordFields: (SynLongIdent * range option * SynExpr) list *
+        range: range *
+        trivia: SynExprAnonRecdTrivia
 
     | ArrayOrList of isArray: bool * exprs: SynExpr list * range: range
 
@@ -700,7 +704,7 @@ type SynExpr =
 
     | FromParseError of expr: SynExpr * range: range
 
-    | DiscardAfterMissingQualificationAfterDot of expr: SynExpr * range: range
+    | DiscardAfterMissingQualificationAfterDot of expr: SynExpr * dotRange: range * range: range
 
     | Fixed of expr: SynExpr * range: range
 
@@ -786,13 +790,7 @@ type SynExpr =
 
     member e.RangeWithoutAnyExtraDot =
         match e with
-        | SynExpr.DotGet (expr, _, lidwd, m) ->
-            if lidwd.ThereIsAnExtraDotAtTheEnd then
-                unionRanges expr.Range lidwd.RangeWithoutAnyExtraDot
-            else
-                m
-        | SynExpr.LongIdent (_, lidwd, _, _) -> lidwd.RangeWithoutAnyExtraDot
-        | SynExpr.DiscardAfterMissingQualificationAfterDot (expr, _) -> expr.Range
+        | SynExpr.DiscardAfterMissingQualificationAfterDot (expr, _, _) -> expr.Range
         | _ -> e.Range
 
     member e.RangeOfFirstPortion =
@@ -886,7 +884,7 @@ type SynSimplePats =
 type SynArgPats =
     | Pats of pats: SynPat list
 
-    | NamePatPairs of pats: (Ident * range * SynPat) list * range: range * trivia: SynArgPatsNamePatPairsTrivia
+    | NamePatPairs of pats: (Ident * range option * SynPat) list * range: range * trivia: SynArgPatsNamePatPairsTrivia
 
     member x.Patterns =
         match x with

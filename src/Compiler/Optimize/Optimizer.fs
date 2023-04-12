@@ -604,9 +604,7 @@ let BindTyparsToUnknown (tps: Typar list) env =
     // However here we mutate to provide better names for generalized type parameters 
     // The names chosen are 'a', 'b' etc. These are also the compiled names in the IL code
     let nms = PrettyTypes.PrettyTyparNames (fun _ -> true) (env.typarInfos |> List.map (fun (tp, _) -> tp.Name) ) tps
-    (tps, nms) ||> List.iter2 (fun tp nm -> 
-            if PrettyTypes.NeedsPrettyTyparName tp then 
-                tp.typar_id <- ident (nm, tp.Range))      
+    PrettyTypes.AssignPrettyTyparNames tps nms
     List.fold (fun sofar arg -> BindTypar arg UnknownTypeValue sofar) env tps 
 
 let BindCcu (ccu: CcuThunk) mval env (_g: TcGlobals) = 

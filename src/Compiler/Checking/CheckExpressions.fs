@@ -16,8 +16,8 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
-open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.CheckBasics
+open FSharp.Compiler.CheckRecordSyntaxHelpers
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
@@ -259,6 +259,19 @@ let permitInferTypars = ExplicitTyparInfo ([], [], true)
 let dontInferTypars = ExplicitTyparInfo ([], [], false)
 
 let noArgOrRetAttribs = ArgAndRetAttribs ([], [])
+
+[<RequireQualifiedAccess>]
+type LiteralArgumentType =
+    /// Literal defined at call site
+    ///
+    /// call "literal"
+    | Inline
+
+    /// F# literal value or IL constant
+    ///
+    /// let [<Literal>] lit = "x"
+    /// call lit
+    | StaticField
 
 /// A flag to represent the sort of bindings are we processing.
 /// Processing "declaration" and "class" bindings that make up a module (such as "let x = 1 let y = 2")
@@ -4356,14 +4369,18 @@ and TcTypeOrMeasure kindOpt (cenv: cenv) newOk checkConstraints occ (iwsam: Warn
         // The inner types are expected to be collected by (|TypesForTypar|) at this point.
         error(Error((FSComp.SR.tcSynTypeOrInvalidInDeclaration()), m))
 
+    | SynType.FromParseError _ ->
+        NewErrorType (), tpenv
+
 and CheckIWSAM (cenv: cenv) (env: TcEnv) checkConstraints iwsam m tcref =
     let g = cenv.g
-    let ad = env.eAccessRights
     let ty = generalizedTyconRef g tcref
+
     if iwsam = WarnOnIWSAM.Yes && isInterfaceTy g ty && checkConstraints = CheckCxs then
-        let tcref = tcrefOfAppTy g ty
-        let meths = AllMethInfosOfTypeInScope ResultCollectionSettings.AllResults cenv.infoReader env.NameEnv None ad IgnoreOverrides m ty
+        let meths = AllMethInfosOfTypeInScope ResultCollectionSettings.AllResults cenv.infoReader env.NameEnv None env.eAccessRights IgnoreOverrides m ty
+
         if meths |> List.exists (fun meth -> not meth.IsInstance && meth.IsDispatchSlot && not meth.IsExtensionMember) then
+            let tcref = tcrefOfAppTy g ty
             warning(Error(FSComp.SR.tcUsingInterfaceWithStaticAbstractMethodAsType(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
 
 and TcLongIdentType kindOpt (cenv: cenv) newOk checkConstraints occ iwsam env tpenv synLongId =
@@ -4547,6 +4564,10 @@ and TcTypeMeasureApp kindOpt (cenv: cenv) newOk checkConstraints occ env tpenv a
         | _ ->
             errorR(Error(FSComp.SR.tcTypeParameterInvalidAsTypeConstructor(), m))
             NewErrorType (), tpenv
+
+    | StripParenTypes(SynType.FromParseError _) ->
+        NewErrorType (), tpenv
+
     | _ ->
         errorR(Error(FSComp.SR.tcIllegalSyntaxInTypeExpression(), m))
         NewErrorType (), tpenv
@@ -4921,9 +4942,9 @@ and ConvSynPatToSynExpr synPat =
     | SynPat.LongIdent (longDotId=SynLongIdent(longId, dotms, trivia) as synLongId; argPats=args; accessibility=None; range=m) ->
         let args = match args with SynArgPats.Pats args -> args | _ -> failwith "impossible: active patterns can be used only with SynConstructorArgs.Pats"
         let e =
-            if dotms.Length = longId.Length then
+            if not dotms.IsEmpty && dotms.Length = longId.Length then
                 let e = SynExpr.LongIdent (false, SynLongIdent(longId, List.truncate (dotms.Length - 1) dotms, trivia), None, m)
-                SynExpr.DiscardAfterMissingQualificationAfterDot (e, unionRanges e.Range (List.last dotms))
+                SynExpr.DiscardAfterMissingQualificationAfterDot (e, List.last dotms, unionRanges e.Range (List.last dotms))
             else SynExpr.LongIdent (false, synLongId, None, m)
         List.fold (fun f x -> mkSynApp1 f (ConvSynPatToSynExpr x) m) e args
 
@@ -5176,6 +5197,12 @@ and TcExprThen (cenv: cenv) overallTy env tpenv isArg synExpr delayed =
 
     match synExpr with
 
+    // A.
+    // A.B.
+    | SynExpr.DiscardAfterMissingQualificationAfterDot (expr1, _, m) ->
+        let _, _, tpenv = suppressErrorReporting (fun () -> TcExprOfUnknownTypeThen cenv env tpenv expr1 [DelayedDot])
+        mkDefault(m, overallTy.Commit), tpenv
+
     // A
     // A.B.C
     | LongOrSingleIdent (isOpt, longId, altNameRefCellOpt, mLongId) ->
@@ -5217,7 +5244,7 @@ and TcExprThen (cenv: cenv) overallTy env tpenv isArg synExpr delayed =
     // etc.
     | SynExpr.DotGet (expr1, _, SynLongIdent(longId, _, _), _) ->
         TcNonControlFlowExpr env <| fun env ->
-        TcExprThen cenv overallTy env tpenv false expr1 ((DelayedDotLookup (longId, synExpr.RangeWithoutAnyExtraDot)) :: delayed)
+        TcExprThen cenv overallTy env tpenv false expr1 ((DelayedDotLookup (longId, synExpr.Range)) :: delayed)
 
     // expr1.[expr2]
     // expr1.[e21, ..., e2n]
@@ -5443,13 +5470,14 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
     | SynExpr.LongIdent _
     | SynExpr.App _
     | SynExpr.Dynamic _
-    | SynExpr.DotGet _ ->
+    | SynExpr.DotGet _
+    | SynExpr.DiscardAfterMissingQualificationAfterDot _ ->
         error(Error(FSComp.SR.tcExprUndelayed(), synExpr.Range))
 
     | SynExpr.Const (SynConst.String (s, _, m), _) ->
         TcNonControlFlowExpr env <| fun env ->
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.AccessRights)
-        TcConstStringExpr cenv overallTy env m tpenv s
+        TcConstStringExpr cenv overallTy env m tpenv s LiteralArgumentType.Inline
 
     | SynExpr.InterpolatedString (parts, _, m) ->
         TcNonControlFlowExpr env <| fun env ->
@@ -5520,7 +5548,7 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         TcNonControlFlowExpr env <| fun env ->
         TcExprTuple cenv overallTy env tpenv (isExplicitStruct, args, m)
 
-    | SynExpr.AnonRecd (isStruct, withExprOpt, unsortedFieldExprs, mWholeExpr) ->
+    | SynExpr.AnonRecd (isStruct, withExprOpt, unsortedFieldExprs, mWholeExpr, _) ->
         TcNonControlFlowExpr env <| fun env ->
         TcPossiblyPropagatingExprLeafThenConvert (fun ty -> isAnonRecdTy g ty || isTyparTy g ty) cenv overallTy env mWholeExpr (fun overallTy ->
             TcAnonRecdExpr cenv overallTy env tpenv (isStruct, withExprOpt, unsortedFieldExprs, mWholeExpr)
@@ -5586,10 +5614,6 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
 
     | SynExpr.ArbitraryAfterError (_debugStr, m) ->
         //SolveTypeAsError cenv env.DisplayEnv m overallTy
-        mkDefault(m, overallTy.Commit), tpenv
-
-    | SynExpr.DiscardAfterMissingQualificationAfterDot (expr1, m) ->
-        let _, _, tpenv = suppressErrorReporting (fun () -> TcExprOfUnknownTypeThen cenv env tpenv expr1 [DelayedDot])
         mkDefault(m, overallTy.Commit), tpenv
 
     | SynExpr.FromParseError (expr1, m) ->
@@ -5993,45 +6017,26 @@ and TcExprStaticOptimization (cenv: cenv) overallTy env tpenv (constraints, synE
 /// synExpr1.longId <- synExpr2
 and TcExprDotSet (cenv: cenv) overallTy env tpenv (synExpr1, synLongId, synExpr2, mStmt) =
     let (SynLongIdent(longId, _, _)) = synLongId
-  
-    if synLongId.ThereIsAnExtraDotAtTheEnd then
-        // just drop rhs on the floor
-        let mExprAndDotLookup = unionRanges synExpr1.Range (rangeOfLid longId)
-        TcExprThen cenv overallTy env tpenv false synExpr1 [DelayedDotLookup(longId, mExprAndDotLookup)]
-    else
-        let mExprAndDotLookup = unionRanges synExpr1.Range (rangeOfLid longId)
-        TcExprThen cenv overallTy env tpenv false synExpr1 [DelayedDotLookup(longId, mExprAndDotLookup); MakeDelayedSet(synExpr2, mStmt)]
+    let mExprAndDotLookup = unionRanges synExpr1.Range (rangeOfLid longId)
+    TcExprThen cenv overallTy env tpenv false synExpr1 [DelayedDotLookup(longId, mExprAndDotLookup); MakeDelayedSet(synExpr2, mStmt)]
 
 /// synExpr1.longId(synExpr2) <- expr3, very rarely used named property setters
 and TcExprDotNamedIndexedPropertySet (cenv: cenv) overallTy env tpenv (synExpr1, synLongId, synExpr2, expr3, mStmt) =
     let (SynLongIdent(longId, _, _)) = synLongId
-    if synLongId.ThereIsAnExtraDotAtTheEnd then
-        // just drop rhs on the floor
-        let mExprAndDotLookup = unionRanges synExpr1.Range (rangeOfLid longId)
-        TcExprThen cenv overallTy env tpenv false synExpr1 [DelayedDotLookup(longId, mExprAndDotLookup)]
-    else
-        let mExprAndDotLookup = unionRanges synExpr1.Range (rangeOfLid longId)
-        TcExprThen cenv overallTy env tpenv false synExpr1 
-            [ DelayedDotLookup(longId, mExprAndDotLookup); 
-              DelayedApp(ExprAtomicFlag.Atomic, false, None, synExpr2, mStmt)
-              MakeDelayedSet(expr3, mStmt)]
+    let mExprAndDotLookup = unionRanges synExpr1.Range (rangeOfLid longId)
+    TcExprThen cenv overallTy env tpenv false synExpr1 
+        [ DelayedDotLookup(longId, mExprAndDotLookup); 
+          DelayedApp(ExprAtomicFlag.Atomic, false, None, synExpr2, mStmt)
+          MakeDelayedSet(expr3, mStmt)]
 
 and TcExprLongIdentSet (cenv: cenv) overallTy env tpenv (synLongId, synExpr2, m) =
-    if synLongId.ThereIsAnExtraDotAtTheEnd then
-        // just drop rhs on the floor
-        TcLongIdentThen cenv overallTy env tpenv synLongId [ ]
-    else
-        TcLongIdentThen cenv overallTy env tpenv synLongId [ MakeDelayedSet(synExpr2, m) ]
+    TcLongIdentThen cenv overallTy env tpenv synLongId [ MakeDelayedSet(synExpr2, m) ]
 
 // Type.Items(synExpr1) <- synExpr2
 and TcExprNamedIndexPropertySet (cenv: cenv) overallTy env tpenv (synLongId, synExpr1, synExpr2, mStmt) =
-    if synLongId.ThereIsAnExtraDotAtTheEnd then
-        // just drop rhs on the floor
-        TcLongIdentThen cenv overallTy env tpenv synLongId [ ]
-    else
-        TcLongIdentThen cenv overallTy env tpenv synLongId 
-            [ DelayedApp(ExprAtomicFlag.Atomic, false, None, synExpr1, mStmt)
-              MakeDelayedSet(synExpr2, mStmt) ]
+    TcLongIdentThen cenv overallTy env tpenv synLongId 
+        [ DelayedApp(ExprAtomicFlag.Atomic, false, None, synExpr1, mStmt)
+          MakeDelayedSet(synExpr2, mStmt) ]
 
 and TcExprTraitCall (cenv: cenv) overallTy env tpenv (synTypes, synMemberSig, arg, m) =
     let g = cenv.g
@@ -6570,7 +6575,9 @@ and TcRecordConstruction (cenv: cenv) (overallTy: TType) env tpenv withExprInfoO
         if not (Zset.subset ns2 ns1) then
             error(MissingFields(Zset.elements (Zset.diff ns2 ns1), m))
     | _ ->
-        if oldFldsList.IsEmpty then
+        // `TransformAstForNestedUpdates` creates record constructions with synthetic ranges.
+        // Don't emit the warning for nested field updates, because it does not really make sense.
+        if oldFldsList.IsEmpty && not m.IsSynthetic then
             let enabledByLangFeature = g.langVersion.SupportsFeature LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields
             warning(ErrorEnabledWithLanguageFeature(FSComp.SR.tcCopyAndUpdateRecordChangesAllFields(fullDisplayTextOfTyconRef tcref), m, enabledByLangFeature))
 
@@ -6962,16 +6969,37 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
 //-------------------------------------------------------------------------
 
 /// Check a constant string expression. It might be a 'printf' format string
-and TcConstStringExpr cenv (overallTy: OverallTy) env m tpenv (s: string) =
+and TcConstStringExpr cenv (overallTy: OverallTy) env m tpenv (s: string) literalType =
+    let rec isFormat g ty =
+        match stripTyEqns g ty with
+        | TType_app (tcref, _, _) -> tyconRefEq g tcref g.format4_tcr || tyconRefEq g tcref g.format_tcr
+        | TType_var (typar, _) ->
+            typar.Constraints
+            |> List.exists (fun c ->
+                match c with
+                | TyparConstraint.CoercesTo (ty, _) -> isFormat g ty
+                | _ -> false)
+        | _ -> false
 
     let g = cenv.g
+  
 
-    if AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy.Commit g.string_ty then
-        mkString g m s, tpenv
-    else
-        TcFormatStringExpr cenv overallTy env m tpenv s
+    match isFormat g overallTy.Commit, literalType with
+    | true, LiteralArgumentType.StaticField ->
+        checkLanguageFeatureAndRecover g.langVersion LanguageFeature.NonInlineLiteralsAsPrintfFormat m
+        TcFormatStringExpr cenv overallTy env m tpenv s literalType
 
-and TcFormatStringExpr cenv (overallTy: OverallTy) env m tpenv (fmtString: string) =
+    | true, LiteralArgumentType.Inline ->
+        TcFormatStringExpr cenv overallTy env m tpenv s literalType
+
+    | false, LiteralArgumentType.StaticField ->
+        Expr.Const (TcFieldInit m (ILFieldInit.String s), m, g.string_ty), tpenv
+
+    | false, LiteralArgumentType.Inline ->
+        TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env (* true *) m (fun () ->
+                mkString g m s, tpenv)
+
+and TcFormatStringExpr cenv (overallTy: OverallTy) env m tpenv (fmtString: string) formatStringLiteralType =
     let g = cenv.g
     let aty = NewInferenceType g
     let bty = NewInferenceType g
@@ -6985,7 +7013,11 @@ and TcFormatStringExpr cenv (overallTy: OverallTy) env m tpenv (fmtString: strin
 
     if ok then
         // Parse the format string to work out the phantom types
-        let formatStringCheckContext = match cenv.tcSink.CurrentSink with None -> None | Some sink -> sink.FormatStringCheckContext
+        let formatStringCheckContext =
+            match cenv.tcSink.CurrentSink, formatStringLiteralType with
+            | Some sink, LiteralArgumentType.Inline -> sink.FormatStringCheckContext
+            | _ -> None
+
         let normalizedString = (fmtString.Replace("\r\n", "\n").Replace("\r", "\n"))
 
         let _argTys, atyRequired, etyRequired, _percentATys, specifierLocations, _dotnetFormatString =
@@ -7224,7 +7256,7 @@ and TcConstExpr cenv (overallTy: OverallTy) env m tpenv c =
         let expr =
             let modName = "NumericLiteral" + suffix
             let ad = env.eAccessRights
-            match ResolveLongIdentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AtMostOneResult cenv.amap m true OpenQualified env.eNameResEnv ad (ident (modName, m)) [] false with
+            match ResolveLongIdentAsModuleOrNamespace cenv.tcSink cenv.amap m true OpenQualified env.eNameResEnv ad (ident (modName, m)) [] false with
             | Result []
             | Exception _ -> error(Error(FSComp.SR.tcNumericLiteralRequiresModule modName, m))
             | Result ((_, mref, _) :: _) ->
@@ -7271,37 +7303,40 @@ and TcAssertExpr cenv overallTy env (m: range) tpenv x =
 
     TcExpr cenv overallTy env tpenv callDiagnosticsExpr
 
-and TcRecdExpr cenv (overallTy: TType) env tpenv (inherits, withExprOpt, synRecdFields, mWholeExpr) =
-
+and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, mWholeExpr) =
     let g = cenv.g
 
     let requiresCtor = (GetCtorShapeCounter env = 1) // Get special expression forms for constructors
     let haveCtor = Option.isSome inherits
 
-    let withExprOpt, tpenv =
-      match withExprOpt with
-      | None -> None, tpenv
-      | Some (origExpr, _) ->
-          match inherits with
-          | Some (_, _, mInherits, _, _) -> error(Error(FSComp.SR.tcInvalidRecordConstruction(), mInherits))
-          | None ->
-              let withExpr, tpenv = TcExpr cenv (MustEqual overallTy) env tpenv origExpr
-              Some withExpr, tpenv
+    let withExprOptChecked, tpenv =
+        match withExprOpt with
+        | None -> None, tpenv
+        | Some (origExpr, _) ->
+            match inherits with
+            | Some (_, _, mInherits, _, _) -> error(Error(FSComp.SR.tcInvalidRecordConstruction(), mInherits))
+            | None ->
+                let withExpr, tpenv = TcExpr cenv (MustEqual overallTy) env tpenv origExpr
+                Some withExpr, tpenv
 
-    let hasOrigExpr = withExprOpt.IsSome
+    let hasOrigExpr = withExprOptChecked.IsSome
 
     let fldsList =
         let flds =
-            [
+            synRecdFields
+            |> List.map (fun (SynExprRecordField (fieldName = (synLongId, isOk); expr = exprBeingAssigned)) ->
                 // if we met at least one field that is not syntactically correct - raise ReportedError to transfer control to the recovery routine
-                for SynExprRecordField(fieldName=(synLongId, isOk); expr=v) in synRecdFields do
-                    if not isOk then
-                        // raising ReportedError None transfers control to the closest errorRecovery point but do not make any records into log
-                        // we assume that parse errors were already reported
-                        raise (ReportedError None)
+                if not isOk then
+                    // raising ReportedError None transfers control to the closest errorRecovery point but do not make any records into log
+                    // we assume that parse errors were already reported
+                    raise (ReportedError None)
 
-                    yield (List.frontAndBack synLongId.LongIdent, v)
-            ]
+                match withExprOpt, synLongId.LongIdent, exprBeingAssigned with
+                | _, [ id ], _ -> ([], id), exprBeingAssigned
+                | Some withExpr, lid, Some exprBeingAssigned -> TransformAstForNestedUpdates cenv env overallTy lid exprBeingAssigned withExpr
+                | _ -> List.frontAndBack synLongId.LongIdent, exprBeingAssigned)
+
+        let flds = if hasOrigExpr then GroupUpdatesToNestedFields flds else flds
 
         match flds with
         | [] -> []
@@ -7316,7 +7351,7 @@ and TcRecdExpr cenv (overallTy: TType) env tpenv (inherits, withExprOpt, synRecd
                 | None -> () ]
 
     let withExprInfoOpt =
-        match withExprOpt with
+        match withExprOptChecked with
         | None -> None
         | Some withExpr ->
             let withExprAddrVal, withExprAddrValExpr = mkCompGenLocal mWholeExpr "inputRecord" (if isStructTy g overallTy then mkByrefTy g overallTy else overallTy)
@@ -7370,7 +7405,7 @@ and TcAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, optOrigSynExpr, 
 
     // Check for duplicate field IDs
     unsortedFieldIdsAndSynExprsGiven
-    |> List.countBy (fun (fId, _, _) -> fId.idText)
+    |> List.countBy (fun (fId, _, _) -> textOfLid fId.LongIdent)
     |> List.iter (fun (label, count) ->
         if count > 1 then error (Error (FSComp.SR.tcAnonRecdDuplicateFieldId(label), mWholeExpr)))
 
@@ -7378,14 +7413,14 @@ and TcAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, optOrigSynExpr, 
     | None ->
         TcNewAnonRecdExpr cenv overallTy env tpenv (isStruct, unsortedFieldIdsAndSynExprsGiven, mWholeExpr)
 
-    | Some (origExpr, _) ->
-        TcCopyAndUpdateAnonRecdExpr cenv overallTy env tpenv (isStruct, origExpr, unsortedFieldIdsAndSynExprsGiven, mWholeExpr)
+    | Some orig ->
+        TcCopyAndUpdateAnonRecdExpr cenv overallTy env tpenv (isStruct, orig, unsortedFieldIdsAndSynExprsGiven, mWholeExpr)
 
 and TcNewAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, unsortedFieldIdsAndSynExprsGiven, mWholeExpr) =
 
     let g = cenv.g
     let unsortedFieldSynExprsGiven = unsortedFieldIdsAndSynExprsGiven |> List.map (fun (_, _, fieldExpr) -> fieldExpr)
-    let unsortedFieldIds = unsortedFieldIdsAndSynExprsGiven |> List.map (fun (fieldId, _, _) -> fieldId) |> List.toArray
+    let unsortedFieldIds = unsortedFieldIdsAndSynExprsGiven |> List.map (fun (synLongIdent, _, _) -> synLongIdent.LongIdent[0]) |> List.toArray
     let anonInfo, sortedFieldTys = UnifyAnonRecdTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv mWholeExpr overallTy isStruct unsortedFieldIds
 
     // Sort into canonical order
@@ -7398,9 +7433,10 @@ and TcNewAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, unsortedField
     let sigma = sortedIndexedArgs |> List.map fst |> List.toArray
     let sortedFieldExprs = sortedIndexedArgs |> List.map snd
 
-    sortedFieldExprs |> List.iteri (fun j (fieldId, _, _) ->
-        let item = Item.AnonRecdField(anonInfo, sortedFieldTys, j, fieldId.idRange)
-        CallNameResolutionSink cenv.tcSink (fieldId.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights))
+    sortedFieldExprs |> List.iteri (fun j (synLongIdent, _, _) ->
+        let m = rangeOfLid synLongIdent.LongIdent
+        let item = Item.AnonRecdField(anonInfo, sortedFieldTys, j, m)
+        CallNameResolutionSink cenv.tcSink (m, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights))
 
     let unsortedFieldTys =
         sortedFieldTys
@@ -7414,7 +7450,7 @@ and TcNewAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, unsortedField
 
     mkAnonRecd g mWholeExpr anonInfo unsortedFieldIds unsortedCheckedArgs unsortedFieldTys, tpenv
 
-and TcCopyAndUpdateAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, origExpr, unsortedFieldIdsAndSynExprsGiven, mWholeExpr) =
+and TcCopyAndUpdateAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, (origExpr, blockSeparator), unsortedFieldIdsAndSynExprsGiven, mWholeExpr) =
     // The fairly complex case '{| origExpr with X = 1; Y = 2 |}'
     // The origExpr may be either a record or anonymous record.
     // The origExpr may be either a struct or not.
@@ -7425,7 +7461,6 @@ and TcCopyAndUpdateAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, ori
     // Unlike in the case of record type copy-and-update {| a with X = 1 |} does not force a.X to exist or have had type 'int'
 
     let g = cenv.g
-    let unsortedFieldSynExprsGiven = unsortedFieldIdsAndSynExprsGiven |> List.map (fun (_, _, e) -> e)
     let origExprTy = NewInferenceType g
     let origExprChecked, tpenv = TcExpr cenv (MustEqual origExprTy) env tpenv origExpr
     let oldv, oldve = mkCompGenLocal mWholeExpr "inputRecord" origExprTy
@@ -7433,6 +7468,18 @@ and TcCopyAndUpdateAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, ori
 
     if not (isAppTy g origExprTy || isAnonRecdTy g origExprTy) then
         error (Error (FSComp.SR.tcCopyAndUpdateNeedsRecordType(), mOrigExpr))
+
+    // Expand expressions with respect to potential nesting
+    let unsortedFieldIdsAndSynExprsGiven =
+        unsortedFieldIdsAndSynExprsGiven
+        |> List.map (fun (synLongIdent, _, exprBeingAssigned) ->
+            match synLongIdent.LongIdent with
+            | [] -> error(Error(FSComp.SR.nrUnexpectedEmptyLongId(), mWholeExpr))
+            | [ id ] -> ([], id), Some exprBeingAssigned
+            | lid -> TransformAstForNestedUpdates cenv env origExprTy lid exprBeingAssigned (origExpr, blockSeparator))
+        |> GroupUpdatesToNestedFields
+
+    let unsortedFieldSynExprsGiven = unsortedFieldIdsAndSynExprsGiven |> List.choose snd
 
     let origExprIsStruct =
         match tryDestAnonRecdTy g origExprTy with
@@ -7449,7 +7496,7 @@ and TcCopyAndUpdateAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, ori
     ///   - Choice2Of2 for a binding coming from the original expression
     let unsortedIdAndExprsAll =
         [|
-            for id, _, e in unsortedFieldIdsAndSynExprsGiven do
+            for (_, id), e in unsortedFieldIdsAndSynExprsGiven do
                 yield (id, Choice1Of2 e)
             match tryDestAnonRecdTy g origExprTy with
             | ValueSome (anonInfo, tinst) ->
@@ -7964,7 +8011,7 @@ and TcNameOfExpr (cenv: cenv) env tpenv (synArg: SynExpr) =
             let resolvedToModuleOrNamespaceName =
                 if delayed.IsEmpty then
                     let id,rest = List.headAndTail longId
-                    match ResolveLongIdentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m true OpenQualified env.eNameResEnv ad id rest true with
+                    match ResolveLongIdentAsModuleOrNamespace cenv.tcSink cenv.amap m true OpenQualified env.eNameResEnv ad id rest true with
                     | Result modref when delayed.IsEmpty && modref |> List.exists (p23 >> IsEntityAccessible cenv.amap m ad) ->
                         true // resolved to a module or namespace, done with checks
                     | _ ->
@@ -7984,7 +8031,7 @@ and TcNameOfExpr (cenv: cenv) env tpenv (synArg: SynExpr) =
         // expr.ID allowed
         | SynExpr.DotGet (hd, _, SynLongIdent(longId, _, _), _) ->
             let result = defaultArg resultOpt (List.last longId)
-            check overallTyOpt (Some result) hd ((DelayedDotLookup (longId, expr.RangeWithoutAnyExtraDot)) :: delayed)
+            check overallTyOpt (Some result) hd ((DelayedDotLookup (longId, expr.Range)) :: delayed)
 
         // "(expr)" allowed with no subsequent qualifications
         | SynExpr.Paren(expr, _, _, _) when delayed.IsEmpty && overallTyOpt.IsNone ->
@@ -8764,7 +8811,14 @@ and TcValueItemThen cenv overallTy env vref tpenv mItem afterResolution delayed 
     // Value get
     | _ ->
         let _, vExpr, isSpecial, _, _, tpenv = TcVal true cenv env tpenv vref None (Some afterResolution) mItem
-        let vexpFlex = (if isSpecial then MakeApplicableExprNoFlex cenv vExpr else MakeApplicableExprWithFlex cenv env vExpr)
+
+        let vExpr, tpenv =
+            match vExpr with
+            | Expr.Const (Const.String value, _, _) -> TcConstStringExpr cenv overallTy env mItem tpenv value LiteralArgumentType.StaticField
+            | _ -> vExpr, tpenv
+
+        let vexpFlex = if isSpecial then MakeApplicableExprNoFlex cenv vExpr else MakeApplicableExprWithFlex cenv env vExpr
+
         PropagateThenTcDelayed cenv overallTy env tpenv mItem vexpFlex vexpFlex.Type ExprAtomicFlag.Atomic delayed
 
 and TcPropertyItemThen cenv overallTy env nm pinfos tpenv mItem afterResolution staticTyOpt delayed =
@@ -8835,10 +8889,12 @@ and TcILFieldItemThen cenv overallTy env finfo tpenv mItem delayed =
 
     | _ ->
         // Get static IL field
-        let expr =
+        let (expr, tpenv), isSpecial =
             match finfo.LiteralValue with
+            | Some (ILFieldInit.String value) when typeEquiv g exprTy g.string_ty ->
+                TcConstStringExpr cenv overallTy env mItem tpenv value LiteralArgumentType.StaticField, true
             | Some lit ->
-                Expr.Const (TcFieldInit mItem lit, mItem, exprTy)
+                (Expr.Const (TcFieldInit mItem lit, mItem, exprTy), tpenv), false
             | None ->
                 let isStruct = finfo.IsValueType
                 let boxity = if isStruct then AsValue else AsObject
@@ -8853,9 +8909,16 @@ and TcILFieldItemThen cenv overallTy env finfo tpenv mItem delayed =
                       // Add an I_nop if this is an initonly field to make sure we never recognize it as an lvalue. See mkExprAddrOfExpr.
                       if finfo.IsInitOnly then AI_nop ]
 
-                mkAsmExpr (ilInstrs, finfo.TypeInst, [], [exprTy], mItem)
+                (mkAsmExpr (ilInstrs, finfo.TypeInst, [], [exprTy], mItem), tpenv), false
 
-        PropagateThenTcDelayed cenv overallTy env tpenv mItem (MakeApplicableExprWithFlex cenv env expr) exprTy ExprAtomicFlag.Atomic delayed
+        let exprTy, exprFlex =
+            if isSpecial then
+                let exprFlex = MakeApplicableExprNoFlex cenv expr
+                exprFlex.Type, exprFlex
+            else
+                exprTy, MakeApplicableExprWithFlex cenv env expr
+
+        PropagateThenTcDelayed cenv overallTy env tpenv mItem exprFlex exprTy ExprAtomicFlag.Atomic delayed
 
 and TcRecdFieldItemThen cenv overallTy env rfinfo tpenv mItem delayed =
     let g = cenv.g
@@ -11080,7 +11143,7 @@ and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (_: Val option) (a
 
        [], declaredTypars
 
-and CheckForNonAbstractInterface declKind tcref (memberFlags: SynMemberFlags) m =
+and CheckForNonAbstractInterface (g: TcGlobals) declKind tcref (memberFlags: SynMemberFlags) isMemberStatic m =
     if isInterfaceTyconRef tcref then
         if memberFlags.MemberKind = SynMemberKind.ClassConstructor then
             error(Error(FSComp.SR.tcStaticInitializersIllegalInInterface(), m))
@@ -11088,8 +11151,11 @@ and CheckForNonAbstractInterface declKind tcref (memberFlags: SynMemberFlags) m 
             error(Error(FSComp.SR.tcObjectConstructorsIllegalInInterface(), m))
         elif memberFlags.IsOverrideOrExplicitImpl then
             error(Error(FSComp.SR.tcMemberOverridesIllegalInInterface(), m))
-        elif not (declKind=ExtrinsicExtensionBinding || memberFlags.IsDispatchSlot ) then
-            error(Error(FSComp.SR.tcConcreteMembersIllegalInInterface(), m))
+        elif not (declKind = ExtrinsicExtensionBinding || memberFlags.IsDispatchSlot) then
+            if not isMemberStatic then
+                error(Error(FSComp.SR.tcConcreteMembersIllegalInInterface(), m))
+            else
+                checkLanguageFeatureError g.langVersion LanguageFeature.StaticMembersInInterfaces m
 
 //-------------------------------------------------------------------------
 // TcLetrecBindings - AnalyzeAndMakeAndPublishRecursiveValue s
@@ -11135,7 +11201,7 @@ and AnalyzeRecursiveStaticMemberOrValDecl
              memberFlags.IsOverrideOrExplicitImpl ->
 
            CheckMemberFlags intfSlotTyOpt newslotsOK overridesOK memberFlags id.idRange
-           CheckForNonAbstractInterface declKind tcref memberFlags id.idRange
+           CheckForNonAbstractInterface g declKind tcref memberFlags true id.idRange
 
            let isExtrinsic = (declKind = ExtrinsicExtensionBinding)
            let tcrefObjTy, enclosingDeclaredTypars, renaming, _, _ = FreshenObjectArgType cenv mBinding TyparRigidity.WillBeRigid tcref isExtrinsic declaredTyconTypars
@@ -11157,7 +11223,7 @@ and AnalyzeRecursiveStaticMemberOrValDecl
         assert (Option.isNone intfSlotTyOpt)
 
         CheckMemberFlags None newslotsOK overridesOK memberFlags id.idRange
-        CheckForNonAbstractInterface declKind tcref memberFlags id.idRange
+        CheckForNonAbstractInterface g declKind tcref memberFlags true id.idRange
 
         if memberFlags.MemberKind = SynMemberKind.Constructor && tcref.Deref.IsFSharpException then
             error(Error(FSComp.SR.tcConstructorsDisallowedInExceptionAugmentation(), id.idRange))
@@ -11262,7 +11328,7 @@ and AnalyzeRecursiveInstanceMemberDecl
          let argsAndRetTy = NewInferenceType g
          UnifyTypes cenv envinner mBinding ty (mkFunTy g thisTy argsAndRetTy)
 
-         CheckForNonAbstractInterface declKind tcref memberFlags memberId.idRange
+         CheckForNonAbstractInterface g declKind tcref memberFlags false memberId.idRange
 
          // Determine if a uniquely-identified-override exists based on the information
          // at the member signature. If so, we know the type of this member, and the full slotsig

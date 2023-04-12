@@ -353,6 +353,9 @@ type EntityOptionalData =
         /// The declared documentation for the type or module
         mutable entity_xmldoc: XmlDoc
 
+        /// the signature xml doc for an item in an implementation file.
+        mutable entity_other_xmldoc: XmlDoc option
+
         /// The XML document signature for this entity
         mutable entity_xmldocsig: string
 
@@ -459,6 +462,8 @@ type Entity =
     member SetIsStructRecordOrUnion: b: bool -> unit
 
     member SetOtherRange: m: (range * bool) -> unit
+
+    member SetOtherXmlDoc: xmlDoc: XmlDoc -> unit
 
     member SetTypeAbbrev: tycon_abbrev: TType option -> unit
 
@@ -1114,7 +1119,10 @@ type UnionCase =
         ReturnType: TType
 
         /// Documentation for the case
-        XmlDoc: XmlDoc
+        OwnXmlDoc: XmlDoc
+
+        /// Documentation for the case from signature file
+        mutable OtherXmlDoc: XmlDoc
 
         /// XML documentation signature for the case
         mutable XmlDocSig: string
@@ -1132,6 +1140,8 @@ type UnionCase =
         /// Attributes, attached to the generated static method to make instances of the case
         mutable Attribs: Attribs
     }
+
+    member XmlDoc: XmlDoc
 
     /// Get a field of the union case by position
     member GetFieldByIndex: n: int -> RecdField
@@ -1184,6 +1194,8 @@ type UnionCase =
     /// Get the signature location of the union case
     member SigRange: range
 
+    member SetOtherXmlDoc: xmlDoc: XmlDoc -> unit
+
 /// Represents a class, struct, record or exception field in an F# type, exception or union-case definition.
 /// This may represent a "field" in either a struct, class, record or union.
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
@@ -1195,6 +1207,9 @@ type RecdField =
 
         /// Documentation for the field
         rfield_xmldoc: XmlDoc
+
+        /// Documentation for the field from signature file
+        mutable rfield_otherxmldoc: XmlDoc
 
         /// XML Documentation signature for the field
         mutable rfield_xmldocsig: string
@@ -1293,6 +1308,8 @@ type RecdField =
 
     /// Get or set the XML documentation signature for the field
     member XmlDocSig: string with get, set
+
+    member SetOtherXmlDoc: xmlDoc: XmlDoc -> unit
 
 /// Represents the implementation of an F# exception definition.
 [<NoEquality; NoComparison>]
@@ -1820,6 +1837,9 @@ type ValOptionalData =
         /// MUTABILITY: for unpickle linkage
         mutable val_xmldoc: XmlDoc
 
+        /// the signature xml doc for an item in an implementation file.
+        mutable val_other_xmldoc: XmlDoc option
+
         /// Is the value actually an instance method/property/event that augments
         /// a type, type if so what name does it take in the IL?
         /// MUTABILITY: for unpickle linkage
@@ -1912,6 +1932,8 @@ type Val =
     member SetMemberInfo: member_info: ValMemberInfo -> unit
 
     member SetOtherRange: m: (range * bool) -> unit
+
+    member SetOtherXmlDoc: xmlDoc: XmlDoc -> unit
 
     member SetType: ty: TType -> unit
 
@@ -2634,6 +2656,8 @@ type EntityRef =
     /// or comes from another F# assembly then it does not (because the documentation will get read from
     /// an XML file).
     member XmlDoc: XmlDoc
+
+    member SetOtherXmlDoc: XmlDoc -> unit
 
     /// The XML documentation sig-string of the entity, if any, to use to lookup an .xml doc file. This also acts
     /// as a cache for this sig-string computation.
@@ -4233,8 +4257,8 @@ type Construct =
 
 #if !NO_TYPEPROVIDERS
     /// Compute the definition location of a provided item
-    static member ComputeDefinitionLocationOfProvidedItem:
-        p: Tainted<#IProvidedCustomAttributeProvider> -> Text.range option
+    static member ComputeDefinitionLocationOfProvidedItem<'T when 'T :> IProvidedCustomAttributeProvider> :
+        p: Tainted<'T> -> range option
 #endif
 
     /// Key a Tycon or TyconRef by both mangled type demangled name.

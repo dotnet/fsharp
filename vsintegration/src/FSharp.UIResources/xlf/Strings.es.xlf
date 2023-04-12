@@ -14,12 +14,22 @@
       </trans-unit>
       <trans-unit id="Enable_Live_Buffers">
         <source>Use live (unsaved) buffers for checking (restart required)</source>
-        <target state="new">Use live (unsaved) buffers for checking (restart required)</target>
+        <target state="translated">Utilizar buffers activos (no guardados) para la comprobación (es necesario reiniciar)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enable_partial_type_checking">
+        <source>Enable partial type checking</source>
+        <target state="translated">Habilitar la comprobación parcial de tipos</target>
         <note />
       </trans-unit>
       <trans-unit id="Find_References_Performance">
         <source>Find References Performance Options</source>
         <target state="translated">Buscar opciones de rendimiento de referencias</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Formatting">
+        <source>Formatting</source>
+        <target state="translated">Formato</target>
         <note />
       </trans-unit>
       <trans-unit id="Inline_Hints">
@@ -69,7 +79,7 @@
       </trans-unit>
       <trans-unit id="LiveBuffers">
         <source>Live Buffers (experimental)</source>
-        <target state="new">Live Buffers (experimental)</target>
+        <target state="translated">Búferes activos (experimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="Navigation_links">
@@ -82,14 +92,24 @@
         <target state="translated">Paralelización (requiere reiniciar)</target>
         <note />
       </trans-unit>
+      <trans-unit id="Preferred_description_width_in_characters">
+        <source>Preferred description width in characters</source>
+        <target state="translated">Anchura preferida de la descripción en caracteres</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Show_Inline_Parameter_Name_Hints">
         <source>Display inline parameter name hints (preview)</source>
-        <target state="needs-review-translation">Mostrar sugerencias de nombre de parámetro insertado (experimental)</target>
+        <target state="translated">Mostrar sugerencias de nombres de parámetros en línea (vista previa)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Type_Hints">
         <source>Display inline type hints (preview)</source>
-        <target state="needs-review-translation">Mostrar sugerencias de tipo insertadas (experimental)</target>
+        <target state="translated">Mostrar sugerencias de tipo en línea (vista previa)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Return_Type_Hints">
+        <source>Display return type hints (preview)</source>
+        <target state="translated">Mostrar sugerencias de tipo retorno (vista previa)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_all_symbols">
@@ -130,6 +150,11 @@
       <trans-unit id="Text_hover">
         <source>Text hover</source>
         <target state="translated">Texto al pasar el puntero</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Tooltip_preferred_description_width_in_characters">
+        <source>Format signature to the given width by adding line breaks conforming with F# syntax rules. </source>
+        <target state="translated">Da formato a la firma al ancho dado agregando saltos de línea conforme a las reglas de sintaxis de F#. </target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
@@ -215,6 +240,11 @@
       <trans-unit id="Suggest_names_for_errors_code_fix">
         <source>Suggest names for unresolved identifiers</source>
         <target state="translated">Sugerir nombres para los identificadores no resueltos</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Use_syntax_tree_cache">
+        <source>Cache parsing results (experimental)</source>
+        <target state="translated">Resultados del análisis de la caché (experimental)</target>
         <note />
       </trans-unit>
     </body>

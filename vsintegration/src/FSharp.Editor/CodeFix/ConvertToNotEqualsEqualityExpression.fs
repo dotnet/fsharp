@@ -8,11 +8,11 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "ConvertToNotEqualsEqualityExpression"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.ConvertToNotEqualsEqualityExpression); Shared>]
 type internal FSharpConvertToNotEqualsEqualityExpressionCodeFixProvider() =
     inherit CodeFixProvider()
 
-    let fixableDiagnosticIds = set ["FS0043"]
+    let fixableDiagnosticIds = set [ "FS0043" ]
 
     override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
@@ -33,10 +33,12 @@ type internal FSharpConvertToNotEqualsEqualityExpressionCodeFixProvider() =
                 |> Seq.toImmutableArray
 
             let codeFix =
-                CodeFixHelpers.createTextChangeCodeFix(
+                CodeFixHelpers.createTextChangeCodeFix (
+                    CodeFix.ConvertToNotEqualsEqualityExpression,
                     title,
                     context,
-                    (fun () -> asyncMaybe.Return [| TextChange(context.Span, "<>") |]))
+                    (fun () -> asyncMaybe.Return [| TextChange(context.Span, "<>") |])
+                )
 
             context.RegisterCodeFix(codeFix, diagnostics)
         }

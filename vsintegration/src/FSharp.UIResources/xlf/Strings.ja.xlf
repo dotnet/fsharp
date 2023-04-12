@@ -14,12 +14,22 @@
       </trans-unit>
       <trans-unit id="Enable_Live_Buffers">
         <source>Use live (unsaved) buffers for checking (restart required)</source>
-        <target state="new">Use live (unsaved) buffers for checking (restart required)</target>
+        <target state="translated">ライブ (未保存) バッファーをチェックに使用する (再起動が必要)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enable_partial_type_checking">
+        <source>Enable partial type checking</source>
+        <target state="translated">部分型チェックを有効にする</target>
         <note />
       </trans-unit>
       <trans-unit id="Find_References_Performance">
         <source>Find References Performance Options</source>
         <target state="translated">参照の検索のパフォーマンス オプション</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Formatting">
+        <source>Formatting</source>
+        <target state="translated">書式設定</target>
         <note />
       </trans-unit>
       <trans-unit id="Inline_Hints">
@@ -69,7 +79,7 @@
       </trans-unit>
       <trans-unit id="LiveBuffers">
         <source>Live Buffers (experimental)</source>
-        <target state="new">Live Buffers (experimental)</target>
+        <target state="translated">ライブ バッファー (試験段階)</target>
         <note />
       </trans-unit>
       <trans-unit id="Navigation_links">
@@ -82,14 +92,24 @@
         <target state="translated">並列化 (再起動が必要)</target>
         <note />
       </trans-unit>
+      <trans-unit id="Preferred_description_width_in_characters">
+        <source>Preferred description width in characters</source>
+        <target state="translated">優先する説明の文字幅</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Show_Inline_Parameter_Name_Hints">
         <source>Display inline parameter name hints (preview)</source>
-        <target state="needs-review-translation">インライン パラメーター名のヒントを表示する (試験段階)</target>
+        <target state="translated">インライン パラメーター名のヒントを表示する (プレビュー)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Type_Hints">
         <source>Display inline type hints (preview)</source>
-        <target state="needs-review-translation">インライン型のヒントを表示する (試験段階)</target>
+        <target state="translated">インライン型のヒントを表示する (プレビュー)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Return_Type_Hints">
+        <source>Display return type hints (preview)</source>
+        <target state="translated">戻り値型のヒントを表示する (プレビュー)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_all_symbols">
@@ -130,6 +150,11 @@
       <trans-unit id="Text_hover">
         <source>Text hover</source>
         <target state="translated">テキスト ホバー</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Tooltip_preferred_description_width_in_characters">
+        <source>Format signature to the given width by adding line breaks conforming with F# syntax rules. </source>
+        <target state="translated">F# 構文規則に準拠した改行を追加して、署名を指定された幅に書式設定します。</target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
@@ -215,6 +240,11 @@
       <trans-unit id="Suggest_names_for_errors_code_fix">
         <source>Suggest names for unresolved identifiers</source>
         <target state="translated">未解決の識別子の名前を提案します</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Use_syntax_tree_cache">
+        <source>Cache parsing results (experimental)</source>
+        <target state="translated">キャッシュ解析の結果 (試験段階)</target>
         <note />
       </trans-unit>
     </body>

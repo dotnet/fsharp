@@ -15,7 +15,6 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.CodeAnalysis.Host.Mef
 open FSharp.Compiler.CodeAnalysis
-open System.Threading
 
 [<AutoOpen>]
 module MefHelpers =
@@ -28,6 +27,7 @@ module MefHelpers =
             [|
                 "Microsoft.CodeAnalysis.Workspaces.dll"
                 "Microsoft.VisualStudio.Shell.15.0.dll"
+                "Microsoft.VisualStudio.Platform.VSEditor.dll"
                 "FSharp.Editor.dll"
             |]
 
@@ -49,7 +49,7 @@ module MefHelpers =
         |> Seq.append MefHostServices.DefaultAssemblies
         |> Array.ofSeq
 
-    let createExportProvider () =
+    let exportProviderFactory =
         let resolver = Resolver.DefaultInstance
 
         let catalog =
@@ -62,14 +62,15 @@ module MefHelpers =
                 )
 
             let parts = partDiscovery.CreatePartsAsync(asms).Result
-            let catalog = ComposableCatalog.Create(resolver)
-            catalog.AddParts(parts)
+            ComposableCatalog.Create(resolver).AddParts(parts).WithCompositionService()
 
-        let configuration =
-            CompositionConfiguration.Create(catalog.WithCompositionService())
+        let configuration = CompositionConfiguration.Create(catalog)
 
-        let runtimeComposition = RuntimeComposition.CreateRuntimeComposition(configuration)
-        let exportProviderFactory = runtimeComposition.CreateExportProviderFactory()
+        RuntimeComposition
+            .CreateRuntimeComposition(configuration)
+            .CreateExportProviderFactory()
+
+    let createExportProvider () =
         exportProviderFactory.CreateExportProvider()
 
 type TestWorkspaceServiceMetadata(serviceType: string, layer: string) =
@@ -173,6 +174,15 @@ type TestHostWorkspaceServices(hostServices: HostServices, workspace: Workspace)
     let langServices =
         TestHostLanguageServices(this, LanguageNames.FSharp, exportProvider)
 
+    member this.SetEditorEptions(value) =
+        exportProvider
+            .GetExportedValue<SettingsStore.ISettingsStore>()
+            .SaveSettings(value)
+
+    member this.WithEditorOptions(value) =
+        this.SetEditorEptions(value)
+        this
+
     override _.Workspace = workspace
 
     override this.GetService<'T when 'T :> IWorkspaceService>() : 'T =
@@ -199,7 +209,7 @@ type TestHostServices() =
     inherit HostServices()
 
     override this.CreateWorkspaceServices(workspace) =
-        TestHostWorkspaceServices(this, workspace) :> HostWorkspaceServices
+        TestHostWorkspaceServices(this, workspace)
 
 [<AbstractClass; Sealed>]
 type RoslynTestHelpers private () =
@@ -219,8 +229,9 @@ type RoslynTestHelpers private () =
             Stamp = None
         }
 
-    static member private GetSourceCodeKind filePath = 
+    static member private GetSourceCodeKind filePath =
         let extension = Path.GetExtension(filePath)
+
         match extension with
         | ".fsx" -> SourceCodeKind.Script
         | ".fsi" -> SourceCodeKind.Regular
@@ -232,7 +243,7 @@ type RoslynTestHelpers private () =
         let id = SolutionId.CreateNewId()
         let versionStamp = VersionStamp.Create(DateTime.UtcNow)
         let slnPath = "test.sln"
- 
+
         let solutionInfo = SolutionInfo.Create(id, versionStamp, slnPath, projects)
         let solution = workspace.AddSolution(solutionInfo)
         solution
@@ -243,7 +254,8 @@ type RoslynTestHelpers private () =
             filePath,
             loader = TextLoader.From(SourceText.From(code).Container, VersionStamp.Create(DateTime.UtcNow)),
             filePath = filePath,
-            sourceCodeKind = RoslynTestHelpers.GetSourceCodeKind filePath)
+            sourceCodeKind = RoslynTestHelpers.GetSourceCodeKind filePath
+        )
 
     static member CreateProjectInfo id filePath documents =
         ProjectInfo.Create(
@@ -253,9 +265,10 @@ type RoslynTestHelpers private () =
             "test.dll",
             LanguageNames.FSharp,
             documents = documents,
-            filePath = filePath)
+            filePath = filePath
+        )
 
-    static member SetProjectOptions projId (solution: Solution) (options: FSharpProjectOptions)  = 
+    static member SetProjectOptions projId (solution: Solution) (options: FSharpProjectOptions) =
         solution
             .Workspace
             .Services
@@ -264,18 +277,19 @@ type RoslynTestHelpers private () =
             .SetCommandLineOptions(
                 projId,
                 options.SourceFiles,
-                options.OtherOptions |> ImmutableArray.CreateRange)
+                options.OtherOptions |> ImmutableArray.CreateRange
+            )
 
-    static member CreateSolution (source, ?options: FSharpProjectOptions) =
+    static member CreateSolution(source, ?options: FSharpProjectOptions) =
         let projId = ProjectId.CreateNewId()
 
         let docInfo = RoslynTestHelpers.CreateDocumentInfo projId "C:\\test.fs" source
 
         let projFilePath = "C:\\test.fsproj"
-        let projInfo = RoslynTestHelpers.CreateProjectInfo projId projFilePath [docInfo]
-        let solution = RoslynTestHelpers.CreateSolution [projInfo]
+        let projInfo = RoslynTestHelpers.CreateProjectInfo projId projFilePath [ docInfo ]
+        let solution = RoslynTestHelpers.CreateSolution [ projInfo ]
 
-        options 
+        options
         |> Option.defaultValue RoslynTestHelpers.DefaultProjectOptions
         |> RoslynTestHelpers.SetProjectOptions projId solution
 

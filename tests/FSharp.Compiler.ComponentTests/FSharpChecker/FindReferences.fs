@@ -3,6 +3,7 @@
 open Xunit
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Test.ProjectGeneration
+open FSharp.Test.ProjectGeneration.Helpers
 
 type Occurence = Definition | InType | Use
 
@@ -194,5 +195,226 @@ let foo x = 5""" })
                 "FileFirst.fs", 6, 5, 16
                 "FileSecond.fs", 8, 2, 4
                 "FileThird.fs", 8, 2, 13
+            ])
+        }
+
+[<Fact>]
+let ``We find values of a type that has been aliased`` () =
+
+    let project = SyntheticProject.Create(
+        { sourceFile "First" [] with
+            ExtraSource = "type MyInt = int32\n" +
+                          "let myNum = 7"
+            SignatureFile = Custom ("type MyInt = int32\n" +
+                                    "val myNum: MyInt") },
+        { sourceFile "Second" [] with
+            ExtraSource = "let goo x = ModuleFirst.myNum + x"})
+
+    project.Workflow {
+        placeCursor "First" "myNum"
+        findAllReferences (expectToFind [
+            "FileFirst.fs", 7, 4, 9
+            "FileFirst.fsi", 3, 4, 9
+            "FileSecond.fs", 6, 12, 29
+        ])
+    }
+
+[<Fact>]
+let ``We don't find type aliases for a type`` () =
+
+    let source = """
+type MyType =
+    member _.foo = "boo"
+    member x.this : mytype = x
+and mytype = MyType
+"""
+
+    let fileName, options, checker = singleFileChecker source
+
+    let symbolUse = getSymbolUse fileName source "MyType" options checker |> Async.RunSynchronously
+
+    checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol, fastCheck = true)
+    |> Async.RunSynchronously
+    |> expectToFind [
+        fileName, 2, 5, 11
+        fileName, 5, 13, 19
+    ]
+
+/// https://github.com/dotnet/fsharp/issues/14396
+[<Fact>]
+let ``itemKeyStore disappearance`` () =
+
+    let source = """
+type MyType() = class end
+
+let x = MyType()
+"""
+    SyntheticProject.Create(
+        { sourceFile "Program" [] with
+            SignatureFile = Custom ""
+            Source = source } ).Workflow {
+
+        placeCursor "Program" "MyType"
+
+        findAllReferences (expectToFind [
+            "FileProgram.fs", 3, 5, 11
+            "FileProgram.fs", 5, 8, 14
+        ])
+
+        updateFile "Program" (fun f -> { f with Source = "\n" + f.Source })
+        saveFile "Program"
+
+        findAllReferences (expectToFind [
+            "FileProgram.fs", 4, 5, 11
+            "FileProgram.fs", 6, 8, 14
+        ])
+    }
+
+[<Fact>]
+let ``itemKeyStore disappearance with live buffers`` () =
+
+    let source = """
+type MyType() = class end
+
+let x = MyType()
+"""
+    let project = SyntheticProject.Create(
+        { sourceFile "Program" [] with
+            SignatureFile = Custom ""
+            Source = source } )
+
+    ProjectWorkflowBuilder(project, useGetSource = true, useChangeNotifications = true) {
+
+        placeCursor "Program" "MyType"
+
+        findAllReferences (expectToFind [
+            "FileProgram.fs", 3, 5, 11
+            "FileProgram.fs", 5, 8, 14
+        ])
+
+        updateFile "Program" (fun f -> { f with Source = "\n" + f.Source })
+
+        placeCursor "Program" "MyType"
+
+        findAllReferences (expectToFind [
+            "FileProgram.fs", 4, 5, 11
+            "FileProgram.fs", 6, 8, 14
+        ])
+    }
+
+
+module ActivePatterns =
+
+    /// https://github.com/dotnet/fsharp/issues/14206
+    [<Fact>]
+    let ``Finding references to an active pattern case shouldn't find other cases`` () =
+        let source = """
+let (|Even|Odd|) v =
+    if v % 2 = 0 then Even else Odd
+match 2 with
+| Even -> ()
+| Odd -> ()
+"""
+        let fileName, options, checker = singleFileChecker source
+
+        let symbolUse = getSymbolUse fileName source "Even" options checker |> Async.RunSynchronously
+
+        checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol, fastCheck = true)
+        |> Async.RunSynchronously
+        |> expectToFind [
+            fileName, 2, 6, 10
+            fileName, 3, 22, 26
+            fileName, 5, 2, 6
+        ]
+
+    [<Fact>]
+    let ``We don't find references to cases from other active patterns with the same name`` () =
+
+        let source = """
+module One =
+
+    let (|Even|Odd|) v =
+        if v % 2 = 0 then Even else Odd
+    match 2 with
+    | Even -> ()
+    | Odd -> ()
+
+module Two =
+
+    let (|Even|Steven|) v =
+        if v % 3 = 0 then Steven else Even
+    match 2 with
+    | Even -> ()
+    | Steven -> ()
+"""
+
+        let fileName, options, checker = singleFileChecker source
+
+        let symbolUse = getSymbolUse fileName source "Even" options checker |> Async.RunSynchronously
+
+        checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol, fastCheck = true)
+        |> Async.RunSynchronously
+        |> expectToFind [
+            fileName, 4, 10, 14
+            fileName, 5, 26, 30
+            fileName, 7, 6, 10
+        ]
+
+    [<Fact>]
+    let ``We don't find references to cases the same active pattern defined in a different file`` () =
+
+        let source = """
+let (|Even|Odd|) v =
+    if v % 2 = 0 then Even else Odd
+match 2 with
+| Even -> ()
+| Odd -> ()
+"""
+        SyntheticProject.Create(
+            { sourceFile "First" [] with Source = source },
+            { sourceFile "Second" [] with Source = source }
+        ).Workflow {
+            placeCursor "First" "Even"
+            findAllReferences (expectToFind [
+                "FileFirst.fs", 3, 6, 10
+                "FileFirst.fs", 4, 22, 26
+                "FileFirst.fs", 6, 2, 6
+            ])
+        }
+
+    [<Fact>]
+    let ``We find active patterns in other files when there are signature files`` () =
+
+        SyntheticProject.Create(
+            { sourceFile "First" [] with
+                Source = "let (|Even|Odd|) v = if v % 2 = 0 then Even else Odd"
+                SignatureFile = AutoGenerated },
+            { sourceFile "Second" [] with
+                Source = """
+open ModuleFirst
+match 2 with | Even -> () | Odd -> ()
+""" }
+        ).Workflow {
+            placeCursor "Second" "Even"
+            findAllReferences (expectToFind [
+                "FileFirst.fs", 2, 6, 10
+                "FileFirst.fs", 2, 39, 43
+                "FileSecond.fs", 4, 15, 19
+            ])
+        }
+
+    /// Bug: https://github.com/dotnet/fsharp/issues/14969
+    [<Fact>]
+    let ``We DON'T find active patterns in signature files`` () =
+        SyntheticProject.Create(
+            { sourceFile "First" [] with
+                Source = "let (|Even|Odd|) v = if v % 2 = 0 then Even else Odd"
+                SignatureFile = AutoGenerated }
+        ).Workflow {
+            placeCursor "First" "Even"
+            findAllReferences (expectToFind [
+                "FileFirst.fs", 2, 6, 10
+                "FileFirst.fs", 2, 39, 43
+                //"FileFirst.fsi", 4, 6, 10 <-- this should also be found
             ])
         }

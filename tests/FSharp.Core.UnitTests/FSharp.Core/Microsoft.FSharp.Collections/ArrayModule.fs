@@ -708,6 +708,20 @@ type ArrayModule() =
         CheckThrowsArgumentNullException (fun () ->  Array.filter funcStr nullArr |> ignore) 
         
         ()
+
+    [<Fact>]
+    member this.ParallelFilter () = 
+        let assertSameBehavior predicate arr =
+            let sequentialZip = Array.filter predicate arr
+            let paraZip = Array.Parallel.filter predicate arr
+            Assert.AreEqual(sequentialZip, paraZip)
+
+        [| 1..20 |] |> assertSameBehavior (fun x -> x%5 = 0)
+        [|"Lists"; "are"; "a"; "commonly"; "data";"structor" |] |> assertSameBehavior  (fun x -> x.Length > 4) 
+        [| |] |> assertSameBehavior  (fun x -> x%5 = 0)
+        let nullArr = null:int[] 
+        CheckThrowsArgumentNullException (fun () ->  Array.Parallel.filter (fun x -> x%5 = 0) nullArr |> ignore) 
+
         
     [<Fact>]
     member this.Filter2 () =
@@ -955,17 +969,16 @@ type ArrayModule() =
         let intArr = [| 1..10 |]
         let seq = Array.toSeq intArr
         let sum = Seq.sum seq
-        Assert.AreEqual(55, sum)
-        
-    [<Fact>]
-    member this.TryPick() =
+        Assert.AreEqual(55, sum)        
+
+    member private _.TryPickTester tryPickInt tryPickString =
         // integer array
         let intArr = [| 1..10 |]    
         let funcInt x = 
                 match x with
                 | _ when x % 3 = 0 -> Some (x.ToString())            
                 | _ -> None
-        let resultInt = Array.tryPick funcInt intArr
+        let resultInt = tryPickInt funcInt intArr
         if resultInt <> Some "3" then Assert.Fail()
         
         // string array
@@ -974,19 +987,25 @@ type ArrayModule() =
                 match x with
                 | "good" -> Some (x.ToString())            
                 | _ -> None
-        let resultStr = Array.tryPick funcStr strArr
+        let resultStr = tryPickString funcStr strArr
         if resultStr <> None then Assert.Fail()
         
         // empty array
         let emptyArr:int[] = [| |]
-        let resultEpt = Array.tryPick funcInt emptyArr
+        let resultEpt = tryPickInt funcInt emptyArr
         if resultEpt <> None then Assert.Fail()
 
         // null array
         let nullArr = null:string[]  
-        CheckThrowsArgumentNullException (fun () -> Array.tryPick funcStr nullArr |> ignore)  
+        CheckThrowsArgumentNullException (fun () -> tryPickString funcStr nullArr |> ignore)  
         
         ()
+
+    [<Fact>]
+    member this.TryPick() = this.TryPickTester Array.tryPick Array.tryPick
+
+    [<Fact>]
+    member this.ParallelTryPick() = this.TryPickTester Array.Parallel.tryPick Array.Parallel.tryPick
 
     [<Fact>]
     member this.Fold() =
@@ -1115,6 +1134,41 @@ type ArrayModule() =
         CheckThrowsArgumentNullException (fun () -> Array.forall (fun x -> true) nullArr |> ignore)  
         
         ()
+
+    [<Fact>]
+    member this.ParallelForAll() =
+        let inline assertSame predicate array =
+            let seq = Array.forall predicate array
+            let para = Array.Parallel.forall predicate array    
+            Assert.AreEqual(seq, para, sprintf "%A" array)
+
+        [| 3..2..10 |] |> assertSame (fun x -> x > 15)
+        [| 3..2..10 |] |> assertSame (fun x -> x < 15)
+        [|"Lists"; "are";  "commonly" ; "list" |] |> assertSame (fun (x:string) -> x.Contains("a")) 
+        [||] |> assertSame (fun (x:string) -> x.Contains("a"))
+        [||] |> assertSame (fun (x:string) -> x.Contains("a") |> not)
+       
+        let nullArr = null:string[] 
+        CheckThrowsArgumentNullException (fun () -> Array.Parallel.forall (fun x -> true) nullArr |> ignore)  
+        
+        ()
+
+    [<Fact>]
+    member this.ParallelExists() =
+        let inline assertSame predicate array =
+            let seq = Array.exists predicate array
+            let para = Array.Parallel.exists predicate array    
+            Assert.AreEqual(seq, para, sprintf "%A" array)
+
+        [| 3..2..10 |] |> assertSame (fun x -> x > 2)
+        [|"Lists"; "are";  "commonly" ; "list" |] |> assertSame (fun (x:string) -> x.Contains("a")) 
+        [||] |> assertSame (fun (x:string) -> x.Contains("a"))
+        [||] |> assertSame (fun (x:string) -> x.Contains("a") |> not)
+       
+        let nullArr = null:string[] 
+        CheckThrowsArgumentNullException (fun () -> Array.Parallel.exists (fun x -> true) nullArr |> ignore)  
+        
+        ()
         
     [<Fact>]
     member this.ForAll2() =
@@ -1235,6 +1289,77 @@ type ArrayModule() =
         if emptyArray <> expectedEmptyArray then Assert.Fail()
 
         CheckThrowsArgumentNullException(fun () -> Array.groupBy funcInt (null : int array) |> ignore)
+        ()
+
+    [<Fact>]
+    member _.ParallelGroupBy() =
+
+        let assertEqualityOfGroupings opName (seqGroup: ('TKey * 'TVal[])[]) (paraGroup: ('TKey * 'TVal[])[]) =
+            seqGroup |> Array.sortInPlaceBy fst
+            paraGroup |> Array.sortInPlaceBy fst
+
+            seqGroup |> Array.iter (snd >> Array.sortInPlace)
+            paraGroup |> Array.iter (snd >> Array.sortInPlace)
+
+            if seqGroup.Length <> paraGroup.Length then                
+                Assert.Fail($"{opName} produced different lengths of results. Seq={seqGroup.Length};Para={paraGroup.Length}.")
+            
+            let seqKeys = seqGroup |> Array.map fst
+            let paraKeys = paraGroup |> Array.map fst
+            if(seqKeys <> paraKeys) then
+                Assert.Fail($"{opName} produced different keys. Seq=%A{seqKeys};Para=%A{paraKeys}.")
+
+            Array.zip seqGroup paraGroup
+            |> Array.iter (fun ((seqKey,seqGroup), (paraKey,paraGroup)) ->
+                Assert.AreEqual(seqKey,paraKey,opName)
+                if seqGroup <> paraGroup then
+                    Assert.Fail($"{opName} produced different results for key={seqKey}. Seq=%A{seqGroup};Para=%A{paraGroup}."))
+
+            Assert.True((seqGroup=paraGroup), $"{opName} produced different results. Seq=%A{seqGroup};Para=%A{paraGroup}.")
+            
+
+        let compareAndAssert opName array projection =
+            let seqGroup = array |> Array.groupBy projection
+            let paraGroup = array |> Array.Parallel.groupBy projection
+            assertEqualityOfGroupings opName seqGroup paraGroup
+
+        // int array
+        let funcInt x = x%5             
+        let IntArray = [| 0 .. 250 |]
+        compareAndAssert "Int grouping" IntArray funcInt  
+
+             
+        // string array
+        let funcStr (x:string) = x.Length
+        let strArray = Array.init 177 (fun i -> string i)     
+        compareAndAssert "String grouping" strArray funcStr        
+
+
+        // Empty array
+        compareAndAssert "Empty group" [||] funcInt
+
+        // Reference key which can be null
+        let sampleStringsCanBeNull = [|"a";null;"abc";String.Empty|]
+        let pickStringByIdx idx = sampleStringsCanBeNull[idx % sampleStringsCanBeNull.Length]
+        compareAndAssert "Key can be null" IntArray pickStringByIdx
+
+        //String array w/ null keys and values
+        let strArray = Array.init 222 (fun i -> if i%3=0 then String.Empty else null )
+        compareAndAssert "String grouping w/ nulls" strArray id
+
+        // Keys being special floats. Array.groupBy does not work here, we test results manually
+        let specialFloats = [|infinity; -infinity;-0.0; 0.0; 1.0; -1.0; -0.0/0.0; -nan|]
+        let pickSpecialFloatByIdx idx = specialFloats[idx % specialFloats.Length]
+
+        let paraGroup = IntArray |> Array.Parallel.groupBy pickSpecialFloatByIdx
+        Assert.AreEqual(6, paraGroup.Length, "There should be 6 special floats!")
+        let (nan,nansGroup) = paraGroup |> Array.find (fun (k,_) -> Double.IsNaN(k))
+        // Both -0.0/0.0; -nan are a Nan. => 2/8 => every 4th elements goes to the NaN bucket
+        Assert.AreEqual((IntArray.Length / 4), nansGroup.Length, $"There should be {(IntArray.Length / 4)} NaNs!")
+
+
+
+        CheckThrowsArgumentNullException(fun () -> Array.Parallel.groupBy funcInt (null : int array) |> ignore)
         ()
 
     member private this.InitTester initInt initString = 

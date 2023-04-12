@@ -159,6 +159,14 @@ type SynExprMatchBangTrivia =
         WithKeyword: range
     }
 
+/// Represents additional information for SynExpr.AnonRecd
+[<NoEquality; NoComparison>]
+type SynExprAnonRecdTrivia =
+    {
+        /// The syntax range of the `{|` token.
+        OpeningBraceRange: range
+    }
+
 /// Represents additional information for SynMatchClause
 [<NoEquality; NoComparison>]
 type SynMatchClauseTrivia =

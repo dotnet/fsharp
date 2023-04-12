@@ -601,9 +601,7 @@ rule token args skip = parse
        // Single quote in triple quote ok, others disallowed
        match args.stringNest with
        | (_, LexerStringStyle.TripleQuote, _) :: _ -> ()
-       | _ :: rest ->
-           args.stringNest <- rest
-           errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
+       | _ :: _ -> errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
        | [] -> ()
 
        if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, LexerStringKind.String, m))
@@ -614,9 +612,7 @@ rule token args skip = parse
 
        // Single quote in triple quote ok, others disallowed
        match args.stringNest with
-       | _ :: rest ->
-           args.stringNest <- rest
-           errorR(Error(FSComp.SR.lexTripleQuoteInTripleQuote(), m))
+       | _ :: _ -> errorR(Error(FSComp.SR.lexTripleQuoteInTripleQuote(), m))
        | [] -> ()
 
        if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, LexerStringKind.InterpolatedStringFirst, m))
@@ -628,9 +624,7 @@ rule token args skip = parse
        // Single quote in triple quote ok, others disallowed
        match args.stringNest with
        | (_, LexerStringStyle.TripleQuote, _) :: _ -> ()
-       | _ :: rest ->
-           args.stringNest <- rest
-           errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
+       | _ :: _ -> errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
        | _ -> ()
 
        if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, LexerStringKind.InterpolatedStringFirst, m))
@@ -641,9 +635,7 @@ rule token args skip = parse
 
        // Single quote in triple quote ok, others disallowed
        match args.stringNest with
-       | _ :: rest ->
-           args.stringNest <- rest
-           errorR(Error(FSComp.SR.lexTripleQuoteInTripleQuote(), m))
+       | _ :: _ -> errorR(Error(FSComp.SR.lexTripleQuoteInTripleQuote(), m))
        | _ -> ()
 
        if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, LexerStringKind.String, m))
@@ -655,9 +647,7 @@ rule token args skip = parse
        // Single quote in triple quote ok, others disallowed
        match args.stringNest with
        | (_, LexerStringStyle.TripleQuote, _) :: _ -> ()
-       | _ :: rest ->
-           args.stringNest <- rest
-           errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
+       | _ :: _ -> errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
        | _ -> ()
 
        if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, LexerStringKind.String, m))
@@ -669,9 +659,7 @@ rule token args skip = parse
        // Single quote in triple quote ok, others disallowed
        match args.stringNest with
        | (_, LexerStringStyle.TripleQuote, _) :: _ -> ()
-       | _ :: rest ->
-           args.stringNest <- rest
-           errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
+       | _ :: _ -> errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
        | _ -> ()
 
        if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, LexerStringKind.InterpolatedStringFirst, m))
@@ -713,8 +701,20 @@ rule token args skip = parse
        if not skip then WHITESPACE (LexCont.Token(args.ifdefStack, args.stringNest))
        else token args skip lexbuf }
 
- | '`' '`' ([^'`' '\n' '\r' '\t'] | '`' [^'`''\n' '\r' '\t']) + '`' '`'
+ | '`' '`' ([^'`' '\n' '\r' '\t'] | '`' [^'`''\n' '\r' '\t'])+ '`' '`'
      { Keywords.IdentifierToken args lexbuf (lexemeTrimBoth lexbuf 2 2) }
+
+ | '`' '`' (([^'`' '\n' '\r' '\t'] | ('`' [^'`' '\n' '\r' '\t']))+)'`'
+     { errorR(Error(FSComp.SR.lexInvalidIdentifier(), lexbuf.LexemeRange))
+       Keywords.IdentifierToken args lexbuf (lexemeTrimBoth lexbuf 2 1) }
+
+ | '`' '`' (([^'`' '\n' '\r' '\t'] | ('`'[^'`' '\n' '\r' '\t']))+)
+     { errorR(Error(FSComp.SR.lexInvalidIdentifier(), lexbuf.LexemeRange))
+       Keywords.IdentifierToken args lexbuf (lexemeTrimLeft lexbuf 2) }
+
+ | "````" | "```" | "``" | "`"
+     { errorR(Error(FSComp.SR.lexInvalidIdentifier(), lexbuf.LexemeRange))
+       Keywords.IdentifierToken args lexbuf "" }
 
  | ('#' anywhite* | "#line" anywhite+ ) digit+ anywhite* ('@'? "\"" [^'\n''\r''"']+ '"')? anywhite* newline
      {  let pos = lexbuf.EndPos
@@ -909,8 +909,6 @@ rule token args skip = parse
  | "-" { MINUS }
 
  | "~" { RESERVED }
-
- | "`" { RESERVED }
 
  | ignored_op_char* '*' '*'                    op_char* { checkExprOp lexbuf; INFIX_STAR_STAR_OP(lexeme lexbuf) }
 

@@ -40,7 +40,8 @@ val ParseInput:
     defaultNamespace: string option *
     fileName: string *
     isLastCompiland: (bool * bool) *
-    identCapture: bool ->
+    identCapture: bool *
+    userOpName: string option ->
         ParsedInput
 
 /// A general routine to process hash directives
@@ -113,7 +114,6 @@ val GetInitialTcEnv: assemblyName: string * range * TcConfig * TcImports * TcGlo
 /// Represents the incremental type checking state for a set of inputs
 [<Sealed>]
 type TcState =
-
     /// The CcuThunk for the current assembly being checked
     member Ccu: CcuThunk
 

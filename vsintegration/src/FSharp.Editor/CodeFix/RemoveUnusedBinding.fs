@@ -9,15 +9,12 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "RemoveUnusedBinding"); Shared>]
-type internal FSharpRemoveUnusedBindingCodeFixProvider
-    [<ImportingConstructor>]
-    (
-    ) =
-    
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.RemoveUnusedBinding); Shared>]
+type internal FSharpRemoveUnusedBindingCodeFixProvider [<ImportingConstructor>] () =
+
     inherit CodeFixProvider()
 
-    let fixableDiagnosticIds = set ["FS1182"]
+    let fixableDiagnosticIds = set [ "FS1182" ]
 
     override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
@@ -29,14 +26,18 @@ type internal FSharpRemoveUnusedBindingCodeFixProvider
             let document = context.Document
             let! sourceText = document.GetTextAsync(context.CancellationToken)
 
-            let! parseResults = context.Document.GetFSharpParseResultsAsync(nameof(FSharpRemoveUnusedBindingCodeFixProvider)) |> liftAsync
+            let! parseResults =
+                context.Document.GetFSharpParseResultsAsync(nameof (FSharpRemoveUnusedBindingCodeFixProvider))
+                |> liftAsync
 
             let diagnostics =
                 context.Diagnostics
                 |> Seq.filter (fun x -> fixableDiagnosticIds |> Set.contains x.Id)
                 |> Seq.toImmutableArray
 
-            let symbolRange = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)
+            let symbolRange =
+                RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)
+
             let! rangeOfBinding = parseResults.TryRangeOfBindingWithHeadPatternWithPos(symbolRange.Start)
             let! spanOfBinding = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, rangeOfBinding)
 
@@ -46,6 +47,7 @@ type internal FSharpRemoveUnusedBindingCodeFixProvider
                         pos
                     else
                         loop sourceText.[pos - 1] (pos - 1)
+
                 loop sourceText.[spanOfBinding.Start - 1] (spanOfBinding.Start - 1)
 
             // This is safe, since we could never have gotten here unless there was a `let` or `use`
@@ -53,12 +55,16 @@ type internal FSharpRemoveUnusedBindingCodeFixProvider
             let fullSpan = TextSpan(keywordStartColumn, spanOfBinding.End - keywordStartColumn)
 
             let prefixTitle = SR.RemoveUnusedBinding()
+
             let removalCodeFix =
-                CodeFixHelpers.createTextChangeCodeFix(
+                CodeFixHelpers.createTextChangeCodeFix (
+                    CodeFix.RemoveUnusedBinding,
                     prefixTitle,
                     context,
-                    (fun () -> asyncMaybe.Return [| TextChange(fullSpan, "") |]))
+                    (fun () -> asyncMaybe.Return [| TextChange(fullSpan, "") |])
+                )
+
             context.RegisterCodeFix(removalCodeFix, diagnostics)
-        } 
+        }
         |> Async.Ignore
         |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

@@ -663,7 +663,6 @@ val FreshenRecdFieldRef: NameResolver -> range -> RecdFieldRef -> RecdFieldInfo
 /// Resolve a long identifier to a namespace, module.
 val internal ResolveLongIdentAsModuleOrNamespace:
     sink: TcResultsSink ->
-    atMostOne: ResultCollectionSettings ->
     amap: ImportMap ->
     m: range ->
     first: bool ->
@@ -742,6 +741,16 @@ val internal ResolveField:
     id: Ident ->
     allFields: Ident list ->
         FieldResolution list
+
+/// Resolve a long identifier to a nested field
+val internal ResolveNestedField:
+    sink: TcResultsSink ->
+    ncenv: NameResolver ->
+    nenv: NameResolutionEnv ->
+    ad: AccessorDomain ->
+    recdTy: TType ->
+    lid: Ident list ->
+        Ident list * (Ident * AnonRecdTypeInfo option) list
 
 /// Resolve a long identifier occurring in an expression position
 val internal ResolveExprLongIdent:
@@ -822,7 +831,7 @@ val ResolveCompletionsInType:
         Item list
 
 val GetVisibleNamespacesAndModulesAtPoint:
-    NameResolver -> NameResolutionEnv -> range -> AccessorDomain -> ModuleOrNamespaceRef list
+    NameResolver -> NameResolutionEnv -> FullyQualifiedFlag -> range -> AccessorDomain -> ModuleOrNamespaceRef list
 
 val IsItemResolvable: NameResolver -> NameResolutionEnv -> range -> AccessorDomain -> string list -> Item -> bool
 

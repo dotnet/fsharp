@@ -38,10 +38,10 @@ type public FSharpChecker =
     /// <param name="keepAllBackgroundSymbolUses">Indicate whether all symbol uses should be kept in background checking</param>
     /// <param name="enableBackgroundItemKeyStoreAndSemanticClassification">Indicates whether a table of symbol keys should be kept for background compilation</param>
     /// <param name="enablePartialTypeChecking">Indicates whether to perform partial type checking. Cannot be set to true if keepAssmeblyContents is true. If set to true, can cause duplicate type-checks when richer information on a file is needed, but can skip background type-checking entirely on implementation files with signature files.</param>
-    /// <param name="enableParallelCheckingWithSignatureFiles">Type check implementation files that are backed by a signature file in parallel.</param>
     /// <param name="parallelReferenceResolution">Indicates whether to resolve references in parallel.</param>
     /// <param name="captureIdentifiersWhenParsing">When set to true we create a set of all identifiers for each parsed file which can be used to speed up finding references.</param>
     /// <param name="documentSource">Default: FileSystem. You can use Custom source to provide a function that will return the source for a given file path instead of reading it from the file system. Note that with this option the FSharpChecker will also not monitor the file system for file changes. It will expect to be notified of changes via the NotifyFileChanged method.</param>
+    /// <param name="useSyntaxTreeCache">Default: true. Indicates whether to keep parsing results in a cache.</param>
     static member Create:
         ?projectCacheSize: int *
         ?keepAssemblyContents: bool *
@@ -52,10 +52,10 @@ type public FSharpChecker =
         ?keepAllBackgroundSymbolUses: bool *
         ?enableBackgroundItemKeyStoreAndSemanticClassification: bool *
         ?enablePartialTypeChecking: bool *
-        ?enableParallelCheckingWithSignatureFiles: bool *
         ?parallelReferenceResolution: bool *
         ?captureIdentifiersWhenParsing: bool *
-        [<Experimental "This parameter is experimental and likely to be removed in the future.">] ?documentSource: DocumentSource ->
+        [<Experimental "This parameter is experimental and likely to be removed in the future.">] ?documentSource: DocumentSource *
+        [<Experimental "This parameter is experimental and likely to be removed in the future.">] ?useSyntaxTreeCache: bool ->
             FSharpChecker
 
     /// <summary>
@@ -385,7 +385,6 @@ type public FSharpChecker =
     member ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients: unit -> unit
 
     /// Notify the checker that given file has changed. This needs to be used when checker is created with documentSource = Custom.
-    /// Although it is not mandatory when the changed file is the next thing requested to be checked.
     [<Experimental "This FCS API is experimental and likely to be removed in the future.">]
     member NotifyFileChanged: fileName: string * options: FSharpProjectOptions * ?userOpName: string -> Async<unit>
 

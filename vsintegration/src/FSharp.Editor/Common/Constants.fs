@@ -6,7 +6,7 @@ open System
 
 [<RequireQualifiedAccess>]
 module internal FSharpConstants =
-    
+
     [<Literal>]
     /// "871D2A70-12A2-4e42-9440-425DD92A4116"
     let packageGuidString = "871D2A70-12A2-4e42-9440-425DD92A4116"
@@ -14,7 +14,7 @@ module internal FSharpConstants =
     [<Literal>]
     /// "871D2A70-12A2-4e42-9440-425DD92A4116" - FSharp Package
     let fsiPackageGuidString = "871D2A70-12A2-4e42-9440-425DD92A4116"
-    
+
     [<Literal>]
     /// "BC6DD5A5-D4D6-4dab-A00D-A51242DBAF1B"
     let languageServiceGuidString = "BC6DD5A5-D4D6-4dab-A00D-A51242DBAF1B"
@@ -26,7 +26,7 @@ module internal FSharpConstants =
     [<Literal>]
     /// "F#"
     let FSharpLanguageName = "F#"
-    
+
     [<Literal>]
     /// "F#"
     let FSharpContentTypeName = "F#"
@@ -38,11 +38,11 @@ module internal FSharpConstants =
     [<Literal>]
     /// "F# Signature Help"
     let FSharpSignatureHelpContentTypeName = "F# Signature Help"
-    
+
     [<Literal>]
     /// "F# Language Service"
     let FSharpLanguageServiceCallbackName = "F# Language Service"
-    
+
     [<Literal>]
     /// "FSharp"
     let FSharpLanguageLongName = "FSharp"
@@ -64,10 +64,9 @@ module internal FSharpProviderConstants =
 
 [<RequireQualifiedAccess>]
 module internal Guids =
-    
-    [<Literal>]
+
     /// "9B164E40-C3A2-4363-9BC5-EB4039DEF653"
-    let svsSettingsPersistenceManagerIdString = "9B164E40-C3A2-4363-9BC5-EB4039DEF653"
+    let svsSettingsPersistenceManagerId = Guid "{9B164E40-C3A2-4363-9BC5-EB4039DEF653}"
 
     [<Literal>]
     /// "9b3c6b8a-754a-461d-9ebe-de1a682d57c1"
@@ -80,10 +79,11 @@ module internal Guids =
     [<Literal>]
     /// "9A66EB6A-DE52-4169-BC26-36FBD4312FD7"
     let codeFixesOptionPageIdString = "9A66EB6A-DE52-4169-BC26-36FBD4312FD7"
-    
+
     [<Literal>]
     /// "8FDA964A-263D-4B4E-9560-29897535217C"
-    let languageServicePerformanceOptionPageIdString = "8FDA964A-263D-4B4E-9560-29897535217C"
+    let languageServicePerformanceOptionPageIdString =
+        "8FDA964A-263D-4B4E-9560-29897535217C"
 
     [<Literal>]
     /// "9007718C-357A-4327-A193-AB3EC38D7EE8"
@@ -94,3 +94,86 @@ module internal Guids =
     let formattingOptionPageIdString = "9EBEBCE8-A79B-46B0-A8C5-A9818AEED17D"
 
     let blueHighContrastThemeId = Guid "{ce94d289-8481-498b-8ca9-9b6191a315b9}"
+
+[<RequireQualifiedAccess>]
+module internal CodeFix =
+
+    [<Literal>]
+    let AddInstanceMemberParameter = "AddInstanceMemberParameter"
+
+    [<Literal>]
+    let ConvertCSharpLambdaToFSharpLambda = "ConvertCSharpLambdaToFSharpLambda"
+
+    [<Literal>]
+    let ConvertToNotEqualsEqualityExpression = "ConvertToNotEqualsEqualityExpression"
+
+    [<Literal>]
+    let UseTripleQuotedInterpolation = "UseTripleQuotedInterpolation"
+
+    [<Literal>]
+    let SimplifyName = "SimplifyName"
+
+    [<Literal>]
+    let RemoveUnusedBinding = "RemoveUnusedBinding"
+
+    [<Literal>]
+    let ChangeToUpcast = "ChangeToUpcast"
+
+    [<Literal>]
+    let UseMutationWhenValueIsMutable = "UseMutationWhenValueIsMutable"
+
+    [<Literal>]
+    let RenameUnusedValue = "RenameUnusedValue"
+
+    [<Literal>]
+    let FixIndexerAccess = "FixIndexerAccess"
+
+    [<Literal>]
+    let RemoveReturnOrYield = "RemoveReturnOrYield"
+
+    [<Literal>]
+    let ReplaceWithSuggestion = "ReplaceWithSuggestion"
+
+    [<Literal>]
+    let MakeOuterBindingRecursive = "MakeOuterBindingRecursive"
+
+    [<Literal>]
+    let ConvertToSingleEqualsEqualityExpression =
+        "ConvertToSingleEqualsEqualityExpression"
+
+    [<Literal>]
+    let MakeDeclarationMutable = "MakeDeclarationMutable"
+
+    [<Literal>]
+    let ChangePrefixNegationToInfixSubtraction =
+        "ChangePrefixNegationToInfixSubtraction"
+
+    [<Literal>]
+    let AddMissingFunKeyword = "AddMissingFunKeyword"
+
+    [<Literal>]
+    let AddNewKeyword = "AddNewKeyword"
+
+    [<Literal>]
+    let RemoveUnusedOpens = "RemoveUnusedOpens"
+
+    [<Literal>]
+    let AddOpen = "AddOpen"
+
+    [<Literal>]
+    let ConvertCSharpUsingToFSharpOpen = "ConvertCSharpUsingToFSharpOpen"
+
+    [<Literal>]
+    let ChangeRefCellDerefToNotExpression = "ChangeRefCellDerefToNotExpression"
+
+    [<Literal>]
+    let AddMissingEqualsToTypeDefinition = "AddMissingEqualsToTypeDefinition"
+
+    [<Literal>]
+    let FSharpRenameParamToMatchSignature = "FSharpRenameParamToMatchSignature"
+
+    [<Literal>]
+    let RemoveIndexerDotBeforeBracket = "RemoveIndexerDotBeforeBracket"
+
+    [<Literal>]
+    let RemoveSuperfluousCapture = "RemoveSuperfluousCapture"

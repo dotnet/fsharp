@@ -29,7 +29,9 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 
+#if !NO_TYPEPROVIDERS
 let verbose = false
+#endif
 
 let ffailwith fileName str =
     let msg = FSComp.SR.pickleErrorReadingWritingMetadata(fileName, str)
@@ -2044,7 +2046,8 @@ and u_unioncase_spec st =
       ReturnType=b
       Id=d
       Attribs=e
-      XmlDoc= defaultArg xmldoc XmlDoc.Empty
+      OwnXmlDoc= defaultArg xmldoc XmlDoc.Empty
+      OtherXmlDoc = XmlDoc.Empty 
       XmlDocSig=f
       Accessibility=i
       OtherRangeOpt=None }
@@ -2086,6 +2089,7 @@ and u_recdfield_spec st =
       rfield_pattribs=e1
       rfield_fattribs=e2
       rfield_xmldoc= defaultArg xmldoc XmlDoc.Empty
+      rfield_otherxmldoc = XmlDoc.Empty 
       rfield_xmldocsig=f
       rfield_access=g
       rfield_name_generated = d.idRange.IsSynthetic
@@ -2262,6 +2266,7 @@ and u_ValData st =
                      val_const            = x14
                      val_access           = x13
                      val_xmldoc           = defaultArg x15 XmlDoc.Empty
+                     val_other_xmldoc     = None
                      val_member_info      = x8
                      val_declaring_entity = x13b
                      val_xmldocsig        = x12

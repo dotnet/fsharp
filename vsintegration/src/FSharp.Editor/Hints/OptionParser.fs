@@ -6,11 +6,16 @@ open Microsoft.VisualStudio.FSharp.Editor
 open Hints
 
 module OptionParser =
-    
-    let getHintKinds options =
-        Set 
-            [ if options.IsInlineTypeHintsEnabled then
-                 HintKind.TypeHint
 
-              if options.IsInlineParameterNameHintsEnabled then
-                 HintKind.ParameterNameHint ]
+    let getHintKinds options =
+        Set
+            [
+                if options.IsInlineTypeHintsEnabled then
+                    HintKind.TypeHint
+
+                if options.IsInlineParameterNameHintsEnabled then
+                    HintKind.ParameterNameHint
+
+                if options.IsInlineReturnTypeHintsEnabled then
+                    HintKind.ReturnTypeHint
+            ]

@@ -47,6 +47,8 @@ type SyntheticSourceFile =
         FunctionName: string
         SignatureFile: SignatureFile
         HasErrors: bool
+        /// If this is set to a non-empty string then it will replace the auto-generated content of the file
+        Source: string
         ExtraSource: string
         EntryPoint: bool
     }
@@ -70,6 +72,7 @@ let sourceFile fileId deps =
       FunctionName = defaultFunctionName
       SignatureFile = No
       HasErrors = false
+      Source = ""
       ExtraSource = ""
       EntryPoint = false }
 
@@ -82,7 +85,8 @@ type SyntheticProject =
       ProjectDir: string
       SourceFiles: SyntheticSourceFile list
       DependsOn: SyntheticProject list
-      RecursiveNamespace: bool }
+      RecursiveNamespace: bool
+      OtherOptions: string list }
 
     static member Create(?name: string) =
         let name = defaultArg name $"TestProject_{Guid.NewGuid().ToString()[..7]}"
@@ -92,7 +96,8 @@ type SyntheticProject =
           ProjectDir = dir ++ name
           SourceFiles = []
           DependsOn = []
-          RecursiveNamespace = false }
+          RecursiveNamespace = false
+          OtherOptions = [] }
 
     static member Create([<ParamArray>] sourceFiles: SyntheticSourceFile[]) =
         { SyntheticProject.Create() with SourceFiles = sourceFiles |> List.ofArray }
@@ -154,7 +159,8 @@ type SyntheticProject =
                         [| yield! baseOptions.OtherOptions
                            "--optimize+"
                            for p in this.DependsOn do
-                               $"-r:{p.OutputFilename}" |]
+                               $"-r:{p.OutputFilename}"
+                           yield! this.OtherOptions |]
                     ReferencedProjects =
                         [| for p in this.DependsOn do
                                FSharpReferencedProject.CreateFSharp(p.OutputFilename, p.GetProjectOptions checker) |]
@@ -167,22 +173,43 @@ type SyntheticProject =
 
         OptionsCache[cacheKey]
 
+    member this.GetAllProjects() =
+        [ this
+          for p in this.DependsOn do
+              yield! p.GetAllProjects() ]
+
     member this.GetAllFiles() =
         [ for f in this.SourceFiles do
               this, f
           for p in this.DependsOn do
               yield! p.GetAllFiles() ]
 
-module Internal =
 
-    let renderSourceFile (project: SyntheticProject) (f: SyntheticSourceFile) =
-        seq {
-            if project.RecursiveNamespace then
-                $"namespace rec {project.Name}"
-                $"module {f.ModuleName}"
-            else
-                $"module %s{project.Name}.{f.ModuleName}"
+let getFilePath p (f: SyntheticSourceFile) = p.ProjectDir ++ f.FileName
+let getSignatureFilePath p (f: SyntheticSourceFile) = p.ProjectDir ++ f.SignatureFileName
 
+
+type SyntheticProject with
+    member this.GetFilePath fileId = this.Find fileId |> getFilePath this
+    member this.GetSignatureFilePath fileId = this.Find fileId |> getSignatureFilePath this
+
+
+let private renderNamespaceModule (project: SyntheticProject) (f: SyntheticSourceFile) =
+    seq {
+        if project.RecursiveNamespace then
+            $"namespace rec {project.Name}"
+            $"module {f.ModuleName}"
+        else
+            $"module %s{project.Name}.{f.ModuleName}"
+    } |> String.concat Environment.NewLine
+
+let renderSourceFile (project: SyntheticProject) (f: SyntheticSourceFile) =
+    seq {
+        renderNamespaceModule project f
+
+        if f.Source <> "" then
+            f.Source
+        else
             for p in project.DependsOn do
                 $"open {p.Name}"
 
@@ -202,51 +229,55 @@ module Internal =
             if f.HasErrors then
                 "let wrong = 1 + 'a'"
 
-            if f.EntryPoint then
-                "[<EntryPoint>]"
-                "let main _ ="
-                "   f 1 |> ignore"
-                "   printfn \"Hello World!\""
-                "   0"
-        }
-        |> String.concat Environment.NewLine
+        if f.EntryPoint then
+            "[<EntryPoint>]"
+            "let main _ ="
+            "   f 1 |> ignore"
+            "   printfn \"Hello World!\""
+            "   0"
+    }
+    |> String.concat Environment.NewLine
 
-    let renderFsProj (p: SyntheticProject) =
-        seq {
-            """
-            <Project Sdk="Microsoft.NET.Sdk">
+let renderCustomSignatureFile (project: SyntheticProject) (f: SyntheticSourceFile) =
+    match f.SignatureFile with
+    | Custom signature -> $"{renderNamespaceModule project f}\n{signature}"
+    | _ -> failwith $"File {f.FileName} does not have a custom signature file."
 
-            <PropertyGroup>
-                <OutputType>Exe</OutputType>
-                <TargetFramework>net7.0</TargetFramework>
-            </PropertyGroup>
+let private renderFsProj (p: SyntheticProject) =
+    seq {
+        """
+        <Project Sdk="Microsoft.NET.Sdk">
 
-            <ItemGroup>
-            """
+        <PropertyGroup>
+            <OutputType>Exe</OutputType>
+            <TargetFramework>net7.0</TargetFramework>
+        </PropertyGroup>
 
-            for f in p.SourceFiles do
-                if f.HasSignatureFile then
-                    $"<Compile Include=\"{f.SignatureFileName}\" />"
+        <ItemGroup>
+        """
 
-                $"<Compile Include=\"{f.FileName}\" />"
+        for f in p.SourceFiles do
+            if f.HasSignatureFile then
+                $"<Compile Include=\"{f.SignatureFileName}\" />"
 
-            """
-            </ItemGroup>
-            </Project>
-            """
-        }
-        |> String.concat Environment.NewLine
+            $"<Compile Include=\"{f.FileName}\" />"
 
-    let writeFileIfChanged path content =
-        if not (File.Exists path) || File.ReadAllText(path) <> content then
-            File.WriteAllText(path, content)
+        """
+        </ItemGroup>
+        </Project>
+        """
+    }
+    |> String.concat Environment.NewLine
 
-    let writeFile (p: SyntheticProject) (f: SyntheticSourceFile) =
-        let fileName = p.ProjectDir ++ f.FileName
-        let content = renderSourceFile p f
-        writeFileIfChanged fileName content
+let private writeFileIfChanged path content =
+    if not (File.Exists path) || File.ReadAllText(path) <> content then
+        File.WriteAllText(path, content)
 
-open Internal
+let private writeFile (p: SyntheticProject) (f: SyntheticSourceFile) =
+    let fileName = getFilePath p f
+    let content = renderSourceFile p f
+    writeFileIfChanged fileName content
+
 
 [<AutoOpen>]
 module ProjectOperations =
@@ -295,7 +326,7 @@ module ProjectOperations =
     let checkFile fileId (project: SyntheticProject) (checker: FSharpChecker) =
         let file = project.Find fileId
         let contents = renderSourceFile project file
-        let absFileName = project.ProjectDir ++ file.FileName
+        let absFileName = getFilePath project file
 
         checker.ParseAndCheckFileInProject(
             absFileName,
@@ -322,7 +353,7 @@ module ProjectOperations =
         if checkResult.Diagnostics.Length > 0 then
             failwith $"Expected no errors, but there were some: \n%A{checkResult.Diagnostics}"
 
-    let expectSingleWarningAndNoErrors (warningSubString:string) parseAndCheckResults _  = 
+    let expectSingleWarningAndNoErrors (warningSubString:string) parseAndCheckResults _  =
         let checkResult = getTypeCheckResult parseAndCheckResults
         let errors = checkResult.Diagnostics|> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
         if errors.Length > 0 then
@@ -331,10 +362,10 @@ module ProjectOperations =
         let warnings = checkResult.Diagnostics|> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Warning)
         match warnings |> Array.tryExactlyOne with
         | None -> failwith $"Expected 1 warning, but got {warnings.Length} instead: \n%A{warnings}"
-        | Some w -> 
+        | Some w ->
             if w.Message.Contains warningSubString then
                 ()
-            else 
+            else
                 failwith $"Expected 1 warning with substring '{warningSubString}' but got %A{w}"
 
     let expectErrors parseAndCheckResults _ =
@@ -364,13 +395,18 @@ module ProjectOperations =
             failwith $"Found {results.Length} references but expected to find {expected}"
 
     let expectToFind expected (foundRanges: range seq) =
-        let actual =
-            foundRanges
-            |> Seq.map (fun r -> Path.GetFileName(r.FileName), r.StartLine, r.StartColumn, r.EndColumn)
+        let expected =
+            expected
             |> Seq.sortBy (fun (file, _, _, _) -> file)
             |> Seq.toArray
 
-        Assert.Equal<(string * int * int * int)[]>(expected |> Seq.toArray, actual)
+        let actual =
+            foundRanges
+            |> Seq.map (fun r -> Path.GetFileName(r.FileName), r.StartLine, r.StartColumn, r.EndColumn)
+            |> Seq.sort
+            |> Seq.toArray
+
+        Assert.Equal<(string * int * int * int)[]>(expected |> Seq.sort |> Seq.toArray, actual)
 
     let rec saveProject (p: SyntheticProject) generateSignatureFiles checker =
         async {
@@ -391,11 +427,72 @@ module ProjectOperations =
                     let! results = checkFile file.Id project checker
                     let signature = getSignature results
                     writeFileIfChanged signatureFileName signature
-                | Custom signature -> writeFileIfChanged signatureFileName signature
+                | Custom _ ->
+                    let signatureContent = renderCustomSignatureFile p file
+                    writeFileIfChanged signatureFileName signatureContent
                 | _ -> ()
 
             writeFileIfChanged (p.ProjectDir ++ $"{p.Name}.fsproj") (renderFsProj p)
         }
+
+
+module Helpers =
+
+    let getSymbolUse fileName (source: string) (symbolName: string) options (checker: FSharpChecker) =
+        async {
+            let index = source.IndexOf symbolName
+            let line = source |> Seq.take index |> Seq.where ((=) '\n') |> Seq.length
+            let fullLine = source.Split '\n' |> Array.item line
+            let colAtEndOfNames = fullLine.IndexOf symbolName + symbolName.Length
+
+            let! results = checker.ParseAndCheckFileInProject(
+                fileName, 0, SourceText.ofString source, options)
+
+            let typeCheckResults = getTypeCheckResult results
+
+            let symbolUse =
+                typeCheckResults.GetSymbolUseAtLocation(line + 1, colAtEndOfNames, fullLine, [symbolName])
+
+            return symbolUse |> Option.defaultWith (fun () ->
+                failwith $"No symbol found in {fileName} at {line}:{colAtEndOfNames}\nFile contents:\n\n{source}\n")
+        }
+
+    let singleFileChecker source =
+
+        let fileName = "test.fs"
+
+        let getSource _ = source |> SourceText.ofString |> Some
+
+        let checker = FSharpChecker.Create(
+            keepAllBackgroundSymbolUses = false,
+            enableBackgroundItemKeyStoreAndSemanticClassification = true,
+            enablePartialTypeChecking = true,
+            captureIdentifiersWhenParsing = true,
+            documentSource = DocumentSource.Custom getSource)
+
+        let options =
+            let baseOptions, _ =
+                checker.GetProjectOptionsFromScript(
+                    fileName,
+                    SourceText.ofString "",
+                    assumeDotNetFramework = false
+                )
+                |> Async.RunSynchronously
+
+            { baseOptions with
+                ProjectFileName = "project"
+                ProjectId = None
+                SourceFiles = [|fileName|]
+                IsIncompleteTypeCheckEnvironment = false
+                UseScriptResolutionRules = false
+                LoadTime = DateTime()
+                UnresolvedReferences = None
+                OriginalLoadReferences = []
+                Stamp = None }
+
+        fileName, options, checker
+
+open Helpers
 
 
 type WorkflowContext =
@@ -434,7 +531,8 @@ type ProjectWorkflowBuilder
         ?initialContext,
         ?checker: FSharpChecker,
         ?useGetSource,
-        ?useChangeNotifications
+        ?useChangeNotifications,
+        ?useSyntaxTreeCache
     ) =
 
     let useGetSource = defaultArg useGetSource false
@@ -442,10 +540,18 @@ type ProjectWorkflowBuilder
 
     let mutable latestProject = initialProject
 
-    let getSource filePath =
-        filePath
-        |> latestProject.FindByPath
-        |> renderSourceFile latestProject
+    let getSource (filePath: string) =
+        if filePath.EndsWith(".fsi") then
+            let implFilePath = filePath[..filePath.Length - 2]
+            let source = latestProject.FindByPath implFilePath
+            match source.SignatureFile with
+            | No -> failwith $"{implFilePath} does not have a signature file"
+            | Custom _ -> renderCustomSignatureFile latestProject source
+            | AutoGenerated -> failwith "AutoGenerated signatures not yet supported for getSource workflow"
+        else
+            filePath
+            |> latestProject.FindByPath
+            |> renderSourceFile latestProject
         |> SourceText.ofString
         |> Some
 
@@ -457,7 +563,8 @@ type ProjectWorkflowBuilder
                 enableBackgroundItemKeyStoreAndSemanticClassification = true,
                 enablePartialTypeChecking = true,
                 captureIdentifiersWhenParsing = true,
-                documentSource = (if useGetSource then DocumentSource.Custom getSource else DocumentSource.FileSystem)
+                documentSource = (if useGetSource then DocumentSource.Custom getSource else DocumentSource.FileSystem),
+                useSyntaxTreeCache = defaultArg useSyntaxTreeCache false
             ))
 
     let mapProjectAsync f workflow =
@@ -593,6 +700,19 @@ type ProjectWorkflowBuilder
             return { ctx with Cursor = su }
         }
 
+    /// Find a symbol by finding the first occurrence of the symbol name in the file
+    [<CustomOperation "placeCursor">]
+    member this.PlaceCursor(workflow: Async<WorkflowContext>, fileId, symbolName: string) =
+        async {
+            let! ctx = workflow
+            let file = ctx.Project.Find fileId
+            let fileName = ctx.Project.ProjectDir ++ file.FileName
+            let source = renderSourceFile ctx.Project file
+            let options= ctx.Project.GetProjectOptions checker
+            let! su = getSymbolUse fileName source symbolName options checker
+            return { ctx with Cursor = Some su }
+        }
+
     /// Find all references within a single file, results are provided to the 'processResults' function
     [<CustomOperation "findAllReferencesInFile">]
     member this.FindAllReferencesInFile(workflow: Async<WorkflowContext>, fileId: string, processResults) =
@@ -603,10 +723,10 @@ type ProjectWorkflowBuilder
             let symbolUse =
                 ctx.Cursor
                 |> Option.defaultWith (fun () ->
-                    failwith $"Please place cursor at a valid location via {nameof this.PlaceCursor} first")
+                    failwith $"Please place cursor at a valid location via placeCursor first")
 
             let file = ctx.Project.Find fileId
-            let absFileName = ctx.Project.ProjectDir ++ file.FileName
+            let absFileName = getFilePath ctx.Project file
 
             let! results =
                 checker.FindBackgroundReferencesInFile(absFileName, options, symbolUse.Symbol, fastCheck = true)
@@ -626,7 +746,7 @@ type ProjectWorkflowBuilder
             let symbolUse =
                 ctx.Cursor
                 |> Option.defaultWith (fun () ->
-                    failwith $"Please place cursor at a valid location via {nameof this.PlaceCursor} first")
+                    failwith $"Please place cursor at a valid location via placeCursor first")
 
             let! results =
                 [ for f in options.SourceFiles do
@@ -688,6 +808,23 @@ type ProjectWorkflowBuilder
             return ctx
         }
 
+    [<CustomOperation "compileWithFSC">]
+    member this.Compile(workflow: Async<WorkflowContext>) =
+        async {
+            let! ctx = workflow
+            let projectOptions = ctx.Project.GetProjectOptions(checker)
+            let arguments =
+                [|
+                    yield "fsc.exe"
+                    yield! projectOptions.OtherOptions
+                    yield! projectOptions.SourceFiles
+                |]
+            let! _diagnostics, exitCode = checker.Compile(arguments)
+            if exitCode <> 0 then
+                exn $"Compilation failed with exit code {exitCode}" |> raise
+            return ctx
+        }
+
 /// Execute a set of operations on a given synthetic project.
 /// The project is saved to disk and type checked at the start.
 let projectWorkflow project = ProjectWorkflowBuilder project
@@ -701,3 +838,8 @@ type SyntheticProject with
 
     member this.WorkflowWith checker =
         ProjectWorkflowBuilder(this, checker = checker)
+
+    /// Saves project to disk and checks it with default options. Returns the FSharpChecker that was created
+    member this.SaveAndCheck() =
+        this.Workflow.Yield() |> Async.RunSynchronously |> ignore
+        this.Workflow.Checker

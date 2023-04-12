@@ -643,14 +643,17 @@ moduleSpfn:
 
   | opt_attributes opt_access moduleIntro colonOrEquals namedModuleAbbrevBlock 
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-        let _mModule, isRec, path, vis, attribs2 = $3
+        let mModule, isRec, path, vis, attribs2 = $3
         if isRec then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsInvalidUseOfRec())
         if not (isSingleton path) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleAbbreviationMustBeSimpleName())
         if not (isNil $1) then raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsIgnoreAttributesOnModuleAbbreviation())
         if not (isNil attribs2) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsIgnoreAttributesOnModuleAbbreviation())
         match vis with
         | Some vis -> raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsIgnoreVisibilityOnModuleAbbreviationAlwaysPrivate(vis.ToString()))
-        | _ -> SynModuleSigDecl.ModuleAbbrev(List.head path, $5, rhs2 parseState 1 5) } 
+        | _ ->
+            let lid: SynLongIdent = $5
+            let m = unionRanges mModule lid.Range
+            SynModuleSigDecl.ModuleAbbrev(List.head path, lid.LongIdent, m) } 
 
   | opt_attributes opt_access moduleIntro colonOrEquals moduleSpecBlock
       { let mModule, isRec, path, vis, attribs2 = $3
@@ -664,6 +667,17 @@ moduleSpfn:
                 |> unionRangeWithXmlDoc xmlDoc
         let trivia: SynModuleSigDeclNestedModuleTrivia = { ModuleKeyword = Some mModule; EqualsRange = $4 }
         SynModuleSigDecl.NestedModule(info, isRec, $5, m, trivia) }
+
+  | opt_attributes opt_access moduleIntro error
+      { let mModule, isRec, path, vis, attribs2 = $3
+        let xmlDoc = grabXmlDoc(parseState, $1, 1)
+        if not (isSingleton path) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleDefnMustBeSimpleName())
+        if isRec then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsInvalidUseOfRec())
+        let info = SynComponentInfo($1 @ attribs2, None, [], path, xmlDoc, false, vis, rhs parseState 3)
+        if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
+        let mWhole = rhs2 parseState 1 3 |> unionRangeWithXmlDoc xmlDoc
+        let trivia: SynModuleSigDeclNestedModuleTrivia = { ModuleKeyword = Some mModule; EqualsRange = None }
+        SynModuleSigDecl.NestedModule(info, isRec, [], mWhole, trivia) }
 
   | opt_attributes opt_access typeKeyword tyconSpfn tyconSpfnList
       { if Option.isSome $2 then errorR (Error (FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
@@ -1273,12 +1287,26 @@ moduleDefn:
             | Some vis -> raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsIgnoreAttributesOnModuleAbbreviationAlwaysPrivate(vis.ToString()))
             | None -> ()
             [ SynModuleDecl.ModuleAbbrev(List.head path, eqn, (rhs parseState 3, eqn) ||> unionRangeWithListBy (fun id -> id.idRange) ) ]
-        | Choice2Of2 def -> 
+        | Choice2Of2 (def, mEndOpt) -> 
             if not (isSingleton path) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleAbbreviationMustBeSimpleName())
             let info = SynComponentInfo(attribs @ attribs2, None, [], path, xmlDoc, false, vis, rhs parseState 3)
             let mEquals = rhs parseState 4
             let trivia: SynModuleDeclNestedModuleTrivia = { ModuleKeyword = Some mModule; EqualsRange = Some mEquals }
-            [ SynModuleDecl.NestedModule(info, isRec, def, false, ((rhs2 parseState 1 4, def) ||> unionRangeWithListBy (fun d -> d.Range) |> unionRangeWithXmlDoc xmlDoc), trivia)] }
+            let m =
+                (rhs2 parseState 1 4, def)
+                ||> unionRangeWithListBy (fun (d: SynModuleDecl) -> d.Range)
+                |> unionRangeWithXmlDoc xmlDoc
+            let m = match mEndOpt with | None -> m | Some mEnd -> unionRanges m mEnd
+            [ SynModuleDecl.NestedModule(info, isRec, def, false, m, trivia) ] }
+
+  /* incomplete 'module' definitions */
+  | opt_attributes opt_access moduleIntro error
+      { let xmlDoc = grabXmlDoc(parseState, $1, 1)
+        let mWhole = rhs2 parseState 1 3 |> unionRangeWithXmlDoc xmlDoc
+        let attribs, (mModule, isRec, path, vis, attribs2) = $1, $3
+        let info = SynComponentInfo(attribs @ attribs2, None, [], path, xmlDoc, false, vis, rhs parseState 3)
+        let trivia: SynModuleDeclNestedModuleTrivia = { ModuleKeyword = Some mModule; EqualsRange = None }
+        [ SynModuleDecl.NestedModule(info, isRec, [], false, mWhole, trivia) ] }
 
   /* unattached custom attributes */
   | attributes recover
@@ -1302,10 +1330,10 @@ openDecl:
 /* We don't use it in signature files */
 namedModuleAbbrevBlock:
   | OBLOCKBEGIN path oblockend 
-     { $2.LongIdent }
+     { $2 }
 
   | path 
-     { $1.LongIdent  }
+     { $1  }
        
 
 /* The right-hand-side of a module definition */ 
@@ -1339,17 +1367,18 @@ namedModuleDefnBlock:
          match $2 with 
          | [ SynModuleDecl.Expr (LongOrSingleIdent(false, SynLongIdent(path, _, _), None, _), _) ] -> 
              Choice1Of2  path
-         | _ -> 
-             Choice2Of2 $2 
+         | _ ->
+             Choice2Of2 ($2, None) 
        }
 
   | OBLOCKBEGIN moduleDefnsOrExpr recover 
      { // The lex filter ensures we can only get a mismatch in OBLOCKBEGIN/OBLOCKEND tokens if there was some other kind of error, hence we don't need to report this error
        // reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnClosedBlockInHashLight())   
-       Choice2Of2 $2 }
+       Choice2Of2 ($2, None) }
 
   | OBLOCKBEGIN error oblockend                
-     { Choice2Of2 [] }
+     { let mEnd = rhs parseState 3
+       Choice2Of2 ([], Some mEnd) }
 
   | wrappedNamedModuleDefn 
      { Choice2Of2 $1 }
@@ -1361,14 +1390,16 @@ namedModuleDefnBlock:
 /* A module definition that includes a 'begin'...'end' (rarely used in F# with #light syntax) */ 
 wrappedNamedModuleDefn:
   | structOrBegin moduleDefnsOrExprPossiblyEmpty END 
-     { $2 }
+     { let mEnd = rhs parseState 3
+       $2, Some mEnd }
 
   | structOrBegin moduleDefnsOrExprPossiblyEmpty recover 
      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBeginOrStruct())  
-       $2 }
+       $2, None }
 
   | structOrBegin error END                      
-     { [] }
+     { let mEnd = rhs parseState 3
+       [], Some mEnd }
 
 
 tyconDefnAugmentation: 
@@ -2493,9 +2524,28 @@ exconDefn:
        SynExceptionDefn($1, mWith, optClassDefn, ($1.Range, optClassDefn) ||> unionRangeWithListBy (fun cd -> cd.Range) ) }
   
 /* Part of an exception definition */
-exconCore: 
+exconCore:
   | EXCEPTION opt_attributes opt_access exconIntro exconRepr
-     { SynExceptionDefnRepr($2, $4, $5, PreXmlDoc.Empty, $3, (match $5 with None -> rhs2 parseState 1 4 | Some p -> unionRanges (rangeOfLongIdent p) (rhs2 parseState 1 4))) }
+      { let m =
+            match $5 with
+            | None -> rhs2 parseState 1 4
+            | Some p -> unionRanges (rangeOfLongIdent p) (rhs2 parseState 1 4)
+        SynExceptionDefnRepr($2, $4, $5, PreXmlDoc.Empty, $3, m) }
+
+  | EXCEPTION opt_attributes opt_access recover
+      { let m =
+            match $3 with
+            | Some access -> unionRanges (rhs parseState 1) access.Range 
+            | _ ->
+
+            match $2 with
+            | [] -> rhs parseState 1
+            | attrs -> ((rhs parseState 1), attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range) 
+
+        let id = SynIdent(mkSynId m.EndRange "", None)
+        let unionCase = SynUnionCase([], id, SynUnionCaseKind.Fields [], PreXmlDoc.Empty, None, m, { BarRange = None })
+
+        SynExceptionDefnRepr($2, unionCase, None, PreXmlDoc.Empty, $3, m) }
   
 /* Part of an exception definition */
 exconIntro:
@@ -2989,6 +3039,11 @@ simplePattern:
   | simplePattern COLON typeWithTypeConstraints
       { SynPat.Typed($1, $3, lhs parseState) }
 
+  | simplePattern COLON recover
+      { let mColon = rhs parseState 2
+        let ty = SynType.FromParseError(mColon.EndRange)
+        SynPat.Typed($1, ty, unionRanges $1.Range mColon) }
+
   | attributes simplePattern %prec paren_pat_attribs
       { SynPat.Attrib($2, $1, lhs parseState) }
 
@@ -3102,7 +3157,12 @@ namePatPairs:
 namePatPair:
    | ident EQUALS parenPattern
      { let mEquals = rhs parseState 2
-       ($1, mEquals, $3) }
+       ($1, Some mEquals, $3) }
+   | ident EQUALS recover
+     { let mEquals = rhs parseState 2
+       ($1, Some mEquals, patFromParseError (SynPat.Wild mEquals.EndRange)) }
+   | ident recover
+     { ($1, None, patFromParseError (SynPat.Wild $1.idRange.EndRange)) }
 
 constrPattern:
   | atomicPatternLongIdent explicitValTyparDecls
@@ -3305,9 +3365,14 @@ parenPattern:
   | conjParenPatternElements
       { SynPat.Ands(List.rev $1, rhs2 parseState 1 3) }
 
-  | parenPattern COLON  typeWithTypeConstraints %prec paren_pat_colon
-      { let mLhs = lhs parseState 
-        SynPat.Typed($1, $3, mLhs) } 
+  | parenPattern COLON typeWithTypeConstraints %prec paren_pat_colon
+      { let mLhs = lhs parseState
+        SynPat.Typed($1, $3, mLhs) }
+
+  | parenPattern COLON recover
+      { let mColon = rhs parseState 2
+        let ty = SynType.FromParseError(mColon.EndRange)
+        SynPat.Typed($1, ty, unionRanges $1.Range mColon) }
 
   | attributes parenPattern  %prec paren_pat_attribs
       { let mLhs = lhs parseState 
@@ -3404,14 +3469,22 @@ declExprBlock:
 /* for these it only inserts a trailing ORIGHT_BLOCK_END */
 typedSequentialExprBlockR: 
   | typedSequentialExpr ORIGHT_BLOCK_END
-    { $1 }
+    { fun _ -> $1 }
 
   | typedSequentialExpr
-    { $1 }
+    { fun _ -> $1 }
 
-typedSequentialExpr: 
+  | recover
+    { fun mStart -> arbExpr ("typedSequentialExprBlockR", mStart) }
+
+typedSequentialExpr:
   | sequentialExpr COLON typeWithTypeConstraints
-    { SynExpr.Typed ($1, $3, unionRanges $1.Range $3.Range) }
+      { SynExpr.Typed ($1, $3, unionRanges $1.Range $3.Range) }
+
+  | sequentialExpr COLON recover
+    { let mColon = rhs parseState 2
+      let ty = SynType.FromParseError(mColon.EndRange)
+      SynExpr.Typed ($1, ty, unionRanges $1.Range mColon) }
 
   | sequentialExpr
     { $1 }
@@ -3537,36 +3610,49 @@ declExpr:
       { if not $3 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileMatch())
         // Produce approximate expression during error recovery 
         exprFromParseError $2 }
-      
-  | TRY typedSequentialExprBlockR withClauses              %prec expr_try 
-      { let mTry = (rhs parseState 1)
+
+  | TRY typedSequentialExprBlockR withClauses %prec expr_try 
+      { let mTry = rhs parseState 1
+        let expr = $2 mTry
         let spTry = DebugPointAtTry.Yes mTry
-        let mWith, (clauses, mLast) = $3 
+        let mWith, (clauses, mLast) = $3
         let spWith = DebugPointAtWith.Yes mWith
-        let mTryToWith = unionRanges mTry mWith 
-        let mWithToLast = unionRanges mWith mLast 
+        let mTryToWith = unionRanges mTry mWith
+        let mWithToLast = unionRanges mWith mLast
         let mTryToLast = unionRanges mTry mLast
-        let trivia: SynExprTryWithTrivia = 
+        let trivia: SynExprTryWithTrivia =
             { TryKeyword = mTry
               TryToWithRange = mTryToWith
               WithKeyword = mWith
               WithToEndRange = mWithToLast }
-        SynExpr.TryWith ($2, clauses, mTryToLast, spTry, spWith, trivia) }
+        SynExpr.TryWith (expr, clauses, mTryToLast, spTry, spWith, trivia) }
 
-  | TRY typedSequentialExprBlockR recover              %prec expr_try 
-      { // Produce approximate expression during error recovery 
-        // Include any expressions to make sure they gets type checked in case that generates useful results for intellisense 
-        if not $3 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileTry())
-        exprFromParseError $2 }
+  | TRY typedSequentialExprBlockR recover %prec expr_try
+      { let mTry = rhs parseState 1
+        let spTry = DebugPointAtTry.Yes mTry
+        if not $3 then reportParseErrorAt mTry (FSComp.SR.parsUnexpectedEndOfFileTry ())
+        let expr = $2 mTry
+        let mExpr = expr.Range
+        let mEnd = mExpr.EndRange
+        let spWith = DebugPointAtWith.Yes mEnd
+        let mWhole = unionRanges mTry mEnd
+        let trivia: SynExprTryWithTrivia =
+            { TryKeyword = mTry
+              TryToWithRange = mWhole
+              WithKeyword = mEnd
+              WithToEndRange = mWhole }
+        SynExpr.TryWith (expr, [], mWhole, spTry, spWith, trivia) }
 
-  | TRY typedSequentialExprBlockR FINALLY typedSequentialExprBlock %prec expr_try 
-      { let mTry = rhs parseState 1 
+  | TRY typedSequentialExprBlockR FINALLY typedSequentialExprBlock %prec expr_try
+      { let mTry = rhs parseState 1
+        let tryExpr = $2 mTry
         let spTry = DebugPointAtTry.Yes mTry
         let mFinally = rhs parseState 3
+        let finallyExpr = $4
         let spFinally = DebugPointAtFinally.Yes mFinally
-        let mTryToLast = unionRanges mTry $4.Range 
+        let mTryToLast = unionRanges mTry finallyExpr.Range
         let trivia = { TryKeyword = mTry; FinallyKeyword = mFinally }
-        SynExpr.TryFinally ($2, $4, mTryToLast, spTry, spFinally, trivia) }
+        SynExpr.TryFinally (tryExpr, finallyExpr, mTryToLast, spTry, spFinally, trivia) }
 
   | IF declExpr ifExprCases %prec expr_if 
       { let mIf = rhs parseState 1
@@ -3820,18 +3906,35 @@ declExpr:
   | FIXED declExpr
      { SynExpr.Fixed ($2, (unionRanges (rhs parseState 1) $2.Range)) } 
 
-  | RARROW typedSequentialExprBlockR 
-     { errorR(Error(FSComp.SR.parsArrowUseIsLimited(), lhs parseState))
-       SynExpr.YieldOrReturn ((true, true), $2, (unionRanges (rhs parseState 1) $2.Range)) } 
+  | RARROW typedSequentialExprBlockR
+     { errorR(Error(FSComp.SR.parsArrowUseIsLimited(), lhs parseState)) 
+       let mArrow = rhs parseState 1
+       let expr = $2 mArrow
+       SynExpr.YieldOrReturn ((true, true), expr, (unionRanges mArrow expr.Range)) }
 
   | declExpr COLON_QMARK typ
-     { SynExpr.TypeTest ($1, $3, unionRanges $1.Range $3.Range) }
+      { SynExpr.TypeTest($1, $3, unionRanges $1.Range $3.Range) }
+
+  | declExpr COLON_QMARK recover
+      { let mColon = rhs parseState 2
+        let ty = SynType.FromParseError(mColon.EndRange)
+        SynExpr.TypeTest($1, ty, unionRanges $1.Range mColon) }
 
   | declExpr COLON_GREATER typ
-     { SynExpr.Upcast ($1, $3, unionRanges $1.Range $3.Range) } 
+      { SynExpr.Upcast($1, $3, unionRanges $1.Range $3.Range) }
+
+  | declExpr COLON_GREATER recover
+      { let mOp = rhs parseState 2
+        let ty = SynType.FromParseError(mOp.EndRange)
+        SynExpr.Upcast($1, ty, unionRanges $1.Range mOp) }
 
   | declExpr COLON_QMARK_GREATER typ
      { SynExpr.Downcast ($1, $3, unionRanges $1.Range $3.Range) }
+
+  | declExpr COLON_QMARK_GREATER recover
+      { let mOp = rhs parseState 2
+        let ty = SynType.FromParseError(mOp.EndRange)
+        SynExpr.Downcast($1, ty, unionRanges $1.Range mOp) }
 
   | declExpr COLON_EQUALS declExpr
      { mkSynInfix (rhs parseState 2) $1 ":=" $3 }
@@ -4120,11 +4223,12 @@ patternGuard:
   | /* EMPTY */
      { None }
 
-patternResult: 
-  | RARROW typedSequentialExprBlockR  
-     { let mArrow = rhs parseState 1
-       mArrow, $2 }
-
+patternResult:
+  | RARROW typedSequentialExprBlockR
+      { let mArrow = rhs parseState 1
+        let expr = $2 mArrow
+        mArrow, expr }
+ 
 ifExprCases: 
   | ifExprThen ifExprElifs 
       { let exprThen, mThen = $1
@@ -4176,8 +4280,9 @@ ifExprElifs:
         else
             None, Some ($3 $2 mElif true) }
 
-  | ELIF declExpr recover 
-      { None, Some (exprFromParseError $2) }
+  | ELIF declExpr recover      
+      { if not $3 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileElif())
+        None, Some (exprFromParseError $2) }
 
 tupleExpr:
   | tupleExpr COMMA declExpr
@@ -4306,6 +4411,9 @@ atomicExpr:
         let lhsm = rhs2 parseState 1 2
         SynExpr.Typar(typar, lhsm), false }
 
+  | RESERVED
+      { arbExpr ("unfinished identifier", rhs parseState 1), false }
+
   | atomicExpr DOT atomicExprQualification 
       { let arg1, hpa1 = $1 
         $3 arg1 (lhs parseState) (rhs parseState 2), hpa1 }
@@ -4378,12 +4486,12 @@ atomicExprQualification:
             reportParseErrorAt mDot (FSComp.SR.parsMissingQualificationAfterDot()) 
             let fixedLhsm = mkRange mLhs.FileName mLhs.Start mDot.End // previous mLhs is wrong after 'recover'
             mkSynDotMissing mDot fixedLhsm e) }
-  | recover 
-      { (fun e mLhs mDot -> 
-            reportParseErrorAt mDot (FSComp.SR.parsMissingQualificationAfterDot()) 
+  | recover
+      { (fun e mLhs mDot ->
+            reportParseErrorAt mDot (FSComp.SR.parsMissingQualificationAfterDot())
             let fixedLhsm = mkRange mLhs.FileName mLhs.Start mDot.End // previous mLhs is wrong after 'recover'
             // Include 'e' in the returned expression but throw it away
-            SynExpr.DiscardAfterMissingQualificationAfterDot (e, fixedLhsm)) }
+            mkSynDotMissing mDot fixedLhsm e) }
   | LPAREN COLON_COLON rparen DOT INT32  
       { (fun e mLhs mDot -> 
             if parseState.LexBuffer.ReportLibraryOnlyFeatures then libraryOnlyError(lhs parseState)
@@ -4630,8 +4738,10 @@ computationExpr:
      { $1.Range, (fun mLhs -> SynExpr.ComputationExpr (false, $1, mLhs)) }
 
 arrowThenExprR:
-  | RARROW typedSequentialExprBlockR 
-     { SynExpr.YieldOrReturn ((true, false), $2, unionRanges (rhs parseState 1) $2.Range) }
+  | RARROW typedSequentialExprBlockR
+      { let mArrow = rhs parseState 1
+        let expr = $2 mArrow
+        SynExpr.YieldOrReturn ((true, false), expr, unionRanges mArrow expr.Range) }
 
 forLoopBinder: 
   | parenPattern IN declExpr 
@@ -4904,46 +5014,61 @@ objExprInterface:
 
 braceBarExpr:
   | STRUCT braceBarExprCore
-      { $2 true }
+      { let mStruct = rhs parseState 1
+        $2 (Some mStruct) }
 
   | braceBarExprCore
-      { $1 false }
+      { $1 None }
 
 braceBarExprCore:
   | LBRACE_BAR recdExprCore bar_rbrace
      { let orig, flds = $2
        let flds = 
            flds |> List.choose (function 
-             | SynExprRecordField((SynLongIdent([id], _, _), _), mEquals, Some e, _) -> Some (id, mEquals, e) 
-             | SynExprRecordField((SynLongIdent([id], _, _), _), mEquals, None, _) -> Some (id, mEquals, arbExpr("anonField", id.idRange)) 
-             | _ -> reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidAnonRecdType()); None) 
-       let m = rhs2 parseState 1 3
-       (fun isStruct -> SynExpr.AnonRecd (isStruct, orig, flds, m)) }
+             | SynExprRecordField((synLongIdent, _), mEquals, Some e, _) when orig.IsSome -> Some (synLongIdent, mEquals, e) // copy-and-update, long identifier signifies nesting
+             | SynExprRecordField((SynLongIdent([ _id ], _, _) as synLongIdent, _), mEquals, Some e, _) -> Some (synLongIdent, mEquals, e) // record construction, long identifier not valid
+             | SynExprRecordField((synLongIdent, _), mEquals, None, _) -> Some (synLongIdent, mEquals, arbExpr("anonField", synLongIdent.Range)) 
+             | _ -> reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidAnonRecdType()); None)
+       let mLeftBrace = rhs parseState 1
+       let mRightBrace = rhs parseState 3
+       (fun (mStruct: range option) -> 
+            let m = match mStruct with | None -> unionRanges mLeftBrace mRightBrace | Some mStruct -> unionRanges mStruct mRightBrace
+            SynExpr.AnonRecd (mStruct.IsSome, orig, flds, m, { OpeningBraceRange = mLeftBrace })) }
 
   | LBRACE_BAR recdExprCore recover 
      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBraceBar())  
        let orig, flds = $2 
        let flds = 
-           flds |> List.choose (function 
-             | SynExprRecordField((SynLongIdent([id], _, _), _), mEquals, Some e, _) -> Some (id, mEquals, e) 
-             | SynExprRecordField((SynLongIdent([id], _, _), _), mEquals, None, _) -> Some (id, mEquals, arbExpr("anonField", id.idRange)) 
-             | _ -> reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidAnonRecdType()); None) 
-       let m = rhs2 parseState 1 2
-       (fun isStruct -> SynExpr.AnonRecd (isStruct, orig, flds, m)) }
+           flds |> List.map (function 
+             | SynExprRecordField((synLongIdent, _), mEquals, Some e, _) -> (synLongIdent, mEquals, e) 
+             | SynExprRecordField((synLongIdent, _), mEquals, None, _) -> (synLongIdent, mEquals, arbExpr("anonField", synLongIdent.Range))) 
+       let mLeftBrace = rhs parseState 1
+       let mExpr = rhs parseState 2
+       (fun (mStruct: range option) -> 
+           let m = match mStruct with | None -> unionRanges mLeftBrace mExpr | Some mStruct -> unionRanges mStruct mExpr
+           SynExpr.AnonRecd (mStruct.IsSome, orig, flds, m, { OpeningBraceRange = mLeftBrace })) }
 
   | LBRACE_BAR error bar_rbrace
      { // silent recovery 
-       let m = rhs2 parseState 1 3
-       (fun _ -> arbExpr("braceBarExpr", m)) }  
+       let mLeftBrace = rhs parseState 1
+       let mRightBrace = rhs parseState 3
+       (fun (mStruct: range option) -> 
+           let m = match mStruct with | None -> unionRanges mLeftBrace mRightBrace | Some mStruct -> unionRanges mStruct mRightBrace
+           arbExpr("braceBarExpr", m)) }  
 
   | LBRACE_BAR recover
      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBraceBar())  
-       let m = rhs2 parseState 1 1
-       (fun isStruct -> SynExpr.AnonRecd (isStruct, None, [], m)) }
+       let mLeftBrace = rhs parseState 1
+       (fun (mStruct: range option) -> 
+           let m = match mStruct with | None -> mLeftBrace | Some mStruct -> unionRanges mStruct mLeftBrace
+           SynExpr.AnonRecd (mStruct.IsSome, None, [], m, { OpeningBraceRange = mLeftBrace })) }
 
   | LBRACE_BAR bar_rbrace 
-     { let m = rhs2 parseState 1 2
-       (fun isStruct -> SynExpr.AnonRecd (isStruct, None, [], m)) }
+     { let mLeftBrace = rhs parseState 1
+       let mRightBrace = rhs parseState 2
+       (fun (mStruct: range option) -> 
+           let m = match mStruct with | None -> unionRanges mLeftBrace mRightBrace | Some mStruct -> unionRanges mStruct mRightBrace
+           SynExpr.AnonRecd (mStruct.IsSome, None, [], m, { OpeningBraceRange = mLeftBrace })) }
 
 anonLambdaExpr: 
   | FUN atomicPatterns RARROW typedSequentialExprBlock 
@@ -4957,15 +5082,17 @@ anonLambdaExpr:
        mkSynFunMatchLambdas parseState.SynArgNameGenerator false mAll $2 mArrow (arbExpr("anonLambdaExpr1", (rhs parseState 4))) }
 
   | OFUN atomicPatterns RARROW typedSequentialExprBlockR OEND
-     { let mAll = unionRanges (rhs parseState 1) $4.Range
-       let mArrow = Some (rhs parseState 3)
-       mkSynFunMatchLambdas parseState.SynArgNameGenerator false mAll $2 mArrow $4 }
+      { let mArrow = rhs parseState 3
+        let expr = $4 mArrow
+        let mAll = unionRanges (rhs parseState 1) expr.Range
+        mkSynFunMatchLambdas parseState.SynArgNameGenerator false mAll $2 (Some mArrow) expr }
 
   | OFUN atomicPatterns RARROW typedSequentialExprBlockR recover
-     { if not $5 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileFunBody());
-       let mAll = unionRanges (rhs parseState 1) $4.Range
-       let mArrow = Some (rhs parseState 3)
-       exprFromParseError (mkSynFunMatchLambdas parseState.SynArgNameGenerator false mAll $2 mArrow $4) }
+     { if not $5 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileFunBody ())
+       let mArrow = rhs parseState 3
+       let expr = $4 mArrow
+       let mAll = unionRanges (rhs parseState 1) expr.Range
+       exprFromParseError (mkSynFunMatchLambdas parseState.SynArgNameGenerator false mAll $2 (Some mArrow) expr) }
 
   | OFUN atomicPatterns RARROW ORIGHT_BLOCK_END OEND
      { let mLambda = rhs2 parseState 1 3
@@ -5016,15 +5143,20 @@ topTypeWithTypeConstraints:
        // nb. it doesn't matter where the constraints go in the structure of the type. 
        SynType.WithGlobalConstraints(ty, List.rev $3, lhs parseState), arity }
 
-opt_topReturnTypeWithTypeConstraints: 
-  |             
-     { None } 
+opt_topReturnTypeWithTypeConstraints:
+  |
+      { None }
 
-  | COLON topTypeWithTypeConstraints 
-     { let mColon = rhs parseState 1
-       let ty, arity = $2 
-       let arity = (match arity with SynValInfo([], rmdata)-> rmdata | _ -> SynInfo.unnamedRetVal)
-       Some (Some mColon, SynReturnInfo((ty, arity), rhs parseState 2)) }
+  | COLON topTypeWithTypeConstraints
+      { let mColon = rhs parseState 1
+        let ty, arity = $2
+        let arity = (match arity with SynValInfo([], rmdata)-> rmdata | _ -> SynInfo.unnamedRetVal)
+        Some (Some mColon, SynReturnInfo((ty, arity), rhs parseState 2)) }
+
+  | COLON recover
+      { let mColon = rhs parseState 1
+        let ty, arity = SynType.FromParseError(mColon.EndRange), SynInfo.unnamedRetVal
+        Some (Some mColon, SynReturnInfo((ty, arity), mColon.EndRange)) }
 
 topType: 
   | topTupleType RARROW topType 
@@ -5058,31 +5190,61 @@ topTupleTypeElements:
        [ SynTupleTypeSegment.Type t, Some argInfo ] }
 
 topAppType:
-  | attributes appType COLON appType 
-     { match $2 with 
-       | SynType.LongIdent(SynLongIdent([id], _, _)) -> 
-           let m = rhs2 parseState 1 4
-           SynType.SignatureParameter($1, false, Some id, $4, m), SynArgInfo($1, false, Some id)
-       | _ -> raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsSyntaxErrorInLabeledType())  }
+  | attributes appType COLON appType
+      { match $2 with
+        | SynType.LongIdent(SynLongIdent([id], _, _)) ->
+            let m = unionRanges (rhs parseState 1) $4.Range
+            SynType.SignatureParameter($1, false, Some id, $4, m), SynArgInfo($1, false, Some id)
+        | _ -> raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsSyntaxErrorInLabeledType()) }
 
-  | attributes QMARK ident COLON appType 
-     { let m = rhs2 parseState 1 5
-       SynType.SignatureParameter($1, true, Some $3, $5, m), SynArgInfo($1, true, Some $3) }
+  | attributes appType COLON recover
+      { match $2 with
+        | SynType.LongIdent(SynLongIdent([id], _, _)) ->
+            let mColon = rhs parseState 2
+            let m = unionRanges (rhs parseState 1) mColon
+            let ty = SynType.FromParseError(mColon.EndRange)
+            SynType.SignatureParameter($1, false, Some id, ty, m), SynArgInfo($1, false, Some id)
+        | _ -> raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsSyntaxErrorInLabeledType()) }
 
-  | attributes appType 
-     { let m = rhs2 parseState 1 2
-       SynType.SignatureParameter($1, false, None, $2, m), SynArgInfo($1, false, None) }
+  | attributes QMARK ident COLON appType
+      { let m = unionRanges (rhs parseState 1) $5.Range
+        SynType.SignatureParameter($1, true, Some $3, $5, m), SynArgInfo($1, true, Some $3) }
 
-  | appType COLON appType 
-     { match $1 with 
-       | SynType.LongIdent(SynLongIdent([id], _, _)) -> 
-           let m = rhs2 parseState 1 3
-           SynType.SignatureParameter([], false, Some id, $3, m), SynArgInfo([], false, Some id)
-       | _ -> raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsSyntaxErrorInLabeledType())  }
+  | attributes QMARK ident COLON recover
+      { let mColon = rhs parseState 4
+        let m = unionRanges (rhs parseState 1) mColon
+        let ty = SynType.FromParseError(mColon.EndRange)
+        SynType.SignatureParameter($1, true, Some $3, ty, m), SynArgInfo($1, true, Some $3) }
 
-  | QMARK ident COLON appType 
-     { let m = rhs2 parseState 1 4
-       SynType.SignatureParameter([], true, Some $2, $4, m), SynArgInfo([], true, Some $2) }
+  | attributes appType
+      { let m = unionRanges (rhs parseState 1) $2.Range
+        SynType.SignatureParameter($1, false, None, $2, m), SynArgInfo($1, false, None) }
+
+  | appType COLON appType
+      { match $1 with
+        | SynType.LongIdent(SynLongIdent([id], _, _)) ->
+            let m = unionRanges (rhs parseState 1) $3.Range
+            SynType.SignatureParameter([], false, Some id, $3, m), SynArgInfo([], false, Some id)
+        | _ -> raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsSyntaxErrorInLabeledType()) }
+
+  | appType COLON recover
+      { match $1 with
+        | SynType.LongIdent(SynLongIdent([id], _, _)) ->
+            let mColon = rhs parseState 2
+            let m = unionRanges $1.Range mColon
+            let ty = SynType.FromParseError(mColon.EndRange)
+            SynType.SignatureParameter([], false, Some id, ty, m), SynArgInfo([], false, Some id)
+        | _ -> raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsSyntaxErrorInLabeledType()) }
+
+  | QMARK ident COLON appType
+      { let m = unionRanges (rhs parseState 1) $4.Range
+        SynType.SignatureParameter([], true, Some $2, $4, m), SynArgInfo([], true, Some $2) }
+
+  | QMARK ident COLON recover
+      { let mColon = rhs parseState 3
+        let m = unionRanges (rhs parseState 1) mColon
+        let ty = SynType.FromParseError(mColon.EndRange)
+        SynType.SignatureParameter([], true, Some $2, ty, m), SynArgInfo([], true, Some $2) }
 
   | appType 
      { $1, SynArgInfo([], false, None) }
@@ -5740,7 +5902,10 @@ nameop:
 
 identExpr:
   | ident
-     { SynExpr.Ident($1) }
+     { if $1.idText = "" then
+           SynExpr.FromParseError(SynExpr.Ident($1), $1.idRange)
+       else
+           SynExpr.Ident($1) }
 
   | opName
      { let m = lhs parseState

@@ -887,6 +887,20 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef) =
 
             let infoReader = cenv.infoReader
 
+            let assemblyInfoL =
+                Layout.aboveListL
+                    [
+                        (Layout.(^^)
+                            (Layout.wordL (TaggedText.tagUnknownEntity "// "))
+                            (Layout.wordL (TaggedText.tagUnknownEntity this.Assembly.QualifiedName)))
+                        match this.Assembly.FileName with
+                        | Some fn ->
+                            (Layout.(^^)
+                                (Layout.wordL (TaggedText.tagUnknownEntity "// "))
+                                (Layout.wordL (TaggedText.tagUnknownEntity fn)))
+                        | None -> Layout.emptyL
+                    ]
+
             let openPathL =
                 extraOpenPath
                 |> List.map (fun x -> Layout.wordL (TaggedText.tagUnknownEntity x))
@@ -920,7 +934,8 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef) =
                         pathL
 
             Layout.aboveListL
-                [
+                [   
+                    (Layout.(^^) assemblyInfoL (Layout.sepL TaggedText.lineBreak))
                     (Layout.(^^) headerL (Layout.sepL TaggedText.lineBreak))
                     (Layout.(^^) openL (Layout.sepL TaggedText.lineBreak))
                     (NicePrint.layoutEntityDefn denv infoReader AccessibleFromSomewhere range0 entity)
@@ -2316,24 +2331,20 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             |> LayoutRender.toArray
 
     member x.GetReturnTypeLayout (displayContext: FSharpDisplayContext) =
-        match x.IsMember, d with
-        | true, _ ->
-            None
-        | false, _ ->
-            checkIsResolved()
-            match d with 
-            | E _
-            | P _
-            | C _ -> None
-            | M m ->
-                let retTy = m.GetFSharpReturnType(cenv.amap, range0, m.FormalMethodInst)
-                NicePrint.layoutType (displayContext.Contents cenv.g) retTy
-                |> LayoutRender.toArray
-                |> Some
-            | V v ->
-                NicePrint.layoutOfValReturnType (displayContext.Contents cenv.g) v
-                |> LayoutRender.toArray
-                |> Some
+        checkIsResolved()
+        match d with 
+        | E _
+        | P _
+        | C _ -> None
+        | M m ->
+            let retTy = m.GetFSharpReturnType(cenv.amap, range0, m.FormalMethodInst)
+            NicePrint.layoutType (displayContext.Contents cenv.g) retTy
+            |> LayoutRender.toArray
+            |> Some
+        | V v ->
+            NicePrint.layoutOfValReturnType (displayContext.Contents cenv.g) v
+            |> LayoutRender.toArray
+            |> Some
     
     member x.GetWitnessPassingInfo() = 
         let witnessInfos = 
@@ -2411,6 +2422,13 @@ type FSharpType(cenv, ty:TType) =
          match stripTyparEqns ty with 
          | TType_app _ | TType_measure (Measure.Const _ | Measure.Prod _ | Measure.Inv _ | Measure.One) -> true 
          | _ -> false
+
+    member _.IsMeasureType =
+       isResolved() &&
+       protect <| fun () ->
+        match stripTyparEqns ty with
+        | TType_measure _ -> true
+        | _ -> false
 
     member _.IsTupleType = 
        isResolved() &&
