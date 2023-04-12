@@ -242,8 +242,6 @@ type TcEnv =
 
       // Do we lay down an implicit debug point?
       eIsControlFlow: bool
-
-      eArgInfoCache: Dictionary<string * range, ArgReprInfo>
     }
 
     member tenv.DisplayEnv = tenv.eNameResEnv.DisplayEnv
@@ -315,6 +313,8 @@ type TcFileState =
 
       diagnosticOptions: FSharpDiagnosticOptions
 
+      argInfoCache: Dictionary<(string * range), ArgReprInfo>
+
       // forward call
       TcPat: WarnOnUpperFlag -> TcFileState -> TcEnv -> PrelimValReprInfo option -> TcPatValFlags -> TcPatLinearEnv -> TType -> SynPat -> (TcPatPhase2Input -> Pattern) * TcPatLinearEnv
 
@@ -364,6 +364,7 @@ type TcFileState =
           conditionalDefines = conditionalDefines
           isInternalTestSpanStackReferring = isInternalTestSpanStackReferring
           diagnosticOptions = diagnosticOptions
+          argInfoCache = Dictionary()
           TcPat = tcPat
           TcSimplePats = tcSimplePats
           TcSequenceExpressionEntry = tcSequenceExpressionEntry

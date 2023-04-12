@@ -915,7 +915,7 @@ let AdjustValSynInfoInSignature g ty (SynValInfo(argsData, retData) as sigMD) =
         sigMD
 
 
-let TranslateTopArgSynInfo (env: TcEnv) isArg m tcAttributes (SynArgInfo(Attributes attrs, isOpt, nm)) =
+let TranslateTopArgSynInfo (cenv: cenv) isArg m tcAttributes (SynArgInfo(Attributes attrs, isOpt, nm)) =
     // Synthesize an artificial "OptionalArgument" attribute for the parameter
     let optAttrs =
         if isOpt then
@@ -940,12 +940,12 @@ let TranslateTopArgSynInfo (env: TcEnv) isArg m tcAttributes (SynArgInfo(Attribu
 
     let argInfo =
         key
-        |> Option.map env.eArgInfoCache.TryGetValue
+        |> Option.map cenv.argInfoCache.TryGetValue
         |> Option.bind (fun (found, info) -> if found then Some info else None)
         |> Option.defaultValue ({ Attribs = attribs; Name = nm; OtherRange = None }: ArgReprInfo)
 
     match key with
-    | Some k -> env.eArgInfoCache.[k] <- argInfo
+    | Some k -> cenv.argInfoCache.[k] <- argInfo
     | None -> ()
 
     // Set freshly computed attribs in case they are different in the cache
@@ -959,9 +959,9 @@ let TranslateTopArgSynInfo (env: TcEnv) isArg m tcAttributes (SynArgInfo(Attribu
 /// Hence remove all "zeros" from arity and replace them with 1 here.
 /// Note we currently use the compiled form for choosing unique names, to distinguish overloads because this must match up
 /// between signature and implementation, and the signature just has "unit".
-let TranslateSynValInfo env m tcAttributes (SynValInfo(argsData, retData)) =
-    PrelimValReprInfo (argsData |> List.mapSquared (TranslateTopArgSynInfo env true m (tcAttributes AttributeTargets.Parameter)),
-                       retData |> TranslateTopArgSynInfo env false m (tcAttributes AttributeTargets.ReturnValue))
+let TranslateSynValInfo (cenv: cenv) m tcAttributes (SynValInfo(argsData, retData)) =
+    PrelimValReprInfo (argsData |> List.mapSquared (TranslateTopArgSynInfo cenv true m (tcAttributes AttributeTargets.Parameter)),
+                       retData |> TranslateTopArgSynInfo cenv false m (tcAttributes AttributeTargets.ReturnValue))
 
 let TranslatePartialValReprInfo tps (PrelimValReprInfo (argsData, retData)) =
     ValReprInfo(ValReprInfo.InferTyparInfo tps, argsData, retData)
@@ -4171,7 +4171,7 @@ and TcValSpec (cenv: cenv) env declKind newOk containerInfo memFlagsOpt thisTyOp
 
             let reallyGenerateOneMember(id: Ident, valSynInfo, tyR, memberFlags) =
                 let PrelimValReprInfo(argsData, _) as prelimValReprInfo =
-                    TranslateSynValInfo env id.idRange (TcAttributes cenv env) valSynInfo
+                    TranslateSynValInfo cenv id.idRange (TcAttributes cenv env) valSynInfo
 
 
                 // Fold in the optional argument information
@@ -4227,7 +4227,7 @@ and TcValSpec (cenv: cenv) env declKind newOk containerInfo memFlagsOpt thisTyOp
               yield! generateOneMember({memberFlags with MemberKind=SynMemberKind.PropertySet}) ], tpenv
     | _ ->
         let valSynInfo = AdjustValSynInfoInSignature g declaredTy valSynInfo
-        let prelimValReprInfo = TranslateSynValInfo env id.idRange (TcAttributes cenv env) valSynInfo
+        let prelimValReprInfo = TranslateSynValInfo cenv id.idRange (TcAttributes cenv env) valSynInfo
         [ ValSpecResult(altActualParent, None, id, enclosingDeclaredTypars, declaredTypars, declaredTy, prelimValReprInfo, declKind) ], tpenv
 
 //-------------------------------------------------------------------------
@@ -6848,7 +6848,7 @@ and ComputeObjectExprOverrides (cenv: cenv) (env: TcEnv) tpenv impls =
             // Convert the syntactic info to actual info
             let overrides =
                 (overrides, bindNameAndSynInfoPairs) ||> List.map2 (fun (id: Ident, memberFlags, ty, bindingAttribs, bindingBody) (_, valSynData) ->
-                    let partialValInfo = TranslateSynValInfo env id.idRange (TcAttributes cenv env) valSynData
+                    let partialValInfo = TranslateSynValInfo cenv id.idRange (TcAttributes cenv env) valSynData
                     let tps, _ = tryDestForallTy g ty
                     let valInfo = TranslatePartialValReprInfo tps partialValInfo
                     DispatchSlotChecking.GetObjectExprOverrideInfo g cenv.amap (implTy, id, memberFlags, ty, valInfo, bindingAttribs, bindingBody))
@@ -10425,7 +10425,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
 
         // Use the syntactic arity if we're defining a function
         let (SynValData(_, valSynInfo, _)) = valSynData
-        let prelimValReprInfo = TranslateSynValInfo env mBinding (TcAttributes cenv env) valSynInfo
+        let prelimValReprInfo = TranslateSynValInfo cenv mBinding (TcAttributes cenv env) valSynInfo
 
         // Check the pattern of the l.h.s. of the binding
         let tcPatPhase2, (TcPatLinearEnv (tpenv, nameToPrelimValSchemeMap, _)) =
@@ -11502,7 +11502,7 @@ and AnalyzeAndMakeAndPublishRecursiveValue
     // NOTE: The type scheme here is normally not 'complete'!!!! The type is more or less just a type variable at this point.
     // NOTE: top arity, type and typars get fixed-up after inference
     let prelimTyscheme = GeneralizedType(enclosingDeclaredTypars@declaredTypars, ty)
-    let prelimValReprInfo = TranslateSynValInfo envinner mBinding (TcAttributes cenv envinner) valSynInfo
+    let prelimValReprInfo = TranslateSynValInfo cenv mBinding (TcAttributes cenv envinner) valSynInfo
     let valReprInfo, valReprInfoForDisplay = UseSyntacticValReprInfo declKind prelimTyscheme prelimValReprInfo
     let hasDeclaredTypars = not (List.isEmpty declaredTypars)
     let prelimValScheme = ValScheme(bindingId, prelimTyscheme, valReprInfo, valReprInfoForDisplay, memberInfoOpt, false, inlineFlag, NormalVal, vis, false, false, false, hasDeclaredTypars)

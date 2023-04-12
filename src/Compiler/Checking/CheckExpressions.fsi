@@ -852,7 +852,7 @@ val TcValSpec:
 /// giving the names and attributes relevant to arguments and return, but before type
 /// parameters have been fully inferred via generalization.
 val TranslateSynValInfo:
-    env: TcEnv ->
+    cenv: TcFileState ->
     range ->
     tcAttributes: (AttributeTargets -> SynAttribute list -> Attrib list) ->
     synValInfo: SynValInfo ->
