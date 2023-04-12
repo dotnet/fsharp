@@ -11,7 +11,12 @@
    All settings below can be overriden via CLI switches if needed. -->
 
   <PropertyGroup Condition="'$(SolutionName)' == 'FSharp.Compiler.Service' and '$(BUILDING_USING_DOTNET)' != 'false'">
-      <BUILDING_USING_DOTNET Condition="'$(BUILDING_USING_DOTNET)' == ''">true</BUILDING_USING_DOTNET>
+      <BUILDING_USING_DOTNET>true</BUILDING_USING_DOTNET>
+  </PropertyGroup>
+
+  <!-- Temporary workaround if proj-info is used, allows Ionide's evaluation to work correctly. -->
+  <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' != 'false' and '$(DotnetProjInfo)' == 'true'">
+      <BUILDING_USING_DOTNET>true</BUILDING_USING_DOTNET>
   </PropertyGroup>
 
   <Import Project="$(RepoRoot)/Directory.Build.props.user" Condition = "Exists('$(RepoRoot)/Directory.Build.props.user')" />
@@ -25,7 +30,6 @@
     <IntermediateOutputPath>$(ArtifactsDir)obj/$(MSBuildProjectName)/$(Configuration)/</IntermediateOutputPath>
     <FsLexPath>$(ArtifactsDir)/bin/fslex/$(Configuration)/net7.0/fslex.dll</FsLexPath>
     <FsYaccPath>$(ArtifactsDir)/bin/fsyacc/$(Configuration)/net7.0/fsyacc.dll</FsYaccPath>
-    <OtherFlags>$(OtherFlags) --test:ParallelCheckingWithSignatureFilesOn</OtherFlags>
   </PropertyGroup>
 
   <Import Project="$(MSBuildThisFileDirectory)/eng/Versions.props" Condition="'$(DISABLE_ARCADE)' == 'true'"/>

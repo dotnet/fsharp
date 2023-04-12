@@ -206,6 +206,7 @@
     <Content Include="TypeChecks\Graph\scrape.fsx" CopyToOutputDirectory="Never" />
     <Compile Include="TypeChecks\Graph\CompilationFromCmdlineArgsTests.fs" />
     <Compile Include="TypeChecks\Graph\TypedTreeGraph.fs" />
+    <Compile Include="TypeChecks\TyparNameTests.fs" />
     <Compile Include="CompilerOptions\fsc\checked\checked.fs" />
     <Compile Include="CompilerOptions\fsc\cliversion.fs" />
     <Compile Include="CompilerOptions\fsc\codepage\codepage.fs" />
@@ -249,7 +250,7 @@
 
   <ItemGroup>
     <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
-      <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
+      <Link>%(RelativeDir)TestSource\%(Filename)%(Extension)</Link>
     </None>
   </ItemGroup>
 

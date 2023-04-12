@@ -1750,7 +1750,7 @@ type internal TypeCheckInfo
             }
 
         let toolTipElement =
-            FormatStructuredDescriptionOfItem displayFullName infoReader accessorDomain m denv itemWithInst None
+            FormatStructuredDescriptionOfItem displayFullName infoReader accessorDomain m denv itemWithInst (Some symbol) None
 
         ToolTipText [ toolTipElement ]
 
@@ -1781,7 +1781,8 @@ type internal TypeCheckInfo
                         ToolTipText(
                             items
                             |> List.map (fun x ->
-                                FormatStructuredDescriptionOfItem false infoReader tcAccessRights m denv x.ItemWithInst width)
+                                let symbol = Some(FSharpSymbol.Create(cenv, x.Item))
+                                FormatStructuredDescriptionOfItem false infoReader tcAccessRights m denv x.ItemWithInst symbol width)
                         ))
 
                 (fun err ->
@@ -2740,12 +2741,7 @@ type FSharpCheckFileResults
                     | None -> ()
                     | Some kwDescription ->
                         let kwText = kw |> TaggedText.tagKeyword |> wordL |> LayoutRender.toArray
-                        let kwTip = ToolTipElementData.Create(kwText, FSharpXmlDoc.None)
-
-                        let descText = kwDescription |> TaggedText.tagText |> wordL |> LayoutRender.toArray
-                        let descTip = ToolTipElementData.Create(descText, FSharpXmlDoc.None)
-
-                        yield ToolTipElement.Group [ kwTip; descTip ]
+                        yield ToolTipElement.Single(kwText, FSharpXmlDoc.FromXmlText(Xml.XmlDoc([| kwDescription |], range.Zero)))
             ]
 
     /// Resolve the names at the given location to give a data tip

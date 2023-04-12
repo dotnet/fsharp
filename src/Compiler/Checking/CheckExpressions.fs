@@ -4388,6 +4388,9 @@ and TcTypeOrMeasure kindOpt (cenv: cenv) newOk checkConstraints occ (iwsam: Warn
         // The inner types are expected to be collected by (|TypesForTypar|) at this point.
         error(Error((FSComp.SR.tcSynTypeOrInvalidInDeclaration()), m))
 
+    | SynType.FromParseError _ ->
+        NewErrorType (), tpenv
+
 and CheckIWSAM (cenv: cenv) (env: TcEnv) checkConstraints iwsam m tcref =
     let g = cenv.g
     let ty = generalizedTyconRef g tcref
@@ -4580,6 +4583,10 @@ and TcTypeMeasureApp kindOpt (cenv: cenv) newOk checkConstraints occ env tpenv a
         | _ ->
             errorR(Error(FSComp.SR.tcTypeParameterInvalidAsTypeConstructor(), m))
             NewErrorType (), tpenv
+
+    | StripParenTypes(SynType.FromParseError _) ->
+        NewErrorType (), tpenv
+
     | _ ->
         errorR(Error(FSComp.SR.tcIllegalSyntaxInTypeExpression(), m))
         NewErrorType (), tpenv

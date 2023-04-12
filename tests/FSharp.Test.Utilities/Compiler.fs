@@ -6,6 +6,7 @@ open FSharp.Compiler.Interactive.Shell
 open FSharp.Compiler.IO
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Symbols
+open FSharp.Compiler.Text
 open FSharp.Test.Assert
 open FSharp.Test.Utilities
 open FSharp.Test.ScriptHelpers
@@ -347,6 +348,12 @@ module rec Compiler =
         | CS src -> CS { src with Name = Some name }
         | IL _ -> failwith "IL Compilation cannot be named."
 
+    let withFileName (name: string) (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS compilationSource -> FS { compilationSource with Source = compilationSource.Source.WithFileName(name) }
+        | CS cSharpCompilationSource -> CS { cSharpCompilationSource with Source = cSharpCompilationSource.Source.WithFileName(name) }
+        | IL _ -> failwith "IL Compilation cannot be named."
+    
     let withReferenceFSharpCompilerService (cUnit: CompilationUnit) : CompilationUnit =
         // Compute the location of the FSharp.Compiler.Service dll that matches the target framework used to build this test assembly
         let compilerServiceAssemblyLocation =
@@ -814,6 +821,26 @@ module rec Compiler =
             let fileName = fsSource.Source.ChangeExtension.GetSourceFileName
             let options = fsSource.Options |> Array.ofList
             CompilerAssert.TypeCheck(options, fileName, source)
+        | _ -> failwith "Typecheck only supports F#"
+
+    let typecheckProject (cUnit: CompilationUnit) : FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults =
+        match cUnit with
+        | FS fsSource ->
+            let options = fsSource.Options |> Array.ofList
+            let sourceFiles =
+                [| yield (fsSource.Source.GetSourceFileName, fsSource.Source.GetSourceText)
+                   yield!
+                    fsSource.AdditionalSources
+                    |> List.map (fun source -> source.GetSourceFileName, source.GetSourceText) |]
+            
+            let getSourceText =
+                let project = Map.ofArray sourceFiles
+                fun (name: string) ->
+                    Map.tryFind name project
+                    |> Option.bind (Option.map SourceText.ofString)
+
+            let sourceFiles = Array.map fst sourceFiles
+            CompilerAssert.TypeCheckProject(options, sourceFiles, getSourceText)
         | _ -> failwith "Typecheck only supports F#"
 
     let run (result: CompilationResult) : CompilationResult =

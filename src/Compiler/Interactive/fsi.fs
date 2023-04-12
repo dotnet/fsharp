@@ -1426,8 +1426,9 @@ type internal FsiDynamicCompiler(
 
     /// Generate one assembly using multi-assembly emit
     let EmitInMemoryAssembly (tcConfig: TcConfig, emEnv: ILMultiInMemoryAssemblyEmitEnv, ilxMainModule: ILModuleDef) =
+        let embeddedTypes = tcGlobals.tryRemoveEmbeddedILTypeDefs() |> List.filter(fun tdef -> not(emEnv.IsLocalInternalType(mkRefForNestedILTypeDef ILScopeRef.Local ([], tdef))))
+        let ilxMainModule = { ilxMainModule with TypeDefs = mkILTypeDefs (ilxMainModule.TypeDefs.AsList() @ embeddedTypes) }
         let multiAssemblyName = ilxMainModule.ManifestOfAssembly.Name
-
         // Adjust the assembly name of this fragment, and add InternalsVisibleTo attributes to 
         // allow internals access by all future assemblies with the same name (and only differing in version)
         let manifest =

@@ -981,6 +981,9 @@ module PrettyTypes =
 
     val PrettyTyparNames: (Typar -> bool) -> string list -> Typars -> string list
 
+    /// Assign previously generated pretty names to typars
+    val AssignPrettyTyparNames: Typars -> string list -> unit
+
     val PrettifyType: TcGlobals -> TType -> TType * TyparConstraintsWithTypars
 
     val PrettifyInstAndTyparsAndType:

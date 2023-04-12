@@ -35,7 +35,7 @@ Show outlining and collapsible nodes for F# code;
 Inline hints;
 Display inline type hints (preview);
 Display return type hints (preview);
-Display inline parameter name hints (preview);Beer;
+Display inline parameter name hints (preview);
 Live Buffers;
 Use live (unsaved) buffers for checking</source>
         <target state="new">Block Structure Guides;
@@ -45,7 +45,7 @@ Show outlining and collapsible nodes for F# code;
 Inline hints;
 Display inline type hints (preview);
 Display return type hints (preview);
-Display inline parameter name hints (preview);Beer;
+Display inline parameter name hints (preview);
 Live Buffers;
 Use live (unsaved) buffers for checking</target>
         <note />
@@ -56,16 +56,16 @@ Always place open statements at the top level;
 Remove unused open statements;
 Analyze and suggest fixes for unused values;
 Suggest names for unresolved identifiers;</source>
-        <target state="new">Simplify names (remove unnecessary qualifiers);
-Always place open statements at the top level;
-Remove unused open statements;
-Analyze and suggest fixes for unused values;
-Suggest names for unresolved identifiers;</target>
+        <target state="translated">Adları basitleştir (gereksiz niteleyicileri kaldır);
+Açık deyimleri her zaman en üst düzeye yerleştir;
+Kullanılmayan açık deyimleri kaldır;
+Kullanılmayan değerleri analiz et ve bunlara düzeltmeler öner;
+Çözümlenmemiş tanımlayıcılar için ad öner;</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertCSharpUsingToFSharpOpen">
         <source>Convert C# 'using' to F# 'open'</source>
-        <target state="new">Convert C# 'using' to F# 'open'</target>
+        <target state="translated">C# 'using' sözcüğünü F# 'open' sözcüğüne dönüştür</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertToAnonymousRecord">
@@ -110,7 +110,7 @@ Suggest names for unresolved identifiers;</target>
       </trans-unit>
       <trans-unit id="FormattingPageKeywords">
         <source>Re-format indentation on paste (Experimental)</source>
-        <target state="new">Re-format indentation on paste (Experimental)</target>
+        <target state="translated">Yapıştırırken girintiyi yeniden biçimlendir (Deneysel)</target>
         <note />
       </trans-unit>
       <trans-unit id="ImplementInterface">
@@ -132,14 +132,14 @@ Enter key behavior;
 Never add new line on enter;
 Only add new line on enter after end of fully typed word;
 Always add new line on enter;</source>
-        <target state="new">Completion Lists;
-Show completion list after a character is deleted;
-Show completion list after a character is typed;
-Show symbols in unopened namespaces;
-Enter key behavior;
-Never add new line on enter;
-Only add new line on enter after end of fully typed word;
-Always add new line on enter;</target>
+        <target state="translated">Tamamlama Listeleri;
+Bir karakter silindikten sonra tamamlama listesini göster;
+Bir karakter yazıldıktan sonra tamamlama listesini göster;
+Açılmamış ad alanlarında simgeleri göster;
+Enter tuşu davranışı;
+Enter tuşunda hiçbir zaman yeni satır ekleme;
+Yalnızca tam olarak yazılan sözcükten sonra basılan Enter tuşunda için yeni satır ekle;
+Enter tuşunda her zaman yeni satır ekle;</target>
         <note />
       </trans-unit>
       <trans-unit id="MakeDeclarationMutable">
@@ -164,17 +164,17 @@ Enable parallel type checking with signature files;
 Enable parallel reference resolution;
 Enable fast find references &amp; rename (experimental);
 Cache parsing results (experimental)</source>
-        <target state="new">F# Project and Caching Performance Options;
-Enable in-memory cross project references;
+        <target state="translated">F# Proje ve Önbelleğe Alma Performans Seçenekleri;
+Bellek içi çapraz proje başvurularını etkinleştir;
 Enable_partial_type_checking;
-IntelliSense Performance Options;
-Enable stale data for IntelliSense features;
-Time until stale results are used (in milliseconds);
-Parallelization (requires restart);
-Enable parallel type checking with signature files;
-Enable parallel reference resolution;
-Enable fast find references &amp; rename (experimental);
-Cache parsing results (experimental)</target>
+IntelliSense Performans Seçenekleri;
+IntelliSense özellikleri için eski verileri etkinleştir;
+Eski sonuçlar kullanılana kadar geçen süre (milisaniye olarak);
+Paralelleştirme (yeniden başlatma gerektirir);
+İmza dosyalarıyla paralel tür denetlemeyi etkinleştir;
+Paralel başvuru çözümlemeyi etkinleştir;
+Başvuruları hızlı bulma ve yeniden adlandırmayı etkinleştir (deneysel)
+Ayrıştırma sonuçlarını önbelleğe al (deneysel)</target>
         <note />
       </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
@@ -191,14 +191,14 @@ Show navigation links as;
 Solid underline;
 Dot underline;
 Dash underline;</source>
-        <target state="new">Formatting;
-Preferred description width in characters;
-Format signature to the given width by adding line breaks conforming with F# syntax rules;
-Navigation links;
-Show navigation links as;
-Solid underline;
-Dot underline;
-Dash underline;</target>
+        <target state="translated">Biçimlendirme; 
+Karakter olarak tercih edilen açıklama genişliği;
+F# söz dizimi kurallarına uyan satır sonları ekleyerek imzayı verilen genişliğe biçimlendir;
+Gezinti bağlantıları;
+Gezinti bağlantılarını şöyle göster;
+Düz alt çizgi;
+Nokta alt çizgi;
+Tire alt çizgisi;</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">
@@ -268,7 +268,7 @@ Dash underline;</target>
       </trans-unit>
       <trans-unit id="6008">
         <source>IntelliSense</source>
-        <target state="needs-review-translation">IntelliSense</target>
+        <target state="translated">IntelliSense</target>
         <note />
       </trans-unit>
       <trans-unit id="6009">

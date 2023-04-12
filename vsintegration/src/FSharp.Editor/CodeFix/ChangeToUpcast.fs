@@ -8,7 +8,7 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "ChangeToUpcast"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.ChangeToUpcast); Shared>]
 type internal FSharpChangeToUpcastCodeFixProvider() =
     inherit CodeFixProvider()
 
@@ -50,6 +50,7 @@ type internal FSharpChangeToUpcastCodeFixProvider() =
 
             let codeFix =
                 CodeFixHelpers.createTextChangeCodeFix (
+                    CodeFix.ChangeToUpcast,
                     title,
                     context,
                     (fun () -> asyncMaybe.Return [| TextChange(context.Span, replacement) |])
