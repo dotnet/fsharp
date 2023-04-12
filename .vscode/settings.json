@@ -16,13 +16,13 @@
         "*.fs": "${capture}.fsi"
     },
     "FSharp.suggestGitignore": false,
-    "FSharp.enableMSBuildProjectGraph": false,
+    "FSharp.enableMSBuildProjectGraph": true,
     "FSharp.enableAdaptiveLspServer": true,
     "FSharp.workspacePath": "FSharp.Compiler.Service.sln",
     "FSharp.workspaceModePeekDeepLevel": 1,
-    "FSharp.enableBackgroundServices": false,
     "FSharp.excludeProjectDirectories": [
         ".git",
+        ".vscode",
         "eng",
         "artifacts",
         "fcs-samples",
