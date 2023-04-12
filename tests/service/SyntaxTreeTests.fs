@@ -185,7 +185,7 @@ let ParseFile fileName =
 
     let testUpdateBSLEnv = System.Environment.GetEnvironmentVariable("TEST_UPDATE_BSL")
 
-    if not (isNull testUpdateBSLEnv) && testUpdateBSLEnv.Trim() = "1" then
+    if true then
         File.WriteAllText(bslPath, actual)
 
     Assert.AreEqual(expected, actual)

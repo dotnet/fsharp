@@ -777,6 +777,11 @@
         <target state="translated">Niekompletne wyrażenie operatora (na przykład a^b) lub wywołanie typu kwalifikowanego (przykład: ^T.Name)</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsMissingUnionCaseName">
+        <source>Missing union case name</source>
+        <target state="new">Missing union case name</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsNewExprMemberAccess">
         <source>This member access is ambiguous. Please use parentheses around the object creation, e.g. '(new SomeType(args)).MemberName'</source>
         <target state="translated">Dostęp tego elementu członkowskiego jest niejednoznaczny. W celu utworzenia obiektu użyj nawiasów, na przykład „(nowy SomeType(args)).MemberName”</target>
