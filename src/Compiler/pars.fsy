@@ -5233,50 +5233,117 @@ topAppType:
 /* Any tokens in this grammar must be added to the lex filter rule 'peekAdjacentTypars' */
 /* See the F# specification "Lexical analysis of type applications and type parameter definitions" */
 typ:
-  | tupleType RARROW typ  
-     { let mArrow = rhs parseState 2
-       SynType.Fun($1, $3, lhs parseState, { ArrowRange = mArrow }) }
+  | tupleType RARROW typ
+      { let mArrow = rhs parseState 2
+        let m = unionRanges (rhs2 parseState 1 2) $3.Range
+        SynType.Fun($1, $3, m, { ArrowRange = mArrow }) }
 
-  | tupleType %prec prec_typ_prefix 
-     { $1 }
+  | tupleType RARROW recover
+      { let mArrow = rhs parseState 2
+        let ty = SynType.FromParseError(mArrow.EndRange)
+        let m = rhs2 parseState 1 2
+        SynType.Fun($1, ty, m, { ArrowRange = mArrow }) }
+
+  | tupleType RARROW RARROW typ
+      { let mArrow1 = rhs parseState 2
+        let mArrow2 = rhs parseState 3
+        reportParseErrorAt mArrow2 (FSComp.SR.parsExpectingType ())
+        let ty = SynType.FromParseError(mArrow2.StartRange)
+        let m1 = unionRanges $1.Range $4.Range
+        let m2 = unionRanges mArrow2 $4.Range
+        SynType.Fun($1, SynType.Fun(ty, $4, m2, { ArrowRange = mArrow2 }), m1, { ArrowRange = mArrow1 }) }
+
+  | tupleType %prec prec_typ_prefix
+      { $1 }
 
 typEOF:
   | typ EOF { checkEndOfFileError $2; $1 }
 
 
 tupleType:
-  | appType STAR tupleOrQuotTypeElements 
-    { let mStar = rhs parseState 2
-      let path = SynTupleTypeSegment.Type $1 :: SynTupleTypeSegment.Star mStar :: $3
-      mkSynTypeTuple path }
+  | appType STAR tupleOrQuotTypeElements
+      { let mStar = rhs parseState 2
+        let path = SynTupleTypeSegment.Type $1 :: SynTupleTypeSegment.Star mStar :: $3
+        mkSynTypeTuple path }
+
+  | appType STAR recover
+      { let mStar = rhs parseState 2
+        let ty = SynType.FromParseError(mStar.EndRange)
+        let path = [SynTupleTypeSegment.Type $1; SynTupleTypeSegment.Star mStar; SynTupleTypeSegment.Type ty]
+        mkSynTypeTuple path }
+
+  | STAR tupleOrQuotTypeElements
+      { let mStar = rhs parseState 1
+        let ty = SynType.FromParseError(mStar.EndRange)
+        reportParseErrorAt mStar (FSComp.SR.parsExpectingType ())
+        let path = SynTupleTypeSegment.Type ty :: SynTupleTypeSegment.Star mStar :: $2
+        mkSynTypeTuple path }
 
   | INFIX_STAR_DIV_MOD_OP tupleOrQuotTypeElements
-    { if $1 <> "/" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedInfixOperator());
-      let mSlash = rhs parseState 1
-      let path = SynTupleTypeSegment.Slash mSlash :: $2
-      mkSynTypeTuple path }
+      { if $1 <> "/" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedInfixOperator ())
+        let mSlash = rhs parseState 1
+        let path = SynTupleTypeSegment.Slash mSlash :: $2
+        mkSynTypeTuple path }
+
+  | INFIX_STAR_DIV_MOD_OP recover
+      { if $1 <> "/" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedInfixOperator ())
+        let mSlash = rhs parseState 1
+        let ty = SynType.FromParseError(mSlash.EndRange)
+        let path = [SynTupleTypeSegment.Slash mSlash; SynTupleTypeSegment.Type ty]
+        mkSynTypeTuple path }
 
   | appType INFIX_STAR_DIV_MOD_OP tupleOrQuotTypeElements
-    { if $2 <> "/" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedInfixOperator());
-      let mSlash = rhs parseState 2
-      let path = SynTupleTypeSegment.Type $1 :: SynTupleTypeSegment.Slash mSlash :: $3
-      mkSynTypeTuple path }
+      { if $2 <> "/" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedInfixOperator())
+        let mSlash = rhs parseState 2
+        let path = SynTupleTypeSegment.Type $1 :: SynTupleTypeSegment.Slash mSlash :: $3
+        mkSynTypeTuple path }
 
-  | appType %prec prec_tuptyp_prefix 
-    { $1 }
+  | appType INFIX_STAR_DIV_MOD_OP recover
+      { if $2 <> "/" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedInfixOperator ())
+        let mSlash = rhs parseState 2
+        let ty = SynType.FromParseError(mSlash.EndRange)
+        let path = [SynTupleTypeSegment.Type $1; SynTupleTypeSegment.Slash mSlash; SynTupleTypeSegment.Type ty]
+        mkSynTypeTuple path }
+
+  | appType %prec prec_tuptyp_prefix
+      { $1 }
 
 tupleOrQuotTypeElements:
-  | appType STAR tupleOrQuotTypeElements              
-    { let mStar = rhs parseState 2
-      SynTupleTypeSegment.Type $1 :: SynTupleTypeSegment.Star mStar :: $3 }
+  | appType STAR tupleOrQuotTypeElements
+      { let mStar = rhs parseState 2
+        SynTupleTypeSegment.Type $1 :: SynTupleTypeSegment.Star mStar :: $3 }
 
-  | appType INFIX_STAR_DIV_MOD_OP tupleOrQuotTypeElements 
-    { if $2 <> "/" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedInfixOperator());
-      let mSlash = rhs parseState 2
-      SynTupleTypeSegment.Type $1 :: SynTupleTypeSegment.Slash mSlash :: $3 }
+  | appType STAR recover
+      { let mStar = rhs parseState 2
+        let ty = SynType.FromParseError(mStar.EndRange)
+        [SynTupleTypeSegment.Type $1; SynTupleTypeSegment.Star mStar; SynTupleTypeSegment.Type ty] }
 
-  | appType %prec prec_tuptyptail_prefix 
-    { [ SynTupleTypeSegment.Type $1 ] }
+  | STAR tupleOrQuotTypeElements
+      { let mStar = rhs parseState 1
+        let ty = SynType.FromParseError(mStar.EndRange)
+        reportParseErrorAt mStar (FSComp.SR.parsExpectingType ())
+        SynTupleTypeSegment.Type ty :: SynTupleTypeSegment.Star mStar :: $2 }
+
+  | appType INFIX_STAR_DIV_MOD_OP tupleOrQuotTypeElements
+      { if $2 <> "/" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedInfixOperator ())
+        let mSlash = rhs parseState 2
+        SynTupleTypeSegment.Type $1 :: SynTupleTypeSegment.Slash mSlash :: $3 }
+
+  | appType INFIX_STAR_DIV_MOD_OP recover
+      { if $2 <> "/" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedInfixOperator ())
+        let mSlash = rhs parseState 2
+        let ty = SynType.FromParseError(mSlash.EndRange)
+        [SynTupleTypeSegment.Type $1; SynTupleTypeSegment.Slash mSlash; SynTupleTypeSegment.Type ty] }
+
+  | INFIX_STAR_DIV_MOD_OP tupleOrQuotTypeElements
+      { if $1 <> "/" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedInfixOperator ())
+        let mSlash = rhs parseState 1
+        let ty = SynType.FromParseError(mSlash.EndRange)
+        reportParseErrorAt mSlash (FSComp.SR.parsExpectingType ())
+        SynTupleTypeSegment.Type ty :: SynTupleTypeSegment.Slash mSlash :: $2 }
+
+  | appType %prec prec_tuptyptail_prefix
+      { [ SynTupleTypeSegment.Type $1 ] }
 
 appTypeCon:
   | path %prec prec_atomtyp_path 
