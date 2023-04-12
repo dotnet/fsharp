@@ -245,8 +245,7 @@ type BoundModel private (
         fileChecked: Event<string>,
         prevTcInfo: TcInfo,
         syntaxTreeOpt: SyntaxTree option,
-        ?tcInfoOpt: GraphNode<TcInfo>,
-        ?tcInfoExtrasNodeOpt: GraphNode<TcInfoExtras>
+        ?tcStateOpt: GraphNode<TcInfo> * GraphNode<TcInfoExtras>
     ) =
 
     let getTypeCheck (syntaxTree: SyntaxTree) : NodeCode<TypeCheck> =
@@ -362,28 +361,30 @@ type BoundModel private (
     let tcInfo, tcInfoExtras =
         let defaultTypeCheck = node { return prevTcInfo, TcResultsSinkImpl(tcGlobals), None, "default typecheck - no syntaxTree" }
         let typeCheckNode = syntaxTreeOpt |> Option.map getTypeCheck |> Option.defaultValue defaultTypeCheck
-
-        match skippedImplemetationTypeCheck with
-        | Some info ->
-            // For skipped implementation sources do full type check only when requested.
-            let extras =
-                node {
-                    let! typeCheck = typeCheckNode
-                    return getTcInfoExtras typeCheck
-                } |> GraphNode
-            (GraphNode.FromResult info), extras
+        match tcStateOpt with
+        | Some tcState -> tcState
         | _ ->
-            // compute type check once
-            let typeCheck = typeCheckNode |> Async.AwaitNodeCode |> Async.RunSynchronously
-            let tcInfo = GraphNode.FromResult (getTcInfo typeCheck)
-            let tcInfoExtras = node { return getTcInfoExtras typeCheck } |> GraphNode
-            // start computing extras, so that typeCheck can be GC'd quickly 
-            tcInfoExtras.GetOrComputeValue() |> Async.AwaitNodeCode |> Async.Ignore |> Async.Start
-            tcInfo, tcInfoExtras 
+            match skippedImplemetationTypeCheck with
+            | Some info ->
+                // For skipped implementation sources do full type check only when requested.
+                let extras =
+                    node {
+                        let! typeCheck = typeCheckNode
+                        return getTcInfoExtras typeCheck
+                    } |> GraphNode
+                GraphNode.FromResult info, extras
+            | _ ->
+                // compute type check once
+                let typeCheck = typeCheckNode |> Async.AwaitNodeCode |> Async.RunSynchronously
+                let tcInfo = getTcInfo typeCheck |> GraphNode.FromResult
+                let tcInfoExtras = node { return getTcInfoExtras typeCheck } |> GraphNode
+                // start computing extras, so that typeCheck can be GC'd quickly 
+                tcInfoExtras.GetOrComputeValue() |> Async.AwaitNodeCode |> Async.Ignore |> Async.Start
+                tcInfo, tcInfoExtras 
 
-    member val TcInfo = defaultArg tcInfoOpt tcInfo
+    member val TcInfo = tcInfo
 
-    member val TcInfoExtras = defaultArg tcInfoExtrasNodeOpt tcInfoExtras
+    member val TcInfoExtras = tcInfoExtras
 
     member _.TcConfig = tcConfig
 
@@ -443,8 +444,7 @@ type BoundModel private (
                     fileChecked,
                     prevTcInfo,
                     syntaxTreeOpt,
-                    GraphNode.FromResult finishState,
-                    this.TcInfoExtras
+                    (GraphNode.FromResult finishState, this.TcInfoExtras)
                 )
         }
 
