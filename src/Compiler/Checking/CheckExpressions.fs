@@ -44,8 +44,6 @@ open FSharp.Compiler.TypeRelations
 
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
-open System.Collections.Concurrent
-
 #endif
 
 //-------------------------------------------------------------------------
