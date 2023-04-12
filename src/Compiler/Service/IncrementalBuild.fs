@@ -231,7 +231,7 @@ module ValueOption =
         | ValueSome x -> Some x
         | _ -> None
 
-type private TypeCheckNode = GraphNode<TcInfo * TcResultsSinkImpl * CheckedImplFile option * string>
+type private TypeCheck = TcInfo * TcResultsSinkImpl * CheckedImplFile option * string
 
 /// Bound model of an underlying syntax and typed tree.
 type BoundModel private (
@@ -249,7 +249,7 @@ type BoundModel private (
         ?tcInfoExtrasNodeOpt: GraphNode<TcInfoExtras>
     ) =
 
-    let getTypeCheck (syntaxTree: SyntaxTree) : TypeCheckNode =
+    let getTypeCheck (syntaxTree: SyntaxTree) : NodeCode<TypeCheck> =
         node {
             let! input, _sourceRange, fileName, parseErrors = syntaxTree.ParseNode.GetOrComputeValue()
             use _ = Activity.start "BoundModel.TypeCheck" [|Activity.Tags.fileName, fileName|]
@@ -298,7 +298,7 @@ type BoundModel private (
                             None
                 }
             return tcInfo, sink, implFile, fileName
-        } |> GraphNode
+        }
 
     let skippedImplemetationTypeCheck =
         match syntaxTreeOpt, prevTcInfo.sigNameOpt with
@@ -318,18 +318,12 @@ type BoundModel private (
                     })
         | _ -> None
 
-    let getTcInfo (typeCheckNode: TypeCheckNode)  = 
-        node {
-            match skippedImplemetationTypeCheck with
-            | Some tcInfo -> return tcInfo
-            | _ -> 
-                let! tcInfo , _, _, _ = typeCheckNode.GetOrComputeValue()
-                return tcInfo
-        } |> GraphNode
+    let getTcInfo (typeCheck: TypeCheck) =
+        let tcInfo , _, _, _ = typeCheck
+        tcInfo
 
-    let getTcInfoExtras (typeCheckNode: TypeCheckNode)  =
-        node {
-            let! _ , sink, implFile, fileName = typeCheckNode.GetOrComputeValue()
+    let getTcInfoExtras (typeCheck: TypeCheck)  =
+            let _ , sink, implFile, fileName = typeCheck
             // Build symbol keys
             let itemKeyStore, semanticClassification =
                 if enableBackgroundItemKeyStoreAndSemanticClassification then
@@ -354,25 +348,42 @@ type BoundModel private (
                     res
                 else
                     None, None
-                    
-            return
-                {
-                    // Only keep the typed interface files when doing a "full" build for fsc.exe, otherwise just throw them away
-                    latestImplFile = if keepAssemblyContents then implFile else None
-                    tcResolutions = (if keepAllBackgroundResolutions then sink.GetResolutions() else TcResolutions.Empty)
-                    tcSymbolUses = (if keepAllBackgroundSymbolUses then sink.GetSymbolUses() else TcSymbolUses.Empty)
-                    tcOpenDeclarations = sink.GetOpenDeclarations()
-                    itemKeyStore = itemKeyStore
-                    semanticClassificationKeyStore = semanticClassification
-                }               
-        } |> GraphNode
 
-    let defaultTypeCheck = GraphNode.FromResult (prevTcInfo, TcResultsSinkImpl(tcGlobals), None, "default typecheck - no syntaxTree")
-    let typeCheck = syntaxTreeOpt |> Option.map getTypeCheck |> Option.defaultValue defaultTypeCheck
+            {
+                // Only keep the typed interface files when doing a "full" build for fsc.exe, otherwise just throw them away
+                latestImplFile = if keepAssemblyContents then implFile else None
+                tcResolutions = (if keepAllBackgroundResolutions then sink.GetResolutions() else TcResolutions.Empty)
+                tcSymbolUses = (if keepAllBackgroundSymbolUses then sink.GetSymbolUses() else TcSymbolUses.Empty)
+                tcOpenDeclarations = sink.GetOpenDeclarations()
+                itemKeyStore = itemKeyStore
+                semanticClassificationKeyStore = semanticClassification
+            }
 
-    member val TcInfo = defaultArg tcInfoOpt (getTcInfo typeCheck)
+    let tcInfo, tcInfoExtras =
+        let defaultTypeCheck = node { return prevTcInfo, TcResultsSinkImpl(tcGlobals), None, "default typecheck - no syntaxTree" }
+        let typeCheckNode = syntaxTreeOpt |> Option.map getTypeCheck |> Option.defaultValue defaultTypeCheck
 
-    member val TcInfoExtras = defaultArg tcInfoExtrasNodeOpt (getTcInfoExtras typeCheck)
+        match skippedImplemetationTypeCheck with
+        | Some info ->
+            // For skipped implementation sources do full type check only when requested.
+            let extras =
+                node {
+                    let! typeCheck = typeCheckNode
+                    return getTcInfoExtras typeCheck
+                } |> GraphNode
+            (GraphNode.FromResult info), extras
+        | _ ->
+            // compute type check once
+            let typeCheck = typeCheckNode |> Async.AwaitNodeCode |> Async.RunSynchronously
+            let tcInfo = GraphNode.FromResult (getTcInfo typeCheck)
+            let tcInfoExtras = node { return getTcInfoExtras typeCheck } |> GraphNode
+            // start computing extras, so that typeCheck can be GC'd quickly 
+            tcInfoExtras.GetOrComputeValue() |> Async.AwaitNodeCode |> Async.Ignore |> Async.Start
+            tcInfo, tcInfoExtras 
+
+    member val TcInfo = defaultArg tcInfoOpt tcInfo
+
+    member val TcInfoExtras = defaultArg tcInfoExtrasNodeOpt tcInfoExtras
 
     member _.TcConfig = tcConfig
 
