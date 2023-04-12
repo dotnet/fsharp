@@ -527,6 +527,11 @@
         <target state="translated">As regiões IF-FSHARP/IF-CAML não são mais suportadas</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexInvalidIdentifier">
+        <source>This is not a valid identifier</source>
+        <target state="new">This is not a valid identifier</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexRBraceInInterpolatedString">
         <source>A '}}' character must be escaped (by doubling) in an interpolated string.</source>
         <target state="translated">Um caractere ''}}' precisa ser de escape (ao duplicar) em uma cadeia de caracteres interpolada.</target>
