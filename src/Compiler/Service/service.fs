@@ -128,27 +128,43 @@ type FSharpChecker
         captureIdentifiersWhenParsing,
         getSource,
         useChangeNotifications,
-        useSyntaxTreeCache
+        useSyntaxTreeCache,
+        useTransparentCompiler
     ) =
 
     let backgroundCompiler =
-        BackgroundCompiler(
-            legacyReferenceResolver,
-            projectCacheSize,
-            keepAssemblyContents,
-            keepAllBackgroundResolutions,
-            tryGetMetadataSnapshot,
-            suggestNamesForErrors,
-            keepAllBackgroundSymbolUses,
-            enableBackgroundItemKeyStoreAndSemanticClassification,
-            enablePartialTypeChecking,
-            parallelReferenceResolution,
-            captureIdentifiersWhenParsing,
-            getSource,
-            useChangeNotifications,
-            useSyntaxTreeCache
-        )
-        :> IBackgroundCompiler
+        if useTransparentCompiler = Some true then
+            TransparentCompiler(
+                legacyReferenceResolver,
+                projectCacheSize,
+                keepAssemblyContents,
+                keepAllBackgroundResolutions,
+                tryGetMetadataSnapshot,
+                suggestNamesForErrors,
+                keepAllBackgroundSymbolUses,
+                enableBackgroundItemKeyStoreAndSemanticClassification,
+                enablePartialTypeChecking,
+                parallelReferenceResolution,
+                captureIdentifiersWhenParsing,
+                getSource,
+                useChangeNotifications,
+                useSyntaxTreeCache) :> IBackgroundCompiler
+        else
+            BackgroundCompiler(
+                legacyReferenceResolver,
+                projectCacheSize,
+                keepAssemblyContents,
+                keepAllBackgroundResolutions,
+                tryGetMetadataSnapshot,
+                suggestNamesForErrors,
+                keepAllBackgroundSymbolUses,
+                enableBackgroundItemKeyStoreAndSemanticClassification,
+                enablePartialTypeChecking,
+                parallelReferenceResolution,
+                captureIdentifiersWhenParsing,
+                getSource,
+                useChangeNotifications,
+                useSyntaxTreeCache) :> IBackgroundCompiler
 
     static let globalInstance = lazy FSharpChecker.Create()
 
@@ -192,7 +208,8 @@ type FSharpChecker
             ?parallelReferenceResolution: bool,
             ?captureIdentifiersWhenParsing: bool,
             ?documentSource: DocumentSource,
-            ?useSyntaxTreeCache: bool
+            ?useSyntaxTreeCache: bool,
+            ?useTransparentCompiler: bool
         ) =
 
         use _ = Activity.startNoTags "FSharpChecker.Create"
@@ -243,7 +260,8 @@ type FSharpChecker
              | Some (DocumentSource.Custom f) -> Some f
              | _ -> None),
             useChangeNotifications,
-            useSyntaxTreeCache
+            useSyntaxTreeCache,
+            useTransparentCompiler
         )
 
     member _.ReferenceResolver = legacyReferenceResolver

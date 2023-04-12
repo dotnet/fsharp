@@ -58,6 +58,7 @@ open FSharp.Compiler.BuildGraph
 open Internal.Utilities
 open Internal.Utilities.Collections
 open FSharp.Compiler.AbstractIL.ILBinaryReader
+open System.Threading.Tasks
 
 type FSharpUnresolvedReferencesSet = FSharpUnresolvedReferencesSet of UnresolvedAssemblyReference list
 
@@ -113,6 +114,130 @@ type internal DelayedILModuleReader =
                         | _ -> Some this.result)
             }
         | _ -> cancellable.Return(Some this.result)
+
+
+
+type FSharpFileKey = string * string
+
+type FSharpProjectSnapshotKey =
+    {
+        ProjectFileName: string
+        SourceFiles: FSharpFileKey list
+        OtherOptions: string list
+        ReferencedProjects: FSharpProjectSnapshotKey list
+
+        // Do we need these?
+        IsIncompleteTypeCheckEnvironment: bool
+        UseScriptResolutionRules: bool
+    }
+
+[<NoComparison; CustomEquality>]
+type FSharpFileSnapshot = {
+    FileName: string
+    Version: string
+    GetSource: unit -> Task<ISourceText>
+} with
+    member this.Key = this.FileName, this.Version
+    override this.Equals(o) =
+        match o with
+        | :? FSharpFileSnapshot as o -> o.FileName = this.FileName && o.Version = this.Version
+        | _ -> false
+
+    override this.GetHashCode() = this.Key.GetHashCode()
+
+
+
+[<NoComparison>]
+type FSharpProjectSnapshot =
+    {
+        ProjectFileName: string
+        ProjectId: string option
+        SourceFiles: FSharpFileSnapshot list
+        OtherOptions: string list
+        ReferencedProjects: FSharpReferencedProjectSnapshot list
+        IsIncompleteTypeCheckEnvironment: bool
+        UseScriptResolutionRules: bool
+        LoadTime: DateTime
+        UnresolvedReferences: FSharpUnresolvedReferencesSet option
+        OriginalLoadReferences: (range * string * string) list
+        Stamp: int64 option
+    }
+    static member UseSameProject(options1, options2) =
+        match options1.ProjectId, options2.ProjectId with
+        | Some (projectId1), Some (projectId2) when
+            not (String.IsNullOrWhiteSpace(projectId1))
+            && not (String.IsNullOrWhiteSpace(projectId2))
+            ->
+            projectId1 = projectId2
+        | Some _, Some _
+        | None, None -> options1.ProjectFileName = options2.ProjectFileName
+        | _ -> false
+
+    static member AreSameForChecking(options1, options2) =
+        match options1.Stamp, options2.Stamp with
+        | Some x, Some y -> (x = y)
+        | _ ->
+            FSharpProjectSnapshot.UseSameProject(options1, options2)
+            && options1.SourceFiles = options2.SourceFiles
+            && options1.OtherOptions = options2.OtherOptions
+            && options1.UnresolvedReferences = options2.UnresolvedReferences
+            && options1.OriginalLoadReferences = options2.OriginalLoadReferences
+            && options1.ReferencedProjects.Length = options2.ReferencedProjects.Length
+            && (options1.ReferencedProjects, options2.ReferencedProjects)
+               ||> List.forall2 (fun r1 r2 ->
+                   match r1, r2 with
+                   | FSharpReferencedProjectSnapshot.FSharpReference (n1, a), FSharpReferencedProjectSnapshot.FSharpReference (n2, b) ->
+                       n1 = n2 && FSharpProjectSnapshot.AreSameForChecking(a, b))
+
+            && options1.LoadTime = options2.LoadTime
+
+    member po.ProjectDirectory = Path.GetDirectoryName(po.ProjectFileName)
+
+    member this.Key = {
+        ProjectFileName = this.ProjectFileName
+        SourceFiles = this.SourceFiles |> List.map (fun x -> x.Key)
+        OtherOptions = this.OtherOptions
+        ReferencedProjects = this.ReferencedProjects |> List.map (function FSharpReference (_, x) -> x.Key)
+        IsIncompleteTypeCheckEnvironment = this.IsIncompleteTypeCheckEnvironment
+        UseScriptResolutionRules = this.UseScriptResolutionRules
+    }
+
+    override this.ToString() =
+        "FSharpProjectSnapshot(" + this.ProjectFileName + ")"
+
+and [<NoComparison; CustomEquality>] public FSharpReferencedProjectSnapshot =
+    internal
+    | FSharpReference of projectOutputFile: string * options: FSharpProjectSnapshot
+    //| PEReference of projectOutputFile: string * getStamp: (unit -> DateTime) * delayedReader: DelayedILModuleReader
+    //| ILModuleReference of
+    //    projectOutputFile: string *
+    //    getStamp: (unit -> DateTime) *
+    //    getReader: (unit -> ILModuleReader)
+
+    /// <summary>
+    /// The fully qualified path to the output of the referenced project. This should be the same value as the <c>-r</c>
+    /// reference in the project options for this referenced project.
+    /// </summary>
+    member this.OutputFile = match this with FSharpReference (projectOutputFile, _) -> projectOutputFile
+
+    /// <summary>
+    /// Creates a reference for an F# project. The physical data for it is stored/cached inside of the compiler service.
+    /// </summary>
+    /// <param name="projectOutputFile">The fully qualified path to the output of the referenced project. This should be the same value as the <c>-r</c> reference in the project options for this referenced project.</param>
+    /// <param name="options">The Project Options for this F# project</param>
+    static member CreateFSharp(projectOutputFile, options: FSharpProjectSnapshot) = FSharpReference (projectOutputFile, options)
+
+    override this.Equals(o) =
+        match o with
+        | :? FSharpReferencedProjectSnapshot as o ->
+            match this, o with
+            | FSharpReference (projectOutputFile1, options1), FSharpReference (projectOutputFile2, options2) ->
+                projectOutputFile1 = projectOutputFile2 && options1 = options2
+
+        | _ -> false
+
+    override this.GetHashCode() = this.OutputFile.GetHashCode()
+
 
 [<RequireQualifiedAccess; NoComparison; CustomEquality>]
 type FSharpReferencedProject =
@@ -2996,7 +3121,7 @@ type FSharpCheckFileResults
             backgroundDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity)[],
             isIncompleteTypeCheckEnvironment: bool,
             projectOptions: FSharpProjectOptions,
-            builder: IncrementalBuilder,
+            builder: IncrementalBuilder option,
             dependencyFiles: string[],
             creationErrors: FSharpDiagnostic[],
             parseErrors: FSharpDiagnostic[],
@@ -3025,7 +3150,7 @@ type FSharpCheckFileResults
                 FSharpCheckFileResults.JoinErrors(isIncompleteTypeCheckEnvironment, creationErrors, parseErrors, tcErrors)
 
             let results =
-                FSharpCheckFileResults(mainInputFileName, errors, Some tcFileInfo, dependencyFiles, Some builder, keepAssemblyContents)
+                FSharpCheckFileResults(mainInputFileName, errors, Some tcFileInfo, dependencyFiles, builder, keepAssemblyContents)
 
             return results
         }

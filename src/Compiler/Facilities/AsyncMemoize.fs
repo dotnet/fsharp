@@ -110,6 +110,7 @@ type internal AsyncMemoize<'TKey, 'TValue when 'TKey: equality>(?eventLog: Resiz
                     | CancelRequest, Some (Completed _) -> ()
 
                     | JobCompleted, Some (Running (job, _)) ->
+                        // TODO: should we re-wrap the result?
                         cache.Set(tok, key, (Completed job))
                         requestCounts.Remove key |> ignore
                         log (Finished key)

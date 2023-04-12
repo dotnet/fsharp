@@ -39,6 +39,108 @@ type internal DelayedILModuleReader =
 /// <summary>Unused in this API</summary>
 type public FSharpUnresolvedReferencesSet = internal FSharpUnresolvedReferencesSet of UnresolvedAssemblyReference list
 
+
+type FSharpFileKey = string * string
+
+type FSharpProjectSnapshotKey =
+    {
+        ProjectFileName: string
+        SourceFiles: FSharpFileKey list
+        OtherOptions: string list
+        ReferencedProjects: FSharpProjectSnapshotKey list
+
+        // Do we need these?
+        IsIncompleteTypeCheckEnvironment: bool
+        UseScriptResolutionRules: bool
+    }
+
+[<NoComparison; CustomEquality>]
+type FSharpFileSnapshot = {
+    FileName: string
+    Version: string
+    GetSource: unit -> System.Threading.Tasks.Task<ISourceText>
+} with member Key: FSharpFileKey
+
+[<NoComparison>]
+type FSharpProjectSnapshot =
+    {
+        // Note that this may not reduce to just the project directory, because there may be two projects in the same directory.
+        ProjectFileName: string
+
+        /// This is the unique identifier for the project, it is case sensitive. If it's None, will key off of ProjectFileName in our caching.
+        ProjectId: string option
+
+        /// The files in the project
+        SourceFiles: FSharpFileSnapshot list
+
+        /// Additional command line argument options for the project. These can include additional files and references.
+        OtherOptions: string list
+
+        /// The command line arguments for the other projects referenced by this project, indexed by the
+        /// exact text used in the "-r:" reference in FSharpProjectOptions.
+        ReferencedProjects: FSharpReferencedProjectSnapshot list
+
+        /// When true, the typechecking environment is known a priori to be incomplete, for
+        /// example when a .fs file is opened outside of a project. In this case, the number of error
+        /// messages reported is reduced.
+        IsIncompleteTypeCheckEnvironment: bool
+
+        /// When true, use the reference resolution rules for scripts rather than the rules for compiler.
+        UseScriptResolutionRules: bool
+
+        /// Timestamp of project/script load, used to differentiate between different instances of a project load.
+        /// This ensures that a complete reload of the project or script type checking
+        /// context occurs on project or script unload/reload.
+        LoadTime: DateTime
+
+        /// Unused in this API and should be 'None' when used as user-specified input
+        UnresolvedReferences: FSharpUnresolvedReferencesSet option
+
+        /// Unused in this API and should be '[]' when used as user-specified input
+        OriginalLoadReferences: (range * string * string) list
+
+        /// An optional stamp to uniquely identify this set of options
+        /// If two sets of options both have stamps, then they are considered equal
+        /// if and only if the stamps are equal
+        Stamp: int64 option
+    }
+
+    /// Whether the two parse options refer to the same project.
+    static member internal UseSameProject: options1: FSharpProjectSnapshot * options2: FSharpProjectSnapshot -> bool
+
+    /// Compare two options sets with respect to the parts of the options that are important to building.
+    static member internal AreSameForChecking: options1: FSharpProjectSnapshot * options2: FSharpProjectSnapshot -> bool
+
+    /// Compute the project directory.
+    member internal ProjectDirectory: string
+
+    member Key: FSharpProjectSnapshotKey
+
+
+and [<NoComparison; CustomEquality>] public FSharpReferencedProjectSnapshot =
+    internal
+    | FSharpReference of projectOutputFile: string * options: FSharpProjectSnapshot
+    //| PEReference of projectOutputFile: string * version: string * delayedReader: DelayedILModuleReader
+    //| ILModuleReference of
+    //    projectOutputFile: string *
+    //    getStamp: (unit -> DateTime) *
+    //    getReader: (unit -> ILModuleReader)
+
+    /// <summary>
+    /// The fully qualified path to the output of the referenced project. This should be the same value as the <c>-r</c>
+    /// reference in the project options for this referenced project.
+    /// </summary>
+    member OutputFile: string
+
+    /// <summary>
+    /// Creates a reference for an F# project. The physical data for it is stored/cached inside of the compiler service.
+    /// </summary>
+    /// <param name="projectOutputFile">The fully qualified path to the output of the referenced project. This should be the same value as the <c>-r</c> reference in the project options for this referenced project.</param>
+    /// <param name="options">The Project Options for this F# project</param>
+    static member CreateFSharp: projectOutputFile: string * options: FSharpProjectSnapshot -> FSharpReferencedProjectSnapshot
+
+
+
 /// <summary>A set of information describing a project or script build configuration.</summary>
 type public FSharpProjectOptions =
     {
@@ -136,6 +238,7 @@ and [<NoComparison; CustomEquality>] public FSharpReferencedProject =
     static member CreateFromILModuleReader:
         projectOutputFile: string * getStamp: (unit -> DateTime) * getReader: (unit -> ILModuleReader) ->
             FSharpReferencedProject
+
 
 /// Represents the use of an F# symbol from F# source code
 [<Sealed>]
@@ -467,7 +570,7 @@ type public FSharpCheckFileResults =
         backgroundDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity)[] *
         isIncompleteTypeCheckEnvironment: bool *
         projectOptions: FSharpProjectOptions *
-        builder: IncrementalBuilder *
+        builder: IncrementalBuilder option *
         dependencyFiles: string[] *
         creationErrors: FSharpDiagnostic[] *
         parseErrors: FSharpDiagnostic[] *

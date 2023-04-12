@@ -468,7 +468,8 @@ module Helpers =
             enableBackgroundItemKeyStoreAndSemanticClassification = true,
             enablePartialTypeChecking = true,
             captureIdentifiersWhenParsing = true,
-            documentSource = DocumentSource.Custom getSource)
+            documentSource = DocumentSource.Custom getSource,
+            useTransparentCompiler = true)
 
         let options =
             let baseOptions, _ =
@@ -564,7 +565,8 @@ type ProjectWorkflowBuilder
                 enablePartialTypeChecking = true,
                 captureIdentifiersWhenParsing = true,
                 documentSource = (if useGetSource then DocumentSource.Custom getSource else DocumentSource.FileSystem),
-                useSyntaxTreeCache = defaultArg useSyntaxTreeCache false
+                useSyntaxTreeCache = defaultArg useSyntaxTreeCache false,
+                useTransparentCompiler = true
             ))
 
     let mapProjectAsync f workflow =

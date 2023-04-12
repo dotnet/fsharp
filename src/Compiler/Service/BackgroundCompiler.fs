@@ -671,7 +671,7 @@ type internal BackgroundCompiler
                     tcInfo.TcDiagnostics,
                     options.IsIncompleteTypeCheckEnvironment,
                     options,
-                    builder,
+                    Some builder,
                     Array.ofList tcInfo.tcDependencyFiles,
                     creationDiags,
                     parseResults.Diagnostics,
