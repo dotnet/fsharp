@@ -3,6 +3,7 @@
 module internal Microsoft.VisualStudio.FSharp.Interactive.Session
 
 open System
+open System.Globalization
 open System.IO
 open System.Text
 open System.Diagnostics
@@ -365,7 +366,7 @@ type FsiSession(sourceFile) =
             let mutable trueFrameworkVersion = Single.MaxValue
             let getTfmNumber (v: string) =
                 let arr = v.Split([| '.' |], 3)
-                match Single.TryParse(arr[0] + "." + arr[1]) with
+                match Single.TryParse(arr[0] + "." + arr[1], NumberStyles.Float, CultureInfo.InvariantCulture) with
                 | true, value -> value
                 | _ -> Single.MaxValue
 
