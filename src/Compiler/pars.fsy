@@ -5139,32 +5139,64 @@ opt_topReturnTypeWithTypeConstraints:
         let ty, arity = SynType.FromParseError(mColon.EndRange), SynInfo.unnamedRetVal
         Some (Some mColon, SynReturnInfo((ty, arity), mColon.EndRange)) }
 
-topType: 
-  | topTupleType RARROW topType 
-     { let dty, dmdata= $1 
-       let rty, (SynValInfo(dmdatas, rmdata)) = $3
+topType:
+  | topTupleType RARROW topType
+      { let dty, dmdata = $1
+        let rty, (SynValInfo(dmdatas, rmdata)) = $3
+        let mArrow = rhs parseState 2
+        SynType.Fun(dty, rty, lhs parseState, { ArrowRange = mArrow }), SynValInfo(dmdata :: dmdatas, rmdata) }
+
+  | topTupleType RARROW recover
+     { let dty, dmdata = $1
        let mArrow = rhs parseState 2
-       SynType.Fun(dty, rty, lhs parseState, { ArrowRange = mArrow }), (SynValInfo(dmdata :: dmdatas, rmdata)) }
+       let rty = SynType.FromParseError(mArrow.EndRange)
+       SynType.Fun(dty, rty, lhs parseState, { ArrowRange = mArrow }), SynValInfo([dmdata], SynInfo.unnamedRetVal) }
 
   | topTupleType 
      { let ty, rmdata = $1 in ty, (SynValInfo([], (match rmdata with [md] -> md | _ -> SynInfo.unnamedRetVal))) }
 
 topTupleType:
-  | topAppType STAR topTupleTypeElements 
-     { let t, argInfo = $1
+  | topAppType STAR topTupleTypeElements
+      { let t, argInfo = $1
+        let mStar = rhs parseState 2
+        let path = SynTupleTypeSegment.Type t :: SynTupleTypeSegment.Star mStar :: (List.map fst $3)
+        let mdata = argInfo :: (List.choose snd $3)
+        mkSynTypeTuple path, mdata }
+
+  | topAppType STAR recover
+     { let ty1, argInfo = $1
        let mStar = rhs parseState 2
-       let path = SynTupleTypeSegment.Type t :: SynTupleTypeSegment.Star mStar :: (List.map fst $3)
-       let mdata = argInfo :: (List.choose snd $3)
-       mkSynTypeTuple path, mdata }
+       let ty2 = SynType.FromParseError(mStar.EndRange)
+       let path = [SynTupleTypeSegment.Type ty1; SynTupleTypeSegment.Star mStar; SynTupleTypeSegment.Type ty2]
+       mkSynTypeTuple path, [argInfo] }
+
+  | STAR topTupleTypeElements
+      { let mStar = rhs parseState 1
+        let ty = SynType.FromParseError(mStar.EndRange)
+        reportParseErrorAt mStar (FSComp.SR.parsExpectingType ())
+        let path = SynTupleTypeSegment.Type ty :: SynTupleTypeSegment.Star mStar :: (List.map fst $2)
+        mkSynTypeTuple path, List.choose snd $2 }
 
   | topAppType                 
      { let ty, mdata = $1 in ty, [mdata] }
 
 topTupleTypeElements:
-  | topAppType STAR topTupleTypeElements       
-     { let t, argInfo = $1
-       let mStar = rhs parseState 2
-       (SynTupleTypeSegment.Type t, Some argInfo) :: (SynTupleTypeSegment.Star mStar, None) :: $3 }
+  | topAppType STAR topTupleTypeElements
+      { let t, argInfo = $1
+        let mStar = rhs parseState 2
+        (SynTupleTypeSegment.Type t, Some argInfo) :: (SynTupleTypeSegment.Star mStar, None) :: $3 }
+
+  | topAppType STAR recover
+      { let ty1, argInfo = $1
+        let mStar = rhs parseState 2
+        let ty2 = SynType.FromParseError(mStar.EndRange)
+        [(SynTupleTypeSegment.Type ty1, Some argInfo); (SynTupleTypeSegment.Star mStar, None); (SynTupleTypeSegment.Type ty2, None)] }
+
+  | STAR topTupleTypeElements
+      { let mStar = rhs parseState 1
+        let ty = SynType.FromParseError(mStar.EndRange)
+        reportParseErrorAt mStar (FSComp.SR.parsExpectingType ())
+        (SynTupleTypeSegment.Type ty, None) :: (SynTupleTypeSegment.Star mStar, None) :: $2 }
 
   | topAppType %prec prec_toptuptyptail_prefix 
      { let t, argInfo = $1
