@@ -3458,9 +3458,14 @@ typedSequentialExprBlockR:
   | recover
     { fun mStart -> arbExpr ("typedSequentialExprBlockR", mStart) }
 
-typedSequentialExpr: 
+typedSequentialExpr:
   | sequentialExpr COLON typeWithTypeConstraints
-    { SynExpr.Typed ($1, $3, unionRanges $1.Range $3.Range) }
+      { SynExpr.Typed ($1, $3, unionRanges $1.Range $3.Range) }
+
+  | sequentialExpr COLON recover
+    { let mColon = rhs parseState 2
+      let ty = SynType.FromParseError(mColon.EndRange)
+      SynExpr.Typed ($1, ty, unionRanges $1.Range mColon) }
 
   | sequentialExpr
     { $1 }
@@ -3889,13 +3894,28 @@ declExpr:
        SynExpr.YieldOrReturn ((true, true), expr, (unionRanges mArrow expr.Range)) }
 
   | declExpr COLON_QMARK typ
-     { SynExpr.TypeTest ($1, $3, unionRanges $1.Range $3.Range) }
+      { SynExpr.TypeTest($1, $3, unionRanges $1.Range $3.Range) }
+
+  | declExpr COLON_QMARK recover
+      { let mColon = rhs parseState 2
+        let ty = SynType.FromParseError(mColon.EndRange)
+        SynExpr.TypeTest($1, ty, unionRanges $1.Range mColon) }
 
   | declExpr COLON_GREATER typ
-     { SynExpr.Upcast ($1, $3, unionRanges $1.Range $3.Range) } 
+      { SynExpr.Upcast($1, $3, unionRanges $1.Range $3.Range) }
+
+  | declExpr COLON_GREATER recover
+      { let mOp = rhs parseState 2
+        let ty = SynType.FromParseError(mOp.EndRange)
+        SynExpr.Upcast($1, ty, unionRanges $1.Range mOp) }
 
   | declExpr COLON_QMARK_GREATER typ
      { SynExpr.Downcast ($1, $3, unionRanges $1.Range $3.Range) }
+
+  | declExpr COLON_QMARK_GREATER recover
+      { let mOp = rhs parseState 2
+        let ty = SynType.FromParseError(mOp.EndRange)
+        SynExpr.Downcast($1, ty, unionRanges $1.Range mOp) }
 
   | declExpr COLON_EQUALS declExpr
      { mkSynInfix (rhs parseState 2) $1 ":=" $3 }
