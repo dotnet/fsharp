@@ -2524,9 +2524,28 @@ exconDefn:
        SynExceptionDefn($1, mWith, optClassDefn, ($1.Range, optClassDefn) ||> unionRangeWithListBy (fun cd -> cd.Range) ) }
   
 /* Part of an exception definition */
-exconCore: 
+exconCore:
   | EXCEPTION opt_attributes opt_access exconIntro exconRepr
-     { SynExceptionDefnRepr($2, $4, $5, PreXmlDoc.Empty, $3, (match $5 with None -> rhs2 parseState 1 4 | Some p -> unionRanges (rangeOfLongIdent p) (rhs2 parseState 1 4))) }
+      { let m =
+            match $5 with
+            | None -> rhs2 parseState 1 4
+            | Some p -> unionRanges (rangeOfLongIdent p) (rhs2 parseState 1 4)
+        SynExceptionDefnRepr($2, $4, $5, PreXmlDoc.Empty, $3, m) }
+
+  | EXCEPTION opt_attributes opt_access recover
+      { let m =
+            match $3 with
+            | Some access -> unionRanges (rhs parseState 1) access.Range 
+            | _ ->
+
+            match $2 with
+            | [] -> rhs parseState 1
+            | attrs -> ((rhs parseState 1), attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range) 
+
+        let id = SynIdent(mkSynId m.EndRange "", None)
+        let unionCase = SynUnionCase([], id, SynUnionCaseKind.Fields [], PreXmlDoc.Empty, None, m, { BarRange = None })
+
+        SynExceptionDefnRepr($2, unionCase, None, PreXmlDoc.Empty, $3, m) }
   
 /* Part of an exception definition */
 exconIntro:
