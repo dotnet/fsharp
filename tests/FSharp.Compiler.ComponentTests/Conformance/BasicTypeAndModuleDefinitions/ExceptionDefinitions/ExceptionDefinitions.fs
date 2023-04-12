@@ -182,7 +182,7 @@ module ExceptionDefinition =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 10, Line 7, Col 11, Line 7, Col 12, "Unexpected reserved keyword in exception definition. Expected identifier or other token.")
+            (Error 3563, Line 7, Col 11, Line 7, Col 17, "This is not a valid identifier")
         ]
 
     // SOURCE=E_DynamicInvocationNotSupported.fsx SCFLAGS=--test:ErrorRanges                   # E_DynamicInvocationNotSupported.fsx

@@ -91,7 +91,7 @@ module UnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 10, Line 9, Col 12, Line 9, Col 13, "Unexpected reserved keyword in union case. Expected identifier, '(', '(*)' or other token.")
+            (Error 3563, Line 9, Col 12, Line 9, Col 18, "This is not a valid identifier")
         ]
 
     //SOURCE=E_BeginWithUppercaseNoPipe01.fsx SCFLAGS="--test:ErrorRanges"                        # E_BeginWithUppercaseNoPipe01.fsx

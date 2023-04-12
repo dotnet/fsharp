@@ -527,6 +527,11 @@
         <target state="translated">IF-FSHARP/IF-CAML bölgeleri artık desteklenmiyor</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexInvalidIdentifier">
+        <source>This is not a valid identifier</source>
+        <target state="new">This is not a valid identifier</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexRBraceInInterpolatedString">
         <source>A '}}' character must be escaped (by doubling) in an interpolated string.</source>
         <target state="translated">Bir '}}' karakteri, düz metin arasına kod eklenmiş bir dizede kaçış dizisi ile (yineleme yapılarak) belirtilir.</target>

@@ -588,19 +588,6 @@
     IL_0006:  ret
   } 
 
-  .method public hidebysig specialname instance void 
-          set_Type(class [runtime]System.Type 'value') cil managed
-  {
-    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  ldarg.1
-    IL_0002:  stfld      class [runtime]System.Type System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::Type@
-    IL_0007:  ret
-  } 
-
   .method public hidebysig specialname instance valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes 
           get_MemberType() cil managed
   {
@@ -613,25 +600,11 @@
     IL_0006:  ret
   } 
 
-  .method public hidebysig specialname instance void 
-          set_MemberType(valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes 'value') cil managed
-  {
-    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  ldarg.1
-    IL_0002:  stfld      valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::MemberType@
-    IL_0007:  ret
-  } 
-
   .property instance valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes
           MemberType()
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .set instance void System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::set_MemberType(valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes)
     .get instance valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::get_MemberType()
   } 
   .property instance class [runtime]System.Type
@@ -639,7 +612,6 @@
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .set instance void System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::set_Type(class [runtime]System.Type)
     .get instance class [runtime]System.Type System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::get_Type()
   } 
 } 
