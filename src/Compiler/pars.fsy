@@ -3020,6 +3020,11 @@ simplePattern:
   | simplePattern COLON typeWithTypeConstraints
       { SynPat.Typed($1, $3, lhs parseState) }
 
+  | simplePattern COLON recover
+      { let mColon = rhs parseState 2
+        let ty = SynType.FromParseError(mColon.EndRange)
+        SynPat.Typed($1, ty, unionRanges $1.Range mColon) }
+
   | attributes simplePattern %prec paren_pat_attribs
       { SynPat.Attrib($2, $1, lhs parseState) }
 
@@ -3341,9 +3346,14 @@ parenPattern:
   | conjParenPatternElements
       { SynPat.Ands(List.rev $1, rhs2 parseState 1 3) }
 
-  | parenPattern COLON  typeWithTypeConstraints %prec paren_pat_colon
-      { let mLhs = lhs parseState 
-        SynPat.Typed($1, $3, mLhs) } 
+  | parenPattern COLON typeWithTypeConstraints %prec paren_pat_colon
+      { let mLhs = lhs parseState
+        SynPat.Typed($1, $3, mLhs) }
+
+  | parenPattern COLON recover
+      { let mColon = rhs parseState 2
+        let ty = SynType.FromParseError(mColon.EndRange)
+        SynPat.Typed($1, ty, unionRanges $1.Range mColon) }
 
   | attributes parenPattern  %prec paren_pat_attribs
       { let mLhs = lhs parseState 
@@ -5114,15 +5124,20 @@ topTypeWithTypeConstraints:
        // nb. it doesn't matter where the constraints go in the structure of the type. 
        SynType.WithGlobalConstraints(ty, List.rev $3, lhs parseState), arity }
 
-opt_topReturnTypeWithTypeConstraints: 
-  |             
-     { None } 
+opt_topReturnTypeWithTypeConstraints:
+  |
+      { None }
 
-  | COLON topTypeWithTypeConstraints 
-     { let mColon = rhs parseState 1
-       let ty, arity = $2 
-       let arity = (match arity with SynValInfo([], rmdata)-> rmdata | _ -> SynInfo.unnamedRetVal)
-       Some (Some mColon, SynReturnInfo((ty, arity), rhs parseState 2)) }
+  | COLON topTypeWithTypeConstraints
+      { let mColon = rhs parseState 1
+        let ty, arity = $2
+        let arity = (match arity with SynValInfo([], rmdata)-> rmdata | _ -> SynInfo.unnamedRetVal)
+        Some (Some mColon, SynReturnInfo((ty, arity), rhs parseState 2)) }
+
+  | COLON recover
+      { let mColon = rhs parseState 1
+        let ty, arity = SynType.FromParseError(mColon.EndRange), SynInfo.unnamedRetVal
+        Some (Some mColon, SynReturnInfo((ty, arity), mColon.EndRange)) }
 
 topType: 
   | topTupleType RARROW topType 
@@ -5156,31 +5171,61 @@ topTupleTypeElements:
        [ SynTupleTypeSegment.Type t, Some argInfo ] }
 
 topAppType:
-  | attributes appType COLON appType 
-     { match $2 with 
-       | SynType.LongIdent(SynLongIdent([id], _, _)) -> 
-           let m = rhs2 parseState 1 4
-           SynType.SignatureParameter($1, false, Some id, $4, m), SynArgInfo($1, false, Some id)
-       | _ -> raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsSyntaxErrorInLabeledType())  }
+  | attributes appType COLON appType
+      { match $2 with
+        | SynType.LongIdent(SynLongIdent([id], _, _)) ->
+            let m = unionRanges (rhs parseState 1) $4.Range
+            SynType.SignatureParameter($1, false, Some id, $4, m), SynArgInfo($1, false, Some id)
+        | _ -> raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsSyntaxErrorInLabeledType()) }
 
-  | attributes QMARK ident COLON appType 
-     { let m = rhs2 parseState 1 5
-       SynType.SignatureParameter($1, true, Some $3, $5, m), SynArgInfo($1, true, Some $3) }
+  | attributes appType COLON recover
+      { match $2 with
+        | SynType.LongIdent(SynLongIdent([id], _, _)) ->
+            let mColon = rhs parseState 2
+            let m = unionRanges (rhs parseState 1) mColon
+            let ty = SynType.FromParseError(mColon.EndRange)
+            SynType.SignatureParameter($1, false, Some id, ty, m), SynArgInfo($1, false, Some id)
+        | _ -> raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsSyntaxErrorInLabeledType()) }
 
-  | attributes appType 
-     { let m = rhs2 parseState 1 2
-       SynType.SignatureParameter($1, false, None, $2, m), SynArgInfo($1, false, None) }
+  | attributes QMARK ident COLON appType
+      { let m = unionRanges (rhs parseState 1) $5.Range
+        SynType.SignatureParameter($1, true, Some $3, $5, m), SynArgInfo($1, true, Some $3) }
 
-  | appType COLON appType 
-     { match $1 with 
-       | SynType.LongIdent(SynLongIdent([id], _, _)) -> 
-           let m = rhs2 parseState 1 3
-           SynType.SignatureParameter([], false, Some id, $3, m), SynArgInfo([], false, Some id)
-       | _ -> raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsSyntaxErrorInLabeledType())  }
+  | attributes QMARK ident COLON recover
+      { let mColon = rhs parseState 4
+        let m = unionRanges (rhs parseState 1) mColon
+        let ty = SynType.FromParseError(mColon.EndRange)
+        SynType.SignatureParameter($1, true, Some $3, ty, m), SynArgInfo($1, true, Some $3) }
 
-  | QMARK ident COLON appType 
-     { let m = rhs2 parseState 1 4
-       SynType.SignatureParameter([], true, Some $2, $4, m), SynArgInfo([], true, Some $2) }
+  | attributes appType
+      { let m = unionRanges (rhs parseState 1) $2.Range
+        SynType.SignatureParameter($1, false, None, $2, m), SynArgInfo($1, false, None) }
+
+  | appType COLON appType
+      { match $1 with
+        | SynType.LongIdent(SynLongIdent([id], _, _)) ->
+            let m = unionRanges (rhs parseState 1) $3.Range
+            SynType.SignatureParameter([], false, Some id, $3, m), SynArgInfo([], false, Some id)
+        | _ -> raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsSyntaxErrorInLabeledType()) }
+
+  | appType COLON recover
+      { match $1 with
+        | SynType.LongIdent(SynLongIdent([id], _, _)) ->
+            let mColon = rhs parseState 2
+            let m = unionRanges $1.Range mColon
+            let ty = SynType.FromParseError(mColon.EndRange)
+            SynType.SignatureParameter([], false, Some id, ty, m), SynArgInfo([], false, Some id)
+        | _ -> raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsSyntaxErrorInLabeledType()) }
+
+  | QMARK ident COLON appType
+      { let m = unionRanges (rhs parseState 1) $4.Range
+        SynType.SignatureParameter([], true, Some $2, $4, m), SynArgInfo([], true, Some $2) }
+
+  | QMARK ident COLON recover
+      { let mColon = rhs parseState 3
+        let m = unionRanges (rhs parseState 1) mColon
+        let ty = SynType.FromParseError(mColon.EndRange)
+        SynType.SignatureParameter([], true, Some $2, ty, m), SynArgInfo([], true, Some $2) }
 
   | appType 
      { $1, SynArgInfo([], false, None) }
