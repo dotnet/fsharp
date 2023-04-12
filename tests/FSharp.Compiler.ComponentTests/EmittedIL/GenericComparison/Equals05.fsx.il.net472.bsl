@@ -588,7 +588,7 @@
     IL_0006:  ret
   } 
 
-  .method private hidebysig specialname instance void 
+  .method public hidebysig specialname instance void 
           set_Type(class [runtime]System.Type 'value') cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -613,7 +613,7 @@
     IL_0006:  ret
   } 
 
-  .method private hidebysig specialname instance void 
+  .method public hidebysig specialname instance void 
           set_MemberType(valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes 'value') cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
