@@ -9068,7 +9068,10 @@ module PresenceOfReflectionApi =
     let testPresenceOfReflectionApi () =
         test "test8800" (lazy(Microsoft.FSharp.Reflection.FSharpValue.PreComputeRecordConstructorInfo typeof<MyRecord> |> ignore; "Done")) "Done"
 
-module PercentaPublicTests =
+    let tests () =
+        testPresenceOfReflectionApi ()
+
+module PercentAPublicTests =
     type MyRecord =
         {
             A: string
@@ -9077,12 +9080,19 @@ module PercentaPublicTests =
             D: float
         }
 
-    let testPercentA () =
+    let testPercentAMyRecord () =
         let data = { A = "Hello, World!"; B = 1.027m; C = 1028; D = 1.029 }
         test "test8900" (lazy (sprintf "%A" data).Replace("\n", ";"))  """{ A = "Hello, World!";  B = 1.027M;  C = 1028;  D = 1.029 }"""
 
-module PercentaInternalTests =
+    let testPercentAMyAnnonymousRecord () =
+        let data = {| A = "Hello, World!"; B = 1.027m; C = 1028; D = 1.029 |}
+        test "test8901" (lazy (sprintf "%A" data).Replace("\n", ";"))  """{ A = "Hello, World!";  B = 1.027M;  C = 1028;  D = 1.029 }"""
 
+    let tests () =
+        testPercentAMyRecord ()
+        testPercentAMyAnnonymousRecord ()
+
+module PercentAInternalTests =
     type internal MyInternalRecord =
         {
             A: string
@@ -9102,6 +9112,10 @@ module PercentaInternalTests =
         let data = { A = "Hello, World!"; B = 1.027m; C = 1028; D = 1.029 }
         test "test9100" (lazy (sprintf "%+A" data).Replace("\n", ";"))  """{ A = "Hello, World!";  B = 1.027M;  C = 1028;  D = 1.029 }"""
 
+    let tests () =
+        testPercentA ()
+        testPercentPlusA ()
+
 [<EntryPoint>]
 let main _ =
     testing1()
@@ -9114,10 +9128,9 @@ let main _ =
     func6000()
     func7000()
     func8000()
-    PresenceOfReflectionApi.testPresenceOfReflectionApi ()
-    PercentaPublicTests.testPercentA ()
-    PercentaInternalTests.testPercentA ()
-    PercentaInternalTests.testPercentPlusA ()
+    PresenceOfReflectionApi.tests ()
+    PercentAPublicTests.tests ()
+    PercentAInternalTests.tests ()
 
     match !failures with 
     | [] -> 
