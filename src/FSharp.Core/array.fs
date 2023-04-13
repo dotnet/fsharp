@@ -2142,13 +2142,14 @@ module Array =
         let inline reduce ([<InlineIfLambda>] reduction) (array: _[]) =
             array |> reduceBy id reduction
 
+        let inline vFst struct (a, _) =
+            a
+
+        let inline vSnd struct (_, b) =
+            b
+
         [<CompiledName("MinBy")>]
         let inline minBy ([<InlineIfLambda>] projection) (array: _[]) =
-            let inline vFst struct (a, _) =
-                a
-
-            let inline vSnd struct (_, b) =
-                b
 
             array
             |> reduceBy (fun x -> struct (projection x, x)) (fun a b -> if vFst a < vFst b then a else b)
@@ -2171,11 +2172,6 @@ module Array =
 
         [<CompiledName("MaxBy")>]
         let inline maxBy projection (array: _[]) =
-            let inline vFst struct (a, _) =
-                a
-
-            let inline vSnd struct (_, b) =
-                b
 
             array
             |> reduceBy (fun x -> struct (projection x, x)) (fun a b -> if vFst a > vFst b then a else b)
