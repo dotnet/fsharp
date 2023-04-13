@@ -9,9 +9,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open Hints
 
-type InlineTypeHints(
-    parseResults: FSharpParseFileResults,
-    symbol: FSharpMemberOrFunctionOrValue) =
+type InlineTypeHints(parseResults: FSharpParseFileResults, symbol: FSharpMemberOrFunctionOrValue) =
 
     let getHintParts (symbol: FSharpMemberOrFunctionOrValue) (symbolUse: FSharpSymbolUse) =
 
@@ -67,8 +65,8 @@ type InlineTypeHints(
         && isNotAfterDot
         && isNotTypeAlias
 
-    member _.getHints symbolUse = 
+    member _.getHints symbolUse =
         [
             if isValidForHint symbolUse then
-                getHint symbol symbolUse 
+                getHint symbol symbolUse
         ]

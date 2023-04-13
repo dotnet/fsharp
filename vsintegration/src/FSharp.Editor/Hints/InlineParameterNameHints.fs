@@ -42,8 +42,7 @@ type InlineParameterNameHints(parseResults: FSharpParseFileResults) =
         |> Option.filter (not << Seq.isEmpty)
         |> Option.defaultValue Seq.empty
 
-    let getTupleRanges =
-        Seq.map (fun location -> location.ArgumentRange) >> Seq.toList
+    let getTupleRanges = Seq.map (fun location -> location.ArgumentRange) >> Seq.toList
 
     let getCurryRanges (symbolUse: FSharpSymbolUse) (parseResults: FSharpParseFileResults) =
 
@@ -75,7 +74,7 @@ type InlineParameterNameHints(parseResults: FSharpParseFileResults) =
             false
 
     let isUnionCaseValidForHint (symbol: FSharpUnionCase) (symbolUse: FSharpSymbolUse) =
-        symbolUse.IsFromUse 
+        symbolUse.IsFromUse
         && symbol.DisplayName <> "(::)"
         // If a case does not use field names, don't even bother getting applied argument ranges
         && Seq.toList symbol.Fields |> Seq.exists doesFieldNameExist
@@ -83,9 +82,10 @@ type InlineParameterNameHints(parseResults: FSharpParseFileResults) =
     member _.getHintsForMemberOrFunctionOrValue
         (sourceText: SourceText)
         (symbol: FSharpMemberOrFunctionOrValue)
-        (symbolUse: FSharpSymbolUse) =
+        (symbolUse: FSharpSymbolUse)
+        =
 
-        if isMemberOrFunctionOrValueValidForHint symbol symbolUse then 
+        if isMemberOrFunctionOrValueValidForHint symbol symbolUse then
             let parameters = symbol.CurriedParameterGroups |> Seq.concat
             let argumentLocations = parseResults |> getArgumentLocations symbolUse
 
@@ -118,6 +118,7 @@ type InlineParameterNameHints(parseResults: FSharpParseFileResults) =
         if isUnionCaseValidForHint symbol symbolUse then
 
             let fields = Seq.toList symbol.Fields
+
             let ranges =
                 parseResults.GetAllArgumentsForFunctionApplicationAtPosition symbolUse.Range.Start
 

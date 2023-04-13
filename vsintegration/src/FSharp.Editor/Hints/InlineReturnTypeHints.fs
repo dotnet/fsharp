@@ -8,9 +8,7 @@ open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open Hints
 
-type InlineReturnTypeHints(
-    parseFileResults: FSharpParseFileResults,
-    symbol: FSharpMemberOrFunctionOrValue) =
+type InlineReturnTypeHints(parseFileResults: FSharpParseFileResults, symbol: FSharpMemberOrFunctionOrValue) =
 
     let getHintParts (symbolUse: FSharpSymbolUse) =
         symbol.GetReturnTypeLayout symbolUse.DisplayContext
@@ -30,8 +28,7 @@ type InlineReturnTypeHints(
                 Parts = parts
             })
 
-    let isValidForHint (symbol: FSharpMemberOrFunctionOrValue) =
-        symbol.IsFunction
+    let isValidForHint (symbol: FSharpMemberOrFunctionOrValue) = symbol.IsFunction
 
     member _.getHints(symbolUse: FSharpSymbolUse) =
         [

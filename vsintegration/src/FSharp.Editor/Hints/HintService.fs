@@ -17,16 +17,14 @@ module HintService =
             | hintKind :: hintKinds ->
                 match (hintKind, symbol) with
                 | HintKind.TypeHint, (:? FSharpMemberOrFunctionOrValue as symbol) ->
-                    symbolUses 
-                    |> Seq.collect (InlineTypeHints(parseResults, symbol)).getHints
+                    symbolUses |> Seq.collect (InlineTypeHints(parseResults, symbol)).getHints
                 | HintKind.ReturnTypeHint, (:? FSharpMemberOrFunctionOrValue as symbol) ->
-                    symbolUses 
-                    |> Seq.collect (InlineReturnTypeHints(parseResults, symbol).getHints)
+                    symbolUses |> Seq.collect (InlineReturnTypeHints(parseResults, symbol).getHints)
                 | HintKind.ParameterNameHint, (:? FSharpMemberOrFunctionOrValue as symbol) ->
-                    symbolUses 
+                    symbolUses
                     |> Seq.collect (InlineParameterNameHints(parseResults).getHintsForMemberOrFunctionOrValue sourceText symbol)
                 | HintKind.ParameterNameHint, (:? FSharpUnionCase as symbol) ->
-                    symbolUses 
+                    symbolUses
                     |> Seq.collect (InlineParameterNameHints(parseResults).getHintsForUnionCase symbol)
                 | _ -> []
                 :: acc
@@ -35,9 +33,7 @@ module HintService =
         getHints (hintKinds |> Set.toList) []
 
     let private getHintsForSymbol (sourceText: SourceText) parseResults hintKinds (symbol, symbolUses) =
-        symbol
-        |> getHints sourceText parseResults hintKinds symbolUses
-        |> Seq.concat
+        symbol |> getHints sourceText parseResults hintKinds symbolUses |> Seq.concat
 
     let getHintsForDocument sourceText (document: Document) hintKinds userOpName cancellationToken =
         async {
