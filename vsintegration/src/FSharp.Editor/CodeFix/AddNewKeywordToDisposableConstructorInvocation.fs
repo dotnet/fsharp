@@ -3,39 +3,42 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
+open System.Threading
 open System.Threading.Tasks
+open System.Collections.Immutable
 
+open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
+open Microsoft.CodeAnalysis.CodeActions
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.AddNewKeyword); Shared>]
 type internal FSharpAddNewKeywordCodeFixProvider() =
     inherit CodeFixProvider()
 
-    static let fixableDiagnosticIds = set [ "FS0760" ]
+    static let title = SR.AddNewKeyword()
+    override _.FixableDiagnosticIds = ImmutableArray.Create "FS0760"
 
-    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    member this.GetChangedDocument(document: Document, diagnostics: ImmutableArray<Diagnostic>, ct: CancellationToken) =
+        backgroundTask {
+            let! sourceText = document.GetTextAsync(ct)
 
-    override _.RegisterCodeFixesAsync context : Task =
-        async {
-            let title = SR.AddNewKeyword()
+            let changes =
+                diagnostics
+                |> Seq.map (fun d -> TextChange(TextSpan(d.Location.SourceSpan.Start, 0), "new "))
 
-            let diagnostics =
-                context.Diagnostics
-                |> Seq.filter (fun x -> fixableDiagnosticIds |> Set.contains x.Id)
-                |> Seq.toImmutableArray
-
-            let codeFix =
-                CodeFixHelpers.createTextChangeCodeFix (
-                    CodeFix.AddNewKeyword,
-                    title,
-                    context,
-                    (fun () -> asyncMaybe.Return [| TextChange(TextSpan(context.Span.Start, 0), "new ") |])
-                )
-
-            context.RegisterCodeFix(codeFix, diagnostics)
+            CodeFixHelpers.reportCodeFixRecommendation diagnostics document CodeFix.AddNewKeyword
+            return document.WithText(sourceText.WithChanges(changes))
         }
-        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
 
-    override this.GetFixAllProvider() = FixAllProvider.Create(fun fixAllCtx doc allDiagnostics -> 
-        this.GetChangedDocument(doc,allDiagnostics, fixAllCtx.CancellationToken) )
+    override this.RegisterCodeFixesAsync ctx : Task =
+        backgroundTask {
+
+            let codeAction =
+                CodeAction.Create(title, (fun ct -> this.GetChangedDocument(ctx.Document, ctx.Diagnostics, ct)), title)
+
+            ctx.RegisterCodeFix(codeAction, this.GetPrunedDiagnostics(ctx))
+        }
+
+    override this.GetFixAllProvider() =
+        FixAllProvider.Create(fun fixAllCtx doc allDiagnostics -> this.GetChangedDocument(doc, allDiagnostics, fixAllCtx.CancellationToken))

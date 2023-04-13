@@ -71,15 +71,17 @@ type internal FsharpFixRemoveDotFromIndexerAccessOptIn() as this =
 
     override _.RegisterCodeFixesAsync context : Task =
         backgroundTask {
-            let relevantDiagnostics = this.GetPrunedDiagnostics(context)
-
-            if not relevantDiagnostics.IsEmpty then
-                this.RegisterFix(CodeFix.RemoveIndexerDotBeforeBracket, title, context, TextChange(context.Span, ""))
+            this.RegisterFix(CodeFix.RemoveIndexerDotBeforeBracket, title, context, TextChange(context.Span, ""))
         }
 
-    override this.GetFixAllProvider() = FixAllProvider.Create(fun fixAllCtx doc allDiagnostics -> 
-        task{
-            let changes = allDiagnostics |> Seq.map (fun x -> TextChange(x.Location.SourceSpan,""))
-            let! text = doc.GetTextAsync(fixAllCtx.CancellationToken)
-            return doc.WithText(text.WithChanges(changes))
-        } )
+    override this.GetFixAllProvider() =
+        FixAllProvider.Create(fun fixAllCtx doc allDiagnostics ->
+            backgroundTask {
+                let changes =
+                    allDiagnostics |> Seq.map (fun x -> TextChange(x.Location.SourceSpan, ""))
+
+                let! text = doc.GetTextAsync(fixAllCtx.CancellationToken)
+
+                CodeFixHelpers.reportCodeFixRecommendation allDiagnostics doc CodeFix.RemoveIndexerDotBeforeBracket
+                return doc.WithText(text.WithChanges(changes))
+            })

@@ -2,14 +2,18 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-open System.Collections.Immutable
 open System.Composition
+open System.Threading
 open System.Threading.Tasks
+open System.Collections.Immutable
+open System.Text.RegularExpressions
 
+open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
-
+open Microsoft.CodeAnalysis.CodeActions
 open Microsoft.VisualStudio.FSharp.Editor.SymbolHelpers
+
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Tokenization.FSharpKeywords
 
@@ -18,60 +22,64 @@ type internal FSharpRenameParamToMatchSignature [<ImportingConstructor>] () =
 
     inherit CodeFixProvider()
 
-    let fixableDiagnosticIds = [ "FS3218" ]
+    let getSuggestion (d: Diagnostic) =
+        let parts = Regex.Match(d.GetMessage(), ".+'(.+)'.+'(.+)'.+")
 
-    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+        if parts.Success then
+            ValueSome parts.Groups.[1].Value
+        else
+            ValueNone
 
-    override _.RegisterCodeFixesAsync context : Task =
-        asyncMaybe {
-            match
-                context.Diagnostics
-                |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id)
-                |> Seq.toList
-            with
-            | [ diagnostic ] ->
-                let message = diagnostic.GetMessage()
+    override _.FixableDiagnosticIds = ImmutableArray.Create("FS3218")
 
-                let parts =
-                    System.Text.RegularExpressions.Regex.Match(message, ".+'(.+)'.+'(.+)'.+")
+    member this.GetChangedDocument(document: Document, diagnostics: ImmutableArray<Diagnostic>, ct: CancellationToken) =
+        backgroundTask {
+            let! sourceText = document.GetTextAsync(ct)
 
-                if parts.Success then
+            let! changes =
+                seq {
+                    for d in diagnostics do
+                        let suggestionOpt = getSuggestion d
 
-                    let diagnostics = ImmutableArray.Create diagnostic
-                    let suggestion = parts.Groups.[1].Value
-                    let replacement = NormalizeIdentifierBackticks suggestion
+                        match suggestionOpt with
+                        | ValueSome suggestion ->
+                            let replacement = NormalizeIdentifierBackticks suggestion
 
-                    let computeChanges () =
-                        asyncMaybe {
-                            let document = context.Document
-                            let! cancellationToken = Async.CancellationToken |> liftAsync
-                            let! sourceText = document.GetTextAsync(cancellationToken)
-                            let! symbolUses = getSymbolUsesOfSymbolAtLocationInDocument (document, context.Span.Start)
+                            async {
+                                let! symbolUses = getSymbolUsesOfSymbolAtLocationInDocument (document, d.Location.SourceSpan.Start)
+                                let symbolUses = symbolUses |> Option.defaultValue [||]
 
-                            let changes =
-                                [|
-                                    for symbolUse in symbolUses do
-                                        match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range) with
-                                        | None -> ()
-                                        | Some span ->
-                                            let textSpan = Tokenizer.fixupSpan (sourceText, span)
-                                            yield TextChange(textSpan, replacement)
-                                |]
+                                return
+                                    [|
+                                        for symbolUse in symbolUses do
+                                            match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range) with
+                                            | None -> ()
+                                            | Some span ->
+                                                let textSpan = Tokenizer.fixupSpan (sourceText, span)
+                                                yield TextChange(textSpan, replacement)
+                                    |]
 
-                            return changes
-                        }
+                            }
+                        | ValueNone -> ()
+                }
+                |> Async.Parallel
 
-                    let title =
-                        CompilerDiagnostics.GetErrorMessage(FSharpDiagnosticKind.ReplaceWithSuggestion suggestion)
-
-                    let codefix =
-                        CodeFixHelpers.createTextChangeCodeFix (CodeFix.FSharpRenameParamToMatchSignature, title, context, computeChanges)
-
-                    context.RegisterCodeFix(codefix, diagnostics)
-            | _ -> ()
+            CodeFixHelpers.reportCodeFixRecommendation diagnostics document CodeFix.FSharpRenameParamToMatchSignature
+            return document.WithText(sourceText.WithChanges(changes |> Array.concat))
         }
-        |> Async.Ignore
-        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
 
-    override this.GetFixAllProvider() = FixAllProvider.Create(fun fixAllCtx doc allDiagnostics -> 
-        this.GetChangedDocument(doc,allDiagnostics, fixAllCtx.CancellationToken) )
+    override this.RegisterCodeFixesAsync ctx : Task =
+        backgroundTask {
+            let title = ctx.Diagnostics |> Seq.head |> getSuggestion
+
+            match title with
+            | ValueSome title ->
+                let codeAction =
+                    CodeAction.Create(title, (fun ct -> this.GetChangedDocument(ctx.Document, ctx.Diagnostics, ct)), title)
+
+                ctx.RegisterCodeFix(codeAction, this.GetPrunedDiagnostics(ctx))
+            | ValueNone -> ()
+        }
+
+    override this.GetFixAllProvider() =
+        FixAllProvider.Create(fun fixAllCtx doc allDiagnostics -> this.GetChangedDocument(doc, allDiagnostics, fixAllCtx.CancellationToken))

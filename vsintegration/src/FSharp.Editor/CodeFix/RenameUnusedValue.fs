@@ -4,93 +4,177 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Composition
+open System.Threading
 open System.Threading.Tasks
+open System.Collections.Immutable
 
+open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
+open Microsoft.CodeAnalysis.CodeActions
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
 open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.RenameUnusedValue); Shared>]
-type internal FSharpRenameUnusedValueCodeFixProvider [<ImportingConstructor>] () =
+module UnusedCodeFixHelper =
+    let getUnusedSymbol (sourceText: SourceText) (textSpan: TextSpan) (document: Document) =
+
+        let ident = sourceText.ToString(textSpan)
+
+        // Prefixing operators and backticked identifiers does not make sense.
+        // We have to use the additional check for backtickes
+        if PrettyNaming.IsIdentifierName ident then
+            asyncMaybe {
+                let! lexerSymbol =
+                    document.TryFindFSharpLexerSymbolAsync(textSpan.Start, SymbolLookupKind.Greedy, false, false, CodeFix.RenameUnusedValue)
+
+                let m = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, textSpan, sourceText)
+
+                let lineText = (sourceText.Lines.GetLineFromPosition textSpan.Start).ToString()
+
+                let! _, checkResults =
+                    document.GetFSharpParseAndCheckResultsAsync(CodeFix.RenameUnusedValue)
+                    |> liftAsync
+
+                return! checkResults.GetSymbolUseAtLocation(m.StartLine, m.EndColumn, lineText, lexerSymbol.FullIsland)
+
+            }
+        else
+            async { return None }
+
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.PrefixUnusedValue); Shared>]
+type internal FSharpPrefixUnusedValueWithUnderscoreCodeFixProvider [<ImportingConstructor>] () =
 
     inherit CodeFixProvider()
 
-    let fixableDiagnosticIds = set [ "FS1182" ]
+    static let title (symbolName: string) =
+        String.Format(SR.PrefixValueNameWithUnderscore(), symbolName)
 
-    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = ImmutableArray.Create("FS1182")
 
-    override _.RegisterCodeFixesAsync context : Task =
-        asyncMaybe {
-            // Don't show code fixes for unused values, even if they are compiler-generated.
-            do! Option.guard context.Document.Project.IsFSharpCodeFixesUnusedDeclarationsEnabled
+    member this.GetChangedDocument(document: Document, diagnostics: ImmutableArray<Diagnostic>, ct: CancellationToken) =
+        backgroundTask {
+            let! sourceText = document.GetTextAsync(ct)
 
-            let document = context.Document
-            let! sourceText = document.GetTextAsync(context.CancellationToken)
-            let ident = sourceText.ToString(context.Span)
+            let! changes =
+                seq {
+                    for d in diagnostics do
+                        let textSpan = d.Location.SourceSpan
 
-            // Prefixing operators and backticked identifiers does not make sense.
-            // We have to use the additional check for backtickes
-            if PrettyNaming.IsIdentifierName ident then
-                let! lexerSymbol =
-                    document.TryFindFSharpLexerSymbolAsync(
-                        context.Span.Start,
-                        SymbolLookupKind.Greedy,
-                        false,
-                        false,
-                        nameof (FSharpRenameUnusedValueCodeFixProvider)
-                    )
+                        yield
+                            async {
+                                let! symbolUse = UnusedCodeFixHelper.getUnusedSymbol sourceText textSpan document
 
-                let m =
-                    RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)
+                                return
+                                    seq {
+                                        match symbolUse with
+                                        | None -> ()
+                                        | Some symbolUse ->
+                                            match symbolUse.Symbol with
+                                            | :? FSharpMemberOrFunctionOrValue -> yield TextChange(TextSpan(textSpan.Start, 0), "_")
+                                            | _ -> ()
+                                    }
+                            }
+                }
+                |> Async.Parallel
 
-                let lineText = (sourceText.Lines.GetLineFromPosition context.Span.Start).ToString()
+            CodeFixHelpers.reportCodeFixRecommendation diagnostics document CodeFix.PrefixUnusedValue
+            return document.WithText(sourceText.WithChanges(changes |> Seq.concat))
+        }
 
-                let! _, checkResults =
-                    document.GetFSharpParseAndCheckResultsAsync(nameof (FSharpRenameUnusedValueCodeFixProvider))
-                    |> liftAsync
+    override this.RegisterCodeFixesAsync ctx : Task =
+        backgroundTask {
+            if ctx.Document.Project.IsFSharpCodeFixesUnusedDeclarationsEnabled then
+                let! sourceText = ctx.Document.GetTextAsync(ctx.CancellationToken)
+                let! unusedSymbol = UnusedCodeFixHelper.getUnusedSymbol sourceText ctx.Span ctx.Document
 
-                let! symbolUse = checkResults.GetSymbolUseAtLocation(m.StartLine, m.EndColumn, lineText, lexerSymbol.FullIsland)
-                let symbolName = symbolUse.Symbol.DisplayName
+                match unusedSymbol with
+                | None -> ()
+                | Some symbolUse ->
+                    match symbolUse.Symbol with
+                    | :? FSharpMemberOrFunctionOrValue ->
+                        let prefixTitle = title symbolUse.Symbol.DisplayName
 
-                let diagnostics =
-                    context.Diagnostics
-                    |> Seq.filter (fun x -> fixableDiagnosticIds |> Set.contains x.Id)
-                    |> Seq.toImmutableArray
-
-                match symbolUse.Symbol with
-                | :? FSharpMemberOrFunctionOrValue as func ->
-                    let prefixTitle = String.Format(SR.PrefixValueNameWithUnderscore(), symbolName)
-
-                    let prefixCodeFix =
-                        CodeFixHelpers.createTextChangeCodeFix (
-                            CodeFix.RenameUnusedValue,
-                            prefixTitle,
-                            context,
-                            (fun () -> asyncMaybe.Return [| TextChange(TextSpan(context.Span.Start, 0), "_") |])
-                        )
-
-                    context.RegisterCodeFix(prefixCodeFix, diagnostics)
-
-                    if func.IsValue then
-                        let replaceTitle = String.Format(SR.RenameValueToUnderscore(), symbolName)
-
-                        let replaceCodeFix =
-                            CodeFixHelpers.createTextChangeCodeFix (
-                                CodeFix.RenameUnusedValue,
-                                replaceTitle,
-                                context,
-                                (fun () -> asyncMaybe.Return [| TextChange(context.Span, "_") |])
+                        let codeAction =
+                            CodeAction.Create(
+                                prefixTitle,
+                                (fun ct -> this.GetChangedDocument(ctx.Document, ctx.Diagnostics, ct)),
+                                prefixTitle
                             )
 
-                        context.RegisterCodeFix(replaceCodeFix, diagnostics)
-                | _ -> ()
+                        ctx.RegisterCodeFix(codeAction, this.GetPrunedDiagnostics(ctx))
+                    | _ -> ()
         }
-        |> Async.Ignore
-        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
 
-    override this.GetFixAllProvider() = FixAllProvider.Create(fun fixAllCtx doc allDiagnostics -> 
-        this.GetChangedDocument(doc,allDiagnostics, fixAllCtx.CancellationToken) )
+    override this.GetFixAllProvider() =
+        FixAllProvider.Create(fun fixAllCtx doc allDiagnostics -> this.GetChangedDocument(doc, allDiagnostics, fixAllCtx.CancellationToken))
+
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.RenameUnusedValue); Shared>]
+type internal FSharpRenameUnusedValueWithUnderscoreCodeFixProvider [<ImportingConstructor>] () =
+
+    inherit CodeFixProvider()
+
+    static let title (symbolName: string) =
+        String.Format(SR.RenameValueToUnderscore(), symbolName)
+
+    override _.FixableDiagnosticIds = ImmutableArray.Create("FS1182")
+
+    member this.GetChangedDocument(document: Document, diagnostics: ImmutableArray<Diagnostic>, ct: CancellationToken) =
+        backgroundTask {
+            let! sourceText = document.GetTextAsync(ct)
+
+            let! changes =
+                seq {
+                    for d in diagnostics do
+                        let textSpan = d.Location.SourceSpan
+
+                        yield
+                            async {
+                                let! symbolUse = UnusedCodeFixHelper.getUnusedSymbol sourceText textSpan document
+
+                                return
+                                    seq {
+                                        match symbolUse with
+                                        | None -> ()
+                                        | Some symbolUse ->
+                                            match symbolUse.Symbol with
+                                            | :? FSharpMemberOrFunctionOrValue as func when func.IsValue -> yield TextChange(textSpan, "_")
+                                            | _ -> ()
+                                    }
+                            }
+                }
+                |> Async.Parallel
+
+            CodeFixHelpers.reportCodeFixRecommendation diagnostics document CodeFix.RenameUnusedValue
+            return document.WithText(sourceText.WithChanges(changes |> Seq.concat))
+        }
+
+    override this.RegisterCodeFixesAsync ctx : Task =
+        backgroundTask {
+            if ctx.Document.Project.IsFSharpCodeFixesUnusedDeclarationsEnabled then
+                let! sourceText = ctx.Document.GetTextAsync(ctx.CancellationToken)
+                let! unusedSymbol = UnusedCodeFixHelper.getUnusedSymbol sourceText ctx.Span ctx.Document
+
+                match unusedSymbol with
+                | None -> ()
+                | Some symbolUse ->
+                    match symbolUse.Symbol with
+                    | :? FSharpMemberOrFunctionOrValue as func when func.IsValue ->
+                        let prefixTitle = title symbolUse.Symbol.DisplayName
+
+                        let codeAction =
+                            CodeAction.Create(
+                                prefixTitle,
+                                (fun ct -> this.GetChangedDocument(ctx.Document, ctx.Diagnostics, ct)),
+                                prefixTitle
+                            )
+
+                        ctx.RegisterCodeFix(codeAction, this.GetPrunedDiagnostics(ctx))
+                    | _ -> ()
+        }
+
+    override this.GetFixAllProvider() =
+        FixAllProvider.Create(fun fixAllCtx doc allDiagnostics -> this.GetChangedDocument(doc, allDiagnostics, fixAllCtx.CancellationToken))

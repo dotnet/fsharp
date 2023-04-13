@@ -4,8 +4,10 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Threading
 open System.Threading.Tasks
+open System.Collections.Immutable
 
 open Microsoft
+open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
@@ -13,6 +15,24 @@ open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
 [<RequireQualifiedAccess>]
 module internal CodeFixHelpers =
+    let reportCodeFixRecommendation (diagnostics: ImmutableArray<Diagnostic>) (doc: Document) (staticName: string) =
+        let ids =
+            diagnostics |> Seq.map (fun d -> d.Id) |> Seq.distinct |> String.concat ","
+
+        let props: (string * obj) list =
+            [
+                "name", staticName
+                "ids", ids
+                // The following can help building a unique but anonymized codefix target:
+                // #projectid#documentid#span
+                // Then we can check if the codefix was actually activated after its creation.
+                "context.document.project.id", doc.Project.Id.Id.ToString()
+                "context.document.id", doc.Id.Id.ToString()
+                "context.diagnostics.count", diagnostics.Length
+            ]
+
+        TelemetryReporter.reportEvent "codefixrecommendation" props
+
     let createTextChangeCodeFix
         (
             name: string,

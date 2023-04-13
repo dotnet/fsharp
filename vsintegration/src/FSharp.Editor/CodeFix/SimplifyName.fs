@@ -3,39 +3,50 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
-open System.Collections.Immutable
+open System.Threading
 open System.Threading.Tasks
+open System.Collections.Immutable
 
+open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
+open Microsoft.CodeAnalysis.CodeActions
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
+
+open FSharp.Compiler.Text
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.SimplifyName); Shared>]
 type internal FSharpSimplifyNameCodeFixProvider() =
     inherit CodeFixProvider()
-    let fixableDiagnosticId = FSharpIDEDiagnosticIds.SimplifyNamesDiagnosticId
 
-    override _.FixableDiagnosticIds = ImmutableArray.Create(fixableDiagnosticId)
+    override _.FixableDiagnosticIds =
+        ImmutableArray.Create(FSharpIDEDiagnosticIds.SimplifyNamesDiagnosticId)
 
-    override _.RegisterCodeFixesAsync(context: CodeFixContext) : Task =
-        async {
-            for diagnostic in context.Diagnostics |> Seq.filter (fun x -> x.Id = fixableDiagnosticId) do
-                let title =
-                    match diagnostic.Properties.TryGetValue(SimplifyNameDiagnosticAnalyzer.LongIdentPropertyKey) with
-                    | true, longIdent -> sprintf "%s '%s'" (SR.SimplifyName()) longIdent
-                    | _ -> SR.SimplifyName()
+    member this.GetChangedDocument(document: Document, diagnostics: ImmutableArray<Diagnostic>, ct: CancellationToken) =
+        backgroundTask {
+            let! sourceText = document.GetTextAsync(ct)
 
-                let codefix =
-                    CodeFixHelpers.createTextChangeCodeFix (
-                        CodeFix.SimplifyName,
-                        title,
-                        context,
-                        (fun () -> asyncMaybe.Return [| TextChange(context.Span, "") |])
-                    )
+            let changes =
+                diagnostics |> Seq.map (fun d -> TextChange(d.Location.SourceSpan, ""))
 
-                context.RegisterCodeFix(codefix, ImmutableArray.Create(diagnostic))
+            CodeFixHelpers.reportCodeFixRecommendation diagnostics document CodeFix.SimplifyName
+            return document.WithText(sourceText.WithChanges(changes))
         }
-        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
 
-    override this.GetFixAllProvider() = FixAllProvider.Create(fun fixAllCtx doc allDiagnostics -> 
-        this.GetChangedDocument(doc,allDiagnostics, fixAllCtx.CancellationToken) )
+    override this.RegisterCodeFixesAsync ctx : Task =
+        backgroundTask {
+            let diag = ctx.Diagnostics |> Seq.head
+
+            let title =
+                match diag.Properties.TryGetValue(SimplifyNameDiagnosticAnalyzer.LongIdentPropertyKey) with
+                | true, longIdent -> sprintf "%s '%s'" (SR.SimplifyName()) longIdent
+                | _ -> SR.SimplifyName()
+
+            let codeAction =
+                CodeAction.Create(title, (fun ct -> this.GetChangedDocument(ctx.Document, ctx.Diagnostics, ct)), title)
+
+            ctx.RegisterCodeFix(codeAction, this.GetPrunedDiagnostics(ctx))
+        }
+
+    override this.GetFixAllProvider() =
+        FixAllProvider.Create(fun fixAllCtx doc allDiagnostics -> this.GetChangedDocument(doc, allDiagnostics, fixAllCtx.CancellationToken))
