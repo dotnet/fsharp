@@ -25,7 +25,7 @@ type internal SimplifyNameDiagnosticAnalyzer [<ImportingConstructor>] () =
 
     static let userOpName = "SimplifyNameDiagnosticAnalyzer"
     static let cache = new MemoryCache("FSharp.Editor." + userOpName)
-    // Make sure only a few  documents is being analyzed at a time, to be nice
+    // Make sure only a few  documents are being analyzed at a time, to be nice
     static let guard = new SemaphoreSlim(3)
 
     static member LongIdentPropertyKey = "FullName"
@@ -39,7 +39,7 @@ type internal SimplifyNameDiagnosticAnalyzer [<ImportingConstructor>] () =
                     do Trace.TraceInformation("{0:n3} (start) SimplifyName", DateTime.Now.TimeOfDay.TotalSeconds)
                     let! textVersion = document.GetTextVersionAsync(cancellationToken)
                     let textVersionHash = textVersion.GetHashCode()
-                    let! lockObtained = guard.WaitAsync(TimeSpan.FromSeconds 10. ,cancellationToken) |> Async.AwaitTask |> liftAsync
+                    let! lockObtained = guard.WaitAsync(DefaultTuning.PerDocumentSavedDataSlidingWindow ,cancellationToken) |> Async.AwaitTask |> liftAsync
                     do! Option.guard lockObtained
 
                     try
