@@ -2,6 +2,7 @@
 
 module internal FSharp.Compiler.CheckBasics
 
+open System.Collections.Concurrent
 open System.Collections.Generic
 
 open FSharp.Compiler.Diagnostics
@@ -24,8 +25,6 @@ open FSharp.Compiler.TypedTreeOps
 
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
-open System.Collections.Concurrent
-
 #endif
 
 #if DEBUG
