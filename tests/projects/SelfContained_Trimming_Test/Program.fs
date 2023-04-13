@@ -9080,6 +9080,8 @@ module PercentAPublicTests =
             D: float
         }
 
+    type Number = IntNumber of int | DoubleNumber of double
+
     let testPercentAMyRecord () =
         let data = { A = "Hello, World!"; B = 1.027m; C = 1028; D = 1.029 }
         test "test8900" (lazy (sprintf "%A" data).Replace("\n", ";"))  """{ A = "Hello, World!";  B = 1.027M;  C = 1028;  D = 1.029 }"""
@@ -9088,9 +9090,15 @@ module PercentAPublicTests =
         let data = {| A = "Hello, World!"; B = 1.027m; C = 1028; D = 1.029 |}
         test "test8901" (lazy (sprintf "%A" data).Replace("\n", ";"))  """{ A = "Hello, World!";  B = 1.027M;  C = 1028;  D = 1.029 }"""
 
+
+    let testDiscriminatedUnion () =
+        test "test8902" (lazy (sprintf "%A" (IntNumber 10 )).Replace("\n", ";"))  """ XXXX """
+        test "test8903" (lazy (sprintf "%A" (DoubleNumber 12.0)).Replace("\n", ";"))  """ XXXX """
+
     let tests () =
         testPercentAMyRecord ()
         testPercentAMyAnnonymousRecord ()
+        testDiscriminatedUnion ()
 
 module PercentAInternalTests =
     type internal MyInternalRecord =

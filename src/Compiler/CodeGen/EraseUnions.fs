@@ -3,9 +3,12 @@
 /// Erase discriminated unions.
 module internal FSharp.Compiler.AbstractIL.ILX.EraseUnions
 
+open FSharp.Compiler.IlxGenSupport
+
 open System.Collections.Generic
 open System.Reflection
 open Internal.Utilities.Library
+open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILX.Types
 
@@ -1157,7 +1160,7 @@ let mkClassUnionDef
      addFieldGeneratedAttrs: ILFieldDef -> ILFieldDef,
      addFieldNeverAttrs: ILFieldDef -> ILFieldDef,
      mkDebuggerTypeProxyAttribute)
-    ilg
+    (g: TcGlobals)
     tref
     (td: ILTypeDef)
     cud
@@ -1183,7 +1186,7 @@ let mkClassUnionDef
                  addFieldGeneratedAttrs,
                  addFieldNeverAttrs,
                  mkDebuggerTypeProxyAttribute)
-                ilg
+                g.ilg
                 i
                 td
                 cud
@@ -1204,7 +1207,7 @@ let mkClassUnionDef
         | SingleCase
         | RuntimeTypes
         | TailOrNull -> []
-        | IntegerTag -> [ mkTagFieldId ilg cuspec ]
+        | IntegerTag -> [ mkTagFieldId g.ilg cuspec ]
 
     let isStruct = td.IsStruct
 
@@ -1224,12 +1227,12 @@ let mkClassUnionDef
                             None
                         else
                             match td.Extends with
-                            | None -> Some ilg.typ_Object.TypeSpec
+                            | None -> Some g.ilg.typ_Object.TypeSpec
                             | Some ilTy -> Some ilTy.TypeSpec
 
                     let extraParamsForCtor =
                         if isStruct && takesExtraParams cud.UnionCases then
-                            let extraTys, _extraInstrs = extraTysAndInstrsForStructCtor ilg cidx
+                            let extraTys, _extraInstrs = extraTysAndInstrsForStructCtor g.ilg cidx
                             List.map mkILParamAnon extraTys
                         else
                             []
@@ -1293,12 +1296,12 @@ let mkClassUnionDef
         else
             let baseTySpec =
                 (match td.Extends with
-                 | None -> ilg.typ_Object
+                 | None -> g.ilg.typ_Object
                  | Some ilTy -> ilTy)
                     .TypeSpec
 
             [
-                mkILSimpleStorageCtor (
+                (mkILSimpleStorageCtor (
                     Some baseTySpec,
                     baseTy,
                     [],
@@ -1306,8 +1309,8 @@ let mkClassUnionDef
                     ILMemberAccess.Assembly,
                     cud.DebugPoint,
                     cud.DebugImports
-                )
-                |> addMethodGeneratedAttrs
+                ) |> addMethodGeneratedAttrs
+                ).With(customAttrs = mkILCustomAttrs[ GetDynamicDependencyAttribute g 0x660 (*Public and NonPublic Fields and Properties*) baseTy])
             ]
 
     // Now initialize the constant fields wherever they are stored...
@@ -1328,7 +1331,7 @@ let mkClassUnionDef
                         | IntegerTag ->
                             if inRootClass then
                                 yield mkLdcInt32 fidx
-                                yield mkNormalNewobj (mkILCtorMethSpecForTy (altTy, [ mkTagFieldType ilg cuspec ]))
+                                yield mkNormalNewobj (mkILCtorMethSpecForTy (altTy, [ mkTagFieldType g.ilg cuspec ]))
                             else
                                 yield mkNormalNewobj (mkILCtorMethSpecForTy (altTy, []))
 
@@ -1339,7 +1342,7 @@ let mkClassUnionDef
                 cd
 
     let tagMeths, tagProps, tagEnumFields =
-        let tagFieldType = mkTagFieldType ilg cuspec
+        let tagFieldType = mkTagFieldType g.ilg cuspec
 
         let tagEnumFields =
             cud.UnionCases
@@ -1350,7 +1353,7 @@ let mkClassUnionDef
 
             let code =
                 genWith (fun cg ->
-                    emitLdDataTagPrim ilg (Some mkLdarg0) cg (true, cuspec)
+                    emitLdDataTagPrim g.ilg (Some mkLdarg0) cg (true, cuspec)
                     cg.EmitInstr I_ret)
 
             let body = mkMethodBody (true, [], 2, code, cud.DebugPoint, cud.DebugImports)
@@ -1414,7 +1417,7 @@ let mkClassUnionDef
                     attributes = enum 0,
                     layout = ILTypeDefLayout.Auto,
                     implements = [],
-                    extends = Some ilg.typ_Object,
+                    extends = Some g.ilg.typ_Object,
                     methods = emptyILMethods,
                     securityDecls = emptyILSecurityDecls,
                     fields = mkILFields tagEnumFields,
@@ -1444,7 +1447,7 @@ let mkClassUnionDef
                     ),
                 extends =
                     (match td.Extends with
-                     | None -> Some ilg.typ_Object
+                     | None -> Some g.ilg.typ_Object
                      | _ -> td.Extends),
                 methods =
                     mkILMethods (
