@@ -46,4 +46,4 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(4,4)-(4,4) parse error Missing union case name
+(4,4)-(4,6) parse error Missing union case name

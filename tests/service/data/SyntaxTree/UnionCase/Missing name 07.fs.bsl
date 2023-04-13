@@ -20,7 +20,7 @@ ImplFile
                          SynUnionCase
                            ([], SynIdent (, None), Fields [],
                             PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, (5,4--5,5), { BarRange = Some (5,4--5,5) });
+                            None, (5,6--5,8), { BarRange = Some (5,4--5,5) });
                          SynUnionCase
                            ([], SynIdent (C, None), Fields [],
                             PreXmlDoc ((6,4), FSharp.Compiler.Xml.XmlDocCollector),
@@ -39,3 +39,4 @@ ImplFile
         CodeComments = [] }, set []))
 
 (6,4)-(6,5) parse error Unexpected symbol '|' in union case
+(5,6)-(5,8) parse error Missing union case name

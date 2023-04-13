@@ -2407,13 +2407,25 @@ attrUnionCaseDecl:
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations(), rhs parseState 2))
         let mOf = rhs parseState 3
         let mId = mOf.StartRange
-        errorR (Error(FSComp.SR.parsMissingUnionCaseName(), mId))
+        errorR (Error(FSComp.SR.parsMissingUnionCaseName(), mOf))
         let mDecl = rhs2 parseState 1 4
         (fun (xmlDoc, mBar) ->
             let id = SynIdent(mkSynId mId "", None)
             let trivia: SynUnionCaseTrivia = { BarRange = Some mBar }
             let mDecl = unionRangeWithXmlDoc xmlDoc mDecl
-            Choice2Of2 (SynUnionCase ( $1, id, SynUnionCaseKind.Fields $4, xmlDoc, None, mDecl, trivia))) }
+            Choice2Of2(SynUnionCase($1, id, SynUnionCaseKind.Fields $4, xmlDoc, None, mDecl, trivia))) }
+
+  | opt_attributes opt_access OF recover
+      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations(), rhs parseState 2))
+        let mOf = rhs parseState 3
+        let mId = mOf.StartRange
+        errorR (Error(FSComp.SR.parsMissingUnionCaseName(), mOf))
+        let mDecl = rhs2 parseState 1 3
+        (fun (xmlDoc, mBar) ->
+            let id = SynIdent(mkSynId mId "", None)
+            let trivia: SynUnionCaseTrivia = { BarRange = Some mBar }
+            let mDecl = unionRangeWithXmlDoc xmlDoc mDecl
+            Choice2Of2(SynUnionCase($1, id, SynUnionCaseKind.Fields [], xmlDoc, None, mDecl, trivia))) }
 
   | opt_attributes opt_access unionCaseName OF recover
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations(), rhs parseState 2))
@@ -2489,7 +2501,7 @@ firstUnionCaseDecl:
   | OF unionCaseRepr
      { let mOf = rhs parseState 1
        let mId = mOf.StartRange
-       errorR (Error(FSComp.SR.parsMissingUnionCaseName(), mId))
+       errorR (Error(FSComp.SR.parsMissingUnionCaseName(), mOf))
        let id = SynIdent(mkSynId mId "", None)
        let trivia: SynUnionCaseTrivia = { BarRange = None }
        let xmlDoc = grabXmlDoc (parseState, [], 1)
