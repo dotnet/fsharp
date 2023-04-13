@@ -23,9 +23,6 @@ module internal CodeFixHelpers =
             [
                 "name", staticName
                 "ids", ids
-                // The following can help building a unique but anonymized codefix target:
-                // #projectid#documentid#span
-                // Then we can check if the codefix was actually activated after its creation.
                 "context.document.project.id", doc.Project.Id.Id.ToString()
                 "context.document.id", doc.Id.Id.ToString()
                 "context.diagnostics.count", diagnostics.Length
