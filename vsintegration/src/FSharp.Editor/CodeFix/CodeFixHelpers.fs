@@ -19,7 +19,10 @@ module internal CodeFixHelpers =
             computeTextChanges: unit -> Async<TextChange[] option>
         ) =
 
-        let ids = context.Diagnostics |> Seq.exactlyOne
+        // Currently there should be one Id here.
+        // Keeping it this way to be error- and futureproof
+        // as the underlying API does allow multiple Ids here.
+        let ids = context.Diagnostics |> Seq.map (fun d -> d.Id) |> String.concat ","
 
         let props: (string * obj) list =
             [
