@@ -138,7 +138,7 @@ module TypeAbbreviations =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3564, Line 6, Col 16, Line 6, Col 16, "Missing union case name")
+            (Error 3564, Line 6, Col 16, Line 6, Col 18, "Missing union case name")
         ]
 
     //SOURCE=E_IncorrectRightSide_Quotation.fsx SCFLAGS="--test:ErrorRanges"                                    # E_IncorrectRightSide_Quotation.fsx
