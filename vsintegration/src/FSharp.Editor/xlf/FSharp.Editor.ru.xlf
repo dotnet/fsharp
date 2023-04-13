@@ -35,10 +35,10 @@ Show outlining and collapsible nodes for F# code;
 Inline hints;
 Display inline type hints (preview);
 Display return type hints (preview);
-Display inline parameter name hints (preview);Beer;
+Display inline parameter name hints (preview);
 Live Buffers;
 Use live (unsaved) buffers for checking</source>
-        <target state="translated">Руководства по блочной структуре;
+        <target state="needs-review-translation">Руководства по блочной структуре;
 Показать рекомендации по структуре для кода F#;
 Структурирование;
 Показать структурные и сворачиваемые узлы для кода F#;
