@@ -9090,7 +9090,6 @@ module PercentAPublicTests =
         let data = {| A = "Hello, World!"; B = 1.027m; C = 1028; D = 1.029 |}
         test "test8901" (lazy (sprintf "%A" data).Replace("\n", ";"))  """{ A = "Hello, World!";  B = 1.027M;  C = 1028;  D = 1.029 }"""
 
-
     let testDiscriminatedUnion () =
         test "test8902" (lazy (sprintf "%A" (IntNumber 10 )).Replace("\n", ";"))  """IntNumber 10"""
         test "test8903" (lazy (sprintf "%A" (DoubleNumber 12.0)).Replace("\n", ";"))  """DoubleNumber 12.0"""

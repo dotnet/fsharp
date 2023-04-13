@@ -762,6 +762,11 @@
         <target state="translated">Desen bekleniyor</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsExpectingType">
+        <source>Expecting type</source>
+        <target state="new">Expecting type</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr1">
         <source>Incomplete character literal (example: 'Q') or qualified type invocation (example: 'T.Name)</source>
         <target state="translated">Eksik karakter değişmez değeri (örnek: 'Q') veya tam tür çağrısı (örnek: 'T.Name)</target>
