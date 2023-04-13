@@ -317,12 +317,15 @@ type BoundModel private (
                     })
         | _ -> None
 
-    let getTcInfo (typeCheck: TypeCheck) =
-        let tcInfo , _, _, _ = typeCheck
-        tcInfo
+    let getTcInfo (typeCheck: GraphNode<TypeCheck>) =
+        node {
+            let! tcInfo , _, _, _ = typeCheck.GetOrComputeValue()
+            return tcInfo
+        } |> GraphNode
 
-    let getTcInfoExtras (typeCheck: TypeCheck)  =
-            let _ , sink, implFile, fileName = typeCheck
+    let getTcInfoExtras (typeCheck: GraphNode<TypeCheck>) =
+        node {
+            let! _ , sink, implFile, fileName = typeCheck.GetOrComputeValue()
             // Build symbol keys
             let itemKeyStore, semanticClassification =
                 if enableBackgroundItemKeyStoreAndSemanticClassification then
@@ -347,40 +350,33 @@ type BoundModel private (
                     res
                 else
                     None, None
-
-            {
-                // Only keep the typed interface files when doing a "full" build for fsc.exe, otherwise just throw them away
-                latestImplFile = if keepAssemblyContents then implFile else None
-                tcResolutions = (if keepAllBackgroundResolutions then sink.GetResolutions() else TcResolutions.Empty)
-                tcSymbolUses = (if keepAllBackgroundSymbolUses then sink.GetSymbolUses() else TcSymbolUses.Empty)
-                tcOpenDeclarations = sink.GetOpenDeclarations()
-                itemKeyStore = itemKeyStore
-                semanticClassificationKeyStore = semanticClassification
-            }
+            return
+                {
+                    // Only keep the typed interface files when doing a "full" build for fsc.exe, otherwise just throw them away
+                    latestImplFile = if keepAssemblyContents then implFile else None
+                    tcResolutions = (if keepAllBackgroundResolutions then sink.GetResolutions() else TcResolutions.Empty)
+                    tcSymbolUses = (if keepAllBackgroundSymbolUses then sink.GetSymbolUses() else TcSymbolUses.Empty)
+                    tcOpenDeclarations = sink.GetOpenDeclarations()
+                    itemKeyStore = itemKeyStore
+                    semanticClassificationKeyStore = semanticClassification
+                }
+        } |> GraphNode
 
     let tcInfo, tcInfoExtras =
         let defaultTypeCheck = node { return prevTcInfo, TcResultsSinkImpl(tcGlobals), None, "default typecheck - no syntaxTree" }
-        let typeCheckNode = syntaxTreeOpt |> Option.map getTypeCheck |> Option.defaultValue defaultTypeCheck
+        let typeCheckNode = syntaxTreeOpt |> Option.map getTypeCheck |> Option.defaultValue defaultTypeCheck |> GraphNode
         match tcStateOpt with
         | Some tcState -> tcState
         | _ ->
             match skippedImplemetationTypeCheck with
             | Some info ->
                 // For skipped implementation sources do full type check only when requested.
-                let extras =
-                    node {
-                        let! typeCheck = typeCheckNode
-                        return getTcInfoExtras typeCheck
-                    } |> GraphNode
-                GraphNode.FromResult info, extras
+                GraphNode.FromResult info, getTcInfoExtras typeCheckNode
             | _ ->
-                // compute type check once
-                let typeCheck = typeCheckNode |> Async.AwaitNodeCode |> Async.RunSynchronously
-                let tcInfo = getTcInfo typeCheck |> GraphNode.FromResult
-                let tcInfoExtras = node { return getTcInfoExtras typeCheck } |> GraphNode
-                // start computing extras, so that typeCheck can be GC'd quickly 
+                let tcInfoExtras = getTcInfoExtras typeCheckNode
+                // start computing extras, so that typeCheckNode can be GC'd quickly 
                 tcInfoExtras.GetOrComputeValue() |> Async.AwaitNodeCode |> Async.Ignore |> Async.Start
-                tcInfo, tcInfoExtras 
+                getTcInfo typeCheckNode, tcInfoExtras
 
     member val TcInfo = tcInfo
 
