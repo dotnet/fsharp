@@ -77,9 +77,7 @@ let mkLocalPrivateAttributeWithPropertyConstructors (g: TcGlobals, name: string,
             let fieldName = name + "@"
 
             (g.AddFieldGeneratedAttributes(mkILInstanceField (fieldName, ilType, None, ILMemberAccess.Private))),
-            (g.AddMethodGeneratedAttributes(
-                mkLdfldMethodDef ($"get_{name}", ILMemberAccess.Public, false, ilTy, fieldName, ilType, [])
-            )),
+            (g.AddMethodGeneratedAttributes(mkLdfldMethodDef ($"get_{name}", ILMemberAccess.Public, false, ilTy, fieldName, ilType, []))),
             (g.AddPropertyGeneratedAttributes(
                 mkILNonGenericInstanceProperty (
                     name,
@@ -150,7 +148,8 @@ let mkLocalPrivateInt32Enum (g: TcGlobals, tref: ILTypeRef, values: (string * in
         emptyILEvents,
         g.AddGeneratedAttributes(mkILCustomAttrs [ mkFlagsAttribute g ]),
         ILTypeInit.OnAny
-    ).WithSealed(true)
+    )
+        .WithSealed(true)
 
 //--------------------------------------------------------------------------
 // Generate Local embeddable versions of framework types when necessary
@@ -207,11 +206,7 @@ let GetDynamicDependencyAttribute (g: TcGlobals) memberTypes ilType =
         tref,
         (fun () ->
             let properties =
-                Some
-                    [
-                        "MemberType", GetDynamicallyAccessedMemberTypes g
-                        "Type", g.ilg.typ_Type
-                    ]
+                Some [ "MemberType", GetDynamicallyAccessedMemberTypes g; "Type", g.ilg.typ_Type ]
 
             mkLocalPrivateAttributeWithPropertyConstructors (g, tref.Name, properties))
     )
@@ -219,12 +214,7 @@ let GetDynamicDependencyAttribute (g: TcGlobals) memberTypes ilType =
     let typIlMemberTypes =
         ILType.Value(mkILNonGenericTySpec (g.enum_DynamicallyAccessedMemberTypes.TypeRef))
 
-    mkILCustomAttribute (
-        tref,
-        [ typIlMemberTypes; g.ilg.typ_Type ],
-        [ ILAttribElem.Int32 memberTypes; ILAttribElem.Type(Some ilType) ],
-        []
-    )
+    mkILCustomAttribute (tref, [ typIlMemberTypes; g.ilg.typ_Type ], [ ILAttribElem.Int32 memberTypes; ILAttribElem.Type(Some ilType) ], [])
 
 /// Generate "modreq([mscorlib]System.Runtime.InteropServices.InAttribute)" on inref types.
 let GenReadOnlyModReqIfNecessary (g: TcGlobals) ty ilTy =

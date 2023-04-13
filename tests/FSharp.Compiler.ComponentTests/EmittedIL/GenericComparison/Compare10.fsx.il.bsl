@@ -56,7 +56,7 @@
                       [runtime]System.Collections.IStructuralComparable
     {
       .custom instance void [runtime]System.Diagnostics.DebuggerDisplayAttribute::.ctor(string) = ( 01 00 15 7B 5F 5F 44 65 62 75 67 44 69 73 70 6C   
-                                                                                                           61 79 28 29 2C 6E 71 7D 00 00 )                   
+                                                                                                     61 79 28 29 2C 6E 71 7D 00 00 )                   
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 01 00 00 00 00 00 ) 
       .field assembly initonly int32 item1
       .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
@@ -85,8 +85,11 @@
               instance void  .ctor(int32 item1,
                                    int32 item2) cil managed
       {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::.ctor(valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes,
+                                                                                                class [runtime]System.Type) = ( 01 00 60 06 00 00 34 43 6F 6D 70 61 72 65 31 30   
+                                                                                                                                 2B 43 6F 6D 70 61 72 65 4D 69 63 72 6F 50 65 72   
+                                                                                                                                 66 41 6E 64 43 6F 64 65 47 65 6E 65 72 61 74 69   
+                                                                                                                                 6F 6E 54 65 73 74 73 2B 4B 65 79 00 00 )          
         
         .maxstack  8
         IL_0000:  ldarg.0
@@ -570,7 +573,7 @@
                       [runtime]System.Collections.IStructuralComparable
     {
       .custom instance void [runtime]System.Diagnostics.DebuggerDisplayAttribute::.ctor(string) = ( 01 00 15 7B 5F 5F 44 65 62 75 67 44 69 73 70 6C   
-                                                                                                           61 79 28 29 2C 6E 71 7D 00 00 )                   
+                                                                                                     61 79 28 29 2C 6E 71 7D 00 00 )                   
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 01 00 00 00 00 00 ) 
       .field assembly initonly class assembly/CompareMicroPerfAndCodeGenerationTests/Key item1
       .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
@@ -599,8 +602,12 @@
               instance void  .ctor(class assembly/CompareMicroPerfAndCodeGenerationTests/Key item1,
                                    class [runtime]System.Tuple`2<class assembly/CompareMicroPerfAndCodeGenerationTests/Key,class assembly/CompareMicroPerfAndCodeGenerationTests/Key> item2) cil managed
       {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::.ctor(valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes,
+                                                                                                class [runtime]System.Type) = ( 01 00 60 06 00 00 41 43 6F 6D 70 61 72 65 31 30   
+                                                                                                                                 2B 43 6F 6D 70 61 72 65 4D 69 63 72 6F 50 65 72   
+                                                                                                                                 66 41 6E 64 43 6F 64 65 47 65 6E 65 72 61 74 69   
+                                                                                                                                 6F 6E 54 65 73 74 73 2B 4B 65 79 57 69 74 68 49   
+                                                                                                                                 6E 6E 65 72 4B 65 79 73 00 00 )                   
         
         .maxstack  8
         IL_0000:  ldarg.0
@@ -1129,7 +1136,7 @@
         IL_0026:  ldfld      class [runtime]System.Tuple`2<class assembly/CompareMicroPerfAndCodeGenerationTests/Key,class assembly/CompareMicroPerfAndCodeGenerationTests/Key> assembly/CompareMicroPerfAndCodeGenerationTests/KeyWithInnerKeys::item2
         IL_002b:  tail.
         IL_002d:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericEqualityERIntrinsic<class [runtime]System.Tuple`2<class assembly/CompareMicroPerfAndCodeGenerationTests/Key,class assembly/CompareMicroPerfAndCodeGenerationTests/Key>>(!!0,
-                                                                                                                                                                                                                                                                                             !!0)
+                                                                                                                                                                                                                                                                                       !!0)
         IL_0032:  ret
 
         IL_0033:  ldc.i4.0
@@ -1221,7 +1228,7 @@
       IL_0012:  call       class assembly/CompareMicroPerfAndCodeGenerationTests/Key assembly/CompareMicroPerfAndCodeGenerationTests/Key::NewKey(int32,
                                                                                                                                                    int32)
       IL_0017:  newobj     instance void class [runtime]System.Tuple`2<class assembly/CompareMicroPerfAndCodeGenerationTests/Key,class assembly/CompareMicroPerfAndCodeGenerationTests/Key>::.ctor(!0,
-                                                                                                                                                                                                            !1)
+                                                                                                                                                                                                      !1)
       IL_001c:  call       class assembly/CompareMicroPerfAndCodeGenerationTests/KeyWithInnerKeys assembly/CompareMicroPerfAndCodeGenerationTests/KeyWithInnerKeys::NewKeyWithInnerKeys(class assembly/CompareMicroPerfAndCodeGenerationTests/Key,
                                                                                                                                                                                           class [runtime]System.Tuple`2<class assembly/CompareMicroPerfAndCodeGenerationTests/Key,class assembly/CompareMicroPerfAndCodeGenerationTests/Key>)
       IL_0021:  stloc.1
@@ -1238,7 +1245,7 @@
       IL_0032:  call       class assembly/CompareMicroPerfAndCodeGenerationTests/Key assembly/CompareMicroPerfAndCodeGenerationTests/Key::NewKey(int32,
                                                                                                                                                    int32)
       IL_0037:  newobj     instance void class [runtime]System.Tuple`2<class assembly/CompareMicroPerfAndCodeGenerationTests/Key,class assembly/CompareMicroPerfAndCodeGenerationTests/Key>::.ctor(!0,
-                                                                                                                                                                                                            !1)
+                                                                                                                                                                                                      !1)
       IL_003c:  call       class assembly/CompareMicroPerfAndCodeGenerationTests/KeyWithInnerKeys assembly/CompareMicroPerfAndCodeGenerationTests/KeyWithInnerKeys::NewKeyWithInnerKeys(class assembly/CompareMicroPerfAndCodeGenerationTests/Key,
                                                                                                                                                                                           class [runtime]System.Tuple`2<class assembly/CompareMicroPerfAndCodeGenerationTests/Key,class assembly/CompareMicroPerfAndCodeGenerationTests/Key>)
       IL_0041:  stloc.2
@@ -1276,6 +1283,99 @@
     IL_0000:  ret
   } 
 
+} 
+
+.class private auto ansi sealed System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes
+       extends [runtime]System.Enum
+{
+  .custom instance void [runtime]System.FlagsAttribute::.ctor() = ( 01 00 00 00 ) 
+  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+  .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+  .field public specialname rtspecialname int32 value__ = int32(0x00000000)
+  .field public static literal valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes All = int32(0xFFFFFFFF)
+  .field public static literal valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes None = int32(0x00000000)
+  .field public static literal valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes PublicParameterlessConstructor = int32(0x00000001)
+  .field public static literal valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes PublicConstructors = int32(0x00000003)
+  .field public static literal valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes NonPublicConstructors = int32(0x00000004)
+  .field public static literal valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes PublicMethods = int32(0x00000008)
+  .field public static literal valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes NonPublicMethods = int32(0x00000010)
+  .field public static literal valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes PublicFields = int32(0x00000020)
+  .field public static literal valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes NonPublicFields = int32(0x00000040)
+  .field public static literal valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes PublicNestedTypes = int32(0x00000080)
+  .field public static literal valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes NonPublicNestedTypes = int32(0x00000100)
+  .field public static literal valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes PublicProperties = int32(0x00000200)
+  .field public static literal valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes NonPublicProperties = int32(0x00000400)
+  .field public static literal valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes PublicEvents = int32(0x00000800)
+  .field public static literal valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes NonPublicEvents = int32(0x00001000)
+  .field public static literal valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes Interfaces = int32(0x00002000)
+} 
+
+.class private auto ansi beforefieldinit System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute
+       extends [runtime]System.Attribute
+{
+  .field private valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes MemberType@
+  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+  .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+  .field private class [runtime]System.Type Type@
+  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+  .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+  .method public specialname rtspecialname 
+          instance void  .ctor(valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes MemberType,
+                               class [runtime]System.Type Type) cil managed
+  {
+    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  call       instance void [runtime]System.Attribute::.ctor()
+    IL_0006:  ldarg.0
+    IL_0007:  ldarg.1
+    IL_0008:  stfld      valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::MemberType@
+    IL_000d:  ldarg.0
+    IL_000e:  ldarg.2
+    IL_000f:  stfld      class [runtime]System.Type System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::Type@
+    IL_0014:  ret
+  } 
+
+  .method public hidebysig specialname instance class [runtime]System.Type 
+          get_Type() cil managed
+  {
+    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  ldfld      class [runtime]System.Type System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::Type@
+    IL_0006:  ret
+  } 
+
+  .method public hidebysig specialname instance valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes 
+          get_MemberType() cil managed
+  {
+    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  ldfld      valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::MemberType@
+    IL_0006:  ret
+  } 
+
+  .property instance valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes
+          MemberType()
+  {
+    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    .get instance valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::get_MemberType()
+  } 
+  .property instance class [runtime]System.Type
+          Type()
+  {
+    .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    .get instance class [runtime]System.Type System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::get_Type()
+  } 
 } 
 
 

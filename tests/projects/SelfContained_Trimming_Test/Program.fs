@@ -9092,8 +9092,8 @@ module PercentAPublicTests =
 
 
     let testDiscriminatedUnion () =
-        test "test8902" (lazy (sprintf "%A" (IntNumber 10 )).Replace("\n", ";"))  """ XXXX """
-        test "test8903" (lazy (sprintf "%A" (DoubleNumber 12.0)).Replace("\n", ";"))  """ XXXX """
+        test "test8902" (lazy (sprintf "%A" (IntNumber 10 )).Replace("\n", ";"))  """IntNumber 10"""
+        test "test8903" (lazy (sprintf "%A" (DoubleNumber 12.0)).Replace("\n", ";"))  """DoubleNumber 12.0"""
 
     let tests () =
         testPercentAMyRecord ()

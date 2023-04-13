@@ -755,7 +755,7 @@ let convAlternativeDef
      addFieldGeneratedAttrs,
      addFieldNeverAttrs,
      mkDebuggerTypeProxyAttribute)
-    (ilg: ILGlobals)
+    (g: TcGlobals)
     num
     (td: ILTypeDef)
     (cud: IlxUnionInfo)
@@ -837,12 +837,12 @@ let convAlternativeDef
                             "get_" + mkTesterName altName,
                             cud.HelpersAccessibility,
                             [],
-                            mkILReturn ilg.typ_Bool,
+                            mkILReturn g.ilg.typ_Bool,
                             mkMethodBody (
                                 true,
                                 [],
                                 2,
-                                nonBranchingInstrsToCode ([ mkLdarg0 ] @ mkIsData ilg (true, cuspec, num)),
+                                nonBranchingInstrsToCode ([ mkLdarg0 ] @ mkIsData g.ilg (true, cuspec, num)),
                                 attr,
                                 imports
                             )
@@ -856,10 +856,17 @@ let convAlternativeDef
                             setMethod = None,
                             getMethod =
                                 Some(
-                                    mkILMethRef (baseTy.TypeRef, ILCallingConv.Instance, "get_" + mkTesterName altName, 0, [], ilg.typ_Bool)
+                                    mkILMethRef (
+                                        baseTy.TypeRef,
+                                        ILCallingConv.Instance,
+                                        "get_" + mkTesterName altName,
+                                        0,
+                                        [],
+                                        g.ilg.typ_Bool
+                                    )
                                 ),
                             callingConv = ILThisConvention.Instance,
-                            propertyType = ilg.typ_Bool,
+                            propertyType = g.ilg.typ_Bool,
                             init = None,
                             args = [],
                             customAttrs = emptyILCustomAttrs
@@ -882,7 +889,7 @@ let convAlternativeDef
                                 true,
                                 [],
                                 fields.Length,
-                                nonBranchingInstrsToCode (convNewDataInstrInternal ilg cuspec num),
+                                nonBranchingInstrsToCode (convNewDataInstrInternal g.ilg cuspec num),
                                 attr,
                                 imports
                             )
@@ -913,7 +920,7 @@ let convAlternativeDef
                         [
                             for i in 0 .. fields.Length - 1 do
                                 mkLdarg (uint16 i)
-                            yield! convNewDataInstrInternal ilg cuspec num
+                            yield! convNewDataInstrInternal g.ilg cuspec num
                         ]
                         |> nonBranchingInstrsToCode
 
@@ -986,7 +993,7 @@ let convAlternativeDef
                             let debugProxyCode =
                                 [
                                     mkLdarg0
-                                    mkNormalCall (mkILCtorMethSpecForTy (ilg.typ_Object, []))
+                                    mkNormalCall (mkILCtorMethSpecForTy (g.ilg.typ_Object, []))
                                     mkLdarg0
                                     mkLdarg 1us
                                     mkNormalStfld (mkILFieldSpecInTy (debugProxyTy, debugProxyFieldName, altTy))
@@ -994,13 +1001,19 @@ let convAlternativeDef
                                 |> nonBranchingInstrsToCode
 
                             let debugProxyCtor =
-                                mkILCtor (
+                                (mkILCtor (
                                     ILMemberAccess.Public (* must always be public - see jared parson blog entry on implementing debugger type proxy *) ,
                                     [ mkILParamNamed ("obj", altTy) ],
                                     mkMethodBody (false, [], 3, debugProxyCode, None, imports)
-                                )
-
-                                |> addMethodGeneratedAttrs
+                                 )
+                                 |> addMethodGeneratedAttrs)
+                                    .With(
+                                        customAttrs =
+                                            mkILCustomAttrs[GetDynamicDependencyAttribute
+                                                                g
+                                                                0x660 (*Public and NonPublic Fields and Properties*)
+                                                                baseTy]
+                                    )
 
                             let debugProxyGetterMeths =
                                 fields
@@ -1060,7 +1073,7 @@ let convAlternativeDef
                                     debugProxyTypeName,
                                     ILTypeDefAccess.Nested ILMemberAccess.Assembly,
                                     td.GenericParams,
-                                    ilg.typ_Object,
+                                    g.ilg.typ_Object,
                                     [],
                                     mkILMethods ([ debugProxyCtor ] @ debugProxyGetterMeths),
                                     mkILFields debugProxyFields,
@@ -1104,7 +1117,7 @@ let convAlternativeDef
                                 match repr.DiscriminationTechnique info with
                                 | IntegerTag ->
                                     yield mkLdcInt32 num
-                                    yield mkNormalCall (mkILCtorMethSpecForTy (baseTy, [ mkTagFieldType ilg cuspec ]))
+                                    yield mkNormalCall (mkILCtorMethSpecForTy (baseTy, [ mkTagFieldType g.ilg cuspec ]))
                                 | SingleCase
                                 | RuntimeTypes -> yield mkNormalCall (mkILCtorMethSpecForTy (baseTy, []))
                                 | TailOrNull -> failwith "unreachable"
@@ -1120,8 +1133,15 @@ let convAlternativeDef
                             basicFields |> List.map (fun fdef -> fdef.Name, fdef.FieldType)
 
                         let basicCtorMeth =
-                            mkILStorageCtor (basicCtorInstrs, altTy, basicCtorFields, basicCtorAccess, attr, imports)
-                            |> addMethodGeneratedAttrs
+                            (mkILStorageCtor (basicCtorInstrs, altTy, basicCtorFields, basicCtorAccess, attr, imports)
+                             |> addMethodGeneratedAttrs)
+                                .With(
+                                    customAttrs =
+                                        mkILCustomAttrs[GetDynamicDependencyAttribute
+                                                            g
+                                                            0x660 (*Public and NonPublic Fields and Properties*)
+                                                            baseTy]
+                                )
 
                         let altTypeDef =
                             mkILGenericClass (
@@ -1186,7 +1206,7 @@ let mkClassUnionDef
                  addFieldGeneratedAttrs,
                  addFieldNeverAttrs,
                  mkDebuggerTypeProxyAttribute)
-                g.ilg
+                g
                 i
                 td
                 cud
@@ -1244,7 +1264,7 @@ let mkClassUnionDef
                              cud.UnionCasesAccessibility)
 
                     let ctor =
-                        mkILSimpleStorageCtor (
+                        (mkILSimpleStorageCtor (
                             baseInit,
                             baseTy,
                             extraParamsForCtor,
@@ -1252,8 +1272,15 @@ let mkClassUnionDef
                             ctorAccess,
                             cud.DebugPoint,
                             cud.DebugImports
-                        )
-                        |> addMethodGeneratedAttrs
+                         )
+                         |> addMethodGeneratedAttrs)
+                            .With(
+                                customAttrs =
+                                    mkILCustomAttrs[GetDynamicDependencyAttribute
+                                                        g
+                                                        0x660 (*Public and NonPublic Fields and Properties*)
+                                                        baseTy]
+                            )
 
                     let props, meths =
                         mkMethodsAndPropertiesForFields
@@ -1309,8 +1336,12 @@ let mkClassUnionDef
                     ILMemberAccess.Assembly,
                     cud.DebugPoint,
                     cud.DebugImports
-                ) |> addMethodGeneratedAttrs
-                ).With(customAttrs = mkILCustomAttrs[ GetDynamicDependencyAttribute g 0x660 (*Public and NonPublic Fields and Properties*) baseTy])
+                 )
+                 |> addMethodGeneratedAttrs)
+                    .With(
+                        customAttrs =
+                            mkILCustomAttrs[GetDynamicDependencyAttribute g 0x7E0 (*Public and NonPublic Fields and Properties*) baseTy]
+                    )
             ]
 
     // Now initialize the constant fields wherever they are stored...

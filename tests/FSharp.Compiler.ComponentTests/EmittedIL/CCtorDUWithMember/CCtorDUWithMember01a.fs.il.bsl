@@ -109,8 +109,9 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor(int32 _tag) cil managed
     {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::.ctor(valuetype [runtime]System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes,
+                                                                                                              class [runtime]System.Type) = ( 01 00 E0 07 00 00 16 43 43 74 6F 72 44 55 57 69   
+                                                                                                                                                     74 68 4D 65 6D 62 65 72 30 31 61 2B 43 00 00 )    
       
       .maxstack  8
       IL_0000:  ldarg.0
