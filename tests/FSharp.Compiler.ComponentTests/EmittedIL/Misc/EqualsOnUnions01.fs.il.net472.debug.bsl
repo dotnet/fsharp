@@ -145,8 +145,9 @@
       .method public specialname rtspecialname 
               instance void  .ctor(class assembly/U/_A obj) cil managed
       {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::.ctor(valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes,
+                                                                                                class [runtime]System.Type) = ( 01 00 60 06 00 00 12 45 71 75 61 6C 73 4F 6E 55   
+                                                                                                                                 6E 69 6F 6E 73 30 31 2B 55 00 00 )                
         
         .maxstack  8
         IL_0000:  ldarg.0
@@ -169,8 +170,9 @@
       .method public specialname rtspecialname 
               instance void  .ctor(class assembly/U/B obj) cil managed
       {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::.ctor(valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes,
+                                                                                                class [runtime]System.Type) = ( 01 00 60 06 00 00 12 45 71 75 61 6C 73 4F 6E 55   
+                                                                                                                                 6E 69 6F 6E 73 30 31 2B 55 00 00 )                
         
         .maxstack  8
         IL_0000:  ldarg.0
