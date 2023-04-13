@@ -24,6 +24,8 @@ open FSharp.Compiler.TypedTreeOps
 
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
+open System.Collections.Concurrent
+
 #endif
 
 #if DEBUG
@@ -313,7 +315,7 @@ type TcFileState =
 
       diagnosticOptions: FSharpDiagnosticOptions
 
-      argInfoCache: Dictionary<(string * range), ArgReprInfo>
+      argInfoCache: ConcurrentDictionary<(string * range), ArgReprInfo>
 
       // forward call
       TcPat: WarnOnUpperFlag -> TcFileState -> TcEnv -> PrelimValReprInfo option -> TcPatValFlags -> TcPatLinearEnv -> TType -> SynPat -> (TcPatPhase2Input -> Pattern) * TcPatLinearEnv
@@ -364,7 +366,7 @@ type TcFileState =
           conditionalDefines = conditionalDefines
           isInternalTestSpanStackReferring = isInternalTestSpanStackReferring
           diagnosticOptions = diagnosticOptions
-          argInfoCache = Dictionary()
+          argInfoCache = ConcurrentDictionary()
           TcPat = tcPat
           TcSimplePats = tcSimplePats
           TcSequenceExpressionEntry = tcSequenceExpressionEntry
