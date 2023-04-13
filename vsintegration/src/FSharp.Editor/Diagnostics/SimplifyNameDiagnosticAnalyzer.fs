@@ -25,24 +25,22 @@ type internal SimplifyNameDiagnosticAnalyzer [<ImportingConstructor>] () =
 
     static let userOpName = "SimplifyNameDiagnosticAnalyzer"
     static let cache = new MemoryCache("FSharp.Editor." + userOpName)
-    // Make sure only one document is being analyzed at a time, to be nice
-    static let guard = new SemaphoreSlim(1)
+    // Make sure only a few  documents is being analyzed at a time, to be nice
+    static let guard = new SemaphoreSlim(3)
 
     static member LongIdentPropertyKey = "FullName"
 
     interface IFSharpSimplifyNameDiagnosticAnalyzer with
 
         member _.AnalyzeSemanticsAsync(descriptor, document: Document, cancellationToken: CancellationToken) =
-            if document.Project.IsFSharpMiscellaneousOrMetadata && not document.IsFSharpScript then
-                Tasks.Task.FromResult(ImmutableArray.Empty)
-            else
 
                 asyncMaybe {
                     do! Option.guard document.Project.IsFSharpCodeFixesSimplifyNameEnabled
                     do Trace.TraceInformation("{0:n3} (start) SimplifyName", DateTime.Now.TimeOfDay.TotalSeconds)
                     let! textVersion = document.GetTextVersionAsync(cancellationToken)
                     let textVersionHash = textVersion.GetHashCode()
-                    let! _ = guard.WaitAsync(cancellationToken) |> Async.AwaitTask |> liftAsync
+                    let! lockObtained = guard.WaitAsync(TimeSpan.FromSeconds 10. ,cancellationToken) |> Async.AwaitTask |> liftAsync
+                    do! Option.guard lockObtained
 
                     try
                         let key = document.Id.ToString()
