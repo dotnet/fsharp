@@ -30,7 +30,7 @@ type InlineParameterNameHints(parseResults: FSharpParseFileResults) =
 
     let doesFieldNameExist (field: FSharpField) = not field.IsNameGenerated
 
-    let getArgumentLocations (symbolUse: FSharpSymbolUse) (parseResults: FSharpParseFileResults) =
+    let getArgumentLocations (symbolUse: FSharpSymbolUse) =
 
         let position =
             Position.mkPos (symbolUse.Range.End.Line) (symbolUse.Range.End.Column + 1)
@@ -44,7 +44,7 @@ type InlineParameterNameHints(parseResults: FSharpParseFileResults) =
 
     let getTupleRanges = Seq.map (fun location -> location.ArgumentRange) >> Seq.toList
 
-    let getCurryRanges (symbolUse: FSharpSymbolUse) (parseResults: FSharpParseFileResults) =
+    let getCurryRanges (symbolUse: FSharpSymbolUse) =
 
         parseResults.GetAllArgumentsForFunctionApplicationAtPosition symbolUse.Range.Start
         |> Option.defaultValue []
@@ -87,10 +87,10 @@ type InlineParameterNameHints(parseResults: FSharpParseFileResults) =
 
         if isMemberOrFunctionOrValueValidForHint symbol symbolUse then
             let parameters = symbol.CurriedParameterGroups |> Seq.concat
-            let argumentLocations = parseResults |> getArgumentLocations symbolUse
+            let argumentLocations = getArgumentLocations symbolUse
 
             let tupleRanges = argumentLocations |> getTupleRanges
-            let curryRanges = parseResults |> getCurryRanges symbolUse
+            let curryRanges = getCurryRanges symbolUse
 
             let ranges =
                 if tupleRanges |> (not << Seq.isEmpty) then
