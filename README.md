@@ -94,7 +94,7 @@ This project is subject to the MIT License. A copy of this license is in [Licens
 
 ## Code of Conduct
 
-This project has adopted the [Contributor Covenant](https://contributor-covenant.org/) code of conduct to clarify expected behavior in our community. You can read it at [CODE_OF_CONDUCT](CODE_OF_CONDUCT.md).
+This project has adopted the [Contributor Covenant](https://contributor-covenant.org/) code of conduct to clarify expected behavior in our community. You can read it at [the .NET Foundation website](https://dotnetfoundation.org/about/policies/code-of-conduct).
 
 ## Get In Touch
 
