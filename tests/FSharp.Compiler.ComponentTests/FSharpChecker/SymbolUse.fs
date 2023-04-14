@@ -12,15 +12,21 @@ open FSharp.Compiler.NameResolution
 
 module IsPrivateToFile =
 
+    let functionParameter = "param"
+    let source = $"""
+    let f x = x + 1
+    let f2 {functionParameter} = {functionParameter} + 1
+    """
+    let testFile = { sourceFile "Test" [] with Source = source }
+
     [<Fact>]
     let ``Function definition in signature file`` () =
         let project = SyntheticProject.Create(
-            sourceFile "First" [] |> addSignatureFile,
-            sourceFile "Second" ["First"])
+            testFile |> addSignatureFile,
+            sourceFile "Second" [testFile.Id])
 
         project.Workflow {
-            checkFile "First" (fun (typeCheckResult: FSharpCheckFileResults) ->
-                let symbolUse = typeCheckResult.GetSymbolUseAtLocation(5, 6, "let f2 x = x + 1", ["f2"]) |> Option.defaultWith (fun () -> failwith "no symbol use found")
+            checkSymbolUse testFile.Id "f2" (fun symbolUse ->
                 Assert.False(symbolUse.IsPrivateToFile)
                 Assert.False(symbolUse.IsPrivateToFileAndSignatureFile))
         }
@@ -28,56 +34,47 @@ module IsPrivateToFile =
     [<Fact>]
     let ``Function definition, no signature file`` () =
         let project = SyntheticProject.Create(
-            sourceFile "First" [],
-            sourceFile "Second" ["First"])
+            testFile,
+            sourceFile "Second" [testFile.Id])
 
         project.Workflow {
-            checkFile "First" (fun (typeCheckResult: FSharpCheckFileResults) ->
-                let symbolUse = typeCheckResult.GetSymbolUseAtLocation(5, 6, "let f2 x = x + 1", ["f2"]) |> Option.defaultWith (fun () -> failwith "no symbol use found")
+            checkSymbolUse testFile.Id "f2" (fun symbolUse ->
                 Assert.False(symbolUse.IsPrivateToFile)
                 Assert.False(symbolUse.IsPrivateToFileAndSignatureFile))
         }
 
     [<Fact>]
     let ``Function definition not in signature file`` () =
-        let signature = $"""
-type TFirstV_1<'a> = | TFirst of 'a
-val f: x: 'a -> TFirstV_1<'a>
-// no f2 here
-"""
+        let signature = "val f: x: int -> int"
         let project = SyntheticProject.Create(
-            { sourceFile "First" [] with SignatureFile = Custom signature },
-            sourceFile "Second" ["First"])
+            { testFile with SignatureFile = Custom signature },
+            sourceFile "Second" [testFile.Id])
 
         project.Workflow {
-            checkFile "First" (fun (typeCheckResult: FSharpCheckFileResults) ->
-                let symbolUse = typeCheckResult.GetSymbolUseAtLocation(5, 6, "let f2 x = x + 1", ["f2"]) |> Option.defaultWith (fun () -> failwith "no symbol use found")
+            checkSymbolUse testFile.Id "f2" (fun symbolUse ->
                 Assert.True(symbolUse.IsPrivateToFile)
                 Assert.False(symbolUse.IsPrivateToFileAndSignatureFile))
         }
 
     [<Fact>]
     let ``Function parameter, no signature file`` () =
-        SyntheticProject.Create(sourceFile "First" []).Workflow {
-            checkFile "First" (fun (typeCheckResult: FSharpCheckFileResults) ->
-                let symbolUse = typeCheckResult.GetSymbolUseAtLocation(5, 8, "let f2 x = x + 1", ["x"]) |> Option.defaultWith (fun () -> failwith "no symbol use found")
+        SyntheticProject.Create(testFile).Workflow {
+            checkSymbolUse testFile.Id functionParameter (fun symbolUse ->
                 Assert.True(symbolUse.IsPrivateToFile)
                 Assert.False(symbolUse.IsPrivateToFileAndSignatureFile))
         }
 
     [<Fact>]
     let ``Function parameter, with signature file, part 1`` () =
-        SyntheticProject.Create(sourceFile "First" [] |> addSignatureFile).Workflow {
-            checkFile "First" (fun (typeCheckResult: FSharpCheckFileResults) ->
-                let symbolUse = typeCheckResult.GetSymbolUseAtLocation(5, 8, "let f2 x = x + 1", ["x"]) |> Option.defaultWith (fun () -> failwith "no symbol use found")
+        SyntheticProject.Create(testFile |> addSignatureFile).Workflow {
+            checkSymbolUse testFile.Id functionParameter (fun symbolUse ->
                 Assert.False(symbolUse.IsPrivateToFile))
         }
 
     [<Fact>]
     let ``Function parameter, with signature file, part 2`` () =
-        SyntheticProject.Create(sourceFile "First" [] |> addSignatureFile).Workflow {
-            checkFile "First" (fun (typeCheckResult: FSharpCheckFileResults) ->
-                let symbolUse = typeCheckResult.GetSymbolUseAtLocation(5, 8, "let f2 x = x + 1", ["x"]) |> Option.defaultWith (fun () -> failwith "no symbol use found")
+        SyntheticProject.Create(testFile |> addSignatureFile).Workflow {
+            checkSymbolUse testFile.Id functionParameter (fun symbolUse ->
                 Assert.True(symbolUse.IsPrivateToFileAndSignatureFile))
         }
 
@@ -85,9 +82,8 @@ val f: x: 'a -> TFirstV_1<'a>
     let ``Function parameter, with signature file, part 3`` () =
 
         for attempt in 1 .. 20 do
-            SyntheticProject.Create(sourceFile "First" [] |> addSignatureFile).Workflow {
-                checkFile "First" (fun (typeCheckResult: FSharpCheckFileResults) ->
-                    let symbolUse = typeCheckResult.GetSymbolUseAtLocation(5, 8, "let f2 x = x + 1", ["x"]) |> Option.defaultWith (fun () -> failwith "no symbol use found")
+            SyntheticProject.Create(testFile |> addSignatureFile).Workflow {
+                checkSymbolUse testFile.Id functionParameter (fun symbolUse ->
 
                     let couldBeParameter, declarationLocation =
                         match symbolUse.Symbol with
@@ -104,7 +100,44 @@ val f: x: 'a -> TFirstV_1<'a>
 
                     let signatureLocation = argReprInfo |> Option.bind (fun a -> a.OtherRange)
 
-                    let diagnostics = $"#{attempt} couldBeParameter: {couldBeParameter} \n declarationLocation: {declarationLocation} \n thisIsSignature: {thisIsSignature} \n signatureLocation: {signatureLocation} \n argReprInfo: {argReprInfo}"
+                    let diagnostics = $"Attempt: #{attempt} couldBeParameter: {couldBeParameter} \n declarationLocation: {declarationLocation} \n thisIsSignature: {thisIsSignature} \n signatureLocation: {signatureLocation} \n argReprInfo: {argReprInfo}"
+
+                    let result =
+                        couldBeParameter
+                        && (thisIsSignature
+                            || (signatureLocation.IsSome && signatureLocation <> declarationLocation))
+
+                    if not result then
+                        failwith diagnostics)
+            }
+            |> ignore
+
+    [<Fact>]
+    let ``Function parameter, with signature file, clear cache`` () =
+
+        for attempt in 1 .. 20 do
+            SyntheticProject.Create(testFile |> addSignatureFile).Workflow {
+
+                clearCache
+
+                checkSymbolUse testFile.Id functionParameter (fun symbolUse ->
+
+                    let couldBeParameter, declarationLocation =
+                        match symbolUse.Symbol with
+                        | :? FSharpParameter as p -> true, Some p.DeclarationLocation
+                        | :? FSharpMemberOrFunctionOrValue as m when not m.IsModuleValueOrMember -> true, Some m.DeclarationLocation
+                        | _ -> false, None
+
+                    let thisIsSignature = SourceFileImpl.IsSignatureFile symbolUse.Range.FileName
+
+                    let argReprInfo =
+                        match symbolUse.Symbol.Item with
+                        | Item.Value v -> v.Deref.ArgReprInfoForDisplay
+                        | _ -> None
+
+                    let signatureLocation = argReprInfo |> Option.bind (fun a -> a.OtherRange)
+
+                    let diagnostics = $"Attempt: #{attempt} couldBeParameter: {couldBeParameter} \n declarationLocation: {declarationLocation} \n thisIsSignature: {thisIsSignature} \n signatureLocation: {signatureLocation} \n argReprInfo: {argReprInfo}"
 
                     let result =
                         couldBeParameter

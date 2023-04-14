@@ -939,7 +939,10 @@ let TranslateTopArgSynInfo (cenv: cenv) isArg m tcAttributes (SynArgInfo(Attribu
     let argInfo =
         key
         |> Option.map cenv.argInfoCache.TryGetValue
-        |> Option.bind (fun (found, info) -> if found then Some info else None)
+        |> Option.bind (fun (found, info) ->
+            if found then
+                Some info
+            else None)
         |> Option.defaultValue ({ Attribs = attribs; Name = nm; OtherRange = None }: ArgReprInfo)
 
     match key with

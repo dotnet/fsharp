@@ -700,17 +700,31 @@ type ProjectWorkflowBuilder
             return { ctx with Cursor = su }
         }
 
+    member this.FindSymbolUse(ctx: WorkflowContext, fileId, symbolName: string) =
+        async {
+            let file = ctx.Project.Find fileId
+            let fileName = ctx.Project.ProjectDir ++ file.FileName
+            let source = renderSourceFile ctx.Project file
+            let options= ctx.Project.GetProjectOptions checker
+            return! getSymbolUse fileName source symbolName options checker
+        }
+
     /// Find a symbol by finding the first occurrence of the symbol name in the file
     [<CustomOperation "placeCursor">]
     member this.PlaceCursor(workflow: Async<WorkflowContext>, fileId, symbolName: string) =
         async {
             let! ctx = workflow
-            let file = ctx.Project.Find fileId
-            let fileName = ctx.Project.ProjectDir ++ file.FileName
-            let source = renderSourceFile ctx.Project file
-            let options= ctx.Project.GetProjectOptions checker
-            let! su = getSymbolUse fileName source symbolName options checker
+            let! su = this.FindSymbolUse(ctx, fileId, symbolName)
             return { ctx with Cursor = Some su }
+        }
+
+    [<CustomOperation "checkSymbolUse">]
+    member this.CheckSymbolUse(workflow: Async<WorkflowContext>, fileId, symbolName: string, check) =
+        async {
+            let! ctx = workflow
+            let! su = this.FindSymbolUse(ctx, fileId, symbolName)
+            check su
+            return ctx
         }
 
     /// Find all references within a single file, results are provided to the 'processResults' function
@@ -773,6 +787,17 @@ type ProjectWorkflowBuilder
         async {
             let! ctx = workflow
             do! saveProject ctx.Project false checker
+            return ctx
+        }
+
+    /// Clear checker caches.
+    [<CustomOperation "clearCache">]
+    member this.ClearCache(workflow: Async<WorkflowContext>) =
+        async {
+            let! ctx = workflow
+            let options = [for p in ctx.Project.GetAllProjects() -> p.GetProjectOptions checker]
+            checker.ClearCache(options)
+            checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
             return ctx
         }
 
