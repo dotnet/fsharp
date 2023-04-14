@@ -572,7 +572,7 @@ type internal FSharpNavigation(metadataAsSource: FSharpMetadataAsSourceService, 
         try
             ThreadHelper.JoinableTaskFactory.Run(
                 SR.NavigatingTo(),
-                (fun progress cancellationToken ->
+                (fun _progress cancellationToken ->
                     Async.StartImmediateAsTask(
                         asyncMaybe {
                             let! targetDoc = solution.TryGetDocumentFromFSharpRange(range, initialDoc.Project.Id)
@@ -583,14 +583,6 @@ type internal FSharpNavigation(metadataAsSource: FSharpMetadataAsSourceService, 
                             if isSignatureFile initialDoc.FilePath then
                                 return gtd.TryNavigateToTextSpan(targetDoc, targetTextSpan, cancellationToken)
                             else
-                                progress.Report(
-                                    ThreadedWaitDialogProgressData(
-                                        "Navigating to implementation.",
-                                        statusBarText = SR.NavigatingTo(),
-                                        isCancelable = true
-                                    )
-                                )
-
                                 let! result =
                                     gtd.NavigateToSymbolDefinitionAsync(targetDoc, targetSource, range, cancellationToken)
                                     |> liftAsync
@@ -601,7 +593,8 @@ type internal FSharpNavigation(metadataAsSource: FSharpMetadataAsSourceService, 
                         }
                         |> Async.Ignore,
                         cancellationToken
-                    ))
+                    )),
+                TimeSpan.FromSeconds 1
             )
         with :? OperationCanceledException ->
             ()
