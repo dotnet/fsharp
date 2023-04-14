@@ -114,6 +114,8 @@ type FSharpProjectSnapshot =
     /// Compute the project directory.
     member internal ProjectDirectory: string
 
+    member SourceFileNames: string list
+
     member Key: FSharpProjectSnapshotKey
 
 
@@ -238,6 +240,9 @@ and [<NoComparison; CustomEquality>] public FSharpReferencedProject =
     static member CreateFromILModuleReader:
         projectOutputFile: string * getStamp: (unit -> DateTime) * getReader: (unit -> ILModuleReader) ->
             FSharpReferencedProject
+
+type FSharpProjectSnapshot with
+    member ToOptions: unit -> FSharpProjectOptions
 
 
 /// Represents the use of an F# symbol from F# source code

@@ -202,6 +202,8 @@ type FSharpProjectSnapshot =
         UseScriptResolutionRules = this.UseScriptResolutionRules
     }
 
+    member this.SourceFileNames = this.SourceFiles |> List.map (fun x -> x.FileName)
+
     override this.ToString() =
         "FSharpProjectSnapshot(" + this.ProjectFileName + ")"
 
@@ -326,6 +328,21 @@ and FSharpProjectOptions =
 
     override this.ToString() =
         "FSharpProjectOptions(" + this.ProjectFileName + ")"
+
+type FSharpProjectSnapshot with
+    member this.ToOptions (): FSharpProjectOptions = {
+        ProjectFileName = this.ProjectFileName
+        ProjectId = this.ProjectId
+        SourceFiles = this.SourceFiles |> Seq.map (fun x -> x.FileName) |> Seq.toArray
+        OtherOptions = this.OtherOptions |> List.toArray
+        ReferencedProjects = this.ReferencedProjects |> Seq.map (function FSharpReference (name, opts) -> FSharpReferencedProject.FSharpReference (name, opts.ToOptions())) |> Seq.toArray
+        IsIncompleteTypeCheckEnvironment = this.IsIncompleteTypeCheckEnvironment
+        UseScriptResolutionRules = this.UseScriptResolutionRules
+        LoadTime = this.LoadTime
+        UnresolvedReferences = this.UnresolvedReferences
+        OriginalLoadReferences = this.OriginalLoadReferences
+        Stamp = this.Stamp
+    }
 
 [<AutoOpen>]
 module internal FSharpCheckerResultsSettings =

@@ -9,6 +9,16 @@ open System
 open FSharp.Compiler
 open Internal.Utilities.Collections
 open FSharp.Compiler.ParseAndCheckInputs
+open FSharp.Compiler.ScriptClosure
+open FSharp.Compiler.AbstractIL.ILBinaryReader
+open FSharp.Compiler.Text.Range
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.ConstraintSolver
+open System.Diagnostics
+open System.IO
+open FSharp.Compiler.CompilerOptions
+open FSharp.Compiler.Xml
+open FSharp.Compiler.CompilerImports
 
 
 
@@ -49,7 +59,7 @@ type internal TransparentCompiler
 
     let ParseFileCache = AsyncMemoize()
     let ParseAndCheckFileInProjectCache = AsyncMemoize()
-
+    let FrameworkImportsCache = AsyncMemoize()
 
     // use this to process not-yet-implemented tasks
     let backgroundCompiler =
@@ -71,18 +81,296 @@ type internal TransparentCompiler
         )
         :> IBackgroundCompiler
 
+    let getProjectReferences (project: FSharpProjectSnapshot) userOpName =
+        [
+            for r in project.ReferencedProjects do
 
-    let ComputeParseFile (file: FSharpFile) (projectSnapshot: FSharpProjectSnapshot) userOpName _key = node {
+                match r with
+                | FSharpReferencedProjectSnapshot.FSharpReference (nm, opts) ->
+                    // Don't use cross-project references for FSharp.Core, since various bits of code
+                    // require a concrete FSharp.Core to exist on-disk. The only solutions that have
+                    // these cross-project references to FSharp.Core are VisualFSharp.sln and FSharp.sln. The ramification
+                    // of this is that you need to build FSharp.Core to get intellisense in those projects.
 
-        return ()
+                    if
+                        (try
+                            Path.GetFileNameWithoutExtension(nm)
+                         with _ ->
+                             "")
+                        <> GetFSharpCoreLibraryName()
+                    then
+                        { new IProjectReference with
+                            member x.EvaluateRawContents() =
+                                node {
+                                    Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "GetAssemblyData", nm)
+                                    return! backgroundCompiler.GetAssemblyData(opts.ToOptions(), userOpName + ".CheckReferencedProject(" + nm + ")")
+                                }
+
+                            member x.TryGetLogicalTimeStamp(cache) =
+                                // TODO:
+                                None
+
+                            member x.FileName = nm
+                        }
+        ]
+
+
+    let ComputeFrameworkImports (tcConfig: TcConfig) _key = node {
+        let tcConfigP = TcConfigProvider.Constant tcConfig
+        return! TcImports.BuildFrameworkTcImports (tcConfigP, frameworkDLLs, nonFrameworkResolutions)
+    }
+
+
+    let ComputeBootstapInfo (projectSnapshot: FSharpProjectSnapshot) =
+        node {
+
+            let useSimpleResolutionSwitch = "--simpleresolution"
+            let commandLineArgs = projectSnapshot.OtherOptions
+            let defaultFSharpBinariesDir = FSharpCheckerResultsSettings.defaultFSharpBinariesDir
+            let useScriptResolutionRules = projectSnapshot.UseScriptResolutionRules
+
+            let projectReferences = getProjectReferences projectSnapshot "ComputeBootstapInfo"
+            let sourceFiles = projectSnapshot.SourceFileNames
+
+            // TODO: script support
+            let loadClosureOpt: LoadClosure option = None
+
+            let tcConfigB, sourceFiles =
+
+                let getSwitchValue switchString =
+                    match commandLineArgs |> List.tryFindIndex(fun s -> s.StartsWithOrdinal switchString) with
+                    | Some idx -> Some(commandLineArgs[idx].Substring(switchString.Length))
+                    | _ -> None
+
+                let sdkDirOverride =
+                    match loadClosureOpt with
+                    | None -> None
+                    | Some loadClosure -> loadClosure.SdkDirOverride
+
+                // see also fsc.fs: runFromCommandLineToImportingAssemblies(), as there are many similarities to where the PS creates a tcConfigB
+                let tcConfigB =
+                    TcConfigBuilder.CreateNew(legacyReferenceResolver,
+                         defaultFSharpBinariesDir,
+                         implicitIncludeDir=projectSnapshot.ProjectDirectory,
+                         reduceMemoryUsage=ReduceMemoryFlag.Yes,
+                         isInteractive=useScriptResolutionRules,
+                         isInvalidationSupported=true,
+                         defaultCopyFSharpCore=CopyFSharpCoreFlag.No,
+                         tryGetMetadataSnapshot=tryGetMetadataSnapshot,
+                         sdkDirOverride=sdkDirOverride,
+                         rangeForErrors=range0)
+
+                tcConfigB.primaryAssembly <-
+                    match loadClosureOpt with
+                    | None -> PrimaryAssembly.Mscorlib
+                    | Some loadClosure ->
+                        if loadClosure.UseDesktopFramework then
+                            PrimaryAssembly.Mscorlib
+                        else
+                            PrimaryAssembly.System_Runtime
+
+                tcConfigB.resolutionEnvironment <- (LegacyResolutionEnvironment.EditingOrCompilation true)
+
+                tcConfigB.conditionalDefines <-
+                    let define = if useScriptResolutionRules then "INTERACTIVE" else "COMPILED"
+                    define :: tcConfigB.conditionalDefines
+
+                tcConfigB.projectReferences <- projectReferences
+
+                tcConfigB.useSimpleResolution <- (getSwitchValue useSimpleResolutionSwitch) |> Option.isSome
+
+                // Apply command-line arguments and collect more source files if they are in the arguments
+                let sourceFilesNew = ApplyCommandLineArgs(tcConfigB, sourceFiles, commandLineArgs)
+
+                // Never open PDB files for the language service, even if --standalone is specified
+                tcConfigB.openDebugInformationForLaterStaticLinking <- false
+
+                tcConfigB.xmlDocInfoLoader <-
+                    { new IXmlDocumentationInfoLoader with
+                        /// Try to load xml documentation associated with an assembly by the same file path with the extension ".xml".
+                        member _.TryLoad(assemblyFileName) =
+                            let xmlFileName = Path.ChangeExtension(assemblyFileName, ".xml")
+
+                            // REVIEW: File IO - Will eventually need to change this to use a file system interface of some sort.
+                            XmlDocumentationInfo.TryCreateFromFile(xmlFileName)
+                    }
+                    |> Some
+
+                tcConfigB.parallelReferenceResolution <- parallelReferenceResolution
+                tcConfigB.captureIdentifiersWhenParsing <- captureIdentifiersWhenParsing
+
+                tcConfigB, sourceFilesNew
+
+            // If this is a builder for a script, re-apply the settings inferred from the
+            // script and its load closure to the configuration.
+            //
+            // NOTE: it would probably be cleaner and more accurate to re-run the load closure at this point.
+            let setupConfigFromLoadClosure () =
+                match loadClosureOpt with
+                | Some loadClosure ->
+                    let dllReferences =
+                        [for reference in tcConfigB.referencedDLLs do
+                            // If there's (one or more) resolutions of closure references then yield them all
+                            match loadClosure.References  |> List.tryFind (fun (resolved, _)->resolved=reference.Text) with
+                            | Some (resolved, closureReferences) ->
+                                for closureReference in closureReferences do
+                                    yield AssemblyReference(closureReference.originalReference.Range, resolved, None)
+                            | None -> yield reference]
+                    tcConfigB.referencedDLLs <- []
+                    tcConfigB.primaryAssembly <- (if loadClosure.UseDesktopFramework then PrimaryAssembly.Mscorlib else PrimaryAssembly.System_Runtime)
+                    // Add one by one to remove duplicates
+                    dllReferences |> List.iter (fun dllReference ->
+                        tcConfigB.AddReferencedAssemblyByPath(dllReference.Range, dllReference.Text))
+                    tcConfigB.knownUnresolvedReferences <- loadClosure.UnresolvedReferences
+                | None -> ()
+
+            setupConfigFromLoadClosure()
+
+            let tcConfig = TcConfig.Create(tcConfigB, validate=true)
+            let outfile, _, assemblyName = tcConfigB.DecideNames sourceFiles
+
+            // Resolve assemblies and create the framework TcImports. This is done when constructing the
+            // builder itself, rather than as an incremental task. This caches a level of "system" references. No type providers are
+            // included in these references.
+            let! tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences = frameworkTcImportsCache.Get(tcConfig)
+
+            // Note we are not calling diagnosticsLogger.GetDiagnostics() anywhere for this task.
+            // This is ok because not much can actually go wrong here.
+            let diagnosticsLogger = CompilationDiagnosticLogger("nonFrameworkAssemblyInputs", tcConfig.diagnosticsOptions)
+            use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parameter)
+
+            // Get the names and time stamps of all the non-framework referenced assemblies, which will act
+            // as inputs to one of the nodes in the build.
+            //
+            // This operation is done when constructing the builder itself, rather than as an incremental task.
+            let nonFrameworkAssemblyInputs =
+                // Note we are not calling diagnosticsLogger.GetDiagnostics() anywhere for this task.
+                // This is ok because not much can actually go wrong here.
+                let diagnosticsLogger = CompilationDiagnosticLogger("nonFrameworkAssemblyInputs", tcConfig.diagnosticsOptions)
+                // Return the disposable object that cleans up
+                use _holder = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parameter)
+
+                [ for r in nonFrameworkResolutions do
+                    let fileName = r.resolvedPath
+                    yield (Choice1Of2 fileName, (fun (cache: TimeStampCache) -> cache.GetFileTimeStamp fileName))
+
+                  for pr in projectReferences  do
+                    yield Choice2Of2 pr, (fun (cache: TimeStampCache) -> cache.GetProjectReferenceTimeStamp pr) ]
+
+            // Start importing
+
+            let tcConfigP = TcConfigProvider.Constant tcConfig
+            let beforeFileChecked = Event<string>()
+            let fileChecked = Event<string>()
+
+#if !NO_TYPEPROVIDERS
+            let importsInvalidatedByTypeProvider = Event<unit>()
+#endif
+
+            // Check for the existence of loaded sources and prepend them to the sources list if present.
+            let sourceFiles = tcConfig.GetAvailableLoadedSources() @ (sourceFiles |>List.map (fun s -> rangeStartup, s))
+
+            // Mark up the source files with an indicator flag indicating if they are the last source file in the project
+            let sourceFiles =
+                let flags, isExe = tcConfig.ComputeCanContainEntryPoint(sourceFiles |> List.map snd)
+                ((sourceFiles, flags) ||> List.map2 (fun (m, nm) flag -> (m, nm, (flag, isExe))))
+
+            let basicDependencies =
+                [ for UnresolvedAssemblyReference(referenceText, _)  in unresolvedReferences do
+                    // Exclude things that are definitely not a file name
+                    if not(FileSystem.IsInvalidPathShim referenceText) then
+                        let file = if FileSystem.IsPathRootedShim referenceText then referenceText else Path.Combine(projectDirectory, referenceText)
+                        yield file
+
+                  for r in nonFrameworkResolutions do
+                        yield  r.resolvedPath  ]
+
+            let allDependencies =
+                [| yield! basicDependencies
+                   for _, f, _ in sourceFiles do
+                        yield f |]
+
+            // For scripts, the dependency provider is already available.
+            // For projects create a fresh one for the project.
+            let dependencyProvider =
+                match dependencyProvider with
+                | None -> new DependencyProvider()
+                | Some dependencyProvider -> dependencyProvider
+
+            let defaultTimeStamp = DateTime.UtcNow
+
+            let! initialBoundModel = 
+                CombineImportedAssembliesTask(
+                    assemblyName,
+                    tcConfig,
+                    tcConfigP,
+                    tcGlobals,
+                    frameworkTcImports,
+                    nonFrameworkResolutions,
+                    unresolvedReferences,
+                    dependencyProvider,
+                    loadClosureOpt,
+                    basicDependencies,
+                    keepAssemblyContents,
+                    keepAllBackgroundResolutions,
+                    keepAllBackgroundSymbolUses,
+                    enableBackgroundItemKeyStoreAndSemanticClassification,
+                    enablePartialTypeChecking,
+                    beforeFileChecked,
+                    fileChecked
+#if !NO_TYPEPROVIDERS
+                    ,importsInvalidatedByTypeProvider
+#endif
+                )
+
+            let getFSharpSource fileName =
+                getSource
+                |> Option.map(fun getSource ->
+                    let timeStamp = DateTime.UtcNow
+                    let getTimeStamp = fun () -> timeStamp
+                    let getSourceText() = getSource fileName
+                    FSharpSource.Create(fileName, getTimeStamp, getSourceText))
+                |> Option.defaultWith(fun () -> FSharpSource.CreateFromFile(fileName))
+
+            let sourceFiles =
+                sourceFiles
+                |> List.map (fun (m, fileName, isLastCompiland) -> 
+                    { Range = m; Source = getFSharpSource fileName; Flags = isLastCompiland } )
+
+            return (), ()
+        }
+
+
+    let ComputeParseFile (file: FSharpFile) (projectSnapshot: FSharpProjectSnapshot) bootstrapInfo userOpName _key = node {
+
+        let parsingOptions =
+            FSharpParsingOptions.FromTcConfig(
+                bootstrapInfo.TcConfig,
+                projectSnapshot.SourceFiles |> Seq.map (fun f -> f.FileName) |> Array.ofSeq,
+                projectSnapshot.UseScriptResolutionRules
+            )
+
+        // TODO: what is this?
+        // GraphNode.SetPreferredUILang tcPrior.TcConfig.preferredUiLang
+
+        let! sourceText = file.Source.GetSource() |> NodeCode.AwaitTask
+
+        return ParseAndCheckFile.parseFile (
+            sourceText,
+            file.Source.FileName,
+            parsingOptions,
+            userOpName,
+            suggestNamesForErrors,
+            captureIdentifiersWhenParsing
+        )
 
     }
 
 
-    let ComputeParseAndCheckFileInProject (fileName: string) (projectSnapshot: FSharpProjectSnapshot) _key =
+    let ComputeParseAndCheckFileInProject (fileName: string) (projectSnapshot: FSharpProjectSnapshot) userOpName _key =
         node {
 
-            let! bootstrapInfoOpt, creationDiags = getBootstrapInfo projectSnapshot // probably cache
+            let! bootstrapInfoOpt, creationDiags = ComputeBootstapInfo projectSnapshot // probably cache
 
             match bootstrapInfoOpt with
             | None ->
@@ -92,31 +380,10 @@ type internal TransparentCompiler
 
             | Some bootstrapInfo ->
 
+                let file = bootstrapInfo.SourceFiles |> List.find (fun f -> f.Source.FileName = fileName)
+                let! parseDiagnostics, parseTree, anyErrors = ParseFileCache.Get(file.Source.Key, ComputeParseFile file projectSnapshot bootstrapInfo userOpName)
 
-                
-
-                // Do the parsing.
-                let parsingOptions =
-                    FSharpParsingOptions.FromTcConfig(
-                        bootstrapInfo.TcConfig,
-                        projectSnapshot.SourceFiles |> Seq.map (fun f -> f.FileName) |> Array.ofSeq,
-                        projectSnapshot.UseScriptResolutionRules
-                    )
-
-                // TODO: what is this?
-                // GraphNode.SetPreferredUILang tcPrior.TcConfig.preferredUiLang
-
-                let parseDiagnostics, parseTree, anyErrors =
-                    ParseAndCheckFile.parseFile (
-                        sourceText,
-                        fileName,
-                        parsingOptions,
-                        userOpName,
-                        suggestNamesForErrors,
-                        captureIdentifiersWhenParsing
-                    )
-
-                // TODO: check if we need this in parse results
+                // TODO: check if we really need this in parse results
                 let dependencyFiles = [||]
 
                 let parseResults =
