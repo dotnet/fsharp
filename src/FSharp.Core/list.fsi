@@ -739,6 +739,8 @@ module List =
     /// <code lang="fsharp">
     /// let input = [1, "Luke"; 2, "Kirk"; 3, "Kenobi"; 4, "Spock"]
     ///
+    /// let isEven x = 0 = x % 2
+    ///
     /// let isComingFromStarTrek (x,_) = isEven x
     /// 
     /// input |> List.filter isComingFromStarTrek
