@@ -84,7 +84,7 @@ type InlineParameterNameHints(parseResults: FSharpParseFileResults) =
         (symbol: FSharpMemberOrFunctionOrValue)
         (symbolUse: FSharpSymbolUse)
         =
-         
+
         if isMemberOrFunctionOrValueValidForHint symbol symbolUse then
             let parameters = Seq.concat symbol.CurriedParameterGroups
             let argumentLocations = getArgumentLocations symbolUse
