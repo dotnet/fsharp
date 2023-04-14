@@ -175,7 +175,9 @@ let ParseFile fileName =
             $"%A{ast}\n\n%s{diagnostics}"
         |> normalize
         |> sprintf "%s\n"
+
     let bslPath = $"{fullPath}.bsl"
+    let tmpPath = $"{fullPath}.tmp"
 
     let expected =
         if File.Exists bslPath then
@@ -183,11 +185,14 @@ let ParseFile fileName =
         else
             "No baseline was found"
 
+    let equals = expected = actual
     let testUpdateBSLEnv = System.Environment.GetEnvironmentVariable("TEST_UPDATE_BSL")
 
     if not (isNull testUpdateBSLEnv) && testUpdateBSLEnv.Trim() = "1" then
         File.WriteAllText(bslPath, actual)
-    elif expected <> actual then
-        File.WriteAllText($"{fullPath}.tmp", actual)
+    elif not equals then
+        File.WriteAllText(tmpPath, actual)
+    else
+        File.Delete(tmpPath)
 
     Assert.AreEqual(expected, actual)
