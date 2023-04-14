@@ -77,14 +77,14 @@ type InlineParameterNameHints(parseResults: FSharpParseFileResults) =
         symbolUse.IsFromUse
         && symbol.DisplayName <> "(::)"
         // If a case does not use field names, don't even bother getting applied argument ranges
-        && Seq.toList symbol.Fields |> Seq.exists fieldNameExists
+        && symbol.Fields |> Seq.exists fieldNameExists
 
     member _.getHintsForMemberOrFunctionOrValue
         (sourceText: SourceText)
         (symbol: FSharpMemberOrFunctionOrValue)
         (symbolUse: FSharpSymbolUse)
         =
-
+         
         if isMemberOrFunctionOrValueValidForHint symbol symbolUse then
             let parameters = Seq.concat symbol.CurriedParameterGroups
             let argumentLocations = getArgumentLocations symbolUse
