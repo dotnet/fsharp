@@ -777,6 +777,11 @@
         <target state="translated">Espressione operatore incompleta (ad esempio a^b) o chiamata di tipo qualificato (ad esempio: ^T.Name)</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsMissingUnionCaseName">
+        <source>Missing union case name</source>
+        <target state="new">Missing union case name</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsNewExprMemberAccess">
         <source>This member access is ambiguous. Please use parentheses around the object creation, e.g. '(new SomeType(args)).MemberName'</source>
         <target state="translated">L'accesso ai membri è ambiguo. Utilizzare le parentesi intorno alla creazione oggetto, ad esempio “(New SomeType (args)). MemberName”</target>
