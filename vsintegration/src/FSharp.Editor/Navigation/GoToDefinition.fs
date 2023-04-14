@@ -568,46 +568,43 @@ type internal FSharpNavigation(metadataAsSource: FSharpMetadataAsSourceService, 
         && solution.TryGetDocumentIdFromFSharpRange(range, initialDoc.Project.Id)
            |> Option.isSome
 
-    member _.RelativePath(range: range) =
-        let relativePathEscaped =
-            match solution.FilePath with
-            | null -> range.FileName
-            | sfp ->
-                let targetUri = Uri(range.FileName)
-                Uri(sfp).MakeRelativeUri(targetUri).ToString()
+    member _.NavigateTo(range: range) =
+        try
+            ThreadHelper.JoinableTaskFactory.Run(
+                SR.NavigatingTo(),
+                (fun progress cancellationToken ->
+                    Async.StartImmediateAsTask(
+                        asyncMaybe {
+                            let! targetDoc = solution.TryGetDocumentFromFSharpRange(range, initialDoc.Project.Id)
+                            let! targetSource = targetDoc.GetTextAsync(cancellationToken)
+                            let! targetTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan(targetSource, range)
+                            let gtd = GoToDefinition(metadataAsSource)
 
-        relativePathEscaped |> Uri.UnescapeDataString
+                            if isSignatureFile initialDoc.FilePath then
+                                return gtd.TryNavigateToTextSpan(targetDoc, targetTextSpan, cancellationToken)
+                            else
+                                progress.Report(
+                                    ThreadedWaitDialogProgressData(
+                                        "Navigating to implementation.",
+                                        statusBarText = SR.NavigatingTo(),
+                                        isCancelable = true
+                                    )
+                                )
 
-    member _.NavigateTo(range: range, cancellationToken: CancellationToken) =
-        asyncMaybe {
-            let targetPath = range.FileName
-            let! targetDoc = solution.TryGetDocumentFromFSharpRange(range, initialDoc.Project.Id)
-            let! targetSource = targetDoc.GetTextAsync(cancellationToken)
-            let! targetTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan(targetSource, range)
-            let gtd = GoToDefinition(metadataAsSource)
+                                let! result =
+                                    gtd.NavigateToSymbolDefinitionAsync(targetDoc, targetSource, range, cancellationToken)
+                                    |> liftAsync
 
-            // To ensure proper navigation decsions, we need to check the type of document the navigation call
-            // is originating from and the target we're provided by default:
-            //  - signature files (.fsi) should navigate to other signature files
-            //  - implementation files (.fs) should navigate to other implementation files
-            let (|Signature|Implementation|) filepath =
-                if isSignatureFile filepath then
-                    Signature
-                else
-                    Implementation
-
-            match initialDoc.FilePath, targetPath with
-            | Signature, Signature
-            | Implementation, Implementation -> return gtd.TryNavigateToTextSpan(targetDoc, targetTextSpan, cancellationToken)
-
-            // Adjust the target from signature to implementation.
-            | Implementation, Signature -> return! gtd.NavigateToSymbolDefinitionAsync(targetDoc, targetSource, range, cancellationToken)
-
-            // Adjust the target from implmentation to signature.
-            | Signature, Implementation -> return! gtd.NavigateToSymbolDeclarationAsync(targetDoc, targetSource, range, cancellationToken)
-        }
-        |> Async.Ignore
-        |> Async.StartImmediate
+                                if result.IsNone then
+                                    // fallback to fast navigation
+                                    return gtd.TryNavigateToTextSpan(targetDoc, targetTextSpan, cancellationToken)
+                        }
+                        |> Async.Ignore,
+                        cancellationToken
+                    ))
+            )
+        with :? OperationCanceledException ->
+            ()
 
     member _.FindDefinitions(position, cancellationToken) =
         let gtd = GoToDefinition(metadataAsSource)
@@ -701,7 +698,7 @@ type FSharpNavigableLocation(metadataAsSource: FSharpMetadataAsSourceService, sy
                 | Signature -> return! gtd.NavigateToSymbolDefinitionAsync(targetDoc, targetSource, symbolRange, cancellationToken)
                 | Implementation -> return! gtd.NavigateToSymbolDeclarationAsync(targetDoc, targetSource, symbolRange, cancellationToken)
             }
-            |> Async.map (fun a -> a.IsSome)
+            |> Async.map Option.isSome
             |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
 [<Export(typeof<IFSharpCrossLanguageSymbolNavigationService>)>]
