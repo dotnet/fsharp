@@ -26,9 +26,9 @@ type InlineParameterNameHints(parseResults: FSharpParseFileResults) =
             Parts = [ TaggedText(TextTag.Text, $"{field.Name} = ") ]
         }
 
-    let doesParameterNameExist (parameter: FSharpParameter) = parameter.DisplayName <> ""
+    let parameterNameExists (parameter: FSharpParameter) = parameter.DisplayName <> ""
 
-    let doesFieldNameExist (field: FSharpField) = not field.IsNameGenerated
+    let fieldNameExists (field: FSharpField) = not field.IsNameGenerated
 
     let getArgumentLocations (symbolUse: FSharpSymbolUse) =
 
@@ -77,7 +77,7 @@ type InlineParameterNameHints(parseResults: FSharpParseFileResults) =
         symbolUse.IsFromUse
         && symbol.DisplayName <> "(::)"
         // If a case does not use field names, don't even bother getting applied argument ranges
-        && Seq.toList symbol.Fields |> Seq.exists doesFieldNameExist
+        && Seq.toList symbol.Fields |> Seq.exists fieldNameExists
 
     member _.getHintsForMemberOrFunctionOrValue
         (sourceText: SourceText)
@@ -86,24 +86,24 @@ type InlineParameterNameHints(parseResults: FSharpParseFileResults) =
         =
 
         if isMemberOrFunctionOrValueValidForHint symbol symbolUse then
-            let parameters = symbol.CurriedParameterGroups |> Seq.concat
+            let parameters = Seq.concat symbol.CurriedParameterGroups
             let argumentLocations = getArgumentLocations symbolUse
 
-            let tupleRanges = argumentLocations |> getTupleRanges
+            let tupleRanges = getTupleRanges argumentLocations
             let curryRanges = getCurryRanges symbolUse
 
             let ranges =
-                if tupleRanges |> (not << Seq.isEmpty) then
-                    tupleRanges
-                else
+                if Seq.isEmpty tupleRanges then
                     curryRanges
+                else
+                    tupleRanges
                 |> Seq.filter (fun range -> argumentLocations |> (not << isNamedArgument range))
 
-            let argumentNames = ranges |> Seq.map (getSourceTextAtRange sourceText)
+            let argumentNames = Seq.map (getSourceTextAtRange sourceText) ranges
 
             parameters
             |> Seq.zip ranges // Seq.zip is important as List.zip requires equal lengths
-            |> Seq.where (snd >> doesParameterNameExist)
+            |> Seq.where (snd >> parameterNameExists)
             |> Seq.zip argumentNames
             |> Seq.choose (fun (argumentName, (range, parameter)) ->
                 if argumentName <> parameter.DisplayName then
@@ -127,7 +127,7 @@ type InlineParameterNameHints(parseResults: FSharpParseFileResults) =
             | Some ranges when ranges.Length = fields.Length ->
                 fields
                 |> List.zip ranges
-                |> List.where (snd >> doesFieldNameExist)
+                |> List.where (snd >> fieldNameExists)
                 |> List.map getFieldHint
 
             | _ -> []

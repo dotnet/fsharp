@@ -33,7 +33,8 @@ module HintService =
         getHints (hintKinds |> Set.toList) []
 
     let private getHintsForSymbol (sourceText: SourceText) parseResults hintKinds (symbol, symbolUses) =
-        symbol |> getHints sourceText parseResults hintKinds symbolUses |> Seq.concat
+        let hints = getHints sourceText parseResults hintKinds symbolUses symbol 
+        hints |> Seq.concat
 
     let getHintsForDocument sourceText (document: Document) hintKinds userOpName cancellationToken =
         async {
