@@ -397,6 +397,8 @@
     <Compile Include="Driver\GraphChecking\TypeCheckingGraphProcessing.fsi" />
     <Compile Include="Driver\GraphChecking\TypeCheckingGraphProcessing.fs" />
     <Content Include="Driver\GraphChecking\Docs.md" />
+    <Compile Include="Driver\GraphChecking\GraphConstruction.fsi" />
+    <Compile Include="Driver\GraphChecking\GraphConstruction.fs" />
     <Compile Include="Driver\ParseAndCheckInputs.fsi" />
     <Compile Include="Driver\ParseAndCheckInputs.fs" />
     <Compile Include="Driver\ScriptClosure.fsi" />

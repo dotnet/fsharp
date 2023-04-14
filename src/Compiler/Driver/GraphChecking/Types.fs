@@ -25,6 +25,16 @@ type internal FileInProject =
         ParsedInput: ParsedInput
     }
 
+    static member FromFileInProject(inputs: ParsedInput list) : FileInProject array =
+        inputs
+        |> List.toArray
+        |> Array.mapi (fun idx (input: ParsedInput) ->
+            {
+                Idx = idx
+                FileName = input.FileName
+                ParsedInput = input
+            })
+
 /// There is a subtle difference between a module and namespace.
 /// A namespace does not necessarily expose a set of dependent files.
 /// Only when the namespace exposes types that could later be inferred.

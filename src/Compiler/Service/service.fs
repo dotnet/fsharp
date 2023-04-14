@@ -8,6 +8,7 @@ open System.IO
 open System.Reflection
 open System.Reflection.Emit
 open System.Threading
+open FSharp.Compiler.GraphChecking
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -1242,6 +1243,24 @@ type BackgroundCompiler
 
     member _.FrameworkImportsCache = frameworkTcImportsCache
 
+    member _.GetDependencyGraph(options: FSharpProjectOptions, userOpName: string) : Async<FSharp.Compiler.GraphChecking.Graph<int * string>> =
+        node {
+            let! builderOpt, _ = getOrCreateBuilder (options, userOpName)
+
+            match builderOpt with
+            | None -> return Graph.make Seq.empty
+            | Some builder ->
+                let inputs =
+                    options.SourceFiles
+                    |> ArrayParallel.map (fun fileName ->
+                        let parseInput, _, _, _ = builder.GetParseResultsForFile(fileName)
+                        parseInput)
+                    |> Array.toList
+
+                return GraphConstructor.getDependencyGraph (inputs)
+        }
+        |> Async.AwaitNodeCode
+
     static member ActualParseFileCount = actualParseFileCount
 
     static member ActualCheckFileCount = actualCheckFileCount
@@ -1727,6 +1746,10 @@ type FSharpChecker
             |]
 
         tokens
+
+    member _.GetDependencyGraph(options: FSharpProjectOptions, ?userOpName: string) : Async<FSharp.Compiler.GraphChecking.Graph<int * string>> =
+        let userOpName = defaultArg userOpName "Unknown"
+        backgroundCompiler.GetDependencyGraph(options, userOpName)
 
 namespace FSharp.Compiler
 

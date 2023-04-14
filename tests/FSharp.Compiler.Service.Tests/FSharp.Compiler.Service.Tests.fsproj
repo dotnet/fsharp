@@ -98,6 +98,9 @@
       <Link>PrettyNaming.fs</Link>
     </Compile>
     <Compile Include="TooltipTests.fs" />
+    <Compile Include="..\service\DependencyGraphTests.fs">
+      <Link>DependencyGraphTests.fs</Link>
+    </Compile>
     <Compile Include="..\service\Program.fs">
       <Link>Program.fs</Link>
     </Compile>

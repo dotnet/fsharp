@@ -23,6 +23,8 @@ type internal FileInProject =
       FileName: FileName
       ParsedInput: ParsedInput }
 
+    static member FromFileInProject: ParsedInput list -> FileInProject array
+
 /// There is a subtle difference between a module and namespace.
 /// A namespace does not necessarily expose a set of dependent files.
 /// Only when the namespace exposes types that could later be inferred.

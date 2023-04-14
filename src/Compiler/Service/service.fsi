@@ -430,6 +430,9 @@ type public FSharpChecker =
     /// Tokenize an entire file, line by line
     member TokenizeFile: source: string -> FSharpTokenInfo[][]
 
+    member GetDependencyGraph:
+        options: FSharpProjectOptions * ?userOpName: string -> Async<FSharp.Compiler.GraphChecking.Graph<int * string>>
+
 namespace FSharp.Compiler
 
 open System
