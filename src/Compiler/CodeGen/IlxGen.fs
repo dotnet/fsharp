@@ -2293,7 +2293,14 @@ type AnonTypeGenerationTable() =
             let ilBaseTySpec = (if isStruct then None else Some ilBaseTy.TypeSpec)
 
             let ilCtorDef =
-                mkILSimpleStorageCtorWithParamNames (ilBaseTySpec, ilTy, [], flds, ILMemberAccess.Public, None, None)
+                (mkILSimpleStorageCtorWithParamNames (ilBaseTySpec, ilTy, [], flds, ILMemberAccess.Public, None, None))
+                    .With(
+                        customAttrs =
+                            mkILCustomAttrs
+                                [
+                                    GetDynamicDependencyAttribute cenv 0x660 (*Public and NonPublic Fields and Properties*) ilTy
+                                ]
+                    )
 
             // Create a tycon that looks exactly like a record definition, to help drive the generation of equality/comparison code
             let m = range0

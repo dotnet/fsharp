@@ -762,6 +762,11 @@
         <target state="translated">Očekává se vzorek.</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsExpectingType">
+        <source>Expecting type</source>
+        <target state="new">Expecting type</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr1">
         <source>Incomplete character literal (example: 'Q') or qualified type invocation (example: 'T.Name)</source>
         <target state="translated">Neúplný znakový literál (příklad: Q) nebo volání kvalifikovaného typu (příklad: T.Name)</target>
