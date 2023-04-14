@@ -527,6 +527,11 @@
         <target state="translated">不再支援 IF-FSHARP/IF-CAML 區域</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexInvalidIdentifier">
+        <source>This is not a valid identifier</source>
+        <target state="new">This is not a valid identifier</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexRBraceInInterpolatedString">
         <source>A '}}' character must be escaped (by doubling) in an interpolated string.</source>
         <target state="translated">在插補字串中，必須將 '}}' 字元逸出 (重複一次)。</target>
@@ -755,6 +760,11 @@
       <trans-unit id="parsExpectingPatternInTuple">
         <source>Expecting pattern</source>
         <target state="translated">必須是模式</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsExpectingType">
+        <source>Expecting type</source>
+        <target state="new">Expecting type</target>
         <note />
       </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr1">

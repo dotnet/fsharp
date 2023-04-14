@@ -91,27 +91,6 @@ let mkLdfldMethodDef (ilMethName, iLAccess, isStatic, ilTy, ilFieldName, ilPropT
 
     ilMethodDef.With(customAttrs = mkILCustomAttrs customAttrs).WithSpecialName
 
-/// Make a method that simply stores a field
-let mkStsfldMethodDef (ilMethName, iLAccess, isStatic, ilTy, ilFieldName, ilPropType, customAttrs) =
-    let ilFieldSpec = mkILFieldSpecInTy (ilTy, ilFieldName, ilPropType)
-    let ilParams = [ mkILParamNamed ("value", ilPropType) ]
-    let ilReturn = mkILReturn ILType.Void
-
-    let ilMethodDef =
-        if isStatic then
-            let body =
-                mkMethodBody (true, [], 2, nonBranchingInstrsToCode [ mkLdarg0; mkNormalStsfld ilFieldSpec ], None, None)
-
-            mkILNonGenericStaticMethod (ilMethName, iLAccess, ilParams, ilReturn, body)
-
-        else
-            let body =
-                mkMethodBody (true, [], 2, nonBranchingInstrsToCode [ mkLdarg0; mkLdarg 1us; mkNormalStfld ilFieldSpec ], None, None)
-
-            mkILNonGenericInstanceMethod (ilMethName, iLAccess, ilParams, ilReturn, body)
-
-    ilMethodDef.With(customAttrs = mkILCustomAttrs customAttrs).WithSpecialName
-
 /// Choose the constructor parameter names for fields
 let ChooseParamNames fieldNamesAndTypes =
     let takenFieldNames = fieldNamesAndTypes |> List.map p23 |> Set.ofList
@@ -634,12 +613,12 @@ let mkLocalPrivateAttributeWithDefaultConstructor (cenv: cenv, name: string) =
         ILTypeInit.BeforeField
     )
 
-let mkILNonGenericInstanceProperty (name, ilTypeRef, ilType, propertyAttribute, customAttributes) =
+let mkILNonGenericInstanceProperty (name, ilType, propertyAttribute, customAttributes, getMethod, setMethod) =
     ILPropertyDef(
         name = name,
         attributes = propertyAttribute,
-        setMethod = Some(mkILMethRef (ilTypeRef, ILCallingConv.Instance, "set_" + name, 0, [ ilType ], ILType.Void)),
-        getMethod = Some(mkILMethRef (ilTypeRef, ILCallingConv.Instance, "get_" + name, 0, [], ilType)),
+        setMethod = setMethod,
+        getMethod = getMethod,
         callingConv = ILThisConvention.Instance,
         propertyType = ilType,
         init = None,
@@ -661,11 +640,15 @@ let mkLocalPrivateAttributeWithPropertyConstructors (cenv, name: string, attrPro
             (cenv.g.AddMethodGeneratedAttributes(
                 mkLdfldMethodDef ($"get_{name}", ILMemberAccess.Public, false, ilTy, fieldName, ilType, [])
             )),
-            (cenv.g.AddMethodGeneratedAttributes(
-                mkStsfldMethodDef ($"set_{name}", ILMemberAccess.Private, false, ilTy, fieldName, ilType, [])
-            )),
             (cenv.g.AddPropertyGeneratedAttributes(
-                mkILNonGenericInstanceProperty (name, ilTypeRef, ilType, PropertyAttributes.None, emptyILCustomAttrs)
+                mkILNonGenericInstanceProperty (
+                    name,
+                    ilType,
+                    PropertyAttributes.None,
+                    emptyILCustomAttrs,
+                    Some(mkILMethRef (ilTypeRef, ILCallingConv.Instance, "get_" + name, 0, [], ilType)),
+                    None
+                )
             )),
             (name, fieldName, ilType))
 
@@ -676,7 +659,7 @@ let mkLocalPrivateAttributeWithPropertyConstructors (cenv, name: string, attrPro
                 Some cenv.g.ilg.typ_Attribute.TypeSpec,
                 ilTy,
                 [],
-                (ilElements |> List.map (fun (_, _, _, _, fieldInfo) -> fieldInfo)),
+                (ilElements |> List.map (fun (_, _, _, fieldInfo) -> fieldInfo)),
                 ILMemberAccess.Public,
                 None,
                 None
@@ -691,12 +674,11 @@ let mkLocalPrivateAttributeWithPropertyConstructors (cenv, name: string, attrPro
         ILTypes.Empty,
         mkILMethods (
             ilCtorDef
-            :: (ilElements
-                |> List.fold (fun acc (_, getter, setter, _, _) -> getter :: (setter :: acc)) [])
+            :: (ilElements |> List.fold (fun acc (_, getter, _, _) -> getter :: acc) [])
         ),
-        mkILFields (ilElements |> List.map (fun (field, _, _, _, _) -> field)),
+        mkILFields (ilElements |> List.map (fun (field, _, _, _) -> field)),
         emptyILTypeDefs,
-        mkILProperties (ilElements |> List.map (fun (_, _, _, property, _) -> property)),
+        mkILProperties (ilElements |> List.map (fun (_, _, property, _) -> property)),
         emptyILEvents,
         emptyILCustomAttrs,
         ILTypeInit.BeforeField
@@ -2311,7 +2293,14 @@ type AnonTypeGenerationTable() =
             let ilBaseTySpec = (if isStruct then None else Some ilBaseTy.TypeSpec)
 
             let ilCtorDef =
-                mkILSimpleStorageCtorWithParamNames (ilBaseTySpec, ilTy, [], flds, ILMemberAccess.Public, None, None)
+                (mkILSimpleStorageCtorWithParamNames (ilBaseTySpec, ilTy, [], flds, ILMemberAccess.Public, None, None))
+                    .With(
+                        customAttrs =
+                            mkILCustomAttrs
+                                [
+                                    GetDynamicDependencyAttribute cenv 0x660 (*Public and NonPublic Fields and Properties*) ilTy
+                                ]
+                    )
 
             // Create a tycon that looks exactly like a record definition, to help drive the generation of equality/comparison code
             let m = range0

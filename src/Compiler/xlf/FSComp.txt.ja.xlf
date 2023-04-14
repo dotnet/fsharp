@@ -527,6 +527,11 @@
         <target state="translated">IF-FSHARP/IF-CAML リージョンは現在サポートされていません</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexInvalidIdentifier">
+        <source>This is not a valid identifier</source>
+        <target state="new">This is not a valid identifier</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexRBraceInInterpolatedString">
         <source>A '}}' character must be escaped (by doubling) in an interpolated string.</source>
         <target state="translated">文字 '}}' は、補間された文字列内で (二重にすることで) エスケープする必要があります。</target>
@@ -755,6 +760,11 @@
       <trans-unit id="parsExpectingPatternInTuple">
         <source>Expecting pattern</source>
         <target state="translated">必要なパターン</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsExpectingType">
+        <source>Expecting type</source>
+        <target state="new">Expecting type</target>
         <note />
       </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr1">

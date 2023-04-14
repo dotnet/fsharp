@@ -130,7 +130,7 @@ let ErrorWithSuggestions ((n, message), m, id, suggestions) =
     DiagnosticWithSuggestions(n, message, m, id, suggestions)
 
 let ErrorEnabledWithLanguageFeature ((n, message), m, enabledByLangFeature) =
-    DiagnosticEnabledWithLanguageFeature (n, message, m, enabledByLangFeature)
+    DiagnosticEnabledWithLanguageFeature(n, message, m, enabledByLangFeature)
 
 let inline protectAssemblyExploration dflt f =
     try
@@ -186,7 +186,7 @@ type StopProcessingExiter() =
     member val ExitCode = 0 with get, set
 
     interface Exiter with
-        member exiter.Exit n = 
+        member exiter.Exit n =
             exiter.ExitCode <- n
             raise StopProcessing
 
@@ -518,7 +518,7 @@ let UseTransformedDiagnosticsLogger (transformer: DiagnosticsLogger -> #Diagnost
     }
 
 let UseDiagnosticsLogger newLogger =
-    UseTransformedDiagnosticsLogger (fun _ -> newLogger)
+    UseTransformedDiagnosticsLogger(fun _ -> newLogger)
 
 let SetThreadBuildPhaseNoUnwind (phase: BuildPhase) =
     DiagnosticsThreadStatics.BuildPhase <- phase
