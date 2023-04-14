@@ -42,7 +42,7 @@ type InlineParameterNameHints(parseResults: FSharpParseFileResults) =
         |> Option.filter (not << Seq.isEmpty)
         |> Option.defaultValue Seq.empty
 
-    let getTupleRanges = Seq.map (fun location -> location.ArgumentRange) >> Seq.toList
+    let getTupleRanges = Seq.map (fun location -> location.ArgumentRange)
 
     let getCurryRanges (symbolUse: FSharpSymbolUse) =
 
@@ -94,7 +94,7 @@ type InlineParameterNameHints(parseResults: FSharpParseFileResults) =
 
             let ranges =
                 if Seq.isEmpty tupleRanges then
-                    curryRanges
+                    curryRanges |> List.toSeq
                 else
                     tupleRanges
                 |> Seq.filter (fun range -> argumentLocations |> (not << isNamedArgument range))
