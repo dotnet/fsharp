@@ -187,5 +187,7 @@ let ParseFile fileName =
 
     if not (isNull testUpdateBSLEnv) && testUpdateBSLEnv.Trim() = "1" then
         File.WriteAllText(bslPath, actual)
+    elif expected <> actual then
+        File.WriteAllText($"{fullPath}.tmp", actual)
 
     Assert.AreEqual(expected, actual)
