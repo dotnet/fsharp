@@ -149,6 +149,45 @@ module IsPrivateToFile =
             }
             |> ignore
 
+    [<Fact>]
+    let ``Function parameter, with signature file, don't auto-generate signature`` () =
+
+        let signature = $"""
+        val f: x: int -> int
+        val f2: {functionParameter}: int -> int
+        """
+        for attempt in 1 .. 20 do
+            SyntheticProject.Create({ testFile with SignatureFile = Custom signature }).Workflow {
+
+                checkSymbolUse testFile.Id functionParameter (fun symbolUse ->
+
+                    let couldBeParameter, declarationLocation =
+                        match symbolUse.Symbol with
+                        | :? FSharpParameter as p -> true, Some p.DeclarationLocation
+                        | :? FSharpMemberOrFunctionOrValue as m when not m.IsModuleValueOrMember -> true, Some m.DeclarationLocation
+                        | _ -> false, None
+
+                    let thisIsSignature = SourceFileImpl.IsSignatureFile symbolUse.Range.FileName
+
+                    let argReprInfo =
+                        match symbolUse.Symbol.Item with
+                        | Item.Value v -> v.Deref.ArgReprInfoForDisplay
+                        | _ -> None
+
+                    let signatureLocation = argReprInfo |> Option.bind (fun a -> a.OtherRange)
+
+                    let diagnostics = $"Attempt: #{attempt} couldBeParameter: {couldBeParameter} \n declarationLocation: {declarationLocation} \n thisIsSignature: {thisIsSignature} \n signatureLocation: {signatureLocation} \n argReprInfo: {argReprInfo}"
+
+                    let result =
+                        couldBeParameter
+                        && (thisIsSignature
+                            || (signatureLocation.IsSome && signatureLocation <> declarationLocation))
+
+                    if not result then
+                        failwith diagnostics)
+            }
+            |> ignore
+
     // [<Fact>] This is a bug - https://github.com/dotnet/fsharp/issues/14419
     let ``Private function, with signature file`` () =
         SyntheticProject.Create(
