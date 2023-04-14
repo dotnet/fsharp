@@ -20,8 +20,8 @@ module IsPrivateToFile =
     let testFile = { sourceFile "Test" [] with Source = source }
 
     let signature = $"""
-    let f: x:int -> int
-    let f2: {functionParameter}: int -> int
+    val f: x:int -> int
+    val f2: {functionParameter}: int -> int
     """
 
     let testFileWithSignature = { testFile with SignatureFile = Custom signature }
