@@ -2387,6 +2387,14 @@ attrUnionCaseDecl:
             let mDecl = unionRangeWithXmlDoc xmlDoc mDecl
             Choice2Of2 (SynUnionCase ( $1, $3, SynUnionCaseKind.Fields [], xmlDoc, None, mDecl, trivia))) }
 
+  | opt_attributes opt_access recover
+      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations(), rhs parseState 2))
+        (fun (xmlDoc, mBar) ->
+            let id = SynIdent(mkSynId mBar.EndRange "", None)
+            let trivia: SynUnionCaseTrivia = { BarRange = Some mBar }
+            let mDecl = unionRangeWithXmlDoc xmlDoc mBar
+            Choice2Of2 (SynUnionCase ( $1, id, SynUnionCaseKind.Fields [], xmlDoc, None, mDecl, trivia))) }
+
   | opt_attributes opt_access unionCaseName OF unionCaseRepr
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations(), rhs parseState 2))
         let mDecl = rhs2 parseState 1 5
@@ -2394,6 +2402,30 @@ attrUnionCaseDecl:
             let trivia: SynUnionCaseTrivia = { BarRange = Some mBar }
             let mDecl = unionRangeWithXmlDoc xmlDoc mDecl
             Choice2Of2 (SynUnionCase ( $1, $3, SynUnionCaseKind.Fields $5, xmlDoc, None, mDecl, trivia))) }
+
+  | opt_attributes opt_access OF unionCaseRepr
+      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations(), rhs parseState 2))
+        let mOf = rhs parseState 3
+        let mId = mOf.StartRange
+        errorR (Error(FSComp.SR.parsMissingUnionCaseName(), mOf))
+        let mDecl = rhs2 parseState 1 4
+        (fun (xmlDoc, mBar) ->
+            let id = SynIdent(mkSynId mId "", None)
+            let trivia: SynUnionCaseTrivia = { BarRange = Some mBar }
+            let mDecl = unionRangeWithXmlDoc xmlDoc mDecl
+            Choice2Of2(SynUnionCase($1, id, SynUnionCaseKind.Fields $4, xmlDoc, None, mDecl, trivia))) }
+
+  | opt_attributes opt_access OF recover
+      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations(), rhs parseState 2))
+        let mOf = rhs parseState 3
+        let mId = mOf.StartRange
+        errorR (Error(FSComp.SR.parsMissingUnionCaseName(), mOf))
+        let mDecl = rhs2 parseState 1 3
+        (fun (xmlDoc, mBar) ->
+            let id = SynIdent(mkSynId mId "", None)
+            let trivia: SynUnionCaseTrivia = { BarRange = Some mBar }
+            let mDecl = unionRangeWithXmlDoc xmlDoc mDecl
+            Choice2Of2(SynUnionCase($1, id, SynUnionCaseKind.Fields [], xmlDoc, None, mDecl, trivia))) }
 
   | opt_attributes opt_access unionCaseName OF recover
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations(), rhs parseState 2))
@@ -2453,19 +2485,35 @@ firstUnionCaseDeclOfMany:
   | firstUnionCaseDecl opt_OBLOCKSEP
       { $1 }
 
-firstUnionCaseDecl: 
-  | ident OF unionCaseRepr  
-     { let trivia: SynUnionCaseTrivia = { BarRange = None }
-       let xmlDoc = grabXmlDoc(parseState, [], 1)
-       let mDecl = rhs2 parseState 1 3 |> unionRangeWithXmlDoc xmlDoc
-       Choice2Of2 (SynUnionCase ( [], SynIdent($1, None), SynUnionCaseKind.Fields $3, xmlDoc, None, mDecl, trivia)) }
+firstUnionCaseDecl:
+  | ident OF unionCaseRepr
+      { let trivia: SynUnionCaseTrivia = { BarRange = None }
+        let xmlDoc = grabXmlDoc (parseState, [], 1)
+        let mDecl = rhs2 parseState 1 3 |> unionRangeWithXmlDoc xmlDoc
+        Choice2Of2(SynUnionCase([], SynIdent($1, None), SynUnionCaseKind.Fields $3, xmlDoc, None, mDecl, trivia)) }
+
+  | ident OF recover
+      { let trivia: SynUnionCaseTrivia = { BarRange = None }
+        let xmlDoc = grabXmlDoc (parseState, [], 1)
+        let mDecl = rhs2 parseState 1 2 |> unionRangeWithXmlDoc xmlDoc
+        Choice2Of2(SynUnionCase([], SynIdent($1, None), SynUnionCaseKind.Fields [], xmlDoc, None, mDecl, trivia)) }
+
+  | OF unionCaseRepr
+     { let mOf = rhs parseState 1
+       let mId = mOf.StartRange
+       errorR (Error(FSComp.SR.parsMissingUnionCaseName(), mOf))
+       let id = SynIdent(mkSynId mId "", None)
+       let trivia: SynUnionCaseTrivia = { BarRange = None }
+       let xmlDoc = grabXmlDoc (parseState, [], 1)
+       let mDecl = rhs2 parseState 1 2 |> unionRangeWithXmlDoc xmlDoc
+       Choice2Of2(SynUnionCase([], id, SynUnionCaseKind.Fields $2, xmlDoc, None, mDecl, trivia)) }
 
   | ident EQUALS atomicExpr opt_OBLOCKSEP
       { let mEquals = rhs parseState 2
         let trivia: SynEnumCaseTrivia = { BarRange = None; EqualsRange = mEquals }
-        let xmlDoc = grabXmlDoc(parseState, [], 1)
+        let xmlDoc = grabXmlDoc (parseState, [], 1)
         let mDecl = rhs2 parseState 1 3 |> unionRangeWithXmlDoc xmlDoc
-        Choice1Of2 (SynEnumCase ([], SynIdent($1, None), fst $3, xmlDoc, mDecl, trivia))  }
+        Choice1Of2(SynEnumCase([], SynIdent($1, None), fst $3, xmlDoc, mDecl, trivia)) }
 
 unionCaseReprElements:
   | unionCaseReprElement STAR unionCaseReprElements
