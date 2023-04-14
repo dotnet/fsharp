@@ -440,10 +440,17 @@ module Helpers =
 
     let getSymbolUse fileName (source: string) (symbolName: string) options (checker: FSharpChecker) =
         async {
-            let index = source.IndexOf symbolName
-            let line = source |> Seq.take index |> Seq.where ((=) '\n') |> Seq.length
-            let fullLine = source.Split '\n' |> Array.item line
-            let colAtEndOfNames = fullLine.IndexOf symbolName + symbolName.Length
+            let lines = source.Split '\n' |> Seq.skip 1 // module definition
+            let lineNumber, fullLine, colAtEndOfNames =
+                lines
+                |> Seq.mapi (fun lineNumber line ->
+                    let index =  line.IndexOf symbolName
+                    if index >= 0 then
+                        let colAtEndOfNames = line.IndexOf symbolName + symbolName.Length
+                        Some (lineNumber + 2, line, colAtEndOfNames)
+                    else None)
+                |> Seq.tryPick id
+                |> Option.defaultValue (-1, "", -1)
 
             let! results = checker.ParseAndCheckFileInProject(
                 fileName, 0, SourceText.ofString source, options)
@@ -451,10 +458,10 @@ module Helpers =
             let typeCheckResults = getTypeCheckResult results
 
             let symbolUse =
-                typeCheckResults.GetSymbolUseAtLocation(line + 1, colAtEndOfNames, fullLine, [symbolName])
+                typeCheckResults.GetSymbolUseAtLocation(lineNumber, colAtEndOfNames, fullLine, [symbolName])
 
             return symbolUse |> Option.defaultWith (fun () ->
-                failwith $"No symbol found in {fileName} at {line}:{colAtEndOfNames}\nFile contents:\n\n{source}\n")
+                failwith $"No symbol found in {fileName} at {lineNumber}:{colAtEndOfNames}\nFile contents:\n\n{source}\n")
         }
 
     let singleFileChecker source =

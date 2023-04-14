@@ -269,11 +269,7 @@ type FSharpSymbolUse(denv: DisplayEnv, symbol: FSharpSymbol, inst: TyparInstanti
 
         let thisIsSignature = SourceFileImpl.IsSignatureFile this.Range.FileName
 
-        let signatureLocation =
-            match this.Symbol.Item with
-            | Item.Value v -> v.Deref.ArgReprInfoForDisplay
-            | _ -> None
-            |> Option.bind (fun a -> a.OtherRange)
+        let signatureLocation = this.Symbol.SignatureLocation
 
         couldBeParameter
         && (thisIsSignature
