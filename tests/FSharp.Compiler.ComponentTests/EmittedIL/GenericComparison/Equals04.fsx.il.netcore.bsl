@@ -90,6 +90,8 @@
                                                                                                                                                        45 71 75 61 6C 73 4D 69 63 72 6F 50 65 72 66 41   
                                                                                                                                                        6E 64 43 6F 64 65 47 65 6E 65 72 61 74 69 6F 6E   
                                                                                                                                                        54 65 73 74 73 2B 4B 65 79 00 00 )                
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         
         .maxstack  8
         IL_0000:  ldarg.0

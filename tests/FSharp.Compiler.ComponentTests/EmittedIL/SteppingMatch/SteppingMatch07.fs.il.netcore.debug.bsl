@@ -94,6 +94,8 @@
       .custom instance void [runtime]System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::.ctor(valuetype [runtime]System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes,
                                                                                                               class [runtime]System.Type) = ( 01 00 E0 07 00 00 15 53 74 65 70 70 69 6E 67 4D   
                                                                                                                                                      61 74 63 68 30 37 2B 44 69 73 63 72 00 00 )       
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  8
       IL_0000:  ldarg.0

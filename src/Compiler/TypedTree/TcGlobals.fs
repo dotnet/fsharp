@@ -878,16 +878,17 @@ type TcGlobals(
     let attribs =
        match generatedAttribsCache with
        | [] ->
-           let res =
-               [ if not noDebugAttributes then
-                   mkCompilerGeneratedAttribute()
-                   mkDebuggerNonUserCodeAttribute()]
-           generatedAttribsCache <- res
-           res
+            let res = [
+                if not noDebugAttributes then
+                    mkCompilerGeneratedAttribute()
+                    mkDebuggerNonUserCodeAttribute()
+                ]
+            generatedAttribsCache <- res
+            res
        | res -> res
     mkILCustomAttrs (attrs.AsList() @ attribs)
 
-  let addMethodGeneratedAttrs (mdef:ILMethodDef)   = mdef.With(customAttrs   = addGeneratedAttrs mdef.CustomAttrs)
+  let addMethodGeneratedAttrs (mdef:ILMethodDef)   = mdef.With(customAttrs = addGeneratedAttrs mdef.CustomAttrs)
 
   let addPropertyGeneratedAttrs (pdef:ILPropertyDef) = pdef.With(customAttrs = addGeneratedAttrs pdef.CustomAttrs)
 

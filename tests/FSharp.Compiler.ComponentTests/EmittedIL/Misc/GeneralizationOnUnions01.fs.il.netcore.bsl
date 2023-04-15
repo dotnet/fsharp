@@ -75,6 +75,8 @@
                                                                                                               class [runtime]System.Type) = ( 01 00 E0 07 00 00 1F 47 65 6E 65 72 61 6C 69 7A   
                                                                                                                                                      61 74 69 6F 6E 4F 6E 55 6E 69 6F 6E 73 30 31 2B   
                                                                                                                                                      57 65 69 72 64 6F 00 00 )                         
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  8
       IL_0000:  ldarg.0

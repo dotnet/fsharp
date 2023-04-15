@@ -1005,15 +1005,9 @@ let convAlternativeDef
                                     ILMemberAccess.Public (* must always be public - see jared parson blog entry on implementing debugger type proxy *) ,
                                     [ mkILParamNamed ("obj", altTy) ],
                                     mkMethodBody (false, [], 3, debugProxyCode, None, imports)
-                                 )
-                                 |> addMethodGeneratedAttrs)
-                                    .With(
-                                        customAttrs =
-                                            mkILCustomAttrs[GetDynamicDependencyAttribute
-                                                                g
-                                                                0x660 (*Public and NonPublic Fields and Properties*)
-                                                                baseTy]
-                                    )
+                                 )).With(
+                                    customAttrs = mkILCustomAttrs[GetDynamicDependencyAttribute g 0x660 baseTy])
+                                 |> addMethodGeneratedAttrs
 
                             let debugProxyGetterMeths =
                                 fields
@@ -1133,15 +1127,9 @@ let convAlternativeDef
                             basicFields |> List.map (fun fdef -> fdef.Name, fdef.FieldType)
 
                         let basicCtorMeth =
-                            (mkILStorageCtor (basicCtorInstrs, altTy, basicCtorFields, basicCtorAccess, attr, imports)
-                             |> addMethodGeneratedAttrs)
-                                .With(
-                                    customAttrs =
-                                        mkILCustomAttrs[GetDynamicDependencyAttribute
-                                                            g
-                                                            0x660 (*Public and NonPublic Fields and Properties*)
-                                                            baseTy]
-                                )
+                            (mkILStorageCtor (basicCtorInstrs, altTy, basicCtorFields, basicCtorAccess, attr, imports))
+                             .With(customAttrs = mkILCustomAttrs[GetDynamicDependencyAttribute g 0x660 baseTy])
+                             |> addMethodGeneratedAttrs
 
                         let altTypeDef =
                             mkILGenericClass (
@@ -1272,15 +1260,8 @@ let mkClassUnionDef
                             ctorAccess,
                             cud.DebugPoint,
                             cud.DebugImports
-                         )
-                         |> addMethodGeneratedAttrs)
-                            .With(
-                                customAttrs =
-                                    mkILCustomAttrs[GetDynamicDependencyAttribute
-                                                        g
-                                                        0x660 (*Public and NonPublic Fields and Properties*)
-                                                        baseTy]
-                            )
+                         )).With(customAttrs = mkILCustomAttrs[GetDynamicDependencyAttribute g 0x660 baseTy])
+                         |> addMethodGeneratedAttrs
 
                     let props, meths =
                         mkMethodsAndPropertiesForFields
@@ -1336,12 +1317,8 @@ let mkClassUnionDef
                     ILMemberAccess.Assembly,
                     cud.DebugPoint,
                     cud.DebugImports
-                 )
-                 |> addMethodGeneratedAttrs)
-                    .With(
-                        customAttrs =
-                            mkILCustomAttrs[GetDynamicDependencyAttribute g 0x7E0 (*Public and NonPublic Fields and Properties*) baseTy]
-                    )
+                )).With(customAttrs =mkILCustomAttrs[GetDynamicDependencyAttribute g 0x7E0 baseTy])
+                |> addMethodGeneratedAttrs
             ]
 
     // Now initialize the constant fields wherever they are stored...
