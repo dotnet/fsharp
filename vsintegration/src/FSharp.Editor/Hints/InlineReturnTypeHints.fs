@@ -28,9 +28,11 @@ type InlineReturnTypeHints(parseFileResults: FSharpParseFileResults, symbol: FSh
                 Parts = parts
             })
 
+    let isValidForHint (symbol: FSharpMemberOrFunctionOrValue) = symbol.IsFunction
+
     member _.getHints(symbolUse: FSharpSymbolUse) =
         [
-            if symbol.IsFunction then
+            if isValidForHint symbol then
                 yield!
                     parseFileResults.TryRangeOfReturnTypeHint symbolUse.Range.Start
                     |> Option.bind (getHint symbolUse)
