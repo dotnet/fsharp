@@ -1005,9 +1005,9 @@ let convAlternativeDef
                                     ILMemberAccess.Public (* must always be public - see jared parson blog entry on implementing debugger type proxy *) ,
                                     [ mkILParamNamed ("obj", altTy) ],
                                     mkMethodBody (false, [], 3, debugProxyCode, None, imports)
-                                 )).With(
-                                    customAttrs = mkILCustomAttrs[GetDynamicDependencyAttribute g 0x660 baseTy])
-                                 |> addMethodGeneratedAttrs
+                                ))
+                                    .With(customAttrs = mkILCustomAttrs[GetDynamicDependencyAttribute g 0x660 baseTy])
+                                |> addMethodGeneratedAttrs
 
                             let debugProxyGetterMeths =
                                 fields
@@ -1128,8 +1128,8 @@ let convAlternativeDef
 
                         let basicCtorMeth =
                             (mkILStorageCtor (basicCtorInstrs, altTy, basicCtorFields, basicCtorAccess, attr, imports))
-                             .With(customAttrs = mkILCustomAttrs[GetDynamicDependencyAttribute g 0x660 baseTy])
-                             |> addMethodGeneratedAttrs
+                                .With(customAttrs = mkILCustomAttrs[GetDynamicDependencyAttribute g 0x660 baseTy])
+                            |> addMethodGeneratedAttrs
 
                         let altTypeDef =
                             mkILGenericClass (
@@ -1260,8 +1260,9 @@ let mkClassUnionDef
                             ctorAccess,
                             cud.DebugPoint,
                             cud.DebugImports
-                         )).With(customAttrs = mkILCustomAttrs[GetDynamicDependencyAttribute g 0x660 baseTy])
-                         |> addMethodGeneratedAttrs
+                        ))
+                            .With(customAttrs = mkILCustomAttrs[GetDynamicDependencyAttribute g 0x660 baseTy])
+                        |> addMethodGeneratedAttrs
 
                     let props, meths =
                         mkMethodsAndPropertiesForFields
@@ -1317,7 +1318,8 @@ let mkClassUnionDef
                     ILMemberAccess.Assembly,
                     cud.DebugPoint,
                     cud.DebugImports
-                )).With(customAttrs =mkILCustomAttrs[GetDynamicDependencyAttribute g 0x7E0 baseTy])
+                ))
+                    .With(customAttrs = mkILCustomAttrs[GetDynamicDependencyAttribute g 0x7E0 baseTy])
                 |> addMethodGeneratedAttrs
             ]
 
