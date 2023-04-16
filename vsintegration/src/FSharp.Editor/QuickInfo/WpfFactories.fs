@@ -11,7 +11,7 @@ open Microsoft.VisualStudio.Utilities
 
 open Microsoft.VisualStudio.FSharp
 
-type FSharpStyle =
+type internal FSharpStyle =
     | Separator
     | Paragraph
     | CustomLinkStyle
@@ -27,7 +27,7 @@ type FSharpStyle =
 [<Export(typeof<IViewElementFactory>)>]
 [<Name("FSharpStyle to UIElement")>]
 [<TypeConversion(typeof<FSharpStyle>, typeof<UIElement>)>]
-type WpfFSharpStyleFactory [<ImportingConstructor>] (settings: Editor.EditorOptions) =
+type internal WpfFSharpStyleFactory [<ImportingConstructor>] (settings: Editor.EditorOptions) =
     let linkStyleUpdater () =
         let key =
             if settings.QuickInfo.DisplayLinks then
