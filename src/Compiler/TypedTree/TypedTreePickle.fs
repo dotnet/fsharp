@@ -1752,7 +1752,7 @@ let u_ArgReprInfo st =
     let b = u_option u_ident st
     match a, b with
     | [], None -> ValReprInfo.unnamedTopArg1
-    | _ -> { Attribs = a; Name = b }
+    | _ -> { Attribs = a; Name = b; OtherRange = None }
 
 let u_TyparReprInfo st =
     let a = u_ident st
@@ -2263,6 +2263,7 @@ and u_ValData st =
                      val_defn             = None
                      val_repr_info        = x10
                      val_repr_info_for_display = None
+                     arg_repr_info_for_display = None
                      val_const            = x14
                      val_access           = x13
                      val_xmldoc           = defaultArg x15 XmlDoc.Empty

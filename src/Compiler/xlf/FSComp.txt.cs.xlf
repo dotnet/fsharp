@@ -777,6 +777,11 @@
         <target state="translated">Neúplný výraz operátoru (například^b) nebo volání kvalifikovaného typu (příklad: ^T.Name)</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsMissingUnionCaseName">
+        <source>Missing union case name</source>
+        <target state="new">Missing union case name</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsNewExprMemberAccess">
         <source>This member access is ambiguous. Please use parentheses around the object creation, e.g. '(new SomeType(args)).MemberName'</source>
         <target state="translated">Tento přístup člena je nejednoznačný. Při vytváření objektu použijte závorky, např. (new SomeType(args)).MemberName'</target>
