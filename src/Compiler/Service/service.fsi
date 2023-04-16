@@ -431,7 +431,8 @@ type public FSharpChecker =
     member TokenizeFile: source: string -> FSharpTokenInfo[][]
 
     member GetDependencyGraph:
-        options: FSharpProjectOptions * ?userOpName: string -> Async<FSharp.Compiler.GraphChecking.Graph<int * string>>
+        options: FSharpProjectOptions * ?userOpName: string ->
+            Async<Collections.Generic.IReadOnlyDictionary<int * string, (int * string) array>>
 
 namespace FSharp.Compiler
 

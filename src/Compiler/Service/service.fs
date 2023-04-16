@@ -1747,7 +1747,11 @@ type FSharpChecker
 
         tokens
 
-    member _.GetDependencyGraph(options: FSharpProjectOptions, ?userOpName: string) : Async<FSharp.Compiler.GraphChecking.Graph<int * string>> =
+    member _.GetDependencyGraph
+        (
+            options: FSharpProjectOptions,
+            ?userOpName: string
+        ) : Async<Collections.Generic.IReadOnlyDictionary<int * string, (int * string) array>> =
         let userOpName = defaultArg userOpName "Unknown"
         backgroundCompiler.GetDependencyGraph(options, userOpName)
 
