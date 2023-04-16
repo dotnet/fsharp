@@ -98,7 +98,7 @@ module internal QuickInfoViewProvider =
             match imageId with
             | Some imageId -> wrapContent [ stackContent [ ImageElement(imageId) ]; encloseText description ]
             | None -> ContainerElement(ContainerElementStyle.Wrapped, encloseText description)
-        
+
         wrapContent [ stackContent [ innerElement; encloseText documentation ]; CustomLinkStyle ]
 
     let stackWithSeparators elements =
