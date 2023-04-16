@@ -231,13 +231,8 @@ type Document with
                     fastCheck = this.Project.IsFastFindReferencesEnabled
                 )
 
-            let! ct = Async.CancellationToken
-            let! sourceText = this.GetTextAsync ct |> Async.AwaitTask
-
             for symbolUse in symbolUses do
-                match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse) with
-                | Some textSpan -> do! onFound textSpan symbolUse
-                | _ -> ()
+                do! onFound symbolUse
         }
 
     /// Try to find a F# lexer/token symbol of the given F# document and position.
@@ -283,7 +278,17 @@ type Project with
                             document.GetFSharpCompilationOptionsAsync(userOpName)
                             |> RoslynHelpers.StartAsyncAsTask ct
 
-                        return options.SourceFiles |> Seq.takeWhile ((<>) document.FilePath) |> Set
+                        let signatureFile =
+                            if not (document.FilePath |> isSignatureFile) then
+                                $"{document.FilePath}i"
+                            else
+                                null
+
+                        return
+                            options.SourceFiles
+                            |> Seq.takeWhile ((<>) document.FilePath)
+                            |> Seq.filter ((<>) signatureFile)
+                            |> Set
                     }
                 | _ -> Task.FromResult Set.empty
 
@@ -296,13 +301,13 @@ type Project with
                     documents
                     |> Seq.map (fun doc ->
                         Task.Run(fun () ->
-                            doc.FindFSharpReferencesAsync(symbol, (fun textSpan range -> onFound doc textSpan range), userOpName)
+                            doc.FindFSharpReferencesAsync(symbol, (fun range -> onFound doc range), userOpName)
                             |> RoslynHelpers.StartAsyncUnitAsTask ct))
                     |> Task.WhenAll
             else
                 for doc in documents do
                     do!
-                        doc.FindFSharpReferencesAsync(symbol, (fun textSpan range -> onFound doc textSpan range), userOpName)
+                        doc.FindFSharpReferencesAsync(symbol, (fun range -> onFound doc range), userOpName)
                         |> RoslynHelpers.StartAsyncAsTask ct
         }
 

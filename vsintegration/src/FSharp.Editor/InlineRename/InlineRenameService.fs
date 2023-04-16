@@ -78,7 +78,6 @@ type internal InlineRenameInfo
         triggerSpan: TextSpan,
         lexerSymbol: LexerSymbol,
         symbolUse: FSharpSymbolUse,
-        declLoc: SymbolDeclarationLocation,
         checkFileResults: FSharpCheckFileResults
     ) =
 
@@ -89,8 +88,8 @@ type internal InlineRenameInfo
         | true, text -> text
         | _ -> document.GetTextAsync(cancellationToken).Result
 
-    let symbolUses ct =
-        SymbolHelpers.getSymbolUsesInSolution (symbolUse.Symbol, declLoc, checkFileResults, document.Project.Solution, ct)
+    let symbolUses =
+        SymbolHelpers.getSymbolUsesInSolution (symbolUse, checkFileResults, document)
 
     override _.CanRename = true
     override _.LocalizedErrorMessage = null
@@ -127,7 +126,7 @@ type internal InlineRenameInfo
 
     override _.FindRenameLocationsAsync(_, _, cancellationToken) =
         async {
-            let! symbolUsesByDocumentId = symbolUses cancellationToken
+            let! symbolUsesByDocumentId = symbolUses
 
             let! locations =
                 symbolUsesByDocumentId
@@ -183,12 +182,10 @@ type internal InlineRenameService [<ImportingConstructor>] () =
                     symbol.FullIsland
                 )
 
-            let! declLoc = symbolUse.GetDeclarationLocation(document)
-
             let! span = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range)
             let triggerSpan = Tokenizer.fixupSpan (sourceText, span)
 
-            return InlineRenameInfo(document, triggerSpan, symbol, symbolUse, declLoc, checkFileResults) :> FSharpInlineRenameInfo
+            return InlineRenameInfo(document, triggerSpan, symbol, symbolUse, checkFileResults) :> FSharpInlineRenameInfo
         }
 
     override _.GetRenameInfoAsync(document: Document, position: int, cancellationToken: CancellationToken) : Task<FSharpInlineRenameInfo> =
