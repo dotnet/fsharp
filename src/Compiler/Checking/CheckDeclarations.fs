@@ -531,7 +531,7 @@ module TcRecdUnionAndEnumDeclarations =
 
             | SynUnionCaseKind.FullType (ty, arity) -> 
                 let tyR, _ = TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv ty
-                let curriedArgTys, recordTy = GetTopTauTypeInFSharpForm g (arity |> TranslateSynValInfo m (TcAttributes cenv env) |> TranslatePartialValReprInfo []).ArgInfos tyR m
+                let curriedArgTys, recordTy = GetTopTauTypeInFSharpForm g (arity |> TranslateSynValInfo cenv m (TcAttributes cenv env) |> TranslatePartialValReprInfo []).ArgInfos tyR m
 
                 if curriedArgTys.Length > 1 then 
                     errorR(Error(FSComp.SR.tcIllegalFormForExplicitTypeDeclaration(), m))   
@@ -2461,7 +2461,7 @@ module EstablishTypeDefinitionCores =
 
                 | SynUnionCaseKind.FullType (ty, arity) -> 
                     let tyR, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv ty
-                    let curriedArgTys, _ = GetTopTauTypeInFSharpForm g (arity |> TranslateSynValInfo m (TcAttributes cenv env) |> TranslatePartialValReprInfo []).ArgInfos tyR m
+                    let curriedArgTys, _ = GetTopTauTypeInFSharpForm g (arity |> TranslateSynValInfo cenv m (TcAttributes cenv env) |> TranslatePartialValReprInfo []).ArgInfos tyR m
 
                     if curriedArgTys.Length > 1 then 
                         errorR(Error(FSComp.SR.tcIllegalFormForExplicitTypeDeclaration(), m))   
@@ -3462,7 +3462,7 @@ module EstablishTypeDefinitionCores =
                                   noFieldsCheck userFields
                                   primaryConstructorInDelegateCheck(implicitCtorSynPats)
                                   let tyR, _ = TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes envinner tpenv ty
-                                  let _, _, curriedArgInfos, returnTy, _ = GetValReprTypeInCompiledForm g (arity |> TranslateSynValInfo m (TcAttributes cenv envinner)  |> TranslatePartialValReprInfo []) 0 tyR m
+                                  let _, _, curriedArgInfos, returnTy, _ = GetValReprTypeInCompiledForm g (arity |> TranslateSynValInfo cenv m (TcAttributes cenv envinner)  |> TranslatePartialValReprInfo []) 0 tyR m
                                   if curriedArgInfos.Length < 1 then error(Error(FSComp.SR.tcInvalidDelegateSpecification(), m))
                                   if curriedArgInfos.Length > 1 then error(Error(FSComp.SR.tcDelegatesCannotBeCurried(), m))
                                   let ttps = thisTyconRef.Typars m

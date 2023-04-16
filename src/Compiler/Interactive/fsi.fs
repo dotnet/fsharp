@@ -1615,7 +1615,17 @@ let internal mkBoundValueTypedImpl tcGlobals m moduleName name ty =
             ty,
             ValMutability.Immutable,
             false,
-            Some(ValReprInfo([], [], { Attribs = []; Name = None })),
+            Some(
+                ValReprInfo(
+                    [],
+                    [],
+                    {
+                        Attribs = []
+                        Name = None
+                        OtherRange = None
+                    }
+                )
+            ),
             vis,
             ValNotInRecScope,
             None,
