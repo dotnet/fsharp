@@ -814,7 +814,7 @@ module internal LexerStateEncoding =
             | FSharpTokenizerColorState.Token -> LexCont.Token(ifdefs, stringNest)
             | FSharpTokenizerColorState.IfDefSkip -> LexCont.IfDefSkip(ifdefs, stringNest, n1, mkRange "file" p1 p1)
             | FSharpTokenizerColorState.String ->
-                LexCont.String(ifdefs, stringNest, LexerStringStyle.SingleQuote, stringKind, 0, mkRange "file" p1 p1)
+                LexCont.String(ifdefs, stringNest, LexerStringStyle.SingleQuote, stringKind, delimLen, mkRange "file" p1 p1)
             | FSharpTokenizerColorState.Comment -> LexCont.Comment(ifdefs, stringNest, n1, mkRange "file" p1 p1)
             | FSharpTokenizerColorState.SingleLineComment -> LexCont.SingleLineComment(ifdefs, stringNest, n1, mkRange "file" p1 p1)
             | FSharpTokenizerColorState.StringInComment ->
@@ -825,7 +825,7 @@ module internal LexerStateEncoding =
                 LexCont.StringInComment(ifdefs, stringNest, LexerStringStyle.TripleQuote, n1, mkRange "file" p1 p1)
             | FSharpTokenizerColorState.CamlOnly -> LexCont.MLOnly(ifdefs, stringNest, mkRange "file" p1 p1)
             | FSharpTokenizerColorState.VerbatimString ->
-                LexCont.String(ifdefs, stringNest, LexerStringStyle.Verbatim, stringKind, 0, mkRange "file" p1 p1)
+                LexCont.String(ifdefs, stringNest, LexerStringStyle.Verbatim, stringKind, delimLen, mkRange "file" p1 p1)
             | FSharpTokenizerColorState.TripleQuoteString ->
                 LexCont.String(ifdefs, stringNest, LexerStringStyle.TripleQuote, stringKind, delimLen, mkRange "file" p1 p1)
             | FSharpTokenizerColorState.EndLineThenSkip ->
