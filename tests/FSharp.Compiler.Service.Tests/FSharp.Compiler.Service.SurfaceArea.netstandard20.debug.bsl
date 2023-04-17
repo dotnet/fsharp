@@ -2182,6 +2182,7 @@ FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean IsFromPattern
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean IsFromType
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean IsFromUse
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean IsPrivateToFile
+FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean IsPrivateToFileAndSignatureFile
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean get_IsFromAttribute()
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean get_IsFromComputationExpression()
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean get_IsFromDefinition()
@@ -2191,6 +2192,7 @@ FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean get_IsFromPattern()
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean get_IsFromType()
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean get_IsFromUse()
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean get_IsPrivateToFile()
+FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean get_IsPrivateToFileAndSignatureFile()
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: FSharp.Compiler.Symbols.FSharpDisplayContext DisplayContext
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: FSharp.Compiler.Symbols.FSharpDisplayContext get_DisplayContext()
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: FSharp.Compiler.Symbols.FSharpSymbol Symbol
