@@ -102,6 +102,7 @@ type LexerStringStyle =
     | Verbatim
     | TripleQuote
     | SingleQuote
+    | ExtendedInterpolated
 
 [<RequireQualifiedAccess; Struct>]
 type LexerStringKind =

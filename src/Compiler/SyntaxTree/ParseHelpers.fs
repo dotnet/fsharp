@@ -268,6 +268,7 @@ type LexerStringStyle =
     | Verbatim
     | TripleQuote
     | SingleQuote
+    | ExtendedInterpolated
 
 [<RequireQualifiedAccess; Struct>]
 type LexerStringKind =
@@ -931,6 +932,7 @@ let checkEndOfFileError t =
         else
             reportParseErrorAt m (FSComp.SR.parsEofInString ())
 
+    | LexCont.String (_, _, LexerStringStyle.ExtendedInterpolated, kind, _, m)
     | LexCont.String (_, _, LexerStringStyle.TripleQuote, kind, _, m) ->
         if kind.IsInterpolated then
             reportParseErrorAt m (FSComp.SR.parsEofInInterpolatedTripleQuoteString ())
@@ -952,6 +954,7 @@ let checkEndOfFileError t =
     | LexCont.StringInComment (_, _, LexerStringStyle.Verbatim, _, m) ->
         reportParseErrorAt m (FSComp.SR.parsEofInVerbatimStringInComment ())
 
+    | LexCont.StringInComment (_, _, LexerStringStyle.ExtendedInterpolated, _, m)
     | LexCont.StringInComment (_, _, LexerStringStyle.TripleQuote, _, m) ->
         reportParseErrorAt m (FSComp.SR.parsEofInTripleQuoteStringInComment ())
 

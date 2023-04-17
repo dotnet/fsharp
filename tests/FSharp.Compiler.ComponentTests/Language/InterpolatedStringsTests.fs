@@ -79,10 +79,28 @@ printfn \"%s\" s"
         Assert.Equal("% 42", $"%%%3d{42}")
 
     [<Fact>]
-    let ``Percent sign characters in triple quote interpolated strings`` () =
-        Assert.Equal("%%", $$$"""%%""")
-        Assert.Equal("42%", $$"""{{42}}%""")
-        Assert.Equal("% 42", $$"""%%%3d{{42}}""")
+    let ``Double percent sign characters in triple quote interpolated strings`` () =
+        Fsx "printfn \"%s\" $$$\"\"\"%%\"\"\""
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContains "%%"
+
+    [<Fact>]
+    let ``Percent sign after interpolation hole in triple quote strings`` () =
+        Fsx "printfn \"%s\" $$\"\"\"{{42}}%\"\"\""
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContains "42%"
+
+    [<Fact>]
+    let ``Percent sign before format specifier in triple quote interpolated strings`` () =
+        Fsx "printfn \"%s\" $$\"\"\"%%%3d{{42}}\"\"\""
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContains "% 42"
 
     [<Fact>]
     let ``Percent signs separated by format specifier's flags`` () =

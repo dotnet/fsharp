@@ -475,6 +475,7 @@ type FSharpTokenizerColorState =
     | EndLineThenToken = 12
     | TripleQuoteString = 13
     | TripleQuoteStringInComment = 14
+    | ExtendedInterpolatedString = 15
     | InitialState = 0
 
 module internal LexerStateEncoding =
@@ -581,12 +582,14 @@ module internal LexerStateEncoding =
         | LexerStringStyle.SingleQuote -> 0
         | LexerStringStyle.Verbatim -> 1
         | LexerStringStyle.TripleQuote -> 2
+        | LexerStringStyle.ExtendedInterpolated -> 3
 
     let decodeStringStyle kind =
         match kind with
         | 0 -> LexerStringStyle.SingleQuote
         | 1 -> LexerStringStyle.Verbatim
         | 2 -> LexerStringStyle.TripleQuote
+        | 3 -> LexerStringStyle.ExtendedInterpolated
         | _ ->
             assert false
             LexerStringStyle.SingleQuote
@@ -761,6 +764,7 @@ module internal LexerStateEncoding =
                 | LexerStringStyle.SingleQuote -> FSharpTokenizerColorState.String
                 | LexerStringStyle.Verbatim -> FSharpTokenizerColorState.VerbatimString
                 | LexerStringStyle.TripleQuote -> FSharpTokenizerColorState.TripleQuoteString
+                | LexerStringStyle.ExtendedInterpolated -> FSharpTokenizerColorState.ExtendedInterpolatedString
 
             encodeLexCont (state, 0L, m.Start, ifdefs, indentationSyntaxStatus, kind, stringNest, delimLen)
         | LexCont.Comment (ifdefs, stringNest, n, m) ->
@@ -790,7 +794,8 @@ module internal LexerStateEncoding =
                 match style with
                 | LexerStringStyle.SingleQuote -> FSharpTokenizerColorState.StringInComment
                 | LexerStringStyle.Verbatim -> FSharpTokenizerColorState.VerbatimStringInComment
-                | LexerStringStyle.TripleQuote -> FSharpTokenizerColorState.TripleQuoteStringInComment
+                | LexerStringStyle.TripleQuote
+                | LexerStringStyle.ExtendedInterpolated -> FSharpTokenizerColorState.TripleQuoteStringInComment
 
             encodeLexCont (state, int64 n, m.Start, ifdefs, indentationSyntaxStatus, LexerStringKind.String, stringNest, 0)
         | LexCont.MLOnly (ifdefs, stringNest, m) ->
@@ -828,6 +833,8 @@ module internal LexerStateEncoding =
                 LexCont.String(ifdefs, stringNest, LexerStringStyle.Verbatim, stringKind, delimLen, mkRange "file" p1 p1)
             | FSharpTokenizerColorState.TripleQuoteString ->
                 LexCont.String(ifdefs, stringNest, LexerStringStyle.TripleQuote, stringKind, delimLen, mkRange "file" p1 p1)
+            | FSharpTokenizerColorState.ExtendedInterpolatedString ->
+                LexCont.String(ifdefs, stringNest, LexerStringStyle.ExtendedInterpolated, stringKind, delimLen, mkRange "file" p1 p1)
             | FSharpTokenizerColorState.EndLineThenSkip ->
                 LexCont.EndLine(ifdefs, stringNest, LexerEndlineContinuation.Skip(n1, mkRange "file" p1 p1))
             | FSharpTokenizerColorState.EndLineThenToken -> LexCont.EndLine(ifdefs, stringNest, LexerEndlineContinuation.Token)
@@ -970,6 +977,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
             | LexerStringStyle.SingleQuote -> Lexer.singleQuoteString args skip lexbuf
             | LexerStringStyle.Verbatim -> Lexer.verbatimString args skip lexbuf
             | LexerStringStyle.TripleQuote -> Lexer.tripleQuoteString args skip lexbuf
+            | LexerStringStyle.ExtendedInterpolated -> Lexer.extendedInterpolatedString args skip lexbuf
 
         | LexCont.Comment (ifdefs, stringNest, n, m) ->
             lexargs.ifdefStack <- ifdefs
@@ -989,7 +997,8 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
             match style with
             | LexerStringStyle.SingleQuote -> Lexer.stringInComment n m lexargs skip lexbuf
             | LexerStringStyle.Verbatim -> Lexer.verbatimStringInComment n m lexargs skip lexbuf
-            | LexerStringStyle.TripleQuote -> Lexer.tripleQuoteStringInComment n m lexargs skip lexbuf
+            | LexerStringStyle.TripleQuote
+            | LexerStringStyle.ExtendedInterpolated -> Lexer.tripleQuoteStringInComment n m lexargs skip lexbuf
 
         | LexCont.MLOnly (ifdefs, stringNest, m) ->
             lexargs.ifdefStack <- ifdefs
