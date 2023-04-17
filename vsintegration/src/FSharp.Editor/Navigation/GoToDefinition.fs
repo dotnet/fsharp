@@ -600,6 +600,10 @@ type internal FSharpNavigation(metadataAsSource: FSharpMetadataAsSourceService, 
                         |> Async.Ignore,
                         cancellationToken
                     )),
+                // Default wait time before VS shows the dialog allowing to cancel the long running task is 2 seconds.
+                // This seems a bit too long to leave the user without any feedback, so we shorten it to 1 second.
+                // Note: it seems anything less than 1 second will get rounded down to zero, resulting in flashing dialog
+                // on each navigation, so 1 second is as low as we cen get from JoinableTaskFactory.
                 TimeSpan.FromSeconds 1
             )
         with :? OperationCanceledException ->
