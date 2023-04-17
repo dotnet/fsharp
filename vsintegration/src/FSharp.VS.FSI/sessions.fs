@@ -360,6 +360,8 @@ type FsiSession(sourceFile) =
     /// interrupt timeout in miliseconds
     let interruptTimeoutMS = 1000
 
+    // system.runtime.interopservices.runtimeinformation.frameworkdescription
+    // https://learn.microsoft.com/en-us/dotnet/api/system.runtime.interopservices.runtimeinformation.frameworkdescription?view=net-7.0
     let splitPidFile =
         lazy
             let mutable trueProcessPid = if usingNetCore then None else Some cmdProcessPid
