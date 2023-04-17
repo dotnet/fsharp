@@ -472,7 +472,7 @@ module DeclarationListHelpers =
             ToolTipElement.Single (layout, FSharpXmlDoc.None, ?symbol = symbol)
             
         // Named parameters
-        | Item.ArgName (Some id, argTy, _, _) -> 
+        | Item.OtherName (ident = Some id; argType = argTy) -> 
             let argTy, _ = PrettyTypes.PrettifyType g argTy
             let layout =
                 wordL (tagText (FSComp.SR.typeInfoArgument())) ^^
@@ -486,7 +486,7 @@ module DeclarationListHelpers =
         | Item.SetterArg (_, item) -> 
             FormatItemDescriptionToToolTipElement displayFullName infoReader ad m denv (ItemWithNoInst item) symbol width
 
-        | Item.ArgName (None, _, _, _)
+        | Item.OtherName (ident = None)
     
         // TODO: give a decent tooltip for implicit operators that include the resolution of the operator
         //
@@ -871,7 +871,7 @@ module internal DescriptionListsImpl =
         | Item.NewDef _
         | Item.ModuleOrNamespaces _
         | Item.ImplicitOp _
-        | Item.ArgName _
+        | Item.OtherName _
         | Item.MethodGroup(_, [], _)
         | Item.CtorGroup(_,[])
         | Item.Property(_,[]) -> 
@@ -967,7 +967,7 @@ module internal DescriptionListsImpl =
             | Item.ModuleOrNamespaces(modref :: _) -> 
                   if modref.IsNamespace then FSharpGlyph.NameSpace else FSharpGlyph.Module
             | Item.NewDef _
-            | Item.ArgName _
+            | Item.OtherName _
             | Item.SetterArg _ -> FSharpGlyph.Variable
 
             // These empty lists are not expected to occur
@@ -1014,7 +1014,7 @@ module internal DescriptionListsImpl =
         | Item.CustomBuilder _
         | Item.ActivePatternCase _
         | Item.AnonRecdField _
-        | Item.ArgName _
+        | Item.OtherName _
         | Item.ImplicitOp _
         | Item.ModuleOrNamespaces _
         | Item.SetterArg _
