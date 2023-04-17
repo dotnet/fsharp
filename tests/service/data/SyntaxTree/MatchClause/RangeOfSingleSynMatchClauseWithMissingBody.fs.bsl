@@ -28,15 +28,16 @@ ImplFile
                     (3,4--4,16), { InKeyword = None }),
                  [SynMatchClause
                     (Named (SynIdent (ex, None), false, None, (6,2--6,4)), None,
-                     ArbitraryAfterError ("patternClauses2", (6,4--6,4)),
-                     (6,2--6,4), Yes, { ArrowRange = None
-                                        BarRange = Some (6,0--6,1) })],
-                 (2,0--6,4), Yes (2,0--2,3), Yes (5,0--5,4),
-                 { TryKeyword = (2,0--2,3)
-                   TryToWithRange = (2,0--5,4)
-                   WithKeyword = (5,0--5,4)
-                   WithToEndRange = (5,0--6,4) }), (2,0--6,4))], PreXmlDocEmpty,
-          [], None, (2,0--7,0), { LeadingKeyword = None })], (true, true),
+                     ArbitraryAfterError
+                       ("typedSequentialExprBlockR", (6,5--6,7)), (6,2--6,7),
+                     Yes, { ArrowRange = Some (6,5--6,7)
+                            BarRange = Some (6,0--6,1) })], (2,0--6,7),
+                 Yes (2,0--2,3), Yes (5,0--5,4), { TryKeyword = (2,0--2,3)
+                                                   TryToWithRange = (2,0--5,4)
+                                                   WithKeyword = (5,0--5,4)
+                                                   WithToEndRange = (5,0--6,7) }),
+              (2,0--6,7))], PreXmlDocEmpty, [], None, (2,0--7,0),
+          { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 

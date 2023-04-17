@@ -159,8 +159,6 @@ module internal CompletionUtils =
             // If caret is at a backtick-identifier, then that is our span.
 
             // Else, check if we are after an unclosed ``, to support the common case of a manually typed leading ``.
-            // Tokenizer will not consider this an identifier, it will consider the bare `` a Keyword, followed by
-            // arbitrary tokens (Identifier, Operator, Text, etc.) depending on the trailing text.
 
             // Else, backticks are not involved in caret location, fall back to standard identifier character scan.
 
@@ -176,8 +174,8 @@ module internal CompletionUtils =
                 && Tokenizer.isDoubleBacktickIdent (sourceText.ToString(classifiedSpan.TextSpan))
 
             let isUnclosedBacktick (classifiedSpan: ClassifiedSpan) =
-                classifiedSpan.ClassificationType = ClassificationTypeNames.Keyword
-                && sourceText.ToString(classifiedSpan.TextSpan) = "``"
+                classifiedSpan.ClassificationType = ClassificationTypeNames.Identifier
+                && sourceText.ToString(classifiedSpan.TextSpan).StartsWith "``"
 
             match
                 classifiedSpans
