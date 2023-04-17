@@ -142,9 +142,12 @@ let WriteSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, ccu: Ccu
         tcConfig.outputFile
         |> Option.iter (fun outputFile ->
             let outputFile = FileSystem.GetFullPathShim(outputFile)
-            let signatureDataFile = FileSystem.ChangeExtensionShim(outputFile, ".signature-data.json")
+
+            let signatureDataFile =
+                FileSystem.ChangeExtensionShim(outputFile, ".signature-data.json")
+
             serializeEntity signatureDataFile mspec)
-    
+
     // For historical reasons, we use a different resource name for FSharp.Core, so older F# compilers
     // don't complain when they see the resource.
     let rName, compress =
@@ -1103,7 +1106,7 @@ and [<Sealed>] TcImports
         initialResolutions: TcAssemblyResolutions,
         importsBase: TcImports option,
         dependencyProviderOpt: DependencyProvider option
-    )
+    ) 
 #if !NO_TYPEPROVIDERS
     as this
 #endif
@@ -1183,10 +1186,11 @@ and [<Sealed>] TcImports
                 if publicOnly then
                     match e.TypeReprInfo with
                     | TILObjectRepr data ->
-                        let (TILObjectReprData(_, _, tyDef)) = data
+                        let (TILObjectReprData (_, _, tyDef)) = data
                         tyDef.Access = ILTypeDefAccess.Public
                     | _ -> false
-                else  true
+                else
+                    true
             | None -> false
         | None -> false
 
