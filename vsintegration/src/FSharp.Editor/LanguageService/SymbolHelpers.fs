@@ -14,7 +14,6 @@ open Microsoft.CodeAnalysis.Text
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
-open Microsoft.VisualStudio.FSharp.Editor.Symbols
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
 module internal SymbolHelpers =
@@ -64,7 +63,7 @@ module internal SymbolHelpers =
         (
             symbol: FSharpSymbol,
             projects: Project list,
-            onFound: Document -> TextSpan -> range -> Async<unit>,
+            onFound: Document -> range -> Async<unit>,
             ct: CancellationToken
         ) =
         match projects with
@@ -87,52 +86,78 @@ module internal SymbolHelpers =
                 TelemetryReporter.reportEvent "getSymbolUsesInProjectsFinished" props
             }
 
-    let getSymbolUsesInSolution
-        (
-            symbol: FSharpSymbol,
-            declLoc: SymbolDeclarationLocation,
-            checkFileResults: FSharpCheckFileResults,
-            solution: Solution,
-            ct: CancellationToken
-        ) =
+    let findSymbolUses (symbolUse: FSharpSymbolUse) (currentDocument: Document) (checkFileResults: FSharpCheckFileResults) onFound =
         async {
-            let toDict (symbolUseRanges: range seq) =
-                let groups =
-                    symbolUseRanges
-                    |> Seq.collect (fun symbolUse ->
-                        solution.GetDocumentIdsWithFilePath(symbolUse.FileName)
-                        |> Seq.map (fun id -> id, symbolUse))
-                    |> Seq.groupBy fst
+            match symbolUse.GetSymbolScope currentDocument with
 
-                groups.ToImmutableDictionary((fun (id, _) -> id), (fun (_, xs) -> xs |> Seq.map snd |> Seq.toArray))
+            | Some SymbolScope.CurrentDocument ->
+                let symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol)
 
-            match declLoc with
-            | SymbolDeclarationLocation.CurrentDocument ->
-                let! ct = Async.CancellationToken
-                let symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbol, ct)
-                return toDict (symbolUses |> Seq.map (fun symbolUse -> symbolUse.Range))
-            | SymbolDeclarationLocation.Projects (projects, isInternalToProject) ->
-                let symbolUseRanges = ConcurrentBag()
+                for symbolUse in symbolUses do
+                    do! onFound currentDocument symbolUse.Range
 
-                let projects =
-                    if isInternalToProject then
-                        projects
-                    else
+            | Some SymbolScope.SignatureAndImplementation ->
+                let otherFile = getOtherFile currentDocument.FilePath
+
+                let! otherFileCheckResults =
+                    match currentDocument.Project.Solution.TryGetDocumentFromPath otherFile with
+                    | Some doc ->
+                        async {
+                            let! _, checkFileResults = doc.GetFSharpParseAndCheckResultsAsync("findReferencedSymbolsAsync")
+                            return [ checkFileResults, doc ]
+                        }
+                    | None -> async.Return []
+
+                let symbolUses =
+                    (checkFileResults, currentDocument) :: otherFileCheckResults
+                    |> Seq.collect (fun (checkFileResults, doc) ->
+                        checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol)
+                        |> Seq.map (fun symbolUse -> (doc, symbolUse.Range)))
+
+                for document, range in symbolUses do
+                    do! onFound document range
+
+            | scope ->
+                let projectsToCheck =
+                    match scope with
+                    | Some (SymbolScope.Projects (scopeProjects, false)) ->
                         [
-                            for project in projects do
-                                yield project
-                                yield! project.GetDependentProjects()
+                            for scopeProject in scopeProjects do
+                                yield scopeProject
+                                yield! scopeProject.GetDependentProjects()
                         ]
-                        |> List.distinctBy (fun x -> x.Id)
+                        |> List.distinct
+                    | Some (SymbolScope.Projects (scopeProjects, true)) -> scopeProjects
+                    // The symbol is declared in .NET framework, an external assembly or in a C# project within the solution.
+                    // In order to find all its usages we have to check all F# projects.
+                    | _ -> Seq.toList currentDocument.Project.Solution.Projects
 
-                let onFound = fun _ _ symbolUseRange -> async { symbolUseRanges.Add symbolUseRange }
+                let! ct = Async.CancellationToken
 
-                do! getSymbolUsesInProjects (symbol, projects, onFound, ct) |> Async.AwaitTask
+                do!
+                    getSymbolUsesInProjects (symbolUse.Symbol, projectsToCheck, onFound, ct)
+                    |> Async.AwaitTask
+        }
 
-                // Distinct these down because each TFM will produce a new 'project'.
-                // Unless guarded by a #if define, symbols with the same range will be added N times
-                let symbolUseRanges = symbolUseRanges |> Seq.distinct
-                return toDict symbolUseRanges
+    let getSymbolUses (symbolUse: FSharpSymbolUse) (currentDocument: Document) (checkFileResults: FSharpCheckFileResults) =
+        async {
+            let symbolUses = ConcurrentBag()
+            let onFound = fun document range -> async { symbolUses.Add(document, range) }
+
+            do! findSymbolUses symbolUse currentDocument checkFileResults onFound
+
+            return symbolUses |> seq
+        }
+
+    let getSymbolUsesInSolution (symbolUse: FSharpSymbolUse, checkFileResults: FSharpCheckFileResults, document: Document) =
+        async {
+            let! symbolUses = getSymbolUses symbolUse document checkFileResults
+
+            let symbolUsesWithDocumentId =
+                symbolUses |> Seq.map (fun (doc, range) -> doc.Id, range)
+
+            let usesByDocumentId = symbolUsesWithDocumentId |> Seq.groupBy fst
+            return usesByDocumentId.ToImmutableDictionary(fst, snd >> Seq.map snd >> Seq.toArray)
         }
 
     type OriginalText = string
@@ -174,20 +199,12 @@ module internal SymbolHelpers =
                     symbol.FullIsland
                 )
 
-            let! declLoc = symbolUse.GetDeclarationLocation(document)
             let newText = textChanger originalText
             // defer finding all symbol uses throughout the solution
             return
                 Func<_, _>(fun (cancellationToken: CancellationToken) ->
                     async {
-                        let! symbolUsesByDocumentId =
-                            getSymbolUsesInSolution (
-                                symbolUse.Symbol,
-                                declLoc,
-                                checkFileResults,
-                                document.Project.Solution,
-                                cancellationToken
-                            )
+                        let! symbolUsesByDocumentId = getSymbolUsesInSolution (symbolUse, checkFileResults, document)
 
                         let mutable solution = document.Project.Solution
 

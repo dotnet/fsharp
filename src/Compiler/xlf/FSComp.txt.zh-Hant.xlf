@@ -777,6 +777,11 @@
         <target state="translated">不完整的運算子運算式 (範例 a^b) 或限定類型調用 (範例: ^T.Name)</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsMissingUnionCaseName">
+        <source>Missing union case name</source>
+        <target state="new">Missing union case name</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsNewExprMemberAccess">
         <source>This member access is ambiguous. Please use parentheses around the object creation, e.g. '(new SomeType(args)).MemberName'</source>
         <target state="translated">此成員存取不明確。請在物件建立前後加上括弧，例如「(new SomeType(args)).MemberName」</target>
