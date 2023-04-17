@@ -177,7 +177,7 @@ let ParseFile fileName =
         |> sprintf "%s\n"
 
     let bslPath = $"{fullPath}.bsl"
-    let tmpPath = $"{fullPath}.tmp"
+    let actualPath = $"{fullPath}.actual"
 
     let expected =
         if File.Exists bslPath then
@@ -191,8 +191,8 @@ let ParseFile fileName =
     if not (isNull testUpdateBSLEnv) && testUpdateBSLEnv.Trim() = "1" then
         File.WriteAllText(bslPath, actual)
     elif not equals then
-        File.WriteAllText(tmpPath, actual)
+        File.WriteAllText(actualPath, actual)
     else
-        File.Delete(tmpPath)
+        File.Delete(actualPath)
 
     Assert.AreEqual(expected, actual)
