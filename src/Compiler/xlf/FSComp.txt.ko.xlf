@@ -527,6 +527,11 @@
         <target state="translated">IF-FSHARP/IF-CAML 영역은 더 이상 지원되지 않습니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexInvalidIdentifier">
+        <source>This is not a valid identifier</source>
+        <target state="new">This is not a valid identifier</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexRBraceInInterpolatedString">
         <source>A '}}' character must be escaped (by doubling) in an interpolated string.</source>
         <target state="translated">'}}' 문자는 보간된 문자열에서 이중으로 사용하여 이스케이프해야 합니다.</target>
@@ -757,6 +762,11 @@
         <target state="translated">예상되는 패턴</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsExpectingType">
+        <source>Expecting type</source>
+        <target state="new">Expecting type</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr1">
         <source>Incomplete character literal (example: 'Q') or qualified type invocation (example: 'T.Name)</source>
         <target state="translated">불완전한 문자 리터럴(예: 'Q') 또는 정규화된 형식 호출(예: 'T.Name)</target>
@@ -765,6 +775,11 @@
       <trans-unit id="parsIncompleteTyparExpr2">
         <source>Incomplete operator expression (example a^b) or qualified type invocation (example: ^T.Name)</source>
         <target state="translated">불완전한 연산자 식(예: a^b) 또는 정규화된 형식 호출(예: ^T.Name)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsMissingUnionCaseName">
+        <source>Missing union case name</source>
+        <target state="new">Missing union case name</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNewExprMemberAccess">

@@ -527,6 +527,11 @@
         <target state="translated">不再支持 IF-FSHARP/IF-CAML 区域</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexInvalidIdentifier">
+        <source>This is not a valid identifier</source>
+        <target state="new">This is not a valid identifier</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexRBraceInInterpolatedString">
         <source>A '}}' character must be escaped (by doubling) in an interpolated string.</source>
         <target state="translated">在内插字符串中，必需对 "}}" 字符进行转义(通过加倍)。</target>
@@ -757,6 +762,11 @@
         <target state="translated">预期模式</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsExpectingType">
+        <source>Expecting type</source>
+        <target state="new">Expecting type</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr1">
         <source>Incomplete character literal (example: 'Q') or qualified type invocation (example: 'T.Name)</source>
         <target state="translated">字符文本不完整(示例: "Q")或限定类型调用(示例: "T.Name")</target>
@@ -765,6 +775,11 @@
       <trans-unit id="parsIncompleteTyparExpr2">
         <source>Incomplete operator expression (example a^b) or qualified type invocation (example: ^T.Name)</source>
         <target state="translated">运算符表达式不完整(示例: a^b)或限定类型调用(示例: ^T.Name)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsMissingUnionCaseName">
+        <source>Missing union case name</source>
+        <target state="new">Missing union case name</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNewExprMemberAccess">

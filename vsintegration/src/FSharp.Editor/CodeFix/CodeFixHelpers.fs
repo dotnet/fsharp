@@ -19,15 +19,15 @@ module internal CodeFixHelpers =
             computeTextChanges: unit -> Async<TextChange[] option>
         ) =
 
-        // I don't understand how we can get anything but a single diagnostic here - as we get a single "title" here.
-        // But since we don't have proper testing yet, keeping it like this to verify this theory in telemetry.
+        // Currently there should be one Id here.
+        // Keeping it this way to be error- and futureproof
+        // as the underlying API does allow multiple Ids here.
         let ids = context.Diagnostics |> Seq.map (fun d -> d.Id) |> String.concat ","
 
         let props: (string * obj) list =
             [
                 "name", name
                 "ids", ids
-                "title", title
 
                 // The following can help building a unique but anonymized codefix target:
                 // #projectid#documentid#span

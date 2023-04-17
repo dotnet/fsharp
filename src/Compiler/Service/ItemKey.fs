@@ -298,6 +298,10 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             writeString ItemKeyTags.parameters
             writeType false vref.Type
 
+            match vref.Deref.ArgReprInfoForDisplay with
+            | Some ({ OtherRange = Some (r) }) -> writeRange r
+            | _ -> ()
+
             match vref.TryDeclaringEntity with
             | ParentNone -> writeChar '%'
             | Parent eref -> writeEntityRef eref
@@ -429,8 +433,17 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             writeString ItemKeyTags.itemDelegateCtor
             writeType false ty
 
+        // Named argument in a signature
+        | Item.OtherName (ident = Some (ident); argType = ty; argInfo = Some _) ->
+            writeString ItemKeyTags.itemValue
+            writeString ident.idText
+            writeString ItemKeyTags.parameters
+            writeType false ty
+            writeRange ident.idRange
+            writeChar '%'
+
         // We should consider writing ItemKey for each of these
-        | Item.ArgName _ -> ()
+        | Item.OtherName _ -> ()
         | Item.FakeInterfaceCtor _ -> ()
         | Item.CustomOperation _ -> ()
         | Item.CustomBuilder _ -> ()
