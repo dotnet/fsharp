@@ -14,6 +14,7 @@ open FSharp.Compiler.CodeAnalysis
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.AddMissingFunKeyword); Shared>]
 type internal FSharpAddMissingFunKeywordCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
+    static let title = SR.AddMissingFunKeyword()
 
     let fixableDiagnosticIds = set [ "FS0010" ]
 
@@ -56,22 +57,7 @@ type internal FSharpAddMissingFunKeywordCodeFixProvider [<ImportingConstructor>]
 
             let! intendedArgSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, intendedArgLexerSymbol.Range)
 
-            let diagnostics =
-                context.Diagnostics
-                |> Seq.filter (fun x -> fixableDiagnosticIds |> Set.contains x.Id)
-                |> Seq.toImmutableArray
-
-            let title = SR.AddMissingFunKeyword()
-
-            let codeFix =
-                CodeFixHelpers.createTextChangeCodeFix (
-                    CodeFix.AddMissingFunKeyword,
-                    title,
-                    context,
-                    (fun () -> asyncMaybe.Return [| TextChange(TextSpan(intendedArgSpan.Start, 0), "fun ") |])
-                )
-
-            context.RegisterCodeFix(codeFix, diagnostics)
+            do context.RegisterFsharpFix(CodeFix.AddMissingFunKeyword, title, [| TextChange(TextSpan(intendedArgSpan.Start, 0), "fun ") |])
         }
         |> Async.Ignore
         |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

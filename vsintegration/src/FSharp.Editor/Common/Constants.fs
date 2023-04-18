@@ -126,6 +126,9 @@ module internal CodeFix =
     let RenameUnusedValue = "RenameUnusedValue"
 
     [<Literal>]
+    let PrefixUnusedValue = "PrefixUnusedValue"
+
+    [<Literal>]
     let FixIndexerAccess = "FixIndexerAccess"
 
     [<Literal>]

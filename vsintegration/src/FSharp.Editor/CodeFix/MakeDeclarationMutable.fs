@@ -16,15 +16,12 @@ type internal FSharpMakeDeclarationMutableFixProvider [<ImportingConstructor>] (
     inherit CodeFixProvider()
 
     let fixableDiagnosticIds = set [ "FS0027" ]
+    static let title = SR.MakeDeclarationMutable()
 
     override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
     override _.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
-            let diagnostics =
-                context.Diagnostics
-                |> Seq.filter (fun x -> fixableDiagnosticIds |> Set.contains x.Id)
-                |> Seq.toImmutableArray
 
             let document = context.Document
             do! Option.guard (not (isSignatureFile document.FilePath))
@@ -65,18 +62,7 @@ type internal FSharpMakeDeclarationMutableFixProvider [<ImportingConstructor>] (
 
                 // Bail if it's a parameter, because like, that ain't allowed
                 do! Option.guard (not (parseFileResults.IsPositionContainedInACurriedParameter declRange.Start))
-
-                let title = SR.MakeDeclarationMutable()
-
-                let codeFix =
-                    CodeFixHelpers.createTextChangeCodeFix (
-                        CodeFix.MakeDeclarationMutable,
-                        title,
-                        context,
-                        (fun () -> asyncMaybe.Return [| TextChange(TextSpan(span.Start, 0), "mutable ") |])
-                    )
-
-                context.RegisterCodeFix(codeFix, diagnostics)
+                do context.RegisterFsharpFix(CodeFix.MakeDeclarationMutable, title, [| TextChange(TextSpan(span.Start, 0), "mutable ") |])
             | _ -> ()
         }
         |> Async.Ignore
