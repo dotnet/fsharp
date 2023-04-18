@@ -679,7 +679,31 @@ module MapTree =
                 (m.Key, m.Value)
             else
                 rightmost nd.Right
-
+                
+    let rec binarySearch (comparer: IComparer<'Key>) k lower higher (m: MapTree<'Key, 'Value>) =
+        if isEmpty m then
+            lower, None, higher
+        else
+            let c = comparer.Compare(k, m.Key)
+            if m.Height = 1 then
+                if c = 0 then
+                    lower, Some (m.Key, m.Value), higher
+                elif c < 0 then
+                    lower, None, Some (m.Key, m.Value)
+                else
+                    Some (m.Key, m.Value), None, higher
+            elif c = 0 then
+                let nd = asNode m
+                (if isEmpty nd.Left then None else Some (rightmost nd.Left)),
+                Some (m.Key, m.Value),
+                (if isEmpty nd.Right then None else Some (leftmost nd.Right))
+            elif c > 0 then
+                let nd = asNode m
+                binarySearch comparer k (Some (nd.Key, nd.Value)) higher nd.Right
+            else
+                let nd = asNode m
+                binarySearch comparer k lower (Some (nd.Key, nd.Value)) nd.Left
+                
 [<System.Diagnostics.DebuggerTypeProxy(typedefof<MapDebugView<_, _>>)>]
 [<System.Diagnostics.DebuggerDisplay("Count = {Count}")>]
 [<Sealed>]
@@ -843,6 +867,9 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
 
     member m.MinKeyValue = MapTree.leftmost tree
     member m.MaxKeyValue = MapTree.rightmost tree
+    
+    member m.BinarySearch key =
+        MapTree.binarySearch comparer key None None tree
 
     static member ofList l : Map<'Key, 'Value> =
         let comparer = LanguagePrimitives.FastGenericComparer<'Key>
@@ -1305,3 +1332,7 @@ module Map =
     [<CompiledName("MaxKeyValue")>]
     let maxKeyValue (table: Map<_, _>) =
         table.MaxKeyValue
+        
+    [<CompiledName("BinarySearch")>]
+    let binarySearch (key: 'Key) (table: Map<'Key, 'T>) =
+        table.BinarySearch key
