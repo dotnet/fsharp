@@ -39,7 +39,6 @@ type internal FSharpRemoveUnusedOpensCodeFixProvider [<ImportingConstructor>] ()
                         .SpanIncludingLineBreak)
                 |> Seq.map (fun span -> TextChange(span, ""))
 
-            CodeFixHelpers.reportCodeFixRecommendation diagnostics document CodeFix.RemoveUnusedOpens
             return document.WithText(sourceText.WithChanges(changes))
         }
 
@@ -53,4 +52,4 @@ type internal FSharpRemoveUnusedOpensCodeFixProvider [<ImportingConstructor>] ()
         }
 
     override this.GetFixAllProvider() =
-        FixAllProvider.Create(fun fixAllCtx doc allDiagnostics -> this.GetChangedDocument(doc, allDiagnostics, fixAllCtx.CancellationToken))
+        CodeFixHelpers.createFixAllProvider CodeFix.RemoveUnusedOpens this.GetChangedDocument

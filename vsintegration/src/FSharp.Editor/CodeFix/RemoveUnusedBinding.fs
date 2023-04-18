@@ -60,7 +60,6 @@ type internal FSharpRemoveUnusedBindingCodeFixProvider [<ImportingConstructor>] 
                         | None -> ()
                 }
 
-            CodeFixHelpers.reportCodeFixRecommendation diagnostics document CodeFix.RemoveUnusedBinding
             return document.WithText(sourceText.WithChanges(changes))
         }
 
@@ -74,4 +73,4 @@ type internal FSharpRemoveUnusedBindingCodeFixProvider [<ImportingConstructor>] 
         }
 
     override this.GetFixAllProvider() =
-        FixAllProvider.Create(fun fixAllCtx doc allDiagnostics -> this.GetChangedDocument(doc, allDiagnostics, fixAllCtx.CancellationToken))
+        CodeFixHelpers.createFixAllProvider CodeFix.RemoveUnusedBinding this.GetChangedDocument

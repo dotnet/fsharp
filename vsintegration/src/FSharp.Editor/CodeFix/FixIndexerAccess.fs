@@ -4,8 +4,10 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
 open System.Collections.Immutable
+open System.Threading
 open System.Threading.Tasks
 
+open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 open FSharp.Compiler.Diagnostics
@@ -67,19 +69,19 @@ type internal FsharpFixRemoveDotFromIndexerAccessOptIn() as this =
     static let title =
         CompilerDiagnostics.GetErrorMessage FSharpDiagnosticKind.RemoveIndexerDot
 
+    member this.GetChangedDocument(document: Document, diagnostics: ImmutableArray<Diagnostic>, ct: CancellationToken) =
+        backgroundTask {
+            let changes =
+                diagnostics |> Seq.map (fun x -> TextChange(x.Location.SourceSpan, ""))
+
+            let! text = document.GetTextAsync(ct)
+            return document.WithText(text.WithChanges(changes))
+        }
+
     override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
     override _.RegisterCodeFixesAsync context : Task =
         backgroundTask { this.RegisterFix(CodeFix.RemoveIndexerDotBeforeBracket, title, context, TextChange(context.Span, "")) }
 
     override this.GetFixAllProvider() =
-        FixAllProvider.Create(fun fixAllCtx doc allDiagnostics ->
-            backgroundTask {
-                let changes =
-                    allDiagnostics |> Seq.map (fun x -> TextChange(x.Location.SourceSpan, ""))
-
-                let! text = doc.GetTextAsync(fixAllCtx.CancellationToken)
-
-                CodeFixHelpers.reportCodeFixRecommendation allDiagnostics doc CodeFix.RemoveIndexerDotBeforeBracket
-                return doc.WithText(text.WithChanges(changes))
-            })
+        CodeFixHelpers.createFixAllProvider CodeFix.RemoveIndexerDotBeforeBracket this.GetChangedDocument

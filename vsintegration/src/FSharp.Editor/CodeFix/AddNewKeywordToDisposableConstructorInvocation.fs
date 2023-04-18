@@ -27,7 +27,6 @@ type internal FSharpAddNewKeywordCodeFixProvider() =
                 diagnostics
                 |> Seq.map (fun d -> TextChange(TextSpan(d.Location.SourceSpan.Start, 0), "new "))
 
-            CodeFixHelpers.reportCodeFixRecommendation diagnostics document CodeFix.AddNewKeyword
             return document.WithText(sourceText.WithChanges(changes))
         }
 
@@ -41,4 +40,4 @@ type internal FSharpAddNewKeywordCodeFixProvider() =
         }
 
     override this.GetFixAllProvider() =
-        FixAllProvider.Create(fun fixAllCtx doc allDiagnostics -> this.GetChangedDocument(doc, allDiagnostics, fixAllCtx.CancellationToken))
+        CodeFixHelpers.createFixAllProvider CodeFix.AddNewKeyword this.GetChangedDocument

@@ -64,7 +64,6 @@ type internal FSharpRenameParamToMatchSignature [<ImportingConstructor>] () =
                 }
                 |> Async.Parallel
 
-            CodeFixHelpers.reportCodeFixRecommendation diagnostics document CodeFix.FSharpRenameParamToMatchSignature
             return document.WithText(sourceText.WithChanges(changes |> Array.concat))
         }
 
@@ -82,4 +81,4 @@ type internal FSharpRenameParamToMatchSignature [<ImportingConstructor>] () =
         }
 
     override this.GetFixAllProvider() =
-        FixAllProvider.Create(fun fixAllCtx doc allDiagnostics -> this.GetChangedDocument(doc, allDiagnostics, fixAllCtx.CancellationToken))
+        CodeFixHelpers.createFixAllProvider CodeFix.FSharpRenameParamToMatchSignature this.GetChangedDocument

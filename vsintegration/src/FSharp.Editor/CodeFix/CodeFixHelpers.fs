@@ -2,9 +2,11 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
+open System
 open System.Threading
 open System.Threading.Tasks
 open System.Collections.Immutable
+open System.Diagnostics
 
 open Microsoft
 open Microsoft.CodeAnalysis
@@ -15,7 +17,13 @@ open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
 [<RequireQualifiedAccess>]
 module internal CodeFixHelpers =
-    let reportCodeFixRecommendation (diagnostics: ImmutableArray<Diagnostic>) (doc: Document) (staticName: string) =
+    let private reportCodeFixTelemetry
+        (diagnostics: ImmutableArray<Diagnostic>)
+        (doc: Document)
+        (staticName: string)
+        (scope: FixAllScope)
+        (ellapsedMs: int64)
+        =
         let ids =
             diagnostics |> Seq.map (fun d -> d.Id) |> Seq.distinct |> String.concat ","
 
@@ -26,9 +34,20 @@ module internal CodeFixHelpers =
                 "context.document.project.id", doc.Project.Id.Id.ToString()
                 "context.document.id", doc.Id.Id.ToString()
                 "context.diagnostics.count", diagnostics.Length
+                "context.bulkChange.scope", scope.ToString()
+                "ellapsedMs", ellapsedMs
             ]
 
-        TelemetryReporter.reportEvent "codefixrecommendation" props
+        TelemetryReporter.reportEvent "codefixactivated" props
+
+    let createFixAllProvider name getChangedDocument =
+        FixAllProvider.Create(fun fixAllCtx doc allDiagnostics ->
+            backgroundTask {
+                let sw = Stopwatch.StartNew()
+                let! doc = getChangedDocument (doc, allDiagnostics, fixAllCtx.CancellationToken)
+                do reportCodeFixTelemetry allDiagnostics doc name (fixAllCtx.Scope) sw.ElapsedMilliseconds
+                return doc
+            })
 
     let createTextChangeCodeFix
         (
@@ -75,7 +94,7 @@ module internal CodeFixHelpers =
                         return context.Document.WithText(sourceText.WithChanges(textChanges))
                 }
                 |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
-            title
+            name
         )
 
 [<AutoOpen>]

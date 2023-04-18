@@ -29,7 +29,6 @@ type internal FSharpSimplifyNameCodeFixProvider() =
             let changes =
                 diagnostics |> Seq.map (fun d -> TextChange(d.Location.SourceSpan, ""))
 
-            CodeFixHelpers.reportCodeFixRecommendation diagnostics document CodeFix.SimplifyName
             return document.WithText(sourceText.WithChanges(changes))
         }
 
@@ -49,4 +48,4 @@ type internal FSharpSimplifyNameCodeFixProvider() =
         }
 
     override this.GetFixAllProvider() =
-        FixAllProvider.Create(fun fixAllCtx doc allDiagnostics -> this.GetChangedDocument(doc, allDiagnostics, fixAllCtx.CancellationToken))
+        CodeFixHelpers.createFixAllProvider CodeFix.SimplifyName this.GetChangedDocument

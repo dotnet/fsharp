@@ -81,7 +81,6 @@ type internal FSharpPrefixUnusedValueWithUnderscoreCodeFixProvider [<ImportingCo
                 }
                 |> Async.Parallel
 
-            CodeFixHelpers.reportCodeFixRecommendation diagnostics document CodeFix.PrefixUnusedValue
             return document.WithText(sourceText.WithChanges(changes |> Seq.concat))
         }
 
@@ -102,7 +101,7 @@ type internal FSharpPrefixUnusedValueWithUnderscoreCodeFixProvider [<ImportingCo
                             CodeAction.Create(
                                 prefixTitle,
                                 (fun ct -> this.GetChangedDocument(ctx.Document, ctx.Diagnostics, ct)),
-                                prefixTitle
+                                CodeFix.PrefixUnusedValue
                             )
 
                         ctx.RegisterCodeFix(codeAction, this.GetPrunedDiagnostics(ctx))
@@ -110,7 +109,7 @@ type internal FSharpPrefixUnusedValueWithUnderscoreCodeFixProvider [<ImportingCo
         }
 
     override this.GetFixAllProvider() =
-        FixAllProvider.Create(fun fixAllCtx doc allDiagnostics -> this.GetChangedDocument(doc, allDiagnostics, fixAllCtx.CancellationToken))
+        CodeFixHelpers.createFixAllProvider CodeFix.PrefixUnusedValue this.GetChangedDocument
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.RenameUnusedValue); Shared>]
 type internal FSharpRenameUnusedValueWithUnderscoreCodeFixProvider [<ImportingConstructor>] () =
@@ -148,7 +147,6 @@ type internal FSharpRenameUnusedValueWithUnderscoreCodeFixProvider [<ImportingCo
                 }
                 |> Async.Parallel
 
-            CodeFixHelpers.reportCodeFixRecommendation diagnostics document CodeFix.RenameUnusedValue
             return document.WithText(sourceText.WithChanges(changes |> Seq.concat))
         }
 
@@ -169,7 +167,7 @@ type internal FSharpRenameUnusedValueWithUnderscoreCodeFixProvider [<ImportingCo
                             CodeAction.Create(
                                 prefixTitle,
                                 (fun ct -> this.GetChangedDocument(ctx.Document, ctx.Diagnostics, ct)),
-                                prefixTitle
+                                CodeFix.RenameUnusedValue
                             )
 
                         ctx.RegisterCodeFix(codeAction, this.GetPrunedDiagnostics(ctx))
@@ -177,4 +175,4 @@ type internal FSharpRenameUnusedValueWithUnderscoreCodeFixProvider [<ImportingCo
         }
 
     override this.GetFixAllProvider() =
-        FixAllProvider.Create(fun fixAllCtx doc allDiagnostics -> this.GetChangedDocument(doc, allDiagnostics, fixAllCtx.CancellationToken))
+        CodeFixHelpers.createFixAllProvider CodeFix.RenameUnusedValue this.GetChangedDocument

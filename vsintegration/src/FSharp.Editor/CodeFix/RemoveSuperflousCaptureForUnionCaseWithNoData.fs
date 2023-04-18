@@ -51,7 +51,6 @@ type internal RemoveSuperflousCaptureForUnionCaseWithNoDataProvider [<ImportingC
                             yield TextChange(reminderSpan, "")
                 }
 
-            CodeFixHelpers.reportCodeFixRecommendation diagnostics document CodeFix.RemoveSuperfluousCapture
             return document.WithText(sourceText.WithChanges(changes))
         }
 
@@ -65,4 +64,4 @@ type internal RemoveSuperflousCaptureForUnionCaseWithNoDataProvider [<ImportingC
         }
 
     override this.GetFixAllProvider() =
-        FixAllProvider.Create(fun fixAllCtx doc allDiagnostics -> this.GetChangedDocument(doc, allDiagnostics, fixAllCtx.CancellationToken))
+        CodeFixHelpers.createFixAllProvider CodeFix.RemoveSuperfluousCapture this.GetChangedDocument
