@@ -5,6 +5,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System.Composition
 open System.Threading
 open System.Threading.Tasks
+open System.Collections.Immutable
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
@@ -14,9 +15,7 @@ open Microsoft.CodeAnalysis.CodeActions
 type internal FSharpWrapExpressionInParenthesesFixProvider() =
     inherit CodeFixProvider()
 
-    let fixableDiagnosticIds = set [ "FS0597" ]
-
-    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0597")
 
     override this.RegisterCodeFixesAsync context : Task =
         async {

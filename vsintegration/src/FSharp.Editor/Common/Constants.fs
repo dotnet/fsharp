@@ -99,6 +99,16 @@ module internal Guids =
 module internal CodeFix =
 
     [<Literal>]
+    let AddTypeAnnotationToObjectOfIndeterminateType =
+        "AddTypeAnnotationToObjectOfIndeterminateType"
+
+    [<Literal>]
+    let AddMissingRecToMutuallyRecFunctions = "AddMissingRecToMutuallyRecFunctions"
+
+    [<Literal>]
+    let ConvertToAnonymousRecord = "ConvertToAnonymousRecord"
+
+    [<Literal>]
     let AddInstanceMemberParameter = "AddInstanceMemberParameter"
 
     [<Literal>]

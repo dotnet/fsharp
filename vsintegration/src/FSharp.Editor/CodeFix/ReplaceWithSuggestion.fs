@@ -4,6 +4,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
 open System.Threading.Tasks
+open System.Collections.Immutable
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
@@ -18,9 +19,7 @@ open FSharp.Compiler.Tokenization
 type internal FSharpReplaceWithSuggestionCodeFixProvider [<ImportingConstructor>] (settings: EditorOptions) =
     inherit CodeFixProvider()
 
-    let fixableDiagnosticIds = set [ "FS0039"; "FS1129"; "FS0495" ]
-
-    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0039", "FS1129", "FS0495")
 
     override _.RegisterCodeFixesAsync context : Task =
         asyncMaybe {

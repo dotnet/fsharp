@@ -5,6 +5,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 open System.Composition
 open System.Threading.Tasks
+open System.Collections.Immutable
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
@@ -13,9 +14,8 @@ open Microsoft.CodeAnalysis.CodeFixes
 type internal FSharpAddMissingEqualsToTypeDefinitionCodeFixProvider() =
     inherit CodeFixProvider()
 
-    let fixableDiagnosticIds = set [ "FS3360" ]
     static let title = SR.AddMissingEqualsToTypeDefinition()
-    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = ImmutableArray.Create("FS3360")
 
     override _.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
