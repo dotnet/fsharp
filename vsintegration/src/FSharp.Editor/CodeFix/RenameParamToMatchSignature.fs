@@ -32,7 +32,7 @@ type internal FSharpRenameParamToMatchSignature [<ImportingConstructor>] () =
 
     override _.FixableDiagnosticIds = ImmutableArray.Create("FS3218")
 
-    member this.GetChangedDocument(document: Document, diagnostics: ImmutableArray<Diagnostic>, ct: CancellationToken) =
+    member this.GetChanges(document: Document, diagnostics: ImmutableArray<Diagnostic>, ct: CancellationToken) =
         backgroundTask {
             let! sourceText = document.GetTextAsync(ct)
 
@@ -64,7 +64,7 @@ type internal FSharpRenameParamToMatchSignature [<ImportingConstructor>] () =
                 }
                 |> Async.Parallel
 
-            return document.WithText(sourceText.WithChanges(changes |> Array.concat))
+            return (changes |> Seq.concat)
         }
 
     override this.RegisterCodeFixesAsync ctx : Task =
@@ -73,12 +73,10 @@ type internal FSharpRenameParamToMatchSignature [<ImportingConstructor>] () =
 
             match title with
             | ValueSome title ->
-                let codeAction =
-                    CodeAction.Create(title, (fun ct -> this.GetChangedDocument(ctx.Document, ctx.Diagnostics, ct)), title)
-
-                ctx.RegisterCodeFix(codeAction, this.GetPrunedDiagnostics(ctx))
+                let! changes = this.GetChanges(ctx.Document, ctx.Diagnostics, ctx.CancellationToken)
+                ctx.RegisterFsharpFix(CodeFix.FSharpRenameParamToMatchSignature, title, changes)
             | ValueNone -> ()
         }
 
     override this.GetFixAllProvider() =
-        CodeFixHelpers.createFixAllProvider CodeFix.FSharpRenameParamToMatchSignature this.GetChangedDocument
+        CodeFixHelpers.createFixAllProvider CodeFix.FSharpRenameParamToMatchSignature this.GetChanges

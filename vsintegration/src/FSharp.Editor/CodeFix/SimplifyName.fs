@@ -22,14 +22,12 @@ type internal FSharpSimplifyNameCodeFixProvider() =
     override _.FixableDiagnosticIds =
         ImmutableArray.Create(FSharpIDEDiagnosticIds.SimplifyNamesDiagnosticId)
 
-    member this.GetChangedDocument(document: Document, diagnostics: ImmutableArray<Diagnostic>, ct: CancellationToken) =
+    member this.GetChanges(_document: Document, diagnostics: ImmutableArray<Diagnostic>, _ct: CancellationToken) =
         backgroundTask {
-            let! sourceText = document.GetTextAsync(ct)
-
             let changes =
                 diagnostics |> Seq.map (fun d -> TextChange(d.Location.SourceSpan, ""))
 
-            return document.WithText(sourceText.WithChanges(changes))
+            return changes
         }
 
     override this.RegisterCodeFixesAsync ctx : Task =
@@ -41,11 +39,9 @@ type internal FSharpSimplifyNameCodeFixProvider() =
                 | true, longIdent -> sprintf "%s '%s'" (SR.SimplifyName()) longIdent
                 | _ -> SR.SimplifyName()
 
-            let codeAction =
-                CodeAction.Create(title, (fun ct -> this.GetChangedDocument(ctx.Document, ctx.Diagnostics, ct)), title)
-
-            ctx.RegisterCodeFix(codeAction, this.GetPrunedDiagnostics(ctx))
+            let! changes = this.GetChanges(ctx.Document, ctx.Diagnostics, ctx.CancellationToken)
+            ctx.RegisterFsharpFix(CodeFix.SimplifyName, title, changes)
         }
 
     override this.GetFixAllProvider() =
-        CodeFixHelpers.createFixAllProvider CodeFix.SimplifyName this.GetChangedDocument
+        CodeFixHelpers.createFixAllProvider CodeFix.SimplifyName this.GetChanges

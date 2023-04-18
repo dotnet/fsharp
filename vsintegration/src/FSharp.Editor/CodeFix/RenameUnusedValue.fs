@@ -55,7 +55,7 @@ type internal FSharpPrefixUnusedValueWithUnderscoreCodeFixProvider [<ImportingCo
 
     override _.FixableDiagnosticIds = ImmutableArray.Create("FS1182")
 
-    member this.GetChangedDocument(document: Document, diagnostics: ImmutableArray<Diagnostic>, ct: CancellationToken) =
+    member this.GetChanges(document: Document, diagnostics: ImmutableArray<Diagnostic>, ct: CancellationToken) =
         backgroundTask {
             let! sourceText = document.GetTextAsync(ct)
 
@@ -81,7 +81,7 @@ type internal FSharpPrefixUnusedValueWithUnderscoreCodeFixProvider [<ImportingCo
                 }
                 |> Async.Parallel
 
-            return document.WithText(sourceText.WithChanges(changes |> Seq.concat))
+            return (changes |> Seq.concat)
         }
 
     override this.RegisterCodeFixesAsync ctx : Task =
@@ -96,20 +96,13 @@ type internal FSharpPrefixUnusedValueWithUnderscoreCodeFixProvider [<ImportingCo
                     match symbolUse.Symbol with
                     | :? FSharpMemberOrFunctionOrValue ->
                         let prefixTitle = title symbolUse.Symbol.DisplayName
-
-                        let codeAction =
-                            CodeAction.Create(
-                                prefixTitle,
-                                (fun ct -> this.GetChangedDocument(ctx.Document, ctx.Diagnostics, ct)),
-                                CodeFix.PrefixUnusedValue
-                            )
-
-                        ctx.RegisterCodeFix(codeAction, this.GetPrunedDiagnostics(ctx))
+                        let! changes = this.GetChanges(ctx.Document, ctx.Diagnostics, ctx.CancellationToken)
+                        ctx.RegisterFsharpFix(CodeFix.PrefixUnusedValue, prefixTitle, changes)
                     | _ -> ()
         }
 
     override this.GetFixAllProvider() =
-        CodeFixHelpers.createFixAllProvider CodeFix.PrefixUnusedValue this.GetChangedDocument
+        CodeFixHelpers.createFixAllProvider CodeFix.PrefixUnusedValue this.GetChanges
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.RenameUnusedValue); Shared>]
 type internal FSharpRenameUnusedValueWithUnderscoreCodeFixProvider [<ImportingConstructor>] () =
@@ -121,7 +114,7 @@ type internal FSharpRenameUnusedValueWithUnderscoreCodeFixProvider [<ImportingCo
 
     override _.FixableDiagnosticIds = ImmutableArray.Create("FS1182")
 
-    member this.GetChangedDocument(document: Document, diagnostics: ImmutableArray<Diagnostic>, ct: CancellationToken) =
+    member this.GetChanges(document: Document, diagnostics: ImmutableArray<Diagnostic>, ct: CancellationToken) =
         backgroundTask {
             let! sourceText = document.GetTextAsync(ct)
 
@@ -147,7 +140,7 @@ type internal FSharpRenameUnusedValueWithUnderscoreCodeFixProvider [<ImportingCo
                 }
                 |> Async.Parallel
 
-            return document.WithText(sourceText.WithChanges(changes |> Seq.concat))
+            return (changes |> Seq.concat)
         }
 
     override this.RegisterCodeFixesAsync ctx : Task =
@@ -163,16 +156,10 @@ type internal FSharpRenameUnusedValueWithUnderscoreCodeFixProvider [<ImportingCo
                     | :? FSharpMemberOrFunctionOrValue as func when func.IsValue ->
                         let prefixTitle = title symbolUse.Symbol.DisplayName
 
-                        let codeAction =
-                            CodeAction.Create(
-                                prefixTitle,
-                                (fun ct -> this.GetChangedDocument(ctx.Document, ctx.Diagnostics, ct)),
-                                CodeFix.RenameUnusedValue
-                            )
-
-                        ctx.RegisterCodeFix(codeAction, this.GetPrunedDiagnostics(ctx))
+                        let! changes = this.GetChanges(ctx.Document, ctx.Diagnostics, ctx.CancellationToken)
+                        ctx.RegisterFsharpFix(CodeFix.RenameUnusedValue, prefixTitle, changes)
                     | _ -> ()
         }
 
     override this.GetFixAllProvider() =
-        CodeFixHelpers.createFixAllProvider CodeFix.RenameUnusedValue this.GetChangedDocument
+        CodeFixHelpers.createFixAllProvider CodeFix.RenameUnusedValue this.GetChanges

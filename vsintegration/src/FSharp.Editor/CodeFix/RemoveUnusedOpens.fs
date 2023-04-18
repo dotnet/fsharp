@@ -24,7 +24,7 @@ type internal FSharpRemoveUnusedOpensCodeFixProvider [<ImportingConstructor>] ()
     override _.FixableDiagnosticIds =
         ImmutableArray.Create FSharpIDEDiagnosticIds.RemoveUnnecessaryImportsDiagnosticId
 
-    member this.GetChangedDocument(document: Document, diagnostics: ImmutableArray<Diagnostic>, ct: CancellationToken) =
+    member this.GetChanges(document: Document, diagnostics: ImmutableArray<Diagnostic>, ct: CancellationToken) =
         backgroundTask {
             let! sourceText = document.GetTextAsync(ct)
 
@@ -39,17 +39,15 @@ type internal FSharpRemoveUnusedOpensCodeFixProvider [<ImportingConstructor>] ()
                         .SpanIncludingLineBreak)
                 |> Seq.map (fun span -> TextChange(span, ""))
 
-            return document.WithText(sourceText.WithChanges(changes))
+            return changes
         }
 
     override this.RegisterCodeFixesAsync ctx : Task =
         backgroundTask {
             if ctx.Document.Project.IsFSharpCodeFixesUnusedOpensEnabled then
-                let codeAction =
-                    CodeAction.Create(title, (fun ct -> this.GetChangedDocument(ctx.Document, ctx.Diagnostics, ct)), title)
-
-                ctx.RegisterCodeFix(codeAction, this.GetPrunedDiagnostics(ctx))
+                let! changes = this.GetChanges(ctx.Document, ctx.Diagnostics, ctx.CancellationToken)
+                ctx.RegisterFsharpFix(CodeFix.RemoveUnusedOpens, title, changes)
         }
 
     override this.GetFixAllProvider() =
-        CodeFixHelpers.createFixAllProvider CodeFix.RemoveUnusedOpens this.GetChangedDocument
+        CodeFixHelpers.createFixAllProvider CodeFix.RemoveUnusedOpens this.GetChanges

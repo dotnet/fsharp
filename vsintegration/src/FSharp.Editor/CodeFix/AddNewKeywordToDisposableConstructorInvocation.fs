@@ -19,25 +19,21 @@ type internal FSharpAddNewKeywordCodeFixProvider() =
     static let title = SR.AddNewKeyword()
     override _.FixableDiagnosticIds = ImmutableArray.Create "FS0760"
 
-    member this.GetChangedDocument(document: Document, diagnostics: ImmutableArray<Diagnostic>, ct: CancellationToken) =
+    member this.GetChanges(_document: Document, diagnostics: ImmutableArray<Diagnostic>, _ct: CancellationToken) =
         backgroundTask {
-            let! sourceText = document.GetTextAsync(ct)
 
             let changes =
                 diagnostics
                 |> Seq.map (fun d -> TextChange(TextSpan(d.Location.SourceSpan.Start, 0), "new "))
 
-            return document.WithText(sourceText.WithChanges(changes))
+            return changes
         }
 
     override this.RegisterCodeFixesAsync ctx : Task =
         backgroundTask {
-
-            let codeAction =
-                CodeAction.Create(title, (fun ct -> this.GetChangedDocument(ctx.Document, ctx.Diagnostics, ct)), title)
-
-            ctx.RegisterCodeFix(codeAction, this.GetPrunedDiagnostics(ctx))
+            let! changes = this.GetChanges(ctx.Document, ctx.Diagnostics, ctx.CancellationToken)
+            ctx.RegisterFsharpFix(CodeFix.AddNewKeyword, title, changes)
         }
 
     override this.GetFixAllProvider() =
-        CodeFixHelpers.createFixAllProvider CodeFix.AddNewKeyword this.GetChangedDocument
+        CodeFixHelpers.createFixAllProvider CodeFix.AddNewKeyword this.GetChanges

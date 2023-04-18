@@ -23,7 +23,7 @@ type internal FSharpRemoveUnusedBindingCodeFixProvider [<ImportingConstructor>] 
     static let title = SR.RemoveUnusedBinding()
     override _.FixableDiagnosticIds = ImmutableArray.Create("FS1182")
 
-    member this.GetChangedDocument(document: Document, diagnostics: ImmutableArray<Diagnostic>, ct: CancellationToken) =
+    member this.GetChanges(document: Document, diagnostics: ImmutableArray<Diagnostic>, ct: CancellationToken) =
         backgroundTask {
 
             let! sourceText = document.GetTextAsync(ct)
@@ -60,17 +60,15 @@ type internal FSharpRemoveUnusedBindingCodeFixProvider [<ImportingConstructor>] 
                         | None -> ()
                 }
 
-            return document.WithText(sourceText.WithChanges(changes))
+            return changes
         }
 
     override this.RegisterCodeFixesAsync ctx : Task =
         backgroundTask {
             if ctx.Document.Project.IsFSharpCodeFixesUnusedDeclarationsEnabled then
-                let codeAction =
-                    CodeAction.Create(title, (fun ct -> this.GetChangedDocument(ctx.Document, ctx.Diagnostics, ct)), title)
-
-                ctx.RegisterCodeFix(codeAction, this.GetPrunedDiagnostics(ctx))
+                let! changes = this.GetChanges(ctx.Document, ctx.Diagnostics, ctx.CancellationToken)
+                ctx.RegisterFsharpFix(CodeFix.RemoveUnusedBinding, title, changes)
         }
 
     override this.GetFixAllProvider() =
-        CodeFixHelpers.createFixAllProvider CodeFix.RemoveUnusedBinding this.GetChangedDocument
+        CodeFixHelpers.createFixAllProvider CodeFix.RemoveUnusedBinding this.GetChanges

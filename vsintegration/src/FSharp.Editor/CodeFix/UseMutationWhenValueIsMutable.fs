@@ -17,16 +17,11 @@ type internal FSharpUseMutationWhenValueIsMutableFixProvider [<ImportingConstruc
     inherit CodeFixProvider()
 
     let fixableDiagnosticIds = set [ "FS0020" ]
-
+    static let title = SR.UseMutationWhenValueIsMutable()
     override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
     override _.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
-            let diagnostics =
-                context.Diagnostics
-                |> Seq.filter (fun x -> fixableDiagnosticIds |> Set.contains x.Id)
-                |> Seq.toImmutableArray
-
             let document = context.Document
             do! Option.guard (not (isSignatureFile document.FilePath))
 
@@ -68,7 +63,6 @@ type internal FSharpUseMutationWhenValueIsMutableFixProvider [<ImportingConstruc
 
             match symbolUse.Symbol with
             | :? FSharpMemberOrFunctionOrValue as mfv when mfv.IsMutable || mfv.HasSetterMethod ->
-                let title = SR.UseMutationWhenValueIsMutable()
                 let! symbolSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range)
                 let mutable pos = symbolSpan.End
                 let mutable ch = sourceText.[pos]
@@ -78,15 +72,7 @@ type internal FSharpUseMutationWhenValueIsMutableFixProvider [<ImportingConstruc
                     pos <- pos + 1
                     ch <- sourceText.[pos]
 
-                let codeFix =
-                    CodeFixHelpers.createTextChangeCodeFix (
-                        CodeFix.UseMutationWhenValueIsMutable,
-                        title,
-                        context,
-                        (fun () -> asyncMaybe.Return [| TextChange(TextSpan(pos + 1, 1), "<-") |])
-                    )
-
-                context.RegisterCodeFix(codeFix, diagnostics)
+                do context.RegisterFsharpFix(CodeFix.UseMutationWhenValueIsMutable, title, [| TextChange(TextSpan(pos + 1, 1), "<-") |])
             | _ -> ()
         }
         |> Async.Ignore

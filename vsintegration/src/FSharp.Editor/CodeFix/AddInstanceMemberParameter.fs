@@ -13,27 +13,17 @@ type internal FSharpAddInstanceMemberParameterCodeFixProvider() =
     inherit CodeFixProvider()
 
     let fixableDiagnosticIds = set [ "FS0673" ]
+    static let title = SR.AddMissingInstanceMemberParameter()
 
     override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
     override _.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
-            let diagnostics =
-                context.Diagnostics
-                |> Seq.filter (fun x -> fixableDiagnosticIds |> Set.contains x.Id)
-                |> Seq.toImmutableArray
-
-            let title = SR.AddMissingInstanceMemberParameter()
-
-            let codeFix =
-                CodeFixHelpers.createTextChangeCodeFix (
+            do context.RegisterFsharpFix (
                     CodeFix.AddInstanceMemberParameter,
-                    title,
-                    context,
-                    (fun () -> asyncMaybe.Return [| TextChange(TextSpan(context.Span.Start, 0), "x.") |])
+                    title,                   
+                    [| TextChange(TextSpan(context.Span.Start, 0), "x.") |]
                 )
-
-            context.RegisterCodeFix(codeFix, diagnostics)
         }
         |> Async.Ignore
         |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

@@ -22,7 +22,7 @@ type internal RemoveSuperflousCaptureForUnionCaseWithNoDataProvider [<ImportingC
     static let title = SR.RemoveUnusedBinding()
     override _.FixableDiagnosticIds = ImmutableArray.Create("FS0725", "FS3548")
 
-    member this.GetChangedDocument(document: Document, diagnostics: ImmutableArray<Diagnostic>, ct: CancellationToken) =
+    member this.GetChanges(document: Document, diagnostics: ImmutableArray<Diagnostic>, ct: CancellationToken) =
         backgroundTask {
 
             let! sourceText = document.GetTextAsync(ct)
@@ -51,17 +51,15 @@ type internal RemoveSuperflousCaptureForUnionCaseWithNoDataProvider [<ImportingC
                             yield TextChange(reminderSpan, "")
                 }
 
-            return document.WithText(sourceText.WithChanges(changes))
+            return changes
         }
 
     override this.RegisterCodeFixesAsync ctx : Task =
         backgroundTask {
             if ctx.Document.Project.IsFSharpCodeFixesUnusedDeclarationsEnabled then
-                let codeAction =
-                    CodeAction.Create(title, (fun ct -> this.GetChangedDocument(ctx.Document, ctx.Diagnostics, ct)), title)
-
-                ctx.RegisterCodeFix(codeAction, this.GetPrunedDiagnostics(ctx))
+                let! changes = this.GetChanges(ctx.Document, ctx.Diagnostics, ctx.CancellationToken)
+                ctx.RegisterFsharpFix(CodeFix.RemoveSuperfluousCapture, title, changes)
         }
 
     override this.GetFixAllProvider() =
-        CodeFixHelpers.createFixAllProvider CodeFix.RemoveSuperfluousCapture this.GetChangedDocument
+        CodeFixHelpers.createFixAllProvider CodeFix.RemoveSuperfluousCapture this.GetChanges
