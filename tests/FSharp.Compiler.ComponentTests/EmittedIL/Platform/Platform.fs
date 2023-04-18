@@ -146,12 +146,14 @@ module Platform =
         let assemblyHasMvidSection =
             FsFromPath (Path.Combine(__SOURCE_DIRECTORY__, "SimpleFsProgram.fs"))
             |> asLibrary
+            |> withOptions ["--test:DumpSignatureData"]
             |> withRefOnly
 
         compilation
         |> asExe
         |> withReferences [mvidReader]
         |> withReferences [assemblyHasMvidSection]
+        |> withOptions ["--test:DumpSignatureData"]
         |> compileExeAndRun
         |> shouldSucceed
 

@@ -4129,8 +4129,17 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
           let hData = sha.ComputeHash data
           let hMeta = sha.ComputeHash metadata
 
-          // Not yet suitable for the mvidsection optimization 
-          let deterministicId = [| hCode; hData; hMeta |] |> Array.collect id |> sha.ComputeHash
+          // Not yet suitable for the mvidsection optimization           
+
+          let deterministicId = 
+            [| hCode
+               hData
+               if options.referenceAssemblyOnly then
+                   () //modul.TypeDefs
+               else
+                   hMeta |] 
+            |> Array.collect id 
+            |> sha.ComputeHash
           let deterministicMvid () = deterministicId[0..15]
           let pdbData =
             // Hash code, data and metadata
