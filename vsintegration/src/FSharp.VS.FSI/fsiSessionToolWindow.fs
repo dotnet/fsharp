@@ -300,10 +300,10 @@ type internal FsiToolWindow() as this =
                 strHandle.Free()
         )
 
-    let executeTextNoHistory sourceFile (text:string) =
+    let executeTextNoHistory sourceFile (text: unit -> string) =
         sessions.Ensure(sourceFile)
         textStream.DirectWriteLine()
-        sessions.SendInput(text)
+        sessions.SendInput(text())
         setCursorAtEndOfBuffer()
         
     let executeUserInput() = 
@@ -530,19 +530,31 @@ type internal FsiToolWindow() as this =
         try
             showNoActivate()
             let directiveC  = sprintf "# 1 \"stdin\""    (* stdin line number reset code *)                
-            let text = "\n" + text + "\n" + directiveC + "\n;;\n"
+            let text() = "\n" + text + "\n" + directiveC + "\n;;\n"
             executeTextNoHistory null text
         with _ -> ()
 
+    let hide () =
+        if sessions.SupportsInteractivePrompt then
+            """#interactiveprompt "hide" """
+        else
+            ""
+
+    let show () =
+        if sessions.SupportsInteractivePrompt then
+            """#interactiveprompt "show" """
+        else
+            ""
+
     let executeInteraction dbgBreak dir filename topLine (text:string) =
-        let interaction = $"""
-#interactiveprompt "hide"
+        let interaction() = $"""
+{    hide()}
 #silentCd @"{dir}";;
 {if dbgBreak then "#dbgbreak" else ""}
 #{topLine} @"{filename}"
 {text.ToString()}
 #1 "stdin"
-#interactiveprompt "show";;
+{    show()};;
 """
         executeTextNoHistory filename interaction
 
