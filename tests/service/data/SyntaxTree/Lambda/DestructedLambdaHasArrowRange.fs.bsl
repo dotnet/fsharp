@@ -63,5 +63,5 @@ ImplFile
                          WithKeyword = (2,4--2,22) })), (2,0--2,22),
                  { ArrowRange = Some (2,14--2,16) }), (2,0--2,22))],
           PreXmlDocEmpty, [], None, (2,0--3,0), { LeadingKeyword = None })],
-      (true, false), { ConditionalDirectives = []
-                       CodeComments = [] }, set []))
+      (true, true), { ConditionalDirectives = []
+                      CodeComments = [] }, set []))

@@ -44,6 +44,12 @@
       <CompressMetadata Condition="'$(CompressAllMetadata)' != 'true'">false</CompressMetadata>
   </PropertyGroup>
 
+  <!-- When we build FCS solution and we include FSCore as reference, set path explicitly -->
+  <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
+    <OutputPath>$(ArtifactsDir)/bin/$(MSBuildProjectName)/$(Configuration)/</OutputPath>
+    <IntermediateOutputPath>$(ArtifactsDir)obj/$(MSBuildProjectName)/$(Configuration)/</IntermediateOutputPath>
+  </PropertyGroup>
+
   <ItemGroup>
     <EmbeddedResource Update="FSCore.resx">
       <GenerateSource>true</GenerateSource>

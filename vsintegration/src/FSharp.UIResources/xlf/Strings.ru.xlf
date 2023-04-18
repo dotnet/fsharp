@@ -14,12 +14,22 @@
       </trans-unit>
       <trans-unit id="Enable_Live_Buffers">
         <source>Use live (unsaved) buffers for checking (restart required)</source>
-        <target state="new">Use live (unsaved) buffers for checking (restart required)</target>
+        <target state="translated">Использовать динамические (несохраненные) буферы для проверки (требуется перезагрузка)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enable_partial_type_checking">
+        <source>Enable partial type checking</source>
+        <target state="translated">Включить частичную проверку типов</target>
         <note />
       </trans-unit>
       <trans-unit id="Find_References_Performance">
         <source>Find References Performance Options</source>
         <target state="translated">Параметры производительности поиска ссылок</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Formatting">
+        <source>Formatting</source>
+        <target state="translated">Форматирование</target>
         <note />
       </trans-unit>
       <trans-unit id="Inline_Hints">
@@ -69,7 +79,7 @@
       </trans-unit>
       <trans-unit id="LiveBuffers">
         <source>Live Buffers (experimental)</source>
-        <target state="new">Live Buffers (experimental)</target>
+        <target state="translated">Динамические буферы (экспериментальная функция)</target>
         <note />
       </trans-unit>
       <trans-unit id="Navigation_links">
@@ -82,14 +92,24 @@
         <target state="translated">Параллелизация (требуется перезапуск)</target>
         <note />
       </trans-unit>
+      <trans-unit id="Preferred_description_width_in_characters">
+        <source>Preferred description width in characters</source>
+        <target state="translated">Предпочитаемая ширина описания в символах</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Show_Inline_Parameter_Name_Hints">
         <source>Display inline parameter name hints (preview)</source>
-        <target state="needs-review-translation">Отображать подсказки для имен встроенных параметров (экспериментальная версия)</target>
+        <target state="translated">Отображение подсказок для имен встроенных параметров (предварительная версия)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Type_Hints">
         <source>Display inline type hints (preview)</source>
-        <target state="needs-review-translation">Отображать подсказки для встроенных типов (экспериментальная версия)</target>
+        <target state="translated">Отображение подсказок для встроенных типов (предварительная версия)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Return_Type_Hints">
+        <source>Display return type hints (preview)</source>
+        <target state="translated">Отображение подсказок типа возвращаемого значения (предварительная версия)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_all_symbols">
@@ -130,6 +150,11 @@
       <trans-unit id="Text_hover">
         <source>Text hover</source>
         <target state="translated">Текст, отображаемый при наведении</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Tooltip_preferred_description_width_in_characters">
+        <source>Format signature to the given width by adding line breaks conforming with F# syntax rules. </source>
+        <target state="translated">Форматирование подписи до заданной ширины путем добавления разрывов строк, соответствующих правилам синтаксиса F#. </target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
@@ -219,7 +244,7 @@
       </trans-unit>
       <trans-unit id="Use_syntax_tree_cache">
         <source>Cache parsing results (experimental)</source>
-        <target state="new">Cache parsing results (experimental)</target>
+        <target state="translated">Результаты анализа кэша (экспериментальная функция)</target>
         <note />
       </trans-unit>
     </body>

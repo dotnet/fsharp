@@ -9,11 +9,11 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "ChangePrefixNegationToInfixSubtraction"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.ChangePrefixNegationToInfixSubtraction); Shared>]
 type internal FSharpChangePrefixNegationToInfixSubtractionodeFixProvider() =
     inherit CodeFixProvider()
 
-    let fixableDiagnosticIds = set ["FS0003"]
+    let fixableDiagnosticIds = set [ "FS0003" ]
 
     override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
@@ -32,6 +32,7 @@ type internal FSharpChangePrefixNegationToInfixSubtractionodeFixProvider() =
             do! Option.guard (pos < sourceText.Length)
 
             let mutable ch = sourceText.[pos]
+
             while pos < sourceText.Length && Char.IsWhiteSpace(ch) do
                 pos <- pos + 1
                 ch <- sourceText.[pos]
@@ -42,12 +43,14 @@ type internal FSharpChangePrefixNegationToInfixSubtractionodeFixProvider() =
             let title = SR.ChangePrefixNegationToInfixSubtraction()
 
             let codeFix =
-                CodeFixHelpers.createTextChangeCodeFix(
+                CodeFixHelpers.createTextChangeCodeFix (
+                    CodeFix.ChangePrefixNegationToInfixSubtraction,
                     title,
                     context,
-                    (fun () -> asyncMaybe.Return [| TextChange(TextSpan(pos, 1), "- ") |]))
+                    (fun () -> asyncMaybe.Return [| TextChange(TextSpan(pos, 1), "- ") |])
+                )
 
             context.RegisterCodeFix(codeFix, diagnostics)
         }
         |> Async.Ignore
-        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)  
+        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

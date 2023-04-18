@@ -6,14 +6,14 @@ open Microsoft.VisualStudio.Telemetry
 
 module TelemetryReporter =
 
-    let eventPrefix = "dotnet/fsharp/"
-    let propPrefix = "dotnet.fsharp."
+    let private eventPrefix = "dotnet/fsharp/"
+    let private propPrefix = "dotnet.fsharp."
 
-    let getFullEventName name = eventPrefix + name
-    let getFullPropName name = propPrefix + name
+    let private getFullEventName name = eventPrefix + name
+    let private getFullPropName name = propPrefix + name
 
-    let createEvent name (props: (string * obj) list) = 
-        let event = TelemetryEvent (getFullEventName name)
+    let private createEvent name (props: (string * obj) list) =
+        let event = TelemetryEvent(getFullEventName name)
 
         props
         |> List.map (fun (k, v) -> getFullPropName k, v)
@@ -25,4 +25,3 @@ module TelemetryReporter =
         let session = TelemetryService.DefaultSession
         let event = createEvent name props
         session.PostEvent event
-

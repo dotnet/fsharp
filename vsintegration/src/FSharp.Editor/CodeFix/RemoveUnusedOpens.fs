@@ -11,14 +11,12 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
 open FSharp.Compiler.Text
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "RemoveUnusedOpens"); Shared>]
-type internal FSharpRemoveUnusedOpensCodeFixProvider
-    [<ImportingConstructor>]
-    (
-    ) =
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.RemoveUnusedOpens); Shared>]
+type internal FSharpRemoveUnusedOpensCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
-    let fixableDiagnosticIds = [FSharpIDEDiagnosticIds.RemoveUnnecessaryImportsDiagnosticId]
+    let fixableDiagnosticIds =
+        [ FSharpIDEDiagnosticIds.RemoveUnnecessaryImportsDiagnosticId ]
 
     override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
@@ -27,6 +25,7 @@ type internal FSharpRemoveUnusedOpensCodeFixProvider
             let document = context.Document
             let! sourceText = document.GetTextAsync()
             let! unusedOpens = UnusedOpensDiagnosticAnalyzer.GetUnusedOpenRanges(document)
+
             let changes =
                 unusedOpens
                 |> List.map (fun m ->
@@ -42,10 +41,7 @@ type internal FSharpRemoveUnusedOpensCodeFixProvider
             let title = SR.RemoveUnusedOpens()
 
             let codefix =
-                CodeFixHelpers.createTextChangeCodeFix(
-                    title,
-                    context,
-                    (fun () -> asyncMaybe.Return changes))
+                CodeFixHelpers.createTextChangeCodeFix (CodeFix.RemoveUnusedOpens, title, context, (fun () -> asyncMaybe.Return changes))
 
             context.RegisterCodeFix(codefix, diagnostics)
         }
@@ -53,4 +49,3 @@ type internal FSharpRemoveUnusedOpensCodeFixProvider
         |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
 
     override _.GetFixAllProvider() = WellKnownFixAllProviders.BatchFixer
- 

@@ -8,6 +8,7 @@ open FsCheck
 open Utils
 
 let smallerSizeCheck testable = Check.One({ Config.QuickThrowOnFailure with EndSize = 25 }, testable)
+let bigSizeCheck testable = Check.One({ Config.QuickThrowOnFailure with StartSize = 222;EndSize = 999; MaxTest = 8 }, testable)
 
 /// helper function that creates labeled FsCheck properties for equality comparisons
 let consistency name sqs ls arr =
@@ -227,7 +228,8 @@ let exists<'a when 'a : equality> (xs : 'a []) f =
     let s = xs |> Seq.exists f
     let l = xs |> List.ofArray |> List.exists f
     let a = xs |> Array.exists f
-    consistency "exists" s l a
+    let pa = xs |> Array.Parallel.exists f
+    consistencyIncludingParallel "exists" s l a pa
 
 [<Fact>]
 let ``exists is consistent`` () =
@@ -253,7 +255,8 @@ let filter<'a when 'a : equality> (xs : 'a []) predicate =
     let s = xs |> Seq.filter predicate
     let l = xs |> List.ofArray |> List.filter predicate
     let a = xs |> Array.filter predicate
-    Seq.toArray s = a && List.toArray l = a
+    let pa = xs |> Array.Parallel.filter predicate
+    pa = a && Seq.toArray s = a && List.toArray l = a
 
 [<Fact>]
 let ``filter is consistent`` () =
@@ -373,7 +376,8 @@ let forall<'a when 'a : equality> (xs : 'a []) f =
     let s = xs |> Seq.forall f
     let l = xs |> List.ofArray |> List.forall f
     let a = xs |> Array.forall f
-    consistency "forall" s l a
+    let pa = xs |> Array.Parallel.forall f
+    consistencyIncludingParallel "forall" s l a pa
 
 [<Fact>]
 let ``forall is consistent`` () =
@@ -995,6 +999,7 @@ let ``sortByDescending actually sorts (but is inconsistent in regards of stabili
     smallerSizeCheck sortByDescending<string,int>
     smallerSizeCheck sortByDescending<NormalFloat,int>
 
+
 let sum (xs : int []) =
     let s = run (fun () -> xs |> Seq.sum)
     let l = run (fun () -> xs |> Array.toList |> List.sum)
@@ -1286,9 +1291,10 @@ let zip<'a when 'a : equality> (xs':('a*'a) []) =
     let xs = Array.map fst xs'
     let xs2 = Array.map snd xs'
     let s = runAndCheckErrorType (fun () -> Seq.zip xs xs2 |> Seq.toArray)
-    let l = runAndCheckErrorType (fun () -> List.zip (List.ofSeq xs) (List.ofSeq xs2) |> List.toArray)
-    let a = runAndCheckErrorType (fun () -> Array.zip (Array.ofSeq xs) (Array.ofSeq xs2))
-    consistency "zip" s l a
+    let l = runAndCheckErrorType (fun () -> List.zip (List.ofArray xs) (List.ofArray xs2) |> List.toArray)
+    let a = runAndCheckErrorType (fun () -> Array.zip xs xs2)
+    let pa = runAndCheckErrorType (fun () -> Array.Parallel.zip xs xs2)
+    consistencyIncludingParallel "zip" s l a pa
     
 [<Fact>]
 let ``zip is consistent for collections with equal length`` () =
@@ -1310,3 +1316,87 @@ let ``zip3 is consistent for collections with equal length`` () =
     smallerSizeCheck zip3<int>
     smallerSizeCheck zip3<string>
     smallerSizeCheck zip3<NormalFloat>
+
+
+module ArrayParallelVsArray = 
+    let sort<'a when 'a : comparison> (xs : 'a []) =
+        let a = xs |> Array.sort
+        let pa = xs |> Array.Parallel.sort
+
+        let opName = "sort"
+        (a = pa) |@ (sprintf  "Array.%s = '%A', Array.Parallel.%s = '%A'" opName a opName pa)
+
+    [<Fact>]
+    let ``sort is consistent`` () =
+        bigSizeCheck sort<int>
+        bigSizeCheck sort<string>
+        bigSizeCheck sort<NormalFloat>
+
+    let sortBy<'a,'b when 'a : comparison and 'b : comparison> (xs : 'a []) (f:'a -> 'b) =
+        let a = xs |> Array.sortBy f
+        let pa = xs |> Array.Parallel.sortBy f
+
+        isSorted (Array.map f a) && isSorted (Array.map f pa) &&
+          haveSameElements pa xs && haveSameElements a xs &&
+          a.Length = pa.Length && a.Length = xs.Length
+
+    [<Fact>]
+    let ``sortBy actually sorts (but is inconsistent in regards of stability)`` () =
+        bigSizeCheck sortBy<int,int>
+        bigSizeCheck sortBy<int,string>
+        bigSizeCheck sortBy<string,string>
+        bigSizeCheck sortBy<string,int>
+        bigSizeCheck sortBy<NormalFloat,int>
+
+    let sortWith<'a,'b when 'a : comparison and 'b : comparison> (xs : 'a []) =
+        let f x y = 
+            if x = y then 0 else
+            if x = Unchecked.defaultof<_> && y <> Unchecked.defaultof<_> then -1 else
+            if y = Unchecked.defaultof<_> && x <> Unchecked.defaultof<_> then 1 else
+            if x < y then -1 else 1
+
+        let a = xs |> Array.sortWith f
+        let pa = xs |> Array.Parallel.sortWith f
+        let isSorted sorted = sorted |> Array.pairwise |> Array.forall (fun (a,b) -> f a b <= 0 || a = b)
+
+        isSorted a && isSorted pa &&
+            haveSameElements pa xs && haveSameElements a xs &&
+            a.Length = pa.Length && a.Length = xs.Length
+
+    [<Fact>]
+    let ``sortWith actually sorts (but is inconsistent in regards of stability)`` () =
+       bigSizeCheck sortWith<int,int>
+       bigSizeCheck sortWith<int,string>
+       bigSizeCheck sortWith<string,string>
+       bigSizeCheck sortWith<string,int>
+       bigSizeCheck sortWith<NormalFloat,int>
+
+    let sortDescending<'a when 'a : comparison> (xs : 'a []) =
+        let a = xs |> Array.sortDescending
+        let pa = xs |> Array.Parallel.sortDescending
+        let opName = "sortDescending"
+        (a = pa) |@ (sprintf  "Array.%s = '%A', Array.Parallel.%s = '%A'" opName a opName pa)
+
+    [<Fact>]
+    let ``sortDescending is consistent`` () =
+        bigSizeCheck sortDescending<int>
+        bigSizeCheck sortDescending<string>
+        bigSizeCheck sortDescending<NormalFloat>
+
+    let sortByDescending<'a,'b when 'a : comparison and 'b : comparison> (xs : 'a []) (f:'a -> 'b) =
+        let a = xs |> Array.sortByDescending f
+        let pa = xs |> Array.Parallel.sortByDescending f
+
+        let isDescSorted arr = arr |> Array.pairwise |> Array.forall (fun (a,b) -> f a >= f b || a = b)
+
+        isDescSorted a && isDescSorted pa &&
+          haveSameElements pa xs && haveSameElements a xs &&
+          a.Length = pa.Length && a.Length = xs.Length
+
+    [<Fact>]
+    let ``sortByDescending actually sorts (but is inconsistent in regards of stability)`` () =
+        bigSizeCheck sortByDescending<int,int>
+        bigSizeCheck sortByDescending<int,string>
+        bigSizeCheck sortByDescending<string,string>
+        bigSizeCheck sortByDescending<string,int>
+        bigSizeCheck sortByDescending<NormalFloat,int>

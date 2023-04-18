@@ -8,27 +8,30 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "ChangeRefCellDerefToNotExpression"); Shared>]
-type internal FSharpChangeRefCellDerefToNotExpressionCodeFixProvider
-    [<ImportingConstructor>]
-    (
-    ) =
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.ChangeRefCellDerefToNotExpression); Shared>]
+type internal FSharpChangeRefCellDerefToNotExpressionCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
-    
-    let fixableDiagnosticIds = set ["FS0001"]
+
+    let fixableDiagnosticIds = set [ "FS0001" ]
 
     override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
     override this.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
             let document = context.Document
-            let! parseResults = document.GetFSharpParseResultsAsync(nameof(FSharpChangeRefCellDerefToNotExpressionCodeFixProvider)) |> liftAsync
+
+            let! parseResults =
+                document.GetFSharpParseResultsAsync(nameof (FSharpChangeRefCellDerefToNotExpressionCodeFixProvider))
+                |> liftAsync
+
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
 
-            let errorRange = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)
+            let errorRange =
+                RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)
+
             let! derefRange = parseResults.TryRangeOfRefCellDereferenceContainingPos errorRange.Start
             let! derefSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, derefRange)
-            
+
             let title = SR.UseNotForNegation()
 
             let diagnostics =
@@ -37,12 +40,14 @@ type internal FSharpChangeRefCellDerefToNotExpressionCodeFixProvider
                 |> Seq.toImmutableArray
 
             let codeFix =
-                CodeFixHelpers.createTextChangeCodeFix(
+                CodeFixHelpers.createTextChangeCodeFix (
+                    CodeFix.ChangeRefCellDerefToNotExpression,
                     title,
                     context,
-                    (fun () -> asyncMaybe.Return [| TextChange(derefSpan, "not ") |]))
+                    (fun () -> asyncMaybe.Return [| TextChange(derefSpan, "not ") |])
+                )
 
             context.RegisterCodeFix(codeFix, diagnostics)
         }
         |> Async.Ignore
-        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken) 
+        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

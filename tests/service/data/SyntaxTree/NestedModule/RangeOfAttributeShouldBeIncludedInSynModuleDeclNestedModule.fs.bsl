@@ -18,6 +18,6 @@ ImplFile
               { ModuleKeyword = Some (5,0--5,6)
                 EqualsRange = Some (5,14--5,15) })],
           PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
-          (2,0--6,6), { LeadingKeyword = Module (2,0--2,6) })], (true, false),
+          (2,0--6,6), { LeadingKeyword = Module (2,0--2,6) })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

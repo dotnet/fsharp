@@ -14,15 +14,12 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "RenameUnusedValue"); Shared>]
-type internal FSharpRenameUnusedValueCodeFixProvider
-    [<ImportingConstructor>]
-    (
-    ) =
-    
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.RenameUnusedValue); Shared>]
+type internal FSharpRenameUnusedValueCodeFixProvider [<ImportingConstructor>] () =
+
     inherit CodeFixProvider()
 
-    let fixableDiagnosticIds = set ["FS1182"]
+    let fixableDiagnosticIds = set [ "FS1182" ]
 
     override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
@@ -36,12 +33,26 @@ type internal FSharpRenameUnusedValueCodeFixProvider
             let ident = sourceText.ToString(context.Span)
 
             // Prefixing operators and backticked identifiers does not make sense.
-            // We have to use the additional check for backtickes 
+            // We have to use the additional check for backtickes
             if PrettyNaming.IsIdentifierName ident then
-                let! lexerSymbol = document.TryFindFSharpLexerSymbolAsync(context.Span.Start, SymbolLookupKind.Greedy, false, false, nameof(FSharpRenameUnusedValueCodeFixProvider))
-                let m = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)
-                let lineText = (sourceText.Lines.GetLineFromPosition context.Span.Start).ToString()  
-                let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpRenameUnusedValueCodeFixProvider)) |> liftAsync
+                let! lexerSymbol =
+                    document.TryFindFSharpLexerSymbolAsync(
+                        context.Span.Start,
+                        SymbolLookupKind.Greedy,
+                        false,
+                        false,
+                        nameof (FSharpRenameUnusedValueCodeFixProvider)
+                    )
+
+                let m =
+                    RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)
+
+                let lineText = (sourceText.Lines.GetLineFromPosition context.Span.Start).ToString()
+
+                let! _, checkResults =
+                    document.GetFSharpParseAndCheckResultsAsync(nameof (FSharpRenameUnusedValueCodeFixProvider))
+                    |> liftAsync
+
                 let! symbolUse = checkResults.GetSymbolUseAtLocation(m.StartLine, m.EndColumn, lineText, lexerSymbol.FullIsland)
                 let symbolName = symbolUse.Symbol.DisplayName
 
@@ -53,22 +64,30 @@ type internal FSharpRenameUnusedValueCodeFixProvider
                 match symbolUse.Symbol with
                 | :? FSharpMemberOrFunctionOrValue as func ->
                     let prefixTitle = String.Format(SR.PrefixValueNameWithUnderscore(), symbolName)
+
                     let prefixCodeFix =
-                        CodeFixHelpers.createTextChangeCodeFix(
+                        CodeFixHelpers.createTextChangeCodeFix (
+                            CodeFix.RenameUnusedValue,
                             prefixTitle,
                             context,
-                            (fun () -> asyncMaybe.Return [| TextChange(TextSpan(context.Span.Start, 0), "_") |]))
+                            (fun () -> asyncMaybe.Return [| TextChange(TextSpan(context.Span.Start, 0), "_") |])
+                        )
+
                     context.RegisterCodeFix(prefixCodeFix, diagnostics)
 
                     if func.IsValue then
                         let replaceTitle = String.Format(SR.RenameValueToUnderscore(), symbolName)
+
                         let replaceCodeFix =
-                            CodeFixHelpers.createTextChangeCodeFix(
+                            CodeFixHelpers.createTextChangeCodeFix (
+                                CodeFix.RenameUnusedValue,
                                 replaceTitle,
                                 context,
-                                (fun () -> asyncMaybe.Return [| TextChange(context.Span, "_") |]))
+                                (fun () -> asyncMaybe.Return [| TextChange(context.Span, "_") |])
+                            )
+
                         context.RegisterCodeFix(replaceCodeFix, diagnostics)
                 | _ -> ()
-        } 
+        }
         |> Async.Ignore
         |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
