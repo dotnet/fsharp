@@ -1,7 +1,8 @@
 ﻿module Core_printf
 
-open Printf
 open Microsoft.FSharp.Reflection
+open Printf
+open System.Collections.Generic
 
 let failures = ref []
 
@@ -9094,10 +9095,39 @@ module PercentAPublicTests =
         test "test8902" (lazy (sprintf "%A" (IntNumber 10 )).Replace("\n", ";"))  """IntNumber 10"""
         test "test8903" (lazy (sprintf "%A" (DoubleNumber 12.0)).Replace("\n", ";"))  """DoubleNumber 12.0"""
 
+    let testPercentAOptionChoiceTypes () =
+        test "test8920" (lazy (sprintf "%A" None).Replace("\n", ";"))  "None"
+        test "test8921" (lazy (sprintf "%A" (Some 1.030m)).Replace("\n", ";"))  "Some 1.030M"
+        test "test8922" (lazy (sprintf "%A" ValueNone).Replace("\n", ";"))  "ValueNone"
+        test "test8923" (lazy (sprintf "%A" (ValueSome 1.030m)).Replace("\n", ";"))  "ValueSome 1.030M"
+        test "test8924" (lazy (sprintf "%A" (Choice1Of2 "Hello")).Replace("\n", ";"))  "Choice1Of2 \"Hello\""
+        test "test8924" (lazy (sprintf "%A" (Choice1Of2 1.032m)).Replace("\n", ";"))  "Choice1Of2 1.032M"
+
+    let testUnit () =
+        test "test8925" (lazy (sprintf "%A" ()).Replace("\n", ";"))  "()"
+
+    let testTupleTypes () =
+        test "test8930" (lazy (sprintf "%A" (1, 1.020m, "Hello, World!!!!")).Replace("\n", ";"))  """(1, 1.020M, "Hello, World!!!!")"""
+        test "test8931" (lazy (sprintf "%A" struct ( 1, 1.020m, "Hello, World!!!!" )).Replace("\n", ";"))  """struct (1, 1.020M, "Hello, World!!!!")"""
+
+    let testCollectionsTypes () =
+        test "test8940" (lazy (sprintf "%A" [|1;2;3;4;5;6;7;8;9|]).Replace("\n", ";"))  "[|1; 2; 3; 4; 5; 6; 7; 8; 9|]"
+        test "test8941" (lazy (sprintf "%A" [1;2;3;4;5;6;7;8;9]).Replace("\n", ";"))  "[1; 2; 3; 4; 5; 6; 7; 8; 9]"
+        test "test8942" (lazy (sprintf "%A" (seq {1;2;3;4;5;6;7;8;9})).Replace("\n", ";"))  "seq [1; 2; 3; 4; ...]"
+        test "test8943" (lazy (sprintf "%A" [|[|1,2|],[|3,4|]|]).Replace("\n", ";"))  "[|([|(1, 2)|], [|(3, 4)|])|]"
+        test "test8944" (lazy (sprintf "%A" [|[|1;2|];[|3;4|]|]).Replace("\n", ";"))  "[|[|1; 2|]; [|3; 4|]|]"
+        test "test8945" (lazy (sprintf "%A" (dict [(1, "a"); (2, "b"); (3, "c")])).Replace("\n", ";"))  "seq [[1, a]; [2, b]; [3, c]]"
+        test "test8946" (lazy (sprintf "%A" (set [1; 2; 3; 4; 5])).Replace("\n", ";"))  "set [1; 2; 3; 4; 5]"
+        test "test8947" (lazy (sprintf "%A" ([ ("One", 1); ("Two", 2) ] |> Map.ofSeq)))  """map [("One", 1); ("Two", 2)]"""
+
     let tests () =
         testPercentAMyRecord ()
         testPercentAMyAnnonymousRecord ()
         testDiscriminatedUnion ()
+        testPercentAOptionChoiceTypes ()
+        testUnit ()
+        testTupleTypes ()
+        testCollectionsTypes ()
 
 module PercentAInternalTests =
     type internal MyInternalRecord =
@@ -9123,9 +9153,44 @@ module PercentAInternalTests =
         testPercentA ()
         testPercentPlusA ()
 
+module ClassWithEvents =
+
+    type EventClass () =
+        let event = new Event<string> ()
+
+        [<CLIEvent>]
+        member _.Event = event.Publish
+
+        member _.TriggerEvent (arg) = event.Trigger (arg)
+
+    let testWithEventClass () =
+        test "test9200" (
+            lazy (
+                let mutable eventstring = ""
+                let evt = EventClass()
+                evt.Event.Add(fun arg -> eventstring <- eventstring + $"Event handler: {arg}")
+                evt.TriggerEvent("Hello World!")
+                eventstring
+            ))
+            """Event handler: Hello World!"""
+        test "test9201" (
+            lazy (
+                let mutable eventstring = ""
+                let evt = EventClass();
+                evt.Event.Add(fun arg -> eventstring <- eventstring + $"First handler: {arg}")
+                evt.Event.Add(fun arg -> eventstring <- eventstring + $" Second handler: {arg}")
+                evt.TriggerEvent("Hello World!")
+                eventstring
+            ))
+            """First handler: Hello World! Second handler: Hello World!"""
+    let tests () =
+        testWithEventClass ()
+
 [<EntryPoint>]
 let main _ =
+
     testing1()
+
     func0()
     func1000()
     func2000()
@@ -9135,9 +9200,11 @@ let main _ =
     func6000()
     func7000()
     func8000()
+
     PresenceOfReflectionApi.tests ()
     PercentAPublicTests.tests ()
     PercentAInternalTests.tests ()
+    ClassWithEvents.testWithEventClass ()
 
     match !failures with 
     | [] -> 
