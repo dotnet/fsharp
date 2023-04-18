@@ -15,7 +15,7 @@ open FSharp.Compiler.Text
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.MakeDeclarationMutable); Shared>]
 type internal FSharpMakeDeclarationMutableFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
-
+    
     static let title = SR.MakeDeclarationMutable()
 
     override _.FixableDiagnosticIds = ImmutableArray.Create("FS0027")
