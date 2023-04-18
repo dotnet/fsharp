@@ -83,7 +83,7 @@ module internal QuickInfoViewProvider =
                 | LineBreak :: rest -> loop rest [] (encloseRuns runs :: stack)
                 | :? NavigableTaggedText as item :: rest when navigation.IsTargetValid item.Range ->
                     let classificationTag = layoutTagToClassificationTag item.Tag
-                    let action = fun () -> navigation.NavigateTo(item.Range, CancellationToken.None)
+                    let action = fun () -> navigation.NavigateTo(item.Range)
 
                     let run =
                         ClassifiedTextRun(classificationTag, item.Text, action, getTooltip item.Range.FileName)
