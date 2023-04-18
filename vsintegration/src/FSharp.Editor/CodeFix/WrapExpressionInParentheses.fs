@@ -21,8 +21,6 @@ type internal FSharpWrapExpressionInParenthesesFixProvider() =
 
     override this.RegisterCodeFixesAsync context : Task =
         backgroundTask {
-            let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
-
             let changes =
                 [
                     TextChange(TextSpan(context.Span.Start, 0), "(")
