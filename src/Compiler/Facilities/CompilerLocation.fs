@@ -104,6 +104,8 @@ module internal FSharpEnvironment =
     let toolingCompatibleVersions =
         if typeof<obj>.Assembly.GetName().Name = "mscorlib" then
             [|
+                "net482"
+                "net481"
                 "net48"
                 "net472"
                 "net471"
@@ -117,6 +119,7 @@ module internal FSharpEnvironment =
             |]
         elif typeof<obj>.Assembly.GetName().Name = "System.Private.CoreLib" then
             [|
+                "net8.0"
                 "net7.0"
                 "net6.0"
                 "net5.0"

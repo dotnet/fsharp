@@ -13,7 +13,7 @@
   <PropertyGroup>
     <PreReleaseVersionLabel>beta</PreReleaseVersionLabel>
     <!-- F# Version components -->
-    <FSMajorVersion>7</FSMajorVersion>
+    <FSMajorVersion>8</FSMajorVersion>
     <FSMinorVersion>0</FSMinorVersion>
     <FSBuildVersion>400</FSBuildVersion>
     <FSRevisionVersion>0</FSRevisionVersion>
@@ -32,7 +32,7 @@
     <!-- -->
     <!-- FSharp.Compiler.Service version -->
     <FCSMajorVersion>43</FCSMajorVersion>
-    <FCSMinorVersion>7</FCSMinorVersion>
+    <FCSMinorVersion>8</FCSMinorVersion>
     <FCSBuildVersion>$(FSBuildVersion)</FCSBuildVersion>
     <FCSRevisionVersion>$(FSRevisionVersion)</FCSRevisionVersion>
     <FSharpCompilerServicePackageVersion>$(FCSMajorVersion).$(FCSMinorVersion).$(FCSBuildVersion)</FSharpCompilerServicePackageVersion>
@@ -47,7 +47,7 @@
     <!-- -->
     <!-- FSharp tools for Visual Studio version number -->
     <FSToolsMajorVersion>12</FSToolsMajorVersion>
-    <FSToolsMinorVersion>5</FSToolsMinorVersion>
+    <FSToolsMinorVersion>7</FSToolsMinorVersion>
     <FSToolsBuildVersion>0</FSToolsBuildVersion>
     <FSToolsRevisionVersion>$(FSRevisionVersion)</FSToolsRevisionVersion>
     <FSProductVersionPrefix>$(FSToolsMajorVersion).$(FSToolsMinorVersion).$(FSToolsBuildVersion)</FSProductVersionPrefix>
@@ -84,11 +84,11 @@
       https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-eng/nuget/v3/index.json;
       https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-tools/nuget/v3/index.json;
       https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet7/nuget/v3/index.json;
-      https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet7-transport/nuget/v3/index.json;
+      https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet8/nuget/v3/index.json;
+      https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet8-transport/nuget/v3/index.json;
       https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-public/nuget/v3/index.json;
       https://pkgs.dev.azure.com/azure-public/vside/_packaging/vssdk-archived/nuget/v3/index.json;
       https://pkgs.dev.azure.com/azure-public/vside/_packaging/vs-impl-archived/nuget/v3/index.json;
-  
     </RestoreSources>
     <!-- System.* packages -->
     <!-- If a System.* package is stuck on version 4.3.x, targets .NET Standard 1.x and hasn't been

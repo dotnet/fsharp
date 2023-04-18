@@ -213,11 +213,11 @@ function Process-Arguments() {
 
 function Update-Arguments() {
     if ($script:noVisualStudio) {
-        $script:bootstrapTfm = "net7.0"
+        $script:bootstrapTfm = "net8.0"
         $script:msbuildEngine = "dotnet"
     }
 
-    if ($bootstrapTfm -eq "net7.0") {
+    if ($bootstrapTfm -eq "net8.0") {
         if (-Not (Test-Path "$ArtifactsDir\Bootstrap\fsc\fsc.runtimeconfig.json")) {
             $script:bootstrap = $True
         }
@@ -238,7 +238,7 @@ function BuildSolution([string] $solutionName) {
     $officialBuildId = if ($official) { $env:BUILD_BUILDNUMBER } else { "" }
     $toolsetBuildProj = InitializeToolset
     $quietRestore = !$ci
-    $testTargetFrameworks = if ($testCoreClr) { "net7.0" } else { "" }
+    $testTargetFrameworks = if ($testCoreClr) { "net8.0" } else { "" }
 
     # Do not set the property to true explicitly, since that would override value projects might set.
     $suppressExtensionDeployment = if (!$deployExtensions) { "/p:DeployExtension=false" } else { "" }
@@ -547,7 +547,7 @@ try {
     $script:BuildCategory = "Test"
     $script:BuildMessage = "Failure running tests"
     $desktopTargetFramework = "net472"
-    $coreclrTargetFramework = "net7.0"
+    $coreclrTargetFramework = "net8.0"
 
     if ($testCoreClr) {
         $bgJob = TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharpSuite.Tests\" -asBackgroundJob $true
