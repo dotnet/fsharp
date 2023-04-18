@@ -23,6 +23,9 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.BuildGraph
 
+
+type FrameworkImportsCacheKey = FrameworkImportsCacheKey of resolvedpath: string list * assemblyName: string * targetFrameworkDirectories: string list * fsharpBinaries: string * langVersion: decimal
+
 /// Lookup the global static cache for building the FrameworkTcImports
 type internal FrameworkImportsCache =
     new: size: int -> FrameworkImportsCache

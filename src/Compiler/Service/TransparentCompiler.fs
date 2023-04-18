@@ -1,25 +1,29 @@
 namespace FSharp.Compiler.CodeAnalysis
 
-open FSharp.Compiler.Text
-open FSharp.Compiler.BuildGraph
-open FSharp.Compiler.Symbols
-open FSharp.Compiler.CompilerConfig
-open FSharp.Compiler.Diagnostics
 open System
-open FSharp.Compiler
-open Internal.Utilities.Collections
-open FSharp.Compiler.ParseAndCheckInputs
-open FSharp.Compiler.ScriptClosure
-open FSharp.Compiler.AbstractIL.ILBinaryReader
-open FSharp.Compiler.Text.Range
-open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.ConstraintSolver
 open System.Diagnostics
 open System.IO
-open FSharp.Compiler.CompilerOptions
-open FSharp.Compiler.Xml
-open FSharp.Compiler.CompilerImports
 
+open Internal.Utilities.Collections
+open Internal.Utilities.Library
+
+open FSharp.Compiler
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.ILBinaryReader
+open FSharp.Compiler.BuildGraph
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.CompilerConfig
+open FSharp.Compiler.CompilerImports
+open FSharp.Compiler.CompilerOptions
+open FSharp.Compiler.DependencyManager
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.IO
+open FSharp.Compiler.ScriptClosure
+open FSharp.Compiler.Symbols
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Xml
 
 
 type internal FSharpFile = {
@@ -60,6 +64,14 @@ type internal TransparentCompiler
     let ParseFileCache = AsyncMemoize()
     let ParseAndCheckFileInProjectCache = AsyncMemoize()
     let FrameworkImportsCache = AsyncMemoize()
+
+    // We currently share one global dependency provider for all scripts for the FSharpChecker.
+    // For projects, one is used per project.
+    //
+    // Sharing one for all scripts is necessary for good performance from GetProjectOptionsFromScript,
+    // which requires a dependency provider to process through the project options prior to working out
+    // if the cached incremental builder can be used for the project.
+    let dependencyProviderForScripts = new DependencyProvider()
 
     // use this to process not-yet-implemented tasks
     let backgroundCompiler =
@@ -115,13 +127,13 @@ type internal TransparentCompiler
         ]
 
 
-    let ComputeFrameworkImports (tcConfig: TcConfig) _key = node {
+    let ComputeFrameworkImports (tcConfig: TcConfig) frameworkDLLs nonFrameworkResolutions _key = node {
         let tcConfigP = TcConfigProvider.Constant tcConfig
         return! TcImports.BuildFrameworkTcImports (tcConfigP, frameworkDLLs, nonFrameworkResolutions)
     }
 
 
-    let ComputeBootstapInfo (projectSnapshot: FSharpProjectSnapshot) =
+    let ComputeBootstrapInfo (projectSnapshot: FSharpProjectSnapshot) =
         node {
 
             let useSimpleResolutionSwitch = "--simpleresolution"
@@ -129,7 +141,7 @@ type internal TransparentCompiler
             let defaultFSharpBinariesDir = FSharpCheckerResultsSettings.defaultFSharpBinariesDir
             let useScriptResolutionRules = projectSnapshot.UseScriptResolutionRules
 
-            let projectReferences = getProjectReferences projectSnapshot "ComputeBootstapInfo"
+            let projectReferences = getProjectReferences projectSnapshot "ComputeBootstrapInfo"
             let sourceFiles = projectSnapshot.SourceFileNames
 
             // TODO: script support
@@ -137,7 +149,7 @@ type internal TransparentCompiler
 
             let tcConfigB, sourceFiles =
 
-                let getSwitchValue switchString =
+                let getSwitchValue (switchString: string) =
                     match commandLineArgs |> List.tryFindIndex(fun s -> s.StartsWithOrdinal switchString) with
                     | Some idx -> Some(commandLineArgs[idx].Substring(switchString.Length))
                     | _ -> None
@@ -229,10 +241,29 @@ type internal TransparentCompiler
             let tcConfig = TcConfig.Create(tcConfigB, validate=true)
             let outfile, _, assemblyName = tcConfigB.DecideNames sourceFiles
 
-            // Resolve assemblies and create the framework TcImports. This is done when constructing the
-            // builder itself, rather than as an incremental task. This caches a level of "system" references. No type providers are
+            // Resolve assemblies and create the framework TcImports. This caches a level of "system" references. No type providers are
             // included in these references.
-            let! tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences = frameworkTcImportsCache.Get(tcConfig)
+
+            let frameworkDLLs, nonFrameworkResolutions, unresolvedReferences = TcAssemblyResolutions.SplitNonFoundationalResolutions(tcConfig)
+
+            let frameworkDLLsKey =
+                frameworkDLLs
+                |> List.map (fun ar->ar.resolvedPath) // The cache key. Just the minimal data.
+                |> List.sort  // Sort to promote cache hits.
+
+            // Prepare the frameworkTcImportsCache
+            //
+            // The data elements in this key are very important. There should be nothing else in the TcConfig that logically affects
+            // the import of a set of framework DLLs into F# CCUs. That is, the F# CCUs that result from a set of DLLs (including
+            // FSharp.Core.dll and mscorlib.dll) must be logically invariant of all the other compiler configuration parameters.
+            let key =
+                FrameworkImportsCacheKey(frameworkDLLsKey,
+                        tcConfig.primaryAssembly.Name,
+                        tcConfig.GetTargetFrameworkDirectories(),
+                        tcConfig.fsharpBinariesDir,
+                        tcConfig.langVersion.SpecifiedVersion)
+
+            let! tcGlobals, frameworkTcImports = FrameworkImportsCache.Get(key, ComputeFrameworkImports tcConfig frameworkDLLs nonFrameworkResolutions)
 
             // Note we are not calling diagnosticsLogger.GetDiagnostics() anywhere for this task.
             // This is ok because not much can actually go wrong here.
@@ -279,7 +310,7 @@ type internal TransparentCompiler
                 [ for UnresolvedAssemblyReference(referenceText, _)  in unresolvedReferences do
                     // Exclude things that are definitely not a file name
                     if not(FileSystem.IsInvalidPathShim referenceText) then
-                        let file = if FileSystem.IsPathRootedShim referenceText then referenceText else Path.Combine(projectDirectory, referenceText)
+                        let file = if FileSystem.IsPathRootedShim referenceText then referenceText else Path.Combine(projectSnapshot.ProjectDirectory, referenceText)
                         yield file
 
                   for r in nonFrameworkResolutions do
@@ -293,11 +324,9 @@ type internal TransparentCompiler
             // For scripts, the dependency provider is already available.
             // For projects create a fresh one for the project.
             let dependencyProvider =
-                match dependencyProvider with
-                | None -> new DependencyProvider()
-                | Some dependencyProvider -> dependencyProvider
-
-            let defaultTimeStamp = DateTime.UtcNow
+                if projectSnapshot.UseScriptResolutionRules
+                then dependencyProviderForScripts
+                else new DependencyProvider()
 
             let! initialBoundModel = 
                 CombineImportedAssembliesTask(
@@ -370,7 +399,7 @@ type internal TransparentCompiler
     let ComputeParseAndCheckFileInProject (fileName: string) (projectSnapshot: FSharpProjectSnapshot) userOpName _key =
         node {
 
-            let! bootstrapInfoOpt, creationDiags = ComputeBootstapInfo projectSnapshot // probably cache
+            let! bootstrapInfoOpt, creationDiags = ComputeBootstrapInfo projectSnapshot // probably cache
 
             match bootstrapInfoOpt with
             | None ->
