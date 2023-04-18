@@ -12,7 +12,7 @@ open Microsoft.CodeAnalysis.CodeFixes
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.ConvertToSingleEqualsEqualityExpression); Shared>]
 type internal FSharpConvertToSingleEqualsEqualityExpressionCodeFixProvider() =
     inherit CodeFixProvider()
-
+    
     static let title = SR.ConvertToSingleEqualsEqualityExpression()
 
     override _.FixableDiagnosticIds = ImmutableArray.Create("FS0043")
