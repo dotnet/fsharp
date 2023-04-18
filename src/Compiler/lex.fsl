@@ -1512,12 +1512,11 @@ and extendedInterpolatedString sargs skip = parse
  | "{" +
     { let (buf, fin, m, kind, args) = sargs
       let numBraces = String.length (lexeme lexbuf)
-      // We are in an interpolated string with 2+ $ characters before the opening quotes.
-      // delimLength is total number of leading $s
-      // which is also the number of '{' needed to open interpolation expression.
+      // Extended interpolated strings starts with at least 2 $
+      // Number of leading $s is the number of '{' needed to open interpolation expression (delimLength)
+      // 2x delimLength (or more) of '{' in a row would be unambiguous, so it's disallowed
       let maxBraces = 2 * args.delimLength - 1
       if numBraces > maxBraces then
-          // 2 * delimLength '{' in a row is dissallowed
           let m2 = lexbuf.LexemeRange
           args.stringNest <- (1, LexerStringStyle.ExtendedInterpolated, args.delimLength, m2) :: args.stringNest
           let cont = LexCont.Token(args.ifdefStack, args.stringNest)
@@ -1533,8 +1532,9 @@ and extendedInterpolatedString sargs skip = parse
       else
           // A sequence of delimLength * '{' starts interpolation expression.
           // Any extra '{' are treated as normal string content.
-          if numBraces > args.delimLength then
-              String.replicate (numBraces - args.delimLength) "{" |> addUnicodeString buf
+          let extraBraces = numBraces - args.delimLength
+          if extraBraces > 0 then
+              String.replicate extraBraces "{" |> addUnicodeString buf
           // get a new range for where the fill starts
           let m2 = lexbuf.LexemeRange
           args.stringNest <- (1, LexerStringStyle.ExtendedInterpolated, args.delimLength, m2) :: args.stringNest
