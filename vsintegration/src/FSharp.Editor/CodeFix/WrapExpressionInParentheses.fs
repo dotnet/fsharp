@@ -11,35 +11,23 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "AddParentheses"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.AddParentheses); Shared>]
 type internal FSharpWrapExpressionInParenthesesFixProvider() =
     inherit CodeFixProvider()
+
+    static let title = SR.WrapExpressionInParentheses()
 
     override _.FixableDiagnosticIds = ImmutableArray.Create("FS0597")
 
     override this.RegisterCodeFixesAsync context : Task =
-        async {
-            let title = SR.WrapExpressionInParentheses()
+        backgroundTask {
+            let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
 
-            let getChangedText (sourceText: SourceText) =
-                sourceText
-                    .WithChanges(TextChange(TextSpan(context.Span.Start, 0), "("))
-                    .WithChanges(TextChange(TextSpan(context.Span.End + 1, 0), ")"))
+            let changes =
+                [
+                    TextChange(TextSpan(context.Span.Start, 0), "(")
+                    TextChange(TextSpan(context.Span.End + 1, 0), ")")
+                ]
 
-            context.RegisterCodeFix(
-                CodeAction.Create(
-                    title,
-                    (fun (cancellationToken: CancellationToken) ->
-                        async {
-                            let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                            return context.Document.WithText(getChangedText sourceText)
-                        }
-                        |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
-                    title
-                ),
-                context.Diagnostics
-                |> Seq.filter (fun x -> this.FixableDiagnosticIds.Contains x.Id)
-                |> Seq.toImmutableArray
-            )
+            context.RegisterFsharpFix(CodeFix.AddParentheses, title, changes)
         }
-        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

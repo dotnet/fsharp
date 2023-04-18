@@ -99,6 +99,9 @@ module internal Guids =
 module internal CodeFix =
 
     [<Literal>]
+    let AddParentheses = "AddParentheses"
+
+    [<Literal>]
     let AddTypeAnnotationToObjectOfIndeterminateType =
         "AddTypeAnnotationToObjectOfIndeterminateType"
 
