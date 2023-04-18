@@ -33,7 +33,8 @@ type internal FSharpAddMissingEqualsToTypeDefinitionCodeFixProvider() =
                 pos <- pos - 1
                 ch <- sourceText.[pos]
 
-            do context.RegisterFsharpFix (
+            do
+                context.RegisterFsharpFix(
                     CodeFix.AddMissingEqualsToTypeDefinition,
                     title,
                     // 'pos + 1' is here because 'pos' is now the position of the first non-whitespace character.

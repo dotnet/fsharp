@@ -19,11 +19,7 @@ type internal FSharpAddInstanceMemberParameterCodeFixProvider() =
 
     override _.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
-            do context.RegisterFsharpFix (
-                    CodeFix.AddInstanceMemberParameter,
-                    title,                   
-                    [| TextChange(TextSpan(context.Span.Start, 0), "x.") |]
-                )
+            do context.RegisterFsharpFix(CodeFix.AddInstanceMemberParameter, title, [| TextChange(TextSpan(context.Span.Start, 0), "x.") |])
         }
         |> Async.Ignore
         |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
