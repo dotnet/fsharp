@@ -46,7 +46,7 @@ module internal CodeFixHelpers =
                         allDiagnostics
                         doc
                         name
-                        [ "scope", fixAllCtx.Scope.ToString(); "ellapsedMs", sw.ElapsedMilliseconds ]
+                        [ "scope", fixAllCtx.Scope.ToString(); "elapsedMs", sw.ElapsedMilliseconds ]
 
                 return doc
             })
