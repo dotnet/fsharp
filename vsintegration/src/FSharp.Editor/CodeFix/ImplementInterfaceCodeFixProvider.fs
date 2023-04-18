@@ -178,7 +178,7 @@ type internal FSharpImplementInterfaceCodeFixProvider [<ImportingConstructor>] (
                             title
                         )
 
-                    context.RegisterCodeFix(codeAction, diagnostics)
+                    context.RegisterCodeFix(codeAction, context.Diagnostics)
 
                 registerCodeFix (SR.ImplementInterface()) true
                 registerCodeFix (SR.ImplementInterfaceWithoutTypeAnnotation()) false
