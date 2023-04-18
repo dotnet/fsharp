@@ -430,6 +430,7 @@ type public FSharpChecker =
     /// Tokenize an entire file, line by line
     member TokenizeFile: source: string -> FSharpTokenInfo[][]
 
+    [<Experimental("This FCS API is experimental and subject to change.")>]
     member GetDependencyGraph:
         options: FSharpProjectOptions * ?userOpName: string ->
             Async<Collections.Generic.IReadOnlyDictionary<int * string, (int * string) array>>
