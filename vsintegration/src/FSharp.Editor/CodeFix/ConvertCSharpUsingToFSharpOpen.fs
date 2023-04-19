@@ -14,7 +14,6 @@ open Microsoft.CodeAnalysis.CodeFixes
 type internal FSharpConvertCSharpUsingToFSharpOpen [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
-    let fixableDiagnosticIds = set [ "FS0039"; "FS0201" ]
     static let title = SR.ConvertCSharpUsingToFSharpOpen()
     let usingLength = "using".Length
 
@@ -47,7 +46,7 @@ type internal FSharpConvertCSharpUsingToFSharpOpen [<ImportingConstructor>] () =
 
         do context.RegisterFsharpFix(CodeFix.ConvertCSharpUsingToFSharpOpen, title, [| replacement |])
 
-    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0039", "FS0201")
 
     override _.RegisterCodeFixesAsync context =
         asyncMaybe {

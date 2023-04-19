@@ -4,6 +4,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Composition
+open System.Collections.Immutable
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
@@ -16,9 +17,7 @@ type internal FSharpAddMissingFunKeywordCodeFixProvider [<ImportingConstructor>]
     inherit CodeFixProvider()
     static let title = SR.AddMissingFunKeyword()
 
-    let fixableDiagnosticIds = set [ "FS0010" ]
-
-    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0010")
 
     override _.RegisterCodeFixesAsync context =
         asyncMaybe {

@@ -4,6 +4,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
 open System.Threading.Tasks
+open System.Collections.Immutable
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
@@ -12,10 +13,9 @@ open Microsoft.CodeAnalysis.CodeFixes
 type internal FSharpAddInstanceMemberParameterCodeFixProvider() =
     inherit CodeFixProvider()
 
-    let fixableDiagnosticIds = set [ "FS0673" ]
     static let title = SR.AddMissingInstanceMemberParameter()
 
-    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0673")
 
     override _.RegisterCodeFixesAsync context : Task =
         asyncMaybe {

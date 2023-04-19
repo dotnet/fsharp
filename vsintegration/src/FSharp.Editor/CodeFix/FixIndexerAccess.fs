@@ -15,10 +15,10 @@ open FSharp.Compiler.Diagnostics
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.FixIndexerAccess); Shared>]
 type internal LegacyFsharpFixAddDotToIndexerAccess() =
     inherit CodeFixProvider()
-    let fixableDiagnosticIds = set [ "FS3217" ]
+
     static let title = CompilerDiagnostics.GetErrorMessage FSharpDiagnosticKind.AddIndexerDot
 
-    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = ImmutableArray.Create("FS3217")
 
     override _.RegisterCodeFixesAsync context : Task =
         async {
@@ -56,7 +56,6 @@ type internal LegacyFsharpFixAddDotToIndexerAccess() =
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.RemoveIndexerDotBeforeBracket); Shared>]
 type internal FsharpFixRemoveDotFromIndexerAccessOptIn() as this =
     inherit CodeFixProvider()
-    let fixableDiagnosticIds = set [ "FS3366" ]
 
     static let title =
         CompilerDiagnostics.GetErrorMessage FSharpDiagnosticKind.RemoveIndexerDot
@@ -69,7 +68,7 @@ type internal FsharpFixRemoveDotFromIndexerAccessOptIn() as this =
             return changes
         }
 
-    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = ImmutableArray.Create("FS3366")
 
     override _.RegisterCodeFixesAsync ctx : Task =
         backgroundTask {
