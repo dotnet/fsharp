@@ -86,7 +86,8 @@ module private FSharpProjectOptionsHelpers =
                            v1 <> v2))
 
     let inline isProjectInvalidated (oldProject: Project) (newProject: Project) ct =
-        hasProjectVersionChanged oldProject newProject || hasDependentVersionChanged oldProject newProject ct
+        hasProjectVersionChanged oldProject newProject
+        || hasDependentVersionChanged oldProject newProject ct
 
 [<RequireQualifiedAccess>]
 type private FSharpProjectOptionsMessage =
@@ -278,9 +279,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                         match! tryComputeOptions referencedProject ct with
                         | None -> canBail <- true
                         | Some (_, projectOptions) ->
-                            referencedProjects.Add(
-                                FSharpReferencedProject.CreateFSharp(referencedProject.OutputFilePath, projectOptions)
-                            )
+                            referencedProjects.Add(FSharpReferencedProject.CreateFSharp(referencedProject.OutputFilePath, projectOptions))
                     elif referencedProject.SupportsCompilation then
                         let! comp = referencedProject.GetCompilationAsync(ct) |> Async.AwaitTask
                         let peRef = createPEReference referencedProject comp
