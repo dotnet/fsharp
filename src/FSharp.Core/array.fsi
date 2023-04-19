@@ -3308,7 +3308,7 @@ module Array =
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val reduceBy: projection: ('T -> 'U) -> reduction: ('U -> 'U -> 'U) -> array: 'T[] -> 'U
 
-        /// <summary>Returns the greatest of all elements of the array, compared via Operators.max on the function result.</summary>
+        /// <summary>Returns the greatest of all elements of the array, compared via Operators.max.</summary>
         ///
         /// <remarks>Throws ArgumentException for empty arrays.</remarks>
         ///
