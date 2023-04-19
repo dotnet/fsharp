@@ -623,14 +623,21 @@ rule token args skip = parse
  | ('$'+) '"' '"' '"'
      { let buf, fin, m = startString args lexbuf
 
-       // Single quote in triple quote ok, others disallowed
-       match args.stringNest with
-       | _ :: _ -> errorR(Error(FSComp.SR.lexTripleQuoteInTripleQuote(), m))
-       | [] -> ()
+       if lexbuf.SupportsFeature LanguageFeature.ExtendedStringInterpolation then
+           // Single quote in triple quote ok, others disallowed
+           match args.stringNest with
+           | _ :: _ -> errorR(Error(FSComp.SR.lexTripleQuoteInTripleQuote(), m))
+           | [] -> ()
 
-       args.delimLength <- lexeme lexbuf |> Seq.takeWhile (fun c -> c = '$') |> Seq.length
-       if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.ExtendedInterpolated, LexerStringKind.InterpolatedStringFirst, args.delimLength, m))
-       else extendedInterpolatedString (buf, fin, m, LexerStringKind.InterpolatedStringFirst, args) skip lexbuf }
+           args.delimLength <- lexeme lexbuf |> Seq.takeWhile (fun c -> c = '$') |> Seq.length
+           if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.ExtendedInterpolated, LexerStringKind.InterpolatedStringFirst, args.delimLength, m))
+           else extendedInterpolatedString (buf, fin, m, LexerStringKind.InterpolatedStringFirst, args) skip lexbuf
+       else
+           let result() =
+             if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, LexerStringKind.InterpolatedStringFirst, args.delimLength, m))
+             else tripleQuoteString (buf, fin, m, LexerStringKind.InterpolatedStringFirst, args) skip lexbuf
+           fail args lexbuf (FSComp.SR.lexExtendedStringInterpolationNotSupported()) (result())
+     }
 
  | '$' '"'
      { let buf,fin,m = startString args lexbuf

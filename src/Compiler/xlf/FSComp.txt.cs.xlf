@@ -252,6 +252,11 @@
         <target state="translated">více typů podporuje měrné jednotky</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureExtendedStringInterpolation">
+        <source>Extended string interpolation similar to C# raw strings.</source>
+        <target state="new">Extended string interpolation similar to C# raw strings.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">
         <source>fixed-index slice 3d/4d</source>
         <target state="translated">řez 3d/4d s pevným indexem</target>
@@ -520,6 +525,11 @@
       <trans-unit id="lexByteStringMayNotBeInterpolated">
         <source>a byte string may not be interpolated</source>
         <target state="translated">Bajtový řetězec se nedá interpolovat.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexExtendedStringInterpolationNotSupported">
+        <source>Extended string interpolation is not supported in this version of F#.</source>
+        <target state="new">Extended string interpolation is not supported in this version of F#.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexIfOCaml">

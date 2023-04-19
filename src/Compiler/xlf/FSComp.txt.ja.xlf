@@ -252,6 +252,11 @@
         <target state="translated">単位をサポートするその他の型</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureExtendedStringInterpolation">
+        <source>Extended string interpolation similar to C# raw strings.</source>
+        <target state="new">Extended string interpolation similar to C# raw strings.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">
         <source>fixed-index slice 3d/4d</source>
         <target state="translated">固定インデックス スライス 3d/4d</target>
@@ -520,6 +525,11 @@
       <trans-unit id="lexByteStringMayNotBeInterpolated">
         <source>a byte string may not be interpolated</source>
         <target state="translated">バイト文字列は補間されていない可能性があります</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexExtendedStringInterpolationNotSupported">
+        <source>Extended string interpolation is not supported in this version of F#.</source>
+        <target state="new">Extended string interpolation is not supported in this version of F#.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexIfOCaml">

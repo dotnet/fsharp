@@ -1125,6 +1125,7 @@ lexIfOCaml,"IF-FSHARP/IF-CAML regions are no longer supported"
 1248,lexTooManyLBracesInTripleQuote,"The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive opening braces as content."
 1249,lexUnmatchedRBracesInTripleQuote,"The interpolated string contains unmatched closing braces."
 1250,lexTooManyPercentsInTripleQuote,"The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive '%%' characters."
+1251,lexExtendedStringInterpolationNotSupported,"Extended string interpolation is not supported in this version of F#."
 # reshapedmsbuild.fs
 1300,toolLocationHelperUnsupportedFrameworkVersion,"The specified .NET Framework version '%s' is not supported. Please specify a value from the enumeration Microsoft.Build.Utilities.TargetDotNetFrameworkVersion."
 # -----------------------------------------------------------------------------
@@ -1570,6 +1571,7 @@ featureWarningWhenCopyAndUpdateRecordChangesAllFields,"Raises warnings when an c
 featureStaticMembersInInterfaces,"Static members in interfaces"
 featureNonInlineLiteralsAsPrintfFormat,"String values marked as literals and IL constants as printf format"
 featureNestedCopyAndUpdate,"Nested record field copy-and-update"
+featureExtendedStringInterpolation,"Extended string interpolation similar to C# raw strings."
 3353,fsiInvalidDirective,"Invalid directive '#%s %s'"
 3354,tcNotAFunctionButIndexerNamedIndexingNotYetEnabled,"This value supports indexing, e.g. '%s.[index]'. The syntax '%s[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation."
 3354,tcNotAFunctionButIndexerIndexingNotYetEnabled,"This expression supports indexing, e.g. 'expr.[index]'. The syntax 'expr[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation."
