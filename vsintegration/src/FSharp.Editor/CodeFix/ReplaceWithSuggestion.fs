@@ -51,23 +51,15 @@ type internal FSharpReplaceWithSuggestionCodeFixProvider [<ImportingConstructor>
                 for item in declInfo.Items do
                     addToBuffer item.NameInList
 
-            let diagnostics =
-                context.Diagnostics
-                |> Seq.filter (fun x -> fixableDiagnosticIds |> Set.contains x.Id)
-                |> Seq.toImmutableArray
-
             for suggestion in CompilerDiagnostics.GetSuggestedNames addNames unresolvedIdentifierText do
                 let replacement = PrettyNaming.NormalizeIdentifierBackticks suggestion
 
-                let codeFix =
-                    CodeFixHelpers.createTextChangeCodeFix (
+                do
+                    context.RegisterFsharpFix(
                         CodeFix.ReplaceWithSuggestion,
                         CompilerDiagnostics.GetErrorMessage(FSharpDiagnosticKind.ReplaceWithSuggestion suggestion),
-                        context,
-                        (fun () -> asyncMaybe.Return [| TextChange(context.Span, replacement) |])
+                        [| TextChange(context.Span, replacement) |]
                     )
-
-                context.RegisterCodeFix(codeFix, diagnostics)
         }
         |> Async.Ignore
         |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

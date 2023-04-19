@@ -30,7 +30,7 @@ type internal FSharpAddOpenCodeFixProvider [<ImportingConstructor>] (assemblyCon
             CodeFix.AddOpen,
             fixUnderscoresInMenuText fullName,
             context,
-            (fun () -> asyncMaybe.Return [| TextChange(context.Span, qualifier) |])
+            [| TextChange(context.Span, qualifier) |]
         )
 
     let openNamespaceFix (context: CodeFixContext) ctx name ns multipleNames =
@@ -77,12 +77,7 @@ type internal FSharpAddOpenCodeFixProvider [<ImportingConstructor>] (assemblyCon
             |> Seq.toList
 
         for codeFix in openNamespaceFixes @ qualifiedSymbolFixes do
-            context.RegisterCodeFix(
-                codeFix,
-                context.Diagnostics
-                |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id)
-                |> Seq.toImmutableArray
-            )
+            context.RegisterCodeFix(codeFix, context.Diagnostics)
 
     override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 

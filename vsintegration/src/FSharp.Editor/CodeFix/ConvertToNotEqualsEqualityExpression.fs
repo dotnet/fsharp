@@ -13,6 +13,7 @@ type internal FSharpConvertToNotEqualsEqualityExpressionCodeFixProvider() =
     inherit CodeFixProvider()
 
     let fixableDiagnosticIds = set [ "FS0043" ]
+    static let title = SR.ConvertToNotEqualsEqualityExpression()
 
     override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
@@ -24,23 +25,7 @@ type internal FSharpConvertToNotEqualsEqualityExpressionCodeFixProvider() =
             // We're converting '!=' into '<>', a common new user mistake.
             // If this is an FS00043 that is anything other than that, bail out
             do! Option.guard (text = "!=")
-
-            let title = SR.ConvertToNotEqualsEqualityExpression()
-
-            let diagnostics =
-                context.Diagnostics
-                |> Seq.filter (fun x -> fixableDiagnosticIds |> Set.contains x.Id)
-                |> Seq.toImmutableArray
-
-            let codeFix =
-                CodeFixHelpers.createTextChangeCodeFix (
-                    CodeFix.ConvertToNotEqualsEqualityExpression,
-                    title,
-                    context,
-                    (fun () -> asyncMaybe.Return [| TextChange(context.Span, "<>") |])
-                )
-
-            context.RegisterCodeFix(codeFix, diagnostics)
+            do context.RegisterFsharpFix(CodeFix.ConvertToNotEqualsEqualityExpression, title, [| TextChange(context.Span, "<>") |])
         }
         |> Async.Ignore
         |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

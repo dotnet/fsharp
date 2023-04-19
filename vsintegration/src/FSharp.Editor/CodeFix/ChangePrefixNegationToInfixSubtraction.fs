@@ -14,16 +14,12 @@ type internal FSharpChangePrefixNegationToInfixSubtractionodeFixProvider() =
     inherit CodeFixProvider()
 
     let fixableDiagnosticIds = set [ "FS0003" ]
+    static let title = SR.ChangePrefixNegationToInfixSubtraction()
 
     override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
     override _.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
-            let diagnostics =
-                context.Diagnostics
-                |> Seq.filter (fun x -> fixableDiagnosticIds |> Set.contains x.Id)
-                |> Seq.toImmutableArray
-
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
 
             let mutable pos = context.Span.End + 1
@@ -39,18 +35,7 @@ type internal FSharpChangePrefixNegationToInfixSubtractionodeFixProvider() =
 
             // Bail if this isn't a negation
             do! Option.guard (ch = '-')
-
-            let title = SR.ChangePrefixNegationToInfixSubtraction()
-
-            let codeFix =
-                CodeFixHelpers.createTextChangeCodeFix (
-                    CodeFix.ChangePrefixNegationToInfixSubtraction,
-                    title,
-                    context,
-                    (fun () -> asyncMaybe.Return [| TextChange(TextSpan(pos, 1), "- ") |])
-                )
-
-            context.RegisterCodeFix(codeFix, diagnostics)
+            do context.RegisterFsharpFix(CodeFix.ChangePrefixNegationToInfixSubtraction, title, [| TextChange(TextSpan(pos, 1), "- ") |])
         }
         |> Async.Ignore
         |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
