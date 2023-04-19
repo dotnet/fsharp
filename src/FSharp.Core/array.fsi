@@ -3257,7 +3257,7 @@ module Array =
         /// Raises ArgumentException if the array is empty.</summary>
         /// <remarks>The order of processing is not guaranteed. For that reason, the 'reduce' function argument should be commutative.
         /// (That is, changing the order of execution must not affect the result)
-        /// Also, compared the non-parallel version of Array.reduce, the 'reduce' function may be invoked more times due to the resulting reduction from participating threads.</remarks>
+        /// Also, compared to the non-parallel version of Array.reduce, the 'reduce' function may be invoked more times due to the resulting reduction from participating threads.</remarks>
         ///
         /// <param name="reduction">The function to reduce a pair of elements to a single element.</param>
         /// <param name="array">The input array.</param>
@@ -3265,7 +3265,7 @@ module Array =
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         /// <exception cref="T:System.ArgumentException">Thrown when the input array is empty.</exception>
         ///
-        /// <returns>The final result of the reductions.</returns>
+        /// <returns>Result of the reductions.</returns>
         ///
         /// <example id="para-reduce-1">
         /// <code lang="fsharp">
@@ -3373,7 +3373,7 @@ module Array =
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val inline maxBy: projection: ('T -> 'U) -> array: 'T[] -> 'T when 'U: comparison
 
-        /// <summary>Returns the lowest of all elements of the array, compared via Operators.min.</summary>
+        /// <summary>Returns the smallest of all elements of the array, compared via Operators.min.</summary>
         ///
         /// <remarks>Throws ArgumentException for empty arrays</remarks>
         ///

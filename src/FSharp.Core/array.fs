@@ -2102,7 +2102,7 @@ module Array =
             createPartitionsUpToWithMinChunkSize maxIdxExclusive minChunkSize array
 
         (* This function is there also as a support vehicle for other aggregations. 
-           It is a public in order to be called from inlined functions, the benefit of inlining call into it is significant *)
+           It is public in order to be called from inlined functions, the benefit of inlining call into it is significant *)
         [<CompiledName("ReduceBy")>]
         let reduceBy (projection: 'T -> 'U) (reduction: 'U -> 'U -> 'U) (array: 'T[]) =
             checkNonNull "array" array
