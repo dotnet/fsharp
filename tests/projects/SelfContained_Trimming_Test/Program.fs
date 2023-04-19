@@ -14,7 +14,7 @@ let report_failure (s : string) =
 
 let check s e r = 
   if r <> e then
-      (stderr.WriteLine ("\n***** {s}: FAIL\n"); report_failure s)
+      (stderr.WriteLine ($"\n***** {s}: Expected: '{e}' Results: '{r}' = FAIL\n"); report_failure s)
 
 let test t (s1:Lazy<string>) s2 =
 
