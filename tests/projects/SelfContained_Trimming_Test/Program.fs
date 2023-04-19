@@ -13,9 +13,7 @@ let report_failure (s : string) =
     ()
 
 let check s e r = 
-  if r = e then
-      stderr.WriteLine ($"{s}: YES")
-  else
+  if r <> e then
       (stderr.WriteLine ("\n***** {s}: FAIL\n"); report_failure s)
 
 let test t (s1:Lazy<string>) s2 =
@@ -9195,185 +9193,177 @@ module ClassWithEvents =
 module SameTestsUsingNonStructuralComparison2 =
     open NonStructuralComparison
 
-    do check "ffcenonoiwe1" (3 > 1) true
-    do check "ffcenonoiwe2" (3y > 1y) true
-    do check "ffcenonoiwe3" (3uy > 1uy) true
-    do check "ffcenonoiwe4" (3s > 1s) true
-    do check "ffcenonoiwe5" (3us > 1us) true
-    do check "ffcenonoiwe6" (3 > 1) true
-    do check "ffcenonoiwe7" (3u > 1u) true
-    do check "ffcenonoiwe8" (3L > 1L) true
-    do check "ffcenonoiwe9" (3UL > 1UL) true
-    do check "ffcenonoiwe9" (3.14 > 3.1) true
-    do check "ffcenonoiwe9" (3.14f > 3.1f) true
-    do check "ffcenonoiwe9" ("bbb" > "aaa") true
-    do check "ffcenonoiwe9" ("bbb" > "bbb") false
-    do check "ffcenonoiwe9" ("aaa" > "bbb") false
-    do check "ffcenonoiwe9" ('b' > 'a') true
-    do check "ffcenonoiwe9" ('a' > 'b') false
-    do check "ffcenonoiwe9" ('b' > 'b') false
+    do check "test9200" (3 > 1) true
+    do check "test9201" (3y > 1y) true
+    do check "test9202" (3uy > 1uy) true
+    do check "test9203" (3s > 1s) true
+    do check "test9204" (3us > 1us) true
+    do check "test9205" (3 > 1) true
+    do check "test9206" (3u > 1u) true
+    do check "test9207" (3L > 1L) true
+    do check "test9208" (3UL > 1UL) true
+    do check "test9209" (3.14 > 3.1) true
+    do check "test9210" (3.14f > 3.1f) true
+    do check "test9211" ("bbb" > "aaa") true
+    do check "test9212" ("bbb" > "bbb") false
+    do check "test9213" ("aaa" > "bbb") false
+    do check "test9214" ('b' > 'a') true
+    do check "test9215" ('a' > 'b') false
+    do check "test9216" ('b' > 'b') false
 
-    do check "ffcenonoiwea" (3 >= 3) true
-    do check "ffcenonoiwes" (3y >= 3y) true
-    do check "ffcenonoiwed" (3uy >= 3uy) true
-    do check "ffcenonoiwef" (3s >= 3s) true
-    do check "ffcenonoiweg" (3us >= 3us) true
-    do check "ffcenonoiweh" (3 >= 3) true
-    do check "ffcenonoiwej" (3u >= 3u) true
-    do check "ffcenonoiwek" (3L >= 3L) true
-    do check "ffcenonoiwel" (3UL >= 3UL) true
-    do check "ffcenonoiwem" (3.14 >= 3.1) true
-    do check "ffcenonoiwen" (3.14f >= 3.1f) true
-    do check "ffcenonoiwen" (3.14M >= 3.1M) true
-    do check "ffcenonoiwe91r" ("bbb" >= "aaa") true
-    do check "ffcenonoiwe92r" ("bbb" >= "bbb") true
-    do check "ffcenonoiwe93r" ("aaa" >= "bbb") false
-    do check "ffcenonoiwe94r" ('b' >= 'a') true
-    do check "ffcenonoiwe95r" ('a' >= 'b') false
-    do check "ffcenonoiwe96r" ('b' >= 'b') true
+    do check "test9217" (3 >= 3) true
+    do check "test9218" (3y >= 3y) true
+    do check "test9219" (3uy >= 3uy) true
+    do check "test9220" (3s >= 3s) true
+    do check "test9221" (3us >= 3us) true
+    do check "test9222" (3 >= 3) true
+    do check "test9223" (3u >= 3u) true
+    do check "test9224" (3L >= 3L) true
+    do check "test9225" (3UL >= 3UL) true
+    do check "test9226" (3.14 >= 3.1) true
+    do check "test9227" (3.14f >= 3.1f) true
+    do check "test9228" (3.14M >= 3.1M) true
+    do check "test9229" ("bbb" >= "aaa") true
+    do check "test9230" ("bbb" >= "bbb") true
+    do check "test9231" ("aaa" >= "bbb") false
+    do check "test9232" ('b' >= 'a') true
+    do check "test9233" ('a' >= 'b') false
+    do check "test9234" ('b' >= 'b') true
 
+    do check "test9235" (3 < 1) false
+    do check "test9236" (3y < 1y) false
+    do check "test9237" (3uy < 1uy) false
+    do check "test9238" (3s < 1s) false
+    do check "test9239" (3us < 1us) false
+    do check "test9240" (3 < 1) false
+    do check "test9241" (3u < 1u) false
+    do check "test9242" (3L < 1L) false
+    do check "test9243" (3UL < 1UL) false
+    do check "test9244" (3.14 < 1.0) false
+    do check "test9245" (3.14f < 1.0f) false
+    do check "test9246" (3.14M < 1.0M) false
+    do check "test9247" ("bbb" < "aaa") false
+    do check "test9248" ("bbb" < "bbb") false
+    do check "test9249" ("aaa" < "bbb") true
+    do check "test9250" ('b' < 'a') false
+    do check "test9251" ('a' < 'b') true
+    do check "test9252" ('b' < 'b') false
 
-    do check "ffcenonoiwd1" (3 < 1) false
-    do check "ffcenonoiwd2" (3y < 1y) false
-    do check "ffcenonoiwd3" (3uy < 1uy) false
-    do check "ffcenonoiwd4" (3s < 1s) false
-    do check "ffcenonoiwd5" (3us < 1us) false
-    do check "ffcenonoiwd6" (3 < 1) false
-    do check "ffcenonoiwd7" (3u < 1u) false
-    do check "ffcenonoiwd8" (3L < 1L) false
-    do check "ffcenonoiwd9" (3UL < 1UL) false
-    do check "ffcenonoiwd9" (3.14 < 1.0) false
-    do check "ffcenonoiwd9" (3.14f < 1.0f) false
-    do check "ffcenonoiwd9" (3.14M < 1.0M) false
-    do check "ffcenonoiwe91a" ("bbb" < "aaa") false
-    do check "ffcenonoiwe92a" ("bbb" < "bbb") false
-    do check "ffcenonoiwe93a" ("aaa" < "bbb") true
-    do check "ffcenonoiwe94a" ('b' < 'a') false
-    do check "ffcenonoiwe95a" ('a' < 'b') true
-    do check "ffcenonoiwe96a" ('b' < 'b') false
-
-
-    do check "ffcenonoiwdq" (3 <= 1) false
-    do check "ffcenonoiwdw" (3y <= 1y) false
-    do check "ffcenonoiwde" (3uy <= 1uy) false
-    do check "ffcenonoiwdr" (3s <= 1s) false
-    do check "ffcenonoiwdt" (3us <= 1us) false
-    do check "ffcenonoiwdy" (3 <= 1) false
-    do check "ffcenonoiwdu" (3u <= 1u) false
-    do check "ffcenonoiwdi" (3L <= 1L) false
-    do check "ffcenonoiwdo" (3UL <= 1UL) false
-    do check "ffcenonoiwdg" (3.14 <= 1.0) false
-    do check "ffcenonoiwdt" (3.14f <= 1.0f) false
-    do check "ffcenonoiwdt" (3.14M <= 1.0M) false
-    do check "ffcenonoiwe91q" ("bbb" <= "aaa") false
-    do check "ffcenonoiwe92q" ("bbb" <= "bbb") true
-    do check "ffcenonoiwe93q" ("aaa" <= "bbb") true
-    do check "ffcenonoiwe94q" ('b' <= 'a') false
-    do check "ffcenonoiwe95q" ('a' <= 'b') true
-    do check "ffcenonoiwe96q" ('b' <= 'b') true
-
-
-    do check "ffcenonoiwda" (3 <= 3) true
-    do check "ffcenonoiwds" (3y <= 3y) true
-    do check "ffcenonoiwdd" (3uy <= 3uy) true
-    do check "ffcenonoiwdf" (3s <= 3s) true
-    do check "ffcenonoiwdg" (3us <= 3us) true
-    do check "ffcenonoiwdh" (3 <= 3) true
-    do check "ffcenonoiwdj" (3u <= 3u) true
-    do check "ffcenonoiwdk" (3L <= 3L) true
-    do check "ffcenonoiwdl" (3UL <= 3UL) true
-    do check "ffcenonoiwdo" (3.14 <= 3.14) true
-    do check "ffcenonoiwdp" (3.14f <= 3.14f) true
-    do check "ffcenonoiwdp" (3.14M <= 3.14M) true
-
+    do check "test9253" (3 <= 1) false
+    do check "test9254" (3y <= 1y) false
+    do check "test9255" (3uy <= 1uy) false
+    do check "test9256" (3s <= 1s) false
+    do check "test9257" (3us <= 1us) false
+    do check "test9258" (3 <= 1) false
+    do check "test9259" (3u <= 1u) false
+    do check "test9260" (3L <= 1L) false
+    do check "test9261" (3UL <= 1UL) false
+    do check "test9262" (3.14 <= 1.0) false
+    do check "test9263" (3.14f <= 1.0f) false
+    do check "test9264" (3.14M <= 1.0M) false
+    do check "test9265" ("bbb" <= "aaa") false
+    do check "test9266" ("bbb" <= "bbb") true
+    do check "test9267" ("aaa" <= "bbb") true
+    do check "test9268" ('b' <= 'a') false
+    do check "test9269" ('a' <= 'b') true
+    do check "test9270" ('b' <= 'b') true
+    do check "test9271" (3 <= 3) true
+    do check "test9272" (3y <= 3y) true
+    do check "test9273" (3uy <= 3uy) true
+    do check "test9274" (3s <= 3s) true
+    do check "test9275" (3us <= 3us) true
+    do check "test9276" (3 <= 3) true
+    do check "test9277" (3u <= 3u) true
+    do check "test9278" (3L <= 3L) true
+    do check "test9279" (3UL <= 3UL) true
+    do check "test9280" (3.14 <= 3.14) true
+    do check "test9281" (3.14f <= 3.14f) true
+    do check "test9282" (3.14M <= 3.14M) true
 
 module NonStructuralComparisonOverDateTime =
     open NonStructuralComparison
     let now = System.DateTime.Now
     let tom = now.AddDays 1.0
-    do check "ffcenonoiwe90" (now = tom) false
-    do check "ffcenonoiwe9q" (now <> tom) true
-    do check "ffcenonoiwe91" (now < tom) true
-    do check "ffcenonoiwe92" (now <= now) true
-    do check "ffcenonoiwe93" (now <= tom) true
-    do check "ffcenonoiwe94" (tom > now) true
-    do check "ffcenonoiwe95" (now >= now) true
-    do check "ffcenonoiwe96" (tom >= now) true
-    do check "ffcenonoiwe97" (compare now now) 0
-    do check "ffcenonoiwe98" (compare now tom) -1
-    do check "ffcenonoiwe99" (compare tom now) 1
-    do check "ffcenonoiwe9a" (max tom tom) tom
-    do check "ffcenonoiwe9b" (max tom now) tom
-    do check "ffcenonoiwe9c" (max now tom) tom
-    do check "ffcenonoiwe9d" (min tom tom) tom
-    do check "ffcenonoiwe9e" (min tom now) now
-    do check "ffcenonoiwe9f" (min now tom) now
 
-    do check "ffcenonoiwe97a1" (ComparisonIdentity.NonStructural.Compare (1, 1)) 0
-    do check "ffcenonoiwe98b2" (ComparisonIdentity.NonStructural.Compare (0, 1)) -1
-    do check "ffcenonoiwe99c3" (ComparisonIdentity.NonStructural.Compare (1, 0)) 1
+    do check "test9283" (now = tom) false
+    do check "test9284" (now <> tom) true
+    do check "test9285" (now < tom) true
+    do check "test9286" (now <= now) true
+    do check "test9287" (now <= tom) true
+    do check "test9288" (tom > now) true
+    do check "test9289" (now >= now) true
+    do check "test9290" (tom >= now) true
+    do check "test9291" (compare now now) 0
+    do check "test9292" (compare now tom) -1
+    do check "test9293" (compare tom now) 1
+    do check "test9294" (max tom tom) tom
+    do check "test9295" (max tom now) tom
+    do check "test9296" (max now tom) tom
+    do check "test9297" (min tom tom) tom
+    do check "test9298" (min tom now) now
+    do check "test9299" (min now tom) now
 
-    do check "ffcenonoiwe97a4" (ComparisonIdentity.NonStructural.Compare (now, now)) 0
-    do check "ffcenonoiwe98b5" (ComparisonIdentity.NonStructural.Compare (now, tom)) -1
-    do check "ffcenonoiwe99c6" (ComparisonIdentity.NonStructural.Compare (tom, now)) 1
-
-    do check "ffcenonoiwe97a7" (HashIdentity.NonStructural.Equals (now, now)) true
-    do check "ffcenonoiwe98b8" (HashIdentity.NonStructural.Equals (now, tom)) false
-    do check "ffcenonoiwe99c9" (HashIdentity.NonStructural.Equals (tom, now)) false
-
-    do check "ffcenonoiwe97a7" (HashIdentity.NonStructural.GetHashCode now) (hash now)
-    do check "ffcenonoiwe97a7" (HashIdentity.NonStructural.GetHashCode tom) (hash tom)
-    do check "ffcenonoiwe97a7" (HashIdentity.NonStructural.GetHashCode 11) (hash 11)
-    do check "ffcenonoiwe97a7" (HashIdentity.NonStructural.GetHashCode 11L) (hash 11L)
-    do check "ffcenonoiwe97a7" (HashIdentity.NonStructural.GetHashCode 11UL) (hash 11UL)
-
-    do check "ffcenonoiwe97aa" (HashIdentity.NonStructural.Equals (1, 1)) true
-    do check "ffcenonoiwe98bb" (HashIdentity.NonStructural.Equals (1, 0)) false
-    do check "ffcenonoiwe99cc" (HashIdentity.NonStructural.Equals (0, 1)) false
-
+    do check "test9301" (ComparisonIdentity.NonStructural.Compare (1, 1)) 0
+    do check "test9302" (ComparisonIdentity.NonStructural.Compare (0, 1)) -1
+    do check "test9303" (ComparisonIdentity.NonStructural.Compare (1, 0)) 1
+    do check "test9304" (ComparisonIdentity.NonStructural.Compare (now, now)) 0
+    do check "test9305" (ComparisonIdentity.NonStructural.Compare (now, tom)) -1
+    do check "test9306" (ComparisonIdentity.NonStructural.Compare (tom, now)) 1
+    do check "test9307" (HashIdentity.NonStructural.Equals (now, now)) true
+    do check "test9308" (HashIdentity.NonStructural.Equals (now, tom)) false
+    do check "test9309" (HashIdentity.NonStructural.Equals (tom, now)) false
+    do check "test9310" (HashIdentity.NonStructural.GetHashCode now) (hash now)
+    do check "test9311" (HashIdentity.NonStructural.GetHashCode tom) (hash tom)
+    do check "test9312" (HashIdentity.NonStructural.GetHashCode 11) (hash 11)
+    do check "test9313" (HashIdentity.NonStructural.GetHashCode 11L) (hash 11L)
+    do check "test9314" (HashIdentity.NonStructural.GetHashCode 11UL) (hash 11UL)
+    do check "test9315" (HashIdentity.NonStructural.Equals (1, 1)) true
+    do check "test9316" (HashIdentity.NonStructural.Equals (1, 0)) false
+    do check "test9317" (HashIdentity.NonStructural.Equals (0, 1)) false
 
 module NonStructuralComparisonOverTimeSpan =
     open NonStructuralComparison
     let now = System.TimeSpan.Zero
     let tom = System.TimeSpan.FromDays 1.0
-    do check "tscenonoiwe90" (now = tom) false
-    do check "tscenonoiwe9q" (now <> tom) true
-    do check "tscenonoiwe91" (now < tom) true
-    do check "tscenonoiwe92" (now <= now) true
-    do check "tscenonoiwe93" (now <= tom) true
-    do check "tscenonoiwe94" (tom > now) true
-    do check "tscenonoiwe95" (now >= now) true
-    do check "tscenonoiwe96" (tom >= now) true
-    do check "tscenonoiwe97" (compare now now) 0
-    do check "tscenonoiwe98" (compare now tom) -1
-    do check "tscenonoiwe99" (compare tom now) 1
-    do check "tscenonoiwe9a" (max tom tom) tom
-    do check "tscenonoiwe9b" (max tom now) tom
-    do check "tscenonoiwe9c" (max now tom) tom
-    do check "tscenonoiwe9d" (min tom tom) tom
-    do check "tscenonoiwe9e" (min tom now) now
-    do check "tscenonoiwe9f" (min now tom) now
 
+    do check "test9318" (now = tom) false
+    do check "test9319" (now <> tom) true
+    do check "test9320" (now < tom) true
+    do check "test9381" (now <= now) true
+    do check "test9382" (now <= tom) true
+    do check "test9383" (tom > now) true
+    do check "test9384" (now >= now) true
+    do check "test9385" (tom >= now) true
+    do check "test9386" (compare now now) 0
+    do check "test9387" (compare now tom) -1
+    do check "test9388" (compare tom now) 1
+    do check "test9389" (max tom tom) tom
+    do check "test9390" (max tom now) tom
+    do check "test9391" (max now tom) tom
+    do check "test9392" (min tom tom) tom
+    do check "test9393" (min tom now) now
+    do check "test9394" (min now tom) now
 
 // Check you can use the operators without opening the module by naming them
 module NonStructuralComparisonOverTimeSpanDirect =
     let now = System.TimeSpan.Zero
     let tom = System.TimeSpan.FromDays 1.0
-    do check "tscenonoiwe90" (NonStructuralComparison.(=) now tom) false
-    do check "tscenonoiwe9q" (NonStructuralComparison.(<>) now tom) true
-    do check "tscenonoiwe91" (NonStructuralComparison.(<) now tom) true
-    do check "tscenonoiwe92" (NonStructuralComparison.(<=) now now) true
-    do check "tscenonoiwe94" (NonStructuralComparison.(>) tom now) true
-    do check "tscenonoiwe95" (NonStructuralComparison.(>=) now now) true
-    do check "tscenonoiwe97" (NonStructuralComparison.compare now now) 0
-    do check "tscenonoiwe9a" (NonStructuralComparison.max tom now) tom
-    do check "tscenonoiwe9e" (NonStructuralComparison.min tom now) now
 
-    do check "ffcenonoiwe97a7" (NonStructuralComparison.hash now) (Operators.hash now)
-    do check "ffcenonoiwe97a7" (NonStructuralComparison.hash tom) (Operators.hash tom)
-    do check "ffcenonoiwe97a7" (NonStructuralComparison.hash 11) (Operators.hash 11)
-    do check "ffcenonoiwe97a7" (NonStructuralComparison.hash 11L) (Operators.hash 11L)
-    do check "ffcenonoiwe97a7" (NonStructuralComparison.hash 11UL) (Operators.hash 11UL)
+    do check "test9395" (NonStructuralComparison.(=) now tom) false
+    do check "test9396" (NonStructuralComparison.(<>) now tom) true
+    do check "test9397" (NonStructuralComparison.(<) now tom) true
+    do check "test9398" (NonStructuralComparison.(<=) now now) true
+    do check "test9399" (NonStructuralComparison.(>) tom now) true
+    do check "test9400" (NonStructuralComparison.(>=) now now) true
+    do check "test9401" (NonStructuralComparison.compare now now) 0
+    do check "test9402" (NonStructuralComparison.max tom now) tom
+    do check "test9403" (NonStructuralComparison.min tom now) now
+
+    do check "test9404" (NonStructuralComparison.hash now) (Operators.hash now)
+    do check "test9405" (NonStructuralComparison.hash tom) (Operators.hash tom)
+    do check "test9406" (NonStructuralComparison.hash 11) (Operators.hash 11)
+    do check "test9407" (NonStructuralComparison.hash 11L) (Operators.hash 11L)
+    do check "test9408" (NonStructuralComparison.hash 11UL) (Operators.hash 11UL)
 
 
 [<EntryPoint>]
