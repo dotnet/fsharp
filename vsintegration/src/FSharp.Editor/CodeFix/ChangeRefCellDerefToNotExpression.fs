@@ -4,6 +4,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
 open System.Threading.Tasks
+open System.Collections.Immutable
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
@@ -12,10 +13,9 @@ open Microsoft.CodeAnalysis.CodeFixes
 type internal FSharpChangeRefCellDerefToNotExpressionCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
-    let fixableDiagnosticIds = set [ "FS0001" ]
     static let title = SR.UseNotForNegation()
 
-    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0001")
 
     override this.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
