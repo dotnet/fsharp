@@ -85,13 +85,8 @@ module private FSharpProjectOptionsHelpers =
                            let v2 = p2.GetDependentVersionAsync(ct).Result
                            v1 <> v2))
 
-    let isProjectInvalidated (oldProject: Project) (newProject: Project) ct =
-        let hasProjectVersionChanged = hasProjectVersionChanged oldProject newProject
-
-        if newProject.AreFSharpInMemoryCrossProjectReferencesEnabled then
-            hasProjectVersionChanged || hasDependentVersionChanged oldProject newProject ct
-        else
-            hasProjectVersionChanged
+    let inline isProjectInvalidated (oldProject: Project) (newProject: Project) ct =
+        hasProjectVersionChanged oldProject newProject || hasDependentVersionChanged oldProject newProject ct
 
 [<RequireQualifiedAccess>]
 type private FSharpProjectOptionsMessage =
@@ -276,21 +271,20 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
 
                 let referencedProjects = ResizeArray()
 
-                if project.AreFSharpInMemoryCrossProjectReferencesEnabled then
-                    for projectReference in project.ProjectReferences do
-                        let referencedProject = project.Solution.GetProject(projectReference.ProjectId)
+                for projectReference in project.ProjectReferences do
+                    let referencedProject = project.Solution.GetProject(projectReference.ProjectId)
 
-                        if referencedProject.Language = FSharpConstants.FSharpLanguageName then
-                            match! tryComputeOptions referencedProject ct with
-                            | None -> canBail <- true
-                            | Some (_, projectOptions) ->
-                                referencedProjects.Add(
-                                    FSharpReferencedProject.CreateFSharp(referencedProject.OutputFilePath, projectOptions)
-                                )
-                        elif referencedProject.SupportsCompilation then
-                            let! comp = referencedProject.GetCompilationAsync(ct) |> Async.AwaitTask
-                            let peRef = createPEReference referencedProject comp
-                            referencedProjects.Add(peRef)
+                    if referencedProject.Language = FSharpConstants.FSharpLanguageName then
+                        match! tryComputeOptions referencedProject ct with
+                        | None -> canBail <- true
+                        | Some (_, projectOptions) ->
+                            referencedProjects.Add(
+                                FSharpReferencedProject.CreateFSharp(referencedProject.OutputFilePath, projectOptions)
+                            )
+                    elif referencedProject.SupportsCompilation then
+                        let! comp = referencedProject.GetCompilationAsync(ct) |> Async.AwaitTask
+                        let peRef = createPEReference referencedProject comp
+                        referencedProjects.Add(peRef)
 
                 if canBail then
                     return None
