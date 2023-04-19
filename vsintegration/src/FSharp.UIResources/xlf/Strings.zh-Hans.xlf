@@ -127,11 +127,6 @@
         <target state="translated">键入字符后显示完成列表(_S)</target>
         <note />
       </trans-unit>
-      <trans-unit id="Enable_in_memory_cross_project_references">
-        <source>_Enable in-memory cross project references</source>
-        <target state="translated">启用内存中跨项目引用(_E)</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Show_navigation_links_as">
         <source>S_how navigation links as</source>
         <target state="translated">导航链接显示方式(_H)</target>
@@ -205,11 +200,6 @@
       <trans-unit id="Enable_Stale_IntelliSense_Results">
         <source>Enable stale data for IntelliSense features</source>
         <target state="translated">针对 IntelliSense 功能启用过时数据</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Tooltip_in_memory_cross_project_references">
-        <source>In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</source>
-        <target state="translated">内存中跨项目引用将项目级数据存储在内存中，让 IDE 功能能够跨项目工作。</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_key_always">
