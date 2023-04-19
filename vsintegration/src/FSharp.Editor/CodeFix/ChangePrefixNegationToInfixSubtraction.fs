@@ -5,6 +5,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 open System.Composition
 open System.Threading.Tasks
+open System.Collections.Immutable
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
@@ -13,10 +14,9 @@ open Microsoft.CodeAnalysis.CodeFixes
 type internal FSharpChangePrefixNegationToInfixSubtractionodeFixProvider() =
     inherit CodeFixProvider()
 
-    let fixableDiagnosticIds = set [ "FS0003" ]
     static let title = SR.ChangePrefixNegationToInfixSubtraction()
 
-    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0003")
 
     override _.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
