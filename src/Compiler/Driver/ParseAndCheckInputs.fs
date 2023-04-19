@@ -508,11 +508,10 @@ let ParseInput
 type Tokenizer = unit -> Parser.token
 
 // Show all tokens in the stream, for testing purposes
-let ShowAllTokensAndExit (shortFilename, tokenizer: Tokenizer, lexbuf: LexBuffer<char>, exiter: Exiter) =
+let ShowAllTokensAndExit (tokenizer: Tokenizer, lexbuf: LexBuffer<char>, exiter: Exiter) =
     while true do
-        printf "tokenize - getting one token from %s\n" shortFilename
         let t = tokenizer ()
-        printf "tokenize - got %s @ %a\n" (Parser.token_to_string t) outputRange lexbuf.LexemeRange
+        printfn $"{Parser.token_to_string t} {lexbuf.LexemeRange}"
 
         match t with
         | Parser.EOF _ -> exiter.Exit 0
@@ -609,9 +608,6 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, fileNam
                 tcConfig.applyLineDirectives
             )
 
-        // Set up the initial lexer arguments
-        let shortFilename = SanitizeFileName fileName tcConfig.implicitIncludeDir
-
         let input =
             usingLexbufForParsing (lexbuf, fileName) (fun lexbuf ->
 
@@ -642,7 +638,7 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, fileNam
 
                 // If '--tokenize' then show the tokens now and exit
                 if tokenizeOnly then
-                    ShowAllTokensAndExit(shortFilename, tokenizer, lexbuf, tcConfig.exiter)
+                    ShowAllTokensAndExit(tokenizer, lexbuf, tcConfig.exiter)
 
                 // Test hook for one of the parser entry points
                 if tcConfig.testInteractionParser then
