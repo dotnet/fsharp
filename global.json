@@ -7,10 +7,8 @@
   "tools": {
     "dotnet": "8.0.100-preview.3.23178.7",
     "vs": {
-      "version": "17.5",
-      "components": [
-        "Microsoft.VisualStudio.Component.FSharp"
-      ]
+      "version": "17.7",
+      "components": ["Microsoft.VisualStudio.Component.FSharp"]
     },
     "xcopy-msbuild": "17.4.1"
   },
