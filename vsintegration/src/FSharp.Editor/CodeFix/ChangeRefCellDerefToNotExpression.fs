@@ -4,6 +4,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
 open System.Threading.Tasks
+open System.Collections.Immutable
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
@@ -12,9 +13,9 @@ open Microsoft.CodeAnalysis.CodeFixes
 type internal FSharpChangeRefCellDerefToNotExpressionCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
-    let fixableDiagnosticIds = set [ "FS0001" ]
+    static let title = SR.UseNotForNegation()
 
-    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0001")
 
     override this.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
@@ -32,22 +33,7 @@ type internal FSharpChangeRefCellDerefToNotExpressionCodeFixProvider [<Importing
             let! derefRange = parseResults.TryRangeOfRefCellDereferenceContainingPos errorRange.Start
             let! derefSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, derefRange)
 
-            let title = SR.UseNotForNegation()
-
-            let diagnostics =
-                context.Diagnostics
-                |> Seq.filter (fun x -> fixableDiagnosticIds |> Set.contains x.Id)
-                |> Seq.toImmutableArray
-
-            let codeFix =
-                CodeFixHelpers.createTextChangeCodeFix (
-                    CodeFix.ChangeRefCellDerefToNotExpression,
-                    title,
-                    context,
-                    (fun () -> asyncMaybe.Return [| TextChange(derefSpan, "not ") |])
-                )
-
-            context.RegisterCodeFix(codeFix, diagnostics)
+            do context.RegisterFsharpFix(CodeFix.ChangeRefCellDerefToNotExpression, title, [| TextChange(derefSpan, "not ") |])
         }
         |> Async.Ignore
         |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
