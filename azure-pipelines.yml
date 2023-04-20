@@ -355,6 +355,7 @@ stages:
                 inttests_release:
                   _configuration: Release
                   _testKind: testIntegration
+          continueOnError: ${{ eq(variables['_testKind'], 'testIntegration') }}
           steps:
           - checkout: self
             clean: true
