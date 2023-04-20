@@ -16,38 +16,13 @@ open FSharp.Compiler.CodeAnalysis
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CodeActions
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "AddMissingRecToMutuallyRecFunctions"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.AddMissingRecToMutuallyRecFunctions); Shared>]
 type internal FSharpAddMissingRecToMutuallyRecFunctionsCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
-    let fixableDiagnosticIds = set [ "FS0576" ]
+    static let titleFormat = SR.MakeOuterBindingRecursive()
 
-    let createCodeFix
-        (
-            context: CodeFixContext,
-            symbolName: string,
-            titleFormat: string,
-            textChange: TextChange,
-            diagnostics: ImmutableArray<Diagnostic>
-        ) =
-        let title = String.Format(titleFormat, symbolName)
-
-        let codeAction =
-            CodeAction.Create(
-                title,
-                (fun (cancellationToken: CancellationToken) ->
-                    async {
-                        let cancellationToken = context.CancellationToken
-                        let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                        return context.Document.WithText(sourceText.WithChanges(textChange))
-                    }
-                    |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
-                title
-            )
-
-        context.RegisterCodeFix(codeAction, diagnostics)
-
-    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0576")
 
     override _.RegisterCodeFixesAsync context =
         asyncMaybe {
@@ -82,18 +57,12 @@ type internal FSharpAddMissingRecToMutuallyRecFunctionsCodeFixProvider [<Importi
             let! funcNameSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, funcLexerSymbol.Range)
             let funcName = sourceText.GetSubText(funcNameSpan).ToString()
 
-            let diagnostics =
-                context.Diagnostics
-                |> Seq.filter (fun x -> fixableDiagnosticIds |> Set.contains x.Id)
-                |> Seq.toImmutableArray
-
-            createCodeFix (
-                context,
-                funcName,
-                SR.MakeOuterBindingRecursive(),
-                TextChange(TextSpan(context.Span.End, 0), " rec"),
-                diagnostics
-            )
+            do
+                context.RegisterFsharpFix(
+                    CodeFix.AddMissingRecToMutuallyRecFunctions,
+                    String.Format(titleFormat, funcName),
+                    [| TextChange(TextSpan(context.Span.End, 0), " rec") |]
+                )
         }
         |> Async.Ignore
         |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

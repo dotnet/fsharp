@@ -5,6 +5,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 open System.Composition
 open System.Threading.Tasks
+open System.Collections.Immutable
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
@@ -16,9 +17,8 @@ open FSharp.Compiler.Text
 type internal FSharpUseMutationWhenValueIsMutableFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
-    let fixableDiagnosticIds = set [ "FS0020" ]
     static let title = SR.UseMutationWhenValueIsMutable()
-    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0020")
 
     override _.RegisterCodeFixesAsync context : Task =
         asyncMaybe {

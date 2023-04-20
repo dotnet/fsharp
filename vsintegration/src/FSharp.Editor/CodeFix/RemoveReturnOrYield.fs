@@ -3,6 +3,7 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
+open System.Collections.Immutable
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
@@ -11,9 +12,7 @@ open Microsoft.CodeAnalysis.CodeFixes
 type internal FSharpRemoveReturnOrYieldCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
-    let fixableDiagnosticIds = set [ "FS0748"; "FS0747" ]
-
-    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0748", "FS0747")
 
     override _.RegisterCodeFixesAsync context =
         asyncMaybe {

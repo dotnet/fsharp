@@ -3,6 +3,7 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
+open System.Collections.Immutable
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
@@ -11,9 +12,8 @@ open Microsoft.CodeAnalysis.CodeFixes
 type internal FSharpUseTripleQuotedInterpolationCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
-    let fixableDiagnosticIds = [ "FS3373" ]
     static let title = SR.UseTripleQuotedInterpolation()
-    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = ImmutableArray.Create("FS3373")
 
     override _.RegisterCodeFixesAsync context =
         asyncMaybe {

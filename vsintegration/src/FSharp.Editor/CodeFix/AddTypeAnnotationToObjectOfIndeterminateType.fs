@@ -6,6 +6,7 @@ open System
 open System.Composition
 open System.Threading
 open System.Threading.Tasks
+open System.Collections.Immutable
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
@@ -16,20 +17,16 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Symbols
 open Microsoft.CodeAnalysis.CodeActions
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "AddTypeAnnotationToObjectOfIndeterminateType"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.AddTypeAnnotationToObjectOfIndeterminateType); Shared>]
 type internal FSharpAddTypeAnnotationToObjectOfIndeterminateTypeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
-    let fixableDiagnosticIds = set [ "FS0072"; "FS3245" ]
+    static let title = SR.AddTypeAnnotation()
 
-    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0072", "FS3245")
 
     override _.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
-            let diagnostics =
-                context.Diagnostics
-                |> Seq.filter (fun x -> fixableDiagnosticIds |> Set.contains x.Id)
-                |> Seq.toImmutableArray
 
             let document = context.Document
             let position = context.Span.Start
@@ -95,29 +92,17 @@ type internal FSharpAddTypeAnnotationToObjectOfIndeterminateTypeFixProvider [<Im
                         let hasRightParen = rightLoop sourceText.[declSpan.End] declSpan.End
                         hasLeftParen && hasRightParen
 
-                    let getChangedText (sourceText: SourceText) =
-                        if alreadyWrappedInParens then
-                            sourceText.WithChanges(TextChange(TextSpan(declSpan.End, 0), ": " + typeString))
-                        else
-                            sourceText
-                                .WithChanges(TextChange(TextSpan(declSpan.Start, 0), "("))
-                                .WithChanges(TextChange(TextSpan(declSpan.End + 1, 0), ": " + typeString + ")"))
+                    let changes =
+                        [
+                            if alreadyWrappedInParens then
+                                TextChange(TextSpan(declSpan.End, 0), ": " + typeString)
+                            else
+                                TextChange(TextSpan(declSpan.Start, 0), "(")
+                                TextChange(TextSpan(declSpan.End + 1, 0), ": " + typeString + ")")
+                        ]
 
-                    let title = SR.AddTypeAnnotation()
+                    context.RegisterFsharpFix(CodeFix.AddTypeAnnotationToObjectOfIndeterminateType, title, changes)
 
-                    let codeAction =
-                        CodeAction.Create(
-                            title,
-                            (fun (cancellationToken: CancellationToken) ->
-                                async {
-                                    let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                                    return context.Document.WithText(getChangedText sourceText)
-                                }
-                                |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
-                            title
-                        )
-
-                    context.RegisterCodeFix(codeAction, diagnostics)
                 | _ -> ()
             | _ -> ()
         }
