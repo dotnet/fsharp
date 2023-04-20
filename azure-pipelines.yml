@@ -362,10 +362,16 @@ stages:
           - powershell: eng\SetupVSHive.ps1
             displayName: Setup VS Hive
             condition: or(eq(variables['_testKind'], 'testVs'), eq(variables['_testKind'], 'testIntegration'))
-
+          - script: |
+              if [ "$( _testKind )" == "testIntegration" ]; then
+                echo "##vso[task.setvariable variable=shouldContinueOnError]true"
+              else
+                echo "##vso[task.setvariable variable=shouldContinueOnError]false"
+              fi
+            displayName: 'Set continueOnError value based on _testKind'
           - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
             displayName: Build / Test
-            continueOnError: ${{ eq(variables['_testKind'], 'testIntegration') }}
+            continueOnError: $(shouldContinueOnError)
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
