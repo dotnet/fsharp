@@ -33,6 +33,7 @@ let increment = add 1
         await Shell.ExecuteCommandAsync(VSStd97CmdID.GotoDefn, TestToken);
         var actualText = await Editor.GetCurrentLineTextAsync(TestToken);
         
+        Assert.True(false);
         Assert.Contains(expectedText, actualText);
     }
 
