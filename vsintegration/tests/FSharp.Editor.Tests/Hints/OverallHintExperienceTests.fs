@@ -39,55 +39,72 @@ let cc = a.Normal "hmm"
                 {
                     Content = ": Song"
                     Location = (2, 18)
+                    ToolTip = "42"
                 }
                 {
                     Content = ": string "
                     Location = (2, 19)
+                    ToolTip = "42"
                 }
                 {
                     Content = "song = "
                     Location = (4, 23)
+                    ToolTip = "42"
                 }
                 {
                     Content = ": string"
                     Location = (4, 11)
+                    ToolTip = "42"
                 }
                 {
                     Content = "side = "
                     Location = (10, 16)
+                    ToolTip = "42"
                 }
                 {
                     Content = ": Shape"
                     Location = (10, 6)
+                    ToolTip = "42"
                 }
                 {
                     Content = "width = "
                     Location = (11, 20)
+                    ToolTip = "42"
                 }
                 {
                     Content = "height = "
                     Location = (11, 23)
+                    ToolTip = "42"
                 }
                 {
                     Content = ": Shape"
                     Location = (11, 6)
+                    ToolTip = "42"
                 }
                 {
                     Content = ": int "
                     Location = (14, 36)
+                    ToolTip = "42"
                 }
                 {
                     Content = "blahFirst = "
                     Location = (16, 11)
+                    ToolTip = "42"
                 }
-                { Content = ": C"; Location = (16, 6) }
+                {
+                    Content = ": C"
+                    Location = (16, 6)
+                    ToolTip = "42"
+                }
                 {
                     Content = "what = "
                     Location = (17, 19)
+                    ToolTip = "42"
                 }
                 {
                     Content = ": int"
                     Location = (17, 7)
+                    ToolTip = "42"
                 }
             ]
 

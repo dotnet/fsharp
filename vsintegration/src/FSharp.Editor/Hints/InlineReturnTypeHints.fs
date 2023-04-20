@@ -19,6 +19,13 @@ type InlineReturnTypeHints(parseFileResults: FSharpParseFileResults, symbol: FSh
                 TaggedText(TextTag.Space, " ")
             ])
 
+    let getToolTip _document _cancellationToken =
+        async {
+            // the hardest part
+            return [ TaggedText(TextTag.Text, "42") ]
+        // the hardest part
+        }
+
     let getHint symbolUse range =
         getHintParts symbolUse
         |> Option.map (fun parts ->
@@ -26,6 +33,7 @@ type InlineReturnTypeHints(parseFileResults: FSharpParseFileResults, symbol: FSh
                 Kind = HintKind.ReturnTypeHint
                 Range = range
                 Parts = parts
+                GetToolTip = getToolTip
             })
 
     let isValidForHint (symbol: FSharpMemberOrFunctionOrValue) = symbol.IsFunction

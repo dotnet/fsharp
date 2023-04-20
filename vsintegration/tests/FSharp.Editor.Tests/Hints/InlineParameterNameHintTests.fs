@@ -22,6 +22,7 @@ let greeting = greet "darkness"
                 {
                     Content = "friend = "
                     Location = (2, 22)
+                    ToolTip = "42"
                 }
             ]
 
@@ -45,10 +46,12 @@ let greeting2 = greet "Liam"
                 {
                     Content = "friend = "
                     Location = (2, 23)
+                    ToolTip = "42"
                 }
                 {
                     Content = "friend = "
                     Location = (3, 23)
+                    ToolTip = "42"
                 }
             ]
 
@@ -71,10 +74,12 @@ let greeting = greet "Liam" "Noel"
                 {
                     Content = "friend1 = "
                     Location = (2, 22)
+                    ToolTip = "42"
                 }
                 {
                     Content = "friend2 = "
                     Location = (2, 29)
+                    ToolTip = "42"
                 }
             ]
 
@@ -97,10 +102,12 @@ let greeting = greet ("Liam", "Noel")
                 {
                     Content = "friend1 = "
                     Location = (2, 23)
+                    ToolTip = "42"
                 }
                 {
                     Content = "friend2 = "
                     Location = (2, 31)
+                    ToolTip = "42"
                 }
             ]
 
@@ -132,10 +139,12 @@ let odd = evenOrOdd 41
                 {
                     Content = "number = "
                     Location = (10, 22)
+                    ToolTip = "42"
                 }
                 {
                     Content = "number = "
                     Location = (11, 21)
+                    ToolTip = "42"
                 }
             ]
 
@@ -201,6 +210,7 @@ let theAnswer = System.Console.WriteLine 42
                 {
                     Content = "value = "
                     Location = (1, 42)
+                    ToolTip = "42"
                 }
             ]
 
@@ -231,23 +241,32 @@ let a = c.Normal "hmm"
                 {
                     Content = "curr1 = "
                     Location = (8, 20)
+                    ToolTip = "42"
                 }
                 {
                     Content = "curr2 = "
                     Location = (8, 27)
+                    ToolTip = "42"
                 }
-                { Content = "x = "; Location = (8, 30) }
+                {
+                    Content = "x = "
+                    Location = (8, 30)
+                    ToolTip = "42"
+                }
                 {
                     Content = "what = "
                     Location = (9, 19)
+                    ToolTip = "42"
                 }
                 {
                     Content = "what2 = "
                     Location = (9, 26)
+                    ToolTip = "42"
                 }
                 {
                     Content = "alone = "
                     Location = (10, 18)
+                    ToolTip = "42"
                 }
             ]
 
@@ -272,14 +291,17 @@ let a = C (1, "")
                 {
                     Content = "blahFirst = "
                     Location = (2, 40)
+                    ToolTip = "42"
                 }
                 {
                     Content = "blah = "
                     Location = (4, 12)
+                    ToolTip = "42"
                 }
                 {
                     Content = "blah2 = "
                     Location = (4, 15)
+                    ToolTip = "42"
                 }
             ]
 
@@ -306,14 +328,17 @@ let b = Rectangle (1, 2)
                 {
                     Content = "side = "
                     Location = (5, 16)
+                    ToolTip = "42"
                 }
                 {
                     Content = "width = "
                     Location = (6, 20)
+                    ToolTip = "42"
                 }
                 {
                     Content = "height = "
                     Location = (6, 23)
+                    ToolTip = "42"
                 }
             ]
 
@@ -340,10 +365,12 @@ let d = Circle 1
                 {
                     Content = "side1 = "
                     Location = (5, 19)
+                    ToolTip = "42"
                 }
                 {
                     Content = "side3 = "
                     Location = (5, 25)
+                    ToolTip = "42"
                 }
             ]
 
@@ -396,10 +423,12 @@ let x = "test".Split("").[0].Split("");
                 {
                     Content = "separator = "
                     Location = (1, 22)
+                    ToolTip = "42"
                 }
                 {
                     Content = "separator = "
                     Location = (1, 36)
+                    ToolTip = "42"
                 }
             ]
 
@@ -425,6 +454,7 @@ type MyType() =
                 {
                     Content = "beep = "
                     Location = (5, 37)
+                    ToolTip = "42"
                 }
             ]
 
@@ -465,14 +495,17 @@ let test sequences =
                 {
                     Content = "mapping = "
                     Location = (3, 16)
+                    ToolTip = "42"
                 }
                 {
                     Content = "mapping = "
                     Location = (3, 53)
+                    ToolTip = "42"
                 }
                 {
                     Content = "mapping = "
                     Location = (3, 92)
+                    ToolTip = "42"
                 }
             ]
 
@@ -494,6 +527,7 @@ let q = query { for x in { 1 .. 10 } do select x }
                 {
                     Content = "projection = "
                     Location = (1, 48)
+                    ToolTip = "42"
                 }
             ]
 
@@ -532,6 +566,7 @@ let fullName = getFullName name lastName
                 {
                     Content = "surname = "
                     Location = (5, 33)
+                    ToolTip = "42"
                 }
             ]
 
@@ -557,6 +592,7 @@ None
                 {
                     Content = "mapping = "
                     Location = (2, 15)
+                    ToolTip = "42"
                 }
             ]
 

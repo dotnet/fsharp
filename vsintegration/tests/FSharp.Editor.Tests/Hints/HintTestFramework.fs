@@ -12,9 +12,13 @@ module HintTestFramework =
 
     // another representation for extra convenience
     type TestHint =
-        { Content: string; Location: int * int }
+        {
+            Content: string
+            Location: int * int
+            ToolTip: string
+        }
 
-    let private convert hint =
+    let private convert hint toolTip =
         let content =
             hint.Parts |> Seq.map (fun hintPart -> hintPart.Text) |> String.concat ""
 
@@ -26,6 +30,7 @@ module HintTestFramework =
         {
             Content = content
             Location = location
+            ToolTip = toolTip
         }
 
     let getFsDocument code =
@@ -57,9 +62,19 @@ module HintTestFramework =
     let getHints (document: Document) hintKinds =
         async {
             let! ct = Async.CancellationToken
+
+            let getToolTip hint =
+                async {
+                    let! roslynTexts = hint.GetToolTip document ct
+                    return roslynTexts |> Seq.map (fun roslynText -> roslynText.Text) |> String.concat ""
+                }
+
             let! sourceText = document.GetTextAsync ct |> Async.AwaitTask
             let! hints = HintService.getHintsForDocument sourceText document hintKinds "test" ct
-            return hints |> Seq.map convert
+
+            return
+                hints
+                |> Seq.map (fun hint -> hint |> (getToolTip >> Async.RunSynchronously) |> convert hint)
         }
         |> Async.RunSynchronously
 

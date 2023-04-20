@@ -24,6 +24,7 @@ let s = { Artist = "Moby"; Title = "Porcelain" }
                 {
                     Content = ": Song"
                     Location = (3, 6)
+                    ToolTip = "42"
                 }
             ]
 
@@ -47,6 +48,7 @@ let whoSings s = s.Artist
                 {
                     Content = ": Song"
                     Location = (3, 15)
+                    ToolTip = "42"
                 }
             ]
 
@@ -156,7 +158,15 @@ let iamboring() =
 """
 
         let document = getFsDocument code
-        let expected = [ { Content = ": 'a"; Location = (2, 10) } ]
+
+        let expected =
+            [
+                {
+                    Content = ": 'a"
+                    Location = (2, 10)
+                    ToolTip = "42"
+                }
+            ]
 
         let actual = getTypeHints document
 
@@ -175,10 +185,26 @@ let zip4 (l1: 'a list) (l2: 'b list) (l3: 'c list) (l4: 'd list) =
 
         let expected =
             [
-                { Content = ": 'a"; Location = (3, 25) }
-                { Content = ": 'b"; Location = (3, 30) }
-                { Content = ": 'c"; Location = (3, 34) }
-                { Content = ": 'd"; Location = (3, 38) }
+                {
+                    Content = ": 'a"
+                    Location = (3, 25)
+                    ToolTip = "42"
+                }
+                {
+                    Content = ": 'b"
+                    Location = (3, 30)
+                    ToolTip = "42"
+                }
+                {
+                    Content = ": 'c"
+                    Location = (3, 34)
+                    ToolTip = "42"
+                }
+                {
+                    Content = ": 'd"
+                    Location = (3, 38)
+                    ToolTip = "42"
+                }
             ]
 
         let actual = getTypeHints document
@@ -261,10 +287,12 @@ type Number<'T when IAddition<'T>>(value: 'T) =
                 {
                     Content = ": Number<'T>"
                     Location = (7, 36)
+                    ToolTip = "42"
                 }
                 {
                     Content = ": Number<'T>"
                     Location = (7, 39)
+                    ToolTip = "42"
                 }
             ]
 

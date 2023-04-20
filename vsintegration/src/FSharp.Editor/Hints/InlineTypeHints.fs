@@ -21,11 +21,19 @@ type InlineTypeHints(parseResults: FSharpParseFileResults, symbol: FSharpMemberO
         // not sure when this can happen
         | None -> []
 
+    let getToolTip _document _cancellationToken =
+        async {
+            // the hardest part
+            return [ TaggedText(TextTag.Text, "42") ]
+        // the hardest part
+        }
+
     let getHint symbol (symbolUse: FSharpSymbolUse) =
         {
             Kind = HintKind.TypeHint
             Range = symbolUse.Range.EndRange
             Parts = getHintParts symbol symbolUse
+            GetToolTip = getToolTip
         }
 
     let isSolved (symbol: FSharpMemberOrFunctionOrValue) =
