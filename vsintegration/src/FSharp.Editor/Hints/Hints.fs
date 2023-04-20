@@ -19,7 +19,7 @@ module Hints =
             Kind: HintKind
             Range: range
             Parts: TaggedText list
-            GetToolTip: Document -> CancellationToken -> Async<TaggedText list>
+            GetTooltip: Document -> CancellationToken -> Async<TaggedText list>
         }
 
     let serialize kind =

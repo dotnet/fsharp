@@ -12,7 +12,7 @@ open Hints
 
 type InlineParameterNameHints(parseResults: FSharpParseFileResults) =
 
-    let getToolTip _document _cancellationToken =
+    let getTooltip _document _cancellationToken =
         async {
             // the hardest part
             return [ TaggedText(TextTag.Text, "42") ]
@@ -24,7 +24,7 @@ type InlineParameterNameHints(parseResults: FSharpParseFileResults) =
             Kind = HintKind.ParameterNameHint
             Range = range.StartRange
             Parts = [ TaggedText(TextTag.Text, $"{parameter.DisplayName} = ") ]
-            GetToolTip = getToolTip
+            GetTooltip = getTooltip
         }
 
     let getFieldHint (range: range, field: FSharpField) =
@@ -32,7 +32,7 @@ type InlineParameterNameHints(parseResults: FSharpParseFileResults) =
             Kind = HintKind.ParameterNameHint
             Range = range.StartRange
             Parts = [ TaggedText(TextTag.Text, $"{field.Name} = ") ]
-            GetToolTip = getToolTip
+            GetTooltip = getTooltip
         }
 
     let parameterNameExists (parameter: FSharpParameter) = parameter.DisplayName <> ""

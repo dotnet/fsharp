@@ -15,10 +15,10 @@ module HintTestFramework =
         {
             Content: string
             Location: int * int
-            ToolTip: string
+            Tooltip: string
         }
 
-    let private convert hint toolTip =
+    let private convert hint tooltip =
         let content =
             hint.Parts |> Seq.map (fun hintPart -> hintPart.Text) |> String.concat ""
 
@@ -30,7 +30,7 @@ module HintTestFramework =
         {
             Content = content
             Location = location
-            ToolTip = toolTip
+            Tooltip = tooltip
         }
 
     let getFsDocument code =
@@ -63,9 +63,9 @@ module HintTestFramework =
         async {
             let! ct = Async.CancellationToken
 
-            let getToolTip hint =
+            let getTooltip hint =
                 async {
-                    let! roslynTexts = hint.GetToolTip document ct
+                    let! roslynTexts = hint.GetTooltip document ct
                     return roslynTexts |> Seq.map (fun roslynText -> roslynText.Text) |> String.concat ""
                 }
 
@@ -74,7 +74,7 @@ module HintTestFramework =
 
             return
                 hints
-                |> Seq.map (fun hint -> hint |> (getToolTip >> Async.RunSynchronously) |> convert hint)
+                |> Seq.map (fun hint -> hint |> (getTooltip >> Async.RunSynchronously) |> convert hint)
         }
         |> Async.RunSynchronously
 

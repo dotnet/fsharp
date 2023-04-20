@@ -24,17 +24,17 @@ let setConsoleOut = System.Console.SetOut
             {
                 Content = ": int "
                 Location = (1, 13)
-                ToolTip = "42"
+                Tooltip = "42"
             }
             {
                 Content = ": int "
                 Location = (2, 13)
-                ToolTip = "42"
+                Tooltip = "42"
             }
             {
                 Content = ": unit "
                 Location = (3, 19)
-                ToolTip = "42"
+                Tooltip = "42"
             }
         ]
 
@@ -57,7 +57,7 @@ type Test() =
             {
                 Content = ": int "
                 Location = (2, 24)
-                ToolTip = "42"
+                Tooltip = "42"
             }
         ]
 
@@ -76,7 +76,7 @@ let ``Hints are shown for generic functions`` () =
             {
                 Content = ": int "
                 Location = (0, 13)
-                ToolTip = "42"
+                Tooltip = "42"
             }
         ]
 
@@ -99,7 +99,7 @@ let ``Hints are shown for functions within expressions`` () =
             {
                 Content = ": int "
                 Location = (2, 21)
-                ToolTip = "42"
+                Tooltip = "42"
             }
         ]
 
