@@ -581,7 +581,7 @@ function InitializeBuildTool() {
       ExitWithExitCode 1
     }
     $dotnetPath = Join-Path $dotnetRoot (GetExecutableFileName 'dotnet')
-    $buildTool = @{ Path = $dotnetPath; Command = 'msbuild'; Tool = 'dotnet'; Framework = 'net8.0' }
+    $buildTool = @{ Path = $dotnetPath; Command = 'msbuild'; Tool = 'dotnet'; Framework = 'net7.0' }
   } elseif ($msbuildEngine -eq "vs") {
     try {
       $msbuildPath = InitializeVisualStudioMSBuild -install:$restore

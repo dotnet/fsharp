@@ -575,7 +575,7 @@ module rec CompilerAssertHelpers =
         let runtimeconfig = """
 {
     "runtimeOptions": {
-        "tfm": "net8.0",
+        "tfm": "net7.0",
         "framework": {
             "name": "Microsoft.NETCore.App",
             "version": "8.0"

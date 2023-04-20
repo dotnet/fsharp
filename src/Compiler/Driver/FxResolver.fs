@@ -416,7 +416,7 @@ type internal FxResolver
 
         match runningTfmOpt with
         | Some tfm -> tfm
-        | _ -> if isRunningOnCoreClr then "net8.0" else "net472"
+        | _ -> if isRunningOnCoreClr then "net7.0" else "net472"
 
     let trySdkRefsPackDirectory =
         lazy

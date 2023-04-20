@@ -104,7 +104,6 @@ module internal FSharpEnvironment =
     let toolingCompatibleVersions =
         if typeof<obj>.Assembly.GetName().Name = "mscorlib" then
             [|
-                "net482"
                 "net481"
                 "net48"
                 "net472"

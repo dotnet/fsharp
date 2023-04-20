@@ -1,4 +1,4 @@
-$output = .\bin\Release\net8.0\win-x64\publish\SelfContained_Trimming_Test.exe
+$output = .\bin\Release\net7.0\win-x64\publish\SelfContained_Trimming_Test.exe
 
 # Checking that it is actually running.
 if (-not ($LASTEXITCODE -eq 0))
@@ -15,7 +15,7 @@ if (-not ($output -eq $expected))
 
 # Checking that FSharp.Core binary is of expected size (needs adjustments if test is updated).
 $expected_len = 265216 # In bytes
-$file = Get-Item .\bin\Release\net8.0\win-x64\publish\FSharp.Core.dll
+$file = Get-Item .\bin\Release\net7.0\win-x64\publish\FSharp.Core.dll
 $file_len = $file.Length
 if (-not ($file_len -eq $expected_len))
 {
