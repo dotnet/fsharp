@@ -20,8 +20,7 @@ type internal FSharpBraceMatchingService [<ImportingConstructor>] () =
             [<Optional; DefaultParameterValue(false)>] forFormatting: bool
         ) =
         async {
-            let! checker, _, parsingOptions, _ =
-                document.GetFSharpCompilationOptionsAsync(nameof (FSharpBraceMatchingService))
+            let! checker, _, parsingOptions, _ = document.GetFSharpCompilationOptionsAsync(nameof (FSharpBraceMatchingService))
 
             let! text = document.GetFSharpSourceText()
 
@@ -48,7 +47,7 @@ type internal FSharpBraceMatchingService [<ImportingConstructor>] () =
     interface IFSharpBraceMatcher with
         member this.FindBracesAsync(document, position, cancellationToken) =
             asyncMaybe {
-                let! left, right =  FSharpBraceMatchingService.GetBraceMatchingResult(document, position, nameof FSharpBraceMatchingService)
+                let! left, right = FSharpBraceMatchingService.GetBraceMatchingResult(document, position, nameof FSharpBraceMatchingService)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! leftSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, left)
                 let! rightSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, right)

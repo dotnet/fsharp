@@ -92,7 +92,6 @@ module private SourceText =
         let sourceText =
             { new Object() with
                 override _.GetHashCode() = defaultArg hash (base.GetHashCode())
-
               interface ISourceText with
 
                   member _.Item
@@ -152,7 +151,10 @@ module private SourceText =
 type SourceText with
 
     member this.ToFSharpSourceText(?hash) =
-        SourceText.weakTable.GetValue(this, Runtime.CompilerServices.ConditionalWeakTable<_, _>.CreateValueCallback (SourceText.create hash))
+        SourceText.weakTable.GetValue(
+            this,
+            Runtime.CompilerServices.ConditionalWeakTable<_, _>.CreateValueCallback (SourceText.create hash)
+        )
 
 type Document with
 
@@ -163,7 +165,6 @@ type Document with
             let! text = this.GetTextAsync(ct) |> Async.AwaitTask
             return text.ToFSharpSourceText(version.GetHashCode())
         }
-
 
 type NavigationItem with
 

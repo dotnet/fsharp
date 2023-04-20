@@ -69,7 +69,9 @@ marker4"""
             sourceText.Lines |> Seq.findIndex (fun line -> line.Span.Contains position)
 
         let parsingOptions, _ =
-            document.GetFSharpChecker().GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
+            document
+                .GetFSharpChecker()
+                .GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
 
         let changesOpt =
             FSharpEditorFormattingService.GetFormattingChanges(

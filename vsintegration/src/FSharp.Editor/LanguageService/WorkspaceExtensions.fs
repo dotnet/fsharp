@@ -43,13 +43,7 @@ module private CheckerExtensions =
                 let parseAndCheckFile =
                     async {
                         let! (parseResults, checkFileAnswer) =
-                            checker.ParseAndCheckFileInProject(
-                                filePath,
-                                textVersionHash,
-                                sourceText,
-                                options,
-                                userOpName = userOpName
-                            )
+                            checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText, options, userOpName = userOpName)
 
                         return
                             match checkFileAnswer with

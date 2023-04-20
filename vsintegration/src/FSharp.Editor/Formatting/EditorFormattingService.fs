@@ -58,12 +58,7 @@ type internal FSharpEditorFormattingService [<ImportingConstructor>] (settings: 
                     && x.Tag <> FSharpTokenTag.LINE_COMMENT)
 
             let! (left, right) =
-                FSharpBraceMatchingService.GetBraceMatchingResult(
-                    document,
-                    position,
-                    "FormattingService",
-                    forFormatting = true
-                )
+                FSharpBraceMatchingService.GetBraceMatchingResult(document, position, "FormattingService", forFormatting = true)
 
             if right.StartColumn = firstMeaningfulToken.LeftColumn then
                 // Replace the indentation on this line with the indentation of the left bracket
@@ -180,13 +175,7 @@ type internal FSharpEditorFormattingService [<ImportingConstructor>] (settings: 
             let parsingOptions = document.GetFSharpQuickParsingOptions()
 
             let! textChange =
-                FSharpEditorFormattingService.GetFormattingChanges(
-                    document,
-                    indentStyle,
-                    parsingOptions,
-                    position,
-                    cancellationToken
-                )
+                FSharpEditorFormattingService.GetFormattingChanges(document, indentStyle, parsingOptions, position, cancellationToken)
 
             return textChange |> Option.toList |> toIList
         }

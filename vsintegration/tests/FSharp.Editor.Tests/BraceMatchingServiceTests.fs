@@ -41,11 +41,7 @@ type BraceMatchingServiceTests() =
             checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
 
         match
-            FSharpBraceMatchingService.GetBraceMatchingResult(
-                document,
-                startMarkerPosition,
-                "UnitTest"
-            )
+            FSharpBraceMatchingService.GetBraceMatchingResult(document, startMarkerPosition, "UnitTest")
             |> Async.RunImmediateExceptOnUI
         with
         | None -> failwith $"Didn't find a match for start brace at position '{startMarkerPosition}"
