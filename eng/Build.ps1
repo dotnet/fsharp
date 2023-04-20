@@ -639,6 +639,7 @@ try {
     }
     
     if ($testIntegration) {
+        Write-Error 'Pipeline failed due to intentional error.'
         TestUsingXUnit -testProject "$RepoRoot\vsintegration\tests\FSharp.Editor.IntegrationTests\FSharp.Editor.IntegrationTests.csproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Editor.IntegrationTests\"
     }
 

@@ -355,7 +355,6 @@ stages:
                 inttests_release:
                   _configuration: Release
                   _testKind: testIntegration
-
           steps:
           - checkout: self
             clean: true
@@ -366,7 +365,7 @@ stages:
 
           - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
             displayName: Build / Test
-            continueOnError: true
+            condition: and(succeededOrFailed(), eq(variables['_testKind'], 'testIntegration'))
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
