@@ -319,6 +319,7 @@ stages:
         enableSourceBuild: true
         enableTelemetry: true
         helixRepo: dotnet/fsharp
+        continueOnError: ${{ eq(variables['_testKind'], 'testIntegration') }}
         jobs:
 
         # Windows With Compressed Metadata
@@ -355,7 +356,6 @@ stages:
                 inttests_release:
                   _configuration: Release
                   _testKind: testIntegration
-          continueOnError: ${{ eq(variables['_testKind'], 'testIntegration') }}
           steps:
           - checkout: self
             clean: true
