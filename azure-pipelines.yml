@@ -206,7 +206,6 @@ stages:
         enableSourceBuild: false
         enableTelemetry: true
         helixRepo: dotnet/fsharp
-        continueOnError: ${{ eq(variables['_testKind'], 'testIntegration') }}
         jobs:
           # Determinism, we want to run it only in PR builds
         - job: Determinism_Debug
@@ -320,7 +319,7 @@ stages:
         enableSourceBuild: true
         enableTelemetry: true
         helixRepo: dotnet/fsharp
-        continueOnError: eq(variables['_testKind'], 'testIntegration')
+        continueOnError: ${{ eq(variables['_testKind'], 'testIntegration') }}
         jobs:
 
         # Windows With Compressed Metadata
