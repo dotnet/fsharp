@@ -365,7 +365,7 @@ stages:
 
           - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
             displayName: Build / Test
-            continueOnError: eq(variables['_testKind'], 'testIntegration')
+            condition: eq(variables['_testKind'], 'testIntegration')
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
