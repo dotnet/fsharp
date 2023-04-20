@@ -365,11 +365,8 @@ stages:
 
           - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
             displayName: Build / Test
-            condition: ne(variables['_testKind'], 'testIntegration')
-          - ${{ if eq(variables['_testKind'], 'testIntegration') }}:
-            - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
-              displayName: Build / Test
-              continueOnError: true
+            continueOnError: $(buildConfiguration)
+            continueOnError: eq(variables._testKind, 'testIntegration')
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
