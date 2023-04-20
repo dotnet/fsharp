@@ -194,12 +194,12 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
 
             match singleFileCache.TryGetValue(document.Id) with
             | false, _ ->
-                let! sourceText = document.GetTextAsync(ct) |> Async.AwaitTask
+                let! sourceText = document.GetFSharpSourceText()
 
                 let! scriptProjectOptions, _ =
                     checker.GetProjectOptionsFromScript(
                         document.FilePath,
-                        sourceText.ToFSharpSourceText(),
+                        sourceText,
                         previewEnabled = SessionsProperties.fsiPreview,
                         assumeDotNetFramework = not SessionsProperties.fsiUseNetCore,
                         userOpName = userOpName

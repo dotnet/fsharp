@@ -26,10 +26,7 @@ type internal FSharpEditorFormattingService [<ImportingConstructor>] (settings: 
 
     static member GetFormattingChanges
         (
-            documentId: DocumentId,
-            sourceText: SourceText,
-            filePath: string,
-            checker: FSharpChecker,
+            document: Document,
             indentStyle: FormattingOptions.IndentStyle,
             parsingOptions: FSharpParsingOptions,
             position: int,
@@ -44,13 +41,14 @@ type internal FSharpEditorFormattingService [<ImportingConstructor>] (settings: 
             // Gate formatting on whether smart indentation is enabled
             // (this is what C# does)
             do! Option.guard (indentStyle = FormattingOptions.IndentStyle.Smart)
+            let! sourceText = document.GetTextAsync()
 
             let line = sourceText.Lines.[sourceText.Lines.IndexOf position]
 
             let defines = CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions
 
             let tokens =
-                Tokenizer.tokenizeLine (documentId, sourceText, line.Start, filePath, defines, cancellationToken)
+                Tokenizer.tokenizeLine (document.Id, sourceText, line.Start, document.FilePath, defines, cancellationToken)
 
             let! firstMeaningfulToken =
                 tokens
@@ -61,10 +59,7 @@ type internal FSharpEditorFormattingService [<ImportingConstructor>] (settings: 
 
             let! (left, right) =
                 FSharpBraceMatchingService.GetBraceMatchingResult(
-                    checker,
-                    sourceText,
-                    filePath,
-                    parsingOptions,
+                    document,
                     position,
                     "FormattingService",
                     forFormatting = true
@@ -177,7 +172,6 @@ type internal FSharpEditorFormattingService [<ImportingConstructor>] (settings: 
 
     member _.GetFormattingChangesAsync(document: Document, position: int, cancellationToken: CancellationToken) =
         async {
-            let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
             let! options = document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
 
             let indentStyle =
@@ -187,10 +181,7 @@ type internal FSharpEditorFormattingService [<ImportingConstructor>] (settings: 
 
             let! textChange =
                 FSharpEditorFormattingService.GetFormattingChanges(
-                    document.Id,
-                    sourceText,
-                    document.FilePath,
-                    document.GetFSharpChecker(),
+                    document,
                     indentStyle,
                     parsingOptions,
                     position,

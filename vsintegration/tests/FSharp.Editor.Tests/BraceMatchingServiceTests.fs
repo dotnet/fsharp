@@ -15,22 +15,22 @@ type BraceMatchingServiceTests() =
     let fileName = "C:\\test.fs"
 
     member private this.VerifyNoBraceMatch(fileContents: string, marker: string) =
-        let sourceText = SourceText.From(fileContents)
+        let solution = Helpers.RoslynTestHelpers.CreateSolution(fileContents)
+        let document = RoslynTestHelpers.GetSingleDocument(solution)
+
         let position = fileContents.IndexOf(marker)
         Assert.True(position >= 0, $"Cannot find marker '{marker}' in file contents")
 
-        let parsingOptions, _ =
-            checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
-
         match
-            FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, fileName, parsingOptions, position, "UnitTest")
+            FSharpBraceMatchingService.GetBraceMatchingResult(document, position, "UnitTest")
             |> Async.RunImmediateExceptOnUI
         with
         | None -> ()
         | Some (left, right) -> failwith $"Found match for brace '{marker}'"
 
     member private this.VerifyBraceMatch(fileContents: string, startMarker: string, endMarker: string) =
-        let sourceText = SourceText.From(fileContents)
+        let solution = Helpers.RoslynTestHelpers.CreateSolution(fileContents)
+        let document = RoslynTestHelpers.GetSingleDocument(solution)
         let startMarkerPosition = fileContents.IndexOf(startMarker)
         let endMarkerPosition = fileContents.IndexOf(endMarker)
 
@@ -42,10 +42,7 @@ type BraceMatchingServiceTests() =
 
         match
             FSharpBraceMatchingService.GetBraceMatchingResult(
-                checker,
-                sourceText,
-                fileName,
-                parsingOptions,
+                document,
                 startMarkerPosition,
                 "UnitTest"
             )
@@ -54,6 +51,7 @@ type BraceMatchingServiceTests() =
         | None -> failwith $"Didn't find a match for start brace at position '{startMarkerPosition}"
         | Some (left, right) ->
             let endPositionInRange (range) =
+                let sourceText = document.GetTextAsync().Result
                 let span = RoslynHelpers.FSharpRangeToTextSpan(sourceText, range)
                 span.Start <= endMarkerPosition && endMarkerPosition <= span.End
 
@@ -203,14 +201,12 @@ let main argv =
     [<InlineData("[<ReflectedDefinition>]\nlet a7 = 70", 0, 1, 22)>]
     [<InlineData("let a8 = seq { yield() }", 13, 23)>]
     member this.DoNotMatchOnInnerSide(fileContents: string, [<ParamArray>] matchingPositions: int[]) =
-        let sourceText = SourceText.From(fileContents)
-
-        let parsingOptions, _ =
-            checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
+        let solution = Helpers.RoslynTestHelpers.CreateSolution(fileContents)
+        let document = RoslynTestHelpers.GetSingleDocument(solution)
 
         for position in matchingPositions do
             match
-                FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, fileName, parsingOptions, position, "UnitTest")
+                FSharpBraceMatchingService.GetBraceMatchingResult(document, position, "UnitTest")
                 |> Async.RunSynchronously
             with
             | Some _ -> ()

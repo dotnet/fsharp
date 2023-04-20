@@ -88,28 +88,11 @@ module private SourceText =
 
     let weakTable = ConditionalWeakTable<SourceText, ISourceText>()
 
-    let create (sourceText: SourceText) =
+    let create (hash: int option) (sourceText: SourceText) =
         let sourceText =
             { new Object() with
-                override _.GetHashCode() =
-                    let checksum = sourceText.GetChecksum()
+                override _.GetHashCode() = defaultArg hash (base.GetHashCode())
 
-                    let contentsHash =
-                        if not checksum.IsDefault then
-                            Hash.combineValues checksum
-                        else
-                            0
-
-                    let encodingHash =
-                        if not (isNull sourceText.Encoding) then
-                            sourceText.Encoding.GetHashCode()
-                        else
-                            0
-
-                    sourceText.ChecksumAlgorithm.GetHashCode()
-                    |> Hash.combine encodingHash
-                    |> Hash.combine contentsHash
-                    |> Hash.combine sourceText.Length
               interface ISourceText with
 
                   member _.Item
@@ -168,8 +151,19 @@ module private SourceText =
 
 type SourceText with
 
-    member this.ToFSharpSourceText() =
-        SourceText.weakTable.GetValue(this, Runtime.CompilerServices.ConditionalWeakTable<_, _>.CreateValueCallback (SourceText.create))
+    member this.ToFSharpSourceText(?hash) =
+        SourceText.weakTable.GetValue(this, Runtime.CompilerServices.ConditionalWeakTable<_, _>.CreateValueCallback (SourceText.create hash))
+
+type Document with
+
+    member this.GetFSharpSourceText() =
+        async {
+            let! ct = Async.CancellationToken
+            let! version = this.GetTextVersionAsync(ct) |> Async.AwaitTask
+            let! text = this.GetTextAsync(ct) |> Async.AwaitTask
+            return text.ToFSharpSourceText(version.GetHashCode())
+        }
+
 
 type NavigationItem with
 
