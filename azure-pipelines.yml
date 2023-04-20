@@ -319,7 +319,6 @@ stages:
         enableSourceBuild: true
         enableTelemetry: true
         helixRepo: dotnet/fsharp
-        continueOnError: ${{ eq(variables['_testKind'], 'testIntegration') }}
         jobs:
 
         # Windows With Compressed Metadata
@@ -366,6 +365,11 @@ stages:
 
           - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
             displayName: Build / Test
+            condition: ne(variables['_testKind'], 'testIntegration')
+          - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
+            displayName: Build / Integration Test
+            continueOnError: true
+            condition: eq(variables['_testKind'], 'testIntegration')
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
