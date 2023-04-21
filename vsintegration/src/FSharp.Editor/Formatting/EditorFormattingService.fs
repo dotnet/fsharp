@@ -26,7 +26,10 @@ type internal FSharpEditorFormattingService [<ImportingConstructor>] (settings: 
 
     static member GetFormattingChanges
         (
-            document: Document,
+            documentId: DocumentId,
+            sourceText: SourceText,
+            filePath: string,
+            checker: FSharpChecker,
             indentStyle: FormattingOptions.IndentStyle,
             parsingOptions: FSharpParsingOptions,
             position: int,
@@ -41,14 +44,13 @@ type internal FSharpEditorFormattingService [<ImportingConstructor>] (settings: 
             // Gate formatting on whether smart indentation is enabled
             // (this is what C# does)
             do! Option.guard (indentStyle = FormattingOptions.IndentStyle.Smart)
-            let! sourceText = document.GetTextAsync()
 
             let line = sourceText.Lines.[sourceText.Lines.IndexOf position]
 
             let defines = CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions
 
             let tokens =
-                Tokenizer.tokenizeLine (document.Id, sourceText, line.Start, document.FilePath, defines, cancellationToken)
+                Tokenizer.tokenizeLine (documentId, sourceText, line.Start, filePath, defines, cancellationToken)
 
             let! firstMeaningfulToken =
                 tokens
@@ -58,7 +60,15 @@ type internal FSharpEditorFormattingService [<ImportingConstructor>] (settings: 
                     && x.Tag <> FSharpTokenTag.LINE_COMMENT)
 
             let! (left, right) =
-                FSharpBraceMatchingService.GetBraceMatchingResult(document, position, "FormattingService", forFormatting = true)
+                FSharpBraceMatchingService.GetBraceMatchingResult(
+                    checker,
+                    sourceText,
+                    filePath,
+                    parsingOptions,
+                    position,
+                    "FormattingService",
+                    forFormatting = true
+                )
 
             if right.StartColumn = firstMeaningfulToken.LeftColumn then
                 // Replace the indentation on this line with the indentation of the left bracket
@@ -167,6 +177,7 @@ type internal FSharpEditorFormattingService [<ImportingConstructor>] (settings: 
 
     member _.GetFormattingChangesAsync(document: Document, position: int, cancellationToken: CancellationToken) =
         async {
+            let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
             let! options = document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
 
             let indentStyle =
@@ -175,7 +186,16 @@ type internal FSharpEditorFormattingService [<ImportingConstructor>] (settings: 
             let parsingOptions = document.GetFSharpQuickParsingOptions()
 
             let! textChange =
-                FSharpEditorFormattingService.GetFormattingChanges(document, indentStyle, parsingOptions, position, cancellationToken)
+                FSharpEditorFormattingService.GetFormattingChanges(
+                    document.Id,
+                    sourceText,
+                    document.FilePath,
+                    document.GetFSharpChecker(),
+                    indentStyle,
+                    parsingOptions,
+                    position,
+                    cancellationToken
+                )
 
             return textChange |> Option.toList |> toIList
         }

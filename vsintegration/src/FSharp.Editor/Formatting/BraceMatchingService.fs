@@ -3,7 +3,6 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.ComponentModel.Composition
-open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open FSharp.Compiler.CodeAnalysis
 open System.Runtime.InteropServices
@@ -14,19 +13,16 @@ type internal FSharpBraceMatchingService [<ImportingConstructor>] () =
 
     static member GetBraceMatchingResult
         (
-            document: Document,
+            checker: FSharpChecker,
+            sourceText: SourceText,
+            fileName,
+            parsingOptions: FSharpParsingOptions,
             position: int,
             userOpName: string,
             [<Optional; DefaultParameterValue(false)>] forFormatting: bool
         ) =
         async {
-            let! checker, _, parsingOptions, _ = document.GetFSharpCompilationOptionsAsync(nameof (FSharpBraceMatchingService))
-
-            let! text = document.GetFSharpSourceText()
-
-            let! matchedBraces = checker.MatchBraces(document.FilePath, text, parsingOptions, userOpName)
-
-            let! sourceText = document.GetTextAsync() |> Async.AwaitTask
+            let! matchedBraces = checker.MatchBraces(fileName, sourceText.ToFSharpSourceText(), parsingOptions, userOpName)
 
             let isPositionInRange range =
                 match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
@@ -41,14 +37,27 @@ type internal FSharpBraceMatchingService [<ImportingConstructor>] () =
             return
                 matchedBraces
                 |> Array.tryFind (fun (left, right) -> isPositionInRange left || isPositionInRange right)
-
         }
 
     interface IFSharpBraceMatcher with
         member this.FindBracesAsync(document, position, cancellationToken) =
             asyncMaybe {
-                let! left, right = FSharpBraceMatchingService.GetBraceMatchingResult(document, position, nameof FSharpBraceMatchingService)
+                let! checker, _, parsingOptions, _ =
+                    document.GetFSharpCompilationOptionsAsync(nameof (FSharpBraceMatchingService))
+                    |> liftAsync
+
                 let! sourceText = document.GetTextAsync(cancellationToken)
+
+                let! (left, right) =
+                    FSharpBraceMatchingService.GetBraceMatchingResult(
+                        checker,
+                        sourceText,
+                        document.Name,
+                        parsingOptions,
+                        position,
+                        nameof (FSharpBraceMatchingService)
+                    )
+
                 let! leftSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, left)
                 let! rightSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, right)
                 return FSharpBraceMatchingResult(leftSpan, rightSpan)

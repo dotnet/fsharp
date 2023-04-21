@@ -57,9 +57,7 @@ marker4"""
     [<InlineData("marker3", "    |]")>]
     [<InlineData("marker4", "    )")>]
     member this.TestIndentation(marker: string, expectedLine: string) =
-        let solution = RoslynTestHelpers.CreateSolution(indentTemplate)
-        let document = RoslynTestHelpers.GetSingleDocument(solution)
-
+        let checker = FSharpChecker.Create()
         let position = indentTemplate.IndexOf(marker)
         Assert.True(position >= 0, "Precondition failed: unable to find marker in template")
 
@@ -69,13 +67,14 @@ marker4"""
             sourceText.Lines |> Seq.findIndex (fun line -> line.Span.Contains position)
 
         let parsingOptions, _ =
-            document
-                .GetFSharpChecker()
-                .GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
+            checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
 
         let changesOpt =
             FSharpEditorFormattingService.GetFormattingChanges(
-                document,
+                documentId,
+                sourceText,
+                filePath,
+                checker,
                 indentStyle,
                 parsingOptions,
                 position,
