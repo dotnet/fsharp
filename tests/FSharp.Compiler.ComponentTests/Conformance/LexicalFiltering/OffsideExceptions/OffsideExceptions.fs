@@ -5,8 +5,10 @@ namespace FSharp.Compiler.ComponentTests.Conformance.LexicalFiltering.Basic
 open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
+open FSharp.Test.Compiler.Assertions.StructuredResultsAsserts
 
 module OffsideExceptions =
+
     type FileAttribute(file) =
         inherit DirectoryAttribute(__SOURCE_DIRECTORY__, Includes=[|file|])
 

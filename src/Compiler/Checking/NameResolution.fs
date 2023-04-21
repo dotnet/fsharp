@@ -229,7 +229,7 @@ type Item =
 
     /// Represents the resolution of a name to a named argument
     //
-    // In the FCS API, Item.ArgName corresponds to FSharpParameter symbols.
+    // In the FCS API, Item.OtherName corresponds to FSharpParameter symbols.
     // Not all parameters have names, e.g. for 'g' in this:
     //
     //    let f (g: int -> int) x = ...
@@ -238,7 +238,7 @@ type Item =
     // based on analyzing the type of g as a function type.
     //
     // For these parameters, the identifier will be missing.
-    | ArgName of ident: Ident option * argType: TType * container: ArgumentContainer option * range: range
+    | OtherName of ident: Ident option * argType: TType * argInfo: ArgReprInfo option * container: ArgumentContainer option * range: range
 
     /// Represents the resolution of a name to a named property setter
     | SetterArg of Ident * Item
@@ -283,8 +283,8 @@ type Item =
         | Item.TypeVar (nm, _) -> nm 
         | Item.Trait traitInfo -> traitInfo.MemberDisplayNameCore
         | Item.ModuleOrNamespaces(modref :: _) -> modref.DisplayNameCore
-        | Item.ArgName (Some id, _, _, _)  -> id.idText 
-        | Item.ArgName (None, _, _, _)  -> ""
+        | Item.OtherName (ident = Some id)  -> id.idText 
+        | Item.OtherName (ident = None)  -> ""
         | Item.SetterArg (id, _) -> id.idText 
         | Item.CustomOperation (customOpName, _, _) -> customOpName 
         | Item.CustomBuilder (nm, _) -> nm 
@@ -310,8 +310,8 @@ type Item =
         | Item.UnqualifiedType(tcref :: _) -> tcref.DisplayName
         | Item.ModuleOrNamespaces(modref :: _) -> modref.DisplayName
         | Item.TypeVar (nm, _) -> nm |> ConvertLogicalNameToDisplayName
-        | Item.ArgName (Some id, _, _, _)  -> id.idText |> ConvertValLogicalNameToDisplayName false
-        | Item.ArgName (None, _, _, _)  -> ""
+        | Item.OtherName (ident = Some id)  -> id.idText |> ConvertValLogicalNameToDisplayName false
+        | Item.OtherName (ident = None)  -> ""
         | _ ->  d.DisplayNameCore |> ConvertLogicalNameToDisplayName
 
 let valRefHash (vref: ValRef) =
@@ -1907,10 +1907,10 @@ let ItemsAreEffectivelyEqual g orig other =
         | Some vref1, Some vref2 -> valRefDefnEq g vref1 vref2
         | _ -> false
 
-    | Item.ArgName (Some id1, _, _, m1), Item.ArgName (Some id2, _, _, m2) ->
+    | Item.OtherName (ident = Some id1; range = m1), Item.OtherName (ident = Some id2; range = m2) ->
         (id1.idText = id2.idText && equals m1 m2)
 
-    | Item.ArgName (Some id, _, _, _), ValUse vref | ValUse vref, Item.ArgName (Some id, _, _, _) ->
+    | Item.OtherName (ident = Some id), ValUse vref | ValUse vref, Item.OtherName (ident = Some id) ->
         ((equals id.idRange vref.DefinitionRange || equals id.idRange vref.SigRange) && id.idText = vref.DisplayName)
 
     | Item.AnonRecdField(anon1, _, i1, _), Item.AnonRecdField(anon2, _, i2, _) -> anonInfoEquiv anon1 anon2 && i1 = i2
@@ -1952,7 +1952,7 @@ let ItemsAreEffectivelyEqualHash (g: TcGlobals) orig =
     | ActivePatternCaseUse (_, _, idx)-> hash idx
     | MethodUse minfo -> minfo.ComputeHashCode()
     | PropertyUse pinfo -> pinfo.ComputeHashCode()
-    | Item.ArgName (Some id, _, _, _) -> hash id.idText
+    | Item.OtherName (ident = Some id) -> hash id.idText
     | ILFieldUse ilfinfo -> ilfinfo.ComputeHashCode()
     | UnionCaseUse ucase ->  hash ucase.CaseName
     | RecordFieldUse (name, _) -> hash name
@@ -2076,7 +2076,7 @@ type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
         let keyOpt =
             match item with
             | Item.Value vref -> Some (endPos, vref.DisplayName)
-            | Item.ArgName (Some id, _, _, _) -> Some (endPos, id.idText)
+            | Item.OtherName (ident = Some id) -> Some (endPos, id.idText)
             | _ -> None
 
         match keyOpt with
@@ -2246,7 +2246,7 @@ let CheckAllTyparsInferrable amap m item =
     | Item.CustomOperation _
     | Item.CustomBuilder _
     | Item.TypeVar _
-    | Item.ArgName _
+    | Item.OtherName _
     | Item.ActivePatternResult _
     | Item.Value _
     | Item.ActivePatternCase _
@@ -3694,6 +3694,146 @@ let ResolveField sink ncenv nenv ad ty mp id allFields =
         ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.UseInType, ad, resInfo, checker)
         rfref)
 
+/// Resolve a long identifier representing a nested record field.
+///
+/// Fields in copy-and-update expressions are specified using long identifiers - `{ x with A.B.C.D.E = 0 }`.
+/// The name of the field to update may be prefixed by namespaces, modules and record type, and be suffixed by field
+/// names of records nested within. Here we split the long identifier into a list of 0 or more identifiers
+/// which act as the qualifiers, and a list of 1 or more identifiers which refer to actual record fields.
+let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
+    let typeNameResInfo = TypeNameResolutionInfo.Default
+    let g = ncenv.g
+    let isAnonRecdTy = isAnonRecdTy g recdTy
+
+    let lookupField ty (id: Ident) =
+        let m = id.idRange
+
+        match tryDestAnonRecdTy g ty with
+        | ValueSome (anonInfo, tys) ->
+            match anonInfo.SortedNames |> Array.tryFindIndex (fun x -> x = id.idText) with
+            | Some index -> OneSuccess (Choice2Of2 (anonInfo, tys[index]))
+            | _ -> raze (Error(FSComp.SR.nrRecordDoesNotContainSuchLabel(NicePrint.minimalStringOfType nenv.eDisplayEnv ty, id.idText), m))
+        | _ ->
+            let otherRecordFields ty =
+                let typeName = NicePrint.minimalStringOfType nenv.eDisplayEnv ty
+
+                [
+                    for KeyValue (_, v) in nenv.eFieldLabels do
+                        match v |> List.tryFind (fun r -> r.TyconRef.DisplayName = typeName) with
+                        | Some rfref -> yield rfref.RecdField.Id
+                        | None  -> () 
+                ]
+
+            if isRecdTy g ty then 
+                match ncenv.InfoReader.TryFindRecdOrClassFieldInfoOfType(id.idText, m, ty) with
+                | ValueSome (RecdFieldInfo (_, rfref)) -> OneSuccess (Choice1Of2 rfref)
+                | _ ->
+                    // record label doesn't belong to record type -> suggest other labels of same record
+                    let suggestLabels addToBuffer = 
+                        for label in SuggestOtherLabelsOfSameRecordType g nenv ty id (otherRecordFields ty) do
+                            addToBuffer label
+
+                    let typeName = NicePrint.minimalStringOfType nenv.eDisplayEnv ty
+                    let errorText = FSComp.SR.nrRecordDoesNotContainSuchLabel(typeName,id.idText)
+                    raze (ErrorWithSuggestions(errorText, m, id.idText, suggestLabels))
+            else 
+                match Map.tryFind id.idText nenv.eFieldLabels with
+                | Some fields ->
+                    // Eliminate duplicates arising from multiple 'open' 
+                    fields 
+                    |> ListSet.setify (fun fref1 fref2 -> tyconRefEq g fref1.TyconRef fref2.TyconRef)
+                    |> List.map Choice1Of2
+                    |> success
+                | None -> raze (SuggestLabelsOfRelatedRecords g nenv id (otherRecordFields ty))
+
+    let anonRecdInfoF field =
+        match field with
+        | Choice1Of2 _ -> None
+        | Choice2Of2 (anonInfo, _) -> Some anonInfo
+
+    match lid with
+    | [] -> [], []
+    | [ id ] ->
+        let res =
+            lookupField recdTy id
+            |> ForceRaise
+            |> List.map (fun x -> id, anonRecdInfoF x)
+
+        [], res
+    | id :: _ ->
+        let fieldSearch () =
+            match lid with
+            | id :: rest ->
+                lookupField recdTy id
+                |?> List.map (fun x ->
+                    match x with
+                    | Choice1Of2 rfref -> None, id, rfref.RecdField.FormalType, rest
+                    | Choice2Of2 (anonInfo, fldTy) -> Some anonInfo, id, fldTy, rest)
+            | _ -> NoResultsOrUsefulErrors
+
+        let tyconSearch ad () =
+            match lid with
+            | tyconId :: fieldId :: rest ->
+                let tcrefs =
+                    LookupTypeNameInEnvNoArity OpenQualified tyconId.idText nenv
+                    |> List.map (fun tcref -> ResolutionInfo.Empty, tcref)
+
+                if isNil tcrefs then
+                    NoResultsOrUsefulErrors
+                else
+                    ResolveLongIdentInTyconRefs ResultCollectionSettings.AllResults ncenv nenv LookupKind.RecdField 1 tyconId.idRange ad fieldId rest typeNameResInfo fieldId.idRange tcrefs
+                    |?> List.choose (fun x ->
+                        match x with
+                        | _, Item.RecdField (RecdFieldInfo (_, rfref)), rest -> Some (None, fieldId, rfref.RecdField.FormalType, rest)
+                        | _ -> None)
+            | _ -> NoResultsOrUsefulErrors
+
+        let moduleOrNsSearch ad () =
+            match lid with
+            | [] -> NoResultsOrUsefulErrors
+            | modOrNsId :: rest ->
+                ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap modOrNsId.idRange OpenQualified nenv ad modOrNsId rest false (ResolveFieldInModuleOrNamespace ncenv nenv ad)
+                |?> List.map (fun (_, FieldResolution(rfinfo, _), restAfterField) ->
+                    let fieldId = rest.[ rest.Length - restAfterField.Length - 1 ]
+                    None, fieldId, rfinfo.RecdField.FormalType, restAfterField)
+
+        let anonRecdInfo, fieldId, fieldTy, rest =
+            let search =
+                if isAnonRecdTy then
+                    fieldSearch ()
+                else
+                    moduleOrNsSearch ad () +++ tyconSearch ad +++ moduleOrNsSearch AccessibleFromSomeFSharpCode +++ tyconSearch AccessibleFromSomeFSharpCode +++ fieldSearch
+
+            search
+            |> AtMostOneResult id.idRange
+            |> ForceRaise
+
+        let idsBeforeField =
+            if isAnonRecdTy then
+                []
+            else
+                lid |> List.takeWhile (fun id -> not (equals id.idRange fieldId.idRange))
+
+        match rest with
+        | [] -> idsBeforeField, [ (fieldId, anonRecdInfo) ]
+        | _ ->  
+            let rec nestedFieldSearch fields ty lid =
+                match lid with
+                | [] -> fields
+                | id :: rest ->
+                    let resolved = lookupField ty id |> ForceRaise
+                    let fieldTy =
+                        match resolved with
+                        | [ Choice1Of2 rfref ] -> rfref.RecdField.FormalType
+                        | [ Choice2Of2 (_, fieldTy) ] -> fieldTy
+                        | _ -> ty
+
+                    let resolved = resolved |> List.map (fun x -> id, anonRecdInfoF x)
+
+                    nestedFieldSearch (fields @ resolved) fieldTy rest
+
+            idsBeforeField, (fieldId, anonRecdInfo) :: (nestedFieldSearch [] fieldTy rest)
+
 /// Resolve F#/IL "." syntax in expressions (2).
 ///
 /// We have an expr. on the left, and we do an access, e.g.
@@ -4216,57 +4356,56 @@ let FullTypeOfPropInfo g amap m (pinfo: PropInfo) =
     ty
 
 let rec ResolvePartialLongIdentInType (ncenv: NameResolver) nenv isApplicableMeth m ad statics plid ty =
-  [
-    let g = ncenv.g
-    let amap = ncenv.amap
     match plid with
-    | [] -> yield! ResolveCompletionsInType ncenv nenv isApplicableMeth m ad statics ty
+    | [] -> ResolveCompletionsInType ncenv nenv isApplicableMeth m ad statics ty
     | id :: rest ->
+        [
+            let g = ncenv.g
+            let amap = ncenv.amap
 
-      // e.g. <val-id>.<recdfield-id>.<more>
-      for fref in ncenv.InfoReader.GetRecordOrClassFieldsOfType(None, ad, m, ty) do
-          if fref.LogicalName = id && IsRecdFieldAccessible ncenv.amap m ad fref.RecdFieldRef && fref.RecdField.IsStatic = statics then
+            // e.g. <val-id>.<recdfield-id>.<more>
+            for fref in ncenv.InfoReader.GetRecordOrClassFieldsOfType(None, ad, m, ty) do
+                if fref.LogicalName = id && IsRecdFieldAccessible ncenv.amap m ad fref.RecdFieldRef && fref.RecdField.IsStatic = statics then
+                    yield! ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest fref.FieldType
 
-              yield! ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest fref.FieldType
+            for pinfo in AllPropInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv (Some id) ad IgnoreOverrides m ty do
+               if pinfo.IsStatic = statics && IsPropInfoAccessible g amap m ad pinfo then
+                   let pinfoTy = FullTypeOfPropInfo g amap m pinfo
+                   yield! ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest pinfoTy
 
-      for pinfo in AllPropInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv (Some id) ad IgnoreOverrides m ty do
-         if pinfo.IsStatic = statics && IsPropInfoAccessible g amap m ad pinfo then
-             let pinfoTy = FullTypeOfPropInfo g amap m pinfo
-             yield! ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest pinfoTy
+            if not statics then
+                match TryFindAnonRecdFieldOfType g ty id with
+                | Some (Item.AnonRecdField(_, tys, i, _)) ->
+                    yield! ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest tys[i]
+                | _ -> ()
 
-      if not statics then
-          match TryFindAnonRecdFieldOfType g ty id with
-          | Some (Item.AnonRecdField(_, tys, i, _)) ->
-              yield! ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest tys[i]
-          | _ -> ()
+            // e.g. <val-id>.<event-id>.<more>
+            for einfo in ncenv.InfoReader.GetEventInfosOfType(Some id, ad, m, ty) do
+                let einfoTy = PropTypeOfEventInfo ncenv.InfoReader m ad einfo
+                yield! ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest einfoTy
 
-      // e.g. <val-id>.<event-id>.<more>
-      for einfo in ncenv.InfoReader.GetEventInfosOfType(Some id, ad, m, ty) do
-         let einfoTy = PropTypeOfEventInfo ncenv.InfoReader m ad einfo
-         yield! ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest einfoTy
+            // nested types
+            for nestedTy in GetNestedTypesOfType (ad, ncenv, Some id, TypeNameResolutionStaticArgsInfo.Indefinite, false, m) ty do
+                yield! ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad statics rest nestedTy
 
-      // nested types
-      for nestedTy in GetNestedTypesOfType (ad, ncenv, Some id, TypeNameResolutionStaticArgsInfo.Indefinite, false, m) ty do
-         yield! ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad statics rest nestedTy
-
-      // e.g. <val-id>.<il-field-id>.<more>
-      for finfo in ncenv.InfoReader.GetILFieldInfosOfType(Some id, ad, m, ty) do
-         if not finfo.IsSpecialName && finfo.IsStatic = statics && IsILFieldInfoAccessible g amap m ad finfo then
-             let finfoTy = finfo.FieldType(amap, m)
-             yield! ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest finfoTy
-  ]
+            // e.g. <val-id>.<il-field-id>.<more>
+            for finfo in ncenv.InfoReader.GetILFieldInfosOfType(Some id, ad, m, ty) do
+                if not finfo.IsSpecialName && finfo.IsStatic = statics && IsILFieldInfoAccessible g amap m ad finfo then
+                    let finfoTy = finfo.FieldType(amap, m)
+                    yield! ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest finfoTy
+        ]
 
 let InfosForTyconConstructors (ncenv: NameResolver) m ad (tcref: TyconRef) =
-  [
     let g = ncenv.g
     let amap = ncenv.amap
+
     // Don't show constructors for type abbreviations. See FSharp 1.0 bug 2881
     if not tcref.IsTypeAbbrev then
         let ty = FreshenTycon ncenv m tcref
         match ResolveObjectConstructor ncenv (DisplayEnv.Empty g) m ad ty with
         | Result item ->
             match item with
-            | Item.FakeInterfaceCtor _ -> ()
+            | Item.FakeInterfaceCtor _ -> None
             | Item.CtorGroup(nm, ctorInfos) ->
                 let ctors =
                     ctorInfos
@@ -4274,12 +4413,12 @@ let InfosForTyconConstructors (ncenv: NameResolver) m ad (tcref: TyconRef) =
                         IsMethInfoAccessible amap m ad minfo &&
                         not (MethInfoIsUnseen g m ty minfo))
                 match ctors with
-                | [] -> ()
-                | _ -> Item.MakeCtorGroup(nm, ctors)
-            | item ->
-                item
-        | Exception _ -> ()
-  ]
+                | [] -> None
+                | _ -> Some(Item.MakeCtorGroup(nm, ctors))
+            | item -> Some item
+        | Exception _ -> None
+    else
+        None
 
 /// import.fs creates somewhat fake modules for nested members of types (so that
 /// types never contain other types)
@@ -4413,7 +4552,7 @@ let rec ResolvePartialLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv is
           |> List.map (modref.NestedTyconRef >> ItemOfTyconRef ncenv m) )
 
        @ (tycons
-          |> List.collect (modref.NestedTyconRef >> InfosForTyconConstructors ncenv m ad))
+          |> List.choose (modref.NestedTyconRef >> InfosForTyconConstructors ncenv m ad))
 
     | id :: rest  ->
 
@@ -4515,7 +4654,7 @@ let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionE
        let constructors =
            nenv.TyconsByDemangledNameAndArity(fullyQualified).Values
            |> Seq.filter (IsTyconUnseen ad g ncenv.amap m >> not)
-           |> Seq.collect (InfosForTyconConstructors ncenv m ad)
+           |> Seq.choose (InfosForTyconConstructors ncenv m ad)
            |> Seq.toList
 
        let typeVars =
@@ -4701,11 +4840,7 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics ty (
         let amap = ncenv.amap
 
         match item with
-        | Item.RecdField _ ->
-            yield!
-                ncenv.InfoReader.GetRecordOrClassFieldsOfType(None, ad, m, ty)
-                |> List.filter (fun rfref -> rfref.IsStatic = statics  &&  IsFieldInfoAccessible ad rfref)
-                |> List.map Item.RecdField
+        | Item.RecdField _ -> yield! ResolveRecordOrClassFieldsOfType ncenv m ad ty statics
         | Item.UnionCase _ ->
             if statics then
                 match tryAppTy g ty with
@@ -4887,52 +5022,51 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics ty (
 // This is "on-demand" reimplementation of completion logic that is only used along one
 // pathway - `IsRelativeNameResolvableFromSymbol` - in the editor support for simplifying names
 let rec ResolvePartialLongIdentInTypeForItem (ncenv: NameResolver) nenv m ad statics plid (item: Item) ty =
-    seq {
-        let g = ncenv.g
-        let amap = ncenv.amap
+    match plid with
+    | [] -> ResolveCompletionsInTypeForItem ncenv nenv m ad statics ty item
+    | id :: rest ->
+        seq {
+            let g = ncenv.g
+            let amap = ncenv.amap
 
-        match plid with
-        | [] -> yield! ResolveCompletionsInTypeForItem ncenv nenv m ad statics ty item
-        | id :: rest ->
+            let rfinfos =
+                ncenv.InfoReader.GetRecordOrClassFieldsOfType(None, ad, m, ty)
+                |> List.filter (fun fref -> fref.LogicalName = id && IsRecdFieldAccessible ncenv.amap m ad fref.RecdFieldRef && fref.RecdField.IsStatic = statics)
 
-          let rfinfos =
-              ncenv.InfoReader.GetRecordOrClassFieldsOfType(None, ad, m, ty)
-              |> List.filter (fun fref -> fref.LogicalName = id && IsRecdFieldAccessible ncenv.amap m ad fref.RecdFieldRef && fref.RecdField.IsStatic = statics)
+            let nestedTypes = ty |> GetNestedTypesOfType (ad, ncenv, Some id, TypeNameResolutionStaticArgsInfo.Indefinite, false, m)
 
-          let nestedTypes = ty |> GetNestedTypesOfType (ad, ncenv, Some id, TypeNameResolutionStaticArgsInfo.Indefinite, false, m)
+            // e.g. <val-id>.<recdfield-id>.<more>
+            for rfinfo in rfinfos do
+                yield! ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item rfinfo.FieldType
 
-          // e.g. <val-id>.<recdfield-id>.<more>
-          for rfinfo in rfinfos do
-              yield! ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item rfinfo.FieldType
+            let pinfos =
+                ty
+                |> AllPropInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv (Some id) ad IgnoreOverrides m
+                |> List.filter (fun pinfo -> pinfo.IsStatic = statics && IsPropInfoAccessible g amap m ad pinfo)
 
-          let pinfos =
-              ty
-              |> AllPropInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv (Some id) ad IgnoreOverrides m
-              |> List.filter (fun pinfo -> pinfo.IsStatic = statics && IsPropInfoAccessible g amap m ad pinfo)
+            for pinfo in pinfos do
+                yield! FullTypeOfPropInfo g amap m pinfo |> ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item
 
-          for pinfo in pinfos do
-              yield! FullTypeOfPropInfo g amap m pinfo |> ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item
+            match TryFindAnonRecdFieldOfType g ty id with
+            | Some (Item.AnonRecdField(_anonInfo, tys, i, _)) ->
+                let tyinfo = tys[i]
+                yield! ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item tyinfo
+            | _ -> ()
 
-          match TryFindAnonRecdFieldOfType g ty id with
-          | Some (Item.AnonRecdField(_anonInfo, tys, i, _)) ->
-              let tyinfo = tys[i]
-              yield! ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item tyinfo
-          | _ -> ()
+            // e.g. <val-id>.<event-id>.<more>
+            for einfo in ncenv.InfoReader.GetEventInfosOfType(Some id, ad, m, ty) do
+                let tyinfo = PropTypeOfEventInfo ncenv.InfoReader m ad einfo
+                yield! ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item tyinfo
 
-          // e.g. <val-id>.<event-id>.<more>
-          for einfo in ncenv.InfoReader.GetEventInfosOfType(Some id, ad, m, ty) do
-              let tyinfo = PropTypeOfEventInfo ncenv.InfoReader m ad einfo
-              yield! ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item tyinfo
+            // nested types!
+            for ty in nestedTypes do
+                yield! ResolvePartialLongIdentInTypeForItem ncenv nenv m ad statics rest item ty
 
-          // nested types!
-          for ty in nestedTypes do
-              yield! ResolvePartialLongIdentInTypeForItem ncenv nenv m ad statics rest item ty
-
-          // e.g. <val-id>.<il-field-id>.<more>
-          for finfo in ncenv.InfoReader.GetILFieldInfosOfType(Some id, ad, m, ty) do
-              if not finfo.IsSpecialName && finfo.IsStatic = statics && IsILFieldInfoAccessible g amap m ad finfo then
-                  yield! finfo.FieldType(amap, m) |> ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item
-    }
+            // e.g. <val-id>.<il-field-id>.<more>
+            for finfo in ncenv.InfoReader.GetILFieldInfosOfType(Some id, ad, m, ty) do
+                if not finfo.IsSpecialName && finfo.IsStatic = statics && IsILFieldInfoAccessible g amap m ad finfo then
+                    yield! finfo.FieldType(amap, m) |> ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item
+        }
 
 // This is "on-demand" reimplementation of completion logic that is only used along one
 // pathway - `IsRelativeNameResolvableFromSymbol` - in the editor support for simplifying names
@@ -4992,7 +5126,7 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForItem (ncenv: NameResolver) 
                  // Get all the types and .NET constructor groups accessible from here
                  let nestedTycons = tycons |> List.map modref.NestedTyconRef
                  yield! nestedTycons |> List.map (ItemOfTyconRef ncenv m)
-                 yield! nestedTycons |> List.collect (InfosForTyconConstructors ncenv m ad)
+                 yield! nestedTycons |> List.choose (InfosForTyconConstructors ncenv m ad)
 
         | id :: rest  ->
 
@@ -5025,16 +5159,12 @@ let rec PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThenLazy f pli
 // This is "on-demand" reimplementation of completion logic that is only used along one
 // pathway - `IsRelativeNameResolvableFromSymbol` - in the editor support for simplifying names
 let PartialResolveLongIdentAsModuleOrNamespaceThenLazy (nenv: NameResolutionEnv) plid f =
-    seq {
-        match plid with
-        | id :: rest ->
-            match nenv.eModulesAndNamespaces.TryGetValue id with
-            | true, modrefs ->
-                for modref in modrefs do
-                    yield! PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThenLazy f rest modref
-            | _ -> ()
-        | [] -> ()
-    }
+    match plid with
+    | id :: rest ->
+        match nenv.eModulesAndNamespaces.TryGetValue id with
+        | true, modrefs -> modrefs |> Seq.collect (fun modref -> PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThenLazy f rest modref)
+        | _ -> Seq.empty
+    | [] -> Seq.empty
 
 // This is "on-demand" reimplementation of completion logic that is only used along one
 // pathway - `IsRelativeNameResolvableFromSymbol` - in the editor support for simplifying names
@@ -5080,9 +5210,10 @@ let rec GetCompletionForItem (ncenv: NameResolver) (nenv: NameResolutionEnv) m a
            | Item.CtorGroup _
            | Item.UnqualifiedType _ ->
                for tcref in nenv.TyconsByDemangledNameAndArity(OpenQualified).Values do
-                   if not (IsTyconUnseen ad g ncenv.amap m tcref)
-                   then yield! InfosForTyconConstructors ncenv m ad tcref
-
+                   if not (IsTyconUnseen ad g ncenv.amap m tcref) then
+                       match InfosForTyconConstructors ncenv m ad tcref with
+                       | Some info -> yield info
+                       | _ -> ()
            | _ -> ()
 
         | id :: rest ->

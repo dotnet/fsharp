@@ -9,9 +9,11 @@
 module internal FSharp.Compiler.TcGlobals
 
 open System.Collections.Concurrent
+open System.Linq
 open System.Diagnostics
 
 open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILX
 open FSharp.Compiler.CompilerGlobalState
@@ -24,6 +26,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 
 open Internal.Utilities
+open System.Reflection
 
 let internal DummyFileNameForRangesWithoutASpecificLocation = startupFileName
 let private envRange = rangeN DummyFileNameForRangesWithoutASpecificLocation 0
@@ -102,7 +105,6 @@ let mk_MFCompilerServices_tcref ccu n = mkNonLocalTyconRef2 ccu CompilerServices
 let mk_MFRuntimeHelpers_tcref   ccu n = mkNonLocalTyconRef2 ccu RuntimeHelpersPath n
 let mk_MFControl_tcref          ccu n = mkNonLocalTyconRef2 ccu ControlPathArray n
 
-
 type
     [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     BuiltinAttribInfo =
@@ -162,6 +164,8 @@ let tname_ValueType = "System.ValueType"
 [<Literal>]
 let tname_Enum = "System.Enum"
 [<Literal>]
+let tname_FlagsAttribute = "System.FlagsAttribute"
+[<Literal>]
 let tname_Array = "System.Array"
 [<Literal>]
 let tname_RuntimeArgumentHandle = "System.RuntimeArgumentHandle"
@@ -184,6 +188,7 @@ let tname_IAsyncResult = "System.IAsyncResult"
 [<Literal>]
 let tname_IsByRefLikeAttribute = "System.Runtime.CompilerServices.IsByRefLikeAttribute"
 
+
 //-------------------------------------------------------------------------
 // Table of all these "globals"
 //-------------------------------------------------------------------------
@@ -197,11 +202,17 @@ type TcGlobals(
     isInteractive: bool,
     useReflectionFreeCodeGen: bool,
     // The helper to find system types amongst referenced DLLs
-    tryFindSysTypeCcu,
+    tryFindSysTypeCcuHelper,
     emitDebugInfoInQuotations: bool,
     noDebugAttributes: bool,
     pathMap: PathMap,
     langVersion: LanguageVersion) =
+
+  let tryFindSysTypeCcu path nm =
+    tryFindSysTypeCcuHelper path nm false
+
+  let tryFindPublicSysTypeCcu path nm =
+    tryFindSysTypeCcuHelper path nm true
 
   let vara = Construct.NewRigidTypar "a" envRange
   let varb = Construct.NewRigidTypar "b" envRange
@@ -249,17 +260,19 @@ type TcGlobals(
   let v_puint16_tcr     = mk_MFCore_tcref fslibCcu "uint16`1"
   let v_puint64_tcr     = mk_MFCore_tcref fslibCcu "uint64`1"
   let v_punativeint_tcr = mk_MFCore_tcref fslibCcu "unativeint`1"
-  let v_byref_tcr      = mk_MFCore_tcref fslibCcu "byref`1"
+  let v_byref_tcr       = mk_MFCore_tcref fslibCcu "byref`1"
   let v_byref2_tcr      = mk_MFCore_tcref fslibCcu "byref`2"
   let v_outref_tcr      = mk_MFCore_tcref fslibCcu "outref`1"
-  let v_inref_tcr      = mk_MFCore_tcref fslibCcu "inref`1"
-  let v_nativeptr_tcr  = mk_MFCore_tcref fslibCcu "nativeptr`1"
-  let v_voidptr_tcr      = mk_MFCore_tcref fslibCcu "voidptr"
-  let v_ilsigptr_tcr   = mk_MFCore_tcref fslibCcu "ilsigptr`1"
-  let v_fastFunc_tcr   = mk_MFCore_tcref fslibCcu "FSharpFunc`2"
+  let v_inref_tcr       = mk_MFCore_tcref fslibCcu "inref`1"
+  let v_nativeptr_tcr   = mk_MFCore_tcref fslibCcu "nativeptr`1"
+  let v_voidptr_tcr     = mk_MFCore_tcref fslibCcu "voidptr"
+  let v_ilsigptr_tcr    = mk_MFCore_tcref fslibCcu "ilsigptr`1"
+  let v_fastFunc_tcr    = mk_MFCore_tcref fslibCcu "FSharpFunc`2"
   let v_refcell_tcr_canon = mk_MFCore_tcref fslibCcu "Ref`1"
   let v_refcell_tcr_nice  = mk_MFCore_tcref fslibCcu "ref`1"
-  let v_mfe_tcr = mk_MFCore_tcref fslibCcu "MatchFailureException"
+  let v_mfe_tcr           = mk_MFCore_tcref fslibCcu "MatchFailureException"
+
+  let mutable embeddedILTypeDefs = ConcurrentDictionary<string, ILTypeDef>()
 
   let dummyAssemblyNameCarryingUsefulErrorInformation path typeName =
       FSComp.SR.tcGlobalsSystemTypeNotFound (String.concat "." path + "." + typeName)
@@ -280,7 +293,7 @@ type TcGlobals(
       let ccu = findSysTypeCcu path nm
       mkNonLocalTyconRef2 ccu (Array.ofList path) nm
 
-  let findSysILTypeRef (nm:string) =
+  let findSysILTypeRef nm =
       let path, typeName = splitILTypeName nm
       let scoref =
           match tryFindSysTypeCcu path typeName with
@@ -288,20 +301,59 @@ type TcGlobals(
           | Some ccu -> ccu.ILScopeRef
       mkILTyRef (scoref, nm)
 
-  let tryFindSysILTypeRef (nm:string) =
+  let tryFindSysILTypeRef nm =
       let path, typeName = splitILTypeName nm
       tryFindSysTypeCcu path typeName |> Option.map (fun ccu -> mkILTyRef (ccu.ILScopeRef, nm))
 
-  let findSysAttrib (nm:string) =
+  let findSysAttrib nm =
       let tref = findSysILTypeRef nm
       let path, typeName = splitILTypeName nm
       AttribInfo(tref, findSysTyconRef path typeName)
 
   let tryFindSysAttrib nm =
       let path, typeName = splitILTypeName nm
+
+      // System Attributes must be public types.
       match tryFindSysTypeCcu path typeName with
       | Some _ -> Some (findSysAttrib nm)
       | None -> None
+
+  let findPublicSysAttrib nm =
+      let path, typeName = splitILTypeName nm
+      let scoref, ccu =
+            match tryFindPublicSysTypeCcu path typeName with
+            | None ->
+                ILScopeRef.Assembly (mkSimpleAssemblyRef (dummyAssemblyNameCarryingUsefulErrorInformation path typeName)),
+                CcuThunk.CreateDelayed(dummyAssemblyNameCarryingUsefulErrorInformation path typeName)
+            | Some ccu ->
+                ccu.ILScopeRef,
+                ccu
+      let tref = mkILTyRef (scoref, nm)
+      let tcref = mkNonLocalTyconRef2 ccu (Array.ofList path) typeName
+      AttribInfo(tref, tcref)
+
+  let findOrEmbedSysPublicAttribute nm =
+        let sysAttrib = findPublicSysAttrib nm
+        if sysAttrib.TyconRef.CanDeref then
+            sysAttrib
+        else
+            let attrRef = ILTypeRef.Create(ILScopeRef.Local, [], nm)
+            let attrTycon =
+                Construct.NewTycon(
+                    Some (CompPath(ILScopeRef.Local, [])),
+                    attrRef.Name,
+                    range0,
+                    taccessInternal,
+                    taccessInternal,
+                    TyparKind.Type,
+                    LazyWithContext.NotLazy [],
+                    FSharp.Compiler.Xml.XmlDoc.Empty,
+                    false,
+                    false,
+                    false,
+                    MaybeLazy.Strict(Construct.NewEmptyModuleOrNamespaceType ModuleOrType)
+                )
+            AttribInfo(attrRef, mkLocalTyconRef attrTycon)
 
   let mkSysNonGenericTy path n = mkNonGenericTy(findSysTyconRef path n)
   let tryMkSysNonGenericTy path n = tryFindSysTyconRef path n |> Option.map mkNonGenericTy
@@ -812,7 +864,7 @@ type TcGlobals(
   let v_quote_to_linq_lambda_info  = makeIntrinsicValRef(fslib_MFLinqRuntimeHelpersQuotationConverter_nleref,  "QuotationToLambdaExpression"          , None                 , None                          , [vara],      ([[mkQuotedExprTy varaTy]], mkLinqExpressionTy varaTy))
 
   let tref_DebuggableAttribute = findSysILTypeRef tname_DebuggableAttribute
-  let tref_CompilerGeneratedAttribute  = findSysILTypeRef tname_CompilerGeneratedAttribute
+  let tref_CompilerGeneratedAttribute = findSysILTypeRef tname_CompilerGeneratedAttribute
   let tref_InternalsVisibleToAttribute = findSysILTypeRef tname_InternalsVisibleToAttribute
 
   let mutable generatedAttribsCache = []
@@ -826,16 +878,17 @@ type TcGlobals(
     let attribs =
        match generatedAttribsCache with
        | [] ->
-           let res =
-               [ if not noDebugAttributes then
-                   mkCompilerGeneratedAttribute()
-                   mkDebuggerNonUserCodeAttribute()]
-           generatedAttribsCache <- res
-           res
+            let res = [
+                if not noDebugAttributes then
+                    mkCompilerGeneratedAttribute()
+                    mkDebuggerNonUserCodeAttribute()
+                ]
+            generatedAttribsCache <- res
+            res
        | res -> res
     mkILCustomAttrs (attrs.AsList() @ attribs)
 
-  let addMethodGeneratedAttrs (mdef:ILMethodDef)   = mdef.With(customAttrs   = addGeneratedAttrs mdef.CustomAttrs)
+  let addMethodGeneratedAttrs (mdef:ILMethodDef)   = mdef.With(customAttrs = addGeneratedAttrs mdef.CustomAttrs)
 
   let addPropertyGeneratedAttrs (pdef:ILPropertyDef) = pdef.With(customAttrs = addGeneratedAttrs pdef.CustomAttrs)
 
@@ -997,6 +1050,15 @@ type TcGlobals(
   override _.ToString() = "<TcGlobals>"
 
   member _.ilg = ilg
+
+  member _.embeddedTypeDefs = embeddedILTypeDefs.Values |> Seq.toList
+
+  member _.tryRemoveEmbeddedILTypeDefs () = [
+      for key in embeddedILTypeDefs.Keys.OrderBy(fun k -> k) do
+        match (embeddedILTypeDefs.TryRemove(key)) with
+        | true, ilTypeDef -> yield ilTypeDef
+        | false, _ -> ()
+      ]
 
   // A table of all intrinsics that the compiler cares about
   member _.knownIntrinsics = v_knownIntrinsics
@@ -1164,6 +1226,10 @@ type TcGlobals(
 
   member val ArrayCollector_tcr = mk_MFCompilerServices_tcref fslibCcu "ArrayCollector`1"
 
+  member _.TryEmbedILType(tref: ILTypeRef, mkEmbeddableType: unit -> ILTypeDef) =
+    if tref.Scope = ILScopeRef.Local && not(embeddedILTypeDefs.ContainsKey(tref.Name)) then
+        embeddedILTypeDefs.TryAdd(tref.Name, mkEmbeddableType()) |> ignore
+
   member g.mk_GeneratedSequenceBase_ty seqElemTy = TType_app(g.seq_base_tcr,[seqElemTy], v_knownWithoutNull)
 
   member val ResumableStateMachine_tcr = mk_MFCompilerServices_tcref fslibCcu "ResumableStateMachine`1"
@@ -1242,7 +1308,8 @@ type TcGlobals(
   member val exn_ty = mkNonGenericTy v_exn_tcr
   member val float_ty = v_float_ty
   member val float32_ty = v_float32_ty
-      /// Memoization table to help minimize the number of ILSourceDocument objects we create
+
+  /// Memoization table to help minimize the number of ILSourceDocument objects we create
   member _.memoize_file x = v_memoize_file.Apply x
 
   member val system_Array_ty = mkSysNonGenericTy sys "Array"
@@ -1347,8 +1414,6 @@ type TcGlobals(
   member val iltyp_RuntimeMethodHandle = findSysILTypeRef tname_RuntimeMethodHandle |> mkILNonGenericValueTy
   member val iltyp_RuntimeTypeHandle   = findSysILTypeRef tname_RuntimeTypeHandle |> mkILNonGenericValueTy
   member val iltyp_ReferenceAssemblyAttributeOpt = tryFindSysILTypeRef tname_ReferenceAssemblyAttribute |> Option.map mkILNonGenericBoxedTy
-
-
   member val attrib_AttributeUsageAttribute = findSysAttrib "System.AttributeUsageAttribute"
   member val attrib_ParamArrayAttribute = findSysAttrib "System.ParamArrayAttribute"
   member val attrib_IDispatchConstantAttribute = tryFindSysAttrib "System.Runtime.CompilerServices.IDispatchConstantAttribute"
@@ -1356,7 +1421,9 @@ type TcGlobals(
 
   // We use 'findSysAttrib' here because lookup on attribute is done by name comparison, and can proceed
   // even if the type is not found in a system assembly.
-  member val attrib_IsReadOnlyAttribute = findSysAttrib "System.Runtime.CompilerServices.IsReadOnlyAttribute"
+  member val attrib_IsReadOnlyAttribute = findOrEmbedSysPublicAttribute "System.Runtime.CompilerServices.IsReadOnlyAttribute"
+  member val attrib_DynamicDependencyAttribute = findOrEmbedSysPublicAttribute "System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute"
+  member val enum_DynamicallyAccessedMemberTypes = findOrEmbedSysPublicAttribute "System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes"
 
   member val attrib_SystemObsolete = findSysAttrib "System.ObsoleteAttribute"
   member val attrib_DllImportAttribute = tryFindSysAttrib "System.Runtime.InteropServices.DllImportAttribute"
@@ -1729,9 +1796,6 @@ type TcGlobals(
   /// Indicates if we can use System.Array.Empty when emitting IL for empty array literals
   member val isArrayEmptyAvailable = v_Array_tcref.ILTyconRawMetadata.Methods.FindByName "Empty" |> List.isEmpty |> not
 
-  /// Indicates if we can emit the System.Runtime.CompilerServices.IsReadOnlyAttribute
-  member val isSystem_Runtime_CompilerServices_IsReadOnlyAttributeAvailable = tryFindSysTypeCcu sysCompilerServices "IsReadOnlyAttribute" |> Option.isSome
-
   member _.FindSysTyconRef path nm = findSysTyconRef path nm
 
   member _.TryFindSysTyconRef path nm = tryFindSysTyconRef path nm
@@ -1743,6 +1807,8 @@ type TcGlobals(
   member _.FindSysAttrib nm = findSysAttrib nm
 
   member _.TryFindSysAttrib nm = tryFindSysAttrib nm
+
+  member _.AddGeneratedAttributes attrs = addGeneratedAttrs attrs
 
   member _.AddMethodGeneratedAttributes mdef = addMethodGeneratedAttrs mdef
 

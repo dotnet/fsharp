@@ -7,4 +7,9 @@
     <DebugType>portable</DebugType>
   </PropertyGroup>
 
+    <!-- Do it the same way .NET Interactive does it, when skipping arcade, we should include test SDK explicitly -->
+  <ItemGroup Condition="($(MSBuildProjectName.EndsWith('.Tests')) OR $(MSBuildProjectName.EndsWith('.ComponentTests')) OR $(MSBuildProjectName.EndsWith('.UnitTests'))) AND '$(DISABLE_ARCADE)' == 'true'">
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(MicrosoftNETTestSdkVersion)" />
+  </ItemGroup>
+
 </Project>

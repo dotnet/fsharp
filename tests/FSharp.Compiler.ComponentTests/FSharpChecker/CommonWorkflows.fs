@@ -2,11 +2,11 @@
 
 open System
 open System.IO
+open System.Diagnostics
 
 open Xunit
 
 open FSharp.Test.ProjectGeneration
-open FSharp.Test.ProjectGeneration.Internal
 open FSharp.Compiler.Text
 open FSharp.Compiler.CodeAnalysis
 
@@ -132,3 +132,4 @@ let ``Using getSource and notifications instead of filesystem`` () =
         checkFile middle expectSignatureChanged
         checkFile last expectSignatureChanged
     }
+

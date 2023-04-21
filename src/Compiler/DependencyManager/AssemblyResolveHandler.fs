@@ -106,12 +106,12 @@ type AssemblyResolveHandlerDeskTop(assemblyProbingPaths: AssemblyResolutionProbe
 type AssemblyResolveHandler internal (assemblyProbingPaths: AssemblyResolutionProbe option) =
 
     let handler =
-        assemblyProbingPaths |> Option.map (fun _ ->
+        assemblyProbingPaths
+        |> Option.map (fun _ ->
             if isRunningOnCoreClr then
                 new AssemblyResolveHandlerCoreclr(assemblyProbingPaths) :> IDisposable
             else
-                new AssemblyResolveHandlerDeskTop(assemblyProbingPaths) :> IDisposable
-        )
+                new AssemblyResolveHandlerDeskTop(assemblyProbingPaths) :> IDisposable)
 
     new(assemblyProbingPaths: AssemblyResolutionProbe) = new AssemblyResolveHandler(Option.ofObj assemblyProbingPaths)
 

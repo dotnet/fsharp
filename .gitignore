@@ -68,6 +68,7 @@ ossreadme*.txt
 *.fsproj.user
 *.vbproj.user
 *.sln.DotSettings.user
+*.props.user
 launchSettings.json
 *.log
 *.jrs
@@ -125,16 +126,3 @@ nCrunchTemp_*
 
 tests/FSharp.Compiler.Service.Tests/FSharp.CompilerService.SurfaceArea.netstandard.actual
 *.vsp
-/Z.fs
-/Y.fs
-/X.fs
-/Library.fs
-/Ghost.fs
-/D.fsi
-/D.fs
-/C.fsi
-/C.fs
-/B.fsi
-/B.fs
-/A.fsi
-/A.fs

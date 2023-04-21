@@ -685,7 +685,8 @@ module ParsedInput =
             | SynType.AnonRecd _
             | SynType.LongIdent _
             | SynType.Var _
-            | SynType.StaticConstant _ -> None
+            | SynType.StaticConstant _
+            | SynType.FromParseError _ -> None
 
         and walkClause clause =
             let (SynMatchClause (pat = pat; whenExpr = e1; resultExpr = e2)) = clause
@@ -1474,6 +1475,12 @@ module ParsedInput =
                             Some(CompletionContext.OpenDeclaration isOpenType)
                         else
                             None
+
+                    // module Namespace.Top
+                    // module Neste|
+                    | SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = [ ident ])) when rangeContainsPos ident.idRange pos ->
+                        Some CompletionContext.Invalid
+
                     | _ -> defaultTraverse decl
 
                 member _.VisitType(_, defaultTraverse, ty) =
@@ -1695,7 +1702,8 @@ module ParsedInput =
             | SynType.Anon _
             | SynType.AnonRecd _
             | SynType.Var _
-            | SynType.StaticConstant _ -> ()
+            | SynType.StaticConstant _
+            | SynType.FromParseError _ -> ()
 
         and walkClause (SynMatchClause (pat = pat; whenExpr = e1; resultExpr = e2)) =
             walkPat pat

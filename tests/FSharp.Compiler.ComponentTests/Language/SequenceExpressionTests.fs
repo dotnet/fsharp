@@ -4,10 +4,10 @@ module FSharp.Compiler.ComponentTests.Language.SequenceExpressionTests
 
 open Xunit
 open FSharp.Test.Compiler
+open FSharp.Test.ScriptHelpers
 
 
-
-let fsiSession = getSessionForEval()
+let fsiSession = getSessionForEval [||] LangVersion.Preview
 
 let runCode = evalInSharedSession fsiSession
 

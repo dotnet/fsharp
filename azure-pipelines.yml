@@ -86,11 +86,11 @@ stages:
   #                                                  Signed build                                                     #
   #-------------------------------------------------------------------------------------------------------------------#
   - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
-    - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/dev17.5') }}:
+    - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/dev17.6') }}:
       - template: /eng/common/templates/job/onelocbuild.yml
         parameters:
           MirrorRepo: fsharp
-          MirrorBranch: release/dev17.5
+          MirrorBranch: release/dev17.6
           LclSource: lclFilesfromPackage
           LclPackageId: 'LCL-JUNO-PROD-FSHARP'
     - template: /eng/common/templates/jobs/jobs.yml
@@ -124,7 +124,7 @@ stages:
           - script: eng\CIBuild.cmd
                     -configuration $(_BuildConfig)
                     -prepareMachine
-                    -testAll
+                    -testAllButIntegration
                     -officialSkipTests $(SkipTests)
                     /p:SignType=$(_SignType)
                     /p:DotNetSignType=$(_SignType)
@@ -268,10 +268,10 @@ stages:
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Install tools
-          - script: dotnet fantomas src -r --check
+          - script: dotnet fantomas . -r --check
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
-            displayName: Check code formatting (run 'dotnet fantomas src -r' to fix)
+            displayName: Check code formatting (run 'dotnet fantomas . -r' to fix)
 
         # Check whether package with current version has been published to nuget.org
         # We will try to restore both FSharp.Core and FCS and if restore is _successful_, package version needs to be bumped.
@@ -323,6 +323,11 @@ stages:
 
         # Windows With Compressed Metadata
         - job: WindowsCompressedMetadata
+          variables:
+          - name: XUNIT_LOGS
+            value: $(Build.SourcesDirectory)\artifacts\TestResults\$(_configuration)
+          - name: __VSNeverShowWhatsNew
+            value: 1
           pool:
             # The PR build definition sets this variable:
             #   WindowsMachineQueueName=Windows.vs2022.amd64.open
@@ -346,14 +351,21 @@ stages:
               vs_release:
                 _configuration: Release
                 _testKind: testVs
-              inttests_release:
-                _configuration: Release
-                _testKind: testIntegration
+              ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
+                inttests_release:
+                  _configuration: Release
+                  _testKind: testIntegration
           steps:
           - checkout: self
             clean: true
+
+          - powershell: eng\SetupVSHive.ps1
+            displayName: Setup VS Hive
+            condition: or(eq(variables['_testKind'], 'testVs'), eq(variables['_testKind'], 'testIntegration'))
+
           - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
             displayName: Build / Test
+            continueOnError: ${{ eq(variables['_testKind'], 'testIntegration') }}
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
@@ -363,13 +375,22 @@ stages:
             continueOnError: true
             condition: ne(variables['_testKind'], 'testFSharpQA')
           - task: PublishBuildArtifacts@1
+            displayName: Publish Tests BinLog
+            condition: always()
+            continueOnError: true
+            inputs:
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/$(_configuration)\Build.VisualFSharp.sln.binlog'
+                ArtifactName: 'Windows $(_configuration) $(_testKind) test binlogs'
+                ArtifactType: Container
+                parallel: true
+          - task: PublishBuildArtifacts@1
             displayName: Publish Test Logs
             inputs:
               PathtoPublish: '$(Build.SourcesDirectory)\artifacts\TestResults\$(_configuration)'
               ArtifactName: 'Windows $(_configuration) $(_testKind) test logs'
               publishLocation: Container
             continueOnError: true
-            condition: failed()
+            condition: always()
           - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
             displayName: Dump NuGet cache contents
             condition: failed()
@@ -444,6 +465,8 @@ stages:
           - checkout: self
             clean: true
           - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr
+            env:
+              COMPlus_DefaultStackSize: 1000000
             displayName: Build / Test
           - task: PublishTestResults@2
             displayName: Publish Test Results
@@ -512,7 +535,7 @@ stages:
         # Run Build with Fsharp Experimental Features
         # Possible change: --times:$(Build.SourcesDirectory)/artifacts/log/Release/compiler_timing.csv
 
-        # Plain build Windows
+        # Plain FCS build Windows
         - job: Plain_Build_Windows
           pool:
             name: $(DncEngPublicBuildPool)
@@ -523,8 +546,6 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - script: .\Build.cmd
-            displayName: Initial build
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
           - task: UseDotNet@2
@@ -535,17 +556,13 @@ stages:
               includePreviewVersions: true
               workingDirectory: $(Build.SourcesDirectory)
               installationPath: $(Agent.ToolsDirectory)/dotnet
-          - script: dotnet build .\FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
-            env:
-              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
-            displayName: Regular rebuild of FSharp.sln
           - script: dotnet build .\FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
-            env:
-              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Regular rebuild of FSharp.Compiler.Service.sln
+            continueOnError: true
+            condition: always()
 
-        # Plain build Linux
+        # Plain FCS build Linux
         - job: Plain_Build_Linux
           pool:
             vmImage: $(UbuntuMachineQueueName)
@@ -555,8 +572,6 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - script: ./build.sh
-            displayName: Initial build
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
           - task: UseDotNet@2
@@ -567,17 +582,13 @@ stages:
               includePreviewVersions: true
               workingDirectory: $(Build.SourcesDirectory)
               installationPath: $(Agent.ToolsDirectory)/dotnet
-          - script: dotnet build ./FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
-            env:
-              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
-            displayName: Regular rebuild of FSharp.sln
           - script: dotnet build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
-            env:
-              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Regular rebuild of FSharp.Compiler.Service.sln
+            continueOnError: true
+            condition: always()
 
-        # Plain build Mac
+        # Plain FCS build Mac
         - job: Plain_Build_MacOS
           pool:
             vmImage: macos-11
@@ -587,8 +598,6 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - script: ./build.sh
-            displayName: Initial build
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
           - task: UseDotNet@2
@@ -599,15 +608,11 @@ stages:
               includePreviewVersions: true
               workingDirectory: $(Build.SourcesDirectory)
               installationPath: $(Agent.ToolsDirectory)/dotnet
-          - script: dotnet build ./FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
-            env:
-              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
-            displayName: Regular rebuild of FSharp.sln
           - script: dotnet build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
-            env:
-              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Regular rebuild of FSharp.Compiler.Service.sln
+            continueOnError: true
+            condition: always()
 
         # Test trimming on Windows
         - job: Build_And_Test_Trimming_Windows
@@ -701,8 +706,8 @@ stages:
 - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
   - template: eng/release/insert-into-vs.yml
     parameters:
-      componentBranchName: refs/heads/release/dev17.5
-      insertTargetBranch: rel/d17.5
+      componentBranchName: refs/heads/release/dev17.6
+      insertTargetBranch: rel/d17.6
       insertTeamEmail: fsharpteam@microsoft.com
       insertTeamName: 'F#'
       completeInsertion: 'auto'

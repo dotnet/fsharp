@@ -1,6 +1,8 @@
 ﻿module Core_printf
 
+open Microsoft.FSharp.Reflection
 open Printf
+open System.Collections.Generic
 
 let failures = ref []
 
@@ -10,7 +12,12 @@ let report_failure (s : string) =
     failures := !failures @ [s]
     ()
 
+let check s e r = 
+  if r <> e then
+      (stderr.WriteLine ($"\n***** {s}: Expected: '{e}' Results: '{r}' = FAIL\n"); report_failure s)
+
 let test t (s1:Lazy<string>) s2 =
+
     let s1 = s1.Force()
     if s1 <> s2 then 
         report_failure ("test "+t+": expected \n\t'"+s2+"' but produced \n\t'"+s1+"'")
@@ -9057,9 +9064,313 @@ let func8000()=
     test "test8736" (lazy(sprintf "09-00%d09-01%d09-02%d09-03%d09-04%d09-05%d09-06%d09-07%d09-08%d09-09%a19-10%d19-11%d19-12%d19-13%d19-14%d19-15%d19-16%d19-17%d19-18%d19-19%a29-20%d29-21%d29-22%d29-23%d29-24%d29-25%d29-26%d29-27%d29-28%d29-29%a39-30%d39-31%d39-32%d39-33%d39-34%d39-35%d39-36%d39-37%d39-38%d39-39%a49-40%d49-41%d49-42%d49-43%d49-44%d49-45%d49-46%d49-47%d49-48%d49-49%a59-50%d59-51%d59-52%d59-53%d59-54%d59-55%d59-56%d59-57%d59-58%d59-59%a69-60%d69-61%d69-62%d69-63%d69-64%d69-65%d69-66%d69-67%d69-68%d69-69%a79-70%d79-71%d79-72%d79-73%d79-74%d79-75%d79-76%d79-77%d79-78%d79-79%a89-80%d89-81%d89-82%d89-83%d89-84%d89-85%d89-86%d89-87%d89-88%d89-89%a99-90%d99-91%d99-92%d99-93%d99-94%d99-95%d99-96%d99-97%d99-98%d99-99" 0 1 2 3 4 5 6 7 8  (fun _ v -> (string v) + "X") 1  10 11 12 13 14 15 16 17 18  (fun _ v -> (string v) + "X") 2  20 21 22 23 24 25 26 27 28  (fun _ v -> (string v) + "X") 3  30 31 32 33 34 35 36 37 38  (fun _ v -> (string v) + "X") 4  40 41 42 43 44 45 46 47 48  (fun _ v -> (string v) + "X") 5  50 51 52 53 54 55 56 57 58  (fun _ v -> (string v) + "X") 6  60 61 62 63 64 65 66 67 68  (fun _ v -> (string v) + "X") 7  70 71 72 73 74 75 76 77 78  (fun _ v -> (string v) + "X") 8  80 81 82 83 84 85 86 87 88  (fun _ v -> (string v) + "X") 9  90 91 92 93 94 95 96 97 98 )) "09-00009-01109-02209-03309-04409-05509-06609-07709-08809-091X19-101019-111119-121219-131319-141419-151519-161619-171719-181819-192X29-202029-212129-222229-232329-242429-252529-262629-272729-282829-293X39-303039-313139-323239-333339-343439-353539-363639-373739-383839-394X49-404049-414149-424249-434349-444449-454549-464649-474749-484849-495X59-505059-515159-525259-535359-545459-555559-565659-575759-585859-596X69-606069-616169-626269-636369-646469-656569-666669-676769-686869-697X79-707079-717179-727279-737379-747479-757579-767679-777779-787879-798X89-808089-818189-828289-838389-848489-858589-868689-878789-888889-899X99-909099-919199-929299-939399-949499-959599-969699-979799-989899-99"
     test "test8737" (lazy(sprintf "09-00%d09-01%d09-02%d09-03%d09-04%d09-05%d09-06%d09-07%d09-08%d09-09%a19-10%d19-11%d19-12%d19-13%d19-14%d19-15%d19-16%d19-17%d19-18%d19-19%a29-20%d29-21%d29-22%d29-23%d29-24%d29-25%d29-26%d29-27%d29-28%d29-29%a39-30%d39-31%d39-32%d39-33%d39-34%d39-35%d39-36%d39-37%d39-38%d39-39%a49-40%d49-41%d49-42%d49-43%d49-44%d49-45%d49-46%d49-47%d49-48%d49-49%a59-50%d59-51%d59-52%d59-53%d59-54%d59-55%d59-56%d59-57%d59-58%d59-59%a69-60%d69-61%d69-62%d69-63%d69-64%d69-65%d69-66%d69-67%d69-68%d69-69%a79-70%d79-71%d79-72%d79-73%d79-74%d79-75%d79-76%d79-77%d79-78%d79-79%a89-80%d89-81%d89-82%d89-83%d89-84%d89-85%d89-86%d89-87%d89-88%d89-89%a99-90%d99-91%d99-92%d99-93%d99-94%d99-95%d99-96%d99-97%d99-98%d99-99%a_TAIL" 0 1 2 3 4 5 6 7 8  (fun _ v -> (string v) + "X") 1  10 11 12 13 14 15 16 17 18  (fun _ v -> (string v) + "X") 2  20 21 22 23 24 25 26 27 28  (fun _ v -> (string v) + "X") 3  30 31 32 33 34 35 36 37 38  (fun _ v -> (string v) + "X") 4  40 41 42 43 44 45 46 47 48  (fun _ v -> (string v) + "X") 5  50 51 52 53 54 55 56 57 58  (fun _ v -> (string v) + "X") 6  60 61 62 63 64 65 66 67 68  (fun _ v -> (string v) + "X") 7  70 71 72 73 74 75 76 77 78  (fun _ v -> (string v) + "X") 8  80 81 82 83 84 85 86 87 88  (fun _ v -> (string v) + "X") 9  90 91 92 93 94 95 96 97 98 (fun _ v -> (string v) + "X") System.IO.FileShare.Read  )) "09-00009-01109-02209-03309-04409-05509-06609-07709-08809-091X19-101019-111119-121219-131319-141419-151519-161619-171719-181819-192X29-202029-212129-222229-232329-242429-252529-262629-272729-282829-293X39-303039-313139-323239-333339-343439-353539-363639-373739-383839-394X49-404049-414149-424249-434349-444449-454549-464649-474749-484849-495X59-505059-515159-525259-535359-545459-555559-565659-575759-585859-596X69-606069-616169-626269-636369-646469-656569-666669-676769-686869-697X79-707079-717179-727279-737379-747479-757579-767679-777779-787879-798X89-808089-818189-828289-838389-848489-858589-868689-878789-888889-899X99-909099-919199-929299-939399-949499-959599-969699-979799-989899-99ReadX_TAIL"
 
+module PresenceOfReflectionApi =
+    type MyRecord = {
+        A: string
+        B: decimal
+    }
+
+    let testPresenceOfReflectionApi () =
+        test "test8800" (lazy(Microsoft.FSharp.Reflection.FSharpValue.PreComputeRecordConstructorInfo typeof<MyRecord> |> ignore; "Done")) "Done"
+
+    let tests () =
+        testPresenceOfReflectionApi ()
+
+module PercentAPublicTests =
+    type MyRecord =
+        {
+            A: string
+            B: decimal
+            C: int
+            D: float
+        }
+
+    type Number = IntNumber of int | DoubleNumber of double
+
+    let testPercentAMyRecord () =
+        let data = { A = "Hello, World!"; B = 1.027m; C = 1028; D = 1.029 }
+        test "test8900" (lazy (sprintf "%A" data).Replace("\n", ";"))  """{ A = "Hello, World!";  B = 1.027M;  C = 1028;  D = 1.029 }"""
+
+    let testPercentAMyAnnonymousRecord () =
+        let data = {| A = "Hello, World!"; B = 1.027m; C = 1028; D = 1.029 |}
+        test "test8901" (lazy (sprintf "%A" data).Replace("\n", ";"))  """{ A = "Hello, World!";  B = 1.027M;  C = 1028;  D = 1.029 }"""
+
+    let testDiscriminatedUnion () =
+        test "test8902" (lazy (sprintf "%A" (IntNumber 10 )).Replace("\n", ";"))  """IntNumber 10"""
+        test "test8903" (lazy (sprintf "%A" (DoubleNumber 12.0)).Replace("\n", ";"))  """DoubleNumber 12.0"""
+
+    let testPercentAOptionChoiceTypes () =
+        test "test8920" (lazy (sprintf "%A" None).Replace("\n", ";"))  "None"
+        test "test8921" (lazy (sprintf "%A" (Some 1.030m)).Replace("\n", ";"))  "Some 1.030M"
+        test "test8922" (lazy (sprintf "%A" ValueNone).Replace("\n", ";"))  "ValueNone"
+        test "test8923" (lazy (sprintf "%A" (ValueSome 1.030m)).Replace("\n", ";"))  "ValueSome 1.030M"
+        test "test8924" (lazy (sprintf "%A" (Choice1Of2 "Hello")).Replace("\n", ";"))  "Choice1Of2 \"Hello\""
+        test "test8924" (lazy (sprintf "%A" (Choice1Of2 1.032m)).Replace("\n", ";"))  "Choice1Of2 1.032M"
+
+    let testUnit () =
+        test "test8925" (lazy (sprintf "%A" ()).Replace("\n", ";"))  "()"
+
+    let testTupleTypes () =
+        test "test8930" (lazy (sprintf "%A" (1, 1.020m, "Hello, World!!!!")).Replace("\n", ";"))  """(1, 1.020M, "Hello, World!!!!")"""
+        test "test8931" (lazy (sprintf "%A" struct ( 1, 1.020m, "Hello, World!!!!" )).Replace("\n", ";"))  """struct (1, 1.020M, "Hello, World!!!!")"""
+
+    let testCollectionsTypes () =
+        test "test8940" (lazy (sprintf "%A" [|1;2;3;4;5;6;7;8;9|]).Replace("\n", ";"))  "[|1; 2; 3; 4; 5; 6; 7; 8; 9|]"
+        test "test8941" (lazy (sprintf "%A" [1;2;3;4;5;6;7;8;9]).Replace("\n", ";"))  "[1; 2; 3; 4; 5; 6; 7; 8; 9]"
+        test "test8942" (lazy (sprintf "%A" (seq {1;2;3;4;5;6;7;8;9})).Replace("\n", ";"))  "seq [1; 2; 3; 4; ...]"
+        test "test8943" (lazy (sprintf "%A" [|[|1,2|],[|3,4|]|]).Replace("\n", ";"))  "[|([|(1, 2)|], [|(3, 4)|])|]"
+        test "test8944" (lazy (sprintf "%A" [|[|1;2|];[|3;4|]|]).Replace("\n", ";"))  "[|[|1; 2|]; [|3; 4|]|]"
+        test "test8945" (lazy (sprintf "%A" (dict [(1, "a"); (2, "b"); (3, "c")])).Replace("\n", ";"))  "seq [[1, a]; [2, b]; [3, c]]"
+        test "test8946" (lazy (sprintf "%A" (set [1; 2; 3; 4; 5])).Replace("\n", ";"))  "set [1; 2; 3; 4; 5]"
+        test "test8947" (lazy (sprintf "%A" ([ ("One", 1); ("Two", 2) ] |> Map.ofSeq)))  """map [("One", 1); ("Two", 2)]"""
+
+    let tests () =
+        testPercentAMyRecord ()
+        testPercentAMyAnnonymousRecord ()
+        testDiscriminatedUnion ()
+        testPercentAOptionChoiceTypes ()
+        testUnit ()
+        testTupleTypes ()
+        testCollectionsTypes ()
+
+module PercentAInternalTests =
+    type internal MyInternalRecord =
+        {
+            A: string
+            B: decimal
+            C: int
+            D: float
+        }
+        override this.ToString() = $"Hidden by ToString()"
+
+    let testPercentA () =
+
+        let data = { A = "Hello, World!"; B = 1.027m; C = 1028; D = 1.029 }
+        test "test9000" (lazy (sprintf "%A" data).Replace("\n", ";"))  "Hidden by ToString()"
+
+    let testPercentPlusA () =
+
+        let data = { A = "Hello, World!"; B = 1.027m; C = 1028; D = 1.029 }
+        test "test9100" (lazy (sprintf "%+A" data).Replace("\n", ";"))  """{ A = "Hello, World!";  B = 1.027M;  C = 1028;  D = 1.029 }"""
+
+    let tests () =
+        testPercentA ()
+        testPercentPlusA ()
+
+module ClassWithEvents =
+
+    type EventClass () =
+        let event = new Event<string> ()
+
+        [<CLIEvent>]
+        member _.Event = event.Publish
+
+        member _.TriggerEvent (arg) = event.Trigger (arg)
+
+    let testWithEventClass () =
+        test "test9200" (
+            lazy (
+                let mutable eventstring = ""
+                let evt = EventClass()
+                evt.Event.Add(fun arg -> eventstring <- eventstring + $"Event handler: {arg}")
+                evt.TriggerEvent("Hello World!")
+                eventstring
+            ))
+            """Event handler: Hello World!"""
+        test "test9201" (
+            lazy (
+                let mutable eventstring = ""
+                let evt = EventClass();
+                evt.Event.Add(fun arg -> eventstring <- eventstring + $"First handler: {arg}")
+                evt.Event.Add(fun arg -> eventstring <- eventstring + $" Second handler: {arg}")
+                evt.TriggerEvent("Hello World!")
+                eventstring
+            ))
+            """First handler: Hello World! Second handler: Hello World!"""
+    let tests () =
+        testWithEventClass ()
+
+module SameTestsUsingNonStructuralComparison2 =
+    open NonStructuralComparison
+
+    do check "test9200" (3 > 1) true
+    do check "test9201" (3y > 1y) true
+    do check "test9202" (3uy > 1uy) true
+    do check "test9203" (3s > 1s) true
+    do check "test9204" (3us > 1us) true
+    do check "test9205" (3 > 1) true
+    do check "test9206" (3u > 1u) true
+    do check "test9207" (3L > 1L) true
+    do check "test9208" (3UL > 1UL) true
+    do check "test9209" (3.14 > 3.1) true
+    do check "test9210" (3.14f > 3.1f) true
+    do check "test9211" ("bbb" > "aaa") true
+    do check "test9212" ("bbb" > "bbb") false
+    do check "test9213" ("aaa" > "bbb") false
+    do check "test9214" ('b' > 'a') true
+    do check "test9215" ('a' > 'b') false
+    do check "test9216" ('b' > 'b') false
+
+    do check "test9217" (3 >= 3) true
+    do check "test9218" (3y >= 3y) true
+    do check "test9219" (3uy >= 3uy) true
+    do check "test9220" (3s >= 3s) true
+    do check "test9221" (3us >= 3us) true
+    do check "test9222" (3 >= 3) true
+    do check "test9223" (3u >= 3u) true
+    do check "test9224" (3L >= 3L) true
+    do check "test9225" (3UL >= 3UL) true
+    do check "test9226" (3.14 >= 3.1) true
+    do check "test9227" (3.14f >= 3.1f) true
+    do check "test9228" (3.14M >= 3.1M) true
+    do check "test9229" ("bbb" >= "aaa") true
+    do check "test9230" ("bbb" >= "bbb") true
+    do check "test9231" ("aaa" >= "bbb") false
+    do check "test9232" ('b' >= 'a') true
+    do check "test9233" ('a' >= 'b') false
+    do check "test9234" ('b' >= 'b') true
+
+    do check "test9235" (3 < 1) false
+    do check "test9236" (3y < 1y) false
+    do check "test9237" (3uy < 1uy) false
+    do check "test9238" (3s < 1s) false
+    do check "test9239" (3us < 1us) false
+    do check "test9240" (3 < 1) false
+    do check "test9241" (3u < 1u) false
+    do check "test9242" (3L < 1L) false
+    do check "test9243" (3UL < 1UL) false
+    do check "test9244" (3.14 < 1.0) false
+    do check "test9245" (3.14f < 1.0f) false
+    do check "test9246" (3.14M < 1.0M) false
+    do check "test9247" ("bbb" < "aaa") false
+    do check "test9248" ("bbb" < "bbb") false
+    do check "test9249" ("aaa" < "bbb") true
+    do check "test9250" ('b' < 'a') false
+    do check "test9251" ('a' < 'b') true
+    do check "test9252" ('b' < 'b') false
+
+    do check "test9253" (3 <= 1) false
+    do check "test9254" (3y <= 1y) false
+    do check "test9255" (3uy <= 1uy) false
+    do check "test9256" (3s <= 1s) false
+    do check "test9257" (3us <= 1us) false
+    do check "test9258" (3 <= 1) false
+    do check "test9259" (3u <= 1u) false
+    do check "test9260" (3L <= 1L) false
+    do check "test9261" (3UL <= 1UL) false
+    do check "test9262" (3.14 <= 1.0) false
+    do check "test9263" (3.14f <= 1.0f) false
+    do check "test9264" (3.14M <= 1.0M) false
+    do check "test9265" ("bbb" <= "aaa") false
+    do check "test9266" ("bbb" <= "bbb") true
+    do check "test9267" ("aaa" <= "bbb") true
+    do check "test9268" ('b' <= 'a') false
+    do check "test9269" ('a' <= 'b') true
+    do check "test9270" ('b' <= 'b') true
+    do check "test9271" (3 <= 3) true
+    do check "test9272" (3y <= 3y) true
+    do check "test9273" (3uy <= 3uy) true
+    do check "test9274" (3s <= 3s) true
+    do check "test9275" (3us <= 3us) true
+    do check "test9276" (3 <= 3) true
+    do check "test9277" (3u <= 3u) true
+    do check "test9278" (3L <= 3L) true
+    do check "test9279" (3UL <= 3UL) true
+    do check "test9280" (3.14 <= 3.14) true
+    do check "test9281" (3.14f <= 3.14f) true
+    do check "test9282" (3.14M <= 3.14M) true
+
+module NonStructuralComparisonOverDateTime =
+    open NonStructuralComparison
+    let now = System.DateTime.Now
+    let tom = now.AddDays 1.0
+
+    do check "test9283" (now = tom) false
+    do check "test9284" (now <> tom) true
+    do check "test9285" (now < tom) true
+    do check "test9286" (now <= now) true
+    do check "test9287" (now <= tom) true
+    do check "test9288" (tom > now) true
+    do check "test9289" (now >= now) true
+    do check "test9290" (tom >= now) true
+    do check "test9291" (compare now now) 0
+    do check "test9292" (compare now tom) -1
+    do check "test9293" (compare tom now) 1
+    do check "test9294" (max tom tom) tom
+    do check "test9295" (max tom now) tom
+    do check "test9296" (max now tom) tom
+    do check "test9297" (min tom tom) tom
+    do check "test9298" (min tom now) now
+    do check "test9299" (min now tom) now
+
+    do check "test9301" (ComparisonIdentity.NonStructural.Compare (1, 1)) 0
+    do check "test9302" (ComparisonIdentity.NonStructural.Compare (0, 1)) -1
+    do check "test9303" (ComparisonIdentity.NonStructural.Compare (1, 0)) 1
+    do check "test9304" (ComparisonIdentity.NonStructural.Compare (now, now)) 0
+    do check "test9305" (ComparisonIdentity.NonStructural.Compare (now, tom)) -1
+    do check "test9306" (ComparisonIdentity.NonStructural.Compare (tom, now)) 1
+    do check "test9307" (HashIdentity.NonStructural.Equals (now, now)) true
+    do check "test9308" (HashIdentity.NonStructural.Equals (now, tom)) false
+    do check "test9309" (HashIdentity.NonStructural.Equals (tom, now)) false
+    do check "test9310" (HashIdentity.NonStructural.GetHashCode now) (hash now)
+    do check "test9311" (HashIdentity.NonStructural.GetHashCode tom) (hash tom)
+    do check "test9312" (HashIdentity.NonStructural.GetHashCode 11) (hash 11)
+    do check "test9313" (HashIdentity.NonStructural.GetHashCode 11L) (hash 11L)
+    do check "test9314" (HashIdentity.NonStructural.GetHashCode 11UL) (hash 11UL)
+    do check "test9315" (HashIdentity.NonStructural.Equals (1, 1)) true
+    do check "test9316" (HashIdentity.NonStructural.Equals (1, 0)) false
+    do check "test9317" (HashIdentity.NonStructural.Equals (0, 1)) false
+
+module NonStructuralComparisonOverTimeSpan =
+    open NonStructuralComparison
+    let now = System.TimeSpan.Zero
+    let tom = System.TimeSpan.FromDays 1.0
+
+    do check "test9318" (now = tom) false
+    do check "test9319" (now <> tom) true
+    do check "test9320" (now < tom) true
+    do check "test9381" (now <= now) true
+    do check "test9382" (now <= tom) true
+    do check "test9383" (tom > now) true
+    do check "test9384" (now >= now) true
+    do check "test9385" (tom >= now) true
+    do check "test9386" (compare now now) 0
+    do check "test9387" (compare now tom) -1
+    do check "test9388" (compare tom now) 1
+    do check "test9389" (max tom tom) tom
+    do check "test9390" (max tom now) tom
+    do check "test9391" (max now tom) tom
+    do check "test9392" (min tom tom) tom
+    do check "test9393" (min tom now) now
+    do check "test9394" (min now tom) now
+
+// Check you can use the operators without opening the module by naming them
+module NonStructuralComparisonOverTimeSpanDirect =
+    let now = System.TimeSpan.Zero
+    let tom = System.TimeSpan.FromDays 1.0
+
+    do check "test9395" (NonStructuralComparison.(=) now tom) false
+    do check "test9396" (NonStructuralComparison.(<>) now tom) true
+    do check "test9397" (NonStructuralComparison.(<) now tom) true
+    do check "test9398" (NonStructuralComparison.(<=) now now) true
+    do check "test9399" (NonStructuralComparison.(>) tom now) true
+    do check "test9400" (NonStructuralComparison.(>=) now now) true
+    do check "test9401" (NonStructuralComparison.compare now now) 0
+    do check "test9402" (NonStructuralComparison.max tom now) tom
+    do check "test9403" (NonStructuralComparison.min tom now) now
+
+    do check "test9404" (NonStructuralComparison.hash now) (Operators.hash now)
+    do check "test9405" (NonStructuralComparison.hash tom) (Operators.hash tom)
+    do check "test9406" (NonStructuralComparison.hash 11) (Operators.hash 11)
+    do check "test9407" (NonStructuralComparison.hash 11L) (Operators.hash 11L)
+    do check "test9408" (NonStructuralComparison.hash 11UL) (Operators.hash 11UL)
+
+
 [<EntryPoint>]
 let main _ =
+
     testing1()
+
     func0()
     func1000()
     func2000()
@@ -9069,6 +9380,12 @@ let main _ =
     func6000()
     func7000()
     func8000()
+
+    PresenceOfReflectionApi.tests ()
+    PercentAPublicTests.tests ()
+    PercentAInternalTests.tests ()
+    ClassWithEvents.testWithEventClass ()
+
     match !failures with 
     | [] -> 
         stdout.WriteLine "All tests passed"

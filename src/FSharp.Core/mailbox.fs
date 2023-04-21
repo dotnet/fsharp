@@ -485,6 +485,9 @@ type MailboxProcessor<'Msg>(body, ?cancellationToken) =
     member _.TryScan(scanner: 'Msg -> (Async<'T>) option, ?timeout) =
         mailbox.TryScan(scanner, timeout = defaultArg timeout defaultTimeout)
 
+    member x.Dispose() =
+        (x :> IDisposable).Dispose()
+
     interface System.IDisposable with
         member _.Dispose() =
             (mailbox :> IDisposable).Dispose()

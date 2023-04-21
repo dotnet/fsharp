@@ -981,6 +981,9 @@ module PrettyTypes =
 
     val PrettyTyparNames: (Typar -> bool) -> string list -> Typars -> string list
 
+    /// Assign previously generated pretty names to typars
+    val AssignPrettyTyparNames: Typars -> string list -> unit
+
     val PrettifyType: TcGlobals -> TType -> TType * TyparConstraintsWithTypars
 
     val PrettifyInstAndTyparsAndType:
@@ -2695,3 +2698,6 @@ val (|EmptyModuleOrNamespaces|_|):
 /// Add an System.Runtime.CompilerServices.ExtensionAttribute to the Entity if found via predicate and not already present.
 val tryAddExtensionAttributeIfNotAlreadyPresent:
     tryFindExtensionAttributeIn: ((Attrib list -> Attrib option) -> Attrib option) -> entity: Entity -> Entity
+
+/// Serialize an entity to a very basic json structure.
+val serializeEntity: path: string -> entity: Entity -> unit

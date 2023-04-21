@@ -518,6 +518,9 @@ type SynType =
     /// F# syntax: ^a or ^b, used in trait calls
     | Or of lhsType: SynType * rhsType: SynType * range: range * trivia: SynTypeOrTrivia
 
+    /// A type arising from a parse error
+    | FromParseError of range: range
+
     /// Gets the syntax range of this construct
     member Range: range
 
@@ -554,7 +557,7 @@ type SynExpr =
     | AnonRecd of
         isStruct: bool *
         copyInfo: (SynExpr * BlockSeparator) option *
-        recordFields: (Ident * range option * SynExpr) list *
+        recordFields: (SynLongIdent * range option * SynExpr) list *
         range: range *
         trivia: SynExprAnonRecdTrivia
 
@@ -1025,7 +1028,7 @@ type SynSimplePats =
 type SynArgPats =
     | Pats of pats: SynPat list
 
-    | NamePatPairs of pats: (Ident * range * SynPat) list * range: range * trivia: SynArgPatsNamePatPairsTrivia
+    | NamePatPairs of pats: (Ident * range option * SynPat) list * range: range * trivia: SynArgPatsNamePatPairsTrivia
 
     member Patterns: SynPat list
 

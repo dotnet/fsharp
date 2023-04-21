@@ -448,7 +448,7 @@ type MyType() =
         let actual = getParameterNameHints document
 
         Assert.Empty(actual)
-        
+
     [<Fact>]
     let ``Hints are shown correctly for inner bindings`` () =
         let code =
@@ -481,7 +481,7 @@ let test sequences =
         Assert.Equal(expected, actual)
 
     [<Fact>]
-    let ``Hints are not shown when CustomOperation attribute is detected`` () =
+    let ``Hints are shown correctly for custom operations`` () =
         let code =
             """
 let q = query { for x in { 1 .. 10 } do select x }
@@ -489,12 +489,33 @@ let q = query { for x in { 1 .. 10 } do select x }
 
         let document = getFsDocument code
 
+        let expected =
+            [
+                {
+                    Content = "projection = "
+                    Location = (1, 48)
+                }
+            ]
+
         let actual = getParameterNameHints document
 
-        Assert.Empty actual
+        Assert.Equal(expected, actual)
 
     [<Fact>]
-    let ``Hints are not shown when parameter names coinside with variable names`` () =
+    let ``Hints are not shown for custom operations with only 1 parameter`` () =
+        let code =
+            """
+let q = query { for _ in { 1 .. 10 } do count }
+"""
+
+        let document = getFsDocument code
+
+        let actual = getParameterNameHints document
+
+        Assert.Empty(actual)
+
+    [<Fact>]
+    let ``Hints are not shown when parameter names coincide with variable names`` () =
         let code =
             """
 let getFullName name surname = $"{name} {surname}"
@@ -511,6 +532,31 @@ let fullName = getFullName name lastName
                 {
                     Content = "surname = "
                     Location = (5, 33)
+                }
+            ]
+
+        let actual = getParameterNameHints document
+
+        Assert.Equal(expected, actual)
+
+    [<Fact>]
+    let ``Hints don't break with multi-line arguments`` () =
+        let code =
+            """
+None
+|> Option.map (fun x ->
+    x + 5
+    )
+|> ignore
+        """
+
+        let document = getFsDocument code
+
+        let expected =
+            [
+                {
+                    Content = "mapping = "
+                    Location = (2, 15)
                 }
             ]
 

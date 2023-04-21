@@ -4,6 +4,7 @@ namespace FSharp.Compiler.ComponentTests.EmittedIL
 
 open Xunit
 open FSharp.Test.Compiler
+open FSharp.Test.Compiler.Assertions.StructuredResultsAsserts
 
 module ``Literals`` =
 
@@ -227,4 +228,31 @@ let [<Literal>] x = 1 + System.DateTime.Now.Hour
                         EndLine = 4
                         EndColumn = 49 }
               Message = "This is not a valid constant expression or custom attribute value" }
+        ]
+
+    [<Fact>]
+    let ``Arithmetic cannot be used in enums, literals and attributes in lang version70``() =
+        FSharp """
+module LiteralArithmetic
+
+open System.Runtime.CompilerServices
+
+[<MethodImpl(enum -(-1 <<< 8))>]
+let x () = 3
+
+let [<Literal>] lit = 1 <<< (7 * 10)
+
+type E =
+    | A = (1 <<< 2)
+    | B = 1
+    | C = (5 / 3 * 4)
+        """
+        |> withLangVersion70
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 6, Col 19, Line 6, Col 30, "Feature 'Arithmetic and logical operations in literals, enum definitions and attributes' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 9, Col 23, Line 9, Col 37, "Feature 'Arithmetic and logical operations in literals, enum definitions and attributes' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 12, Col 12, Line 12, Col 19, "Feature 'Arithmetic and logical operations in literals, enum definitions and attributes' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 14, Col 12, Line 14, Col 21, "Feature 'Arithmetic and logical operations in literals, enum definitions and attributes' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.")
         ]

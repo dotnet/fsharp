@@ -138,6 +138,16 @@ let GetSignatureData (file, ilScopeRef, ilModule, byteReader) : PickledDataWithR
 let WriteSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, ccu: CcuThunk, fileName, inMem) : ILResource =
     let mspec = ApplyExportRemappingToEntity tcGlobals exportRemapping ccu.Contents
 
+    if tcConfig.dumpSignatureData then
+        tcConfig.outputFile
+        |> Option.iter (fun outputFile ->
+            let outputFile = FileSystem.GetFullPathShim(outputFile)
+
+            let signatureDataFile =
+                FileSystem.ChangeExtensionShim(outputFile, ".signature-data.json")
+
+            serializeEntity signatureDataFile mspec)
+
     // For historical reasons, we use a different resource name for FSharp.Core, so older F# compilers
     // don't complain when they see the resource.
     let rName, compress =
@@ -1096,7 +1106,7 @@ and [<Sealed>] TcImports
         initialResolutions: TcAssemblyResolutions,
         importsBase: TcImports option,
         dependencyProviderOpt: DependencyProvider option
-    )
+    ) 
 #if !NO_TYPEPROVIDERS
     as this
 #endif
@@ -1163,7 +1173,7 @@ and [<Sealed>] TcImports
         | ResolvedCcu ccu -> Some ccu
         | UnresolvedCcu _ -> None
 
-    static let ccuHasType (ccu: CcuThunk) (nsname: string list) (tname: string) =
+    static let ccuHasType (ccu: CcuThunk) (nsname: string list) (tname: string) (publicOnly: bool) =
         let matchNameSpace (entityOpt: Entity option) n =
             match entityOpt with
             | None -> None
@@ -1172,7 +1182,15 @@ and [<Sealed>] TcImports
         match (Some ccu.Contents, nsname) ||> List.fold matchNameSpace with
         | Some ns ->
             match Map.tryFind tname ns.ModuleOrNamespaceType.TypesByMangledName with
-            | Some _ -> true
+            | Some e ->
+                if publicOnly then
+                    match e.TypeReprInfo with
+                    | TILObjectRepr data ->
+                        let (TILObjectReprData (_, _, tyDef)) = data
+                        tyDef.Access = ILTypeDefAccess.Public
+                    | _ -> false
+                else
+                    true
             | None -> false
         | None -> false
 
@@ -2461,8 +2479,8 @@ and [<Sealed>] TcImports
                         ccu
                 |]
 
-            let tryFindSysTypeCcu path typeName =
-                sysCcus |> Array.tryFind (fun ccu -> ccuHasType ccu path typeName)
+            let tryFindSysTypeCcu path typeName publicOnly =
+                sysCcus |> Array.tryFind (fun ccu -> ccuHasType ccu path typeName publicOnly)
 
             let ilGlobals =
                 mkILGlobals (primaryScopeRef, equivPrimaryAssemblyRefs, fsharpCoreAssemblyScopeRef)

@@ -8,12 +8,16 @@ open FsCheck
 open Utils
 
 let smallerSizeCheck testable = Check.One({ Config.QuickThrowOnFailure with EndSize = 25 }, testable)
+let bigSizeCheck testable = Check.One({ Config.QuickThrowOnFailure with StartSize = 222;EndSize = 999; MaxTest = 8 }, testable)
 
 /// helper function that creates labeled FsCheck properties for equality comparisons
 let consistency name sqs ls arr =
     (sqs = arr) |@ (sprintf  "Seq.%s = '%A', Array.%s = '%A'" name sqs name arr) .&. 
     (ls  = arr) |@ (sprintf "List.%s = '%A', Array.%s = '%A'" name ls name arr)
 
+let consistencyIncludingParallel name sqs ls arr paraArr = 
+    consistency name sqs ls arr .&.
+    (paraArr = arr) |@ (sprintf "Parallel.%s = '%A', Array.%s = '%A'" name paraArr name arr)
 
 let allPairs<'a when 'a : equality> (xs : list<'a>) (xs2 : list<'a>) =
     let s = xs |> Seq.allPairs xs2 |> Seq.toArray
@@ -40,12 +44,15 @@ let ``append is consistent`` () =
     smallerSizeCheck append<string>
     smallerSizeCheck append<NormalFloat>
 
+let inline roundResult res = res |> Result.map (fun (x:float) -> Math.Round(x,8))
+
 let averageFloat (xs : NormalFloat []) =
     let xs = xs |> Array.map float
-    let s = runAndCheckErrorType (fun () -> xs |> Seq.average)
-    let l = runAndCheckErrorType (fun () -> xs |> List.ofArray |> List.average)
-    let a = runAndCheckErrorType (fun () -> xs |> Array.average)    
-    consistency "average" s l a
+    let s = runAndCheckErrorType (fun () -> xs |> Seq.average) |> roundResult
+    let l = runAndCheckErrorType (fun () -> xs |> List.ofArray |> List.average) |> roundResult
+    let a = runAndCheckErrorType (fun () -> xs |> Array.average) |> roundResult
+    let pa = runAndCheckErrorType (fun () -> xs |> Array.Parallel.average) |> roundResult
+    consistencyIncludingParallel "average" s l a pa
 
 [<Fact>]
 let ``average is consistent`` () =
@@ -54,10 +61,11 @@ let ``average is consistent`` () =
 let averageBy (xs : float []) f =
     let xs = xs |> Array.map float
     let f x = (f x : NormalFloat) |> float
-    let s = runAndCheckErrorType (fun () -> xs |> Seq.averageBy f)
-    let l = runAndCheckErrorType (fun () -> xs |> List.ofArray |> List.averageBy f)
-    let a = runAndCheckErrorType (fun () -> xs |> Array.averageBy f)
-    consistency "averageBy" s l a
+    let s = runAndCheckErrorType (fun () -> xs |> Seq.averageBy f) |> roundResult
+    let l = runAndCheckErrorType (fun () -> xs |> List.ofArray |> List.averageBy f) |> roundResult
+    let a = runAndCheckErrorType (fun () -> xs |> Array.averageBy f) |> roundResult
+    let pa = runAndCheckErrorType (fun () -> xs |> Array.Parallel.averageBy f) |> roundResult
+    consistencyIncludingParallel "averageBy" s l a pa
 
 
 [<Fact>]
@@ -81,7 +89,9 @@ let choose<'a when 'a : equality> (xs : 'a []) f  =
     let s = xs |> Seq.choose f |> Seq.toArray
     let l = xs |> List.ofArray |> List.choose f |> List.toArray
     let a = xs |> Array.choose f
-    consistency "contains" s l a
+    let pa = xs |> Array.Parallel.choose f
+    
+    consistencyIncludingParallel "contains" s l a pa
 
 [<Fact>]
 let ``choose is consistent`` () =
@@ -112,7 +122,8 @@ let collect<'a> (xs : 'a []) f  =
     let s = xs |> Seq.collect f |> Seq.toArray
     let l = xs |> List.ofArray |> List.collect (fun x -> f x |> List.ofArray) |> List.toArray
     let a = xs |> Array.collect f
-    consistency "collect" s l a
+    let pa = xs |> Array.Parallel.collect f
+    consistencyIncludingParallel "collect" s l a pa
 
 
 
@@ -224,7 +235,8 @@ let exists<'a when 'a : equality> (xs : 'a []) f =
     let s = xs |> Seq.exists f
     let l = xs |> List.ofArray |> List.exists f
     let a = xs |> Array.exists f
-    consistency "exists" s l a
+    let pa = xs |> Array.Parallel.exists f
+    consistencyIncludingParallel "exists" s l a pa
 
 [<Fact>]
 let ``exists is consistent`` () =
@@ -250,7 +262,8 @@ let filter<'a when 'a : equality> (xs : 'a []) predicate =
     let s = xs |> Seq.filter predicate
     let l = xs |> List.ofArray |> List.filter predicate
     let a = xs |> Array.filter predicate
-    Seq.toArray s = a && List.toArray l = a
+    let pa = xs |> Array.Parallel.filter predicate
+    pa = a && Seq.toArray s = a && List.toArray l = a
 
 [<Fact>]
 let ``filter is consistent`` () =
@@ -370,7 +383,8 @@ let forall<'a when 'a : equality> (xs : 'a []) f =
     let s = xs |> Seq.forall f
     let l = xs |> List.ofArray |> List.forall f
     let a = xs |> Array.forall f
-    consistency "forall" s l a
+    let pa = xs |> Array.Parallel.forall f
+    consistencyIncludingParallel "forall" s l a pa
 
 [<Fact>]
 let ``forall is consistent`` () =
@@ -698,7 +712,8 @@ let max<'a when 'a : comparison> (xs : 'a []) =
     let s = runAndCheckIfAnyError (fun () -> xs |> Seq.max)
     let l = runAndCheckIfAnyError (fun () -> xs |> List.ofArray |> List.max)
     let a = runAndCheckIfAnyError (fun () -> xs |> Array.max)
-    consistency "max" s l a
+    let pa = runAndCheckIfAnyError (fun () -> xs |> Array.Parallel.max)
+    consistencyIncludingParallel "max" s l a pa
 
 [<Fact>]
 let ``max is consistent`` () =
@@ -710,7 +725,8 @@ let maxBy<'a when 'a : comparison> (xs : 'a []) f =
     let s = runAndCheckIfAnyError (fun () -> xs |> Seq.maxBy f)
     let l = runAndCheckIfAnyError (fun () -> xs |> List.ofArray |> List.maxBy f)
     let a = runAndCheckIfAnyError (fun () -> xs |> Array.maxBy f)
-    consistency "maxBy" s l a
+    let pa = runAndCheckIfAnyError (fun () -> xs |> Array.Parallel.maxBy f)
+    consistencyIncludingParallel "maxBy" s l a pa
 
 [<Fact>]
 let ``maxBy is consistent`` () =
@@ -722,7 +738,8 @@ let min<'a when 'a : comparison> (xs : 'a []) =
     let s = runAndCheckIfAnyError (fun () -> xs |> Seq.min)
     let l = runAndCheckIfAnyError (fun () -> xs |> List.ofArray |> List.min)
     let a = runAndCheckIfAnyError (fun () -> xs |> Array.min)
-    consistency "min" s l a
+    let pa = runAndCheckIfAnyError (fun () -> xs |> Array.Parallel.min)
+    consistencyIncludingParallel "min" s l a pa
 
 [<Fact>]
 let ``min is consistent`` () =
@@ -734,7 +751,8 @@ let minBy<'a when 'a : comparison> (xs : 'a []) f =
     let s = runAndCheckIfAnyError (fun () -> xs |> Seq.minBy f)
     let l = runAndCheckIfAnyError (fun () -> xs |> List.ofArray |> List.minBy f)
     let a = runAndCheckIfAnyError (fun () -> xs |> Array.minBy f)
-    consistency "minBy" s l a
+    let pa = runAndCheckIfAnyError (fun () -> xs |> Array.Parallel.minBy f)
+    consistencyIncludingParallel "minBy" s l a pa
 
 [<Fact>]
 let ``minBy is consistent`` () =
@@ -806,8 +824,8 @@ let ``pick is consistent`` () =
 let reduce<'a when 'a : equality> (xs : 'a []) f =
     let s = runAndCheckErrorType (fun () -> xs |> Seq.reduce f)
     let l = runAndCheckErrorType (fun () -> xs |> List.ofArray |> List.reduce f)
-    let a = runAndCheckErrorType (fun () -> xs |> Array.reduce f)
-    consistency "reduce" s l a
+    let a = runAndCheckErrorType (fun () -> xs |> Array.reduce f)   
+    consistency "reduce" s l a 
 
 [<Fact>]
 let ``reduce is consistent`` () =
@@ -992,11 +1010,13 @@ let ``sortByDescending actually sorts (but is inconsistent in regards of stabili
     smallerSizeCheck sortByDescending<string,int>
     smallerSizeCheck sortByDescending<NormalFloat,int>
 
+
 let sum (xs : int []) =
     let s = run (fun () -> xs |> Seq.sum)
     let l = run (fun () -> xs |> Array.toList |> List.sum)
     let a = run (fun () -> xs |> Array.sum)
-    consistency "sum" s l a
+    let pa = run (fun () -> xs |> Array.Parallel.sum)
+    consistencyIncludingParallel "sum" s l a pa
 
 [<Fact>]
 let ``sum is consistent`` () =
@@ -1006,7 +1026,8 @@ let sumBy<'a> (xs : 'a []) (f:'a -> int) =
     let s = run (fun () -> xs |> Seq.sumBy f)
     let l = run (fun () -> xs |> Array.toList |> List.sumBy f)
     let a = run (fun () -> xs |> Array.sumBy f)
-    consistency "sumBy" s l a
+    let pa = run (fun () -> xs |> Array.Parallel.sumBy f)
+    consistencyIncludingParallel "sumBy" s l a pa
 
 [<Fact>]
 let ``sumBy is consistent`` () =
@@ -1104,7 +1125,8 @@ let tryFind<'a when 'a : equality> (xs : 'a []) predicate =
     let s = xs |> Seq.tryFind predicate
     let l = xs |> List.ofArray |> List.tryFind predicate
     let a = xs |> Array.tryFind predicate
-    consistency "tryFind" s l a
+    let pa = xs |> Array.Parallel.tryFind predicate
+    consistencyIncludingParallel "tryFind" s l a pa
 
 [<Fact>]
 let ``tryFind is consistent`` () =
@@ -1128,7 +1150,8 @@ let tryFindIndex<'a when 'a : equality> (xs : 'a []) predicate =
     let s = xs |> Seq.tryFindIndex predicate
     let l = xs |> List.ofArray |> List.tryFindIndex predicate
     let a = xs |> Array.tryFindIndex predicate
-    consistency "tryFindIndex" s l a
+    let pa = xs |> Array.Parallel.tryFindIndex predicate
+    consistencyIncludingParallel "tryFindIndex" s l a pa
 
 [<Fact>]
 let ``tryFindIndex is consistent`` () =
@@ -1188,7 +1211,8 @@ let tryPick<'a when 'a : comparison> (xs : 'a []) f =
     let s = xs |> Seq.tryPick f
     let l = xs |> List.ofArray |> List.tryPick f
     let a = xs |> Array.tryPick f
-    consistency "tryPick" s l a
+    let pa = xs |> Array.Parallel.tryPick f
+    consistencyIncludingParallel "tryPick" s l a pa
 
 [<Fact>]
 let ``tryPick is consistent`` () =
@@ -1280,9 +1304,10 @@ let zip<'a when 'a : equality> (xs':('a*'a) []) =
     let xs = Array.map fst xs'
     let xs2 = Array.map snd xs'
     let s = runAndCheckErrorType (fun () -> Seq.zip xs xs2 |> Seq.toArray)
-    let l = runAndCheckErrorType (fun () -> List.zip (List.ofSeq xs) (List.ofSeq xs2) |> List.toArray)
-    let a = runAndCheckErrorType (fun () -> Array.zip (Array.ofSeq xs) (Array.ofSeq xs2))
-    consistency "zip" s l a
+    let l = runAndCheckErrorType (fun () -> List.zip (List.ofArray xs) (List.ofArray xs2) |> List.toArray)
+    let a = runAndCheckErrorType (fun () -> Array.zip xs xs2)
+    let pa = runAndCheckErrorType (fun () -> Array.Parallel.zip xs xs2)
+    consistencyIncludingParallel "zip" s l a pa
     
 [<Fact>]
 let ``zip is consistent for collections with equal length`` () =
@@ -1304,3 +1329,87 @@ let ``zip3 is consistent for collections with equal length`` () =
     smallerSizeCheck zip3<int>
     smallerSizeCheck zip3<string>
     smallerSizeCheck zip3<NormalFloat>
+
+
+module ArrayParallelVsArray = 
+    let sort<'a when 'a : comparison> (xs : 'a []) =
+        let a = xs |> Array.sort
+        let pa = xs |> Array.Parallel.sort
+
+        let opName = "sort"
+        (a = pa) |@ (sprintf  "Array.%s = '%A', Array.Parallel.%s = '%A'" opName a opName pa)
+
+    [<Fact>]
+    let ``sort is consistent`` () =
+        bigSizeCheck sort<int>
+        bigSizeCheck sort<string>
+        bigSizeCheck sort<NormalFloat>
+
+    let sortBy<'a,'b when 'a : comparison and 'b : comparison> (xs : 'a []) (f:'a -> 'b) =
+        let a = xs |> Array.sortBy f
+        let pa = xs |> Array.Parallel.sortBy f
+
+        isSorted (Array.map f a) && isSorted (Array.map f pa) &&
+          haveSameElements pa xs && haveSameElements a xs &&
+          a.Length = pa.Length && a.Length = xs.Length
+
+    [<Fact>]
+    let ``sortBy actually sorts (but is inconsistent in regards of stability)`` () =
+        bigSizeCheck sortBy<int,int>
+        bigSizeCheck sortBy<int,string>
+        bigSizeCheck sortBy<string,string>
+        bigSizeCheck sortBy<string,int>
+        bigSizeCheck sortBy<NormalFloat,int>
+
+    let sortWith<'a,'b when 'a : comparison and 'b : comparison> (xs : 'a []) =
+        let f x y = 
+            if x = y then 0 else
+            if x = Unchecked.defaultof<_> && y <> Unchecked.defaultof<_> then -1 else
+            if y = Unchecked.defaultof<_> && x <> Unchecked.defaultof<_> then 1 else
+            if x < y then -1 else 1
+
+        let a = xs |> Array.sortWith f
+        let pa = xs |> Array.Parallel.sortWith f
+        let isSorted sorted = sorted |> Array.pairwise |> Array.forall (fun (a,b) -> f a b <= 0 || a = b)
+
+        isSorted a && isSorted pa &&
+            haveSameElements pa xs && haveSameElements a xs &&
+            a.Length = pa.Length && a.Length = xs.Length
+
+    [<Fact>]
+    let ``sortWith actually sorts (but is inconsistent in regards of stability)`` () =
+       bigSizeCheck sortWith<int,int>
+       bigSizeCheck sortWith<int,string>
+       bigSizeCheck sortWith<string,string>
+       bigSizeCheck sortWith<string,int>
+       bigSizeCheck sortWith<NormalFloat,int>
+
+    let sortDescending<'a when 'a : comparison> (xs : 'a []) =
+        let a = xs |> Array.sortDescending
+        let pa = xs |> Array.Parallel.sortDescending
+        let opName = "sortDescending"
+        (a = pa) |@ (sprintf  "Array.%s = '%A', Array.Parallel.%s = '%A'" opName a opName pa)
+
+    [<Fact>]
+    let ``sortDescending is consistent`` () =
+        bigSizeCheck sortDescending<int>
+        bigSizeCheck sortDescending<string>
+        bigSizeCheck sortDescending<NormalFloat>
+
+    let sortByDescending<'a,'b when 'a : comparison and 'b : comparison> (xs : 'a []) (f:'a -> 'b) =
+        let a = xs |> Array.sortByDescending f
+        let pa = xs |> Array.Parallel.sortByDescending f
+
+        let isDescSorted arr = arr |> Array.pairwise |> Array.forall (fun (a,b) -> f a >= f b || a = b)
+
+        isDescSorted a && isDescSorted pa &&
+          haveSameElements pa xs && haveSameElements a xs &&
+          a.Length = pa.Length && a.Length = xs.Length
+
+    [<Fact>]
+    let ``sortByDescending actually sorts (but is inconsistent in regards of stability)`` () =
+        bigSizeCheck sortByDescending<int,int>
+        bigSizeCheck sortByDescending<int,string>
+        bigSizeCheck sortByDescending<string,string>
+        bigSizeCheck sortByDescending<string,int>
+        bigSizeCheck sortByDescending<NormalFloat,int>

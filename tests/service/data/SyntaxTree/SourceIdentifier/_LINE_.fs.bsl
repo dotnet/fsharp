@@ -7,6 +7,6 @@ ImplFile
           [Expr
              (Const (SourceIdentifier ("__LINE__", "2", (2,0--2,8)), (2,0--2,8)),
               (2,0--2,8))], PreXmlDocEmpty, [], None, (2,0--2,8),
-          { LeadingKeyword = None })], (true, false),
+          { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

@@ -286,7 +286,7 @@ module MainModuleBuilder =
         (
             ctok,
             tcConfig: TcConfig,
-            tcGlobals,
+            tcGlobals: TcGlobals,
             tcImports: TcImports,
             pdbfile,
             assemblyName,
@@ -304,8 +304,7 @@ module MainModuleBuilder =
         RequireCompilationThread ctok
 
         let ilTypeDefs =
-            //let topTypeDef = mkILTypeDefForGlobalFunctions tcGlobals.ilg (mkILMethods [], emptyILFields)
-            mkILTypeDefs codegenResults.ilTypeDefs
+            mkILTypeDefs (codegenResults.ilTypeDefs @ tcGlobals.tryRemoveEmbeddedILTypeDefs ())
 
         let mainModule =
             let hashAlg =

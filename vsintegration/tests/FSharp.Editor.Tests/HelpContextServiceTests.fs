@@ -27,6 +27,7 @@ type HelpContextServiceTests() =
         let fileContents = fileContentsWithMarkers.Replace("$", "")
 
         let sourceText = SourceText.From(fileContents)
+
         let document =
             RoslynTestHelpers.CreateSolution(fileContents)
             |> RoslynTestHelpers.GetSingleDocument
@@ -57,7 +58,7 @@ type HelpContextServiceTests() =
         TestF1KeywordsWithOptions(expectedKeywords, lines)
 
 #if RELEASE
-    [<Fact(Skip="Fails in some CI, reproduces locally in Release mode, needs investigation")>]
+    [<Fact(Skip = "Fails in some CI, reproduces locally in Release mode, needs investigation")>]
 #else
     [<Fact>]
 #endif
@@ -209,7 +210,7 @@ type HelpContextServiceTests() =
         TestF1Keywords(keywords, file)
 
 #if RELEASE
-    [<Fact(Skip="Fails in some CI, reproduces locally in Release mode, needs investigation")>]
+    [<Fact(Skip = "Fails in some CI, reproduces locally in Release mode, needs investigation")>]
 #else
     [<Fact>]
 #endif
@@ -218,13 +219,10 @@ type HelpContextServiceTests() =
         let file = [ "open N$1" ]
         let keywords = [ Some "N1" ]
 
-        TestF1KeywordsWithOptions(
-            keywords,
-            file
-        )
+        TestF1KeywordsWithOptions(keywords, file)
 
 #if RELEASE
-    [<Fact(Skip="Fails in some CI, reproduces locally in Release mode, needs investigation")>]
+    [<Fact(Skip = "Fails in some CI, reproduces locally in Release mode, needs investigation")>]
 #else
     [<Fact>]
 #endif
@@ -239,10 +237,7 @@ type HelpContextServiceTests() =
 
         let keywords = [ Some "N1.T" ]
 
-        TestF1KeywordsWithOptions(
-            keywords,
-            file
-        )
+        TestF1KeywordsWithOptions(keywords, file)
 
     [<Fact>]
     member _.``F1 help keyword EndOfLine``() =

@@ -50,13 +50,6 @@ type Checker =
     member CheckTypars: m: range -> aenv: TypeEquivEnv -> implTypars: Typars -> signTypars: Typars -> bool
 
 /// Check the names add up between a signature and its implementation. We check this first.
-val CheckNamesOfModuleOrNamespaceContents:
-    denv: DisplayEnv ->
-    infoReader: InfoReader ->
-    implModRef: ModuleOrNamespaceRef ->
-    signModType: ModuleOrNamespaceType ->
-        bool
-
 val CheckNamesOfModuleOrNamespace:
     denv: DisplayEnv ->
     infoReader: InfoReader ->

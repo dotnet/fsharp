@@ -20,13 +20,13 @@ SigFile
                         Fun
                           (LongIdent (SynLongIdent ([unit], [], [None])),
                            LongIdent (SynLongIdent ([unit], [], [None])),
-                           (5,13--5,25), { ArrowRange = (5,18--5,20) }),
+                           (5,17--5,29), { ArrowRange = (5,22--5,24) }),
                         SynValInfo
                           ([[SynArgInfo ([], false, None)]],
                            SynArgInfo ([], false, None)), false, false,
-                        PreXmlDoc ((5,0), FSharp.Compiler.Xml.XmlDocCollector),
-                        None, None, (5,0--5,25),
-                        { LeadingKeyword = Member (5,0--5,6)
+                        PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
+                        None, None, (5,4--5,29),
+                        { LeadingKeyword = Member (5,4--5,10)
                           InlineKeyword = None
                           WithKeyword = None
                           EqualsRange = None }),
@@ -35,9 +35,9 @@ SigFile
                        IsOverrideOrExplicitImpl = false
                        IsFinal = false
                        GetterOrSetterIsCompilerGenerated = false
-                       MemberKind = Member }, (5,0--5,25),
-                     { GetSetKeywords = None })], (4,0--5,25)), (4,0--5,25))],
-          PreXmlDocEmpty, [], None, (2,0--5,25),
+                       MemberKind = Member }, (5,4--5,29),
+                     { GetSetKeywords = None })], (4,0--5,29)), (4,0--5,29))],
+          PreXmlDocEmpty, [], None, (2,0--5,29),
           { LeadingKeyword = Namespace (2,0--2,9) })],
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
