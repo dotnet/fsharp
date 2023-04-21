@@ -172,58 +172,62 @@ let mkGraph (compilingFSharpCore: bool) (filePairs: FilePairMap) (files: FileInP
     let fileContents = files |> Array.Parallel.map FileContentMapping.mkFileContent
 
     let findDependencies (file: FileInProject) : FileIndex array =
-        let fileContent = fileContents[file.Idx]
+        if file.Idx = 0 then
+            // First file cannot have any dependencies.
+            Array.empty
+        else
+            let fileContent = fileContents[file.Idx]
 
-        let knownFiles = [ 0 .. (file.Idx - 1) ] |> set
-        // File depends on all files above it that define accessible symbols at the root level (global namespace).
-        let filesFromRoot = trie.Files |> Set.filter (fun rootIdx -> rootIdx < file.Idx)
-        // Start by listing root-level dependencies.
-        let initialDepsResult =
-            (FileContentQueryState.Create file.Idx knownFiles filesFromRoot), fileContent
-        // Sequentially process all relevant entries of the file and keep updating the state and set of dependencies.
-        let depsResult =
-            initialDepsResult
-            // Seq is faster than List in this case.
-            ||> Seq.fold (processStateEntry queryTrie)
+            let knownFiles = [ 0 .. (file.Idx - 1) ] |> set
+            // File depends on all files above it that define accessible symbols at the root level (global namespace).
+            let filesFromRoot = trie.Files |> Set.filter (fun rootIdx -> rootIdx < file.Idx)
+            // Start by listing root-level dependencies.
+            let initialDepsResult =
+                (FileContentQueryState.Create file.Idx knownFiles filesFromRoot), fileContent
+            // Sequentially process all relevant entries of the file and keep updating the state and set of dependencies.
+            let depsResult =
+                initialDepsResult
+                // Seq is faster than List in this case.
+                ||> Seq.fold (processStateEntry queryTrie)
 
-        // Add missing links for cases where an unused open namespace did not create a link.
-        let ghostDependencies = collectGhostDependencies file.Idx trie queryTrie depsResult
+            // Add missing links for cases where an unused open namespace did not create a link.
+            let ghostDependencies = collectGhostDependencies file.Idx trie queryTrie depsResult
 
-        // Add a link from implementation files to their signature files.
-        let signatureDependency =
-            match filePairs.TryGetSignatureIndex file.Idx with
-            | None -> Array.empty
-            | Some sigIdx -> Array.singleton sigIdx
+            // Add a link from implementation files to their signature files.
+            let signatureDependency =
+                match filePairs.TryGetSignatureIndex file.Idx with
+                | None -> Array.empty
+                | Some sigIdx -> Array.singleton sigIdx
 
-        // Files in FSharp.Core have an implicit dependency on `prim-types-prelude.fsi` - add it.
-        let fsharpCoreImplicitDependencies =
-            let filename = "prim-types-prelude.fsi"
+            // Files in FSharp.Core have an implicit dependency on `prim-types-prelude.fsi` - add it.
+            let fsharpCoreImplicitDependencies =
+                let filename = "prim-types-prelude.fsi"
 
-            let implicitDepIdx =
-                files
-                |> Array.tryFindIndex (fun f -> FileSystemUtils.fileNameOfPath f.FileName = filename)
+                let implicitDepIdx =
+                    files
+                    |> Array.tryFindIndex (fun f -> FileSystemUtils.fileNameOfPath f.FileName = filename)
 
-            [|
-                if compilingFSharpCore then
-                    match implicitDepIdx with
-                    | Some idx ->
-                        if file.Idx > idx then
-                            yield idx
-                    | None ->
-                        exn $"Expected to find file '{filename}' during compilation of FSharp.Core, but it was not found."
-                        |> raise
-            |]
+                [|
+                    if compilingFSharpCore then
+                        match implicitDepIdx with
+                        | Some idx ->
+                            if file.Idx > idx then
+                                yield idx
+                        | None ->
+                            exn $"Expected to find file '{filename}' during compilation of FSharp.Core, but it was not found."
+                            |> raise
+                |]
 
-        let allDependencies =
-            [|
-                yield! depsResult.FoundDependencies
-                yield! ghostDependencies
-                yield! signatureDependency
-                yield! fsharpCoreImplicitDependencies
-            |]
-            |> Array.distinct
+            let allDependencies =
+                [|
+                    yield! depsResult.FoundDependencies
+                    yield! ghostDependencies
+                    yield! signatureDependency
+                    yield! fsharpCoreImplicitDependencies
+                |]
+                |> Array.distinct
 
-        allDependencies
+            allDependencies
 
     files
     |> Array.Parallel.map (fun file -> file.Idx, findDependencies file)

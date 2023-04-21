@@ -7,7 +7,8 @@ open TestUtils
 let private getContent isSignature sourceCode =
     let fileName = if isSignature then "Test.fsi" else "Test.fs"
     let ast = parseSourceCode ("Test.fs", sourceCode)
-    FileContentMapping.mkFileContent { Idx = 0; FileName = fileName; ParsedInput = ast }
+    // We use index 1 in this test because the index 0 will always return an empty list
+    FileContentMapping.mkFileContent { Idx = 1; FileName = fileName; ParsedInput = ast }
 
 let private (|TopLevelNamespace|_|) value e =
     match e with
@@ -121,3 +122,8 @@ module B = C
     match content with
     | [ TopLevelNamespace "" [ PrefixedIdentifier "C" ] ] -> Assert.Pass()
     | content -> Assert.Fail($"Unexpected content: {content}")
+
+[<Test>]
+let ``First file index always returns an empty list`` () =
+    let content = FileContentMapping.mkFileContent { Idx = 0; FileName = "FirstFile.fs"; ParsedInput = Unchecked.defaultof<_> }
+    Assert.IsTrue content.IsEmpty
