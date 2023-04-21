@@ -481,7 +481,7 @@ let test sequences =
         Assert.Equal(expected, actual)
 
     [<Fact>]
-    let ``Hints are not shown when CustomOperation attribute is detected`` () =
+    let ``Hints are shown correctly for custom operations`` () =
         let code =
             """
 let q = query { for x in { 1 .. 10 } do select x }
@@ -489,9 +489,30 @@ let q = query { for x in { 1 .. 10 } do select x }
 
         let document = getFsDocument code
 
+        let expected =
+            [
+                {
+                    Content = "projection = "
+                    Location = (1, 48)
+                }
+            ]
+
         let actual = getParameterNameHints document
 
-        Assert.Empty actual
+        Assert.Equal(expected, actual)
+
+    [<Fact>]
+    let ``Hints are not shown for custom operations with only 1 parameter`` () =
+        let code =
+            """
+let q = query { for _ in { 1 .. 10 } do count }
+"""
+
+        let document = getFsDocument code
+
+        let actual = getParameterNameHints document
+
+        Assert.Empty(actual)
 
     [<Fact>]
     let ``Hints are not shown when parameter names coincide with variable names`` () =
