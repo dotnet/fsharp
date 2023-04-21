@@ -263,12 +263,12 @@ let c = 0
 """
                     (set [| 0 |])
             ]
-        // This is a very last resort measure to link C to all files that came before it.
-        // `open X` does exist but there is no file that is actively contributing to the X namespace
+        // `open X` does exist but there is no file that is actively contributing to the X namespace.
         // This is a trade-off scenario, if A.fs had a type or nested module we would consider it to contribute to the X namespace.
         // As it is empty, we don't include the file index in the trie.
+        // To satisfy the open statement we link it to the lowest file idx that came before it.
         scenario
-            "A open statement that leads nowhere should link to every file that came above it."
+            "A open statement that leads nowhere should link to the first that file that came before it."
             [
                 sourceFile
                     "A.fs"
@@ -289,7 +289,7 @@ namespace Z
 
 open X
 """
-                    (set [| 0; 1 |])
+                    (set [| 0 |])
             ]
         // The nested module in this case adds content to the namespace
         // Similar if a namespace had a type.
@@ -576,5 +576,22 @@ let Foo () : unit =
     Bar.Foo ()
 """
                     (set [| 0 |])
+            ]
+        scenario
+            "Ghost dependency takes file index into account"
+            [
+                sourceFile "X.fs" "module X" Set.empty
+                // opened namespace 'System.IO' will be found in the Trie.
+                // However, we should not link A.fs to X.fs (because of the ghost dependency mechanism)
+                // because B.fs introduces nodes `System` and `IO` and comes after A.fs.
+                sourceFile
+                    "A.fs"
+                    """
+module A
+
+open System.IO
+                    """
+                    Set.empty
+                sourceFile "B.fs" "namespace System.IO" Set.empty
             ]
     ]

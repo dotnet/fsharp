@@ -61,9 +61,13 @@ let mergeTrieNodes (defaultChildSize: int) (tries: TrieNode array) =
             let node = root.Children[k]
 
             match node.Current, v.Current with
-            | TrieNodeInfo.Namespace (filesThatExposeTypes = currentFiles), TrieNodeInfo.Namespace (filesThatExposeTypes = otherFiles) ->
+            | TrieNodeInfo.Namespace (filesThatExposeTypes = currentFilesThatExposeTypes; connectedFiles = currentConnectedFiles),
+              TrieNodeInfo.Namespace (filesThatExposeTypes = otherFiles; connectedFiles = otherConnectedFiles) ->
                 for otherFile in otherFiles do
-                    currentFiles.Add(otherFile) |> ignore
+                    currentFilesThatExposeTypes.Add(otherFile) |> ignore
+
+                for otherFile in otherConnectedFiles do
+                    currentConnectedFiles.Add(otherFile) |> ignore
             | _ -> ()
 
             for kv in v.Children do
@@ -142,13 +146,13 @@ let processSynModuleOrNamespace<'Decl>
                 // The reasoning is that a type could be inferred and a nested auto open module will lift its content one level up.
                 let current =
                     if isNamespace then
-                        TrieNodeInfo.Namespace(
-                            name,
-                            (if hasTypesOrAutoOpenNestedModules then
-                                 HashSet.singleton idx
-                             else
-                                 HashSet.empty ())
-                        )
+                        let filesThatExposeTypes =
+                            if hasTypesOrAutoOpenNestedModules then
+                                HashSet.singleton idx
+                            else
+                                HashSet.empty ()
+
+                        TrieNodeInfo.Namespace(name, filesThatExposeTypes, HashSet.singleton idx)
                     else
                         TrieNodeInfo.Module(name, idx)
 
@@ -184,7 +188,7 @@ let processSynModuleOrNamespace<'Decl>
                                     HashSet.empty ()
                             | _ -> HashSet.empty ()
 
-                        let current = TrieNodeInfo.Namespace(name, files)
+                        let current = TrieNodeInfo.Namespace(name, files, HashSet.singleton idx)
 
                         mkSingletonDict name { Current = current; Children = node } |> continuation)
                     tail

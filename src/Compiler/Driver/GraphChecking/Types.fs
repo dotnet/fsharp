@@ -32,7 +32,7 @@ type internal FileInProject =
 type internal TrieNodeInfo =
     | Root of files: HashSet<FileIndex>
     | Module of name: Identifier * file: FileIndex
-    | Namespace of name: Identifier * filesThatExposeTypes: HashSet<FileIndex>
+    | Namespace of name: Identifier * filesThatExposeTypes: HashSet<FileIndex> * connectedFiles: HashSet<FileIndex>
 
     member x.Files: Set<FileIndex> =
         match x with

@@ -108,22 +108,6 @@ let rec processStateEntry (queryTrie: QueryTrie) (state: FileContentQueryState) 
             FoundDependencies = foundDependencies
         }
 
-/// Return all files contained in the trie.
-let filesInTrie (node: TrieNode) : Set<FileIndex> =
-    let rec collect (node: TrieNode) (continuation: FileIndex list -> FileIndex list) : FileIndex list =
-        let continuations: ((FileIndex list -> FileIndex list) -> FileIndex list) list =
-            [
-                for node in node.Children.Values do
-                    yield collect node
-            ]
-
-        let finalContinuation indexes =
-            continuation [ yield! node.Files; yield! List.concat indexes ]
-
-        Continuation.sequence continuations finalContinuation
-
-    Set.ofList (collect node id)
-
 /// <summary>
 /// For a given file's content, collect all missing ("ghost") file dependencies that the core resolution algorithm didn't return,
 /// but are required to satisfy the type-checker.
@@ -136,16 +120,16 @@ let filesInTrie (node: TrieNode) : Set<FileIndex> =
 /// - the namespace does not contain any children that can be referenced implicitly (eg. by type inference),
 /// then the main resolution algorithm does not create a link to any file defining the namespace.</para>
 /// <para>However, to satisfy the type-checker, the namespace must be resolved.
-/// This function returns a list of extra dependencies that makes sure that any such namespaces can be resolved (if it exists).
-/// For each unused open namespace we return one or more file links that define it.</para>
+/// This function returns an array with a potential extra dependencies that makes sure that any such namespaces can be resolved (if it exists).
+/// For each unused open namespace we might return one link that defined it.</para>
 /// </remarks>
 let collectGhostDependencies (fileIndex: FileIndex) (trie: TrieNode) (queryTrie: QueryTrie) (result: FileContentQueryState) =
-    // Go over all open namespaces, and assert all those links eventually went anywhere
+    // Go over all open namespaces, and assert all those links eventually went anywhere.
     Set.toArray result.OpenedNamespaces
-    |> Array.collect (fun path ->
+    |> Array.choose (fun path ->
         match queryTrie path with
         | QueryTrieNodeResult.NodeExposesData _
-        | QueryTrieNodeResult.NodeDoesNotExist -> Array.empty
+        | QueryTrieNodeResult.NodeDoesNotExist -> None
         | QueryTrieNodeResult.NodeDoesNotExposeData ->
             // At this point we are following up if an open namespace really lead nowhere.
             let node =
@@ -156,25 +140,16 @@ let collectGhostDependencies (fileIndex: FileIndex) (trie: TrieNode) (queryTrie:
 
                 find trie path
 
-            let filesDefiningNamespace =
-                filesInTrie node |> Set.filter (fun idx -> idx < fileIndex)
-
-            let dependenciesDefiningNamespace =
-                Set.intersect result.FoundDependencies filesDefiningNamespace
-
-            [|
-                if Set.isEmpty dependenciesDefiningNamespace then
-                    // There is no existing dependency defining the namespace,
-                    // so we need to add one.
-                    if Set.isEmpty filesDefiningNamespace then
-                        // No file defines inferrable symbols for this namespace, but the namespace might exist.
-                        // Because we don't track what files define a namespace without any relevant content,
-                        // the only way to ensure the namespace is in scope is to add a link to every preceding file.
-                        yield! [| 0 .. (fileIndex - 1) |]
-                    else
-                        // At least one file defines the namespace - add a dependency to the first (top) one.
-                        yield Seq.head filesDefiningNamespace
-            |])
+            match node.Current with
+            // Both Root and module would expose data, so we can ignore them.
+            | Root _
+            | Module _ -> None
+            | Namespace (connectedFiles = connectedFiles) ->
+                // We are only interested in any file that contained the namespace when they came before the current file.
+                // If the namespace is defined in a file after the current file then there is no way the current file can reference it.
+                // Which means that namespace would come from a different assembly.
+                connectedFiles
+                |> Seq.tryFind (fun connectedFileIdx -> connectedFileIdx < fileIndex))
 
 let mkGraph (compilingFSharpCore: bool) (filePairs: FilePairMap) (files: FileInProject array) : Graph<FileIndex> =
     // We know that implementation files backed by signatures cannot be depended upon.
