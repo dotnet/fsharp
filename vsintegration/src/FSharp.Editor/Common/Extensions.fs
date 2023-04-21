@@ -156,7 +156,8 @@ type SourceText with
             Runtime.CompilerServices.ConditionalWeakTable<_, _>.CreateValueCallback (SourceText.create version)
         )
 
-    member this.ToFSharpSourceTextWithoutVersion() = this.ToFSharpSourceText(this.GetHashCode())
+    member this.ToFSharpSourceTextWithoutVersion() =
+        this.ToFSharpSourceText(this.GetHashCode())
 
 type Document with
 
