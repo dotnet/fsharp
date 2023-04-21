@@ -78,7 +78,6 @@ type CodeFixesOptions =
 [<CLIMutable>]
 type LanguageServicePerformanceOptions =
     {
-        EnableInMemoryCrossProjectReferences: bool
         AllowStaleCompletionResults: bool
         TimeUntilStaleCompletion: int
         EnableParallelReferenceResolution: bool
@@ -89,7 +88,6 @@ type LanguageServicePerformanceOptions =
 
     static member Default =
         {
-            EnableInMemoryCrossProjectReferences = true
             AllowStaleCompletionResults = true
             TimeUntilStaleCompletion = 2000 // In ms, so this is 2 seconds
             EnableParallelReferenceResolution = false
@@ -216,9 +214,6 @@ module EditorOptionsExtensions =
 
         member private this.EditorOptions =
             this.Solution.Workspace.Services.GetService<EditorOptions>()
-
-        member this.AreFSharpInMemoryCrossProjectReferencesEnabled =
-            this.EditorOptions.LanguageServicePerformance.EnableInMemoryCrossProjectReferences
 
         member this.IsFSharpCodeFixesAlwaysPlaceOpensAtTopLevelEnabled =
             this.EditorOptions.CodeFixes.AlwaysPlaceOpensAtTopLevel
