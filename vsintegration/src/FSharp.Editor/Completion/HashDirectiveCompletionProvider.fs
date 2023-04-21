@@ -67,10 +67,22 @@ type internal HashDirectiveCompletionProvider
     let getClassifiedSpans (text: SourceText, position: int) : ResizeArray<ClassifiedSpan> =
         let documentId = workspace.GetDocumentIdInCurrentContext(text.Container)
         let document = workspace.CurrentSolution.GetDocument(documentId)
-        let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)
+
+        let defines, langVersion =
+            projectInfoManager.GetCompilationDefinesAndLangVersionForEditingDocument(document)
+
         let textLines = text.Lines
         let triggerLine = textLines.GetLineFromPosition(position)
-        Tokenizer.getClassifiedSpans (documentId, text, triggerLine.Span, Some document.FilePath, defines, CancellationToken.None)
+
+        Tokenizer.getClassifiedSpans (
+            documentId,
+            text,
+            triggerLine.Span,
+            Some document.FilePath,
+            defines,
+            Some langVersion,
+            CancellationToken.None
+        )
 
     let isInStringLiteral (text: SourceText, position: int) : bool =
         getClassifiedSpans (text, position)

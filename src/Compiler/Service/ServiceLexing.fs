@@ -1218,9 +1218,13 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
         }
 
 [<Sealed>]
-type FSharpSourceTokenizer(conditionalDefines: string list, fileName: string option) =
+type FSharpSourceTokenizer(conditionalDefines: string list, fileName: string option, langVersion: string option) =
 
-    let langVersion = LanguageVersion.Default
+    let langVersion =
+        langVersion
+        |> Option.map LanguageVersion
+        |> Option.defaultValue LanguageVersion.Default
+
     let reportLibraryOnlyFeatures = true
 
     let lexResourceManager = LexResourceManager()

@@ -12,7 +12,14 @@ open FSharp.Test
 
 type SyntacticClassificationServiceTests() =
 
-    member private this.ExtractMarkerData(fileContents: string, marker: string, defines: string list, isScriptFile: Option<bool>) =
+    member private this.ExtractMarkerData
+        (
+            fileContents: string,
+            marker: string,
+            defines: string list,
+            langVersion: string option,
+            isScriptFile: Option<bool>
+        ) =
         let textSpan = TextSpan(0, fileContents.Length)
 
         let fileName =
@@ -30,6 +37,7 @@ type SyntacticClassificationServiceTests() =
                 textSpan,
                 Some(fileName),
                 defines,
+                langVersion,
                 CancellationToken.None
             )
 
@@ -43,10 +51,13 @@ type SyntacticClassificationServiceTests() =
             marker: string,
             defines: string list,
             classificationType: string,
-            ?isScriptFile: bool
+            ?isScriptFile: bool,
+            ?langVersion: string
         ) =
+        let langVersion = langVersion |> Option.orElse (Some "preview")
+
         let (tokens, markerPosition) =
-            this.ExtractMarkerData(fileContents, marker, defines, isScriptFile)
+            this.ExtractMarkerData(fileContents, marker, defines, langVersion, isScriptFile)
 
         match tokens |> Seq.tryFind (fun token -> token.TextSpan.Contains(markerPosition)) with
         | None -> failwith "Cannot find colorization data for start of marker"
@@ -60,10 +71,13 @@ type SyntacticClassificationServiceTests() =
             marker: string,
             defines: string list,
             classificationType: string,
-            ?isScriptFile: bool
+            ?isScriptFile: bool,
+            ?langVersion: string
         ) =
+        let langVersion = langVersion |> Option.orElse (Some "preview")
+
         let (tokens, markerPosition) =
-            this.ExtractMarkerData(fileContents, marker, defines, isScriptFile)
+            this.ExtractMarkerData(fileContents, marker, defines, langVersion, isScriptFile)
 
         match
             tokens

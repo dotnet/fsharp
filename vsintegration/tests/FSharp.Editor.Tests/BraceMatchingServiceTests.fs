@@ -14,13 +14,18 @@ type BraceMatchingServiceTests() =
 
     let fileName = "C:\\test.fs"
 
-    member private this.VerifyNoBraceMatch(fileContents: string, marker: string) =
+    member private this.VerifyNoBraceMatch(fileContents: string, marker: string, ?langVersion: string) =
         let sourceText = SourceText.From(fileContents)
         let position = fileContents.IndexOf(marker)
         Assert.True(position >= 0, $"Cannot find marker '{marker}' in file contents")
 
-        let parsingOptions, _ =
-            checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
+        let parsingOptions =
+            let parsingOptions, _ =
+                checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
+
+            { parsingOptions with
+                LangVersionText = langVersion |> Option.defaultValue "preview"
+            }
 
         match
             FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, fileName, parsingOptions, position, "UnitTest")
@@ -29,7 +34,7 @@ type BraceMatchingServiceTests() =
         | None -> ()
         | Some (left, right) -> failwith $"Found match for brace '{marker}'"
 
-    member private this.VerifyBraceMatch(fileContents: string, startMarker: string, endMarker: string) =
+    member private this.VerifyBraceMatch(fileContents: string, startMarker: string, endMarker: string, ?langVersion: string) =
         let sourceText = SourceText.From(fileContents)
         let startMarkerPosition = fileContents.IndexOf(startMarker)
         let endMarkerPosition = fileContents.IndexOf(endMarker)
@@ -37,8 +42,13 @@ type BraceMatchingServiceTests() =
         Assert.True(startMarkerPosition >= 0, $"Cannot find start marker '{startMarkerPosition}' in file contents")
         Assert.True(endMarkerPosition >= 0, $"Cannot find end marker '{endMarkerPosition}' in file contents")
 
-        let parsingOptions, _ =
-            checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
+        let parsingOptions =
+            let parsingOptions, _ =
+                checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
+
+            { parsingOptions with
+                LangVersionText = langVersion |> Option.defaultValue "preview"
+            }
 
         match
             FSharpBraceMatchingService.GetBraceMatchingResult(

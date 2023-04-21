@@ -22,7 +22,7 @@ module internal SymbolHelpers =
         asyncMaybe {
             let userOpName = "getSymbolUsesOfSymbolAtLocationInDocument"
             let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(userOpName) |> liftAsync
-            let! defines = document.GetFSharpCompilationDefinesAsync(userOpName) |> liftAsync
+            let! defines, langVersion = document.GetFSharpCompilationDefinesAndLangVersionAsync(userOpName) |> liftAsync
 
             let! cancellationToken = Async.CancellationToken |> liftAsync
             let! sourceText = document.GetTextAsync(cancellationToken)
@@ -40,6 +40,7 @@ module internal SymbolHelpers =
                     SymbolLookupKind.Greedy,
                     false,
                     false,
+                    Some langVersion,
                     cancellationToken
                 )
 
