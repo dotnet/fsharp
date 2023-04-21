@@ -109,9 +109,11 @@ let ``Hints are not shown for lambda bindings`` () =
 
     Assert.Empty result
 
-[<Fact>]
-let ``Hints are not shown when there's type annotation`` () =
-    let code = "let func x : int = x"
+[<Theory>]
+[<InlineData("let func x : int = x")>]
+[<InlineData("let func (a: 'a) : 'a = a")>]
+[<InlineData("let func (a: 'a) : List<'a> = [a]")>]
+let ``Hints are not shown when there's type annotation`` code =
 
     let document = getFsDocument code
 

@@ -662,11 +662,13 @@ moduleSpfn:
         if isRec then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsInvalidUseOfRec())
         let info = SynComponentInfo($1 @ attribs2, None, [], path, xmlDoc, false, vis, rhs parseState 3)
         if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-        let m = (rhs2 parseState 1 4, $5)
+        let decls, mOptEnd = $5
+        let m = (rhs2 parseState 1 4, decls)
                 ||> unionRangeWithListBy (fun (d: SynModuleSigDecl) -> d.Range)
                 |> unionRangeWithXmlDoc xmlDoc
+        let m = match mOptEnd with | None -> m | Some mEnd -> unionRanges m mEnd
         let trivia: SynModuleSigDeclNestedModuleTrivia = { ModuleKeyword = Some mModule; EqualsRange = $4 }
-        SynModuleSigDecl.NestedModule(info, isRec, $5, m, trivia) }
+        SynModuleSigDecl.NestedModule(info, isRec, decls, m, trivia) }
 
   | opt_attributes opt_access moduleIntro error
       { let mModule, isRec, path, vis, attribs2 = $3
@@ -743,15 +745,17 @@ moduleSpecBlock:
 
   /* #light-syntax, with no sig/end or begin/end */
   | OBLOCKBEGIN moduleSpfns oblockend
-      { $2 }
+      { $2, None }
 
   /* #light-syntax, with sig/end or begin/end */
   | OBLOCKBEGIN sigOrBegin moduleSpfnsPossiblyEmpty END oblockend
-      { $3 }
+      { let mEnd = rhs parseState 4
+        $3, Some mEnd }
 
   /* non-#light-syntax, with sig/end or begin/end */
   | sigOrBegin moduleSpfnsPossiblyEmpty END
-      { $2 }
+      { let mEnd = rhs parseState 3
+        $2, Some mEnd }
 
 
 tyconSpfnList:
