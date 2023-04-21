@@ -22,7 +22,7 @@ type internal FSharpBraceMatchingService [<ImportingConstructor>] () =
             [<Optional; DefaultParameterValue(false)>] forFormatting: bool
         ) =
         async {
-            let! matchedBraces = checker.MatchBraces(fileName, sourceText.ToFSharpSourceText(), parsingOptions, userOpName)
+            let! matchedBraces = checker.MatchBraces(fileName, sourceText.ToFSharpSourceTextWithoutVersion(), parsingOptions, userOpName)
 
             let isPositionInRange range =
                 match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with

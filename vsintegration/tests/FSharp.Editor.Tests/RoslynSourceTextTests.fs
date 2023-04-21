@@ -12,7 +12,7 @@ module RoslynSourceTextTests =
     [<Fact>]
     let SourceText () =
         let text = "test\ntest2\r\ntest3\n\ntest4\ntest5\rtest6\n"
-        let sourceText = SourceText.From(text).ToFSharpSourceText()
+        let sourceText = SourceText.From(text).ToFSharpSourceTextWithoutVersion()
 
         Assert.Equal("test", sourceText.GetLineString(0))
         Assert.Equal("test2", sourceText.GetLineString(1))

@@ -88,10 +88,10 @@ module private SourceText =
 
     let weakTable = ConditionalWeakTable<SourceText, ISourceText>()
 
-    let create (hash: int option) (sourceText: SourceText) =
+    let create version (sourceText: SourceText) =
         let sourceText =
             { new Object() with
-                override _.GetHashCode() = defaultArg hash (base.GetHashCode())
+                override _.GetHashCode() = version
               interface ISourceText with
 
                   member _.Item
@@ -150,11 +150,13 @@ module private SourceText =
 
 type SourceText with
 
-    member this.ToFSharpSourceText(?hash) =
+    member this.ToFSharpSourceText(version) =
         SourceText.weakTable.GetValue(
             this,
-            Runtime.CompilerServices.ConditionalWeakTable<_, _>.CreateValueCallback (SourceText.create hash)
+            Runtime.CompilerServices.ConditionalWeakTable<_, _>.CreateValueCallback (SourceText.create version)
         )
+
+    member this.ToFSharpSourceTextWithoutVersion() = this.ToFSharpSourceText(this.GetHashCode())
 
 type Document with
 

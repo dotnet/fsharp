@@ -70,7 +70,7 @@ type internal XmlDocCommandFilter(wpfTextView: IWpfTextView, filePath: string, w
                                 let! parseResults = document.GetFSharpParseResultsAsync(nameof (XmlDocCommandFilter)) |> liftAsync
 
                                 let xmlDocables =
-                                    XmlDocParser.GetXmlDocables(sourceText.ToFSharpSourceText(), parseResults.ParseTree)
+                                    XmlDocParser.GetXmlDocables(sourceText.ToFSharpSourceTextWithoutVersion(), parseResults.ParseTree)
 
                                 let xmlDocablesBelowThisLine =
                                     // +1 because looking below current line for e.g. a 'member' or 'let'

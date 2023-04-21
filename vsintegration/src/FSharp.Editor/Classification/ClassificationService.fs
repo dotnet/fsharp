@@ -101,7 +101,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
             &&& ~~~FSharpLexerFlags.UseLexFilter
 
         FSharpLexer.Tokenize(
-            text.ToFSharpSourceText(),
+            text.ToFSharpSourceTextWithoutVersion(),
             tokenCallback,
             filePath = filePath,
             conditionalDefines = defines,
