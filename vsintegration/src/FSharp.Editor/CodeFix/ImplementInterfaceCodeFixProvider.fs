@@ -6,6 +6,7 @@ open System
 open System.Composition
 open System.Threading
 open System.Threading.Tasks
+open System.Collections.Immutable
 
 open Microsoft.CodeAnalysis.Formatting
 open Microsoft.CodeAnalysis.Text
@@ -33,7 +34,6 @@ type internal InterfaceState =
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "ImplementInterface"); Shared>]
 type internal FSharpImplementInterfaceCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
-    let fixableDiagnosticIds = [ "FS0366" ]
 
     let queryInterfaceState appendBracketAt (pos: pos) (tokens: Tokenizer.SavedTokenInfo[]) (ast: ParsedInput) =
         asyncMaybe {
@@ -143,10 +143,6 @@ type internal FSharpImplementInterfaceCodeFixProvider [<ImportingConstructor>] (
                 |> Array.exists (fun e -> e.Severity = FSharpDiagnosticSeverity.Error)
             // This comparison is a bit expensive
             if hasTypeCheckError && List.length membersAndRanges <> Seq.length interfaceMembers then
-                let diagnostics =
-                    context.Diagnostics
-                    |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id)
-                    |> Seq.toImmutableArray
 
                 let registerCodeFix title verboseMode =
                     let codeAction =
@@ -182,14 +178,14 @@ type internal FSharpImplementInterfaceCodeFixProvider [<ImportingConstructor>] (
                             title
                         )
 
-                    context.RegisterCodeFix(codeAction, diagnostics)
+                    context.RegisterCodeFix(codeAction, context.Diagnostics)
 
                 registerCodeFix (SR.ImplementInterface()) true
                 registerCodeFix (SR.ImplementInterfaceWithoutTypeAnnotation()) false
             else
                 ()
 
-    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0366")
 
     override _.RegisterCodeFixesAsync context : Task =
         asyncMaybe {

@@ -2291,6 +2291,11 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | V vref -> not vref.IsCtorThisVal && isRefCellTy cenv.g vref.Type
         | _ -> false
 
+    member x.IsReferencedValue =
+        match d with
+        | V vref -> vref.Deref.HasBeenReferenced
+        | _ -> false
+
     override x.Equals(other: obj) =
         box x === other ||
         match other with

@@ -4,67 +4,71 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Composition
+open System.Threading
 open System.Threading.Tasks
+open System.Collections.Immutable
 
+open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.CodeActions
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
+
+open FSharp.Compiler.EditorServices
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.RemoveUnusedBinding); Shared>]
 type internal FSharpRemoveUnusedBindingCodeFixProvider [<ImportingConstructor>] () =
 
     inherit CodeFixProvider()
 
-    let fixableDiagnosticIds = set [ "FS1182" ]
+    static let title = SR.RemoveUnusedBinding()
+    override _.FixableDiagnosticIds = ImmutableArray.Create("FS1182")
 
-    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    member this.GetChanges(document: Document, diagnostics: ImmutableArray<Diagnostic>, ct: CancellationToken) =
+        backgroundTask {
 
-    override _.RegisterCodeFixesAsync context : Task =
-        asyncMaybe {
-            // Don't show code fixes for unused values, even if they are compiler-generated.
-            do! Option.guard context.Document.Project.IsFSharpCodeFixesUnusedDeclarationsEnabled
+            let! sourceText = document.GetTextAsync(ct)
+            let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpRemoveUnusedBindingCodeFixProvider))
 
-            let document = context.Document
-            let! sourceText = document.GetTextAsync(context.CancellationToken)
+            let changes =
+                seq {
+                    for d in diagnostics do
+                        let textSpan = d.Location.SourceSpan
 
-            let! parseResults =
-                context.Document.GetFSharpParseResultsAsync(nameof (FSharpRemoveUnusedBindingCodeFixProvider))
-                |> liftAsync
+                        let symbolRange =
+                            RoslynHelpers.TextSpanToFSharpRange(document.FilePath, textSpan, sourceText)
 
-            let diagnostics =
-                context.Diagnostics
-                |> Seq.filter (fun x -> fixableDiagnosticIds |> Set.contains x.Id)
-                |> Seq.toImmutableArray
+                        let spanOfBindingOpt =
+                            parseResults.TryRangeOfBindingWithHeadPatternWithPos(symbolRange.Start)
+                            |> Option.bind (fun rangeOfBinding -> RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, rangeOfBinding))
 
-            let symbolRange =
-                RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)
+                        match spanOfBindingOpt with
+                        | Some spanOfBinding ->
+                            let keywordEndColumn =
+                                let rec loop ch pos =
+                                    if not (Char.IsWhiteSpace(ch)) then
+                                        pos
+                                    else
+                                        loop sourceText.[pos - 1] (pos - 1)
 
-            let! rangeOfBinding = parseResults.TryRangeOfBindingWithHeadPatternWithPos(symbolRange.Start)
-            let! spanOfBinding = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, rangeOfBinding)
+                                loop sourceText.[spanOfBinding.Start - 1] (spanOfBinding.Start - 1)
 
-            let keywordEndColumn =
-                let rec loop ch pos =
-                    if not (Char.IsWhiteSpace(ch)) then
-                        pos
-                    else
-                        loop sourceText.[pos - 1] (pos - 1)
+                            // This is safe, since we could never have gotten here unless there was a `let` or `use`
+                            let keywordStartColumn = keywordEndColumn - 2
+                            let fullSpan = TextSpan(keywordStartColumn, spanOfBinding.End - keywordStartColumn)
 
-                loop sourceText.[spanOfBinding.Start - 1] (spanOfBinding.Start - 1)
+                            yield TextChange(fullSpan, "")
+                        | None -> ()
+                }
 
-            // This is safe, since we could never have gotten here unless there was a `let` or `use`
-            let keywordStartColumn = keywordEndColumn - 2
-            let fullSpan = TextSpan(keywordStartColumn, spanOfBinding.End - keywordStartColumn)
-
-            let prefixTitle = SR.RemoveUnusedBinding()
-
-            let removalCodeFix =
-                CodeFixHelpers.createTextChangeCodeFix (
-                    CodeFix.RemoveUnusedBinding,
-                    prefixTitle,
-                    context,
-                    (fun () -> asyncMaybe.Return [| TextChange(fullSpan, "") |])
-                )
-
-            context.RegisterCodeFix(removalCodeFix, diagnostics)
+            return changes
         }
-        |> Async.Ignore
-        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+
+    override this.RegisterCodeFixesAsync ctx : Task =
+        backgroundTask {
+            if ctx.Document.Project.IsFSharpCodeFixesUnusedDeclarationsEnabled then
+                let! changes = this.GetChanges(ctx.Document, ctx.Diagnostics, ctx.CancellationToken)
+                ctx.RegisterFsharpFix(CodeFix.RemoveUnusedBinding, title, changes)
+        }
+
+    override this.GetFixAllProvider() =
+        CodeFixHelpers.createFixAllProvider CodeFix.RemoveUnusedBinding this.GetChanges
