@@ -52,11 +52,6 @@
         <target state="translated">Diagnostika</target>
         <note />
       </trans-unit>
-      <trans-unit id="Enable_Parallel_Checking_With_Signature_Files">
-        <source>Enable parallel type checking with signature files</source>
-        <target state="translated">Povolit paralelní kontrolu typů pomocí souborů podpisu</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Enable_Parallel_Reference_Resolution">
         <source>Enable parallel reference resolution</source>
         <target state="translated">Povolit paralelní referenční rozlišení</target>
