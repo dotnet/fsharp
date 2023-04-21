@@ -471,10 +471,6 @@ function EnablePreviewSdks() {
 }
 
 try {
-    if ($testIntegration) {
-        Write-Error 'Pipeline failed due to intentional error.'
-    }
-    
     $script:BuildCategory = "Build"
     $script:BuildMessage = "Failure preparing build"
 
