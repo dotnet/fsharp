@@ -1,4 +1,4 @@
-namespace FSharp.Compiler.CodeAnalysis
+namespace FSharp.Compiler.CodeAnalysis.TransparentCompiler
 
 open System
 open System.Diagnostics
@@ -21,9 +21,14 @@ open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.IO
 open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.Symbols
+open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Xml
+open System.Threading.Tasks
+open FSharp.Compiler.ParseAndCheckInputs
+open FSharp.Compiler.GraphChecking
+open FSharp.Compiler.Syntax
 
 
 type internal FSharpFile = {
@@ -34,11 +39,14 @@ type internal FSharpFile = {
 }
 
 /// Things we need to start parsing and checking files for a given project snapshot
-type BootstrapInfo = {
+type internal BootstrapInfo = {
     TcConfig: TcConfig
+    TcImports: TcImports
+    TcGlobals: TcGlobals
+    InitialTcInfo: TcInfo
     SourceFiles: FSharpFile list
+    LoadClosure: LoadClosure option
 }
-
 
 type internal TransparentCompiler
     (
@@ -59,11 +67,14 @@ type internal TransparentCompiler
     ) =
 
     // Is having just one of these ok?
-    let lexResourceManager = Lexhelp.LexResourceManager()
+    let _lexResourceManager = Lexhelp.LexResourceManager()
 
     let ParseFileCache = AsyncMemoize()
     let ParseAndCheckFileInProjectCache = AsyncMemoize()
     let FrameworkImportsCache = AsyncMemoize()
+    let BootstrapInfoCache = AsyncMemoize()
+    let TcPriorCache = AsyncMemoize()
+    let DependencyGraphForLastFileCache = AsyncMemoize()
 
     // We currently share one global dependency provider for all scripts for the FSharpChecker.
     // For projects, one is used per project.
@@ -132,17 +143,92 @@ type internal TransparentCompiler
         return! TcImports.BuildFrameworkTcImports (tcConfigP, frameworkDLLs, nonFrameworkResolutions)
     }
 
+    // Link all the assemblies together and produce the input typecheck accumulator
+    let CombineImportedAssembliesTask (
+        assemblyName, 
+        tcConfig: TcConfig, 
+        tcConfigP, 
+        tcGlobals, 
+        frameworkTcImports, 
+        nonFrameworkResolutions, 
+        unresolvedReferences, 
+        dependencyProvider, 
+        loadClosureOpt: LoadClosure option, 
+        basicDependencies
+#if !NO_TYPEPROVIDERS
+        ,importsInvalidatedByTypeProvider: Event<unit>
+#endif
+        ) =
 
-    let ComputeBootstrapInfo (projectSnapshot: FSharpProjectSnapshot) =
+      node {
+        let diagnosticsLogger = CompilationDiagnosticLogger("CombineImportedAssembliesTask", tcConfig.diagnosticsOptions)
+        use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parameter)
+
+        let! tcImports =
+          node {
+            try
+                let! tcImports = TcImports.BuildNonFrameworkTcImports(tcConfigP, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences, dependencyProvider)
+#if !NO_TYPEPROVIDERS
+                tcImports.GetCcusExcludingBase() |> Seq.iter (fun ccu ->
+                    // When a CCU reports an invalidation, merge them together and just report a
+                    // general "imports invalidated". This triggers a rebuild.
+                    //
+                    // We are explicit about what the handler closure captures to help reason about the
+                    // lifetime of captured objects, especially in case the type provider instance gets leaked
+                    // or keeps itself alive mistakenly, e.g. via some global state in the type provider instance.
+                    //
+                    // The handler only captures
+                    //    1. a weak reference to the importsInvalidated event.
+                    //
+                    // The IncrementalBuilder holds the strong reference the importsInvalidated event.
+                    //
+                    // In the invalidation handler we use a weak reference to allow the IncrementalBuilder to
+                    // be collected if, for some reason, a TP instance is not disposed or not GC'd.
+                    let capturedImportsInvalidated = WeakReference<_>(importsInvalidatedByTypeProvider)
+                    ccu.Deref.InvalidateEvent.Add(fun _ ->
+                        match capturedImportsInvalidated.TryGetTarget() with
+                        | true, tg -> tg.Trigger()
+                        | _ -> ()))
+#endif
+                return tcImports
+            with exn ->
+                Debug.Assert(false, sprintf "Could not BuildAllReferencedDllTcImports %A" exn)
+                diagnosticsLogger.Warning exn
+                return frameworkTcImports
+          }
+
+        let tcInitial, openDecls0 = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
+        let tcState = GetInitialTcState (rangeStartup, assemblyName, tcConfig, tcGlobals, tcImports, tcInitial, openDecls0)
+        let loadClosureErrors =
+           [ match loadClosureOpt with
+             | None -> ()
+             | Some loadClosure ->
+                for inp in loadClosure.Inputs do
+                    yield! inp.MetaCommandDiagnostics ]
+
+        let initialErrors = Array.append (Array.ofList loadClosureErrors) (diagnosticsLogger.GetDiagnostics())
+        let tcInfo =
+            {
+              tcState=tcState
+              tcEnvAtEndOfFile=tcInitial
+              topAttribs=None
+              latestCcuSigForFile=None
+              tcDiagnosticsRev = [ initialErrors ]
+              moduleNamesDict = Map.empty
+              tcDependencyFiles = basicDependencies
+              sigNameOpt = None
+            }
+        return tcImports, tcInfo
+      }
+
+    let ComputeBootstrapInfoInner (projectSnapshot: FSharpProjectSnapshot) =
         node {
-
             let useSimpleResolutionSwitch = "--simpleresolution"
             let commandLineArgs = projectSnapshot.OtherOptions
             let defaultFSharpBinariesDir = FSharpCheckerResultsSettings.defaultFSharpBinariesDir
             let useScriptResolutionRules = projectSnapshot.UseScriptResolutionRules
 
             let projectReferences = getProjectReferences projectSnapshot "ComputeBootstrapInfo"
-            let sourceFiles = projectSnapshot.SourceFileNames
 
             // TODO: script support
             let loadClosureOpt: LoadClosure option = None
@@ -192,7 +278,7 @@ type internal TransparentCompiler
                 tcConfigB.useSimpleResolution <- (getSwitchValue useSimpleResolutionSwitch) |> Option.isSome
 
                 // Apply command-line arguments and collect more source files if they are in the arguments
-                let sourceFilesNew = ApplyCommandLineArgs(tcConfigB, sourceFiles, commandLineArgs)
+                let sourceFilesNew = ApplyCommandLineArgs(tcConfigB, projectSnapshot.SourceFileNames, commandLineArgs)
 
                 // Never open PDB files for the language service, even if --standalone is specified
                 tcConfigB.openDebugInformationForLaterStaticLinking <- false
@@ -239,7 +325,7 @@ type internal TransparentCompiler
             setupConfigFromLoadClosure()
 
             let tcConfig = TcConfig.Create(tcConfigB, validate=true)
-            let outfile, _, assemblyName = tcConfigB.DecideNames sourceFiles
+            let _outfile, _, assemblyName = tcConfigB.DecideNames sourceFiles
 
             // Resolve assemblies and create the framework TcImports. This caches a level of "system" references. No type providers are
             // included in these references.
@@ -270,36 +356,33 @@ type internal TransparentCompiler
             let diagnosticsLogger = CompilationDiagnosticLogger("nonFrameworkAssemblyInputs", tcConfig.diagnosticsOptions)
             use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parameter)
 
-            // Get the names and time stamps of all the non-framework referenced assemblies, which will act
-            // as inputs to one of the nodes in the build.
-            //
-            // This operation is done when constructing the builder itself, rather than as an incremental task.
-            let nonFrameworkAssemblyInputs =
-                // Note we are not calling diagnosticsLogger.GetDiagnostics() anywhere for this task.
-                // This is ok because not much can actually go wrong here.
-                let diagnosticsLogger = CompilationDiagnosticLogger("nonFrameworkAssemblyInputs", tcConfig.diagnosticsOptions)
-                // Return the disposable object that cleans up
-                use _holder = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parameter)
+            // TODO: might need to put something like this somewhere
+            //// Get the names and time stamps of all the non-framework referenced assemblies, which will act
+            //// as inputs to one of the nodes in the build.
+            ////
+            //// This operation is done when constructing the builder itself, rather than as an incremental task.
+            //let nonFrameworkAssemblyInputs =
+            //    // Note we are not calling diagnosticsLogger.GetDiagnostics() anywhere for this task.
+            //    // This is ok because not much can actually go wrong here.
+            //    let diagnosticsLogger = CompilationDiagnosticLogger("nonFrameworkAssemblyInputs", tcConfig.diagnosticsOptions)
+            //    // Return the disposable object that cleans up
+            //    use _holder = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parameter)
 
-                [ for r in nonFrameworkResolutions do
-                    let fileName = r.resolvedPath
-                    yield (Choice1Of2 fileName, (fun (cache: TimeStampCache) -> cache.GetFileTimeStamp fileName))
+            //    [ for r in nonFrameworkResolutions do
+            //        let fileName = r.resolvedPath
+            //        yield (Choice1Of2 fileName, (fun (cache: TimeStampCache) -> cache.GetFileTimeStamp fileName))
 
-                  for pr in projectReferences  do
-                    yield Choice2Of2 pr, (fun (cache: TimeStampCache) -> cache.GetProjectReferenceTimeStamp pr) ]
-
-            // Start importing
+            //      for pr in projectReferences  do
+            //        yield Choice2Of2 pr, (fun (cache: TimeStampCache) -> cache.GetProjectReferenceTimeStamp pr) ]
 
             let tcConfigP = TcConfigProvider.Constant tcConfig
-            let beforeFileChecked = Event<string>()
-            let fileChecked = Event<string>()
 
-#if !NO_TYPEPROVIDERS
+                #if !NO_TYPEPROVIDERS
             let importsInvalidatedByTypeProvider = Event<unit>()
-#endif
+                #endif
 
             // Check for the existence of loaded sources and prepend them to the sources list if present.
-            let sourceFiles = tcConfig.GetAvailableLoadedSources() @ (sourceFiles |>List.map (fun s -> rangeStartup, s))
+            let sourceFiles = tcConfig.GetAvailableLoadedSources() @ (sourceFiles |> List.map (fun s -> rangeStartup, s))
 
             // Mark up the source files with an indicator flag indicating if they are the last source file in the project
             let sourceFiles =
@@ -314,12 +397,7 @@ type internal TransparentCompiler
                         yield file
 
                   for r in nonFrameworkResolutions do
-                        yield  r.resolvedPath  ]
-
-            let allDependencies =
-                [| yield! basicDependencies
-                   for _, f, _ in sourceFiles do
-                        yield f |]
+                        yield r.resolvedPath ]
 
             // For scripts, the dependency provider is already available.
             // For projects create a fresh one for the project.
@@ -328,7 +406,7 @@ type internal TransparentCompiler
                 then dependencyProviderForScripts
                 else new DependencyProvider()
 
-            let! initialBoundModel = 
+            let! tcImports, initialTcInfo = 
                 CombineImportedAssembliesTask(
                     assemblyName,
                     tcConfig,
@@ -339,36 +417,67 @@ type internal TransparentCompiler
                     unresolvedReferences,
                     dependencyProvider,
                     loadClosureOpt,
-                    basicDependencies,
-                    keepAssemblyContents,
-                    keepAllBackgroundResolutions,
-                    keepAllBackgroundSymbolUses,
-                    enableBackgroundItemKeyStoreAndSemanticClassification,
-                    enablePartialTypeChecking,
-                    beforeFileChecked,
-                    fileChecked
-#if !NO_TYPEPROVIDERS
+                    basicDependencies
+                #if !NO_TYPEPROVIDERS
                     ,importsInvalidatedByTypeProvider
-#endif
+                #endif
                 )
 
-            let getFSharpSource fileName =
-                getSource
-                |> Option.map(fun getSource ->
-                    let timeStamp = DateTime.UtcNow
-                    let getTimeStamp = fun () -> timeStamp
-                    let getSourceText() = getSource fileName
-                    FSharpSource.Create(fileName, getTimeStamp, getSourceText))
-                |> Option.defaultWith(fun () -> FSharpSource.CreateFromFile(fileName))
+            let fileSnapshots = Map [ for f in projectSnapshot.SourceFiles -> f.FileName, f ]
 
             let sourceFiles =
                 sourceFiles
-                |> List.map (fun (m, fileName, isLastCompiland) -> 
-                    { Range = m; Source = getFSharpSource fileName; Flags = isLastCompiland } )
+                |> List.map (fun (m, fileName, (isLastCompiland, isExe)) ->
+                    let source =
+                        fileSnapshots.TryFind fileName
+                        |> Option.defaultWith (fun () ->
+                            // TODO: does this commonly happen?
+                            {
+                                FileName = fileName
+                                Version = (FileSystem.GetLastWriteTimeShim fileName).Ticks.ToString()
+                                GetSource = (fun () -> fileName |> File.ReadAllText |> SourceText.ofString |> Task.FromResult)
+                            })
+                    { Range = m; Source = source; IsLastCompiland = isLastCompiland; IsExe = isExe })
 
-            return (), ()
+            return Some {
+                TcConfig = tcConfig
+                TcImports = tcImports
+                TcGlobals = tcGlobals
+                InitialTcInfo = initialTcInfo
+                SourceFiles = sourceFiles
+                LoadClosure = loadClosureOpt
+            }
         }
 
+    let ComputeBootstrapInfo (projectSnapshot: FSharpProjectSnapshot) _key =
+        node {
+
+            // Trap and report diagnostics from creation.
+            let delayedLogger = CapturingDiagnosticsLogger("IncrementalBuilderCreation")
+            use _ = new CompilationGlobalsScope(delayedLogger, BuildPhase.Parameter)
+
+            let! bootstrapInfoOpt =
+                node {
+                    try
+                        return! ComputeBootstrapInfoInner projectSnapshot
+                    with exn ->
+                        errorRecoveryNoRange exn
+                        return None
+                }
+
+            let diagnostics =
+                match bootstrapInfoOpt with
+                | Some bootstrapInfo ->
+                    let diagnosticsOptions = bootstrapInfo.TcConfig.diagnosticsOptions
+                    let diagnosticsLogger = CompilationDiagnosticLogger("IncrementalBuilderCreation", diagnosticsOptions)
+                    delayedLogger.CommitDelayedDiagnostics diagnosticsLogger
+                    diagnosticsLogger.GetDiagnostics()
+                | _ ->
+                    Array.ofList delayedLogger.Diagnostics
+                |> Array.map (fun (diagnostic, severity) ->
+                    FSharpDiagnostic.CreateFromException(diagnostic, severity, range.Zero, suggestNamesForErrors))
+            return bootstrapInfoOpt, diagnostics
+        }
 
     let ComputeParseFile (file: FSharpFile) (projectSnapshot: FSharpProjectSnapshot) bootstrapInfo userOpName _key = node {
 
@@ -383,8 +492,7 @@ type internal TransparentCompiler
         // GraphNode.SetPreferredUILang tcPrior.TcConfig.preferredUiLang
 
         let! sourceText = file.Source.GetSource() |> NodeCode.AwaitTask
-
-        return ParseAndCheckFile.parseFile (
+        let diagnostics, parsedInput, anyErrors = ParseAndCheckFile.parseFile(
             sourceText,
             file.Source.FileName,
             parsingOptions,
@@ -392,14 +500,64 @@ type internal TransparentCompiler
             suggestNamesForErrors,
             captureIdentifiersWhenParsing
         )
-
+        return diagnostics, parsedInput, anyErrors, sourceText
     }
 
+    let ComputeDependencyGraphForLastFile parsedInputs (tcConfig: TcConfig) _key =
+        node {
+            let sourceFiles: FileInProject array =
+                parsedInputs
+                |> Seq.toArray
+                |> Array.mapi (fun idx (input: ParsedInput) ->
+                    {
+                        Idx = idx
+                        FileName = input.FileName
+                        ParsedInput = input
+                    })
+
+            let filePairs = FilePairMap(sourceFiles)
+
+            // TODO: we will probably want to cache and re-use larger graphs if available
+            let graph =
+                DependencyResolution.mkGraph tcConfig.compilingFSharpCore filePairs sourceFiles
+                |> Graph.subGraphFor (sourceFiles |> Array.last).Idx
+
+            return graph, filePairs
+        }
+
+    // Type check everything that is needed to check given file
+    let ComputeTcPrior (file: FSharpFile) (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshot) userOpName _key: NodeCode<TcInfo> =
+        node {
+
+            // parse required files
+            let files = seq {
+                yield! bootstrapInfo.SourceFiles |> Seq.takeWhile ((<>) file)
+                file
+            }
+
+            let! parsedInputs =
+                files
+                |> Seq.map (fun f ->
+                    node {
+                        let! _diagnostics, parsedInput, _anyErrors, _sourceText = ParseFileCache.Get((f.Source.Key, f.IsLastCompiland, f.IsExe), ComputeParseFile f projectSnapshot bootstrapInfo userOpName)
+                        // TODO: Do we need to do something here when we get parse errors?
+                        return parsedInput
+                    })
+                |> NodeCode.Parallel
+
+            // compute dependency graph
+            let graphKey = projectSnapshot.UpTo(file.Source.FileName).SourceFileNames
+            let! _graph, _filePairs = DependencyGraphForLastFileCache.Get(graphKey, ComputeDependencyGraphForLastFile parsedInputs bootstrapInfo.TcConfig)
+
+
+
+            return bootstrapInfo.InitialTcInfo
+        }
 
     let ComputeParseAndCheckFileInProject (fileName: string) (projectSnapshot: FSharpProjectSnapshot) userOpName _key =
         node {
 
-            let! bootstrapInfoOpt, creationDiags = ComputeBootstrapInfo projectSnapshot // probably cache
+            let! bootstrapInfoOpt, creationDiags = BootstrapInfoCache.Get(projectSnapshot.Key, ComputeBootstrapInfo projectSnapshot) // probably cache
 
             match bootstrapInfoOpt with
             | None ->
@@ -410,7 +568,11 @@ type internal TransparentCompiler
             | Some bootstrapInfo ->
 
                 let file = bootstrapInfo.SourceFiles |> List.find (fun f -> f.Source.FileName = fileName)
-                let! parseDiagnostics, parseTree, anyErrors = ParseFileCache.Get(file.Source.Key, ComputeParseFile file projectSnapshot bootstrapInfo userOpName)
+
+                let priorSnapshot = projectSnapshot.UpTo fileName
+                let! tcInfo = TcPriorCache.Get(priorSnapshot.Key, ComputeTcPrior file bootstrapInfo priorSnapshot userOpName)
+
+                let! parseDiagnostics, parseTree, anyErrors, sourceText = ParseFileCache.Get((file.Source.Key, file.IsLastCompiland, file.IsExe), ComputeParseFile file projectSnapshot bootstrapInfo userOpName)
 
                 // TODO: check if we really need this in parse results
                 let dependencyFiles = [||]
@@ -419,19 +581,30 @@ type internal TransparentCompiler
                     FSharpParseFileResults(parseDiagnostics, parseTree, anyErrors, dependencyFiles)
 
                 let! checkResults =
-                    bc.CheckOneFileImpl(
+                    FSharpCheckFileResults.CheckOneFile(
                         parseResults,
                         sourceText,
                         fileName,
-                        options,
-                        fileVersion,
-                        builder,
-                        tcPrior,
-                        tcInfo,
-                        creationDiags
+                        projectSnapshot.ProjectFileName,
+                        bootstrapInfo.TcConfig,
+                        bootstrapInfo.TcGlobals,
+                        bootstrapInfo.TcImports,
+                        tcInfo.tcState,
+                        tcInfo.moduleNamesDict,
+                        bootstrapInfo.LoadClosure,
+                        tcInfo.TcDiagnostics,
+                        projectSnapshot.IsIncompleteTypeCheckEnvironment,
+                        projectSnapshot.ToOptions(),
+                        None,
+                        Array.ofList tcInfo.tcDependencyFiles,
+                        creationDiags,
+                        parseResults.Diagnostics,
+                        keepAssemblyContents,
+                        suggestNamesForErrors
                     )
+                    |> NodeCode.FromCancellable
 
-                return (parseResults, checkResults)
+                return (parseResults, FSharpCheckFileAnswer.Succeeded checkResults)
         }
 
     member _.ParseAndCheckFileInProject
@@ -439,10 +612,9 @@ type internal TransparentCompiler
             fileName: string,
             projectSnapshot: FSharpProjectSnapshot,
             userOpName: string
-        ) : NodeCode<FSharpParseFileResults * FSharpCheckFileAnswer> = node {
-            ignore userOpName // TODO
+        ) = node {
             let key = fileName, projectSnapshot.Key
-            return! ParseAndCheckFileInProjectCache.Get(key, ComputeParseAndCheckFileInProject fileName projectSnapshot)
+            return! ParseAndCheckFileInProjectCache.Get(key, ComputeParseAndCheckFileInProject fileName projectSnapshot userOpName)
         }
 
 

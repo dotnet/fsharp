@@ -146,7 +146,6 @@ type FSharpFileSnapshot = {
     override this.GetHashCode() = this.Key.GetHashCode()
 
 
-
 [<NoComparison>]
 type FSharpProjectSnapshot =
     {
@@ -192,6 +191,10 @@ type FSharpProjectSnapshot =
             && options1.LoadTime = options2.LoadTime
 
     member po.ProjectDirectory = Path.GetDirectoryName(po.ProjectFileName)
+
+    member this.UpTo fileName =
+        let fileIndex = this.SourceFiles |> List.findIndex (fun x -> x.FileName = fileName)
+        { this with SourceFiles = this.SourceFiles[..fileIndex] }
 
     member this.Key = {
         ProjectFileName = this.ProjectFileName

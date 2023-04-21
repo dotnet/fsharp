@@ -13,6 +13,8 @@ module internal Graph =
     /// Create a transitive closure of the graph in O(n^2) time (but parallelize it).
     /// The resulting graph contains edge A -> C iff the input graph contains a (directed) non-zero length path from A to C.
     val transitive<'Node when 'Node: equality> : graph: Graph<'Node> -> Graph<'Node>
+    /// Get a sub-graph of the graph containing only the nodes reachable from the given node.
+    val subGraphFor: node: 'Node -> graph: Graph<'Node> -> Graph<'Node> when 'Node: equality
     /// Create a reverse of the graph.
     val reverse<'Node when 'Node: equality> : originalGraph: Graph<'Node> -> Graph<'Node>
     /// Print the contents of the graph to the standard output.
