@@ -594,4 +594,22 @@ open System.IO
                     Set.empty
                 sourceFile "B.fs" "namespace System.IO" Set.empty
             ]
+        scenario
+            "Ghost dependency that is already linked via module"
+            [
+                sourceFile "X.fs" "module Foo.Bar.X" Set.empty
+                sourceFile "Y.fs" "module Foo.Bar.Y" Set.empty
+                // This file is linked to Y.fs due to opening the module `Foo.Bar.Y`
+                // The link to Y.fs should also satisfy the ghost dependency created after opening `Foo.Bar`.
+                // There is no need to add an additional link to the lowest index in node `Foo.Bar`.
+                sourceFile
+                    "Z.fs"
+                    """
+module Z
+
+open Foo.Bar // ghost dependency
+open Foo.Bar.Y // Y.fs
+"""
+                    (set [| 1 |])
+            ]
     ]

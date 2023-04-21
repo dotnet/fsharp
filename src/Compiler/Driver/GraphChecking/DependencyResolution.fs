@@ -145,11 +145,15 @@ let collectGhostDependencies (fileIndex: FileIndex) (trie: TrieNode) (queryTrie:
             | Root _
             | Module _ -> None
             | Namespace (connectedFiles = connectedFiles) ->
-                // We are only interested in any file that contained the namespace when they came before the current file.
-                // If the namespace is defined in a file after the current file then there is no way the current file can reference it.
-                // Which means that namespace would come from a different assembly.
-                connectedFiles
-                |> Seq.tryFind (fun connectedFileIdx -> connectedFileIdx < fileIndex))
+                if connectedFiles.Overlaps(result.FoundDependencies) then
+                    // The ghost dependency is already covered by a real dependency.
+                    None
+                else
+                    // We are only interested in any file that contained the namespace when they came before the current file.
+                    // If the namespace is defined in a file after the current file then there is no way the current file can reference it.
+                    // Which means that namespace would come from a different assembly.
+                    connectedFiles
+                    |> Seq.tryFind (fun connectedFileIdx -> connectedFileIdx < fileIndex))
 
 let mkGraph (compilingFSharpCore: bool) (filePairs: FilePairMap) (files: FileInProject array) : Graph<FileIndex> =
     // We know that implementation files backed by signatures cannot be depended upon.
