@@ -73,91 +73,69 @@ type Document with
     member this.IsFSharpSignatureFile = isSignatureFile this.FilePath
 
 module private SourceText =
-
-    open System.Runtime.CompilerServices
-
-    /// Ported from Roslyn.Utilities
-    [<RequireQualifiedAccess>]
-    module Hash =
-        /// (From Roslyn) This is how VB Anonymous Types combine hash values for fields.
-        let combine (newKey: int) (currentKey: int) =
-            (currentKey * (int 0xA5555529)) + newKey
-
-        let combineValues (values: seq<'T>) =
-            (0, values) ||> Seq.fold (fun hash value -> combine (value.GetHashCode()) hash)
-
-    let weakTable = ConditionalWeakTable<SourceText, ISourceText>()
-
     let create version (sourceText: SourceText) =
-        let sourceText =
-            { new Object() with
-                override _.GetHashCode() = version
-              interface ISourceText with
+        { new Object() with
+            override _.GetHashCode() = version
+          interface ISourceText with
 
-                  member _.Item
-                      with get index = sourceText.[index]
+              member _.Item
+                  with get index = sourceText.[index]
 
-                  member _.GetLineString(lineIndex) = sourceText.Lines.[lineIndex].ToString()
+              member _.GetLineString(lineIndex) = sourceText.Lines.[lineIndex].ToString()
 
-                  member _.GetLineCount() = sourceText.Lines.Count
+              member _.GetLineCount() = sourceText.Lines.Count
 
-                  member _.GetLastCharacterPosition() =
-                      if sourceText.Lines.Count > 0 then
-                          (sourceText.Lines.Count, sourceText.Lines.[sourceText.Lines.Count - 1].Span.Length)
+              member _.GetLastCharacterPosition() =
+                  if sourceText.Lines.Count > 0 then
+                      (sourceText.Lines.Count, sourceText.Lines.[sourceText.Lines.Count - 1].Span.Length)
+                  else
+                      (0, 0)
+
+              member _.GetSubTextString(start, length) =
+                  sourceText.GetSubText(TextSpan(start, length)).ToString()
+
+              member _.SubTextEquals(target, startIndex) =
+                  if startIndex < 0 || startIndex >= sourceText.Length then
+                      invalidArg "startIndex" "Out of range."
+
+                  if String.IsNullOrEmpty(target) then
+                      invalidArg "target" "Is null or empty."
+
+                  let lastIndex = startIndex + target.Length
+
+                  if lastIndex <= startIndex || lastIndex >= sourceText.Length then
+                      invalidArg "target" "Too big."
+
+                  let mutable finished = false
+                  let mutable didEqual = true
+                  let mutable i = 0
+
+                  while not finished && i < target.Length do
+                      if target.[i] <> sourceText.[startIndex + i] then
+                          didEqual <- false
+                          finished <- true // bail out early
                       else
-                          (0, 0)
+                          i <- i + 1
 
-                  member _.GetSubTextString(start, length) =
-                      sourceText.GetSubText(TextSpan(start, length)).ToString()
+                  didEqual
 
-                  member _.SubTextEquals(target, startIndex) =
-                      if startIndex < 0 || startIndex >= sourceText.Length then
-                          invalidArg "startIndex" "Out of range."
+              member _.ContentEquals(sourceText) =
+                  match sourceText with
+                  | :? SourceText as sourceText -> sourceText.ContentEquals(sourceText)
+                  | _ -> false
 
-                      if String.IsNullOrEmpty(target) then
-                          invalidArg "target" "Is null or empty."
+              member _.Length = sourceText.Length
 
-                      let lastIndex = startIndex + target.Length
-
-                      if lastIndex <= startIndex || lastIndex >= sourceText.Length then
-                          invalidArg "target" "Too big."
-
-                      let mutable finished = false
-                      let mutable didEqual = true
-                      let mutable i = 0
-
-                      while not finished && i < target.Length do
-                          if target.[i] <> sourceText.[startIndex + i] then
-                              didEqual <- false
-                              finished <- true // bail out early
-                          else
-                              i <- i + 1
-
-                      didEqual
-
-                  member _.ContentEquals(sourceText) =
-                      match sourceText with
-                      | :? SourceText as sourceText -> sourceText.ContentEquals(sourceText)
-                      | _ -> false
-
-                  member _.Length = sourceText.Length
-
-                  member _.CopyTo(sourceIndex, destination, destinationIndex, count) =
-                      sourceText.CopyTo(sourceIndex, destination, destinationIndex, count)
-            }
-
-        sourceText
+              member _.CopyTo(sourceIndex, destination, destinationIndex, count) =
+                  sourceText.CopyTo(sourceIndex, destination, destinationIndex, count)
+        }
 
 type SourceText with
 
-    member this.ToFSharpSourceText(version) =
-        SourceText.weakTable.GetValue(
-            this,
-            Runtime.CompilerServices.ConditionalWeakTable<_, _>.CreateValueCallback (SourceText.create version)
-        )
+    member this.ToFSharpSourceText(version) = SourceText.create version this
 
     member this.ToFSharpSourceTextWithoutVersion() =
-        this.ToFSharpSourceText(this.GetHashCode())
+        SourceText.create (this.GetHashCode()) this
 
 type Document with
 
