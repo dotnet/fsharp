@@ -142,9 +142,15 @@ type Document with
     member this.GetFSharpSourceText() =
         async {
             let! ct = Async.CancellationToken
+
             let! version = this.GetTextVersionAsync(ct) |> Async.AwaitTask
+            // VersionStamp.GetHashCode() is surprisingly weak, as it gets into account only creation time and local increment,
+            // which leads to collisions in CI testing, where the increment is 0.
+            // That's why we do ToString() first, which gives us a globally (per-session) deconflicted value.
+            let versionHash = version.ToString().GetHashCode()
+
             let! text = this.GetTextAsync(ct) |> Async.AwaitTask
-            return text.ToFSharpSourceText(version.GetHashCode())
+            return text.ToFSharpSourceText(versionHash)
         }
 
 type NavigationItem with
