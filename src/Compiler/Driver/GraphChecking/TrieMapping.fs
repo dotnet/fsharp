@@ -56,18 +56,18 @@ let doesFileExposeContentToTheRoot (ast: ParsedInput) : bool =
             || kind = SynModuleOrNamespaceKind.GlobalNamespace)
 
 let mergeTrieNodes (defaultChildSize: int) (tries: TrieNode array) =
+    /// Add the current node as child node to the root node.
+    /// If the node already exists and is a namespace node, the existing node will be updated with new information via mutation.
     let rec mergeTrieNodesAux (root: TrieNode) (KeyValue (k, v)) =
         if root.Children.ContainsKey k then
             let node = root.Children[k]
 
             match node.Current, v.Current with
-            | TrieNodeInfo.Namespace (filesThatExposeTypes = currentFilesThatExposeTypes; connectedFiles = currentConnectedFiles),
-              TrieNodeInfo.Namespace (filesThatExposeTypes = otherFiles; connectedFiles = otherConnectedFiles) ->
-                for otherFile in otherFiles do
-                    currentFilesThatExposeTypes.Add(otherFile) |> ignore
-
-                for otherFile in otherConnectedFiles do
-                    currentConnectedFiles.Add(otherFile) |> ignore
+            | TrieNodeInfo.Namespace (filesThatExposeTypes = currentFilesThatExposeTypes
+                                      filesDefiningNamespaceWithoutTypes = currentFilesWithoutTypes),
+              TrieNodeInfo.Namespace (filesThatExposeTypes = otherFiles; filesDefiningNamespaceWithoutTypes = otherFilesWithoutTypes) ->
+                currentFilesThatExposeTypes.UnionWith otherFiles
+                currentFilesWithoutTypes.UnionWith otherFilesWithoutTypes
             | _ -> ()
 
             for kv in v.Children do
@@ -146,13 +146,13 @@ let processSynModuleOrNamespace<'Decl>
                 // The reasoning is that a type could be inferred and a nested auto open module will lift its content one level up.
                 let current =
                     if isNamespace then
-                        let filesThatExposeTypes =
+                        let filesThatExposeTypes, filesDefiningNamespaceWithoutTypes =
                             if hasTypesOrAutoOpenNestedModules then
-                                HashSet.singleton idx
+                                HashSet.singleton idx, HashSet.empty ()
                             else
-                                HashSet.empty ()
+                                HashSet.empty (), HashSet.singleton idx
 
-                        TrieNodeInfo.Namespace(name, filesThatExposeTypes, HashSet.singleton idx)
+                        TrieNodeInfo.Namespace(name, filesThatExposeTypes, filesDefiningNamespaceWithoutTypes)
                     else
                         TrieNodeInfo.Module(name, idx)
 
@@ -171,7 +171,7 @@ let processSynModuleOrNamespace<'Decl>
 
                 visit
                     (fun node ->
-                        let files =
+                        let filesThatExposeTypes, filesDefiningNamespaceWithoutTypes =
                             match tail with
                             | [ _ ] ->
                                 // In case you have:
@@ -183,12 +183,13 @@ let processSynModuleOrNamespace<'Decl>
                                 let topLevelModuleOrNamespaceHasAutoOpen = isAnyAttributeAutoOpen attributes
 
                                 if topLevelModuleOrNamespaceHasAutoOpen && not isNamespace then
-                                    HashSet.singleton idx
+                                    HashSet.singleton idx, HashSet.empty ()
                                 else
-                                    HashSet.empty ()
-                            | _ -> HashSet.empty ()
+                                    HashSet.empty (), HashSet.singleton idx
+                            | _ -> HashSet.empty (), HashSet.singleton idx
 
-                        let current = TrieNodeInfo.Namespace(name, files, HashSet.singleton idx)
+                        let current =
+                            TrieNodeInfo.Namespace(name, filesThatExposeTypes, filesDefiningNamespaceWithoutTypes)
 
                         mkSingletonDict name { Current = current; Children = node } |> continuation)
                     tail

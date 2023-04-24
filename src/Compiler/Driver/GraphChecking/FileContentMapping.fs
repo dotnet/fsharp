@@ -619,36 +619,32 @@ let visitSynMemberSig (ms: SynMemberSig) : FileContentEntry list =
     | SynMemberSig.NestedType _ -> []
 
 let mkFileContent (f: FileInProject) : FileContentEntry list =
-    if f.Idx = 0 then
-        // We don't need to process the first file as it cannot have any dependencies.
-        List.empty
-    else
-        [
-            match f.ParsedInput with
-            | ParsedInput.SigFile (ParsedSigFileInput (contents = contents)) ->
-                for SynModuleOrNamespaceSig (longId = longId; kind = kind; decls = decls; attribs = attribs) in contents do
-                    yield! List.collect visitSynAttributeList attribs
+    [
+        match f.ParsedInput with
+        | ParsedInput.SigFile (ParsedSigFileInput (contents = contents)) ->
+            for SynModuleOrNamespaceSig (longId = longId; kind = kind; decls = decls; attribs = attribs) in contents do
+                yield! List.collect visitSynAttributeList attribs
 
-                    match kind with
-                    | SynModuleOrNamespaceKind.GlobalNamespace
-                    | SynModuleOrNamespaceKind.AnonModule -> yield! List.collect visitSynModuleSigDecl decls
-                    | SynModuleOrNamespaceKind.DeclaredNamespace ->
-                        let path = longIdentToPath false longId
-                        yield FileContentEntry.TopLevelNamespace(path, List.collect visitSynModuleSigDecl decls)
-                    | SynModuleOrNamespaceKind.NamedModule ->
-                        let path = longIdentToPath true longId
-                        yield FileContentEntry.TopLevelNamespace(path, List.collect visitSynModuleSigDecl decls)
-            | ParsedInput.ImplFile (ParsedImplFileInput (contents = contents)) ->
-                for SynModuleOrNamespace (longId = longId; attribs = attribs; kind = kind; decls = decls) in contents do
-                    yield! List.collect visitSynAttributeList attribs
+                match kind with
+                | SynModuleOrNamespaceKind.GlobalNamespace
+                | SynModuleOrNamespaceKind.AnonModule -> yield! List.collect visitSynModuleSigDecl decls
+                | SynModuleOrNamespaceKind.DeclaredNamespace ->
+                    let path = longIdentToPath false longId
+                    yield FileContentEntry.TopLevelNamespace(path, List.collect visitSynModuleSigDecl decls)
+                | SynModuleOrNamespaceKind.NamedModule ->
+                    let path = longIdentToPath true longId
+                    yield FileContentEntry.TopLevelNamespace(path, List.collect visitSynModuleSigDecl decls)
+        | ParsedInput.ImplFile (ParsedImplFileInput (contents = contents)) ->
+            for SynModuleOrNamespace (longId = longId; attribs = attribs; kind = kind; decls = decls) in contents do
+                yield! List.collect visitSynAttributeList attribs
 
-                    match kind with
-                    | SynModuleOrNamespaceKind.GlobalNamespace
-                    | SynModuleOrNamespaceKind.AnonModule -> yield! List.collect visitSynModuleDecl decls
-                    | SynModuleOrNamespaceKind.DeclaredNamespace ->
-                        let path = longIdentToPath false longId
-                        yield FileContentEntry.TopLevelNamespace(path, List.collect visitSynModuleDecl decls)
-                    | SynModuleOrNamespaceKind.NamedModule ->
-                        let path = longIdentToPath true longId
-                        yield FileContentEntry.TopLevelNamespace(path, List.collect visitSynModuleDecl decls)
-        ]
+                match kind with
+                | SynModuleOrNamespaceKind.GlobalNamespace
+                | SynModuleOrNamespaceKind.AnonModule -> yield! List.collect visitSynModuleDecl decls
+                | SynModuleOrNamespaceKind.DeclaredNamespace ->
+                    let path = longIdentToPath false longId
+                    yield FileContentEntry.TopLevelNamespace(path, List.collect visitSynModuleDecl decls)
+                | SynModuleOrNamespaceKind.NamedModule ->
+                    let path = longIdentToPath true longId
+                    yield FileContentEntry.TopLevelNamespace(path, List.collect visitSynModuleDecl decls)
+    ]

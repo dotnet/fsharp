@@ -120,8 +120,8 @@ let rec processStateEntry (queryTrie: QueryTrie) (state: FileContentQueryState) 
 /// - the namespace does not contain any children that can be referenced implicitly (eg. by type inference),
 /// then the main resolution algorithm does not create a link to any file defining the namespace.</para>
 /// <para>However, to satisfy the type-checker, the namespace must be resolved.
-/// This function returns an array with a potential extra dependencies that makes sure that any such namespaces can be resolved (if it exists).
-/// For each unused open namespace we might return one link that defined it.</para>
+/// This function returns an array with a potential extra dependencies that makes sure that any such namespaces can be resolved (if they exists).
+/// For each unused namespace `open` we return at most one file that defines that namespace.</para>
 /// </remarks>
 let collectGhostDependencies (fileIndex: FileIndex) (trie: TrieNode) (queryTrie: QueryTrie) (result: FileContentQueryState) =
     // Go over all open namespaces, and assert all those links eventually went anywhere.
@@ -144,16 +144,19 @@ let collectGhostDependencies (fileIndex: FileIndex) (trie: TrieNode) (queryTrie:
             // Both Root and module would expose data, so we can ignore them.
             | Root _
             | Module _ -> None
-            | Namespace (connectedFiles = connectedFiles) ->
-                if connectedFiles.Overlaps(result.FoundDependencies) then
+            | Namespace (filesDefiningNamespaceWithoutTypes = filesDefiningNamespaceWithoutTypes) ->
+                if filesDefiningNamespaceWithoutTypes.Overlaps(result.FoundDependencies) then
                     // The ghost dependency is already covered by a real dependency.
                     None
                 else
                     // We are only interested in any file that contained the namespace when they came before the current file.
                     // If the namespace is defined in a file after the current file then there is no way the current file can reference it.
                     // Which means that namespace would come from a different assembly.
-                    connectedFiles
-                    |> Seq.tryFind (fun connectedFileIdx -> connectedFileIdx < fileIndex))
+                    filesDefiningNamespaceWithoutTypes
+                    |> Seq.sort
+                    |> Seq.tryFind (fun connectedFileIdx ->
+                        // We pick the lowest file index from the namespace to satisfy the type-checker for the open statement.
+                        connectedFileIdx < fileIndex))
 
 let mkGraph (compilingFSharpCore: bool) (filePairs: FilePairMap) (files: FileInProject array) : Graph<FileIndex> =
     // We know that implementation files backed by signatures cannot be depended upon.
@@ -169,7 +172,13 @@ let mkGraph (compilingFSharpCore: bool) (filePairs: FilePairMap) (files: FileInP
     let trie = TrieMapping.mkTrie trieInput
     let queryTrie: QueryTrie = queryTrieMemoized trie
 
-    let fileContents = files |> Array.Parallel.map FileContentMapping.mkFileContent
+    let fileContents =
+        files
+        |> Array.Parallel.map (fun file ->
+            if file.Idx = 0 then
+                List.empty
+            else
+                FileContentMapping.mkFileContent file)
 
     let findDependencies (file: FileInProject) : FileIndex array =
         if file.Idx = 0 then

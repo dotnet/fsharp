@@ -266,9 +266,9 @@ let c = 0
         // `open X` does exist but there is no file that is actively contributing to the X namespace.
         // This is a trade-off scenario, if A.fs had a type or nested module we would consider it to contribute to the X namespace.
         // As it is empty, we don't include the file index in the trie.
-        // To satisfy the open statement we link it to the lowest file idx that came before it.
+        // To satisfy the open statement we link it to the lowest file idx of the found namespace node X in the trie.
         scenario
-            "A open statement that leads nowhere should link to the first that file that came before it."
+            "An open statement that leads to a namespace node without any types, should link to the lowest file idx of that namespace node."
             [
                 sourceFile
                     "A.fs"
