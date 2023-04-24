@@ -636,7 +636,7 @@ let private fantomasCoreTrie: TrieNode =
                 [|
                     "System",
                     {
-                        Current = TrieNodeInfo.Namespace("System", emptyHS ())
+                        Current = TrieNodeInfo.Namespace("System", emptyHS (), emptyHS ())
                         Children =
                             dictionary
                                 [|
@@ -649,13 +649,35 @@ let private fantomasCoreTrie: TrieNode =
                     }
                     "Fantomas",
                     {
-                        Current = TrieNodeInfo.Namespace("Fantomas", emptyHS ())
+                        Current =
+                            TrieNodeInfo.Namespace(
+                                "Fantomas",
+                                emptyHS (),
+                                HashSet([|
+                                    indexOf "ISourceTextExtensions.fs"
+                                    indexOf "RangeHelpers.fs"
+                                    indexOf "AstExtensions.fs"
+                                    indexOf "TriviaTypes.fs"
+                                    indexOf "Utils.fs"
+                                    indexOf "SourceParser.fs"
+                                |]))
                         Children =
                             dictionary
                                 [|
                                     "Core",
                                     {
-                                        Current = TrieNodeInfo.Namespace("Core", emptyHS ())
+                                        Current =
+                                            TrieNodeInfo.Namespace(
+                                                "Core",
+                                                emptyHS (),
+                                                HashSet([|
+                                                    indexOf "ISourceTextExtensions.fs"
+                                                    indexOf "RangeHelpers.fs"
+                                                    indexOf "AstExtensions.fs"
+                                                    indexOf "TriviaTypes.fs"
+                                                    indexOf "Utils.fs"
+                                                    indexOf "SourceParser.fs"
+                                                |]))
                                         Children =
                                             dictionary
                                                 [|

@@ -81,7 +81,7 @@ type LanguageServicePerformanceOptions =
         AllowStaleCompletionResults: bool
         TimeUntilStaleCompletion: int
         EnableParallelReferenceResolution: bool
-        EnableFastFindReferences: bool
+        EnableFastFindReferencesAndRename: bool
         EnablePartialTypeChecking: bool
         UseSyntaxTreeCache: bool
     }
@@ -91,7 +91,7 @@ type LanguageServicePerformanceOptions =
             AllowStaleCompletionResults = true
             TimeUntilStaleCompletion = 2000 // In ms, so this is 2 seconds
             EnableParallelReferenceResolution = false
-            EnableFastFindReferences = FSharpExperimentalFeaturesEnabledAutomatically
+            EnableFastFindReferencesAndRename = true
             EnablePartialTypeChecking = true
             UseSyntaxTreeCache = FSharpExperimentalFeaturesEnabledAutomatically
         }
@@ -237,4 +237,4 @@ module EditorOptionsExtensions =
             this.EditorOptions.Advanced.IsBlockStructureEnabled
 
         member this.IsFastFindReferencesEnabled =
-            this.EditorOptions.LanguageServicePerformance.EnableFastFindReferences
+            this.EditorOptions.LanguageServicePerformance.EnableFastFindReferencesAndRename
