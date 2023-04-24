@@ -124,7 +124,7 @@ let rec processStateEntry (queryTrie: QueryTrie) (state: FileContentQueryState) 
 /// For each unused namespace `open` we return at most one file that defines that namespace.</para>
 /// </remarks>
 let collectGhostDependencies (fileIndex: FileIndex) (trie: TrieNode) (queryTrie: QueryTrie) (result: FileContentQueryState) =
-    // Go over all open namespaces, and assert all those links eventually went anywhere.
+    // For each opened namespace, if none of already resolved dependencies define it, return the top-most file that defines it.
     Set.toArray result.OpenedNamespaces
     |> Array.choose (fun path ->
         match queryTrie path with
