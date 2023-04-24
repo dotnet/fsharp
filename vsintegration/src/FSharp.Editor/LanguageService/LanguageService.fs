@@ -127,7 +127,7 @@ type internal FSharpWorkspaceServiceFactory [<System.Composition.ImportingConstr
                             let useSyntaxTreeCache = editorOptions.LanguageServicePerformance.UseSyntaxTreeCache
 
                             let enableFastFindReferences =
-                                editorOptions.LanguageServicePerformance.EnableFastFindReferences
+                                editorOptions.LanguageServicePerformance.EnableFastFindReferencesAndRename
 
                             let isInlineParameterNameHintsEnabled =
                                 editorOptions.Advanced.IsInlineParameterNameHintsEnabled
