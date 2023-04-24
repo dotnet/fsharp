@@ -135,7 +135,9 @@ type SourceText with
     member this.ToFSharpSourceText(version) = SourceText.create version this
 
     member this.ToFSharpSourceTextWithoutVersion() =
-        SourceText.create (this.GetHashCode()) this
+        // To ensure no conflicts with versioned SourceTexts, we increment VersionStamp globally.
+        let version = VersionStamp.Create(DateTime.UtcNow).ToString().GetHashCode()
+        SourceText.create version this
 
 type Document with
 
