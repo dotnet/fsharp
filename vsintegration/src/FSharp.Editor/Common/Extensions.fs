@@ -130,13 +130,19 @@ module private SourceText =
                   sourceText.CopyTo(sourceIndex, destination, destinationIndex, count)
         }
 
+type VersionStamp with
+    // VersionStamp.GetHashCode() is surprisingly non-unique, as it gets into account only creation time and local increment,
+    // which leads to collisions in CI testing, where the increment is 0.
+    // That's why we do ToString() first, to get a string which contains a globally unique value.
+    // However hashing it still does not guarantee zero collisions like using the VersionStamp directly would.
+    member this.GetVersionHash() = this.ToString().GetHashCode()
+
 type SourceText with
 
-    member this.ToFSharpSourceText(version) = SourceText.create version this
+    member this.ToFSharpSourceText(versionHash) = SourceText.create versionHash this
 
     member this.ToFSharpSourceTextWithoutVersion() =
-        // To ensure no conflicts with versioned SourceTexts, we increment VersionStamp globally.
-        let version = VersionStamp.Create(DateTime.UtcNow).ToString().GetHashCode()
+        let version = VersionStamp.Create(DateTime.UtcNow).GetVersionHash()
         SourceText.create version this
 
 type Document with
@@ -146,10 +152,7 @@ type Document with
             let! ct = Async.CancellationToken
 
             let! version = this.GetTextVersionAsync(ct) |> Async.AwaitTask
-            // VersionStamp.GetHashCode() is surprisingly weak, as it gets into account only creation time and local increment,
-            // which leads to collisions in CI testing, where the increment is 0.
-            // That's why we do ToString() first, which gives us a globally (per-session) deconflicted value.
-            let versionHash = version.ToString().GetHashCode()
+            let versionHash = version.GetVersionHash()
 
             let! text = this.GetTextAsync(ct) |> Async.AwaitTask
             return text.ToFSharpSourceText(versionHash)

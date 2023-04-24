@@ -16,7 +16,7 @@ open FSharp.Compiler.Text
 
 type private PerDocumentSavedData =
     {
-        Hash: int
+        Version: VersionStamp
         Diagnostics: ImmutableArray<Diagnostic>
     }
 
@@ -38,7 +38,6 @@ type internal SimplifyNameDiagnosticAnalyzer [<ImportingConstructor>] () =
                 do! Option.guard document.Project.IsFSharpCodeFixesSimplifyNameEnabled
                 do Trace.TraceInformation("{0:n3} (start) SimplifyName", DateTime.Now.TimeOfDay.TotalSeconds)
                 let! textVersion = document.GetTextVersionAsync(cancellationToken)
-                let textVersionHash = textVersion.GetHashCode()
 
                 let! lockObtained =
                     guard.WaitAsync(DefaultTuning.PerDocumentSavedDataSlidingWindow, cancellationToken)
@@ -51,7 +50,7 @@ type internal SimplifyNameDiagnosticAnalyzer [<ImportingConstructor>] () =
                     let key = document.Id.ToString()
 
                     match cache.Get(key) with
-                    | :? PerDocumentSavedData as data when data.Hash = textVersionHash -> return data.Diagnostics
+                    | :? PerDocumentSavedData as data when data.Version = textVersion -> return data.Diagnostics
                     | _ ->
                         let! sourceText = document.GetTextAsync()
 
@@ -84,7 +83,7 @@ type internal SimplifyNameDiagnosticAnalyzer [<ImportingConstructor>] () =
 
                         let data =
                             {
-                                Hash = textVersionHash
+                                Version = textVersion
                                 Diagnostics = diagnostics
                             }
 

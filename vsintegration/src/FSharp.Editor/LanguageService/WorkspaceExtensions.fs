@@ -38,7 +38,7 @@ module private CheckerExtensions =
                 let! textVersion = document.GetTextVersionAsync(ct) |> Async.AwaitTask
 
                 let filePath = document.FilePath
-                let textVersionHash = textVersion.GetHashCode()
+                let textVersionHash = textVersion.GetVersionHash()
 
                 let parseAndCheckFile =
                     async {

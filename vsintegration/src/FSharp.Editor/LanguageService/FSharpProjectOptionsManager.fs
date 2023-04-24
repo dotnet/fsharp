@@ -232,7 +232,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                             LoadTime = DateTime.Now
                             UnresolvedReferences = None
                             OriginalLoadReferences = []
-                            Stamp = Some(int64 (fileStamp.GetHashCode()))
+                            Stamp = Some(int64 (fileStamp.GetVersionHash()))
                         }
 
                 let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions(projectOptions)
@@ -314,7 +314,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                                 "--ignorelinedirectives"
                             |]
 
-                        let! ver = project.GetDependentVersionAsync(ct) |> Async.AwaitTask
+                        let! version = project.GetDependentVersionAsync(ct) |> Async.AwaitTask
 
                         let projectOptions =
                             {
@@ -328,7 +328,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                                 LoadTime = projectSite.LoadTime
                                 UnresolvedReferences = None
                                 OriginalLoadReferences = []
-                                Stamp = Some(int64 (ver.GetHashCode()))
+                                Stamp = Some(int64 (version.GetVersionHash()))
                             }
 
                         // This can happen if we didn't receive the callback from HandleCommandLineChanges yet.
