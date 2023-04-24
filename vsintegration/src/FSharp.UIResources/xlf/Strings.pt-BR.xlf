@@ -14,12 +14,22 @@
       </trans-unit>
       <trans-unit id="Enable_Live_Buffers">
         <source>Use live (unsaved) buffers for checking (restart required)</source>
-        <target state="new">Use live (unsaved) buffers for checking (restart required)</target>
+        <target state="translated">Usar buffers dinâmicos (não salvos) para verificação (reinicialização necessária)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enable_partial_type_checking">
+        <source>Enable partial type checking</source>
+        <target state="translated">Habilitar verificação parcial de tipo</target>
         <note />
       </trans-unit>
       <trans-unit id="Find_References_Performance">
         <source>Find References Performance Options</source>
         <target state="translated">Opções de Localizar Referências de Desempenho</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Formatting">
+        <source>Formatting</source>
+        <target state="translated">Formatação</target>
         <note />
       </trans-unit>
       <trans-unit id="Inline_Hints">
@@ -40,11 +50,6 @@
       <trans-unit id="Diagnostics">
         <source>Diagnostics</source>
         <target state="translated">Diagnóstico</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Enable_Parallel_Checking_With_Signature_Files">
-        <source>Enable parallel type checking with signature files</source>
-        <target state="translated">Habilitar a verificação de tipo paralelo com arquivos de assinatura</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_Parallel_Reference_Resolution">
@@ -69,7 +74,7 @@
       </trans-unit>
       <trans-unit id="LiveBuffers">
         <source>Live Buffers (experimental)</source>
-        <target state="new">Live Buffers (experimental)</target>
+        <target state="translated">Buffers Dinâmicos (experimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="Navigation_links">
@@ -82,14 +87,24 @@
         <target state="translated">Paralelização (requer reinicialização)</target>
         <note />
       </trans-unit>
+      <trans-unit id="Preferred_description_width_in_characters">
+        <source>Preferred description width in characters</source>
+        <target state="translated">Largura de descrição preferencial em caracteres</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Show_Inline_Parameter_Name_Hints">
         <source>Display inline parameter name hints (preview)</source>
-        <target state="needs-review-translation">Exibir dicas de nome de parâmetro embutidas (experimental)</target>
+        <target state="translated">Exibir dicas de nome de parâmetro embutido (versão prévia)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Type_Hints">
         <source>Display inline type hints (preview)</source>
-        <target state="needs-review-translation">Exibir as dicas de tipo embutido (experimental)</target>
+        <target state="translated">Exibir dicas de tipo embutido (versão prévia)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Return_Type_Hints">
+        <source>Display return type hints (preview)</source>
+        <target state="translated">Exibir dicas de tipo de retorno (versão prévia)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_all_symbols">
@@ -105,11 +120,6 @@
       <trans-unit id="Show_completion_list_after_a_character_is_typed">
         <source>_Show completion list after a character is typed</source>
         <target state="translated">_Mostrar lista de conclusão depois que um caractere é digitado</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Enable_in_memory_cross_project_references">
-        <source>_Enable in-memory cross project references</source>
-        <target state="translated">_Habilitar referências de projeto cruzado na memória</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_navigation_links_as">
@@ -130,6 +140,11 @@
       <trans-unit id="Text_hover">
         <source>Text hover</source>
         <target state="translated">Foco do texto</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Tooltip_preferred_description_width_in_characters">
+        <source>Format signature to the given width by adding line breaks conforming with F# syntax rules. </source>
+        <target state="translated">Formate a assinatura para a largura fornecida adicionando quebras de linha em conformidade com as regras de sintaxe F#. </target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
@@ -182,11 +197,6 @@
         <target state="translated">Habilitar dados obsoletos para os recursos do IntelliSense</target>
         <note />
       </trans-unit>
-      <trans-unit id="Tooltip_in_memory_cross_project_references">
-        <source>In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</source>
-        <target state="translated">As referências entre projetos na memória armazenam os dados de nível de projeto na memória para permitir que os recursos do IDE funcionem nos projetos.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Enter_key_always">
         <source>Always add new line on enter</source>
         <target state="translated">Sempre adicionar uma nova linha ao pressionar enter</target>
@@ -219,7 +229,7 @@
       </trans-unit>
       <trans-unit id="Use_syntax_tree_cache">
         <source>Cache parsing results (experimental)</source>
-        <target state="new">Cache parsing results (experimental)</target>
+        <target state="translated">Resultados da análise de cache (experimental)</target>
         <note />
       </trans-unit>
     </body>

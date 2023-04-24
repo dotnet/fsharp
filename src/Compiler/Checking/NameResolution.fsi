@@ -122,7 +122,7 @@ type Item =
 
     /// Represents the resolution of a name to a named argument
     //
-    // In the FCS API, Item.ArgName corresponds to FSharpParameter symbols.
+    // In the FCS API, Item.OtherName corresponds to FSharpParameter symbols.
     // Not all parameters have names, e.g. for 'g' in this:
     //
     //    let f (g: int -> int) x = ...
@@ -131,7 +131,12 @@ type Item =
     // based on analyzing the type of g as a function type.
     //
     // For these parameters, the identifier will be missing.
-    | ArgName of ident: Ident option * argType: TType * container: ArgumentContainer option * range: range
+    | OtherName of
+        ident: Ident option *
+        argType: TType *
+        argInfo: ArgReprInfo option *
+        container: ArgumentContainer option *
+        range: range
 
     /// Represents the resolution of a name to a named property setter
     | SetterArg of Ident * Item
@@ -741,6 +746,16 @@ val internal ResolveField:
     id: Ident ->
     allFields: Ident list ->
         FieldResolution list
+
+/// Resolve a long identifier to a nested field
+val internal ResolveNestedField:
+    sink: TcResultsSink ->
+    ncenv: NameResolver ->
+    nenv: NameResolutionEnv ->
+    ad: AccessorDomain ->
+    recdTy: TType ->
+    lid: Ident list ->
+        Ident list * (Ident * AnonRecdTypeInfo option) list
 
 /// Resolve a long identifier occurring in an expression position
 val internal ResolveExprLongIdent:

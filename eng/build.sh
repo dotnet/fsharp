@@ -207,6 +207,7 @@ function TestUsingNUnit() {
 }
 
 function BuildSolution {
+  BUILDING_USING_DOTNET=false
   BuildCategory="Build"
   BuildMessage="Error preparing build"
   local solution="FSharp.sln"

@@ -2,49 +2,64 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-open System
 open System.Composition
+open System.Threading
 open System.Threading.Tasks
+open System.Collections.Immutable
 
+open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.CodeActions
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-open FSharp.Compiler
-open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.Symbols
-open FSharp.Compiler.Syntax
 open FSharp.Compiler.EditorServices
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "RemoveSuperflousCapture"); Shared>]
-type internal RemoveSuperflousCaptureForUnionCaseWithNoDataProvider
-    [<ImportingConstructor>]
-    (
-    ) =
-    
-    inherit CodeFixProvider()    
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.RemoveSuperfluousCapture); Shared>]
+type internal RemoveSuperflousCaptureForUnionCaseWithNoDataProvider [<ImportingConstructor>] () =
 
-    override _.FixableDiagnosticIds = Seq.toImmutableArray ["FS0725";"FS3548"]
+    inherit CodeFixProvider()
 
-    override this.RegisterCodeFixesAsync context : Task =
-        asyncMaybe {           
-            do! Option.guard context.Document.Project.IsFSharpCodeFixesUnusedDeclarationsEnabled
+    static let title = SR.RemoveUnusedBinding()
+    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0725", "FS3548")
 
-            let document = context.Document      
-            let! sourceText = document.GetTextAsync(context.CancellationToken)
-            let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync(nameof(RemoveSuperflousCaptureForUnionCaseWithNoDataProvider)) |> liftAsync
-            let m = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)
-            let classifications = checkResults.GetSemanticClassification(Some m)
-            let unionCaseItem = 
-                classifications
-                |> Array.tryFind (fun c -> c.Type = SemanticClassificationType.UnionCase)           
+    member this.GetChanges(document: Document, diagnostics: ImmutableArray<Diagnostic>, ct: CancellationToken) =
+        backgroundTask {
 
-            match unionCaseItem with
-            | None -> ()
-            | Some unionCaseItem ->
-                // The error/warning captures entire pattern match, like "Ns.Type.DuName bindingName". We want to keep type info when suggesting a replacement, and only remove "bindingName".
-                let typeInfoLength = unionCaseItem.Range.EndColumn - m.StartColumn
-                let reminderSpan = new TextSpan(context.Span.Start + typeInfoLength, context.Span.Length - typeInfoLength)                   
-                this.RegisterFix(context, SR.RemoveUnusedBinding(), TextChange(reminderSpan, ""))              
-        } 
-        |> Async.Ignore
-        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+            let! sourceText = document.GetTextAsync(ct)
+            let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync(CodeFix.RemoveSuperfluousCapture)
+
+            let changes =
+                seq {
+                    for d in diagnostics do
+                        let textSpan = d.Location.SourceSpan
+                        let m = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, textSpan, sourceText)
+                        let classifications = checkResults.GetSemanticClassification(Some m)
+
+                        let unionCaseItem =
+                            classifications
+                            |> Array.tryFind (fun c -> c.Type = SemanticClassificationType.UnionCase)
+
+                        match unionCaseItem with
+                        | None -> ()
+                        | Some unionCaseItem ->
+                            // The error/warning captures entire pattern match, like "Ns.Type.DuName bindingName". We want to keep type info when suggesting a replacement, and only remove "bindingName".
+                            let typeInfoLength = unionCaseItem.Range.EndColumn - m.StartColumn
+
+                            let reminderSpan =
+                                new TextSpan(textSpan.Start + typeInfoLength, textSpan.Length - typeInfoLength)
+
+                            yield TextChange(reminderSpan, "")
+                }
+
+            return changes
+        }
+
+    override this.RegisterCodeFixesAsync ctx : Task =
+        backgroundTask {
+            if ctx.Document.Project.IsFSharpCodeFixesUnusedDeclarationsEnabled then
+                let! changes = this.GetChanges(ctx.Document, ctx.Diagnostics, ctx.CancellationToken)
+                ctx.RegisterFsharpFix(CodeFix.RemoveSuperfluousCapture, title, changes)
+        }
+
+    override this.GetFixAllProvider() =
+        CodeFixHelpers.createFixAllProvider CodeFix.RemoveSuperfluousCapture this.GetChanges

@@ -35,8 +35,10 @@ ImplFile
                                            InlineKeyword = None
                                            EqualsRange = Some (3,6--3,7) })],
               (2,0--9,9))], PreXmlDocEmpty, [], None, (3,0--10,0),
-          { LeadingKeyword = None })], (true, false),
+          { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         CodeComments =
          [LineComment (4,4--4,40); LineComment (6,4--6,36);
           LineComment (7,4--7,27)] }, set []))
+
+(4,4)-(7,27) parse info XML comment is not placed on a valid language element.

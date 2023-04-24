@@ -10,134 +10,129 @@ open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open Hints
 
-module InlineParameterNameHints =
+type InlineParameterNameHints(parseResults: FSharpParseFileResults) =
 
-    let private getParameterHint (range: range, parameter: FSharpParameter) =
+    let getParameterHint (range: range, parameter: FSharpParameter) =
         {
             Kind = HintKind.ParameterNameHint
             Range = range.StartRange
             Parts = [ TaggedText(TextTag.Text, $"{parameter.DisplayName} = ") ]
         }
 
-    let private getFieldHint (range: range, field: FSharpField) =
+    let getFieldHint (range: range, field: FSharpField) =
         {
             Kind = HintKind.ParameterNameHint
             Range = range.StartRange
             Parts = [ TaggedText(TextTag.Text, $"{field.Name} = ") ]
         }
 
-    let private doesParameterNameExist (parameter: FSharpParameter) = 
-        parameter.DisplayName <> ""
+    let parameterNameExists (parameter: FSharpParameter) = parameter.DisplayName <> ""
 
-    let private doesFieldNameExist (field: FSharpField) = 
-        not field.IsNameGenerated
+    let fieldNameExists (field: FSharpField) = not field.IsNameGenerated
 
-    let private getArgumentLocations
-        (symbolUse: FSharpSymbolUse)
-        (parseResults: FSharpParseFileResults) =
+    let getArgumentLocations (symbolUse: FSharpSymbolUse) =
 
-        let position = Position.mkPos 
-                        (symbolUse.Range.End.Line) 
-                        (symbolUse.Range.End.Column + 1)
+        let position =
+            Position.mkPos (symbolUse.Range.End.Line) (symbolUse.Range.End.Column + 1)
 
         parseResults.FindParameterLocations position
-        |> Option.map (fun locations -> locations.ArgumentLocations |> Seq.filter (fun location -> Position.posGeq location.ArgumentRange.Start position))
+        |> Option.map (fun locations ->
+            locations.ArgumentLocations
+            |> Seq.filter (fun location -> Position.posGeq location.ArgumentRange.Start position))
         |> Option.filter (not << Seq.isEmpty)
         |> Option.defaultValue Seq.empty
 
-    let private getTupleRanges =
-        Seq.map (fun location -> location.ArgumentRange)
-        >> Seq.toList
+    let getTupleRanges = Seq.map (fun location -> location.ArgumentRange)
 
-    let private getCurryRanges 
-        (symbolUse: FSharpSymbolUse) 
-        (parseResults: FSharpParseFileResults) = 
+    let getCurryRanges (symbolUse: FSharpSymbolUse) =
 
         parseResults.GetAllArgumentsForFunctionApplicationAtPosition symbolUse.Range.Start
         |> Option.defaultValue []
 
-    let private isNamedArgument range =
+    let isNamedArgument range =
         Seq.filter (fun location -> location.IsNamedArgument)
-        >> Seq.map (fun location -> location.ArgumentRange) 
+        >> Seq.map (fun location -> location.ArgumentRange)
         >> Seq.contains range
 
-    let private getSourceTextAtRange 
-        (sourceText: SourceText)
-        (range: range) =
+    let isCustomOperation (symbol: FSharpMemberOrFunctionOrValue) =
+        symbol.HasAttribute<CustomOperationAttribute>()
 
-        let line = sourceText.Lines[range.Start.Line - 1].ToString()
-        let length = range.EndColumn - range.StartColumn
-        line.Substring(range.Start.Column, length)
+    let getSourceTextAtRange (sourceText: SourceText) (range: range) =
+        (RoslynHelpers.FSharpRangeToTextSpan(sourceText, range) |> sourceText.GetSubText)
+            .ToString()
 
-    let isMemberOrFunctionOrValueValidForHint 
-        (symbol: FSharpMemberOrFunctionOrValue) 
-        (symbolUse: FSharpSymbolUse) =
+    let isMemberOrFunctionOrValueValidForHint (symbol: FSharpMemberOrFunctionOrValue) (symbolUse: FSharpSymbolUse) =
 
         if symbolUse.IsFromUse then
-            let isNotBuiltInOperator = 
-                symbol.DeclaringEntity 
+            let isNotBuiltInOperator =
+                symbol.DeclaringEntity
                 |> Option.exists (fun entity -> entity.CompiledName <> "Operators")
-
-            let isNotCustomOperation = 
-                not <| symbol.HasAttribute<CustomOperationAttribute>()
 
             (symbol.IsFunction && isNotBuiltInOperator) // arguably, hints for those would be rather useless
             || symbol.IsConstructor
-            || (symbol.IsMethod && isNotCustomOperation)
+            || symbol.IsMethod
         else
             false
 
     let isUnionCaseValidForHint (symbol: FSharpUnionCase) (symbolUse: FSharpSymbolUse) =
         symbolUse.IsFromUse
         && symbol.DisplayName <> "(::)"
-
-    let getHintsForMemberOrFunctionOrValue
-        (sourceText: SourceText)
-        (parseResults: FSharpParseFileResults) 
-        (symbol: FSharpMemberOrFunctionOrValue) 
-        (symbolUse: FSharpSymbolUse) =
-
-        let parameters = symbol.CurriedParameterGroups |> Seq.concat
-        let argumentLocations = parseResults |> getArgumentLocations symbolUse
-
-        let tupleRanges = argumentLocations |> getTupleRanges
-        let curryRanges = parseResults |> getCurryRanges symbolUse
-
-        let ranges = 
-            if tupleRanges |> (not << Seq.isEmpty) then tupleRanges else curryRanges
-            |> Seq.filter (fun range -> argumentLocations |> (not << isNamedArgument range))
-
-        let argumentNames = 
-            ranges
-            |> Seq.map (getSourceTextAtRange sourceText)
-
-        parameters
-        |> Seq.zip ranges // Seq.zip is important as List.zip requires equal lengths
-        |> Seq.where (snd >> doesParameterNameExist)
-        |> Seq.zip argumentNames
-        |> Seq.choose (fun (argumentName, (range, parameter)) -> 
-            if argumentName <> parameter.DisplayName then Some (getParameterHint (range, parameter)) else None)
-        |> Seq.toList
-
-    let getHintsForUnionCase
-        (parseResults: FSharpParseFileResults) 
-        (symbol: FSharpUnionCase) 
-        (symbolUse: FSharpSymbolUse) =
-
-        let fields = Seq.toList symbol.Fields
-
         // If a case does not use field names, don't even bother getting applied argument ranges
-        if fields |> List.exists doesFieldNameExist |> not then
-            []
+        && symbol.Fields |> Seq.exists fieldNameExists
+
+    member _.getHintsForMemberOrFunctionOrValue
+        (sourceText: SourceText)
+        (symbol: FSharpMemberOrFunctionOrValue)
+        (symbolUse: FSharpSymbolUse)
+        =
+
+        if isMemberOrFunctionOrValueValidForHint symbol symbolUse then
+            let parameters = Seq.concat symbol.CurriedParameterGroups
+            let argumentLocations = getArgumentLocations symbolUse
+
+            let tupleRanges = getTupleRanges argumentLocations
+            let curryRanges = getCurryRanges symbolUse
+
+            let ranges =
+                if Seq.isEmpty tupleRanges then
+                    curryRanges |> List.toSeq
+                else
+                    tupleRanges
+                |> Seq.filter (fun range -> argumentLocations |> (not << isNamedArgument range))
+
+            let argumentNames = Seq.map (getSourceTextAtRange sourceText) ranges
+            let skipped = if symbol |> isCustomOperation then 1 else 0
+
+            parameters
+            |> Seq.skip skipped
+            |> Seq.zip ranges // Seq.zip is important as List.zip requires equal lengths
+            |> Seq.where (snd >> parameterNameExists)
+            |> Seq.zip argumentNames
+            |> Seq.choose (fun (argumentName, (range, parameter)) ->
+                if argumentName <> parameter.DisplayName then
+                    Some(getParameterHint (range, parameter))
+                else
+                    None)
+            |> Seq.toList
         else
-            let ranges = parseResults.GetAllArgumentsForFunctionApplicationAtPosition symbolUse.Range.Start
-            
+            []
+
+    member _.getHintsForUnionCase (symbol: FSharpUnionCase) (symbolUse: FSharpSymbolUse) =
+        if isUnionCaseValidForHint symbol symbolUse then
+
+            let fields = Seq.toList symbol.Fields
+
+            let ranges =
+                parseResults.GetAllArgumentsForFunctionApplicationAtPosition symbolUse.Range.Start
+
             // When not all field values are provided (as the user is typing), don't show anything yet
             match ranges with
-            | Some ranges when ranges.Length = fields.Length -> 
+            | Some ranges when ranges.Length = fields.Length ->
                 fields
                 |> List.zip ranges
-                |> List.where (snd >> doesFieldNameExist)
+                |> List.where (snd >> fieldNameExists)
                 |> List.map getFieldHint
-            
+
             | _ -> []
+        else
+            []

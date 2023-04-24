@@ -33,11 +33,6 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <FsYaccOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsYaccOutputFolder>
-    <FsLexOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsLexOutputFolder>
-  </PropertyGroup>
-
-  <PropertyGroup>
     <PackageId>FSharp.Compiler.Service</PackageId>
     <NuspecFile>FSharp.Compiler.Service.nuspec</NuspecFile>
     <IsPackable>true</IsPackable>
@@ -283,6 +278,8 @@
     <Compile Include="TypedTree\TypedTreeOps.fs" />
     <Compile Include="TypedTree\TypedTreePickle.fsi" />
     <Compile Include="TypedTree\TypedTreePickle.fs" />
+    <Compile Include="TypedTree\UpdatePrettyTyparNames.fsi" />
+    <Compile Include="TypedTree\UpdatePrettyTyparNames.fs" />
     <Compile Include="Checking\import.fsi" />
     <Compile Include="Checking\import.fs" />
     <Compile Include="Checking\TypeHierarchy.fsi" />
@@ -323,6 +320,8 @@
     <Compile Include="Checking\PostInferenceChecks.fs" />
     <Compile Include="Checking\CheckBasics.fsi" />
     <Compile Include="Checking\CheckBasics.fs" />
+    <Compile Include="Checking\CheckRecordSyntaxHelpers.fsi" />
+    <Compile Include="Checking\CheckRecordSyntaxHelpers.fs" />
     <Compile Include="Checking\CheckExpressions.fsi" />
     <Compile Include="Checking\CheckExpressions.fs" />
     <Compile Include="Checking\CheckPatterns.fsi" />
@@ -349,6 +348,8 @@
     <Compile Include="Optimize\LowerStateMachines.fs" />
     <Compile Include="Optimize\LowerLocalMutables.fsi" />
     <Compile Include="Optimize\LowerLocalMutables.fs" />
+    <Compile Include="CodeGen\IlxGenSupport.fsi" />
+    <Compile Include="CodeGen\IlxGenSupport.fs" />
     <Compile Include="CodeGen\EraseClosures.fsi" />
     <Compile Include="CodeGen\EraseClosures.fs" />
     <Compile Include="CodeGen\EraseUnions.fsi" />
@@ -489,6 +490,27 @@
     <None Include="default.win32manifest">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
+    <OutputPath>$(ArtifactsDir)/bin/$(MSBuildProjectName)/$(Configuration)/</OutputPath>
+    <IntermediateOutputPath>$(ArtifactsDir)obj/$(MSBuildProjectName)/$(Configuration)/</IntermediateOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
+    <!-- We are setting TFM explicitly here, since we are only using fslexyacc's dlls in msbuild -->
+    <ProjectReference Include="$(RepoRoot)\buildtools\fslex\fslex.fsproj" ReferenceOutputAssembly="False">
+      <SetTargetFramework>TargetFramework=net7.0</SetTargetFramework>
+      <ExcludeAssets>compile</ExcludeAssets>
+    </ProjectReference>
+    <ProjectReference Include="$(RepoRoot)\buildtools\fsyacc\fsyacc.fsproj" ReferenceOutputAssembly="False">
+      <SetTargetFramework>TargetFramework=net7.0</SetTargetFramework>
+      <ExcludeAssets>compile</ExcludeAssets>
+    </ProjectReference>
+    <ProjectReference Include="$(RepoRoot)\buildtools\AssemblyCheck\AssemblyCheck.fsproj" ReferenceOutputAssembly="False">
+      <SetTargetFramework>TargetFramework=net7.0</SetTargetFramework>
+      <ExcludeAssets>compile</ExcludeAssets>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>

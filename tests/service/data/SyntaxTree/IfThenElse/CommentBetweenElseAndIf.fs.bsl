@@ -21,6 +21,11 @@ ImplFile
                    ThenKeyword = (2,5--2,9)
                    ElseKeyword = Some (4,0--4,4)
                    IfToThenRange = (2,0--2,9) }), (2,0--5,1))], PreXmlDocEmpty,
-          [], None, (2,0--6,0), { LeadingKeyword = None })], (true, false),
+          [], None, (2,0--6,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [BlockComment (4,5--4,33)] }, set []))
+
+(3,0)-(3,1) parse warning Possible incorrect indentation: this token is offside of context started at position (2:1). Try indenting this token further or using standard formatting conventions.
+(3,0)-(3,1) parse warning Possible incorrect indentation: this token is offside of context started at position (2:1). Try indenting this token further or using standard formatting conventions.
+(5,0)-(5,1) parse warning Possible incorrect indentation: this token is offside of context started at position (4:1). Try indenting this token further or using standard formatting conventions.
+(5,0)-(5,1) parse warning Possible incorrect indentation: this token is offside of context started at position (4:1). Try indenting this token further or using standard formatting conventions.

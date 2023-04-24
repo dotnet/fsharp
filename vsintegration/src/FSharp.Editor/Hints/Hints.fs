@@ -5,19 +5,22 @@ namespace Microsoft.VisualStudio.FSharp.Editor.Hints
 open FSharp.Compiler.Text
 
 module Hints =
-    
-    type HintKind = 
+
+    type HintKind =
         | TypeHint
         | ParameterNameHint
+        | ReturnTypeHint
 
     // Relatively convenient for testing
-    type NativeHint = {
-        Kind: HintKind
-        Range: range
-        Parts: TaggedText list
-    }
+    type NativeHint =
+        {
+            Kind: HintKind
+            Range: range
+            Parts: TaggedText list
+        }
 
     let serialize kind =
         match kind with
         | TypeHint -> "type"
         | ParameterNameHint -> "parameterName"
+        | ReturnTypeHint -> "returnType"

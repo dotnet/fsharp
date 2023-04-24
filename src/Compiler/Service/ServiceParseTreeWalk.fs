@@ -358,7 +358,7 @@ module SyntaxTraversal =
                 | SynExpr.ArrayOrList (_, synExprList, _range) ->
                     synExprList |> List.map (fun x -> dive x x.Range traverseSynExpr) |> pick expr
 
-                | SynExpr.AnonRecd (copyInfo = copyOpt; recordFields = synExprList) ->
+                | SynExpr.AnonRecd (copyInfo = copyOpt; recordFields = fields) ->
                     [
                         match copyOpt with
                         | Some (expr, (withRange, _)) ->
@@ -373,7 +373,9 @@ module SyntaxTraversal =
                                     else
                                         None)
                         | _ -> ()
-                        for _, _, x in synExprList do
+
+                        for field, _, x in fields do
+                            yield dive () field.Range (fun () -> visitor.VisitRecordField(path, copyOpt |> Option.map fst, Some field))
                             yield dive x x.Range traverseSynExpr
                     ]
                     |> pick expr
@@ -847,7 +849,8 @@ module SyntaxTraversal =
                 | SynType.AnonRecd _
                 | SynType.LongIdent _
                 | SynType.Var _
-                | SynType.StaticConstant _ -> None
+                | SynType.StaticConstant _
+                | SynType.FromParseError _ -> None
 
             visitor.VisitType(origPath, defaultTraverse, ty)
 

@@ -159,5 +159,5 @@ ImplFile
                          WithKeyword = (3,5--6,13) })), (2,0--6,13),
                  { ArrowRange = Some (5,4--5,6) }), (2,0--6,13))],
           PreXmlDocEmpty, [], None, (2,0--7,0), { LeadingKeyword = None })],
-      (true, false), { ConditionalDirectives = []
-                       CodeComments = [] }, set []))
+      (true, true), { ConditionalDirectives = []
+                      CodeComments = [] }, set []))
