@@ -1,6 +1,8 @@
 ﻿module internal FSharp.Compiler.GraphChecking.TrieMapping
 
 open System.Collections.Generic
+open System.Text
+open FSharp.Compiler.IO
 open FSharp.Compiler.Syntax
 
 [<RequireQualifiedAccess>]
@@ -297,3 +299,82 @@ and mkTrieForSynModuleSigDecl (fileIndex: FileIndex) (decl: SynModuleSigDecl) : 
 
 let mkTrie (files: FileInProject array) : TrieNode =
     mergeTrieNodes 0 (files |> Array.Parallel.map mkTrieNodeFor)
+
+type MermaidBoxPos =
+    | First
+    | Second
+
+let serializeToMermaid (path: string) (filesInProject: FileInProject array) (trie: TrieNode) =
+    let sb = StringBuilder()
+    let appendLine (line: string) = sb.AppendLine(line) |> ignore
+    let discovered = HashSet<TrieNodeInfo>()
+
+    let getName (node: TrieNodeInfo) =
+        match node with
+        | Root _ -> "root"
+        | Module (name, _) -> $"mod_{name}"
+        | Namespace (name, _, _) -> $"ns_{name}"
+
+    let toBoxList (boxPos: MermaidBoxPos) (files: HashSet<FileIndex>) =
+        let sb = StringBuilder()
+        let orderedIndexes = Seq.sort files
+
+        let opening, closing =
+            match boxPos with
+            | First -> "[", "]"
+            | Second -> "(", ")"
+
+        for file in orderedIndexes do
+            let fileName = System.IO.Path.GetFileName(filesInProject[file].FileName)
+            sb.Append($"    {fileName}{opening}{file}{closing}\n") |> ignore
+
+        sb.ToString()
+
+    let printNode (parent: TrieNode, node: TrieNode) =
+        match node.Current with
+        | TrieNodeInfo.Root files ->
+            let firstBox = toBoxList First files
+
+            if System.String.IsNullOrWhiteSpace firstBox then
+                appendLine "class root\n"
+            else
+                appendLine $"class root {{\n{firstBox}}}\n"
+        | TrieNodeInfo.Module (_name, file) as md ->
+            let name = getName md
+            let fileName = System.IO.Path.GetFileName(filesInProject[file].FileName)
+            appendLine $"{getName parent.Current} <|-- {name}"
+            appendLine $"class {name} {{\n    {fileName}[{file}]\n}}\n"
+        | TrieNodeInfo.Namespace (_name, filesThatExposeTypes, filesDefiningNamespaceWithoutTypes) as ns ->
+            let name = getName ns
+            let firstBox = toBoxList First filesThatExposeTypes
+            let secondBox = toBoxList Second filesDefiningNamespaceWithoutTypes
+            appendLine $"{getName parent.Current} <|-- {name}"
+
+            if
+                System.String.IsNullOrWhiteSpace(firstBox)
+                && System.String.IsNullOrWhiteSpace(secondBox)
+            then
+                appendLine $"class {name}"
+            else
+                appendLine $"class {name} {{\n{firstBox}\n{secondBox}}}\n"
+
+    let rec dfs (v: TrieNode) =
+        discovered.Add(v.Current) |> ignore
+
+        for c in v.Children do
+            if not (discovered.Contains(c.Value.Current)) then
+                printNode (v, c.Value)
+                dfs c.Value
+
+    appendLine "```mermaid"
+    appendLine "classDiagram\n"
+
+    printNode (trie, trie)
+    dfs trie
+
+    appendLine "```"
+
+    use out =
+        FileSystem.OpenFileForWriteShim(path, fileMode = System.IO.FileMode.Create)
+
+    out.WriteAllText(sb.ToString())
