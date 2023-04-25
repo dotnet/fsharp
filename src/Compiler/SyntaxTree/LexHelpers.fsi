@@ -38,7 +38,7 @@ type LexArgs =
       mutable ifdefStack: LexerIfdefStack
       mutable indentationSyntaxStatus: IndentationAwareSyntaxStatus
       mutable stringNest: LexerInterpolatedStringNesting
-      mutable delimLength: int }
+      mutable interpolationDelimiterLength: int }
 
 type LongUnicodeLexResult =
     | SurrogatePair of uint16 * uint16
