@@ -1,5 +1,6 @@
 ﻿module FSharp.Compiler.ComponentTests.Signatures.TypeTests
 
+open FSharp.Compiler.Symbols
 open Xunit
 open FsUnit
 open FSharp.Test.Compiler
@@ -75,3 +76,29 @@ namespace Foo.Types
     val EndLine: int
 
     val EndColumn: int"""
+
+[<Fact>]
+let ``Signature of instance member should not included the leading type name`` () =
+    let input =
+        FSharp """
+namespace Sample
+
+type X =
+    member this.Y z = z + 1
+"""
+
+    let typeCheckResults = typecheckResults input
+    let allSymbols = typeCheckResults.GetAllUsesOfAllSymbolsInFile() |> Seq.toArray
+    ignore allSymbols
+    let symbolUse =
+        typeCheckResults.GetSymbolUseAtLocation(5, 17, "    member this.Y z = z + 1", ["Y"])
+
+    match symbolUse with
+    | Some symbolUse ->
+        match symbolUse.Symbol with
+        | :? FSharpMemberOrFunctionOrValue as memberVal ->
+            let signature = memberVal.FullType.Format symbolUse.DisplayContext
+            Assert.Equal("int -> int", signature)
+        | _ -> failwith "Could not find member"
+    | None ->
+        failwith "Could not find member"

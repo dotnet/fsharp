@@ -1717,7 +1717,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             | V v -> v.Typars 
         tps |> List.map (fun tp -> FSharpGenericParameter(cenv, tp)) |> makeReadOnlyCollection
 
-    member _.FullType = 
+    member this.FullType = 
         checkIsResolved()
         let ty = 
             match d with 
@@ -1727,7 +1727,22 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                 let retTy = m.GetFSharpReturnType(cenv.amap, range0, m.FormalMethodInst)
                 let argTysl = m.GetParamTypes(cenv.amap, range0, m.FormalMethodInst) 
                 mkIteratedFunTy cenv.g (List.map (mkRefTupledTy cenv.g) argTysl) retTy
-            | V v -> v.TauType
+            | V v ->
+                if not this.IsInstanceMember then
+                    v.TauType
+                else
+                    let retTy: TType = (this.ReturnParameter :> FSharpParameter).Type.Type
+                    let argTysl =
+                        this.CurriedParameterGroups
+                        |> Seq.map (fun parameterGroup ->
+                            parameterGroup
+                            |> Seq.map (fun (parameter:FSharpParameter) -> parameter.Type.Type)
+                            |> Seq.toList
+                            |> mkRefTupledTy cenv.g
+                        )
+                        |> Seq.toList
+
+                    mkIteratedFunTy cenv.g argTysl retTy
         FSharpType(cenv, ty)
 
     member _.HasGetterMethod =
