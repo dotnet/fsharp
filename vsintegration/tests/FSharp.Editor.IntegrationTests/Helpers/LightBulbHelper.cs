@@ -23,7 +23,7 @@ namespace FSharp.Editor.IntegrationTests.Helpers
         {
             var activeSession = broker.GetSession(view);
             var asyncSession = (IAsyncLightBulbSession)activeSession;
-            var tcs = new TaskCompletionSource<List<SuggestedActionSet>>();
+            var tcs = new TaskCompletionSource<IEnumerable<SuggestedActionSet>>();
 
             void Handler(object s, SuggestedActionsUpdatedArgs e)
             {
@@ -36,7 +36,7 @@ namespace FSharp.Editor.IntegrationTests.Helpers
                 if (e.Status == QuerySuggestedActionCompletionStatus.Completed ||
                     e.Status == QuerySuggestedActionCompletionStatus.CompletedWithoutData)
                 {
-                    tcs.SetResult(e.ActionSets.ToList());
+                    tcs.SetResult(e.ActionSets);
                 }
                 else
                 {
