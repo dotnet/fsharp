@@ -89,13 +89,11 @@ let makeFmts (context: FormatStringCheckContext) (fragRanges: range list) (fmt: 
                         fullRangeText
                         |> Seq.takeWhile (fun c -> c = '$')
                         |> Seq.length
-                        |> max delimLen
-                    let interpolatedTripleQuotePrefix =
+                    let tripleQuotePrefix =
                         [String.replicate delimLen "$"; "\"\"\""]
                         |> String.concat ""
                     match fullRangeText with
-                    | PrefixedBy interpolatedTripleQuotePrefix len
-                    | PrefixedBy "\"\"\"" len ->
+                    | PrefixedBy tripleQuotePrefix len ->
                         nQuotes <- 3
                         len
                     | PrefixedBy "$@\"" len
