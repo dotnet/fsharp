@@ -52,11 +52,6 @@
         <target state="translated">Diagnóstico</target>
         <note />
       </trans-unit>
-      <trans-unit id="Enable_Parallel_Checking_With_Signature_Files">
-        <source>Enable parallel type checking with signature files</source>
-        <target state="translated">Habilitar la comprobación de tipos paralelos con archivos de firma</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Enable_Parallel_Reference_Resolution">
         <source>Enable parallel reference resolution</source>
         <target state="translated">Habilitar resolución de referencias paralelas</target>

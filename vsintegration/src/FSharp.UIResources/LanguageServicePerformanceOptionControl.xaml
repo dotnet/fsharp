@@ -58,9 +58,6 @@
                 </GroupBox>
                 <GroupBox Header="{x:Static local:Strings.Parallelization}">
                     <StackPanel>
-                        <CheckBox x:Name="enableParallelCheckingWithSignatureFiles"
-                                  IsChecked="{Binding EnableParallelCheckingWithSignatureFiles}"
-                                  Content="{x:Static local:Strings.Enable_Parallel_Checking_With_Signature_Files}"/>
                         <CheckBox x:Name="enableParallelReferenceResolution"
                                   IsChecked="{Binding EnableParallelReferenceResolution}"
                                   Content="{x:Static local:Strings.Enable_Parallel_Reference_Resolution}"/>
@@ -68,8 +65,8 @@
                 </GroupBox>
                 <GroupBox Header="{x:Static local:Strings.Find_References_Performance}">
                     <StackPanel>
-                        <CheckBox x:Name="enableFastFindReferences"
-                                  IsChecked="{Binding EnableFastFindReferences}"
+                        <CheckBox x:Name="enableFastFindReferencesAndRename"
+                                  IsChecked="{Binding EnableFastFindReferencesAndRename}"
                                   Content="{x:Static local:Strings.Enable_Fast_Find_References}"/>
                     </StackPanel>
                 </GroupBox>
