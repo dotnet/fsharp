@@ -69,6 +69,7 @@ module internal Graph =
         |> readOnlyDict
         |> addIfMissing originalGraph.Keys
 
+    /// Returns leaves of the graph and the remaining graph without the leaves.
     let cutLeaves (graph: Graph<'Node>) =
         let notLeaves = set [ for (KeyValue (node, deps)) in graph do if deps.Length > 0 then node ]
         let leaves =
@@ -78,6 +79,14 @@ module internal Graph =
         leaves, seq { for (KeyValue (node, deps)) in graph do
                         if deps.Length > 0 then
                             node, deps |> Array.filter (leaves.Contains >> not) } |> make
+
+    /// Returns layers of leaves repeatedly removed from the graph until there's nothing left
+    let leafSequence (graph: Graph<'Node>) =
+        let rec loop (graph: Graph<'Node>) acc =
+            match graph |> cutLeaves with
+            | leaves, _ when leaves.IsEmpty -> acc
+            | leaves, graph -> seq { yield! acc; leaves } |> loop graph
+        loop graph Seq.empty
 
     let printCustom (graph: Graph<'Node>) (nodePrinter: 'Node -> string) : unit =
         printfn "Graph:"

@@ -29,6 +29,8 @@ open System.Threading.Tasks
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.GraphChecking
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.CompilerDiagnostics
+open FSharp.Compiler.NameResolution
 
 
 type internal FSharpFile = {
@@ -47,6 +49,8 @@ type internal BootstrapInfo = {
     SourceFiles: FSharpFile list
     LoadClosure: LoadClosure option
 }
+
+//type ParseResults 
 
 type internal TransparentCompiler
     (
@@ -67,13 +71,14 @@ type internal TransparentCompiler
     ) =
 
     // Is having just one of these ok?
-    let _lexResourceManager = Lexhelp.LexResourceManager()
+    let lexResourceManager = Lexhelp.LexResourceManager()
 
     let ParseFileCache = AsyncMemoize()
     let ParseAndCheckFileInProjectCache = AsyncMemoize()
     let FrameworkImportsCache = AsyncMemoize()
     let BootstrapInfoCache = AsyncMemoize()
     let TcPriorCache = AsyncMemoize()
+    let TcIntermediateCache = AsyncMemoize()
     let DependencyGraphForLastFileCache = AsyncMemoize()
 
     // We currently share one global dependency provider for all scripts for the FSharpChecker.
@@ -221,7 +226,7 @@ type internal TransparentCompiler
         return tcImports, tcInfo
       }
 
-    let ComputeBootstrapInfoInner (projectSnapshot: FSharpProjectSnapshot) =
+    let computeBootstrapInfoInner (projectSnapshot: FSharpProjectSnapshot) =
         node {
             let useSimpleResolutionSwitch = "--simpleresolution"
             let commandLineArgs = projectSnapshot.OtherOptions
@@ -459,7 +464,7 @@ type internal TransparentCompiler
             let! bootstrapInfoOpt =
                 node {
                     try
-                        return! ComputeBootstrapInfoInner projectSnapshot
+                        return! computeBootstrapInfoInner projectSnapshot
                     with exn ->
                         errorRecoveryNoRange exn
                         return None
@@ -479,7 +484,7 @@ type internal TransparentCompiler
             return bootstrapInfoOpt, diagnostics
         }
 
-    let ComputeParseFile (file: FSharpFile) (projectSnapshot: FSharpProjectSnapshot) bootstrapInfo userOpName _key = node {
+    let ComputeParseFile' (file: FSharpFile) (projectSnapshot: FSharpProjectSnapshot) bootstrapInfo userOpName _key = node {
 
         let parsingOptions =
             FSharpParsingOptions.FromTcConfig(
@@ -503,6 +508,22 @@ type internal TransparentCompiler
         return diagnostics, parsedInput, anyErrors, sourceText
     }
 
+    let ComputeParseFile (file: FSharpFile) bootstrapInfo _key =
+        node {
+            let tcConfig = bootstrapInfo.TcConfig
+            let diagnosticsLogger = CompilationDiagnosticLogger("Parse", tcConfig.diagnosticsOptions)
+            // Return the disposable object that cleans up
+            use _holder = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parse)
+
+            let flags = file.IsLastCompiland, file.IsExe
+            let fileName = file.Source.FileName
+            let! sourceText = file.Source.GetSource() |> NodeCode.AwaitTask
+
+            let input = ParseOneInputSourceText(tcConfig, lexResourceManager, fileName, flags, diagnosticsLogger, sourceText)
+
+            return input, diagnosticsLogger.GetDiagnostics()
+        }
+
     let ComputeDependencyGraphForLastFile parsedInputs (tcConfig: TcConfig) _key =
         node {
             let sourceFiles: FileInProject array =
@@ -525,6 +546,63 @@ type internal TransparentCompiler
             return graph, filePairs
         }
 
+    let ComputeTcIntermediate (parsedInput: ParsedInput) bootstrapInfo prevTcInfo _key =
+        node {
+            let input = parsedInput
+            let fileName = input.FileName
+            let tcConfig = bootstrapInfo.TcConfig
+            let tcGlobals = bootstrapInfo.TcGlobals
+            let tcImports = bootstrapInfo.TcImports
+
+            let capturingDiagnosticsLogger = CapturingDiagnosticsLogger("TypeCheck")
+            let diagnosticsLogger = GetDiagnosticsLoggerFilteringByScopedPragmas(false, input.ScopedPragmas, tcConfig.diagnosticsOptions, capturingDiagnosticsLogger)
+            use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.TypeCheck)
+
+            //beforeFileChecked.Trigger fileName
+
+            ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, Path.GetDirectoryName fileName, tcImports.DependencyProvider) |> ignore
+            let sink = TcResultsSinkImpl(tcGlobals)
+            let hadParseErrors = not (Array.isEmpty parseErrors)
+            let input, moduleNamesDict = DeduplicateParsedInputModuleName prevTcInfo.moduleNamesDict input
+
+            let! (tcEnvAtEndOfFile, topAttribs, implFile, ccuSigForFile), tcState =
+                CheckOneInput (
+                        (fun () -> hadParseErrors || diagnosticsLogger.ErrorCount > 0),
+                        tcConfig, tcImports,
+                        tcGlobals,
+                        None,
+                        TcResultsSink.WithSink sink,
+                        prevTcInfo.tcState, input )
+                |> NodeCode.FromCancellable
+
+            //fileChecked.Trigger fileName
+
+            let newErrors = Array.append parseErrors (capturingDiagnosticsLogger.Diagnostics |> List.toArray)
+            let tcEnvAtEndOfFile = if keepAllBackgroundResolutions then tcEnvAtEndOfFile else tcState.TcEnvFromImpls
+
+            let tcInfo =
+                {
+                    tcState = tcState
+                    tcEnvAtEndOfFile = tcEnvAtEndOfFile
+                    moduleNamesDict = moduleNamesDict
+                    latestCcuSigForFile = Some ccuSigForFile
+                    tcDiagnosticsRev = newErrors :: prevTcInfo.tcDiagnosticsRev
+                    topAttribs = Some topAttribs
+                    tcDependencyFiles = fileName :: prevTcInfo.tcDependencyFiles
+                    sigNameOpt =
+                        match input with
+                        | ParsedInput.SigFile sigFile ->
+                            Some(sigFile.FileName, sigFile.QualifiedName)
+                        | _ ->
+                            None
+                }
+            return tcInfo, sink, implFile, fileName
+
+            
+        }
+
+    
+
     // Type check everything that is needed to check given file
     let ComputeTcPrior (file: FSharpFile) (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshot) userOpName _key: NodeCode<TcInfo> =
         node {
@@ -546,11 +624,25 @@ type internal TransparentCompiler
                 |> NodeCode.Parallel
 
             // compute dependency graph
-            let graphKey = projectSnapshot.UpTo(file.Source.FileName).SourceFileNames
-            let! _graph, _filePairs = DependencyGraphForLastFileCache.Get(graphKey, ComputeDependencyGraphForLastFile parsedInputs bootstrapInfo.TcConfig)
+            let graphKey = projectSnapshot.UpTo(file.Source.FileName).SourceFiles |> List.map (fun s -> s.Key)
+            let! graph, _filePairs = DependencyGraphForLastFileCache.Get(graphKey, ComputeDependencyGraphForLastFile parsedInputs bootstrapInfo.TcConfig)
 
+            // layers that can be processed in parallel
+            let layers = Graph.leafSequence graph
 
-
+            let rec processLayer (layers: Set<FileIndex> list) state = node {
+                match layers with
+                | [] -> return state
+                | layer::rest ->
+                    let! results =
+                        layer
+                        |> Seq.map (fun fileIndex ->
+                            let key = projectSnapshot.UpTo(fileIndex).Key
+                            TcIntermediateCache.Get(key, ComputeTcIntermediate parsedInputs[fileIndex] bootstrapInfo state))
+                        |> NodeCode.Parallel
+                    return! processLayer rest (combineResults state results)
+            }
+            
             return bootstrapInfo.InitialTcInfo
         }
 

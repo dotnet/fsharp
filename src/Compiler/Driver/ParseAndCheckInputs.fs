@@ -1467,14 +1467,14 @@ let CheckOneInputWithCallback
       prefixPathOpt,
       tcSink,
       tcState: TcState,
-      inp: ParsedInput,
+      input: ParsedInput,
       _skipImplIfSigExists: bool): (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcResultsSink * TcState * ParsedInput * bool)
     : Cancellable<Finisher<TcState, PartialResult>> =
     cancellable {
         try
             CheckSimulateException tcConfig
 
-            let m = inp.Range
+            let m = input.Range
             let amap = tcImports.GetImportMap()
 
             let conditionalDefines =
@@ -1483,7 +1483,7 @@ let CheckOneInputWithCallback
                 else
                     Some tcConfig.conditionalDefines
 
-            match inp with
+            match input with
             | ParsedInput.SigFile file ->
                 let qualNameOfFile = file.QualifiedName
 

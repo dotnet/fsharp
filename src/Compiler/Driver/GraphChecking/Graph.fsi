@@ -17,6 +17,8 @@ module internal Graph =
     val subGraphFor: node: 'Node -> graph: Graph<'Node> -> Graph<'Node> when 'Node: equality
     /// Create a reverse of the graph.
     val reverse<'Node when 'Node: equality> : originalGraph: Graph<'Node> -> Graph<'Node>
+    /// Returns layers of leaves repeatedly removed from the graph until there's nothing left
+    val leafSequence: graph: Graph<'Node> -> Set<'Node> seq
     /// Print the contents of the graph to the standard output.
     val print: graph: Graph<'Node> -> unit
     /// Create a simple Mermaid graph and save it under the path specified.

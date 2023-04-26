@@ -193,6 +193,11 @@ type SyntheticProject with
     member this.GetFilePath fileId = this.Find fileId |> getFilePath this
     member this.GetSignatureFilePath fileId = this.Find fileId |> getSignatureFilePath this
 
+    member this.SourceFilePaths =
+        [ for f in this.SourceFiles do
+            if f.HasSignatureFile then this.GetSignatureFilePath f.Id
+            this.GetFilePath f.Id ]
+
 
 let private renderNamespaceModule (project: SyntheticProject) (f: SyntheticSourceFile) =
     seq {
@@ -616,6 +621,14 @@ type ProjectWorkflowBuilder
         finally
             if initialContext.IsNone then
                 this.DeleteProjectDir()
+
+    [<CustomOperation "withProject">]
+    member this.WithProject(workflow: Async<WorkflowContext>, f) =
+        workflow |> mapProjectAsync (fun project -> 
+            async {
+                do! f project checker
+                return project
+            })
 
     /// Change contents of given file using `processFile` function.
     /// Does not save the file to disk.

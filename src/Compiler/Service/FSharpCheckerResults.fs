@@ -192,9 +192,12 @@ type FSharpProjectSnapshot =
 
     member po.ProjectDirectory = Path.GetDirectoryName(po.ProjectFileName)
 
+    member this.UpTo fileIndex =
+        { this with SourceFiles = this.SourceFiles[..fileIndex] }
+
     member this.UpTo fileName =
         let fileIndex = this.SourceFiles |> List.findIndex (fun x -> x.FileName = fileName)
-        { this with SourceFiles = this.SourceFiles[..fileIndex] }
+        this.UpTo fileIndex
 
     member this.Key = {
         ProjectFileName = this.ProjectFileName

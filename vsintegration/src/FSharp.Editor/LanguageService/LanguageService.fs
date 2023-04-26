@@ -156,7 +156,8 @@ type internal FSharpWorkspaceServiceFactory [<System.Composition.ImportingConstr
                                              DocumentSource.Custom getSource
                                          else
                                              DocumentSource.FileSystem),
-                                    useSyntaxTreeCache = useSyntaxTreeCache
+                                    useSyntaxTreeCache = useSyntaxTreeCache,
+                                    useTransparentCompiler = true
                                 )
 
                             TelemetryReporter.reportEvent

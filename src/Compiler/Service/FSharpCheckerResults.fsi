@@ -116,6 +116,9 @@ type FSharpProjectSnapshot =
 
     member SourceFileNames: string list
 
+    /// A snapshot of the same project but only up to the given file index (including).
+    member UpTo: fileIndex: int -> FSharpProjectSnapshot
+
     /// A snapshot of the same project but only up to the given file (including).
     member UpTo: fileName: string -> FSharpProjectSnapshot
 

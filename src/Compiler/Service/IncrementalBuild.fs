@@ -325,7 +325,7 @@ type BoundModel private (
 
     let getTcInfoExtras (typeCheck: GraphNode<TypeCheck>) =
         node {
-            let! _ , sink, implFile, fileName = typeCheck.GetOrComputeValue()
+            let! _x , sink, implFile, fileName = typeCheck.GetOrComputeValue()
             // Build symbol keys
             let itemKeyStore, semanticClassification =
                 if enableBackgroundItemKeyStoreAndSemanticClassification then
@@ -914,7 +914,7 @@ module IncrementalBuilderStateHelpers =
             return! prevBoundModel.Next(syntaxTree)
         })
 
-    let rec createFinalizeBoundModelGraphNode (initialState: IncrementalBuilderInitialState) (boundModels: GraphNode<BoundModel> seq) =
+    let createFinalizeBoundModelGraphNode (initialState: IncrementalBuilderInitialState) (boundModels: GraphNode<BoundModel> seq) =
         GraphNode(node {
             use _ = Activity.start "GetCheckResultsAndImplementationsForProject" [|Activity.Tags.project, initialState.outfile|]
             let! result = 
@@ -928,7 +928,7 @@ module IncrementalBuilderStateHelpers =
             return result, DateTime.UtcNow
         })
 
-    and computeStampedFileNames (initialState: IncrementalBuilderInitialState) (state: IncrementalBuilderState) (cache: TimeStampCache) =
+    let computeStampedFileNames (initialState: IncrementalBuilderInitialState) (state: IncrementalBuilderState) (cache: TimeStampCache) =
         let slots = 
             if initialState.useChangeNotifications then
                 state.slots
@@ -967,7 +967,7 @@ module IncrementalBuilderStateHelpers =
         else
             state
 
-    and computeStampedReferencedAssemblies (initialState: IncrementalBuilderInitialState) state canTriggerInvalidation (cache: TimeStampCache) =
+    let computeStampedReferencedAssemblies (initialState: IncrementalBuilderInitialState) state canTriggerInvalidation (cache: TimeStampCache) =
         let stampedReferencedAssemblies = state.stampedReferencedAssemblies.ToBuilder()
 
         let mutable referencesUpdated = false
