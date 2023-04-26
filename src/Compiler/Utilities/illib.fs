@@ -68,7 +68,7 @@ module internal PervasiveAutoOpens =
 
     let inline (===) x y = LanguagePrimitives.PhysicalEquality x y
 
-    /// Per the docs the threshold for the Large Object Heap is 85000 bytes: https://docs.microsoft.com/en-us/dotnet/standard/garbage-collection/large-object-heap#how-an-object-ends-up-on-the-large-object-heap-and-how-gc-handles-them
+    /// Per the docs the threshold for the Large Object Heap is 85000 bytes: https://learn.microsoft.com/dotnet/standard/garbage-collection/large-object-heap#how-an-object-ends-up-on-the-large-object-heap-and-how-gc-handles-them
     /// We set the limit to be 80k to account for larger pointer sizes for when F# is running 64-bit.
     let LOH_SIZE_THRESHOLD_BYTES = 80_000
 
@@ -90,27 +90,17 @@ module internal PervasiveAutoOpens =
         | Some x -> x
 
     let reportTime =
-        let mutable tFirst = None
-        let mutable tPrev = None
+        let mutable tPrev: IDisposable = null
 
-        fun showTimes descr ->
-            if showTimes then
-                let t = Process.GetCurrentProcess().UserProcessorTime.TotalSeconds
+        fun descr ->
+            if isNotNull tPrev then
+                tPrev.Dispose()
 
-                let prev =
-                    match tPrev with
-                    | None -> 0.0
-                    | Some t -> t
-
-                let first =
-                    match tFirst with
-                    | None ->
-                        (tFirst <- Some t
-                         t)
-                    | Some t -> t
-
-                printf "  ilwrite: Cpu %4.1f (total)   %4.1f (delta) - %s\n" (t - first) (t - prev) descr
-                tPrev <- Some t
+            tPrev <-
+                if descr <> "Finish" then
+                    FSharp.Compiler.Diagnostics.Activity.Profiling.startAndMeasureEnvironmentStats descr
+                else
+                    null
 
     let foldOn p f z x = f z (p x)
 
@@ -920,10 +910,6 @@ module Cancellable =
     let token () =
         Cancellable(fun ct -> ValueOrCancelled.Value ct)
 
-    /// Represents a canceled computation
-    let canceled () =
-        Cancellable(fun ct -> ValueOrCancelled.Cancelled(OperationCanceledException ct))
-
 type CancellableBuilder() =
 
     member inline _.Delay([<InlineIfLambda>] f) =
@@ -999,7 +985,7 @@ type CancellableBuilder() =
 
             match compRes with
             | ValueOrCancelled.Value res ->
-                (resource :> IDisposable).Dispose()
+                Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicFunctions.Dispose resource
 
                 match res with
                 | Choice1Of2 r -> ValueOrCancelled.Value r
@@ -1043,28 +1029,21 @@ module CancellableAutoOpens =
 
 /// Generates unique stamps
 type UniqueStampGenerator<'T when 'T: equality>() =
-    let gate = obj ()
-    let encodeTab = ConcurrentDictionary<'T, int>(HashIdentity.Structural)
-    let mutable nItems = 0
+    let encodeTable = ConcurrentDictionary<'T, Lazy<int>>(HashIdentity.Structural)
+    let mutable nItems = -1
 
-    let encode str =
-        match encodeTab.TryGetValue str with
-        | true, idx -> idx
-        | _ ->
-            lock gate (fun () ->
-                let idx = nItems
-                encodeTab[str] <- idx
-                nItems <- nItems + 1
-                idx)
+    let computeFunc = Func<'T, _>(fun _ -> lazy (Interlocked.Increment(&nItems)))
 
-    member _.Encode str = encode str
+    member _.Encode str =
+        encodeTable.GetOrAdd(str, computeFunc).Value
 
-    member _.Table = encodeTab.Keys
+    member _.Table = encodeTable.Keys
 
 /// memoize tables (all entries cached, never collected)
 type MemoizationTable<'T, 'U>(compute: 'T -> 'U, keyComparer: IEqualityComparer<'T>, ?canMemoize) =
 
-    let table = new ConcurrentDictionary<'T, 'U>(keyComparer)
+    let table = new ConcurrentDictionary<'T, Lazy<'U>>(keyComparer)
+    let computeFunc = Func<_, _>(fun key -> lazy (compute key))
 
     member t.Apply x =
         if
@@ -1072,18 +1051,31 @@ type MemoizationTable<'T, 'U>(compute: 'T -> 'U, keyComparer: IEqualityComparer<
              | None -> true
              | Some f -> f x)
         then
-            match table.TryGetValue x with
-            | true, res -> res
-            | _ ->
-                lock table (fun () ->
-                    match table.TryGetValue x with
-                    | true, res -> res
-                    | _ ->
-                        let res = compute x
-                        table[x] <- res
-                        res)
+            table.GetOrAdd(x, computeFunc).Value
         else
             compute x
+
+/// A thread-safe lookup table which is assigning an auto-increment stamp with each insert
+type internal StampedDictionary<'T, 'U>(keyComparer: IEqualityComparer<'T>) =
+    let table = new ConcurrentDictionary<'T, Lazy<int * 'U>>(keyComparer)
+    let mutable count = -1
+
+    member _.Add(key, value) =
+        let entry = table.GetOrAdd(key, lazy (Interlocked.Increment(&count), value))
+        entry.Force() |> ignore
+
+    member _.UpdateIfExists(key, valueReplaceFunc) =
+        match table.TryGetValue key with
+        | true, v ->
+            let (stamp, oldVal) = v.Value
+
+            match valueReplaceFunc oldVal with
+            | None -> ()
+            | Some newVal -> table.TryUpdate(key, lazy (stamp, newVal), v) |> ignore<bool>
+        | _ -> ()
+
+    member _.GetAll() =
+        table |> Seq.map (fun kvp -> kvp.Key, kvp.Value.Value)
 
 exception UndefinedException
 

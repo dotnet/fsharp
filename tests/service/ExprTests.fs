@@ -215,9 +215,9 @@ module internal Utils =
                     //printfn "%s" v.CompiledName
 //                 try
                     if v.IsMember then
-                        sprintf "member %s%s = %s @ %s" v.CompiledName (printCurriedParams vs)  (printExpr 0 e) (e.Range.ToShortString())
+                        sprintf "member %s%s = %s @ %s" v.CompiledName (printCurriedParams vs)  (printExpr 0 e) (e.Range.ToString())
                     else
-                        sprintf "let %s%s = %s @ %s" v.CompiledName (printCurriedParams vs) (printExpr 0 e) (e.Range.ToShortString())
+                        sprintf "let %s%s = %s @ %s" v.CompiledName (printCurriedParams vs) (printExpr 0 e) (e.Range.ToString())
 //                 with e ->
 //                     printfn "FAILURE STACK: %A" e
 //                     sprintf "!!!!!!!!!! FAILED on %s @ %s, message: %s" v.CompiledName (v.DeclarationLocation.ToString()) e.Message
@@ -721,6 +721,13 @@ let test{0}ToCharOperator     (e1:{1}) = char e1
 let test{0}ToStringOperator   (e1:{1}) = string e1
 
 """
+
+let ignoreTestIfStackOverflowExpected () =
+#if !NETFRAMEWORK && DEBUG
+    Assert.Ignore("Test is known to fail in DEBUG when not using NetFramework. Use RELEASE configuration or NetFramework to run it.")
+#else
+    ()
+#endif
 
 /// This test is run in unison with its optimized counterpart below
 [<Test>]
@@ -3197,6 +3204,7 @@ let BigSequenceExpression(outFileOpt,docFileOpt,baseAddressOpt) =
 
 [<Test>]
 let ``Test expressions of declarations stress big expressions`` () =
+    ignoreTestIfStackOverflowExpected ()
     let cleanup, options = ProjectStressBigExpressions.createOptions()
     use _holder = cleanup
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
@@ -3213,6 +3221,7 @@ let ``Test expressions of declarations stress big expressions`` () =
 
 [<Test>]
 let ``Test expressions of optimized declarations stress big expressions`` () =
+    ignoreTestIfStackOverflowExpected ()
     let cleanup, options = ProjectStressBigExpressions.createOptions()
     use _holder = cleanup
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)

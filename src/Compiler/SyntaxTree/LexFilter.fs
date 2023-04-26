@@ -149,11 +149,6 @@ let isInfix token =
     | QMARK_QMARK -> true
     | _ -> false
 
-let isNonAssocInfixToken token = 
-    match token with 
-    | EQUALS -> true
-    | _ -> false
-
 let infixTokenLength token = 
     match token with 
     | COMMA -> 1
@@ -391,16 +386,6 @@ let rec isWithAugmentBlockContinuator token =
     //                          end 
     | END -> true    
     | ODUMMY token -> isWithAugmentBlockContinuator token
-    | _ -> false
-
-let isLongIdentifier token =
-    match token with
-    | IDENT _ | DOT -> true
-    | _ -> false
-
-let isLongIdentifierOrGlobal token =
-    match token with
-    | GLOBAL | IDENT _ | DOT -> true
     | _ -> false
 
 let isAtomicExprEndToken token = 
@@ -699,6 +684,8 @@ type LexFilterImpl (
     let mutable prevWasAtomicEnd = false
     
     let peekInitial() =
+        // Forget the lexbuf state we might have saved from previous input
+        haveLexbufState <- false
         let initialLookaheadTokenTup = popNextTokenTup()
         if debug then dprintf "first token: initialLookaheadTokenLexbufState = %a\n" outputPos (startPosOfTokenTup initialLookaheadTokenTup)
         
@@ -1598,7 +1585,7 @@ type LexFilterImpl (
         //  Otherwise it's a 'head' module declaration, so ignore it
 
         //  Here prevToken is either 'module', 'rec', 'global' (invalid), '.', or ident, because we skip attribute tokens and access modifier tokens
-        | _, CtxtModuleHead (moduleTokenPos, prevToken, lexingModuleAttributes) :: _ ->
+        | _, CtxtModuleHead (moduleTokenPos, prevToken, lexingModuleAttributes) :: rest ->
             match prevToken, token with
             | _, GREATER_RBRACK when lexingModuleAttributes = LexingModuleAttributes
                                      && moduleTokenPos.Column < tokenStartPos.Column ->
@@ -1623,19 +1610,28 @@ type LexFilterImpl (
                 pushCtxt tokenTup (CtxtModuleBody (moduleTokenPos, false))
                 pushCtxtSeqBlock(true, AddBlockEnd)
                 returnToken tokenLexbufState token
-            | _ -> 
-                if debug then dprintf "CtxtModuleHead: start of file, CtxtSeqBlock\n"
-                popCtxt()
-                // Don't push a new context if next token is EOF, since that raises an offside warning
-                match tokenTup.Token with 
-                | EOF _ -> 
-                    returnToken tokenLexbufState token
+            | _ ->
+                match rest with
+                | [ CtxtSeqBlock _ ] ->
+                    if debug then dprintf "CtxtModuleHead: start of file, CtxtSeqBlock\n"
+                    popCtxt()
+                    // Don't push a new context if next token is EOF, since that raises an offside warning
+                    match tokenTup.Token with 
+                    | EOF _ -> 
+                        returnToken tokenLexbufState token
+                    | _ ->
+                        // We have reached other tokens without encountering '=' or ':', so this is a module declaration spanning the whole file
+                        delayToken tokenTup 
+                        pushCtxt tokenTup (CtxtModuleBody (moduleTokenPos, true))
+                        pushCtxtSeqBlockAt (tokenTup, true, AddBlockEnd) 
+                        hwTokenFetch false
                 | _ ->
-                    // We have reached other tokens without encountering '=' or ':', so this is a module declaration spanning the whole file
-                    delayToken tokenTup 
-                    pushCtxt tokenTup (CtxtModuleBody (moduleTokenPos, true))
-                    pushCtxtSeqBlockAt (tokenTup, true, AddBlockEnd) 
-                    hwTokenFetch false
+                    // Adding a new nested module, EQUALS hasn't been typed yet
+                    // and we've encountered declarations below
+                    if debug then dprintf "CtxtModuleHead: not start of file, popping CtxtModuleHead\n"
+                    popCtxt()
+                    reprocessWithoutBlockRule()
+
         //  Offside rule for SeqBlock.  
         //      f x
         //      g x

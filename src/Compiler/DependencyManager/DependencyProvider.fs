@@ -132,6 +132,7 @@ type IDependencyManagerProvider =
     abstract Key: string
     abstract HelpMessages: string[]
     abstract ClearResultsCache: unit -> unit
+
     abstract ResolveDependencies:
         scriptDir: string *
         mainScriptName: string *
@@ -143,7 +144,7 @@ type IDependencyManagerProvider =
         timeout: int ->
             IResolveDependenciesResult
 
-    type ReflectionDependencyManagerProvider
+type ReflectionDependencyManagerProvider
     (
         theType: Type,
         nameProperty: PropertyInfo,
@@ -156,10 +157,10 @@ type IDependencyManagerProvider =
         clearResultCache: MethodInfo option,
         outputDir: string option,
         useResultsCache: bool
-        ) =
+    ) =
 
     let instance =
-        if not(isNull (theType.GetConstructor([|typeof<string option>; typeof<bool>|]))) then
+        if not (isNull (theType.GetConstructor([| typeof<string option>; typeof<bool> |]))) then
             Activator.CreateInstance(theType, [| outputDir :> obj; useResultsCache :> obj |])
         else
             Activator.CreateInstance(theType, [| outputDir :> obj |])
@@ -175,11 +176,12 @@ type IDependencyManagerProvider =
         | None -> fun _ -> [||]
 
     static member InstanceMaker(theType: Type, outputDir: string option, useResultsCache: bool) =
-        match getAttributeNamed theType dependencyManagerAttributeName,
-              getInstanceProperty<string> theType namePropertyName,
-              getInstanceProperty<string> theType keyPropertyName,
-              getInstanceProperty<string[]> theType helpMessagesPropertyName
-            with
+        match
+            getAttributeNamed theType dependencyManagerAttributeName,
+            getInstanceProperty<string> theType namePropertyName,
+            getInstanceProperty<string> theType keyPropertyName,
+            getInstanceProperty<string[]> theType helpMessagesPropertyName
+        with
         | None, _, _, _
         | _, None, _, _
         | _, _, None, _ -> None
@@ -234,9 +236,7 @@ type IDependencyManagerProvider =
                     resolveDependenciesMethodName
 
             let clearResultsCacheMethod =
-                getInstanceMethod<unit>
-                    theType [||]
-                    clearResultsCacheMethodName
+                getInstanceMethod<unit> theType [||] clearResultsCacheMethodName
 
             Some(fun () ->
                 ReflectionDependencyManagerProvider(
@@ -305,9 +305,7 @@ type IDependencyManagerProvider =
                     resolveDependenciesMethodName
 
             let clearResultsCacheMethod =
-                getInstanceMethod<unit>
-                    theType [||]
-                    clearResultsCacheMethodName
+                getInstanceMethod<unit> theType [||] clearResultsCacheMethodName
 
             Some(fun () ->
                 ReflectionDependencyManagerProvider(
@@ -402,10 +400,9 @@ type IDependencyManagerProvider =
         member _.Key = instance |> keyProperty
 
         /// Clear the dependency manager caches
-        member _.ClearResultsCache () =
+        member _.ClearResultsCache() =
             match clearResultCache with
-            | Some clearResultsCache ->
-                clearResultsCache.Invoke(instance, [||]) |> ignore
+            | Some clearResultsCache -> clearResultsCache.Invoke(instance, [||]) |> ignore
             | None -> ()
 
         /// Key of dependency Manager: used for #help
@@ -485,7 +482,13 @@ type IDependencyManagerProvider =
 
 /// Provides DependencyManagement functions.
 /// Class is IDisposable
-type DependencyProvider internal (assemblyProbingPaths: AssemblyResolutionProbe option, nativeProbingRoots: NativeResolutionProbe option, useResultsCache: bool) =
+type DependencyProvider
+    internal
+    (
+        assemblyProbingPaths: AssemblyResolutionProbe option,
+        nativeProbingRoots: NativeResolutionProbe option,
+        useResultsCache: bool
+    ) =
 
     // Note: creating a NativeDllResolveHandler currently installs process-wide handlers
     let dllResolveHandler = new NativeDllResolveHandler(nativeProbingRoots)
@@ -559,11 +562,9 @@ type DependencyProvider internal (assemblyProbingPaths: AssemblyResolutionProbe 
     new(assemblyProbingPaths: AssemblyResolutionProbe, nativeProbingRoots: NativeResolutionProbe, useResultsCache) =
         new DependencyProvider(Some assemblyProbingPaths, Some nativeProbingRoots, useResultsCache)
 
-    new(nativeProbingRoots: NativeResolutionProbe, useResultsCache) =
-        new DependencyProvider(None, Some nativeProbingRoots, useResultsCache)
+    new(nativeProbingRoots: NativeResolutionProbe, useResultsCache) = new DependencyProvider(None, Some nativeProbingRoots, useResultsCache)
 
-    new(nativeProbingRoots: NativeResolutionProbe) =
-        new DependencyProvider(None, Some nativeProbingRoots, true)
+    new(nativeProbingRoots: NativeResolutionProbe) = new DependencyProvider(None, Some nativeProbingRoots, true)
 
     new() = new DependencyProvider(None, None, true)
 

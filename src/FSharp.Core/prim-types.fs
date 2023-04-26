@@ -21,7 +21,7 @@ namespace Microsoft.FSharp.Core
     open System.Globalization
     open System.Reflection
     open System.Text
-    
+
     type Unit() =
         override _.GetHashCode() = 0
 
@@ -370,6 +370,64 @@ namespace Microsoft.FSharp.Core
     [<Sealed>]
     type ValueAsStaticPropertyAttribute() =
         inherit Attribute()
+
+    [<AttributeUsage(AttributeTargets.Method ||| AttributeTargets.Property, AllowMultiple=false)>]
+    [<Sealed>]
+    type NoCompilerInliningAttribute() =
+        inherit Attribute()
+
+#if !NET5_0_OR_GREATER
+namespace System.Diagnostics.CodeAnalysis
+
+    open System
+    open Microsoft.FSharp.Core
+
+    /// <summary>
+    /// Specifies the types of members that are dynamically accessed.
+    ///
+    /// This enumeration has a <see cref="FlagsAttribute"/> attribute that allows a
+    /// bitwise combination of its member values.
+    /// </summary>
+    [<Flags; RequireQualifiedAccessAttribute>]
+    type internal DynamicallyAccessedMemberTypes =
+        | None = 0
+        | PublicParameterlessConstructor = 0x0001
+        | PublicConstructors = 0x0003
+        | NonPublicConstructors = 0x0004
+        | PublicMethods = 0x0008
+        | NonPublicMethods = 0x0010
+        | PublicFields = 0x0020
+        | NonPublicFields = 0x0040
+        | PublicNestedTypes = 0x0080
+        | NonPublicNestedTypes = 0x0100
+        | PublicProperties = 0x0200
+        | NonPublicProperties = 0x0400
+        | PublicEvents = 0x0800
+        | NonPublicEvents = 0x1000
+        | Interfaces = 0x2000
+        | All = 0xffffffff
+
+    [<AttributeUsage(
+        AttributeTargets.Field ||| AttributeTargets.ReturnValue ||| AttributeTargets.GenericParameter |||
+        AttributeTargets.Parameter ||| AttributeTargets.Property ||| AttributeTargets.Method,
+        Inherited = false)>]
+    type internal DynamicallyAccessedMembersAttribute (memberTypes: DynamicallyAccessedMemberTypes) =
+        inherit Attribute ()
+
+        member val MemberTypes = memberTypes with get, set
+
+        member this.DynamicallyAccessedMembersAttribute(memberTypes: DynamicallyAccessedMemberTypes) =
+            this.MemberTypes <- memberTypes
+
+namespace Microsoft.FSharp.Core
+    open System
+    open System.Collections
+    open System.Collections.Generic
+    open System.Diagnostics
+    open System.Globalization
+    open System.Reflection
+    open System.Text
+#endif
 
     [<MeasureAnnotatedAbbreviation>] type float<[<Measure>] 'Measure> = float 
     [<MeasureAnnotatedAbbreviation>] type float32<[<Measure>] 'Measure> = float32
@@ -1598,11 +1656,6 @@ namespace Microsoft.FSharp.Core
                   when 'T : string  = System.String.Equals((# "" x : string #),(# "" y : string #))                  
                   when 'T : decimal = System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
                   when 'T : DateTime = DateTime.Equals((# "" x : DateTime #), (# "" y : DateTime #))
-                  
-
-            let inline GenericInequalityFast (x:'T) (y:'T) = (not(GenericEqualityFast x y) : bool)
-            let inline GenericInequalityERFast (x:'T) (y:'T) = (not(GenericEqualityERFast x y) : bool)
-
 
             //-------------------------------------------------------------------------
             // LanguagePrimitives.HashCompare: HASHING.  
@@ -3909,6 +3962,16 @@ namespace Microsoft.FSharp.Collections
     type List<'T> = 
        | ([])  :                  'T list
        | ( :: )  : Head: 'T * Tail: 'T list -> 'T list
+       member private this.CustomHashCode(c:IEqualityComparer) =        
+            let rec loop l acc position =
+                match l with
+                | [] -> acc           
+                | h::t ->
+                    let hashOfH = GenericHashWithComparer c h
+                    let acc = LanguagePrimitives.HashCompare.HashCombine position acc hashOfH
+                    loop t acc (position+1)
+
+            loop this 0 0
        interface IEnumerable<'T>
        interface IEnumerable
        interface IReadOnlyCollection<'T>
@@ -5723,7 +5786,7 @@ namespace Microsoft.FSharp.Core
                     let current () = 
                         // according to IEnumerator<int>.Current documentation, the result of of Current
                         // is undefined prior to the first call of MoveNext and post called to MoveNext
-                        // that return false (see https://msdn.microsoft.com/en-us/library/58e146b7%28v=vs.110%29.aspx)
+                        // that return false (see https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerator-1.current?view=net-7.0)
                         // so we should be able to just return value here, and we could get rid of the 
                         // complete variable which would be faster
                         if not state.Started then
@@ -5781,7 +5844,7 @@ namespace Microsoft.FSharp.Core
                         let inline current () =
                             // according to IEnumerator<int>.Current documentation, the result of of Current
                             // is undefined prior to the first call of MoveNext and post called to MoveNext
-                            // that return false (see https://msdn.microsoft.com/en-us/library/58e146b7%28v=vs.110%29.aspx)
+                            // that return false (see https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerator-1.current?view=net-7.0)
                             // so we should be able to just return value here, which would be faster
                             let derefValue = value
                             if derefValue < n then

@@ -1672,6 +1672,9 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                 let bindCall = mkSynCall bindName bindRange (bindArgs @ [consumeExpr])
                 translatedCtxt (bindCall |> addBindDebugPoint))
 
+    /// This function is for desugaring into .Bind{N}Return calls if possible
+    /// The outer option indicates if .BindReturn is possible. When it returns None, .BindReturn cannot be used
+    /// The inner option indicates if a custom operation is involved inside
     and convertSimpleReturnToExpr varSpace innerComp =
         match innerComp with 
         | SynExpr.YieldOrReturn ((false, _), returnExpr, m) ->
@@ -1697,7 +1700,8 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
             | Some (thenExpr, None) ->
             let elseExprOptOpt  = 
                 match elseCompOpt with 
-                | None -> Some None 
+                // When we are missing an 'else' part alltogether in case of 'if cond then return exp', we fallback from BindReturn into regular Bind+Return
+                | None -> None 
                 | Some elseComp -> 
                     match convertSimpleReturnToExpr varSpace elseComp with
                     | None -> None // failure
@@ -1849,6 +1853,13 @@ let mkSeqFinally (cenv: cenv) env m genTy e1 e2 =
     UnifyTypes cenv env m genTy (mkSeqTy cenv.g genResultTy)
     let e1 = mkCoerceIfNeeded cenv.g (mkSeqTy cenv.g genResultTy) (tyOfExpr cenv.g e1) e1
     mkCallSeqFinally cenv.g m genResultTy e1 e2 
+
+let mkSeqTryWith (cenv: cenv) env m genTy origSeq exnFilter exnHandler =
+    let g = cenv.g
+    let genResultTy = NewInferenceType g
+    UnifyTypes cenv env m genTy (mkSeqTy cenv.g genResultTy)
+    let origSeq = mkCoerceIfNeeded cenv.g (mkSeqTy cenv.g genResultTy) (tyOfExpr cenv.g origSeq) origSeq
+    mkCallSeqTryWith cenv.g m genResultTy origSeq exnFilter exnHandler 
 
 let mkSeqExprMatchClauses (pat, vspecs) innerExpr = 
     [MatchClause(pat, None, TTarget(vspecs, innerExpr, None), pat.Range) ] 
@@ -2075,8 +2086,38 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
 
             Some(mkLet spMatch inputExprMark matchv inputExpr matchExpr, tpenv)
 
-        | SynExpr.TryWith (trivia={ TryToWithRange = mTryToWith }) ->
-            error(Error(FSComp.SR.tcTryIllegalInSequenceExpression(), mTryToWith))
+        | SynExpr.TryWith (innerTry,withList,mTryToWith,_spTry,_spWith,trivia) ->
+            if not(g.langVersion.SupportsFeature(LanguageFeature.TryWithInSeqExpression)) then
+                 error(Error(FSComp.SR.tcTryIllegalInSequenceExpression(), mTryToWith))
+
+            let env = { env with eIsControlFlow = true }
+            let tryExpr, tpenv = 
+                let inner,tpenv = tcSequenceExprBody env genOuterTy tpenv innerTry
+                mkSeqDelayedExpr mTryToWith inner, tpenv
+
+            // Compile the pattern twice, once as a filter with all succeeding targets returning "1", and once as a proper catch block.
+            let clauses, tpenv = 
+                (tpenv, withList) ||> List.mapFold (fun tpenv (SynMatchClause(pat, cond, innerComp, m, sp, _)) ->
+                    let patR, condR, vspecs, envinner, tpenv = TcMatchPattern cenv g.exn_ty env tpenv pat cond
+                    let envinner =
+                        match sp with
+                        | DebugPointAtTarget.Yes -> { envinner with eIsControlFlow = true }
+                        | DebugPointAtTarget.No -> envinner
+                    let matchBody, tpenv = tcSequenceExprBody envinner genOuterTy tpenv innerComp
+                    let handlerClause = MatchClause(patR, condR, TTarget(vspecs, matchBody, None), patR.Range)
+                    let filterClause = MatchClause(patR, condR, TTarget([], Expr.Const(Const.Int32 1,m,g.int_ty), None), patR.Range)
+                    (handlerClause,filterClause), tpenv)
+
+            let handlers, filterClauses = List.unzip clauses
+            let withRange = trivia.WithToEndRange
+            let v1, filterExpr = CompilePatternForMatchClauses cenv env withRange withRange true FailFilter None g.exn_ty g.int_ty filterClauses
+            let v2, handlerExpr = CompilePatternForMatchClauses cenv env withRange withRange true FailFilter None g.exn_ty genOuterTy handlers
+
+            let filterLambda = mkLambda filterExpr.Range v1 (filterExpr, genOuterTy)
+            let handlerLambda = mkLambda handlerExpr.Range v2 (handlerExpr, genOuterTy)
+
+            let combinatorExpr = mkSeqTryWith cenv env mTryToWith genOuterTy tryExpr filterLambda handlerLambda
+            Some (combinatorExpr,tpenv)
 
         | SynExpr.YieldOrReturnFrom ((isYield, _), synYieldExpr, m) -> 
             let env = { env with eIsControlFlow = false }

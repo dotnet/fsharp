@@ -35,51 +35,80 @@ type FSharpEditorFactory(parentPackage: ShellPackage) =
 
     let parentPackage = nullArgCheck "parentPackage" parentPackage 
     let serviceProvider = parentPackage :> IServiceProvider
-    let componentModel = serviceProvider.GetService(typeof<SComponentModel>) :?> IComponentModel
-    let editorAdaptersFactoryService = componentModel.GetService<IVsEditorAdaptersFactoryService>()
-    let contentTypeRegistryService = componentModel.GetService<IContentTypeRegistryService>()
 
-    let setWindowBuffer oleServiceProvider (textBuffer: IVsTextBuffer) (ppunkDocView: byref<nativeint>) (ppunkDocData: byref<nativeint>) (pbstrEditorCaption: byref<string>) =   
+    let componentModel =
+        serviceProvider.GetService(typeof<SComponentModel>) :?> IComponentModel
+
+    let editorAdaptersFactoryService =
+        componentModel.GetService<IVsEditorAdaptersFactoryService>()
+
+    let contentTypeRegistryService =
+        componentModel.GetService<IContentTypeRegistryService>()
+
+    let setWindowBuffer
+        oleServiceProvider
+        (textBuffer: IVsTextBuffer)
+        (ppunkDocView: byref<nativeint>)
+        (ppunkDocData: byref<nativeint>)
+        (pbstrEditorCaption: byref<string>)
+        =
         // If the text buffer is marked as read-only, ensure that the padlock icon is displayed
         // next the new window's title and that [Read Only] is appended to title.
-        let readOnlyFlags = 
+        let readOnlyFlags =
             (BUFFERSTATEFLAGS.BSF_FILESYS_READONLY ||| BUFFERSTATEFLAGS.BSF_USER_READONLY)
-            |> LanguagePrimitives.EnumToValue 
+            |> LanguagePrimitives.EnumToValue
             |> uint32
 
         let mutable textBufferFlags = 0u
-        let readOnlyStatus = 
-            if (ErrorHandler.Succeeded(textBuffer.GetStateFlags(&textBufferFlags)) && 0u <> (textBufferFlags &&& readOnlyFlags)) then
+
+        let readOnlyStatus =
+            if
+                (ErrorHandler.Succeeded(textBuffer.GetStateFlags(&textBufferFlags))
+                 && 0u <> (textBufferFlags &&& readOnlyFlags))
+            then
                 READONLYSTATUS.ROSTATUS_ReadOnly
             else
                 READONLYSTATUS.ROSTATUS_NotReadOnly
-                
-        let codeWindow = editorAdaptersFactoryService.CreateVsCodeWindowAdapter(oleServiceProvider);
-        codeWindow.SetBuffer(textBuffer :?> IVsTextLines) 
-        |> ignore
-        codeWindow.GetEditorCaption(readOnlyStatus, &pbstrEditorCaption) 
-        |> ignore
 
-        ppunkDocView <- Marshal.GetIUnknownForObject(codeWindow);
-        ppunkDocData <- Marshal.GetIUnknownForObject(textBuffer);
+        let codeWindow =
+            editorAdaptersFactoryService.CreateVsCodeWindowAdapter(oleServiceProvider)
 
-        VSConstants.S_OK;
+        codeWindow.SetBuffer(textBuffer :?> IVsTextLines) |> ignore
+        codeWindow.GetEditorCaption(readOnlyStatus, &pbstrEditorCaption) |> ignore
+
+        ppunkDocView <- Marshal.GetIUnknownForObject(codeWindow)
+        ppunkDocData <- Marshal.GetIUnknownForObject(textBuffer)
+
+        VSConstants.S_OK
 
     let mutable oleServiceProviderOpt = None
-    
+
     interface IVsEditorFactory with
 
         member _.Close() = VSConstants.S_OK
 
-        member _.CreateEditorInstance(_grfCreateDoc, _pszMkDocument, _pszPhysicalView, _pvHier, _itemid, punkDocDataExisting, ppunkDocView, ppunkDocData, pbstrEditorCaption, pguidCmdUI, pgrfCDW) =
+        member _.CreateEditorInstance
+            (
+                _grfCreateDoc,
+                _pszMkDocument,
+                _pszPhysicalView,
+                _pvHier,
+                _itemid,
+                punkDocDataExisting,
+                ppunkDocView,
+                ppunkDocData,
+                pbstrEditorCaption,
+                pguidCmdUI,
+                pgrfCDW
+            ) =
             ppunkDocView <- IntPtr.Zero
             ppunkDocData <- IntPtr.Zero
             pbstrEditorCaption <- String.Empty
 
             //pguidCmdUI is the highest priority Guid that Visual Studio Shell looks at when translating key strokes into editor commands.
-            //Here we intentionally set it to Guid.Empty so it will not play a part in translating keystrokes at all. The next highest priority 
+            //Here we intentionally set it to Guid.Empty so it will not play a part in translating keystrokes at all. The next highest priority
             //will be commands tied to this FSharpEditorFactory (such as Alt-Enter).
-            //However, because we are setting pguidCmdUI, we are not going to get typical text editor commands bound to this editor unless we inherit 
+            //However, because we are setting pguidCmdUI, we are not going to get typical text editor commands bound to this editor unless we inherit
             //those keybindings on the IVsWindowFrame in which our editor lives.
             pguidCmdUI <- Guid.Empty
             pgrfCDW <- 0
@@ -91,30 +120,32 @@ type FSharpEditorFactory(parentPackage: ShellPackage) =
                 // to properly handle multiple windows open for the same document.
                 if punkDocDataExisting <> IntPtr.Zero then
                     match Marshal.GetObjectForIUnknown(punkDocDataExisting) with
-                    | :? IVsTextBuffer as textBuffer -> 
+                    | :? IVsTextBuffer as textBuffer ->
                         setWindowBuffer oleServiceProvider textBuffer &ppunkDocView &ppunkDocData &pbstrEditorCaption
-                    | _ -> 
-                        VSConstants.VS_E_INCOMPATIBLEDOCDATA
+                    | _ -> VSConstants.VS_E_INCOMPATIBLEDOCDATA
                 else
                     // We need to create a text buffer now.
-                    let contentType = contentTypeRegistryService.GetContentType(Constants.FSharpContentType)
-                    let textBuffer = editorAdaptersFactoryService.CreateVsTextBufferAdapter(oleServiceProvider, contentType)
+                    let contentType =
+                        contentTypeRegistryService.GetContentType(Constants.FSharpContentType)
+
+                    let textBuffer =
+                        editorAdaptersFactoryService.CreateVsTextBufferAdapter(oleServiceProvider, contentType)
+
                     setWindowBuffer oleServiceProvider textBuffer &ppunkDocView &ppunkDocData &pbstrEditorCaption
 
         member _.MapLogicalView(rguidLogicalView, pbstrPhysicalView) =
             pbstrPhysicalView <- null
 
             match rguidLogicalView with
-            | x when 
-                    x = VSConstants.LOGVIEWID.Primary_guid   ||
-                    x = VSConstants.LOGVIEWID.Debugging_guid ||
-                    x = VSConstants.LOGVIEWID.Code_guid      ||
-                    x = VSConstants.LOGVIEWID.TextView_guid  ->
+            | x when
+                x = VSConstants.LOGVIEWID.Primary_guid
+                || x = VSConstants.LOGVIEWID.Debugging_guid
+                || x = VSConstants.LOGVIEWID.Code_guid
+                || x = VSConstants.LOGVIEWID.TextView_guid
+                ->
                 VSConstants.S_OK
-            | _ ->
-                VSConstants.E_NOTIMPL
+            | _ -> VSConstants.E_NOTIMPL
 
         member _.SetSite(packageServiceProvider) =
             oleServiceProviderOpt <- Some packageServiceProvider
             VSConstants.S_OK
-        

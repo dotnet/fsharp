@@ -128,6 +128,7 @@ type Exception with
         | LetRecEvaluatedOutOfOrder (_, _, _, m)
         | DiagnosticWithText (_, _, m)
         | DiagnosticWithSuggestions (_, _, m, _, _)
+        | DiagnosticEnabledWithLanguageFeature (_, _, m, _)
         | SyntaxError (_, m)
         | InternalError (_, m)
         | InterfaceNotRevealed (_, _, m)
@@ -334,6 +335,7 @@ type Exception with
         | WrappedError (e, _) -> e.DiagnosticNumber
         | DiagnosticWithText (n, _, _) -> n
         | DiagnosticWithSuggestions (n, _, _, _, _) -> n
+        | DiagnosticEnabledWithLanguageFeature (n, _, _, _) -> n
         | Failure _ -> 192
         | IllegalFileNameChar (fileName, invalidChar) -> fst (FSComp.SR.buildUnexpectedFileNameCharacter (fileName, string invalidChar))
 #if !NO_TYPEPROVIDERS
@@ -361,6 +363,7 @@ type PhasedDiagnostic with
         | DefensiveCopyWarning _ -> 5
 
         | DiagnosticWithText (n, _, _)
+        | DiagnosticEnabledWithLanguageFeature (n, _, _, _)
         | DiagnosticWithSuggestions (n, _, _, _, _) ->
             // 1178, tcNoComparisonNeeded1, "The struct, record or union type '%s' is not structurally comparable because the type parameter %s does not satisfy the 'comparison' constraint..."
             // 1178, tcNoComparisonNeeded2, "The struct, record or union type '%s' is not structurally comparable because the type '%s' does not satisfy the 'comparison' constraint...."
@@ -388,9 +391,13 @@ type PhasedDiagnostic with
         | 3389 -> false // tcBuiltInImplicitConversionUsed - off by default
         | 3390 -> false // xmlDocBadlyFormed - off by default
         | 3395 -> false // tcImplicitConversionUsedForMethodArg - off by default
+        | 3559 -> false // typrelNeverRefinedAwayFromTop - off by default
         | _ ->
-            (severity = FSharpDiagnosticSeverity.Info)
-            || (severity = FSharpDiagnosticSeverity.Warning && level >= x.WarningLevel)
+            match x.Exception with
+            | DiagnosticEnabledWithLanguageFeature (_, _, _, enabled) -> enabled
+            | _ ->
+                (severity = FSharpDiagnosticSeverity.Info)
+                || (severity = FSharpDiagnosticSeverity.Warning && level >= x.WarningLevel)
 
     /// Indicates if a diagnostic should be reported as an informational
     member x.ReportAsInfo(options, severity) =
@@ -867,6 +874,7 @@ type Exception with
                         {
                             ArgReprInfo.Name = name |> Option.map (fun name -> Ident(name, range.Zero))
                             ArgReprInfo.Attribs = []
+                            ArgReprInfo.OtherRange = None
                         })
 
                 let argsL, retTyL, genParamTysL =
@@ -1703,7 +1711,8 @@ type Exception with
 
             os.AppendString(NonUniqueInferredAbstractSlot4E().Format)
 
-        | DiagnosticWithText (_, s, _) -> os.AppendString s
+        | DiagnosticWithText (_, s, _)
+        | DiagnosticEnabledWithLanguageFeature (_, s, _, _) -> os.AppendString s
 
         | DiagnosticWithSuggestions (_, s, _, idText, suggestionF) ->
             os.AppendString(ConvertValLogicalNameToDisplayNameCore s)

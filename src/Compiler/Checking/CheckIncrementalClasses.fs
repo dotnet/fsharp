@@ -4,6 +4,7 @@ module internal FSharp.Compiler.CheckIncrementalClasses
 
 open System
 
+open FSharp.Compiler.Diagnostics
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -127,15 +128,17 @@ let TcImplicitCtorLhs_Phase2A(cenv: cenv, env, tpenv, tcref: TyconRef, vis, attr
         let valSynData = SynValInfo([synArgInfos], SynInfo.unnamedRetVal)
         let id = ident ("new", m)
 
-        CheckForNonAbstractInterface ModuleOrMemberBinding tcref memberFlags id.idRange
+        CheckForNonAbstractInterface g ModuleOrMemberBinding tcref memberFlags false id.idRange
         let memberInfo = MakeMemberDataAndMangledNameForMemberVal(g, tcref, false, attribs, [], memberFlags, valSynData, id, false)
-        let prelimValReprInfo = TranslateSynValInfo m (TcAttributes cenv env) valSynData
+        let prelimValReprInfo = TranslateSynValInfo cenv m (TcAttributes cenv env) valSynData
         let prelimTyschemeG = GeneralizedType(copyOfTyconTypars, ctorTy)
         let isComplete = ComputeIsComplete copyOfTyconTypars [] ctorTy
         let varReprInfo = InferGenericArityFromTyScheme prelimTyschemeG prelimValReprInfo
         let ctorValScheme = ValScheme(id, prelimTyschemeG, Some varReprInfo, None, Some memberInfo, false, ValInline.Never, NormalVal, vis, false, true, false, false)
         let paramNames = varReprInfo.ArgNames
-        let xmlDoc = xmlDoc.ToXmlDoc(true, Some paramNames)
+
+        let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
+        let xmlDoc = xmlDoc.ToXmlDoc(checkXmlDocs, Some paramNames)
         let ctorVal = MakeAndPublishVal cenv env (Parent tcref, false, ModuleOrMemberBinding, ValInRecScope isComplete, ctorValScheme, attribs, xmlDoc, None, false) 
         ctorValScheme, ctorVal
 
@@ -149,9 +152,9 @@ let TcImplicitCtorLhs_Phase2A(cenv: cenv, env, tpenv, tcref: TyconRef, vis, attr
             let cctorTy = mkFunTy g g.unit_ty g.unit_ty
             let valSynData = SynValInfo([[]], SynInfo.unnamedRetVal)
             let id = ident ("cctor", m)
-            CheckForNonAbstractInterface ModuleOrMemberBinding tcref ClassCtorMemberFlags id.idRange
+            CheckForNonAbstractInterface g ModuleOrMemberBinding tcref ClassCtorMemberFlags false id.idRange
             let memberInfo = MakeMemberDataAndMangledNameForMemberVal(g, tcref, false, [], [], ClassCtorMemberFlags, valSynData, id, false)
-            let prelimValReprInfo = TranslateSynValInfo m (TcAttributes cenv env) valSynData
+            let prelimValReprInfo = TranslateSynValInfo cenv m (TcAttributes cenv env) valSynData
             let prelimTyschemeG = GeneralizedType(copyOfTyconTypars, cctorTy)
             let valReprInfo = InferGenericArityFromTyScheme prelimTyschemeG prelimValReprInfo
             let cctorValScheme = ValScheme(id, prelimTyschemeG, Some valReprInfo, None, Some memberInfo, false, ValInline.Never, NormalVal, Some (SynAccess.Private Range.Zero), false, true, false, false)

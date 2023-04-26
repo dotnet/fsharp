@@ -430,8 +430,6 @@ module Keywords =
 
         tab
 
-    let KeywordToken s = keywordTable[s]
-
     let IdentifierToken args (lexbuf: Lexbuf) (s: string) =
         if IsCompilerGeneratedName s then
             warning (Error(FSComp.SR.lexhlpIdentifiersContainingAtSymbolReserved (), lexbuf.LexemeRange))

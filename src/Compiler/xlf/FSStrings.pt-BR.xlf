@@ -24,7 +24,7 @@
       </trans-unit>
       <trans-unit id="ErrorFromAddingTypeEquationTuples">
         <source>Type mismatch. Expecting a tuple of length {0} of type\n    {1}    \nbut given a tuple of length {2} of type\n    {3}    {4}\n</source>
-        <target state="new">Type mismatch. Expecting a tuple of length {0} of type\n    {1}    \nbut given a tuple of length {2} of type\n    {3}    {4}\n</target>
+        <target state="translated">Tipo incompatível. Esperando uma tupla de comprimento {0} do tipo\n    {1}    \nmas recebeu uma tupla de comprimento {2} do tipo\n    {3}{4}\n</target>
         <note />
       </trans-unit>
       <trans-unit id="HashLoadedSourceHasIssues0">
@@ -34,7 +34,7 @@
       </trans-unit>
       <trans-unit id="NotUpperCaseConstructorWithoutRQA">
         <source>Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute</source>
-        <target state="new">Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute</target>
+        <target state="translated">Os casos de união discriminados em letras minúsculas só são permitidos ao usar o atributo RequireQualifiedAccess</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
@@ -1584,7 +1584,7 @@
       </trans-unit>
       <trans-unit id="IntfImplInIntrinsicAugmentation">
         <source>Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using #nowarn "69" if you have checked this is not the case.</source>
-        <target state="needs-review-translation">Implementações de interface em aumentos agora são preteridas. Implementações de interface devem ser dadas nas declarações de tipo iniciais.</target>
+        <target state="translated">As implementações de interface normalmente devem ser fornecidas na declaração inicial de um tipo. As implementações de interface em aumentos podem levar ao acesso a associações estáticas antes de serem inicializadas, embora somente se a implementação de interface for chamada durante a inicialização dos dados estáticos e, por sua vez, o acesso aos dados estáticos. Você pode remover este aviso usando #nowarn "69" se tiver verificado que não é o caso.</target>
         <note />
       </trans-unit>
       <trans-unit id="IntfImplInExtrinsicAugmentation">

@@ -17,34 +17,42 @@ open Microsoft.VisualStudio.FSharp.Interactive
 
 type internal FsiCommandFilter(serviceProvider: System.IServiceProvider) =
 
-    let loadPackage (guidString: string) : Lazy<Package MaybeNull> =
-      lazy(
-        let shell = serviceProvider.GetService(typeof<SVsShell>) :?> IVsShell
-        let packageToBeLoadedGuid = ref (Guid(guidString))       
-        match shell.LoadPackage packageToBeLoadedGuid with
-        | VSConstants.S_OK, pkg -> unbox pkg 
-        | _ -> null)
+    let loadPackage (guidString: string) =
+        lazy
+            (let shell = serviceProvider.GetService(typeof<SVsShell MaybeNull>) :?> IVsShell
+             let packageToBeLoadedGuid = ref (Guid(guidString))
+
+             match shell.LoadPackage packageToBeLoadedGuid with
+             | VSConstants.S_OK, pkg -> pkg :?> Package
+             | _ -> null)
 
     let fsiPackage = loadPackage FSharpConstants.fsiPackageGuidString
 
     let mutable nextTarget = null
 
-    member x.AttachToViewAdapter (viewAdapter: IVsTextView) =
+    member x.AttachToViewAdapter(viewAdapter: IVsTextView) =
         match viewAdapter.AddCommandFilter x with
-        | VSConstants.S_OK, next ->
-            nextTarget <- next
-        | errorCode, _ -> 
-            ErrorHandler.ThrowOnFailure errorCode |> ignore
+        | VSConstants.S_OK, next -> nextTarget <- next
+        | errorCode, _ -> ErrorHandler.ThrowOnFailure errorCode |> ignore
 
     interface IOleCommandTarget with
-        member x.Exec (pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut) =
-            if pguidCmdGroup = VSConstants.VsStd11 && nCmdId = uint32 VSConstants.VSStd11CmdID.ExecuteSelectionInInteractive then
+        member x.Exec(pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut) =
+            if
+                pguidCmdGroup = VSConstants.VsStd11
+                && nCmdId = uint32 VSConstants.VSStd11CmdID.ExecuteSelectionInInteractive
+            then
                 Hooks.OnMLSend fsiPackage.Value FsiEditorSendAction.ExecuteSelection
                 VSConstants.S_OK
-            elif pguidCmdGroup = VSConstants.VsStd11 && nCmdId = uint32 VSConstants.VSStd11CmdID.ExecuteLineInInteractive then
+            elif
+                pguidCmdGroup = VSConstants.VsStd11
+                && nCmdId = uint32 VSConstants.VSStd11CmdID.ExecuteLineInInteractive
+            then
                 Hooks.OnMLSend fsiPackage.Value FsiEditorSendAction.ExecuteLine
                 VSConstants.S_OK
-            elif pguidCmdGroup = Guids.guidInteractive && nCmdId = uint32 Guids.cmdIDDebugSelection then
+            elif
+                pguidCmdGroup = Guids.guidInteractive
+                && nCmdId = uint32 Guids.cmdIDDebugSelection
+            then
                 Hooks.OnMLSend fsiPackage.Value FsiEditorSendAction.DebugSelection
                 VSConstants.S_OK
             elif not (isNull nextTarget) then
@@ -52,22 +60,30 @@ type internal FsiCommandFilter(serviceProvider: System.IServiceProvider) =
             else
                 VSConstants.E_FAIL
 
-        member x.QueryStatus (pguidCmdGroup, cCmds, prgCmds, pCmdText) =
+        member x.QueryStatus(pguidCmdGroup, cCmds, prgCmds, pCmdText) =
             if pguidCmdGroup = VSConstants.VsStd11 then
-                for i = 0 to int cCmds-1 do
+                for i = 0 to int cCmds - 1 do
                     if prgCmds.[i].cmdID = uint32 VSConstants.VSStd11CmdID.ExecuteSelectionInInteractive then
                         prgCmds.[i].cmdf <- uint32 (OLECMDF.OLECMDF_SUPPORTED ||| OLECMDF.OLECMDF_ENABLED)
                     elif prgCmds.[i].cmdID = uint32 VSConstants.VSStd11CmdID.ExecuteLineInInteractive then
-                        prgCmds.[i].cmdf <- uint32 (OLECMDF.OLECMDF_SUPPORTED ||| OLECMDF.OLECMDF_ENABLED ||| OLECMDF.OLECMDF_DEFHIDEONCTXTMENU)
+                        prgCmds.[i].cmdf <-
+                            uint32 (
+                                OLECMDF.OLECMDF_SUPPORTED
+                                ||| OLECMDF.OLECMDF_ENABLED
+                                ||| OLECMDF.OLECMDF_DEFHIDEONCTXTMENU
+                            )
+
                 VSConstants.S_OK
             elif pguidCmdGroup = Guids.guidInteractive then
-                for i = 0 to int cCmds-1 do
+                for i = 0 to int cCmds - 1 do
                     if prgCmds.[i].cmdID = uint32 Guids.cmdIDDebugSelection then
                         let dbgState = Hooks.GetDebuggerState fsiPackage.Value
+
                         if dbgState = FsiDebuggerState.AttachedNotToFSI then
                             prgCmds.[i].cmdf <- uint32 OLECMDF.OLECMDF_INVISIBLE
                         else
                             prgCmds.[i].cmdf <- uint32 (OLECMDF.OLECMDF_SUPPORTED ||| OLECMDF.OLECMDF_ENABLED)
+
                 VSConstants.S_OK
             elif not (isNull nextTarget) then
                 nextTarget.QueryStatus(&pguidCmdGroup, cCmds, prgCmds, pCmdText)
@@ -77,14 +93,15 @@ type internal FsiCommandFilter(serviceProvider: System.IServiceProvider) =
 [<Export(typeof<IWpfTextViewCreationListener>)>]
 [<ContentType(FSharpConstants.FSharpContentTypeName)>]
 [<TextViewRole(PredefinedTextViewRoles.PrimaryDocument)>]
-type internal FsiCommandFilterProvider [<ImportingConstructor>] 
-    ([<Import(typeof<SVsServiceProvider>)>] serviceProvider: System.IServiceProvider,
-     editorFactory: IVsEditorAdaptersFactoryService) =
+type internal FsiCommandFilterProvider [<ImportingConstructor>]
+    (
+        [<Import(typeof<SVsServiceProvider>)>] serviceProvider: System.IServiceProvider,
+        editorFactory: IVsEditorAdaptersFactoryService
+    ) =
     interface IWpfTextViewCreationListener with
-        member _.TextViewCreated(textView) = 
+        member _.TextViewCreated(textView) =
             match editorFactory.GetViewAdapter(textView) with
             | null -> ()
             | textViewAdapter ->
                 let commandFilter = FsiCommandFilter serviceProvider
                 commandFilter.AttachToViewAdapter textViewAdapter
-        

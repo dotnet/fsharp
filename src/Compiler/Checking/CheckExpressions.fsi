@@ -389,7 +389,13 @@ val AnalyzeAndMakeAndPublishRecursiveValue:
 
 /// Check that a member can be included in an interface
 val CheckForNonAbstractInterface:
-    declKind: DeclKind -> tcref: TyconRef -> memberFlags: SynMemberFlags -> m: range -> unit
+    g: TcGlobals ->
+    declKind: DeclKind ->
+    tcref: TyconRef ->
+    memberFlags: SynMemberFlags ->
+    isMemberStatic: bool ->
+    m: range ->
+        unit
 
 /// Check the flags on a member definition for consistency
 val CheckMemberFlags:
@@ -846,6 +852,7 @@ val TcValSpec:
 /// giving the names and attributes relevant to arguments and return, but before type
 /// parameters have been fully inferred via generalization.
 val TranslateSynValInfo:
+    cenv: TcFileState ->
     range ->
     tcAttributes: (AttributeTargets -> SynAttribute list -> Attrib list) ->
     synValInfo: SynValInfo ->
@@ -886,7 +893,7 @@ val BuildFieldMap:
     env: TcEnv ->
     isPartial: bool ->
     ty: TType ->
-    ((Ident list * Ident) * 'T) list ->
+    flds: ((Ident list * Ident) * 'T) list ->
     m: range ->
         TypeInst * TyconRef * Map<string, 'T> * (string * 'T) list
 

@@ -185,7 +185,8 @@ and [<Sealed>] internal LexBuffer<'Char>(filler: LexBufferFiller<'Char>, reportL
 
     member lexbuf.EndOfScan() : int =
         //Printf.eprintf "endOfScan, lexBuffer.lexemeLength = %d\n" lexBuffer.lexemeLength;
-        if bufferAcceptAction < 0 then failwith "unrecognized input"
+        if bufferAcceptAction < 0 then
+            failwith "unrecognized input"
 
         //printf "endOfScan %d state %d on unconsumed input '%c' (%d)\n" a s (Char.chr inp) inp;
         //Printf.eprintf "accept, lexeme = %s\n" (lexeme lexBuffer);
@@ -387,7 +388,9 @@ type internal UnicodeTables(trans: uint16[] array, accept: uint16[]) =
     let rec scanUntilSentinel lexBuffer state =
         // Return an endOfScan after consuming the input
         let a = int accept[state]
-        if a <> sentinel then onAccept (lexBuffer, a)
+
+        if a <> sentinel then
+            onAccept (lexBuffer, a)
 
         if lexBuffer.BufferScanLength = lexBuffer.BufferMaxScanLength then
             lexBuffer.DiscardInput()

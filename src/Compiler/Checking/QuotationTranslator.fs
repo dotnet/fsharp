@@ -22,7 +22,7 @@ open System.Collections.Generic
 
 module QP = QuotationPickler
 
-let verboseCReflect = condition "VERBOSE_CREFLECT"
+let verboseCReflect = isEnvVarSet "VERBOSE_CREFLECT"
 
 [<RequireQualifiedAccess>]
 type IsReflectedDefinition =

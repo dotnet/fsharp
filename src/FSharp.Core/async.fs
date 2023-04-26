@@ -316,7 +316,7 @@ type AsyncActivation<'T>(contents: AsyncActivationContents<'T>) =
     /// Produce a new execution context for a composite async
     member ctxt.WithContinuations(cont, econt, ccont) =
         AsyncActivation<'T>
-            { contents with
+            {
                 cont = cont
                 aux =
                     { ctxt.aux with
@@ -868,7 +868,7 @@ module AsyncPrimitives =
 
     ///   - Initial cancellation check
     ///   - Call syncCtxt.Post with exception protection. THis may fail as it is arbitrary user code
-    let CreateSwitchToAsync (syncCtxt: SynchronizationContext) =
+    let CreateSwitchToAsync (syncCtxt: SynchronizationContext MaybeNull) =
         MakeAsyncWithCancelCheck(fun ctxt -> ctxt.PostWithTrampoline syncCtxt ctxt.cont)
 
     ///   - Initial cancellation check

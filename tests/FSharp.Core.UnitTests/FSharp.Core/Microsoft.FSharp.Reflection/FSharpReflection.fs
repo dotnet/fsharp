@@ -1164,6 +1164,24 @@ type FSharpTypeTests() =
         // null
         CheckThrowsArgumentException(fun () ->FSharpType.MakeStructTupleType(asm, [|null;null|]) |> ignore )
 
+    [<Fact>]
+    member _.MakeStructTupleTypeNoAsm() =          
+        // positive
+        Assert.AreEqual(FSharpType.MakeStructTupleType( [|typeof<System.String>; typeof<System.Int32>|]), typeof<struct (string * int)>)
+        // positive for nested tuple
+        Assert.AreEqual(FSharpType.MakeStructTupleType( [|for i in 1..10 -> typeof<System.Int32>|]), typeof<struct(int * int * int * int * int * int * int * int * int * int )>)
+        // the representations above and below are equivalent, as tuple types are nested from 8th element on
+        Assert.AreEqual(FSharpType.MakeStructTupleType( [|for i in 1..10 -> typeof<System.Int32>|]), typeof<ValueTuple<int, int, int, int, int, int, int, ValueTuple<int, int, int>>>)
+
+        
+        // negative
+        Assert.AreNotEqual(FSharpType.MakeStructTupleType( [|typeof<System.String>; typeof<System.Int32>|]), typeof<struct (string * int * string)>)
+        
+        // invalid cases
+        CheckThrowsArgumentException(fun () ->FSharpType.MakeStructTupleType( [|null;null|]) |> ignore )
+        CheckThrowsArgumentException(fun () ->FSharpType.MakeStructTupleType( null) |> ignore )
+        CheckThrowsArgumentException(fun () ->FSharpType.MakeStructTupleType( [| |]) |> ignore )
+
 type UnionCaseInfoTests() =    
     
     let singlenullarycaseunion = SingleNullaryCaseDiscUnion.SingleNullaryCaseTag

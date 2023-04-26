@@ -101,6 +101,9 @@ type SynExprMatchBangTrivia =
     }
 
 [<NoEquality; NoComparison>]
+type SynExprAnonRecdTrivia = { OpeningBraceRange: range }
+
+[<NoEquality; NoComparison>]
 type SynMatchClauseTrivia =
     {
         ArrowRange: range option
@@ -224,12 +227,14 @@ type SynLeadingKeyword =
 type SynBindingTrivia =
     {
         LeadingKeyword: SynLeadingKeyword
+        InlineKeyword: range option
         EqualsRange: range option
     }
 
     static member Zero: SynBindingTrivia =
         {
             LeadingKeyword = SynLeadingKeyword.Synthetic
+            InlineKeyword = None
             EqualsRange = None
         }
 
@@ -288,6 +293,7 @@ type SynModuleOrNamespaceSigTrivia =
 type SynValSigTrivia =
     {
         LeadingKeyword: SynLeadingKeyword
+        InlineKeyword: range option
         WithKeyword: range option
         EqualsRange: range option
     }
@@ -295,6 +301,7 @@ type SynValSigTrivia =
     static member Zero: SynValSigTrivia =
         {
             LeadingKeyword = SynLeadingKeyword.Synthetic
+            InlineKeyword = None
             WithKeyword = None
             EqualsRange = None
         }
@@ -305,6 +312,7 @@ type SynTypeFunTrivia = { ArrowRange: range }
 [<NoEquality; NoComparison>]
 type SynMemberGetSetTrivia =
     {
+        InlineKeyword: range option
         WithKeyword: range
         GetKeyword: range option
         AndKeyword: range option
@@ -312,7 +320,26 @@ type SynMemberGetSetTrivia =
     }
 
 [<NoEquality; NoComparison>]
+type SynMemberDefnImplicitCtorTrivia = { AsKeyword: range option }
+
+[<NoEquality; NoComparison>]
 type SynArgPatsNamePatPairsTrivia = { ParenRange: range }
+
+[<NoEquality; NoComparison>]
+type GetSetKeywords =
+    | Get of range
+    | Set of range
+    | GetSet of get: range * set: range
+
+    member x.Range =
+        match x with
+        | Get m
+        | Set m -> m
+        | GetSet (mG, mS) ->
+            if Range.rangeBeforePos mG mS.Start then
+                Range.unionRanges mG mS
+            else
+                Range.unionRanges mS mG
 
 [<NoEquality; NoComparison>]
 type SynMemberDefnAutoPropertyTrivia =
@@ -320,8 +347,16 @@ type SynMemberDefnAutoPropertyTrivia =
         LeadingKeyword: SynLeadingKeyword
         WithKeyword: range option
         EqualsRange: range option
-        GetSetKeyword: range option
+        GetSetKeywords: GetSetKeywords option
     }
+
+[<NoEquality; NoComparison>]
+type SynMemberDefnAbstractSlotTrivia =
+    {
+        GetSetKeywords: GetSetKeywords option
+    }
+
+    static member Zero = { GetSetKeywords = None }
 
 [<NoEquality; NoComparison>]
 type SynFieldTrivia =
@@ -336,3 +371,11 @@ type SynTypeOrTrivia = { OrKeyword: range }
 
 [<NoEquality; NoComparison>]
 type SynBindingReturnInfoTrivia = { ColonRange: range option }
+
+[<NoEquality; NoComparison>]
+type SynMemberSigMemberTrivia =
+    {
+        GetSetKeywords: GetSetKeywords option
+    }
+
+    static member Zero: SynMemberSigMemberTrivia = { GetSetKeywords = None }

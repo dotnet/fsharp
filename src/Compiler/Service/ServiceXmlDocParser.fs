@@ -175,7 +175,7 @@ module XmlDocParsing =
                         |> Option.toList
                         |> List.collect getXmlDocablesSynMemberDefn
 
-                | SynMemberDefn.AbstractSlot (valSig, _, range) ->
+                | SynMemberDefn.AbstractSlot (slotSig = valSig; range = range) ->
                     let (SynValSig (attributes = synAttributes; arity = synValInfo; xmlDoc = preXmlDoc)) =
                         valSig
 
@@ -218,26 +218,26 @@ module XmlDocParsing =
         getXmlDocablesInput input
 
 module XmlDocComment =
-    let ws (s: string, pos) =
+    let inline ws (s: string, pos) =
         let res = s.TrimStart()
         Some(res, pos + (s.Length - res.Length))
 
-    let str (prefix: string) (s: string, pos) =
+    let inline str (prefix: string) (s: string, pos) =
         match s.StartsWithOrdinal(prefix) with
         | true ->
             let res = s.Substring prefix.Length
             Some(res, pos + (s.Length - res.Length))
         | _ -> None
 
-    let eol (s: string, pos) =
+    let inline eol (s: string, pos) =
         match s with
         | "" -> Some("", pos)
         | _ -> None
 
-    let (>=>) f g = f >> Option.bind g
+    let inline (>=>) ([<InlineIfLambda>] f) g = f >> Option.bind g
 
     // if it's a blank XML comment with trailing "<", returns Some (index of the "<"), otherwise returns None
-    let IsBlank (s: string) =
+    let inline IsBlank (s: string) =
         let parser = ws >=> str "///" >=> ws >=> str "<" >=> eol
         let res = parser (s.TrimEnd(), 0) |> Option.map snd |> Option.map (fun x -> x - 1)
         res

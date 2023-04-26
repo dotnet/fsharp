@@ -233,7 +233,7 @@ type internal IncrementalBuilder =
         unit ->
             NodeCode<PartialCheckResults * IL.ILAssemblyRef * ProjectAssemblyDataResult * CheckedImplFile list option>
 
-    /// Get the logical time stamp that is associated with the output of the project if it were gully built immediately
+    /// Get the logical time stamp that is associated with the output of the project if it were fully built immediately
     member GetLogicalTimeStampForProject: TimeStampCache -> DateTime
 
     /// Does the given file exist in the builder's pipeline?
@@ -244,6 +244,8 @@ type internal IncrementalBuilder =
     /// This may be a marginally long-running operation (parses are relatively quick, only one file needs to be parsed)
     member GetParseResultsForFile:
         fileName: string -> ParsedInput * range * string * (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
+
+    member NotifyFileChanged: fileName: string * timeStamp: DateTime -> NodeCode<unit>
 
     /// Create the incremental builder
     static member TryCreateIncrementalBuilderForProjectOptions:
@@ -263,9 +265,12 @@ type internal IncrementalBuilder =
         keepAllBackgroundSymbolUses: bool *
         enableBackgroundItemKeyStoreAndSemanticClassification: bool *
         enablePartialTypeChecking: bool *
-        enableParallelCheckingWithSignatureFiles: bool *
         dependencyProvider: DependencyProvider option *
-        parallelReferenceResolution: ParallelReferenceResolution ->
+        parallelReferenceResolution: ParallelReferenceResolution *
+        captureIdentifiersWhenParsing: bool *
+        getSource: (string -> ISourceText option) option *
+        useChangeNotifications: bool *
+        useSyntaxTreeCache: bool ->
             NodeCode<IncrementalBuilder option * FSharpDiagnostic[]>
 
 /// Generalized Incremental Builder. This is exposed only for unit testing purposes.

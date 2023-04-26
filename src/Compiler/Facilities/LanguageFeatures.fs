@@ -56,6 +56,17 @@ type LanguageFeature =
     | InterfacesWithAbstractStaticMembers
     | SelfTypeConstraints
     | MatchNotAllowedForUnionCaseWithNoData
+    | CSharpExtensionAttributeNotRequired
+    | ErrorForNonVirtualMembersOverrides
+    | WarningWhenInliningMethodImplNoInlineMarkedFunction
+    | EscapeDotnetFormattableStrings
+    | ArithmeticInLiterals
+    | ErrorReportingOnStaticClasses
+    | TryWithInSeqExpression
+    | WarningWhenCopyAndUpdateRecordChangesAllFields
+    | StaticMembersInInterfaces
+    | NonInlineLiteralsAsPrintfFormat
+    | NestedCopyAndUpdate
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -74,7 +85,14 @@ type LanguageVersion(versionText) =
     static let validOptions = [| "preview"; "default"; "latest"; "latestmajor" |]
 
     static let languageVersions =
-        set [| languageVersion46; languageVersion47; languageVersion50; languageVersion60; languageVersion70 |]
+        set
+            [|
+                languageVersion46
+                languageVersion47
+                languageVersion50
+                languageVersion60
+                languageVersion70
+            |]
 
     static let features =
         dict
@@ -128,6 +146,18 @@ type LanguageVersion(versionText) =
                 LanguageFeature.FromEndSlicing, previewVersion
                 LanguageFeature.NullnessChecking, previewVersion
                 LanguageFeature.MatchNotAllowedForUnionCaseWithNoData, previewVersion
+                LanguageFeature.CSharpExtensionAttributeNotRequired, previewVersion
+                LanguageFeature.ErrorForNonVirtualMembersOverrides, previewVersion
+                LanguageFeature.WarningWhenInliningMethodImplNoInlineMarkedFunction, previewVersion
+                LanguageFeature.EscapeDotnetFormattableStrings, previewVersion
+                LanguageFeature.ArithmeticInLiterals, previewVersion
+                LanguageFeature.ErrorReportingOnStaticClasses, previewVersion
+                LanguageFeature.TryWithInSeqExpression, previewVersion
+                LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields, previewVersion
+                LanguageFeature.StaticMembersInInterfaces, previewVersion
+                LanguageFeature.NonInlineLiteralsAsPrintfFormat, previewVersion
+                LanguageFeature.NestedCopyAndUpdate, previewVersion
+
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -236,6 +266,19 @@ type LanguageVersion(versionText) =
         | LanguageFeature.InterfacesWithAbstractStaticMembers -> FSComp.SR.featureInterfacesWithAbstractStaticMembers ()
         | LanguageFeature.SelfTypeConstraints -> FSComp.SR.featureSelfTypeConstraints ()
         | LanguageFeature.MatchNotAllowedForUnionCaseWithNoData -> FSComp.SR.featureMatchNotAllowedForUnionCaseWithNoData ()
+        | LanguageFeature.CSharpExtensionAttributeNotRequired -> FSComp.SR.featureCSharpExtensionAttributeNotRequired ()
+        | LanguageFeature.ErrorForNonVirtualMembersOverrides -> FSComp.SR.featureErrorForNonVirtualMembersOverrides ()
+        | LanguageFeature.WarningWhenInliningMethodImplNoInlineMarkedFunction ->
+            FSComp.SR.featureWarningWhenInliningMethodImplNoInlineMarkedFunction ()
+        | LanguageFeature.EscapeDotnetFormattableStrings -> FSComp.SR.featureEscapeBracesInFormattableString ()
+        | LanguageFeature.ArithmeticInLiterals -> FSComp.SR.featureArithmeticInLiterals ()
+        | LanguageFeature.ErrorReportingOnStaticClasses -> FSComp.SR.featureErrorReportingOnStaticClasses ()
+        | LanguageFeature.TryWithInSeqExpression -> FSComp.SR.featureTryWithInSeqExpressions ()
+        | LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields ->
+            FSComp.SR.featureWarningWhenCopyAndUpdateRecordChangesAllFields ()
+        | LanguageFeature.StaticMembersInInterfaces -> FSComp.SR.featureStaticMembersInInterfaces ()
+        | LanguageFeature.NonInlineLiteralsAsPrintfFormat -> FSComp.SR.featureNonInlineLiteralsAsPrintfFormat ()
+        | LanguageFeature.NestedCopyAndUpdate -> FSComp.SR.featureNestedCopyAndUpdate ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

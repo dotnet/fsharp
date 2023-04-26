@@ -9,9 +9,11 @@
 module internal FSharp.Compiler.TcGlobals
 
 open System.Collections.Concurrent
+open System.Linq
 open System.Diagnostics
 
 open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILX
 open FSharp.Compiler.CompilerGlobalState
@@ -24,6 +26,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 
 open Internal.Utilities
+open System.Reflection
 
 let internal DummyFileNameForRangesWithoutASpecificLocation = startupFileName
 let private envRange = rangeN DummyFileNameForRangesWithoutASpecificLocation 0
@@ -51,33 +54,37 @@ let ValRefForIntrinsic (IntrinsicValRef(mvr, _, _, _, key))  = mkNonLocalValRef 
 [<AutoOpen>]
 module FSharpLib =
 
-    let CoreOperatorsCheckedName = FSharpLib.Root + ".Core.Operators.Checked"
-    let ControlName              = FSharpLib.Root + ".Control"
-    let LinqName                 = FSharpLib.Root + ".Linq"
-    let CollectionsName          = FSharpLib.Root + ".Collections"
-    let LanguagePrimitivesName   = FSharpLib.Root + ".Core.LanguagePrimitives"
-    let CompilerServicesName     = FSharpLib.Root + ".Core.CompilerServices"
-    let LinqRuntimeHelpersName   = FSharpLib.Root + ".Linq.RuntimeHelpers"
-    let RuntimeHelpersName       = FSharpLib.Root + ".Core.CompilerServices.RuntimeHelpers"
-    let ExtraTopLevelOperatorsName = FSharpLib.Root + ".Core.ExtraTopLevelOperators"
-    let NativeInteropName                 = FSharpLib.Root + ".NativeInterop"
+    let Root                       = "Microsoft.FSharp"
+    let RootPath                   = splitNamespace Root
+    let Core                       = Root + ".Core"
+    let CorePath                   = splitNamespace Core
+    let CoreOperatorsCheckedName   = Root + ".Core.Operators.Checked"
+    let ControlName                = Root + ".Control"
+    let LinqName                   = Root + ".Linq"
+    let CollectionsName            = Root + ".Collections"
+    let LanguagePrimitivesName     = Root + ".Core.LanguagePrimitives"
+    let CompilerServicesName       = Root + ".Core.CompilerServices"
+    let LinqRuntimeHelpersName     = Root + ".Linq.RuntimeHelpers"
+    let RuntimeHelpersName         = Root + ".Core.CompilerServices.RuntimeHelpers"
+    let ExtraTopLevelOperatorsName = Root + ".Core.ExtraTopLevelOperators"
+    let NativeInteropName          = Root + ".NativeInterop"
 
-    let QuotationsName             = FSharpLib.Root + ".Quotations"
+    let QuotationsName             = Root + ".Quotations"
 
-    let ControlPath                 = splitNamespace ControlName
-    let LinqPath                    = splitNamespace LinqName
-    let CollectionsPath             = splitNamespace CollectionsName
-    let NativeInteropPath           = splitNamespace NativeInteropName |> Array.ofList
-    let CompilerServicesPath        = splitNamespace CompilerServicesName |> Array.ofList
-    let LinqRuntimeHelpersPath      = splitNamespace LinqRuntimeHelpersName |> Array.ofList
-    let RuntimeHelpersPath          = splitNamespace RuntimeHelpersName |> Array.ofList
-    let QuotationsPath              = splitNamespace QuotationsName |> Array.ofList
+    let ControlPath                = splitNamespace ControlName
+    let LinqPath                   = splitNamespace LinqName
+    let CollectionsPath            = splitNamespace CollectionsName
+    let NativeInteropPath          = splitNamespace NativeInteropName |> Array.ofList
+    let CompilerServicesPath       = splitNamespace CompilerServicesName |> Array.ofList
+    let LinqRuntimeHelpersPath     = splitNamespace LinqRuntimeHelpersName |> Array.ofList
+    let RuntimeHelpersPath         = splitNamespace RuntimeHelpersName |> Array.ofList
+    let QuotationsPath             = splitNamespace QuotationsName |> Array.ofList
 
-    let RootPathArray                    = FSharpLib.RootPath |> Array.ofList
-    let CorePathArray                    = FSharpLib.CorePath |> Array.ofList
-    let LinqPathArray                    = LinqPath |> Array.ofList
-    let ControlPathArray                 = ControlPath |> Array.ofList
-    let CollectionsPathArray             = CollectionsPath |> Array.ofList
+    let RootPathArray              = RootPath |> Array.ofList
+    let CorePathArray              = CorePath |> Array.ofList
+    let LinqPathArray              = LinqPath |> Array.ofList
+    let ControlPathArray           = ControlPath |> Array.ofList
+    let CollectionsPathArray       = CollectionsPath |> Array.ofList
 
 //-------------------------------------------------------------------------
 // Access the initial environment: helpers to build references
@@ -142,6 +149,8 @@ let tname_ValueType = "System.ValueType"
 [<Literal>]
 let tname_Enum = "System.Enum"
 [<Literal>]
+let tname_FlagsAttribute = "System.FlagsAttribute"
+[<Literal>]
 let tname_Array = "System.Array"
 [<Literal>]
 let tname_RuntimeArgumentHandle = "System.RuntimeArgumentHandle"
@@ -164,6 +173,7 @@ let tname_IAsyncResult = "System.IAsyncResult"
 [<Literal>]
 let tname_IsByRefLikeAttribute = "System.Runtime.CompilerServices.IsByRefLikeAttribute"
 
+
 //-------------------------------------------------------------------------
 // Table of all these "globals"
 //-------------------------------------------------------------------------
@@ -178,7 +188,7 @@ type TcGlobals(
     checkNullness: bool,
     useReflectionFreeCodeGen: bool,
     // The helper to find system types amongst referenced DLLs
-    tryFindSysTypeCcu,
+    tryFindSysTypeCcuHelper,
     emitDebugInfoInQuotations: bool,
     noDebugAttributes: bool,
     pathMap: PathMap,
@@ -200,7 +210,14 @@ type TcGlobals(
   let mk_MFLinq_tcref ccu n = mkNonLocalTyconRef2 ccu LinqPathArray n 
   let mk_MFCollections_tcref ccu n = mkNonLocalTyconRef2 ccu FSharpLib.CollectionsPathArray n 
   let mk_MFCompilerServices_tcref ccu n = mkNonLocalTyconRef2 ccu FSharpLib.CompilerServicesPath n 
+  let mk_MFRuntimeHelpers_tcref ccu n = mkNonLocalTyconRef2 ccu FSharpLib.RuntimeHelpersPath n
   let mk_MFControl_tcref ccu n = mkNonLocalTyconRef2 ccu FSharpLib.ControlPathArray n 
+
+  let tryFindSysTypeCcu path nm =
+    tryFindSysTypeCcuHelper path nm false
+
+  let tryFindPublicSysTypeCcu path nm =
+    tryFindSysTypeCcuHelper path nm true
 
   let vara = Construct.NewRigidTypar "a" envRange
   let varb = Construct.NewRigidTypar "b" envRange
@@ -248,17 +265,19 @@ type TcGlobals(
   let v_puint16_tcr     = mk_MFCore_tcref fslibCcu "uint16`1"
   let v_puint64_tcr     = mk_MFCore_tcref fslibCcu "uint64`1"
   let v_punativeint_tcr = mk_MFCore_tcref fslibCcu "unativeint`1"
-  let v_byref_tcr      = mk_MFCore_tcref fslibCcu "byref`1"
+  let v_byref_tcr       = mk_MFCore_tcref fslibCcu "byref`1"
   let v_byref2_tcr      = mk_MFCore_tcref fslibCcu "byref`2"
   let v_outref_tcr      = mk_MFCore_tcref fslibCcu "outref`1"
-  let v_inref_tcr      = mk_MFCore_tcref fslibCcu "inref`1"
-  let v_nativeptr_tcr  = mk_MFCore_tcref fslibCcu "nativeptr`1"
-  let v_voidptr_tcr      = mk_MFCore_tcref fslibCcu "voidptr"
-  let v_ilsigptr_tcr   = mk_MFCore_tcref fslibCcu "ilsigptr`1"
-  let v_fastFunc_tcr   = mk_MFCore_tcref fslibCcu "FSharpFunc`2"
+  let v_inref_tcr       = mk_MFCore_tcref fslibCcu "inref`1"
+  let v_nativeptr_tcr   = mk_MFCore_tcref fslibCcu "nativeptr`1"
+  let v_voidptr_tcr     = mk_MFCore_tcref fslibCcu "voidptr"
+  let v_ilsigptr_tcr    = mk_MFCore_tcref fslibCcu "ilsigptr`1"
+  let v_fastFunc_tcr    = mk_MFCore_tcref fslibCcu "FSharpFunc`2"
   let v_refcell_tcr_canon = mk_MFCore_tcref fslibCcu "Ref`1"
   let v_refcell_tcr_nice  = mk_MFCore_tcref fslibCcu "ref`1"
-  let v_mfe_tcr = mk_MFCore_tcref fslibCcu "MatchFailureException"
+  let v_mfe_tcr           = mk_MFCore_tcref fslibCcu "MatchFailureException"
+
+  let mutable embeddedILTypeDefs = ConcurrentDictionary<string, ILTypeDef>()
 
   let dummyAssemblyNameCarryingUsefulErrorInformation path typeName =
       FSComp.SR.tcGlobalsSystemTypeNotFound (String.concat "." path + "." + typeName)
@@ -279,7 +298,7 @@ type TcGlobals(
       let ccu = findSysTypeCcu path nm
       mkNonLocalTyconRef2 ccu (Array.ofList path) nm
 
-  let findSysILTypeRef (nm:string) =
+  let findSysILTypeRef nm =
       let path, typeName = splitILTypeName nm
       let scoref =
           match tryFindSysTypeCcu path typeName with
@@ -287,20 +306,59 @@ type TcGlobals(
           | Some ccu -> ccu.ILScopeRef
       mkILTyRef (scoref, nm)
 
-  let tryFindSysILTypeRef (nm:string) =
+  let tryFindSysILTypeRef nm =
       let path, typeName = splitILTypeName nm
       tryFindSysTypeCcu path typeName |> Option.map (fun ccu -> mkILTyRef (ccu.ILScopeRef, nm))
 
-  let findSysAttrib (nm:string) =
+  let findSysAttrib nm =
       let tref = findSysILTypeRef nm
       let path, typeName = splitILTypeName nm
       AttribInfo(tref, findSysTyconRef path typeName)
 
   let tryFindSysAttrib nm =
       let path, typeName = splitILTypeName nm
+
+      // System Attributes must be public types.
       match tryFindSysTypeCcu path typeName with
       | Some _ -> Some (findSysAttrib nm)
       | None -> None
+
+  let findPublicSysAttrib nm =
+      let path, typeName = splitILTypeName nm
+      let scoref, ccu =
+            match tryFindPublicSysTypeCcu path typeName with
+            | None ->
+                ILScopeRef.Assembly (mkSimpleAssemblyRef (dummyAssemblyNameCarryingUsefulErrorInformation path typeName)),
+                CcuThunk.CreateDelayed(dummyAssemblyNameCarryingUsefulErrorInformation path typeName)
+            | Some ccu ->
+                ccu.ILScopeRef,
+                ccu
+      let tref = mkILTyRef (scoref, nm)
+      let tcref = mkNonLocalTyconRef2 ccu (Array.ofList path) typeName
+      AttribInfo(tref, tcref)
+
+  let findOrEmbedSysPublicAttribute nm =
+        let sysAttrib = findPublicSysAttrib nm
+        if sysAttrib.TyconRef.CanDeref then
+            sysAttrib
+        else
+            let attrRef = ILTypeRef.Create(ILScopeRef.Local, [], nm)
+            let attrTycon =
+                Construct.NewTycon(
+                    Some (CompPath(ILScopeRef.Local, [])),
+                    attrRef.Name,
+                    range0,
+                    taccessInternal,
+                    taccessInternal,
+                    TyparKind.Type,
+                    LazyWithContext.NotLazy [],
+                    FSharp.Compiler.Xml.XmlDoc.Empty,
+                    false,
+                    false,
+                    false,
+                    MaybeLazy.Strict(Construct.NewEmptyModuleOrNamespaceType ModuleOrType)
+                )
+            AttribInfo(attrRef, mkLocalTyconRef attrTycon)
 
   let mkSysNonGenericTy path n = mkNonGenericTy(findSysTyconRef path n)
   let tryMkSysNonGenericTy path n = tryFindSysTyconRef path n |> Option.map mkNonGenericTy
@@ -459,14 +517,14 @@ type TcGlobals(
 
   let v_nil_ucref  = mkUnionCaseRef v_list_tcr_canon "op_Nil"
 
-  let fslib_MF_nleref                   = mkNonLocalEntityRef fslibCcu FSharpLib.RootPathArray
-  let fslib_MFCore_nleref               = mkNonLocalEntityRef fslibCcu FSharpLib.CorePathArray
-  let fslib_MFLinq_nleref               = mkNonLocalEntityRef fslibCcu FSharpLib.LinqPathArray
-  let fslib_MFCollections_nleref        = mkNonLocalEntityRef fslibCcu FSharpLib.CollectionsPathArray
-  let fslib_MFCompilerServices_nleref   = mkNonLocalEntityRef fslibCcu FSharpLib.CompilerServicesPath
-  let fslib_MFLinqRuntimeHelpers_nleref = mkNonLocalEntityRef fslibCcu FSharpLib.LinqRuntimeHelpersPath
-  let fslib_MFControl_nleref            = mkNonLocalEntityRef fslibCcu FSharpLib.ControlPathArray
-  let fslib_MFNativeInterop_nleref      = mkNonLocalEntityRef fslibCcu FSharpLib.NativeInteropPath
+  let fslib_MF_nleref                   = mkNonLocalEntityRef fslibCcu RootPathArray
+  let fslib_MFCore_nleref               = mkNonLocalEntityRef fslibCcu CorePathArray
+  let fslib_MFLinq_nleref               = mkNonLocalEntityRef fslibCcu LinqPathArray
+  let fslib_MFCollections_nleref        = mkNonLocalEntityRef fslibCcu CollectionsPathArray
+  let fslib_MFCompilerServices_nleref   = mkNonLocalEntityRef fslibCcu CompilerServicesPath
+  let fslib_MFLinqRuntimeHelpers_nleref = mkNonLocalEntityRef fslibCcu LinqRuntimeHelpersPath
+  let fslib_MFControl_nleref            = mkNonLocalEntityRef fslibCcu ControlPathArray
+  let fslib_MFNativeInterop_nleref      = mkNonLocalEntityRef fslibCcu NativeInteropPath
 
   let fslib_MFLanguagePrimitives_nleref        = mkNestedNonLocalEntityRef fslib_MFCore_nleref "LanguagePrimitives"
   let fslib_MFIntrinsicOperators_nleref        = mkNestedNonLocalEntityRef fslib_MFLanguagePrimitives_nleref "IntrinsicOperators"
@@ -592,10 +650,10 @@ type TcGlobals(
       decodeTupleTyAndNullness tupInfo tinst v_knownWithoutNull
 
   let mk_MFCore_attrib nm : BuiltinAttribInfo =
-      AttribInfo(mkILTyRef(ilg.fsharpCoreAssemblyScopeRef, FSharpLib.Core + "." + nm), mk_MFCore_tcref fslibCcu nm)
+      AttribInfo(mkILTyRef(ilg.fsharpCoreAssemblyScopeRef, Core + "." + nm), mk_MFCore_tcref fslibCcu nm)
 
   let mk_MFCompilerServices_attrib nm : BuiltinAttribInfo =
-      AttribInfo(mkILTyRef(ilg.fsharpCoreAssemblyScopeRef, FSharpLib.Core + "." + nm), mk_MFCompilerServices_tcref fslibCcu nm)
+      AttribInfo(mkILTyRef(ilg.fsharpCoreAssemblyScopeRef, Core + "." + nm), mk_MFCompilerServices_tcref fslibCcu nm)
 
   let mkSourceDoc fileName = ILSourceDocument.Create(language=None, vendor=None, documentType=None, file=fileName)
 
@@ -765,6 +823,7 @@ type TcGlobals(
   let v_seq_using_info             = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "EnumerateUsing"                       , None                 , None          , [vara;varb;varc], ([[varaTy];[(varaTy --> varbTy)]], mkSeqTy varcTy))
   let v_seq_generated_info         = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "EnumerateWhile"                       , None                 , None          , [varb],     ([[v_unit_ty --> v_bool_ty]; [mkSeqTy varbTy]], mkSeqTy varbTy))
   let v_seq_finally_info           = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "EnumerateThenFinally"                 , None                 , None          , [varb],     ([[mkSeqTy varbTy]; [v_unit_ty --> v_unit_ty]], mkSeqTy varbTy))
+  let v_seq_trywith_info           = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "EnumerateTryWith"                     , None                 , None          , [varb],     ([[mkSeqTy varbTy]; [mkNonGenericTy v_exn_tcr --> v_int32_ty]; [mkNonGenericTy v_exn_tcr --> mkSeqTy varbTy]], mkSeqTy varbTy))
   let v_seq_of_functions_info      = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "EnumerateFromFunctions"               , None                 , None          , [vara;varb], ([[v_unit_ty --> varaTy]; [varaTy --> v_bool_ty]; [varaTy --> varbTy]], mkSeqTy varbTy))
   let v_create_event_info          = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "CreateEvent"                          , None                 , None          , [vara;varb], ([[varaTy --> v_unit_ty]; [varaTy --> v_unit_ty]; [(v_obj_ty --> (varbTy --> v_unit_ty)) --> varaTy]], mkIEvent2Ty varaTy varbTy))
   let v_cgh__useResumableCode_info = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__useResumableCode"                   , None                 , None          , [vara],     ([[]], v_bool_ty))
@@ -812,7 +871,7 @@ type TcGlobals(
   let v_quote_to_linq_lambda_info  = makeIntrinsicValRef(fslib_MFLinqRuntimeHelpersQuotationConverter_nleref,  "QuotationToLambdaExpression"          , None                 , None                          , [vara],      ([[mkQuotedExprTy varaTy]], mkLinqExpressionTy varaTy))
 
   let tref_DebuggableAttribute = findSysILTypeRef tname_DebuggableAttribute
-  let tref_CompilerGeneratedAttribute  = findSysILTypeRef tname_CompilerGeneratedAttribute
+  let tref_CompilerGeneratedAttribute = findSysILTypeRef tname_CompilerGeneratedAttribute
   let tref_InternalsVisibleToAttribute = findSysILTypeRef tname_InternalsVisibleToAttribute
 
   let mutable generatedAttribsCache = []
@@ -826,16 +885,17 @@ type TcGlobals(
     let attribs =
        match generatedAttribsCache with
        | [] ->
-           let res =
-               [ if not noDebugAttributes then
-                   mkCompilerGeneratedAttribute()
-                   mkDebuggerNonUserCodeAttribute()]
-           generatedAttribsCache <- res
-           res
+            let res = [
+                if not noDebugAttributes then
+                    mkCompilerGeneratedAttribute()
+                    mkDebuggerNonUserCodeAttribute()
+                ]
+            generatedAttribsCache <- res
+            res
        | res -> res
     mkILCustomAttrs (attrs.AsList() @ attribs)
 
-  let addMethodGeneratedAttrs (mdef:ILMethodDef)   = mdef.With(customAttrs   = addGeneratedAttrs mdef.CustomAttrs)
+  let addMethodGeneratedAttrs (mdef:ILMethodDef)   = mdef.With(customAttrs = addGeneratedAttrs mdef.CustomAttrs)
 
   let addPropertyGeneratedAttrs (pdef:ILPropertyDef) = pdef.With(customAttrs = addGeneratedAttrs pdef.CustomAttrs)
 
@@ -1002,6 +1062,15 @@ type TcGlobals(
 
   member _.ilg = ilg
 
+  member _.embeddedTypeDefs = embeddedILTypeDefs.Values |> Seq.toList
+
+  member _.tryRemoveEmbeddedILTypeDefs () = [
+      for key in embeddedILTypeDefs.Keys.OrderBy(fun k -> k) do
+        match (embeddedILTypeDefs.TryRemove(key)) with
+        | true, ilTypeDef -> yield ilTypeDef
+        | false, _ -> ()
+      ]
+
   // A table of all intrinsics that the compiler cares about
   member _.knownIntrinsics = v_knownIntrinsics
 
@@ -1062,6 +1131,8 @@ type TcGlobals(
   member _.lazy_tcr_nice = v_lazy_tcr_nice
 
   member _.format_tcr = v_format_tcr
+
+  member _.format4_tcr = v_format4_tcr
 
   member _.expr_tcr = v_expr_tcr
 
@@ -1169,6 +1240,10 @@ type TcGlobals(
 
   member val ArrayCollector_tcr = mk_MFCompilerServices_tcref fslibCcu "ArrayCollector`1"
 
+  member _.TryEmbedILType(tref: ILTypeRef, mkEmbeddableType: unit -> ILTypeDef) =
+    if tref.Scope = ILScopeRef.Local && not(embeddedILTypeDefs.ContainsKey(tref.Name)) then
+        embeddedILTypeDefs.TryAdd(tref.Name, mkEmbeddableType()) |> ignore
+
   member g.mk_GeneratedSequenceBase_ty seqElemTy = TType_app(g.seq_base_tcr,[seqElemTy], v_knownWithoutNull)
 
   member val ResumableStateMachine_tcr = mk_MFCompilerServices_tcref fslibCcu "ResumableStateMachine`1"
@@ -1247,7 +1322,8 @@ type TcGlobals(
   member val exn_ty = mkNonGenericTy v_exn_tcr
   member val float_ty = v_float_ty
   member val float32_ty = v_float32_ty
-      /// Memoization table to help minimize the number of ILSourceDocument objects we create
+
+  /// Memoization table to help minimize the number of ILSourceDocument objects we create
   member _.memoize_file x = v_memoize_file.Apply x
 
   member val system_Array_ty = mkSysNonGenericTy sys "Array"
@@ -1352,8 +1428,6 @@ type TcGlobals(
   member val iltyp_RuntimeMethodHandle = findSysILTypeRef tname_RuntimeMethodHandle |> mkILNonGenericValueTy
   member val iltyp_RuntimeTypeHandle   = findSysILTypeRef tname_RuntimeTypeHandle |> mkILNonGenericValueTy
   member val iltyp_ReferenceAssemblyAttributeOpt = tryFindSysILTypeRef tname_ReferenceAssemblyAttribute |> Option.map mkILNonGenericBoxedTy
-
-
   member val attrib_AttributeUsageAttribute = findSysAttrib "System.AttributeUsageAttribute"
   member val attrib_ParamArrayAttribute = findSysAttrib "System.ParamArrayAttribute"
   member val attrib_IDispatchConstantAttribute = tryFindSysAttrib "System.Runtime.CompilerServices.IDispatchConstantAttribute"
@@ -1361,7 +1435,9 @@ type TcGlobals(
 
   // We use 'findSysAttrib' here because lookup on attribute is done by name comparison, and can proceed
   // even if the type is not found in a system assembly.
-  member val attrib_IsReadOnlyAttribute = findSysAttrib "System.Runtime.CompilerServices.IsReadOnlyAttribute"
+  member val attrib_IsReadOnlyAttribute = findOrEmbedSysPublicAttribute "System.Runtime.CompilerServices.IsReadOnlyAttribute"
+  member val attrib_DynamicDependencyAttribute = findOrEmbedSysPublicAttribute "System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute"
+  member val enum_DynamicallyAccessedMemberTypes = findOrEmbedSysPublicAttribute "System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes"
 
   member val attrib_SystemObsolete = findSysAttrib "System.ObsoleteAttribute"
   member val attrib_DllImportAttribute = tryFindSysAttrib "System.Runtime.InteropServices.DllImportAttribute"
@@ -1439,6 +1515,7 @@ type TcGlobals(
   member val attrib_MeasureAttribute                       = mk_MFCore_attrib "MeasureAttribute"
   member val attrib_MeasureableAttribute                   = mk_MFCore_attrib "MeasureAnnotatedAbbreviationAttribute"
   member val attrib_NoDynamicInvocationAttribute           = mk_MFCore_attrib "NoDynamicInvocationAttribute"
+  member val attrib_NoCompilerInliningAttribute            = mk_MFCore_attrib "NoCompilerInliningAttribute"
   member val attrib_SecurityAttribute                      = tryFindSysAttrib "System.Security.Permissions.SecurityAttribute"
   member val attrib_SecurityCriticalAttribute              = findSysAttrib "System.Security.SecurityCriticalAttribute"
   member val attrib_SecuritySafeCriticalAttribute          = findSysAttrib "System.Security.SecuritySafeCriticalAttribute"
@@ -1492,6 +1569,8 @@ type TcGlobals(
   member val unchecked_unary_not_vref = ValRefForIntrinsic v_unchecked_unary_not_info
   member val unchecked_subtraction_vref = ValRefForIntrinsic v_unchecked_subtraction_info
   member val unchecked_multiply_vref    = ValRefForIntrinsic v_unchecked_multiply_info
+  member val unchecked_division_vref    = ValRefForIntrinsic v_unchecked_division_info
+  member val unchecked_modulus_vref     = ValRefForIntrinsic v_unchecked_modulus_info
   member val unchecked_defaultof_vref    = ValRefForIntrinsic v_unchecked_defaultof_info
   member val refcell_deref_vref = ValRefForIntrinsic v_refcell_deref_info
   member val refcell_assign_vref = ValRefForIntrinsic v_refcell_assign_info
@@ -1629,8 +1708,8 @@ type TcGlobals(
   member val query_select_vref          = ValRefForIntrinsic v_query_select_value_info
   member val query_where_vref           = ValRefForIntrinsic v_query_where_value_info
   member val query_zero_vref            = ValRefForIntrinsic v_query_zero_value_info
-  member val seq_to_list_vref            = ValRefForIntrinsic v_seq_to_list_info
-  member val seq_to_array_vref            = ValRefForIntrinsic v_seq_to_array_info
+  member val seq_to_list_vref           = ValRefForIntrinsic v_seq_to_list_info
+  member val seq_to_array_vref          = ValRefForIntrinsic v_seq_to_array_info
 
   member _.seq_collect_info           = v_seq_collect_info
   member _.seq_using_info             = v_seq_using_info
@@ -1638,6 +1717,7 @@ type TcGlobals(
   member _.seq_append_info            = v_seq_append_info
   member _.seq_generated_info         = v_seq_generated_info
   member _.seq_finally_info           = v_seq_finally_info
+  member _.seq_trywith_info           = v_seq_trywith_info
   member _.seq_of_functions_info      = v_seq_of_functions_info
   member _.seq_map_info               = v_seq_map_info
   member _.seq_singleton_info         = v_seq_singleton_info
@@ -1742,6 +1822,8 @@ type TcGlobals(
 
   member _.TryFindSysAttrib nm = tryFindSysAttrib nm
 
+  member _.AddGeneratedAttributes attrs = addGeneratedAttrs attrs
+
   member _.AddMethodGeneratedAttributes mdef = addMethodGeneratedAttrs mdef
 
   member _.AddPropertyGeneratedAttributes mdef = addPropertyGeneratedAttrs mdef
@@ -1839,12 +1921,12 @@ type TcGlobals(
         let info = makeOtherIntrinsicValRef (fslib_MFOperators_nleref, "atan2", None, Some "Atan2", [vara; varb], ([[varaTy]; [varaTy]], varbTy))
         let tyargs = [aty;bty]
         Some (info, tyargs, argExprs)
-    | "get_Zero", _, Some aty, [_] ->
+    | "get_Zero", _, Some aty, ([] | [_]) ->
         // Call LanguagePrimitives.GenericZero
         let info = makeOtherIntrinsicValRef (fslib_MFLanguagePrimitives_nleref, "GenericZero", None, None, [vara], ([], varaTy))
         let tyargs = [aty]
         Some (info, tyargs, [])
-    | "get_One", _, Some aty, [_] ->
+    | "get_One", _, Some aty,  ([] | [_])  ->
         // Call LanguagePrimitives.GenericOne
         let info = makeOtherIntrinsicValRef (fslib_MFLanguagePrimitives_nleref, "GenericOne", None, None, [vara], ([], varaTy))
         let tyargs = [aty]

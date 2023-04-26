@@ -55,6 +55,34 @@ module ExceptionDefinition =
         |> compileExeAndRun
         |> shouldSucceed
 
+        // SOURCE=AddMessageProperty.fs                                                               # AddMessageProperty
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AddMessageProperty.fs"|])>]
+    let``AddMessageProperty`` compilation =
+        compilation
+        |> asExe
+        |> withOptions ["--warnaserror+"; "--nowarn:988"]
+        |> compileExeAndRun
+        |> shouldSucceed
+
+     // SOURCE=ManualMessagePropertyWinsOverAutomaticOne.fs                                                               # ManualMessagePropertyWinsOverAutomaticOne
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ManualMessagePropertyWinsOverAutomaticOne.fs"|])>]
+    let``ManualMessagePropertyWinsOverAutomaticOne`` compilation =
+        compilation
+        |> asExe
+        |> withOptions ["--warnaserror+"; "--nowarn:988"]
+        |> compileExeAndRun
+        |> shouldSucceed
+
+     // SOURCE=PrivateMessagePropertyIsNotReplacingBuiltinMessage.fs                                                               # PrivateMessagePropertyIsNotReplacingBuiltinMessage
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PrivateMessagePropertyIsNotReplacingBuiltinMessage.fs"|])>]
+    let``PrivateMessagePropertyIsNotReplacingBuiltinMessage`` compilation =
+        compilation
+        |> asExe
+        |> withOptions ["--nowarn:988"]
+        |> ignoreWarnings
+        |> compileExeAndRun
+        |> shouldSucceed
+
     // SOURCE=CatchWOTypecheck01.fs                                                            # CatchWOTypeCheck01
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"CatchWOTypecheck01.fs"|])>]
     let``CatchWOTypecheck01_fs`` compilation =
@@ -154,7 +182,7 @@ module ExceptionDefinition =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 10, Line 7, Col 11, Line 7, Col 12, "Unexpected reserved keyword in exception definition. Expected identifier or other token.")
+            (Error 3563, Line 7, Col 11, Line 7, Col 17, "This is not a valid identifier")
         ]
 
     // SOURCE=E_DynamicInvocationNotSupported.fsx SCFLAGS=--test:ErrorRanges                   # E_DynamicInvocationNotSupported.fsx

@@ -4,17 +4,16 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
 open System.Threading.Tasks
+open System.Collections.Immutable
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "ChangeToUpcast"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.ChangeToUpcast); Shared>]
 type internal FSharpChangeToUpcastCodeFixProvider() =
     inherit CodeFixProvider()
 
-    let fixableDiagnosticIds = set ["FS3198"]
-
-    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = ImmutableArray.Create("FS3198")
 
     override this.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
@@ -24,7 +23,12 @@ type internal FSharpChangeToUpcastCodeFixProvider() =
             // Only works if it's one or the other
             let isDowncastOperator = text.Contains(":?>")
             let isDowncastKeyword = text.Contains("downcast")
-            do! Option.guard ((isDowncastOperator || isDowncastKeyword) && not (isDowncastOperator && isDowncastKeyword))
+
+            do!
+                Option.guard (
+                    (isDowncastOperator || isDowncastKeyword)
+                    && not (isDowncastOperator && isDowncastKeyword)
+                )
 
             let replacement =
                 if isDowncastOperator then
@@ -38,18 +42,7 @@ type internal FSharpChangeToUpcastCodeFixProvider() =
                 else
                     SR.UseUpcastKeyword()
 
-            let diagnostics =
-                context.Diagnostics
-                |> Seq.filter (fun x -> fixableDiagnosticIds |> Set.contains x.Id)
-                |> Seq.toImmutableArray
-
-            let codeFix =
-                CodeFixHelpers.createTextChangeCodeFix(
-                    title,
-                    context,
-                    (fun () -> asyncMaybe.Return [| TextChange(context.Span, replacement) |]))
-
-            context.RegisterCodeFix(codeFix, diagnostics)
+            do context.RegisterFsharpFix(CodeFix.ChangeToUpcast, title, [| TextChange(context.Span, replacement) |])
         }
         |> Async.Ignore
-        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken) 
+        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

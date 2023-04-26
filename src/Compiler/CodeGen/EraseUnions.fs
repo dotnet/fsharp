@@ -3,9 +3,12 @@
 /// Erase discriminated unions.
 module internal FSharp.Compiler.AbstractIL.ILX.EraseUnions
 
+open FSharp.Compiler.IlxGenSupport
+
 open System.Collections.Generic
 open System.Reflection
 open Internal.Utilities.Library
+open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILX.Types
 
@@ -234,8 +237,6 @@ let mkTagFieldType (ilg: ILGlobals) _cuspec = ilg.typ_Int32
 let mkTagFieldFormalType (ilg: ILGlobals) _cuspec = ilg.typ_Int32
 
 let mkTagFieldId ilg cuspec = "_tag", mkTagFieldType ilg cuspec
-
-let mkTailOrNullId baseTy = "tail", constFormalFieldTy baseTy
 
 let altOfUnionSpec (cuspec: IlxUnionSpec) cidx =
     try
@@ -754,7 +755,7 @@ let convAlternativeDef
      addFieldGeneratedAttrs,
      addFieldNeverAttrs,
      mkDebuggerTypeProxyAttribute)
-    (ilg: ILGlobals)
+    (g: TcGlobals)
     num
     (td: ILTypeDef)
     (cud: IlxUnionInfo)
@@ -836,12 +837,12 @@ let convAlternativeDef
                             "get_" + mkTesterName altName,
                             cud.HelpersAccessibility,
                             [],
-                            mkILReturn ilg.typ_Bool,
+                            mkILReturn g.ilg.typ_Bool,
                             mkMethodBody (
                                 true,
                                 [],
                                 2,
-                                nonBranchingInstrsToCode ([ mkLdarg0 ] @ mkIsData ilg (true, cuspec, num)),
+                                nonBranchingInstrsToCode ([ mkLdarg0 ] @ mkIsData g.ilg (true, cuspec, num)),
                                 attr,
                                 imports
                             )
@@ -855,10 +856,17 @@ let convAlternativeDef
                             setMethod = None,
                             getMethod =
                                 Some(
-                                    mkILMethRef (baseTy.TypeRef, ILCallingConv.Instance, "get_" + mkTesterName altName, 0, [], ilg.typ_Bool)
+                                    mkILMethRef (
+                                        baseTy.TypeRef,
+                                        ILCallingConv.Instance,
+                                        "get_" + mkTesterName altName,
+                                        0,
+                                        [],
+                                        g.ilg.typ_Bool
+                                    )
                                 ),
                             callingConv = ILThisConvention.Instance,
-                            propertyType = ilg.typ_Bool,
+                            propertyType = g.ilg.typ_Bool,
                             init = None,
                             args = [],
                             customAttrs = emptyILCustomAttrs
@@ -881,7 +889,7 @@ let convAlternativeDef
                                 true,
                                 [],
                                 fields.Length,
-                                nonBranchingInstrsToCode (convNewDataInstrInternal ilg cuspec num),
+                                nonBranchingInstrsToCode (convNewDataInstrInternal g.ilg cuspec num),
                                 attr,
                                 imports
                             )
@@ -912,7 +920,7 @@ let convAlternativeDef
                         [
                             for i in 0 .. fields.Length - 1 do
                                 mkLdarg (uint16 i)
-                            yield! convNewDataInstrInternal ilg cuspec num
+                            yield! convNewDataInstrInternal g.ilg cuspec num
                         ]
                         |> nonBranchingInstrsToCode
 
@@ -985,7 +993,7 @@ let convAlternativeDef
                             let debugProxyCode =
                                 [
                                     mkLdarg0
-                                    mkNormalCall (mkILCtorMethSpecForTy (ilg.typ_Object, []))
+                                    mkNormalCall (mkILCtorMethSpecForTy (g.ilg.typ_Object, []))
                                     mkLdarg0
                                     mkLdarg 1us
                                     mkNormalStfld (mkILFieldSpecInTy (debugProxyTy, debugProxyFieldName, altTy))
@@ -993,12 +1001,12 @@ let convAlternativeDef
                                 |> nonBranchingInstrsToCode
 
                             let debugProxyCtor =
-                                mkILCtor (
+                                (mkILCtor (
                                     ILMemberAccess.Public (* must always be public - see jared parson blog entry on implementing debugger type proxy *) ,
                                     [ mkILParamNamed ("obj", altTy) ],
                                     mkMethodBody (false, [], 3, debugProxyCode, None, imports)
-                                )
-
+                                ))
+                                    .With(customAttrs = mkILCustomAttrs[GetDynamicDependencyAttribute g 0x660 baseTy])
                                 |> addMethodGeneratedAttrs
 
                             let debugProxyGetterMeths =
@@ -1059,7 +1067,7 @@ let convAlternativeDef
                                     debugProxyTypeName,
                                     ILTypeDefAccess.Nested ILMemberAccess.Assembly,
                                     td.GenericParams,
-                                    ilg.typ_Object,
+                                    g.ilg.typ_Object,
                                     [],
                                     mkILMethods ([ debugProxyCtor ] @ debugProxyGetterMeths),
                                     mkILFields debugProxyFields,
@@ -1103,7 +1111,7 @@ let convAlternativeDef
                                 match repr.DiscriminationTechnique info with
                                 | IntegerTag ->
                                     yield mkLdcInt32 num
-                                    yield mkNormalCall (mkILCtorMethSpecForTy (baseTy, [ mkTagFieldType ilg cuspec ]))
+                                    yield mkNormalCall (mkILCtorMethSpecForTy (baseTy, [ mkTagFieldType g.ilg cuspec ]))
                                 | SingleCase
                                 | RuntimeTypes -> yield mkNormalCall (mkILCtorMethSpecForTy (baseTy, []))
                                 | TailOrNull -> failwith "unreachable"
@@ -1119,7 +1127,8 @@ let convAlternativeDef
                             basicFields |> List.map (fun fdef -> fdef.Name, fdef.FieldType)
 
                         let basicCtorMeth =
-                            mkILStorageCtor (basicCtorInstrs, altTy, basicCtorFields, basicCtorAccess, attr, imports)
+                            (mkILStorageCtor (basicCtorInstrs, altTy, basicCtorFields, basicCtorAccess, attr, imports))
+                                .With(customAttrs = mkILCustomAttrs[GetDynamicDependencyAttribute g 0x660 baseTy])
                             |> addMethodGeneratedAttrs
 
                         let altTypeDef =
@@ -1159,7 +1168,7 @@ let mkClassUnionDef
      addFieldGeneratedAttrs: ILFieldDef -> ILFieldDef,
      addFieldNeverAttrs: ILFieldDef -> ILFieldDef,
      mkDebuggerTypeProxyAttribute)
-    ilg
+    (g: TcGlobals)
     tref
     (td: ILTypeDef)
     cud
@@ -1185,7 +1194,7 @@ let mkClassUnionDef
                  addFieldGeneratedAttrs,
                  addFieldNeverAttrs,
                  mkDebuggerTypeProxyAttribute)
-                ilg
+                g
                 i
                 td
                 cud
@@ -1206,7 +1215,7 @@ let mkClassUnionDef
         | SingleCase
         | RuntimeTypes
         | TailOrNull -> []
-        | IntegerTag -> [ mkTagFieldId ilg cuspec ]
+        | IntegerTag -> [ mkTagFieldId g.ilg cuspec ]
 
     let isStruct = td.IsStruct
 
@@ -1226,12 +1235,12 @@ let mkClassUnionDef
                             None
                         else
                             match td.Extends with
-                            | None -> Some ilg.typ_Object.TypeSpec
+                            | None -> Some g.ilg.typ_Object.TypeSpec
                             | Some ilTy -> Some ilTy.TypeSpec
 
                     let extraParamsForCtor =
                         if isStruct && takesExtraParams cud.UnionCases then
-                            let extraTys, _extraInstrs = extraTysAndInstrsForStructCtor ilg cidx
+                            let extraTys, _extraInstrs = extraTysAndInstrsForStructCtor g.ilg cidx
                             List.map mkILParamAnon extraTys
                         else
                             []
@@ -1243,7 +1252,7 @@ let mkClassUnionDef
                              cud.UnionCasesAccessibility)
 
                     let ctor =
-                        mkILSimpleStorageCtor (
+                        (mkILSimpleStorageCtor (
                             baseInit,
                             baseTy,
                             extraParamsForCtor,
@@ -1251,7 +1260,8 @@ let mkClassUnionDef
                             ctorAccess,
                             cud.DebugPoint,
                             cud.DebugImports
-                        )
+                        ))
+                            .With(customAttrs = mkILCustomAttrs[GetDynamicDependencyAttribute g 0x660 baseTy])
                         |> addMethodGeneratedAttrs
 
                     let props, meths =
@@ -1295,12 +1305,12 @@ let mkClassUnionDef
         else
             let baseTySpec =
                 (match td.Extends with
-                 | None -> ilg.typ_Object
+                 | None -> g.ilg.typ_Object
                  | Some ilTy -> ilTy)
                     .TypeSpec
 
             [
-                mkILSimpleStorageCtor (
+                (mkILSimpleStorageCtor (
                     Some baseTySpec,
                     baseTy,
                     [],
@@ -1308,7 +1318,8 @@ let mkClassUnionDef
                     ILMemberAccess.Assembly,
                     cud.DebugPoint,
                     cud.DebugImports
-                )
+                ))
+                    .With(customAttrs = mkILCustomAttrs[GetDynamicDependencyAttribute g 0x7E0 baseTy])
                 |> addMethodGeneratedAttrs
             ]
 
@@ -1330,7 +1341,7 @@ let mkClassUnionDef
                         | IntegerTag ->
                             if inRootClass then
                                 yield mkLdcInt32 fidx
-                                yield mkNormalNewobj (mkILCtorMethSpecForTy (altTy, [ mkTagFieldType ilg cuspec ]))
+                                yield mkNormalNewobj (mkILCtorMethSpecForTy (altTy, [ mkTagFieldType g.ilg cuspec ]))
                             else
                                 yield mkNormalNewobj (mkILCtorMethSpecForTy (altTy, []))
 
@@ -1341,7 +1352,7 @@ let mkClassUnionDef
                 cd
 
     let tagMeths, tagProps, tagEnumFields =
-        let tagFieldType = mkTagFieldType ilg cuspec
+        let tagFieldType = mkTagFieldType g.ilg cuspec
 
         let tagEnumFields =
             cud.UnionCases
@@ -1352,7 +1363,7 @@ let mkClassUnionDef
 
             let code =
                 genWith (fun cg ->
-                    emitLdDataTagPrim ilg (Some mkLdarg0) cg (true, cuspec)
+                    emitLdDataTagPrim g.ilg (Some mkLdarg0) cg (true, cuspec)
                     cg.EmitInstr I_ret)
 
             let body = mkMethodBody (true, [], 2, code, cud.DebugPoint, cud.DebugImports)
@@ -1416,7 +1427,7 @@ let mkClassUnionDef
                     attributes = enum 0,
                     layout = ILTypeDefLayout.Auto,
                     implements = [],
-                    extends = Some ilg.typ_Object,
+                    extends = Some g.ilg.typ_Object,
                     methods = emptyILMethods,
                     securityDecls = emptyILSecurityDecls,
                     fields = mkILFields tagEnumFields,
@@ -1446,7 +1457,7 @@ let mkClassUnionDef
                     ),
                 extends =
                     (match td.Extends with
-                     | None -> Some ilg.typ_Object
+                     | None -> Some g.ilg.typ_Object
                      | _ -> td.Extends),
                 methods =
                     mkILMethods (

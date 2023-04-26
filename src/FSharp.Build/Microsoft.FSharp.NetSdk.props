@@ -45,6 +45,11 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <ReflectionFree Condition=" '$(ReflectionFree)' == '' ">false</ReflectionFree>
   </PropertyGroup>
 
+  <!-- BinaryFormatter is disabled (warning is treated as error) by default in .NET8+, this mirroring the change in SDK (https://github.com/dotnet/sdk/pull/31591) -->
+  <PropertyGroup>
+    <WarningsAsErrors Condition="'$(_BinaryFormatterObsoleteAsError)' == 'true'">$(WarningsAsErrors);SYSLIB0011</WarningsAsErrors>
+  </PropertyGroup>
+
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols Condition="'$(DebugSymbols)' == '' ">true</DebugSymbols>
     <Optimize Condition="'$(Optimize)' == '' ">false</Optimize>
@@ -65,6 +70,11 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <FsiToolPath Condition="'$(FsiToolPath)' == ''">$([System.IO.Path]::GetDirectoryName($(DOTNET_HOST_PATH)))</FsiToolPath>
     <FsiToolExe Condition="'$(FsiToolExe)' == ''">$([System.IO.Path]::GetFileName($(DOTNET_HOST_PATH)))</FsiToolExe>
     <DotnetFsiCompilerPath Condition="'$(DotnetFscCompilerPath)' == ''">"$(MSBuildThisFileDirectory)fsi.dll"</DotnetFsiCompilerPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(ManagePackageVersionsCentrally)' == 'true' ">
+    <DisableImplicitSystemValueTupleReference Condition="'$(DisableImplicitSystemValueTupleReference)' == ''">true</DisableImplicitSystemValueTupleReference>
+    <DisableImplicitFSharpCoreReference Condition="'$(DisableImplicitFSharpCoreReference)' == ''">true</DisableImplicitFSharpCoreReference>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(DisableImplicitSystemValueTupleReference)' != 'true'

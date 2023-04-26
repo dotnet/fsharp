@@ -159,6 +159,14 @@ type SynExprMatchBangTrivia =
         WithKeyword: range
     }
 
+/// Represents additional information for SynExpr.AnonRecd
+[<NoEquality; NoComparison>]
+type SynExprAnonRecdTrivia =
+    {
+        /// The syntax range of the `{|` token.
+        OpeningBraceRange: range
+    }
+
 /// Represents additional information for SynMatchClause
 [<NoEquality; NoComparison>]
 type SynMatchClauseTrivia =
@@ -287,6 +295,9 @@ type SynBindingTrivia =
         /// Used leading keyword of SynBinding
         LeadingKeyword: SynLeadingKeyword
 
+        /// The syntax range of the `inline` keyword
+        InlineKeyword: range option
+
         /// The syntax range of the `=` token.
         EqualsRange: range option
     }
@@ -362,6 +373,9 @@ type SynValSigTrivia =
         /// but in case of `SynMemberDefn.AutoProperty` or `SynMemberDefn.AbstractSlot` it could be something else.
         LeadingKeyword: SynLeadingKeyword
 
+        /// The syntax range of the `inline` keyword
+        InlineKeyword: range option
+
         /// The syntax range of the `with` keyword
         WithKeyword: range option
 
@@ -383,6 +397,9 @@ type SynTypeFunTrivia =
 [<NoEquality; NoComparison>]
 type SynMemberGetSetTrivia =
     {
+        /// The syntax range of the `inline` keyword
+        InlineKeyword: range option
+
         /// The syntax range of the `with` keyword
         WithKeyword: range
 
@@ -396,6 +413,14 @@ type SynMemberGetSetTrivia =
         SetKeyword: range option
     }
 
+/// Represents additional information for SynMemberDefn.ImplicitCtor
+[<NoEquality; NoComparison>]
+type SynMemberDefnImplicitCtorTrivia =
+    {
+        /// The syntax range of the `as` keyword
+        AsKeyword: range option
+    }
+
 /// Represents additional information for SynArgPats.NamePatPairs
 [<NoEquality; NoComparison>]
 type SynArgPatsNamePatPairsTrivia =
@@ -403,6 +428,15 @@ type SynArgPatsNamePatPairsTrivia =
         /// The syntax range from the beginning of the `(` token till the end of the `)` token.
         ParenRange: range
     }
+
+/// Represents additional information for `get, set` syntax
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
+type GetSetKeywords =
+    | Get of range
+    | Set of range
+    | GetSet of get: range * set: range
+
+    member Range: range
 
 /// Represents additional information for SynMemberDefn.AutoProperty
 [<NoEquality; NoComparison>]
@@ -418,8 +452,18 @@ type SynMemberDefnAutoPropertyTrivia =
         EqualsRange: range option
 
         /// The syntax range of 'get, set'
-        GetSetKeyword: range option
+        GetSetKeywords: GetSetKeywords option
     }
+
+///  Represents additional information for SynMemberDefn.AbstractSlot
+[<NoEquality; NoComparison>]
+type SynMemberDefnAbstractSlotTrivia =
+    {
+        /// The syntax range of 'get, set'
+        GetSetKeywords: GetSetKeywords option
+    }
+
+    static member Zero: SynMemberDefnAbstractSlotTrivia
 
 /// Represents additional information for SynField
 [<NoEquality; NoComparison>]
@@ -446,3 +490,13 @@ type SynBindingReturnInfoTrivia =
         /// The syntax range of the `:` token
         ColonRange: range option
     }
+
+/// Represents additional information for SynMemberSig.Member
+[<NoEquality; NoComparison>]
+type SynMemberSigMemberTrivia =
+    {
+        /// The syntax range of 'get, set'
+        GetSetKeywords: GetSetKeywords option
+    }
+
+    static member Zero: SynMemberSigMemberTrivia

@@ -5,7 +5,6 @@ module internal FSharp.Compiler.CodeAnalysis.SimulatedMSBuildReferenceResolver
 open System
 open System.IO
 open System.Reflection
-open Microsoft.Build.Utilities
 open Internal.Utilities.Library
 open FSharp.Compiler.IO
 
@@ -51,41 +50,20 @@ let private SimulatedMSBuildResolver =
 
     /// Get the path to the .NET Framework implementation assemblies by using ToolLocationHelper.GetPathToDotNetFramework
     /// This is only used to specify the "last resort" path for assembly resolution.
-    let GetPathToDotNetFrameworkImlpementationAssemblies v =
-        let v =
-            match v with
-            | Net45 -> Some TargetDotNetFrameworkVersion.Version45
-            | Net451 -> Some TargetDotNetFrameworkVersion.Version451
-            | Net452 -> Some TargetDotNetFrameworkVersion.Version452
-            | Net46 -> Some TargetDotNetFrameworkVersion.Version46
-            | Net461 -> Some TargetDotNetFrameworkVersion.Version461
-            | Net462 -> Some TargetDotNetFrameworkVersion.Version462
-            | Net47 -> Some TargetDotNetFrameworkVersion.Version47
-            | Net471 -> Some TargetDotNetFrameworkVersion.Version471
-            | Net472 -> Some TargetDotNetFrameworkVersion.Version472
-            | Net48 -> Some TargetDotNetFrameworkVersion.Version48
-            | _ ->
-                assert false
-                None
+    let GetPathToDotNetFrameworkImlpementationAssemblies _ =
+        let isDesktop = typeof<int>.Assembly.GetName().Name = "mscorlib"
 
-        match v with
-        | Some v ->
-            match ToolLocationHelper.GetPathToDotNetFramework v with
+        if isDesktop then
+            match System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory() with
             | null -> []
             | x -> [ x ]
-        | _ -> []
+        else
+            []
 
     let GetPathToDotNetFrameworkReferenceAssemblies version =
-#if NETSTANDARD
         ignore version
         let r: string list = []
         r
-#else
-        match Microsoft.Build.Utilities.ToolLocationHelper.GetPathToStandardLibraries(".NETFramework", version, "") with
-        | null
-        | "" -> []
-        | x -> [ x ]
-#endif
 
     { new ILegacyReferenceResolver with
         member x.HighestInstalledNetFrameworkVersion() =
@@ -98,7 +76,7 @@ let private SimulatedMSBuildResolver =
 
             match fwOpt with
             | Some fw -> fw
-            | None -> "v4.5"
+            | None -> Net45
 
         member _.DotNetFrameworkReferenceAssembliesRootDirectory =
             if Environment.OSVersion.Platform = PlatformID.Win32NT then
@@ -124,7 +102,6 @@ let private SimulatedMSBuildResolver =
                 logMessage,
                 logWarningOrError
             ) =
-
 
             let results = ResizeArray()
 
@@ -156,15 +133,18 @@ let private SimulatedMSBuildResolver =
 
                 try
                     if not found && FileSystem.IsPathRootedShim r then
-                        if FileSystem.FileExistsShim r then success r
+                        if FileSystem.FileExistsShim r then
+                            success r
                 with e ->
                     logWarningOrError false "SR001" (e.ToString())
 
                 // For this one we need to get the version search exactly right, without doing a load
                 try
-                    if not found
-                       && r.StartsWithOrdinal("FSharp.Core, Version=")
-                       && Environment.OSVersion.Platform = PlatformID.Win32NT then
+                    if
+                        not found
+                        && r.StartsWithOrdinal("FSharp.Core, Version=")
+                        && Environment.OSVersion.Platform = PlatformID.Win32NT
+                    then
                         let n = AssemblyName r
 
                         let fscoreDir0 =
@@ -209,9 +189,11 @@ let private SimulatedMSBuildResolver =
 
                 try
                     // Search the GAC on Windows
-                    if not found
-                       && not isFileName
-                       && Environment.OSVersion.Platform = PlatformID.Win32NT then
+                    if
+                        not found
+                        && not isFileName
+                        && Environment.OSVersion.Platform = PlatformID.Win32NT
+                    then
                         let n = AssemblyName r
                         let netFx = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
 
@@ -230,7 +212,9 @@ let private SimulatedMSBuildResolver =
                                             if FileSystem.DirectoryExistsShim assemblyDir then
                                                 for tdir in FileSystem.EnumerateDirectoriesShim assemblyDir do
                                                     let trialPath = Path.Combine(tdir, qual)
-                                                    if FileSystem.FileExistsShim trialPath then yield trialPath
+
+                                                    if FileSystem.FileExistsShim trialPath then
+                                                        yield trialPath
                                 ]
                             //printfn "sorting GAC paths: %A" options
                             options

@@ -21,7 +21,7 @@ let mutable progress = false
 // Intended to be a general hook to control diagnostic output when tracking down bugs
 let mutable tracking = false
 
-let condition s =
+let isEnvVarSet s =
     try (Environment.GetEnvironmentVariable(s) <> null) with _ -> false
 
 let GetEnvInteger e dflt = match Environment.GetEnvironmentVariable(e) with null -> dflt | t -> try int t with _ -> dflt
@@ -75,37 +75,6 @@ module NameSet =
 module NameMap =
     let domain m = Map.foldBack (fun x _ acc -> Zset.add x acc) m (Zset.empty String.order)
     let domainL m = Zset.elements (domain m)
-
-// Library: Pre\Post checks
-//-------------------------------------------------------------------------
-module Check =
-
-    /// Throw <cref>System.InvalidOperationException</cref> if argument is <c>None</c>.
-    /// If there is a value (e.g. <c>Some(value)</c>) then value is returned.
-    let NotNone argName (arg:'T option) : 'T =
-        match arg with
-        | None -> raise (InvalidOperationException(argName))
-        | Some x -> x
-
-    /// Throw <cref>System.ArgumentNullException</cref> if argument is <c>null</c>.
-    let ArgumentNotNull arg argName =
-        match box(arg) with
-        | null -> raise (ArgumentNullException(argName))
-        | _ -> ()
-
-    /// Throw <cref>System.ArgumentNullException</cref> if array argument is <c>null</c>.
-    /// Throw <cref>System.ArgumentOutOfRangeException</cref> is array argument is empty.
-    let ArrayArgumentNotNullOrEmpty (arr:'T[]) argName =
-        ArgumentNotNull arr argName
-        if (0 = arr.Length) then
-            raise (ArgumentOutOfRangeException(argName))
-
-    /// Throw <cref>System.ArgumentNullException</cref> if string argument is <c>null</c>.
-    /// Throw <cref>System.ArgumentOutOfRangeException</cref> is string argument is empty.
-    let StringArgumentNotNullOrEmpty (s:string) argName =
-        ArgumentNotNull s argName
-        if s.Length = 0 then
-            raise (ArgumentNullException(argName))
 
 //-------------------------------------------------------------------------
 // Library
@@ -288,8 +257,6 @@ let mapTriple (f1, f2, f3) (a1, a2, a3) = (f1 a1, f2 a2, f3 a3)
 
 let mapQuadruple (f1, f2, f3, f4) (a1, a2, a3, a4) = (f1 a1, f2 a2, f3 a3, f4 a4)
 
-let fmap2Of2 f z (a1, a2) = let z, a2 = f z a2 in z, (a1, a2)
-
 //---------------------------------------------------------------------------
 // Zmap rebinds
 //-------------------------------------------------------------------------
@@ -314,8 +281,6 @@ module Zset =
         let s = f s
         if Zset.equal s s0 then s0 (* fixed *)
         else fixpoint f s (* iterate *)
-
-let equalOn f x y = (f x) = (f y)
 
 /// Buffer printing utility
 let buildString f =
@@ -422,92 +387,6 @@ type Dumper(x:obj) =
      [<DebuggerBrowsable(DebuggerBrowsableState.Collapsed)>]
      member self.Dump = sprintf "%A" x
 #endif
-
-//---------------------------------------------------------------------------
-// AsyncUtil
-//---------------------------------------------------------------------------
-
-module internal AsyncUtil =
-    open Microsoft.FSharp.Control
-
-    /// Represents the reified result of an asynchronous computation.
-    [<NoEquality; NoComparison>]
-    type AsyncResult<'T> =
-        | AsyncOk of 'T
-        | AsyncException of exn
-        | AsyncCanceled of OperationCanceledException
-
-        static member Commit(res:AsyncResult<'T>) =
-            Async.FromContinuations (fun (cont, eCont, cCont) ->
-                    match res with
-                    | AsyncOk v -> cont v
-                    | AsyncException exn -> eCont exn
-                    | AsyncCanceled exn -> cCont exn)
-
-    /// When using .NET 4.0 you can replace this type by <see cref="Task{T}"/>
-    [<Sealed>]
-    type AsyncResultCell<'T>() =
-        let mutable result = None
-        // The continuation for the result, if any
-        let mutable savedConts = []
-
-        let syncRoot = obj()
-
-
-        // Record the result in the AsyncResultCell.
-        // Ignore subsequent sets of the result. This can happen, e.g. for a race between
-        // a cancellation and a success.
-        member x.RegisterResult (res:AsyncResult<'T>) =
-            let grabbedConts =
-                lock syncRoot (fun () ->
-                    if result.IsSome then
-                        []
-                    else
-                        result <- Some res
-                        // Invoke continuations in FIFO order
-                        // Continuations that Async.FromContinuations provide do QUWI/SyncContext.Post,
-                        // so the order is not overly relevant but still.
-                        List.rev savedConts)
-            let postOrQueue (sc: SynchronizationContext MaybeNull, cont) =
-                match sc with
-                | null -> ThreadPool.QueueUserWorkItem(fun _ -> cont res) |> ignore
-                | NonNullQuick sc ->
-                    sc.Post((fun _ -> cont res), state=null)
-
-            // Run continuations outside the lock
-            match grabbedConts with
-            |   [] -> ()
-            |   [sc, cont as c] ->
-                    if SynchronizationContext.Current = sc then
-                        cont res
-                    else
-                        postOrQueue c
-            |   _ ->
-                    grabbedConts |> List.iter postOrQueue
-
-        /// Get the reified result.
-        member private x.AsyncPrimitiveResult =
-            Async.FromContinuations(fun (cont, _, _) ->
-                let grabbedResult =
-                    lock syncRoot (fun () ->
-                        match result with
-                        | Some _ ->
-                            result
-                        | None ->
-                            // Otherwise save the continuation and call it in RegisterResult
-                            let sc = SynchronizationContext.Current
-                            savedConts <- (sc, cont) :: savedConts
-                            None)
-                // Run the action outside the lock
-                match grabbedResult with
-                | None -> ()
-                | Some res -> cont res)
-
-
-        /// Get the result and Commit(...).
-        member x.AsyncResult =
-            async { let! res = x.AsyncPrimitiveResult
-                    return! AsyncResult.Commit(res) }
 
 //---------------------------------------------------------------------------
 // EnableHeapTerminationOnCorruption()

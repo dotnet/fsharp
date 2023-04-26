@@ -4015,7 +4015,7 @@ let ``Test project28 all symbols in signature`` () =
         ("FSharpEntity", "Use", "T:M.Use");
         ("FSharpMemberOrFunctionOrValue", "``.ctor``", "M:M.Use.#ctor");
         ("FSharpMemberOrFunctionOrValue", "Test", "M:M.Use.Test``1(``0)");
-        ("FSharpGenericParameter", "``?``", "")|]
+        ("FSharpGenericParameter", "a", "")|]
     |> Array.iter (fun x ->
         if xmlDocSigs |> Array.exists (fun y -> x = y) |> not then
             failwithf "%A does not exist in the collection." x
@@ -5719,7 +5719,7 @@ let checkContentAsScript content =
     // set).
     // because of this we have to do it all manually
     let scriptName = "test.fsx"
-    let tempDir = Path.GetTempPath()
+    let tempDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)
     let scriptFullPath = Path.Combine(tempDir, scriptName)
     let sourceText = SourceText.ofString content
     let projectOptions, _ = checker.GetProjectOptionsFromScript(scriptFullPath, sourceText, useSdkRefs = true, assumeDotNetFramework = false) |>    Async.RunImmediate

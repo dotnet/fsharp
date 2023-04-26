@@ -124,20 +124,20 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to _Enable in-memory cross project references.
+        ///   Looks up a localized string similar to Enable fast find references &amp; rename (experimental).
         /// </summary>
-        public static string Enable_in_memory_cross_project_references {
+        public static string Enable_Fast_Find_References {
             get {
-                return ResourceManager.GetString("Enable_in_memory_cross_project_references", resourceCulture);
+                return ResourceManager.GetString("Enable_Fast_Find_References", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Enable parallel type checking with signature files.
+        ///   Looks up a localized string similar to Use live (unsaved) buffers for checking (restart required).
         /// </summary>
-        public static string Enable_Parallel_Checking_With_Signature_Files {
+        public static string Enable_Live_Buffers {
             get {
-                return ResourceManager.GetString("Enable_Parallel_Checking_With_Signature_Files", resourceCulture);
+                return ResourceManager.GetString("Enable_Live_Buffers", resourceCulture);
             }
         }
         
@@ -147,6 +147,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Enable_Parallel_Reference_Resolution {
             get {
                 return ResourceManager.GetString("Enable_Parallel_Reference_Resolution", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enable partial type checking.
+        /// </summary>
+        public static string Enable_partial_type_checking {
+            get {
+                return ResourceManager.GetString("Enable_partial_type_checking", resourceCulture);
             }
         }
         
@@ -196,11 +205,29 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Find References Performance Options.
+        /// </summary>
+        public static string Find_References_Performance {
+            get {
+                return ResourceManager.GetString("Find_References_Performance", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Re-format indentation on paste (Experimental).
         /// </summary>
         public static string Format_on_paste {
             get {
                 return ResourceManager.GetString("Format_on_paste", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Formatting.
+        /// </summary>
+        public static string Formatting {
+            get {
+                return ResourceManager.GetString("Formatting", resourceCulture);
             }
         }
         
@@ -212,7 +239,7 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
                 return ResourceManager.GetString("Inline_Hints", resourceCulture);
             }
         }
-
+        
         /// <summary>
         ///   Looks up a localized string similar to IntelliSense Performance Options.
         /// </summary>
@@ -232,38 +259,11 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Lens.
+        ///   Looks up a localized string similar to Live Buffers (experimental).
         /// </summary>
-        public static string Lens {
+        public static string LiveBuffers {
             get {
-                return ResourceManager.GetString("Lens", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Annotation prefix.
-        /// </summary>
-        public static string Lens_Prefix {
-            get {
-                return ResourceManager.GetString("Lens_Prefix", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Enable Lens (Experimental).
-        /// </summary>
-        public static string Lens_Switch {
-            get {
-                return ResourceManager.GetString("Lens_Switch", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Use colors in annotations.
-        /// </summary>
-        public static string Lens_UseColors {
-            get {
-                return ResourceManager.GetString("Lens_UseColors", resourceCulture);
+                return ResourceManager.GetString("LiveBuffers", resourceCulture);
             }
         }
         
@@ -291,6 +291,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Parallelization {
             get {
                 return ResourceManager.GetString("Parallelization", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Preferred description width in characters.
+        /// </summary>
+        public static string Preferred_description_width_in_characters {
+            get {
+                return ResourceManager.GetString("Preferred_description_width_in_characters", resourceCulture);
             }
         }
         
@@ -340,14 +349,23 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Display inline type hints (experimental).
+        ///   Looks up a localized string similar to Display inline parameter name hints (preview).
         /// </summary>
-        public static string Show_Inline_Hints {
+        public static string Show_Inline_Parameter_Name_Hints {
             get {
-                return ResourceManager.GetString("Show_Inline_Hints", resourceCulture);
+                return ResourceManager.GetString("Show_Inline_Parameter_Name_Hints", resourceCulture);
             }
         }
-
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Display inline type hints (preview).
+        /// </summary>
+        public static string Show_Inline_Type_Hints {
+            get {
+                return ResourceManager.GetString("Show_Inline_Type_Hints", resourceCulture);
+            }
+        }
+        
         /// <summary>
         ///   Looks up a localized string similar to S_how navigation links as.
         /// </summary>
@@ -363,6 +381,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Show_Outlining {
             get {
                 return ResourceManager.GetString("Show_Outlining", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Display return type hints (preview).
+        /// </summary>
+        public static string Show_Return_Type_Hints {
+            get {
+                return ResourceManager.GetString("Show_Return_Type_Hints", resourceCulture);
             }
         }
         
@@ -412,11 +439,11 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to In-memory cross-project references store project-level data in memory to allow IDE features to work across projects..
+        ///   Looks up a localized string similar to Format signature to the given width by adding line breaks conforming with F# syntax rules. .
         /// </summary>
-        public static string Tooltip_in_memory_cross_project_references {
+        public static string Tooltip_preferred_description_width_in_characters {
             get {
-                return ResourceManager.GetString("Tooltip_in_memory_cross_project_references", resourceCulture);
+                return ResourceManager.GetString("Tooltip_preferred_description_width_in_characters", resourceCulture);
             }
         }
         
@@ -435,6 +462,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Unused_opens_code_fix {
             get {
                 return ResourceManager.GetString("Unused_opens_code_fix", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cache parsing results (experimental).
+        /// </summary>
+        public static string Use_syntax_tree_cache {
+            get {
+                return ResourceManager.GetString("Use_syntax_tree_cache", resourceCulture);
             }
         }
     }

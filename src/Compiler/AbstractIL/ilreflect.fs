@@ -417,9 +417,6 @@ let equalTypes (s: Type) (t: Type) = Type.op_Equality (s, t)
 let equalTypeLists (tys1: Type list) (tys2: Type list) =
     List.lengthsEqAndForall2 equalTypes tys1 tys2
 
-let equalTypeArrays (tys1: Type[]) (tys2: Type[]) =
-    Array.lengthsEqAndForall2 equalTypes tys1 tys2
-
 let getGenericArgumentsOfType (typT: Type) =
     if typT.IsGenericType then
         typT.GetGenericArguments()
@@ -625,8 +622,6 @@ let envGetTypeDef emEnv (tref: ILTypeRef) =
 let envSetLocals emEnv locs =
     assert (emEnv.emLocals.Length = 0) // check "locals" is not yet set (scopes once only)
     { emEnv with emLocals = locs }
-
-let envGetLocal emEnv i = emEnv.emLocals[i]
 
 let envSetLabel emEnv name lab =
     assert (not (Zmap.mem name emEnv.emLabels))
@@ -1152,10 +1147,6 @@ let convConstructorSpec cenv emEnv (mspec: ILMethodSpec) =
         )
     | NonNull res -> res
 
-let emitLabelMark emEnv (ilG: ILGenerator) (label: ILCodeLabel) =
-    let lab = envGetLabel emEnv label
-    ilG.MarkLabelAndLog lab
-
 ///Emit comparison instructions.
 let emitInstrCompare emEnv (ilG: ILGenerator) comp targ =
     match comp with
@@ -1218,28 +1209,6 @@ let emitInstrCall cenv emEnv (ilG: ILGenerator) opCall tail (mspec: ILMethodSpec
             match varargs with
             | None -> ilG.EmitAndLog(opCall, minfo)
             | Some varargTys -> ilG.EmitCall(opCall, minfo, convTypesToArray cenv emEnv varargTys))
-
-let getGenericMethodDefinition q (ty: Type) =
-    let gminfo =
-        match q with
-        | Quotations.Patterns.Call (_, minfo, _) -> minfo.GetGenericMethodDefinition()
-        | _ -> failwith "unexpected failure decoding quotation at ilreflect startup"
-
-    gminfo.MakeGenericMethod [| ty |]
-
-let getArrayMethInfo n ty =
-    match n with
-    | 2 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.GetArray2D<int> Unchecked.defaultof<_> 0 0 @@> ty
-    | 3 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.GetArray3D<int> Unchecked.defaultof<_> 0 0 0 @@> ty
-    | 4 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.GetArray4D<int> Unchecked.defaultof<_> 0 0 0 0 @@> ty
-    | _ -> invalidArg "n" "not expecting array dimension > 4"
-
-let setArrayMethInfo n ty =
-    match n with
-    | 2 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.SetArray2D<int> Unchecked.defaultof<_> 0 0 0 @@> ty
-    | 3 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.SetArray3D<int> Unchecked.defaultof<_> 0 0 0 0 @@> ty
-    | 4 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.SetArray4D<int> Unchecked.defaultof<_> 0 0 0 0 0 @@> ty
-    | _ -> invalidArg "n" "not expecting array dimension > 4"
 
 //----------------------------------------------------------------------------
 // emitInstr cenv
@@ -2103,35 +2072,6 @@ let buildMethodImplsPass3 cenv _tref (typB: TypeBuilder) emEnv (mimpl: ILMethodI
 //----------------------------------------------------------------------------
 // typeAttributesOf*
 //----------------------------------------------------------------------------
-
-let typeAttributesOfTypeDefKind x =
-    match x with
-    // required for a TypeBuilder
-    | ILTypeDefKind.Class -> TypeAttributes.Class
-    | ILTypeDefKind.ValueType -> TypeAttributes.Class
-    | ILTypeDefKind.Interface -> TypeAttributes.Interface
-    | ILTypeDefKind.Enum -> TypeAttributes.Class
-    | ILTypeDefKind.Delegate -> TypeAttributes.Class
-
-let typeAttributesOfTypeAccess x =
-    match x with
-    | ILTypeDefAccess.Public -> TypeAttributes.Public
-    | ILTypeDefAccess.Private -> TypeAttributes.NotPublic
-    | ILTypeDefAccess.Nested macc ->
-        match macc with
-        | ILMemberAccess.Assembly -> TypeAttributes.NestedAssembly
-        | ILMemberAccess.CompilerControlled -> failwith "Nested compiler controlled."
-        | ILMemberAccess.FamilyAndAssembly -> TypeAttributes.NestedFamANDAssem
-        | ILMemberAccess.FamilyOrAssembly -> TypeAttributes.NestedFamORAssem
-        | ILMemberAccess.Family -> TypeAttributes.NestedFamily
-        | ILMemberAccess.Private -> TypeAttributes.NestedPrivate
-        | ILMemberAccess.Public -> TypeAttributes.NestedPublic
-
-let typeAttributesOfTypeEncoding x =
-    match x with
-    | ILDefaultPInvokeEncoding.Ansi -> TypeAttributes.AnsiClass
-    | ILDefaultPInvokeEncoding.Auto -> TypeAttributes.AutoClass
-    | ILDefaultPInvokeEncoding.Unicode -> TypeAttributes.UnicodeClass
 
 let typeAttributesOfTypeLayout cenv emEnv x =
     let attr x p =

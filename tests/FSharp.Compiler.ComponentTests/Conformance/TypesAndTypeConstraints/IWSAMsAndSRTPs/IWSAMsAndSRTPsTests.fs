@@ -19,6 +19,38 @@ let setupCompilation compilation =
     |> withReferences [typesModule]
 
 
+[<Fact>]
+let ``Srtp call Zero property returns valid result`` () =
+    Fsx """
+let inline zero<'T when 'T: (static member Zero: 'T)> = 'T.Zero
+let result = zero<int>
+if result <> 0 then failwith $"Something's wrong: {result}"
+    """
+    |> runFsi
+    |> shouldSucceed
+
+[<Fact>]
+let ``Srtp call to custom property returns valid result`` () =
+    FSharp """
+module Foo
+type Foo = 
+    static member Bar = 1
+
+type HasBar<'T when 'T: (static member Bar: int)> = 'T
+
+let inline bar<'T when HasBar<'T>> =
+    'T.Bar
+
+[<EntryPoint>]
+let main _ =
+    let result = bar<Foo>
+    if result <> 0 then
+        failwith $"Unexpected result: {result}"
+    0
+    """
+    |> asExe
+    |> compileAndRun
+
 #if !NETCOREAPP
 [<Theory(Skip = "IWSAMs are not supported by NET472.")>]
 #else
@@ -288,6 +320,28 @@ module ``Equivalence of properties and getters`` =
             IL_000e:  ret
           }"""]
 
+module ``Type checking behavior`` =   
+
+    #if !NETCOREAPP
+    [<Theory(Skip = "IWSAMs are not supported by NET472.")>]
+    #else   
+    [<InlineData("6.0")>]
+    [<InlineData("7.0")>]
+    [<Theory>]
+    #endif
+    let ``Extension method on interface without SAM does not produce a warning`` version =
+        Fsx """
+        type INormalInterface =
+            abstract member IntMember: int
+
+        module INormalInterfaceExtensions =
+            type INormalInterface with
+                static member ExtMethod (a: INormalInterface) =
+                    ()
+        """
+        |> withLangVersion version
+        |> compile
+        |> shouldSucceed
 
 module Negative =
 
@@ -320,11 +374,7 @@ module Negative =
         |> ignore
 
 
-    #if !NETCOREAPP
-    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
-    #else
-    [<Fact>]
-    #endif
+    [<FactForNETCOREAPP>]
     let ``IWSAM warning`` () =
         Fsx "let fExpectAWarning(x: Types.ISinOperator<'T>) = ()"
         |> withReferences [typesModule]
@@ -342,7 +392,6 @@ module Negative =
         |> withErrorCode 3537
         |> withDiagnosticMessage "The trait 'A' invoked by this call has multiple support types. This invocation syntax is not permitted for such traits. See https://aka.ms/fsharp-srtp for guidance."
         |> ignore
-
 
 module InvocationBehavior =
 
@@ -362,11 +411,7 @@ module InvocationBehavior =
         |> shouldFail
         |> withErrorMessage "This function takes too many arguments, or is used in a context where a function is not expected"
 
-    #if !NETCOREAPP
-    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
-    #else
-    [<Fact>]
-    #endif
+    [<FactForNETCOREAPP>]
     let ``IWSAM Delegate conversion works`` () =
         Fsx
             """
@@ -383,11 +428,7 @@ module InvocationBehavior =
         |> compileAndRun
         |> shouldSucceed
 
-    #if !NETCOREAPP
-    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
-    #else
-    [<Fact>]
-    #endif
+    [<FactForNETCOREAPP>]
     let ``IWSAM Expression conversion works`` () =
         Fsx
             """
@@ -544,11 +585,7 @@ module ``Implicit conversion`` =
         |> withLangVersion70
         |> withOptions ["--nowarn:3535"]
 
-    #if !NETCOREAPP
-    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
-    #else
-    [<Fact>]
-    #endif
+    [<FactForNETCOREAPP>]
     let ``Function implicit conversion not supported on constrained type`` () =
         Fsx
             """
@@ -562,11 +599,7 @@ module ``Implicit conversion`` =
         |> shouldFail
         |> withDiagnosticMessageMatches "This expression was expected to have type\\s+'int'\\s+but here has type\\s+''T'"
 
-    #if !NETCOREAPP
-    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
-    #else
-    [<Fact>]
-    #endif
+    [<FactForNETCOREAPP>]
     let ``Method implicit conversion not supported on constrained type`` () =
         Fsx
             """
@@ -580,11 +613,7 @@ module ``Implicit conversion`` =
         |> shouldFail
         |> withDiagnosticMessageMatches "This expression was expected to have type\\s+'int'\\s+but here has type\\s+''T'"
 
-    #if !NETCOREAPP
-    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
-    #else
-    [<Fact>]
-    #endif
+    [<FactForNETCOREAPP>]
     let ``Function explicit conversion works on constrained type`` () =
         Fsx
             """
@@ -597,11 +626,7 @@ module ``Implicit conversion`` =
         |> compile
         |> shouldSucceed
 
-    #if !NETCOREAPP
-    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
-    #else
-    [<Fact>]
-    #endif
+    [<FactForNETCOREAPP>]
     let ``Method explicit conversion works on constrained type`` () =
         Fsx
             """
@@ -699,11 +724,7 @@ module ``Active patterns`` =
         |> withName "Potato"
         |> withOptions ["--nowarn:3535"]
 
-    #if !NETCOREAPP
-    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
-    #else
-    [<Fact>]
-    #endif
+    [<FactForNETCOREAPP>]
     let ``Using IWSAM in active pattern`` () =
         FSharp """
             module Potato.Test
@@ -733,11 +754,7 @@ module ``Active patterns`` =
             """
         ]
 
-    #if !NETCOREAPP
-    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
-    #else
-    [<Fact>]
-    #endif
+    [<FactForNETCOREAPP>]
     let ``Using IWSAM equality in active pattern uses generic equality intrinsic`` () =
         FSharp """
             module Potato.Test
@@ -775,7 +792,7 @@ module ``Active patterns`` =
 
 module ``Suppression of System Numerics interfaces on unitized types`` =
 
-    [<Fact(Skip = "Solution needs to be updated to .NET 7")>]
+    [<FactForNETCOREAPP>]
     let Baseline () =
         Fsx """
             open System.Numerics
@@ -785,16 +802,19 @@ module ``Suppression of System Numerics interfaces on unitized types`` =
         |> compile
         |> shouldSucceed
 
-    [<Theory(Skip = "Solution needs to be updated to .NET 7")>]
+#if !NETCOREAPP
+    [<Theory(Skip = "IWSAMs are not supported by NET472.")>]
+#else
+    [<Theory>]
     [<InlineData("IAdditionOperators", 3)>]
     [<InlineData("IAdditiveIdentity", 2)>]
     [<InlineData("IBinaryFloatingPointIeee754", 1)>]
     [<InlineData("IBinaryNumber", 1)>]
     [<InlineData("IBitwiseOperators", 3)>]
-    [<InlineData("IComparisonOperators", 2)>]
+    [<InlineData("IComparisonOperators", 3)>]
     [<InlineData("IDecrementOperators", 1)>]
     [<InlineData("IDivisionOperators", 3)>]
-    [<InlineData("IEqualityOperators", 2)>]
+    [<InlineData("IEqualityOperators", 3)>]
     [<InlineData("IExponentialFunctions", 1)>]
     [<InlineData("IFloatingPoint", 1)>]
     [<InlineData("IFloatingPointIeee754", 1)>]
@@ -814,6 +834,7 @@ module ``Suppression of System Numerics interfaces on unitized types`` =
     [<InlineData("ITrigonometricFunctions", 1)>]
     [<InlineData("IUnaryNegationOperators", 2)>]
     [<InlineData("IUnaryPlusOperators", 2)>]
+#endif
     let ``Unitized type shouldn't be compatible with System.Numerics.I*`` name paramCount =
         let typeParams = Seq.replicate paramCount "'T" |> String.concat ","
         let genericType = $"{name}<{typeParams}>"

@@ -126,7 +126,6 @@ module NullShim =
 [<AutoOpen>]
 module TaggedText =
     let mkTag tag text = TaggedText(tag, text)
-
     let length (tt: TaggedText) = tt.Text.Length
     let toText (tt: TaggedText) = tt.Text
     let tagClass name = mkTag TextTag.Class name
@@ -142,8 +141,6 @@ module TaggedText =
     let tagMethod t = mkTag TextTag.Method t
     let tagPunctuation t = mkTag TextTag.Punctuation t
     let tagOperator t = mkTag TextTag.Operator t
-    let tagSpace t = mkTag TextTag.Space t
-
     let leftParen = tagPunctuation "("
     let rightParen = tagPunctuation ")"
     let comma = tagPunctuation ","
@@ -153,7 +150,6 @@ module TaggedText =
     let rightBracket = tagPunctuation "]"
     let leftBrace = tagPunctuation "{"
     let rightBrace = tagPunctuation "}"
-    let space = tagSpace " "
     let equals = tagOperator "="
 
 #if COMPILER
@@ -208,6 +204,7 @@ module TaggedText =
     let tagFunction t = mkTag TextTag.Function t
     let tagNamespace t = mkTag TextTag.Namespace t
     let tagParameter t = mkTag TextTag.Parameter t
+    let tagSpace t = mkTag TextTag.Space t
     let tagStruct t = mkTag TextTag.Struct t
     let tagTypeParameter t = mkTag TextTag.TypeParameter t
     let tagActivePatternCase t = mkTag TextTag.ActivePatternCase t
@@ -219,6 +216,7 @@ module TaggedText =
 
     // common tagged literals
     let lineBreak = tagLineBreak "\n"
+    let space = tagSpace " "
     let leftBraceBar = tagPunctuation "{|"
     let rightBraceBar = tagPunctuation "|}"
     let arrow = tagPunctuation "->"
@@ -791,6 +789,7 @@ module Display =
         let rstrs, _ = addL z0 0 layout
         extract rstrs
 
+#if COMPILER
     let outL outAttribute leafFormatter (chan: TaggedTextWriter) layout =
         // write layout to output chan directly
         let write s = chan.Write(s)
@@ -835,6 +834,7 @@ module Display =
 
         let _ = addL z0 0 layout
         ()
+#endif
 
     let unpackCons recd =
         match recd with
@@ -930,6 +930,7 @@ module Display =
 
         "\"" + s + "\""
 
+#if COMPILER
     // Return a truncated version of the string, e.g.
     //   "This is the initial text, which has been truncated"+[12 chars]
     //
@@ -950,6 +951,7 @@ module Display =
         + "+["
         + (str.Length - prefixLength).ToString()
         + " chars]"
+#endif
 
     type Precedence =
         | BracketIfTupleOrNotAtomic = 2
@@ -1427,22 +1429,13 @@ module Display =
 
             // massively reign in deep printing of properties
             let nDepth = depthLim / 10
-#if NETSTANDARD
+
             Array.Sort(
                 propsAndFields,
                 { new IComparer<MemberInfo> with
                     member this.Compare(p1, p2) = compare p1.Name p2.Name
                 }
             )
-#else
-            Array.Sort(
-                (propsAndFields :> Array),
-                { new System.Collections.IComparer with
-                    member this.Compare(p1, p2) =
-                        compare ((p1 :?> MemberInfo).Name) ((p2 :?> MemberInfo).Name)
-                }
-            )
-#endif
 
             if propsAndFields.Length = 0 || (nDepth <= 0) then
                 basicL
@@ -1597,12 +1590,14 @@ module Display =
 
             tagText t
 
+#if COMPILER
     let any_to_layout options (value, typValue) =
         let formatter = ObjectGraphFormatter(options, BindingFlags.Public)
         formatter.Format(ShowAll, value, typValue)
 
     let squashTo width layout =
         layout |> squashToAux (width, leafFormatter FormatOptions.Default)
+#endif
 
     let squash_layout options layout =
         // Print width = 0 implies 1D layout, no squash
@@ -1611,6 +1606,7 @@ module Display =
         else
             layout |> squashToAux (options.PrintWidth, leafFormatter options)
 
+#if COMPILER
     let asTaggedTextWriter (writer: TextWriter) =
         { new TaggedTextWriter with
             member _.Write(t) = writer.Write t.Text
@@ -1621,26 +1617,12 @@ module Display =
         layout
         |> squash_layout options
         |> outL options.AttributeProcessor (leafFormatter options) writer
-
-    let output_layout options writer layout =
-        output_layout_tagged options (asTaggedTextWriter writer) layout
+#endif
 
     let layout_to_string options layout =
         layout
         |> squash_layout options
         |> showL options ((leafFormatter options) >> toText)
-
-    let output_any_ex opts oc x =
-        x |> any_to_layout opts |> output_layout opts oc
-
-    let output_any writer x =
-        output_any_ex FormatOptions.Default writer x
-
-    let layout_as_string options x =
-        x |> any_to_layout options |> layout_to_string options
-
-    let any_to_string x =
-        layout_as_string FormatOptions.Default x
 
 #if COMPILER
     let fsi_any_to_layout options (value, typValue) =
