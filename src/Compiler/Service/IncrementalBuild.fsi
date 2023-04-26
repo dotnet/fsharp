@@ -176,30 +176,21 @@ type internal IncrementalBuilder =
     /// This is a very quick operation.
     ///
     /// This is safe for use from non-compiler threads but the objects returned must in many cases be accessed only from the compiler thread.
-    member GetCheckResultsBeforeFileInProjectEvenIfStale: fileName: string -> PartialCheckResults option
+    member GetCheckResultsBeforeFileInProjectEvenIfStale: fileName: string -> PartialCheckResults
 
     /// Get the typecheck state of a slot, without checking if it is up-to-date w.r.t.
     /// the timestamps on files and referenced DLLs prior to this one. Return None if the result is not available.
     /// This is a very quick operation.
     ///
     /// This is safe for use from non-compiler threads but the objects returned must in many cases be accessed only from the compiler thread.
-    member GetCheckResultsForFileInProjectEvenIfStale: fileName: string -> PartialCheckResults option
-
-    // TODO: Looks like the following doc does not match the actual method or it's signature.
-
-    /// Get the preceding typecheck state of a slot, but only if it is up-to-date w.r.t.
-    /// the timestamps on files and referenced DLLs prior to this one. Return None if the result is not available.
-    /// This is a relatively quick operation.
-    ///
-    /// This is safe for use from non-compiler threads
-    member AreCheckResultsBeforeFileInProjectReady: fileName: string -> bool
+    member GetCheckResultsForFileInProjectEvenIfStale: fileName: string -> PartialCheckResults
 
     /// Get the preceding typecheck state of a slot, WITH checking if it is up-to-date w.r.t. the timestamps of files and referenced DLLs prior to this one.
     /// However, files will not be parsed or checked.
     /// Return None if the result is not available or if it is not up-to-date.
     ///
     /// This is safe for use from non-compiler threads but the objects returned must in many cases be accessed only from the compiler thread.
-    member TryGetCheckResultsBeforeFileInProject: fileName: string -> PartialCheckResults option
+    member TryGetCheckResultsBeforeFileInProject: fileName: string -> PartialCheckResults
 
     /// Get the preceding typecheck state of a slot. Compute the entire type check of the project up
     /// to the necessary point if the result is not available. This may be a long-running operation.
