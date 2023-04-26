@@ -914,7 +914,7 @@ module IncrementalBuilderStateHelpers =
             return! prevBoundModel.Next(syntaxTree)
         })
 
-    let rec createFinalizeBoundModelGraphNode (initialState: IncrementalBuilderInitialState) (boundModels: GraphNode<BoundModel> seq) =
+    let createFinalizeBoundModelGraphNode (initialState: IncrementalBuilderInitialState) (boundModels: GraphNode<BoundModel> seq) =
         GraphNode(node {
             use _ = Activity.start "GetCheckResultsAndImplementationsForProject" [|Activity.Tags.project, initialState.outfile|]
             let! result = 
@@ -928,15 +928,19 @@ module IncrementalBuilderStateHelpers =
             return result, DateTime.UtcNow
         })
 
-    and computeStampedFileNames (initialState: IncrementalBuilderInitialState) (state: IncrementalBuilderState) (cache: TimeStampCache) =
-        let slots = 
+    let updateStamps (state: IncrementalBuilderState) (cache: TimeStampCache) =
+        let slots = [ for slot in state.slots -> cache.GetFileTimeStamp slot.SyntaxTree.FileName |> slot.Notify ]
+        { state with slots = slots }
+
+    let computeStampedFileNames (initialState: IncrementalBuilderInitialState) (state: IncrementalBuilderState) (cache: TimeStampCache) =
+        let state = 
             if initialState.useChangeNotifications then
-                state.slots
+                state
             else
-               [ for slot in state.slots -> cache.GetFileTimeStamp slot.SyntaxTree.FileName |> slot.Notify ]
+                updateStamps state cache
 
         let slots =
-            [ for slot in slots do
+            [ for slot in state.slots do
                 if slot.Notified then { slot with SyntaxTree = slot.SyntaxTree.Invalidate() } else slot ]
 
         let mapping (status, prevNode) slot =
@@ -967,7 +971,7 @@ module IncrementalBuilderStateHelpers =
         else
             state
 
-    and computeStampedReferencedAssemblies (initialState: IncrementalBuilderInitialState) state canTriggerInvalidation (cache: TimeStampCache) =
+    let computeStampedReferencedAssemblies (initialState: IncrementalBuilderInitialState) state canTriggerInvalidation (cache: TimeStampCache) =
         let stampedReferencedAssemblies = state.stampedReferencedAssemblies.ToBuilder()
 
         let mutable referencesUpdated = false
@@ -1277,12 +1281,12 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
     member _.GetLogicalTimeStampForFileInProject(slotOfFile: int) =
         let cache = TimeStampCache defaultTimeStamp
-        checkFileTimeStampsSynchronously cache
-        computeProjectTimeStamp currentState slotOfFile
+        let tempStateJustForCheckingTimeStamps = updateStamps currentState cache
+        computeProjectTimeStamp tempStateJustForCheckingTimeStamps slotOfFile
 
     member _.GetLogicalTimeStampForProject(cache) =
-        checkFileTimeStampsSynchronously cache
-        computeProjectTimeStamp currentState -1
+        let tempStateJustForCheckingTimeStamps = updateStamps currentState cache
+        computeProjectTimeStamp tempStateJustForCheckingTimeStamps -1
 
     member _.TryGetSlotOfFileName(fileName: string) =
         // Get the slot of the given file and force it to build.
