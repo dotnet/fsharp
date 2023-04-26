@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace FSharp.Editor.Tests.Hints
 
@@ -24,13 +24,35 @@ let s = { Artist = "Moby"; Title = "Porcelain" }
                 {
                     Content = ": Song"
                     Location = (3, 6)
-                    Tooltip = "42"
+                    Tooltip = "type Song"
                 }
             ]
 
         let actual = getTypeHints document
 
         Assert.Equal(expected, actual)
+
+    [<Fact>]
+    let ``Hints are correct for builtin types`` () =
+        let code =
+            """
+let songName = "Happy House"
+    """
+
+        let document = getFsDocument code
+
+        let result = getTypeHints document
+
+        let expected =
+            [
+                {
+                    Content = ": string"
+                    Location = (1, 13)
+                    Tooltip = "type string"
+                }
+            ]
+
+        Assert.Equal(expected, result)
 
     [<Fact>]
     let ``Hint is shown for a parameter`` () =
@@ -48,7 +70,7 @@ let whoSings s = s.Artist
                 {
                     Content = ": Song"
                     Location = (3, 15)
-                    Tooltip = "42"
+                    Tooltip = "type Song"
                 }
             ]
 
@@ -164,7 +186,7 @@ let iamboring() =
                 {
                     Content = ": 'a"
                     Location = (2, 10)
-                    Tooltip = "42"
+                    Tooltip = "type 'a"
                 }
             ]
 
@@ -188,22 +210,22 @@ let zip4 (l1: 'a list) (l2: 'b list) (l3: 'c list) (l4: 'd list) =
                 {
                     Content = ": 'a"
                     Location = (3, 25)
-                    Tooltip = "42"
+                    Tooltip = "type 'a"
                 }
                 {
                     Content = ": 'b"
                     Location = (3, 30)
-                    Tooltip = "42"
+                    Tooltip = "type 'b"
                 }
                 {
                     Content = ": 'c"
                     Location = (3, 34)
-                    Tooltip = "42"
+                    Tooltip = "type 'c"
                 }
                 {
                     Content = ": 'd"
                     Location = (3, 38)
-                    Tooltip = "42"
+                    Tooltip = "type 'd"
                 }
             ]
 
@@ -287,12 +309,12 @@ type Number<'T when IAddition<'T>>(value: 'T) =
                 {
                     Content = ": Number<'T>"
                     Location = (7, 36)
-                    Tooltip = "42"
+                    Tooltip = "type Number`1"
                 }
                 {
                     Content = ": Number<'T>"
                     Location = (7, 39)
-                    Tooltip = "42"
+                    Tooltip = "type Number`1"
                 }
             ]
 

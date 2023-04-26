@@ -12,11 +12,31 @@ open Hints
 
 type InlineParameterNameHints(parseResults: FSharpParseFileResults) =
 
-    let getTooltip _document _cancellationToken =
+    let getTooltip (symbol: FSharpSymbol) _ _ =
         async {
-            // the hardest part
-            return [ TaggedText(TextTag.Text, "42") ]
-        // the hardest part
+            // This brings little value as of now. Basically just discerns fields from parameters
+            // and fills the tooltip bubble which otherwise looks like a visual glitch.
+            //
+            // Now, we could add some type information here, like C# does, for example:
+            // (parameter) int number
+            //
+            // This would work for simple cases but can get weird in more complex ones.
+            // Consider this code:
+            //
+            // let rev list = list |> List.rev
+            // let reversed = rev [ 42 ]
+            //
+            // With the trivial implementation, the tooltip for hint before [ 42 ] will look like:
+            // parameter 'a list list
+            //
+            // Arguably, this can look confusing.
+            // Hence, I wouldn't add type info to the text until we have some coloring plugged in here.
+            //
+            // Some alignment with C# also needs to be kept in mind,
+            // e.g. taking the type in braces would be opposite to what C# does which can be confusing.
+            let text = symbol.ToString()
+
+            return [ TaggedText(TextTag.Text, text) ]
         }
 
     let getParameterHint (range: range, parameter: FSharpParameter) =
@@ -24,7 +44,7 @@ type InlineParameterNameHints(parseResults: FSharpParseFileResults) =
             Kind = HintKind.ParameterNameHint
             Range = range.StartRange
             Parts = [ TaggedText(TextTag.Text, $"{parameter.DisplayName} = ") ]
-            GetTooltip = getTooltip
+            GetTooltip = getTooltip parameter
         }
 
     let getFieldHint (range: range, field: FSharpField) =
@@ -32,7 +52,7 @@ type InlineParameterNameHints(parseResults: FSharpParseFileResults) =
             Kind = HintKind.ParameterNameHint
             Range = range.StartRange
             Parts = [ TaggedText(TextTag.Text, $"{field.Name} = ") ]
-            GetTooltip = getTooltip
+            GetTooltip = getTooltip field
         }
 
     let parameterNameExists (parameter: FSharpParameter) = parameter.DisplayName <> ""

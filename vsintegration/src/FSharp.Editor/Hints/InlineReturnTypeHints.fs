@@ -19,11 +19,11 @@ type InlineReturnTypeHints(parseFileResults: FSharpParseFileResults, symbol: FSh
                 TaggedText(TextTag.Space, " ")
             ])
 
-    let getTooltip _document _cancellationToken =
+    let getTooltip _ _ =
         async {
-            // the hardest part
-            return [ TaggedText(TextTag.Text, "42") ]
-        // the hardest part
+            let typeAsString = symbol.ReturnParameter.Type.TypeDefinition.ToString()
+            let text = $"type {typeAsString}"
+            return [ TaggedText(TextTag.Text, text) ]
         }
 
     let getHint symbolUse range =

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 module FSharp.Editor.Tests.Hints.InlineReturnTypeHintTests
 
@@ -24,17 +24,41 @@ let setConsoleOut = System.Console.SetOut
             {
                 Content = ": int "
                 Location = (1, 13)
-                Tooltip = "42"
+                Tooltip = "type int"
             }
             {
                 Content = ": int "
                 Location = (2, 13)
-                Tooltip = "42"
+                Tooltip = "type int"
             }
             {
                 Content = ": unit "
                 Location = (3, 19)
-                Tooltip = "42"
+                Tooltip = "type unit"
+            }
+        ]
+
+    Assert.Equal(expected, result)
+
+[<Fact>]
+let ``Hints are correct for user types`` () =
+    let code =
+        """
+type Answer = { Text: string }
+
+let getAnswer() = { Text = "42" }
+"""
+
+    let document = getFsDocument code
+
+    let result = getReturnTypeHints document
+
+    let expected =
+        [
+            {
+                Content = ": Answer "
+                Location = (3, 17)
+                Tooltip = "type Answer"
             }
         ]
 
@@ -57,7 +81,7 @@ type Test() =
             {
                 Content = ": int "
                 Location = (2, 24)
-                Tooltip = "42"
+                Tooltip = "type int"
             }
         ]
 
@@ -76,7 +100,7 @@ let ``Hints are shown for generic functions`` () =
             {
                 Content = ": int "
                 Location = (0, 13)
-                Tooltip = "42"
+                Tooltip = "type int"
             }
         ]
 
@@ -99,7 +123,7 @@ let ``Hints are shown for functions within expressions`` () =
             {
                 Content = ": int "
                 Location = (2, 21)
-                Tooltip = "42"
+                Tooltip = "type int"
             }
         ]
 
