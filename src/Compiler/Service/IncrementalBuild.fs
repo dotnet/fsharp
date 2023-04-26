@@ -928,19 +928,15 @@ module IncrementalBuilderStateHelpers =
             return result, DateTime.UtcNow
         })
 
-    let updateStamps (state: IncrementalBuilderState) (cache: TimeStampCache) =
-        let slots = [ for slot in state.slots -> cache.GetFileTimeStamp slot.SyntaxTree.FileName |> slot.Notify ]
-        { state with slots = slots }
-
     let computeStampedFileNames (initialState: IncrementalBuilderInitialState) (state: IncrementalBuilderState) (cache: TimeStampCache) =
-        let state = 
+        let slots = 
             if initialState.useChangeNotifications then
-                state
+                state.slots
             else
-                updateStamps state cache
+               [ for slot in state.slots -> cache.GetFileTimeStamp slot.SyntaxTree.FileName |> slot.Notify ]
 
         let slots =
-            [ for slot in state.slots do
+            [ for slot in slots do
                 if slot.Notified then { slot with SyntaxTree = slot.SyntaxTree.Invalidate() } else slot ]
 
         let mapping (status, prevNode) slot =
@@ -1136,11 +1132,6 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             do! setCurrentState currentState cache ct
         }
 
-    let checkFileTimeStampsSynchronously cache =
-        checkFileTimeStamps cache
-        |> Async.AwaitNodeCode
-        |> Async.RunSynchronously
-
     do IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBECreated)
 
     member _.TcConfig = tcConfig
@@ -1196,10 +1187,10 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
     member builder.TryGetCheckResultsBeforeFileInProject fileName =
         let cache = TimeStampCache defaultTimeStamp
-        checkFileTimeStampsSynchronously cache
+        let tmpState = computeStampedFileNames initialState currentState cache
 
         let slotOfFile = builder.GetSlotOfFileName fileName
-        match tryGetBeforeSlot currentState slotOfFile with
+        match tryGetBeforeSlot tmpState slotOfFile with
         | Some(boundModel, timestamp) ->
             let projectTimeStamp = builder.GetLogicalTimeStampForFileInProject(fileName)
             Some (PartialCheckResults (boundModel, timestamp, projectTimeStamp))
@@ -1281,12 +1272,12 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
     member _.GetLogicalTimeStampForFileInProject(slotOfFile: int) =
         let cache = TimeStampCache defaultTimeStamp
-        let tempStateJustForCheckingTimeStamps = updateStamps currentState cache
-        computeProjectTimeStamp tempStateJustForCheckingTimeStamps slotOfFile
+        let tempState = computeStampedFileNames initialState currentState cache
+        computeProjectTimeStamp tempState slotOfFile
 
     member _.GetLogicalTimeStampForProject(cache) =
-        let tempStateJustForCheckingTimeStamps = updateStamps currentState cache
-        computeProjectTimeStamp tempStateJustForCheckingTimeStamps -1
+        let tempState = computeStampedFileNames initialState currentState cache
+        computeProjectTimeStamp tempState -1
 
     member _.TryGetSlotOfFileName(fileName: string) =
         // Get the slot of the given file and force it to build.
