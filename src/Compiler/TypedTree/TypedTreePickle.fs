@@ -488,10 +488,6 @@ let p_array f (x: 'T[]) st =
     p_int x.Length st
     p_array_core f x st
 
-let p_arrayB f (x: 'T[]) st =
-    p_intB x.Length st
-    p_array_core f x st
-
 let p_list_core f (xs: 'T list) st =
     for x in xs do
         f x st
@@ -584,11 +580,6 @@ let u_array f st =
     let n = u_int st
     u_array_core f n st
 
-/// Unpickle an array from the B stream. The array is empty if the B stream is not present.
-let u_arrayB f st =
-    let n = u_intB st
-    u_array_core f n st
-
 let u_list_core f n st =
     List.init n (fun _ -> f st)
 
@@ -598,7 +589,8 @@ let u_list f st =
 
 /// Unpickle a list from the B stream. The resulting list is empty if the B stream is not present.
 let u_listB f st =
-    Array.toList (u_arrayB f st)
+    let n = u_intB st
+    u_list_core f n st
 
 let u_list_ext extra f st =
     let n = u_int st

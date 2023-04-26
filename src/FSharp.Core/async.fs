@@ -868,8 +868,13 @@ module AsyncPrimitives =
 
     ///   - Initial cancellation check
     ///   - Call syncCtxt.Post with exception protection. THis may fail as it is arbitrary user code
-    let CreateSwitchToAsync (syncCtxt: SynchronizationContext MaybeNull) =
+#if BUILDING_WITH_LKG || NO_NULLCHECKING_FEATURE
+    let CreateSwitchToAsync (syncCtxt: SynchronizationContext) =
+#else
+    let CreateSwitchToAsync (syncCtxt: SynchronizationContext?) =
+#endif
         MakeAsyncWithCancelCheck(fun ctxt -> ctxt.PostWithTrampoline syncCtxt ctxt.cont)
+
 
     ///   - Initial cancellation check
     ///   - Create Thread and call Start() with exception protection. We don't expect this

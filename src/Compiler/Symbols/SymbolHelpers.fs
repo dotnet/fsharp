@@ -242,10 +242,6 @@ module internal SymbolHelpers =
                   yield ParamNameAndType(argInfo.Name, ty) ]
         | _ -> []
 
-    // Find the name of the metadata file for this external definition
-    let metaInfoOfEntityRef (infoReader: InfoReader) m tcref =
-        InfoReader.TryFindMetadataInfoOfExternalEntityRef infoReader m tcref
-
     let mkXmlComment thing =
         match thing with
         | Some (Some fileName, xmlDocSig) -> FSharpXmlDoc.FromXmlFile(fileName, xmlDocSig)

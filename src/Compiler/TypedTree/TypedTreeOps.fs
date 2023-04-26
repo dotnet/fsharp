@@ -2781,11 +2781,6 @@ let generalizedTyconRef (g: TcGlobals) tcref =
     let tinst = generalTyconRefInst tcref
     TType_app(tcref, tinst, g.knownWithoutNull)
 
-let isTTyparSupportsStaticMethod tpc = 
-    match tpc with 
-    | TyparConstraint.MayResolveMember _ -> true
-    | _ -> false
-
 let isTTyparCoercesToType tpc = 
     match tpc with 
     | TyparConstraint.CoercesTo _  -> true
