@@ -931,19 +931,15 @@ module IncrementalBuilderStateHelpers =
             return result, DateTime.UtcNow
         })
 
-    let updateStamps (state: IncrementalBuilderState) (cache: TimeStampCache) =
-        let slots = [ for slot in state.slots -> cache.GetFileTimeStamp slot.SyntaxTree.FileName |> slot.Notify ]
-        { state with slots = slots }
-
     let computeStampedFileNames (initialState: IncrementalBuilderInitialState) (state: IncrementalBuilderState) (cache: TimeStampCache) =
-        let state = 
+        let slots = 
             if initialState.useChangeNotifications then
-                state
+                state.slots
             else
-                updateStamps state cache
+               [ for slot in state.slots -> cache.GetFileTimeStamp slot.SyntaxTree.FileName |> slot.Notify ]
 
         let slots =
-            [ for slot in state.slots do
+            [ for slot in slots do
                 if slot.Notified then { slot with SyntaxTree = slot.SyntaxTree.Invalidate() } else slot ]
 
         let mapping (status, prevNode) slot =
