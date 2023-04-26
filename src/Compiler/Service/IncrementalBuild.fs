@@ -1160,13 +1160,13 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         projectChecked.Trigger()
       }
 
-    member builder.GetCheckResultsBeforeFileInProjectEvenIfStale fileName: PartialCheckResults  =
+    member builder.GetCheckResultsBeforeFileInProjectEvenIfStale fileName =
         let slotOfFile = builder.GetSlotOfFileName fileName
         let boundModel, timestamp = getBeforeSlot currentState slotOfFile
         let projectTimeStamp = builder.GetLogicalTimeStampForFileInProject(fileName)
         PartialCheckResults (boundModel, timestamp, projectTimeStamp)
 
-    member builder.GetCheckResultsForFileInProjectEvenIfStale fileName: PartialCheckResults  =
+    member builder.GetCheckResultsForFileInProjectEvenIfStale fileName =
         let slotOfFile = builder.GetSlotOfFileName fileName
         let boundModel, timestamp = getSlot currentState slotOfFile
         let projectTimeStamp = builder.GetLogicalTimeStampForFileInProject(fileName)

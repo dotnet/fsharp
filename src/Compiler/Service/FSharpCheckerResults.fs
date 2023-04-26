@@ -3213,12 +3213,11 @@ type FSharpCheckProjectResults
                 builder.SourceFiles
                 |> Array.ofList
                 |> Array.collect (fun x ->
-                    match builder.GetCheckResultsForFileInProjectEvenIfStale x with
-                    | Some partialCheckResults ->
-                        match partialCheckResults.TryPeekTcInfoWithExtras() with
-                        | Some (_, tcInfoExtras) -> tcInfoExtras.TcSymbolUses.GetUsesOfSymbol symbol.Item
-                        | _ -> [||]
-                    | _ -> [||])
+                    let partialCheckResults = builder.GetCheckResultsForFileInProjectEvenIfStale x
+                    match partialCheckResults.TryPeekTcInfoWithExtras() with
+                    | Some (_, tcInfoExtras) -> tcInfoExtras.TcSymbolUses.GetUsesOfSymbol symbol.Item
+                    | _ -> [||]
+                )
             | Choice2Of2 tcSymbolUses -> tcSymbolUses.GetUsesOfSymbol symbol.Item
 
         results
@@ -3243,12 +3242,11 @@ type FSharpCheckProjectResults
                 builder.SourceFiles
                 |> Array.ofList
                 |> Array.map (fun x ->
-                    match builder.GetCheckResultsForFileInProjectEvenIfStale x with
-                    | Some partialCheckResults ->
-                        match partialCheckResults.TryPeekTcInfoWithExtras() with
-                        | Some (_, tcInfoExtras) -> tcInfoExtras.TcSymbolUses
-                        | _ -> TcSymbolUses.Empty
-                    | _ -> TcSymbolUses.Empty)
+                    let partialCheckResults = builder.GetCheckResultsForFileInProjectEvenIfStale x
+                    match partialCheckResults.TryPeekTcInfoWithExtras() with
+                    | Some (_, tcInfoExtras) -> tcInfoExtras.TcSymbolUses
+                    | _ -> TcSymbolUses.Empty
+                )
             | Choice2Of2 tcSymbolUses -> [| tcSymbolUses |]
 
         [|
