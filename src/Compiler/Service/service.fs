@@ -581,11 +581,7 @@ type BackgroundCompiler
             | Some cachedResults ->
                 match! cachedResults.GetOrComputeValue() with
                 | parseResults, checkResults, _, priorTimeStamp when
-                    (match builder.GetCheckResultsBeforeFileInProjectEvenIfStale fileName with
-                     | None -> false
-                     | Some (tcPrior) ->
-                         tcPrior.ProjectTimeStamp = priorTimeStamp
-                         && builder.AreCheckResultsBeforeFileInProjectReady(fileName))
+                    (builder.GetCheckResultsBeforeFileInProjectEvenIfStale fileName).ProjectTimeStamp = priorTimeStamp
                     ->
                     return Some(parseResults, checkResults)
                 | _ ->
@@ -702,16 +698,14 @@ type BackgroundCompiler
             | Some (builder, creationDiags, None) ->
                 Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "CheckFileInProjectAllowingStaleCachedResults.CacheMiss", fileName)
 
-                match builder.GetCheckResultsBeforeFileInProjectEvenIfStale fileName with
-                | Some tcPrior ->
-                    match tcPrior.TryPeekTcInfo() with
-                    | Some tcInfo ->
-                        let! checkResults =
-                            bc.CheckOneFileImpl(parseResults, sourceText, fileName, options, fileVersion, builder, tcPrior, tcInfo, creationDiags)
+                let tcPrior = builder.GetCheckResultsBeforeFileInProjectEvenIfStale fileName
+                match tcPrior.TryPeekTcInfo() with
+                | Some tcInfo ->
+                    let! checkResults =
+                        bc.CheckOneFileImpl(parseResults, sourceText, fileName, options, fileVersion, builder, tcPrior, tcInfo, creationDiags)
 
-                        return Some checkResults
-                    | None -> return None
-                | None -> return None // the incremental builder was not up to date
+                    return Some checkResults
+                | None -> return None
         }
 
     /// Type-check the result obtained by parsing. Force the evaluation of the antecedent type checking context if needed.
