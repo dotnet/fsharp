@@ -358,19 +358,19 @@ let serializeToMermaid (path: string) (filesInProject: FileInProject array) (tri
             else
                 appendLine $"class {name} {{\n{firstBox}\n{secondBox}}}\n"
 
-    let rec dfs (v: TrieNode) =
+    let rec traverse (v: TrieNode) =
         discovered.Add(v.Current) |> ignore
 
         for c in v.Children do
             if not (discovered.Contains(c.Value.Current)) then
                 printNode (v, c.Value)
-                dfs c.Value
+                traverse c.Value
 
     appendLine "```mermaid"
     appendLine "classDiagram\n"
 
     printNode (trie, trie)
-    dfs trie
+    traverse trie
 
     appendLine "```"
 
