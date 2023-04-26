@@ -1584,7 +1584,7 @@ and extendedInterpolatedString sargs skip = parse
       if numPercents > maxPercents then
           let m2 = lexbuf.LexemeRange
           let rest = result()
-          args.diagnosticsLogger.ErrorR(Error(FSComp.SR.lexTooManyPercentsInTripleQuote(), m2))
+          errorR(Error(FSComp.SR.lexTooManyPercentsInTripleQuote(), m2))
           rest
       else
           // Add two % chars for each % that is supposed to be treated as regular string content
