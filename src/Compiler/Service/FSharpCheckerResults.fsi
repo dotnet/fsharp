@@ -39,27 +39,25 @@ type internal DelayedILModuleReader =
 /// <summary>Unused in this API</summary>
 type public FSharpUnresolvedReferencesSet = internal FSharpUnresolvedReferencesSet of UnresolvedAssemblyReference list
 
-
 type FSharpFileKey = string * string
 
 type FSharpProjectSnapshotKey =
-    {
-        ProjectFileName: string
-        SourceFiles: FSharpFileKey list
-        OtherOptions: string list
-        ReferencedProjects: FSharpProjectSnapshotKey list
+    { ProjectFileName: string
+      SourceFiles: FSharpFileKey list
+      OtherOptions: string list
+      ReferencedProjects: FSharpProjectSnapshotKey list
 
-        // Do we need these?
-        IsIncompleteTypeCheckEnvironment: bool
-        UseScriptResolutionRules: bool
-    }
+      // Do we need these?
+      IsIncompleteTypeCheckEnvironment: bool
+      UseScriptResolutionRules: bool }
 
 [<NoComparison; CustomEquality>]
-type FSharpFileSnapshot = {
-    FileName: string
-    Version: string
-    GetSource: unit -> System.Threading.Tasks.Task<ISourceText>
-} with member Key: FSharpFileKey
+type FSharpFileSnapshot =
+    { FileName: string
+      Version: string
+      GetSource: unit -> System.Threading.Tasks.Task<ISourceText> }
+
+    member Key: FSharpFileKey
 
 [<NoComparison>]
 type FSharpProjectSnapshot =
@@ -124,7 +122,6 @@ type FSharpProjectSnapshot =
 
     member Key: FSharpProjectSnapshotKey
 
-
 and [<NoComparison; CustomEquality>] public FSharpReferencedProjectSnapshot =
     internal
     | FSharpReference of projectOutputFile: string * options: FSharpProjectSnapshot
@@ -145,9 +142,8 @@ and [<NoComparison; CustomEquality>] public FSharpReferencedProjectSnapshot =
     /// </summary>
     /// <param name="projectOutputFile">The fully qualified path to the output of the referenced project. This should be the same value as the <c>-r</c> reference in the project options for this referenced project.</param>
     /// <param name="options">The Project Options for this F# project</param>
-    static member CreateFSharp: projectOutputFile: string * options: FSharpProjectSnapshot -> FSharpReferencedProjectSnapshot
-
-
+    static member CreateFSharp:
+        projectOutputFile: string * options: FSharpProjectSnapshot -> FSharpReferencedProjectSnapshot
 
 /// <summary>A set of information describing a project or script build configuration.</summary>
 type public FSharpProjectOptions =
@@ -248,8 +244,8 @@ and [<NoComparison; CustomEquality>] public FSharpReferencedProject =
             FSharpReferencedProject
 
 type FSharpProjectSnapshot with
-    member ToOptions: unit -> FSharpProjectOptions
 
+    member ToOptions: unit -> FSharpProjectOptions
 
 /// Represents the use of an F# symbol from F# source code
 [<Sealed>]

@@ -115,8 +115,6 @@ type internal DelayedILModuleReader =
             }
         | _ -> cancellable.Return(Some this.result)
 
-
-
 type FSharpFileKey = string * string
 
 type FSharpProjectSnapshotKey =
@@ -132,19 +130,21 @@ type FSharpProjectSnapshotKey =
     }
 
 [<NoComparison; CustomEquality>]
-type FSharpFileSnapshot = {
-    FileName: string
-    Version: string
-    GetSource: unit -> Task<ISourceText>
-} with
+type FSharpFileSnapshot =
+    {
+        FileName: string
+        Version: string
+        GetSource: unit -> Task<ISourceText>
+    }
+
     member this.Key = this.FileName, this.Version
+
     override this.Equals(o) =
         match o with
         | :? FSharpFileSnapshot as o -> o.FileName = this.FileName && o.Version = this.Version
         | _ -> false
 
     override this.GetHashCode() = this.Key.GetHashCode()
-
 
 [<NoComparison>]
 type FSharpProjectSnapshot =
@@ -161,6 +161,7 @@ type FSharpProjectSnapshot =
         OriginalLoadReferences: (range * string * string) list
         Stamp: int64 option
     }
+
     static member UseSameProject(options1, options2) =
         match options1.ProjectId, options2.ProjectId with
         | Some (projectId1), Some (projectId2) when
@@ -193,20 +194,26 @@ type FSharpProjectSnapshot =
     member po.ProjectDirectory = Path.GetDirectoryName(po.ProjectFileName)
 
     member this.UpTo fileIndex =
-        { this with SourceFiles = this.SourceFiles[..fileIndex] }
+        { this with
+            SourceFiles = this.SourceFiles[..fileIndex]
+        }
 
     member this.UpTo fileName =
         let fileIndex = this.SourceFiles |> List.findIndex (fun x -> x.FileName = fileName)
         this.UpTo fileIndex
 
-    member this.Key = {
-        ProjectFileName = this.ProjectFileName
-        SourceFiles = this.SourceFiles |> List.map (fun x -> x.Key)
-        OtherOptions = this.OtherOptions
-        ReferencedProjects = this.ReferencedProjects |> List.map (function FSharpReference (_, x) -> x.Key)
-        IsIncompleteTypeCheckEnvironment = this.IsIncompleteTypeCheckEnvironment
-        UseScriptResolutionRules = this.UseScriptResolutionRules
-    }
+    member this.Key =
+        {
+            ProjectFileName = this.ProjectFileName
+            SourceFiles = this.SourceFiles |> List.map (fun x -> x.Key)
+            OtherOptions = this.OtherOptions
+            ReferencedProjects =
+                this.ReferencedProjects
+                |> List.map (function
+                    | FSharpReference (_, x) -> x.Key)
+            IsIncompleteTypeCheckEnvironment = this.IsIncompleteTypeCheckEnvironment
+            UseScriptResolutionRules = this.UseScriptResolutionRules
+        }
 
     member this.SourceFileNames = this.SourceFiles |> List.map (fun x -> x.FileName)
 
@@ -226,14 +233,17 @@ and [<NoComparison; CustomEquality>] public FSharpReferencedProjectSnapshot =
     /// The fully qualified path to the output of the referenced project. This should be the same value as the <c>-r</c>
     /// reference in the project options for this referenced project.
     /// </summary>
-    member this.OutputFile = match this with FSharpReference (projectOutputFile, _) -> projectOutputFile
+    member this.OutputFile =
+        match this with
+        | FSharpReference (projectOutputFile, _) -> projectOutputFile
 
     /// <summary>
     /// Creates a reference for an F# project. The physical data for it is stored/cached inside of the compiler service.
     /// </summary>
     /// <param name="projectOutputFile">The fully qualified path to the output of the referenced project. This should be the same value as the <c>-r</c> reference in the project options for this referenced project.</param>
     /// <param name="options">The Project Options for this F# project</param>
-    static member CreateFSharp(projectOutputFile, options: FSharpProjectSnapshot) = FSharpReference (projectOutputFile, options)
+    static member CreateFSharp(projectOutputFile, options: FSharpProjectSnapshot) =
+        FSharpReference(projectOutputFile, options)
 
     override this.Equals(o) =
         match o with
@@ -245,7 +255,6 @@ and [<NoComparison; CustomEquality>] public FSharpReferencedProjectSnapshot =
         | _ -> false
 
     override this.GetHashCode() = this.OutputFile.GetHashCode()
-
 
 [<RequireQualifiedAccess; NoComparison; CustomEquality>]
 type FSharpReferencedProject =
@@ -336,19 +345,25 @@ and FSharpProjectOptions =
         "FSharpProjectOptions(" + this.ProjectFileName + ")"
 
 type FSharpProjectSnapshot with
-    member this.ToOptions (): FSharpProjectOptions = {
-        ProjectFileName = this.ProjectFileName
-        ProjectId = this.ProjectId
-        SourceFiles = this.SourceFiles |> Seq.map (fun x -> x.FileName) |> Seq.toArray
-        OtherOptions = this.OtherOptions |> List.toArray
-        ReferencedProjects = this.ReferencedProjects |> Seq.map (function FSharpReference (name, opts) -> FSharpReferencedProject.FSharpReference (name, opts.ToOptions())) |> Seq.toArray
-        IsIncompleteTypeCheckEnvironment = this.IsIncompleteTypeCheckEnvironment
-        UseScriptResolutionRules = this.UseScriptResolutionRules
-        LoadTime = this.LoadTime
-        UnresolvedReferences = this.UnresolvedReferences
-        OriginalLoadReferences = this.OriginalLoadReferences
-        Stamp = this.Stamp
-    }
+
+    member this.ToOptions() : FSharpProjectOptions =
+        {
+            ProjectFileName = this.ProjectFileName
+            ProjectId = this.ProjectId
+            SourceFiles = this.SourceFiles |> Seq.map (fun x -> x.FileName) |> Seq.toArray
+            OtherOptions = this.OtherOptions |> List.toArray
+            ReferencedProjects =
+                this.ReferencedProjects
+                |> Seq.map (function
+                    | FSharpReference (name, opts) -> FSharpReferencedProject.FSharpReference(name, opts.ToOptions()))
+                |> Seq.toArray
+            IsIncompleteTypeCheckEnvironment = this.IsIncompleteTypeCheckEnvironment
+            UseScriptResolutionRules = this.UseScriptResolutionRules
+            LoadTime = this.LoadTime
+            UnresolvedReferences = this.UnresolvedReferences
+            OriginalLoadReferences = this.OriginalLoadReferences
+            Stamp = this.Stamp
+        }
 
 [<AutoOpen>]
 module internal FSharpCheckerResultsSettings =

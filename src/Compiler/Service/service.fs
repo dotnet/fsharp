@@ -149,7 +149,9 @@ type FSharpChecker
                 captureIdentifiersWhenParsing,
                 getSource,
                 useChangeNotifications,
-                useSyntaxTreeCache) :> IBackgroundCompiler
+                useSyntaxTreeCache
+            )
+            :> IBackgroundCompiler
         else
             BackgroundCompiler(
                 legacyReferenceResolver,
@@ -165,7 +167,9 @@ type FSharpChecker
                 captureIdentifiersWhenParsing,
                 getSource,
                 useChangeNotifications,
-                useSyntaxTreeCache) :> IBackgroundCompiler
+                useSyntaxTreeCache
+            )
+            :> IBackgroundCompiler
 
     static let globalInstance = lazy FSharpChecker.Create()
 

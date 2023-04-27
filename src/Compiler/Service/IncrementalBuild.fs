@@ -247,7 +247,7 @@ type BoundModel private (
         syntaxTreeOpt: SyntaxTree option,
         ?tcStateOpt: GraphNode<TcInfo> * GraphNode<TcInfoExtras>
     ) =
-
+    
     let getTypeCheck (syntaxTree: SyntaxTree) : NodeCode<TypeCheck> =
         node {
             let! input, _sourceRange, fileName, parseErrors = syntaxTree.ParseNode.GetOrComputeValue()

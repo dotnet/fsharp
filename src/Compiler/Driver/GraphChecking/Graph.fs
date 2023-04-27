@@ -41,7 +41,7 @@ module internal Graph =
         dfs node
         visited |> Seq.toArray
 
-    let transitive<'Node when 'Node: equality> (graph: Graph<'Node>) : Graph<'Node> = 
+    let transitive<'Node when 'Node: equality> (graph: Graph<'Node>) : Graph<'Node> =
         graph.Keys
         |> Seq.toArray
         |> Array.Parallel.map (fun node -> node, graph |> transitiveDeps node)
@@ -51,11 +51,14 @@ module internal Graph =
     let subGraphFor node graph =
         let allDeps = graph |> transitiveDeps node
         let relevant n = n = node || allDeps |> Array.contains n
+
         graph
         |> Seq.choose (fun (KeyValue (src, deps)) ->
-            if relevant src then Some (src, deps |> Array.filter relevant) else None)
+            if relevant src then
+                Some(src, deps |> Array.filter relevant)
+            else
+                None)
         |> make
-
 
     /// Create a reverse of the graph
     let reverse (originalGraph: Graph<'Node>) : Graph<'Node> =
@@ -71,21 +74,44 @@ module internal Graph =
 
     /// Returns leaves of the graph and the remaining graph without the leaves.
     let cutLeaves (graph: Graph<'Node>) =
-        let notLeaves = set [ for (KeyValue (node, deps)) in graph do if deps.Length > 0 then node ]
-        let leaves =
-            set [ for (KeyValue (node, deps)) in graph do
-                    if deps.Length = 0 then node
-                    yield! deps |> Array.filter (notLeaves.Contains >> not) ]
-        leaves, seq { for (KeyValue (node, deps)) in graph do
+        let notLeaves =
+            set
+                [
+                    for (KeyValue (node, deps)) in graph do
                         if deps.Length > 0 then
-                            node, deps |> Array.filter (leaves.Contains >> not) } |> make
+                            node
+                ]
+
+        let leaves =
+            set
+                [
+                    for (KeyValue (node, deps)) in graph do
+                        if deps.Length = 0 then
+                            node
+
+                        yield! deps |> Array.filter (notLeaves.Contains >> not)
+                ]
+
+        leaves,
+        seq {
+            for (KeyValue (node, deps)) in graph do
+                if deps.Length > 0 then
+                    node, deps |> Array.filter (leaves.Contains >> not)
+        }
+        |> make
 
     /// Returns layers of leaves repeatedly removed from the graph until there's nothing left
     let leafSequence (graph: Graph<'Node>) =
         let rec loop (graph: Graph<'Node>) acc =
             match graph |> cutLeaves with
             | leaves, _ when leaves.IsEmpty -> acc
-            | leaves, graph -> seq { yield! acc; leaves } |> loop graph
+            | leaves, graph ->
+                seq {
+                    yield! acc
+                    leaves
+                }
+                |> loop graph
+
         loop graph Seq.empty
 
     let printCustom (graph: Graph<'Node>) (nodePrinter: 'Node -> string) : unit =
