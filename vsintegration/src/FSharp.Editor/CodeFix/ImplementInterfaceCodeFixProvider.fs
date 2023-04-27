@@ -202,6 +202,7 @@ type internal FSharpImplementInterfaceCodeFixProvider [<ImportingConstructor>] (
                 |> liftAsync
 
             let defines = CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions
+            let langVersionOpt = Some parsingOptions.LangVersionText
             // Notice that context.Span doesn't return reliable ranges to find tokens at exact positions.
             // That's why we tokenize the line and try to find the last successive identifier token
             let tokens =
@@ -211,6 +212,7 @@ type internal FSharpImplementInterfaceCodeFixProvider [<ImportingConstructor>] (
                     context.Span.Start,
                     context.Document.FilePath,
                     defines,
+                    langVersionOpt,
                     context.CancellationToken
                 )
 
@@ -249,6 +251,7 @@ type internal FSharpImplementInterfaceCodeFixProvider [<ImportingConstructor>] (
                     SymbolLookupKind.Greedy,
                     false,
                     false,
+                    langVersionOpt,
                     context.CancellationToken
                 )
 
