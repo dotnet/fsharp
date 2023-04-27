@@ -136,38 +136,41 @@ module IncrementalBuildSyntaxTree =
             ), sourceRange, fileName, [||]
 
         let parse (source: FSharpSource) =
-            IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBEParsed fileName)
-            use _ =
-                Activity.start "IncrementalBuildSyntaxTree.parse"
-                    [|
-                        Activity.Tags.fileName, fileName                       
-                        Activity.Tags.buildPhase, BuildPhase.Parse.ToString()
-                    |]
+            node {
+                IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBEParsed fileName)
+                use _ =
+                    Activity.start "IncrementalBuildSyntaxTree.parse"
+                        [|
+                            Activity.Tags.fileName, fileName
+                            Activity.Tags.buildPhase, BuildPhase.Parse.ToString()
+                        |]
 
-            try 
-                let diagnosticsLogger = CompilationDiagnosticLogger("Parse", tcConfig.diagnosticsOptions)
-                // Return the disposable object that cleans up
-                use _holder = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parse)
-                use text = source.GetTextContainer()
-                let input = 
-                    match text with
-                    | TextContainer.Stream(stream) ->
-                        ParseOneInputStream(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, false, stream)
-                    | TextContainer.SourceText(sourceText) ->
-                        ParseOneInputSourceText(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, sourceText)
-                    | TextContainer.OnDisk ->
-                        ParseOneInputFile(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, true)
+                try
+                    let diagnosticsLogger = CompilationDiagnosticLogger("Parse", tcConfig.diagnosticsOptions)
+                    // Return the disposable object that cleans up
+                    use _holder = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parse)
+                    use! text = source.GetTextContainer() |> NodeCode.AwaitAsync
+                    let input =
+                        match text :?> TextContainer with
+                        | TextContainer.Stream(stream) ->
+                            ParseOneInputStream(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, false, stream)
+                        | TextContainer.SourceText(sourceText) ->
+                            ParseOneInputSourceText(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, sourceText)
+                        | TextContainer.OnDisk ->
+                            ParseOneInputFile(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, true)
 
-                fileParsed.Trigger fileName
+                    fileParsed.Trigger fileName
 
-                input, sourceRange, fileName, diagnosticsLogger.GetDiagnostics()
-            with exn -> 
-                let msg = sprintf "unexpected failure in SyntaxTree.parse\nerror = %s" (exn.ToString())
-                System.Diagnostics.Debug.Assert(false, msg)
-                failwith msg
+                    return input, sourceRange, fileName, diagnosticsLogger.GetDiagnostics()
+                with exn ->
+                    let msg = sprintf "unexpected failure in SyntaxTree.parse\nerror = %s" (exn.ToString())
+                    System.Diagnostics.Debug.Assert(false, msg)
+                    failwith msg
+                    return Unchecked.defaultof<_>
+            }
 
         /// Parse the given file and return the given input.
-        member val ParseNode : GraphNode<ParseResult> = node { return parse source } |> GraphNode
+        member val ParseNode : GraphNode<ParseResult> = parse source |> GraphNode
 
         member _.Invalidate() =
             SyntaxTree(tcConfig, fileParsed, lexResourceManager, file, hasSignature)
@@ -1563,7 +1566,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
             let sourceFiles =
                 sourceFiles
-                |> List.map (fun (m, fileName, isLastCompiland) -> 
+                |> List.map (fun (m, fileName, isLastCompiland) ->
                     { Range = m; Source = getFSharpSource fileName; Flags = isLastCompiland } )
 
             let initialState =
