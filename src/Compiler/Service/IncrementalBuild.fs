@@ -250,72 +250,6 @@ type BoundModel private (
         tcInfoExtras: GraphNode<TcInfoExtras>
     ) =
 
-    member val TcInfo = tcInfo
-
-    member val TcInfoExtras = tcInfoExtras
-
-    member _.TcConfig = tcConfig
-
-    member _.TcGlobals = tcGlobals
-
-    member _.TcImports = tcImports
-
-    member this.TryPeekTcInfo() = this.TcInfo.TryPeekValue() |> ValueOption.toOption
-    
-    member this.TryPeekTcInfoWithExtras() = 
-        (this.TcInfo.TryPeekValue(), this.TcInfoExtras.TryPeekValue())
-        ||> ValueOption.map2 (fun a b -> a, b)
-        |> ValueOption.toOption
-    
-    member this.GetOrComputeTcInfo = this.TcInfo.GetOrComputeValue
-    
-    member this.GetOrComputeTcInfoExtras = this.TcInfoExtras.GetOrComputeValue
-    
-    member this.GetOrComputeTcInfoWithExtras() = node {
-        let! tcInfo = this.TcInfo.GetOrComputeValue()
-        let! tcInfoExtras = this.TcInfoExtras.GetOrComputeValue()
-        return tcInfo, tcInfoExtras
-    }
-
-    member this.Next(syntaxTree: SyntaxTree) =
-
-        let prevTcInfo = this.TcInfo
-
-        BoundModel.Create(
-                tcConfig,
-                tcGlobals,
-                tcImports,
-                keepAssemblyContents,
-                keepAllBackgroundResolutions,
-                keepAllBackgroundSymbolUses,
-                enableBackgroundItemKeyStoreAndSemanticClassification,
-                beforeFileChecked,
-                fileChecked,
-                prevTcInfo,
-                Some syntaxTree
-            )
-
-    member this.Finish(finalTcDiagnosticsRev, finalTopAttribs) =
-        let finishState =
-            node {
-                let! tcInfo = this.TcInfo.GetOrComputeValue()
-                return { tcInfo with tcDiagnosticsRev = finalTcDiagnosticsRev; topAttribs = finalTopAttribs }
-            } |> GraphNode
-
-        BoundModel(
-            tcConfig,
-            tcGlobals,
-            tcImports,
-            keepAssemblyContents,
-            keepAllBackgroundResolutions,
-            keepAllBackgroundSymbolUses,
-            enableBackgroundItemKeyStoreAndSemanticClassification,
-            beforeFileChecked,
-            fileChecked,
-            finishState,
-            this.TcInfoExtras
-        )
-
     static member Create(
         tcConfig: TcConfig,
         tcGlobals: TcGlobals,
@@ -474,6 +408,71 @@ type BoundModel private (
             tcInfoExtras
         )
 
+    member val TcInfo = tcInfo
+
+    member val TcInfoExtras = tcInfoExtras
+
+    member _.TcConfig = tcConfig
+
+    member _.TcGlobals = tcGlobals
+
+    member _.TcImports = tcImports
+
+    member this.TryPeekTcInfo() = this.TcInfo.TryPeekValue() |> ValueOption.toOption
+    
+    member this.TryPeekTcInfoWithExtras() = 
+        (this.TcInfo.TryPeekValue(), this.TcInfoExtras.TryPeekValue())
+        ||> ValueOption.map2 (fun a b -> a, b)
+        |> ValueOption.toOption
+    
+    member this.GetOrComputeTcInfo = this.TcInfo.GetOrComputeValue
+    
+    member this.GetOrComputeTcInfoExtras = this.TcInfoExtras.GetOrComputeValue
+    
+    member this.GetOrComputeTcInfoWithExtras() = node {
+        let! tcInfo = this.TcInfo.GetOrComputeValue()
+        let! tcInfoExtras = this.TcInfoExtras.GetOrComputeValue()
+        return tcInfo, tcInfoExtras
+    }
+
+    member this.Next(syntaxTree: SyntaxTree) =
+
+        let prevTcInfo = this.TcInfo
+
+        BoundModel.Create(
+                tcConfig,
+                tcGlobals,
+                tcImports,
+                keepAssemblyContents,
+                keepAllBackgroundResolutions,
+                keepAllBackgroundSymbolUses,
+                enableBackgroundItemKeyStoreAndSemanticClassification,
+                beforeFileChecked,
+                fileChecked,
+                prevTcInfo,
+                Some syntaxTree
+            )
+
+    member this.Finish(finalTcDiagnosticsRev, finalTopAttribs) =
+        let finishState =
+            node {
+                let! tcInfo = this.TcInfo.GetOrComputeValue()
+                return { tcInfo with tcDiagnosticsRev = finalTcDiagnosticsRev; topAttribs = finalTopAttribs }
+            } |> GraphNode
+
+        BoundModel(
+            tcConfig,
+            tcGlobals,
+            tcImports,
+            keepAssemblyContents,
+            keepAllBackgroundResolutions,
+            keepAllBackgroundSymbolUses,
+            enableBackgroundItemKeyStoreAndSemanticClassification,
+            beforeFileChecked,
+            fileChecked,
+            finishState,
+            this.TcInfoExtras
+        )
 
 /// Global service state
 type FrameworkImportsCacheKey = FrameworkImportsCacheKey of resolvedpath: string list * assemblyName: string * targetFrameworkDirectories: string list * fsharpBinaries: string * langVersion: decimal
@@ -884,12 +883,13 @@ type IncrementalBuilderInitialState =
 // Notified indicates that there is pending file change.
 type Slot =
     {
-        HasSignature: bool
         Stamp: DateTime
         SyntaxTree: SyntaxTree
         Notified: bool
         BoundModel: BoundModel
     }
+    member this.FileName = this.SyntaxTree.FileName
+    member this.HasSignature = this.SyntaxTree.HasSignature
     member this.Notify timeStamp =
         if this.Stamp <> timeStamp then { this with Stamp = timeStamp; Notified = true } else this
 
@@ -931,7 +931,7 @@ module IncrementalBuilderStateHelpers =
             if initialState.useChangeNotifications then
                 state.slots
             else
-               [ for slot in state.slots -> cache.GetFileTimeStamp slot.SyntaxTree.FileName |> slot.Notify ]
+               [ for slot in state.slots -> cache.GetFileTimeStamp slot.FileName |> slot.Notify ]
 
         let slots =
             [ for slot in slots do
@@ -1026,9 +1026,8 @@ type IncrementalBuilderState with
 
         let slots =
             [
-                for model, syntaxTree, hasSignature in Seq.zip3 boundModels syntaxTrees hasSignature do
+                for model, syntaxTree in Seq.zip boundModels syntaxTrees do
                     {
-                        HasSignature = hasSignature
                         Stamp = DateTime.MinValue
                         Notified = false
                         SyntaxTree = syntaxTree
@@ -1109,6 +1108,10 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
     let checkFileTimeStamps cache = setCurrentState currentState cache
 
+    let updateFileTimeStamps () =
+        let cache = TimeStampCache defaultTimeStamp
+        checkFileTimeStamps cache
+
     do IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBECreated)
 
     member _.TcConfig = tcConfig
@@ -1136,8 +1139,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
     member _.PopulatePartialCheckingResults () =
       node {
-        let cache = TimeStampCache defaultTimeStamp // One per step
-        checkFileTimeStamps cache
+        updateFileTimeStamps ()
         let _ = currentState.finalizedBoundModel
         projectChecked.Trigger()
       }
@@ -1155,8 +1157,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         PartialCheckResults (boundModel, timestamp, projectTimeStamp)
 
     member builder.TryGetCheckResultsBeforeFileInProject fileName =
-        let cache = TimeStampCache defaultTimeStamp
-        checkFileTimeStamps cache
+        updateFileTimeStamps ()
         let slotOfFile = builder.GetSlotOfFileName fileName
         let boundModel, timestamp = getBeforeSlot currentState slotOfFile
         let projectTimeStamp = builder.GetLogicalTimeStampForFileInProject(fileName)
@@ -1164,8 +1165,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
     member builder.GetCheckResultsBeforeSlotInProject slotOfFile =
       node {
-        let cache = TimeStampCache defaultTimeStamp
-        checkFileTimeStamps cache
+        updateFileTimeStamps ()
         let! result = evalUpToTargetSlot currentState (slotOfFile - 1)
         match result with
         | Some (boundModel, timestamp) ->
@@ -1176,8 +1176,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
     member builder.GetFullCheckResultsBeforeSlotInProject slotOfFile =
       node {
-        let cache = TimeStampCache defaultTimeStamp
-        checkFileTimeStamps cache
+        updateFileTimeStamps ()
         let! result = evalUpToTargetSlot currentState (slotOfFile - 1)
         match result with
         | Some (boundModel, timestamp) -> 
@@ -1211,8 +1210,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
     member builder.GetCheckResultsAndImplementationsForProject() =
       node {
-        let cache = TimeStampCache(defaultTimeStamp)
-        checkFileTimeStamps cache
+        updateFileTimeStamps ()
         let! result = currentState.finalizedBoundModel.GetOrComputeValue()
         match result with
         | (ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, boundModel), timestamp ->
@@ -1234,8 +1232,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         builder.GetLogicalTimeStampForFileInProject(slot)
 
     member _.GetLogicalTimeStampForFileInProject(slotOfFile: int) =
-        let cache = TimeStampCache defaultTimeStamp
-        checkFileTimeStamps cache
+        updateFileTimeStamps ()
         computeProjectTimeStamp currentState slotOfFile
 
     member _.GetLogicalTimeStampForProject(cache) =
