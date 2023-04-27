@@ -21,7 +21,7 @@ type InlineTypeHints(parseResults: FSharpParseFileResults, symbol: FSharpMemberO
         // not sure when this can happen
         | None -> []
 
-    let getTooltip _ _ =
+    let getTooltip _ =
         async {
             // Done this way because I am not sure if we want to show full-blown types everywhere,
             // e.g. Microsoft.FSharp.Core.string instead of string.

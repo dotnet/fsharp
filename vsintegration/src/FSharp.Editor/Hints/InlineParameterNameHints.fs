@@ -12,7 +12,7 @@ open Hints
 
 type InlineParameterNameHints(parseResults: FSharpParseFileResults) =
 
-    let getTooltip (symbol: FSharpSymbol) _ _ =
+    let getTooltip (symbol: FSharpSymbol) _ =
         async {
             // This brings little value as of now. Basically just discerns fields from parameters
             // and fills the tooltip bubble which otherwise looks like a visual glitch.

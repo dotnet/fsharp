@@ -27,9 +27,9 @@ module NativeToRoslynHintConverter =
 
     let nativeToRoslynFunc nativeFunc =
         Func<Document, CancellationToken, Task<ImmutableArray<RoslynTaggedText>>>(fun doc ct ->
-            nativeFunc doc ct
+            nativeFunc doc
             |> Async.map (List.map nativeToRoslynText >> ImmutableArray.CreateRange)
-            |> Async.StartAsTask)
+            |> fun comp -> Async.StartAsTask(comp, cancellationToken = ct))
 
     let convert sourceText hint =
         let span = rangeToSpan hint.Range sourceText

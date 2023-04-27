@@ -19,7 +19,7 @@ type InlineReturnTypeHints(parseFileResults: FSharpParseFileResults, symbol: FSh
                 TaggedText(TextTag.Space, " ")
             ])
 
-    let getTooltip _ _ =
+    let getTooltip _ =
         async {
             let typeAsString = symbol.ReturnParameter.Type.TypeDefinition.ToString()
             let text = $"type {typeAsString}"

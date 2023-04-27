@@ -65,7 +65,7 @@ module HintTestFramework =
 
             let getTooltip hint =
                 async {
-                    let! roslynTexts = hint.GetTooltip document ct
+                    let! roslynTexts = hint.GetTooltip document
                     return roslynTexts |> Seq.map (fun roslynText -> roslynText.Text) |> String.concat ""
                 }
 
