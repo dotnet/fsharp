@@ -441,7 +441,7 @@ type BoundModel private (
                         itemKeyStore = itemKeyStore
                         semanticClassificationKeyStore = semanticClassification
                     }
-            } |> GraphNode
+            }
 
         let defaultTypeCheck = 
             node { 
@@ -451,7 +451,7 @@ type BoundModel private (
 
         let typeCheckNode = syntaxTreeOpt |> Option.map getTypeCheck |> Option.defaultValue defaultTypeCheck |> GraphNode
 
-        let tcInfoExtras = getTcInfoExtras typeCheckNode
+        let tcInfoExtras = GraphNode (getTcInfoExtras typeCheckNode)
 
         let tcInfo =
             node {
@@ -882,12 +882,10 @@ type IncrementalBuilderInitialState =
 
 // Stamp represent the real stamp of the file.
 // Notified indicates that there is pending file change.
-// LogicalStamp represent the stamp of the file that is used to calculate the project's logical timestamp.
 type Slot =
     {
         HasSignature: bool
         Stamp: DateTime
-        LogicalStamp: DateTime
         SyntaxTree: SyntaxTree
         Notified: bool
         BoundModel: BoundModel
@@ -904,7 +902,6 @@ type IncrementalBuilderState =
         finalizedBoundModel: GraphNode<(ILAssemblyRef * ProjectAssemblyDataResult * CheckedImplFile list option * BoundModel) * DateTime>
     }
     member this.stampedFileNames = this.slots |> List.map (fun s -> s.Stamp)
-    member this.logicalStampedFileNames = this.slots |> List.map (fun s -> s.LogicalStamp)
     member this.boundModels = this.slots |> List.map (fun s -> s.BoundModel)
 
 [<AutoOpen>]
@@ -944,7 +941,6 @@ module IncrementalBuilderStateHelpers =
             let update newStatus =
                 let boundModel = nextBoundModel prevBoundModel slot.SyntaxTree
                 { slot with
-                    LogicalStamp = slot.Stamp
                     Notified = false
                     BoundModel = boundModel },
                 (newStatus, boundModel)
@@ -1034,7 +1030,6 @@ type IncrementalBuilderState with
                     {
                         HasSignature = hasSignature
                         Stamp = DateTime.MinValue
-                        LogicalStamp = DateTime.MinValue
                         Notified = false
                         SyntaxTree = syntaxTree
                         BoundModel = model
@@ -1104,28 +1099,15 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             MaxTimeStampInDependencies state.stampedReferencedAssemblies -1
         else
             let t1 = MaxTimeStampInDependencies state.stampedReferencedAssemblies -1
-            let t2 = MaxTimeStampInDependencies state.logicalStampedFileNames fileSlot
+            let t2 = MaxTimeStampInDependencies state.stampedFileNames fileSlot
             max t1 t2
-
-    let semaphore = new SemaphoreSlim(1,1)
 
     let mutable currentState = state 
 
-    let setCurrentState state cache (ct: CancellationToken) =
-        node {
-            do! semaphore.WaitAsync(ct) |> NodeCode.AwaitTask
-            try
-                ct.ThrowIfCancellationRequested()
-                currentState <- computeStampedFileNames initialState state cache
-            finally
-                semaphore.Release() |> ignore
-        }
+    let setCurrentState state cache =
+        currentState <- computeStampedFileNames initialState state cache
 
-    let checkFileTimeStamps (cache: TimeStampCache) =
-        node {
-            let! ct = NodeCode.CancellationToken
-            do! setCurrentState currentState cache ct
-        }
+    let checkFileTimeStamps cache = setCurrentState currentState cache
 
     do IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBECreated)
 
@@ -1155,7 +1137,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
     member _.PopulatePartialCheckingResults () =
       node {
         let cache = TimeStampCache defaultTimeStamp // One per step
-        do! checkFileTimeStamps cache
+        checkFileTimeStamps cache
         let _ = currentState.finalizedBoundModel
         projectChecked.Trigger()
       }
@@ -1174,17 +1156,16 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
     member builder.TryGetCheckResultsBeforeFileInProject fileName =
         let cache = TimeStampCache defaultTimeStamp
-        let tmpState = computeStampedFileNames initialState currentState cache
-
+        checkFileTimeStamps cache
         let slotOfFile = builder.GetSlotOfFileName fileName
-        let boundModel, timestamp = getBeforeSlot tmpState slotOfFile
+        let boundModel, timestamp = getBeforeSlot currentState slotOfFile
         let projectTimeStamp = builder.GetLogicalTimeStampForFileInProject(fileName)
         PartialCheckResults (boundModel, timestamp, projectTimeStamp)
 
     member builder.GetCheckResultsBeforeSlotInProject slotOfFile =
       node {
         let cache = TimeStampCache defaultTimeStamp
-        do! checkFileTimeStamps cache
+        checkFileTimeStamps cache
         let! result = evalUpToTargetSlot currentState (slotOfFile - 1)
         match result with
         | Some (boundModel, timestamp) ->
@@ -1196,7 +1177,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
     member builder.GetFullCheckResultsBeforeSlotInProject slotOfFile =
       node {
         let cache = TimeStampCache defaultTimeStamp
-        do! checkFileTimeStamps cache
+        checkFileTimeStamps cache
         let! result = evalUpToTargetSlot currentState (slotOfFile - 1)
         match result with
         | Some (boundModel, timestamp) -> 
@@ -1231,7 +1212,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
     member builder.GetCheckResultsAndImplementationsForProject() =
       node {
         let cache = TimeStampCache(defaultTimeStamp)
-        do! checkFileTimeStamps cache
+        checkFileTimeStamps cache
         let! result = currentState.finalizedBoundModel.GetOrComputeValue()
         match result with
         | (ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, boundModel), timestamp ->
@@ -1254,12 +1235,12 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
     member _.GetLogicalTimeStampForFileInProject(slotOfFile: int) =
         let cache = TimeStampCache defaultTimeStamp
-        let tempState = computeStampedFileNames initialState currentState cache
-        computeProjectTimeStamp tempState slotOfFile
+        checkFileTimeStamps cache
+        computeProjectTimeStamp currentState slotOfFile
 
     member _.GetLogicalTimeStampForProject(cache) =
-        let tempState = computeStampedFileNames initialState currentState cache
-        computeProjectTimeStamp tempState -1
+        checkFileTimeStamps cache
+        computeProjectTimeStamp currentState -1
 
     member _.TryGetSlotOfFileName(fileName: string) =
         // Get the slot of the given file and force it to build.
@@ -1293,11 +1274,10 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         node {
             let slotOfFile = builder.GetSlotOfFileName fileName        
             let cache = TimeStampCache defaultTimeStamp
-            let! ct = NodeCode.CancellationToken
-            do! setCurrentState
-                    { currentState with 
-                        slots = currentState.slots |> List.updateAt slotOfFile (currentState.slots[slotOfFile].Notify timeStamp) }
-                    cache ct
+            setCurrentState
+                { currentState with 
+                    slots = currentState.slots |> List.updateAt slotOfFile (currentState.slots[slotOfFile].Notify timeStamp) }
+                cache
         }
 
     member _.SourceFiles = fileNames |> Seq.map (fun f -> f.Source.FilePath) |> List.ofSeq
