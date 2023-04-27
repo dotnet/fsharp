@@ -18,7 +18,7 @@ module HintTestFramework =
             Tooltip: string
         }
 
-    let private convert hint tooltip =
+    let private convert (hint, tooltip) =
         let content =
             hint.Parts |> Seq.map (fun hintPart -> hintPart.Text) |> String.concat ""
 
@@ -71,10 +71,8 @@ module HintTestFramework =
 
             let! sourceText = document.GetTextAsync ct |> Async.AwaitTask
             let! hints = HintService.getHintsForDocument sourceText document hintKinds "test" ct
-
-            return
-                hints
-                |> Seq.map (fun hint -> hint |> (getTooltip >> Async.RunSynchronously) |> convert hint)
+            let! tooltips = hints |> Seq.map getTooltip |> Async.Parallel
+            return tooltips |> Seq.zip hints |> Seq.map convert
         }
         |> Async.RunSynchronously
 
