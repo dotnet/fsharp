@@ -546,7 +546,7 @@ type internal TransparentCompiler
             return graph, filePairs
         }
 
-    let ComputeTcIntermediate (parsedInput: ParsedInput) bootstrapInfo prevTcInfo _key =
+    let ComputeTcIntermediate (parsedInput: ParsedInput, parseErrors) bootstrapInfo prevTcInfo _key =
         node {
             let input = parsedInput
             let fileName = input.FileName
@@ -586,9 +586,9 @@ type internal TransparentCompiler
                     tcEnvAtEndOfFile = tcEnvAtEndOfFile
                     moduleNamesDict = moduleNamesDict
                     latestCcuSigForFile = Some ccuSigForFile
-                    tcDiagnosticsRev = newErrors :: prevTcInfo.tcDiagnosticsRev
+                    tcDiagnosticsRev = [newErrors]
                     topAttribs = Some topAttribs
-                    tcDependencyFiles = fileName :: prevTcInfo.tcDependencyFiles
+                    tcDependencyFiles = [fileName]
                     sigNameOpt =
                         match input with
                         | ParsedInput.SigFile sigFile ->
@@ -597,11 +597,7 @@ type internal TransparentCompiler
                             None
                 }
             return tcInfo, sink, implFile, fileName
-
-            
         }
-
-    
 
     // Type check everything that is needed to check given file
     let ComputeTcPrior (file: FSharpFile) (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshot) userOpName _key: NodeCode<TcInfo> =
@@ -616,16 +612,13 @@ type internal TransparentCompiler
             let! parsedInputs =
                 files
                 |> Seq.map (fun f ->
-                    node {
-                        let! _diagnostics, parsedInput, _anyErrors, _sourceText = ParseFileCache.Get((f.Source.Key, f.IsLastCompiland, f.IsExe), ComputeParseFile f projectSnapshot bootstrapInfo userOpName)
-                        // TODO: Do we need to do something here when we get parse errors?
-                        return parsedInput
-                    })
+                    let key = f.Source.Key, f.IsLastCompiland, f.IsExe
+                    ParseFileCache.Get(key, ComputeParseFile f bootstrapInfo))
                 |> NodeCode.Parallel
 
             // compute dependency graph
             let graphKey = projectSnapshot.UpTo(file.Source.FileName).SourceFiles |> List.map (fun s -> s.Key)
-            let! graph, _filePairs = DependencyGraphForLastFileCache.Get(graphKey, ComputeDependencyGraphForLastFile parsedInputs bootstrapInfo.TcConfig)
+            let! graph, _filePairs = DependencyGraphForLastFileCache.Get(graphKey, ComputeDependencyGraphForLastFile (parsedInputs |> Seq.map fst) bootstrapInfo.TcConfig)
 
             // layers that can be processed in parallel
             let layers = Graph.leafSequence graph
@@ -642,7 +635,7 @@ type internal TransparentCompiler
                         |> NodeCode.Parallel
                     return! processLayer rest (combineResults state results)
             }
-            
+
             return bootstrapInfo.InitialTcInfo
         }
 
@@ -664,14 +657,30 @@ type internal TransparentCompiler
                 let priorSnapshot = projectSnapshot.UpTo fileName
                 let! tcInfo = TcPriorCache.Get(priorSnapshot.Key, ComputeTcPrior file bootstrapInfo priorSnapshot userOpName)
 
-                let! parseDiagnostics, parseTree, anyErrors, sourceText = ParseFileCache.Get((file.Source.Key, file.IsLastCompiland, file.IsExe), ComputeParseFile file projectSnapshot bootstrapInfo userOpName)
+                let! parseTree, parseDiagnostics = ParseFileCache.Get((file.Source.Key, file.IsLastCompiland, file.IsExe), ComputeParseFile file bootstrapInfo)
 
-                // TODO: check if we really need this in parse results
-                let dependencyFiles = [||]
+                let parseDiagnostics =
+                    DiagnosticHelpers.CreateDiagnostics(
+                        bootstrapInfo.TcConfig.diagnosticsOptions,
+                        false,
+                        fileName,
+                        parseDiagnostics,
+                        suggestNamesForErrors
+                    )
+
+                let diagnostics = [| yield! creationDiags; yield! parseDiagnostics |]
 
                 let parseResults =
-                    FSharpParseFileResults(parseDiagnostics, parseTree, anyErrors, dependencyFiles)
+                    FSharpParseFileResults(
+                        diagnostics = diagnostics,
+                        input = parseTree,
+                        parseHadErrors = (parseDiagnostics.Length > 0),
+                        // TODO: check if we really need this in parse results
+                        dependencyFiles = [||]
+                    )
 
+                // TODO: this might be replaced... probably should use intermediate TC result
+                let sourceText = Unchecked.defaultof<_>
                 let! checkResults =
                     FSharpCheckFileResults.CheckOneFile(
                         parseResults,
