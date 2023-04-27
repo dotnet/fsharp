@@ -17,15 +17,15 @@ open System.Diagnostics
 [<Export(typeof<IFSharpTaskListService>)>]
 type internal FSharpTaskListService [<ImportingConstructor>] () as this =
 
-    let getDefines (doc: Microsoft.CodeAnalysis.Document) =
+    let getDefinesAndLangVersion (doc: Microsoft.CodeAnalysis.Document) =
         asyncMaybe {
             let! _, _, parsingOptions, _ =
                 doc.GetFSharpCompilationOptionsAsync(nameof (FSharpTaskListService))
                 |> liftAsync
 
-            return CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions
+            return CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions, Some parsingOptions.LangVersionText
         }
-        |> Async.map (Option.defaultValue [])
+        |> Async.map (Option.defaultValue ([], None))
 
     let extractContractedComments (tokens: Tokenizer.SavedTokenInfo[]) =
         let granularTokens =
@@ -52,6 +52,7 @@ type internal FSharpTaskListService [<ImportingConstructor>] () as this =
             doc: Microsoft.CodeAnalysis.Document,
             sourceText: SourceText,
             defines: string list,
+            langVersion: string option,
             descriptors: (string * FSharpTaskListDescriptor)[],
             cancellationToken
         ) =
@@ -61,7 +62,7 @@ type internal FSharpTaskListService [<ImportingConstructor>] () as this =
         for line in sourceText.Lines do
 
             let contractedTokens =
-                Tokenizer.tokenizeLine (doc.Id, sourceText, line.Span.Start, doc.FilePath, defines, cancellationToken)
+                Tokenizer.tokenizeLine (doc.Id, sourceText, line.Span.Start, doc.FilePath, defines, langVersion, cancellationToken)
                 |> extractContractedComments
 
             for ct in contractedTokens do
@@ -89,6 +90,6 @@ type internal FSharpTaskListService [<ImportingConstructor>] () as this =
             backgroundTask {
                 let descriptors = desc |> Seq.map (fun d -> d.Text, d) |> Array.ofSeq
                 let! sourceText = doc.GetTextAsync(cancellationToken)
-                let! defines = doc |> getDefines
-                return this.GetTaskListItems(doc, sourceText, defines, descriptors, cancellationToken)
+                let! defines, langVersion = doc |> getDefinesAndLangVersion
+                return this.GetTaskListItems(doc, sourceText, defines, langVersion, descriptors, cancellationToken)
             }

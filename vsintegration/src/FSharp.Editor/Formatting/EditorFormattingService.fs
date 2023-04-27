@@ -50,7 +50,15 @@ type internal FSharpEditorFormattingService [<ImportingConstructor>] (settings: 
             let defines = CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions
 
             let tokens =
-                Tokenizer.tokenizeLine (documentId, sourceText, line.Start, filePath, defines, cancellationToken)
+                Tokenizer.tokenizeLine (
+                    documentId,
+                    sourceText,
+                    line.Start,
+                    filePath,
+                    defines,
+                    Some parsingOptions.LangVersionText,
+                    cancellationToken
+                )
 
             let! firstMeaningfulToken =
                 tokens

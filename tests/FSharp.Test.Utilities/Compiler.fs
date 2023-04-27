@@ -838,6 +838,7 @@ module rec Compiler =
                 fun (name: string) ->
                     Map.tryFind name project
                     |> Option.bind (Option.map SourceText.ofString)
+                    |> async.Return
 
             let sourceFiles = Array.map fst sourceFiles
             CompilerAssert.TypeCheckProject(options, sourceFiles, getSourceText)

@@ -526,10 +526,10 @@ type internal FSharpProjectOptionsManager(checker: FSharpChecker, workspace: Wor
     member _.ClearSingleFileOptionsCache(documentId) =
         reactor.ClearSingleFileOptionsCache(documentId)
 
-    /// Get compilation defines relevant for syntax processing.
+    /// Get compilation defines and language version relevant for syntax processing.
     /// Quicker then TryGetOptionsForDocumentOrProject as it doesn't need to recompute the exact project
     /// options for a script.
-    member _.GetCompilationDefinesForEditingDocument(document: Document) =
+    member _.GetCompilationDefinesAndLangVersionForEditingDocument(document: Document) =
         let parsingOptions =
             match reactor.TryGetCachedOptionsByProjectId(document.Project.Id) with
             | Some (_, parsingOptions, _) -> parsingOptions
@@ -539,7 +539,7 @@ type internal FSharpProjectOptionsManager(checker: FSharpChecker, workspace: Wor
                     IsInteractive = CompilerEnvironment.IsScriptFile document.Name
                 }
 
-        CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions
+        CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions, parsingOptions.LangVersionText
 
     member _.TryGetOptionsByProject(project) =
         reactor.TryGetOptionsByProjectAsync(project)
