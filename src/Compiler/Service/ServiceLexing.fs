@@ -513,7 +513,7 @@ module internal LexerStateEncoding =
     let ifdefstackNumBits = 24 // 0 means if, 1 means else
     let stringKindBits = 3
     let nestingBits = 12
-    let dlenBits = 3
+    let delimLenBits = 3
 
     let _ =
         assert
@@ -524,7 +524,7 @@ module internal LexerStateEncoding =
              + ifdefstackNumBits
              + stringKindBits
              + nestingBits
-             + dlenBits
+             + delimLenBits
              <= 64)
 
     let lexstateStart = 0
@@ -550,7 +550,7 @@ module internal LexerStateEncoding =
         + ifdefstackNumBits
         + stringKindBits
 
-    let dlenStart =
+    let delimLenStart =
         lexstateNumBits
         + ncommentsNumBits
         + hardwhiteNumBits
@@ -566,7 +566,7 @@ module internal LexerStateEncoding =
     let ifdefstackMask = Bits.mask64 ifdefstackStart ifdefstackNumBits
     let stringKindMask = Bits.mask64 stringKindStart stringKindBits
     let nestingMask = Bits.mask64 nestingStart nestingBits
-    let dlenMask = Bits.mask64 dlenStart dlenBits
+    let delimLenMask = Bits.mask64 delimLenStart delimLenBits
 
     let bitOfBool b = if b then 1 else 0
     let boolOfBit n = (n = 1L)
@@ -638,7 +638,7 @@ module internal LexerStateEncoding =
             ||| ((kind1 <<< 2) &&& 0b000000001100)
             ||| ((kind2 <<< 0) &&& 0b000000000011)
 
-        let delimLen = min delimLen (Bits.pown32 dlenBits)
+        let delimLen = min delimLen (Bits.pown32 delimLenBits)
 
         let bits =
             lexStateOfColorState colorState
@@ -648,7 +648,7 @@ module internal LexerStateEncoding =
             ||| ((int64 ifdefStackBits <<< ifdefstackStart) &&& ifdefstackMask)
             ||| ((int64 stringKindValue <<< stringKindStart) &&& stringKindMask)
             ||| ((int64 nestingValue <<< nestingStart) &&& nestingMask)
-            ||| ((int64 delimLen <<< dlenStart) &&& dlenMask)
+            ||| ((int64 delimLen <<< delimLenStart) &&& delimLenMask)
 
         {
             PosBits = b.Encoding
@@ -706,7 +706,7 @@ module internal LexerStateEncoding =
 
             nest
 
-        let delimLen = int32 ((bits &&& dlenMask) >>> dlenStart)
+        let delimLen = int32 ((bits &&& delimLenMask) >>> delimLenStart)
 
         (colorState, ncomments, pos, ifDefs, hardwhite, stringKind, stringNest, delimLen)
 

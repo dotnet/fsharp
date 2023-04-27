@@ -253,8 +253,8 @@
         <note />
       </trans-unit>
       <trans-unit id="featureExtendedStringInterpolation">
-        <source>Extended string interpolation similar to C# raw strings.</source>
-        <target state="new">Extended string interpolation similar to C# raw strings.</target>
+        <source>Extended string interpolation similar to C# raw string literals.</source>
+        <target state="new">Extended string interpolation similar to C# raw string literals.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">

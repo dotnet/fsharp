@@ -2396,7 +2396,7 @@ module internal ParseAndCheckFile =
                     let braceOffset =
                         match tok with
                         | INTERP_STRING_BEGIN_PART (_, SynStringKind.TripleQuote, (LexerContinuation.Token (_, (_, _, dl, _) :: _))) ->
-                            max 0 (dl - 1)
+                            dl - 1
                         | _ -> 0
 
                     let m = lexbuf.LexemeRange
