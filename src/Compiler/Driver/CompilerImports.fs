@@ -312,7 +312,7 @@ let EncodeSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, generat
     else
         [], []
 
-let EncodeOptimizationData (tcConfig: TcConfig, tcGlobals, outfile, exportRemapping, data, isIncrementalBuild) =
+let EncodeOptimizationData (tcGlobals, tcConfig: TcConfig, outfile, exportRemapping, data, isIncrementalBuild) =
     if tcConfig.GenerateOptimizationData then
         let data = map2Of2 (Optimizer.RemapOptimizationInfo tcGlobals exportRemapping) data
 

@@ -73,8 +73,8 @@ type ValRef with
 #if !NO_TYPEPROVIDERS
 /// Get the return type of a provided method, where 'void' is returned as 'None'
 let GetCompiledReturnTyOfProvidedMethodInfo amap m (mi: Tainted<ProvidedMethodBase>) =
-    let returnType = 
-        if mi.PUntaint((fun mi -> mi.IsConstructor), m) then  
+    let returnType =
+        if mi.PUntaint((fun mi -> mi.IsConstructor), m) then
             mi.PApply((fun mi -> nonNull<ProvidedType> mi.DeclaringType), m)
         else mi.Coerce<ProvidedMethodInfo>(m).PApply((fun mi -> mi.ReturnType), m)
     let ty = ImportProvidedType amap m returnType
@@ -407,8 +407,8 @@ let ArbitraryMethodInfoOfPropertyInfo (pi: Tainted<ProvidedPropertyInfo>) m =
         GetAndSanityCheckProviderMethod m pi (fun pi -> pi.GetGetMethod()) FSComp.SR.etPropertyCanReadButHasNoGetter
     elif pi.PUntaint((fun pi -> pi.CanWrite), m) then
         GetAndSanityCheckProviderMethod m pi (fun pi -> pi.GetSetMethod()) FSComp.SR.etPropertyCanWriteButHasNoSetter
-    else 
-        error(Error(FSComp.SR.etPropertyNeedsCanWriteOrCanRead(pi.PUntaint((fun mi -> mi.Name), m), pi.PUntaint((fun mi -> (nonNull<ProvidedType> mi.DeclaringType).Name), m)), m))   
+    else
+        error(Error(FSComp.SR.etPropertyNeedsCanWriteOrCanRead(pi.PUntaint((fun mi -> mi.Name), m), pi.PUntaint((fun mi -> (nonNull<ProvidedType> mi.DeclaringType).Name), m)), m))
 
 #endif
 
@@ -652,7 +652,7 @@ type MethInfo =
         | FSMeth(_, ty, _, _) -> ty
         | DefaultStructCtor(_, ty) -> ty
 #if !NO_TYPEPROVIDERS
-        | ProvidedMeth(amap, mi, _, m) -> 
+        | ProvidedMeth(amap, mi, _, m) ->
               ImportProvidedType amap m (mi.PApply((fun mi -> nonNull<ProvidedType> mi.DeclaringType), m))
 #endif
 
@@ -1140,7 +1140,7 @@ type MethInfo =
             else []
         | DefaultStructCtor _ -> []
 #if !NO_TYPEPROVIDERS
-        | ProvidedMeth(amap, mi, _, m) -> 
+        | ProvidedMeth(amap, mi, _, m) ->
             if x.IsInstance then [ ImportProvidedType amap m (mi.PApply((fun mi -> nonNull<ProvidedType> mi.DeclaringType), m)) ] // find the type of the 'this' argument
             else []
 #endif
@@ -1264,8 +1264,8 @@ type MethInfo =
                     let formalRetTy = x.GetCompiledReturnType(amap, m, formalMethTyparTys)
                     // GENERIC TYPE PROVIDERS: formal types should be  generated here, not the actual types
                     // For non-generic type providers there is no difference
-                    let formalParams = 
-                        [ [ for p in mi.PApplyArray((fun mi -> mi.GetParameters()), "GetParameters", m) do 
+                    let formalParams =
+                        [ [ for p in mi.PApplyArray((fun mi -> mi.GetParameters()), "GetParameters", m) do
                                 let paramName = p.PUntaint((fun p -> match p.Name with "" -> None | s -> Some s), m)
                                 let paramTy = ImportProvidedType amap m (p.PApply((fun p -> p.ParameterType), m))
                                 let isIn, isOut, isOptional = p.PUntaint((fun p -> p.IsIn, p.IsOut, p.IsOptional), m)

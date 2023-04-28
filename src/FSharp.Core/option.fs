@@ -152,7 +152,7 @@ module Option =
         else
             None
 
-#if BUILDING_WITH_LKG || NO_NULLCHECKING_FEATURE
+#if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
     [<CompiledName("OfObj")>]
     let inline ofObj value =
         match value with
@@ -329,7 +329,7 @@ module ValueOption =
         else
             ValueNone
 
-#if BUILDING_WITH_LKG || NO_NULLCHECKING_FEATURE
+#if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
     [<CompiledName("OfObj")>]
     let ofObj value =
         match value with

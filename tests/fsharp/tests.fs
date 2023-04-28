@@ -39,7 +39,7 @@ module CoreTests =
 
 #if !NETCOREAPP
     [<Test>]
-    let ``subtype-langversion-50-checknulls`` () =
+    let ``subtype-langversion-preview-checknulls`` () =
         let cfg = testConfig "core/subtype"
 
         use testOkFile = fileguard cfg "test.ok"
@@ -51,7 +51,7 @@ module CoreTests =
         testOkFile.CheckExists()
 
     [<Test>]
-    let ``subtype-langversion-50-no-checknulls`` () =
+    let ``subtype-langversion-preview-no-checknulls`` () =
         let cfg = testConfig "core/subtype"
 
         use testOkFile = fileguard cfg "test.ok"
@@ -63,7 +63,7 @@ module CoreTests =
         testOkFile.CheckExists()
 
     [<Test>]
-    let ``subtype-langversion-45`` () =
+    let ``subtype-langversion-46`` () =
         let cfg = testConfig "core/subtype"
 
         use testOkFile = fileguard cfg "test.ok"
@@ -107,9 +107,12 @@ module CoreTests =
 
     [<Test>]
     let ``quotes-FSI-BASIC`` () = singleTestBuildAndRun "core/quotes" FSI
+#endif
 
-    // This test has hardcoded expectations about current synchronization context
-    // Will be moved out of FsharpSuite.Tests in a later phase for desktop framework
+
+#if !NETCOREAPP
+// This test has hardcoded expectations about current synchronization context
+// Will be moved out of FsharpSuite.Tests in a later phase for desktop framework
     [<Test>]
     let ``control-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/control" FSC_OPTIMIZED
 
@@ -445,7 +448,7 @@ module CoreTests =
     //    // "%FSI%" %fsi_flags%  --shadowcopyreferences- < test1.fsx
     //    [<FSharpSuiteTestCase("core/fsi-shadowcopy", "--shadowcopyreferences-")
     //    let ``shadowcopy disabled`` (flags: string) =
-    //        let cfg = testConfig ()
+    //        let cfg = testConfig' ()
     //
     //
     //
@@ -466,7 +469,7 @@ module CoreTests =
     //    // "%FSI%" %fsi_flags%  --shadowcopyreferences  < test2.fsx
     //    [<FSharpSuiteTestCase("core/fsi-shadowcopy", "--shadowcopyreferences")
     //    let ``shadowcopy enabled`` (flags: string) =
-    //        let cfg = testConfig ()
+    //        let cfg = testConfig' ()
     //
     //
     //
@@ -1097,7 +1100,7 @@ module CoreTests =
 
  
     [<Test>]
-    let ``libtest-langversion-45`` () =
+    let ``libtest-langversion-46`` () =
         let cfg = testConfig "core/libtest"
 
         use testOkFile = fileguard cfg "test.ok"

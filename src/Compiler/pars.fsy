@@ -2314,7 +2314,7 @@ typeConstraint:
      { SynTypeConstraint.WhereTyparIsValueType($1, lhs parseState) }
 
   | typar COLON IDENT STRUCT
-     { if $3 <> "not" then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier($3 + "1"))
+     { if $3 <> "not" then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier($3 + " (1)"))
        SynTypeConstraint.WhereTyparIsReferenceType($1, lhs parseState) }
 
   | typar COLON NULL
@@ -2323,12 +2323,11 @@ typeConstraint:
 ** TODO: This rule is not triggering, faking it with __notnull for now
 
   | typar COLON IDENT NULL
-      { if $3 <> "not" then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier($3 + "2"))  
+      { if $3 <> "not" then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier($3 + " (2)"))  
         SynTypeConstraint.WhereTyparNotSupportsNull($1, lhs parseState) }
 */
   | typar COLON NOTNULL__
-      { //if $3 <> "not" then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier($3 + "2"))  
-        SynTypeConstraint.WhereTyparNotSupportsNull($1, lhs parseState) }
+      { SynTypeConstraint.WhereTyparNotSupportsNull($1, lhs parseState) }
 
   | typar COLON LPAREN classMemberSpfn rparen
      { let tp = $1
@@ -2348,14 +2347,14 @@ typeConstraint:
        | "enum" ->
            let _ltm, _gtm, args, _commas, mWhole = $4
            SynTypeConstraint.WhereTyparIsEnum($1, args, unionRanges $1.Range mWhole)
-       | nm -> raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier(nm + "3")) }
+       | nm -> raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier(nm + " (3)")) }
 
   | typar COLON IDENT
      { match $3 with
        | "comparison" -> SynTypeConstraint.WhereTyparIsComparable($1, lhs parseState)
        | "equality" -> SynTypeConstraint.WhereTyparIsEquatable($1, lhs parseState)
        | "unmanaged" -> SynTypeConstraint.WhereTyparIsUnmanaged($1, lhs parseState)
-       | nm -> raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier(nm + "4")) }
+       | nm -> raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier(nm + " (4)")) }
 
   | appType
      { SynTypeConstraint.WhereSelfConstrained($1, lhs parseState) }
@@ -2836,16 +2835,21 @@ cType:
      { let m = lhs parseState
        SynType.App(SynType.LongIdent(SynLongIdent([ident("nativeptr", m)], [], [ Some(IdentTrivia.OriginalNotation "*") ])), None, [$1], [], None, true, m) }
 
+/*
   | cType QMARK
+    { SynType.WithNull($1, false, lhs parseState) }
+*/
+  | cType WITHNULL__
     { SynType.WithNull($1, false, lhs parseState) }
 
   | cType AMP
      { let m = lhs parseState
-       SynType.App(SynType.LongIdent(SynLongIdent([ident("byref", m)], [], [ Some (IdentTrivia.OriginalNotation "&") ])), None, [$1], [], None, true, m) }
+       SynType.App(SynType.LongIdent(SynLongIdent([ident("byref", m)], [], [ Some(IdentTrivia.OriginalNotation "&") ])), None, [$1], [], None, true, m) }
 
   | VOID STAR
      { let m = lhs parseState
        SynType.App(SynType.LongIdent(SynLongIdent([ident("nativeint", m)], [], [ Some(IdentTrivia.OriginalNotation "void*") ])), None, [], [], None, true, m) }
+
 
 /* A return type in an 'extern' DllImport function definition */
 cRetType:

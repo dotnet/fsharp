@@ -164,9 +164,9 @@ let rec remapTypeAux (tyenv: Remap) (ty: TType) =
       let res = instTyparRef tyenv.tpinst ty tp
       addNullnessToTy nullness res
 
-  | TType_app (tcref, tinst, nullness) as ty -> 
+  | TType_app (tcref, tinst, flags) as ty -> 
       match tyenv.tyconRefRemap.TryFind tcref with 
-      | Some tcrefR -> TType_app (tcrefR, remapTypesAux tyenv tinst, nullness)
+      | Some tcrefR -> TType_app (tcrefR, remapTypesAux tyenv tinst, flags)
       | None -> 
           match tinst with 
           | [] -> ty  // optimization to avoid re-allocation of TType_app node in the common case 
@@ -174,7 +174,7 @@ let rec remapTypeAux (tyenv: Remap) (ty: TType) =
               // avoid reallocation on idempotent 
               let tinstR = remapTypesAux tyenv tinst
               if tinst === tinstR then ty else 
-              TType_app (tcref, tinstR, nullness)
+              TType_app (tcref, tinstR, flags)
 
   | TType_ucase (UnionCaseRef(tcref, n), tinst) -> 
       match tyenv.tyconRefRemap.TryFind tcref with 
@@ -193,11 +193,11 @@ let rec remapTypeAux (tyenv: Remap) (ty: TType) =
       if tupInfo === tupInfoR && l === lR then ty else  
       TType_tuple (tupInfoR, lR)
 
-  | TType_fun (domainTy, rangeTy, nullness) as ty -> 
+  | TType_fun (domainTy, rangeTy, flags) as ty -> 
       let domainTyR = remapTypeAux tyenv domainTy
-      let rangeTyR = remapTypeAux tyenv rangeTy
-      if domainTy === domainTyR && rangeTy === rangeTyR then ty else
-      TType_fun (domainTyR, rangeTyR, nullness)
+      let retTyR = remapTypeAux tyenv rangeTy
+      if domainTy === domainTyR && rangeTy === retTyR then ty else
+      TType_fun (domainTyR, retTyR, flags)
 
   | TType_forall (tps, ty) -> 
       let tpsR, tyenv = copyAndRemapAndBindTypars tyenv tps

@@ -906,7 +906,7 @@ let rec GetMeasureVarGcdInType v ty =
     match stripTyparEqns ty with 
     | TType_ucase(_, l)
     | TType_app (_, l, _) 
-    | TType_anon (_, l)
+    | TType_anon (_,l)
     | TType_tuple (_, l) -> GetMeasureVarGcdInTypes v l
 
     | TType_fun (domainTy, rangeTy, _) -> GcdRational (GetMeasureVarGcdInType v domainTy) (GetMeasureVarGcdInType v rangeTy)
@@ -1311,7 +1311,7 @@ and SolveTypeEqualsType (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTra
 
     | TType_app _, TType_app _ ->  localAbortD
 
-    | TType_tuple (tupInfo1, l1), TType_tuple (tupInfo2, l2)      -> 
+    | TType_tuple (tupInfo1, l1), TType_tuple (tupInfo2, l2) -> 
         if evalTupInfoIsStruct tupInfo1 <> evalTupInfoIsStruct tupInfo2 then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m, m2)) else
         SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2
 
@@ -1327,7 +1327,7 @@ and SolveTypeEqualsType (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTra
         SolveAnonInfoEqualsAnonInfo csenv m2 anonInfo1 anonInfo2 ++ (fun () -> 
         SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2)
 
-    | TType_forall(tps1, bodyTy1), TType_forall(tps2, bodyTy2) ->
+    | TType_forall(tps1, bodyTy1), TType_forall(tps2, bodyTy2) -> 
         if tps1.Length <> tps2.Length then localAbortD else
         let aenv = aenv.BindEquivTypars tps1 tps2 
         let csenv = {csenv with EquivEnv = aenv }
@@ -1339,7 +1339,7 @@ and SolveTypeEqualsType (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTra
 
     | _  -> localAbortD
 
-and SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace ty1 ty2 = 
+and SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace ty1 ty2 =
     SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace None ty1 ty2
 
 and private SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln ty1 ty2 = 
@@ -1364,7 +1364,7 @@ and SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln origl1 origl2 =
                ErrorD(ConstraintSolverTupleDiffLengths(csenv.DisplayEnv, csenv.eContextInfo, origl1, origl2, csenv.m, m2)) 
        loop origl1 origl2
 
-and SolveFunTypeEqn csenv ndeep m2 trace cxsln domainTy1 domainTy2 rangeTy1 rangeTy2= trackErrors {
+and SolveFunTypeEqn csenv ndeep m2 trace cxsln domainTy1 domainTy2 rangeTy1 rangeTy2 = trackErrors {
     // TODO NULLNESS: consider whether flipping the actual and expected in argument position
     // causes other problems, e.g. better/worse diagnostics
     do! SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln domainTy2 domainTy1

@@ -2393,7 +2393,7 @@ namespace Microsoft.FSharp.Core
         // and only request AllowLeadingSign.
 
         let isOXB c = 
-            let c = Char.ToLowerInvariant c
+            let c = System.Char.ToLowerInvariant c
             charEq c 'x' || charEq c 'o' || charEq c 'b'
 
         let is0OXB (s:string) p l = 
@@ -2401,7 +2401,7 @@ namespace Microsoft.FSharp.Core
 
         let get0OXB (s:string) (p:byref<int>)  l = 
             if is0OXB s p l
-            then let r = Char.ToLowerInvariant(s.Chars(p+1)) in p <- p + 2; r
+            then let r = System.Char.ToLowerInvariant(s.Chars(p+1)) in p <- p + 2; r
             else 'd' 
 
         let getSign32 (s:string) (p:byref<int>) l = 
@@ -2426,8 +2426,8 @@ namespace Microsoft.FSharp.Core
             | s -> s.Replace("_", "")
 
         let ParseUInt32 (s:string) = 
-            if Object.ReferenceEquals(s,null) then
-                raise( new ArgumentNullException("s") )
+            if System.Object.ReferenceEquals(s,null) then
+                raise( new System.ArgumentNullException("s") )
             let s = removeUnderscores (s.Trim())
             let l = s.Length 
             let mutable p = 0 
@@ -2443,8 +2443,8 @@ namespace Microsoft.FSharp.Core
         let inline int64OfUInt64 (x:uint64) = (# "" x  : int64 #)
 
         let ParseInt32 (s:string) = 
-            if Object.ReferenceEquals(s,null) then
-                raise( new ArgumentNullException("s") )
+            if System.Object.ReferenceEquals(s,null) then
+                raise( new System.ArgumentNullException("s") )
             let s = removeUnderscores (s.Trim())
             let l = s.Length 
             let mutable p = 0 
@@ -2458,8 +2458,8 @@ namespace Microsoft.FSharp.Core
             | _ -> Int32.Parse(s, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture)
 
         let ParseInt64 (s:string) = 
-            if Object.ReferenceEquals(s,null) then
-                raise( new ArgumentNullException("s") )
+            if System.Object.ReferenceEquals(s,null) then
+                raise( new System.ArgumentNullException("s") )
             let s = removeUnderscores (s.Trim())
             let l = s.Length 
             let mutable p = 0 
@@ -2473,8 +2473,8 @@ namespace Microsoft.FSharp.Core
             | _ -> Int64.Parse(s, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture)
 
         let ParseUInt64     (s:string) : uint64 = 
-            if Object.ReferenceEquals(s,null) then
-                raise( new ArgumentNullException("s") )
+            if System.Object.ReferenceEquals(s,null) then
+                raise( new System.ArgumentNullException("s") )
             let s = removeUnderscores (s.Trim())
             let l = s.Length 
             let mutable p = 0 
@@ -4233,13 +4233,13 @@ namespace Microsoft.FSharp.Core
             | null -> false 
             | _ -> true
 
-#if !BUILDING_WITH_LKG && !NO_NULLCHECKING_FEATURE
+#if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
 
         [<CompiledName("IsNullV")>]
         let inline isNullV (value : Nullable<'T>) = not value.HasValue
 
         [<CompiledName("NonNull")>]
-        let inline nonNull (value : 'T? when 'T : not struct and 'T : __notnull) = 
+        let inline nonNull (value : 'T __withnull when 'T : not struct and 'T : __notnull) = 
             match box value with 
             | null -> raise (NullReferenceException()) 
             | _ -> (# "" value : 'T #)
@@ -4252,7 +4252,7 @@ namespace Microsoft.FSharp.Core
                 raise (NullReferenceException())
 
         [<CompiledName("NullMatchPattern")>]
-        let inline (|Null|NonNull|) (value : 'T? when 'T : __notnull) = 
+        let inline (|Null|NonNull|) (value : 'T __withnull when 'T : __notnull) = 
             match value with 
             | null -> Null () 
             | _ -> NonNull (# "" value : 'T #)
@@ -4263,7 +4263,7 @@ namespace Microsoft.FSharp.Core
             else NullV ()
 
         [<CompiledName("NonNullQuickPattern")>]
-        let inline (|NonNullQuick|) (value : 'T? when 'T : __notnull) =
+        let inline (|NonNullQuick|) (value : 'T __withnull when 'T : __notnull) =
             match box value with 
             | null -> raise (NullReferenceException()) 
             | _ -> (# "" value : 'T #)
@@ -4274,13 +4274,19 @@ namespace Microsoft.FSharp.Core
             else raise (NullReferenceException()) 
 
         [<CompiledName("WithNull")>]
-        let inline withNull (value : 'T when 'T : not struct) = (# "" value : 'T? #)
+        let inline withNull (value : 'T when 'T : not struct) = (# "" value : 'T __withnull #)
 
         [<CompiledName("WithNullV")>]
         let inline withNullV (value : 'T) : Nullable<'T> = Nullable<'T>(value)
 
         [<CompiledName("NullV")>]
         let inline nullV<'T when 'T : struct and 'T : (new : unit -> 'T) and 'T :> ValueType>  = Nullable<'T>()
+
+        [<CompiledName("NullArgCheck")>]
+        let inline nullArgCheck (argumentName:string) (value: 'T __withnull when 'T : not struct and 'T : __notnull) = 
+            match value with 
+            | null -> raise (new ArgumentNullException(argumentName))        
+            | _ ->  (# "" value : 'T #)
 #endif
 
         [<CompiledName("Raise")>]
@@ -4323,14 +4329,6 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("NullArg")>]
         let inline nullArg (argumentName:string) = 
             raise (new ArgumentNullException(argumentName))        
-
-#if !BUILDING_WITH_LKG && !NO_NULLCHECKING_FEATURE
-        [<CompiledName("NullArgCheck")>]
-        let inline nullArgCheck (argumentName:string) (value: 'T? when 'T : not struct and 'T : __notnull) = 
-            match value with 
-            | null -> raise (new ArgumentNullException(argumentName))        
-            | _ ->  (# "" value : 'T #)
-#endif
 
         [<CompiledName("InvalidOp")>]
         let inline invalidOp message = raise (InvalidOperationException(message))
@@ -4378,20 +4376,14 @@ namespace Microsoft.FSharp.Core
         let (^) (s1: string) (s2: string) = String.Concat(s1, s2)
 
         [<CompiledName("DefaultArg")>]
-        let defaultArg arg defaultValue = 
-            match arg with None -> defaultValue | Some v -> v
+        let defaultArg arg defaultValue = match arg with None -> defaultValue | Some v -> v
         
         [<CompiledName("DefaultValueArg")>]
-        let defaultValueArg arg defaultValue = 
-            match arg with ValueNone -> defaultValue | ValueSome v -> v
+        let defaultValueArg arg defaultValue = match arg with ValueNone -> defaultValue | ValueSome v -> v
 
-        [<CompiledName("DefaultIfNone")>]
-        let inline defaultIfNone defaultValue arg = 
-            match arg with None -> defaultValue | Some v -> v
-        
-#if !BUILDING_WITH_LKG && !NO_NULLCHECKING_FEATURE
+#if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
         [<CompiledName("DefaultIfNull")>]
-        let inline defaultIfNull defaultValue (arg: 'T? when 'T : not struct and 'T : __notnull) = 
+        let inline defaultIfNull defaultValue (arg: 'T __withnull when 'T : not struct and 'T : __notnull) = 
             match arg with null -> defaultValue | _ -> (# "" arg : 'T #)
         
         [<CompiledName("DefaultIfNullV")>]

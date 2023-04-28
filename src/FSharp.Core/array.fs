@@ -831,7 +831,7 @@ module Array =
 
             count
 
-#if BUILDING_WITH_LKG || NO_NULLCHECKING_FEATURE
+#if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
         let private createMask<'a>
             (f: 'a -> bool)
             (src: array<'a>)
@@ -842,7 +842,7 @@ module Array =
         let private createMask<'a>
             (f: 'a -> bool)
             (src: array<'a>)
-            (maskArrayOut: byref<array<uint32>?>)
+            (maskArrayOut: byref<array<uint32> __withnull>)
             (leftoverMaskOut: byref<uint32>)
             =
 #endif
@@ -1035,10 +1035,10 @@ module Array =
 
             dstIdx
 
-#if BUILDING_WITH_LKG || NO_NULLCHECKING_FEATURE
+#if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
         let private filterViaMask (maskArray: array<uint32>) (leftoverMask: uint32) (count: int) (src: array<_>) =
 #else
-        let private filterViaMask (maskArray: array<uint32>?) (leftoverMask: uint32) (count: int) (src: array<_>) =
+        let private filterViaMask (maskArray: array<uint32> __withnull) (leftoverMask: uint32) (count: int) (src: array<_>) =
 #endif
             let dst = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count
 

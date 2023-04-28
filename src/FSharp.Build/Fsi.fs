@@ -326,7 +326,7 @@ type public Fsi() as this =
             let host = box fsi.HostObject
 
             match host with
-            | Null -> base.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
+            | null -> base.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
             | _ ->
                 let invokeCompiler baseCallDelegate =
                     try

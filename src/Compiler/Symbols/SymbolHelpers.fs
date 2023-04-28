@@ -524,13 +524,13 @@ module internal SymbolHelpers =
                 match tryTcrefOfAppTy g ty with
                 | ValueSome tcr1 ->
                     g.suppressed_types 
-                    |> List.exists (fun supp -> 
+                    |> List.exists (fun supp ->
                         let generalizedSupp = generalizedTyconRef g supp
                         // check the display name is precisely the one we're suppressing
                         match tryTcrefOfAppTy g generalizedSupp with
                         | ValueSome tcr2 ->
                             it = supp.DisplayName &&
-                            // check if they are the same logical type (after removing all abbreviations)
+                            // check if they are the same logical type (after removing all abbreviations) 
                             tyconRefEq g tcr1 tcr2
                         | _ -> false) 
                 | _ -> false

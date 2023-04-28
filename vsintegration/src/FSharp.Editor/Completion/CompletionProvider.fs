@@ -14,7 +14,6 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Completion
 
 open Microsoft.VisualStudio.Shell
-open Microsoft.VisualStudio.FSharp.Editor.Extensions
 
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices

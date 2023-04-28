@@ -362,12 +362,12 @@ let rec ImportProvidedType (env: ImportMap) (m: range) (* (tinst: TypeInst) *) (
                 if tp.Kind = TyparKind.Measure then  
                     let rec conv ty = 
                         match ty with 
-                        | TType_app (tcref,[ty1;ty2], _) when tyconRefEq g tcref g.measureproduct_tcr -> Measure.Prod (conv ty1, conv ty2)
-                        | TType_app (tcref,[ty1], _) when tyconRefEq g tcref g.measureinverse_tcr -> Measure.Inv (conv ty1)
-                        | TType_app (tcref,[], _) when tyconRefEq g tcref g.measureone_tcr -> Measure.One 
-                        | TType_app (tcref,[], _) when tcref.TypeOrMeasureKind = TyparKind.Measure -> Measure.Const tcref
+                        | TType_app (tcref, [ty1;ty2], _) when tyconRefEq g tcref g.measureproduct_tcr -> Measure.Prod (conv ty1, conv ty2)
+                        | TType_app (tcref, [ty1], _) when tyconRefEq g tcref g.measureinverse_tcr -> Measure.Inv (conv ty1)
+                        | TType_app (tcref, [], _) when tyconRefEq g tcref g.measureone_tcr -> Measure.One 
+                        | TType_app (tcref, [], _) when tcref.TypeOrMeasureKind = TyparKind.Measure -> Measure.Const tcref
                         | TType_app (tcref, _, _) -> 
-                            errorR(Error(FSComp.SR.impInvalidMeasureArgument1(tcref.CompiledName, tp.Name),m))
+                            errorR(Error(FSComp.SR.impInvalidMeasureArgument1(tcref.CompiledName, tp.Name), m))
                             Measure.One
                         | _ -> 
                             errorR(Error(FSComp.SR.impInvalidMeasureArgument2(tp.Name), m))
@@ -395,7 +395,7 @@ let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: range) (mbase: Ta
 
                 let declaringGenericTypeDefn =  
                     if declaringType.PUntaint((fun t -> t.IsGenericType), m) then 
-                        declaringType.PApply((fun t -> t.GetGenericTypeDefinition()), m)
+                        declaringType.PApply((fun declaringType -> declaringType.GetGenericTypeDefinition()), m)
                     else 
                         declaringType
 

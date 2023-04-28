@@ -631,6 +631,12 @@ let u_option f st =
     | 1 -> Some (f st)
     | n -> ufailwith st ("u_option: found number " + string n)
 
+// Boobytrap an OSGN node with a force of a lazy load of a bunch of pickled data
+#if LAZY_UNPICKLE
+let wire (x: osgn<_>) (res: Lazy<_>) =
+    x.osgnTripWire <- Some(fun () -> res.Force() |> ignore)
+#endif
+
 let u_lazy u st =
 
     // Read the number of bytes in the record
@@ -643,8 +649,25 @@ let u_lazy u st =
     let ovalsIdx1   = prim_u_int32 st // fixupPos6
     let ovalsIdx2   = prim_u_int32 st // fixupPos7
 
+#if LAZY_UNPICKLE
+    // Record the position in the bytestream to use when forcing the read of the data
+    let idx1 = st.is.Position
+    // Skip the length of data
+    st.is.Skip len
+    // This is the lazy computation that wil force the unpickling of the term.
+    // This term must contain OSGN definitions of the given nodes.
+    let res =
+        lazy (let st = { st with is = st.is.CloneAndSeek idx1 }
+              u st)
+    // Force the reading of the data as a "tripwire" for each of the OSGN thunks
+    for i = otyconsIdx1 to otyconsIdx2-1 do wire (st.ientities.Get i) res done
+    for i = ovalsIdx1   to ovalsIdx2-1   do wire (st.ivals.Get i)   res done
+    for i = otyparsIdx1 to otyparsIdx2-1 do wire (st.itypars.Get i) res done
+    res
+#else
     ignore (len, otyconsIdx1, otyconsIdx2, otyparsIdx1, otyparsIdx2, ovalsIdx1, ovalsIdx2)
     Lazy.CreateFromValue(u st)
+#endif
 
 
 let u_hole () =
@@ -722,7 +745,7 @@ let p_nleref x st = p_int (encode_nleref st.occus st.ostrings st.onlerefs st.osc
 // Simple types are types like "int", represented as TType(Ref_nonlocal(..., "int"), []).
 // A huge number of these occur in pickled F# data, so make them unique.
 //
-// TODO NULLNESS - the simpletyp table now holds KnownAmbivalentToNull by default, is this the right default?
+// NULLNESS - the simpletyp table now holds KnownAmbivalentToNull by default.
 // For old assemblies it is, if we give those assemblies the ambivalent interpretation.
 // For new asemblies compiled with null-checking on it isn't, if the default is to give
 // those the KnownWithoutNull interpretation by default.
@@ -827,17 +850,17 @@ let check (ilscope: ILScopeRef) (inMap: NodeInTable<_,_>) =
 let unpickleObjWithDanglingCcus file viewedScope (ilModule: ILModuleDef option) u (phase2bytes: ReadOnlyByteMemory) (phase1bytesB: ReadOnlyByteMemory) =
     let st2 =
        { is = ByteStream.FromBytes (phase2bytes, 0, phase2bytes.Length)
-         isB = ByteStream.FromBytes (ByteMemory.FromArray([| |]).AsReadOnly(),0,0) 
+         isB = ByteStream.FromBytes (ByteMemory.FromArray([| |]).AsReadOnly(), 0, 0) 
          iilscope = viewedScope
-         iccus = new_itbl "iccus (fake)" [| |] 
-         ientities = NodeInTable<_,_>.Create (Tycon.NewUnlinked, (fun osgn tg -> osgn.Link tg),(fun osgn -> osgn.IsLinked),"ientities",0) 
-         itypars = NodeInTable<_,_>.Create (Typar.NewUnlinked, (fun osgn tg -> osgn.Link tg),(fun osgn -> osgn.IsLinked),"itypars",0) 
-         ivals = NodeInTable<_,_>.Create (Val.NewUnlinked , (fun osgn tg -> osgn.Link tg),(fun osgn -> osgn.IsLinked),"ivals",0)
-         ianoninfos = NodeInTable<_,_>.Create(AnonRecdTypeInfo.NewUnlinked, (fun osgn tg -> osgn.Link tg),(fun osgn -> osgn.IsLinked),"ianoninfos",0)
-         istrings = new_itbl "istrings (fake)" [| |] 
-         inlerefs = new_itbl "inlerefs (fake)" [| |] 
-         ipubpaths = new_itbl "ipubpaths (fake)" [| |] 
-         isimpletys = new_itbl "isimpletys (fake)" [| |] 
+         iccus = new_itbl "iccus (fake)" [| |]
+         ientities = NodeInTable<_, _>.Create (Tycon.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itycons", 0)
+         itypars = NodeInTable<_, _>.Create (Typar.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itypars", 0)
+         ivals = NodeInTable<_, _>.Create (Val.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ivals", 0)
+         ianoninfos = NodeInTable<_, _>.Create(AnonRecdTypeInfo.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ianoninfos", 0)
+         istrings = new_itbl "istrings (fake)" [| |]
+         inlerefs = new_itbl "inlerefs (fake)" [| |]
+         ipubpaths = new_itbl "ipubpaths (fake)" [| |]
+         isimpletys = new_itbl "isimpletys (fake)" [| |]
          ifile = file
          iILModule = ilModule }
     let ccuNameTab = u_array u_encoded_ccuref st2

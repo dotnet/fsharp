@@ -342,11 +342,7 @@ let nullableSlotFull (x: 'T) : NonNullSlot<'T> = x
 // Caches, mainly for free variables
 //---------------------------------------------------------------------------
 
-//#if BUILDING_WITH_LKG
 type cache<'T when 'T : not struct> = { mutable cacheVal: NonNullSlot<'T> }
-//#else
-//type cache<'T when 'T : (* not null and *) 'T : not struct> = { mutable cacheVal: NonNullSlot<'T> }
-//#endif
 let newCache() = { cacheVal = nullableSlotEmpty() }
 
 let inline cached cache resF =
@@ -387,7 +383,6 @@ type Dumper(x:obj) =
      [<DebuggerBrowsable(DebuggerBrowsableState.Collapsed)>]
      member self.Dump = sprintf "%A" x
 #endif
-
 //---------------------------------------------------------------------------
 // EnableHeapTerminationOnCorruption()
 //---------------------------------------------------------------------------

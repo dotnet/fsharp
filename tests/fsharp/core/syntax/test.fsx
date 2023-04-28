@@ -1441,7 +1441,7 @@ module TypeApplicationDisambiguation =
     let f8 x = x<x % x>x
     let f9 x = x<x %%% x>x
     let f10 x = x<x <<< x>x
- //   let f13 x = x<x ? x, x>x
+    let f13 x = x<x ? x, x>x
     let f14 x = x<x &&& x>x
     let f16 x = x<x => x>x
     let f17 x = x<x || x>x

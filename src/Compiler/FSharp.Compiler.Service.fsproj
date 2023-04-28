@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Project Sdk="Microsoft.NET.Sdk">
 
@@ -13,16 +13,9 @@
     <AssemblyName>FSharp.Compiler.Service</AssemblyName>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
-    <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
-    <OtherFlags>$(OtherFlags) /warnon:3218 /warnon:1182 /warnon:3390 --times</OtherFlags>
     <CheckNulls>true</CheckNulls>
-    <Tailcalls>true</Tailcalls>
-    <!-- .tail annotations always emitted for this binary, even in debug mode -->
-    <NGenBinary>true</NGenBinary>
     <!-- nullness checking isn't possible when using shipped FSHarp.Core package until it's updated -->
-    <DefineConstants Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">$(DefineConstants);NO_CHECKNULLS</DefineConstants>
     <CheckNulls Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">false</CheckNulls>
-    <DefineConstants Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">$(DefineConstants);USE_SHIPPED_FSCORE</DefineConstants>
     <DefineConstants Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">$(DefineConstants);FSHARPCORE_USE_PACKAGE</DefineConstants>
     <OtherFlags>$(OtherFlags) --extraoptimizationloops:1</OtherFlags>
     <!-- 1182: Unused variables -->

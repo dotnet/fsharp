@@ -5,7 +5,7 @@ namespace FSharp.Compiler.UnitTests
 open NUnit.Framework
 open FSharp.Test.Compiler
 
-[<TestFixture>]
+[<TestFixture()>]
 module NullableOptionalRegressionTests =
 
     //Disabled, see RFC for nullable

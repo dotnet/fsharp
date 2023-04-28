@@ -62,8 +62,8 @@ val EncodeSignatureData:
         ILAttribute list * ILResource list
 
 val EncodeOptimizationData:
-    tcConfig: TcConfig *
     tcGlobals: TcGlobals *
+    tcConfig: TcConfig *
     outfile: string *
     exportRemapping: Remap *
     (CcuThunk * #CcuOptimizationInfo) *

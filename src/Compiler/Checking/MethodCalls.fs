@@ -659,7 +659,7 @@ type CalledMeth<'T>
 
                             let pminst =
                                 match tyargsOpt with
-                                | Some (TType_app(_, types, _)) -> types
+                                | Some(TType_app(_, types, _)) -> types
                                 | _ -> pminst
 
                             let propStaticTyOpt = if isTyparTy g returnedObjTy then Some returnedObjTy else None

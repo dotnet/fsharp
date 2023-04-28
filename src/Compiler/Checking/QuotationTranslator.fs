@@ -994,7 +994,7 @@ and FilterMeasureTyargs tys =
 and ConvType cenv env m ty =
     let g = cenv.g
     match stripTyEqnsAndMeasureEqns g ty with
-    | TType_app(tcref, [tyarg],_) when isArrayTyconRef g tcref ->
+    | TType_app(tcref, [tyarg], _) when isArrayTyconRef g tcref ->
         QP.mkArrayTy(rankOfArrayTyconRef g tcref, ConvType cenv env m tyarg)
 
     | TType_ucase(UnionCaseRef(tcref, _), tyargs) // Note: we erase union case 'types' when converting to quotations

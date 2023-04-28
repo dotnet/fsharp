@@ -497,10 +497,10 @@ module ReflectUtils =
         // Analyze an object to see if it the representation
         // of an F# value.
         let GetValueInfoOfObject (bindingFlags: BindingFlags) (obj: obj) =
-            match obj with 
+            match obj with
             | Null -> NullValue
-            | _ -> 
-                let reprty = obj.GetType() 
+            | _ ->
+                let reprty = obj.GetType()
 
                 // First a bunch of special rules for tuples
                 // Because of the way F# currently compiles tuple values
@@ -563,7 +563,7 @@ module ReflectUtils =
 
         let GetValueInfo bindingFlags (x: 'a, ty: Type) (* x could be null *)  =
             let obj = (box x)
-            match obj with 
+            match obj with
             | Null ->
                 let isNullaryUnion =
                     match ty.GetCustomAttributes(typeof<CompilationRepresentationAttribute>, false) with
@@ -577,7 +577,7 @@ module ReflectUtils =
                         |> Array.filter (fun uc -> uc.GetFields().Length = 0)
                         |> Array.item 0
 
-                    UnionCaseValue(nullaryCase.Name, [| |])
+                    UnionCaseValue(nullaryCase.Name, [||])
                 elif isUnitType ty then
                     UnitValue
                 else
@@ -842,9 +842,9 @@ module Display =
         | _ -> failwith "unpackCons"
 
     let getListValueInfo bindingFlags (x: obj, ty: Type) =
-        match x with 
-        | Null -> None 
-        | NonNull x -> 
+        match x with
+        | Null -> None
+        | NonNull x ->
             match Value.GetValueInfo bindingFlags (x, ty) with
             | UnionCaseValue ("Cons", recd) -> Some(unpackCons recd)
             | UnionCaseValue ("Empty", [||]) -> None
@@ -994,18 +994,18 @@ module Display =
         and objL showMode depthLim prec (x: obj, ty: Type) =
             let info = Value.GetValueInfo bindingFlags (x, ty)
             try
-                if depthLim<=0 || exceededPrintSize() then
+                if depthLim <= 0 || exceededPrintSize () then
                     wordL (tagPunctuation "...")
                 else
-                    match x with 
+                    match x with
                     | Null -> reprL showMode (depthLim - 1) prec info x
                     | NonNull x ->
-                        if (path.ContainsKey(x)) then 
+                        if (path.ContainsKey(x)) then
                             wordL (tagPunctuation "...")
-                        else 
-                            path.Add(x,0)
+                        else
+                            path.Add(x, 0)
 
-                            let res = 
+                            let res =
                                 // Lazy<T> values. VS2008 used StructuredFormatDisplayAttribute to show via ToString. Dev10 (no attr) needs a special case.
                                 let ty = x.GetType()
 
@@ -1581,7 +1581,7 @@ module Display =
                     let text = obj.ToString()
 
                     match text with
-                    | Null -> ""
+                    | null -> ""
                     | _ -> text
                 with e ->
                     // If a .ToString() call throws an exception, catch it and use the message as the result.

@@ -9,11 +9,8 @@
     <NoWarn>$(NoWarn);75</NoWarn> <!-- InternalCommandLineOption -->
     <NoWarn>$(NoWarn);1204</NoWarn> <!-- This construct is for use in the FSharp.Core library and should not be used directly -->
     <AllowCrossTargeting>true</AllowCrossTargeting>
-    <OtherFlags>$(OtherFlags) --warnon:3218</OtherFlags>
     <DefineConstants>$(DefineConstants);FSHARP_CORE</DefineConstants>
     <DefineConstants Condition="'$(Configuration)' == 'Proto'">BUILDING_WITH_LKG;$(DefineConstants)</DefineConstants>
-    <OtherFlags>$(OtherFlags) --warnon:3218 --warnon:1182 --warnon:3390</OtherFlags>
-    <OtherFlags>$(OtherFlags) --compiling-fslib --compiling-fslib-40 --maxerrors:100 --extraoptimizationloops:1</OtherFlags>
     <OtherFlags Condition="'$(Configuration)' != 'Proto'">$(OtherFlags) --langversion:preview</OtherFlags>
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
     <!-- 3218: ArgumentsInSigAndImplMismatch -->

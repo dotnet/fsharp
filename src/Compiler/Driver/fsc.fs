@@ -876,7 +876,7 @@ let main3
         // Encode the optimization data
         ReportTime tcConfig ("Encoding OptData")
 
-        optimizedImpls, EncodeOptimizationData(tcConfig, tcGlobals, outfile, exportRemapping, (generatedCcu, optimizationData), false)
+        optimizedImpls, EncodeOptimizationData(tcGlobals, tcConfig, outfile, exportRemapping, (generatedCcu, optimizationData), false)
 
     // Pass on only the minimum information required for the next phase
     Args(

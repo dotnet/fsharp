@@ -25,7 +25,7 @@
   </PropertyGroup>
 
 	<PropertyGroup Condition="'$(NullCheckingSupportInLibrary)' == 'false'">
-		<DefineConstants>NO_NULLCHECKING_FEATURE;$(DefineConstants)</DefineConstants>
+		<DefineConstants>NO_NULLCHECKING_LIB_SUPPORT;$(DefineConstants)</DefineConstants>
 	</PropertyGroup>
 
   <Choose>
