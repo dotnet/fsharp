@@ -1049,7 +1049,7 @@ module Array =
 
             dst
 
-        let filter f (src: array<_>) =
+        let filter f (src: _ array) =
             let mutable maskArray = Unchecked.defaultof<_>
             let mutable leftOverMask = Unchecked.defaultof<_>
 

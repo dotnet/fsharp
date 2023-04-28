@@ -195,9 +195,12 @@ let rec ImportILType (env: ImportMap) m tinst ty =
          ImportILType env m tinst ty
 
     | ILType.TypeVar u16 -> 
-         try List.item (int u16) tinst
-         with _ -> 
-              error(Error(FSComp.SR.impNotEnoughTypeParamsInScopeWhileImporting(), m))
+        let ty = 
+            try 
+                List.item (int u16) tinst
+            with _ -> 
+                error(Error(FSComp.SR.impNotEnoughTypeParamsInScopeWhileImporting(), m))
+        ty
 
 /// Determines if an IL type can be imported as an F# type
 let rec CanImportILType (env: ImportMap) m ty =  
@@ -359,15 +362,15 @@ let rec ImportProvidedType (env: ImportMap) (m: range) (* (tinst: TypeInst) *) (
 
 /// Import a provided method reference as an Abstract IL method reference
 let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: range) (mbase: Tainted<ProvidedMethodBase>) = 
-     let tref = GetILTypeRefOfProvidedType (mbase.PApply((fun mbase -> mbase.DeclaringType), m), m)
+     let tref = GetILTypeRefOfProvidedType (mbase.PApply((fun mbase -> nonNull<ProvidedType> mbase.DeclaringType), m), m)
 
      let mbase = 
          // Find the formal member corresponding to the called member
          match mbase.OfType<ProvidedMethodInfo>() with 
          | Some minfo when 
-                    minfo.PUntaint((fun minfo -> minfo.IsGenericMethod|| minfo.DeclaringType.IsGenericType), m) -> 
+                    minfo.PUntaint((fun minfo -> minfo.IsGenericMethod|| (nonNull<ProvidedType> minfo.DeclaringType).IsGenericType), m) -> 
 
-                let declaringType = minfo.PApply((fun minfo -> minfo.DeclaringType), m)
+                let declaringType = minfo.PApply((fun minfo -> nonNull<ProvidedType> minfo.DeclaringType), m)
 
                 let declaringGenericTypeDefn =  
                     if declaringType.PUntaint((fun t -> t.IsGenericType), m) then 
@@ -386,8 +389,8 @@ let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: range) (mbase: Ta
                     error(Error(FSComp.SR.etIncorrectProvidedMethod(DisplayNameOfTypeProvider(minfo.TypeProvider, m), methodName, metadataToken, typeName), m))
          | _ -> 
          match mbase.OfType<ProvidedConstructorInfo>() with 
-         | Some cinfo when cinfo.PUntaint((fun x -> x.DeclaringType.IsGenericType), m) -> 
-                let declaringType = cinfo.PApply((fun x -> x.DeclaringType), m)
+         | Some cinfo when cinfo.PUntaint((fun x -> (nonNull<ProvidedType> x.DeclaringType).IsGenericType), m) -> 
+                let declaringType = cinfo.PApply((fun x -> nonNull<ProvidedType> x.DeclaringType), m)
                 let declaringGenericTypeDefn =  declaringType.PApply((fun x -> x.GetGenericTypeDefinition()), m)
 
                 // We have to find the uninstantiated formal signature corresponding to this instantiated constructor.
