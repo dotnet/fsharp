@@ -4,6 +4,7 @@ namespace FSharp.Editor.Tests.Hints
 
 open Xunit
 open HintTestFramework
+open FSharp.Test
 
 module InlineParameterNameHintTests =
 
@@ -599,3 +600,43 @@ None
         let actual = getParameterNameHints document
 
         Assert.Equal(expected, actual)
+
+    [<Fact>]
+    let ``Blah`` () =
+        let code =
+            """
+type X = | X of a: int list * b: string
+
+let x = X(List.map id [ 42 ], "")
+        """
+
+        let document = getFsDocument code
+
+        let expected =
+            [
+                {
+                    Content = "a = "
+                    Location = (3, 11)
+                    Tooltip = "field a"
+                }
+                {
+                    Content = "mapping = "
+                    Location = (3, 20)
+                    Tooltip = "parameter mapping"
+                }
+                {
+                    Content = "list = "
+                    Location = (3, 23)
+                    Tooltip = "parameter list"
+                }
+                {
+                    Content = "b = "
+                    Location = (3, 31)
+                    Tooltip = "field b"
+                }
+            ]
+
+        let actual = getParameterNameHints document
+
+        actual |> Assert.shouldBeEquivalentTo expected
+
