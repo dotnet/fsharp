@@ -168,7 +168,7 @@ module internal Tainted =
     let (|Null|NonNull|) (p:Tainted<'T>) : Choice<unit, Tainted<'T>> when 'T : null and 'T : not struct =
         if p.PUntaintNoFailure isNull then Null else NonNull (p.PApplyNoFailure id)
 #else
-    let (|Null|NonNull|) (p:Tainted<'T?>) : Choice<unit, Tainted<'T>> when 'T : not null =
+    let (|Null|NonNull|) (p:Tainted<'T?>) : Choice<unit, Tainted<'T>> when 'T : __notnull =
         if p.PUntaintNoFailure isNull then Null else NonNull (p.PApplyNoFailure nonNull)
 #endif
 

@@ -4239,7 +4239,7 @@ namespace Microsoft.FSharp.Core
         let inline isNullV (value : Nullable<'T>) = not value.HasValue
 
         [<CompiledName("NonNull")>]
-        let inline nonNull (value : 'T? when 'T : not struct and 'T : not null) = 
+        let inline nonNull (value : 'T? when 'T : not struct and 'T : __notnull) = 
             match box value with 
             | null -> raise (NullReferenceException()) 
             | _ -> (# "" value : 'T #)
@@ -4252,7 +4252,7 @@ namespace Microsoft.FSharp.Core
                 raise (NullReferenceException())
 
         [<CompiledName("NullMatchPattern")>]
-        let inline (|Null|NonNull|) (value : 'T? when 'T : not null) = 
+        let inline (|Null|NonNull|) (value : 'T? when 'T : __notnull) = 
             match value with 
             | null -> Null () 
             | _ -> NonNull (# "" value : 'T #)
@@ -4263,7 +4263,7 @@ namespace Microsoft.FSharp.Core
             else NullV ()
 
         [<CompiledName("NonNullQuickPattern")>]
-        let inline (|NonNullQuick|) (value : 'T? when 'T : not null) =
+        let inline (|NonNullQuick|) (value : 'T? when 'T : __notnull) =
             match box value with 
             | null -> raise (NullReferenceException()) 
             | _ -> (# "" value : 'T #)
@@ -4326,7 +4326,7 @@ namespace Microsoft.FSharp.Core
 
 #if !BUILDING_WITH_LKG && !NO_NULLCHECKING_FEATURE
         [<CompiledName("NullArgCheck")>]
-        let inline nullArgCheck (argumentName:string) (value: 'T? when 'T : not struct and 'T : not null) = 
+        let inline nullArgCheck (argumentName:string) (value: 'T? when 'T : not struct and 'T : __notnull) = 
             match value with 
             | null -> raise (new ArgumentNullException(argumentName))        
             | _ ->  (# "" value : 'T #)
@@ -4391,7 +4391,7 @@ namespace Microsoft.FSharp.Core
         
 #if !BUILDING_WITH_LKG && !NO_NULLCHECKING_FEATURE
         [<CompiledName("DefaultIfNull")>]
-        let inline defaultIfNull defaultValue (arg: 'T? when 'T : not struct and 'T : not null) = 
+        let inline defaultIfNull defaultValue (arg: 'T? when 'T : not struct and 'T : __notnull) = 
             match arg with null -> defaultValue | _ -> (# "" arg : 'T #)
         
         [<CompiledName("DefaultIfNullV")>]

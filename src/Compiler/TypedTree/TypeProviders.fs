@@ -231,7 +231,7 @@ let TryTypeMemberArray (st: Tainted<_>, fullName, memberName, m, f) =
 let TryTypeMemberNonNull<'T, 'U when 'U : null and 'U : not struct>(st: Tainted<'T>, fullName, memberName, m, recover: 'U, (f: 'T -> 'U)) : Tainted<'U> =
     match TryTypeMember(st, fullName, memberName, m, recover, f) with 
 #else
-let TryTypeMemberNonNull<'T, 'U when 'U : not null and 'U : not struct>(st: Tainted<'T>, fullName, memberName, m, recover: 'U, (f: 'T -> 'U?)) : Tainted<'U> =
+let TryTypeMemberNonNull<'T, 'U when 'U : __notnull and 'U : not struct>(st: Tainted<'T>, fullName, memberName, m, recover: 'U, (f: 'T -> 'U?)) : Tainted<'U> =
     match TryTypeMember<'T, 'U?>(st, fullName, memberName, m, withNull recover, f) with 
 #endif
     | Tainted.Null -> 

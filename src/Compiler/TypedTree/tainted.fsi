@@ -104,7 +104,7 @@ module internal Tainted =
 #if NO_CHECKNULLS
     val (|Null|NonNull|) : Tainted<'T MaybeNull> -> Choice<unit, Tainted<'T>> when 'T : null and 'T : not struct
 #else
-    val (|Null|NonNull|) : Tainted<'T MaybeNull> -> Choice<unit, Tainted<'T>> when 'T : not null
+    val (|Null|NonNull|) : Tainted<'T MaybeNull> -> Choice<unit, Tainted<'T>> when 'T : __notnull
 #endif
 
     /// Test whether the tainted value equals given value.

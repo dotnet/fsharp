@@ -444,7 +444,7 @@ module Option =
     val inline ofObj: value: 'T -> 'T option  when 'T : null
 #else
     // TODO NULLNESS: assess this change - is it a breaking change?
-    val inline ofObj: value: 'T? -> 'T option  when 'T : not struct and 'T : not null
+    val inline ofObj: value: 'T? -> 'T option  when 'T : not struct and 'T : __notnull
 #endif
 
     /// <summary>Convert an option to a potentially null value.</summary>
@@ -464,7 +464,7 @@ module Option =
     val inline toObj: value: 'T option -> 'T when 'T : null
 #else
     // TODO NULLNESS: assess this change - is it a breaking change?
-    val inline toObj: value: 'T option -> 'T? when 'T : not struct (* and 'T : not null *)
+    val inline toObj: value: 'T option -> 'T? when 'T : not struct (* and 'T : __notnull *)
 #endif
 
 /// <summary>Contains operations for working with value options.</summary>
@@ -902,7 +902,7 @@ module ValueOption =
     val ofObj: value: 'T -> 'T voption  when 'T : null
 #else
     // TODO NULLNESS: assess this change - is it a breaking change?
-    val ofObj: value: 'T? -> 'T voption  when 'T : not struct and 'T : not null
+    val ofObj: value: 'T? -> 'T voption  when 'T : not struct and 'T : __notnull
 #endif
 
     /// <summary>Convert an option to a potentially null value.</summary>
@@ -922,5 +922,5 @@ module ValueOption =
     val toObj: value: 'T voption -> 'T when 'T : null
 #else
     // TODO NULLNESS: assess this change - is it a breaking change?
-    val toObj: value: 'T voption -> 'T? when 'T : not struct (* and 'T : not null *)
+    val toObj: value: 'T voption -> 'T? when 'T : not struct (* and 'T : __notnull *)
 #endif

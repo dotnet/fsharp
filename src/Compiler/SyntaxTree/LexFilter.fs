@@ -1107,7 +1107,7 @@ type LexFilterImpl (
                     //      f<x ' x>x
                     //      f<x?>x
                     | DEFAULT | COLON | COLON_GREATER | STRUCT | NULL | DELEGATE | AND | WHEN 
-                    | QMARK | AMBIVALENT
+                    | QMARK | AMBIVALENT__
                     | DOT_DOT
                     | NEW
                     | LBRACE_BAR

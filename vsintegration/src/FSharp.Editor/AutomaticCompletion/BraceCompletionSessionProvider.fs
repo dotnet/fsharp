@@ -589,7 +589,6 @@ type BraceCompletionSessionProvider [<ImportingConstructor>]
 
                     let! session =
                         sessionFactory.TryCreateSession(document, openingPoint.Position, openingBrace, CancellationToken.None)
-                        |> Option.ofObj
 
                     let undoHistory =
                         undoManager.GetTextBufferUndoManager(textView.TextBuffer).TextBufferUndoHistory

@@ -2,19 +2,15 @@
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Project>
   <PropertyGroup>
-    <!-- This turns off the feature. -->
-    <NullCheckingFeature>true</NullCheckingFeature>
+    <!-- This turns off the feature in FSharp.Core. -->
+    <NullCheckingSupportInLibrary>false</NullCheckingSupportInLibrary>
     <!-- If the feature is on, this turns off null checking in all assemblies. Otherwise it is selectively enabled in the project files. -->
-    <!-- <CheckNulls>false</CheckNulls> -->
+    <CheckNulls>false</CheckNulls>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Proto'">
     <DefineConstants>BUILDING_WITH_LKG;NO_CHECKNULLS;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
-
-	<PropertyGroup Condition="'$(NullCheckingFeature)' == 'false'">
-		<DefineConstants>NO_NULLCHECKING_FEATURE;$(DefineConstants)</DefineConstants>
-	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)' != 'Proto' AND '$(CheckNulls)' == 'true'">
   	<OtherFlags>$(OtherFlags) /langversion:preview</OtherFlags>
@@ -27,6 +23,10 @@
     <NoWarn>$(NoWarn);3271</NoWarn>
     <DefineConstants>$(DefineConstants);NO_CHECKNULLS</DefineConstants>
   </PropertyGroup>
+
+	<PropertyGroup Condition="'$(NullCheckingSupportInLibrary)' == 'false'">
+		<DefineConstants>NO_NULLCHECKING_FEATURE;$(DefineConstants)</DefineConstants>
+	</PropertyGroup>
 
   <Choose>
     <When Condition=" '$(TargetFrameworkIdentifier)' == '.NETFramework' ">

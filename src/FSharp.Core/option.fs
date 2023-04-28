@@ -166,13 +166,13 @@ module Option =
         | Some x -> x
 #else
     [<CompiledName("OfObj")>]
-    let ofObj (value: 'T?) : 'T option when 'T: not struct and 'T : not null = 
+    let ofObj (value: 'T?) : 'T option when 'T: not struct and 'T : __notnull = 
         match value with
         | null -> None
         | _ -> Some value
 
     [<CompiledName("ToObj")>]
-    let toObj (value: 'T option) : 'T? when 'T: not struct (* and 'T : not null *)  =
+    let toObj (value: 'T option) : 'T? when 'T: not struct (* and 'T : __notnull *)  =
         match value with
         | None -> null
         | Some x -> x
@@ -343,13 +343,13 @@ module ValueOption =
         | ValueSome x -> x
 #else
     [<CompiledName("OfObj")>]
-    let ofObj (value: 'T?) : 'T voption when 'T: not struct and 'T : not null  = 
+    let ofObj (value: 'T?) : 'T voption when 'T: not struct and 'T : __notnull  = 
         match value with
         | null -> ValueNone
         | _ -> ValueSome value
 
     [<CompiledName("ToObj")>]
-    let toObj (value : 'T voption) : 'T? when 'T: not struct (* and 'T : not null *) = 
+    let toObj (value : 'T voption) : 'T? when 'T: not struct (* and 'T : __notnull *) = 
         match value with
         | ValueNone -> null
         | ValueSome x -> x

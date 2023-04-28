@@ -381,7 +381,7 @@ module Keywords =
             ALWAYS, "with", WITH
             FSHARP, "yield", YIELD(true)
             ALWAYS, "_", UNDERSCORE
-            (*------- for prototyping and explaining offside rule *)
+            (*------- for explaining offside rule *)
             FSHARP, "__token_OBLOCKSEP", OBLOCKSEP
             FSHARP, "__token_OWITH", OWITH
             FSHARP, "__token_ODECLEND", ODECLEND
@@ -391,7 +391,10 @@ module Keywords =
             FSHARP, "__token_ODO", ODO
             FSHARP, "__token_OLET", OLET(true)
             FSHARP, "__token_constraint", CONSTRAINT
-            FSHARP, "__ambivalent", AMBIVALENT
+            (*------- for prototyping *)
+            FSHARP, "__ambivalent", AMBIVALENT__
+            FSHARP, "__notnull", NOTNULL__
+            FSHARP, "__withnull", WITHNULL__
         ]
         (*------- reserved keywords which are ml-compatibility ids *)
         @ List.map

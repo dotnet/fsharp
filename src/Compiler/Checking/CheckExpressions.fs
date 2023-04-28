@@ -4400,7 +4400,7 @@ and TcTypeOrMeasure kindOpt (cenv: cenv) newOk checkConstraints occ (iwsam: Warn
                 // For example "int option?" is not allowed, not "string??".
                 //
                 // For variable types in FSharp.Core we make an exception because we must allow
-                //    val toObj: value: 'T option -> 'T? when 'T : not struct (* and 'T : not null *)
+                //    val toObj: value: 'T option -> 'T? when 'T : not struct (* and 'T : __notnull *)
                 // wihout implying 'T is not null.  This is because it is legitimate to use this
                 // function to "collapse" null and obj-null-coming-from-option using such a function.
 

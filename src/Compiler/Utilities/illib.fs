@@ -62,7 +62,7 @@ module internal PervasiveAutoOpens =
         | null -> raise (ArgumentNullException(paramName))
         | v -> v
 #else
-    type 'T MaybeNull when 'T: not null and 'T: not struct = 'T?
+    type 'T MaybeNull when 'T: __notnull and 'T: not struct = 'T?
 
 #endif
 

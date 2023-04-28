@@ -79,7 +79,7 @@ module Basics =
     check "ekjnceoiwey10" y10 false
 
 module NotNullConstraint =
-    let f3 (x: 'T when 'T : not null) = 1
+    let f3 (x: 'T when 'T : __notnull) = 1
     let v1 = f3 1 // Should not give an error
     check "ekjnceoiwev1" v1 1
     let v2 = f3 "a" // Should not give an error
@@ -272,8 +272,8 @@ let f3 (x: string?) = x
 let f5 x = (x: int)
 //let f4 x = (x: string nullable)
 
-//let f6<'T when 'T : not null> (x: 'T) = x
-//let f6<'T when 'T : not null> (x: 'T) = x
+//let f6<'T when 'T : __notnull> (x: 'T) = x
+//let f6<'T when 'T : __notnull> (x: 'T) = x
 
 //let f2 (x: string | null) = x;;
 

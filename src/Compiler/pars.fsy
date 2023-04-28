@@ -91,7 +91,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %token GREATER_RBRACK STRUCT SIG
 %token STATIC MEMBER CLASS ABSTRACT OVERRIDE DEFAULT CONSTRUCTOR INHERIT
 %token EXTERN VOID PUBLIC PRIVATE INTERNAL GLOBAL
-%token AMBIVALENT
+%token AMBIVALENT__ NOTNULL__ WITHNULL__
 
 /* for parser 'escape hatch' out of expression context without consuming the 'recover' token */
 %token TYPE_COMING_SOON TYPE_IS_HERE MODULE_COMING_SOON MODULE_IS_HERE
@@ -2314,14 +2314,20 @@ typeConstraint:
      { SynTypeConstraint.WhereTyparIsValueType($1, lhs parseState) }
 
   | typar COLON IDENT STRUCT
-     { if $3 <> "not" then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier($3))
+     { if $3 <> "not" then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier($3 + "1"))
        SynTypeConstraint.WhereTyparIsReferenceType($1, lhs parseState) }
 
   | typar COLON NULL
      { SynTypeConstraint.WhereTyparSupportsNull($1, lhs parseState) }
+/*
+** TODO: This rule is not triggering, faking it with __notnull for now
 
   | typar COLON IDENT NULL
-      { if $3 <> "not" then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier($3))  
+      { if $3 <> "not" then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier($3 + "2"))  
+        SynTypeConstraint.WhereTyparNotSupportsNull($1, lhs parseState) }
+*/
+  | typar COLON NOTNULL__
+      { //if $3 <> "not" then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier($3 + "2"))  
         SynTypeConstraint.WhereTyparNotSupportsNull($1, lhs parseState) }
 
   | typar COLON LPAREN classMemberSpfn rparen
@@ -2342,14 +2348,14 @@ typeConstraint:
        | "enum" ->
            let _ltm, _gtm, args, _commas, mWhole = $4
            SynTypeConstraint.WhereTyparIsEnum($1, args, unionRanges $1.Range mWhole)
-       | nm -> raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier(nm)) }
+       | nm -> raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier(nm + "3")) }
 
   | typar COLON IDENT
      { match $3 with
        | "comparison" -> SynTypeConstraint.WhereTyparIsComparable($1, lhs parseState)
        | "equality" -> SynTypeConstraint.WhereTyparIsEquatable($1, lhs parseState)
        | "unmanaged" -> SynTypeConstraint.WhereTyparIsUnmanaged($1, lhs parseState)
-       | nm -> raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier(nm)) }
+       | nm -> raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier(nm + "4")) }
 
   | appType
      { SynTypeConstraint.WhereSelfConstrained($1, lhs parseState) }
@@ -5486,11 +5492,16 @@ appTypeConPower:
     { $1 }
 
 appType:
-  | appType AMBIVALENT
+  | appType AMBIVALENT__
     { SynType.WithNull($1, true, lhs parseState) }
 
+  | appType WITHNULL__
+    { SynType.WithNull($1, false, lhs parseState) }
+
+/*
   | appType QMARK
     { SynType.WithNull($1, false, lhs parseState) }
+*/
 
   | appType arrayTypeSuffix
       {  SynType.Array($2, $1, lhs parseState) }

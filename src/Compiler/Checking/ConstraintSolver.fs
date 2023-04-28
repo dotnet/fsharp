@@ -2570,8 +2570,8 @@ and SolveTypeDefnNotSupportsNull (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
     let g = csenv.g
     let m = csenv.m
     //match stripTyparEqns ty with 
-    //// If you set a type variable constrained with a T: not null to U then you don't induce an inference constraint
-    //// of U: not null.
+    //// If you set a type variable constrained with a T: __notnull to U then you don't induce an inference constraint
+    //// of U: __notnull.
     //// TODO: what about Obsolete?
     //| TType_var(_, nullness) when nullness.TryEvaluate() = Some NullnessInfo.WithoutNull || nullness.TryEvaluate() = Some NullnessInfo.AmbivalentToNull -> CompleteD
     //| _ ->
