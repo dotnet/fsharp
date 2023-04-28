@@ -26,7 +26,7 @@ module internal PervasiveAutoOpens =
     /// Returns true if the argument is non-null.
     val inline isNotNull: x: 'T -> bool when 'T: null
 
-    /// Indicates that a type may be null. 'MaybeNull<string>' is used internally in the F# compiler as 
+    /// Indicates that a type may be null. 'MaybeNull<string>' is used internally in the F# compiler as
     /// replacement for 'string?' to align with FS-1060.
     type 'T MaybeNull when 'T: null and 'T: not struct = 'T
 

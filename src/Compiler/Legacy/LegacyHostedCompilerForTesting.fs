@@ -209,12 +209,12 @@ type internal FscCompiler(legacyReferenceResolver) =
         // compensate for this in case caller didn't know
         let args =
             match box args with
-            | Null -> [|"fsc"|]
-            | _ -> 
-            match args with
-            | [||] -> [|"fsc"|]
-            | a when not <| fscExeArg a[0] -> Array.append [| "fsc" |] a
-            | _ -> args
+            | Null -> [| "fsc" |]
+            | _ ->
+                match args with
+                | [||] -> [| "fsc" |]
+                | a when not <| fscExeArg a[0] -> Array.append [| "fsc" |] a
+                | _ -> args
 
         let errorRanges = args |> Seq.exists errorRangesArg
         let vsErrors = args |> Seq.exists vsErrorsArg
