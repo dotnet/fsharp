@@ -168,9 +168,6 @@ type internal IncrementalBuilder =
     /// The list of files the build depends on
     member AllDependenciesDeprecated: string[]
 
-    /// The project build. Return true if the background work is finished.
-    member PopulatePartialCheckingResults: unit -> NodeCode<unit>
-
     /// Get the preceding typecheck state of a slot, without checking if it is up-to-date w.r.t.
     /// the timestamps on files and referenced DLLs prior to this one. Return None if the result is not available.
     /// This is a very quick operation.
@@ -239,7 +236,7 @@ type internal IncrementalBuilder =
     member GetParseResultsForFile:
         fileName: string -> ParsedInput * range * string * (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
 
-    member NotifyFileChanged: fileName: string * timeStamp: DateTime -> NodeCode<unit>
+    member NotifyFileChanged: fileName: string * timeStamp: DateTime -> unit
 
     /// Create the incremental builder
     static member TryCreateIncrementalBuilderForProjectOptions:

@@ -805,7 +805,7 @@ type BackgroundCompiler
 
             match builderOpt with
             | None -> return ()
-            | Some builder -> do! builder.NotifyFileChanged(fileName, DateTime.UtcNow)
+            | Some builder -> builder.NotifyFileChanged(fileName, DateTime.UtcNow)
         }
 
     /// Fetch the check information from the background compiler (which checks w.r.t. the FileSystem API)
