@@ -104,10 +104,13 @@ type internal FSharpWorkspaceServiceFactory [<System.Composition.ImportingConstr
                 | _ -> None
 
             let getSource filename =
-                workspace.CurrentSolution.TryGetDocumentFromPath(filename)
-                |> Option.map (fun document ->
-                    let text = document.GetTextAsync().Result
-                    text.ToFSharpSourceText())
+                async {
+                    match workspace.CurrentSolution.TryGetDocumentFromPath filename with
+                    | Some document ->
+                        let! text = document.GetTextAsync() |> Async.AwaitTask
+                        return Some(text.ToFSharpSourceText())
+                    | None -> return None
+                }
 
             lock gate (fun () ->
                 match checkerSingleton with

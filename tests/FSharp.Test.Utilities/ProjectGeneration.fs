@@ -473,7 +473,7 @@ module Helpers =
 
         let fileName = "test.fs"
 
-        let getSource _ = source |> SourceText.ofString |> Some
+        let getSource _ = source |> SourceText.ofString |> Some |> async.Return
 
         let checker = FSharpChecker.Create(
             keepAllBackgroundSymbolUses = false,
@@ -567,6 +567,7 @@ type ProjectWorkflowBuilder
             |> renderSourceFile latestProject
         |> SourceText.ofString
         |> Some
+        |> async.Return
 
     let checker =
         defaultArg

@@ -67,7 +67,7 @@ type internal TransparentCompiler
         enablePartialTypeChecking,
         parallelReferenceResolution,
         captureIdentifiersWhenParsing,
-        getSource: (string -> ISourceText option) option,
+        getSource: (string -> Async<ISourceText option>) option,
         useChangeNotifications,
         useSyntaxTreeCache
     ) =

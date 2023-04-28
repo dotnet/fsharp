@@ -12,7 +12,7 @@ open FSharp.Compiler.Tokenization
 
 open NUnit.Framework
 
-let sourceTok = FSharpSourceTokenizer([], Some "C:\\test.fsx")
+let sourceTok = FSharpSourceTokenizer([], Some "C:\\test.fsx", None)
 
 let rec parseLine(line: string, state: FSharpTokenizerLexState ref, tokenizer: FSharpLineTokenizer) = seq {
   match tokenizer.ScanToken(state.Value) with

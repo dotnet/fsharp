@@ -26,8 +26,10 @@ type internal FSharpAddMissingRecToMutuallyRecFunctionsCodeFixProvider [<Importi
 
     override _.RegisterCodeFixesAsync context =
         asyncMaybe {
-            let! defines =
-                context.Document.GetFSharpCompilationDefinesAsync(nameof (FSharpAddMissingRecToMutuallyRecFunctionsCodeFixProvider))
+            let! defines, langVersion =
+                context.Document.GetFSharpCompilationDefinesAndLangVersionAsync(
+                    nameof (FSharpAddMissingRecToMutuallyRecFunctionsCodeFixProvider)
+                )
                 |> liftAsync
 
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
@@ -51,6 +53,7 @@ type internal FSharpAddMissingRecToMutuallyRecFunctionsCodeFixProvider [<Importi
                     SymbolLookupKind.Greedy,
                     false,
                     false,
+                    Some langVersion,
                     context.CancellationToken
                 )
 

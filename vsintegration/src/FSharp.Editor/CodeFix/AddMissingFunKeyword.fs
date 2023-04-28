@@ -28,8 +28,8 @@ type internal FSharpAddMissingFunKeywordCodeFixProvider [<ImportingConstructor>]
             // Only trigger when failing to parse `->`, which arises when `fun` is missing
             do! Option.guard (textOfError = "->")
 
-            let! defines =
-                document.GetFSharpCompilationDefinesAsync(nameof (FSharpAddMissingFunKeywordCodeFixProvider))
+            let! defines, langVersion =
+                document.GetFSharpCompilationDefinesAndLangVersionAsync(nameof (FSharpAddMissingFunKeywordCodeFixProvider))
                 |> liftAsync
 
             let adjustedPosition =
@@ -51,6 +51,7 @@ type internal FSharpAddMissingFunKeywordCodeFixProvider [<ImportingConstructor>]
                     SymbolLookupKind.Greedy,
                     false,
                     false,
+                    Some langVersion,
                     context.CancellationToken
                 )
 

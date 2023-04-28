@@ -2515,7 +2515,7 @@ module internal ParseAndCheckFile =
 
             let rec matchBraces stack =
                 match lexfun lexbuf, stack with
-                | tok2, (tok1, m1) :: stackAfterMatch when parenTokensBalance tok1 tok2 ->
+                | tok2, (tok1, braceOffset, m1) :: stackAfterMatch when parenTokensBalance tok1 tok2 ->
                     let m2 = lexbuf.LexemeRange
 
                     // For INTERP_STRING_PART and INTERP_STRING_END grab the one character
@@ -2523,7 +2523,11 @@ module internal ParseAndCheckFile =
                     let m2Start =
                         match tok2 with
                         | INTERP_STRING_PART _
-                        | INTERP_STRING_END _ -> mkFileIndexRange m2.FileIndex m2.Start (mkPos m2.Start.Line (m2.Start.Column + 1))
+                        | INTERP_STRING_END _ ->
+                            mkFileIndexRange
+                                m2.FileIndex
+                                (mkPos m2.Start.Line (m2.Start.Column - braceOffset))
+                                (mkPos m2.Start.Line (m2.Start.Column + 1))
                         | _ -> m2
 
                     matchingBraces.Add(m1, m2Start)
@@ -2534,15 +2538,15 @@ module internal ParseAndCheckFile =
                         match tok2 with
                         | INTERP_STRING_PART _ ->
                             let m2End =
-                                mkFileIndexRange m2.FileIndex (mkPos m2.End.Line (max (m2.End.Column - 1) 0)) m2.End
+                                mkFileIndexRange m2.FileIndex (mkPos m2.End.Line (max (m2.End.Column - 1 - braceOffset) 0)) m2.End
 
-                            (tok2, m2End) :: stackAfterMatch
+                            (tok2, braceOffset, m2End) :: stackAfterMatch
                         | _ -> stackAfterMatch
 
                     matchBraces stackAfterMatch
 
                 | LPAREN | LBRACE _ | LBRACK | LBRACE_BAR | LBRACK_BAR | LQUOTE _ | LBRACK_LESS as tok, _ ->
-                    matchBraces ((tok, lexbuf.LexemeRange) :: stack)
+                    matchBraces ((tok, 0, lexbuf.LexemeRange) :: stack)
 
                 // INTERP_STRING_BEGIN_PART corresponds to $"... {" at the start of an interpolated string
                 //
@@ -2552,12 +2556,18 @@ module internal ParseAndCheckFile =
                 //
                 // Either way we start a new potential match at the last character
                 | INTERP_STRING_BEGIN_PART _ | INTERP_STRING_PART _ as tok, _ ->
+                    let braceOffset =
+                        match tok with
+                        | INTERP_STRING_BEGIN_PART (_, SynStringKind.TripleQuote, (LexerContinuation.Token (_, (_, _, dl, _) :: _))) ->
+                            dl - 1
+                        | _ -> 0
+
                     let m = lexbuf.LexemeRange
 
                     let m2 =
-                        mkFileIndexRange m.FileIndex (mkPos m.End.Line (max (m.End.Column - 1) 0)) m.End
+                        mkFileIndexRange m.FileIndex (mkPos m.End.Line (max (m.End.Column - 1 - braceOffset) 0)) m.End
 
-                    matchBraces ((tok, m2) :: stack)
+                    matchBraces ((tok, braceOffset, m2) :: stack)
 
                 | (EOF _ | LEX_FAILURE _), _ -> ()
                 | _ -> matchBraces stack

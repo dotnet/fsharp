@@ -279,7 +279,7 @@ type internal IncrementalBuilder =
         dependencyProvider: DependencyProvider option *
         parallelReferenceResolution: ParallelReferenceResolution *
         captureIdentifiersWhenParsing: bool *
-        getSource: (string -> ISourceText option) option *
+        getSource: (string -> Async<ISourceText option>) option *
         useChangeNotifications: bool *
         useSyntaxTreeCache: bool ->
             NodeCode<IncrementalBuilder option * FSharpDiagnostic[]>

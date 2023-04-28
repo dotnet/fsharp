@@ -79,8 +79,8 @@ type internal FSharpAddOpenCodeFixProvider [<ImportingConstructor>] (assemblyCon
             let line = sourceText.Lines.GetLineFromPosition(context.Span.End)
             let linePos = sourceText.Lines.GetLinePosition(context.Span.End)
 
-            let! defines =
-                document.GetFSharpCompilationDefinesAsync(nameof (FSharpAddOpenCodeFixProvider))
+            let! defines, langVersion =
+                document.GetFSharpCompilationDefinesAndLangVersionAsync(nameof (FSharpAddOpenCodeFixProvider))
                 |> liftAsync
 
             let! symbol =
@@ -95,6 +95,7 @@ type internal FSharpAddOpenCodeFixProvider [<ImportingConstructor>] (assemblyCon
                             SymbolLookupKind.Greedy,
                             false,
                             false,
+                            Some langVersion,
                             context.CancellationToken
                         )
 
