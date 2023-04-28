@@ -807,7 +807,7 @@ type IncrementalBuilderInitialState =
     {
         initialBoundModel: BoundModel
         tcGlobals: TcGlobals
-        referencedAssemblies: ImmutableArray<Choice<string, IProjectReference> * (TimeStampCache -> DateTime)>
+        referencedAssemblies: (Choice<string, IProjectReference> * (TimeStampCache -> DateTime)) list
         tcConfig: TcConfig
         outfile: string
         assemblyName: string
@@ -854,7 +854,7 @@ type IncrementalBuilderInitialState =
             {
                 initialBoundModel = initialBoundModel
                 tcGlobals = tcGlobals
-                referencedAssemblies = nonFrameworkAssemblyInputs |> ImmutableArray.ofSeq
+                referencedAssemblies = nonFrameworkAssemblyInputs |> List.ofSeq
                 tcConfig = tcConfig
                 outfile = outfile
                 assemblyName = assemblyName
@@ -897,7 +897,7 @@ type Slot =
 type IncrementalBuilderState =
     {
         slots: Slot list
-        stampedReferencedAssemblies: ImmutableArray<DateTime>
+        stampedReferencedAssemblies: DateTime list
         initialBoundModel: BoundModel
         finalizedBoundModel: GraphNode<(ILAssemblyRef * ProjectAssemblyDataResult * CheckedImplFile list option * BoundModel) * DateTime>
     }
@@ -939,11 +939,16 @@ module IncrementalBuilderStateHelpers =
 
         let mapping (status, prevBoundModel) slot =
             let update newStatus =
+                let syntaxTree = if slot.Notified then slot.SyntaxTree.Invalidate() else slot.SyntaxTree
                 let boundModel = nextBoundModel prevBoundModel slot.SyntaxTree
-                { slot with
-                    Notified = false
-                    BoundModel = boundModel },
-                (newStatus, boundModel)
+
+                let slot = 
+                    { slot with
+                        Notified = false
+                        SyntaxTree = syntaxTree
+                        BoundModel = boundModel }
+
+                slot, (newStatus, boundModel)
 
             let noChange = slot, (Good, slot.BoundModel)
 
@@ -955,7 +960,9 @@ module IncrementalBuilderStateHelpers =
             | Good when slot.Notified -> update Invalidated
             | _ -> noChange
 
-        if slots |> List.exists (fun s -> s.Notified) then
+        let needsUpdate = slots |> List.exists (fun s -> s.Notified)
+
+        if needsUpdate then
             let slots, _ = slots |> List.mapFold mapping (Good, initialState.initialBoundModel)
             let boundModels = slots |> Seq.map (fun s -> s.BoundModel)
             { state with
@@ -964,30 +971,8 @@ module IncrementalBuilderStateHelpers =
         else
             state
 
-    let computeStampedReferencedAssemblies (initialState: IncrementalBuilderInitialState) state canTriggerInvalidation (cache: TimeStampCache) =
-        let stampedReferencedAssemblies = state.stampedReferencedAssemblies.ToBuilder()
-
-        let mutable referencesUpdated = false
-        initialState.referencedAssemblies
-        |> ImmutableArray.iteri (fun i asmInfo ->
-
-            let currentStamp = state.stampedReferencedAssemblies[i]
-            let stamp = StampReferencedAssemblyTask cache asmInfo
-
-            if currentStamp <> stamp then
-                referencesUpdated <- true
-                stampedReferencedAssemblies[i] <- stamp
-        )
-
-        if referencesUpdated then
-            // Build is invalidated. The build must be rebuilt with the newly updated references.
-            if not initialState.isImportsInvalidated && canTriggerInvalidation then
-                initialState.isImportsInvalidated <- true
-            { state with
-                stampedReferencedAssemblies = stampedReferencedAssemblies.ToImmutable()
-            }
-        else
-            state
+    let computeStampedReferencedAssemblies (initialState: IncrementalBuilderInitialState) (cache: TimeStampCache) =
+        [ for asmInfo in initialState.referencedAssemblies -> StampReferencedAssemblyTask cache asmInfo ]
 
 type IncrementalBuilderState with
 
@@ -998,7 +983,7 @@ type IncrementalBuilderState with
     *)
     static member Create(initialState: IncrementalBuilderInitialState) =
         let defaultTimeStamp = initialState.defaultTimeStamp
-        let referencedAssemblies = initialState.referencedAssemblies
+
         let cache = TimeStampCache(defaultTimeStamp)
 
         let hasSignature =
@@ -1038,11 +1023,10 @@ type IncrementalBuilderState with
         let state =
             {
                 slots = slots
-                stampedReferencedAssemblies = ImmutableArray.init referencedAssemblies.Length (fun _ -> DateTime.MinValue)
+                stampedReferencedAssemblies = computeStampedReferencedAssemblies initialState cache
                 initialBoundModel = initialState.initialBoundModel
                 finalizedBoundModel = createFinalizeBoundModelGraphNode initialState boundModels
             }
-        let state = computeStampedReferencedAssemblies initialState state false cache
         let state = computeStampedFileNames initialState state cache
         state
 
@@ -1132,17 +1116,9 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         // fast path
         if initialState.isImportsInvalidated then true
         else 
-            computeStampedReferencedAssemblies initialState currentState true (TimeStampCache(defaultTimeStamp)) |> ignore
-            initialState.isImportsInvalidated
+            state.stampedReferencedAssemblies <> computeStampedReferencedAssemblies initialState (TimeStampCache defaultTimeStamp)
 
     member _.AllDependenciesDeprecated = allDependencies
-
-    member _.PopulatePartialCheckingResults () =
-      node {
-        updateFileTimeStamps ()
-        let _ = currentState.finalizedBoundModel
-        projectChecked.Trigger()
-      }
 
     member builder.GetCheckResultsBeforeFileInProjectEvenIfStale fileName =
         let slotOfFile = builder.GetSlotOfFileName fileName
@@ -1268,14 +1244,11 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         |> Async.RunSynchronously
 
     member builder.NotifyFileChanged(fileName, timeStamp) =
-        node {
-            let slotOfFile = builder.GetSlotOfFileName fileName        
-            let cache = TimeStampCache defaultTimeStamp
-            setCurrentState
-                { currentState with 
-                    slots = currentState.slots |> List.updateAt slotOfFile (currentState.slots[slotOfFile].Notify timeStamp) }
-                cache
-        }
+        let slotOfFile = builder.GetSlotOfFileName fileName        
+        setCurrentState
+            { currentState with 
+                slots = currentState.slots |> List.updateAt slotOfFile (currentState.slots[slotOfFile].Notify timeStamp) }
+            (TimeStampCache defaultTimeStamp)
 
     member _.SourceFiles = fileNames |> Seq.map (fun f -> f.Source.FilePath) |> List.ofSeq
 
