@@ -42,44 +42,44 @@ let GetSuperTypeOfType g amap m ty =
 #endif
 
     let resBeforeNull = 
-      match metadataOfTy g ty with
+        match metadataOfTy g ty with
 #if !NO_TYPEPROVIDERS
-      | ProvidedTypeMetadata info ->
-        let st = info.ProvidedType
-        let superOpt = st.PApplyOption((fun st -> match st.BaseType with null -> None | t -> Some (nonNull t)), m)
-        match superOpt with
-        | None -> None
-        | Some super -> Some(ImportProvidedType amap m super)
+        | ProvidedTypeMetadata info ->
+            let st = info.ProvidedType
+            let superOpt = st.PApplyOption((fun st -> match st.BaseType with null -> None | t -> Some (nonNull t)), m)
+            match superOpt with
+            | None -> None
+            | Some super -> Some(ImportProvidedType amap m super)
 #endif
-      | ILTypeMetadata (TILObjectReprData(scoref, _, tdef)) ->
-        let tinst = argsOfAppTy g ty
-        match tdef.Extends with
-        | None -> None
-        | Some ilTy -> Some (RescopeAndImportILType scoref amap m tinst ilTy)
+        | ILTypeMetadata (TILObjectReprData(scoref, _, tdef)) ->
+            let tinst = argsOfAppTy g ty
+            match tdef.Extends with
+            | None -> None
+            | Some ilTy -> Some (RescopeAndImportILType scoref amap m tinst ilTy)
 
-      | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
-        if isFSharpObjModelTy g ty || isFSharpExceptionTy g ty then
-            let tcref = tcrefOfAppTy g ty
-            Some (instType (mkInstForAppTy g ty) (superOfTycon g tcref.Deref))
-        elif isArrayTy g ty then
-            Some g.system_Array_ty
-        elif isRefTy g ty && not (isObjTy g ty) then
-            Some g.obj_ty
-        elif isStructTupleTy g ty then
-            Some g.system_Value_ty
-        elif isFSharpStructOrEnumTy g ty then
-            if isFSharpEnumTy g ty then
-                Some g.system_Enum_ty
-            else
+        | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
+            if isFSharpObjModelTy g ty || isFSharpExceptionTy g ty then
+                let tcref = tcrefOfAppTy g ty
+                Some (instType (mkInstForAppTy g ty) (superOfTycon g tcref.Deref))
+            elif isArrayTy g ty then
+                Some g.system_Array_ty
+            elif isRefTy g ty && not (isObjTy g ty) then
+                Some g.obj_ty
+            elif isStructTupleTy g ty then
                 Some g.system_Value_ty
-        elif isStructAnonRecdTy g ty then
-            Some g.system_Value_ty
-        elif isAnonRecdTy g ty then
-            Some g.obj_ty
-        elif isRecdTy g ty || isUnionTy g ty then
-            Some g.obj_ty
-        else
-            None
+            elif isFSharpStructOrEnumTy g ty then
+                if isFSharpEnumTy g ty then
+                    Some g.system_Enum_ty
+                else
+                    Some g.system_Value_ty
+            elif isStructAnonRecdTy g ty then
+                Some g.system_Value_ty
+            elif isAnonRecdTy g ty then
+                Some g.obj_ty
+            elif isRecdTy g ty || isUnionTy g ty then
+                Some g.obj_ty
+            else
+                None
     match resBeforeNull with 
     | Some superTy ->
         let nullness = nullnessOfTy g ty

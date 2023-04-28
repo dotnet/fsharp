@@ -2444,8 +2444,9 @@ and accFreeInTypeLeftToRight g cxFlag thruFlag acc ty =
         let racc = accFreeInTypeLeftToRight g cxFlag thruFlag emptyFreeTyparsLeftToRight r
         unionFreeTyparsLeftToRight (boundTyparsLeftToRight g cxFlag thruFlag tps racc) acc
 
-    | TType_measure unt -> 
-        List.foldBack (fun (tp, _) acc -> accFreeTyparRefLeftToRight g cxFlag thruFlag acc tp) (ListMeasureVarOccsWithNonZeroExponents unt) acc
+    | TType_measure unt ->
+        let mvars = ListMeasureVarOccsWithNonZeroExponents unt
+        List.foldBack (fun (tp, _) acc -> accFreeTyparRefLeftToRight g cxFlag thruFlag acc tp) mvars acc
 
 and accFreeInTupInfoLeftToRight _g _cxFlag _thruFlag acc unt = 
     match unt with 
@@ -3925,27 +3926,27 @@ module DebugPrint =
            let tcL = layoutTyconRef tcref
            auxTyparsL env tcL prefix tinst
 
-        | TType_app (tcref, tinst, nullness) -> 
+        | TType_app (tcref, tinst, nullness) ->
            let prefix = tcref.IsPrefixDisplay
            let tcL = layoutTyconRef tcref
            let coreL = auxTyparsL env tcL prefix tinst
            auxAddNullness coreL nullness
 
-        | TType_tuple (_tupInfo, tys) -> 
+        | TType_tuple (_tupInfo, tys) ->
             sepListL (wordL (tagText "*")) (List.map (auxTypeAtomL env) tys) |> wrap
 
-        | TType_fun (domainTy, rangeTy, nullness) -> 
+        | TType_fun (domainTy, rangeTy, nullness) ->
            let coreL = ((auxTypeAtomL env domainTy ^^ wordL (tagText "->")) --- auxTypeL env rangeTy)  |> wrap
            auxAddNullness coreL nullness
 
         | TType_var (typar, nullness) ->
-           let coreL = auxTyparWrapL env isAtomic typar 
+           let coreL = auxTyparWrapL env isAtomic typar
            auxAddNullness coreL nullness
 
-        | TType_anon (anonInfo, tys) -> 
+        | TType_anon (anonInfo, tys) ->
            braceBarL (sepListL (wordL (tagText ";")) (List.map2 (fun nm ty -> wordL (tagField nm) --- auxTypeAtomL env ty) (Array.toList anonInfo.SortedNames) tys))
 
-        | TType_measure unt -> 
+        | TType_measure unt ->
 #if DEBUG
           leftL (tagText "{") ^^
           (match global_g with

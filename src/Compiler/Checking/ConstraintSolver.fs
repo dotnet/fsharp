@@ -1315,17 +1315,17 @@ and SolveTypeEqualsType (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTra
         if evalTupInfoIsStruct tupInfo1 <> evalTupInfoIsStruct tupInfo2 then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m, m2)) else
         SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2
 
+    | TType_anon (anonInfo1, l1),TType_anon (anonInfo2, l2) ->
+        SolveAnonInfoEqualsAnonInfo csenv m2 anonInfo1 anonInfo2 ++ (fun () ->
+        SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2)
+
     | TType_fun (domainTy1, rangeTy1, nullness1), TType_fun (domainTy2, rangeTy2, nullness2) ->
-        SolveFunTypeEqn csenv ndeep m2 trace None domainTy1 domainTy2 rangeTy1 rangeTy2 ++ (fun () -> 
+        SolveFunTypeEqn csenv ndeep m2 trace None domainTy1 domainTy2 rangeTy1 rangeTy2 ++ (fun () ->
            SolveNullnessEquiv csenv m2 trace ty1 ty2 nullness1 nullness2
         )
 
-    | TType_measure ms1, TType_measure ms2 -> 
+    | TType_measure ms1, TType_measure ms2 ->
         UnifyMeasures csenv trace ms1 ms2
-
-    | TType_anon (anonInfo1, l1),TType_anon (anonInfo2, l2) -> 
-        SolveAnonInfoEqualsAnonInfo csenv m2 anonInfo1 anonInfo2 ++ (fun () -> 
-        SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2)
 
     | TType_forall(tps1, bodyTy1), TType_forall(tps2, bodyTy2) -> 
         if tps1.Length <> tps2.Length then localAbortD else
@@ -1334,7 +1334,7 @@ and SolveTypeEqualsType (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTra
         if not (typarsAEquiv g aenv tps1 tps2) then localAbortD else
         SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace bodyTy1 bodyTy2 
 
-    | TType_ucase (uc1, l1)  , TType_ucase (uc2, l2) when g.unionCaseRefEq uc1 uc2  -> 
+    | TType_ucase (uc1, l1)  , TType_ucase (uc2, l2) when g.unionCaseRefEq uc1 uc2 ->
         SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2
 
     | _  -> localAbortD
