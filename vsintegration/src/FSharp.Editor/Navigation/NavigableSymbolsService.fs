@@ -15,6 +15,7 @@ open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Text.Editor
 open Microsoft.VisualStudio.Utilities
 
+[<AllowNullLiteral>]
 type internal FSharpNavigableSymbol(item: FSharpNavigableItem, span: SnapshotSpan, gtd: GoToDefinition) =
     interface INavigableSymbol with
         member _.Navigate(_: INavigableRelationship) =
@@ -31,7 +32,7 @@ type internal FSharpNavigableSymbolSource(metadataAsSource) =
     let statusBar = StatusBar()
 
     interface INavigableSymbolSource with
-        member _.GetNavigableSymbolAsync(triggerSpan: SnapshotSpan, cancellationToken: CancellationToken) : Task<INavigableSymbol MaybeNull> MaybeNull =
+        member _.GetNavigableSymbolAsync(triggerSpan: SnapshotSpan, cancellationToken: CancellationToken) =
             // Yes, this is a code smell. But this is how the editor API accepts what we would treat as None.
             if disposed then
                 null
@@ -63,7 +64,7 @@ type internal FSharpNavigableSymbolSource(metadataAsSource) =
 
                             match result with
                             | FSharpGoToDefinitionResult.NavigableItem (navItem) ->
-                                return FSharpNavigableSymbol(navItem, symbolSpan, gtd) :> INavigableSymbol MaybeNull
+                                return FSharpNavigableSymbol(navItem, symbolSpan, gtd) :> INavigableSymbol
 
                             | FSharpGoToDefinitionResult.ExternalAssembly (targetSymbolUse, metadataReferences) ->
                                 let nav =
@@ -92,8 +93,6 @@ type internal FSharpNavigableSymbolSource(metadataAsSource) =
                         // The NavigableSymbols API accepts 'null' when there's nothing to navigate to.
                         return null
                 }
-                // Async<INavigableSymbol? option>
-                // --> Async<INavigableSymbol?>
                 |> Async.map Option.toObj
                 |> RoslynHelpers.StartAsyncAsTask cancellationToken
 

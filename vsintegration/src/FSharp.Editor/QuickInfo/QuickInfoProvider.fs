@@ -107,7 +107,7 @@ type internal FSharpAsyncQuickInfoSource
     interface IAsyncQuickInfoSource with
         override _.Dispose() = () // no cleanup necessary
 
-        override _.GetQuickInfoItemAsync(session: IAsyncQuickInfoSession, cancellationToken: CancellationToken) : Task<QuickInfoItem MaybeNull> =
+        override _.GetQuickInfoItemAsync(session: IAsyncQuickInfoSession, cancellationToken: CancellationToken) : Task<QuickInfoItem> =
             asyncMaybe {
                 let document =
                     textBuffer.CurrentSnapshot.GetOpenDocumentInCurrentContextWithChanges()

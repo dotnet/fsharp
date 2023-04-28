@@ -188,7 +188,7 @@ type internal InlineRenameService [<ImportingConstructor>] () =
             return InlineRenameInfo(document, triggerSpan, symbol, symbolUse, checkFileResults) :> FSharpInlineRenameInfo
         }
 
-    override _.GetRenameInfoAsync(document: Document, position: int, cancellationToken: CancellationToken) : Task<FSharpInlineRenameInfo MaybeNull> =
+    override _.GetRenameInfoAsync(document: Document, position: int, cancellationToken: CancellationToken) : Task<FSharpInlineRenameInfo> =
         asyncMaybe { return! InlineRenameService.GetInlineRenameInfo(document, position) }
-        |> Async.map Option.toObj
+        |> Async.map (Option.defaultValue null)
         |> RoslynHelpers.StartAsyncAsTask(cancellationToken)

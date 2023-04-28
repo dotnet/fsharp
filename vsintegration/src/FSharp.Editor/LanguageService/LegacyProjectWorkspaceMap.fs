@@ -137,7 +137,7 @@ type internal LegacyProjectWorkspaceMap
             // Roslyn is expecting site to be an IVsHierarchy.
             // It just so happens that the object that implements IProvideProjectSite is also
             // an IVsHierarchy. This assertion is to ensure that the assumption holds true.
-            Debug.Assert(not (isNull (box hierarchy)), "About to CreateProjectContext with a non-hierarchy site")
+            Debug.Assert(not (isNull hierarchy), "About to CreateProjectContext with a non-hierarchy site")
 
             let projectContext =
                 projectContextFactory.CreateProjectContext(

@@ -9,7 +9,6 @@ open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.Utilities
 open Microsoft.VisualStudio.ComponentModelHost
-open Microsoft.VisualStudio.FSharp.Editor.Extensions
 
 type ShellPackage = Microsoft.VisualStudio.Shell.Package
 
@@ -33,8 +32,11 @@ module Constants =
 [<Guid(Constants.FSharpEditorFactoryIdString)>]
 type FSharpEditorFactory(parentPackage: ShellPackage) =
 
-    let parentPackage = nullArgCheck "parentPackage" parentPackage 
-    let serviceProvider = parentPackage :> IServiceProvider
+    let serviceProvider =
+        if parentPackage = null then
+            nullArg "parentPackage"
+
+        parentPackage :> IServiceProvider
 
     let componentModel =
         serviceProvider.GetService(typeof<SComponentModel>) :?> IComponentModel

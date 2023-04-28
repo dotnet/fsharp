@@ -218,7 +218,7 @@ type internal FSharpCompletionProvider
 
                 let namespaceName =
                     match declarationItem.NamespaceToOpen with
-                    | Some namespaceToOpen -> withNull<string> namespaceToOpen
+                    | Some namespaceToOpen -> namespaceToOpen
                     | _ -> null // Icky, but this is how roslyn handles it
 
                 let filterText =

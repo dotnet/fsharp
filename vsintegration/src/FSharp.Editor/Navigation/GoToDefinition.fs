@@ -31,13 +31,13 @@ open System.Text.RegularExpressions
 
 module private Symbol =
     let fullName (root: ISymbol) : string =
-        let rec inner parts (sym: ISymbol MaybeNull) =
+        let rec inner parts (sym: ISymbol) =
             match sym with
-            | Null -> parts
+            | null -> parts
             // TODO: do we have any other terminating cases?
-            | NonNull sym when sym.Kind = SymbolKind.NetModule || sym.Kind = SymbolKind.Assembly -> parts
-            | NonNull sym when sym.MetadataName <> "" -> inner (sym.MetadataName :: parts) sym.ContainingSymbol
-            | NonNull sym -> inner parts sym.ContainingSymbol
+            | sym when sym.Kind = SymbolKind.NetModule || sym.Kind = SymbolKind.Assembly -> parts
+            | sym when sym.MetadataName <> "" -> inner (sym.MetadataName :: parts) sym.ContainingSymbol
+            | sym -> inner parts sym.ContainingSymbol
 
         inner [] root |> String.concat "."
 

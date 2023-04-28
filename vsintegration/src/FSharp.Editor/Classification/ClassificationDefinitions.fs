@@ -207,24 +207,24 @@ module internal ClassificationDefinitions =
                 VSColorTheme.remove_ThemeChanged handler
 
     [<Export; Name(FSharpClassificationTypes.MutableVar); BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)>]
-    let FSharpMutableVarClassificationType: ClassificationTypeDefinition MaybeNull = null
+    let FSharpMutableVarClassificationType: ClassificationTypeDefinition = null
 
     [<Export; Name(FSharpClassificationTypes.DisposableType); BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)>]
-    let FSharpDisposableClassificationType: ClassificationTypeDefinition MaybeNull = null
+    let FSharpDisposableClassificationType: ClassificationTypeDefinition = null
 
     [<Export; Name(FSharpClassificationTypes.DisposableLocalValue); BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)>]
-    let FSharpDisposableLocalValueClassificationType: ClassificationTypeDefinition MaybeNull =
+    let FSharpDisposableLocalValueClassificationType: ClassificationTypeDefinition =
         null
 
     [<Export; Name(FSharpClassificationTypes.DisposableTopLevelValue); BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)>]
-    let FSharpDisposableTopLevelValueClassificationType: ClassificationTypeDefinition MaybeNull =
+    let FSharpDisposableTopLevelValueClassificationType: ClassificationTypeDefinition =
         null
 
     [<Export; Name(FSharpClassificationTypes.Function); BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)>]
-    let FSharpFunctionClassificationType: ClassificationTypeDefinition MaybeNull = null
+    let FSharpFunctionClassificationType: ClassificationTypeDefinition = null
 
     [<Export; Name(FSharpClassificationTypes.Printf); BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)>]
-    let FSharpPrintfClassificationType: ClassificationTypeDefinition MaybeNull = null
+    let FSharpPrintfClassificationType: ClassificationTypeDefinition = null
 
     [<Export(typeof<EditorFormatDefinition>)>]
     [<ClassificationType(ClassificationTypeNames = FSharpClassificationTypes.Function)>]

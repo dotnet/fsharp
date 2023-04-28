@@ -19,21 +19,6 @@ open FSharp.Compiler.Text
 
 open Microsoft.VisualStudio.FSharp.Editor
 
-#if NO_CHECKNULLS
-type MaybeNull<'T when 'T : null> = 'T
-// Shim to match nullness checking library support in preview
-let inline (|NonNullQuick|) x = match x with null -> raise (NullReferenceException()) | v -> v
-let inline nonNull<'T when 'T : null> (x: 'T) = x
-let inline (|Null|NonNull|) (x: 'T) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
-let inline nullArgCheck (argumentName:string) (value: 'T when 'T : not struct) = 
-    match box value with 
-    | null -> raise (new System.ArgumentNullException(argumentName))        
-    | _ ->  value
-let inline withNull<'T when 'T: not struct> (value : 'T) = value
-#else
-type MaybeNull<'T when 'T : __notnull> = 'T __withnull
-#endif
-
 type private FSharpGlyph = FSharp.Compiler.EditorServices.FSharpGlyph
 type private FSharpRoslynGlyph = Microsoft.CodeAnalysis.ExternalAccess.FSharp.FSharpGlyph
 
@@ -325,10 +310,10 @@ module Exception =
     /// messages recursively.
     let flattenMessage (root: System.Exception) =
 
-        let rec flattenInner (exc: System.Exception MaybeNull) =
+        let rec flattenInner (exc: System.Exception) =
             match exc with
-            | Null -> []
-            | NonNull exc -> [ exc.Message ] @ (flattenInner exc.InnerException)
+            | null -> []
+            | _ -> [ exc.Message ] @ (flattenInner exc.InnerException)
 
         // If an aggregate exception only has a single inner exception, use that as the root
         match root with

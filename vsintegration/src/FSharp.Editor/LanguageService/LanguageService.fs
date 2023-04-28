@@ -16,7 +16,6 @@ open FSharp.NativeInterop
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Editor
 open Microsoft.VisualStudio.FSharp.Editor
-open Microsoft.VisualStudio.FSharp.Editor.Extensions
 open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.LanguageServices.Implementation.LanguageService
 open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
@@ -37,12 +36,12 @@ open System.Threading.Tasks
 type internal RoamingProfileStorageLocation(keyName: string) =
     inherit OptionStorageLocation()
 
-    member _.GetKeyNameForLanguage(languageName: string MaybeNull) =
+    member _.GetKeyNameForLanguage(languageName: string) =
         let unsubstitutedKeyName = keyName
 
         match languageName with
-        | Null -> unsubstitutedKeyName
-        | NonNull languageName ->
+        | null -> unsubstitutedKeyName
+        | _ ->
             let substituteLanguageName =
                 if languageName = FSharpConstants.FSharpLanguageName then
                     "FSharp"

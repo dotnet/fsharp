@@ -19,7 +19,7 @@ type internal FsiCommandFilter(serviceProvider: System.IServiceProvider) =
 
     let loadPackage (guidString: string) =
         lazy
-            (let shell = serviceProvider.GetService(typeof<SVsShell MaybeNull>) :?> IVsShell
+            (let shell = serviceProvider.GetService(typeof<SVsShell>) :?> IVsShell
              let packageToBeLoadedGuid = ref (Guid(guidString))
 
              match shell.LoadPackage packageToBeLoadedGuid with
