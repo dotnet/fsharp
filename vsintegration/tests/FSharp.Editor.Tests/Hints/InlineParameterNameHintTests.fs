@@ -639,4 +639,3 @@ let x = X(List.map id [ 42 ], "")
         let actual = getParameterNameHints document
 
         actual |> Assert.shouldBeEquivalentTo expected
-
