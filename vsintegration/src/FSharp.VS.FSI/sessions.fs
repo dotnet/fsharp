@@ -276,7 +276,7 @@ let fsiStartInfo channelName sourceFile =
     
     let initialPath = 
         match sourceFile with 
-        | Some path when Directory.Exists(Path.GetDirectoryName(path)) -> Path.GetDirectoryName(path)
+        | path when path <> null && Directory.Exists(Path.GetDirectoryName(path)) -> Path.GetDirectoryName(path)
         | _ -> Path.GetTempPath()
 
     if Directory.Exists(initialPath) then
@@ -285,8 +285,10 @@ let fsiStartInfo channelName sourceFile =
     procInfo
 
 
+let nonNull = function null -> false | (s:string) -> true
+
 /// Represents an active F# Interactive process to which Visual Studio is connected via stdin/stdout/stderr and a remoting channel
-type FsiSession(sourceFile: string option) = 
+type FsiSession(sourceFile) = 
     let randomSalt = System.Random()
     let channelName =
         let pid  = Process.GetCurrentProcess().Id
@@ -411,9 +413,9 @@ type FsiSession(sourceFile: string option) =
 
     member _.SendInput (str: string) = inputQueue.Post(str)
 
-    member _.Output      = Observable.filter (isNull >> not) fsiOutput.Publish
+    member _.Output      = Observable.filter nonNull fsiOutput.Publish
 
-    member _.Error       = Observable.filter (isNull >> not) fsiError.Publish
+    member _.Error       = Observable.filter nonNull fsiError.Publish
 
     member _.Exited      = (cmdProcess.Exited |> Observable.map id)
 

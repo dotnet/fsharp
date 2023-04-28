@@ -85,7 +85,7 @@ type internal FsiMethods() =
     override this.GetParameterCount(i:int) = 0
     override this.GetParameterInfo(i,param_i,name:byref<string>,display:byref<string>,description:byref<string>) =
         name <- items.[i]; display <- ""; description <- ""
-    override this.GetType(i:int) : string MaybeNull = null
+    override this.GetType(i:int) = null:string
 
 // FsiSource
 type internal FsiSource(service:LanguageService, textLines:IVsTextLines, colorizer:Colorizer) =
@@ -114,7 +114,7 @@ type internal FsiAuthoringScope(sessions:FsiSessions option,readOnlySpanGetter:u
     inherit AuthoringScope()
     override this.GetDataTipText(line:int,col:int,span:byref<TextSpan>) =
         span <- new TextSpan()
-        null
+        null : string
 
     override this.GetDeclarations(_snapshot,line:int,col:int,info:TokenInfo,reason:ParseReason) =
         (new FsiDeclarations() :> Declarations)
@@ -179,9 +179,9 @@ module internal Helpers =
 type internal FsiLanguageService() = 
     inherit LanguageService()
 
-    let mutable preferences : LanguagePreferences MaybeNull = null
-    let mutable scanner : IScanner option = None
-    let mutable sessions : Session.FsiSessions option = None
+    let mutable preferences        = null : LanguagePreferences     
+    let mutable scanner            = null : IScanner
+    let mutable sessions           = None : Session.FsiSessions option
     let mutable readOnlySpanGetter = (fun () -> new TextSpan())
 
     let readOnlySpan() = readOnlySpanGetter() // do not eta-contract, readOnlySpanGetter is mutable.
@@ -198,12 +198,9 @@ type internal FsiLanguageService() =
         preferences
         
     override this.GetScanner(buffer:IVsTextLines) =
-        match scanner with
-        | None ->
-            let res = new FsiScanner(buffer) :> IScanner
-            scanner <- Some res
-            res
-        | Some scanner -> scanner
+        if isNull scanner then
+            scanner <- (new FsiScanner(buffer) :> IScanner)
+        scanner
         
     override this.ParseSource(req:ParseRequest) =
         (new FsiAuthoringScope(sessions,readOnlySpan) :> AuthoringScope)
