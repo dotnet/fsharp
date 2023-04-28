@@ -57,7 +57,6 @@ module internal Guids =
     let fsiContentTypeName              = "FSharpInteractive"
 
 module internal Util =
-
     /// Utility function to create an instance of a class from the local registry. [From Iron Python].
     let CreateObject (globalProvider:System.IServiceProvider) (classType:Type,interfaceType:Type) =
         // Follows IronPython sample. See ConsoleWindow.CreateObject

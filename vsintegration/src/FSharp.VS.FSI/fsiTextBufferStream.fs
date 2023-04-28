@@ -6,7 +6,6 @@ open System
 open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Utilities
-open Util
 
 // This type wraps the IVsTextLines which contains the FSI session (output and input).
 // It provides the API for writing directly to the read-only part of the buffer.

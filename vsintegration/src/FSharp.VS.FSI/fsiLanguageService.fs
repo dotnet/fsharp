@@ -114,7 +114,7 @@ type internal FsiAuthoringScope(sessions:FsiSessions option,readOnlySpanGetter:u
     inherit AuthoringScope()
     override this.GetDataTipText(line:int,col:int,span:byref<TextSpan>) =
         span <- new TextSpan()
-        null : string
+        null
 
     override this.GetDeclarations(_snapshot,line:int,col:int,info:TokenInfo,reason:ParseReason) =
         (new FsiDeclarations() :> Declarations)
@@ -128,7 +128,7 @@ type internal FsiAuthoringScope(sessions:FsiSessions option,readOnlySpanGetter:u
                        col      : int,
                        span     : byref<TextSpan>) =
         span <- new TextSpan()
-        null
+        null : string
 
 type internal FsiViewFilter(mgr:CodeWindowManager,view:IVsTextView) =
     inherit ViewFilter(mgr,view)

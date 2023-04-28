@@ -198,7 +198,6 @@ type internal FsiToolWindow() as this =
     let writeText scroll (str:string) =
         if str <> null && textLines <> null then
             lock textLines (fun () ->
-            lock lines (fun () ->
                 textStream.DirectWrite(fixServerPrompt str)
                 if scroll then 
                     setScrollToEndOfBuffer()
@@ -378,7 +377,7 @@ type internal FsiToolWindow() as this =
     /// Hanlde no-op, used to overwrite some standard command with an empty action.
     let onNoAction (sender:obj) (e:EventArgs) = ()
     
-
+    
     /// Handle "Clear Pane". Clear input and all but the last ReadOnly line (probably the prompt).    
     let onClearPane (sender:obj) (args:EventArgs) =
         lock textLines (fun () ->        
