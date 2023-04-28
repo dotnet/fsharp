@@ -196,7 +196,7 @@ type TcGlobals(
   // empty flags
   let v_knownWithoutNull = 0uy
 
-  let private mkNonGenericTy tcref = TType_app(tcref, [], v_knownWithoutNull)
+  let mkNonGenericTy tcref = TType_app(tcref, [], v_knownWithoutNull)
 
   let mkNonLocalTyconRef2 ccu path n = mkNonLocalTyconRef (mkNonLocalEntityRef ccu path) n
 

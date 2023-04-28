@@ -5339,8 +5339,8 @@ and TcExprUndelayedNoType (cenv: cenv) env tpenv synExpr =
     let expr, tpenv = TcExprUndelayed cenv (MustEqual overallTy) env tpenv synExpr
     expr, overallTy, tpenv
 
-/// Process a leaf construct where the actual type (or an approximation of it such as 'list<_>'
-/// or 'array<_>') is already sufficiently pre-known, and the information in the overall type
+/// Process a leaf construct where the actual type (or an approximation of it such as '_ list'
+/// or '_ array') is already sufficiently pre-known, and the information in the overall type
 /// can be eagerly propagated into the actual type (UnifyOverallType), including pre-calculating
 /// any type-directed conversion. This must mean that types extracted when processing the expression are not
 /// considered in determining any type-directed conversion. 

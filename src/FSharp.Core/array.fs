@@ -692,7 +692,7 @@ module Array =
     // - when the predicate yields consecutive runs of true data that is >= 32 elements (and fall
     //   into maskArray buckets) are copied in chunks using System.Array.Copy
     module Filter =
-        let private populateMask<'a> (f: 'a -> bool) (src: array<'a>) (maskArray: array<uint32>) =
+        let private populateMask<'a> (f: 'a -> bool) (src: 'a array) (maskArray: uint32 array) =
             let mutable count = 0
 
             for maskIdx = 0 to maskArray.Length - 1 do
@@ -833,8 +833,8 @@ module Array =
 
         let private createMask<'a>
             (f: 'a -> bool)
-            (src: array<'a>)
-            (maskArrayOut: byref<array<uint32>>)
+            (src: 'a array)
+            (maskArrayOut: byref<uint32 array>)
             (leftoverMaskOut: byref<uint32>)
             =
             let maskArrayLength = src.Length / 0x20
@@ -842,7 +842,7 @@ module Array =
             // null when there are less than 32 items in src array.
             let maskArray =
                 if maskArrayLength = 0 then
-                    Unchecked.defaultof<_>
+                    null
                 else
                     Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked<uint32> maskArrayLength
 
@@ -871,7 +871,7 @@ module Array =
             leftoverMaskOut <- leftoverMask
             count
 
-        let private populateDstViaMask<'a> (src: array<'a>) (maskArray: array<uint32>) (dst: array<'a>) =
+        let private populateDstViaMask<'a> (src: 'a array) (maskArray: uint32 array) (dst: 'a array) =
             let mutable dstIdx = 0
             let mutable batchCount = 0
 
@@ -1026,7 +1026,7 @@ module Array =
 
             dstIdx
 
-        let private filterViaMask (maskArray: array<uint32>) (leftoverMask: uint32) (count: int) (src: array<_>) =
+        let private filterViaMask (maskArray: uint32 array) (leftoverMask: uint32) (count: int) (src: _ array) =
             let dst = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count
 
             let mutable dstIdx = 0
