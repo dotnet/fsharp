@@ -38,7 +38,7 @@ type AssemblyLoader =
     /// Get a flag indicating if an assembly is a provided assembly, plus the
     /// table of information recording remappings from type names in the provided assembly to type
     /// names in the statically linked, embedded assembly.
-    abstract GetProvidedAssemblyInfo : CompilationThreadToken * range * Tainted<ProvidedAssembly> -> bool * ProvidedAssemblyStaticLinkingMap option
+    abstract GetProvidedAssemblyInfo : CompilationThreadToken * range * Tainted<ProvidedAssembly MaybeNull> -> bool * ProvidedAssemblyStaticLinkingMap option
 
     /// Record a root for a [<Generate>] type to help guide static linking & type relocation
     abstract RecordGeneratedTypeRoot : ProviderGeneratedType -> unit
@@ -183,12 +183,17 @@ let rec ImportILType (env: ImportMap) m tinst ty =
         ImportTyconRefApp env tcref inst
 
     | ILType.Byref ty -> mkByrefTy env.g (ImportILType env m tinst ty)
+
     | ILType.Ptr ILType.Void  when env.g.voidptr_tcr.CanDeref -> mkVoidPtrTy env.g
+
     | ILType.Ptr ty  -> mkNativePtrTy env.g (ImportILType env m tinst ty)
+
     | ILType.FunctionPointer _ -> env.g.nativeint_ty (* failwith "cannot import this kind of type (ptr, fptr)" *)
+
     | ILType.Modified(_, _, ty) -> 
          // All custom modifiers are ignored
          ImportILType env m tinst ty
+
     | ILType.TypeVar u16 -> 
          try List.item (int u16) tinst
          with _ -> 

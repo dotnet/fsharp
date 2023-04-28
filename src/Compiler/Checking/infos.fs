@@ -344,8 +344,8 @@ type ILFieldInit with
     /// Compute the ILFieldInit for the given provided constant value for a provided enum type.
     static member FromProvidedObj m (v: obj) =
         match v with
-        | null -> ILFieldInit.Null
-        | _ ->
+        | Null -> ILFieldInit.Null
+        | NonNull v ->
             let objTy = v.GetType()
             let v = if objTy.IsEnum then objTy.GetField("value__").GetValue v else v
             match v with

@@ -4332,7 +4332,7 @@ and TcTypeOrMeasure kindOpt (cenv: cenv) newOk checkConstraints occ (iwsam: Warn
         TcLongIdentType kindOpt cenv newOk checkConstraints occ iwsam env tpenv synLongId
 
     | MultiDimensionArrayType (rank, elemTy, m) ->
-        TcElementType cenv newOk checkConstraints occ env tpenv rank elemTy m
+        TcArrayType cenv newOk checkConstraints occ env tpenv rank elemTy m
     
     | SynType.App (StripParenTypes (SynType.LongIdent longId), _, args, _, _, postfix, m) ->
         TcLongIdentAppType kindOpt cenv newOk checkConstraints occ iwsam env tpenv longId postfix args m
@@ -4353,7 +4353,7 @@ and TcTypeOrMeasure kindOpt (cenv: cenv) newOk checkConstraints occ (iwsam: Warn
         TcFunctionType cenv newOk checkConstraints occ env tpenv domainTy resultTy
 
     | SynType.Array (rank , elemTy, m) ->
-        TcElementType cenv newOk checkConstraints occ env tpenv rank elemTy m
+        TcArrayType cenv newOk checkConstraints occ env tpenv rank elemTy m
 
     | SynType.Var (tp, _) ->
         TcTypeParameter kindOpt cenv env newOk tpenv tp
@@ -4521,7 +4521,7 @@ and TcFunctionType (cenv: cenv) newOk checkConstraints occ env tpenv domainTy re
     let tyR = mkFunTy g domainTyR resultTyR
     tyR, tpenv
 
-and TcElementType (cenv: cenv) newOk checkConstraints occ env tpenv rank elemTy m =
+and TcArrayType (cenv: cenv) newOk checkConstraints occ env tpenv rank elemTy m =
     let g = cenv.g
     let elemTy, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ WarnOnIWSAM.Yes env tpenv elemTy
     let tyR = mkArrayTy g rank elemTy m

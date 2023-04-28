@@ -128,14 +128,14 @@ type InlineDelayInit<'T when 'T: not struct> =
         }
 
     val mutable store: 'T
-    val mutable func: Func<'T>
+    val mutable func: Func<'T> MaybeNull
 
     member x.Value =
         match x.func with
         | null -> x.store
         | _ ->
             let res = LazyInitializer.EnsureInitialized(&x.store, x.func)
-            x.func <- Unchecked.defaultof<_>
+            x.func <- null
             res
 
 //-------------------------------------------------------------------------

@@ -3487,7 +3487,7 @@ type FsiStdinLexerProvider
 
         IndentationAwareSyntaxStatus(initialIndentationAwareSyntaxStatus, warn = false)
 
-    let LexbufFromLineReader (fsiStdinSyphon: FsiStdinSyphon) readF =
+    let LexbufFromLineReader (fsiStdinSyphon: FsiStdinSyphon) (readF: unit -> string MaybeNull) =
         UnicodeLexing.FunctionAsLexbuf(
             true,
             tcConfigB.langVersion,
@@ -3499,7 +3499,10 @@ type FsiStdinLexerProvider
                     with :? EndOfStreamException ->
                         None
 
-                inputOption |> Option.iter (fun t -> fsiStdinSyphon.Add(t + "\n"))
+                inputOption |> Option.iter (fun t ->
+                    match t with
+                    | Null -> ()
+                    | NonNull t -> fsiStdinSyphon.Add(t + "\n"))
 
                 match inputOption with
                 | Some null
@@ -3526,11 +3529,14 @@ type FsiStdinLexerProvider
     // Reading stdin as a lex stream
     //----------------------------------------------------------------------------
 
-    let removeZeroCharsFromString (str: string) =
-        if str <> null && str.Contains("\000") then
-            String(str |> Seq.filter (fun c -> c <> '\000') |> Seq.toArray)
-        else
-            str
+    let removeZeroCharsFromString (str: string MaybeNull) : string MaybeNull =
+        match str with
+        | Null -> str
+        | NonNull str ->
+            if str.Contains("\000") then
+                String(str |> Seq.filter (fun c -> c <> '\000') |> Seq.toArray)
+            else
+                str
 
     let CreateLexerForLexBuffer (sourceFileName, lexbuf, diagnosticsLogger) =
 
