@@ -1945,8 +1945,8 @@ FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryRe
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+Shim
-FSharp.Compiler.CodeAnalysis.DocumentSource+Custom: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.ISourceText]] Item
-FSharp.Compiler.CodeAnalysis.DocumentSource+Custom: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.ISourceText]] get_Item()
+FSharp.Compiler.CodeAnalysis.DocumentSource+Custom: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.ISourceText]]] Item
+FSharp.Compiler.CodeAnalysis.DocumentSource+Custom: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.ISourceText]]] get_Item()
 FSharp.Compiler.CodeAnalysis.DocumentSource+Tags: Int32 Custom
 FSharp.Compiler.CodeAnalysis.DocumentSource+Tags: Int32 FileSystem
 FSharp.Compiler.CodeAnalysis.DocumentSource: Boolean IsCustom
@@ -1954,7 +1954,7 @@ FSharp.Compiler.CodeAnalysis.DocumentSource: Boolean IsFileSystem
 FSharp.Compiler.CodeAnalysis.DocumentSource: Boolean get_IsCustom()
 FSharp.Compiler.CodeAnalysis.DocumentSource: Boolean get_IsFileSystem()
 FSharp.Compiler.CodeAnalysis.DocumentSource: FSharp.Compiler.CodeAnalysis.DocumentSource FileSystem
-FSharp.Compiler.CodeAnalysis.DocumentSource: FSharp.Compiler.CodeAnalysis.DocumentSource NewCustom(Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.ISourceText]])
+FSharp.Compiler.CodeAnalysis.DocumentSource: FSharp.Compiler.CodeAnalysis.DocumentSource NewCustom(Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.ISourceText]]])
 FSharp.Compiler.CodeAnalysis.DocumentSource: FSharp.Compiler.CodeAnalysis.DocumentSource get_FileSystem()
 FSharp.Compiler.CodeAnalysis.DocumentSource: FSharp.Compiler.CodeAnalysis.DocumentSource+Custom
 FSharp.Compiler.CodeAnalysis.DocumentSource: FSharp.Compiler.CodeAnalysis.DocumentSource+Tags
@@ -10133,7 +10133,7 @@ FSharp.Compiler.Tokenization.FSharpLineTokenizer: FSharp.Compiler.Tokenization.F
 FSharp.Compiler.Tokenization.FSharpLineTokenizer: System.Tuple`2[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Tokenization.FSharpTokenInfo],FSharp.Compiler.Tokenization.FSharpTokenizerLexState] ScanToken(FSharp.Compiler.Tokenization.FSharpTokenizerLexState)
 FSharp.Compiler.Tokenization.FSharpSourceTokenizer: FSharp.Compiler.Tokenization.FSharpLineTokenizer CreateBufferTokenizer(Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`3[System.Char[],System.Int32,System.Int32],System.Int32])
 FSharp.Compiler.Tokenization.FSharpSourceTokenizer: FSharp.Compiler.Tokenization.FSharpLineTokenizer CreateLineTokenizer(System.String)
-FSharp.Compiler.Tokenization.FSharpSourceTokenizer: Void .ctor(Microsoft.FSharp.Collections.FSharpList`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.String])
+FSharp.Compiler.Tokenization.FSharpSourceTokenizer: Void .ctor(Microsoft.FSharp.Collections.FSharpList`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.Tokenization.FSharpToken: Boolean IsCommentTrivia
 FSharp.Compiler.Tokenization.FSharpToken: Boolean IsIdentifier
 FSharp.Compiler.Tokenization.FSharpToken: Boolean IsKeyword
@@ -11302,6 +11302,7 @@ FSharp.Compiler.Tokenization.FSharpTokenizerColorState: FSharp.Compiler.Tokeniza
 FSharp.Compiler.Tokenization.FSharpTokenizerColorState: FSharp.Compiler.Tokenization.FSharpTokenizerColorState Comment
 FSharp.Compiler.Tokenization.FSharpTokenizerColorState: FSharp.Compiler.Tokenization.FSharpTokenizerColorState EndLineThenSkip
 FSharp.Compiler.Tokenization.FSharpTokenizerColorState: FSharp.Compiler.Tokenization.FSharpTokenizerColorState EndLineThenToken
+FSharp.Compiler.Tokenization.FSharpTokenizerColorState: FSharp.Compiler.Tokenization.FSharpTokenizerColorState ExtendedInterpolatedString
 FSharp.Compiler.Tokenization.FSharpTokenizerColorState: FSharp.Compiler.Tokenization.FSharpTokenizerColorState IfDefSkip
 FSharp.Compiler.Tokenization.FSharpTokenizerColorState: FSharp.Compiler.Tokenization.FSharpTokenizerColorState InitialState
 FSharp.Compiler.Tokenization.FSharpTokenizerColorState: FSharp.Compiler.Tokenization.FSharpTokenizerColorState SingleLineComment
