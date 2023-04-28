@@ -602,7 +602,7 @@ None
         Assert.Equal(expected, actual)
 
     [<Fact>]
-    let ``Blah`` () =
+    let ``Hints are shown correctly in type constructors mixed with functions`` () =
         let code =
             """
 type X = | X of a: int list * b: string
