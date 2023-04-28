@@ -41,19 +41,19 @@ type internal FsiCommandFilter(serviceProvider: System.IServiceProvider) =
                 pguidCmdGroup = VSConstants.VsStd11
                 && nCmdId = uint32 VSConstants.VSStd11CmdID.ExecuteSelectionInInteractive
             then
-                Hooks.OnMLSend fsiPackage.Value FsiEditorSendAction.ExecuteSelection
+                Hooks.OnMLSend fsiPackage.Value FsiEditorSendAction.ExecuteSelection null null
                 VSConstants.S_OK
             elif
                 pguidCmdGroup = VSConstants.VsStd11
                 && nCmdId = uint32 VSConstants.VSStd11CmdID.ExecuteLineInInteractive
             then
-                Hooks.OnMLSend fsiPackage.Value FsiEditorSendAction.ExecuteLine
+                Hooks.OnMLSend fsiPackage.Value FsiEditorSendAction.ExecuteLine null null
                 VSConstants.S_OK
             elif
                 pguidCmdGroup = Guids.guidInteractive
                 && nCmdId = uint32 Guids.cmdIDDebugSelection
             then
-                Hooks.OnMLSend fsiPackage.Value FsiEditorSendAction.DebugSelection
+                Hooks.OnMLSend fsiPackage.Value FsiEditorSendAction.DebugSelection null null
                 VSConstants.S_OK
             elif not (isNull nextTarget) then
                 nextTarget.Exec(&pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut)
