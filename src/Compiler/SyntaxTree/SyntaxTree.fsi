@@ -502,7 +502,7 @@ type SynType =
     /// For the dimensionless units i.e. 1, and static parameters to provided types
     | StaticConstant of constant: SynConst * range: range
 
-    /// F# syntax : nul used in parameters to type providers
+    /// F# syntax: null, used in parameters to type providers
     | StaticConstantNull of range: range
 
     /// F# syntax: const expr, used in static parameters to type providers

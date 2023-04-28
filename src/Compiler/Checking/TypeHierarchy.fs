@@ -270,10 +270,10 @@ let FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst skipUnref visitor
                           | TyparConstraint.IsDelegate _
                           | TyparConstraint.SupportsNull _
                           | TyparConstraint.NotSupportsNull _
-                          | TyparConstraint.IsNonNullableStruct _ 
-                          | TyparConstraint.IsUnmanaged _ 
-                          | TyparConstraint.IsReferenceType _ 
-                          | TyparConstraint.SimpleChoice _ 
+                          | TyparConstraint.IsNonNullableStruct _
+                          | TyparConstraint.IsUnmanaged _
+                          | TyparConstraint.IsReferenceType _
+                          | TyparConstraint.SimpleChoice _
                           | TyparConstraint.RequiresDefaultConstructor _ -> vacc
                           | TyparConstraint.CoercesTo(cty, _) ->
                                   loop (ndeep + 1)  cty vacc)

@@ -28,7 +28,7 @@ module Utils =
 #else
     /// Indicates that a type may be null. 'MaybeNull<string>' used internally in the F# compiler as unchecked
     /// replacement for 'string?' for example for future FS-1060.
-    type MaybeNull<'T when 'T : __notnull> = 'T?
+    type MaybeNull<'T when 'T : __notnull> = 'T __withnull
 #endif
 
 type FSharpCommandLineBuilder() =

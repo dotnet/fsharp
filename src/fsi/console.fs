@@ -16,7 +16,7 @@ module internal ConsoleHelpers =
   // Shim to match nullness checking library support in preview
   let inline (|Null|NonNull|) (x: 'T) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
 #else
-  type MaybeNull<'T when 'T : __notnull> = 'T?
+  type MaybeNull<'T when 'T : __notnull> = 'T __withnull
 #endif
 
 type internal Style =

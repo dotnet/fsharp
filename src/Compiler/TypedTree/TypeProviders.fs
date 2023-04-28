@@ -231,8 +231,8 @@ let TryTypeMemberArray (st: Tainted<_>, fullName, memberName, m, f) =
 let TryTypeMemberNonNull<'T, 'U when 'U : null and 'U : not struct>(st: Tainted<'T>, fullName, memberName, m, recover: 'U, (f: 'T -> 'U)) : Tainted<'U> =
     match TryTypeMember(st, fullName, memberName, m, recover, f) with 
 #else
-let TryTypeMemberNonNull<'T, 'U when 'U : __notnull and 'U : not struct>(st: Tainted<'T>, fullName, memberName, m, recover: 'U, (f: 'T -> 'U?)) : Tainted<'U> =
-    match TryTypeMember<'T, 'U?>(st, fullName, memberName, m, withNull recover, f) with 
+let TryTypeMemberNonNull<'T, 'U when 'U : __notnull and 'U : not struct>(st: Tainted<'T>, fullName, memberName, m, recover: 'U, (f: 'T -> 'U __withnull)) : Tainted<'U> =
+    match TryTypeMember<'T, 'U __withnull>(st, fullName, memberName, m, withNull recover, f) with 
 #endif
     | Tainted.Null -> 
         errorR(Error(FSComp.SR.etUnexpectedNullFromProvidedTypeMember(fullName, memberName), m))
@@ -1417,41 +1417,41 @@ let TryLinkProvidedType(resolver: Tainted<ITypeProvider>, moduleOrNamespace: str
         
         let staticArgs = 
             staticParameters |> Array.map (fun sp -> 
-                    let typeBeforeArgumentsName = typeBeforeArguments.PUntaint ((fun st -> st.Name), range)
-                    let spName = sp.PUntaint ((fun sp -> sp.Name), range)
-                    match argSpecsTable.TryGetValue spName with
-                    | true, arg ->
-                        /// Find the name of the representation type for the static parameter
-                        let spReprTypeName = 
-                            sp.PUntaint((fun sp -> 
-                                let pt = sp.ParameterType
-                                let uet = if pt.IsEnum then pt.GetEnumUnderlyingType() else pt
-                                uet.FullName), range)
+                let typeBeforeArgumentsName = typeBeforeArguments.PUntaint ((fun st -> st.Name), range)
+                let spName = sp.PUntaint ((fun sp -> sp.Name), range)
+                match argSpecsTable.TryGetValue spName with
+                | true, arg ->
+                    /// Find the name of the representation type for the static parameter
+                    let spReprTypeName = 
+                        sp.PUntaint((fun sp -> 
+                            let pt = sp.ParameterType
+                            let uet = if pt.IsEnum then pt.GetEnumUnderlyingType() else pt
+                            uet.FullName), range)
 
-                        match spReprTypeName with 
-                        | "System.SByte" -> box (sbyte arg)
-                        | "System.Int16" -> box (int16 arg)
-                        | "System.Int32" -> box (int32 arg)
-                        | "System.Int64" -> box (int64 arg)
-                        | "System.Byte" -> box (byte arg)
-                        | "System.UInt16" -> box (uint16 arg)
-                        | "System.UInt32" -> box (uint32 arg)
-                        | "System.UInt64" -> box (uint64 arg)
-                        | "System.Decimal" -> box (decimal arg)
-                        | "System.Single" -> box (single arg)
-                        | "System.Double" -> box (double arg)
-                        | "System.Char" -> box (char arg)
-                        | "System.Boolean" -> box (arg = "True")
-                        | "System.String" -> box (string arg)
-                        | s -> error(Error(FSComp.SR.etUnknownStaticArgumentKind(s, typeLogicalName), range0))
+                    match spReprTypeName with 
+                    | "System.SByte" -> box (sbyte arg)
+                    | "System.Int16" -> box (int16 arg)
+                    | "System.Int32" -> box (int32 arg)
+                    | "System.Int64" -> box (int64 arg)
+                    | "System.Byte" -> box (byte arg)
+                    | "System.UInt16" -> box (uint16 arg)
+                    | "System.UInt32" -> box (uint32 arg)
+                    | "System.UInt64" -> box (uint64 arg)
+                    | "System.Decimal" -> box (decimal arg)
+                    | "System.Single" -> box (single arg)
+                    | "System.Double" -> box (double arg)
+                    | "System.Char" -> box (char arg)
+                    | "System.Boolean" -> box (arg = "True")
+                    | "System.String" -> box (string arg)
+                    | s -> error(Error(FSComp.SR.etUnknownStaticArgumentKind(s, typeLogicalName), range0))
 
-                    | _ ->
-                        if sp.PUntaint ((fun sp -> sp.IsOptional), range) then 
-                            match sp.PUntaint((fun sp -> sp.RawDefaultValue), range) with
-                            | Null -> error (Error(FSComp.SR.etStaticParameterRequiresAValue (spName, typeBeforeArgumentsName, typeBeforeArgumentsName, spName), range0))
-                            | NonNull v -> v
-                        else
-                            error(Error(FSComp.SR.etProvidedTypeReferenceMissingArgument spName, range0)))
+                | _ ->
+                    if sp.PUntaint ((fun sp -> sp.IsOptional), range) then 
+                        match sp.PUntaint((fun sp -> sp.RawDefaultValue), range) with
+                        | Null -> error (Error(FSComp.SR.etStaticParameterRequiresAValue (spName, typeBeforeArgumentsName, typeBeforeArgumentsName, spName), range0))
+                        | NonNull v -> v
+                    else
+                        error(Error(FSComp.SR.etProvidedTypeReferenceMissingArgument spName, range0)))
                 
 
         match TryApplyProvidedType(typeBeforeArguments, None, staticArgs, range0) with 

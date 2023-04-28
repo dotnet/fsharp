@@ -2540,7 +2540,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                 let zeroInitUnsafe = TryFindFSharpBoolAttribute g g.attrib_DefaultValueAttribute f.FieldAttribs
                 if zeroInitUnsafe = Some true then
                     let ty = f.FormalType
-                    if not (TypeHasDefaultValueNew g m ty) && not (TypeHasDefaultValueOld g m ty) then 
+                    if not (TypeHasDefaultValueNew g m ty) && not (TypeHasDefaultValue g m ty) then 
                         if tycon.IsStructOrEnumTycon then 
                             // Under F# 4.5 we gave a hard error for this case so we can give it now
                             errorR(Error(FSComp.SR.chkValueWithDefaultValueMustHaveDefaultValue(), m))
@@ -2559,7 +2559,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                 // Check if it's marked unsafe 
                 let zeroInitUnsafe = TryFindFSharpBoolAttribute g g.attrib_DefaultValueAttribute f.FieldAttribs
                 if zeroInitUnsafe = Some true then
-                    if not (TypeHasDefaultValueOld g m ty) then 
+                    if not (TypeHasDefaultValue g m ty) then 
                         errorR(Error(FSComp.SR.chkValueWithDefaultValueMustHaveDefaultValue(), m))
 
         // Check type abbreviations

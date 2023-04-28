@@ -45,7 +45,7 @@ module internal PervasiveAutoOpens =
 #else
     /// Indicates that a type may be null. 'MaybeNull<string>' used internally in the F# compiler as unchecked
     /// replacement for 'string?'
-    type 'T MaybeNull when 'T: __notnull and 'T: not struct = 'T?
+    type 'T MaybeNull when 'T: __notnull and 'T: not struct = 'T __withnull
 #endif
 
     val inline (===): x: 'a -> y: 'a -> bool when 'a: not struct

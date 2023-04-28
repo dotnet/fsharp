@@ -8894,7 +8894,7 @@ let TypeNullNever g ty =
     isByrefTy g underlyingTy ||
     isNonNullableStructTyparTy g ty
 
-let TyconRefNullIsExtraValue isNew g m (tcref: TyconRef) = 
+let TyconRefNullIsExtraValueAux isNew g m (tcref: TyconRef) = 
     not tcref.IsStructOrEnumTycon &&
     not (isByrefLikeTyconRef g m tcref) && 
     (if tcref.IsILTycon then 
@@ -8904,8 +8904,8 @@ let TyconRefNullIsExtraValue isNew g m (tcref: TyconRef) =
 // Putting AllowNullLiteralAttribute(true) on an F# type means it always admits null even in the new model
         (TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some true))
 
-let TyconRefNullIsExtraValue g m tcref = TyconRefNullIsExtraValue false g m tcref
-let TyconRefNullIsExtraValueNew g m tcref = TyconRefNullIsExtraValue true g m tcref
+let TyconRefNullIsExtraValue g m tcref = TyconRefNullIsExtraValueAux false g m tcref
+let TyconRefNullIsExtraValueNew g m tcref = TyconRefNullIsExtraValueAux true g m tcref
 
 /// The F# 4.5 logic about whether a type admits the use of 'null' as a value.
 let TypeNullIsExtraValue g m ty = 
@@ -8932,7 +8932,7 @@ let TypeNullIsExtraValue g m ty =
         else
             false
 
-/// The F# 5.0 logic about whether a type admits the use of 'null' as a value.
+/// The new logic about whether a type admits the use of 'null' as a value.
 let TypeNullIsExtraValueNew g m ty = 
     let sty = stripTyparEqns ty
     (match tryTcrefOfAppTy g sty with 
@@ -8961,7 +8961,7 @@ let TypeNullNotLiked g m ty =
     && not (TypeNullIsTrueValue g ty) 
     && not (TypeNullNever g ty) 
 
-let rec TypeHasDefaultValue isNew g m ty = 
+let rec TypeHasDefaultValueAux isNew g m ty = 
     let ty = stripTyEqnsAndMeasureEqns g ty
     (if isNew then TypeNullIsExtraValueNew g m ty else TypeNullIsExtraValue g m ty)
     || (isStructTy g ty &&
@@ -8974,17 +8974,17 @@ let rec TypeHasDefaultValue isNew g m ty =
                   // We can ignore fields with the DefaultValue(false) attribute 
                   |> List.filter (fun fld -> not (TryFindFSharpBoolAttribute g g.attrib_DefaultValueAttribute fld.FieldAttribs = Some false))
 
-            flds |> List.forall (actualTyOfRecdField (mkTyconRefInst tcref tinst) >> TypeHasDefaultValue isNew g m)
+            flds |> List.forall (actualTyOfRecdField (mkTyconRefInst tcref tinst) >> TypeHasDefaultValueAux isNew g m)
 
          // Struct tuple types have a DefaultValue if all their element types have a default value
          elif isStructTupleTy g ty then 
-            destStructTupleTy g ty |> List.forall (TypeHasDefaultValue isNew g m)
+            destStructTupleTy g ty |> List.forall (TypeHasDefaultValueAux isNew g m)
          
          // Struct anonymous record types have a DefaultValue if all their element types have a default value
          elif isStructAnonRecdTy g ty then 
             match tryDestAnonRecdTy g ty with
             | ValueNone -> true
-            | ValueSome (_, ptys) -> ptys |> List.forall (TypeHasDefaultValue isNew g m)
+            | ValueSome (_, ptys) -> ptys |> List.forall (TypeHasDefaultValueAux isNew g m)
          else
             // All nominal struct types defined in other .NET languages have a DefaultValue regardless of their instantiation
             true))
@@ -8993,9 +8993,9 @@ let rec TypeHasDefaultValue isNew g m ty =
       (isNonNullableStructTyparTy g ty &&
         (destTyparTy g ty).Constraints |> List.exists (function TyparConstraint.RequiresDefaultConstructor _ -> true | _ -> false))
 
-let TypeHasDefaultValueOld g m ty = TypeHasDefaultValue false g m ty  
+let TypeHasDefaultValue g m ty = TypeHasDefaultValueAux false g m ty  
 
-let TypeHasDefaultValueNew g m ty = TypeHasDefaultValue true g m ty  
+let TypeHasDefaultValueNew g m ty = TypeHasDefaultValueAux true g m ty  
 
 /// Determines types that are potentially known to satisfy the 'comparable' constraint and returns
 /// a set of residual types that must also satisfy the constraint

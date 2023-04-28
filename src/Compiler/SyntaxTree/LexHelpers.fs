@@ -382,8 +382,7 @@ module Keywords =
             ALWAYS, "while", WHILE
             ALWAYS, "with", WITH
             FSHARP, "yield", YIELD(true)
-            ALWAYS, "_", UNDERSCORE
-            (*------- for explaining offside rule *)
+            (*------- for prototyping and explaining offside rule *)
             FSHARP, "__token_OBLOCKSEP", OBLOCKSEP
             FSHARP, "__token_OWITH", OWITH
             FSHARP, "__token_ODECLEND", ODECLEND

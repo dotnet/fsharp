@@ -793,8 +793,8 @@ let pickleObjWithDanglingCcus inMem file g scope p x =
        osB = ByteBuffer.Create(PickleBufferCapacity, useArrayPool = true)
        oscope=scope
        occus= Table<_>.Create "occus (fake)"
-       oentities=NodeOutTable<_, _>.Create((fun (tc: Tycon) -> tc.Stamp), (fun tc -> tc.LogicalName), (fun tc -> tc.Range), (fun osgn -> osgn), "otycons")
-       otypars=NodeOutTable<_, _>.Create((fun (tp: Typar) -> tp.Stamp), (fun tp -> tp.DisplayName), (fun tp -> tp.Range), (fun osgn -> osgn), "otypars")
+       oentities=NodeOutTable<_, _>.Create((fun (tc: Tycon) -> tc.Stamp), (fun tc -> tc.LogicalName), (fun tc -> tc.Range), id, "otycons")
+       otypars=NodeOutTable<_, _>.Create((fun (tp: Typar) -> tp.Stamp), (fun tp -> tp.DisplayName), (fun tp -> tp.Range), id, "otypars")
        ovals=NodeOutTable<_, _>.Create((fun (v: Val) -> v.Stamp), (fun v -> v.LogicalName), (fun v -> v.Range), (fun osgn -> osgn), "ovals")
        oanoninfos=NodeOutTable<_, _>.Create((fun (v: AnonRecdTypeInfo) -> v.Stamp), (fun v -> string v.Stamp), (fun _ -> range0), id, "oanoninfos")
        ostrings=Table<_>.Create "ostrings (fake)"
@@ -808,16 +808,12 @@ let pickleObjWithDanglingCcus inMem file g scope p x =
 
   let phase2bytes =
     p_array p_encoded_ccuref ccuNameTab.AsArray st2
-
-    // For F# 5.0 and beyond we add a 4th integer for nanoninfos, indicated by a negative 1st integer
-    // Note that this means assemblies using anonymous record types are not binary-metadata consumable by previous
-    // generation F# tooling.
+    // Add a 4th integer indicated by a negative 1st integer
     let z1 = if nanoninfos > 0 then  -ntycons-1 else ntycons
     p_int z1 st2
     p_tup2 p_int p_int (ntypars, nvals) st2
     if nanoninfos > 0 then
         p_int nanoninfos st2
-
     p_tup5
         (p_array p_encoded_string)
         (p_array p_encoded_pubpath)
@@ -1783,7 +1779,7 @@ let _ = fill_p_ty2 (fun isStructThisArgPos ty st ->
         p_byte 4 st
         p_tpref r st
 
-    | TType_forall (tps,r) -> 
+    | TType_forall (tps, r) ->
         p_byte 5 st
         p_tyar_specs tps st
         // Note, the "this" argument may be found in the body of a generic forall type, so propagate the isStructThisArgPos value
@@ -1809,7 +1805,7 @@ let _ = fill_u_ty (fun st ->
     let tag = u_byte st
 
     match tag with
-    | 0 -> 
+    | 0 ->
         let l = u_tys st
         TType_tuple (tupInfoRef, l)
     | 1 -> 

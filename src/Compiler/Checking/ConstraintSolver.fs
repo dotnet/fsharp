@@ -2771,14 +2771,14 @@ and SolveTypeRequiresDefaultConstructor (csenv: ConstraintSolverEnv) ndeep m2 tr
     | ValueSome tp ->
         AddConstraint csenv ndeep m2 trace tp (TyparConstraint.RequiresDefaultConstructor m)
     | _ ->
-        if isStructTy g ty && (isStructTupleTy g ty || isStructAnonRecdTy g ty || TypeHasDefaultValueOld g m ty) then
+        if isStructTy g ty && (isStructTupleTy g ty || isStructAnonRecdTy g ty || TypeHasDefaultValue g m ty) then
             if isStructTupleTy g ty then 
                 destStructTupleTy g ty |> IterateD (SolveTypeRequiresDefaultValue csenv ndeep m trace)
             elif isStructAnonRecdTy g ty then 
                 match tryDestAnonRecdTy g ty with
                 | ValueNone -> CompleteD
                 | ValueSome (_, ptys) -> ptys |> IterateD (SolveTypeRequiresDefaultValue csenv ndeep m trace)
-            elif TypeHasDefaultValueOld g m ty then
+            elif TypeHasDefaultValue g m ty then
                 CompleteD
             else
                 ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresPublicDefaultConstructor(NicePrint.minimalStringOfType denv origTy), m, m2))

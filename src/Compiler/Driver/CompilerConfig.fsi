@@ -12,14 +12,12 @@ open FSharp.Compiler.Xml
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.ILPdbWriter
-open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
-open FSharp.Compiler.Xml
 open FSharp.Compiler.BuildGraph
 
 exception FileNameNotResolved of searchedLocations: string * fileName: string * range: range

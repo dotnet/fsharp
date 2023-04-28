@@ -31,7 +31,7 @@ let inline nullArgCheck (argumentName:string) (value: 'T when 'T : not struct) =
     | _ ->  value
 let inline withNull<'T when 'T: not struct> (value : 'T) = value
 #else
-type MaybeNull<'T when 'T : __notnull> = 'T?
+type MaybeNull<'T when 'T : __notnull> = 'T __withnull
 #endif
 
 type private FSharpGlyph = FSharp.Compiler.EditorServices.FSharpGlyph

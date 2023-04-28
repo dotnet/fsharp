@@ -1084,9 +1084,11 @@ type LexFilterImpl (
                     //      f<{| C : int |}>x
                     //      f<x # x>x
                     //      f<x ' x>x
-                    //      f<x?>x
+                    //      f<x __ambivalent>x
+                    //      f<x  __notnull>x
+                    //      f<x  __withnull>x
                     | DEFAULT | COLON | COLON_GREATER | STRUCT | NULL | DELEGATE | AND | WHEN 
-                    | QMARK | AMBIVALENT__
+                    | NOTNULL__ | AMBIVALENT__ | WITHNULL__
                     | DOT_DOT
                     | NEW
                     | LBRACE_BAR

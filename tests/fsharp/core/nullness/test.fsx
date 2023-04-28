@@ -21,7 +21,7 @@ let check s v1 v2 = test s (v1 = v2)
 open System
 open System.Runtime.CompilerServices
 
-//let f<'T when 'T : not struct> (x: 'T?) = 1
+//let f<'T when 'T : not struct> (x: 'T __withnull) = 1
 
 module Basics = 
     let x1 : string = null // ** Expected to give a Nullness warning
@@ -121,18 +121,18 @@ module Basics2 =
     let f2 () : string? = null
     // val f : unit -> string?
 
-    let f3 () : 'T? = null
+    let f3 () : 'T __withnull = null
 
-    let f4 () : 'T? when 'T : not struct = null
+    let f4 () : 'T __withnull when 'T : not struct = null
 
     let f5 () : 'T when 'T : not struct and 'T : null = null
 
 #if NEGATIVE
-    let f6 () : 'T? when 'T : not struct and 'T : null = null // Expected to give an error about inconistent constraints
+    let f6 () : 'T __withnull when 'T : not struct and 'T : null = null // Expected to give an error about inconistent constraints
 #endif
 
     // Note yet allowed 
-    //let f7 () : 'T? when 'T : struct = null
+    //let f7 () : 'T __withnull when 'T : struct = null
     let f7b () : Nullable<'T> = nullV // BUG: Incorrectly gives a warning about System.ValueType with /test:AssumeNullOnImport
 
     let f8 () : string = null // Expected to give a Nullness warning
