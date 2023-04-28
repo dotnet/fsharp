@@ -175,7 +175,7 @@ let ImportNullness (g: TcGlobals) =
 
 let ImportNullnessForTyconRef (g: TcGlobals) (m: range) (tcref: TyconRef) =
     ignore (g, tcref, m)
-    // if g.langFeatureNullness && g.assumeNullOnImport && TyconRefNullIsExtraValueOld g m tcref then
+    // if g.langFeatureNullness && g.assumeNullOnImport && TyconRefNullIsExtraValue g m tcref then
     //     KnownWithNull
     // else
     KnownAmbivalentToNull

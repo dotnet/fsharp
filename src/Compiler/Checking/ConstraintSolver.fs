@@ -2495,7 +2495,7 @@ and SolveTypeSupportsNullCore (csenv:ConstraintSolverEnv) ndeep m2 trace ty = tr
 
             // If langFeatureNullness or checkNullness are off give the same errors as F# 4.5
             if not g.langFeatureNullness || not g.checkNullness then 
-                if not (TypeNullIsExtraValueOld g m ty) then
+                if not (TypeNullIsExtraValue g m ty) then
                     return! ErrorD (ConstraintSolverError(FSComp.SR.csTypeDoesNotHaveNull(NicePrint.minimalStringOfType denv ty), m, m2))
   }
 
@@ -2544,7 +2544,7 @@ and SolveNullnessNotSupportsNull (csenv:ConstraintSolverEnv) ndeep m2 (trace: Op
                 if not (isObjTy g ty) then 
                     return! WarnD(ConstraintSolverNonNullnessWarningWithType(denv, ty, n1, m, m2)) 
             else
-                if TypeNullIsExtraValueOld g m ty then
+                if TypeNullIsExtraValue g m ty then
                     return! ErrorD (ConstraintSolverError(FSComp.SR.csTypeHasNullAsExtraValue(NicePrint.minimalStringOfType denv ty), m, m2))
   }
 
@@ -2557,7 +2557,7 @@ and SolveTypeNotSupportsNullCore (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
         // code via Option.ofObj and Option.toObj
         do! WarnD (ConstraintSolverError(FSComp.SR.csTypeHasNullAsTrueValue(NicePrint.minimalStringOfType denv ty), m, m2))
     elif TypeNullIsExtraValueNew g m ty then 
-        if g.checkNullness || TypeNullIsExtraValueOld g m ty then 
+        if g.checkNullness || TypeNullIsExtraValue g m ty then 
             do! WarnD (ConstraintSolverError(FSComp.SR.csTypeHasNullAsExtraValue(NicePrint.minimalStringOfType denv ty), m, m2))
     else
         if g.checkNullness then 

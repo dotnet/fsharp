@@ -8904,11 +8904,11 @@ let TyconRefNullIsExtraValue isNew g m (tcref: TyconRef) =
 // Putting AllowNullLiteralAttribute(true) on an F# type means it always admits null even in the new model
         (TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some true))
 
-let TyconRefNullIsExtraValueOld g m tcref = TyconRefNullIsExtraValue false g m tcref
+let TyconRefNullIsExtraValue g m tcref = TyconRefNullIsExtraValue false g m tcref
 let TyconRefNullIsExtraValueNew g m tcref = TyconRefNullIsExtraValue true g m tcref
 
 /// The F# 4.5 logic about whether a type admits the use of 'null' as a value.
-let TypeNullIsExtraValueOld g m ty = 
+let TypeNullIsExtraValue g m ty = 
     if isILReferenceTy g ty || isDelegateTy g ty then
         match tryTcrefOfAppTy g ty with 
         | ValueSome tcref -> 
@@ -8957,13 +8957,13 @@ let TypeNullIsTrueValue g ty =
 /// Indicates if unbox<T>(null) is actively rejected at runtime.   See nullability RFC.  This applies to types that don't have null
 /// as a valid runtime representation under old compatiblity rules.
 let TypeNullNotLiked g m ty = 
-       not (TypeNullIsExtraValueOld g m ty) 
+       not (TypeNullIsExtraValue g m ty) 
     && not (TypeNullIsTrueValue g ty) 
     && not (TypeNullNever g ty) 
 
 let rec TypeHasDefaultValue isNew g m ty = 
     let ty = stripTyEqnsAndMeasureEqns g ty
-    (if isNew then TypeNullIsExtraValueNew g m ty else TypeNullIsExtraValueOld g m ty)
+    (if isNew then TypeNullIsExtraValueNew g m ty else TypeNullIsExtraValue g m ty)
     || (isStructTy g ty &&
         // Is it an F# struct type?
         (if isFSharpStructTy g ty then 
