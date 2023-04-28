@@ -540,8 +540,10 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap: Import.Impor
         let ty = generalizedTyconRef g tcrefOfStaticClass
       
         let minfos =
-            GetImmediateIntrinsicMethInfosOfType (None, AccessorDomain.AccessibleFromSomeFSharpCode) g amap m ty
-            |> List.filter (IsMethInfoPlainCSharpStyleExtensionMember g m true)
+            protectAssemblyExploration [] (fun () ->
+                GetImmediateIntrinsicMethInfosOfType (None, AccessorDomain.AccessibleFromSomeFSharpCode) g amap m ty
+                |> List.filter (IsMethInfoPlainCSharpStyleExtensionMember g m true)
+            )
 
         if IsTyconRefUsedForCSharpStyleExtensionMembers g m tcrefOfStaticClass || not minfos.IsEmpty then
             let pri = NextExtensionMethodPriority()

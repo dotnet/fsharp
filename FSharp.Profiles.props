@@ -8,25 +8,29 @@
     <CheckNulls>false</CheckNulls>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">
+    <!-- nullness checking isn't possible when using shipped FSHarp.Core package until it's updated -->
+    <CheckNulls>false</CheckNulls>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(Configuration)' == 'Proto'">
     <DefineConstants>BUILDING_WITH_LKG;NO_CHECKNULLS;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)' != 'Proto' AND '$(CheckNulls)' == 'true'">
-  	<OtherFlags>$(OtherFlags) /langversion:preview</OtherFlags>
-	  <OtherFlags>$(OtherFlags) /checknulls</OtherFlags>
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto' AND '$(CheckNulls)' == 'true'">
+    <OtherFlags>$(OtherFlags) /langversion:preview /checknulls</OtherFlags>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' != 'Proto' AND '$(CheckNulls)' != 'true'">
-  	<OtherFlags>$(OtherFlags) /langversion:preview</OtherFlags>
+    <OtherFlags>$(OtherFlags) /langversion:preview</OtherFlags>
     <!-- 3271: warning nullness annotations being ignored -->
     <NoWarn>$(NoWarn);3271</NoWarn>
     <DefineConstants>$(DefineConstants);NO_CHECKNULLS</DefineConstants>
   </PropertyGroup>
 
-	<PropertyGroup Condition="'$(NullCheckingSupportInLibrary)' == 'false'">
-		<DefineConstants>NO_NULLCHECKING_LIB_SUPPORT;$(DefineConstants)</DefineConstants>
-	</PropertyGroup>
+  <PropertyGroup Condition="'$(NullCheckingSupportInLibrary)' == 'false'">
+    <DefineConstants>NO_NULLCHECKING_LIB_SUPPORT;$(DefineConstants)</DefineConstants>
+  </PropertyGroup>
 
   <Choose>
     <When Condition=" '$(TargetFrameworkIdentifier)' == '.NETFramework' ">

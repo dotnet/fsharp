@@ -14,7 +14,7 @@ do ()
 
 // Shim to match nullness checking library support in preview
 [<AutoOpen>]
-module Utils = 
+module Utils =
 #if NO_CHECKNULLS
     /// Match on the nullness of an argument.
     let inline (|Null|NonNull|) (x: 'T) : Choice<unit, 'T> =

@@ -95,17 +95,6 @@ type public Fsc() as this =
     let mutable utf8output: bool = false
     let mutable useReflectionFreeCodeGen: bool = false
 
-    let mutable toolPath: string =
-        let locationOfThisDll =
-            try
-                Some(Path.GetDirectoryName(typeof<Fsc>.Assembly.Location))
-            with _ ->
-                None
-
-        match FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(locationOfThisDll) with
-        | Some s -> s
-        | None -> ""
-
     /// Trim whitespace ... spaces, tabs, newlines,returns, Double quotes and single quotes
     let wsCharsToTrim = [| ' '; '\t'; '\"'; '\'' |]
 
