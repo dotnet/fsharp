@@ -57,6 +57,7 @@ type LanguageFeature =
     | StaticMembersInInterfaces
     | NonInlineLiteralsAsPrintfFormat
     | NestedCopyAndUpdate
+    | ExtendedStringInterpolation
 
 /// LanguageVersion management
 type LanguageVersion =

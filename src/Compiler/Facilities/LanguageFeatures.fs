@@ -67,6 +67,7 @@ type LanguageFeature =
     | StaticMembersInInterfaces
     | NonInlineLiteralsAsPrintfFormat
     | NestedCopyAndUpdate
+    | ExtendedStringInterpolation
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -157,6 +158,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.StaticMembersInInterfaces, previewVersion
                 LanguageFeature.NonInlineLiteralsAsPrintfFormat, previewVersion
                 LanguageFeature.NestedCopyAndUpdate, previewVersion
+                LanguageFeature.ExtendedStringInterpolation, previewVersion
 
             ]
 
@@ -279,6 +281,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.StaticMembersInInterfaces -> FSComp.SR.featureStaticMembersInInterfaces ()
         | LanguageFeature.NonInlineLiteralsAsPrintfFormat -> FSComp.SR.featureNonInlineLiteralsAsPrintfFormat ()
         | LanguageFeature.NestedCopyAndUpdate -> FSComp.SR.featureNestedCopyAndUpdate ()
+        | LanguageFeature.ExtendedStringInterpolation -> FSComp.SR.featureExtendedStringInterpolation ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

@@ -513,6 +513,7 @@ type EditorBraceCompletionSessionFactory() =
                     TextSpan(position - 1, 1),
                     Some(document.FilePath),
                     [],
+                    None,
                     cancellationToken
                 )
 
