@@ -123,7 +123,7 @@ type InlineParameterNameHints(parseResults: FSharpParseFileResults) =
             let curryRanges = getCurryRanges symbolUse
 
             let ranges =
-                if Seq.isEmpty tupleRanges then
+                if symbol.IsFunction || Seq.isEmpty tupleRanges then
                     curryRanges |> List.toSeq
                 else
                     tupleRanges
