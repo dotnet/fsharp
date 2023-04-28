@@ -255,4 +255,10 @@
   <data name="Show_Return_Type_Hints" xml:space="preserve">
     <value>Display return type hints (preview)</value>
   </data>
+  <data name="TransparentCompiler" xml:space="preserve">
+    <value>Transparent Compiler (experimental)</value>
+  </data>
+  <data name="Use_Transparent_Compiler" xml:space="preserve">
+    <value>Use Transparent Compiler (restart required)</value>
+  </data>
 </root>

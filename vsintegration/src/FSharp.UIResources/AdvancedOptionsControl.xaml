@@ -38,6 +38,10 @@
                     <CheckBox x:Name="toggleLiveBuffers" IsChecked="{Binding IsLiveBuffersEnabled}"
                               Content="{x:Static local:Strings.Enable_Live_Buffers}"/>
                 </GroupBox>
+                <GroupBox Header="{x:Static local:Strings.TransparentCompiler}">
+                    <CheckBox x:Name="toggleTransparentCompiler" IsChecked="{Binding UseTransparentCompiler}"
+                              Content="{x:Static local:Strings.Use_Transparent_Compiler}"/>
+                </GroupBox>
             </StackPanel>
         </ScrollViewer>
     </Grid>

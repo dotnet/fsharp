@@ -24,6 +24,65 @@ module private CheckerExtensions =
                 return! checker.ParseFile(document.FilePath, sourceText.ToFSharpSourceText(), parsingOptions, userOpName = userOpName)
             }
 
+        member checker.ParseAndCheckDocumentUsingTransparentCompiler
+            (
+                document: Document,
+                options: FSharpProjectOptions,
+                userOpName: string
+            ) =
+            async {
+                let fileName = document.FilePath
+                let project = document.Project
+                let documents = project.Documents |> Seq.map (fun d -> d.FilePath, d) |> Map
+
+                let! sourceFiles =
+                    options.SourceFiles
+                    |> Seq.map (fun path ->
+                        async {
+                            let document = documents[path]
+                            let! version = document.GetTextVersionAsync() |> Async.AwaitTask
+
+                            let getSource () =
+                                task {
+                                    let! sourceText = document.GetTextAsync()
+                                    return sourceText.ToFSharpSourceText()
+                                }
+
+                            return
+                                {
+                                    FileName = path
+                                    Version = version.ToString()
+                                    GetSource = getSource
+                                }
+                        })
+                    |> Async.Parallel
+
+                // TODO: referenced projects
+                let referencedProjects = []
+
+                let projectSnapshot: FSharpProjectSnapshot =
+                    {
+                        ProjectFileName = options.ProjectFileName
+                        ProjectId = options.ProjectId
+                        SourceFiles = sourceFiles |> List.ofArray
+                        OtherOptions = options.OtherOptions |> List.ofArray
+                        ReferencedProjects = referencedProjects
+                        IsIncompleteTypeCheckEnvironment = options.IsIncompleteTypeCheckEnvironment
+                        UseScriptResolutionRules = options.UseScriptResolutionRules
+                        LoadTime = options.LoadTime
+                        UnresolvedReferences = options.UnresolvedReferences
+                        OriginalLoadReferences = options.OriginalLoadReferences
+                        Stamp = options.Stamp
+                    }
+
+                let! (parseResults, checkFileAnswer) = checker.ParseAndCheckFileInProject(fileName, projectSnapshot, userOpName)
+
+                return
+                    match checkFileAnswer with
+                    | FSharpCheckFileAnswer.Aborted -> None
+                    | FSharpCheckFileAnswer.Succeeded (checkFileResults) -> Some(parseResults, checkFileResults)
+            }
+
         /// Parse and check the source text from the Roslyn document with possible stale results.
         member checker.ParseAndCheckDocumentWithPossibleStaleResults
             (
@@ -77,11 +136,6 @@ module private CheckerExtensions =
                             return None // worker is cancelled at this point, we cannot return it and wait its completion anymore
                     }
 
-                let bindParsedInput (results: (FSharpParseFileResults * FSharpCheckFileResults) option) =
-                    match results with
-                    | Some (parseResults, checkResults) -> Some(parseResults, parseResults.ParseTree, checkResults)
-                    | None -> None
-
                 if allowStaleResults then
                     let! freshResults = tryGetFreshResultsWithTimeout ()
 
@@ -95,10 +149,10 @@ module private CheckerExtensions =
                                 | None -> return! parseAndCheckFile
                             }
 
-                    return bindParsedInput results
+                    return results
                 else
                     let! results = parseAndCheckFile
-                    return bindParsedInput results
+                    return results
             }
 
         /// Parse and check the source text from the Roslyn document.
@@ -110,12 +164,17 @@ module private CheckerExtensions =
                 ?allowStaleResults: bool
             ) =
             async {
-                let allowStaleResults =
-                    match allowStaleResults with
-                    | Some b -> b
-                    | _ -> document.Project.IsFSharpStaleCompletionResultsEnabled
 
-                return! checker.ParseAndCheckDocumentWithPossibleStaleResults(document, options, allowStaleResults, userOpName = userOpName)
+                if document.Project.UseTransparentCompiiler then
+                    return! checker.ParseAndCheckDocumentUsingTransparentCompiler(document, options, userOpName)
+                else
+                    let allowStaleResults =
+                        match allowStaleResults with
+                        | Some b -> b
+                        | _ -> document.Project.IsFSharpStaleCompletionResultsEnabled
+
+                    return!
+                        checker.ParseAndCheckDocumentWithPossibleStaleResults(document, options, allowStaleResults, userOpName = userOpName)
             }
 
 [<RequireQualifiedAccess>]
@@ -215,7 +274,7 @@ type Document with
             let! checker, _, _, projectOptions = this.GetFSharpCompilationOptionsAsync(userOpName)
 
             match! checker.ParseAndCheckDocument(this, projectOptions, userOpName, allowStaleResults = false) with
-            | Some (parseResults, _, checkResults) -> return (parseResults, checkResults)
+            | Some results -> return results
             | _ -> return raise (System.OperationCanceledException("Unable to get FSharp parse and check results."))
         }
 

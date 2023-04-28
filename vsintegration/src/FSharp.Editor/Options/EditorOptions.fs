@@ -105,6 +105,7 @@ type AdvancedOptions =
         IsInlineParameterNameHintsEnabled: bool
         IsInlineReturnTypeHintsEnabled: bool
         IsLiveBuffersEnabled: bool
+        UseTransparentCompiler: bool
     }
 
     static member Default =
@@ -115,6 +116,7 @@ type AdvancedOptions =
             IsInlineParameterNameHintsEnabled = false
             IsInlineReturnTypeHintsEnabled = false
             IsLiveBuffersEnabled = FSharpExperimentalFeaturesEnabledAutomatically
+            UseTransparentCompiler = false
         }
 
 [<CLIMutable>]
@@ -238,3 +240,6 @@ module EditorOptionsExtensions =
 
         member this.IsFastFindReferencesEnabled =
             this.EditorOptions.LanguageServicePerformance.EnableFastFindReferencesAndRename
+
+        member this.UseTransparentCompiiler =
+            this.EditorOptions.Advanced.UseTransparentCompiler

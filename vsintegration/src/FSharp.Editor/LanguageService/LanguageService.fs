@@ -143,6 +143,8 @@ type internal FSharpWorkspaceServiceFactory [<System.Composition.ImportingConstr
                             let enablePartialTypeChecking =
                                 editorOptions.LanguageServicePerformance.EnablePartialTypeChecking
 
+                            let useTransparentCompiler = editorOptions.Advanced.UseTransparentCompiler
+
                             let checker =
                                 FSharpChecker.Create(
                                     projectCacheSize = 5000, // We do not care how big the cache is. VS will actually tell FCS to clear caches, so this is fine.
@@ -160,7 +162,7 @@ type internal FSharpWorkspaceServiceFactory [<System.Composition.ImportingConstr
                                          else
                                              DocumentSource.FileSystem),
                                     useSyntaxTreeCache = useSyntaxTreeCache,
-                                    useTransparentCompiler = true
+                                    useTransparentCompiler = useTransparentCompiler
                                 )
 
                             TelemetryReporter.reportEvent
@@ -174,6 +176,7 @@ type internal FSharpWorkspaceServiceFactory [<System.Composition.ImportingConstr
                                     nameof isInlineTypeHintsEnabled, isInlineTypeHintsEnabled
                                     nameof isInlineReturnTypeHintsEnabled, isInlineReturnTypeHintsEnabled
                                     nameof enablePartialTypeChecking, enablePartialTypeChecking
+                                    nameof useTransparentCompiler, useTransparentCompiler
                                 ]
 
                             if enableLiveBuffers then

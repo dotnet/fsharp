@@ -117,6 +117,7 @@ type internal DelayedILModuleReader =
 
 type FSharpFileKey = string * string
 
+// TODO: use stamp if we have it?
 type FSharpProjectSnapshotKey =
     {
         ProjectFileName: string

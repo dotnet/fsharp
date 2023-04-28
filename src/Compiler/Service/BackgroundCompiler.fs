@@ -124,6 +124,10 @@ type internal IBackgroundCompiler =
         fileName: string * fileVersion: int * sourceText: ISourceText * options: FSharpProjectOptions * userOpName: string ->
             NodeCode<FSharpParseFileResults * FSharpCheckFileAnswer>
 
+    abstract member ParseAndCheckFileInProject:
+        fileName: string * projectSnapshot: FSharpProjectSnapshot * userOpName: string ->
+            NodeCode<FSharpParseFileResults * FSharpCheckFileAnswer>
+
     /// Parse and typecheck the whole project.
     abstract member ParseAndCheckProject: options: FSharpProjectOptions * userOpName: string -> NodeCode<FSharpCheckProjectResults>
 
@@ -1373,6 +1377,7 @@ type internal BackgroundCompiler
     static member ActualCheckFileCount = actualCheckFileCount
 
     interface IBackgroundCompiler with
+
         member _.BeforeBackgroundFileCheck = self.BeforeBackgroundFileCheck
 
         member _.CheckFileInProject
@@ -1497,6 +1502,14 @@ type internal BackgroundCompiler
                 userOpName: string
             ) : NodeCode<FSharpParseFileResults * FSharpCheckFileAnswer> =
             self.ParseAndCheckFileInProject(fileName, fileVersion, sourceText, options, userOpName)
+
+        member this.ParseAndCheckFileInProject
+            (
+                _fileName: string,
+                _projectSnapshot: FSharpProjectSnapshot,
+                _userOpName: string
+            ) : NodeCode<FSharpParseFileResults * FSharpCheckFileAnswer> =
+            raise (System.NotImplementedException())
 
         member _.ParseAndCheckProject(options: FSharpProjectOptions, userOpName: string) : NodeCode<FSharpCheckProjectResults> =
             self.ParseAndCheckProject(options, userOpName)

@@ -448,6 +448,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Transparent Compiler (experimental).
+        /// </summary>
+        public static string TransparentCompiler {
+            get {
+                return ResourceManager.GetString("TransparentCompiler", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Analyze and suggest fixes for unused values.
         /// </summary>
         public static string Unused_declaration_code_fix {
@@ -471,6 +480,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Use_syntax_tree_cache {
             get {
                 return ResourceManager.GetString("Use_syntax_tree_cache", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Use Transparent Compiler (restart required).
+        /// </summary>
+        public static string Use_Transparent_Compiler {
+            get {
+                return ResourceManager.GetString("Use_Transparent_Compiler", resourceCulture);
             }
         }
     }

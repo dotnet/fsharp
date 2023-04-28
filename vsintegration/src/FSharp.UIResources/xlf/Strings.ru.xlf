@@ -147,6 +147,11 @@
         <target state="translated">Форматирование подписи до заданной ширины путем добавления разрывов строк, соответствующих правилам синтаксиса F#. </target>
         <note />
       </trans-unit>
+      <trans-unit id="TransparentCompiler">
+        <source>Transparent Compiler (experimental)</source>
+        <target state="new">Transparent Compiler (experimental)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
         <source>Remove unused open statements</source>
         <target state="translated">Удалить неиспользуемые открытые операторы</target>
@@ -225,6 +230,11 @@
       <trans-unit id="Suggest_names_for_errors_code_fix">
         <source>Suggest names for unresolved identifiers</source>
         <target state="translated">Предлагать имена для неразрешенных идентификаторов</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Use_Transparent_Compiler">
+        <source>Use Transparent Compiler (restart required)</source>
+        <target state="new">Use Transparent Compiler (restart required)</target>
         <note />
       </trans-unit>
       <trans-unit id="Use_syntax_tree_cache">

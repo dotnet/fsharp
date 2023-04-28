@@ -52,8 +52,6 @@ type internal BootstrapInfo =
         LoadClosure: LoadClosure option
     }
 
-//type ParseResults
-
 type internal TransparentCompiler
     (
         legacyReferenceResolver,
@@ -168,8 +166,9 @@ type internal TransparentCompiler
             dependencyProvider,
             loadClosureOpt: LoadClosure option,
             basicDependencies,
+#if !NO_TYPEPROVIDERS
             importsInvalidatedByTypeProvider: Event<unit>
-        //#endif
+#endif
         ) =
 
         node {
@@ -189,7 +188,7 @@ type internal TransparentCompiler
                                 unresolvedReferences,
                                 dependencyProvider
                             )
-                        //#if !NO_TYPEPROVIDERS
+#if !NO_TYPEPROVIDERS
                         tcImports.GetCcusExcludingBase()
                         |> Seq.iter (fun ccu ->
                             // When a CCU reports an invalidation, merge them together and just report a
@@ -212,7 +211,7 @@ type internal TransparentCompiler
                                 match capturedImportsInvalidated.TryGetTarget() with
                                 | true, tg -> tg.Trigger()
                                 | _ -> ()))
-                        //#endif
+#endif
                         return tcImports
                     with exn ->
                         Debug.Assert(false, sprintf "Could not BuildAllReferencedDllTcImports %A" exn)
@@ -435,9 +434,9 @@ type internal TransparentCompiler
 
             let tcConfigP = TcConfigProvider.Constant tcConfig
 
-            //#if !NO_TYPEPROVIDERS
+#if !NO_TYPEPROVIDERS
             let importsInvalidatedByTypeProvider = Event<unit>()
-            //#endif
+#endif
 
             // Check for the existence of loaded sources and prepend them to the sources list if present.
             let sourceFiles =
@@ -486,9 +485,9 @@ type internal TransparentCompiler
                     dependencyProvider,
                     loadClosureOpt,
                     basicDependencies,
-                    //#if !NO_TYPEPROVIDERS
+#if !NO_TYPEPROVIDERS
                     importsInvalidatedByTypeProvider
-                //#endif
+#endif
                 )
 
             let fileSnapshots = Map [ for f in projectSnapshot.SourceFiles -> f.FileName, f ]
@@ -602,7 +601,7 @@ type internal TransparentCompiler
             let input =
                 ParseOneInputSourceText(tcConfig, lexResourceManager, fileName, flags, diagnosticsLogger, sourceText)
 
-            return input, diagnosticsLogger.GetDiagnostics()
+            return input, diagnosticsLogger.GetDiagnostics(), sourceText
         }
 
     let ComputeDependencyGraphForLastFile parsedInputs (tcConfig: TcConfig) _key =
@@ -691,10 +690,8 @@ type internal TransparentCompiler
                     tcDiagnosticsRev = [ newErrors ]
                     topAttribs = Some topAttribs
                     tcDependencyFiles = [ fileName ]
-                    sigNameOpt =
-                        match input with
-                        | ParsedInput.SigFile sigFile -> Some(sigFile.FileName, sigFile.QualifiedName)
-                        | _ -> None
+                    // we shouldn't need this with graph checking (?)
+                    sigNameOpt = None
                 }
 
             return tcInfo, sink, implFile, fileName
@@ -709,18 +706,13 @@ type internal TransparentCompiler
                 latestCcuSigForFile = b.latestCcuSigForFile
                 tcDiagnosticsRev = b.tcDiagnosticsRev @ a.tcDiagnosticsRev
                 topAttribs = b.topAttribs
-                tcDependencyFiles = b.tcDependencyFiles
-                sigNameOpt = b.sigNameOpt
+                tcDependencyFiles = b.tcDependencyFiles @ a.tcDependencyFiles
+                // we shouldn't need this with graph checking (?)
+                sigNameOpt = None
             })
 
     // Type check everything that is needed to check given file
-    let ComputeTcPrior
-        (file: FSharpFile)
-        (bootstrapInfo: BootstrapInfo)
-        (projectSnapshot: FSharpProjectSnapshot)
-        _userOpName
-        _key
-        : NodeCode<TcInfo> =
+    let ComputeTcPrior (file: FSharpFile) (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshot) _userOpName _key =
         node {
 
             // parse required files
@@ -745,29 +737,32 @@ type internal TransparentCompiler
             let! graph, _filePairs =
                 DependencyGraphForLastFileCache.Get(
                     graphKey,
-                    ComputeDependencyGraphForLastFile (parsedInputs |> Seq.map fst) bootstrapInfo.TcConfig
+                    ComputeDependencyGraphForLastFile (parsedInputs |> Seq.map p13) bootstrapInfo.TcConfig
                 )
 
             // layers that can be processed in parallel
             let layers = Graph.leafSequence graph |> Seq.toList
 
-            let rec processLayer (layers: Set<FileIndex> list) state =
+            // remove the final layer, which should be the target file
+            let layers = layers |> List.take (layers.Length - 1)
+
+            let rec processLayer (layers: Set<FileIndex> list) tcInfo =
                 node {
                     match layers with
-                    | [] -> return state
+                    | [] -> return tcInfo
                     | layer :: rest ->
                         let! results =
                             layer
                             |> Seq.map (fun fileIndex ->
                                 let key = projectSnapshot.UpTo(fileIndex).Key
-                                TcIntermediateCache.Get(key, ComputeTcIntermediate parsedInputs[fileIndex] bootstrapInfo state))
+                                let parsedInput, parseErrors, _ = parsedInputs[fileIndex]
+                                TcIntermediateCache.Get(key, ComputeTcIntermediate (parsedInput, parseErrors) bootstrapInfo tcInfo))
                             |> NodeCode.Parallel
 
-                        return! processLayer rest (mergeTcInfos state (results |> Array.map p14))
+                        return! processLayer rest (mergeTcInfos tcInfo (results |> Array.map p14))
                 }
 
-            let! tcInfo = processLayer layers bootstrapInfo.InitialTcInfo
-            return tcInfo
+            return! processLayer layers bootstrapInfo.InitialTcInfo
         }
 
     let ComputeParseAndCheckFileInProject (fileName: string) (projectSnapshot: FSharpProjectSnapshot) userOpName _key =
@@ -789,7 +784,8 @@ type internal TransparentCompiler
                 let priorSnapshot = projectSnapshot.UpTo fileName
                 let! tcInfo = TcPriorCache.Get(priorSnapshot.Key, ComputeTcPrior file bootstrapInfo priorSnapshot userOpName)
 
-                let! parseTree, parseDiagnostics =
+                // We could also bubble this through ComputeTcPrior
+                let! parseTree, parseDiagnostics, sourceText =
                     ParseFileCache.Get((file.Source.Key, file.IsLastCompiland, file.IsExe), ComputeParseFile file bootstrapInfo)
 
                 let parseDiagnostics =
@@ -811,9 +807,6 @@ type internal TransparentCompiler
                         // TODO: check if we really need this in parse results
                         dependencyFiles = [||]
                     )
-
-                // TODO: this might be replaced... probably should use intermediate TC result
-                let sourceText = Unchecked.defaultof<_>
 
                 let! checkResults =
                     FSharpCheckFileResults.CheckOneFile(
@@ -849,6 +842,7 @@ type internal TransparentCompiler
         }
 
     interface IBackgroundCompiler with
+
         member this.BeforeBackgroundFileCheck: IEvent<string * FSharpProjectOptions> =
             backgroundCompiler.BeforeBackgroundFileCheck
 
@@ -989,6 +983,9 @@ type internal TransparentCompiler
             ) : NodeCode<FSharpParseFileResults * FSharpCheckFileAnswer> =
 
             backgroundCompiler.ParseAndCheckFileInProject(fileName, fileVersion, sourceText, options, userOpName)
+
+        member this.ParseAndCheckFileInProject(fileName: string, projectSnapshot: FSharpProjectSnapshot, userOpName: string) =
+            this.ParseAndCheckFileInProject(fileName, projectSnapshot, userOpName)
 
         member _.ParseAndCheckProject(options: FSharpProjectOptions, userOpName: string) : NodeCode<FSharpCheckProjectResults> =
             backgroundCompiler.ParseAndCheckProject(options, userOpName)

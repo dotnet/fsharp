@@ -250,7 +250,7 @@ type BoundModel private (
         syntaxTreeOpt: SyntaxTree option,
         ?tcStateOpt: GraphNode<TcInfo> * GraphNode<TcInfoExtras>
     ) =
-    
+
     let getTypeCheck (syntaxTree: SyntaxTree) : NodeCode<TypeCheck> =
         node {
             let! input, _sourceRange, fileName, parseErrors = syntaxTree.ParseNode.GetOrComputeValue()
@@ -262,7 +262,7 @@ type BoundModel private (
             use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.TypeCheck)
 
             beforeFileChecked.Trigger fileName
-                    
+
             ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, Path.GetDirectoryName fileName, tcImports.DependencyProvider) |> ignore
             let sink = TcResultsSinkImpl(tcGlobals)
             let hadParseErrors = not (Array.isEmpty parseErrors)

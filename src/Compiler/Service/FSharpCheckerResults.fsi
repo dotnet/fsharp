@@ -5,6 +5,7 @@ namespace FSharp.Compiler.CodeAnalysis
 open System
 open System.IO
 open System.Threading
+open System.Threading.Tasks
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
@@ -55,7 +56,7 @@ type FSharpProjectSnapshotKey =
 type FSharpFileSnapshot =
     { FileName: string
       Version: string
-      GetSource: unit -> System.Threading.Tasks.Task<ISourceText> }
+      GetSource: unit -> Task<ISourceText> }
 
     member Key: FSharpFileKey
 
