@@ -194,8 +194,9 @@ type LowerStateMachine(g: TcGlobals) =
             if sm_verbose then printfn "binding fun %A --> %A..." valParams bodyExpr
             BindResumableCodeDefinitions env bodyExpr
 
-        | Expr.DebugPoint (_, expr) ->
-            BindResumableCodeDefinitions env expr
+        | Expr.DebugPoint (_, innerExpr) ->
+            let envR, _ = BindResumableCodeDefinitions env innerExpr
+            envR, expr
 
          // Eliminate 'if __useResumableCode ...'
          | IfUseResumableStateMachinesExpr g (thenExpr, _) ->
