@@ -265,7 +265,7 @@ type TypeBuilder with
         let t = typB.CreateTypeAndLog()
 
         let m =
-            if t <> null then
+            if box t <> null then
                 t.GetMethod(nm, (args |> Seq.map (fun x -> x.GetType()) |> Seq.toArray))
             else
                 null
@@ -546,10 +546,10 @@ let emEnv0 =
         delayedFieldInits = []
     }
 
-let envBindTypeRef emEnv (tref: ILTypeRef) (typT, typB, typeDef) =
+let envBindTypeRef emEnv (tref: ILTypeRef) (typT: System.Type MaybeNull, typB, typeDef) =
     match typT with
-    | null -> failwithf "binding null type in envBindTypeRef: %s\n" tref.Name
-    | _ ->
+    | Null -> failwithf "binding null type in envBindTypeRef: %s\n" tref.Name
+    | NonNull typT ->
         { emEnv with
             emTypMap = Zmap.add tref (typT, typB, typeDef, None) emEnv.emTypMap
         }
@@ -1018,7 +1018,7 @@ let queryableTypeGetMethod cenv emEnv parentT (mref: ILMethodRef) : MethodInfo =
                     cconv ||| BindingFlags.Public ||| BindingFlags.NonPublic,
                     null,
                     argTs,
-                    (null: ParameterModifier[])
+                    (null: ParameterModifier[] MaybeNull)
                 )
             // This can fail if there is an ambiguity w.r.t. return type
             with _ ->
@@ -1102,14 +1102,14 @@ let queryableTypeGetConstructor cenv emEnv (parentT: Type) (mref: ILMethodRef) =
         parentT.GetConstructor(BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance, null, reqArgTs, null)
 
     match res with
-    | null ->
+    | Null ->
         error (
             Error(
                 FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("constructor", mref.Name, parentT.FullName, parentT.Assembly.FullName),
                 range0
             )
         )
-    | _ -> res
+    | NonNull res -> res
 
 let nonQueryableTypeGetConstructor (parentTI: Type) (consInfo: ConstructorInfo) : ConstructorInfo MaybeNull =
     if parentTI.IsGenericType then

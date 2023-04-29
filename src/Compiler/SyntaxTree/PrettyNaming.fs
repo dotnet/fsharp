@@ -1093,6 +1093,7 @@ let GetLongNameFromString x = SplitNamesForILPath x
 
 // Uncompressed OptimizationData/SignatureData name for embedded resource
 let FSharpOptimizationDataResourceName = "FSharpOptimizationData."
+
 let FSharpSignatureDataResourceName = "FSharpSignatureData."
 
 // Compressed OptimizationData/SignatureData name for embedded resource
