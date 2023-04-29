@@ -199,7 +199,7 @@ let GetDynamicallyAccessedMemberTypes (g: TcGlobals) =
 
     ILType.Value(mkILNonGenericTySpec (tref))
 
-let GetDynamicDependencyAttribute (g: TcGlobals) memberTypes ilType =
+let GetDynamicDependencyAttribute (g: TcGlobals) memberTypes (ilType:ILType) =
     let tref = g.attrib_DynamicDependencyAttribute.TypeRef
 
     g.TryEmbedILType(
@@ -214,7 +214,8 @@ let GetDynamicDependencyAttribute (g: TcGlobals) memberTypes ilType =
     let typIlMemberTypes =
         ILType.Value(mkILNonGenericTySpec (g.enum_DynamicallyAccessedMemberTypes.TypeRef))
 
-    mkILCustomAttribute (tref, [ typIlMemberTypes; g.ilg.typ_Type ], [ ILAttribElem.Int32 memberTypes; ILAttribElem.Type(Some ilType) ], [])
+    mkILCustomAttribute (tref, [ typIlMemberTypes; g.ilg.typ_Type ], [ ILAttribElem.Int32 memberTypes; ILAttribElem.TypeRef(Some ilType.TypeRef) ], [])
+
 
 /// Generate "modreq([mscorlib]System.Runtime.InteropServices.InAttribute)" on inref types.
 let GenReadOnlyModReqIfNecessary (g: TcGlobals) ty ilTy =
