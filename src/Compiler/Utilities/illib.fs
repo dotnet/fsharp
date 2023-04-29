@@ -128,14 +128,14 @@ type InlineDelayInit<'T when 'T: not struct> =
         }
 
     val mutable store: 'T
-    val mutable func: Func<'T>
+    val mutable func: Func<'T> MaybeNull
 
     member x.Value =
         match x.func with
         | null -> x.store
         | _ ->
             let res = LazyInitializer.EnsureInitialized(&x.store, x.func)
-            x.func <- Unchecked.defaultof<_>
+            x.func <- null
             res
 
 //-------------------------------------------------------------------------
@@ -182,7 +182,7 @@ module Array =
         Array.length l1 = Array.length l2 && Array.forall2 p l1 l2
 
     let order (eltOrder: IComparer<'T>) =
-        { new IComparer<array<'T>> with
+        { new IComparer<'T array> with
             member _.Compare(xs, ys) =
                 let c = compare xs.Length ys.Length
 
