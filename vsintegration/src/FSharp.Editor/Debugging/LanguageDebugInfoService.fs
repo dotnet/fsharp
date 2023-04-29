@@ -55,13 +55,21 @@ type internal FSharpLanguageDebugInfoService [<ImportingConstructor>] () =
                 cancellationToken: CancellationToken
             ) : Task<FSharpDebugDataTipInfo> =
             async {
-                let defines = document.GetFSharpQuickDefines()
+                let defines, langVersion = document.GetFSharpQuickDefinesAndLangVersion()
                 let! cancellationToken = Async.CancellationToken
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                 let textSpan = TextSpan.FromBounds(0, sourceText.Length)
 
                 let classifiedSpans =
-                    Tokenizer.getClassifiedSpans (document.Id, sourceText, textSpan, Some(document.Name), defines, cancellationToken)
+                    Tokenizer.getClassifiedSpans (
+                        document.Id,
+                        sourceText,
+                        textSpan,
+                        Some(document.Name),
+                        defines,
+                        Some langVersion,
+                        cancellationToken
+                    )
 
                 let result =
                     match FSharpLanguageDebugInfoService.GetDataTipInformation(sourceText, position, classifiedSpans) with

@@ -21,11 +21,29 @@ type InlineTypeHints(parseResults: FSharpParseFileResults, symbol: FSharpMemberO
         // not sure when this can happen
         | None -> []
 
+    let getTooltip _ =
+        async {
+            // Done this way because I am not sure if we want to show full-blown types everywhere,
+            // e.g. Microsoft.FSharp.Core.string instead of string.
+            // On the other hand, for user types this could be useful.
+            // Then there should be some smarter algorithm here.
+            let text =
+                if symbol.FullType.HasTypeDefinition then
+                    let typeAsString = symbol.FullType.TypeDefinition.ToString()
+                    $"type {typeAsString}"
+                else
+                    // already includes the word "type"
+                    symbol.FullType.ToString()
+
+            return [ TaggedText(TextTag.Text, text) ]
+        }
+
     let getHint symbol (symbolUse: FSharpSymbolUse) =
         {
             Kind = HintKind.TypeHint
             Range = symbolUse.Range.EndRange
             Parts = getHintParts symbol symbolUse
+            GetTooltip = getTooltip
         }
 
     let isSolved (symbol: FSharpMemberOrFunctionOrValue) =
