@@ -333,9 +333,7 @@ type Graph<'Data, 'Id when 'Id : comparison and 'Id : equality>
 //----------------------------------------------------------------------------
 
 type NonNullSlot<'T when 'T : not struct> = 'T
-
 let nullableSlotEmpty() : NonNullSlot<'T> = Unchecked.defaultof<_>
-
 let nullableSlotFull (x: 'T) : NonNullSlot<'T> = x
 
 //---------------------------------------------------------------------------

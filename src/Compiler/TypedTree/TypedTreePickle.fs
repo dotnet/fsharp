@@ -832,7 +832,7 @@ let pickleObjWithDanglingCcus inMem file g scope p x =
   (st1.os :> System.IDisposable).Dispose()
 
   phase2bytes, phase1bytesB
-  
+
 let check (ilscope: ILScopeRef) (inMap: NodeInTable<_,_>) =
     for i = 0 to inMap.Count - 1 do
       let n = inMap.Get i

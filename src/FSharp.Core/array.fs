@@ -692,7 +692,7 @@ module Array =
     // - when the predicate yields consecutive runs of true data that is >= 32 elements (and fall
     //   into maskArray buckets) are copied in chunks using System.Array.Copy
     module Filter =
-        let private populateMask<'a> (f: 'a -> bool) (src: array<'a>) (maskArray: array<uint32>) =
+        let private populateMask<'a> (f: 'a -> bool) (src: 'a array) (maskArray: uint32 array) =
             let mutable count = 0
 
             for maskIdx = 0 to maskArray.Length - 1 do
@@ -834,8 +834,8 @@ module Array =
 #if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
         let private createMask<'a>
             (f: 'a -> bool)
-            (src: array<'a>)
-            (maskArrayOut: byref<array<uint32>>)
+            (src: 'a array)
+            (maskArrayOut: byref<uint32 array>)
             (leftoverMaskOut: byref<uint32>)
             =
 #else
@@ -880,7 +880,7 @@ module Array =
             leftoverMaskOut <- leftoverMask
             count
 
-        let private populateDstViaMask<'a> (src: array<'a>) (maskArray: array<uint32>) (dst: array<'a>) =
+        let private populateDstViaMask<'a> (src: 'a array) (maskArray: uint32 array) (dst: 'a array) =
             let mutable dstIdx = 0
             let mutable batchCount = 0
 
@@ -1036,9 +1036,9 @@ module Array =
             dstIdx
 
 #if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
-        let private filterViaMask (maskArray: array<uint32>) (leftoverMask: uint32) (count: int) (src: array<_>) =
+        let private filterViaMask (maskArray: uint32 array) (leftoverMask: uint32) (count: int) (src: _ array) =
 #else
-        let private filterViaMask (maskArray: array<uint32> __withnull) (leftoverMask: uint32) (count: int) (src: array<_>) =
+        let private filterViaMask (maskArray: uint32 array __withnull) (leftoverMask: uint32) (count: int) (src: _ array) =
 #endif
             let dst = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count
 
@@ -1062,7 +1062,7 @@ module Array =
 
             dst
 
-        let filter f (src: array<_>) =
+        let filter f (src: _ array) =
             let mutable maskArray = Unchecked.defaultof<_>
             let mutable leftOverMask = Unchecked.defaultof<_>
 

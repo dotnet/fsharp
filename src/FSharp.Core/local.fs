@@ -522,7 +522,7 @@ module internal List =
         loop 0 l
         res
 
-    let ofArray (arr:'T[]) =
+    let ofArray (arr:'T array) =
         let mutable res = ([]: 'T list)
         for i = arr.Length-1 downto 0 do
             res <- arr.[i] :: res
@@ -531,7 +531,7 @@ module internal List =
     let inline ofSeq (e : IEnumerable<'T>) =
         match e with
         | :? ('T list) as l -> l
-        | :? ('T[]) as arr -> ofArray arr
+        | :? ('T array) as arr -> ofArray arr
         | _ ->
             use ie = e.GetEnumerator()
             if not (ie.MoveNext()) then []
@@ -998,35 +998,35 @@ module internal Array =
 
     let inline indexNotFound() = raise (KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))
 
-    let findBack predicate (array: _[]) =
+    let findBack predicate (array: _ array) =
         let rec loop i =
             if i < 0 then indexNotFound()
             elif predicate array.[i] then array.[i]
             else loop (i - 1)
         loop (array.Length - 1)
 
-    let tryFindBack predicate (array: _[]) =
+    let tryFindBack predicate (array: _ array) =
         let rec loop i =
             if i < 0 then None
             elif predicate array.[i] then Some array.[i]
             else loop (i - 1)
         loop (array.Length - 1)
 
-    let findIndexBack predicate (array: _[]) =
+    let findIndexBack predicate (array: _ array) =
         let rec loop i =
             if i < 0 then indexNotFound()
             elif predicate array.[i] then i
             else loop (i - 1)
         loop (array.Length - 1)
 
-    let tryFindIndexBack predicate (array: _[]) =
+    let tryFindIndexBack predicate (array: _ array) =
         let rec loop i =
             if i < 0 then None
             elif predicate array.[i] then Some i
             else loop (i - 1)
         loop (array.Length - 1)
 
-    let permute indexMap (arr : _[]) =
+    let permute indexMap (arr : _ array) =
         let res  = zeroCreateUnchecked arr.Length
         let inv = zeroCreateUnchecked arr.Length
         for i = 0 to arr.Length - 1 do
@@ -1038,7 +1038,7 @@ module internal Array =
             if inv.[i] <> 1uy then invalidArg "indexMap" (SR.GetString(SR.notAPermutation))
         res
 
-    let mapFold f acc (array : _[]) =
+    let mapFold f acc (array: _ array) =
         match array.Length with
         | 0 -> [| |], acc
         | len ->
@@ -1051,7 +1051,7 @@ module internal Array =
                 acc <- s'
             res, acc
 
-    let mapFoldBack f (array : _[]) acc =
+    let mapFoldBack f (array: _ array) acc =
         match array.Length with
         | 0 -> [| |], acc
         | len ->
@@ -1064,7 +1064,7 @@ module internal Array =
                 acc <- s'
             res, acc
 
-    let scanSubRight f (array : _[]) start fin initState =
+    let scanSubRight f (array: _ array) start fin initState =
         let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(f)
         let mutable state = initState
         let res = zeroCreateUnchecked (fin-start+2)
@@ -1074,7 +1074,7 @@ module internal Array =
             res.[i - start] <- state
         res
 
-    let unstableSortInPlaceBy (projection: 'T -> 'U) (array : array<'T>) =
+    let unstableSortInPlaceBy (projection: 'T -> 'U) (array: 'T array) =
         let len = array.Length
         if len > 1 then
             let keys = zeroCreateUnchecked len
@@ -1082,12 +1082,12 @@ module internal Array =
                 keys.[i] <- projection array.[i]
             Array.Sort<_, _>(keys, array, fastComparerForArraySort())
 
-    let unstableSortInPlace (array : array<'T>) =
+    let unstableSortInPlace (array: 'T array) =
         if array.Length > 1 then 
             Array.Sort<_>(array, fastComparerForArraySort())
 
 #if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
-    let stableSortWithKeysAndComparer (cFast:IComparer<'Key>) (c:IComparer<'Key>) (array:array<'T>) (keys:array<'Key>)  =
+    let stableSortWithKeysAndComparer (cFast:IComparer<'Key>) (c:IComparer<'Key>) (array:'T array) (keys: 'Key array)  =
 #else
     let stableSortWithKeysAndComparer (cFast:IComparer<'Key> __withnull) (c:IComparer<'Key>) (array:array<'T>) (keys:array<'Key>)  =
 #endif
@@ -1098,7 +1098,7 @@ module internal Array =
             places.[i] <- i
         System.Array.Sort<_, _>(keys, places, cFast)
         // 'array2' is a copy of the original values
-        let array2 = (array.Clone() :?> array<'T>)
+        let array2 = (array.Clone() :?> 'T array)
 
         // Walk through any chunks where the keys are equal
         let mutable i = 0
@@ -1116,12 +1116,12 @@ module internal Array =
                 Array.Sort<_, _>(places, array, i, j-i, intCompare)
             i <- j
 
-    let stableSortWithKeys (array:array<'T>) (keys:array<'Key>) =
+    let stableSortWithKeys (array:'T array) (keys:'Key array) =
         let cFast = fastComparerForArraySort()
         let c = LanguagePrimitives.FastGenericComparer<'Key>
         stableSortWithKeysAndComparer cFast c array keys
 
-    let stableSortInPlaceBy (projection: 'T -> 'U) (array : array<'T>) =
+    let stableSortInPlaceBy (projection: 'T -> 'U) (array: 'T array) =
         let len = array.Length
         if len > 1 then
             // 'keys' is an array storing the projected keys
@@ -1130,7 +1130,7 @@ module internal Array =
                 keys.[i] <- projection array.[i]
             stableSortWithKeys array keys
 
-    let stableSortInPlace (array : array<'T>) =
+    let stableSortInPlace (array: 'T array) =
         let len = array.Length
         if len > 1 then
             let cFast = LanguagePrimitives.FastGenericComparerCanBeNull<'T>
@@ -1141,19 +1141,19 @@ module internal Array =
                 Array.Sort<_, _>(array, null)
             | _ ->
                 // 'keys' is an array storing the projected keys
-                let keys = (array.Clone() :?> array<'T>)
+                let keys = (array.Clone() :?> 'T array)
                 stableSortWithKeys array keys
 
-    let stableSortInPlaceWith (comparer:'T -> 'T -> int) (array : array<'T>) =
+    let stableSortInPlaceWith (comparer:'T -> 'T -> int) (array: 'T array) =
         let len = array.Length
         if len > 1 then
-            let keys = (array.Clone() :?> array<'T>)
+            let keys = (array.Clone() :?> 'T array)
             let comparer = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(comparer)
             let c = { new IComparer<'T> with member _.Compare(x, y) = comparer.Invoke(x, y) }
             stableSortWithKeysAndComparer c c array keys
 
-    let inline subUnchecked startIndex count (array : 'T[]) =
-        let res = zeroCreateUnchecked count : 'T[]
+    let inline subUnchecked startIndex count (array: 'T array) =
+        let res = zeroCreateUnchecked count : 'T array
         if count < 64 then
             for i = 0 to res.Length-1 do
                 res.[i] <- array.[startIndex+i]
@@ -1161,13 +1161,13 @@ module internal Array =
             Array.Copy(array, startIndex, res, 0, count)
         res
 
-    let splitInto count (array : 'T[]) =
+    let splitInto count (array: 'T array) =
         let len = array.Length
         if len = 0 then
             [| |]
         else
             let count = min count len
-            let res = zeroCreateUnchecked count : 'T[][]
+            let res = zeroCreateUnchecked count : 'T array array
             let minChunkSize = len / count
             let mutable startIndex = 0
             for i = 0 to len % count - 1 do
@@ -1182,7 +1182,7 @@ module internal Seq =
     let tryLastV (source : seq<_>) =
         //checkNonNull "source" source //done in main Seq.tryLast
         match source with
-        | :? ('T[]) as a -> 
+        | :? ('T array) as a -> 
             if a.Length = 0 then ValueNone
             else ValueSome(a.[a.Length - 1])
         

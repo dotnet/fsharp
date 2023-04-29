@@ -80,6 +80,7 @@ let GetSuperTypeOfType g amap m ty =
                 Some g.obj_ty
             else
                 None
+
     match resBeforeNull with 
     | Some superTy ->
         let nullness = nullnessOfTy g ty

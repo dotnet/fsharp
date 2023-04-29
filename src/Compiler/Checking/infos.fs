@@ -394,11 +394,7 @@ let OptionalArgInfoOfProvidedParameter (amap: ImportMap) m (provParam : Tainted<
 /// Compute the ILFieldInit for the given provided constant value for a provided enum type.
 let GetAndSanityCheckProviderMethod m (mi: Tainted<'T :> ProvidedMemberInfo>) (get : 'T -> ProvidedMethodInfo MaybeNull) err = 
     match mi.PApply((fun mi -> (get mi :> ProvidedMethodBase MaybeNull)),m) with 
-#if NO_CHECKNULLS
-    | Tainted.Null -> error(Error(err(mi.PUntaint((fun mi -> mi.Name),m),mi.PUntaint((fun mi -> mi.DeclaringType.Name), m)), m))   
-#else
     | Tainted.Null -> error(Error(err(mi.PUntaint((fun mi -> mi.Name),m),mi.PUntaint((fun mi -> (nonNull<ProvidedType> mi.DeclaringType).Name), m)), m))   // TODO NULLNESS: type isntantiation should not be needed
-#endif
     | Tainted.NonNull meth -> meth
 
 /// Try to get an arbitrary ProvidedMethodInfo associated with a property.
@@ -1667,7 +1663,7 @@ type PropInfo =
         | ILProp ilpinfo -> ilpinfo.ILTypeInfo.ToType
         | FSProp(_, ty, _, _) -> ty
 #if !NO_TYPEPROVIDERS
-        | ProvidedProp(amap, pi, m) -> 
+        | ProvidedProp(amap, pi, m) ->
             ImportProvidedType amap m (pi.PApply((fun pi -> nonNull<ProvidedType> pi.DeclaringType), m)) 
 #endif
 
@@ -2116,7 +2112,7 @@ type EventInfo =
         | ILEvent ileinfo -> ileinfo.ApparentEnclosingType
         | FSEvent (_, p, _, _) -> p.ApparentEnclosingType
 #if !NO_TYPEPROVIDERS
-        | ProvidedEvent (amap, ei, m) -> ImportProvidedType amap m (ei.PApply((fun ei -> nonNull<ProvidedType> ei.DeclaringType), m)) 
+        | ProvidedEvent (amap, ei, m) -> ImportProvidedType amap m (ei.PApply((fun ei -> nonNull<ProvidedType> ei.DeclaringType), m))
 #endif
 
     /// Get the enclosing type of the method info, using a nominal type for tuple types

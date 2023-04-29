@@ -3499,7 +3499,8 @@ type FsiStdinLexerProvider
                     with :? EndOfStreamException ->
                         None
 
-                inputOption |> Option.iter (fun t ->
+                inputOption
+                |> Option.iter (fun t ->
                     match t with
                     | Null -> ()
                     | NonNull t -> fsiStdinSyphon.Add(t + "\n"))

@@ -339,15 +339,22 @@ type internal ByteMemory with
 
 [<Sealed>]
 type internal ByteStream =
+
     member IsEOF: bool
+
     member ReadByte: unit -> byte
+
     member ReadBytes: int -> ReadOnlyByteMemory
+
     member ReadUtf8String: int -> string
+
     member Position: int
+
     static member FromBytes: ReadOnlyByteMemory * start: int * length: int -> ByteStream
 
 #if LAZY_UNPICKLE
     member CloneAndSeek: int -> ByteStream
+
     member Skip: int -> unit
 #endif
 
