@@ -106,3 +106,94 @@ for i in 1 .. 100 do
         |> withOptimize
         |> compileExeAndRun
         |> shouldSucceed
+
+    [<Fact>] // https://github.com/dotnet/fsharp/issues/12839#issuecomment-1292310944
+    let ``Tasks with a for loop over tuples are statically compilable``() =
+        FSharp """
+module TestProject1
+
+let ret i = task { return i }
+
+let one (f: seq<string * string * int>) = task {
+    let mutable sum = 0
+
+    let! x = ret 1
+    sum <- sum + x
+
+    for name, _whatever, i in f do
+        let! x = ret i
+        sum <- sum + x
+
+        System.Console.Write name
+
+        let! x = ret i
+        sum <- sum + x
+
+    let! x = ret 1
+    sum <- sum + x
+
+    return sum
+}
+
+let two (f: seq<string * string * int>) = task {
+    let mutable sum = 0
+
+    let! x = ret 1
+    sum <- sum + x
+
+    for name, _whatever, i in f do
+        let! x = ret i
+        sum <- sum + x
+
+        System.Console.Write name
+
+    let! x = ret 1
+    sum <- sum + x
+
+    return sum
+}
+
+let three (f: seq<string * string * int>) = task {
+    let mutable sum = 0
+
+    let! x = ret 1
+    sum <- sum + x
+
+    for name, _whatever, i in f do
+        let! x = ret i
+        sum <- sum + x
+
+        System.Console.Write name
+
+    return sum
+}
+
+let four (f: seq<string * int>) = task {
+    let mutable sum = 0
+
+    let! x = ret 5
+    sum <- sum + x
+
+    for name, _i in f do
+        System.Console.Write name
+
+    let! x = ret 1
+    sum <- sum + x
+
+    return sum
+}
+
+if (one [ ("", "", 1); ("", "", 2) ]).Result <> 8 then
+    failwith "unexpected result one"
+if (one []).Result <> 2 then
+    failwith "unexpected result one"
+if (two [ ("", "", 2) ]).Result <> 4 then
+    failwith "unexpected result two"
+if (three [ ("", "", 5) ]).Result <> 6 then
+    failwith "unexpected result three"
+if (four [ ("", 10) ]).Result <> 6 then
+    failwith "unexpected result four"
+"""
+        |> withOptimize
+        |> compileExeAndRun
+        |> shouldSucceed
