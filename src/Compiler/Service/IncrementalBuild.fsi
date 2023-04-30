@@ -100,7 +100,7 @@ type internal PartialCheckResults =
 
     member TcConfig: TcConfig
 
-    member Version: int
+    member TimeStamp: DateTime
 
     member TryPeekTcInfo: unit -> TcInfo option
 

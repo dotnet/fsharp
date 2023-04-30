@@ -249,12 +249,8 @@ type BoundModel private (
         fileChecked: Event<string>,
         tcInfo: GraphNode<TcInfo>,
         tcInfoExtras: GraphNode<TcInfoExtras>,
-        versionStamp: DateTime
+        timeStamp: DateTime
     ) =
-    
-    static let mutable globalIncrement = 0
-
-    let version = System.Threading.Interlocked.Increment(&globalIncrement)
 
     static member Create(
         tcConfig: TcConfig,
@@ -267,7 +263,7 @@ type BoundModel private (
         fileChecked: Event<string>,
         prevTcInfo: GraphNode<TcInfo>,
         syntaxTreeOpt: SyntaxTree option,
-        versionStamp: DateTime
+        timeStamp: DateTime
     ) =
    
         let getTypeCheck (syntaxTree: SyntaxTree) : NodeCode<TypeCheck> =
@@ -413,7 +409,7 @@ type BoundModel private (
             fileChecked,
             tcInfo,
             tcInfoExtras,
-            versionStamp
+            timeStamp
         )
 
     member val TcInfo = tcInfo
@@ -426,9 +422,7 @@ type BoundModel private (
 
     member _.TcImports = tcImports
 
-    member val Version = version
-
-    member _.VersionStamp = versionStamp
+    member _.TimeStamp = timeStamp
 
     member this.TryPeekTcInfo() = this.TcInfo.TryPeekValue() |> ValueOption.toOption
     
@@ -450,7 +444,7 @@ type BoundModel private (
     member this.Next(syntaxTree: SyntaxTree) =
 
         let prevTcInfo = this.TcInfo
-        let versionStamp = max syntaxTree.TimeStamp versionStamp
+        let versionStamp = max syntaxTree.TimeStamp timeStamp
 
         BoundModel.Create(
                 tcConfig,
@@ -486,7 +480,7 @@ type BoundModel private (
             fileChecked,
             finishState,
             this.TcInfoExtras,
-            versionStamp
+            timeStamp
         )
 
 /// Global service state
@@ -560,7 +554,7 @@ type PartialCheckResults (boundModel: BoundModel) =
 
     member _.TcConfig = boundModel.TcConfig
 
-    member _.Version = boundModel.Version
+    member _.TimeStamp = boundModel.TimeStamp
 
     member _.TryPeekTcInfo() = boundModel.TryPeekTcInfo()
 
@@ -1177,7 +1171,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
     member _.GetLogicalTimeStampForProject(cache) =
         checkFileTimeStampsIfNotUsingNotifications cache
         let slot = currentState.slots |> List.last
-        slot.BoundModel.VersionStamp
+        slot.BoundModel.TimeStamp
 
     member _.TryGetSlotOfFileName(fileName: string) =
         // Get the slot of the given file.
