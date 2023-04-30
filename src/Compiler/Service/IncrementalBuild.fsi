@@ -100,9 +100,7 @@ type internal PartialCheckResults =
 
     member TcConfig: TcConfig
 
-    member TimeStamp: DateTime
-
-    member ProjectTimeStamp: DateTime
+    member Version: int
 
     member TryPeekTcInfo: unit -> TcInfo option
 
@@ -129,8 +127,6 @@ type internal PartialCheckResults =
     ///
     /// Will return 'None' for enableBackgroundItemKeyStoreAndSemanticClassification=false.
     member GetOrComputeSemanticClassificationIfEnabled: unit -> NodeCode<SemanticClassificationKeyStore option>
-
-    member TimeStamp: DateTime
 
 /// Manages an incremental build graph for the build of an F# project
 [<Class>]

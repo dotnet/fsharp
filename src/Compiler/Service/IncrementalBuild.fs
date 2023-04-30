@@ -251,6 +251,10 @@ type BoundModel private (
         tcInfoExtras: GraphNode<TcInfoExtras>,
         versionStamp: DateTime
     ) =
+    
+    static let mutable globalIncrement = 0
+
+    let version = System.Threading.Interlocked.Increment(&globalIncrement)
 
     static member Create(
         tcConfig: TcConfig,
@@ -422,6 +426,8 @@ type BoundModel private (
 
     member _.TcImports = tcImports
 
+    member val Version = version
+
     member _.VersionStamp = versionStamp
 
     member this.TryPeekTcInfo() = this.TcInfo.TryPeekValue() |> ValueOption.toOption
@@ -546,7 +552,7 @@ type FrameworkImportsCache(size) =
 
 /// Represents the interim state of checking an assembly
 [<Sealed>]
-type PartialCheckResults (boundModel: BoundModel, timeStamp: DateTime, projectTimeStamp: DateTime) =
+type PartialCheckResults (boundModel: BoundModel) =
 
     member _.TcImports = boundModel.TcImports
 
@@ -554,9 +560,7 @@ type PartialCheckResults (boundModel: BoundModel, timeStamp: DateTime, projectTi
 
     member _.TcConfig = boundModel.TcConfig
 
-    member _.TimeStamp = timeStamp
-
-    member _.ProjectTimeStamp = projectTimeStamp
+    member _.Version = boundModel.Version
 
     member _.TryPeekTcInfo() = boundModel.TryPeekTcInfo()
 
@@ -910,7 +914,7 @@ type IncrementalBuilderState =
         stampedReferencedAssemblies: DateTime list
         versionStamp: DateTime
         initialBoundModel: BoundModel
-        finalizedBoundModel: GraphNode<(ILAssemblyRef * ProjectAssemblyDataResult * CheckedImplFile list option * BoundModel) * DateTime>
+        finalizedBoundModel: GraphNode<(ILAssemblyRef * ProjectAssemblyDataResult * CheckedImplFile list option * BoundModel)>
     }
     member this.stampedFileNames = this.slots |> List.map (fun s -> s.Stamp)
     member this.boundModels = this.slots |> List.map (fun s -> s.BoundModel)
@@ -926,7 +930,7 @@ module IncrementalBuilderStateHelpers =
     let createFinalizeBoundModelGraphNode (initialState: IncrementalBuilderInitialState) (boundModels: BoundModel seq) =
         GraphNode(node {
             use _ = Activity.start "GetCheckResultsAndImplementationsForProject" [|Activity.Tags.project, initialState.outfile|]
-            let! result = 
+            return!
                 FinalizeTypeCheckTask 
                     initialState.tcConfig 
                     initialState.tcGlobals
@@ -934,7 +938,6 @@ module IncrementalBuilderStateHelpers =
                     initialState.assemblyName 
                     initialState.outfile 
                     boundModels
-            return result, DateTime.UtcNow
         })
 
     let computeStampedFileNames (initialState: IncrementalBuilderInitialState) (state: IncrementalBuilderState) =
@@ -1048,38 +1051,20 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
     let getSlot (state: IncrementalBuilderState) slot =
         if slot = -1 then
-            initialBoundModel, defaultTimeStamp
+            initialBoundModel
         else
-            let slot = state.slots[slot]
-            slot.BoundModel, slot.Stamp
+            state.slots[slot].BoundModel
 
     let getBeforeSlot (state: IncrementalBuilderState) slot =
         getSlot state (slot - 1)
 
-    let MaxTimeStampInDependencies stamps fileSlot =
-        if Seq.isEmpty stamps then
-            defaultTimeStamp
-        else
-            let stamps =
-                match fileSlot with
-                | -1 -> stamps
-                | fileSlot -> stamps |> Seq.take fileSlot
-
-            stamps |> Seq.max
-
-    let computeProjectTimeStamp (state: IncrementalBuilderState) fileSlot =
-        if fileSlot = 0 then
-            state.versionStamp
-            // MaxTimeStampInDependencies state.stampedReferencedAssemblies -1
-        else
-            let t1 = state.versionStamp // MaxTimeStampInDependencies state.stampedReferencedAssemblies -1
-            let t2 = MaxTimeStampInDependencies state.stampedFileNames fileSlot
-            max t1 t2
-
     let mutable currentState = state 
 
+    let guard = obj()
+
     let setCurrentState state =
-        currentState <- computeStampedFileNames initialState state
+        lock guard <| fun () ->
+            currentState <- computeStampedFileNames initialState state
 
     let checkFileTimeStampsIfNotUsingNotifications cache =
         if not initialState.useChangeNotifications then
@@ -1118,39 +1103,36 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
     member _.AllDependenciesDeprecated = initialState.allDependencies
 
     member builder.GetCheckResultsBeforeFileInProjectEvenIfStale fileName =
+        updateFileTimeStampsIfNotUsingNotifications ()
         let slotOfFile = builder.GetSlotOfFileName fileName
-        let boundModel, timestamp = getBeforeSlot currentState slotOfFile
-        let projectTimeStamp = builder.GetLogicalTimeStampForFileInProject(fileName)
-        PartialCheckResults (boundModel, timestamp, projectTimeStamp)
+        let boundModel = getBeforeSlot currentState slotOfFile
+        PartialCheckResults boundModel
 
     member builder.GetCheckResultsForFileInProjectEvenIfStale fileName =
+        updateFileTimeStampsIfNotUsingNotifications ()
         let slotOfFile = builder.GetSlotOfFileName fileName
-        let boundModel, timestamp = getSlot currentState slotOfFile
-        let projectTimeStamp = builder.GetLogicalTimeStampForFileInProject(fileName)
-        PartialCheckResults (boundModel, timestamp, projectTimeStamp)
+        let boundModel = getSlot currentState slotOfFile
+        PartialCheckResults boundModel
 
     member builder.TryGetCheckResultsBeforeFileInProject fileName =
         updateFileTimeStampsIfNotUsingNotifications ()
         let slotOfFile = builder.GetSlotOfFileName fileName
-        let boundModel, timestamp = getBeforeSlot currentState slotOfFile
-        let projectTimeStamp = builder.GetLogicalTimeStampForFileInProject(fileName)
-        PartialCheckResults (boundModel, timestamp, projectTimeStamp)
+        let boundModel = getBeforeSlot currentState slotOfFile
+        PartialCheckResults boundModel
 
     member builder.GetCheckResultsBeforeSlotInProject slotOfFile =
       node {
         updateFileTimeStampsIfNotUsingNotifications ()
-        let boundModel, timestamp = getSlot currentState (slotOfFile - 1)
-        let projectTimeStamp = builder.GetLogicalTimeStampForFileInProject(slotOfFile)
-        return PartialCheckResults(boundModel, timestamp, projectTimeStamp)
+        let boundModel = getBeforeSlot currentState slotOfFile
+        return PartialCheckResults boundModel
       }
 
     member builder.GetFullCheckResultsBeforeSlotInProject slotOfFile =
       node {
         updateFileTimeStampsIfNotUsingNotifications ()
-        let boundModel, timestamp = getSlot currentState (slotOfFile - 1)
+        let boundModel = getBeforeSlot currentState slotOfFile
         let! _ = boundModel.GetOrComputeTcInfoExtras()
-        let projectTimeStamp = builder.GetLogicalTimeStampForFileInProject(slotOfFile)
-        return PartialCheckResults(boundModel, timestamp, projectTimeStamp)
+        return PartialCheckResults boundModel
       }
 
     member builder.GetCheckResultsBeforeFileInProject fileName =
@@ -1180,10 +1162,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         updateFileTimeStampsIfNotUsingNotifications ()
         let! result = currentState.finalizedBoundModel.GetOrComputeValue()
         match result with
-        | (ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, boundModel), timestamp ->
-            let cache = TimeStampCache defaultTimeStamp
-            let projectTimeStamp = builder.GetLogicalTimeStampForProject(cache)
-            return PartialCheckResults (boundModel, timestamp, projectTimeStamp), ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt
+        | (ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, boundModel) ->
+            return PartialCheckResults boundModel, ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt
       }
 
     member builder.GetFullCheckResultsAndImplementationsForProject() =
@@ -1194,20 +1174,13 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             return result
         }
 
-    member builder.GetLogicalTimeStampForFileInProject(filename: string) =
-        let slot = builder.GetSlotOfFileName(filename)
-        builder.GetLogicalTimeStampForFileInProject(slot)
-
-    member _.GetLogicalTimeStampForFileInProject(slotOfFile: int) =
-        updateFileTimeStampsIfNotUsingNotifications ()
-        computeProjectTimeStamp currentState slotOfFile
-
     member _.GetLogicalTimeStampForProject(cache) =
         checkFileTimeStampsIfNotUsingNotifications cache
-        computeProjectTimeStamp currentState -1
+        let slot = currentState.slots |> List.last
+        slot.BoundModel.VersionStamp
 
     member _.TryGetSlotOfFileName(fileName: string) =
-        // Get the slot of the given file and force it to build.
+        // Get the slot of the given file.
         let CompareFileNames f =
             let result =
                    String.Compare(fileName, f.FileName, StringComparison.CurrentCultureIgnoreCase)=0
