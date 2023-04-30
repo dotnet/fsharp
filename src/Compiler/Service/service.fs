@@ -179,7 +179,7 @@ type ScriptClosureCacheToken() =
     interface LockToken
 
 type CheckFileCacheKey = FileName * SourceTextHash * FSharpProjectOptions
-type CheckFileCacheValue = FSharpParseFileResults * FSharpCheckFileResults * SourceTextHash * int
+type CheckFileCacheValue = FSharpParseFileResults * FSharpCheckFileResults * SourceTextHash * DateTime
 
 // There is only one instance of this type, held in FSharpChecker
 type BackgroundCompiler
@@ -580,8 +580,8 @@ type BackgroundCompiler
             match cachedResultsOpt with
             | Some cachedResults ->
                 match! cachedResults.GetOrComputeValue() with
-                | parseResults, checkResults, _, version when
-                    (builder.GetCheckResultsBeforeFileInProjectEvenIfStale fileName).Version = version
+                | parseResults, checkResults, _, timeStamp when
+                    (builder.GetCheckResultsBeforeFileInProjectEvenIfStale fileName).TimeStamp = timeStamp
                     ->
                     return Some(parseResults, checkResults)
                 | _ ->
@@ -633,7 +633,7 @@ type BackgroundCompiler
                 |> NodeCode.FromCancellable
 
             GraphNode.SetPreferredUILang tcConfig.preferredUiLang
-            return (parseResults, checkAnswer, sourceText.GetHashCode() |> int64, tcPrior.Version)
+            return (parseResults, checkAnswer, sourceText.GetHashCode() |> int64, tcPrior.TimeStamp)
         }
 
     member private bc.CheckOneFileImpl
