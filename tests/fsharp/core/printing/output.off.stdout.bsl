@@ -563,7 +563,7 @@ type F1 =
   abstract AAA: int
   abstract BBB: bool with set
   member D2: int with get, set
-  member E: int
+  member E: int with get, set
   abstract ZZZ: int
   static val mutable private sx: F1
   static val mutable private sx2: F1
