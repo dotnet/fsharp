@@ -93,6 +93,7 @@ module Tc = CheckExpressions
 
 type internal FSharpFile = {
         FileName: string
+        HasSignature: bool
         Range: range
         GetSource: string -> FSharpSource
         Flags: bool * bool
@@ -110,8 +111,7 @@ module IncrementalBuildSyntaxTree =
             tcConfig: TcConfig,
             fileParsed: Event<string>,
             lexResourceManager,
-            file: FSharpFile,
-            hasSignature
+            file: FSharpFile
         ) =
 
         let source = file.GetSource file.FileName
@@ -172,15 +172,15 @@ module IncrementalBuildSyntaxTree =
         member val ParseNode : GraphNode<ParseResult> = parse source |> GraphNode
 
         member _.Invalidate() =
-            SyntaxTree(tcConfig, fileParsed, lexResourceManager, file, hasSignature)
+            SyntaxTree(tcConfig, fileParsed, lexResourceManager, file)
 
         member _.Skip = skippedImplFilePlaceholder
 
         member _.FileName = file.FileName
 
-        member _.TimeStamp = source.TimeStamp
+        member _.HasSignature = file.HasSignature
 
-        member _.HasSignature  = hasSignature
+        member _.TimeStamp = source.TimeStamp
 
         member _.SourceRange = sourceRange
 
@@ -980,22 +980,10 @@ type IncrementalBuilderState with
         ReferencedAssembliesStamps => FileStamps => BoundModels => FinalizedBoundModel
     *)
     static member Create(initialState: IncrementalBuilderInitialState, cache) =
-        let hasSignature =
-            let isImplFile fileName = FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName)
-            let isSigFile fileName = FSharpSigFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName)
-            let isBackingSignature fileName sigName =
-                isImplFile fileName && isSigFile sigName &&
-                    FileSystemUtils.fileNameWithoutExtension sigName = FileSystemUtils.fileNameWithoutExtension fileName
-            [
-                false
-                for prev, file in initialState.fileNames |> List.pairwise do
-                    isBackingSignature file.FileName prev.FileName
-            ]
-
         let syntaxTrees =
             [
-                for sourceFile, hasSignature in Seq.zip initialState.fileNames hasSignature ->
-                    SyntaxTree(initialState.tcConfig, initialState.fileParsed, initialState.lexResourceManager, sourceFile, hasSignature)
+                for sourceFile in initialState.fileNames ->
+                    SyntaxTree(initialState.tcConfig, initialState.fileParsed, initialState.lexResourceManager, sourceFile)
             ]
 
         let boundModels = 
@@ -1451,10 +1439,22 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                     FSharpSource.Create(fileName, getTimeStamp, getSourceText))
                 |> Option.defaultWith(fun () -> FSharpSource.CreateFromFile(fileName))
 
+            let hasSignature =
+                let isImplFile fileName = FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName)
+                let isSigFile fileName = FSharpSigFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName)
+                let isBackingSignature fileName sigName =
+                    isImplFile fileName && isSigFile sigName &&
+                        FileSystemUtils.fileNameWithoutExtension sigName = FileSystemUtils.fileNameWithoutExtension fileName
+                let fileNames = sourceFiles |> List.map (fun (_, fileName, _) -> fileName )
+                [
+                    false
+                    for prev, file in fileNames |> List.pairwise do
+                        isBackingSignature file prev
+                ]
+            
             let sourceFiles =
-                sourceFiles
-                |> List.map (fun (m, fileName, isLastCompiland) ->
-                    { FileName = fileName; Range = m; GetSource = getFSharpSource; Flags = isLastCompiland } )
+                [ for (m, fileName, isLastCompiland), hasSignature in List.zip sourceFiles hasSignature ->
+                    { FileName = fileName; HasSignature = hasSignature; Range = m; GetSource = getFSharpSource; Flags = isLastCompiland } ]
 
             let initialState =
                 IncrementalBuilderInitialState.Create(
