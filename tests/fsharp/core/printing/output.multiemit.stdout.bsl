@@ -5078,7 +5078,7 @@ type F1 =
   static member C: unit -> int
   abstract AAA: int
   abstract BBB: bool with set
-  member D2: int
+  member D2: int with get, set
   member E: int
   abstract ZZZ: int
   static val mutable private sx: F1
