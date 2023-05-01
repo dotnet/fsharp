@@ -1726,7 +1726,11 @@ module TastDefinitionPrinting =
 
         match pinfo.ArbitraryValRef with
         | Some vref ->
-            PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader vref
+            let propL = PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader vref
+            if pinfo.HasGetter && pinfo.HasSetter then
+                propL ^^ wordL (tagKeyword "with") ^^ wordL (tagText "get, set")
+            else
+                propL
         | None ->
 
             let modifierAndMember =
