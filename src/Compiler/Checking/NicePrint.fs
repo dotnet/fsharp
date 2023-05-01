@@ -1724,10 +1724,16 @@ module TastDefinitionPrinting =
     let layoutPropInfo denv (infoReader: InfoReader) m (pinfo: PropInfo) =
         let amap = infoReader.amap
 
+        let isPublicGetterSetter (getter: MethInfo) (setter: MethInfo) =
+            let isPublicAccess access = access = TAccess []
+            match getter.ArbitraryValRef, setter.ArbitraryValRef with
+            | Some gRef, Some sRef -> isPublicAccess gRef.Accessibility && isPublicAccess sRef.Accessibility
+            | _ -> false
+
         match pinfo.ArbitraryValRef with
         | Some vref ->
             let propL = PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader vref
-            if pinfo.HasGetter && pinfo.HasSetter && not pinfo.IsIndexer then
+            if pinfo.HasGetter && pinfo.HasSetter && not pinfo.IsIndexer && isPublicGetterSetter pinfo.GetterMethod pinfo.SetterMethod then
                 propL ^^ wordL (tagKeyword "with") ^^ wordL (tagText "get, set")
             else
                 propL
