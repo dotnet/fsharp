@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace FSharp.Compiler.UnitTests
 
@@ -179,3 +179,51 @@ module Inner =
       member SomeAutoProp: string with get, set
 
       member SomeAutoPropWithGetOnly: string"""
+
+    [<Test>]
+    let ``can generate attributes for implicit namespace`` () = 
+        """
+[<AutoOpen>]
+module A.B
+
+open System
+
+    module Say =
+        let hello name =
+            printfn "Hello %s" name
+
+        let f a = a
+        """
+        |> sigShouldBe """
+[<AutoOpen>]
+module A.B
+
+module Say =
+
+  val hello: name: string -> unit
+
+  val f: a: 'a -> 'a"""
+
+    [<Test>]
+    let ``can generate attributes for implicit namespace with multiple modules`` () = 
+        """
+[<AutoOpen>]
+module A.B.C.D
+
+open System
+
+    module Say =
+        let hello name =
+            printfn "Hello %s" name
+
+        let f a = a
+        """
+        |> sigShouldBe """
+[<AutoOpen>]
+module A.B.C.D
+
+module Say =
+
+  val hello: name: string -> unit
+
+  val f: a: 'a -> 'a"""
