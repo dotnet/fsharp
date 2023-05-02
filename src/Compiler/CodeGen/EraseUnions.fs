@@ -1006,7 +1006,7 @@ let convAlternativeDef
                                     [ mkILParamNamed ("obj", altTy) ],
                                     mkMethodBody (false, [], 3, debugProxyCode, None, imports)
                                 ))
-                                    .With(customAttrs = mkILCustomAttrs[GetDynamicDependencyAttribute g 0x660 baseTy])
+                                    .With(customAttrs = mkILCustomAttrs [ GetDynamicDependencyAttribute g 0x660 baseTy ])
                                 |> addMethodGeneratedAttrs
 
                             let debugProxyGetterMeths =
@@ -1128,7 +1128,7 @@ let convAlternativeDef
 
                         let basicCtorMeth =
                             (mkILStorageCtor (basicCtorInstrs, altTy, basicCtorFields, basicCtorAccess, attr, imports))
-                                .With(customAttrs = mkILCustomAttrs[GetDynamicDependencyAttribute g 0x660 baseTy])
+                                .With(customAttrs = mkILCustomAttrs [ GetDynamicDependencyAttribute g 0x660 baseTy ])
                             |> addMethodGeneratedAttrs
 
                         let altTypeDef =
@@ -1261,7 +1261,7 @@ let mkClassUnionDef
                             cud.DebugPoint,
                             cud.DebugImports
                         ))
-                            .With(customAttrs = mkILCustomAttrs[GetDynamicDependencyAttribute g 0x660 baseTy])
+                            .With(customAttrs = mkILCustomAttrs [ GetDynamicDependencyAttribute g 0x660 baseTy ])
                         |> addMethodGeneratedAttrs
 
                     let props, meths =
@@ -1319,7 +1319,7 @@ let mkClassUnionDef
                     cud.DebugPoint,
                     cud.DebugImports
                 ))
-                    .With(customAttrs = mkILCustomAttrs[GetDynamicDependencyAttribute g 0x7E0 baseTy])
+                    .With(customAttrs = mkILCustomAttrs [ GetDynamicDependencyAttribute g 0x7E0 baseTy ])
                 |> addMethodGeneratedAttrs
             ]
 

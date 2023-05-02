@@ -4332,7 +4332,7 @@ and TcTypeOrMeasure kindOpt (cenv: cenv) newOk checkConstraints occ (iwsam: Warn
         TcLongIdentType kindOpt cenv newOk checkConstraints occ iwsam env tpenv synLongId
 
     | MultiDimensionArrayType (rank, elemTy, m) ->
-        TcElementType cenv newOk checkConstraints occ env tpenv rank elemTy m
+        TcArrayType cenv newOk checkConstraints occ env tpenv rank elemTy m
     
     | SynType.App (StripParenTypes (SynType.LongIdent longId), _, args, _, _, postfix, m) ->
         TcLongIdentAppType kindOpt cenv newOk checkConstraints occ iwsam env tpenv longId postfix args m
@@ -4353,7 +4353,7 @@ and TcTypeOrMeasure kindOpt (cenv: cenv) newOk checkConstraints occ (iwsam: Warn
         TcFunctionType cenv newOk checkConstraints occ env tpenv domainTy resultTy
 
     | SynType.Array (rank , elemTy, m) ->
-        TcElementType cenv newOk checkConstraints occ env tpenv rank elemTy m
+        TcArrayType cenv newOk checkConstraints occ env tpenv rank elemTy m
 
     | SynType.Var (tp, _) ->
         TcTypeParameter kindOpt cenv env newOk tpenv tp
@@ -4521,7 +4521,7 @@ and TcFunctionType (cenv: cenv) newOk checkConstraints occ env tpenv domainTy re
     let tyR = mkFunTy g domainTyR resultTyR
     tyR, tpenv
 
-and TcElementType (cenv: cenv) newOk checkConstraints occ env tpenv rank elemTy m =
+and TcArrayType (cenv: cenv) newOk checkConstraints occ env tpenv rank elemTy m =
     let g = cenv.g
     let elemTy, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ WarnOnIWSAM.Yes env tpenv elemTy
     let tyR = mkArrayTy g rank elemTy m
@@ -5339,8 +5339,8 @@ and TcExprUndelayedNoType (cenv: cenv) env tpenv synExpr =
     let expr, tpenv = TcExprUndelayed cenv (MustEqual overallTy) env tpenv synExpr
     expr, overallTy, tpenv
 
-/// Process a leaf construct where the actual type (or an approximation of it such as 'list<_>'
-/// or 'array<_>') is already sufficiently pre-known, and the information in the overall type
+/// Process a leaf construct where the actual type (or an approximation of it such as '_ list'
+/// or '_ array') is already sufficiently pre-known, and the information in the overall type
 /// can be eagerly propagated into the actual type (UnifyOverallType), including pre-calculating
 /// any type-directed conversion. This must mean that types extracted when processing the expression are not
 /// considered in determining any type-directed conversion. 
