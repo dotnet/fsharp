@@ -12,7 +12,7 @@
 .assembly extern System.Linq
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         
-  .ver 8:0:0:0
+  .ver 7:0:0:0
 }
 .assembly assembly
 {
@@ -1463,9 +1463,3 @@
   } 
 
 } 
-
-
-
-
-
-
