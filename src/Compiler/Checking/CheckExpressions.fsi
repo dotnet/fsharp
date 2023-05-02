@@ -158,32 +158,6 @@ type PrelimVal2 =
         isCompGen: bool *
         hasDeclaredTypars: bool
 
-        // forward call
-        TcComputationExpression: TcFileState
-            -> TcEnv
-            -> OverallTy
-            -> UnscopedTyparEnv
-            -> range * Expr * TType * SynExpr
-            -> Expr * UnscopedTyparEnv
-    }
-
-    static member Create:
-        g: TcGlobals *
-        isScript: bool *
-        niceNameGen: NiceNameGenerator *
-        amap: ImportMap *
-        thisCcu: CcuThunk *
-        isSig: bool *
-        haveSig: bool *
-        conditionalDefines: string list option *
-        tcSink: TcResultsSink *
-        tcVal: TcValF *
-        isInternalTestSpanStackReferring: bool *
-        tcSequenceExpressionEntry: (TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv) *
-        tcArrayOrListSequenceExpression: (TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> CollectionType * SynExpr -> range -> Expr * UnscopedTyparEnv) *
-        tcComputationExpression: (TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> range * Expr * TType * SynExpr -> Expr * UnscopedTyparEnv) ->
-            TcFileState
-
 /// Represents information about the module or type in which a member or value is declared.
 type MemberOrValContainerInfo =
     | MemberOrValContainerInfo of
