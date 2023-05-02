@@ -20,7 +20,7 @@ function CheckTrim($tfm, $expected_len) {
     }
 
     # Checking that the trimmed FSharp.Core binary is of expected size (needs adjustments if test is updated).
-    $file = Get-Item (Join-Path $PSScriptRoot "bin\Release\net7.0\win-x64\publish\FSharp.Core.dll")
+    $file = Get-Item (Join-Path $PSScriptRoot "bin\Release\${tfm}\win-x64\publish\FSharp.Core.dll")
     $file_len = $file.Length
     if (-not ($file_len -eq $expected_len))
     {
@@ -28,8 +28,8 @@ function CheckTrim($tfm, $expected_len) {
     }
 }
 
-# Check net472 trimmed assemblies
-CheckTrim -tfm "net472" -expected_len 287744
+# Check net472 trimmed assemblies trimming doesn't work for tfm net472
+### CheckTrim -tfm "net472" -expected_len 287744
 
 # Check net7.0 trimmed assemblies
 CheckTrim -tfm "net7.0" -expected_len 287744
