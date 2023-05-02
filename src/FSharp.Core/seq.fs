@@ -8,6 +8,7 @@ open System
 open System.Diagnostics
 open System.Collections
 open System.Collections.Generic
+open System.Collections.Immutable
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.CompilerServices
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
@@ -1037,8 +1038,8 @@ module Seq =
                 [||]
 
     [<CompiledName("ToBlock")>]
-        let toBlock (source : seq<'T>)  =
-            ImmutableArray.ToImmutableArray(source)
+    let toBlock (source : seq<'T>)  =
+        ImmutableArray.ToImmutableArray(source)
     
     let foldArraySubRight (f: OptimizedClosures.FSharpFunc<'T, _, _>) (arr: 'T[]) start fin acc =
         let mutable state = acc
