@@ -92,10 +92,10 @@ module IncrementalBuilderEventTesting =
 module Tc = CheckExpressions
 
 type internal FSharpFile = {
-        FileName: string
+        Name: string
         HasSignature: bool
         Range: range
-        GetSource: string -> FSharpSource
+        Source: FSharpSource
         Flags: bool * bool
     }
  
@@ -105,7 +105,7 @@ module IncrementalBuildSyntaxTree =
 
     type ParseResult = ParsedInput * range * string * (PhasedDiagnostic * FSharpDiagnosticSeverity) array
 
-    /// Information needed to lazily parse a file to get a ParsedInput. Internally uses a weak cache.
+    /// Information needed to lazily parse a file to get a ParsedInput. Internally uses GraphNodes to cache results.
     [<Sealed>]
     type SyntaxTree (
             tcConfig: TcConfig,
@@ -114,14 +114,13 @@ module IncrementalBuildSyntaxTree =
             file: FSharpFile
         ) =
 
-        let source = file.GetSource file.FileName
-        let sourceRange = file.Range
+        let source = file.Source
         let isLastCompiland = file.Flags
 
         let skippedImplFilePlaceholder sigName =
             ParsedInput.ImplFile(
                 ParsedImplFileInput(
-                    file.FileName,
+                    file.Name,
                     false,
                     sigName,
                     [],
@@ -160,7 +159,7 @@ module IncrementalBuildSyntaxTree =
 
                     fileParsed.Trigger fileName
 
-                    return input, sourceRange, fileName, diagnosticsLogger.GetDiagnostics()
+                    return input, file.Range, fileName, diagnosticsLogger.GetDiagnostics()
                 with exn ->
                     let msg = sprintf "unexpected failure in SyntaxTree.parse\nerror = %s" (exn.ToString())
                     System.Diagnostics.Debug.Assert(false, msg)
@@ -168,7 +167,7 @@ module IncrementalBuildSyntaxTree =
                     return Unchecked.defaultof<_>
             }
 
-        /// Parse the given file and return the given input.
+        /// Parse the source and cache the result in a GraphNode.
         member val ParseNode : GraphNode<ParseResult> = parse source |> GraphNode
 
         member _.Invalidate() =
@@ -176,13 +175,11 @@ module IncrementalBuildSyntaxTree =
 
         member _.Skip = skippedImplFilePlaceholder
 
-        member _.FileName = file.FileName
+        member _.FileName = file.Name
 
         member _.HasSignature = file.HasSignature
 
         member _.TimeStamp = source.TimeStamp
-
-        member _.SourceRange = sourceRange
 
 /// Accumulated results of type checking. The minimum amount of state in order to continue type-checking following files.
 [<NoEquality; NoComparison>]
@@ -299,8 +296,7 @@ type PartialCheckResultsBuilder(
     beforeFileChecked: Event<string>,
     fileChecked: Event<string>)
     =
-    let getTcInfoExtras
-        (typeCheck: GraphNode<TypeCheck>) =
+    let getTcInfoExtras (typeCheck: GraphNode<TypeCheck>) =
         node {
             let! _ , sink, implFile, fileName = typeCheck.GetOrComputeValue()
             // Build symbol keys
@@ -416,10 +412,12 @@ type PartialCheckResultsBuilder(
 
     member _.Create(tcInfo, tcInfoExtras, timeStamp)  = PartialCheckResults(tcInfo, tcInfoExtras, timeStamp, tcConfig, tcGlobals, tcImports)
 
+    /// Return TcInfoExtras node for initial PartialCheckResults.
     member _.DefaultTcInfoExtras(tcInfo) =
         let defaultTypeCheck = tcInfo, TcResultsSinkImpl(tcGlobals), None, "default typecheck - no syntaxTree"
         getTcInfoExtras (GraphNode.FromResult defaultTypeCheck)
 
+    /// Return PartialCheckResults for next file in compilation order.
     member _.Next(prevCheckResults: PartialCheckResults, syntaxTree: SyntaxTree) =
         let timeStamp = max syntaxTree.TimeStamp prevCheckResults.TimeStamp
 
@@ -435,8 +433,12 @@ type PartialCheckResultsBuilder(
                 match! skippedImplemetationTypeCheck prevTcInfo syntaxTree with
                 | Some tcInfo -> return tcInfo
                 | _ ->
-                    tcInfoExtras.GetOrComputeValue() |> Async.AwaitNodeCode |> Async.Ignore |> Async.Start
+                    // 
                     let! tcInfo , _, _, _ = typeCheckNode.GetOrComputeValue()
+                    // typeCheckNode holds type check results, which can be big.
+                    // We want it to get garbage collected soon, that's why we also start computing extras in parallel here.
+                    // Once this is computed, the intermediate type check results can be freed from memory.
+                    tcInfoExtras.GetOrComputeValue() |> Async.AwaitNodeCode |> Async.Ignore |> Async.Start
                     return tcInfo
             } |> GraphNode
 
@@ -560,7 +562,7 @@ module IncrementalBuilderHelpers =
 #if !NO_TYPEPROVIDERS
         ,importsInvalidatedByTypeProvider: Event<unit>
 #endif
-        ) : NodeCode<TcImports> =
+        ) =
 
       node {
         let diagnosticsLogger = CompilationDiagnosticLogger("CombineImportedAssembliesTask", tcConfig.diagnosticsOptions)
@@ -599,10 +601,10 @@ module IncrementalBuilderHelpers =
                 return frameworkTcImports
           }
 
-        return tcImports
+        return tcImports, diagnosticsLogger.GetDiagnostics()
       }
 
-    let GetInitialTcInfo (tcConfig: TcConfig) assemblyName (loadClosureOpt: LoadClosure option) basicDependencies tcGlobals tcImports =
+    let GetInitialTcInfo (tcConfig: TcConfig) assemblyName (loadClosureOpt: LoadClosure option) basicDependencies tcGlobals tcImports diagnostics =
         let diagnosticsLogger = CompilationDiagnosticLogger("InitialTcInfoTask", tcConfig.diagnosticsOptions)
         use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parameter)
         let tcInitial, openDecls0 = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
@@ -614,7 +616,7 @@ module IncrementalBuilderHelpers =
                 for inp in loadClosure.Inputs do
                     yield! inp.MetaCommandDiagnostics ]
 
-        let initialErrors = Array.append (Array.ofList loadClosureErrors) (diagnosticsLogger.GetDiagnostics())
+        let initialErrors = [| yield! loadClosureErrors; yield! diagnosticsLogger.GetDiagnostics(); yield! diagnostics |]
         let tcInfo =
             {
               tcState = tcState
@@ -627,8 +629,6 @@ module IncrementalBuilderHelpers =
               sigNameOpt = None
             }
         tcInfo
-
-
 
     /// Finish up the typechecking to produce outputs for the rest of the compilation process
     let FinalizeTypeCheckTask (tcConfig: TcConfig) tcGlobals partialCheck assemblyName outfile (partialCheckResults: PartialCheckResults seq) =
@@ -825,7 +825,7 @@ type IncrementalBuilderState =
 module IncrementalBuilderStateHelpers =
 
     // Used to thread the status of the build in computeStampedFileNames mapFold.
-    type BuildStatus = Invalidated | Good
+    type private BuildStatus = Invalidated | Good
 
     let createFinalizeBoundModelGraphNode (initialState: IncrementalBuilderInitialState) (boundModels: PartialCheckResults seq) =
         GraphNode(node {
@@ -1066,8 +1066,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         // Get the slot of the given file.
         let CompareFileNames f =
             let result =
-                   String.Compare(fileName, f.FileName, StringComparison.CurrentCultureIgnoreCase)=0
-                || String.Compare(FileSystem.GetFullPathShim fileName, FileSystem.GetFullPathShim f.FileName, StringComparison.CurrentCultureIgnoreCase)=0
+                   String.Compare(fileName, f.Name, StringComparison.CurrentCultureIgnoreCase)=0
+                || String.Compare(FileSystem.GetFullPathShim fileName, FileSystem.GetFullPathShim f.Name, StringComparison.CurrentCultureIgnoreCase)=0
             result
         match fileNames |> List.tryFindIndex CompareFileNames with
         | Some slot -> Some slot
@@ -1096,7 +1096,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             { currentState with 
                 slots = currentState.slots |> List.updateAt slotOfFile (currentState.slots[slotOfFile].Notify timeStamp) }
 
-    member _.SourceFiles = fileNames |> Seq.map (fun f -> f.FileName) |> List.ofSeq
+    member _.SourceFiles = fileNames |> Seq.map (fun f -> f.Name) |> List.ofSeq
 
     /// CreateIncrementalBuilder (for background type checking). Note that fsc.fs also
     /// creates an incremental builder used by the command line compiler.
@@ -1308,7 +1308,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             let defaultTimeStamp = DateTime.UtcNow
             let cache = TimeStampCache defaultTimeStamp
 
-            let! tcImports = 
+            let! tcImports, diagnostics = 
                 CombineImportedAssembliesTask(
                     tcConfig,
                     tcConfigP,
@@ -1334,7 +1334,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                     fileChecked   
                 )
 
-            let tcInfo = GetInitialTcInfo tcConfig assemblyName loadClosureOpt basicDependencies tcGlobals tcImports
+            let tcInfo = GetInitialTcInfo tcConfig assemblyName loadClosureOpt basicDependencies tcGlobals tcImports diagnostics
             let defaultTcInfoExtras = partialCheckResultsBuilder.DefaultTcInfoExtras(tcInfo)
 
             let initialCheckResults =
@@ -1364,7 +1364,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             
             let sourceFiles =
                 [ for (m, fileName, isLastCompiland), hasSignature in List.zip sourceFiles hasSignature ->
-                    { FileName = fileName; HasSignature = hasSignature; Range = m; GetSource = getFSharpSource; Flags = isLastCompiland } ]
+                    { Name = fileName; HasSignature = hasSignature; Range = m; Source = getFSharpSource fileName; Flags = isLastCompiland } ]
 
             let initialState =
                 IncrementalBuilderInitialState.Create(
