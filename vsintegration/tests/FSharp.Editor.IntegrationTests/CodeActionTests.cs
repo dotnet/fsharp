@@ -29,9 +29,9 @@ let x = 42
         await Editor.SetTextAsync(code, TestToken);
         await Editor.PlaceCaretAsync("open System", TestToken);
 
-        await Workspace.WaitForAsyncOperationsAsync(TestToken);
+        await Workspace.WaitForProjectSystemAsync(TestToken);
         var codeActions = await Editor.InvokeCodeActionListAsync(TestToken);
-        await Workspace.WaitForAsyncOperationsAsync(TestToken);
+        await Workspace.WaitForProjectSystemAsync(TestToken);
 
         Assert.Single(codeActions);
         var actionSet = codeActions.Single();
@@ -59,9 +59,9 @@ let transformed = original |> List.map (x -> x)
         await Editor.SetTextAsync(code, TestToken);
         await Editor.PlaceCaretAsync("->", TestToken);
 
-        await Workspace.WaitForAsyncOperationsAsync(TestToken);
+        await Workspace.WaitForProjectSystemAsync(TestToken);
         var codeActions = await Editor.InvokeCodeActionListAsync(TestToken);
-        await Workspace.WaitForAsyncOperationsAsync(TestToken);
+        await Workspace.WaitForProjectSystemAsync(TestToken);
 
         Assert.Single(codeActions);
         var actionSet = codeActions.Single();
@@ -88,9 +88,9 @@ let sr = System.IO.StreamReader("")
         await Editor.SetTextAsync(code, TestToken);
         await Editor.PlaceCaretAsync("let sr", TestToken);
 
-        await Workspace.WaitForAsyncOperationsAsync(TestToken);
+        await Workspace.WaitForProjectSystemAsync(TestToken);
         var codeActions = await Editor.InvokeCodeActionListAsync(TestToken);
-        await Workspace.WaitForAsyncOperationsAsync(TestToken);
+        await Workspace.WaitForProjectSystemAsync(TestToken);
 
         Assert.Single(codeActions);
         var actionSet = codeActions.Single();
