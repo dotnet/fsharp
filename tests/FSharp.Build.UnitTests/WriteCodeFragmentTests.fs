@@ -5,9 +5,8 @@ namespace FSharp.Build.UnitTests
 open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 open FSharp.Build
-open NUnit.Framework
+open Xunit
 
-[<TestFixture>]
 type WriteCodeFragmentFSharpTests() =
 
     let verifyAttribute (attributeName:string) (parameters:(string*string) list) (expectedAttributeText:string) =
@@ -15,29 +14,28 @@ type WriteCodeFragmentFSharpTests() =
         parameters |> List.iter (fun (key, value) -> taskItem.SetMetadata(key, value))
         let actualAttributeText = (new WriteCodeFragment()).GenerateAttribute (taskItem :> ITaskItem, "f#")
         let fullExpectedAttributeText = "[<assembly: " + expectedAttributeText + ">]"
-        Assert.AreEqual(fullExpectedAttributeText, actualAttributeText)
+        Assert.Equal(fullExpectedAttributeText, actualAttributeText)
 
-    [<Test>]
+    [<Fact>]
     member _.``No parameters``() =
         verifyAttribute "SomeAttribute" [] "SomeAttribute()"
 
-    [<Test>]
+    [<Fact>]
     member _.``Skipped and out of order positional parameters``() =
         verifyAttribute "SomeAttribute" [("_Parameter3", "3"); ("_Parameter5", "5"); ("_Parameter2", "2")] "SomeAttribute(null, \"2\", \"3\", null, \"5\")"
 
-    [<Test>]
+    [<Fact>]
     member _.``Named parameters``() =
         verifyAttribute "SomeAttribute" [("One", "1"); ("Two", "2")] "SomeAttribute(One = \"1\", Two = \"2\")"
 
-    [<Test>]
+    [<Fact>]
     member _.``Named and positional parameters``() =
         verifyAttribute "SomeAttribute" [("One", "1"); ("_Parameter2", "2.2"); ("Two", "2")] "SomeAttribute(null, \"2.2\", One = \"1\", Two = \"2\")"
 
-    [<Test>]
+    [<Fact>]
     member _.``Escaped string parameters``() =
         verifyAttribute "SomeAttribute" [("_Parameter1", "\"uno\"")] "SomeAttribute(\"\\\"uno\\\"\")"
 
-[<TestFixture>]
 type WriteCodeFragmentCSharpTests() =
 
     let verifyAttribute (attributeName:string) (parameters:(string*string) list) (expectedAttributeText:string) =
@@ -45,31 +43,30 @@ type WriteCodeFragmentCSharpTests() =
         parameters |> List.iter (fun (key, value) -> taskItem.SetMetadata(key, value))
         let actualAttributeText = (new WriteCodeFragment()).GenerateAttribute (taskItem :> ITaskItem, "c#")
         let fullExpectedAttributeText = "[assembly: " + expectedAttributeText + "]"
-        Assert.AreEqual(fullExpectedAttributeText, actualAttributeText)
+        Assert.Equal(fullExpectedAttributeText, actualAttributeText)
 
-    [<Test>]
+    [<Fact>]
     member _.``No parameters``() =
         verifyAttribute "SomeAttribute" [] "SomeAttribute()"
 
-    [<Test>]
+    [<Fact>]
     member _.``Skipped and out of order positional parameters``() =
         verifyAttribute "SomeAttribute" [("_Parameter3", "3"); ("_Parameter5", "5"); ("_Parameter2", "2")] "SomeAttribute(null, \"2\", \"3\", null, \"5\")"
 
-    [<Test>]
+    [<Fact>]
     member _.``Named parameters``() =
         verifyAttribute "SomeAttribute" [("One", "1"); ("Two", "2")] "SomeAttribute(One = \"1\", Two = \"2\")"
 
-    [<Test>]
+    [<Fact>]
     member _.``Named and positional parameters``() =
         verifyAttribute "SomeAttribute" [("One", "1"); ("_Parameter2", "2.2"); ("Two", "2")] "SomeAttribute(null, \"2.2\", One = \"1\", Two = \"2\")"
 
-    [<Test>]
+    [<Fact>]
     member _.``Escaped string parameters``() =
         verifyAttribute "SomeAttribute" [("_Parameter1", "\"uno\"")] "SomeAttribute(\"\\\"uno\\\"\")"
         //                                     this should look like: SomeAttribute("\"uno\"")
 
 
-[<TestFixture>]
 type WriteCodeFragmentVisualBasicTests() =
 
     let verifyAttribute (attributeName:string) (parameters:(string*string) list) (expectedAttributeText:string) =
@@ -77,25 +74,25 @@ type WriteCodeFragmentVisualBasicTests() =
         parameters |> List.iter (fun (key, value) -> taskItem.SetMetadata(key, value))
         let actualAttributeText = (new WriteCodeFragment()).GenerateAttribute (taskItem :> ITaskItem, "vb")
         let fullExpectedAttributeText = "<Assembly: " + expectedAttributeText + ">"
-        Assert.AreEqual(fullExpectedAttributeText, actualAttributeText)
+        Assert.Equal(fullExpectedAttributeText, actualAttributeText)
 
-    [<Test>]
+    [<Fact>]
     member _.``No parameters``() =
         verifyAttribute "SomeAttribute" [] "SomeAttribute()"
 
-    [<Test>]
+    [<Fact>]
     member _.``Skipped and out of order positional parameters``() =
         verifyAttribute "SomeAttribute" [("_Parameter3", "3"); ("_Parameter5", "5"); ("_Parameter2", "2")] "SomeAttribute(null, \"2\", \"3\", null, \"5\")"
 
-    [<Test>]
+    [<Fact>]
     member _.``Named parameters``() =
         verifyAttribute "SomeAttribute" [("One", "1"); ("Two", "2")] "SomeAttribute(One = \"1\", Two = \"2\")"
 
-    [<Test>]
+    [<Fact>]
     member _.``Named and positional parameters``() =
         verifyAttribute "SomeAttribute" [("One", "1"); ("_Parameter2", "2.2"); ("Two", "2")] "SomeAttribute(null, \"2.2\", One = \"1\", Two = \"2\")"
 
-    [<Test>]
+    [<Fact>]
     member _.``Escaped string parameters``() =
         verifyAttribute "SomeAttribute" [("_Parameter1", "\"uno\"")] "SomeAttribute(\"\\\"uno\\\"\")"
         //                                     this should look like: SomeAttribute("\"uno\"")

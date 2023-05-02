@@ -52,11 +52,6 @@
         <target state="translated">Диагностика</target>
         <note />
       </trans-unit>
-      <trans-unit id="Enable_Parallel_Checking_With_Signature_Files">
-        <source>Enable parallel type checking with signature files</source>
-        <target state="translated">Включить параллельную проверку типа с файлами подписей</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Enable_Parallel_Reference_Resolution">
         <source>Enable parallel reference resolution</source>
         <target state="translated">Включить параллельное разрешение ссылок</target>
@@ -125,11 +120,6 @@
       <trans-unit id="Show_completion_list_after_a_character_is_typed">
         <source>_Show completion list after a character is typed</source>
         <target state="translated">_Показывать список завершения после ввода знака</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Enable_in_memory_cross_project_references">
-        <source>_Enable in-memory cross project references</source>
-        <target state="translated">_Включить перекрестные ссылки между проектами в памяти</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_navigation_links_as">
@@ -205,11 +195,6 @@
       <trans-unit id="Enable_Stale_IntelliSense_Results">
         <source>Enable stale data for IntelliSense features</source>
         <target state="translated">Включение устаревших данных для функций IntelliSense</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Tooltip_in_memory_cross_project_references">
-        <source>In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</source>
-        <target state="translated">Перекрестные ссылки между проектами в памяти хранят данные уровня проекта в памяти, поэтому функции и компоненты IDE могут работать в разных проектах.</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_key_always">
