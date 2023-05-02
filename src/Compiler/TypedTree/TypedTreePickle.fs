@@ -2408,42 +2408,50 @@ and p_op x st =
     let p(toe:TOpEnum) =
         p_byte (int toe) st
     match x with
-    | TOp.UnionCase c -> p TOpEnum.UnionCase; p_ucref c st
-    | TOp.ExnConstr c -> p TOpEnum.ExnConstr; p_tcref "op"  c st
-    | TOp.Tuple tupInfo ->
-        p (if evalTupInfoIsStruct tupInfo then TOpEnum.StructTuple else TOpEnum.RefTuple)
-    | TOp.Recd (a, b) -> p TOpEnum.Recd; p_tup2 p_recdInfo (p_tcref "recd op") (a, b) st
-    | TOp.ValFieldSet a -> p TOpEnum.ValFieldSet; p_rfref a st
-    | TOp.ValFieldGet a -> p TOpEnum.ValFieldGet; p_rfref a st
-    | TOp.UnionCaseTagGet a -> p TOpEnum.UnionCaseTagGet; p_tcref "cnstr op" a st
-    | TOp.UnionCaseFieldGet (a, b) -> p TOpEnum.UnionCaseFieldGet; p_tup2 p_ucref p_int (a, b) st
-    | TOp.UnionCaseFieldSet (a, b) ->p TOpEnum.UnionCaseFieldSet; p_tup2 p_ucref p_int (a, b) st
-    | TOp.ExnFieldGet (a, b) -> p TOpEnum.ExnFieldGet; p_tup2 (p_tcref "exn op") p_int (a, b) st
-    | TOp.ExnFieldSet (a, b) -> p TOpEnum.ExnFieldSet; p_tup2 (p_tcref "exn op")  p_int (a, b) st
-    | TOp.TupleFieldGet (tupInfo, a) ->
-        p (if evalTupInfoIsStruct tupInfo then TOpEnum.StructTupleFieldGet else TOpEnum.RefTupleFieldGet)
-        p_int a st
-    | TOp.ILAsm (a, b) -> p TOpEnum.ILAsm; p_tup2 (p_list p_ILInstr) p_tys (a, b) st
-    | TOp.RefAddrGet _ -> p TOpEnum.RefAddrGet
-    | TOp.UnionCaseProof a -> p TOpEnum.UnionCaseProof; p_ucref a st
-    | TOp.Coerce -> p TOpEnum.Coerce
-    | TOp.TraitCall b -> p TOpEnum.TraitCall; p_trait b st
-    | TOp.LValueOp (a, b) -> p TOpEnum.LValueOp; p_tup2 p_lval_op_kind (p_vref "lval") (a, b) st
+    | TOp.UnionCase c               -> p_byte 0 st; p_ucref c st
+    | TOp.ExnConstr c               -> p_byte 1 st; p_tcref "op"  c st
+    | TOp.Tuple tupInfo             ->
+         if evalTupInfoIsStruct tupInfo then
+              p_byte 29 st
+         else
+              p_byte 2 st
+    | TOp.Recd (a, b)                 -> p_byte 3 st; p_tup2 p_recdInfo (p_tcref "recd op") (a, b) st
+    | TOp.ValFieldSet a            -> p_byte 4 st; p_rfref a st
+    | TOp.ValFieldGet a            -> p_byte 5 st; p_rfref a st
+    | TOp.UnionCaseTagGet a        -> p_byte 6 st; p_tcref "cnstr op" a st
+    | TOp.UnionCaseFieldGet (a, b)    -> p_byte 7 st; p_tup2 p_ucref p_int (a, b) st
+    | TOp.UnionCaseFieldSet (a, b)    -> p_byte 8 st; p_tup2 p_ucref p_int (a, b) st
+    | TOp.ExnFieldGet (a, b)          -> p_byte 9 st; p_tup2 (p_tcref "exn op") p_int (a, b) st
+    | TOp.ExnFieldSet (a, b)          -> p_byte 10 st; p_tup2 (p_tcref "exn op")  p_int (a, b) st
+    | TOp.TupleFieldGet (tupInfo, a)       ->
+         if evalTupInfoIsStruct tupInfo then
+              p_byte 30 st; p_int a st
+         else
+              p_byte 11 st; p_int a st
+    | TOp.ILAsm (a, b)      -> p_byte 12 st; p_tup2 (p_list p_ILInstr) p_tys (a, b) st
+    | TOp.RefAddrGet _               -> p_byte 13 st
+    | TOp.UnionCaseProof a         -> p_byte 14 st; p_ucref a st
+    | TOp.Coerce                     -> p_byte 15 st
+    | TOp.TraitCall b              -> p_byte 16 st; p_trait b st
+    | TOp.LValueOp (a, b)             -> p_byte 17 st; p_tup2 p_lval_op_kind (p_vref "lval") (a, b) st
     | TOp.ILCall (a1, a2, a3, a4, a5, a7, a8, a9, b, c, d)
-        -> p TOpEnum.ILCall; p_tup11 p_bool p_bool p_bool p_bool p_vrefFlags p_bool p_bool p_ILMethodRef p_tys p_tys p_tys (a1, a2, a3, a4, a5, a7, a8, a9, b, c, d) st
-    | TOp.Array -> p TOpEnum.Array
-    | TOp.Block -> p TOpEnum.Block
-    | TOp.While _ -> p TOpEnum.While
-    | TOp.IntegerForLoop (_, _, dir) -> p TOpEnum.IntegerForLoop; p_int (match dir with FSharpForLoopUp -> 0 | CSharpForLoopUp -> 1 | FSharpForLoopDown -> 2) st
-    | TOp.Bytes bytes -> p TOpEnum.Bytes; p_bytes bytes st
-    | TOp.TryWith _ -> p TOpEnum.TryWith
-    | TOp.TryFinally _ -> p TOpEnum.TryFinally
-    | TOp.ValFieldGetAddr (a, _) -> p TOpEnum.ValFieldGetAddr; p_rfref a st
-    | TOp.UInt16s arr -> p TOpEnum.UInt16s; p_array p_uint16 arr st
-    | TOp.Reraise -> p TOpEnum.Reraise
-    | TOp.UnionCaseFieldGetAddr (a, b, _) -> p TOpEnum.UnionCaseFieldGetAddr; p_tup2 p_ucref p_int (a, b) st
-    | TOp.AnonRecd info -> p TOpEnum.AnonRecd; p_anonInfo info st
-    | TOp.AnonRecdGet (info, n) -> p TOpEnum.AnonRecdGet; p_anonInfo info st; p_int n st
+                                     -> p_byte 18 st; p_tup11 p_bool p_bool p_bool p_bool p_vrefFlags p_bool p_bool p_ILMethodRef p_tys p_tys p_tys (a1, a2, a3, a4, a5, a7, a8, a9, b, c, d) st
+    | TOp.Array                      -> p_byte 19 st
+    | TOp.While _                    -> p_byte 20 st
+    | TOp.IntegerForLoop (_, _, dir)            -> p_byte 21 st; p_int (match dir with FSharpForLoopUp -> 0 | CSharpForLoopUp -> 1 | FSharpForLoopDown -> 2) st
+    | TOp.Bytes bytes                -> p_byte 22 st; p_bytes bytes st
+    | TOp.TryWith _                 -> p_byte 23 st
+    | TOp.TryFinally _               -> p_byte 24 st
+    | TOp.ValFieldGetAddr (a, _)     -> p_byte 25 st; p_rfref a st
+    | TOp.UInt16s arr                -> p_byte 26 st; p_array p_uint16 arr st
+    | TOp.Reraise                    -> p_byte 27 st
+    | TOp.UnionCaseFieldGetAddr (a, b, _) -> p_byte 28 st; p_tup2 p_ucref p_int (a, b) st
+       // Note tag byte 29 is taken for struct tuples, see above
+       // Note tag byte 30 is taken for struct tuples, see above
+    (* 29: TOp.Tuple when evalTupInfoIsStruct tupInfo = true *)
+    (* 30: TOp.TupleFieldGet  when evalTupInfoIsStruct tupInfo = true *)
+    | TOp.AnonRecd info   -> p_byte 31 st; p_anonInfo info st
+    | TOp.AnonRecdGet (info, n)   -> p_byte 32 st; p_anonInfo info st; p_int n st
     | TOp.Goto _ | TOp.Label _ | TOp.Return -> failwith "unexpected backend construct in pickled TAST"
 
 and u_op st =
