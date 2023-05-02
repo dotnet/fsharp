@@ -692,7 +692,7 @@ module Array =
     // - when the predicate yields consecutive runs of true data that is >= 32 elements (and fall
     //   into maskArray buckets) are copied in chunks using System.Array.Copy
     module Filter =
-        let private populateMask<'a> (f: 'a -> bool) (src: array<'a>) (maskArray: array<uint32>) =
+        let private populateMask<'a> (f: 'a -> bool) (src: 'a array) (maskArray: uint32 array) =
             let mutable count = 0
 
             for maskIdx = 0 to maskArray.Length - 1 do
@@ -833,8 +833,8 @@ module Array =
 
         let private createMask<'a>
             (f: 'a -> bool)
-            (src: array<'a>)
-            (maskArrayOut: byref<array<uint32>>)
+            (src: 'a array)
+            (maskArrayOut: byref<uint32 array>)
             (leftoverMaskOut: byref<uint32>)
             =
             let maskArrayLength = src.Length / 0x20
@@ -842,7 +842,7 @@ module Array =
             // null when there are less than 32 items in src array.
             let maskArray =
                 if maskArrayLength = 0 then
-                    Unchecked.defaultof<_>
+                    null
                 else
                     Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked<uint32> maskArrayLength
 
@@ -871,7 +871,7 @@ module Array =
             leftoverMaskOut <- leftoverMask
             count
 
-        let private populateDstViaMask<'a> (src: array<'a>) (maskArray: array<uint32>) (dst: array<'a>) =
+        let private populateDstViaMask<'a> (src: 'a array) (maskArray: uint32 array) (dst: 'a array) =
             let mutable dstIdx = 0
             let mutable batchCount = 0
 
@@ -1026,7 +1026,7 @@ module Array =
 
             dstIdx
 
-        let private filterViaMask (maskArray: array<uint32>) (leftoverMask: uint32) (count: int) (src: array<_>) =
+        let private filterViaMask (maskArray: uint32 array) (leftoverMask: uint32) (count: int) (src: _ array) =
             let dst = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count
 
             let mutable dstIdx = 0
@@ -1049,7 +1049,7 @@ module Array =
 
             dst
 
-        let filter f (src: array<_>) =
+        let filter f (src: _ array) =
             let mutable maskArray = Unchecked.defaultof<_>
             let mutable leftOverMask = Unchecked.defaultof<_>
 
@@ -2081,7 +2081,7 @@ module Array =
         let private maxPartitions = Environment.ProcessorCount // The maximum number of partitions to use
         let private minChunkSize = 256 // The minimum size of a chunk to be sorted in parallel
 
-        let private createPartitionsUpTo maxIdxExclusive (array: 'T[]) =
+        let private createPartitionsUpToWithMinChunkSize maxIdxExclusive minChunkSize (array: 'T[]) =
             [|
                 let chunkSize =
                     match maxIdxExclusive with
@@ -2097,6 +2097,98 @@ module Array =
 
                 yield new ArraySegment<'T>(array, offset, maxIdxExclusive - offset)
             |]
+
+        let private createPartitionsUpTo maxIdxExclusive (array: 'T[]) =
+            createPartitionsUpToWithMinChunkSize maxIdxExclusive minChunkSize array
+
+        (* This function is there also as a support vehicle for other aggregations. 
+           It is public in order to be called from inlined functions, the benefit of inlining call into it is significant *)
+        [<CompiledName("ReduceBy")>]
+        let reduceBy (projection: 'T -> 'U) (reduction: 'U -> 'U -> 'U) (array: 'T[]) =
+            checkNonNull "array" array
+
+            if array.Length = 0 then
+                invalidArg "array" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
+
+            let chunks = createPartitionsUpToWithMinChunkSize array.Length 2 array // We need at least 2 elements/chunk for 'reduction'
+
+            let chunkResults =
+                Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked chunks.Length
+
+            Parallel.For(
+                0,
+                chunks.Length,
+                fun chunkIdx ->
+                    let chunk = chunks[chunkIdx]
+                    let mutable res = projection array[chunk.Offset]
+                    let lastIdx = chunk.Offset + chunk.Count - 1
+
+                    for i = chunk.Offset + 1 to lastIdx do
+                        let projected = projection array[i]
+                        res <- reduction res projected
+
+                    chunkResults[chunkIdx] <- res
+            )
+            |> ignore
+
+            let mutable finalResult = chunkResults[0]
+
+            for i = 1 to chunkResults.Length - 1 do
+                finalResult <- reduction finalResult chunkResults[i]
+
+            finalResult
+
+        [<CompiledName("Reduce")>]
+        let inline reduce ([<InlineIfLambda>] reduction) (array: _[]) =
+            array |> reduceBy id reduction
+
+        let inline vFst struct (a, _) =
+            a
+
+        let inline vSnd struct (_, b) =
+            b
+
+        [<CompiledName("MinBy")>]
+        let inline minBy ([<InlineIfLambda>] projection) (array: _[]) =
+
+            array
+            |> reduceBy (fun x -> struct (projection x, x)) (fun a b -> if vFst a < vFst b then a else b)
+            |> vSnd
+
+        [<CompiledName("Min")>]
+        let inline min (array: _[]) =
+            array |> reduce (fun a b -> if a < b then a else b)
+
+        [<CompiledName("SumBy")>]
+        let inline sumBy ([<InlineIfLambda>] projection: 'T -> ^U) (array: 'T[]) : ^U =
+            if array.Length = 0 then
+                LanguagePrimitives.GenericZero
+            else
+                array |> reduceBy projection Operators.Checked.(+)
+
+        [<CompiledName("Sum")>]
+        let inline sum (array: ^T[]) : ^T =
+            array |> sumBy id
+
+        [<CompiledName("MaxBy")>]
+        let inline maxBy projection (array: _[]) =
+
+            array
+            |> reduceBy (fun x -> struct (projection x, x)) (fun a b -> if vFst a > vFst b then a else b)
+            |> vSnd
+
+        [<CompiledName("Max")>]
+        let inline max (array: _[]) =
+            array |> reduce (fun a b -> if a > b then a else b)
+
+        [<CompiledName("AverageBy")>]
+        let inline averageBy ([<InlineIfLambda>] projection: 'T -> ^U) (array: 'T[]) : ^U =
+            let sum = array |> reduceBy projection Operators.Checked.(+)
+            LanguagePrimitives.DivideByInt sum (array.Length)
+
+        [<CompiledName("Average")>]
+        let inline average (array: 'T[]) =
+            array |> averageBy id
 
         [<CompiledName("Zip")>]
         let zip (array1: _[]) (array2: _[]) =

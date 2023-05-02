@@ -177,7 +177,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
             async {
                 use _logBlock = Logger.LogBlock(LogEditorFunctionId.Classification_Syntactic)
 
-                let defines = document.GetFSharpQuickDefines()
+                let defines, langVersion = document.GetFSharpQuickDefinesAndLangVersion()
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
 
                 // For closed documents, only get classification for the text within the span.
@@ -193,6 +193,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                             textSpan,
                             Some(document.FilePath),
                             defines,
+                            Some langVersion,
                             cancellationToken
                         )
                     )

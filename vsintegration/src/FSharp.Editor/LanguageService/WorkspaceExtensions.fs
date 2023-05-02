@@ -168,6 +168,13 @@ type Document with
             return CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions
         }
 
+    /// Get the compilation defines and language version from F# project that is associated with the given F# document.
+    member this.GetFSharpCompilationDefinesAndLangVersionAsync(userOpName) =
+        async {
+            let! _, _, parsingOptions, _ = this.GetFSharpCompilationOptionsAsync(userOpName)
+            return CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions, parsingOptions.LangVersionText
+        }
+
     /// Get the instance of the FSharpChecker from the workspace by the given F# document.
     member this.GetFSharpChecker() =
         let workspaceService = this.Project.Solution.GetFSharpWorkspaceService()
@@ -184,11 +191,16 @@ type Document with
         let workspaceService = this.Project.Solution.GetFSharpWorkspaceService()
         workspaceService.FSharpProjectOptionsManager.TryGetQuickParsingOptionsForEditingDocumentOrProject(this.Id, this.FilePath)
 
+    /// A non-async call that quickly gets the defines and F# language version of the given F# document.
+    /// This tries to get the data by looking at an internal cache; if it doesn't exist in the cache it will create an inaccurate but usable form of the defines and the language version.
+    member this.GetFSharpQuickDefinesAndLangVersion() =
+        let workspaceService = this.Project.Solution.GetFSharpWorkspaceService()
+        workspaceService.FSharpProjectOptionsManager.GetCompilationDefinesAndLangVersionForEditingDocument(this)
+
     /// A non-async call that quickly gets the defines of the given F# document.
     /// This tries to get the defines by looking at an internal cache; if it doesn't exist in the cache it will create an inaccurate but usable form of the defines.
     member this.GetFSharpQuickDefines() =
-        let workspaceService = this.Project.Solution.GetFSharpWorkspaceService()
-        workspaceService.FSharpProjectOptionsManager.GetCompilationDefinesForEditingDocument(this)
+        this.GetFSharpQuickDefinesAndLangVersion() |> fst
 
     /// Parses the given F# document.
     member this.GetFSharpParseResultsAsync(userOpName) =
@@ -238,7 +250,7 @@ type Document with
     /// Try to find a F# lexer/token symbol of the given F# document and position.
     member this.TryFindFSharpLexerSymbolAsync(position, lookupKind, wholeActivePattern, allowStringToken, userOpName) =
         async {
-            let! defines = this.GetFSharpCompilationDefinesAsync(userOpName)
+            let! defines, langVersion = this.GetFSharpCompilationDefinesAndLangVersionAsync(userOpName)
             let! ct = Async.CancellationToken
             let! sourceText = this.GetTextAsync(ct) |> Async.AwaitTask
 
@@ -252,6 +264,7 @@ type Document with
                     lookupKind,
                     wholeActivePattern,
                     allowStringToken,
+                    Some langVersion,
                     ct
                 )
         }

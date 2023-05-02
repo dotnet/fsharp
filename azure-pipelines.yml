@@ -363,9 +363,15 @@ stages:
             displayName: Setup VS Hive
             condition: or(eq(variables['_testKind'], 'testVs'), eq(variables['_testKind'], 'testIntegration'))
 
+          # yes, this is miserable, but - https://github.com/dotnet/arcade/issues/13239
           - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
             displayName: Build / Test
-            continueOnError: ${{ eq(variables['_testKind'], 'testIntegration') }}
+            condition: ne(variables['_testKind'], 'testIntegration')
+          - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
+            displayName: Build / Integration Test
+            continueOnError: true
+            condition: eq(variables['_testKind'], 'testIntegration')
+            
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:

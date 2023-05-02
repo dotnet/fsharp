@@ -34,8 +34,8 @@ let ``Calculate transitive graph`` () =
 [<Fact>]
 let ``Reverse graph`` () =
     let graph = Graph.make [ "a", Array.empty; "b", [| "a" |] ]
-    let reserved = Graph.reverse graph
-    let valueA = reserved["a"]
+    let reversed = Graph.reverse graph
+    let valueA = reversed["a"]
     Assert.Equal<string array>([| "b" |], valueA)
-    let valueB = reserved["b"]
+    let valueB = reversed["b"]
     Assert.Equal<string array>(Array.empty, valueB)

@@ -105,11 +105,19 @@ type internal FSharpHelpContextService [<ImportingConstructor>] () =
         member this.GetHelpTermAsync(document, textSpan, cancellationToken) =
             asyncMaybe {
                 let! sourceText = document.GetTextAsync(cancellationToken)
-                let defines = document.GetFSharpQuickDefines()
+                let defines, langVersion = document.GetFSharpQuickDefinesAndLangVersion()
                 let textLine = sourceText.Lines.GetLineFromPosition(textSpan.Start)
 
                 let classifiedSpans =
-                    Tokenizer.getClassifiedSpans (document.Id, sourceText, textLine.Span, Some document.Name, defines, cancellationToken)
+                    Tokenizer.getClassifiedSpans (
+                        document.Id,
+                        sourceText,
+                        textLine.Span,
+                        Some document.Name,
+                        defines,
+                        Some langVersion,
+                        cancellationToken
+                    )
 
                 return! FSharpHelpContextService.GetHelpTerm(document, textSpan, classifiedSpans)
             }

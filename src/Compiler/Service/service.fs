@@ -52,7 +52,7 @@ module EnvMisc =
 [<RequireQualifiedAccess>]
 type DocumentSource =
     | FileSystem
-    | Custom of (string -> ISourceText option)
+    | Custom of (string -> Async<ISourceText option>)
 
 /// Callback that indicates whether a requested result has become obsolete.
 [<NoComparison; NoEquality>]
@@ -194,7 +194,7 @@ type BackgroundCompiler
         enablePartialTypeChecking,
         parallelReferenceResolution,
         captureIdentifiersWhenParsing,
-        getSource: (string -> ISourceText option) option,
+        getSource: (string -> Async<ISourceText option>) option,
         useChangeNotifications,
         useSyntaxTreeCache
     ) as self =
@@ -1699,7 +1699,7 @@ type FSharpChecker
 
     /// Tokenize a single line, returning token information and a tokenization state represented by an integer
     member _.TokenizeLine(line: string, state: FSharpTokenizerLexState) =
-        let tokenizer = FSharpSourceTokenizer([], None)
+        let tokenizer = FSharpSourceTokenizer([], None, None)
         let lineTokenizer = tokenizer.CreateLineTokenizer line
         let mutable state = (None, state)
 
