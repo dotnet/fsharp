@@ -1627,7 +1627,7 @@ let CheckMultipleInputsUsingGraphMode
 
     let filePairs = FilePairMap(sourceFiles)
 
-    let graph =
+    let graph, trie =
         DependencyResolution.mkGraph tcConfig.compilingFSharpCore filePairs sourceFiles
 
     let nodeGraph =
@@ -1673,6 +1673,9 @@ let CheckMultipleInputsUsingGraphMode
         |> Option.iter (fun outputFile ->
             let outputFile = FileSystem.GetFullPathShim(outputFile)
             let graphFile = FileSystem.ChangeExtensionShim(outputFile, ".graph.md")
+
+            let trieFile = FileSystem.ChangeExtensionShim(outputFile, ".trie.md")
+            TrieMapping.serializeToMermaid trieFile sourceFiles trie
 
             graph
             |> Graph.map (fun idx ->

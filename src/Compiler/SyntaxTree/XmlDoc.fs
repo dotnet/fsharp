@@ -268,7 +268,7 @@ type PreXmlDoc =
 
                 doc
 
-    member internal x.Range =
+    member x.Range =
         match x with
         | PreXmlDirect (_, m) -> m
         | PreXmlMerge (part1, part2) ->
