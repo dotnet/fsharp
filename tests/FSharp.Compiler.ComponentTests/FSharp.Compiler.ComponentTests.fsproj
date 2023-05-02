@@ -222,12 +222,9 @@
     <Compile Include="CompilerOptions\fsc\reference.fs" />
     <Compile Include="CompilerOptions\fsc\reflectionfree.fs" />
     <Compile Include="CompilerOptions\fsc\refonlyrefout.fs" />
-	<Compile Include="CompilerOptions\fsc\sourceFiles.fs" />
-	  <Compile Include="CompilerService\RangeModule.fs" />
-	  <Compile Include="CompilerService\AsyncMemoize.fs" />
-    <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
-      <Link>%(RelativeDir)TestSource\%(Filename)%(Extension)</Link>
-    </None>
+    <Compile Include="CompilerOptions\fsc\sourceFiles.fs" />
+    <Compile Include="CompilerService\RangeModule.fs" />
+    <Compile Include="CompilerService\AsyncMemoize.fs" />
     <Compile Include="Debugger\PortablePdbs.fs" />
     <Compile Include="Diagnostics\async.fs" />
     <Compile Include="Diagnostics\General.fs" />
@@ -249,8 +246,12 @@
     <Compile Include="Signatures\TypeTests.fs" />
     <Compile Include="Signatures\SigGenerationRoundTripTests.fs" />
     <Compile Include="FSharpChecker\CommonWorkflows.fs" />
+    <Compile Include="FSharpChecker\TransparentCompiler.fs" />
     <Compile Include="FSharpChecker\SymbolUse.fs" />
     <Compile Include="FSharpChecker\FindReferences.fs" />
+    <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
+	    <Link>%(RelativeDir)TestSource\%(Filename)%(Extension)</Link>
+    </None>
   </ItemGroup>
 
   <ItemGroup />

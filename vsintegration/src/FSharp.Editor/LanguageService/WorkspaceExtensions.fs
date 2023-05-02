@@ -31,51 +31,38 @@ module private CheckerExtensions =
                 userOpName: string
             ) =
             async {
-                let fileName = document.FilePath
+
                 let project = document.Project
-                let documents = project.Documents |> Seq.map (fun d -> d.FilePath, d) |> Map
+                let solution = project.Solution
+                // TODO cache?
+                let projects =
+                    solution.Projects
+                    |> Seq.map (fun p -> p.FilePath, p.Documents |> Seq.map (fun d -> d.FilePath, d) |> Map)
+                    |> Map
 
-                let! sourceFiles =
-                    options.SourceFiles
-                    |> Seq.map (fun path ->
-                        async {
-                            let document = documents[path]
-                            let! version = document.GetTextVersionAsync() |> Async.AwaitTask
+                let getFileSnapshot (options: FSharpProjectOptions) path =
+                    async {
+                        let project = projects[options.ProjectFileName]
+                        let document = project[path]
+                        let! version = document.GetTextVersionAsync() |> Async.AwaitTask
 
-                            let getSource () =
-                                task {
-                                    let! sourceText = document.GetTextAsync()
-                                    return sourceText.ToFSharpSourceText()
-                                }
+                        let getSource () =
+                            task {
+                                let! sourceText = document.GetTextAsync()
+                                return sourceText.ToFSharpSourceText()
+                            }
 
-                            return
-                                {
-                                    FileName = path
-                                    Version = version.ToString()
-                                    GetSource = getSource
-                                }
-                        })
-                    |> Async.Parallel
-
-                // TODO: referenced projects
-                let referencedProjects = []
-
-                let projectSnapshot: FSharpProjectSnapshot =
-                    {
-                        ProjectFileName = options.ProjectFileName
-                        ProjectId = options.ProjectId
-                        SourceFiles = sourceFiles |> List.ofArray
-                        OtherOptions = options.OtherOptions |> List.ofArray
-                        ReferencedProjects = referencedProjects
-                        IsIncompleteTypeCheckEnvironment = options.IsIncompleteTypeCheckEnvironment
-                        UseScriptResolutionRules = options.UseScriptResolutionRules
-                        LoadTime = options.LoadTime
-                        UnresolvedReferences = options.UnresolvedReferences
-                        OriginalLoadReferences = options.OriginalLoadReferences
-                        Stamp = options.Stamp
+                        return
+                            {
+                                FileName = path
+                                Version = version.ToString()
+                                GetSource = getSource
+                            }
                     }
 
-                let! (parseResults, checkFileAnswer) = checker.ParseAndCheckFileInProject(fileName, projectSnapshot, userOpName)
+                let! projectSnapshot = FSharpProjectSnapshot.FromOptions(options, getFileSnapshot)
+
+                let! (parseResults, checkFileAnswer) = checker.ParseAndCheckFileInProject(document.FilePath, projectSnapshot, userOpName)
 
                 return
                     match checkFileAnswer with

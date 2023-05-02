@@ -269,6 +269,8 @@ type FSharpChecker
             useTransparentCompiler
         )
 
+    member _.UsesTransparentCompiler = useTransparentCompiler = Some true
+
     member _.ReferenceResolver = legacyReferenceResolver
 
     member _.MatchBraces(fileName, sourceText: ISourceText, options: FSharpParsingOptions, ?userOpName: string) =

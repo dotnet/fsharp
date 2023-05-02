@@ -60,6 +60,9 @@ type public FSharpChecker =
         [<Experimental "This parameter is experimental and likely to be removed in the future.">] ?useTransparentCompiler: bool ->
             FSharpChecker
 
+    [<Experimental "This parameter is experimental and likely to be removed in the future.">]
+    member UsesTransparentCompiler: bool
+
     /// <summary>
     ///   Parse a source code file, returning information about brace matching in the file.
     ///   Return an enumeration of the matching parenthetical tokens in the file.
