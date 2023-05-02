@@ -6,7 +6,7 @@ type Derived() =
     inherit Base()
     member this.Foo() = printfn "Derived"
     
-let inline callFoo< ^T when ^T : (member Foo: unit -> unit) > (t: ^T) =
+let inline callFoo<^T when ^T : (member Foo: unit -> unit) > (t: ^T) =
     (^T : (member Foo: unit -> unit) (t))
     
 let b = Base()

@@ -188,6 +188,8 @@ module internal TaggedText =
     val internal keywordGet: TaggedText
     val internal bar: TaggedText
     val internal keywordStruct: TaggedText
+    val internal keywordClass: TaggedText
+    val internal keywordInterface: TaggedText
     val internal keywordInherit: TaggedText
     val internal keywordBegin: TaggedText
     val internal keywordEnd: TaggedText
@@ -386,10 +388,6 @@ module internal Display =
     val squash_layout: options: FormatOptions -> layout: Layout -> Layout
 
     val output_layout_tagged: options: FormatOptions -> writer: TaggedTextWriter -> layout: Layout -> unit
-
-    val output_layout: options: FormatOptions -> writer: TextWriter -> layout: Layout -> unit
-
-    val layout_as_string: options: FormatOptions -> value: 'T * typValue: Type -> string
 #else
 
     // Most functions aren't needed in FSharp.Core.dll, but we add one inernal entry for printf

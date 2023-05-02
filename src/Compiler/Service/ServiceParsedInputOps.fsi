@@ -35,10 +35,11 @@ type public CompletionContext =
 
     | RangeOperator
 
-    /// Completing named parameters\setters in parameter list of constructor\method calls
+    /// Completing named parameters\setters in parameter list of attributes\constructor\method calls
     /// end of name ast node * list of properties\parameters that were already set
     | ParameterList of pos * HashSet<string>
 
+    /// Completing an attribute name, outside of the constructor
     | AttributeApplication
 
     | OpenDeclaration of isOpenType: bool
@@ -120,6 +121,9 @@ type public InsertionContextEntity =
 
 /// Operations querying the entire syntax tree
 module public ParsedInput =
+    /// A pattern that collects all sequential expressions to avoid StackOverflowException
+    val internal (|Sequentials|_|): SynExpr -> SynExpr list option
+
     val TryFindExpressionASTLeftOfDotLeftOfCursor: pos: pos * parsedInput: ParsedInput -> (pos * bool) option
 
     val GetRangeOfExprLeftOfDot: pos: pos * parsedInput: ParsedInput -> range option
@@ -138,7 +142,7 @@ module public ParsedInput =
         parsedInput: ParsedInput ->
         partiallyQualifiedName: MaybeUnresolvedIdent[] ->
         insertionPoint: OpenStatementInsertionPoint ->
-            (( (* requiresQualifiedAccessParent: *) ShortIdents option (* autoOpenParent: *)  * ShortIdents option (*  entityNamespace *)  * ShortIdents option (* entity: *)  * ShortIdents) -> (InsertionContextEntity * InsertionContext)[])
+            (( (* requiresQualifiedAccessParent: *) ShortIdents option (* autoOpenParent: *) * ShortIdents option (*  entityNamespace *) * ShortIdents option (* entity: *) * ShortIdents) -> (InsertionContextEntity * InsertionContext)[])
 
     /// Returns `InsertContext` based on current position and symbol idents.
     val FindNearestPointToInsertOpenDeclaration:
@@ -157,6 +161,6 @@ module public ParsedInput =
 // implementation details used by other code in the compiler
 module internal SourceFileImpl =
 
-    val IsInterfaceFile: string -> bool
+    val IsSignatureFile: string -> bool
 
     val GetImplicitConditionalDefinesForEditing: isInteractive: bool -> string list

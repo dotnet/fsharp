@@ -4,7 +4,10 @@ namespace FSharp.Compiler.ComponentTests.Debugger
 
 open Xunit
 open FSharp.Test.Compiler
+open System
+open System.IO
 open System.Reflection.Metadata
+open FSharp.Test
 
 module PortablePdbs =
 
@@ -70,5 +73,36 @@ module Baz =
                 Line 8, Col 26, Line 8, Col 32
                 Line 16, Col 20, Line 16, Col 22
                 Line 21, Col 20, Line 21, Col 22
+            ]
+            VerifyDocuments [
+                Path.Combine(Environment.CurrentDirectory, "test.fs")
+            ]
+        ]
+
+    [<Fact>]
+    let ``Portable PDBs contain signature files`` () =
+
+        let compilation =
+            Fsi """
+namespace Foo
+
+module M =
+   val f: unit -> int
+        """
+        compilation
+        |> withAdditionalSourceFile (FsSource """
+namespace Foo
+
+module M =
+   let f () = 1
+        """)
+        |> asLibrary
+        |> withPortablePdb
+        |> compile
+        |> shouldSucceed
+        |> verifyPdb [
+            VerifyDocuments [
+                Path.Combine(Environment.CurrentDirectory, "test.fsi")
+                Path.Combine(Environment.CurrentDirectory, "test.fs")
             ]
         ]

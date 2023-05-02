@@ -85,7 +85,7 @@ val MethInfoIsUnseen: g: TcGlobals -> m: range -> ty: TType -> minfo: MethInfo -
 
 val PropInfoIsUnseen: m: 'a -> pinfo: PropInfo -> bool
 
-val CheckEntityAttributes: g: TcGlobals -> x: TyconRef -> m: range -> OperationResult<unit>
+val CheckEntityAttributes: g: TcGlobals -> tcref: TyconRef -> m: range -> OperationResult<unit>
 
 val CheckUnionCaseAttributes: g: TcGlobals -> x: UnionCaseRef -> m: range -> OperationResult<unit>
 
@@ -96,8 +96,10 @@ val CheckValAttributes: g: TcGlobals -> x: ValRef -> m: range -> OperationResult
 val CheckRecdFieldInfoAttributes: g: TcGlobals -> x: RecdFieldInfo -> m: range -> OperationResult<unit>
 
 val IsSecurityAttribute:
-    g: TcGlobals -> amap: Import.ImportMap -> casmap: Dictionary<Stamp, bool> -> Attrib -> m: range -> bool
+    g: TcGlobals -> amap: Import.ImportMap -> casmap: IDictionary<Stamp, bool> -> Attrib -> m: range -> bool
 
 val IsSecurityCriticalAttribute: g: TcGlobals -> Attrib -> bool
 
 val IsAssemblyVersionAttribute: g: TcGlobals -> Attrib -> bool
+
+val CheckILEventAttributes: g: TcGlobals -> tcref: TyconRef -> cattrs: ILAttributes -> m: range -> OperationResult<unit>

@@ -359,7 +359,7 @@ module MiscOperatorOverloadTests =
 module OperatorConstraintsWithExplicitRigidTypeParameters = 
     type M() = class end
 
-    let inline empty< ^R when ( ^R or  M) : (static member ( $ ) :  ^R *  M ->  ^R)> =        
+    let inline empty< ^R when ( ^R or  M) : (static member ( $ ) :  ^R *  M -> ^R)> =        
         let m = M()
         Unchecked.defaultof< ^R> $ m: ^R
 
@@ -415,7 +415,7 @@ let RUN() = !failures
 let aa =
   match !failures with 
   | [] -> 
-      stdout.WriteLine "Test Passed"
+      stdout.WriteLine "Test Passed"    
       System.IO.File.WriteAllText("test.ok","ok")
       exit 0
   | _ -> 

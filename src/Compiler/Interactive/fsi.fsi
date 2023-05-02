@@ -180,6 +180,16 @@ type FsiEvaluationSession =
 
     /// Execute the code as if it had been entered as one or more interactions, with an
     /// implicit termination at the end of the input. Stop on first error, discarding the rest
+    /// of the input. Errors are sent to the output writer, a 'true' return value indicates there
+    /// were no errors overall. Execution is performed on the 'Run()' thread.
+    ///
+    /// Due to a current limitation, it is not fully thread-safe to run this operation concurrently with evaluation triggered
+    /// by input from 'stdin'.
+    /// The scriptFileName parameter is used to report errors including this file name.
+    member EvalInteraction: code: string * scriptFileName: string * ?cancellationToken: CancellationToken -> unit
+
+    /// Execute the code as if it had been entered as one or more interactions, with an
+    /// implicit termination at the end of the input. Stop on first error, discarding the rest
     /// of the input. Errors and warnings are collected apart from any exception arising from execution
     /// which is returned via a Choice. Execution is performed on the 'Run()' thread.
     ///
@@ -187,6 +197,18 @@ type FsiEvaluationSession =
     /// by input from 'stdin'.
     member EvalInteractionNonThrowing:
         code: string * ?cancellationToken: CancellationToken -> Choice<FsiValue option, exn> * FSharpDiagnostic[]
+
+    /// Execute the code as if it had been entered as one or more interactions, with an
+    /// implicit termination at the end of the input. Stop on first error, discarding the rest
+    /// of the input. Errors and warnings are collected apart from any exception arising from execution
+    /// which is returned via a Choice. Execution is performed on the 'Run()' thread.
+    ///
+    /// Due to a current limitation, it is not fully thread-safe to run this operation concurrently with evaluation triggered
+    /// by input from 'stdin'.
+    /// The scriptFileName parameter is used to report errors including this file name.
+    member EvalInteractionNonThrowing:
+        code: string * scriptFileName: string * ?cancellationToken: CancellationToken ->
+            Choice<FsiValue option, exn> * FSharpDiagnostic[]
 
     /// Execute the given script. Stop on first error, discarding the rest
     /// of the script. Errors are sent to the output writer, a 'true' return value indicates there
@@ -215,6 +237,16 @@ type FsiEvaluationSession =
 
     /// Execute the code as if it had been entered as one or more interactions, with an
     /// implicit termination at the end of the input. Stop on first error, discarding the rest
+    /// of the input. Errors are sent to the output writer. Parsing is performed on the current thread, and execution is performed
+    /// synchronously on the 'main' thread.
+    ///
+    /// Due to a current limitation, it is not fully thread-safe to run this operation concurrently with evaluation triggered
+    /// by input from 'stdin'.
+    /// The scriptFileName parameter is used to report errors including this file name.
+    member EvalExpression: code: string * scriptFileName: string -> FsiValue option
+
+    /// Execute the code as if it had been entered as one or more interactions, with an
+    /// implicit termination at the end of the input. Stop on first error, discarding the rest
     /// of the input. Errors and warnings are collected apart from any exception arising from execution
     /// which is returned via a Choice. Parsing is performed on the current thread, and execution is performed
     /// synchronously on the 'main' thread.
@@ -222,6 +254,18 @@ type FsiEvaluationSession =
     /// Due to a current limitation, it is not fully thread-safe to run this operation concurrently with evaluation triggered
     /// by input from 'stdin'.
     member EvalExpressionNonThrowing: code: string -> Choice<FsiValue option, exn> * FSharpDiagnostic[]
+
+    /// Execute the code as if it had been entered as one or more interactions, with an
+    /// implicit termination at the end of the input. Stop on first error, discarding the rest
+    /// of the input. Errors and warnings are collected apart from any exception arising from execution
+    /// which is returned via a Choice. Parsing is performed on the current thread, and execution is performed
+    /// synchronously on the 'main' thread.
+    ///
+    /// Due to a current limitation, it is not fully thread-safe to run this operation concurrently with evaluation triggered
+    /// by input from 'stdin'.
+    /// The scriptFileName parameter is used to report errors including this file name.
+    member EvalExpressionNonThrowing:
+        code: string * scriptFileName: string -> Choice<FsiValue option, exn> * FSharpDiagnostic[]
 
     /// Format a value to a string using the current PrintDepth, PrintLength etc settings provided by the active fsi configuration object
     member FormatValue: reflectionValue: obj * reflectionType: Type -> string
@@ -353,7 +397,6 @@ module Settings =
         member AddPrintTransformer: ('T -> obj) -> unit
 
         member internal AddedPrinters: Choice<Type * (obj -> string), Type * (obj -> obj)> list
-
 
         /// <summary>The command line arguments after ignoring the arguments relevant to the interactive
         /// environment and replacing the first argument with the name of the last script file,

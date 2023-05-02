@@ -9,6 +9,7 @@ open System.Threading
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Formatting
+open Microsoft.CodeAnalysis.Host
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor
@@ -18,29 +19,39 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Tokenization
 
-[<Export(typeof<IFSharpSynchronousIndentationService>)>]
-type internal FSharpIndentationService
-    [<ImportingConstructor>]
-    () =
+[<Export(typeof<IFSharpIndentationService>)>]
+type internal FSharpIndentationService [<ImportingConstructor>] () =
 
-    static member IsSmartIndentEnabled (options: Microsoft.CodeAnalysis.Options.OptionSet) =
-        options.GetOption(FormattingOptions.SmartIndent, FSharpConstants.FSharpLanguageName) = FormattingOptions.IndentStyle.Smart
-
-    static member IndentShouldFollow (documentId: DocumentId, sourceText: SourceText, filePath: string, position: int, parsingOptions: FSharpParsingOptions) =
+    static member IndentShouldFollow
+        (
+            documentId: DocumentId,
+            sourceText: SourceText,
+            filePath: string,
+            position: int,
+            parsingOptions: FSharpParsingOptions
+        ) =
         let lastTokenOpt =
-           let defines = CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions
-           let tokens = Tokenizer.tokenizeLine(documentId, sourceText, position, filePath, defines)
+            let defines = CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions
 
-           tokens
-           |> Array.rev
-           |> Array.tryFind (fun x ->
-               x.Tag <> FSharpTokenTag.WHITESPACE &&
-               x.Tag <> FSharpTokenTag.COMMENT &&
-               x.Tag <> FSharpTokenTag.LINE_COMMENT)
+            let tokens =
+                Tokenizer.tokenizeLine (
+                    documentId,
+                    sourceText,
+                    position,
+                    filePath,
+                    defines,
+                    Some parsingOptions.LangVersionText,
+                    CancellationToken.None
+                )
 
-        let (|Eq|_|) y x =
-            if x = y then Some()
-            else None
+            tokens
+            |> Array.rev
+            |> Array.tryFind (fun x ->
+                x.Tag <> FSharpTokenTag.WHITESPACE
+                && x.Tag <> FSharpTokenTag.COMMENT
+                && x.Tag <> FSharpTokenTag.LINE_COMMENT)
+
+        let (|Eq|_|) y x = if x = y then Some() else None
 
         match lastTokenOpt with
         | None -> false
@@ -65,13 +76,24 @@ type internal FSharpIndentationService
                 true
             | _ -> false
 
-    static member GetDesiredIndentation(documentId: DocumentId, sourceText: SourceText, filePath: string, lineNumber: int, tabSize: int, indentStyle: FormattingOptions.IndentStyle, parsingOptions: FSharpParsingOptions): Option<int> =
+    static member GetDesiredIndentation
+        (
+            documentId: DocumentId,
+            sourceText: SourceText,
+            filePath: string,
+            lineNumber: int,
+            tabSize: int,
+            indentStyle: FormattingOptions.IndentStyle,
+            parsingOptions: FSharpParsingOptions
+        ) : Option<int> =
 
         // Match indentation with previous line
         let rec tryFindPreviousNonEmptyLine l =
-            if l <= 0 then None
+            if l <= 0 then
+                None
             else
                 let previousLine = sourceText.Lines.[l - 1]
+
                 if not (String.IsNullOrEmpty(previousLine.ToString())) then
                     Some previousLine
                 else
@@ -79,33 +101,48 @@ type internal FSharpIndentationService
 
         maybe {
             let! previousLine = tryFindPreviousNonEmptyLine lineNumber
-            
-            let lastIndent =
-                previousLine.ToString()
-                |> Seq.takeWhile ((=) ' ')
-                |> Seq.length
+
+            let lastIndent = previousLine.ToString() |> Seq.takeWhile ((=) ' ') |> Seq.length
 
             // Only use smart indentation after tokens that need indentation
             // if the option is enabled
             return
-                if indentStyle = FormattingOptions.IndentStyle.Smart && FSharpIndentationService.IndentShouldFollow(documentId, sourceText, filePath, previousLine.Start, parsingOptions) then
-                    (lastIndent/tabSize + 1) * tabSize
+                if
+                    indentStyle = FormattingOptions.IndentStyle.Smart
+                    && FSharpIndentationService.IndentShouldFollow(documentId, sourceText, filePath, previousLine.Start, parsingOptions)
+                then
+                    (lastIndent / tabSize + 1) * tabSize
                 else
                     lastIndent
         }
 
-    interface IFSharpSynchronousIndentationService with
-        member this.GetDesiredIndentation(document: Document, lineNumber: int, cancellationToken: CancellationToken): Nullable<FSharpIndentationResult> =
-            async {
-                let! cancellationToken = Async.CancellationToken
-                let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                let! options = document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
-                let tabSize = options.GetOption<int>(FormattingOptions.TabSize, FSharpConstants.FSharpLanguageName)
-                let indentStyle = options.GetOption(FormattingOptions.SmartIndent, FSharpConstants.FSharpLanguageName)
-                let parsingOptions = document.GetFSharpQuickParsingOptions()
-                let indent = FSharpIndentationService.GetDesiredIndentation(document.Id, sourceText, document.FilePath, lineNumber, tabSize, indentStyle, parsingOptions)
-                return
-                    match indent with
-                    | None -> Nullable()
-                    | Some(indentation) -> Nullable<FSharpIndentationResult>(FSharpIndentationResult(sourceText.Lines.[lineNumber].Start, indentation))
-            } |> (fun c -> Async.RunImmediateExceptOnUI(c,cancellationToken=cancellationToken))
+    interface IFSharpIndentationService with
+        member this.GetDesiredIndentation
+            (
+                services: HostLanguageServices,
+                text: SourceText,
+                documentId: DocumentId,
+                path: string,
+                lineNumber: int,
+                options: FSharpIndentationOptions
+            ) : Nullable<FSharpIndentationResult> =
+            let workspaceService =
+                services.WorkspaceServices.GetRequiredService<IFSharpWorkspaceService>()
+
+            let parsingOptions =
+                workspaceService.FSharpProjectOptionsManager.TryGetQuickParsingOptionsForEditingDocumentOrProject(documentId, path)
+
+            let indent =
+                FSharpIndentationService.GetDesiredIndentation(
+                    documentId,
+                    text,
+                    path,
+                    lineNumber,
+                    options.TabSize,
+                    options.IndentStyle,
+                    parsingOptions
+                )
+
+            match indent with
+            | None -> Nullable()
+            | Some (indentation) -> Nullable<FSharpIndentationResult>(FSharpIndentationResult(text.Lines.[lineNumber].Start, indentation))

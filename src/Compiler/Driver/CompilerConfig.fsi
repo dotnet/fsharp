@@ -99,7 +99,7 @@ and IProjectReference =
     abstract TryGetLogicalTimeStamp: cache: TimeStampCache -> DateTime option
 
 type AssemblyReference =
-    | AssemblyReference of range * string * IProjectReference option
+    | AssemblyReference of range: range * text: string * projectReference: IProjectReference option
 
     member Range: range
 
@@ -198,6 +198,29 @@ type MetadataAssemblyGeneration =
     /// Only emits the assembly as a reference assembly.
     | ReferenceOnly
 
+[<RequireQualifiedAccess>]
+type ParallelReferenceResolution =
+    | On
+    | Off
+
+/// Determines the algorithm used for type-checking.
+[<RequireQualifiedAccess>]
+type TypeCheckingMode =
+    /// Default mode where all source files are processed sequentially in compilation order.
+    | Sequential
+    /// Parallel type-checking that uses automated file-to-file dependency detection to construct a file graph processed in parallel.
+    | Graph
+
+/// Some of the information dedicated to type-checking.
+[<RequireQualifiedAccess>]
+type TypeCheckingConfig =
+    {
+        Mode: TypeCheckingMode
+        /// When using TypeCheckingMode.Graph, this flag determines whether the
+        /// resolved file graph should be serialised as a Mermaid diagram into a file next to the output dll.
+        DumpGraph: bool
+    }
+
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
     {
@@ -254,6 +277,8 @@ type TcConfigBuilder =
         mutable useHighEntropyVA: bool
 
         mutable inputCodePage: int option
+
+        mutable clearResultsCache: bool
 
         mutable embedResources: string list
 
@@ -329,6 +354,8 @@ type TcConfigBuilder =
 
         mutable extraStaticLinkRoots: string list
 
+        mutable compressMetadata: bool
+
         mutable noSignatureData: bool
 
         mutable onlyEssentialOptimizationData: bool
@@ -346,8 +373,6 @@ type TcConfigBuilder =
         mutable embedSourceList: string list
 
         mutable sourceLink: string
-
-        mutable ignoreSymbolStoreSequencePoints: bool
 
         mutable internConstantStrings: bool
 
@@ -405,6 +430,8 @@ type TcConfigBuilder =
 
         mutable concurrentBuild: bool
 
+        mutable parallelIlxGen: bool
+
         mutable emitMetadataAssembly: MetadataAssemblyGeneration
 
         mutable preferredUiLang: string option
@@ -416,6 +443,8 @@ type TcConfigBuilder =
         mutable showBanner: bool
 
         mutable showTimes: bool
+
+        mutable writeTimesToFile: string option
 
         mutable showLoadedAssemblies: bool
 
@@ -430,6 +459,8 @@ type TcConfigBuilder =
         mutable alwaysCallVirt: bool
 
         mutable noDebugAttributes: bool
+
+        mutable useReflectionFreeCodeGen: bool
 
         /// If true, indicates all type checking and code generation is in the context of fsi.exe
         isInteractive: bool
@@ -448,6 +479,8 @@ type TcConfigBuilder =
 
         mutable fxResolver: FxResolver option
 
+        mutable bufferWidth: int option
+
         mutable fsiMultiAssemblyEmit: bool
 
         rangeForErrors: range
@@ -464,11 +497,24 @@ type TcConfigBuilder =
         /// Prevent erasure of conditional attributes and methods so tooling is able analyse them.
         mutable noConditionalErasure: bool
 
+        /// Take '#line' into account? Defaults to true
+        mutable applyLineDirectives: bool
+
         mutable pathMap: PathMap
 
         mutable langVersion: LanguageVersion
 
         mutable xmlDocInfoLoader: IXmlDocumentationInfoLoader option
+
+        mutable exiter: Exiter
+
+        mutable parallelReferenceResolution: ParallelReferenceResolution
+
+        mutable captureIdentifiersWhenParsing: bool
+
+        mutable typeCheckingConfig: TypeCheckingConfig
+
+        mutable dumpSignatureData: bool
     }
 
     static member CreateNew:
@@ -566,6 +612,8 @@ type TcConfig =
 
     member inputCodePage: int option
 
+    member clearResultsCache: bool
+
     member embedResources: string list
 
     member diagnosticsOptions: FSharpDiagnosticOptions
@@ -640,6 +688,8 @@ type TcConfig =
 
     member extraStaticLinkRoots: string list
 
+    member compressMetadata: bool
+
     member noSignatureData: bool
 
     member onlyEssentialOptimizationData: bool
@@ -657,8 +707,6 @@ type TcConfig =
     member embedSourceList: string list
 
     member sourceLink: string
-
-    member ignoreSymbolStoreSequencePoints: bool
 
     member internConstantStrings: bool
 
@@ -710,6 +758,8 @@ type TcConfig =
 
     member concurrentBuild: bool
 
+    member parallelIlxGen: bool
+
     member emitMetadataAssembly: MetadataAssemblyGeneration
 
     member pathMap: PathMap
@@ -723,6 +773,8 @@ type TcConfig =
     member showBanner: bool
 
     member showTimes: bool
+
+    member writeTimesToFile: string option
 
     member showLoadedAssemblies: bool
 
@@ -738,10 +790,14 @@ type TcConfig =
 
     member noDebugAttributes: bool
 
+    member useReflectionFreeCodeGen: bool
+
     /// If true, indicates all type checking and code generation is in the context of fsi.exe
     member isInteractive: bool
 
     member isInvalidationSupported: bool
+
+    member bufferWidth: int option
 
     /// Indicates if F# Interactive is using single-assembly emit via Reflection.Emit, where internals are available.
     member fsiMultiAssemblyEmit: bool
@@ -796,6 +852,9 @@ type TcConfig =
     /// Prevent erasure of conditional attributes and methods so tooling is able analyse them.
     member noConditionalErasure: bool
 
+    /// Take '#line' into account? Defaults to true
+    member applyLineDirectives: bool
+
     /// if true - 'let mutable x = Span.Empty', the value 'x' is a stack referring span. Used for internal testing purposes only until we get true stack spans.
     member internalTestSpanStackReferring: bool
 
@@ -818,6 +877,16 @@ type TcConfig =
 
     /// Check if the primary assembly is mscorlib
     member assumeDotNetFramework: bool
+
+    member exiter: Exiter
+
+    member parallelReferenceResolution: ParallelReferenceResolution
+
+    member captureIdentifiersWhenParsing: bool
+
+    member typeCheckingConfig: TypeCheckingConfig
+
+    member dumpSignatureData: bool
 
 /// Represents a computation to return a TcConfig. Normally this is just a constant immutable TcConfig,
 /// but for F# Interactive it may be based on an underlying mutable TcConfigBuilder.
@@ -854,6 +923,7 @@ val FSharpScriptFileSuffixes: string list
 /// File suffixes where #light is the default
 val FSharpIndentationAwareSyntaxFileSuffixes: string list
 
-val doNotRequireNamespaceOrModuleSuffixes: string list
+val FSharpMLCompatFileSuffixes: string list
 
-val mlCompatSuffixes: string list
+/// Indicates whether experimental features should be enabled automatically
+val FSharpExperimentalFeaturesEnabledAutomatically: bool

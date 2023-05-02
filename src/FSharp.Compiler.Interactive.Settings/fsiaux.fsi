@@ -71,7 +71,6 @@ type InteractiveSession =
     /// <summary>Sets the current event loop being used to process interactions.</summary>
     member internal SetEventLoop: (unit -> bool) * ((unit -> obj) -> obj) * (unit -> unit) -> unit
 
-
 module Settings =
 
     /// <summary>The settings associated with the interactive session.</summary>

@@ -3,8 +3,8 @@
 # Licensed under the MIT License. See https://go.microsoft.com/fwlink/?linkid=2090316 for license information.
 #-------------------------------------------------------------------------------------------------------------
 
-ARG VARIANT=6.0-focal
-FROM mcr.microsoft.com/vscode/devcontainers/dotnet:0-${VARIANT}
+ARG VARIANT=7.0.203-bullseye-slim-amd64
+FROM mcr.microsoft.com/dotnet/sdk:${VARIANT}
 
 # Avoid warnings by switching to noninteractive
 ENV DEBIAN_FRONTEND=noninteractive
@@ -21,3 +21,6 @@ RUN apt-get update \
 
 # Switch back to dialog for any ad-hoc use of apt-get
 ENV DEBIAN_FRONTEND=dialog
+
+# Make sure we can build using plain dotnet
+ENV BUILDING_USING_DOTNET="true"

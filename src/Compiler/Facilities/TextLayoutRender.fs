@@ -45,6 +45,8 @@ module WordL =
     let keywordFalse = wordL TaggedText.keywordFalse
     let bar = wordL TaggedText.bar
     let keywordStruct = wordL TaggedText.keywordStruct
+    let keywordClass = wordL TaggedText.keywordClass
+    let keywordInterface = wordL TaggedText.keywordInterface
     let keywordInherit = wordL TaggedText.keywordInherit
     let keywordBegin = wordL TaggedText.keywordBegin
     let keywordEnd = wordL TaggedText.keywordEnd
@@ -77,12 +79,12 @@ module RightL =
     let rightBracketBar = rightL TaggedText.rightBracketBar
 
 type LayoutRenderer<'a, 'b> =
-    abstract Start    : unit -> 'b
-    abstract AddText  : 'b -> TaggedText -> 'b
-    abstract AddBreak : 'b -> int -> 'b
-    abstract AddTag   : 'b -> string * (string * string) list * bool -> 'b
-    abstract Finish   : 'b -> 'a
-  
+    abstract Start: unit -> 'b
+    abstract AddText: 'b -> TaggedText -> 'b
+    abstract AddBreak: 'b -> int -> 'b
+    abstract AddTag: 'b -> string * (string * string) list * bool -> 'b
+    abstract Finish: 'b -> 'a
+
 type NoState = NoState
 type NoResult = NoResult
 
@@ -91,82 +93,116 @@ module LayoutRender =
     let mkNav r t = NavigableTaggedText(t, r) :> TaggedText
 
     let spaces n = String(' ', n)
-      
+
     let renderL (rr: LayoutRenderer<_, _>) layout =
-        let rec addL z pos i layout k = 
-          match layout with
-          | ObjLeaf _ -> failwith "ObjLeaf should never appear here"
+        let rec addL z pos i layout k =
+            match layout with
+            | ObjLeaf _ -> failwith "ObjLeaf should never appear here"
             (* pos is tab level *)
-          | Leaf (_, text, _)                 -> 
-              k(rr.AddText z text, i + text.Text.Length)
-          | Node (l, r, Broken indent) -> 
-              addL z pos i l <|
-                fun (z, _i) ->
-                  let z, i = rr.AddBreak z (pos+indent), (pos+indent) 
-                  addL z (pos+indent) i r k
-          | Node (l, r, _)             -> 
-              let jm = Layout.JuxtapositionMiddle (l, r)
-              addL z pos i l <|
-                fun (z, i) ->
-                  let z, i = if jm then z, i else rr.AddText z TaggedText.space, i+1 
-                  let pos = i 
-                  addL z pos i r k
-          | Attr (tag, attrs, l)                -> 
-              let z   = rr.AddTag z (tag, attrs, true) 
-              addL z pos i l <|
-                fun (z, i) ->
-                  let z   = rr.AddTag z (tag, attrs, false) 
-                  k(z, i)
-        let pos = 0 
-        let z, i = rr.Start(), 0 
+            | Leaf (_, text, _) -> k (rr.AddText z text, i + text.Text.Length)
+            | Node (l, r, Broken indent) ->
+                addL z pos i l
+                <| fun (z, _i) ->
+                    let z, i = rr.AddBreak z (pos + indent), (pos + indent)
+                    addL z (pos + indent) i r k
+            | Node (l, r, _) ->
+                let jm = Layout.JuxtapositionMiddle(l, r)
+
+                addL z pos i l
+                <| fun (z, i) ->
+                    let z, i = if jm then z, i else rr.AddText z TaggedText.space, i + 1
+                    let pos = i
+                    addL z pos i r k
+            | Attr (tag, attrs, l) ->
+                let z = rr.AddTag z (tag, attrs, true)
+
+                addL z pos i l
+                <| fun (z, i) ->
+                    let z = rr.AddTag z (tag, attrs, false)
+                    k (z, i)
+
+        let pos = 0
+        let z, i = rr.Start(), 0
         let z, _i = addL z pos i layout id
         rr.Finish z
 
-    /// string render 
+    /// string render
     let stringR =
-      { new LayoutRenderer<string, string list> with 
-          member _.Start () = []
-          member _.AddText rstrs taggedText = taggedText.Text :: rstrs
-          member _.AddBreak rstrs n = (spaces n) :: "\n" ::  rstrs 
-          member _.AddTag z (_, _, _) = z
-          member _.Finish rstrs = String.Join("", Array.ofList (List.rev rstrs)) }
+        { new LayoutRenderer<string, string list> with
+            member _.Start() = []
+            member _.AddText rstrs taggedText = taggedText.Text :: rstrs
+            member _.AddBreak rstrs n = (spaces n) :: "\n" :: rstrs
+            member _.AddTag z (_, _, _) = z
 
-    /// string render 
+            member _.Finish rstrs =
+                String.Join("", Array.ofList (List.rev rstrs))
+        }
+
+    /// string render
     let taggedTextListR collector =
-      { new LayoutRenderer<NoResult, NoState> with 
-          member _.Start () = NoState
-          member _.AddText z text = collector text; z
-          member _.AddBreak rstrs n = collector TaggedText.lineBreak; collector (TaggedText.tagSpace(spaces n)); rstrs 
-          member _.AddTag z (_, _, _) = z
-          member _.Finish rstrs = NoResult }
+        { new LayoutRenderer<NoResult, NoState> with
+            member _.Start() = NoState
+
+            member _.AddText z text =
+                collector text
+                z
+
+            member _.AddBreak rstrs n =
+                collector TaggedText.lineBreak
+                collector (TaggedText.tagSpace (spaces n))
+                rstrs
+
+            member _.AddTag z (_, _, _) = z
+            member _.Finish rstrs = NoResult
+        }
 
     /// channel LayoutRenderer
-    let channelR (chan:TextWriter) =
-      { new LayoutRenderer<NoResult, NoState> with 
-          member r.Start () = NoState
-          member r.AddText z s = chan.Write s.Text; z
-          member r.AddBreak z n = chan.WriteLine(); chan.Write (spaces n); z
-          member r.AddTag z (tag, attrs, start) =  z
-          member r.Finish z = NoResult }
+    let channelR (chan: TextWriter) =
+        { new LayoutRenderer<NoResult, NoState> with
+            member r.Start() = NoState
+
+            member r.AddText z s =
+                chan.Write s.Text
+                z
+
+            member r.AddBreak z n =
+                chan.WriteLine()
+                chan.Write(spaces n)
+                z
+
+            member r.AddTag z (tag, attrs, start) = z
+            member r.Finish z = NoResult
+        }
 
     /// buffer render
     let bufferR os =
-      { new LayoutRenderer<NoResult, NoState> with 
-          member r.Start () = NoState
-          member r.AddText z s = bprintf os "%s" s.Text; z
-          member r.AddBreak z n = bprintf os "\n"; bprintf os "%s" (spaces n); z
-          member r.AddTag z (tag, attrs, start) = z
-          member r.Finish z = NoResult }
+        { new LayoutRenderer<NoResult, NoState> with
+            member r.Start() = NoState
+
+            member r.AddText z s =
+                bprintf os "%s" s.Text
+                z
+
+            member r.AddBreak z n =
+                bprintf os "\n"
+                bprintf os "%s" (spaces n)
+                z
+
+            member r.AddTag z (tag, attrs, start) = z
+            member r.Finish z = NoResult
+        }
 
     let showL layout = renderL stringR layout
 
-    let outL (chan:TextWriter)  layout = renderL (channelR chan) layout |> ignore
+    let outL (chan: TextWriter) layout =
+        renderL (channelR chan) layout |> ignore
 
     let bufferL os layout = renderL (bufferR os) layout |> ignore
 
-    let emitL f layout = renderL (taggedTextListR f) layout |> ignore
+    let emitL f layout =
+        renderL (taggedTextListR f) layout |> ignore
 
-    let toArray layout = 
+    let toArray layout =
         let output = ResizeArray()
-        renderL (taggedTextListR (fun tt -> output.Add(tt))) layout |> ignore
+        renderL (taggedTextListR output.Add) layout |> ignore
         output.ToArray()

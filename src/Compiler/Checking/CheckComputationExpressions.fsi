@@ -2,7 +2,7 @@
 
 module internal FSharp.Compiler.CheckComputationExpressions
 
-open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text

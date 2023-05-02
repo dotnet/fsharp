@@ -3,8 +3,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net472;net6.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net6.0</TargetFrameworks>
+    <TargetFrameworks>net472;net7.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net7.0</TargetFrameworks>
     <OutputType>Library</OutputType>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <DefineConstants>$(DefineConstants);ASSUME_PREVIEW_FSHARP_CORE</DefineConstants>
@@ -36,6 +36,7 @@
     <Compile Include="..\..\tests\service\Symbols.fs">
       <Link>CompilerService\Symbols.fs</Link>
     </Compile>
+    <Compile Include="..\..\tests\service\SyntaxTreeTests.fs" />
     <Compile Include="..\..\tests\service\EditorTests.fs">
       <Link>CompilerService\EditorTests.fs</Link>
     </Compile>

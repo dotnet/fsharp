@@ -121,6 +121,20 @@ type FSharpQuotationsTests() =
         | _ -> Assert.Fail()
 
     [<Fact>]
+    member x.``NewStructTuple without assembly should be recognized by NewStructTuple active pattern`` () =
+        let expr = Expr.NewStructTuple([ <@@ 1 @@>; <@@ "" @@> ])
+        match expr with
+        | NewStructTuple [ Value(:? int as i, _) ; Value(:? string as s, _) ] when i = 1 && s = "" -> ()
+        | _ -> Assert.Fail()
+
+    [<Fact>]
+    member x.``NewStructTuple without assembly should be recognized by NewTuple active pattern`` () =
+        let expr = Expr.NewStructTuple([ <@@ 1 @@>; <@@ "" @@> ])
+        match expr with
+        | NewTuple [ Value(:? int as i, _) ; Value(:? string as s, _) ] when i = 1 && s = "" -> ()
+        | _ -> Assert.Fail()
+
+    [<Fact>]
     member x.``NewTuple should not be recognized by NewStructTuple active pattern`` () =
         let expr = Expr.NewTuple [ <@@ 1 @@>; <@@ "" @@> ]
         match expr with

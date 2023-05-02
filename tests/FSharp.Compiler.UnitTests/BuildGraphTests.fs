@@ -228,47 +228,8 @@ module BuildGraphTests =
             try x.Wait(1000) |> ignore with | :? TimeoutException -> reraise() | _ -> ())
 
     [<Fact>]
-    let ``No-RetryCompute - Many requests to get a value asynchronously should only evaluate the computation once even when some requests get canceled``() =
-        let requests = 10000
-        let resetEvent = new ManualResetEvent(false)
-        let mutable computationCountBeforeSleep = 0
-        let mutable computationCount = 0
+    let ``GraphNode created from an already computed result will return it in tryPeekValue`` () =
+        let graphNode = GraphNode.FromResult 1
 
-        let graphNode = 
-            GraphNode(false, node { 
-                computationCountBeforeSleep <- computationCountBeforeSleep + 1
-                let! _ = NodeCode.AwaitWaitHandle_ForTesting(resetEvent)
-                computationCount <- computationCount + 1
-                return 1 
-            })
-
-        use cts = new CancellationTokenSource()
-
-        let work = 
-            node { 
-                let! _ = graphNode.GetOrComputeValue()
-                ()
-            }
-
-        let tasks = ResizeArray()
-
-        for i = 0 to requests - 1 do
-            if i % 10 = 0 then
-                NodeCode.StartAsTask_ForTesting(work, ct = cts.Token)
-                |> tasks.Add
-            else
-                NodeCode.StartAsTask_ForTesting(work)
-                |> tasks.Add
-
-        cts.Cancel()
-        resetEvent.Set() |> ignore
-        NodeCode.RunImmediateWithoutCancellation(work)
-        |> ignore
-
-        Assert.shouldBeTrue cts.IsCancellationRequested
-        Assert.shouldBe 1 computationCountBeforeSleep
-        Assert.shouldBe 1 computationCount
-
-        tasks
-        |> Seq.iter (fun x -> 
-            try x.Wait(1000) |> ignore with | :? TimeoutException -> reraise() | _ -> ())
+        Assert.shouldBeTrue graphNode.HasValue
+        Assert.shouldBe (ValueSome 1) (graphNode.TryPeekValue())

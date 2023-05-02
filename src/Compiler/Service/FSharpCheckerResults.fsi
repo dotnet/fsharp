@@ -171,11 +171,18 @@ type public FSharpSymbolUse =
     /// Indicates if the reference is in open statement
     member IsFromOpenStatement: bool
 
+    /// Indicates if the reference is used for example at a call site
+    member IsFromUse: bool
+
     /// The file name the reference occurs in
     member FileName: string
 
     /// The range of text representing the reference to the symbol
     member Range: range
+
+    /// Indicates if the FSharpSymbolUse is private to the implementation & signature file.
+    /// This is true for function and method parameters.
+    member IsPrivateToFileAndSignatureFile: bool
 
     /// Indicates if the FSharpSymbolUse is declared as private
     member IsPrivateToFile: bool
@@ -200,14 +207,30 @@ type public FSharpProjectContext =
 
 /// Options used to determine active --define conditionals and other options relevant to parsing files in a project
 type public FSharpParsingOptions =
-    { SourceFiles: string[]
-      ConditionalDefines: string list
-      DiagnosticOptions: FSharpDiagnosticOptions
-      LangVersionText: string
-      IsInteractive: bool
-      IndentationAwareSyntax: bool option
-      CompilingFSharpCore: bool
-      IsExe: bool }
+    {
+        SourceFiles: string[]
+
+        /// Indicates if the ranges returned by parsing should have '#line' directives applied to them.
+        /// When compiling code, this should usually be 'true'.  For editing tools, this is usually 'false.
+        /// The default for FSharpParsingOptions.ApplyLineDirectives is 'false'.  The default for
+        /// FSharpParsingOptions arising from FSharpProjectOptions will be 'true' unless '--ignorelinedirectives' is used in the
+        /// parameters from which these are derived.
+        ApplyLineDirectives: bool
+
+        ConditionalDefines: string list
+
+        DiagnosticOptions: FSharpDiagnosticOptions
+
+        LangVersionText: string
+
+        IsInteractive: bool
+
+        IndentationAwareSyntax: bool option
+
+        CompilingFSharpCore: bool
+
+        IsExe: bool
+    }
 
     static member Default: FSharpParsingOptions
 
@@ -297,6 +320,11 @@ type public FSharpCheckFileResults =
         ?getAllEntities: (unit -> AssemblySymbol list) ->
             FSharpSymbolUse list list
 
+    /// <summary>Compute a formatted tooltip for the given keywords</summary>
+    ///
+    /// <param name="names">The keywords at the location where the information is being requested.</param>
+    member GetKeywordTooltip: names: string list -> ToolTipText
+
     /// <summary>Compute a formatted tooltip for the given location</summary>
     ///
     /// <param name="line">The line number where the information is being requested.</param>
@@ -304,8 +332,10 @@ type public FSharpCheckFileResults =
     /// <param name="lineText">The text of the line where the information is being requested.</param>
     /// <param name="names">The identifiers at the location where the information is being requested.</param>
     /// <param name="tokenTag">Used to discriminate between 'identifiers', 'strings' and others. For strings, an attempt is made to give a tooltip for a #r "..." location. Use a value from FSharpTokenInfo.Tag, or FSharpTokenTag.Identifier, unless you have other information available.</param>
+    /// <param name="width">The optional width that the layout gets squashed to.</param>
     member GetToolTip:
-        line: int * colAtEndOfNames: int * lineText: string * names: string list * tokenTag: int -> ToolTipText
+        line: int * colAtEndOfNames: int * lineText: string * names: string list * tokenTag: int * ?width: int ->
+            ToolTipText
 
     /// <summary>Compute a formatted tooltip for the given symbol at position</summary>
     ///
@@ -394,7 +424,7 @@ type public FSharpCheckFileResults =
     member OpenDeclarations: FSharpOpenDeclaration[]
 
     /// Lays out and returns the formatted signature for the typechecked file as source text.
-    member GenerateSignature: unit -> ISourceText option
+    member GenerateSignature: ?pageWidth: int -> ISourceText option
 
     /// Internal constructor
     static member internal MakeEmpty:
@@ -506,7 +536,8 @@ module internal ParseAndCheckFile =
         fileName: string *
         options: FSharpParsingOptions *
         userOpName: string *
-        suggestNamesForErrors: bool ->
+        suggestNamesForErrors: bool *
+        identCapture: bool ->
             FSharpDiagnostic[] * ParsedInput * bool
 
     val matchBraces:

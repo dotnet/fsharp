@@ -89,7 +89,7 @@ module DispatchSlotChecking =
     val GetObjectExprOverrideInfo:
         g: TcGlobals ->
         amap: ImportMap ->
-        implty: TType *
+        implTy: TType *
         id: Ident *
         memberFlags: SynMemberFlags *
         ty: TType *
@@ -155,7 +155,9 @@ val GetAbstractMethInfosForSynMethodDecl:
     memberName: Ident *
     bindm: range *
     typToSearchForAbstractMembers: (TType * SlotImplSet option) *
-    valSynData: SynValInfo ->
+    valSynData: SynValInfo *
+    memberFlags: SynMemberFlags *
+    findFlag: FindMemberFlag ->
         MethInfo list * MethInfo list
 
 /// Get the properties relevant to determining if a uniquely-identified-override exists based on the syntactic information

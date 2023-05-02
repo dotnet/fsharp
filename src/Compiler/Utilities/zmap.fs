@@ -6,41 +6,49 @@ open Internal.Utilities.Collections.Tagged
 open System.Collections.Generic
 
 /// Maps with a specific comparison function
-type internal Zmap<'Key,'T> = Internal.Utilities.Collections.Tagged.Map<'Key,'T> 
+type internal Zmap<'Key, 'T> = Internal.Utilities.Collections.Tagged.Map<'Key, 'T>
 
-module internal Zmap = 
+module internal Zmap =
 
-    let empty (ord: IComparer<'T>) = Map<_,_,_>.Empty(ord)
+    let empty (ord: IComparer<'T>) = Map<_, _, _>.Empty (ord)
 
-    let add k v (m: Zmap<_,_>) = m.Add(k,v)
-    let find k (m: Zmap<_,_>) = m[k]
-    let tryFind k (m: Zmap<_,_>) = m.TryFind(k)
-    let remove k (m: Zmap<_,_>) = m.Remove(k)
-    let mem k (m: Zmap<_,_>) = m.ContainsKey(k)
-    let iter action (m: Zmap<_,_>) = m.Iterate(action)
-    let first f (m: Zmap<_,_>) = m.First(fun k v -> if f k v then Some (k,v) else None)
-    let exists f (m: Zmap<_,_>) = m.Exists(f)
-    let forall f (m: Zmap<_,_>) = m.ForAll(f)
-    let map mapping (m: Zmap<_,_>) = m.MapRange(mapping)
-    let mapi mapping (m: Zmap<_,_>) = m.Map(mapping)
-    let fold f (m: Zmap<_,_>) x = m.Fold f x
-    let toList (m: Zmap<_,_>) = m.ToList()
-    let foldSection lo hi f (m: Zmap<_,_>) x = m.FoldSection lo hi f x
+    let add k v (m: Zmap<_, _>) = m.Add(k, v)
+    let find k (m: Zmap<_, _>) = m[k]
+    let tryFind k (m: Zmap<_, _>) = m.TryFind(k)
+    let remove k (m: Zmap<_, _>) = m.Remove(k)
+    let mem k (m: Zmap<_, _>) = m.ContainsKey(k)
+    let iter action (m: Zmap<_, _>) = m.Iterate(action)
 
-    let isEmpty (m: Zmap<_,_>) = m.IsEmpty
+    let first f (m: Zmap<_, _>) =
+        m.First(fun k v -> if f k v then Some(k, v) else None)
 
-    let foldMap f z (m: Zmap<_,_>) =
-      let m,z = m.FoldAndMap (fun k v z -> let z,v' = f z k v in v',z) z in
-      z,m
+    let exists f (m: Zmap<_, _>) = m.Exists(f)
+    let forall f (m: Zmap<_, _>) = m.ForAll(f)
+    let map mapping (m: Zmap<_, _>) = m.MapRange(mapping)
+    let mapi mapping (m: Zmap<_, _>) = m.Map(mapping)
+    let fold f (m: Zmap<_, _>) x = m.Fold f x
+    let toList (m: Zmap<_, _>) = m.ToList()
+    let foldSection lo hi f (m: Zmap<_, _>) x = m.FoldSection lo hi f x
 
-    let choose f  (m: Zmap<_,_>) = m.First(f)
+    let isEmpty (m: Zmap<_, _>) = m.IsEmpty
 
-    let chooseL f  (m: Zmap<_,_>) =
-      m.Fold (fun k v s -> match f k v with None -> s | Some x -> x :: s) []
+    let foldMap f z (m: Zmap<_, _>) =
+        let m, z = m.FoldAndMap (fun k v z -> let z, v' = f z k v in v', z) z in z, m
 
-    let ofList ord xs = Internal.Utilities.Collections.Tagged.Map<_,_>.FromList(ord,xs)
+    let choose f (m: Zmap<_, _>) = m.First(f)
 
-    let keys   (m: Zmap<_,_>) = m.Fold (fun k _ s -> k :: s) []
-    let values (m: Zmap<_,_>) = m.Fold (fun _ v s -> v :: s) []
+    let chooseL f (m: Zmap<_, _>) =
+        m.Fold
+            (fun k v s ->
+                match f k v with
+                | None -> s
+                | Some x -> x :: s)
+            []
+
+    let ofList ord xs =
+        Internal.Utilities.Collections.Tagged.Map<_, _>.FromList (ord, xs)
+
+    let keys (m: Zmap<_, _>) = m.Fold (fun k _ s -> k :: s) []
+    let values (m: Zmap<_, _>) = m.Fold (fun _ v s -> v :: s) []
 
     let memberOf m k = mem k m

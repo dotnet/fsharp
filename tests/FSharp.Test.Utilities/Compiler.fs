@@ -6,6 +6,7 @@ open FSharp.Compiler.Interactive.Shell
 open FSharp.Compiler.IO
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Symbols
+open FSharp.Compiler.Text
 open FSharp.Test.Assert
 open FSharp.Test.Utilities
 open FSharp.Test.ScriptHelpers
@@ -59,7 +60,9 @@ module rec Compiler =
           OutputDirectory:  DirectoryInfo option
           Name:             string option
           IgnoreWarnings:   bool
-          References:       CompilationUnit list }
+          References:       CompilationUnit list
+          TargetFramework:  TargetFramework
+          }
 
         member this.CreateOutputDirectory() =
             match this.OutputDirectory with
@@ -85,6 +88,7 @@ module rec Compiler =
             Source:          SourceCodeFileKind
             LangVersion:     CSharpLanguageVersion
             TargetFramework: TargetFramework
+            OutputType:      CompileOutput
             OutputDirectory: DirectoryInfo option
             Name:            string option
             References:      CompilationUnit list
@@ -137,15 +141,15 @@ module rec Compiler =
 
     type Disposable (dispose : unit -> unit) =
         interface IDisposable with
-            member this.Dispose() = 
+            member this.Dispose() =
                 dispose()
 
     type ErrorInfo =
         { Error:   ErrorType
           Range:   Range
-          Message: string }
-
-    type EvalOutput = Result<FsiValue option, exn>
+          NativeRange : FSharp.Compiler.Text.range
+          Message: string
+          SubCategory: string }
 
     type ExecutionOutput =
         { ExitCode: int
@@ -153,21 +157,27 @@ module rec Compiler =
           StdErr:   string }
 
     type RunOutput =
-        | EvalOutput of EvalOutput
+        | EvalOutput of Result<FsiValue option, exn>
         | ExecutionOutput of ExecutionOutput
 
+    type SourceCodeFileName = string
+
     type CompilationOutput =
-        { OutputPath:   string option
-          Dependencies: string list
-          Adjust:       int
-          Diagnostics:  ErrorInfo list
-          Output:       RunOutput option
-          Compilation:  CompilationUnit }
+        { OutputPath:    string option
+          Dependencies:  string list
+          Adjust:        int
+          Diagnostics:   ErrorInfo list
+          PerFileErrors: (SourceCodeFileName * ErrorInfo) list
+          Output:        RunOutput option
+          Compilation:   CompilationUnit }
 
     [<RequireQualifiedAccess>]
     type CompilationResult =
         | Success of CompilationOutput
         | Failure of CompilationOutput
+        with
+            member this.Output = match this with Success o | Failure o -> o
+            member this.RunOutput = this.Output.Output
 
     type ExecutionPlatform =
         | Anycpu = 0
@@ -191,7 +201,7 @@ module rec Compiler =
     // Load the source file from the path
     let loadSourceFromFile path = getSource(TestType.Path path)
 
-    let private fsFromString (source: SourceCodeFileKind): FSharpCompilationSource =
+    let fsFromString (source: SourceCodeFileKind): FSharpCompilationSource =
         {
             Source            = source
             AdditionalSources = []
@@ -202,6 +212,7 @@ module rec Compiler =
             Name              = None
             IgnoreWarnings    = false
             References        = []
+            TargetFramework   = TargetFramework.Current
         }
 
     let private csFromString (source: SourceCodeFileKind) : CSharpCompilationSource =
@@ -209,19 +220,27 @@ module rec Compiler =
             Source          = source
             LangVersion     = CSharpLanguageVersion.CSharp9
             TargetFramework = TargetFramework.Current
-            OutputDirectory= None
+            OutputType      = Library
+            OutputDirectory = None
             Name            = None
             References      = []
         }
 
-    let private fromFSharpDiagnostic (errors: FSharpDiagnostic[]) : ErrorInfo list =
-        let toErrorInfo (e: FSharpDiagnostic) : ErrorInfo =
+    let private fromFSharpDiagnostic (errors: FSharpDiagnostic[]) : (SourceCodeFileName * ErrorInfo) list =
+        let toErrorInfo (e: FSharpDiagnostic) : SourceCodeFileName * ErrorInfo =
             let errorNumber = e.ErrorNumber
             let severity = e.Severity
+            let error = 
+                match severity with
+                | FSharpDiagnosticSeverity.Warning -> Warning errorNumber
+                | FSharpDiagnosticSeverity.Error -> Error errorNumber
+                | FSharpDiagnosticSeverity.Info -> Information errorNumber
+                | FSharpDiagnosticSeverity.Hidden -> Hidden errorNumber            
 
-            let error = if severity = FSharpDiagnosticSeverity.Warning then Warning errorNumber else Error errorNumber
-
+            e.FileName |> Path.GetFileName,
             { Error   = error
+              NativeRange = e.Range
+              SubCategory = e.Subcategory
               Range   =
                   { StartLine   = e.StartLine
                     StartColumn = e.StartColumn
@@ -231,7 +250,7 @@ module rec Compiler =
 
         errors
         |> List.ofArray
-        |> List.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLine, e.StartColumn, e.EndLine, e.EndColumn, e.Message)
+        |> List.distinctBy (fun e -> e.FileName,e.Severity, e.ErrorNumber, e.StartLine, e.StartColumn, e.EndLine, e.EndColumn, e.Message)
         |> List.map toErrorInfo
 
     let private partitionErrors diagnostics = diagnostics |> List.partition (fun e -> match e.Error with Error _ -> true | _ -> false)
@@ -241,11 +260,12 @@ module rec Compiler =
     let private getWarnings diagnostics = diagnostics |> List.filter (fun e -> match e.Error with Warning _ -> true | _ -> false)
 
     let private adjustRange (range: Range) (adjust: int) : Range =
-        { range with
-                StartLine   = range.StartLine   - adjust
-                StartColumn = range.StartColumn + 1
-                EndLine     = range.EndLine     - adjust
-                EndColumn   = range.EndColumn   + 1 }
+        {
+            StartLine   = range.StartLine   - adjust
+            StartColumn = range.StartColumn + 1
+            EndLine     = range.EndLine     - adjust
+            EndColumn   = range.EndColumn   + 1
+        }
 
     let FsxSourceCode source =
         SourceCodeFileKind.Fsx({FileName="test.fsx"; SourceText=Some source})
@@ -265,6 +285,11 @@ module rec Compiler =
     let CsSource source =
         SourceCodeFileKind.Cs({FileName="test.cs"; SourceText=Some source })
 
+    let CsFromPath (path: string) : CompilationUnit =
+        csFromString (SourceFromPath path)
+        |> CS
+        |> withName (Path.GetFileNameWithoutExtension(path))
+
     let Fsx (source: string) : CompilationUnit =
         fsFromString (FsxSourceCode source) |> FS
 
@@ -272,10 +297,13 @@ module rec Compiler =
         fsFromString (SourceFromPath path) |> FS
 
     let Fs (source: string) : CompilationUnit =
-        fsFromString (SourceCodeFileKind.Fs({FileName="test.fs"; SourceText=Some source })) |> FS
+        fsFromString (FsSource source) |> FS
+
+    let Fsi (source: string) : CompilationUnit =
+        fsFromString (FsiSource source) |> FS
 
     let FSharp (source: string) : CompilationUnit =
-        fsFromString (SourceCodeFileKind.Fs({FileName="test.fs"; SourceText=Some source })) |> FS
+        Fs source
 
     let FsFromPath (path: string) : CompilationUnit =
         fsFromString (SourceFromPath path)
@@ -295,6 +323,7 @@ module rec Compiler =
             Name              = Some name
             IgnoreWarnings    = false
             References        = []
+            TargetFramework   = TargetFramework.Current
         } |> FS
 
     let CSharp (source: string) : CompilationUnit =
@@ -310,6 +339,7 @@ module rec Compiler =
 
     let asFs (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
+        | FS { Source = SourceCodeFileKind.Fsi _} -> cUnit
         | FS src -> FS {src with Source=SourceCodeFileKind.Fs({FileName=src.Source.GetSourceFileName; SourceText=src.Source.GetSourceText})}
         | _ -> failwith "Only F# compilation can be of type Fs."
 
@@ -318,6 +348,18 @@ module rec Compiler =
         | FS src -> FS { src with Name = Some name }
         | CS src -> CS { src with Name = Some name }
         | IL _ -> failwith "IL Compilation cannot be named."
+
+    let withFileName (name: string) (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS compilationSource -> FS { compilationSource with Source = compilationSource.Source.WithFileName(name) }
+        | CS cSharpCompilationSource -> CS { cSharpCompilationSource with Source = cSharpCompilationSource.Source.WithFileName(name) }
+        | IL _ -> failwith "IL Compilation cannot be named."
+    
+    let withReferenceFSharpCompilerService (cUnit: CompilationUnit) : CompilationUnit =
+        // Compute the location of the FSharp.Compiler.Service dll that matches the target framework used to build this test assembly
+        let compilerServiceAssemblyLocation =
+            typeof<FSharp.Compiler.Text.Range>.Assembly.Location
+        withOptionsHelper [ $"-r:{compilerServiceAssemblyLocation}" ] "withReferenceFSharpCompilerService is only supported for F#" cUnit
 
     let withReferences (references: CompilationUnit list) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
@@ -342,6 +384,9 @@ module rec Compiler =
         | FS fs -> FS { fs with Options = fs.Options @ options }
         | _ -> failwith message
 
+    let withCodepage (codepage:string) (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ $"--codepage:{codepage}" ] "codepage is only supported on F#" cUnit
+
     let withDebug (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--debug+" ] "debug+ is only supported on F#" cUnit
 
@@ -358,6 +403,9 @@ module rec Compiler =
         match cUnit with
         | FS fs -> FS { fs with OutputDirectory = Some (DirectoryInfo(path)) }
         | _ -> failwith "withOutputDirectory is only supported on F#"
+
+    let withBufferWidth (width: int)(cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ $"--bufferwidth:{width}" ] "withBufferWidth is only supported on F#" cUnit
 
     let withDefines (defines: string list) (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper (defines |> List.map(fun define -> $"--define:{define}")) "withDefines is only supported on F#" cUnit
@@ -377,8 +425,17 @@ module rec Compiler =
     let withLangVersion60 (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:6.0" ] "withLangVersion60 is only supported on F#" cUnit
 
+    let withLangVersion70 (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ "--langversion:7.0" ] "withLangVersion70 is only supported on F#" cUnit
+
+    let withLangVersion80 (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ "--langversion:8.0" ] "withLangVersion80 is only supported on F#" cUnit
+
     let withLangVersionPreview (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:preview" ] "withLangVersionPreview is only supported on F#" cUnit
+        
+    let withLangVersion (version: string) (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ $"--langversion:{version}" ] "withLangVersion is only supported on F#" cUnit
 
     let withAssemblyVersion (version:string) (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ $"--version:{version}" ] "withAssemblyVersion is only supported on F#" cUnit
@@ -432,24 +489,52 @@ module rec Compiler =
     let withNoInterfaceData (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--nointerfacedata" ] "withNoInterfaceData is only supported for F#" cUnit
 
-    let asLibrary (cUnit: CompilationUnit) : CompilationUnit =
+    //--refonly[+|-]
+    let withRefOnly (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ $"--refonly+" ] "withRefOnly is only supported for F#" cUnit
+
+    //--refonly[+|-]
+    let withNoRefOnly (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ $"--refonly-" ] "withRefOnly is only supported for F#" cUnit
+
+    //--refout:<file>                          Produce a reference assembly with the specified file path.
+    let withRefOut (name:string) (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ $"--refout:{name}" ] "withNoInterfaceData is only supported for F#" cUnit
+
+    let withCSharpLanguageVersion (ver: CSharpLanguageVersion) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
-        | FS fs -> FS { fs with OutputType = CompileOutput.Library }
-        | _ -> failwith "TODO: Implement asLibrary where applicable."
+        | CS cs -> CS { cs with LangVersion = ver }
+        | _ -> failwith "Only supported in C#"
+
+    let withOutputType (outputType : CompileOutput) (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS x -> FS { x with OutputType = outputType }
+        | CS x -> CS { x with OutputType = outputType }
+        | _ -> failwith "TODO: Implement where applicable."
 
     let asExe (cUnit: CompilationUnit) : CompilationUnit =
+        withOutputType CompileOutput.Exe cUnit    
+    
+    let asLibrary (cUnit: CompilationUnit) : CompilationUnit =
+        withOutputType CompileOutput.Library cUnit
+
+    let asModule (cUnit: CompilationUnit) : CompilationUnit =
+        withOutputType CompileOutput.Module cUnit    
+    
+    let asNetStandard20 (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
-        | FS fs -> FS { fs with OutputType = CompileOutput.Exe }
-        | _ -> failwith "TODO: Implement where applicable."
+        | FS fs -> FS { fs with TargetFramework = TargetFramework.NetStandard20 }
+        | CS _ -> failwith "References are not supported in CS"
+        | IL _ ->  failwith "References are not supported in IL"
 
     let withPlatform (platform:ExecutionPlatform) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
-        | FS _ -> 
+        | FS _ ->
             let p =
                 match platform with
                 | ExecutionPlatform.Anycpu -> "anycpu"
                 | ExecutionPlatform.AnyCpu32bitPreferred -> "anycpu32bitpreferred"
-                | ExecutionPlatform.Itanium -> "itanium"
+                | ExecutionPlatform.Itanium -> "Itanium"
                 | ExecutionPlatform.X64 -> "x64"
                 | ExecutionPlatform.X86 -> "x86"
                 | ExecutionPlatform.Arm -> "arm"
@@ -463,6 +548,9 @@ module rec Compiler =
         match cUnit with
         | FS fs -> FS { fs with IgnoreWarnings = true }
         | _ -> failwith "TODO: Implement ignorewarnings for the rest."
+
+    let withCulture culture (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ $"--preferreduilang:%s{culture}" ] "preferreduilang is only supported for F#" cUnit
 
     let rec private asMetadataReference (cUnit: CompilationUnit) reference =
         match reference with
@@ -492,7 +580,7 @@ module rec Compiler =
                         | Some outputDirectory -> outputDirectory
                         | _ -> defaultOutputDirectory
                     let cmpl =
-                        Compilation.CreateFromSources([fs.Source] @ fs.AdditionalSources, fs.OutputType, options, refs, name, outDir) |> CompilationReference.CreateFSharp
+                        Compilation.CreateFromSources([fs.Source] @ fs.AdditionalSources, fs.OutputType, options, fs.TargetFramework, refs, name, outDir) |> CompilationReference.CreateFSharp
                     loop (cmpl::acc) xs
 
                 | CS cs ->
@@ -509,19 +597,24 @@ module rec Compiler =
 
     let private compileFSharpCompilation compilation ignoreWarnings (cUnit: CompilationUnit) : CompilationResult =
 
-        let ((err: FSharpDiagnostic[], outputFilePath: string), deps) = CompilerAssert.CompileRaw(compilation, ignoreWarnings)
+        use redirect = new RedirectConsole()
+        let ((err: FSharpDiagnostic[], rc: int, outputFilePath: string), deps) =
+            CompilerAssert.CompileRaw(compilation, ignoreWarnings)
 
+        // Create and stash the console output
         let diagnostics = err |> fromFSharpDiagnostic
 
-        let result =
-            { OutputPath   = None
-              Dependencies = deps
-              Adjust       = 0
-              Diagnostics  = diagnostics
-              Output       = None
-              Compilation  = cUnit }
+        let result = {
+            OutputPath    = None
+            Dependencies  = deps
+            Adjust        = 0
+            PerFileErrors = diagnostics
+            Diagnostics   = diagnostics |> List.map snd
+            Output        = Some (RunOutput.ExecutionOutput { ExitCode = rc; StdOut = redirect.Output(); StdErr = redirect.ErrorOutput() })
+            Compilation   = cUnit
+        }
 
-        let (errors, warnings) = partitionErrors diagnostics
+        let (errors, warnings) = partitionErrors result.Diagnostics
 
         // Treat warnings as errors if "IgnoreWarnings" is false
         if errors.Length > 0 || (warnings.Length > 0 && not ignoreWarnings) then
@@ -538,25 +631,43 @@ module rec Compiler =
             | Some di -> di
             | None -> DirectoryInfo(tryCreateTemporaryDirectory())
         let references = processReferences fs.References outputDirectory
-        let compilation = Compilation.CreateFromSources([fs.Source] @ fs.AdditionalSources, output, options, references, name, outputDirectory)
+        let compilation = Compilation.CreateFromSources([fs.Source] @ fs.AdditionalSources, output, options, fs.TargetFramework, references, name, outputDirectory)
         compileFSharpCompilation compilation fs.IgnoreWarnings (FS fs)
 
-    let private compileCSharpCompilation (compilation: CSharpCompilation) csSource : CompilationResult =
-        let outputPath = tryCreateTemporaryDirectory()
-        Directory.CreateDirectory(outputPath) |> ignore
-        let fileName = compilation.AssemblyName
-        let output = Path.Combine(outputPath, Path.ChangeExtension(fileName, ".dll"))
-        let cmplResult = compilation.Emit (output)
+    let toErrorInfo (d: Diagnostic) =
+        let span = d.Location.GetMappedLineSpan().Span
+        let number = d.Id |> Seq.where Char.IsDigit |> String.Concat |> int
+
+        { Error =
+            match d.Severity with
+            | DiagnosticSeverity.Error -> Error
+            | DiagnosticSeverity.Warning -> Warning
+            | DiagnosticSeverity.Info -> Information
+            | DiagnosticSeverity.Hidden -> Hidden
+            | x -> failwith $"Unknown severity {x}"
+            |> (|>) number
+          Range =
+            { StartLine = span.Start.Line
+              StartColumn = span.Start.Character
+              EndLine = span.End.Line
+              EndColumn = span.End.Character }
+          NativeRange = Unchecked.defaultof<_>
+          SubCategory = ""
+          Message = d.GetMessage() }
+
+    let private compileCSharpCompilation (compilation: CSharpCompilation) csSource (filePath : string) dependencies : CompilationResult =
+        let cmplResult = compilation.Emit filePath
         let result =
             { OutputPath   = None
-              Dependencies = []
+              Dependencies = dependencies
               Adjust       = 0
-              Diagnostics  = []
-              Output       = None 
+              Diagnostics  = cmplResult.Diagnostics |> Seq.map toErrorInfo |> Seq.toList
+              PerFileErrors= List.empty // Not needed for C# testing for now. Implement when needed
+              Output       = None
               Compilation  = CS csSource }
 
         if cmplResult.Success then
-            CompilationResult.Success { result with OutputPath  = Some output }
+            CompilationResult.Success { result with OutputPath  = Some filePath }
         else
             CompilationResult.Failure result
 
@@ -571,9 +682,12 @@ module rec Compiler =
             | None -> DirectoryInfo(tryCreateTemporaryDirectory())
 
         let additionalReferences =
-            match processReferences csSource.References outputDirectory with
-            | [] -> ImmutableArray.Empty
-            | r  -> (List.map (asMetadataReference (CS csSource)) r).ToImmutableArray().As<MetadataReference>()
+            processReferences csSource.References outputDirectory
+            |> List.map (asMetadataReference (CS csSource))
+
+        let additionalMetadataReferences = additionalReferences.ToImmutableArray().As<MetadataReference>()
+
+        let additionalReferencePaths = [for r in additionalReferences -> r.FilePath]
 
         let references = TargetFrameworkUtil.getReferences csSource.TargetFramework
 
@@ -584,14 +698,23 @@ module rec Compiler =
             | CSharpLanguageVersion.Preview -> LanguageVersion.Preview
             | _ -> LanguageVersion.Default
 
+        let outputKind, extension =
+            match csSource.OutputType with
+            | Exe -> OutputKind.ConsoleApplication, "exe"
+            | Library -> OutputKind.DynamicallyLinkedLibrary, "dll"
+            | Module -> OutputKind.NetModule, "mod"
+
         let cmpl =
           CSharpCompilation.Create(
             name,
             [ CSharpSyntaxTree.ParseText (source, CSharpParseOptions lv) ],
-            references.As<MetadataReference>().AddRange additionalReferences,
-            CSharpCompilationOptions (OutputKind.DynamicallyLinkedLibrary))
+            references.As<MetadataReference>().AddRange additionalMetadataReferences,
+            CSharpCompilationOptions outputKind)
 
-        compileCSharpCompilation cmpl csSource
+        let filename = Path.ChangeExtension(cmpl.AssemblyName, extension)
+        let filePath = Path.Combine(outputDirectory.FullName, filename)
+
+        compileCSharpCompilation cmpl csSource filePath additionalReferencePaths
 
     let compile (cUnit: CompilationUnit) : CompilationResult =
         match cUnit with
@@ -608,16 +731,27 @@ module rec Compiler =
         | _ ->
             failwith "Compilation has errors."
 
-    let compileGuid (cUnit: CompilationUnit) : Guid =
-        let bytes =
-            compile cUnit
-            |> shouldSucceed
-            |> getAssemblyInBytes
+    let getAssembly = getAssemblyInBytes >> Assembly.Load
 
-        use reader1 = new PEReader(bytes.ToImmutableArray())
-        let reader1 = reader1.GetMetadataReader()
+    let withPeReader func compilationResult =
+        let bytes = getAssemblyInBytes compilationResult
+        use reader = new PEReader(bytes.ToImmutableArray())
+        func reader
 
-        reader1.GetModuleDefinition().Mvid |> reader1.GetGuid
+    let withMetadataReader func =
+        withPeReader (fun reader -> reader.GetMetadataReader() |> func)
+
+    let compileGuid cUnit =
+        cUnit
+        |> compile
+        |> shouldSucceed
+        |> withMetadataReader (fun reader -> reader.GetModuleDefinition().Mvid |> reader.GetGuid)
+
+    let compileAssembly cUnit =
+        cUnit
+        |> compile
+        |> shouldSucceed
+        |> getAssembly
 
     let private parseFSharp (fsSource: FSharpCompilationSource) : CompilationResult =
         let source = fsSource.Source.GetSourceText |> Option.defaultValue ""
@@ -629,8 +763,9 @@ module rec Compiler =
             { OutputPath   = None
               Dependencies = []
               Adjust       = 0
-              Diagnostics  = diagnostics
-              Output       = None 
+              Diagnostics  = diagnostics |> List.map snd
+              PerFileErrors= diagnostics
+              Output       = None
               Compilation  = FS fsSource }
 
         if failed then
@@ -659,10 +794,11 @@ module rec Compiler =
             { OutputPath   = None
               Dependencies = []
               Adjust       = 0
-              Diagnostics  = diagnostics
-              Output       = None 
+              Diagnostics  = diagnostics |> List.map snd
+              PerFileErrors= diagnostics
+              Output       = None
               Compilation  = FS fsSource }
-        let (errors, warnings) = partitionErrors diagnostics
+        let (errors, warnings) = partitionErrors result.Diagnostics
 
         // Treat warnings as errors if "IgnoreWarnings" is false;
         if errors.Length > 0 || (warnings.Length > 0 && not fsSource.IgnoreWarnings) then
@@ -688,6 +824,27 @@ module rec Compiler =
             CompilerAssert.TypeCheck(options, fileName, source)
         | _ -> failwith "Typecheck only supports F#"
 
+    let typecheckProject (cUnit: CompilationUnit) : FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults =
+        match cUnit with
+        | FS fsSource ->
+            let options = fsSource.Options |> Array.ofList
+            let sourceFiles =
+                [| yield (fsSource.Source.GetSourceFileName, fsSource.Source.GetSourceText)
+                   yield!
+                    fsSource.AdditionalSources
+                    |> List.map (fun source -> source.GetSourceFileName, source.GetSourceText) |]
+            
+            let getSourceText =
+                let project = Map.ofArray sourceFiles
+                fun (name: string) ->
+                    Map.tryFind name project
+                    |> Option.bind (Option.map SourceText.ofString)
+                    |> async.Return
+
+            let sourceFiles = Array.map fst sourceFiles
+            CompilerAssert.TypeCheckProject(options, sourceFiles, getSourceText)
+        | _ -> failwith "Typecheck only supports F#"
+
     let run (result: CompilationResult) : CompilationResult =
         match result with
         | CompilationResult.Failure f -> failwith (sprintf "Compilation should be successful in order to run.\n Errors: %A" (f.Diagnostics))
@@ -708,31 +865,60 @@ module rec Compiler =
 
     let compileExeAndRun = asExe >> compileAndRun
 
-    let private evalFSharp (fs: FSharpCompilationSource) : CompilationResult =
-        let source = fs.Source.GetSourceText |> Option.defaultValue ""
-        let options = fs.Options |> Array.ofList
-
-        use script = new FSharpScript(additionalArgs=options)
-        let ((evalresult: Result<FsiValue option, exn>), (err: FSharpDiagnostic[])) = script.Eval(source)
-        let diagnostics = err |> fromFSharpDiagnostic
+    let private processScriptResults fs (evalResult: Result<FsiValue option, exn>, err: FSharpDiagnostic[])  =
+        let perFileDiagnostics = err |> fromFSharpDiagnostic
+        let diagnostics = perFileDiagnostics |> List.map snd
+        let (errors, warnings) = partitionErrors diagnostics
         let result =
             { OutputPath   = None
               Dependencies = []
               Adjust       = 0
-              Diagnostics  = diagnostics
-              Output       = Some(EvalOutput evalresult) 
+              Diagnostics  = if fs.IgnoreWarnings then errors else diagnostics
+              PerFileErrors = perFileDiagnostics
+              Output       = Some (EvalOutput evalResult)
               Compilation  = FS fs }
-
-        let (errors, warnings) = partitionErrors diagnostics
-        let evalError = match evalresult with Ok _ -> false | _ -> true
-        if evalError || errors.Length > 0 || (warnings.Length > 0 && not fs.IgnoreWarnings) then
+        
+        let evalError = match evalResult with Ok _ -> false | _ -> true
+        if evalError || errors.Length > 0 || (warnings.Length > 0 && not fs.IgnoreWarnings) then       
             CompilationResult.Failure result
         else
             CompilationResult.Success result
+        
+
+    let private evalFSharp (fs: FSharpCompilationSource) (script:FSharpScript) : CompilationResult =
+        let source = fs.Source.GetSourceText |> Option.defaultValue ""
+        script.Eval(source) |> (processScriptResults fs)  
+
+    let scriptingShim = Path.Combine(__SOURCE_DIRECTORY__,"ScriptingShims.fsx")
+    let private evalScriptFromDisk (fs: FSharpCompilationSource) (script:FSharpScript) : CompilationResult =
+        
+        let fileNames = 
+            (fs.Source :: fs.AdditionalSources)
+            |> List.map (fun x -> x.GetSourceFileName)
+            |> List.insertAt 0 scriptingShim
+            |> List.map (sprintf " @\"%s\"")
+            |> String.Concat
+
+        script.Eval("#load " + fileNames ) |> (processScriptResults fs) 
 
     let eval (cUnit: CompilationUnit) : CompilationResult =
         match cUnit with
-        | FS fs -> evalFSharp fs
+        | FS fs -> 
+            let options = fs.Options |> Array.ofList
+            use script = new FSharpScript(additionalArgs=options)
+            evalFSharp fs script
+        | _ -> failwith "Script evaluation is only supported for F#."
+
+    let getSessionForEval args version = new FSharpScript(additionalArgs=args,quiet=false,langVersion=version)
+
+    let evalInSharedSession (script:FSharpScript) (cUnit: CompilationUnit)  : CompilationResult =
+        match cUnit with
+        | FS fs -> evalFSharp fs script
+        | _ -> failwith "Script evaluation is only supported for F#."
+
+    let evalScriptFromDiskInSharedSession (script:FSharpScript) (cUnit: CompilationUnit) : CompilationResult =
+        match cUnit with
+        | FS fs -> evalScriptFromDisk fs script
         | _ -> failwith "Script evaluation is only supported for F#."
 
     let runFsi (cUnit: CompilationUnit) : CompilationResult =
@@ -751,7 +937,7 @@ module rec Compiler =
                 disposals.Add({ new IDisposable with member _.Dispose() = outputDirectory.Delete(true) })
 
                 let references = processReferences fs.References outputDirectory
-                let cmpl = Compilation.Create(fs.Source, fs.OutputType, options, references, name, outputDirectory)
+                let cmpl = Compilation.Create(fs.Source, fs.OutputType, options, fs.TargetFramework, references, name, outputDirectory)
                 let _compilationRefs, _deps = evaluateReferences outputDirectory disposals fs.IgnoreWarnings cmpl
                 let options =
                     let opts = new ResizeArray<string>(fs.Options)
@@ -761,7 +947,7 @@ module rec Compiler =
                         match reference with
                         | CompilationReference( cmpl, _) ->
                             match cmpl with
-                            | Compilation(_sources, _outputType, _options, _references, _name, outputDirectory) ->
+                            | Compilation(_sources, _outputType, _options, _targetFramework, _references, _name, outputDirectory) ->
                                 if outputDirectory.IsSome then
                                     opts.Add($"-I:\"{(outputDirectory.Value.FullName)}\"")
                         | _ -> ()
@@ -773,7 +959,8 @@ module rec Compiler =
                       Dependencies = []
                       Adjust       = 0
                       Diagnostics  = []
-                      Output       = None 
+                      PerFileErrors= []
+                      Output       = None
                       Compilation  = cUnit }
 
                 if errors.Count > 0 then
@@ -824,13 +1011,17 @@ module rec Compiler =
 
         cUnit
 
-    let verifyIL (il: string list) (result: CompilationResult) : unit =
+    let private doILCheck func (il: string list) result =
         match result with
         | CompilationResult.Success s ->
             match s.OutputPath with
             | None -> failwith "Operation didn't produce any output!"
-            | Some p -> ILChecker.checkIL p il
+            | Some p -> func p il
         | CompilationResult.Failure _ -> failwith "Result should be \"Success\" in order to get IL."
+
+    let verifyIL = doILCheck ILChecker.checkIL
+
+    let verifyILNotPresent = doILCheck ILChecker.checkILNotPresent
 
     let verifyILBinary (il: string list) (dll: string)= ILChecker.checkIL dll il
 
@@ -871,11 +1062,68 @@ module rec Compiler =
 
     let verifyBaselines = verifyBaseline >> verifyILBaseline
 
+    let normalizeNewlines output =
+        let regex = new Regex("(\r\n|\r|\n)", RegexOptions.Singleline ||| RegexOptions.ExplicitCapture)
+        let result = regex.Replace(output, System.Environment.NewLine)
+        result
+
+    let regexStrip output pattern flags =
+        let regex = new Regex(pattern, flags)
+        let result = regex.Replace(output, "")
+        result
+
+    let stripEnvironment output = 
+        let pattern = @"(---------------------------------------------------------------(\r\n|\r|\n)).*(\n---------------------------------------------------------------(\r\n|\r|\n))"
+        let result = regexStrip output pattern (RegexOptions.Singleline ||| RegexOptions.ExplicitCapture)
+        result
+
+    let stripVersion output =
+        let pattern = @"(Microsoft \(R\) (.*) version (.*) F# (.*))"
+        let result = regexStrip output pattern (RegexOptions.Multiline ||| RegexOptions.ExplicitCapture)
+        result
+
+    let getOutput (cResult: CompilationResult) : string option =
+        let result =
+            match cResult  with
+            | CompilationResult.Failure f -> failwith $"Build failure: {f}"
+            | CompilationResult.Success output ->
+                match output.Output with
+                | Some (EvalOutput _) -> None
+                | Some (ExecutionOutput eo) ->
+                    match eo.StdOut with
+                    | null -> None
+                    | output -> Some (stripVersion (stripEnvironment (normalizeNewlines output)))
+                | None -> None
+        result
+
+    let verifyOutput (expected: string) (cResult: CompilationResult) : CompilationResult =
+        match getOutput cResult with
+        | None -> cResult
+        | Some actual ->
+            let expected = stripVersion (normalizeNewlines expected)
+            if expected <> actual then
+                failwith $"""Output does not match expected: ------------{Environment.NewLine}{expected}{Environment.NewLine}Actual: ------------{Environment.NewLine}{actual}{Environment.NewLine}"""
+            else
+                cResult
+
+    let verifyOutputWithBaseline path =
+        verifyOutput (File.ReadAllText(path).Replace(@"\r\n", Environment.NewLine))
+
+    let verifyOutputContains (expected: string array) (cResult: CompilationResult) : CompilationResult =
+        match getOutput cResult with
+        | None -> cResult
+        | Some actual ->
+            for item in expected do
+                if not(actual.Contains(item)) then
+                    failwith $"""Output does not match expected: ------------{Environment.NewLine}{item}{Environment.NewLine}Actual: ------------{Environment.NewLine}{actual}{Environment.NewLine}"""
+            cResult
+
     type ImportScope = { Kind: ImportDefinitionKind; Name: string }
 
     type PdbVerificationOption =
     | VerifyImportScopes of ImportScope list list
     | VerifySequencePoints of (Line * Col * Line * Col) list
+    | VerifyDocuments of string list
     | Dummy of unit
 
     let private verifyPdbFormat (reader: MetadataReader) compilationType =
@@ -931,15 +1179,32 @@ module rec Compiler =
 
     let private verifySequencePoints (reader: MetadataReader) expectedSequencePoints =
 
-        let sequencePoints = 
+        let sequencePoints =
             [ for sp in reader.MethodDebugInformation do
                 let mdi = reader.GetMethodDebugInformation sp
                 yield! mdi.GetSequencePoints() ]
             |> List.sortBy (fun sp -> sp.StartLine)
             |> List.map (fun sp -> (Line sp.StartLine, Col sp.StartColumn, Line sp.EndLine, Col sp.EndColumn) )
-        
+
         if sequencePoints <> expectedSequencePoints then
             failwith $"Expected sequence points are different from PDB.\nExpected: %A{expectedSequencePoints}\nActual: %A{sequencePoints}"
+
+    let private verifyDocuments (reader: MetadataReader) expectedDocuments =
+
+        let documents =
+            [ for doc in reader.Documents do
+                if not doc.IsNil then
+                    let di = reader.GetDocument doc
+                    let nmh = di.Name
+                    if not nmh.IsNil then
+                        let name = reader.GetString nmh
+                        name ]
+            |> List.sort
+
+        let expectedDocuments = expectedDocuments |> List.sort
+
+        if documents <> expectedDocuments then
+            failwith $"Expected documents are different from PDB.\nExpected: %A{expectedDocuments}\nActual: %A{documents}"
 
 
     let private verifyPdbOptions reader options =
@@ -947,6 +1212,7 @@ module rec Compiler =
             match option with
             | VerifyImportScopes scopes -> verifyPdbImportTables reader scopes
             | VerifySequencePoints sp -> verifySequencePoints reader sp
+            | VerifyDocuments docs -> verifyDocuments reader docs
             | _ -> failwith $"Unknown verification option: {option.ToString()}"
 
     let private verifyPortablePdb (result: CompilationOutput) options : unit =
@@ -976,6 +1242,30 @@ module rec Compiler =
         | _ -> failwith "Result should be \"Success\" in order to verify PDB."
 
         result
+
+    let verifyHasPdb (result: CompilationResult): unit =
+        let verifyPdbExists r =
+            match r.OutputPath with
+            | Some assemblyPath ->
+                let pdbPath = Path.ChangeExtension(assemblyPath, ".pdb")
+                if not (FileSystem.FileExistsShim pdbPath) then
+                    failwith $"PDB file does not exists: {pdbPath}"
+            | _ -> failwith "Output path is not set, please make sure compilation was successfull."
+        match result with
+        | CompilationResult.Success r -> verifyPdbExists r 
+        | _ -> failwith "Result should be \"Success\" in order to verify PDB."
+
+    let verifyNoPdb (result: CompilationResult): unit =
+        let verifyPdbNotExists r =
+            match r.OutputPath with
+            | Some assemblyPath ->
+                let pdbPath = Path.ChangeExtension(assemblyPath, ".pdb")
+                if FileSystem.FileExistsShim pdbPath then
+                    failwith $"PDB file exists: {pdbPath}"
+            | _ -> failwith "Output path is not set, please make sure compilation was successfull."
+        match result with
+        | CompilationResult.Success r -> verifyPdbNotExists r 
+        | _ -> failwith "Result should be \"Success\" in order to verify PDB."
 
     [<AutoOpen>]
     module Assertions =
@@ -1033,7 +1323,7 @@ module rec Compiler =
             (sourceErrors, expectedErrors)
             ||> List.iter2 (fun actual expected ->
 
-                Assert.AreEqual(actual, expected, $"Mismatched error message:\nExpecting: {expected}\nActual:    {actual}\n"))
+                Assert.AreEqual(expected, actual, $"Mismatched error message:\nExpecting: {expected}\nActual:    {actual}\n"))
 
         let adjust (adjust: int) (result: CompilationResult) : CompilationResult =
             match result with
@@ -1044,47 +1334,51 @@ module rec Compiler =
             match result with
             | CompilationResult.Success _ -> result
             | CompilationResult.Failure r ->
-                let message = 
+                let message =
                     [ sprintf "Operation failed (expected to succeed).\n All errors:\n%A\n" r.Diagnostics
                       match r.Output with
                       | Some (ExecutionOutput output) ->
                           sprintf "----output-----\n%s\n----error-------\n%s\n----------" output.StdOut output.StdErr
+                      | Some (EvalOutput (Result.Error exn) ) -> 
+                          sprintf "----script error-----\n%s\n----------" (exn.ToString())
+                      | Some (EvalOutput (Result.Ok fsiVal) ) -> 
+                          sprintf "----script output-----\n%A\n----------" (fsiVal)  
                       | _ -> () ]
                     |> String.concat "\n"
                 failwith message
 
         let shouldFail (result: CompilationResult) : CompilationResult =
             match result with
-            | CompilationResult.Success _ -> failwith "Operation was succeeded (expected to fail)."
+            | CompilationResult.Success _ -> failwith "Operation succeeded (expected to fail)."
             | CompilationResult.Failure _ -> result
 
         let private assertResultsCategory (what: string) (selector: CompilationOutput -> ErrorInfo list) (expected: ErrorInfo list) (result: CompilationResult) : CompilationResult =
             match result with
-            | CompilationResult.Success r 
+            | CompilationResult.Success r
             | CompilationResult.Failure r ->
                 assertErrors what r.Adjust (selector r) expected
             result
 
-        let withResults (expectedResults: ErrorInfo list) result : CompilationResult =
+        let private withResultsIgnoreNativeRange (expectedResults: ErrorInfo list) result : CompilationResult =
             assertResultsCategory "Results" (fun r -> r.Diagnostics) expectedResults result
 
-        let withResult (expectedResult: ErrorInfo ) (result: CompilationResult) : CompilationResult =
-            withResults [expectedResult] result
+        let private withResultIgnoreNativeRange (expectedResult: ErrorInfo ) (result: CompilationResult) : CompilationResult =
+            withResultsIgnoreNativeRange [expectedResult] result
 
         let withDiagnostics (expected: (ErrorType * Line * Col * Line * Col * string) list) (result: CompilationResult) : CompilationResult =
-            let (expectedResults: ErrorInfo list) =
-                expected |>
-                List.map(
-                    fun e ->
-                      let (error, (Line startLine), (Col startCol), (Line endLine), (Col endCol), message) = e
+            let expectedResults: ErrorInfo list =
+                [ for e in expected do
+                      let (error, Line startLine, Col startCol, Line endLine, Col endCol, message) = e
                       { Error = error
                         Range =
                             { StartLine   = startLine
                               StartColumn = startCol
                               EndLine     = endLine
                               EndColumn   = endCol }
-                        Message     = message })
-            withResults expectedResults result
+                        NativeRange = Unchecked.defaultof<_>
+                        SubCategory = ""
+                        Message     = message } ]
+            withResultsIgnoreNativeRange expectedResults result
 
         let withSingleDiagnostic (expected: (ErrorType * Line * Col * Line * Col * string)) (result: CompilationResult) : CompilationResult =
             withDiagnostics [expected] result
@@ -1094,6 +1388,64 @@ module rec Compiler =
 
         let withError (expectedError: ErrorInfo) (result: CompilationResult) : CompilationResult =
             withErrors [expectedError] result
+
+        module StructuredResultsAsserts = 
+            type SimpleErrorInfo =    
+                { Error:   ErrorType
+                  Range:   Range        
+                  Message: string }
+
+            let withResults (expectedResults: SimpleErrorInfo list) result : CompilationResult =
+                let mappedResults = expectedResults |> List.map (fun s -> { Error = s.Error;Range = s.Range;  Message = s.Message; NativeRange = Unchecked.defaultof<_>; SubCategory = ""})
+                Compiler.Assertions.withResultsIgnoreNativeRange mappedResults result
+
+            let withResult (expectedResult: SimpleErrorInfo ) (result: CompilationResult) : CompilationResult =
+                withResults [expectedResult] result
+
+
+
+        module TextBasedDiagnosticAsserts = 
+            open FSharp.Compiler.Text.Range
+
+            let private messageAndNumber errorType= 
+                match errorType with
+                | ErrorType.Error n -> "error",n
+                | ErrorType.Warning n-> "warning",n
+                | ErrorType.Hidden n
+                | ErrorType.Information n-> "info",n
+
+            let normalizeNewLines (s:string) = s.Replace("\r\n","\n").Replace("\n",Environment.NewLine) 
+
+            let private renderToString (cr:CompilationResult) = 
+                [ for (file,err) in cr.Output.PerFileErrors do
+                    let m = err.NativeRange
+                    let file = file.Replace("/", "\\")
+                    let severity,no = messageAndNumber err.Error
+                    let adjustedMessage = err.Message |> normalizeNewLines
+                    let location = 
+                        if  (equals m range0) || (equals m rangeStartup) || (equals m rangeCmdArgs) then
+                            ""
+                        else 
+                            // The baseline .bsl files use 1-based notation for columns, hence the +1's
+                            sprintf "%s(%d,%d,%d,%d):" file m.StartLine (m.StartColumn+1) m.EndLine (m.EndColumn+1)
+                    Environment.NewLine + $"{location} {err.SubCategory} {severity} FS%04d{no}: {adjustedMessage}" + Environment.NewLine
+                ]
+                |> String.Concat
+
+            let withResultsMatchingFile (path:string) (result:CompilationResult) = 
+                let expectedContent = File.ReadAllText(path) |> normalizeNewLines
+                let actualErrors = renderToString result                
+
+                match Environment.GetEnvironmentVariable("TEST_UPDATE_BSL") with
+                | null -> ()
+                | _ when expectedContent = actualErrors -> ()
+                | _ -> File.WriteAllText(path, actualErrors)
+
+                match Assert.shouldBeSameMultilineStringSets expectedContent actualErrors with
+                | None -> () 
+                | Some diff -> Assert.That(diff, Is.Empty, path)
+                
+                result
 
         let checkCodes (expected: int list) (selector: CompilationOutput -> ErrorInfo list) (result: CompilationResult) : CompilationResult =
             match result with
@@ -1128,6 +1480,12 @@ module rec Compiler =
 
         let private diagnosticMatches (pattern: string) (diagnostics: ErrorInfo list) : bool =
             diagnostics |> List.exists (fun d -> Regex.IsMatch(d.Message, pattern))
+
+        let withDiagnosticMessage (message: string) (result: CompilationResult) : CompilationResult =
+            let messages = [for d in result.Output.Diagnostics -> d.Message]
+            if not (messages |> List.exists ((=) message)) then
+                failwith $"Message:\n{message}\n\nwas not found. All diagnostic messages:\n{messages}"
+            result
 
         let withDiagnosticMessageMatches (pattern: string) (result: CompilationResult) : CompilationResult =
             match result with
@@ -1164,30 +1522,24 @@ module rec Compiler =
             withWarningMessages [message] result
 
         let withExitCode (expectedExitCode: int) (result: CompilationResult) : CompilationResult =
-            match result with
-            | CompilationResult.Success r
-            | CompilationResult.Failure r ->
-                match r.Output with
-                | None -> failwith "Execution output is missing, cannot check exit code."
-                | Some o ->
-                    match o with
-                    | ExecutionOutput e -> Assert.AreEqual(e.ExitCode, expectedExitCode, sprintf "Exit code was expected to be: %A, but got %A." expectedExitCode e.ExitCode)
-                    | _ -> failwith "Cannot check exit code on this run result."
+            match result.RunOutput with
+            | None -> failwith "Execution output is missing, cannot check exit code."
+            | Some o ->
+                match o with
+                | ExecutionOutput e -> Assert.AreEqual(e.ExitCode, expectedExitCode, sprintf "Exit code was expected to be: %A, but got %A." expectedExitCode e.ExitCode)
+                | _ -> failwith "Cannot check exit code on this run result."
             result
 
         let private checkOutput (category: string) (substring: string) (selector: ExecutionOutput -> string) (result: CompilationResult) : CompilationResult =
-            match result with
-            | CompilationResult.Success r
-            | CompilationResult.Failure r ->
-                match r.Output with
-                | None -> failwith (sprintf "Execution output is missing cannot check \"%A\"" category)
-                | Some o ->
-                    match o with
-                    | ExecutionOutput e ->
-                        let where = selector e
-                        if not (where.Contains(substring)) then
-                            failwith (sprintf "\nThe following substring:\n    %A\nwas not found in the %A\nOutput:\n    %A" substring category where)
-                    | _ -> failwith "Cannot check output on this run result."
+            match result.RunOutput with
+            | None -> failwith (sprintf "Execution output is missing cannot check \"%A\"" category)
+            | Some o ->
+                match o with
+                | ExecutionOutput e ->
+                    let where = selector e
+                    if not (where.Contains(substring)) then
+                        failwith (sprintf "\nThe following substring:\n    %A\nwas not found in the %A\nOutput:\n    %A" substring category where)
+                | _ -> failwith "Cannot check output on this run result."
             result
 
         let withOutputContains (substring: string) (result: CompilationResult) : CompilationResult =
@@ -1199,23 +1551,13 @@ module rec Compiler =
         let withStdErrContains (substring: string) (result: CompilationResult) : CompilationResult =
             checkOutput "STDERR" substring (fun o -> o.StdErr) result
 
-        // TODO: probably needs a bit of simplification, + need to remove that pyramid of doom.
         let private assertEvalOutput (selector: FsiValue -> 'T) (value: 'T) (result: CompilationResult) : CompilationResult =
-            match result with
-            | CompilationResult.Success r
-            | CompilationResult.Failure r ->
-                match r.Output with
-                | None -> failwith "Execution output is missing cannot check value."
-                | Some o ->
-                    match o with
-                    | EvalOutput e ->
-                        match e with
-                        | Ok v ->
-                            match v with
-                            | None -> failwith "Cannot assert value of evaluation, since it is None."
-                            | Some e -> Assert.AreEqual(value, (selector e))
-                        | Result.Error ex -> raise ex
-                    | _ -> failwith "Only 'eval' output is supported."
+            match result.RunOutput with
+            | None -> failwith "Execution output is missing cannot check value."
+            | Some (EvalOutput (Ok (Some e))) -> Assert.AreEqual(value, (selector e))
+            | Some (EvalOutput (Ok None )) -> failwith "Cannot assert value of evaluation, since it is None."
+            | Some (EvalOutput (Result.Error ex)) -> raise ex
+            | Some _ -> failwith "Only 'eval' output is supported."
             result
 
         // TODO: Need to support for:
@@ -1227,3 +1569,34 @@ module rec Compiler =
 
         let withEvalTypeEquals t (result: CompilationResult) : CompilationResult =
             assertEvalOutput (fun (x: FsiValue) -> x.ReflectionType) t result
+
+    let signatureText (pageWidth: int option) (checkResults: FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults) =
+        checkResults.GenerateSignature(?pageWidth = pageWidth)
+        |> Option.defaultWith (fun _ -> failwith "Unable to generate signature text.")
+
+    let signaturesShouldContain (expected: string) cUnit =
+        let text =
+            cUnit
+            |> typecheckResults
+            |> signatureText None
+
+        let actual =
+            text.ToString().Split('\n')
+            |> Array.map (fun s -> s.TrimEnd(' ', '\r'))
+            |> Array.filter (fun s -> s.Length > 0)
+
+        if not (actual |> Array.contains expected) then
+            failwith ($"The following signature:\n%s{expected}\n\nwas not found in:\n" + (actual |> String.concat "\n"))
+
+    let private printSignaturesImpl pageWidth cUnit  =
+        cUnit
+        |> typecheckResults
+        |> signatureText pageWidth
+        |> string
+        |> fun s ->
+            s.Replace("\r", "").Split('\n')
+            |> Array.map (fun line -> line.TrimEnd())
+            |> String.concat "\n"
+    
+    let printSignatures cUnit = printSignaturesImpl None cUnit
+    let printSignaturesWith pageWidth cUnit = printSignaturesImpl (Some pageWidth) cUnit

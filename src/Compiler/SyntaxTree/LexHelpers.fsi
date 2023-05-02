@@ -37,7 +37,8 @@ type LexArgs =
       pathMap: PathMap
       mutable ifdefStack: LexerIfdefStack
       mutable indentationSyntaxStatus: IndentationAwareSyntaxStatus
-      mutable stringNest: LexerInterpolatedStringNesting }
+      mutable stringNest: LexerInterpolatedStringNesting
+      mutable interpolationDelimiterLength: int }
 
 type LongUnicodeLexResult =
     | SurrogatePair of uint16 * uint16
@@ -52,7 +53,8 @@ val mkLexargs:
     resourceManager: LexResourceManager *
     ifdefStack: LexerIfdefStack *
     diagnosticsLogger: DiagnosticsLogger *
-    pathMap: PathMap ->
+    pathMap: PathMap *
+    applyLineDirectives: bool ->
         LexArgs
 
 val reusingLexbufForParsing: Lexbuf -> (unit -> 'a) -> 'a

@@ -16,12 +16,12 @@ type options =
       embeddedPDB: bool
       embedAllSource: bool
       embedSourceList: string list
+      allGivenSources: ILSourceDocument list
       sourceLink: string
       checksumAlgorithm: HashAlgorithm
       signer: ILStrongNameSigner option
       emitTailcalls: bool
       deterministic: bool
-      showTimes: bool
       dumpDebugInfo: bool
       referenceAssemblyOnly: bool
       referenceAssemblyAttribOpt: ILAttribute option

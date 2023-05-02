@@ -24,11 +24,11 @@ type TextContainer =
 [<AbstractClass>]
 type FSharpSource internal () =
 
-    abstract FilePath : string
+    abstract FilePath: string
 
-    abstract TimeStamp : DateTime
+    abstract TimeStamp: DateTime
 
-    abstract GetTextContainer: unit -> TextContainer
+    abstract GetTextContainer: unit -> Async<TextContainer>
 
 type private FSharpSourceMemoryMappedFile(filePath: string, timeStamp: DateTime, openStream: unit -> Stream) =
     inherit FSharpSource()
@@ -38,7 +38,7 @@ type private FSharpSourceMemoryMappedFile(filePath: string, timeStamp: DateTime,
     override _.TimeStamp = timeStamp
 
     override _.GetTextContainer() =
-        openStream () |> TextContainer.Stream
+        openStream () |> TextContainer.Stream |> async.Return
 
 type private FSharpSourceByteArray(filePath: string, timeStamp: DateTime, bytes: byte[]) =
     inherit FSharpSource()
@@ -49,6 +49,7 @@ type private FSharpSourceByteArray(filePath: string, timeStamp: DateTime, bytes:
 
     override _.GetTextContainer() =
         TextContainer.Stream(new MemoryStream(bytes, 0, bytes.Length, false) :> Stream)
+        |> async.Return
 
 type private FSharpSourceFromFile(filePath: string) =
     inherit FSharpSource()
@@ -57,18 +58,24 @@ type private FSharpSourceFromFile(filePath: string) =
 
     override _.TimeStamp = FileSystem.GetLastWriteTimeShim(filePath)
 
-    override _.GetTextContainer() =
-        TextContainer.OnDisk
+    override _.GetTextContainer() = TextContainer.OnDisk |> async.Return
 
 type private FSharpSourceCustom(filePath: string, getTimeStamp, getSourceText) =
     inherit FSharpSource()
 
     override _.FilePath = filePath
 
-    override _.TimeStamp = getTimeStamp()
+    override _.TimeStamp = getTimeStamp ()
 
     override _.GetTextContainer() =
-        TextContainer.SourceText(getSourceText())
+        async {
+            let! sourceOpt = getSourceText ()
+
+            return
+                sourceOpt
+                |> Option.map TextContainer.SourceText
+                |> Option.defaultValue TextContainer.OnDisk
+        }
 
 type FSharpSource with
 
@@ -81,12 +88,7 @@ type FSharpSource with
     static member CreateCopyFromFile(filePath: string) =
         let timeStamp = FileSystem.GetLastWriteTimeShim(filePath)
 
-        // We want to use mmaped documents only when
-        // not running on mono, since its MemoryMappedFile implementation throws when "mapName" is not provided (is null), (see: https://github.com/mono/mono/issues/10245)
-        if runningOnMono then
-            let bytes = FileSystem.OpenFileForReadShim(filePath, useMemoryMappedFile = false).ReadAllBytes()
-            FSharpSourceByteArray(filePath, timeStamp, bytes) :> FSharpSource
-        else
-            let openStream = fun () ->
-                FileSystem.OpenFileForReadShim(filePath, useMemoryMappedFile = true, shouldShadowCopy = true)
-            FSharpSourceMemoryMappedFile(filePath, timeStamp, openStream) :> FSharpSource
+        let openStream =
+            fun () -> FileSystem.OpenFileForReadShim(filePath, useMemoryMappedFile = true, shouldShadowCopy = true)
+
+        FSharpSourceMemoryMappedFile(filePath, timeStamp, openStream) :> FSharpSource

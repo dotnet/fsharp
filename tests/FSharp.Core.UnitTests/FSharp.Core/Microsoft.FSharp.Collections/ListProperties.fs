@@ -377,7 +377,7 @@ type ListProperties () =
         let b = List.tryItem pos xs
 
         match a with
-        | Success a -> b.Value = a
+        | Ok a -> b.Value = a
         | _ -> b = None
 
     [<Fact>]
@@ -391,7 +391,7 @@ type ListProperties () =
         let b = List.tryPick f xs
 
         match a with
-        | Success a -> b.Value = a
+        | Ok a -> b.Value = a
         | _ -> b = None
 
     [<Fact>]
@@ -405,7 +405,7 @@ type ListProperties () =
         let b = List.tryLast xs
 
         match a with
-        | Success a -> b.Value = a
+        | Ok a -> b.Value = a
         | _ -> b = None
 
     [<Fact>]
@@ -503,7 +503,7 @@ type ListProperties () =
 
 
         match run (fun () -> xs |> List.indexed |> List.permute permutation) with
-        | Success s ->         
+        | Ok s ->         
             let originals = s |> List.map fst
             let rs = s |> List.map snd
             for o in originals do
@@ -718,7 +718,7 @@ type ListProperties () =
         let a = run (fun () -> xs |> List.findIndex predicate)
         let b = run (fun () -> xs |> List.rev |> List.findIndexBack predicate)
         match a,b with
-        | Success a, Success b -> a = (xs.Length - b - 1)
+        | Ok a, Ok b -> a = (xs.Length - b - 1)
         | _ -> a = b
 
     [<Fact>]
@@ -838,7 +838,7 @@ type ListProperties () =
         let check = xs |> List.collect (List.replicate ys.Length)
         pairsFst = check
 
-    [<Fact>]
+    [<Fact(Skip="Test is flaky and bugged on .NET7, will be re-enabled when https://github.com/dotnet/fsharp/issues/13563 is fixed")>]
     member this.``List.allPairs first elements are correct`` () =
         Check.QuickThrowOnFailure this.allPairsFst<int, int>
         Check.QuickThrowOnFailure this.allPairsFst<string, string>

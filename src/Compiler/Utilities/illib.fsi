@@ -26,8 +26,8 @@ module internal PervasiveAutoOpens =
     /// Returns true if the argument is non-null.
     val inline isNotNull: x: 'T -> bool when 'T: null
 
-    /// Indicates that a type may be null. 'MaybeNull<string>' used internally in the F# compiler as unchecked
-    /// replacement for 'string?' for example for future FS-1060.
+    /// Indicates that a type may be null. 'MaybeNull<string>' is used internally in the F# compiler as
+    /// replacement for 'string?' to align with FS-1060.
     type 'T MaybeNull when 'T: null and 'T: not struct = 'T
 
     /// Asserts the argument is non-null and raises an exception if it is
@@ -44,13 +44,11 @@ module internal PervasiveAutoOpens =
 
     val inline (===): x: 'a -> y: 'a -> bool when 'a: not struct
 
-    /// Per the docs the threshold for the Large Object Heap is 85000 bytes: https://docs.microsoft.com/en-us/dotnet/standard/garbage-collection/large-object-heap#how-an-object-ends-up-on-the-large-object-heap-and-how-gc-handles-them
+    /// Per the docs the threshold for the Large Object Heap is 85000 bytes: https://learn.microsoft.com/dotnet/standard/garbage-collection/large-object-heap#how-an-object-ends-up-on-the-large-object-heap-and-how-gc-handles-them
     /// We set the limit to be 80k to account for larger pointer sizes for when F# is running 64-bit.
     val LOH_SIZE_THRESHOLD_BYTES: int
 
-    val reportTime: (bool -> string -> unit)
-
-    val runningOnMono: bool
+    val reportTime: (string -> unit)
 
     /// Get an initialization hole
     val getHole: r: 'a option ref -> 'a
@@ -154,6 +152,8 @@ module internal List =
 
     val frontAndBack: l: 'a list -> 'a list * 'a
 
+    val tryFrontAndBack: l: 'a list -> ('a list * 'a) option
+
     val tryRemove: f: ('a -> bool) -> inp: 'a list -> ('a * 'a list) option
 
     val zip4: l1: 'a list -> l2: 'b list -> l3: 'c list -> l4: 'd list -> ('a * 'b * 'c * 'd) list
@@ -228,7 +228,6 @@ module internal ValueOptionInternal =
     val inline ofOption: x: 'a option -> 'a voption
 
     val inline bind: f: ('a -> 'b voption) -> x: 'a voption -> 'b voption
-
 
 module internal String =
 
@@ -368,80 +367,53 @@ type internal ValueOrCancelled<'TResult> =
     | Value of result: 'TResult
     | Cancelled of ``exception``: OperationCanceledException
 
-/// Represents a synchronous cancellable computation with explicit representation of a cancelled result.
+/// Represents a synchronous, cold-start, cancellable computation with explicit representation of a cancelled result.
 ///
-/// A cancellable computation is passed may be cancelled via a CancellationToken, which is propagated implicitly.
+/// A cancellable computation may be cancelled via a CancellationToken, which is propagated implicitly.
 /// If cancellation occurs, it is propagated as data rather than by raising an OperationCanceledException.
 [<Struct>]
-type internal Cancellable<'TResult> = Cancellable of (CancellationToken -> ValueOrCancelled<'TResult>)
+type internal Cancellable<'T> = Cancellable of (CancellationToken -> ValueOrCancelled<'T>)
 
 module internal Cancellable =
 
     /// Run a cancellable computation using the given cancellation token
-    val run: ct: CancellationToken -> Cancellable<'a> -> ValueOrCancelled<'a>
+    val inline run: ct: CancellationToken -> Cancellable<'T> -> ValueOrCancelled<'T>
 
-    /// Bind the result of a cancellable computation
-    val inline bind: f: ('a -> Cancellable<'b>) -> comp1: Cancellable<'a> -> Cancellable<'b>
-
-    /// Map the result of a cancellable computation
-    val inline map: f: ('a -> 'b) -> oper: Cancellable<'a> -> Cancellable<'b>
-
-    /// Return a simple value as the result of a cancellable computation
-    val inline ret: x: 'a -> Cancellable<'a>
-
-    /// Fold a cancellable computation along a sequence of inputs
-    val fold: f: ('a -> 'b -> Cancellable<'a>) -> acc: 'a -> seq: seq<'b> -> Cancellable<'a>
-
-    /// Iterate a cancellable computation over a collection
-    val inline each: f: ('a -> Cancellable<'b>) -> seq: seq<'a> -> Cancellable<'b list>
-
-    /// Delay a cancellable computation
-    val inline delay: f: (unit -> Cancellable<'T>) -> Cancellable<'T>
+    val fold: f: ('State -> 'T -> Cancellable<'State>) -> acc: 'State -> seq: seq<'T> -> Cancellable<'State>
 
     /// Run the computation in a mode where it may not be cancelled. The computation never results in a
     /// ValueOrCancelled.Cancelled.
-    val runWithoutCancellation: comp: Cancellable<'a> -> 'a
+    val runWithoutCancellation: comp: Cancellable<'T> -> 'T
 
     /// Bind the cancellation token associated with the computation
     val token: unit -> Cancellable<CancellationToken>
 
-    /// Represents a canceled computation
-    val canceled: unit -> Cancellable<'a>
-
-    /// Implement try/finally for a cancellable computation
-    val inline catch: comp: Cancellable<'a> -> Cancellable<Choice<'a, Exception>>
-
-    /// Implement try/finally for a cancellable computation
-    val inline tryFinally: comp: Cancellable<'a> -> compensation: (unit -> unit) -> Cancellable<'a>
-
-    /// Implement try/with for a cancellable computation
-    val inline tryWith: comp: Cancellable<'a> -> handler: (exn -> Cancellable<'a>) -> Cancellable<'a>
-
-    val toAsync: Cancellable<'a> -> Async<'a>
+    val toAsync: Cancellable<'T> -> Async<'T>
 
 type internal CancellableBuilder =
 
     new: unit -> CancellableBuilder
 
-    member inline BindReturn: comp: Cancellable<'T> * k: ('T -> 'U) -> Cancellable<'U>
+    member inline BindReturn: comp: Cancellable<'T> * [<InlineIfLambda>] k: ('T -> 'U) -> Cancellable<'U>
 
-    member inline Bind: comp: Cancellable<'T> * k: ('T -> Cancellable<'U>) -> Cancellable<'U>
+    member inline Bind: comp: Cancellable<'T> * [<InlineIfLambda>] k: ('T -> Cancellable<'U>) -> Cancellable<'U>
 
-    member inline Combine: e1: Cancellable<unit> * e2: Cancellable<'T> -> Cancellable<'T>
+    member inline Combine: comp1: Cancellable<unit> * comp2: Cancellable<'T> -> Cancellable<'T>
 
-    member inline Delay: f: (unit -> Cancellable<'T>) -> Cancellable<'T>
-
-    member inline For: es: seq<'T> * f: ('T -> Cancellable<'U>) -> Cancellable<'U list>
+    member inline Delay: [<InlineIfLambda>] f: (unit -> Cancellable<'T>) -> Cancellable<'T>
 
     member inline Return: v: 'T -> Cancellable<'T>
 
     member inline ReturnFrom: v: Cancellable<'T> -> Cancellable<'T>
 
-    member inline TryFinally: comp: Cancellable<'T> * compensation: (unit -> unit) -> Cancellable<'T>
+    member inline TryFinally: comp: Cancellable<'T> * [<InlineIfLambda>] compensation: (unit -> unit) -> Cancellable<'T>
 
-    member inline TryWith: comp: Cancellable<'T> * handler: (exn -> Cancellable<'T>) -> Cancellable<'T>
+    member inline TryWith:
+        comp: Cancellable<'T> * [<InlineIfLambda>] handler: (exn -> Cancellable<'T>) -> Cancellable<'T>
 
-    member inline Using: resource: 'c * comp: ('c -> Cancellable<'T>) -> Cancellable<'T> when 'c :> IDisposable
+    member inline Using:
+        resource: 'Resource * [<InlineIfLambda>] comp: ('Resource -> Cancellable<'T>) -> Cancellable<'T>
+            when 'Resource :> IDisposable
 
     member inline Zero: unit -> Cancellable<unit>
 
@@ -465,6 +437,17 @@ type internal MemoizationTable<'T, 'U> =
         compute: ('T -> 'U) * keyComparer: IEqualityComparer<'T> * ?canMemoize: ('T -> bool) -> MemoizationTable<'T, 'U>
 
     member Apply: x: 'T -> 'U
+
+/// A thread-safe lookup table which is assigning an auto-increment stamp with each insert
+type internal StampedDictionary<'T, 'U> =
+
+    new: keyComparer: IEqualityComparer<'T> -> StampedDictionary<'T, 'U>
+
+    member Add: key: 'T * value: 'U -> unit
+
+    member UpdateIfExists: key: 'T * valueReplaceFunc: ('U -> 'U option) -> unit
+
+    member GetAll: unit -> seq<'T * (int * 'U)>
 
 exception internal UndefinedException
 
@@ -521,7 +504,6 @@ module internal NameMap =
 
     val exists: f: ('a -> 'b -> bool) -> m: Map<'a, 'b> -> bool when 'a: comparison
 
-
     val ofKeyedList: f: ('a -> 'b) -> l: 'a list -> Map<'b, 'a> when 'b: comparison
 
     val ofList: l: (string * 'T) list -> NameMap<'T>
@@ -533,18 +515,21 @@ module internal NameMap =
     val layer: m1: NameMap<'T> -> m2: Map<string, 'T> -> Map<string, 'T>
 
     /// Not a very useful function - only called in one place - should be changed
-    val layerAdditive: addf: ('a list -> 'b -> 'a list) -> m1: Map<'c, 'b> -> m2: Map<'c, 'a list> -> Map<'c, 'a list>
-        when 'c: comparison
+    val layerAdditive:
+        addf: ('a list -> 'b -> 'a list) -> m1: Map<'c, 'b> -> m2: Map<'c, 'a list> -> Map<'c, 'a list>
+            when 'c: comparison
 
     /// Union entries by identical key, using the provided function to union sets of values
     val union: unionf: (seq<'a> -> 'b) -> ms: seq<NameMap<'a>> -> Map<string, 'b>
 
     /// For every entry in m2 find an entry in m1 and fold
-    val subfold2: errf: ('a -> 'b -> 'c) -> f: ('a -> 'd -> 'b -> 'c -> 'c) -> m1: Map<'a, 'd> -> m2: Map<'a, 'b> -> acc: 'c -> 'c
-        when 'a: comparison
+    val subfold2:
+        errf: ('a -> 'b -> 'c) -> f: ('a -> 'd -> 'b -> 'c -> 'c) -> m1: Map<'a, 'd> -> m2: Map<'a, 'b> -> acc: 'c -> 'c
+            when 'a: comparison
 
-    val suball2: errf: ('a -> 'b -> bool) -> p: ('c -> 'b -> bool) -> m1: Map<'a, 'c> -> m2: Map<'a, 'b> -> bool
-        when 'a: comparison
+    val suball2:
+        errf: ('a -> 'b -> bool) -> p: ('c -> 'b -> bool) -> m1: Map<'a, 'c> -> m2: Map<'a, 'b> -> bool
+            when 'a: comparison
 
     val mapFold: f: ('a -> string -> 'T -> 'b * 'a) -> s: 'a -> l: NameMap<'T> -> Map<string, 'b> * 'a
 
@@ -612,14 +597,13 @@ module internal MultiMap =
 
 type internal LayeredMap<'Key, 'Value when 'Key: comparison> = Map<'Key, 'Value>
 
-
 [<AutoOpen>]
 module internal MapAutoOpens =
     type internal Map<'Key, 'Value when 'Key: comparison> with
 
         static member Empty: Map<'Key, 'Value> when 'Key: comparison
 
-#if USE_SHIPPED_FSCORE
+#if FSHARPCORE_USE_PACKAGE
         member Values: 'Value list
 #endif
 

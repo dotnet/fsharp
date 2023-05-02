@@ -37,7 +37,7 @@ type public NavigationEntityKind =
 /// Represents an item to be displayed in the navigation bar
 [<Sealed>]
 type public NavigationItem =
-    member Name: string
+    member LogicalName: string
 
     member UniqueName: string
 
@@ -98,12 +98,21 @@ type NavigableContainerType =
     | Type
     | Exception
 
+[<Sealed>]
 type NavigableContainer =
-    { Type: NavigableContainerType
-      Name: string }
+    /// The kind of container.
+    member Type: NavigableContainerType
+
+    /// The fully qualified name of the container.
+    /// For files it returns empty string.
+    member FullName: string
+
+    /// The name of the container or file
+    member Name: string
 
 type NavigableItem =
     { Name: string
+      NeedsBackticks: bool
       Range: range
       IsSignature: bool
       Kind: NavigableItemKind

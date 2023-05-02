@@ -210,6 +210,7 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
     interface ICollection<KeyValuePair<'Key, 'Value>>
     interface IEnumerable<KeyValuePair<'Key, 'Value>>
     interface System.IComparable
+    interface System.Collections.IStructuralEquatable
     interface System.Collections.IEnumerable
     interface IReadOnlyCollection<KeyValuePair<'Key, 'Value>>
     interface IReadOnlyDictionary<'Key, 'Value>
@@ -256,8 +257,7 @@ module Map =
     ///     match x with
     ///     | Some s -> Some (s + "z")
     ///     | None -> None
-    /// )
-    /// evaluates to map [(1, "az"); (2, "b")]
+    /// ) // evaluates to map [(1, "az"); (2, "b")]
     /// </code>
     /// </example>
     [<CompiledName("Change")>]
@@ -484,8 +484,9 @@ module Map =
     /// Evaluates to <c>"1 a 2 b initial"</c>
     /// </example>
     [<CompiledName("FoldBack")>]
-    val foldBack<'Key, 'T, 'State> : folder: ('Key -> 'T -> 'State -> 'State) -> table: Map<'Key, 'T> -> state: 'State -> 'State
-        when 'Key: comparison
+    val foldBack<'Key, 'T, 'State> :
+        folder: ('Key -> 'T -> 'State -> 'State) -> table: Map<'Key, 'T> -> state: 'State -> 'State
+            when 'Key: comparison
 
     /// <summary>Folds over the bindings in the map </summary>
     ///
@@ -504,8 +505,9 @@ module Map =
     /// Evaluates to <c>"initial 1 a 2 b"</c>.
     /// </example>
     [<CompiledName("Fold")>]
-    val fold<'Key, 'T, 'State> : folder: ('State -> 'Key -> 'T -> 'State) -> state: 'State -> table: Map<'Key, 'T> -> 'State
-        when 'Key: comparison
+    val fold<'Key, 'T, 'State> :
+        folder: ('State -> 'Key -> 'T -> 'State) -> state: 'State -> table: Map<'Key, 'T> -> 'State
+            when 'Key: comparison
 
     /// <summary>Applies the given function to each binding in the dictionary</summary>
     ///

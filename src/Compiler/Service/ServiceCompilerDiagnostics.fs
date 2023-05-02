@@ -7,18 +7,21 @@ open FSharp.Compiler.DiagnosticResolutionHints
 [<RequireQualifiedAccess>]
 type FSharpDiagnosticKind =
     | AddIndexerDot
-    | ReplaceWithSuggestion of suggestion:string
+    | ReplaceWithSuggestion of suggestion: string
+    | RemoveIndexerDot
 
 [<RequireQualifiedAccess>]
 module CompilerDiagnostics =
 
     let GetErrorMessage diagnosticKind =
         match diagnosticKind with
-        | FSharpDiagnosticKind.AddIndexerDot -> FSComp.SR.addIndexerDot()
-        | FSharpDiagnosticKind.ReplaceWithSuggestion s -> FSComp.SR.replaceWithSuggestion(s)
+        | FSharpDiagnosticKind.AddIndexerDot -> FSComp.SR.addIndexerDot ()
+        | FSharpDiagnosticKind.ReplaceWithSuggestion s -> FSComp.SR.replaceWithSuggestion (s)
+        | FSharpDiagnosticKind.RemoveIndexerDot -> FSComp.SR.tcIndexNotationDeprecated () |> snd
 
     let GetSuggestedNames (suggestionsF: FSharp.Compiler.DiagnosticsLogger.Suggestions) (unresolvedIdentifier: string) =
         let buffer = SuggestionBuffer(unresolvedIdentifier)
+
         if buffer.Disabled then
             Seq.empty
         else

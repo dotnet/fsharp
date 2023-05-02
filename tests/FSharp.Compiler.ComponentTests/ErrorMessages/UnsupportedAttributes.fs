@@ -2,13 +2,13 @@
 
 namespace FSharp.Compiler.ComponentTests.ErrorMessages
 
-#if NETCOREAPP
 open Xunit
 open FSharp.Test.Compiler
+open FSharp.Test.Compiler.Assertions.StructuredResultsAsserts
 
 module ``Unsupported Attributes`` =
 
-    [<Fact>]
+    [<FSharp.Test.FactForNETCOREAPP>]
     let ``Warn successfully`` () =
         """
 open System.Runtime.CompilerServices
@@ -27,7 +27,7 @@ type C() =
               Range = { StartLine = 3
                         StartColumn = 13
                         EndLine = 3
-                        EndColumn = 37 }
+                        EndColumn = 41 }
               Message =
                "This attribute is currently unsupported by the F# compiler. Applying it will not achieve its intended effect." }
             { Error = Warning 202
@@ -41,7 +41,7 @@ type C() =
               Range = { StartLine = 6
                         StartColumn = 22
                         EndLine = 6
-                        EndColumn = 78 }
+                        EndColumn = 82 }
               Message =
                "This attribute is currently unsupported by the F# compiler. Applying it will not achieve its intended effect." }
             { Error = Warning 202
@@ -52,4 +52,3 @@ type C() =
               Message =
                "This attribute is currently unsupported by the F# compiler. Applying it will not achieve its intended effect." }
         ]
-#endif

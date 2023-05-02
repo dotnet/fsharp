@@ -1,5 +1,4 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -118,11 +117,11 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="FSharpInteractive64Bit" xml:space="preserve">
-    <value>64-bit F# Interactive</value>
+  <data name="FSharpInteractiveAnyCpu" xml:space="preserve">
+    <value>Use fsiAnyCpu.exe</value>
   </data>
-  <data name="FSharpInteractive64BitDescr" xml:space="preserve">
-    <value>If set to true, and the current machine is 64-bit, then run F# Interactive as a 64-bit process.  (Otherwise, F# Interactive is a 32-bit process.)</value>
+  <data name="FSharpInteractiveAnyCpuDescr" xml:space="preserve">
+    <value>If set to true, 'fsiAnyCpu.exe' is run as a platform neutral process. Otherwise, F# Interactive is a 32-bit process on X86/X64 or a native 64 bit process on Arm64 based systems.</value>
   </data>
   <data name="FSharpInteractiveOptions" xml:space="preserve">
     <value>F# Interactive options</value>
@@ -163,5 +162,4 @@
   <data name="FSharpInteractiveUseNetCoreDescr" xml:space="preserve">
     <value>Enable .NET Core script editing and execution for all F# scripts and the F# Interactive window</value>
   </data>
-
 </root>

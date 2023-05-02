@@ -3,8 +3,15 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net472;net6.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net6.0</TargetFrameworks>
+    <TargetFrameworks>net472;net7.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix' or '$(BUILDING_USING_DOTNET)' == 'true'">net7.0</TargetFrameworks>
+    <!-- Workaround to get rid of:
+        error NU1505: Duplicate 'PackageDownload' items found.
+        Remove the duplicate items or use the Update functionality to ensure a consistent restore behavior.
+        The duplicate 'PackageDownload' items are:
+          Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2].
+    -->
+    <NoWarn>$(NoWarn);NU1505</NoWarn>
     <NoWarn>$(NoWarn);44;75;</NoWarn>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateProgramFile>false</GenerateProgramFile>
@@ -13,9 +20,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\fsharp\TestHelpers.fs" Link="TestHelpers.fs" />
-    <Compile Include="LibraryTestFx.fs" />
-    <Compile Include="SurfaceArea.netstandard.fs" />
+    <Content Include="expected-help-output.bsl">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Content>
+    <Compile Include="SurfaceArea.fs" Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp'"/>
     <Compile Include="..\service\FsUnit.fs">
       <Link>FsUnit.fs</Link>
     </Compile>
@@ -31,6 +39,10 @@
     <Compile Include="..\service\Symbols.fs">
       <Link>Symbols.fs</Link>
     </Compile>
+    <Compile Include="TestDoubles.fs" />
+    <Compile Include="ConsoleOnlyOptionsTests.fs" />
+    <Compile Include="VisualStudioVersusConsoleContextTests.fs" />
+    <Compile Include="..\service\SyntaxTreeTests.fs" />
     <Compile Include="..\service\FileSystemTests.fs">
       <Link>FileSystemTests.fs</Link>
     </Compile>
@@ -85,6 +97,7 @@
     <Compile Include="..\service\PrettyNaming.fs">
       <Link>PrettyNaming.fs</Link>
     </Compile>
+    <Compile Include="TooltipTests.fs" />
     <Compile Include="..\service\Program.fs">
       <Link>Program.fs</Link>
     </Compile>
@@ -92,6 +105,8 @@
 
   <ItemGroup>
     <PackageReference Include="Dotnet.ProjInfo" Version="0.37.0" />
+    <!-- Force a newer Newtonsoft.Json version to avoid conflicts. -->
+    <PackageReference Include="Newtonsoft.Json" Version="$(NewtonsoftJsonVersion)" />
     <ProjectReference Include="..\..\src\Compiler\FSharp.Compiler.Service.fsproj" />
     <ProjectReference Include="..\..\tests\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
     <ProjectReference Include="..\service\data\CSharp_Analysis\CSharp_Analysis.csproj" />

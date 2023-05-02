@@ -1,0 +1,129 @@
+[
+  {
+    "Version": {
+      "Case": "Local"
+    },
+    "VersionTime": "2022-07-13T19:36:29.1189338Z",
+    "Results": {
+      "MeanS": 407125562.24489796,
+      "AllocatedMB": 288379560.0
+    }
+  },
+  {
+    "Version": {
+      "Case": "Git",
+      "Fields": [
+        "4edcbb45365f96d4858f438a556b93d4a32ae219"
+      ]
+    },
+    "VersionTime": "2021-04-27T20:46:24Z",
+    "Results": {
+      "MeanS": 323065237.5,
+      "AllocatedMB": 176081512.0
+    }
+  },
+  {
+    "Version": {
+      "Case": "NuGet",
+      "Fields": [
+        "41.0.5-preview.22329.3"
+      ]
+    },
+    "VersionTime": "2022-07-12T14:31:06Z",
+    "Results": {
+      "MeanS": 386133361.0,
+      "AllocatedMB": 288359960.0
+    }
+  },
+  {
+    "Version": {
+      "Case": "NuGet",
+      "Fields": [
+        "41.0.5"
+      ]
+    },
+    "VersionTime": "2022-06-14T16:17:50Z",
+    "Results": {
+      "MeanS": 373396345.9459459,
+      "AllocatedMB": 286827416.0
+    }
+  },
+  {
+    "Version": {
+      "Case": "NuGet",
+      "Fields": [
+        "40.0.0"
+      ]
+    },
+    "VersionTime": "2021-06-22T22:16:34Z",
+    "Results": {
+      "MeanS": 330649644.4444444,
+      "AllocatedMB": 177144704.0
+    }
+  },
+  {
+    "Version": {
+      "Case": "NuGet",
+      "Fields": [
+        "35.0.0"
+      ]
+    },
+    "VersionTime": "2021-02-09T23:24:33Z",
+    "Results": {
+      "MeanS": 328710979.71014494,
+      "AllocatedMB": 192795088.0
+    }
+  },
+  {
+    "Version": {
+      "Case": "NuGet",
+      "Fields": [
+        "30.0.0"
+      ]
+    },
+    "VersionTime": "2021-02-09T23:24:22Z",
+    "Results": {
+      "MeanS": 272079184.2105263,
+      "AllocatedMB": 177900568.0
+    }
+  },
+  {
+    "Version": {
+      "Case": "NuGet",
+      "Fields": [
+        "25.0.1"
+      ]
+    },
+    "VersionTime": "2021-02-09T23:24:36Z",
+    "Results": {
+      "MeanS": 308437262.1621622,
+      "AllocatedMB": 192296968.0
+    }
+  },
+  {
+    "Version": {
+      "Case": "NuGet",
+      "Fields": [
+        "20.0.1"
+      ]
+    },
+    "VersionTime": "2021-02-09T23:24:04Z",
+    "Results": {
+      "MeanS": 411006163.6363636,
+      "AllocatedMB": 355512464.0
+    }
+  },
+  {
+    "Version": {
+      "Case": "NuGet",
+      "Fields": [
+        "13.0.0"
+      ]
+    },
+    "VersionTime": "2021-02-09T23:24:07Z",
+    "Results": {
+      "MeanS": 1081577700.0,
+      "AllocatedMB": 1014285288.0
+    }
+  }
+]

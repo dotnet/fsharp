@@ -42,7 +42,6 @@ type internal TypeProviderError =
     /// provides uniform way to process aggregated errors
     member Iter: (TypeProviderError -> unit) -> unit
 
-
 /// This struct wraps a value produced by a type provider to properly attribute any failures.
 [<NoEquality; NoComparison; Class>]
 type internal Tainted<'T> =
