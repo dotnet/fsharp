@@ -3,6 +3,7 @@ namespace Internal.Utilities.Collections
 open FSharp.Compiler.BuildGraph
 open System.Threading
 open System.Collections.Generic
+open FSharp.Compiler.Diagnostics
 
 type internal Action<'TKey, 'TValue> =
     | GetOrCompute of ('TKey -> NodeCode<'TValue>) * CancellationToken
@@ -26,9 +27,11 @@ type internal JobEvent<'TKey> =
         | Finished key -> key
         | Canceled key -> key
 
-type internal AsyncMemoize<'TKey, 'TValue when 'TKey: equality>(?eventLog: ResizeArray<JobEvent<'TKey>>) =
+type internal AsyncMemoize<'TKey, 'TValue when 'TKey: equality>(?logEvent: (JobEvent<'TKey> -> unit), ?name: string) =
 
     let tok = obj ()
+
+    let name = name |> Option.defaultValue "Unnamed"
 
     let cache =
         MruCache<_, 'TKey, Job<'TValue>>(keepStrongly = 10, areSame = (fun (x, y) -> x = y))
@@ -46,7 +49,7 @@ type internal AsyncMemoize<'TKey, 'TValue when 'TKey: equality>(?eventLog: Resiz
         inbox.PostAndAsyncReply(fun rc -> key, msg, rc) |> Async.Ignore |> Async.Start
 
     let log event =
-        eventLog |> Option.iter (fun log -> log.Add event)
+        logEvent |> Option.iter ((|>) event)
 
     let agent =
         MailboxProcessor.Start(fun (inbox: MailboxProcessor<MemoizeRequest<_, _>>) ->
@@ -74,6 +77,8 @@ type internal AsyncMemoize<'TKey, 'TValue when 'TKey: equality>(?eventLog: Resiz
                             Async.StartAsTask(
                                 Async.AwaitNodeCode(
                                     node {
+                                        use _ = Activity.start $"AsyncMemoize.{name}" [| |]
+
                                         let! result = computation key
                                         post key JobCompleted
                                         return result

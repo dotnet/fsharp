@@ -132,4 +132,3 @@ let ``Using getSource and notifications instead of filesystem`` () =
         checkFile middle expectSignatureChanged
         checkFile last expectSignatureChanged
     }
-

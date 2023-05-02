@@ -344,10 +344,11 @@ module ProjectOperations =
     let getFileSnapshot (project: SyntheticProject) _options path =
         async {
             let file = project.FindByPath path
-            let version = $"{file.PublicVersion}.{file.InternalVersion}.{file.Source.GetHashCode()}.{file.ExtraSource.GetHashCode()}"
+            let dependencies = file.DependsOn |> String.concat "|"
+            let version = $"{file.PublicVersion}.{file.InternalVersion}.{file.Source.GetHashCode()}.{file.ExtraSource.GetHashCode()}.{dependencies}"
 
             return {
-                FileName = file.FileName
+                FileName = getFilePath project file
                 Version = version
                 GetSource = fun () -> renderSourceFile project file |> SourceText.ofString |> Task.FromResult
             }
@@ -551,14 +552,17 @@ let SaveAndCheckProject project checker =
         if not (Array.isEmpty results.Diagnostics) then
             failwith $"Project {project.Name} failed initial check: \n%A{results.Diagnostics}"
 
-        let! signatures =
-            Async.Sequential
-                [ for file in project.SourceFiles do
-                      async {
-                          let! result = checkFile file.Id project checker
-                          let signature = getSignature result
-                          return file.Id, signature
-                      } ]
+        // TODO: re-enable
+        //let! signatures =
+        //    Async.Sequential
+        //        [ for file in project.SourceFiles do
+        //              async {
+        //                  let! result = checkFile file.Id project checker
+        //                  let signature = getSignature result
+        //                  return file.Id, signature
+        //              } ]
+
+        let signatures = [ for file in project.SourceFiles -> file.Id, "" ]
 
         return
             { Project = project

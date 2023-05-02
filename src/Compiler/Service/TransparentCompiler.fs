@@ -73,13 +73,13 @@ type internal TransparentCompiler
     // Is having just one of these ok?
     let lexResourceManager = Lexhelp.LexResourceManager()
 
-    let ParseFileCache = AsyncMemoize()
-    let ParseAndCheckFileInProjectCache = AsyncMemoize()
-    let FrameworkImportsCache = AsyncMemoize()
-    let BootstrapInfoCache = AsyncMemoize()
-    let TcPriorCache = AsyncMemoize()
-    let TcIntermediateCache = AsyncMemoize()
-    let DependencyGraphForLastFileCache = AsyncMemoize()
+    let ParseFileCache = AsyncMemoize(name = "ParseFile")
+    let ParseAndCheckFileInProjectCache = AsyncMemoize(name = "ParseAndCheckFileInProject")
+    let FrameworkImportsCache = AsyncMemoize(name = "FrameworkImports")
+    let BootstrapInfoCache = AsyncMemoize(name = "BootstrapInfo")
+    let TcPriorCache = AsyncMemoize(name = "TcPrior")
+    let TcIntermediateCache = AsyncMemoize(name = "TcIntermediate")
+    let DependencyGraphForLastFileCache = AsyncMemoize(name = "DependencyGraphForLastFile")
 
     // We currently share one global dependency provider for all scripts for the FSharpChecker.
     // For projects, one is used per project.
@@ -699,6 +699,7 @@ type internal TransparentCompiler
 
     let mergeTcInfos =
         Array.fold (fun a b ->
+            // TODO: proper merge
             { a with
                 tcState = b.tcState
                 tcEnvAtEndOfFile = b.tcEnvAtEndOfFile
@@ -768,7 +769,7 @@ type internal TransparentCompiler
     let ComputeParseAndCheckFileInProject (fileName: string) (projectSnapshot: FSharpProjectSnapshot) userOpName _key =
         node {
 
-            let! bootstrapInfoOpt, creationDiags = BootstrapInfoCache.Get(projectSnapshot.Key, ComputeBootstrapInfo projectSnapshot) // probably cache
+            let! bootstrapInfoOpt, creationDiags = BootstrapInfoCache.Get(projectSnapshot.Key, ComputeBootstrapInfo projectSnapshot)
 
             match bootstrapInfoOpt with
             | None ->
@@ -779,7 +780,7 @@ type internal TransparentCompiler
             | Some bootstrapInfo ->
 
                 let file =
-                    bootstrapInfo.SourceFiles |> List.find (fun f -> f.Source.FileName = fileName)
+                    bootstrapInfo.SourceFiles |> List.tryFind (fun f -> f.Source.FileName = fileName) |> Option.defaultWith (fun _ -> failwith ($"File {fileName} not found in project snapshot. Files in project: \n\n" + (bootstrapInfo.SourceFiles |> Seq.map (fun f -> f.Source.FileName) |> String.concat " \n")))
 
                 let priorSnapshot = projectSnapshot.UpTo fileName
                 let! tcInfo = TcPriorCache.Get(priorSnapshot.Key, ComputeTcPrior file bootstrapInfo priorSnapshot userOpName)
