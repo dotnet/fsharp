@@ -816,10 +816,8 @@ type IncrementalBuilderState =
         stampedReferencedAssemblies: DateTime list
         initialCheckResults: PartialCheckResults
         partialCheckResultsBuilder: PartialCheckResultsBuilder
-        finalizedBoundModel: GraphNode<(PartialCheckResults * ILAssemblyRef * ProjectAssemblyDataResult * CheckedImplFile list option)>
+        finalizedCheckResults: GraphNode<(PartialCheckResults * ILAssemblyRef * ProjectAssemblyDataResult * CheckedImplFile list option)>
     }
-    member this.stampedFileNames = this.slots |> List.map (fun s -> s.Stamp)
-    member this.boundModels = this.slots |> List.map (fun s -> s.PartialCheckResults)
 
 [<AutoOpen>]
 module IncrementalBuilderStateHelpers =
@@ -827,7 +825,7 @@ module IncrementalBuilderStateHelpers =
     // Used to thread the status of the build in computeStampedFileNames mapFold.
     type private BuildStatus = Invalidated | Good
 
-    let createFinalizeBoundModelGraphNode (initialState: IncrementalBuilderInitialState) (boundModels: PartialCheckResults seq) =
+    let createFinalizeCheckResultsGraphNode (initialState: IncrementalBuilderInitialState) (partialCheckResults: PartialCheckResults seq) =
         GraphNode(node {
             use _ = Activity.start "GetCheckResultsAndImplementationsForProject" [|Activity.Tags.project, initialState.outfile|]
             return!
@@ -837,16 +835,16 @@ module IncrementalBuilderStateHelpers =
                     initialState.enablePartialTypeChecking
                     initialState.assemblyName 
                     initialState.outfile
-                    boundModels
+                    partialCheckResults
         })
 
-    let checkResultsForFile (builder: PartialCheckResultsBuilder) prevBoundModel syntaxTree =
-        builder.Next(prevBoundModel, syntaxTree)
+    let checkResultsForFile (builder: PartialCheckResultsBuilder) prevCheckResults syntaxTree =
+        builder.Next(prevCheckResults, syntaxTree)
 
     let computeStampedFileNames (initialState: IncrementalBuilderInitialState) (state: IncrementalBuilderState) =
-        let mapping (status, prevBoundModel) slot =
+        let mapping (status, prevCheckResults) slot =
             let update newStatus =
-                let partialCheckResults = checkResultsForFile state.partialCheckResultsBuilder prevBoundModel slot.SyntaxTree
+                let partialCheckResults = checkResultsForFile state.partialCheckResultsBuilder prevCheckResults slot.SyntaxTree
                 let slot = 
                     { slot with
                         Notified = false
@@ -864,14 +862,14 @@ module IncrementalBuilderStateHelpers =
             | Good when slot.Notified -> update Invalidated
             | _ -> noChange
 
-        let needsUpdate = state.slots |> List.exists (fun s -> s.Notified)
+        let graphNeedsUpdate = state.slots |> List.exists (fun s -> s.Notified)
 
-        if needsUpdate then
+        if graphNeedsUpdate then
             let slots, _ = state.slots |> List.mapFold mapping (Good, state.initialCheckResults)
-            let boundModels = slots |> Seq.map (fun s -> s.PartialCheckResults)
+            let partialCheckResults = slots |> Seq.map (fun s -> s.PartialCheckResults)
             { state with
                 slots = slots
-                finalizedBoundModel = createFinalizeBoundModelGraphNode initialState boundModels }
+                finalizedCheckResults = createFinalizeCheckResultsGraphNode initialState partialCheckResults }
         else
             state
 
@@ -895,14 +893,14 @@ type IncrementalBuilderState with
                     SyntaxTree(initialState.tcConfig, initialState.fileParsed, initialState.lexResourceManager, sourceFile)
             ]
 
-        let boundModels = 
+        let partialCheckResults = 
             syntaxTrees
             |> Seq.scan (checkResultsForFile partialCheckResultsBuilder) initialCheckResults
             |> Seq.skip 1
 
         let slots =
             [
-                for results, syntaxTree in Seq.zip boundModels syntaxTrees do
+                for results, syntaxTree in Seq.zip partialCheckResults syntaxTrees do
                     {
                         Stamp = DateTime.MinValue
                         Notified = false
@@ -919,7 +917,7 @@ type IncrementalBuilderState with
                 stampedReferencedAssemblies = stampedReferencedAssemblies
                 partialCheckResultsBuilder = partialCheckResultsBuilder
                 initialCheckResults = initialCheckResults
-                finalizedBoundModel = createFinalizeBoundModelGraphNode initialState boundModels
+                finalizedCheckResults = createFinalizeCheckResultsGraphNode initialState partialCheckResults
             }
         let state = if initialState.useChangeNotifications then state else checkFileStamps state cache
         let state = computeStampedFileNames initialState state
@@ -1046,7 +1044,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
     member builder.GetCheckResultsAndImplementationsForProject() =
         node {
             updateFileTimeStampsIfNotUsingNotifications ()
-            return! currentState.finalizedBoundModel.GetOrComputeValue()
+            return! currentState.finalizedCheckResults.GetOrComputeValue()
         }
 
     member builder.GetFullCheckResultsAndImplementationsForProject() =
