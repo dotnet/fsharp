@@ -342,7 +342,7 @@ module Structure =
                 parseExpr e2
 
             | SynExpr.ArrayOrListComputed (cType, e, r) ->
-                let pos = match cc with CollectionType.Array | CollectionType.ImmutableArray -> 2 | CollectionType.List -> 1
+                let pos = match cType with CollectionType.Array | CollectionType.ImmutableArray -> 2 | CollectionType.List -> 1
                 let collapse = Range.modBoth pos pos r
                 rcheck Scope.ArrayOrList Collapse.Same r collapse
                 parseExpr e

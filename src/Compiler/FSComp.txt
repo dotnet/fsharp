@@ -23,6 +23,7 @@ listElementHasWrongTypeTuple,"All elements of a list must be implicitly converti
 arrayElementHasWrongType,"All elements of an array must be implicitly convertible to the type of the first element, which here is '%s'. This element has type '%s'."
 arrayElementHasWrongTypeTuple,"All elements of an array must be implicitly convertible to the type of the first element, which here is a tuple of length %d of type\n    %s    \nThis element is a tuple of length %d of type\n    %s    \n"
 blockElementHasWrongType,"All elements of a block must be implicitly convertible to the type of the first element, which here is '%s'. This element has type '%s'."
+blockElementHasWrongTypeTuple,"All elements of a block must be implicitly convertible to the type of the first element, which here is a tuple of length %d of type\n    %s    \nThis element is a tuple of length %d of type\n    %s    \n"
 missingElseBranch,"This 'if' expression is missing an 'else' branch. Because 'if' is an expression, and not a statement, add an 'else' branch which also returns a value of type '%s'."
 ifExpression,"The 'if' expression needs to have type '%s' to satisfy context type requirements. It currently has type '%s'."
 ifExpressionTuple,"The 'if' expression needs to return a tuple of length %d of type\n    %s    \nto satisfy context type requirements. It currently returns a tuple of length %d of type\n    %s    \n"
