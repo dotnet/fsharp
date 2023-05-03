@@ -78,7 +78,7 @@ type public PreXmlDoc =
     member ToXmlDoc: check: bool * paramNamesOpt: string list option -> XmlDoc
 
     /// Get the overall range of the PreXmlDoc
-    member internal Range: Range
+    member Range: Range
 
     /// Indicates if the PreXmlDoc is non-empty
     member IsEmpty: bool
