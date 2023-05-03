@@ -4516,7 +4516,8 @@ type FsiEvaluationSession
 
     do updateBannerText () // setting the correct banner so that 'fsi -?' display the right thing
 
-    let fsiOptions = FsiCommandLineOptions(fsi, argv, tcConfigB, fsiConsoleOutput)
+    let fsiOptions =
+        FsiCommandLineOptions(fsi, argv, tcConfigB, fsiConsoleOutput)
 
     do
         match fsiOptions.WriteReferencesAndExit with
@@ -4623,7 +4624,7 @@ type FsiEvaluationSession
             resolveAssemblyRef
         )
 
-    let controlledExecution = ControlledExecution()
+    let controlledExecution = ControlledExecution(fsiOptions.Interact)
 
     let fsiInterruptController =
         FsiInterruptController(fsiOptions, controlledExecution, fsiConsoleOutput)

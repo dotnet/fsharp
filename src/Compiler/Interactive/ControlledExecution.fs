@@ -16,7 +16,7 @@ open Internal.Utilities.FSharpEnvironment
 
 open Unchecked
 
-type internal ControlledExecution() =
+type internal ControlledExecution(isInteractive: bool) =
 
     let mutable cts: CancellationTokenSource voption = ValueNone
     let mutable thread: Thread voption = ValueNone
@@ -46,8 +46,8 @@ type internal ControlledExecution() =
         | _ -> None
 
     member _.Run(action: Action) =
-        match ceRun with
-        | Some run ->
+        match isInteractive, ceRun with
+        | true, Some run ->
             cts <- ValueSome(new CancellationTokenSource())
             run.Invoke(null, [| action; cts.Value.Token |]) |> ignore
         | _ ->
@@ -55,16 +55,14 @@ type internal ControlledExecution() =
             action.Invoke()
 
     member _.TryAbort() : unit =
-        match isRunningOnCoreClr, cts, thread with
-        | true, ValueSome cts, _ -> cts.Cancel()
-        | false, _, ValueSome thread ->
-            thread.Abort()
-            ()
+        match isInteractive, isRunningOnCoreClr, cts, thread with
+        | true, true, ValueSome cts, _ ->cts.Cancel()
+        | true, false, _, ValueSome thread -> thread.Abort()
         | _ -> ()
 
     member _.ResetAbort() =
-        match thread, threadResetAbort with
-        | thread, Some threadResetAbort -> threadResetAbort.Invoke(thread, [||]) |> ignore
+        match isInteractive, thread, threadResetAbort with
+        | true, thread, Some threadResetAbort -> threadResetAbort.Invoke(thread, [||]) |> ignore
         | _ -> ()
 
     static member StripTargetInvocationException(exn: Exception) =
