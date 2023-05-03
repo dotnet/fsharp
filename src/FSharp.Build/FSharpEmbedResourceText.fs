@@ -543,13 +543,18 @@ open Printf
                         (actualArgs.ToString())
 
                     let signatureMember =
+                        let returnType =
+                            match optErrNum with
+                            | None -> "string"
+                            | Some _ -> "int * string"
+
                         if Array.isEmpty holes then
-                            sprintf "    static member %s: unit -> string" ident
+                            sprintf "    static member %s: unit -> %s" ident returnType
                         else
                             holes
                             |> Array.mapi (fun idx holeType -> sprintf "a%i: %s" idx holeType)
                             |> String.concat " * "
-                            |> sprintf "    static member %s: %s -> string" ident
+                            |> fun parameters -> sprintf "    static member %s: %s -> %s" ident parameters returnType
 
                     fprintfn outSignature "%s" signatureMember
                 )
@@ -560,6 +565,7 @@ open Printf
                 fprintfn out "    /// Call this method once to validate that all known resources are valid; throws if not"
 
                 fprintfn out "    static member RunStartupValidation() ="
+                fprintfn outSignature "    static member RunStartupValidation: unit -> unit"
 
                 stringInfos
                 |> Seq.iter (fun (lineNum, (optErrNum, ident), str, holes, netFormatString) ->
