@@ -541,10 +541,12 @@ open Printf
                         (actualArgs.ToString())
                 
                     let signatureMember =
+                        let arrow = if Array.isEmpty holes then System.String.Empty else  " -> "
+                        
                         holes
                         |> Array.mapi (fun idx holeType -> sprintf "a%i: %s" idx holeType)
                         |> String.concat " -> "
-                        |> sprintf "    static member %s: %s -> string" ident
+                        |> sprintf "    static member %s: %s%sstring" ident arrow
 
                     fprintfn outSignature "%s" signatureMember
                 )
