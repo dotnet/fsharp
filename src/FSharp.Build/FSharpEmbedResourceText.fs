@@ -556,8 +556,7 @@ open Printf
                             |> String.concat " * "
                             |> fun parameters -> sprintf "    static member %s: %s -> %s" ident parameters returnType
 
-                    fprintfn outSignature "%s" signatureMember
-                )
+                    fprintfn outSignature "%s" signatureMember)
 
                 printMessage "Generating .resx for %s" outFileName
                 fprintfn out ""
@@ -626,7 +625,7 @@ open Printf
                             item.SetMetadata("DesignTime", "true")
                             item.SetMetadata("DependentUpon", resx)
                             item :> ITaskItem
-                        
+
                         let sourceItem =
                             let item = TaskItem(source)
                             item.SetMetadata("AutoGen", "true")
