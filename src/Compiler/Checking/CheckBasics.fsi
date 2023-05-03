@@ -304,7 +304,7 @@ type TcFileState =
             -> TcEnv
             -> OverallTy
             -> UnscopedTyparEnv
-            -> bool * SynExpr
+            -> CollectionType * SynExpr
             -> range
             -> Expr * UnscopedTyparEnv
 

@@ -633,7 +633,7 @@ let OutputTypesNotInEqualityRelationContextInfo contextInfo ty1 ty2 m (os: Strin
             os.AppendString(FSComp.SR.arrayElementHasWrongType (ty1, ty2))
         | CollectionType.List ->
             os.AppendString(FSComp.SR.listElementHasWrongType (ty1, ty2))
-        | CollectionType.Block ->
+        | CollectionType.ImmutableArray ->
             os.AppendString(FSComp.SR.blockElementHasWrongType (ty1, ty2))
     | ContextInfo.OmittedElseBranch range when equals range m -> os.AppendString(FSComp.SR.missingElseBranch (ty2))
     | ContextInfo.ElseBranchResult range when equals range m -> os.AppendString(FSComp.SR.elseBranchHasWrongType (ty1, ty2))
@@ -752,7 +752,7 @@ type Exception with
                         os.AppendString(FSComp.SR.arrayElementHasWrongTypeTuple messageArgs)
                     | CollectionType.List ->
                         os.AppendString(FSComp.SR.listElementHasWrongTypeTuple messageArgs)
-                    | CollectionType.Block ->
+                    | CollectionType.ImmutableArray ->
                         os.AppendString(FSComp.SR.blockElementHasWrongTypeTuple messageArgs)
                 | _ -> os.AppendString(ErrorFromAddingTypeEquationTuplesE().Format tl1.Length ty1 tl2.Length ty2 tpcs)
 

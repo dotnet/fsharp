@@ -6,6 +6,7 @@ open System
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Xml
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTrivia
 
 /// Represents an identifier in F# code

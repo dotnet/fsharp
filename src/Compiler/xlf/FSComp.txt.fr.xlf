@@ -7,6 +7,11 @@
         <target state="translated">Tous les éléments d’un tableau doivent être implicitement convertibles en type du premier élément, qui est ici un tuple de longueur {0} de type\n    {1}    \nCet élément est un tuple de longueur {2} de type\n    {3}    \n</target>
         <note />
       </trans-unit>
+      <trans-unit id="blockElementHasWrongTypeTuple">
+        <source>All elements of a block must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</source>
+        <target state="new">All elements of a block must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</target>
+        <note />
+      </trans-unit>
       <trans-unit id="buildDuplicateFile">
         <source>The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</source>
         <target state="translated">Le fichier source « {0} » (à la position {1}/{2}) apparaît déjà dans la liste de compilation (à la position {3}/{4}). Vérifiez qu’il n’est inclus qu’une seule fois dans le fichier projet.</target>

@@ -438,14 +438,14 @@ and TcPatTuple warnOnUpper cenv env vFlags patEnv ty isExplicitStruct args m =
 and TcPatArrayOrList warnOnUpper cenv env vFlags patEnv ty cType args m =
     let g = cenv.g
     let argTy = NewInferenceType g
-    UnifyTypes cenv env m ty (match cType with | CollectionType.Array -> mkArrayType g argTy | CollectionType.List -> mkListTy g argTy | CollectionType.Block -> mkBlockTy g argTy)
+    UnifyTypes cenv env m ty (match cType with | CollectionType.Array -> mkArrayType g argTy | CollectionType.List -> mkListTy g argTy | CollectionType.ImmutableArray -> mkBlockType g argTy)
     let argsR, acc = TcPatterns warnOnUpper cenv env vFlags patEnv (List.map (fun _ -> argTy) args) args
     let phase2 values =
         let argsR = List.map (fun f -> f values) argsR
         match cType with
         | CollectionType.Array -> TPat_array(argsR, argTy, m)
         | CollectionType.List -> List.foldBack (mkConsListPat g argTy) argsR (mkNilListPat g m argTy)
-        | ColectionType.Block -> TPat_block(argsR, argTy, m)
+        | CollectionType.ImmutableArray -> TPat_block(argsR, argTy, m)
     phase2, acc
 
 and TcRecordPat warnOnUpper cenv env vFlags patEnv ty fieldPats m =
