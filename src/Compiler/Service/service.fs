@@ -580,8 +580,8 @@ type BackgroundCompiler
             match cachedResultsOpt with
             | Some cachedResults ->
                 match! cachedResults.GetOrComputeValue() with
-                | parseResults, checkResults, _, timeStamp when
-                    (builder.GetCheckResultsBeforeFileInProjectEvenIfStale fileName).TimeStamp = timeStamp
+                | parseResults, checkResults, _, priorTimeStamp when
+                    (builder.GetCheckResultsBeforeFileInProjectEvenIfStale fileName).TimeStamp = priorTimeStamp
                     ->
                     return Some(parseResults, checkResults)
                 | _ ->
