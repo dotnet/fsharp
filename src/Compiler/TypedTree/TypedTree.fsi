@@ -3580,6 +3580,9 @@ type TOp =
     /// An operation representing the creation of an array value
     | Array
 
+    /// An operation representing the creation of a block value
+    | Block
+
     /// Constant byte arrays (used for parser tables type other embedded data)
     | Bytes of byte[]
 
