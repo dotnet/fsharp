@@ -111,7 +111,8 @@ module IncrementalBuildSyntaxTree =
             tcConfig: TcConfig,
             fileParsed: Event<string>,
             lexResourceManager,
-            file: FSharpFile
+            file: FSharpFile,
+            timeStamp: DateTime
         ) =
 
         let source = file.Source
@@ -170,14 +171,16 @@ module IncrementalBuildSyntaxTree =
         /// Parse the source and cache the result in a GraphNode.
         member val ParseNode : GraphNode<ParseResult> = parse source |> GraphNode
 
-        member _.Invalidate() =
-            SyntaxTree(tcConfig, fileParsed, lexResourceManager, file)
+        member _.Invalidate(timeStamp) =
+            SyntaxTree(tcConfig, fileParsed, lexResourceManager, file, timeStamp)
 
         member _.Skip = skippedImplFilePlaceholder
 
         member _.FileName = file.Name
 
         member _.HasSignature = file.HasSignature
+
+        member _.TimeStamp = timeStamp
 
 /// Accumulated results of type checking. The minimum amount of state in order to continue type-checking following files.
 [<NoEquality; NoComparison>]
@@ -242,7 +245,7 @@ type internal PartialCheckResults(
     ) =
     member _.TcInfo = tcInfo
 
-    /// Either the timestamp of source file or the most recent of dependencies
+    /// Max timestamp of the inputs so far.
     member _.TimeStamp = timeStamp
 
     member _.TcConfig = tcConfig
@@ -418,12 +421,14 @@ type PartialCheckResultsBuilder(
         getTcInfoExtras (GraphNode.FromResult defaultTypeCheck)
 
     /// Return PartialCheckResults for next file in compilation order.
-    member _.Next(prevCheckResults: PartialCheckResults, syntaxTree: SyntaxTree, sourceTimeStamp) =
+    member _.Next(priorCheckresults: PartialCheckResults, syntaxTree: SyntaxTree) =
 
         // Pass on dependecies time stamp if newer.
-        let timeStamp = max sourceTimeStamp prevCheckResults.TimeStamp
+        // Implementation files with backing signatures do not contribute to the partial check timestamp.
+        let timeStamp =
+            if syntaxTree.HasSignature then priorCheckresults.TimeStamp else max syntaxTree.TimeStamp priorCheckresults.TimeStamp
 
-        let prevTcInfo = prevCheckResults.TcInfo
+        let prevTcInfo = priorCheckresults.TcInfo
 
         let typeCheckNode = getTypeCheck prevTcInfo syntaxTree |> GraphNode
 
@@ -796,24 +801,22 @@ type IncrementalBuilderInitialState =
 #endif
         initialState
 
-// Stamp represent the real stamp of the file.
-// Notified indicates that there is pending file change.
-type Slot =
+type BoundModel =
     {
         Stamp: DateTime
         SyntaxTree: SyntaxTree
-        Notified: bool
         PartialCheckResults: PartialCheckResults
     }
     member this.FileName = this.SyntaxTree.FileName
     member this.HasSignature = this.SyntaxTree.HasSignature
     member this.Notify timeStamp =
-        if this.Stamp <> timeStamp then { this with Stamp = timeStamp; Notified = true; SyntaxTree = this.SyntaxTree.Invalidate() } else this
+        if this.Stamp <> timeStamp then { this with Stamp = timeStamp } else this
+    member this.Notified = this.Stamp <> this.SyntaxTree.TimeStamp
 
 [<NoComparison;NoEquality>]
 type IncrementalBuilderState =
     {
-        slots: Slot list
+        boundModels: BoundModel list
         stampedReferencedAssemblies: DateTime list
         initialCheckResults: PartialCheckResults
         partialCheckResultsBuilder: PartialCheckResultsBuilder
@@ -839,46 +842,35 @@ module IncrementalBuilderStateHelpers =
                     partialCheckResults
         })
 
-    let checkResultsForFile (builder: PartialCheckResultsBuilder) timeStamp prevCheckResults syntaxTree =
-        builder.Next(prevCheckResults, syntaxTree, timeStamp)
+    let checkResultsForFile (builder: PartialCheckResultsBuilder) prevCheckResults syntaxTree =
+        builder.Next(prevCheckResults, syntaxTree)
 
     let computeStampedFileNames (initialState: IncrementalBuilderInitialState) (state: IncrementalBuilderState) =
-        let mapping (status, prevCheckResults) slot =
-            let update newStatus =
-                let partialCheckResults = checkResultsForFile state.partialCheckResultsBuilder slot.Stamp prevCheckResults slot.SyntaxTree
-                let slot = 
-                    { slot with
-                        Notified = false
-                        PartialCheckResults = partialCheckResults }
+        let folder (priorCheckResults: PartialCheckResults) (bm: BoundModel) =
+            let syntaxTree = if bm.Notified then bm.SyntaxTree.Invalidate(bm.Stamp) else bm.SyntaxTree
+            let partialCheckResults =
+                if bm.Notified || priorCheckResults.TimeStamp > bm.PartialCheckResults.TimeStamp then
+                    checkResultsForFile state.partialCheckResultsBuilder priorCheckResults syntaxTree
+                else
+                    bm.PartialCheckResults
+            let updated = 
+                { bm with
+                    SyntaxTree = syntaxTree
+                    PartialCheckResults = partialCheckResults }
 
-                slot, (newStatus, partialCheckResults)
+            updated, partialCheckResults
 
-            let noChange = slot, (Good, slot.PartialCheckResults)
-
-            match status with
-            // Modifying implementation file that has signature file does not invalidate the build.
-            // So we just pass along previous status.
-            | status when slot.Notified && slot.HasSignature -> update status
-            | Invalidated -> update Invalidated
-            | Good when slot.Notified -> update Invalidated
-            | _ -> noChange
-
-        let graphNeedsUpdate = state.slots |> List.exists (fun s -> s.Notified)
-
-        if graphNeedsUpdate then
-            let slots, _ = state.slots |> List.mapFold mapping (Good, state.initialCheckResults)
-            let partialCheckResults = slots |> Seq.map (fun s -> s.PartialCheckResults)
-            { state with
-                slots = slots
-                finalizedCheckResults = createFinalizeCheckResultsGraphNode initialState partialCheckResults }
-        else
-            state
+        let slots, _ = state.boundModels |> List.mapFold folder state.initialCheckResults
+        let partialCheckResults = slots |> Seq.map (fun s -> s.PartialCheckResults)
+        { state with
+            boundModels = slots
+            finalizedCheckResults = createFinalizeCheckResultsGraphNode initialState partialCheckResults }
 
     let computeStampedReferencedAssemblies referencedAssemblies (cache: TimeStampCache) =
         [ for asmInfo in referencedAssemblies -> StampReferencedAssemblyTask cache asmInfo ]
 
     let checkFileStamps (state: IncrementalBuilderState) (cache: TimeStampCache) =
-        { state with slots = [ for slot in state.slots -> cache.GetFileTimeStamp slot.FileName |> slot.Notify ] }
+        { state with boundModels = [ for slot in state.boundModels -> cache.GetFileTimeStamp slot.FileName |> slot.Notify ] }
 
 type IncrementalBuilderState with
 
@@ -891,12 +883,12 @@ type IncrementalBuilderState with
         let syntaxTrees =
             [
                 for sourceFile in initialState.fileNames ->
-                    SyntaxTree(initialState.tcConfig, initialState.fileParsed, initialState.lexResourceManager, sourceFile)
+                    SyntaxTree(initialState.tcConfig, initialState.fileParsed, initialState.lexResourceManager, sourceFile, DateTime.MinValue)
             ]
 
         let partialCheckResults = 
             syntaxTrees
-            |> Seq.scan (checkResultsForFile partialCheckResultsBuilder DateTime.MinValue) initialCheckResults
+            |> Seq.scan (checkResultsForFile partialCheckResultsBuilder) initialCheckResults
             |> Seq.skip 1
 
         let slots =
@@ -904,7 +896,6 @@ type IncrementalBuilderState with
                 for results, syntaxTree in Seq.zip partialCheckResults syntaxTrees do
                     {
                         Stamp = DateTime.MinValue
-                        Notified = false
                         SyntaxTree = syntaxTree
                         PartialCheckResults = results
                     }
@@ -914,7 +905,7 @@ type IncrementalBuilderState with
 
         let state =
             {
-                slots = slots
+                boundModels = slots
                 stampedReferencedAssemblies = stampedReferencedAssemblies
                 partialCheckResultsBuilder = partialCheckResultsBuilder
                 initialCheckResults = initialCheckResults
@@ -942,7 +933,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         if slot = -1 then
             state.initialCheckResults
         else
-            state.slots[slot].PartialCheckResults
+            state.boundModels[slot].PartialCheckResults
 
     let getBeforeSlot (state: IncrementalBuilderState) slot =
         getSlot state (slot - 1)
@@ -1056,7 +1047,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
     member _.GetLogicalTimeStampForProject(cache) =
         checkFileTimeStampsIfNotUsingNotifications cache
-        let slot = currentState.slots |> List.last
+        let slot = currentState.boundModels |> List.last
         slot.PartialCheckResults.TimeStamp
 
     member _.TryGetSlotOfFileName(fileName: string) =
@@ -1082,7 +1073,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
     member builder.GetParseResultsForFile fileName =
         let slotOfFile = builder.GetSlotOfFileName fileName
-        let syntaxTree = currentState.slots[slotOfFile].SyntaxTree
+        let syntaxTree = currentState.boundModels[slotOfFile].SyntaxTree
         syntaxTree.ParseNode.GetOrComputeValue()
         |> Async.AwaitNodeCode
         |> Async.RunSynchronously
@@ -1091,7 +1082,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         let slotOfFile = builder.GetSlotOfFileName fileName        
         setCurrentState
             { currentState with 
-                slots = currentState.slots |> List.updateAt slotOfFile (currentState.slots[slotOfFile].Notify timeStamp) }
+                boundModels = currentState.boundModels |> List.updateAt slotOfFile (currentState.boundModels[slotOfFile].Notify timeStamp) }
 
     member _.SourceFiles = fileNames |> Seq.map (fun f -> f.Name) |> List.ofSeq
 
