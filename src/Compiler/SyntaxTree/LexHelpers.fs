@@ -205,6 +205,10 @@ type LexerStringFinisher =
 
                 STRING(stringBufferAsString buf, synStringKind, cont))
 
+type LexerStringArgs = ByteBuffer * LexerStringFinisher * range * LexerStringKind * LexArgs
+type SingleLineCommentArgs = (range * StringBuilder) option * int * range * range * LexArgs
+type BlockCommentArgs = int * range * LexArgs
+
 let addUnicodeString (buf: ByteBuffer) (x: string) =
     buf.EmitBytes(Encoding.Unicode.GetBytes x)
 
@@ -480,3 +484,7 @@ module Keywords =
             | "__SOURCE_FILE__" -> KEYWORD_STRING(s, System.IO.Path.GetFileName(FileIndex.fileOfFileIndex lexbuf.StartPos.FileIndex))
             | "__LINE__" -> KEYWORD_STRING(s, string lexbuf.StartPos.Line)
             | _ -> IdentifierToken args lexbuf s
+
+/// Arbitrary value
+[<Literal>]
+let StringCapacity = 100
