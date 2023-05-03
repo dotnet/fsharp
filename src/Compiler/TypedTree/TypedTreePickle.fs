@@ -1794,6 +1794,42 @@ let u_istype st =
 
 let u_cpath  st = let a, b = u_tup2 u_ILScopeRef (u_list (u_tup2 u_string u_istype)) st in (CompPath(a, b))
 
+type private TOpEnum =
+    | UnionCase = 0
+    | ExnConstr = 1
+    | RefTuple = 2
+    | Recd = 3
+    | ValFieldSet = 4
+    | ValFieldGet = 5
+    | UnionCaseTagGet = 6
+    | UnionCaseFieldGet = 7
+    | UnionCaseFieldSet = 8
+    | ExnFieldGet = 9
+    | ExnFieldSet =10
+    | RefTupleFieldGet = 11
+    | ILAsm = 12
+    | RefAddrGet = 13
+    | UnionCaseProof = 14
+    | Coerce = 15
+    | TraitCall = 16
+    | LValueOp = 17
+    | ILCall = 18
+    | Array = 19
+    | While = 20
+    | IntegerForLoop = 21
+    | Bytes = 22
+    | TryWith = 23
+    | TryFinally = 24
+    | ValFieldGetAddr = 25
+    | UInt16s = 26
+    | Reraise = 27
+    | UnionCaseFieldGetAddr = 28
+    | StructTuple = 29
+    | StructTupleFieldGet = 30
+    | AnonRecd = 31
+    | AnonRecdGet = 32
+    | Block = 33
+
 let rec p_tycon_repr x st =
     // The leading "p_byte 1" and "p_byte 0" come from the F# 2.0 format, which used an option value at this point.
     match x with
