@@ -541,10 +541,10 @@ open Printf
                         ident
                         justPercentsFromFormatString
                         (actualArgs.ToString())
-                
+
                     let signatureMember =
                         if Array.isEmpty holes then
-                            "unit -> string"
+                            sprintf "    static member %s: unit -> string" ident
                         else
                             holes
                             |> Array.mapi (fun idx holeType -> sprintf "a%i: %s" idx holeType)
