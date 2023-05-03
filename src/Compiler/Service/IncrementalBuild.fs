@@ -262,7 +262,7 @@ type BoundModel private (
             use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.TypeCheck)
 
             beforeFileChecked.Trigger fileName
-
+                    
             ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, Path.GetDirectoryName fileName, tcImports.DependencyProvider) |> ignore
             let sink = TcResultsSinkImpl(tcGlobals)
             let hadParseErrors = not (Array.isEmpty parseErrors)
@@ -328,7 +328,7 @@ type BoundModel private (
 
     let getTcInfoExtras (typeCheck: GraphNode<TypeCheck>) =
         node {
-            let! _x , sink, implFile, fileName = typeCheck.GetOrComputeValue()
+            let! _ , sink, implFile, fileName = typeCheck.GetOrComputeValue()
             // Build symbol keys
             let itemKeyStore, semanticClassification =
                 if enableBackgroundItemKeyStoreAndSemanticClassification then
