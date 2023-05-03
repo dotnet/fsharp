@@ -230,6 +230,7 @@ module ValueOption =
         | ValueSome x -> Some x
         | _ -> None
 
+/// Represents the interim state of checking an assembly
 [<Sealed>]
 type internal PartialCheckResults(
         tcInfo: GraphNode<TcInfo>,
