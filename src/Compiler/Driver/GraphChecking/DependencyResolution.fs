@@ -158,7 +158,7 @@ let collectGhostDependencies (fileIndex: FileIndex) (trie: TrieNode) (queryTrie:
                         // We pick the lowest file index from the namespace to satisfy the type-checker for the open statement.
                         connectedFileIdx < fileIndex))
 
-let mkGraph (compilingFSharpCore: bool) (filePairs: FilePairMap) (files: FileInProject array) : Graph<FileIndex> =
+let mkGraph (compilingFSharpCore: bool) (filePairs: FilePairMap) (files: FileInProject array) : Graph<FileIndex> * TrieNode =
     // We know that implementation files backed by signatures cannot be depended upon.
     // Do not include them when building the Trie.
     let trieInput =
@@ -238,6 +238,9 @@ let mkGraph (compilingFSharpCore: bool) (filePairs: FilePairMap) (files: FileInP
 
             allDependencies
 
-    files
-    |> Array.Parallel.map (fun file -> file.Idx, findDependencies file)
-    |> readOnlyDict
+    let graph =
+        files
+        |> Array.Parallel.map (fun file -> file.Idx, findDependencies file)
+        |> readOnlyDict
+
+    graph, trie
