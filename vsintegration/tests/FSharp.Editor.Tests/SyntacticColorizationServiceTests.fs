@@ -12,7 +12,14 @@ open FSharp.Test
 
 type SyntacticClassificationServiceTests() =
 
-    member private this.ExtractMarkerData(fileContents: string, marker: string, defines: string list, isScriptFile: Option<bool>) =
+    member private this.ExtractMarkerData
+        (
+            fileContents: string,
+            marker: string,
+            defines: string list,
+            langVersion: string option,
+            isScriptFile: Option<bool>
+        ) =
         let textSpan = TextSpan(0, fileContents.Length)
 
         let fileName =
@@ -30,6 +37,7 @@ type SyntacticClassificationServiceTests() =
                 textSpan,
                 Some(fileName),
                 defines,
+                langVersion,
                 CancellationToken.None
             )
 
@@ -43,10 +51,13 @@ type SyntacticClassificationServiceTests() =
             marker: string,
             defines: string list,
             classificationType: string,
-            ?isScriptFile: bool
+            ?isScriptFile: bool,
+            ?langVersion: string
         ) =
+        let langVersion = langVersion |> Option.orElse (Some "preview")
+
         let (tokens, markerPosition) =
-            this.ExtractMarkerData(fileContents, marker, defines, isScriptFile)
+            this.ExtractMarkerData(fileContents, marker, defines, langVersion, isScriptFile)
 
         match tokens |> Seq.tryFind (fun token -> token.TextSpan.Contains(markerPosition)) with
         | None -> failwith "Cannot find colorization data for start of marker"
@@ -60,10 +71,13 @@ type SyntacticClassificationServiceTests() =
             marker: string,
             defines: string list,
             classificationType: string,
-            ?isScriptFile: bool
+            ?isScriptFile: bool,
+            ?langVersion: string
         ) =
+        let langVersion = langVersion |> Option.orElse (Some "preview")
+
         let (tokens, markerPosition) =
-            this.ExtractMarkerData(fileContents, marker, defines, isScriptFile)
+            this.ExtractMarkerData(fileContents, marker, defines, langVersion, isScriptFile)
 
         match
             tokens
@@ -1202,4 +1216,71 @@ type SyntacticClassificationServiceTests() =
             marker = "(*Bob*)typ",
             defines = [],
             classificationType = ClassificationTypeNames.Keyword
+        )
+
+    [<Fact>]
+    member public this.InterpolatedString_1Dollar() =
+        this.VerifyColorizerAtEndOfMarker(
+            fileContents = "$\"\"\"{{41+1}} = {42}\"\"\"",
+            marker = "42",
+            defines = [],
+            classificationType = ClassificationTypeNames.NumericLiteral
+        )
+
+        this.VerifyColorizerAtEndOfMarker(
+            fileContents = "$\"\"\"{{41+1}} = {42}\"\"\"",
+            marker = "41+1",
+            defines = [],
+            classificationType = ClassificationTypeNames.StringLiteral
+        )
+
+    [<Fact>]
+    member public this.InterpolatedString_2Dollars() =
+        this.VerifyColorizerAtEndOfMarker(
+            fileContents = "$$\"\"\"{{41+1}} = {42}\"\"\"",
+            marker = "42",
+            defines = [],
+            classificationType = ClassificationTypeNames.StringLiteral
+        )
+
+        this.VerifyColorizerAtEndOfMarker(
+            fileContents = "$$\"\"\"{{41+1}} = {42}\"\"\"",
+            marker = "41+1",
+            defines = [],
+            classificationType = ClassificationTypeNames.NumericLiteral
+        )
+
+    [<Fact>]
+    member public this.InterpolatedString_6Dollars() =
+        this.VerifyColorizerAtEndOfMarker(
+            fileContents = "$$$$$$\"\"\"{{41+1}} = {42} = {{{{{{40+2}}}}}}\"\"\"",
+            marker = "42",
+            defines = [],
+            classificationType = ClassificationTypeNames.StringLiteral
+        )
+
+        this.VerifyColorizerAtEndOfMarker(
+            fileContents = "$$$$$$\"\"\"{{41+1}} = {42} = {{{{{{40+2}}}}}}\"\"\"",
+            marker = "41+1",
+            defines = [],
+            classificationType = ClassificationTypeNames.StringLiteral
+        )
+
+        this.VerifyColorizerAtEndOfMarker(
+            fileContents = "$$$$$$\"\"\"{{41+1}} = {42} = {{{{{{40+2}}}}}}\"\"\"",
+            marker = "40+2",
+            defines = [],
+            classificationType = ClassificationTypeNames.NumericLiteral
+        )
+
+    [<Theory>]
+    [<InlineData("10+1", ClassificationTypeNames.NumericLiteral)>]
+    [<InlineData("20+2", ClassificationTypeNames.StringLiteral)>]
+    [<InlineData("30+3", ClassificationTypeNames.NumericLiteral)>]
+    member public this.InterpolatedString_1DollarNestedIn2Dollars(marker: string, classificationType: string) =
+        this.VerifyColorizerAtEndOfMarker(
+            fileContents = "$$\"\"\"{{ $\"{10+1}\" }} {20+2} {{30+3}}\"\"\"",
+            marker = marker,
+            defines = [],
+            classificationType = classificationType
         )

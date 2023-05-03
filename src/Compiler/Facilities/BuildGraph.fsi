@@ -70,6 +70,8 @@ type NodeCode =
 
     static member Parallel: computations: (NodeCode<'T> seq) -> NodeCode<'T[]>
 
+    static member AwaitAsync: computation: Async<'T> -> NodeCode<'T>
+
     static member AwaitTask: task: Task<'T> -> NodeCode<'T>
 
     static member AwaitTask: task: Task -> NodeCode<unit>

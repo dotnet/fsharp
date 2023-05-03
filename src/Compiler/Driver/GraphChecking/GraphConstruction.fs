@@ -26,7 +26,8 @@ let constructGraphs (tcConfig: TcConfig option) (sourceFiles: FileInProject arra
         |> Option.map (fun c -> c.compilingFSharpCore)
         |> Option.defaultValue false
 
-    let graph = DependencyResolution.mkGraph compilingFSharpCore filePairs sourceFiles
+    let graph, trie =
+        DependencyResolution.mkGraph compilingFSharpCore filePairs sourceFiles
 
     let nodeGraph =
         let mkArtificialImplFile n = NodeToTypeCheck.ArtificialImplFile n
@@ -73,6 +74,9 @@ let constructGraphs (tcConfig: TcConfig option) (sourceFiles: FileInProject arra
             |> Option.iter (fun outputFile ->
                 let outputFile = FileSystem.GetFullPathShim(outputFile)
                 let graphFile = FileSystem.ChangeExtensionShim(outputFile, ".graph.md")
+
+                let trieFile = FileSystem.ChangeExtensionShim(outputFile, ".trie.md")
+                TrieMapping.serializeToMermaid trieFile sourceFiles trie
 
                 graph
                 |> Graph.map (fun idx ->

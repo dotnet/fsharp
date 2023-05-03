@@ -24,7 +24,7 @@ let bar a b = a - b
 open A
 bar 1 1
 """             |]
-        let documentSource fileName = Map.tryFind fileName files
+        let documentSource fileName = Map.tryFind fileName files |> async.Return
         let projectOptions =
             let _, projectOptions = mkTestFileAndOptions "" Array.empty
             { projectOptions with SourceFiles = [| "A.fs"; "B.fs" |] }
