@@ -556,7 +556,6 @@ module IncrementalBuilderHelpers =
     // Link all the assemblies together and produce the input typecheck accumulator
     let CombineImportedAssembliesTask (
         tcConfig: TcConfig, 
-        tcConfigP, 
         frameworkTcImports, 
         nonFrameworkResolutions, 
         unresolvedReferences, 
@@ -573,7 +572,7 @@ module IncrementalBuilderHelpers =
         let! tcImports =
           node {
             try
-                let! tcImports = TcImports.BuildNonFrameworkTcImports(tcConfigP, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences, dependencyProvider)
+                let! tcImports = TcImports.BuildNonFrameworkTcImports(TcConfigProvider.Constant tcConfig, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences, dependencyProvider)
 #if !NO_TYPEPROVIDERS
                 tcImports.GetCcusExcludingBase() |> Seq.iter (fun ccu ->
                     // When a CCU reports an invalidation, merge them together and just report a
@@ -1265,7 +1264,6 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
             // Start importing
 
-            let tcConfigP = TcConfigProvider.Constant tcConfig
             let beforeFileChecked = Event<string>()
             let fileChecked = Event<string>()
 
@@ -1309,7 +1307,6 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             let! tcImports, diagnostics = 
                 CombineImportedAssembliesTask(
                     tcConfig,
-                    tcConfigP,
                     frameworkTcImports,
                     nonFrameworkResolutions,
                     unresolvedReferences,
