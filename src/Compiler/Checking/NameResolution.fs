@@ -539,16 +539,17 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap: Import.Impor
     if g.langVersion.SupportsFeature(LanguageFeature.CSharpExtensionAttributeNotRequired) then
         let ty = generalizedTyconRef g tcrefOfStaticClass
       
-        let minfos =
-            protectAssemblyExploration [] (fun () ->
+        let csharpStyleExtensionMembers = 
+            if IsTyconRefUsedForCSharpStyleExtensionMembers g m tcrefOfStaticClass || tcrefOfStaticClass.IsLocalRef then
                 GetImmediateIntrinsicMethInfosOfType (None, AccessorDomain.AccessibleFromSomeFSharpCode) g amap m ty
                 |> List.filter (IsMethInfoPlainCSharpStyleExtensionMember g m true)
-            )
+            else
+                []
 
-        if IsTyconRefUsedForCSharpStyleExtensionMembers g m tcrefOfStaticClass || not minfos.IsEmpty then
+        if not csharpStyleExtensionMembers.IsEmpty then
             let pri = NextExtensionMethodPriority()
 
-            [ for minfo in minfos do
+            [ for minfo in csharpStyleExtensionMembers do
                 let ilExtMem = ILExtMem (tcrefOfStaticClass, minfo, pri)
 
                 // The results are indexed by the TyconRef of the first 'this' argument, if any.
