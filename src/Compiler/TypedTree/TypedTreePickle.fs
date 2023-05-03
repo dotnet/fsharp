@@ -2417,7 +2417,7 @@ and p_op x st =
     | TOp.ValFieldGet a -> p TOpEnum.ValFieldGet; p_rfref a st
     | TOp.UnionCaseTagGet a -> p TOpEnum.UnionCaseTagGet; p_tcref "cnstr op" a st
     | TOp.UnionCaseFieldGet (a, b) -> p TOpEnum.UnionCaseFieldGet; p_tup2 p_ucref p_int (a, b) st
-    | TOp.UnionCaseFieldSet (a, b) ->p TOpEnum.UnionCaseFieldSet; p_tup2 p_ucref p_int (a, b) st
+    | TOp.UnionCaseFieldSet (a, b) -> p TOpEnum.UnionCaseFieldSet; p_tup2 p_ucref p_int (a, b) st
     | TOp.ExnFieldGet (a, b) -> p TOpEnum.ExnFieldGet; p_tup2 (p_tcref "exn op") p_int (a, b) st
     | TOp.ExnFieldSet (a, b) -> p TOpEnum.ExnFieldSet; p_tup2 (p_tcref "exn op")  p_int (a, b) st
     | TOp.TupleFieldGet (tupInfo, a) ->
