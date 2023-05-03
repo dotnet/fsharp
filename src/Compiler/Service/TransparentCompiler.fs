@@ -557,34 +557,6 @@ type internal TransparentCompiler
             return bootstrapInfoOpt, diagnostics
         }
 
-    let ComputeParseFile' (file: FSharpFile) (projectSnapshot: FSharpProjectSnapshot) bootstrapInfo userOpName _key =
-        node {
-
-            let parsingOptions =
-                FSharpParsingOptions.FromTcConfig(
-                    bootstrapInfo.TcConfig,
-                    projectSnapshot.SourceFiles |> Seq.map (fun f -> f.FileName) |> Array.ofSeq,
-                    projectSnapshot.UseScriptResolutionRules
-                )
-
-            // TODO: what is this?
-            // GraphNode.SetPreferredUILang tcPrior.TcConfig.preferredUiLang
-
-            let! sourceText = file.Source.GetSource() |> NodeCode.AwaitTask
-
-            let diagnostics, parsedInput, anyErrors =
-                ParseAndCheckFile.parseFile (
-                    sourceText,
-                    file.Source.FileName,
-                    parsingOptions,
-                    userOpName,
-                    suggestNamesForErrors,
-                    captureIdentifiersWhenParsing
-                )
-
-            return diagnostics, parsedInput, anyErrors, sourceText
-        }
-
     let ComputeParseFile (file: FSharpFile) bootstrapInfo _key =
         node {
             let tcConfig = bootstrapInfo.TcConfig
@@ -621,6 +593,7 @@ type internal TransparentCompiler
             // TODO: we will probably want to cache and re-use larger graphs if available
             let graph =
                 DependencyResolution.mkGraph tcConfig.compilingFSharpCore filePairs sourceFiles
+                |> fst
                 |> Graph.subGraphFor (sourceFiles |> Array.last).Idx
 
             return graph, filePairs
