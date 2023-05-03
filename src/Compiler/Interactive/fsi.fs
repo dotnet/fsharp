@@ -4516,8 +4516,7 @@ type FsiEvaluationSession
 
     do updateBannerText () // setting the correct banner so that 'fsi -?' display the right thing
 
-    let fsiOptions =
-        FsiCommandLineOptions(fsi, argv, tcConfigB, fsiConsoleOutput)
+    let fsiOptions = FsiCommandLineOptions(fsi, argv, tcConfigB, fsiConsoleOutput)
 
     do
         match fsiOptions.WriteReferencesAndExit with

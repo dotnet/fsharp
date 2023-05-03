@@ -56,7 +56,7 @@ type internal ControlledExecution(isInteractive: bool) =
 
     member _.TryAbort() : unit =
         match isInteractive, isRunningOnCoreClr, cts, thread with
-        | true, true, ValueSome cts, _ ->cts.Cancel()
+        | true, true, ValueSome cts, _ -> cts.Cancel()
         | true, false, _, ValueSome thread -> thread.Abort()
         | _ -> ()
 
