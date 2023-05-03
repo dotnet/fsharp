@@ -11259,16 +11259,15 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                         }
 
                     let layout =
+                        // Structs with no instance fields get size 1, pack 0
                         if isStructTy g thisTy then
                             if
-                                (match ilTypeDefKind with
-                                 | ILTypeDefKind.ValueType -> true
-                                 | _ -> false)
+                                (tycon.AllFieldsArray.Length = 0 || tycon.AllFieldsArray |> Array.exists (fun f -> not f.IsStatic))
+                                && (alternatives |> Array.collect (fun a -> a.FieldDefs) |> Array.exists (fun fd -> not fd.ILField.IsStatic))
                             then
-                                // Structs with no instance fields get size 1, pack 0
-                                ILTypeDefLayout.Sequential { Size = Some 1; Pack = Some 0us }
-                            else
                                 ILTypeDefLayout.Sequential { Size = None; Pack = None }
+                            else
+                                ILTypeDefLayout.Sequential { Size = Some 1; Pack = Some 0us }
                         else
                             ILTypeDefLayout.Auto
 
