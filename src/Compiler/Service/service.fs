@@ -731,7 +731,7 @@ type BackgroundCompiler
                 match cachedResults with
                 | Some (_, checkResults) -> return FSharpCheckFileAnswer.Succeeded checkResults
                 | _ ->
-                    let! tcPrior = builder.GetCheckResultsBeforeFileInProject fileName
+                    let tcPrior = builder.GetCheckResultsBeforeFileInProject fileName
                     let! tcInfo = tcPrior.GetOrComputeTcInfo()
                     return! bc.CheckOneFileImpl(parseResults, sourceText, fileName, options, fileVersion, builder, tcPrior, tcInfo, creationDiags)
         }
@@ -762,7 +762,7 @@ type BackgroundCompiler
                 match cachedResults with
                 | Some (parseResults, checkResults) -> return (parseResults, FSharpCheckFileAnswer.Succeeded checkResults)
                 | _ ->
-                    let! tcPrior = builder.GetCheckResultsBeforeFileInProject fileName
+                    let tcPrior = builder.GetCheckResultsBeforeFileInProject fileName
                     let! tcInfo = tcPrior.GetOrComputeTcInfo()
                     // Do the parsing.
                     let parsingOptions =

@@ -187,7 +187,7 @@ type internal IncrementalBuilder =
 
     /// Get the preceding typecheck state of a slot. Compute the entire type check of the project up
     /// to the necessary point if the result is not available. This may be a long-running operation.
-    member GetCheckResultsBeforeFileInProject: fileName: string -> NodeCode<PartialCheckResults>
+    member GetCheckResultsBeforeFileInProject: fileName: string -> PartialCheckResults
 
     /// Get the preceding typecheck state of a slot. Compute the entire type check of the project up
     /// to the necessary point if the result is not available. This may be a long-running operation.
@@ -196,7 +196,7 @@ type internal IncrementalBuilder =
 
     /// Get the typecheck state after checking a file. Compute the entire type check of the project up
     /// to the necessary point if the result is not available. This may be a long-running operation.
-    member GetCheckResultsAfterFileInProject: fileName: string -> NodeCode<PartialCheckResults>
+    member GetCheckResultsAfterFileInProject: fileName: string -> PartialCheckResults
 
     /// Get the typecheck state after checking a file. Compute the entire type check of the project up
     /// to the necessary point if the result is not available. This may be a long-running operation.
@@ -205,7 +205,7 @@ type internal IncrementalBuilder =
 
     /// Get the typecheck result after the end of the last file. The typecheck of the project is not 'completed'.
     /// This may be a long-running operation.
-    member GetCheckResultsAfterLastFileInProject: unit -> NodeCode<PartialCheckResults>
+    member GetCheckResultsAfterLastFileInProject: unit -> PartialCheckResults
 
     /// Get the final typecheck result. If 'generateTypedImplFiles' was set on Create then the CheckedAssemblyAfterOptimization will contain implementations.
     /// This may be a long-running operation.

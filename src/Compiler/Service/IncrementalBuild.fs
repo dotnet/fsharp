@@ -179,8 +179,6 @@ module IncrementalBuildSyntaxTree =
 
         member _.HasSignature = file.HasSignature
 
-        member _.TimeStamp = source.TimeStamp
-
 /// Accumulated results of type checking. The minimum amount of state in order to continue type-checking following files.
 [<NoEquality; NoComparison>]
 type TcInfo =
@@ -232,8 +230,6 @@ module ValueOption =
         | ValueSome x -> Some x
         | _ -> None
 
-type private TypeCheck = TcInfo * TcResultsSinkImpl * CheckedImplFile option * string
-
 [<Sealed>]
 type internal PartialCheckResults(
         tcInfo: GraphNode<TcInfo>,
@@ -245,6 +241,7 @@ type internal PartialCheckResults(
     ) =
     member _.TcInfo = tcInfo
 
+    /// Either the timestamp of source file or the most recent of dependencies
     member _.TimeStamp = timeStamp
 
     member _.TcConfig = tcConfig
@@ -285,6 +282,8 @@ type internal PartialCheckResults(
     member _.Finalize(finalTcInfo) =
         PartialCheckResults(GraphNode.FromResult finalTcInfo, tcInfoExtras, timeStamp, tcConfig, tcGlobals, tcImports)
 
+type private TypeCheck = TcInfo * TcResultsSinkImpl * CheckedImplFile option * string
+
 type PartialCheckResultsBuilder(
     tcImports: TcImports,
     tcConfig: TcConfig,
@@ -294,8 +293,8 @@ type PartialCheckResultsBuilder(
     keepAllBackgroundResolutions,
     keepAllBackgroundSymbolUses,
     beforeFileChecked: Event<string>,
-    fileChecked: Event<string>)
-    =
+    fileChecked: Event<string>
+    ) =
     let getTcInfoExtras (typeCheck: GraphNode<TypeCheck>) =
         node {
             let! _ , sink, implFile, fileName = typeCheck.GetOrComputeValue()
@@ -418,8 +417,10 @@ type PartialCheckResultsBuilder(
         getTcInfoExtras (GraphNode.FromResult defaultTypeCheck)
 
     /// Return PartialCheckResults for next file in compilation order.
-    member _.Next(prevCheckResults: PartialCheckResults, syntaxTree: SyntaxTree) =
-        let timeStamp = max syntaxTree.TimeStamp prevCheckResults.TimeStamp
+    member _.Next(prevCheckResults: PartialCheckResults, syntaxTree: SyntaxTree, sourceTimeStamp) =
+
+        // Pass on dependecies time stamp if newer.
+        let timeStamp = max sourceTimeStamp prevCheckResults.TimeStamp
 
         let prevTcInfo = prevCheckResults.TcInfo
 
@@ -838,13 +839,13 @@ module IncrementalBuilderStateHelpers =
                     partialCheckResults
         })
 
-    let checkResultsForFile (builder: PartialCheckResultsBuilder) prevCheckResults syntaxTree =
-        builder.Next(prevCheckResults, syntaxTree)
+    let checkResultsForFile (builder: PartialCheckResultsBuilder) timeStamp prevCheckResults syntaxTree =
+        builder.Next(prevCheckResults, syntaxTree, timeStamp)
 
     let computeStampedFileNames (initialState: IncrementalBuilderInitialState) (state: IncrementalBuilderState) =
         let mapping (status, prevCheckResults) slot =
             let update newStatus =
-                let partialCheckResults = checkResultsForFile state.partialCheckResultsBuilder prevCheckResults slot.SyntaxTree
+                let partialCheckResults = checkResultsForFile state.partialCheckResultsBuilder slot.Stamp prevCheckResults slot.SyntaxTree
                 let slot = 
                     { slot with
                         Notified = false
@@ -895,7 +896,7 @@ type IncrementalBuilderState with
 
         let partialCheckResults = 
             syntaxTrees
-            |> Seq.scan (checkResultsForFile partialCheckResultsBuilder) initialCheckResults
+            |> Seq.scan (checkResultsForFile partialCheckResultsBuilder DateTime.MinValue) initialCheckResults
             |> Seq.skip 1
 
         let slots =
@@ -1005,11 +1006,9 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         let slotOfFile = builder.GetSlotOfFileName fileName
         getBeforeSlot currentState slotOfFile
 
-    member builder.GetCheckResultsBeforeSlotInProject slotOfFile =
-      node {
+    member _.GetCheckResultsBeforeSlotInProject slotOfFile =
         updateFileTimeStampsIfNotUsingNotifications ()
-        return getBeforeSlot currentState slotOfFile
-      }
+        getBeforeSlot currentState slotOfFile
 
     member builder.GetFullCheckResultsBeforeSlotInProject slotOfFile =
       node {
@@ -1041,7 +1040,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
     member builder.GetCheckResultsAfterLastFileInProject () =
         builder.GetCheckResultsBeforeSlotInProject(builder.GetSlotsCount())
 
-    member builder.GetCheckResultsAndImplementationsForProject() =
+    member _.GetCheckResultsAndImplementationsForProject() =
         node {
             updateFileTimeStampsIfNotUsingNotifications ()
             return! currentState.finalizedCheckResults.GetOrComputeValue()
