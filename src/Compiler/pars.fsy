@@ -4679,14 +4679,14 @@ immarrayExpr:
       {  $2 (lhs parseState) }
 
   | LBRACK_COLON immarrayExprElements recover
-      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBracketBar()) // Don't know where this is, can't change to BracketColon
+      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBracketColon())
         exprFromParseError ($2 (rhs2 parseState 1 2)) }
 
   | LBRACK_COLON error COLON_RBRACK
       {  (* silent recovery *) SynExpr.ArrayOrList (CollectionType.ImmutableArray, [ ], lhs parseState) }
 
   | LBRACK_COLON recover
-      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBracketBar()) // Don't know where this is, can't change to BracketColon
+      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBracketColon())
         (* silent recovery *)
         exprFromParseError (SynExpr.ArrayOrList (CollectionType.ImmutableArray, [ ], rhs parseState 1)) }
 

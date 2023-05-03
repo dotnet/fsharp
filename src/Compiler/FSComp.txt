@@ -940,6 +940,7 @@ optsOptimizationData,"Specify included optimization information, the default is 
 1047,optsUnknownOptimizationData,"Invalid value '%s' for --optimizationdata, valid value are: none, file, compress."
 1051,optsInvalidSubSystemVersion,"Invalid version '%s' for '--subsystemversion'. The version must be 4.00 or greater."
 1052,optsInvalidTargetProfile,"Invalid value '%s' for '--targetprofile', valid values are 'mscorlib', 'netcore' or 'netstandard'."
+1053,parsUnmatchedBracketColon,"Unmatched '[|'"
 typeInfoFullName,"Full name"
 # typeInfoType,"type"
 # typeInfoInherits,"inherits"
