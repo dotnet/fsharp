@@ -7,6 +7,8 @@ open System.ComponentModel.Composition
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.InlineHints
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
+open Internal.Utilities.CancellableTasks
+open System.Threading.Tasks
 
 // So the Roslyn interface is called IFSharpInlineHintsService
 // but our implementation is called just HintsService.
@@ -20,21 +22,23 @@ type internal RoslynAdapter [<ImportingConstructor>] (settings: EditorOptions) =
 
     interface IFSharpInlineHintsService with
         member _.GetInlineHintsAsync(document, _, cancellationToken) =
-            async {
+            cancellableTask {
                 let hintKinds = OptionParser.getHintKinds settings.Advanced
 
                 if hintKinds.IsEmpty then
                     return ImmutableArray.Empty
                 else
+                    let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+
                     let hintKindsSerialized = hintKinds |> Set.map Hints.serialize |> String.concat ","
                     TelemetryReporter.reportEvent "hints" [ ("hints.kinds", hintKindsSerialized) ]
 
-                    let! sourceText = document.GetTextAsync cancellationToken |> Async.AwaitTask
+                    let! sourceText = document.GetTextAsync cancellationToken
                     let! nativeHints = HintService.getHintsForDocument sourceText document hintKinds userOpName cancellationToken
 
-                    let roslynHints =
-                        nativeHints |> Seq.map (NativeToRoslynHintConverter.convert sourceText)
+                    let tasks = nativeHints |> Seq.map (fun hint -> NativeToRoslynHintConverter.convert sourceText hint cancellationToken)
+
+                    let! roslynHints = Task.WhenAll(tasks)
 
                     return roslynHints.ToImmutableArray()
-            }
-            |> RoslynHelpers.StartAsyncAsTask cancellationToken
+            } |> CancellableTask.start cancellationToken

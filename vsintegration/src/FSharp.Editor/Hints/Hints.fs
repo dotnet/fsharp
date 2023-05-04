@@ -2,9 +2,9 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor.Hints
 
-open System.Threading
 open Microsoft.CodeAnalysis
 open FSharp.Compiler.Text
+open Internal.Utilities.CancellableTasks
 
 module Hints =
 
@@ -19,7 +19,7 @@ module Hints =
             Kind: HintKind
             Range: range
             Parts: TaggedText list
-            GetTooltip: Document -> Async<TaggedText list>
+            GetTooltip: Document -> CancellableTask<TaggedText list>
         }
 
     let serialize kind =

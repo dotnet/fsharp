@@ -24,6 +24,8 @@ open Microsoft.VisualStudio.Core.Imaging
 open Microsoft.VisualStudio.Imaging
 
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp
+open Internal.Utilities.CancellableTasks.CancellableTaskBuilder
+open Internal.Utilities.CancellableTasks
 
 type private FSharpGlyph = FSharp.Compiler.EditorServices.FSharpGlyph
 type private Glyph = Microsoft.CodeAnalysis.ExternalAccess.FSharp.FSharpGlyph
@@ -698,33 +700,33 @@ module internal Tokenizer =
             langVersion,
             cancellationToken: CancellationToken
         ) : ResizeArray<ClassifiedSpan> =
-        let result = new ResizeArray<ClassifiedSpan>()
+            let result = new ResizeArray<ClassifiedSpan>()
 
-        try
-            let sourceTokenizer = FSharpSourceTokenizer(defines, fileName, langVersion)
-            let lines = sourceText.Lines
-            let sourceTextData = getSourceTextData (documentKey, defines, lines.Count)
+            try
+                let sourceTokenizer = FSharpSourceTokenizer(defines, fileName, langVersion)
+                let lines = sourceText.Lines
+                let sourceTextData = getSourceTextData (documentKey, defines, lines.Count)
 
-            let startLine = lines.GetLineFromPosition(textSpan.Start).LineNumber
-            let endLine = lines.GetLineFromPosition(textSpan.End).LineNumber
+                let startLine = lines.GetLineFromPosition(textSpan.Start).LineNumber
+                let endLine = lines.GetLineFromPosition(textSpan.End).LineNumber
 
-            let lineDataResults =
-                getFromRefreshedTokenCache (lines, startLine, endLine, sourceTokenizer, sourceTextData, cancellationToken)
+                let lineDataResults =
+                    getFromRefreshedTokenCache (lines, startLine, endLine, sourceTokenizer, sourceTextData, cancellationToken)
 
-            for lineData, _ in lineDataResults do
-                result.AddRange(
-                    lineData.ClassifiedSpans
-                    |> Array.filter (fun token ->
-                        textSpan.Contains(token.TextSpan.Start)
-                        || textSpan.Contains(token.TextSpan.End - 1)
-                        || (token.TextSpan.Start <= textSpan.Start && textSpan.End <= token.TextSpan.End))
-                )
+                for lineData, _ in lineDataResults do
+                    result.AddRange(
+                        lineData.ClassifiedSpans
+                        |> Array.filter (fun token ->
+                            textSpan.Contains(token.TextSpan.Start)
+                            || textSpan.Contains(token.TextSpan.End - 1)
+                            || (token.TextSpan.Start <= textSpan.Start && textSpan.End <= token.TextSpan.End))
+                    )
 
-        with
-        | :? System.OperationCanceledException -> reraise ()
-        | ex -> Assert.Exception(ex)
+            with
+            | :? System.OperationCanceledException -> reraise ()
+            | ex -> Assert.Exception(ex)
 
-        result
+            result
 
     /// Returns symbol at a given position.
     let private getSymbolFromSavedTokens

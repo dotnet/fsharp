@@ -6,20 +6,18 @@ open System
 open System.Composition
 open System.Collections.Generic
 open System.Collections.Immutable
-open System.Diagnostics
 open System.Threading
 open System.Runtime.Caching
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Classification
-open Microsoft.CodeAnalysis.Editor
-open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Classification
 
-open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Tokenization
+open Internal.Utilities.CancellableTasks.CancellableTaskBuilder
+open Internal.Utilities.CancellableTasks
 
 // IEditorClassificationService is marked as Obsolete, but is still supported. The replacement (IClassificationService)
 // is internal to Microsoft.CodeAnalysis.Workspaces which we don't have internals visible to. Rather than add yet another
@@ -45,9 +43,9 @@ type DocumentCache<'Value when 'Value: not struct>() =
         CacheItemPolicy(SlidingExpiration = TimeSpan.FromSeconds slidingExpirationSeconds)
 
     member _.TryGetValueAsync(doc: Document) =
-        async {
-            let! ct = Async.CancellationToken
-            let! currentVersion = doc.GetTextVersionAsync ct |> Async.AwaitTask
+        cancellableTask {
+            let! ct = CancellableTask.getCurrentCancellationToken ()
+            let! currentVersion = doc.GetTextVersionAsync ct
 
             match cache.Get(doc.Id.ToString()) with
             | null -> return ValueNone
@@ -60,9 +58,9 @@ type DocumentCache<'Value when 'Value: not struct>() =
         }
 
     member _.SetAsync(doc: Document, value: 'Value) =
-        async {
-            let! ct = Async.CancellationToken
-            let! currentVersion = doc.GetTextVersionAsync ct |> Async.AwaitTask
+        cancellableTask {
+            let! ct = CancellableTask.getCurrentCancellationToken ()
+            let! currentVersion = doc.GetTextVersionAsync ct
             cache.Set(doc.Id.ToString(), (currentVersion, value), policy)
         }
 
@@ -73,43 +71,47 @@ type DocumentCache<'Value when 'Value: not struct>() =
 [<Export(typeof<IFSharpClassificationService>)>]
 type internal FSharpClassificationService [<ImportingConstructor>] () =
 
-    static let getLexicalClassifications (filePath: string, defines, text: SourceText, textSpan: TextSpan, ct) =
-        let text = text.GetSubText(textSpan)
-        let result = ImmutableArray.CreateBuilder()
+    static let getLexicalClassifications (filePath: string, defines, text: SourceText, textSpan: TextSpan) =
+        cancellableTask {
+            let! ct = CancellableTask.getCurrentCancellationToken ()
 
-        let tokenCallback =
-            fun (tok: FSharpToken) ->
-                let spanKind =
-                    if tok.IsKeyword then
-                        ClassificationTypeNames.Keyword
-                    elif tok.IsNumericLiteral then
-                        ClassificationTypeNames.NumericLiteral
-                    elif tok.IsCommentTrivia then
-                        ClassificationTypeNames.Comment
-                    elif tok.IsStringLiteral then
-                        ClassificationTypeNames.StringLiteral
-                    else
-                        ClassificationTypeNames.Text
+            let text = text.GetSubText(textSpan)
+            let result = ImmutableArray.CreateBuilder()
 
-                match RoslynHelpers.TryFSharpRangeToTextSpan(text, tok.Range) with
-                | Some span -> result.Add(ClassifiedSpan(TextSpan(textSpan.Start + span.Start, span.Length), spanKind))
-                | _ -> ()
+            let tokenCallback =
+                fun (tok: FSharpToken) ->
+                    let spanKind =
+                        if tok.IsKeyword then
+                            ClassificationTypeNames.Keyword
+                        elif tok.IsNumericLiteral then
+                            ClassificationTypeNames.NumericLiteral
+                        elif tok.IsCommentTrivia then
+                            ClassificationTypeNames.Comment
+                        elif tok.IsStringLiteral then
+                            ClassificationTypeNames.StringLiteral
+                        else
+                            ClassificationTypeNames.Text
 
-        let flags =
-            FSharpLexerFlags.Default
-            &&& ~~~FSharpLexerFlags.Compiling
-            &&& ~~~FSharpLexerFlags.UseLexFilter
+                    match RoslynHelpers.TryFSharpRangeToTextSpan(text, tok.Range) with
+                    | Some span -> result.Add(ClassifiedSpan(TextSpan(textSpan.Start + span.Start, span.Length), spanKind))
+                    | _ -> ()
 
-        FSharpLexer.Tokenize(
-            text.ToFSharpSourceText(),
-            tokenCallback,
-            filePath = filePath,
-            conditionalDefines = defines,
-            flags = flags,
-            ct = ct
-        )
+            let flags =
+                FSharpLexerFlags.Default
+                &&& ~~~FSharpLexerFlags.Compiling
+                &&& ~~~FSharpLexerFlags.UseLexFilter
 
-        result.ToImmutable()
+            FSharpLexer.Tokenize(
+                text.ToFSharpSourceText(),
+                tokenCallback,
+                filePath = filePath,
+                conditionalDefines = defines,
+                flags = flags,
+                ct = ct
+            )
+
+            return result.ToImmutable()
+        }
 
     static let addSemanticClassification
         sourceText
@@ -144,7 +146,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
 
     static let toSemanticClassificationLookup (d: SemanticClassificationData) =
         let lookup =
-            System.Collections.Generic.Dictionary<int, ResizeArray<SemanticClassificationItem>>()
+            Dictionary<int, ResizeArray<SemanticClassificationItem>>()
 
         let f (dataItem: SemanticClassificationItem) =
             let items =
@@ -159,7 +161,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
 
         d.ForEach(f)
 
-        System.Collections.ObjectModel.ReadOnlyDictionary lookup :> IReadOnlyDictionary<_, _>
+        Collections.ObjectModel.ReadOnlyDictionary lookup :> IReadOnlyDictionary<_, _>
 
     let semanticClassificationCache = new DocumentCache<SemanticClassificationLookup>()
 
@@ -174,43 +176,36 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                 result: List<ClassifiedSpan>,
                 cancellationToken: CancellationToken
             ) =
-            async {
+            cancellableTask {
                 use _logBlock = Logger.LogBlock(LogEditorFunctionId.Classification_Syntactic)
 
-                let defines, langVersion = document.GetFSharpQuickDefinesAndLangVersion()
-                let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+
+                let defines, _= document.GetFSharpQuickDefinesAndLangVersion()
+                let! sourceText = document.GetTextAsync(cancellationToken)
 
                 // For closed documents, only get classification for the text within the span.
                 // This may be inaccurate for multi-line tokens such as string literals, but this is ok for now
                 //     as it's better than having to tokenize a big part of a file which in return will allocate a lot and hurt find all references performance.
                 if not (document.Project.Solution.Workspace.IsDocumentOpen document.Id) then
-                    result.AddRange(getLexicalClassifications (document.FilePath, defines, sourceText, textSpan, cancellationToken))
+                    let! classifiedSpans = getLexicalClassifications (document.FilePath, defines, sourceText, textSpan)
+                    result.AddRange(classifiedSpans)
                 else
-                    result.AddRange(
-                        Tokenizer.getClassifiedSpans (
-                            document.Id,
-                            sourceText,
-                            textSpan,
-                            Some(document.FilePath),
-                            defines,
-                            Some langVersion,
-                            cancellationToken
-                        )
-                    )
-            }
-            |> RoslynHelpers.StartAsyncUnitAsTask cancellationToken
+                    let! classifiedSpans = getLexicalClassifications (document.FilePath, defines, sourceText, textSpan)
+                    result.AddRange(classifiedSpans)
+            } |> CancellableTask.startAsTask cancellationToken
 
-        member this.AddSemanticClassificationsAsync
+        member _.AddSemanticClassificationsAsync
             (
                 document: Document,
                 textSpan: TextSpan,
                 result: List<ClassifiedSpan>,
                 cancellationToken: CancellationToken
             ) =
-            async {
+            cancellableTask {
                 use _logBlock = Logger.LogBlock(LogEditorFunctionId.Classification_Semantic)
 
-                let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                let! sourceText = document.GetTextAsync(cancellationToken)
 
                 // If we are trying to get semantic classification for a document that is not open, get the results from the background and cache it.
                 // We do this for find all references when it is populating results.
@@ -232,9 +227,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
 
                     let classificationData = checkResults.GetSemanticClassification(Some targetRange)
                     addSemanticClassification sourceText textSpan classificationData result
-            }
-            |> Async.Ignore
-            |> RoslynHelpers.StartAsyncUnitAsTask cancellationToken
+            } |> CancellableTask.startAsTask cancellationToken
 
         // Do not perform classification if we don't have project options (#defines matter)
         member _.AdjustStaleClassification(_: SourceText, classifiedSpan: ClassifiedSpan) : ClassifiedSpan = classifiedSpan

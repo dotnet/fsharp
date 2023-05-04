@@ -13,6 +13,8 @@ open Microsoft.CodeAnalysis.Classification
 open FSharp.Compiler.EditorServices
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.Implementation.Debugging
+open Internal.Utilities.CancellableTasks.CancellableTaskBuilder
+open Internal.Utilities.CancellableTasks
 
 [<Export(typeof<IFSharpLanguageDebugInfoService>)>]
 type internal FSharpLanguageDebugInfoService [<ImportingConstructor>] () =
@@ -45,19 +47,19 @@ type internal FSharpLanguageDebugInfoService [<ImportingConstructor>] () =
     interface IFSharpLanguageDebugInfoService with
 
         // FSROSLYNTODO: This is used to get function names in breakpoint window. It should return fully qualified function name and line offset from the start of the function.
-        member this.GetLocationInfoAsync(_, _, _) : Task<FSharpDebugLocationInfo> =
+        member _.GetLocationInfoAsync(_, _, _) : Task<FSharpDebugLocationInfo> =
             Task.FromResult(Unchecked.defaultof<FSharpDebugLocationInfo>)
 
-        member this.GetDataTipInfoAsync
+        member _.GetDataTipInfoAsync
             (
                 document: Document,
                 position: int,
                 cancellationToken: CancellationToken
             ) : Task<FSharpDebugDataTipInfo> =
-            async {
+            cancellableTask {
                 let defines, langVersion = document.GetFSharpQuickDefinesAndLangVersion()
-                let! cancellationToken = Async.CancellationToken
-                let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+                let! sourceText = document.GetTextAsync(cancellationToken)
                 let textSpan = TextSpan.FromBounds(0, sourceText.Length)
 
                 let classifiedSpans =
@@ -77,5 +79,4 @@ type internal FSharpLanguageDebugInfoService [<ImportingConstructor>] () =
                     | Some textSpan -> FSharpDebugDataTipInfo(textSpan, sourceText.GetSubText(textSpan).ToString())
 
                 return result
-            }
-            |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
+            } |> CancellableTask.start cancellationToken

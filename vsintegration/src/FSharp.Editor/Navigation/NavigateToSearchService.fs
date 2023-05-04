@@ -147,7 +147,7 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>]
             let! ct = Async.CancellationToken
             let! sourceText = document.GetTextAsync ct |> Async.AwaitTask
 
-            let processItem item =
+            let processItem (item: NavigableItem) =
                 asyncMaybe {
                     do! Option.guard (kinds.Contains(navigateToItemKindToRoslynKind item.Kind))
 

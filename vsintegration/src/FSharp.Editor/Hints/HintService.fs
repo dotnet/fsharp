@@ -7,6 +7,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.Symbols
 open Hints
+open Internal.Utilities.CancellableTasks
 
 module HintService =
 
@@ -15,15 +16,15 @@ module HintService =
         let getHintsPerKind hintKind =
             match hintKind, symbol with
             | HintKind.TypeHint, (:? FSharpMemberOrFunctionOrValue as symbol) ->
-                symbolUses |> Seq.collect (InlineTypeHints(parseResults, symbol)).getHints
+                symbolUses |> Seq.collect (InlineTypeHints(parseResults, symbol)).GetHints
             | HintKind.ReturnTypeHint, (:? FSharpMemberOrFunctionOrValue as symbol) ->
-                symbolUses |> Seq.collect (InlineReturnTypeHints(parseResults, symbol).getHints)
+                symbolUses |> Seq.collect (InlineReturnTypeHints(parseResults, symbol).GetHints)
             | HintKind.ParameterNameHint, (:? FSharpMemberOrFunctionOrValue as symbol) ->
                 symbolUses
-                |> Seq.collect (InlineParameterNameHints(parseResults).getHintsForMemberOrFunctionOrValue sourceText symbol)
+                |> Seq.collect (InlineParameterNameHints(parseResults).GetHintsForMemberOrFunctionOrValue sourceText symbol)
             | HintKind.ParameterNameHint, (:? FSharpUnionCase as symbol) ->
                 symbolUses
-                |> Seq.collect (InlineParameterNameHints(parseResults).getHintsForUnionCase symbol)
+                |> Seq.collect (InlineParameterNameHints(parseResults).GetHintsForUnionCase symbol)
             | _ -> []
 
         let rec getHints hintKinds acc =
@@ -37,11 +38,12 @@ module HintService =
         let hints = getHints sourceText parseResults hintKinds symbolUses symbol
         Seq.concat hints
 
-    let getHintsForDocument sourceText (document: Document) hintKinds userOpName cancellationToken =
-        async {
+    let getHintsForDocument sourceText (document: Document) hintKinds userOpName =
+        cancellableTask {
             if isSignatureFile document.FilePath then
                 return []
             else
+                let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
                 let! parseResults, checkResults = document.GetFSharpParseAndCheckResultsAsync userOpName
 
                 return
