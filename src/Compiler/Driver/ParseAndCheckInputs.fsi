@@ -13,6 +13,7 @@ open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
@@ -150,6 +151,18 @@ val CheckOneInput:
     tcState: TcState *
     input: ParsedInput ->
         Cancellable<(TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType) * TcState>
+
+val AddCheckResultsToTcState:
+    tcGlobals: TcGlobals *
+    amap: Import.ImportMap *
+    hadSig: bool *
+    prefixPathOpt: LongIdent option *
+    tcSink: TcResultsSink *
+    tcImplEnv: TcEnv *
+    qualNameOfFile: QualifiedNameOfFile *
+    implFileSigType: ModuleOrNamespaceType ->
+        tcState: TcState ->
+        ModuleOrNamespaceType * TcState
 
 /// Finish the checking of multiple inputs
 val CheckMultipleInputsFinish:

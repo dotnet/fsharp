@@ -32,6 +32,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.NameResolution
 open Internal.Utilities.Library.Extras
+open FSharp.Compiler.TypedTree
 
 type internal FSharpFile =
     {
@@ -51,6 +52,8 @@ type internal BootstrapInfo =
         SourceFiles: FSharpFile list
         LoadClosure: LoadClosure option
     }
+
+type internal TcIntermediateResult = TcInfo * TcResultsSinkImpl * CheckedImplFile option * string
 
 type internal TransparentCompiler
     (
@@ -165,9 +168,9 @@ type internal TransparentCompiler
             unresolvedReferences,
             dependencyProvider,
             loadClosureOpt: LoadClosure option,
-            basicDependencies,
+            basicDependencies
 #if !NO_TYPEPROVIDERS
-            importsInvalidatedByTypeProvider: Event<unit>
+            ,importsInvalidatedByTypeProvider: Event<unit>
 #endif
         ) =
 
@@ -484,9 +487,9 @@ type internal TransparentCompiler
                     unresolvedReferences,
                     dependencyProvider,
                     loadClosureOpt,
-                    basicDependencies,
+                    basicDependencies
 #if !NO_TYPEPROVIDERS
-                    importsInvalidatedByTypeProvider
+                    ,importsInvalidatedByTypeProvider
 #endif
                 )
 
@@ -670,11 +673,27 @@ type internal TransparentCompiler
             return tcInfo, sink, implFile, fileName
         }
 
-    let mergeTcInfos =
-        Array.fold (fun a b ->
+    let mergeIntermediateResults bootstrapInfo =
+        Array.reduce (fun (a: TcInfo, _: TcResultsSinkImpl, _, _) (b, bSink, implFileOpt: CheckedImplFile option, name) ->
             // TODO: proper merge
+
+            let amap = bootstrapInfo.TcImports.GetImportMap()
+
+            // TODO: figure out
+            let hadSig = false
+
+            let prefixPathOpt = None
+
+            // TODO:
+            let implFile = implFileOpt.Value
+
+            let _ccuSigForFile, tcState =
+                AddCheckResultsToTcState
+                    (bootstrapInfo.TcGlobals, amap, hadSig, prefixPathOpt, TcResultsSink.NoSink, b.tcState.TcEnvFromImpls, implFile.QualifiedNameOfFile, implFile.Signature)
+                    a.tcState
+
             { a with
-                tcState = b.tcState
+                tcState = tcState
                 tcEnvAtEndOfFile = b.tcEnvAtEndOfFile
                 moduleNamesDict = b.moduleNamesDict
                 latestCcuSigForFile = b.latestCcuSigForFile
@@ -683,7 +702,7 @@ type internal TransparentCompiler
                 tcDependencyFiles = b.tcDependencyFiles @ a.tcDependencyFiles
                 // we shouldn't need this with graph checking (?)
                 sigNameOpt = None
-            })
+            }, bSink, Some implFile, name)
 
     // Type check everything that is needed to check given file
     let ComputeTcPrior (file: FSharpFile) (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshot) _userOpName _key =
@@ -733,7 +752,7 @@ type internal TransparentCompiler
                                 TcIntermediateCache.Get(key, ComputeTcIntermediate (parsedInput, parseErrors) bootstrapInfo tcInfo))
                             |> NodeCode.Parallel
 
-                        return! processLayer rest (mergeTcInfos tcInfo (results |> Array.map p14))
+                        return! processLayer rest (mergeIntermediateResults bootstrapInfo results |> p14)
                 }
 
             return! processLayer layers bootstrapInfo.InitialTcInfo

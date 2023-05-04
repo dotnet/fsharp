@@ -65,6 +65,7 @@ let ``See what this does`` () =
 
                 let fullGraph =
                     DependencyResolution.mkGraph false filePairs sourceFiles
+                    |> fst
                     |> Graph.map (fun idx -> project.SourceFilePaths[idx] |> Path.GetFileName)
 
                 let subGraph = fullGraph |> Graph.subGraphFor "FileF.fs"
