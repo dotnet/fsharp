@@ -69,6 +69,8 @@ let ``We can cancel a job`` () =
     cts1.Cancel()
     cts2.Cancel()
 
+    Thread.Sleep 10
+
     Assert.Equal<JobEvent<_> array>([| Started key |], eventLog |> Seq.toArray )
 
     cts3.Cancel()
