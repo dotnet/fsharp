@@ -146,7 +146,7 @@ module Checked =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 243, Line 0, Col 1, Line 0, Col 1, "Unrecognized option: '--Checked'")
+            (Error 243, Line 0, Col 1, Line 0, Col 1, "Unrecognized option: '--Checked'. Use '--help' to learn about recognized command line options.")
         ]
 
     //  SOURCE=unrecogarg.fs  SCFLAGS="--checked*"  # fsc--checked*
@@ -158,7 +158,7 @@ module Checked =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 243, Line 0, Col 1, Line 0, Col 1, "Unrecognized option: '--checked*'")
+            (Error 243, Line 0, Col 1, Line 0, Col 1, "Unrecognized option: '--checked*'. Use '--help' to learn about recognized command line options.")
         ]
 
     //  SOURCE=unrecogarg.fs  SCFLAGS="--checked*"  # fsc--checked*
