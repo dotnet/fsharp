@@ -11262,8 +11262,11 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                         // Structs with no instance fields get size 1, pack 0
                         if isStructTy g thisTy then
                             if
-                                (tycon.AllFieldsArray.Length = 0 || tycon.AllFieldsArray |> Array.exists (fun f -> not f.IsStatic))
-                                && (alternatives |> Array.collect (fun a -> a.FieldDefs) |> Array.exists (fun fd -> not fd.ILField.IsStatic))
+                                (tycon.AllFieldsArray.Length = 0
+                                 || tycon.AllFieldsArray |> Array.exists (fun f -> not f.IsStatic))
+                                && (alternatives
+                                    |> Array.collect (fun a -> a.FieldDefs)
+                                    |> Array.exists (fun fd -> not fd.ILField.IsStatic))
                             then
                                 ILTypeDefLayout.Sequential { Size = None; Pack = None }
                             else
