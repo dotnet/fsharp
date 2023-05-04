@@ -162,7 +162,7 @@ val AddCheckResultsToTcState:
     qualNameOfFile: QualifiedNameOfFile *
     implFileSigType: ModuleOrNamespaceType ->
         tcState: TcState ->
-        ModuleOrNamespaceType * TcState
+            ModuleOrNamespaceType * TcState
 
 /// Finish the checking of multiple inputs
 val CheckMultipleInputsFinish:

@@ -248,7 +248,9 @@ type FSharpProjectSnapshot with
 
     member ToOptions: unit -> FSharpProjectOptions
 
-    static member FromOptions: options: FSharpProjectOptions * getFileSnapshot: (FSharpProjectOptions -> string -> Async<FSharpFileSnapshot>) -> Async<FSharpProjectSnapshot>
+    static member FromOptions:
+        options: FSharpProjectOptions * getFileSnapshot: (FSharpProjectOptions -> string -> Async<FSharpFileSnapshot>) ->
+            Async<FSharpProjectSnapshot>
 
 /// Represents the use of an F# symbol from F# source code
 [<Sealed>]

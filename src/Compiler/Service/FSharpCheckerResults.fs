@@ -368,19 +368,18 @@ type FSharpProjectSnapshot with
 
     static member FromOptions(options: FSharpProjectOptions, getFileSnapshot) =
         async {
-            let! sourceFiles =
-                options.SourceFiles
-                |> Seq.map (getFileSnapshot options)
-                |> Async.Parallel
+            let! sourceFiles = options.SourceFiles |> Seq.map (getFileSnapshot options) |> Async.Parallel
 
             let! referencedProjects =
                 options.ReferencedProjects
                 |> Seq.choose (function
-                    | FSharpReferencedProject.FSharpReference (outputName, options) -> Some (
-                        async {
-                            let! snapshot = FSharpProjectSnapshot.FromOptions(options, getFileSnapshot)
-                            return FSharpReferencedProjectSnapshot.FSharpReference (outputName, snapshot)
-                        })
+                    | FSharpReferencedProject.FSharpReference (outputName, options) ->
+                        Some(
+                            async {
+                                let! snapshot = FSharpProjectSnapshot.FromOptions(options, getFileSnapshot)
+                                return FSharpReferencedProjectSnapshot.FSharpReference(outputName, snapshot)
+                            }
+                        )
                     // TODO: other types
                     | _ -> None)
                 |> Async.Parallel

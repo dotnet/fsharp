@@ -48,8 +48,7 @@ type internal AsyncMemoize<'TKey, 'TValue when 'TKey: equality>(?logEvent: (JobE
     let sendAsync (inbox: MailboxProcessor<_>) key msg =
         inbox.PostAndAsyncReply(fun rc -> key, msg, rc) |> Async.Ignore |> Async.Start
 
-    let log event =
-        logEvent |> Option.iter ((|>) event)
+    let log event = logEvent |> Option.iter ((|>) event)
 
     let agent =
         MailboxProcessor.Start(fun (inbox: MailboxProcessor<MemoizeRequest<_, _>>) ->
@@ -77,7 +76,7 @@ type internal AsyncMemoize<'TKey, 'TValue when 'TKey: equality>(?logEvent: (JobE
                             Async.StartAsTask(
                                 Async.AwaitNodeCode(
                                     node {
-                                        use _ = Activity.start $"AsyncMemoize.{name}" [| |]
+                                        use _ = Activity.start $"AsyncMemoize.{name}" [||]
 
                                         let! result = computation key
                                         post key JobCompleted
