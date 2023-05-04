@@ -73,7 +73,7 @@ tupleRequiredInAbstractMethod,"\nA tuple type is required for one or more argume
 240,buildSignatureWithoutImplementation,"The signature file '%s' does not have a corresponding implementation file. If an implementation file exists then check the 'module' and 'namespace' declarations in the signature and implementation files match."
 241,buildArgInvalidInt,"'%s' is not a valid integer argument"
 242,buildArgInvalidFloat,"'%s' is not a valid floating point argument"
-243,buildUnrecognizedOption,"Unrecognized option: '%s'"
+243,buildUnrecognizedOption,"Unrecognized option: '%s'. Use '--help' to learn about recognized command line options."
 244,buildInvalidModuleOrNamespaceName,"Invalid module or namespace name"
 pickleErrorReadingWritingMetadata,"Error reading/writing metadata for the F# compiled DLL '%s'. Was the DLL compiled with an earlier version of the F# compiler? (error: '%s')."
 245,tastTypeOrModuleNotConcrete,"The type/module '%s' is not a concrete module or type"
