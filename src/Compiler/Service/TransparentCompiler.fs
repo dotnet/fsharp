@@ -674,7 +674,7 @@ type internal TransparentCompiler
         }
 
     let mergeIntermediateResults bootstrapInfo =
-        Array.reduce (fun (a: TcInfo, _: TcResultsSinkImpl, _, _) (b, bSink, implFileOpt: CheckedImplFile option, name) ->
+        Array.fold (fun (a: TcInfo, _, _, _) (b, sink, implFileOpt: CheckedImplFile option, name) ->
             // TODO: proper merge
 
             let amap = bootstrapInfo.TcImports.GetImportMap()
@@ -687,22 +687,22 @@ type internal TransparentCompiler
             // TODO:
             let implFile = implFileOpt.Value
 
-            let _ccuSigForFile, tcState =
+            let ccuSigForFile, tcState =
                 AddCheckResultsToTcState
-                    (bootstrapInfo.TcGlobals, amap, hadSig, prefixPathOpt, TcResultsSink.NoSink, b.tcState.TcEnvFromImpls, implFile.QualifiedNameOfFile, implFile.Signature)
-                    a.tcState
+                    (bootstrapInfo.TcGlobals, amap, hadSig, prefixPathOpt, TcResultsSink.NoSink, a.tcState.TcEnvFromImpls, implFile.QualifiedNameOfFile, implFile.Signature)
+                    b.tcState
 
             { a with
                 tcState = tcState
                 tcEnvAtEndOfFile = b.tcEnvAtEndOfFile
                 moduleNamesDict = b.moduleNamesDict
-                latestCcuSigForFile = b.latestCcuSigForFile
+                latestCcuSigForFile = Some ccuSigForFile
                 tcDiagnosticsRev = b.tcDiagnosticsRev @ a.tcDiagnosticsRev
                 topAttribs = b.topAttribs
                 tcDependencyFiles = b.tcDependencyFiles @ a.tcDependencyFiles
                 // we shouldn't need this with graph checking (?)
                 sigNameOpt = None
-            }, bSink, Some implFile, name)
+            }, sink, Some implFile, name)
 
     // Type check everything that is needed to check given file
     let ComputeTcPrior (file: FSharpFile) (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshot) _userOpName _key =
@@ -752,7 +752,7 @@ type internal TransparentCompiler
                                 TcIntermediateCache.Get(key, ComputeTcIntermediate (parsedInput, parseErrors) bootstrapInfo tcInfo))
                             |> NodeCode.Parallel
 
-                        return! processLayer rest (mergeIntermediateResults bootstrapInfo results |> p14)
+                        return! processLayer rest (mergeIntermediateResults bootstrapInfo (tcInfo, Unchecked.defaultof<_>, None, "") results |> p14)
                 }
 
             return! processLayer layers bootstrapInfo.InitialTcInfo

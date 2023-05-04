@@ -552,17 +552,14 @@ let SaveAndCheckProject project checker =
         if not (Array.isEmpty results.Diagnostics) then
             failwith $"Project {project.Name} failed initial check: \n%A{results.Diagnostics}"
 
-        // TODO: re-enable
-        //let! signatures =
-        //    Async.Sequential
-        //        [ for file in project.SourceFiles do
-        //              async {
-        //                  let! result = checkFile file.Id project checker
-        //                  let signature = getSignature result
-        //                  return file.Id, signature
-        //              } ]
-
-        let signatures = [ for file in project.SourceFiles -> file.Id, "" ]
+        let! signatures =
+            Async.Sequential
+                [ for file in project.SourceFiles do
+                      async {
+                          let! result = checkFile file.Id project checker
+                          let signature = getSignature result
+                          return file.Id, signature
+                      } ]
 
         return
             { Project = project

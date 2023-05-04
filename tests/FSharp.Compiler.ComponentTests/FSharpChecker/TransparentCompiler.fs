@@ -45,7 +45,7 @@ module Activity =
 [<Fact>]
 let ``Use Transparent Compiler`` () =
 
-    let _logger = Activity.listenToAll ()
+    Activity.listenToAll ()
 
     let size = 20
 
@@ -77,7 +77,7 @@ let ``Use Transparent Compiler`` () =
 [<Fact>]
 let ``Parallel processing`` () =
 
-    let _logger = Activity.listenToAll ()
+    Activity.listenToAll ()
 
     let project = SyntheticProject.Create(
         sourceFile "A" [],
