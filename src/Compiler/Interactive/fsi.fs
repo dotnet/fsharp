@@ -4623,7 +4623,7 @@ type FsiEvaluationSession
             resolveAssemblyRef
         )
 
-    let controlledExecution = ControlledExecution()
+    let controlledExecution = ControlledExecution(fsiOptions.Interact)
 
     let fsiInterruptController =
         FsiInterruptController(fsiOptions, controlledExecution, fsiConsoleOutput)
