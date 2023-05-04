@@ -536,8 +536,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="Driver\parallel-optimization.md" />
-    <Content Include="Driver\parallel-optimization.drawio.svg" />
+    <None Include="Driver\parallel-optimization.md" />
+    <None Include="Driver\parallel-optimization.drawio.svg" />
   </ItemGroup>
 
 </Project>
