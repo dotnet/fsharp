@@ -339,4 +339,8 @@ module Basic =
         |> verifyCompile
         |> shouldSucceed
 
-
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"EnsureValidCustomAttributeBlob.fs"|])>]
+    let ``EnsureValidCustomAttributeBlob_fs`` compilation =
+        compilation
+        |> verifyCompileAndRun
+        |> shouldSucceed
