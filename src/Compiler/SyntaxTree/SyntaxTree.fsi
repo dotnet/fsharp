@@ -518,6 +518,9 @@ type SynType =
     /// F# syntax: ^a or ^b, used in trait calls
     | Or of lhsType: SynType * rhsType: SynType * range: range * trivia: SynTypeOrTrivia
 
+    /// A type arising from a parse error
+    | FromParseError of range: range
+
     /// Gets the syntax range of this construct
     member Range: range
 

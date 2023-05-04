@@ -304,7 +304,7 @@ module MainModuleBuilder =
         RequireCompilationThread ctok
 
         let ilTypeDefs =
-            mkILTypeDefs (codegenResults.ilTypeDefs @ tcGlobals.embeddedTypeDefs)
+            mkILTypeDefs (codegenResults.ilTypeDefs @ tcGlobals.tryRemoveEmbeddedILTypeDefs ())
 
         let mainModule =
             let hashAlg =

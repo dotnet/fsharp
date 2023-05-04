@@ -2,8 +2,14 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
+open System
 open System.Threading
+open System.Threading.Tasks
+open System.Collections.Immutable
+open System.Diagnostics
 
+open Microsoft
+open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
@@ -11,50 +17,60 @@ open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
 [<RequireQualifiedAccess>]
 module internal CodeFixHelpers =
-    let createTextChangeCodeFix (title: string, context: CodeFixContext, computeTextChanges: unit -> Async<TextChange[] option>) =
-        let props: (string * obj) list =
-            [
-                "title", title
+    let private reportCodeFixTelemetry (diagnostics: ImmutableArray<Diagnostic>) (doc: Document) (staticName: string) (additionalProps) =
+        let ids =
+            diagnostics |> Seq.map (fun d -> d.Id) |> Seq.distinct |> String.concat ","
 
-                // The following can help building a unique but anonymized codefix target:
-                // #projectid#documentid#span
-                // Then we can check if the codefix was actually activated after its creation.
-                "context.document.project.id", context.Document.Project.Id.Id.ToString()
-                "context.document.id", context.Document.Id.Id.ToString()
-                "context.span", context.Span.ToString()
+        let props: (string * obj) list =
+            additionalProps
+            @ [
+                "name", staticName
+                "ids", ids
+                "context.document.project.id", doc.Project.Id.Id.ToString()
+                "context.document.id", doc.Id.Id.ToString()
+                "context.diagnostics.count", diagnostics.Length
             ]
 
-        TelemetryReporter.reportEvent "codefixregistered" props
+        TelemetryReporter.reportEvent "codefixactivated" props
 
+    let createFixAllProvider name getChanges =
+        FixAllProvider.Create(fun fixAllCtx doc allDiagnostics ->
+            backgroundTask {
+                let sw = Stopwatch.StartNew()
+                let! (changes: seq<TextChange>) = getChanges (doc, allDiagnostics, fixAllCtx.CancellationToken)
+                let! text = doc.GetTextAsync(fixAllCtx.CancellationToken)
+                let doc = doc.WithText(text.WithChanges(changes))
+
+                do
+                    reportCodeFixTelemetry
+                        allDiagnostics
+                        doc
+                        name
+                        [ "scope", fixAllCtx.Scope.ToString(); "elapsedMs", sw.ElapsedMilliseconds ]
+
+                return doc
+            })
+
+    let createTextChangeCodeFix (name: string, title: string, context: CodeFixContext, changes: TextChange seq) =
         CodeAction.Create(
             title,
             (fun (cancellationToken: CancellationToken) ->
-                async {
-                    let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                    let! changesOpt = computeTextChanges ()
-
-                    match changesOpt with
-                    | None -> return context.Document
-                    | Some textChanges ->
-                        // Note: "activated" doesn't mean "applied".
-                        // It's one step prior to that:
-                        // e.g. when one clicks (Ctrl + .) and looks at the potential change.
-                        TelemetryReporter.reportEvent "codefixactivated" props
-                        return context.Document.WithText(sourceText.WithChanges(textChanges))
-                }
-                |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
-            title
+                backgroundTask {
+                    let! sourceText = context.Document.GetTextAsync(cancellationToken)
+                    let doc = context.Document.WithText(sourceText.WithChanges(changes))
+                    reportCodeFixTelemetry context.Diagnostics context.Document name []
+                    return doc
+                }),
+            name
         )
 
 [<AutoOpen>]
 module internal CodeFixExtensions =
-    type CodeFixProvider with
+    type CodeFixContext with
 
-        member this.GetPrunedDiagnostics(context: CodeFixContext) =
-            context.Diagnostics.RemoveAll(fun x -> this.FixableDiagnosticIds.Contains(x.Id) |> not)
+        member ctx.RegisterFsharpFix(staticName, title, changes, ?diagnostics) =
+            let codeAction =
+                CodeFixHelpers.createTextChangeCodeFix (staticName, title, ctx, changes)
 
-        member this.RegisterFix(context: CodeFixContext, fixName, fixChange) =
-            let replaceCodeFix =
-                CodeFixHelpers.createTextChangeCodeFix (fixName, context, (fun () -> asyncMaybe.Return [| fixChange |]))
-
-            context.RegisterCodeFix(replaceCodeFix, this.GetPrunedDiagnostics(context))
+            let diag = diagnostics |> Option.defaultValue ctx.Diagnostics
+            ctx.RegisterCodeFix(codeAction, diag)

@@ -440,10 +440,17 @@ module Helpers =
 
     let getSymbolUse fileName (source: string) (symbolName: string) options (checker: FSharpChecker) =
         async {
-            let index = source.IndexOf symbolName
-            let line = source |> Seq.take index |> Seq.where ((=) '\n') |> Seq.length
-            let fullLine = source.Split '\n' |> Array.item line
-            let colAtEndOfNames = fullLine.IndexOf symbolName + symbolName.Length
+            let lines = source.Split '\n' |> Seq.skip 1 // module definition
+            let lineNumber, fullLine, colAtEndOfNames =
+                lines
+                |> Seq.mapi (fun lineNumber line ->
+                    let index =  line.IndexOf symbolName
+                    if index >= 0 then
+                        let colAtEndOfNames = line.IndexOf symbolName + symbolName.Length
+                        Some (lineNumber + 2, line, colAtEndOfNames)
+                    else None)
+                |> Seq.tryPick id
+                |> Option.defaultValue (-1, "", -1)
 
             let! results = checker.ParseAndCheckFileInProject(
                 fileName, 0, SourceText.ofString source, options)
@@ -451,17 +458,17 @@ module Helpers =
             let typeCheckResults = getTypeCheckResult results
 
             let symbolUse =
-                typeCheckResults.GetSymbolUseAtLocation(line + 1, colAtEndOfNames, fullLine, [symbolName])
+                typeCheckResults.GetSymbolUseAtLocation(lineNumber, colAtEndOfNames, fullLine, [symbolName])
 
             return symbolUse |> Option.defaultWith (fun () ->
-                failwith $"No symbol found in {fileName} at {line}:{colAtEndOfNames}\nFile contents:\n\n{source}\n")
+                failwith $"No symbol found in {fileName} at {lineNumber}:{colAtEndOfNames}\nFile contents:\n\n{source}\n")
         }
 
     let singleFileChecker source =
 
         let fileName = "test.fs"
 
-        let getSource _ = source |> SourceText.ofString |> Some
+        let getSource _ = source |> SourceText.ofString |> Some |> async.Return
 
         let checker = FSharpChecker.Create(
             keepAllBackgroundSymbolUses = false,
@@ -554,6 +561,7 @@ type ProjectWorkflowBuilder
             |> renderSourceFile latestProject
         |> SourceText.ofString
         |> Some
+        |> async.Return
 
     let checker =
         defaultArg
@@ -700,17 +708,31 @@ type ProjectWorkflowBuilder
             return { ctx with Cursor = su }
         }
 
+    member this.FindSymbolUse(ctx: WorkflowContext, fileId, symbolName: string) =
+        async {
+            let file = ctx.Project.Find fileId
+            let fileName = ctx.Project.ProjectDir ++ file.FileName
+            let source = renderSourceFile ctx.Project file
+            let options= ctx.Project.GetProjectOptions checker
+            return! getSymbolUse fileName source symbolName options checker
+        }
+
     /// Find a symbol by finding the first occurrence of the symbol name in the file
     [<CustomOperation "placeCursor">]
     member this.PlaceCursor(workflow: Async<WorkflowContext>, fileId, symbolName: string) =
         async {
             let! ctx = workflow
-            let file = ctx.Project.Find fileId
-            let fileName = ctx.Project.ProjectDir ++ file.FileName
-            let source = renderSourceFile ctx.Project file
-            let options= ctx.Project.GetProjectOptions checker
-            let! su = getSymbolUse fileName source symbolName options checker
+            let! su = this.FindSymbolUse(ctx, fileId, symbolName)
             return { ctx with Cursor = Some su }
+        }
+
+    [<CustomOperation "checkSymbolUse">]
+    member this.CheckSymbolUse(workflow: Async<WorkflowContext>, fileId, symbolName: string, check) =
+        async {
+            let! ctx = workflow
+            let! su = this.FindSymbolUse(ctx, fileId, symbolName)
+            check su
+            return ctx
         }
 
     /// Find all references within a single file, results are provided to the 'processResults' function
@@ -773,6 +795,17 @@ type ProjectWorkflowBuilder
         async {
             let! ctx = workflow
             do! saveProject ctx.Project false checker
+            return ctx
+        }
+
+    /// Clear checker caches.
+    [<CustomOperation "clearCache">]
+    member this.ClearCache(workflow: Async<WorkflowContext>) =
+        async {
+            let! ctx = workflow
+            let options = [for p in ctx.Project.GetAllProjects() -> p.GetProjectOptions checker]
+            checker.ClearCache(options)
+            checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
             return ctx
         }
 

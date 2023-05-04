@@ -4,6 +4,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
 open System.Threading.Tasks
+open System.Collections.Immutable
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
@@ -14,13 +15,11 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "ReplaceWithSuggestion"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.ReplaceWithSuggestion); Shared>]
 type internal FSharpReplaceWithSuggestionCodeFixProvider [<ImportingConstructor>] (settings: EditorOptions) =
     inherit CodeFixProvider()
 
-    let fixableDiagnosticIds = set [ "FS0039"; "FS1129"; "FS0495" ]
-
-    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0039", "FS1129", "FS0495")
 
     override _.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
@@ -51,22 +50,15 @@ type internal FSharpReplaceWithSuggestionCodeFixProvider [<ImportingConstructor>
                 for item in declInfo.Items do
                     addToBuffer item.NameInList
 
-            let diagnostics =
-                context.Diagnostics
-                |> Seq.filter (fun x -> fixableDiagnosticIds |> Set.contains x.Id)
-                |> Seq.toImmutableArray
-
             for suggestion in CompilerDiagnostics.GetSuggestedNames addNames unresolvedIdentifierText do
                 let replacement = PrettyNaming.NormalizeIdentifierBackticks suggestion
 
-                let codeFix =
-                    CodeFixHelpers.createTextChangeCodeFix (
+                do
+                    context.RegisterFsharpFix(
+                        CodeFix.ReplaceWithSuggestion,
                         CompilerDiagnostics.GetErrorMessage(FSharpDiagnosticKind.ReplaceWithSuggestion suggestion),
-                        context,
-                        (fun () -> asyncMaybe.Return [| TextChange(context.Span, replacement) |])
+                        [| TextChange(context.Span, replacement) |]
                     )
-
-                context.RegisterCodeFix(codeFix, diagnostics)
         }
         |> Async.Ignore
         |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

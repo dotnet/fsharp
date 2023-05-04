@@ -11,12 +11,11 @@ open Internal.Utilities
 open Internal.Utilities.FSharpEnvironment
 open FSharp.Compiler.IO
 
-
 type internal ProbingPathsStore() =
 
     let addedPaths = ConcurrentBag<string>()
 
-    static member AppendPathSeparator (p: string) =
+    static member AppendPathSeparator(p: string) =
         let separator = string Path.PathSeparator
 
         if not (p.EndsWith(separator, StringComparison.OrdinalIgnoreCase)) then
@@ -27,14 +26,18 @@ type internal ProbingPathsStore() =
     static member RemoveProbeFromProcessPath probePath =
         if not (String.IsNullOrWhiteSpace(probePath)) then
             let probe = ProbingPathsStore.AppendPathSeparator probePath
-            let path = ProbingPathsStore.AppendPathSeparator (Environment.GetEnvironmentVariable("PATH"))
+
+            let path =
+                ProbingPathsStore.AppendPathSeparator(Environment.GetEnvironmentVariable("PATH"))
 
             if path.Contains(probe) then
                 Environment.SetEnvironmentVariable("PATH", path.Replace(probe, ""))
 
     member _.AddProbeToProcessPath probePath =
         let probe = ProbingPathsStore.AppendPathSeparator probePath
-        let path = ProbingPathsStore.AppendPathSeparator (Environment.GetEnvironmentVariable("PATH"))
+
+        let path =
+            ProbingPathsStore.AppendPathSeparator(Environment.GetEnvironmentVariable("PATH"))
 
         if not (path.Contains(probe)) then
             Environment.SetEnvironmentVariable("PATH", path + probe)
@@ -46,12 +49,14 @@ type internal ProbingPathsStore() =
 
     member this.Dispose() =
         let mutable probe: string = Unchecked.defaultof<string>
+
         while (addedPaths.TryTake(&probe)) do
             ProbingPathsStore.RemoveProbeFromProcessPath(probe)
 
     interface IDisposable with
         member _.Dispose() =
             let mutable probe: string = Unchecked.defaultof<string>
+
             while (addedPaths.TryTake(&probe)) do
                 ProbingPathsStore.RemoveProbeFromProcessPath(probe)
 
@@ -176,7 +181,7 @@ type NativeDllResolveHandler(nativeProbingRoots: NativeResolutionProbe option) =
 
     let handler: NativeDllResolveHandlerCoreClr option =
         nativeProbingRoots
-        |> Option.filter(fun _ -> isRunningOnCoreClr)
+        |> Option.filter (fun _ -> isRunningOnCoreClr)
         |> Option.map (fun _ -> new NativeDllResolveHandlerCoreClr(nativeProbingRoots))
 
     new(nativeProbingRoots: NativeResolutionProbe) = new NativeDllResolveHandler(Option.ofObj nativeProbingRoots)

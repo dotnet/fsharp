@@ -6,6 +6,7 @@ open System
 open System.Composition
 open System.Threading
 open System.Threading.Tasks
+open System.Collections.Immutable
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
@@ -17,38 +18,28 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "AddOpen"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.AddOpen); Shared>]
 type internal FSharpAddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentProvider: AssemblyContentProvider) =
     inherit CodeFixProvider()
-
-    let fixableDiagnosticIds = [ "FS0039"; "FS0043" ]
 
     let fixUnderscoresInMenuText (text: string) = text.Replace("_", "__")
 
     let qualifySymbolFix (context: CodeFixContext) (fullName, qualifier) =
-        CodeFixHelpers.createTextChangeCodeFix (
-            fixUnderscoresInMenuText fullName,
-            context,
-            (fun () -> asyncMaybe.Return [| TextChange(context.Span, qualifier) |])
-        )
+        context.RegisterFsharpFix(CodeFix.AddOpen, fixUnderscoresInMenuText fullName, [| TextChange(context.Span, qualifier) |])
 
-    let openNamespaceFix (context: CodeFixContext) ctx name ns multipleNames =
+    let openNamespaceFix (context: CodeFixContext) ctx name ns multipleNames sourceText =
         let displayText = "open " + ns + (if multipleNames then " (" + name + ")" else "")
+        let newText, _ = OpenDeclarationHelper.insertOpenDeclaration sourceText ctx ns
+        let changes = newText.GetTextChanges(sourceText)
 
-        CodeAction.Create(
-            fixUnderscoresInMenuText displayText,
-            (fun (cancellationToken: CancellationToken) ->
-                async {
-                    let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                    let changedText, _ = OpenDeclarationHelper.insertOpenDeclaration sourceText ctx ns
-                    return context.Document.WithText(changedText)
-                }
-                |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
-            displayText
-        )
+        context.RegisterFsharpFix(CodeFix.AddOpen, fixUnderscoresInMenuText displayText, changes)
 
-    let addSuggestionsAsCodeFixes (context: CodeFixContext) (candidates: (InsertionContextEntity * InsertionContext) list) =
-        let openNamespaceFixes =
+    let addSuggestionsAsCodeFixes
+        (context: CodeFixContext)
+        (sourceText: SourceText)
+        (candidates: (InsertionContextEntity * InsertionContext) list)
+        =
+        do
             candidates
             |> Seq.choose (fun (entity, ctx) -> entity.Namespace |> Option.map (fun ns -> ns, entity.FullDisplayName, ctx))
             |> Seq.groupBy (fun (ns, _, _) -> ns)
@@ -63,27 +54,17 @@ type internal FSharpAddOpenCodeFixProvider [<ImportingConstructor>] (assemblyCon
                 let multipleNames = names |> Array.length > 1
                 names |> Seq.map (fun (name, ctx) -> ns, name, ctx, multipleNames))
             |> Seq.concat
-            |> Seq.map (fun (ns, name, ctx, multipleNames) -> openNamespaceFix context ctx name ns multipleNames)
-            |> Seq.toList
+            |> Seq.iter (fun (ns, name, ctx, multipleNames) -> openNamespaceFix context ctx name ns multipleNames sourceText)
 
-        let qualifiedSymbolFixes =
+        do
             candidates
             |> Seq.filter (fun (entity, _) -> not (entity.LastIdent.StartsWith "op_")) // Don't include qualified operator names. The resultant codefix won't compile because it won't be an infix operator anymore.
             |> Seq.map (fun (entity, _) -> entity.FullRelativeName, entity.Qualifier)
             |> Seq.distinct
             |> Seq.sort
-            |> Seq.map (qualifySymbolFix context)
-            |> Seq.toList
+            |> Seq.iter (qualifySymbolFix context)
 
-        for codeFix in openNamespaceFixes @ qualifiedSymbolFixes do
-            context.RegisterCodeFix(
-                codeFix,
-                context.Diagnostics
-                |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id)
-                |> Seq.toImmutableArray
-            )
-
-    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0039", "FS0043")
 
     override _.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
@@ -98,8 +79,8 @@ type internal FSharpAddOpenCodeFixProvider [<ImportingConstructor>] (assemblyCon
             let line = sourceText.Lines.GetLineFromPosition(context.Span.End)
             let linePos = sourceText.Lines.GetLinePosition(context.Span.End)
 
-            let! defines =
-                document.GetFSharpCompilationDefinesAsync(nameof (FSharpAddOpenCodeFixProvider))
+            let! defines, langVersion =
+                document.GetFSharpCompilationDefinesAndLangVersionAsync(nameof (FSharpAddOpenCodeFixProvider))
                 |> liftAsync
 
             let! symbol =
@@ -114,6 +95,7 @@ type internal FSharpAddOpenCodeFixProvider [<ImportingConstructor>] (assemblyCon
                             SymbolLookupKind.Greedy,
                             false,
                             false,
+                            Some langVersion,
                             context.CancellationToken
                         )
 
@@ -190,7 +172,7 @@ type internal FSharpAddOpenCodeFixProvider [<ImportingConstructor>] (assemblyCon
                 |> Seq.map createEntity
                 |> Seq.concat
                 |> Seq.toList
-                |> addSuggestionsAsCodeFixes context
+                |> addSuggestionsAsCodeFixes context sourceText
         }
         |> Async.Ignore
         |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

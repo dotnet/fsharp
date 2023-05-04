@@ -298,3 +298,16 @@ module internal OpenDeclarationHelper =
 module internal TaggedText =
     let toString (tts: TaggedText[]) =
         tts |> Array.map (fun tt -> tt.Text) |> String.concat ""
+
+// http://www.fssnip.net/7S3/title/Intersperse-a-list
+module List =
+    /// The intersperse function takes an element and a list and
+    /// 'intersperses' that element between the elements of the list.
+    let intersperse sep ls =
+        List.foldBack
+            (fun x ->
+                function
+                | [] -> [ x ]
+                | xs -> x :: sep :: xs)
+            ls
+            []

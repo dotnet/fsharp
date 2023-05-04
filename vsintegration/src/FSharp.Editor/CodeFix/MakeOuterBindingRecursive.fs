@@ -4,17 +4,16 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Composition
+open System.Collections.Immutable
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "MakeOuterBindingRecursive"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.MakeOuterBindingRecursive); Shared>]
 type internal FSharpMakeOuterBindingRecursiveCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
-    let fixableDiagnosticIds = set [ "FS0039" ]
-
-    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0039")
 
     override _.RegisterCodeFixesAsync context =
         asyncMaybe {
@@ -40,22 +39,15 @@ type internal FSharpMakeOuterBindingRecursiveCodeFixProvider [<ImportingConstruc
                         .ContentEquals(sourceText.GetSubText(context.Span))
                 )
 
-            let diagnostics =
-                context.Diagnostics
-                |> Seq.filter (fun x -> fixableDiagnosticIds |> Set.contains x.Id)
-                |> Seq.toImmutableArray
-
             let title =
                 String.Format(SR.MakeOuterBindingRecursive(), sourceText.GetSubText(outerBindingNameSpan).ToString())
 
-            let codeFix =
-                CodeFixHelpers.createTextChangeCodeFix (
+            do
+                context.RegisterFsharpFix(
+                    CodeFix.MakeOuterBindingRecursive,
                     title,
-                    context,
-                    (fun () -> asyncMaybe.Return [| TextChange(TextSpan(outerBindingNameSpan.Start, 0), "rec ") |])
+                    [| TextChange(TextSpan(outerBindingNameSpan.Start, 0), "rec ") |]
                 )
-
-            context.RegisterCodeFix(codeFix, diagnostics)
         }
         |> Async.Ignore
         |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

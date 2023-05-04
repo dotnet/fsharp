@@ -10,11 +10,11 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "ConvertCSharpUsingToFSharpOpen"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.ConvertCSharpUsingToFSharpOpen); Shared>]
 type internal FSharpConvertCSharpUsingToFSharpOpen [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
-    let fixableDiagnosticIds = set [ "FS0039"; "FS0201" ]
+    static let title = SR.ConvertCSharpUsingToFSharpOpen()
     let usingLength = "using".Length
 
     let isCSharpUsingShapeWithPos (context: CodeFixContext) (sourceText: SourceText) =
@@ -39,29 +39,17 @@ type internal FSharpConvertCSharpUsingToFSharpOpen [<ImportingConstructor>] () =
         let slice = sourceText.GetSubText(span).ToString()
         struct (slice = "using", start)
 
-    let registerCodeFix (context: CodeFixContext) (diagnostics: ImmutableArray<Diagnostic>) (str: string) (span: TextSpan) =
+    let registerCodeFix (context: CodeFixContext) (str: string) (span: TextSpan) =
         let replacement =
             let str = str.Replace("using", "open").Replace(";", "")
             TextChange(span, str)
 
-        let title = SR.ConvertCSharpUsingToFSharpOpen()
+        do context.RegisterFsharpFix(CodeFix.ConvertCSharpUsingToFSharpOpen, title, [| replacement |])
 
-        let codeFix =
-            CodeFixHelpers.createTextChangeCodeFix (title, context, (fun () -> asyncMaybe.Return [| replacement |]))
-
-        context.RegisterCodeFix(codeFix, diagnostics)
-
-    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0039", "FS0201")
 
     override _.RegisterCodeFixesAsync context =
         asyncMaybe {
-            let diagnostics =
-                context.Diagnostics
-                |> Seq.filter (fun x -> fixableDiagnosticIds |> Set.contains x.Id)
-                |> Seq.toImmutableArray
-
-            do! Option.guard (diagnostics.Length > 0)
-
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
 
             // TODO: handle single-line case?
@@ -78,7 +66,7 @@ type internal FSharpConvertCSharpUsingToFSharpOpen [<ImportingConstructor>] () =
                 (statementWithSemicolon.StartsWith("using")
                  && statementWithSemicolon.EndsWith(";"))
             then
-                registerCodeFix context diagnostics statementWithSemicolon statementWithSemicolonSpan
+                registerCodeFix context statementWithSemicolon statementWithSemicolonSpan
             else
                 // Only the identifier being opened has a diagnostic, so we try to find the rest of the statement
                 let struct (isCSharpUsingShape, start) =
@@ -88,7 +76,7 @@ type internal FSharpConvertCSharpUsingToFSharpOpen [<ImportingConstructor>] () =
                     let len = (context.Span.Start - start) + statementWithSemicolonSpan.Length
                     let fullSpan = TextSpan(start, len)
                     let str = sourceText.GetSubText(fullSpan).ToString()
-                    registerCodeFix context diagnostics str fullSpan
+                    registerCodeFix context str fullSpan
         }
         |> Async.Ignore
         |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

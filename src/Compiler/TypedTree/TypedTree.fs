@@ -1930,7 +1930,7 @@ type ExceptionInfo =
 
     override x.ToString() = sprintf "%+A" x 
 
-/// Represents the contents of of a module of namespace
+/// Represents the contents of a module or namespace
 [<Sealed; StructuredFormatDisplay("{DebugText}")>]
 type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, entities: QueueList<Entity>) = 
 
@@ -2578,6 +2578,10 @@ type ValOptionalData =
       /// that may be compiled as closures (that is are not necessarily compiled as top-level methods).
       mutable val_repr_info_for_display: ValReprInfo option
 
+      /// Records the "extra information" for parameters in implementation files if we've been able to correlate
+      /// them with lambda arguments.
+      mutable arg_repr_info_for_display: ArgReprInfo option
+
       /// How visible is this? 
       /// MUTABILITY: for unpickle linkage
       mutable val_access: Accessibility 
@@ -2641,6 +2645,7 @@ type Val =
           val_defn = None
           val_repr_info = None
           val_repr_info_for_display = None
+          arg_repr_info_for_display = None
           val_access = TAccess []
           val_xmldoc = XmlDoc.Empty
           val_other_xmldoc = None
@@ -2656,8 +2661,9 @@ type Val =
         | _ -> x.val_range
 
     /// Range of the definition (signature) of the value, used by Visual Studio 
-    member x.SigRange = 
+    member x.SigRange =
         match x.val_opt_data with
+        | Some { arg_repr_info_for_display = Some { OtherRange = Some m } } -> m
         | Some { val_other_range = Some(m, false) } -> m
         | _ -> x.val_range
 
@@ -2709,6 +2715,11 @@ type Val =
     member x.ValReprInfoForDisplay: ValReprInfo option =
         match x.val_opt_data with
         | Some optData -> optData.val_repr_info_for_display
+        | _ -> None
+
+    member x.ArgReprInfoForDisplay: ArgReprInfo option =
+        match x.val_opt_data with
+        | Some optData -> optData.arg_repr_info_for_display
         | _ -> None
 
     member x.Id = ident(x.LogicalName, x.Range)
@@ -3107,6 +3118,11 @@ type Val =
         | Some optData -> optData.val_repr_info_for_display <- info
         | _ -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_repr_info_for_display = info }
 
+    member x.SetArgReprInfoForDisplay info =
+        match x.val_opt_data with
+        | Some optData -> optData.arg_repr_info_for_display <- info
+        | _ -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with arg_repr_info_for_display = info }
+
     member x.SetType ty = x.val_type <- ty
 
     member x.SetOtherRange m =
@@ -3170,6 +3186,7 @@ type Val =
                        val_const = tg.val_const
                        val_defn = tg.val_defn
                        val_repr_info_for_display = tg.val_repr_info_for_display
+                       arg_repr_info_for_display = tg.arg_repr_info_for_display
                        val_repr_info = tg.val_repr_info
                        val_access = tg.val_access
                        val_xmldoc = tg.val_xmldoc
@@ -4665,8 +4682,8 @@ type ValReprInfo =
 /// Records the "extra information" for an argument compiled as a real
 /// method argument, specifically the argument name and attributes.
 [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
-type ArgReprInfo = 
-    { 
+type ArgReprInfo =
+    {
       /// The attributes for the argument
       // MUTABILITY: used when propagating signature attributes into the implementation.
       mutable Attribs: Attribs 
@@ -4674,6 +4691,10 @@ type ArgReprInfo =
       /// The name for the argument at this position, if any
       // MUTABILITY: used when propagating names of parameters from signature into the implementation.
       mutable Name: Ident option
+
+      /// The range of the signature/implementation counterpart to this argument, if any
+      // MUTABILITY: used when propagating ranges from signature into the implementation.
+      mutable OtherRange: range option
     }
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]

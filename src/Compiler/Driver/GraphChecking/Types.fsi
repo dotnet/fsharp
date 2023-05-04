@@ -30,7 +30,12 @@ type internal FileInProject =
 type internal TrieNodeInfo =
     | Root of files: HashSet<FileIndex>
     | Module of name: Identifier * file: FileIndex
-    | Namespace of name: Identifier * filesThatExposeTypes: HashSet<FileIndex>
+    | Namespace of
+        name: Identifier *
+        /// Files that expose types that are part of this namespace.
+        filesThatExposeTypes: HashSet<FileIndex> *
+        /// Files that use this namespace but don't contain any types.
+        filesDefiningNamespaceWithoutTypes: HashSet<FileIndex>
 
     member Files: Set<FileIndex>
 

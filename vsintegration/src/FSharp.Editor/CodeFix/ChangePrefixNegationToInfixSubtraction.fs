@@ -5,25 +5,21 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 open System.Composition
 open System.Threading.Tasks
+open System.Collections.Immutable
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "ChangePrefixNegationToInfixSubtraction"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.ChangePrefixNegationToInfixSubtraction); Shared>]
 type internal FSharpChangePrefixNegationToInfixSubtractionodeFixProvider() =
     inherit CodeFixProvider()
 
-    let fixableDiagnosticIds = set [ "FS0003" ]
+    static let title = SR.ChangePrefixNegationToInfixSubtraction()
 
-    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0003")
 
     override _.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
-            let diagnostics =
-                context.Diagnostics
-                |> Seq.filter (fun x -> fixableDiagnosticIds |> Set.contains x.Id)
-                |> Seq.toImmutableArray
-
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
 
             let mutable pos = context.Span.End + 1
@@ -39,17 +35,7 @@ type internal FSharpChangePrefixNegationToInfixSubtractionodeFixProvider() =
 
             // Bail if this isn't a negation
             do! Option.guard (ch = '-')
-
-            let title = SR.ChangePrefixNegationToInfixSubtraction()
-
-            let codeFix =
-                CodeFixHelpers.createTextChangeCodeFix (
-                    title,
-                    context,
-                    (fun () -> asyncMaybe.Return [| TextChange(TextSpan(pos, 1), "- ") |])
-                )
-
-            context.RegisterCodeFix(codeFix, diagnostics)
+            do context.RegisterFsharpFix(CodeFix.ChangePrefixNegationToInfixSubtraction, title, [| TextChange(TextSpan(pos, 1), "- ") |])
         }
         |> Async.Ignore
         |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

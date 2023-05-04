@@ -26,7 +26,10 @@ let isEnvVarSet s =
 
 let GetEnvInteger e dflt = match Environment.GetEnvironmentVariable(e) with null -> dflt | t -> try int t with _ -> dflt
 
-let dispose (x:IDisposable) = match x with null -> () | x -> x.Dispose()
+let dispose (x: IDisposable MaybeNull) = 
+    match x with
+    | Null -> ()
+    | NonNull x -> x.Dispose()
 
 //-------------------------------------------------------------------------
 // Library: bits
@@ -329,16 +332,9 @@ type Graph<'Data, 'Id when 'Id : comparison and 'Id : equality>
 // with care.
 //----------------------------------------------------------------------------
 
-// The following DEBUG code does not currently compile.
-//#if DEBUG
-//type 'T NonNullSlot = 'T option
-//let nullableSlotEmpty() = None
-//let nullableSlotFull(x) = Some x
-//#else
 type NonNullSlot<'T> = 'T
 let nullableSlotEmpty() = Unchecked.defaultof<'T>
 let nullableSlotFull x = x
-//#endif
 
 //---------------------------------------------------------------------------
 // Caches, mainly for free variables
