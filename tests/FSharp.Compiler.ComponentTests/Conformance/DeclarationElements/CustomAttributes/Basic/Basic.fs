@@ -344,3 +344,65 @@ module Basic =
         compilation
         |> verifyCompileAndRun
         |> shouldSucceed
+
+    [<Fact>]
+    let ``StructLayoutAttribute doesn't have size=1 for struct DUs with instance fields`` () =
+        Fsx """
+        [<Struct>] type Option<'T> = None | Some of 'T
+        """
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+        """
+        .class sequential autochar serializable sealed nested public beforefieldinit Option`1<T>
+        extends [runtime]System.ValueType
+        implements class [runtime]System.IEquatable`1<valuetype Test/Option`1<!T>>,
+                   [runtime]System.Collections.IStructuralEquatable,
+                   class [runtime]System.IComparable`1<valuetype Test/Option`1<!T>>,
+                   [runtime]System.IComparable,
+                   [runtime]System.Collections.IStructuralComparable
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.StructAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [runtime]System.Diagnostics.DebuggerDisplayAttribute::.ctor(string) = ( 01 00 15 7B 5F 5F 44 65 62 75 67 44 69 73 70 6C   
+                                                                                                  61 79 28 29 2C 6E 71 7D 00 00 )                   
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 01 00 00 00 00 00 ) 
+    .class abstract auto ansi sealed nested public Tags<T>
+          extends [runtime]System.Object
+    {
+      .field public static literal int32 None = int32(0x00000000)
+      .field public static literal int32 Some = int32(0x00000001)
+    } 
+        """
+        ]
+
+    [<Fact>]
+    let ``StructLayoutAttribute has size=1 for struct DUs with no instance fields`` () =
+        Fsx """
+        [<Struct>] type Option<'T> = None | Some
+        """
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+        """
+        .class sequential autochar serializable sealed nested public beforefieldinit Option`1<T>
+        extends [runtime]System.ValueType
+        implements class [runtime]System.IEquatable`1<valuetype Test/Option`1<!T>>,
+                   [runtime]System.Collections.IStructuralEquatable,
+                   class [runtime]System.IComparable`1<valuetype Test/Option`1<!T>>,
+                   [runtime]System.IComparable,
+                   [runtime]System.Collections.IStructuralComparable
+  {
+    .pack 0
+    .size 1
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.StructAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [runtime]System.Diagnostics.DebuggerDisplayAttribute::.ctor(string) = ( 01 00 15 7B 5F 5F 44 65 62 75 67 44 69 73 70 6C   
+                                                                                                  61 79 28 29 2C 6E 71 7D 00 00 )                   
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 01 00 00 00 00 00 ) 
+    .class abstract auto ansi sealed nested public Tags<T>
+          extends [runtime]System.Object
+    {
+      .field public static literal int32 None = int32(0x00000000)
+      .field public static literal int32 Some = int32(0x00000001)
+    } 
+        """
+        ]
