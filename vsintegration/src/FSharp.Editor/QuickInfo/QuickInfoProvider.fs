@@ -18,6 +18,7 @@ open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.Text
 open Microsoft.IO
 open FSharp.Compiler.EditorServices
+open Internal.Utilities.CancellableTasks
 
 type internal FSharpAsyncQuickInfoSource
     (
@@ -108,20 +109,27 @@ type internal FSharpAsyncQuickInfoSource
         override _.Dispose() = () // no cleanup necessary
 
         override _.GetQuickInfoItemAsync(session: IAsyncQuickInfoSession, cancellationToken: CancellationToken) : Task<QuickInfoItem> =
-            asyncMaybe {
+            cancellableTask {
                 let document =
                     textBuffer.CurrentSnapshot.GetOpenDocumentInCurrentContextWithChanges()
 
-                let! triggerPoint = session.GetTriggerPoint(textBuffer.CurrentSnapshot) |> Option.ofNullable
-                let position = triggerPoint.Position
+                let triggerPoint = session.GetTriggerPoint(textBuffer.CurrentSnapshot)
 
-                let! tipdata =
-                    FSharpAsyncQuickInfoSource.TryGetToolTip(document, position, ?width = editorOptions.QuickInfo.DescriptionWidth)
+                if not triggerPoint.HasValue then
+                    return Unchecked.defaultof<_>
+                else
+                    let position = triggerPoint.Value.Position
 
-                return! getQuickInfoItem tipdata
-            }
-            |> Async.map Option.toObj
-            |> RoslynHelpers.StartAsyncAsTask cancellationToken
+                    let! tipdata =
+                        FSharpAsyncQuickInfoSource.TryGetToolTip(document, position, ?width = editorOptions.QuickInfo.DescriptionWidth)
+
+                    match tipdata with
+                    | Some tipdata ->
+                        let! tipdata = getQuickInfoItem tipdata
+                        return Option.toObj tipdata
+                    | None -> return Unchecked.defaultof<_>
+
+            } |> CancellableTask.start cancellationToken
 
 [<Export(typeof<IAsyncQuickInfoSourceProvider>)>]
 [<Name("F# Quick Info Provider")>]

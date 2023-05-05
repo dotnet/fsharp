@@ -97,7 +97,8 @@ module internal CompletionUtils =
             defines: string list,
             langVersion: string option,
             sourceText: SourceText,
-            triggerPosition: int
+            triggerPosition: int,
+            ct: CancellationToken
         ) : bool =
         let textLines = sourceText.Lines
         let triggerLine = textLines.GetLineFromPosition triggerPosition
@@ -110,7 +111,7 @@ module internal CompletionUtils =
                 Some filePath,
                 defines,
                 langVersion,
-                CancellationToken.None
+                ct
             )
 
         classifiedSpans.Count = 0
@@ -140,7 +141,7 @@ module internal CompletionUtils =
         | CompletionItemKind.Method(isExtension = true) -> 7
 
     /// Indicates the text span to be replaced by a committed completion list item.
-    let getDefaultCompletionListSpan (sourceText: SourceText, caretIndex, documentId, filePath, defines, langVersion) =
+    let getDefaultCompletionListSpan (sourceText: SourceText, caretIndex, documentId, filePath, defines, langVersion, ct: CancellationToken) =
 
         // Gets connected identifier-part characters backward and forward from caret.
         let getIdentifierChars () =
@@ -183,7 +184,7 @@ module internal CompletionUtils =
                     Some filePath,
                     defines,
                     langVersion,
-                    CancellationToken.None
+                    ct
                 )
 
             let isBacktickIdentifier (classifiedSpan: ClassifiedSpan) =

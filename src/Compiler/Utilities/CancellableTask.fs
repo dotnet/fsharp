@@ -692,23 +692,23 @@ module CancellableTasks =
             /// Turn option into "awaitable", will return cancelled task if None
             /// </summary>
             /// <param name="s">Option instance to bind on</param>
-            member inline _.Source(s: 'T option) =
+            (*member inline _.Source(s: 'T option) =
                 (fun (_ct: CancellationToken) ->
                     match s with
                     | Some x -> Task.FromResult<'T>(x).GetAwaiter()
                     | None -> Task.FromCanceled<'T>(CancellationToken(true)).GetAwaiter()
-                )
+                )*)
 
             /// <summary>
             /// Turn a value option into "awaitable", will return cancelled task if None
             /// </summary>
             /// <param name="s">Option instance to bind on</param>
-            member inline _.Source(s: 'T voption) =
+            (*member inline _.Source(s: 'T voption) =
                 (fun (_ct: CancellationToken) ->
                     match s with
                     | ValueSome x -> Task.FromResult<'T>(x).GetAwaiter()
                     | ValueNone -> Task.FromCanceled<'T>(CancellationToken(true)).GetAwaiter()
-                )
+                )*)
 
             /// <summary>Allows the computation expression to turn other types into other types</summary>
             ///

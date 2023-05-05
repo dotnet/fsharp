@@ -142,7 +142,7 @@
     <Compile Include="Hints\HintService.fs" />
     <Compile Include="Hints\NativeToRoslynHintConverter.fs" />
     <Compile Include="Hints\OptionParser.fs" />
-    <Compile Include="Hints\RoslynAdapter.fs" />
+    <Compile Include="Hints\FSharpInlineHintsService.fs" />
   </ItemGroup>
 
   <ItemGroup>

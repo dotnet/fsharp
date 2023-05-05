@@ -22,7 +22,7 @@ module Hints =
             GetTooltip: Document -> CancellableTask<TaggedText list>
         }
 
-    let serialize kind =
+    let inline serialize kind =
         match kind with
         | TypeHint -> "type"
         | ParameterNameHint -> "parameterName"

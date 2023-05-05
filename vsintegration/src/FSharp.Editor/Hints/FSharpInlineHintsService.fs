@@ -16,29 +16,29 @@ open System.Threading.Tasks
 // e.g. signature hints above the line, pipeline hints on the side and so on.
 
 [<Export(typeof<IFSharpInlineHintsService>)>]
-type internal RoslynAdapter [<ImportingConstructor>] (settings: EditorOptions) =
+type internal FSharpInlineHintsService [<ImportingConstructor>] (settings: EditorOptions) =
 
     static let userOpName = "Hints"
 
     interface IFSharpInlineHintsService with
         member _.GetInlineHintsAsync(document, _, cancellationToken) =
-            cancellableTask {
-                let hintKinds = OptionParser.getHintKinds settings.Advanced
+            let hintKinds = OptionParser.getHintKinds settings.Advanced
 
-                if hintKinds.IsEmpty then
-                    return ImmutableArray.Empty
-                else
+            if hintKinds.IsEmpty then
+                Task.FromResult ImmutableArray.Empty
+            else 
+                cancellableTask {
                     let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
 
                     let hintKindsSerialized = hintKinds |> Set.map Hints.serialize |> String.concat ","
                     TelemetryReporter.reportEvent "hints" [ ("hints.kinds", hintKindsSerialized) ]
 
                     let! sourceText = document.GetTextAsync cancellationToken
-                    let! nativeHints = HintService.getHintsForDocument sourceText document hintKinds userOpName cancellationToken
+                    let! nativeHints = HintService.getHintsForDocument sourceText document hintKinds userOpName
 
                     let tasks = nativeHints |> Seq.map (fun hint -> NativeToRoslynHintConverter.convert sourceText hint cancellationToken)
 
                     let! roslynHints = Task.WhenAll(tasks)
 
                     return roslynHints.ToImmutableArray()
-            } |> CancellableTask.start cancellationToken
+                } |> CancellableTask.start cancellationToken
