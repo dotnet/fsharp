@@ -23,8 +23,7 @@ type internal FSharpHelpContextService [<ImportingConstructor>] () =
     static member GetHelpTerm(document: Document, span: TextSpan, tokens: List<ClassifiedSpan>) : CancellableTask<string> =
         cancellableTask {
             let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
-            let! _, check =
-                document.GetFSharpParseAndCheckResultsAsync(nameof (FSharpHelpContextService))
+            let! _, check = document.GetFSharpParseAndCheckResultsAsync(nameof (FSharpHelpContextService))
 
             let! sourceText = document.GetTextAsync(cancellationToken)
             let textLines = sourceText.Lines
@@ -91,7 +90,9 @@ type internal FSharpHelpContextService [<ImportingConstructor>] () =
                         match island with
                         | Some (s, colAtEndOfNames, _) when check.HasFullTypeCheckInfo ->
                             let qualId = PrettyNaming.GetLongNameFromString s
-                            let f1Keyword = check.GetF1Keyword(Line.fromZ line, colAtEndOfNames, lineText, qualId)
+
+                            let f1Keyword =
+                                check.GetF1Keyword(Line.fromZ line, colAtEndOfNames, lineText, qualId)
 
                             return Option.defaultValue "" f1Keyword
 
@@ -125,6 +126,7 @@ type internal FSharpHelpContextService [<ImportingConstructor>] () =
                     )
 
                 return! FSharpHelpContextService.GetHelpTerm(document, textSpan, classifiedSpans)
-            } |> CancellableTask.start cancellationToken
+            }
+            |> CancellableTask.start cancellationToken
 
         member this.FormatSymbol(_symbol) = Unchecked.defaultof<_>

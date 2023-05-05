@@ -37,6 +37,7 @@ module QuickInfo =
                 FSharpAsyncQuickInfoSource.TryGetToolTip(document, caretPosition)
                 |> CancellableTask.start CancellationToken.None
                 |> Async.AwaitTask
+
             return tooltip
         }
         |> Async.RunSynchronously

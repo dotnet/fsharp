@@ -58,7 +58,15 @@ type internal FSharpCompletionService
         let defines, langVersion =
             projectInfoManager.GetCompilationDefinesAndLangVersionForEditingDocument(document)
 
-        CompletionUtils.getDefaultCompletionListSpan (sourceText, caretIndex, documentId, document.FilePath, defines, Some langVersion, CancellationToken.None)
+        CompletionUtils.getDefaultCompletionListSpan (
+            sourceText,
+            caretIndex,
+            documentId,
+            document.FilePath,
+            defines,
+            Some langVersion,
+            CancellationToken.None
+        )
 
 [<Shared>]
 [<ExportLanguageServiceFactory(typeof<CompletionService>, FSharpConstants.FSharpLanguageName)>]

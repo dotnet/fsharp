@@ -190,7 +190,8 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>]
 
                 let! ct = CancellableTask.getCurrentCancellationToken ()
 
-                let tasks = Seq.map (fun doc -> processDocument tryMatch kinds doc ct) project.Documents
+                let tasks =
+                    Seq.map (fun doc -> processDocument tryMatch kinds doc ct) project.Documents
 
                 let! results = Task.WhenAll(tasks)
 

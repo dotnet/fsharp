@@ -84,6 +84,7 @@ module CompletionProviderTests =
             let task =
                 FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> []))
                 |> CancellableTask.start CancellationToken.None
+
             task.Result
             |> Seq.toList
             // sort items as Roslyn do - by `SortText`

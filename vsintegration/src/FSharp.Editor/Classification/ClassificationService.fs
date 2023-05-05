@@ -145,8 +145,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
             | _ -> ()
 
     static let toSemanticClassificationLookup (d: SemanticClassificationData) =
-        let lookup =
-            Dictionary<int, ResizeArray<SemanticClassificationItem>>()
+        let lookup = Dictionary<int, ResizeArray<SemanticClassificationItem>>()
 
         let f (dataItem: SemanticClassificationItem) =
             let items =
@@ -181,7 +180,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
 
                 let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
 
-                let defines, _= document.GetFSharpQuickDefinesAndLangVersion()
+                let defines, _ = document.GetFSharpQuickDefinesAndLangVersion()
                 let! sourceText = document.GetTextAsync(cancellationToken)
 
                 // For closed documents, only get classification for the text within the span.
@@ -193,7 +192,8 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                 else
                     let! classifiedSpans = getLexicalClassifications (document.FilePath, defines, sourceText, textSpan)
                     result.AddRange(classifiedSpans)
-            } |> CancellableTask.startAsTask cancellationToken
+            }
+            |> CancellableTask.startAsTask cancellationToken
 
         member _.AddSemanticClassificationsAsync
             (
@@ -227,7 +227,8 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
 
                     let classificationData = checkResults.GetSemanticClassification(Some targetRange)
                     addSemanticClassification sourceText textSpan classificationData result
-            } |> CancellableTask.startAsTask cancellationToken
+            }
+            |> CancellableTask.startAsTask cancellationToken
 
         // Do not perform classification if we don't have project options (#defines matter)
         member _.AdjustStaleClassification(_: SourceText, classifiedSpan: ClassifiedSpan) : ClassifiedSpan = classifiedSpan

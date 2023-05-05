@@ -49,10 +49,7 @@ type internal RoamingProfileStorageLocation(keyName: string) =
 
 [<Composition.Shared>]
 [<ExportWorkspaceServiceFactory(typeof<IFSharpWorkspaceService>, ServiceLayer.Default)>]
-type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
-    (
-        metadataAsSourceService: FSharpMetadataAsSourceService
-    ) =
+type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>] (metadataAsSourceService: FSharpMetadataAsSourceService) =
 
     // We have a lock just in case if multi-threads try to create a new IFSharpWorkspaceService -
     //     but we only want to have a single instance of the FSharpChecker regardless if there are multiple instances of IFSharpWorkspaceService.
@@ -73,11 +70,7 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                 | :? VisualStudioWorkspace as workspace ->
                     try
                         let md =
-                            LanguageServices.FSharpVisualStudioWorkspaceExtensions.GetMetadata(
-                                workspace,
-                                path,
-                                timeStamp
-                            )
+                            LanguageServices.FSharpVisualStudioWorkspaceExtensions.GetMetadata(workspace, path, timeStamp)
 
                         let amd = (md :?> AssemblyMetadata)
                         let mmd = amd.GetModules().[0]
@@ -304,14 +297,11 @@ type internal FSharpSettingsFactory [<Composition.ImportingConstructor>] (settin
 type internal FSharpPackage() as this =
     inherit AbstractPackage<FSharpPackage, FSharpLanguageService>()
 
-    let mutable vfsiToolWindow =
-        Unchecked.defaultof<FSharp.Interactive.FsiToolWindow>
+    let mutable vfsiToolWindow = Unchecked.defaultof<FSharp.Interactive.FsiToolWindow>
 
     let GetToolWindowAsITestVFSI () =
         if vfsiToolWindow = Unchecked.defaultof<_> then
-            vfsiToolWindow <-
-                this.FindToolWindow(typeof<FSharp.Interactive.FsiToolWindow>, 0, true)
-                :?> FSharp.Interactive.FsiToolWindow
+            vfsiToolWindow <- this.FindToolWindow(typeof<FSharp.Interactive.FsiToolWindow>, 0, true) :?> FSharp.Interactive.FsiToolWindow
 
         vfsiToolWindow :> FSharp.Interactive.ITestVFSI
 
@@ -342,12 +332,26 @@ type internal FSharpPackage() as this =
             FSharp.Interactive.Hooks.fsiConsoleWindowPackageInitalizeSited (this :> Package) commandService
 
             // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
-            let _fsiPropertyPage = this.GetDialogPage(typeof<FSharp.Interactive.FsiPropertyPage>)
+            let _fsiPropertyPage =
+                this.GetDialogPage(typeof<FSharp.Interactive.FsiPropertyPage>)
 
             let workspace = this.ComponentModel.GetService<VisualStudioWorkspace>()
-            let _ = this.ComponentModel.DefaultExportProvider.GetExport<HackCpsCommandLineChanges>()
-            let optionsManager = workspace.Services.GetService<IFSharpWorkspaceService>().FSharpProjectOptionsManager
-            let metadataAsSource = this.ComponentModel.DefaultExportProvider.GetExport<FSharpMetadataAsSourceService>().Value
+
+            let _ =
+                this.ComponentModel.DefaultExportProvider.GetExport<HackCpsCommandLineChanges>()
+
+            let optionsManager =
+                workspace
+                    .Services
+                    .GetService<IFSharpWorkspaceService>()
+                    .FSharpProjectOptionsManager
+
+            let metadataAsSource =
+                this
+                    .ComponentModel
+                    .DefaultExportProvider
+                    .GetExport<FSharpMetadataAsSourceService>()
+                    .Value
 
             let! solution = this.GetServiceAsync(typeof<SVsSolution>)
             let solution = solution :?> IVsSolution
@@ -360,18 +364,18 @@ type internal FSharpPackage() as this =
             solutionEventsOpt <- Some(solutionEvents)
             solution.AdviseSolutionEvents(solutionEvents) |> ignore
 
-            let projectContextFactory = this.ComponentModel.GetService<FSharpWorkspaceProjectContextFactory>()
-            let miscFilesWorkspace = this.ComponentModel.GetService<MiscellaneousFilesWorkspace>()
-            do SingleFileWorkspaceMap(
-                FSharpMiscellaneousFileService(
-                    workspace,
-                    miscFilesWorkspace,
-                    projectContextFactory
-                ),
-                rdt) |> ignore
+            let projectContextFactory =
+                this.ComponentModel.GetService<FSharpWorkspaceProjectContextFactory>()
 
-        } |> CancellableTask.startAsTask cancellationToken
-        
+            let miscFilesWorkspace =
+                this.ComponentModel.GetService<MiscellaneousFilesWorkspace>()
+
+            do
+                SingleFileWorkspaceMap(FSharpMiscellaneousFileService(workspace, miscFilesWorkspace, projectContextFactory), rdt)
+                |> ignore
+
+        }
+        |> CancellableTask.startAsTask cancellationToken
 
     override _.RoslynLanguageName = FSharpConstants.FSharpLanguageName
     (*override this.CreateWorkspace() = this.ComponentModel.GetService<VisualStudioWorkspaceImpl>() *)
@@ -428,8 +432,7 @@ type internal FSharpLanguageService(package: FSharpPackage) =
     override _.LanguageServiceId = new Guid(FSharpConstants.languageServiceGuidString)
     override _.DebuggerLanguageId = CompilerEnvironment.GetDebuggerLanguageID()
 
-    override _.CreateContext(_, _, _, _, _) =
-        raise (NotImplementedException())
+    override _.CreateContext(_, _, _, _, _) = raise (NotImplementedException())
 
     override this.SetupNewTextView(textView) =
         base.SetupNewTextView(textView)
@@ -481,9 +484,11 @@ type internal HackCpsCommandLineChanges [<ComponentModel.Composition.ImportingCo
             with
             | true, projectId -> projectId
             | false, _ ->
-                LanguageServices
-                    .FSharpVisualStudioWorkspaceExtensions
-                    .GetOrCreateProjectIdForPath(workspace, path, projectDisplayNameOf path)
+                LanguageServices.FSharpVisualStudioWorkspaceExtensions.GetOrCreateProjectIdForPath(
+                    workspace,
+                    path,
+                    projectDisplayNameOf path
+                )
 
         let path =
             Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.FSharpVisualStudioWorkspaceExtensions.GetProjectFilePath(

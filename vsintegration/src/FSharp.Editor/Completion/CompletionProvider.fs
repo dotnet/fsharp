@@ -131,7 +131,15 @@ type internal FSharpCompletionProvider
             else
                 let documentId, filePath, defines, langVersion = getInfo ()
 
-                CompletionUtils.shouldProvideCompletion (documentId, filePath, defines, langVersion, sourceText, triggerPosition, cancellationToken)
+                CompletionUtils.shouldProvideCompletion (
+                    documentId,
+                    filePath,
+                    defines,
+                    langVersion,
+                    sourceText,
+                    triggerPosition,
+                    cancellationToken
+                )
                 && (triggerChar = '.'
                     || (intelliSenseOptions.ShowAfterCharIsTyped
                         && CompletionUtils.isStartingNewWord (sourceText, triggerPosition)))
@@ -144,8 +152,7 @@ type internal FSharpCompletionProvider
         ) =
 
         cancellableTask {
-            let! parseResults, checkFileResults =
-                document.GetFSharpParseAndCheckResultsAsync("ProvideCompletionsAsyncAux")
+            let! parseResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync("ProvideCompletionsAsyncAux")
 
             let! ct = CancellableTask.getCurrentCancellationToken ()
 
@@ -293,7 +300,14 @@ type internal FSharpCompletionProvider
             let defines, langVersion = document.GetFSharpQuickDefinesAndLangVersion()
             (documentId, document.FilePath, defines, Some langVersion)
 
-        FSharpCompletionProvider.ShouldTriggerCompletionAux(sourceText, caretPosition, trigger.Kind, getInfo, settings.IntelliSense, CancellationToken.None)
+        FSharpCompletionProvider.ShouldTriggerCompletionAux(
+            sourceText,
+            caretPosition,
+            trigger.Kind,
+            getInfo,
+            settings.IntelliSense,
+            CancellationToken.None
+        )
 
     override _.ProvideCompletionsAsync(context: Completion.CompletionContext) =
         cancellableTask {
@@ -325,10 +339,11 @@ type internal FSharpCompletionProvider
                         []
 
                 let! results = FSharpCompletionProvider.ProvideCompletionsAsyncAux(context.Document, context.Position, getAllSymbols)
-                
+
                 context.AddItems results
- 
-        } |> CancellableTask.startAsTask context.CancellationToken
+
+        }
+        |> CancellableTask.startAsTask context.CancellationToken
 
     override _.GetDescriptionAsync
         (
@@ -368,7 +383,8 @@ type internal FSharpCompletionProvider
                 match completionItem.Properties.TryGetValue KeywordDescription with
                 | true, keywordDescription -> return CompletionDescription.FromText(keywordDescription)
                 | false, _ -> return CompletionDescription.Empty
-        } |> CancellableTask.start cancellationToken
+        }
+        |> CancellableTask.start cancellationToken
 
     override _.GetChangeAsync(document, item, _, cancellationToken) : Task<CompletionChange> =
         cancellableTask {
@@ -397,10 +413,8 @@ type internal FSharpCompletionProvider
                 | true, x -> x
                 | _ -> item.DisplayText
 
-
             match item.Properties.TryGetValue NamespaceToOpenPropName with
-            | false, _ ->
-                return CompletionChange.Create(TextChange(item.Span, nameInCode))
+            | false, _ -> return CompletionChange.Create(TextChange(item.Span, nameInCode))
             | true, ns ->
                 let! sourceText = document.GetTextAsync(cancellationToken)
 
@@ -421,11 +435,7 @@ type internal FSharpCompletionProvider
                         OpenStatementInsertionPoint.Nearest
 
                 let ctx =
-                    ParsedInput.FindNearestPointToInsertOpenDeclaration
-                        line.LineNumber
-                        parseResults.ParseTree
-                        fullNameIdents
-                        insertionPoint
+                    ParsedInput.FindNearestPointToInsertOpenDeclaration line.LineNumber parseResults.ParseTree fullNameIdents insertionPoint
 
                 let finalSourceText, changedSpanStartPos =
                     OpenDeclarationHelper.insertOpenDeclaration textWithItemCommitted ctx ns
@@ -441,4 +451,5 @@ type internal FSharpCompletionProvider
                     CompletionChange
                         .Create(TextChange(fullChangingSpan, changedText))
                         .WithNewPosition(Nullable(changedSpan.End))
-        } |> CancellableTask.start cancellationToken
+        }
+        |> CancellableTask.start cancellationToken

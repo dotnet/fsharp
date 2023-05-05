@@ -104,15 +104,7 @@ module internal CompletionUtils =
         let triggerLine = textLines.GetLineFromPosition triggerPosition
 
         let classifiedSpans =
-            Tokenizer.getClassifiedSpans (
-                documentId,
-                sourceText,
-                triggerLine.Span,
-                Some filePath,
-                defines,
-                langVersion,
-                ct
-            )
+            Tokenizer.getClassifiedSpans (documentId, sourceText, triggerLine.Span, Some filePath, defines, langVersion, ct)
 
         classifiedSpans.Count = 0
         || // we should provide completion at the start of empty line, where there are no tokens at all
@@ -141,7 +133,16 @@ module internal CompletionUtils =
         | CompletionItemKind.Method(isExtension = true) -> 7
 
     /// Indicates the text span to be replaced by a committed completion list item.
-    let getDefaultCompletionListSpan (sourceText: SourceText, caretIndex, documentId, filePath, defines, langVersion, ct: CancellationToken) =
+    let getDefaultCompletionListSpan
+        (
+            sourceText: SourceText,
+            caretIndex,
+            documentId,
+            filePath,
+            defines,
+            langVersion,
+            ct: CancellationToken
+        ) =
 
         // Gets connected identifier-part characters backward and forward from caret.
         let getIdentifierChars () =
@@ -177,15 +178,7 @@ module internal CompletionUtils =
             // the majority of common cases.
 
             let classifiedSpans =
-                Tokenizer.getClassifiedSpans (
-                    documentId,
-                    sourceText,
-                    line.Span,
-                    Some filePath,
-                    defines,
-                    langVersion,
-                    ct
-                )
+                Tokenizer.getClassifiedSpans (documentId, sourceText, line.Span, Some filePath, defines, langVersion, ct)
 
             let isBacktickIdentifier (classifiedSpan: ClassifiedSpan) =
                 classifiedSpan.ClassificationType = ClassificationTypeNames.Identifier

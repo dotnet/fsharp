@@ -79,4 +79,5 @@ type internal FSharpLanguageDebugInfoService [<ImportingConstructor>] () =
                     | Some textSpan -> FSharpDebugDataTipInfo(textSpan, sourceText.GetSubText(textSpan).ToString())
 
                 return result
-            } |> CancellableTask.start cancellationToken
+            }
+            |> CancellableTask.start cancellationToken

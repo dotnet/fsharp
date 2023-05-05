@@ -99,6 +99,7 @@ module QuickInfoProviderTests =
                 let task =
                     FSharpAsyncQuickInfoSource.TryGetToolTip(document, caretPosition)
                     |> CancellableTask.start CancellationToken.None
+
                 task.Result
 
             let actual =

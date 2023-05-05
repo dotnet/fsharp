@@ -26,7 +26,7 @@ type internal FSharpInlineHintsService [<ImportingConstructor>] (settings: Edito
 
             if hintKinds.IsEmpty then
                 Task.FromResult ImmutableArray.Empty
-            else 
+            else
                 cancellableTask {
                     let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
 
@@ -36,9 +36,12 @@ type internal FSharpInlineHintsService [<ImportingConstructor>] (settings: Edito
                     let! sourceText = document.GetTextAsync cancellationToken
                     let! nativeHints = HintService.getHintsForDocument sourceText document hintKinds userOpName
 
-                    let tasks = nativeHints |> Seq.map (fun hint -> NativeToRoslynHintConverter.convert sourceText hint cancellationToken)
+                    let tasks =
+                        nativeHints
+                        |> Seq.map (fun hint -> NativeToRoslynHintConverter.convert sourceText hint cancellationToken)
 
                     let! roslynHints = Task.WhenAll(tasks)
 
                     return roslynHints.ToImmutableArray()
-                } |> CancellableTask.start cancellationToken
+                }
+                |> CancellableTask.start cancellationToken

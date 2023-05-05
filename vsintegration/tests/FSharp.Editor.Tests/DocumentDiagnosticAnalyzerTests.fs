@@ -24,7 +24,9 @@ type DocumentDiagnosticAnalyzerTests() =
                 let! syntacticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax)
                 let! semanticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic)
                 return syntacticDiagnostics.AddRange(semanticDiagnostics)
-            } |> CancellableTask.start CancellationToken.None
+            }
+            |> CancellableTask.start CancellationToken.None
+
         task.Result
 
     member private this.VerifyNoErrors(fileContents: string, ?additionalFlags: string[]) =

@@ -62,7 +62,7 @@ module HintTestFramework =
         project.Documents
 
     let getHints (document: Document) hintKinds =
-        let task = 
+        let task =
             cancellableTask {
                 let! ct = CancellableTask.getCurrentCancellationToken ()
 
@@ -76,7 +76,9 @@ module HintTestFramework =
                 let! hints = HintService.getHintsForDocument sourceText document hintKinds "test" ct
                 let! tooltips = hints |> Seq.map getTooltip |> Async.Parallel
                 return tooltips |> Seq.zip hints |> Seq.map convert
-            } |> CancellableTask.start CancellationToken.None
+            }
+            |> CancellableTask.start CancellationToken.None
+
         task.Result
 
     let getTypeHints document =

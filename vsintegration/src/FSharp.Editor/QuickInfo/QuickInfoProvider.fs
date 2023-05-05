@@ -57,7 +57,7 @@ type internal FSharpAsyncQuickInfoSource
                 )
 
             let content = elements |> List.map getSingleContent
-            
+
             if content.IsEmpty then
                 return None
             else
@@ -137,7 +137,8 @@ type internal FSharpAsyncQuickInfoSource
                         return Option.toObj tipdata
                     | None -> return Unchecked.defaultof<_>
 
-            } |> CancellableTask.start cancellationToken
+            }
+            |> CancellableTask.start cancellationToken
 
 [<Export(typeof<IAsyncQuickInfoSourceProvider>)>]
 [<Name("F# Quick Info Provider")>]

@@ -160,11 +160,11 @@ type internal FSharpBlockStructureService [<ImportingConstructor>] () =
 
                 let! sourceText = document.GetTextAsync(cancellationToken)
 
-                let! parseResults =
-                    document.GetFSharpParseResultsAsync(nameof (FSharpBlockStructureService))
+                let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpBlockStructureService))
 
                 return
                     createBlockSpans document.Project.IsFSharpBlockStructureEnabled sourceText parseResults.ParseTree
                     |> Seq.toImmutableArray
                     |> FSharpBlockStructure
-            } |> CancellableTask.start cancellationToken
+            }
+            |> CancellableTask.start cancellationToken

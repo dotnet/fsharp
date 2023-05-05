@@ -112,7 +112,8 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
                     return ImmutableArray.Empty
                 else
                     return! FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax)
-            } |> CancellableTask.start cancellationToken
+            }
+            |> CancellableTask.start cancellationToken
 
         member _.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken) : Task<ImmutableArray<Diagnostic>> =
             cancellableTask {
@@ -120,4 +121,5 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
                     return ImmutableArray.Empty
                 else
                     return! FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic)
-            } |> CancellableTask.start cancellationToken
+            }
+            |> CancellableTask.start cancellationToken

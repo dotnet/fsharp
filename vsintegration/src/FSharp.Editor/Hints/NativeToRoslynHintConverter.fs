@@ -30,7 +30,8 @@ module NativeToRoslynHintConverter =
             cancellableTask {
                 let! taggedText = hint.GetTooltip doc
                 return taggedText |> List.map nativeToRoslynText |> ImmutableArray.CreateRange
-            } |> CancellableTask.start ct
+            }
+            |> CancellableTask.start ct
 
         cancellableTask {
             let span = rangeToSpan hint.Range sourceText

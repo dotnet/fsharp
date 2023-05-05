@@ -56,6 +56,7 @@ type HelpContextServiceTests() =
                     let task =
                         FSharpHelpContextService.GetHelpTerm(document, span, classifiedSpans)
                         |> CancellableTask.start CancellationToken.None
+
                     task.Result
             ]
 
