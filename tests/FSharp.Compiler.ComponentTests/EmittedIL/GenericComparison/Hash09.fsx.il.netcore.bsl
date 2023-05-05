@@ -43,15 +43,15 @@
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class abstract auto ansi sealed nested public CompareMicroPerfAndCodeGenerationTests
+  .class abstract auto ansi sealed nested public HashMicroPerfAndCodeGenerationTests
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
     .class auto autochar serializable sealed nested public beforefieldinit GenericKey`1<a>
            extends [runtime]System.Object
-           implements class [runtime]System.IEquatable`1<class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>>,
+           implements class [runtime]System.IEquatable`1<class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>>,
                       [runtime]System.Collections.IStructuralEquatable,
-                      class [runtime]System.IComparable`1<class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>>,
+                      class [runtime]System.IComparable`1<class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>>,
                       [runtime]System.IComparable,
                       [runtime]System.Collections.IStructuralComparable
     {
@@ -66,7 +66,7 @@
       .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      .method public static class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a> 
+      .method public static class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a> 
               NewGenericKey(!a item1,
                             !a item2) cil managed
       {
@@ -76,8 +76,8 @@
         .maxstack  8
         IL_0000:  ldarg.0
         IL_0001:  ldarg.1
-        IL_0002:  newobj     instance void class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::.ctor(!0,
-                                                                                                                          !0)
+        IL_0002:  newobj     instance void class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::.ctor(!0,
+                                                                                                                    !0)
         IL_0007:  ret
       } 
 
@@ -86,11 +86,10 @@
                                    !a item2) cil managed
       {
         .custom instance void [runtime]System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::.ctor(valuetype [runtime]System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes,
-                                                                                                                class [runtime]System.Type) = ( 01 00 60 06 00 00 3D 43 6F 6D 70 61 72 65 30 37   
-                                                                                                                                                       2B 43 6F 6D 70 61 72 65 4D 69 63 72 6F 50 65 72   
-                                                                                                                                                       66 41 6E 64 43 6F 64 65 47 65 6E 65 72 61 74 69   
-                                                                                                                                                       6F 6E 54 65 73 74 73 2B 47 65 6E 65 72 69 63 4B   
-                                                                                                                                                       65 79 60 31 00 00 )                               
+                                                                                                                class [runtime]System.Type) = ( 01 00 60 06 00 00 37 48 61 73 68 30 39 2B 48 61   
+                                                                                                                                                       73 68 4D 69 63 72 6F 50 65 72 66 41 6E 64 43 6F   
+                                                                                                                                                       64 65 47 65 6E 65 72 61 74 69 6F 6E 54 65 73 74   
+                                                                                                                                                       73 2B 47 65 6E 65 72 69 63 4B 65 79 60 31 00 00 ) 
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         
@@ -99,10 +98,10 @@
         IL_0001:  call       instance void [runtime]System.Object::.ctor()
         IL_0006:  ldarg.0
         IL_0007:  ldarg.1
-        IL_0008:  stfld      !0 class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item1
+        IL_0008:  stfld      !0 class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item1
         IL_000d:  ldarg.0
         IL_000e:  ldarg.2
-        IL_000f:  stfld      !0 class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item2
+        IL_000f:  stfld      !0 class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item2
         IL_0014:  ret
       } 
 
@@ -114,7 +113,7 @@
         
         .maxstack  8
         IL_0000:  ldarg.0
-        IL_0001:  ldfld      !0 class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item1
+        IL_0001:  ldfld      !0 class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item1
         IL_0006:  ret
       } 
 
@@ -126,7 +125,7 @@
         
         .maxstack  8
         IL_0000:  ldarg.0
-        IL_0001:  ldfld      !0 class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item2
+        IL_0001:  ldfld      !0 class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item2
         IL_0006:  ret
       } 
 
@@ -151,10 +150,10 @@
         
         .maxstack  8
         IL_0000:  ldstr      "%+0.8A"
-        IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,string>::.ctor(string)
-        IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
+        IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,string>::.ctor(string)
+        IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
         IL_000f:  ldarg.0
-        IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>,string>::Invoke(!0)
+        IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>,string>::Invoke(!0)
         IL_0015:  ret
       } 
 
@@ -165,21 +164,21 @@
         
         .maxstack  8
         IL_0000:  ldstr      "%+A"
-        IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>>::.ctor(string)
-        IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
+        IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>>::.ctor(string)
+        IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
         IL_000f:  ldarg.0
-        IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>,string>::Invoke(!0)
+        IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>,string>::Invoke(!0)
         IL_0015:  ret
       } 
 
       .method public hidebysig virtual final 
-              instance int32  CompareTo(class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a> obj) cil managed
+              instance int32  CompareTo(class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a> obj) cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         
         .maxstack  5
-        .locals init (class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_0,
-                 class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_1,
+        .locals init (class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_0,
+                 class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_1,
                  int32 V_2,
                  class [runtime]System.Collections.IComparer V_3,
                  !a V_4,
@@ -199,10 +198,10 @@
         IL_000c:  call       class [runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
         IL_0011:  stloc.3
         IL_0012:  ldloc.0
-        IL_0013:  ldfld      !0 class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item1
+        IL_0013:  ldfld      !0 class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item1
         IL_0018:  stloc.s    V_4
         IL_001a:  ldloc.1
-        IL_001b:  ldfld      !0 class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item1
+        IL_001b:  ldfld      !0 class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item1
         IL_0020:  stloc.s    V_5
         IL_0022:  ldloc.3
         IL_0023:  ldloc.s    V_4
@@ -228,10 +227,10 @@
         IL_0039:  call       class [runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
         IL_003e:  stloc.3
         IL_003f:  ldloc.0
-        IL_0040:  ldfld      !0 class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item2
+        IL_0040:  ldfld      !0 class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item2
         IL_0045:  stloc.s    V_4
         IL_0047:  ldloc.1
-        IL_0048:  ldfld      !0 class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item2
+        IL_0048:  ldfld      !0 class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item2
         IL_004d:  stloc.s    V_5
         IL_004f:  ldloc.3
         IL_0050:  ldloc.s    V_4
@@ -263,9 +262,9 @@
         .maxstack  8
         IL_0000:  ldarg.0
         IL_0001:  ldarg.1
-        IL_0002:  unbox.any  class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>
+        IL_0002:  unbox.any  class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>
         IL_0007:  tail.
-        IL_0009:  callvirt   instance int32 class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::CompareTo(class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!0>)
+        IL_0009:  callvirt   instance int32 class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::CompareTo(class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!0>)
         IL_000e:  ret
       } 
 
@@ -276,20 +275,20 @@
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         
         .maxstack  5
-        .locals init (class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_0,
-                 class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_1,
-                 class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_2,
+        .locals init (class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_0,
+                 class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_1,
+                 class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_2,
                  int32 V_3,
                  !a V_4,
                  !a V_5)
         IL_0000:  ldarg.1
-        IL_0001:  unbox.any  class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>
+        IL_0001:  unbox.any  class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>
         IL_0006:  stloc.0
         IL_0007:  ldarg.0
         IL_0008:  brfalse.s  IL_005e
 
         IL_000a:  ldarg.1
-        IL_000b:  unbox.any  class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>
+        IL_000b:  unbox.any  class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>
         IL_0010:  brfalse.s  IL_005c
 
         IL_0012:  ldarg.0
@@ -299,10 +298,10 @@
         IL_0016:  ldloc.0
         IL_0017:  stloc.2
         IL_0018:  ldloc.1
-        IL_0019:  ldfld      !0 class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item1
+        IL_0019:  ldfld      !0 class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item1
         IL_001e:  stloc.s    V_4
         IL_0020:  ldloc.2
-        IL_0021:  ldfld      !0 class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item1
+        IL_0021:  ldfld      !0 class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item1
         IL_0026:  stloc.s    V_5
         IL_0028:  ldarg.2
         IL_0029:  ldloc.s    V_4
@@ -326,10 +325,10 @@
         IL_003e:  ret
 
         IL_003f:  ldloc.1
-        IL_0040:  ldfld      !0 class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item2
+        IL_0040:  ldfld      !0 class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item2
         IL_0045:  stloc.s    V_4
         IL_0047:  ldloc.2
-        IL_0048:  ldfld      !0 class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item2
+        IL_0048:  ldfld      !0 class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item2
         IL_004d:  stloc.s    V_5
         IL_004f:  ldarg.2
         IL_0050:  ldloc.s    V_4
@@ -344,7 +343,7 @@
         IL_005d:  ret
 
         IL_005e:  ldarg.1
-        IL_005f:  unbox.any  class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>
+        IL_005f:  unbox.any  class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>
         IL_0064:  brfalse.s  IL_0068
 
         IL_0066:  ldc.i4.m1
@@ -361,7 +360,7 @@
         
         .maxstack  7
         .locals init (int32 V_0,
-                 class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_1,
+                 class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_1,
                  !a V_2)
         IL_0000:  ldarg.0
         IL_0001:  brfalse.s  IL_0047
@@ -376,7 +375,7 @@
         IL_000a:  stloc.0
         IL_000b:  ldc.i4     0x9e3779b9
         IL_0010:  ldloc.1
-        IL_0011:  ldfld      !0 class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item2
+        IL_0011:  ldfld      !0 class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item2
         IL_0016:  stloc.2
         IL_0017:  ldarg.1
         IL_0018:  ldloc.2
@@ -394,7 +393,7 @@
         IL_0027:  stloc.0
         IL_0028:  ldc.i4     0x9e3779b9
         IL_002d:  ldloc.1
-        IL_002e:  ldfld      !0 class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item1
+        IL_002e:  ldfld      !0 class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item1
         IL_0033:  stloc.2
         IL_0034:  ldarg.1
         IL_0035:  ldloc.2
@@ -425,7 +424,7 @@
         .maxstack  8
         IL_0000:  ldarg.0
         IL_0001:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
-        IL_0006:  callvirt   instance int32 class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
+        IL_0006:  callvirt   instance int32 class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
         IL_000b:  ret
       } 
 
@@ -436,16 +435,16 @@
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         
         .maxstack  5
-        .locals init (class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_0,
-                 class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_1,
-                 class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_2,
+        .locals init (class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_0,
+                 class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_1,
+                 class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_2,
                  !a V_3,
                  !a V_4)
         IL_0000:  ldarg.0
         IL_0001:  brfalse.s  IL_004c
 
         IL_0003:  ldarg.1
-        IL_0004:  isinst     class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>
+        IL_0004:  isinst     class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>
         IL_0009:  stloc.0
         IL_000a:  ldloc.0
         IL_000b:  brfalse.s  IL_004a
@@ -457,10 +456,10 @@
         IL_0011:  ldloc.0
         IL_0012:  stloc.2
         IL_0013:  ldloc.1
-        IL_0014:  ldfld      !0 class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item1
+        IL_0014:  ldfld      !0 class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item1
         IL_0019:  stloc.3
         IL_001a:  ldloc.2
-        IL_001b:  ldfld      !0 class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item1
+        IL_001b:  ldfld      !0 class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item1
         IL_0020:  stloc.s    V_4
         IL_0022:  ldarg.2
         IL_0023:  ldloc.3
@@ -471,10 +470,10 @@
         IL_002b:  brfalse.s  IL_0048
 
         IL_002d:  ldloc.1
-        IL_002e:  ldfld      !0 class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item2
+        IL_002e:  ldfld      !0 class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item2
         IL_0033:  stloc.3
         IL_0034:  ldloc.2
-        IL_0035:  ldfld      !0 class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item2
+        IL_0035:  ldfld      !0 class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item2
         IL_003a:  stloc.s    V_4
         IL_003c:  ldarg.2
         IL_003d:  ldloc.3
@@ -500,13 +499,13 @@
       } 
 
       .method public hidebysig virtual final 
-              instance bool  Equals(class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a> obj) cil managed
+              instance bool  Equals(class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a> obj) cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         
         .maxstack  4
-        .locals init (class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_0,
-                 class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_1,
+        .locals init (class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_0,
+                 class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_1,
                  !a V_2,
                  !a V_3)
         IL_0000:  ldarg.0
@@ -522,10 +521,10 @@
         IL_000a:  ldarg.1
         IL_000b:  stloc.1
         IL_000c:  ldloc.0
-        IL_000d:  ldfld      !0 class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item1
+        IL_000d:  ldfld      !0 class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item1
         IL_0012:  stloc.2
         IL_0013:  ldloc.1
-        IL_0014:  ldfld      !0 class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item1
+        IL_0014:  ldfld      !0 class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item1
         IL_0019:  stloc.3
         IL_001a:  ldloc.2
         IL_001b:  ldloc.3
@@ -534,10 +533,10 @@
         IL_0021:  brfalse.s  IL_003b
 
         IL_0023:  ldloc.0
-        IL_0024:  ldfld      !0 class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item2
+        IL_0024:  ldfld      !0 class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item2
         IL_0029:  stloc.2
         IL_002a:  ldloc.1
-        IL_002b:  ldfld      !0 class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item2
+        IL_002b:  ldfld      !0 class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item2
         IL_0030:  stloc.3
         IL_0031:  ldloc.2
         IL_0032:  ldloc.3
@@ -566,9 +565,9 @@
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         
         .maxstack  4
-        .locals init (class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_0)
+        .locals init (class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_0)
         IL_0000:  ldarg.1
-        IL_0001:  isinst     class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>
+        IL_0001:  isinst     class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>
         IL_0006:  stloc.0
         IL_0007:  ldloc.0
         IL_0008:  brfalse.s  IL_0014
@@ -576,7 +575,7 @@
         IL_000a:  ldarg.0
         IL_000b:  ldloc.0
         IL_000c:  tail.
-        IL_000e:  callvirt   instance bool class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::Equals(class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!0>)
+        IL_000e:  callvirt   instance bool class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::Equals(class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!0>)
         IL_0013:  ret
 
         IL_0014:  ldc.i4.0
@@ -588,7 +587,7 @@
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-        .get instance int32 assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1::get_Tag()
+        .get instance int32 assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1::get_Tag()
       } 
       .property instance !a Item1()
       {
@@ -597,7 +596,7 @@
                                                                                                     int32) = ( 01 00 04 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-        .get instance !a assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1::get_Item1()
+        .get instance !a assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1::get_Item1()
       } 
       .property instance !a Item2()
       {
@@ -606,48 +605,37 @@
                                                                                                     int32) = ( 01 00 04 00 00 00 00 00 00 00 01 00 00 00 00 00 ) 
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-        .get instance !a assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1::get_Item2()
+        .get instance !a assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1::get_Item2()
       } 
     } 
 
-    .method public static int32  f6() cil managed
+    .method public static void  f6() cil managed
     {
       
       .maxstack  4
       .locals init (int32 V_0,
-               class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<int32> V_1,
-               class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<int32> V_2,
-               int32 V_3)
-      IL_0000:  ldc.i4.1
-      IL_0001:  stloc.0
-      IL_0002:  ldc.i4.1
-      IL_0003:  ldc.i4.2
-      IL_0004:  call       class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!0> class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<int32>::NewGenericKey(!0,
-                                                                                                                                                                                             !0)
-      IL_0009:  stloc.1
-      IL_000a:  ldc.i4.1
-      IL_000b:  ldc.i4.3
-      IL_000c:  call       class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!0> class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<int32>::NewGenericKey(!0,
-                                                                                                                                                                                             !0)
-      IL_0011:  stloc.2
-      IL_0012:  ldc.i4.0
-      IL_0013:  stloc.3
-      IL_0014:  br.s       IL_0022
+               int32 V_1)
+      IL_0000:  nop
+      IL_0001:  ldc.i4.0
+      IL_0002:  stloc.0
+      IL_0003:  br.s       IL_001b
 
-      IL_0016:  ldloc.1
-      IL_0017:  ldloc.2
-      IL_0018:  callvirt   instance int32 class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<int32>::CompareTo(class assembly/CompareMicroPerfAndCodeGenerationTests/GenericKey`1<!0>)
-      IL_001d:  stloc.0
-      IL_001e:  ldloc.3
-      IL_001f:  ldc.i4.1
-      IL_0020:  add
-      IL_0021:  stloc.3
-      IL_0022:  ldloc.3
-      IL_0023:  ldc.i4     0x989681
-      IL_0028:  blt.s      IL_0016
+      IL_0005:  ldc.i4.1
+      IL_0006:  ldc.i4.2
+      IL_0007:  call       class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!0> class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<int32>::NewGenericKey(!0,
+                                                                                                                                                                                 !0)
+      IL_000c:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityERComparer()
+      IL_0011:  callvirt   instance int32 class assembly/HashMicroPerfAndCodeGenerationTests/GenericKey`1<int32>::GetHashCode(class [runtime]System.Collections.IEqualityComparer)
+      IL_0016:  stloc.1
+      IL_0017:  ldloc.0
+      IL_0018:  ldc.i4.1
+      IL_0019:  add
+      IL_001a:  stloc.0
+      IL_001b:  ldloc.0
+      IL_001c:  ldc.i4     0x989681
+      IL_0021:  blt.s      IL_0005
 
-      IL_002a:  ldloc.0
-      IL_002b:  ret
+      IL_0023:  ret
     } 
 
   } 
