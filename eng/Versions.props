@@ -15,7 +15,7 @@
     <!-- F# Version components -->
     <FSMajorVersion>7</FSMajorVersion>
     <FSMinorVersion>0</FSMinorVersion>
-    <FSBuildVersion>300</FSBuildVersion>
+    <FSBuildVersion>400</FSBuildVersion>
     <FSRevisionVersion>0</FSRevisionVersion>
     <!-- -->
     <!-- F# Language version -->
@@ -57,7 +57,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <VSMajorVersion>17</VSMajorVersion>
-    <VSMinorVersion>6</VSMinorVersion>
+    <VSMinorVersion>7</VSMinorVersion>
     <VSGeneralVersion>$(VSMajorVersion).0</VSGeneralVersion>
     <VSAssemblyVersionPrefix>$(VSMajorVersion).$(VSMinorVersion).0</VSAssemblyVersionPrefix>
     <VSAssemblyVersion>$(VSAssemblyVersionPrefix).0</VSAssemblyVersion>
