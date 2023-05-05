@@ -29,7 +29,7 @@ type internal FSharpAsyncQuickInfoSource
     ) =
 
     let getQuickInfoItem (sourceText, (document: Document), (lexerSymbol: LexerSymbol), (ToolTipText elements)) =
-        asyncMaybe {
+        cancellableTask {
             let documentationBuilder =
                 XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService)
 
@@ -57,52 +57,60 @@ type internal FSharpAsyncQuickInfoSource
                 )
 
             let content = elements |> List.map getSingleContent
-            do! Option.guard (not content.IsEmpty)
+            
+            if content.IsEmpty then
+                return None
+            else
+                let textSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, lexerSymbol.Range)
 
-            let! textSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, lexerSymbol.Range)
+                match textSpan with
+                | None -> return None
+                | Some textSpan ->
+                    let trackingSpan =
+                        textBuffer.CurrentSnapshot.CreateTrackingSpan(textSpan.Start, textSpan.Length, SpanTrackingMode.EdgeInclusive)
 
-            let trackingSpan =
-                textBuffer.CurrentSnapshot.CreateTrackingSpan(textSpan.Start, textSpan.Length, SpanTrackingMode.EdgeInclusive)
-
-            return QuickInfoItem(trackingSpan, QuickInfoViewProvider.stackWithSeparators content)
+                    return Some(QuickInfoItem(trackingSpan, QuickInfoViewProvider.stackWithSeparators content))
         }
 
     static member TryGetToolTip(document: Document, position, ?width) =
-        asyncMaybe {
+        cancellableTask {
             let userOpName = "getQuickInfo"
-
+            let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
             let! lexerSymbol = document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, true, true, userOpName)
-            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(userOpName) |> liftAsync
-            let! cancellationToken = Async.CancellationToken |> liftAsync
-            let! sourceText = document.GetTextAsync cancellationToken
-            let range = lexerSymbol.Range
-            let textLinePos = sourceText.Lines.GetLinePosition position
-            let fcsTextLineNumber = Line.fromZ textLinePos.Line
-            let lineText = (sourceText.Lines.GetLineFromPosition position).ToString()
 
-            let tooltip =
-                match lexerSymbol.Kind with
-                | LexerSymbolKind.Keyword -> checkFileResults.GetKeywordTooltip(lexerSymbol.FullIsland)
-                | LexerSymbolKind.String ->
-                    checkFileResults.GetToolTip(
-                        fcsTextLineNumber,
-                        range.EndColumn,
-                        lineText,
-                        lexerSymbol.FullIsland,
-                        FSharp.Compiler.Tokenization.FSharpTokenTag.String,
-                        ?width = width
-                    )
-                | _ ->
-                    checkFileResults.GetToolTip(
-                        fcsTextLineNumber,
-                        range.EndColumn,
-                        lineText,
-                        lexerSymbol.FullIsland,
-                        FSharp.Compiler.Tokenization.FSharpTokenTag.IDENT,
-                        ?width = width
-                    )
+            match lexerSymbol with
+            | None -> return None
+            | Some lexerSymbol ->
+                let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(userOpName)
+                let! sourceText = document.GetTextAsync cancellationToken
+                let range = lexerSymbol.Range
+                let textLinePos = sourceText.Lines.GetLinePosition position
+                let fcsTextLineNumber = Line.fromZ textLinePos.Line
+                let lineText = (sourceText.Lines.GetLineFromPosition position).ToString()
 
-            return sourceText, document, lexerSymbol, tooltip
+                let tooltip =
+                    match lexerSymbol.Kind with
+                    | LexerSymbolKind.Keyword -> checkFileResults.GetKeywordTooltip(lexerSymbol.FullIsland)
+                    | LexerSymbolKind.String ->
+                        checkFileResults.GetToolTip(
+                            fcsTextLineNumber,
+                            range.EndColumn,
+                            lineText,
+                            lexerSymbol.FullIsland,
+                            FSharp.Compiler.Tokenization.FSharpTokenTag.String,
+                            ?width = width
+                        )
+                    | _ ->
+                        checkFileResults.GetToolTip(
+                            fcsTextLineNumber,
+                            range.EndColumn,
+                            lineText,
+                            lexerSymbol.FullIsland,
+                            FSharp.Compiler.Tokenization.FSharpTokenTag.IDENT,
+                            ?width = width
+                        )
+
+                return Some(sourceText, document, lexerSymbol, tooltip)
         }
 
     interface IAsyncQuickInfoSource with

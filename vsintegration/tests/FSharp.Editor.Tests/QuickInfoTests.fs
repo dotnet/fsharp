@@ -2,10 +2,12 @@
 
 namespace FSharp.Editor.Tests
 
+open System.Threading
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.Editor.QuickInfo
 open Xunit
 open FSharp.Editor.Tests.Helpers
+open Internal.Utilities.CancellableTasks
 
 module QuickInfo =
     open FSharp.Compiler.EditorServices
@@ -31,7 +33,10 @@ module QuickInfo =
             let document =
                 RoslynTestHelpers.CreateSolution(code) |> RoslynTestHelpers.GetSingleDocument
 
-            let! _, _, _, tooltip = FSharpAsyncQuickInfoSource.TryGetToolTip(document, caretPosition)
+            let! _, _, _, tooltip =
+                FSharpAsyncQuickInfoSource.TryGetToolTip(document, caretPosition)
+                |> CancellableTask.start CancellationToken.None
+                |> Async.AwaitTask
             return tooltip
         }
         |> Async.RunSynchronously

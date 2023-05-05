@@ -147,6 +147,7 @@ module internal BlockStructure =
             | _, _ -> None)
 
 open BlockStructure
+open Internal.Utilities.CancellableTasks
 
 [<Export(typeof<IFSharpBlockStructureService>)>]
 type internal FSharpBlockStructureService [<ImportingConstructor>] () =
@@ -154,17 +155,16 @@ type internal FSharpBlockStructureService [<ImportingConstructor>] () =
     interface IFSharpBlockStructureService with
 
         member _.GetBlockStructureAsync(document, cancellationToken) : Task<FSharpBlockStructure> =
-            asyncMaybe {
+            cancellableTask {
+                let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+
                 let! sourceText = document.GetTextAsync(cancellationToken)
 
                 let! parseResults =
                     document.GetFSharpParseResultsAsync(nameof (FSharpBlockStructureService))
-                    |> liftAsync
 
                 return
                     createBlockSpans document.Project.IsFSharpBlockStructureEnabled sourceText parseResults.ParseTree
                     |> Seq.toImmutableArray
-            }
-            |> Async.map (Option.defaultValue ImmutableArray<_>.Empty)
-            |> Async.map FSharpBlockStructure
-            |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
+                    |> FSharpBlockStructure
+            } |> CancellableTask.start cancellationToken
