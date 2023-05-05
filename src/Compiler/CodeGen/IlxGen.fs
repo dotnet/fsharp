@@ -3001,6 +3001,9 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr (sequel: sequel) =
             | TOp.LValueOp (LByrefSet, v), [ e ], [] -> GenSetByref cenv cgbuf eenv (v, e, m) sequel
             | TOp.LValueOp (LAddrOf _, v), [], [] -> GenGetValAddr cenv cgbuf eenv (v, m) sequel
             | TOp.Array, elems, [ elemTy ] -> GenNewArray cenv cgbuf eenv (elems, elemTy, m) sequel
+            | TOp.Block, elems, [ elemTy ] ->
+                // This codepath is currently reached with non-computation-expression arrays and not handled
+                failwith $"entering | TOp.Block, {elems}, [ {elemTy} ] ->"
             | TOp.Bytes bytes, [], [] ->
                 if cenv.options.emitConstantArraysUsingStaticDataBlobs then
                     GenConstArray cenv cgbuf eenv g.ilg.typ_Byte bytes (fun buf b -> buf.EmitByte b)

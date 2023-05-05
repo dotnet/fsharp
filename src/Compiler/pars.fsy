@@ -4506,6 +4506,9 @@ atomicExpr:
   | LBRACK listExprElements RBRACK
       { $2 (lhs parseState), false }
 
+  | immarrayExpr
+      { $1, false }
+
   | LBRACK listExprElements recover
       { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBracket())
         exprFromParseError ($2 (rhs2 parseState 1 2)), false }

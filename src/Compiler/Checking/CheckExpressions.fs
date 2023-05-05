@@ -5889,7 +5889,19 @@ and TcExprArrayOrList (cenv: cenv) overallTy env tpenv (cType: CollectionType, a
             | CollectionType.List ->
                 List.foldBack (mkCons g argTy) argsR (mkNil g m argTy)
             | CollectionType.ImmutableArray ->
-                Expr.Op (TOp.Block, [argTy], argsR, m)
+                //// TODO: the idea is to use code from builder called in LowerComputedListOrArraySeqExpr. Need to find tcVal to check whether the approach works.
+                //let infoReader = InfoReader(g, cenv.amap)
+                //let collectorTy = g.mk_BlockCollector_ty argTy
+                //let name = "AddMany"
+                //let collVal, collExpr = mkMutableCompGenLocal m "@collector" collectorTy
+                //let listCollectorTy = tyOfExpr g collExpr
+                //let addMethod = 
+                //    match GetIntrinsicMethInfosOfType infoReader (Some name) AccessibleFromSomewhere AllowMultiIntfInstantiations.Yes IgnoreOverrides m listCollectorTy with
+                //    | [x] -> x
+                //    | _ -> error(InternalError("no " + name + " method found on Collector", m))
+                //let expr, _ = BuildMethodCall tcVal g infoReader.amap DefinitelyMutates m false addMethod NormalValUse [] [collExpr] args None
+                //expr
+                Expr.Op (TOp.Block, [argTy], argsR, m) // This code goes down a path that is currently not handled
         expr, tpenv
     )
 
