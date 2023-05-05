@@ -77,7 +77,7 @@ type internal AsyncMemoize<'TKey, 'TValue when 'TKey: equality>(?logEvent: (JobE
                                 Async.AwaitNodeCode(
                                     node {
                                         use _ = Activity.start $"AsyncMemoize.{name}" [||]
-
+                                        log (Started key)
                                         let! result = computation key
                                         post key JobCompleted
                                         return result
@@ -85,8 +85,6 @@ type internal AsyncMemoize<'TKey, 'TValue when 'TKey: equality>(?logEvent: (JobE
                                 ),
                                 cancellationToken = cts.Token
                             )
-
-                        log (Started key)
 
                         let job = NodeCode.AwaitTask startedComputation
 
