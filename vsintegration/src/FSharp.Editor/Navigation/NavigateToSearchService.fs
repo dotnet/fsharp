@@ -152,6 +152,7 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>]
 
             let processItem (item: NavigableItem) =
                 asyncMaybe { // TODO: make a flat cancellable task
+
                     do! Option.guard (kinds.Contains(navigateToItemKindToRoslynKind item.Kind))
 
                     let! m = tryMatch item
