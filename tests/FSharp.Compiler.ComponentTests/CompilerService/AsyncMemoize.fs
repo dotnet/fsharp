@@ -43,7 +43,10 @@ let ``Basics``() =
 [<Fact>]
 let ``We can cancel a job`` () =
 
+    let resetEvent = new ManualResetEvent(false)
+
     let computation key = node {
+        resetEvent.Set() |> ignore
         do! Async.Sleep 1000 |> NodeCode.AwaitAsync
         failwith "Should be canceled before it gets here"
         return key * 2
@@ -62,7 +65,7 @@ let ``We can cancel a job`` () =
     let _task2 = NodeCode.StartAsTask_ForTesting(memoize.Get(key, computation), cts2.Token)
     let _task3 = NodeCode.StartAsTask_ForTesting(memoize.Get(key, computation), cts3.Token)
 
-    Thread.Sleep 10
+    resetEvent.WaitOne() |> ignore
 
     Assert.Equal<JobEvent<_> array>([| Started key |], eventLog |> Seq.toArray )
 
