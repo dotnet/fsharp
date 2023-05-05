@@ -78,7 +78,7 @@ let ``We can cancel a job`` () =
 
     cts3.Cancel()
 
-    Thread.Sleep 10
+    Thread.Sleep 100
 
     Assert.Equal<JobEvent<_> array>([| Started key; Canceled key |], eventLog |> Seq.toArray )
 

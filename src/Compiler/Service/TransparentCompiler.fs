@@ -684,25 +684,29 @@ type internal TransparentCompiler
 
             let prefixPathOpt = None
 
-            // TODO:
-            let implFile = implFileOpt.Value
-
             let ccuSigForFile, tcState =
-                AddCheckResultsToTcState
-                    (bootstrapInfo.TcGlobals, amap, hadSig, prefixPathOpt, TcResultsSink.NoSink, a.tcState.TcEnvFromImpls, implFile.QualifiedNameOfFile, implFile.Signature)
-                    b.tcState
+                match implFileOpt with 
+                | Some implFile ->
+
+                    let ccuSigForFile, tcState =
+                        AddCheckResultsToTcState
+                            (bootstrapInfo.TcGlobals, amap, hadSig, prefixPathOpt, TcResultsSink.NoSink, a.tcState.TcEnvFromImpls, implFile.QualifiedNameOfFile, implFile.Signature)
+                            b.tcState
+                    Some ccuSigForFile, tcState
+                | None ->
+                    b.latestCcuSigForFile, b.tcState
 
             { a with
                 tcState = tcState
                 tcEnvAtEndOfFile = b.tcEnvAtEndOfFile
                 moduleNamesDict = b.moduleNamesDict
-                latestCcuSigForFile = Some ccuSigForFile
+                latestCcuSigForFile = ccuSigForFile
                 tcDiagnosticsRev = b.tcDiagnosticsRev @ a.tcDiagnosticsRev
                 topAttribs = b.topAttribs
                 tcDependencyFiles = b.tcDependencyFiles @ a.tcDependencyFiles
                 // we shouldn't need this with graph checking (?)
                 sigNameOpt = None
-            }, sink, Some implFile, name)
+            }, sink, implFileOpt, name)
 
     // Type check everything that is needed to check given file
     let ComputeTcPrior (file: FSharpFile) (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshot) _userOpName _key =
