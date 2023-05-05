@@ -470,7 +470,7 @@
     <Compile Include="Service\FSharpCheckerResults.fsi" />
 	  <Compile Include="Service\FSharpCheckerResults.fs" />
 	  <Compile Include="Service\BackgroundCompiler.fs" />
-	  <Compile Include="service\TransparentCompiler.fs" />
+	  <Compile Include="Service\TransparentCompiler.fs" />
     <Compile Include="Service\service.fsi" />
     <Compile Include="Service\service.fs" />
     <Compile Include="Service\ServiceInterfaceStubGenerator.fsi" />
