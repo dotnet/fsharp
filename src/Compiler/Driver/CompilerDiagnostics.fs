@@ -1880,6 +1880,8 @@ type Exception with
 
         | :? UnauthorizedAccessException as exn -> Printf.bprintf os "%s" exn.Message
 
+        | :? InvalidOperationException as exn when exn.Message.Contains "ControlledExecution.Run" -> Printf.bprintf os "%s" exn.Message
+
         | exn ->
             os.AppendString(TargetInvocationExceptionWrapperE().Format exn.Message)
 #if DEBUG
