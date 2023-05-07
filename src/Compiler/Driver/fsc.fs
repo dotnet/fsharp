@@ -930,13 +930,11 @@ let main4
     | None -> ()
     | Some f -> f tcImports
 
-    // Compute a static linker, it gets called later.
-    let ilGlobals = tcGlobals.ilg
-
     if tcConfig.standalone && generatedCcu.UsesFSharp20PlusQuotations then
         error (Error(FSComp.SR.fscQuotationLiteralsStaticLinking0 (), rangeStartup))
 
-    let staticLinker = StaticLink(ctok, tcConfig, tcImports, ilGlobals)
+    // Compute a static linker, it gets called later.
+    let staticLinker = StaticLink(ctok, tcConfig, tcImports, tcGlobals)
 
     ReportTime tcConfig "TAST -> IL"
     use _ = UseBuildPhase BuildPhase.IlxGen

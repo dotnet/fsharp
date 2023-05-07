@@ -61,6 +61,7 @@ param (
     [switch]$testAll,
     [switch]$testAllButIntegration,
     [switch]$testpack,
+    [switch]$testAOT,
     [string]$officialSkipTests = "false",
     [switch]$noVisualStudio,
     [switch]$sourceBuild,
@@ -109,6 +110,7 @@ function Print-Usage() {
     Write-Host "  -testScripting                Run Scripting tests"
     Write-Host "  -testVs                       Run F# editor unit tests"
     Write-Host "  -testpack                     Verify built packages"
+    Write-Host "  -testAOT                      Run AOT/Trimming tests"
     Write-Host "  -officialSkipTests <bool>     Set to 'true' to skip running tests"
     Write-Host ""
     Write-Host "Advanced settings:"
@@ -148,6 +150,7 @@ function Process-Arguments() {
         $script:testFSharpQA = $True
         $script:testIntegration = $True
         $script:testVs = $True
+        $script:testAOT = $True
     }
 
     if ($testAllButIntegration) {
@@ -156,6 +159,7 @@ function Process-Arguments() {
         $script:testFSharpQA = $True
         $script:testIntegration = $False
         $script:testVs = $True
+        $script:testAOT = $True
     }
 
     if ([System.Boolean]::Parse($script:officialSkipTests)) {
@@ -171,6 +175,7 @@ function Process-Arguments() {
         $script:testIntegration = $False
         $script:testVs = $False
         $script:testpack = $False
+        $script:testAOT = $False
         $script:verifypackageshipstatus = $True
     }
 
@@ -200,6 +205,10 @@ function Process-Arguments() {
 
     if ($verifypackageshipstatus) {
         $script:verifypackageshipstatus = $True;
+    }
+
+    if ($testAOT) {
+        $script:pack = $True;
     }
 
     foreach ($property in $properties) {
@@ -637,9 +646,15 @@ try {
         TestUsingXUnit -testProject "$RepoRoot\vsintegration\tests\FSharp.Editor.Tests\FSharp.Editor.Tests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Editor.Tests\FSharp.Editor.Tests.fsproj"
         TestUsingNUnit -testProject "$RepoRoot\vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\VisualFSharp.UnitTests\"
     }
-    
+
     if ($testIntegration) {
         TestUsingXUnit -testProject "$RepoRoot\vsintegration\tests\FSharp.Editor.IntegrationTests\FSharp.Editor.IntegrationTests.csproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Editor.IntegrationTests\"
+    }
+
+    if ($testAOT) {
+        Push-Location "$RepoRoot\tests\AheadOfTime\Trimming"
+        ./check.cmd
+        Pop-Location
     }
 
     # verify nupkgs have access to the source code
