@@ -9,6 +9,7 @@ open System.Reflection
 open System.Runtime.InteropServices
 open System.Threading
 open System.Threading.Tasks
+open FSharp.Compiler.Interactive
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Test.ScriptHelpers
 open FSharp.Test.Utilities
@@ -41,6 +42,44 @@ type InteractiveTests() =
         let value = opt.Value
         Assert.Equal(typeof<int>, value.ReflectionType)
         Assert.Equal(3, value.ReflectionValue :?> int)
+
+    [<Fact>]
+    member _.``ExecuteScript with host providing ControlledExecution should succeed with --noninteractive``() =
+        let ce = new FSharp.Compiler.Interactive.ControlledExecution(true)
+        ce.Run(fun () ->
+            use script = new FSharpScript([|"--noninteractive"|])
+            let opt =
+                script.Eval("""
+open System
+let x = 1 + 2
+x
+                """) |> getValue
+            let value = opt.Value
+            Assert.Equal(typeof<int>, value.ReflectionType)
+            Assert.Equal(3, value.ReflectionValue :?> int)
+        )
+
+#if NETSTANDARD
+    [<Fact>]
+    member _.``ExecuteScript with host providing ControlledExecution should fail without --noninteractive``() =
+        let ce = new ControlledExecution(true)
+        ce.Run(fun () ->
+            use script = new FSharpScript()
+            let result, errors = 
+                script.Eval("""
+open System
+let x = 1 + 2
+x
+                """)
+            match result with
+            | Ok(_) -> Assert.True(false, "expected a failure")
+            | Error(ex) ->
+                Assert.IsAssignableFrom(typeof<FsiCompilationException>, ex)
+                match ex with
+                | :? FsiCompilationException as e when Option.isSome(e.ErrorInfos) -> Assert.Equal("The thread is already executing the ControlledExecution.Run method.", e.ErrorInfos.Value[0].Message)
+                | _ -> Assert.True(false, "threw incorrect exception expects: 'The thread is already executing the ControlledExecution.Run method.'")
+        )
+#endif
 
     [<Fact>]
     member _.``Capture console input``() =

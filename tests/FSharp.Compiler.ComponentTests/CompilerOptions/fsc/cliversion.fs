@@ -18,7 +18,7 @@ module cliversion =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 243, Line 0, Col 1, Line 0, Col 1, "Unrecognized option: '--cliversion'")
+            (Error 243, Line 0, Col 1, Line 0, Col 1, "Unrecognized option: '--cliversion'. Use '--help' to learn about recognized command line options.")
         ]
 
     //#   SOURCE=E_fsi_cliversion.fs  SCFLAGS="--cliversion:2.0" FSIMODE=EXEC COMPILE_ONLY=1  # fsi --cliversion:2.0
@@ -31,6 +31,6 @@ module cliversion =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 243, Line 0, Col 1, Line 0, Col 1, "Unrecognized option: '--cliversion'")
+            (Error 243, Line 0, Col 1, Line 0, Col 1, "Unrecognized option: '--cliversion'. Use '--help' to learn about recognized command line options.")
         ]
 
