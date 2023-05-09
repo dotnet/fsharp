@@ -3,7 +3,7 @@ function CheckTrim($root, $tfm, $outputfile, $expected_len) {
 
     $cwd = Get-Location
     Set-Location (Join-Path $PSScriptRoot "${root}")
-    $build_output = dotnet publish -restore -c release -f:$tfm $root.fsproj -bl:"../../../../artifacts/log/Release/AheadOfTime/${root}_${tfm}.binlog"
+    $build_output = dotnet publish -restore -c release -f:$tfm $root.fsproj -bl:"../../../../artifacts/log/Release/AheadOfTime/Trimming/${root}_${tfm}.binlog"
     Set-Location ${cwd}
     if (-not ($LASTEXITCODE -eq 0))
     {
