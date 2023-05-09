@@ -571,6 +571,8 @@ type WorkflowContext =
 
 let SaveAndCheckProject project checker =
     async {
+        use _ =
+            Activity.start "SaveAndCheckProject" [ Activity.Tags.project, project.Name ]
 
         do! saveProject project true checker
 

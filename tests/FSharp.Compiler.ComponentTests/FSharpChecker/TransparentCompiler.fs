@@ -91,6 +91,25 @@ let ``Parallel processing`` () =
     }
 
 
+[<Fact>]
+let ``Parallel processing with signatures`` () =
+
+    Activity.listenToAll ()
+
+    let project = SyntheticProject.Create(
+        sourceFile "A" [] |> addSignatureFile,
+        sourceFile "B" ["A"] |> addSignatureFile,
+        sourceFile "C" ["A"] |> addSignatureFile,
+        sourceFile "D" ["A"] |> addSignatureFile,
+        sourceFile "E" ["B"; "C"; "D"] |> addSignatureFile)
+
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+        checkFile "C" expectOk
+        //updateFile "A" updatePublicSurface
+        //checkFile "E" expectSignatureChanged
+    }
+
+
 let makeTestProject () =
     SyntheticProject.Create(
         sourceFile "First" [],

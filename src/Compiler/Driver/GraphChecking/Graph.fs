@@ -124,7 +124,7 @@ module internal Graph =
     let print (graph: Graph<'Node>) : unit =
         printCustom graph (fun node -> node.ToString())
 
-    let serialiseToMermaid path (graph: Graph<FileIndex * string>) =
+    let serialiseToMermaid (graph: Graph<FileIndex * string>) =
         let sb = StringBuilder()
         let appendLine (line: string) = sb.AppendLine(line) |> ignore
 
@@ -139,8 +139,10 @@ module internal Graph =
                 appendLine $"    %i{idx} --> %i{depIdx}"
 
         appendLine "```"
+        sb.ToString()
 
+    let writeMermaidToFile path (graph: Graph<FileIndex * string>) =
         use out =
             FileSystem.OpenFileForWriteShim(path, fileMode = System.IO.FileMode.Create)
 
-        out.WriteAllText(sb.ToString())
+        graph |> serialiseToMermaid |> out.WriteAllText

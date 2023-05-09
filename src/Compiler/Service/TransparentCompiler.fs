@@ -599,7 +599,7 @@ type internal TransparentCompiler
                 |> fst
                 |> Graph.subGraphFor (sourceFiles |> Array.last).Idx
 
-            return graph, filePairs
+            return TransformDependencyGraph(graph, filePairs), filePairs
         }
 
     let ComputeTcIntermediate (parsedInput: ParsedInput, parseErrors) bootstrapInfo prevTcInfo _key =
@@ -737,25 +737,59 @@ type internal TransparentCompiler
                     ComputeDependencyGraphForLastFile (parsedInputs |> Seq.map p13) bootstrapInfo.TcConfig
                 )
 
+            let fileNames = 
+                parsedInputs 
+                |> Seq.mapi (fun idx (input, _, _) -> idx, Path.GetFileName input.FileName)
+                |> Map.ofSeq
+
+            let debugGraph = 
+                graph
+                |> Graph.map (function NodeToTypeCheck.PhysicalFile i -> i, fileNames[i] | NodeToTypeCheck.ArtificialImplFile i -> -(i + 1), $"AIF : {fileNames[i]}")
+
+            Trace.TraceInformation("\n" + (debugGraph |> Graph.serialiseToMermaid))
+
             // layers that can be processed in parallel
             let layers = Graph.leafSequence graph |> Seq.toList
 
             // remove the final layer, which should be the target file
             let layers = layers |> List.take (layers.Length - 1)
 
-            let rec processLayer (layers: Set<FileIndex> list) tcInfo =
+            let rec processLayer (layers: Set<NodeToTypeCheck> list) tcInfo =
                 node {
                     match layers with
                     | [] -> return tcInfo
                     | layer :: rest ->
                         let! results =
                             layer
-                            |> Seq.map (fun fileIndex ->
-                                let key = projectSnapshot.UpTo(fileIndex).Key
-                                let parsedInput, parseErrors, _ = parsedInputs[fileIndex]
-                                TcIntermediateCache.Get(key, ComputeTcIntermediate (parsedInput, parseErrors) bootstrapInfo tcInfo))
-                            |> NodeCode.Parallel
+                            |> Seq.map (fun fileNode ->
 
+                                match fileNode with
+                                | NodeToTypeCheck.PhysicalFile fileIndex ->
+                                    let parsedInput, parseErrors, _ = parsedInputs[fileIndex]
+                                    let key = projectSnapshot.UpTo(fileIndex).Key
+                                    TcIntermediateCache.Get(key, ComputeTcIntermediate (parsedInput, parseErrors) bootstrapInfo tcInfo)
+                                | NodeToTypeCheck.ArtificialImplFile fileIndex ->
+                                    let parsedInput, _parseErrors, _ = parsedInputs[fileIndex]
+                                    let tcState = tcInfo.tcState
+                                    let prefixPathOpt = None
+                                    
+                                    let (tcEnv , topAttribs , checkedImplFileOpt , _moduleOrNamespaceType), newTcState =
+                                        // Retrieve the type-checked signature information and add it to the TcEnvFromImpls.
+                                        AddSignatureResultToTcImplEnv(bootstrapInfo.TcImports, bootstrapInfo.TcGlobals, prefixPathOpt, TcResultsSink.NoSink, tcState, parsedInput) tcState
+                                    let tcInfo =
+                                        { tcInfo with
+                                            tcState = newTcState
+                                            tcEnvAtEndOfFile = tcEnv
+
+                                            topAttribs = Some topAttribs
+                                            // we shouldn't need this with graph checking (?)
+                                            sigNameOpt = None
+                                        }
+
+                                    node.Return(tcInfo, Unchecked.defaultof<_>, checkedImplFileOpt, parsedInput.FileName))
+                            |> NodeCode.Parallel
+                        let nodes = layer |> Seq.map (function NodeToTypeCheck.PhysicalFile i -> fileNames[i] | NodeToTypeCheck.ArtificialImplFile i -> $"AIF : {fileNames[i]}") |> String.concat " "
+                        Trace.TraceInformation $"Processed layer {nodes}"
                         return! processLayer rest (mergeIntermediateResults bootstrapInfo (tcInfo, Unchecked.defaultof<_>, None, "") results |> p14)
                 }
 

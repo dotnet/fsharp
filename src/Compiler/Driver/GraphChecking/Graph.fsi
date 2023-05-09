@@ -21,5 +21,7 @@ module internal Graph =
     val leafSequence: graph: Graph<'Node> -> Set<'Node> seq
     /// Print the contents of the graph to the standard output.
     val print: graph: Graph<'Node> -> unit
+    /// Create a simple Mermaid graph
+    val serialiseToMermaid: graph: Graph<FileIndex * string> -> string
     /// Create a simple Mermaid graph and save it under the path specified.
-    val serialiseToMermaid: path: string -> graph: Graph<FileIndex * string> -> unit
+    val writeMermaidToFile: path: string -> graph: Graph<FileIndex * string> -> unit

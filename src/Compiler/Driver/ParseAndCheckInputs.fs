@@ -1608,6 +1608,7 @@ let AddSignatureResultToTcImplEnv (tcImports: TcImports, tcGlobals, prefixPathOp
                 tcState.tcsTcSigEnv, EmptyTopAttrs, None, ccuSigForFile
 
             partialResult, tcState
+
 let TransformDependencyGraph (graph: Graph<FileIndex>, filePairs: FilePairMap) =
     let mkArtificialImplFile n = NodeToTypeCheck.ArtificialImplFile n
     let mkPhysicalFile n = NodeToTypeCheck.PhysicalFile n
@@ -1666,7 +1667,7 @@ let CheckMultipleInputsUsingGraphMode
     let graph, trie =
         DependencyResolution.mkGraph tcConfig.compilingFSharpCore filePairs sourceFiles
 
-    let nodeGraph = TransformDependencyGraph (graph, filePairs)
+    let nodeGraph = TransformDependencyGraph(graph, filePairs)
 
     // Persist the graph to a Mermaid diagram if specified.
     if tcConfig.typeCheckingConfig.DumpGraph then
@@ -1686,7 +1687,7 @@ let CheckMultipleInputsUsingGraphMode
                         .TrimStart([| '\\'; '/' |])
 
                 (idx, friendlyFileName))
-            |> Graph.serialiseToMermaid graphFile)
+            |> Graph.writeMermaidToFile graphFile)
 
     let _ = ctok // TODO Use it
     let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger

@@ -194,7 +194,19 @@ val AddCheckResultsToTcState:
     implFileSigType: ModuleOrNamespaceType ->
         tcState: TcState ->
             ModuleOrNamespaceType * TcState
-            
+
+type PartialResult = TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType
+
+val AddSignatureResultToTcImplEnv:
+    tcImports: TcImports *
+    tcGlobals: TcGlobals *
+    prefixPathOpt: LongIdent option *
+    tcSink: TcResultsSink *
+    tcState: TcState *
+    input: ParsedInput ->
+        (TcState ->
+            PartialResult * TcState)
+
 val TransformDependencyGraph: graph: Graph<FileIndex> * filePairs: FilePairMap -> Graph<NodeToTypeCheck>
 
 /// Finish the checking of multiple inputs
