@@ -260,11 +260,12 @@ module rec Compiler =
     let private getWarnings diagnostics = diagnostics |> List.filter (fun e -> match e.Error with Warning _ -> true | _ -> false)
 
     let private adjustRange (range: Range) (adjust: int) : Range =
-        { range with
-                StartLine   = range.StartLine   - adjust
-                StartColumn = range.StartColumn + 1
-                EndLine     = range.EndLine     - adjust
-                EndColumn   = range.EndColumn   + 1 }
+        {
+            StartLine   = range.StartLine   - adjust
+            StartColumn = range.StartColumn + 1
+            EndLine     = range.EndLine     - adjust
+            EndColumn   = range.EndColumn   + 1
+        }
 
     let FsxSourceCode source =
         SourceCodeFileKind.Fsx({FileName="test.fsx"; SourceText=Some source})
@@ -838,6 +839,7 @@ module rec Compiler =
                 fun (name: string) ->
                     Map.tryFind name project
                     |> Option.bind (Option.map SourceText.ofString)
+                    |> async.Return
 
             let sourceFiles = Array.map fst sourceFiles
             CompilerAssert.TypeCheckProject(options, sourceFiles, getSourceText)

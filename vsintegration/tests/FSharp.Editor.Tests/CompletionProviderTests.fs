@@ -16,6 +16,9 @@ module CompletionProviderTests =
 
     let filePath = "C:\\test.fs"
 
+    let mkGetInfo documentId =
+        fun () -> documentId, filePath, [], (Some "preview")
+
     let formatCompletions (completions: string seq) =
         "\n\t" + String.Join("\n\t", completions)
 
@@ -102,7 +105,7 @@ module CompletionProviderTests =
         let sourceText = SourceText.From(fileContents)
 
         let resultSpan =
-            CompletionUtils.getDefaultCompletionListSpan (sourceText, caretPosition, documentId, filePath, [])
+            CompletionUtils.getDefaultCompletionListSpan (sourceText, caretPosition, documentId, filePath, [], None)
 
         Assert.Equal(expected, sourceText.ToString(resultSpan))
 
@@ -130,14 +133,13 @@ System.Console.WriteLine(x + y)
 
             let caretPosition = fileContents.IndexOf(marker) + marker.Length
             let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-            let getInfo () = documentId, filePath, []
 
             let triggered =
                 FSharpCompletionProvider.ShouldTriggerCompletionAux(
                     SourceText.From(fileContents),
                     caretPosition,
                     CompletionTriggerKind.Insertion,
-                    getInfo,
+                    mkGetInfo documentId,
                     IntelliSenseOptions.Default
                 )
 
@@ -152,14 +154,13 @@ System.Console.WriteLine(x + y)
             let fileContents = "System.Console.WriteLine(123)"
             let caretPosition = fileContents.IndexOf("rite")
             let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-            let getInfo () = documentId, filePath, []
 
             let triggered =
                 FSharpCompletionProvider.ShouldTriggerCompletionAux(
                     SourceText.From(fileContents),
                     caretPosition,
                     triggerKind,
-                    getInfo,
+                    mkGetInfo documentId,
                     IntelliSenseOptions.Default
                 )
 
@@ -170,14 +171,13 @@ System.Console.WriteLine(x + y)
         let fileContents = "let literal = \"System.Console.WriteLine()\""
         let caretPosition = fileContents.IndexOf("System.")
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-        let getInfo () = documentId, filePath, []
 
         let triggered =
             FSharpCompletionProvider.ShouldTriggerCompletionAux(
                 SourceText.From(fileContents),
                 caretPosition,
                 CompletionTriggerKind.Insertion,
-                getInfo,
+                mkGetInfo documentId,
                 IntelliSenseOptions.Default
             )
 
@@ -195,14 +195,13 @@ System.Console.WriteLine()
 
         let caretPosition = fileContents.IndexOf("System.")
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-        let getInfo () = documentId, filePath, []
 
         let triggered =
             FSharpCompletionProvider.ShouldTriggerCompletionAux(
                 SourceText.From(fileContents),
                 caretPosition,
                 CompletionTriggerKind.Insertion,
-                getInfo,
+                mkGetInfo documentId,
                 IntelliSenseOptions.Default
             )
 
@@ -233,14 +232,13 @@ let z = $"abc  {System.Console.WriteLine(x + y)} def"
         for (marker, shouldBeTriggered) in testCases do
             let caretPosition = fileContents.IndexOf(marker) + marker.Length
             let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-            let getInfo () = documentId, filePath, []
 
             let triggered =
                 FSharpCompletionProvider.ShouldTriggerCompletionAux(
                     SourceText.From(fileContents),
                     caretPosition,
                     CompletionTriggerKind.Insertion,
-                    getInfo,
+                    mkGetInfo documentId,
                     IntelliSenseOptions.Default
                 )
 
@@ -260,14 +258,13 @@ System.Console.WriteLine()
 
         let caretPosition = fileContents.IndexOf("System.")
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-        let getInfo () = documentId, filePath, []
 
         let triggered =
             FSharpCompletionProvider.ShouldTriggerCompletionAux(
                 SourceText.From(fileContents),
                 caretPosition,
                 CompletionTriggerKind.Insertion,
-                getInfo,
+                mkGetInfo documentId,
                 IntelliSenseOptions.Default
             )
 
@@ -284,14 +281,13 @@ let f() =
 
         let caretPosition = fileContents.IndexOf("|.")
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-        let getInfo () = documentId, filePath, []
 
         let triggered =
             FSharpCompletionProvider.ShouldTriggerCompletionAux(
                 SourceText.From(fileContents),
                 caretPosition,
                 CompletionTriggerKind.Insertion,
-                getInfo,
+                mkGetInfo documentId,
                 IntelliSenseOptions.Default
             )
 
@@ -308,14 +304,13 @@ module Foo = module end
         let marker = "A"
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-        let getInfo () = documentId, filePath, []
 
         let triggered =
             FSharpCompletionProvider.ShouldTriggerCompletionAux(
                 SourceText.From(fileContents),
                 caretPosition,
                 CompletionTriggerKind.Insertion,
-                getInfo,
+                mkGetInfo documentId,
                 IntelliSenseOptions.Default
             )
 
@@ -332,14 +327,13 @@ printfn "%d" !f
         let marker = "!f"
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-        let getInfo () = documentId, filePath, []
 
         let triggered =
             FSharpCompletionProvider.ShouldTriggerCompletionAux(
                 SourceText.From(fileContents),
                 caretPosition,
                 CompletionTriggerKind.Insertion,
-                getInfo,
+                mkGetInfo documentId,
                 IntelliSenseOptions.Default
             )
 
@@ -357,14 +351,13 @@ use ptr = fixed &p
         let marker = "&p"
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-        let getInfo () = documentId, filePath, []
 
         let triggered =
             FSharpCompletionProvider.ShouldTriggerCompletionAux(
                 SourceText.From(fileContents),
                 caretPosition,
                 CompletionTriggerKind.Insertion,
-                getInfo,
+                mkGetInfo documentId,
                 IntelliSenseOptions.Default
             )
 
@@ -391,14 +384,13 @@ xVal**y
         for marker in markers do
             let caretPosition = fileContents.IndexOf(marker) + marker.Length
             let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-            let getInfo () = documentId, filePath, []
 
             let triggered =
                 FSharpCompletionProvider.ShouldTriggerCompletionAux(
                     SourceText.From(fileContents),
                     caretPosition,
                     CompletionTriggerKind.Insertion,
-                    getInfo,
+                    mkGetInfo documentId,
                     IntelliSenseOptions.Default
                 )
 
@@ -413,14 +405,13 @@ l"""
         let marker = "l"
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-        let getInfo () = documentId, filePath, []
 
         let triggered =
             FSharpCompletionProvider.ShouldTriggerCompletionAux(
                 SourceText.From(fileContents),
                 caretPosition,
                 CompletionTriggerKind.Insertion,
-                getInfo,
+                mkGetInfo documentId,
                 IntelliSenseOptions.Default
             )
 

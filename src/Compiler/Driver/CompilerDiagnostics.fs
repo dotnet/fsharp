@@ -825,6 +825,7 @@ type Exception with
                         {
                             ArgReprInfo.Name = name |> Option.map (fun name -> Ident(name, range.Zero))
                             ArgReprInfo.Attribs = []
+                            ArgReprInfo.OtherRange = None
                         })
 
                 let argsL, retTyL, genParamTysL =
@@ -1878,6 +1879,8 @@ type Exception with
         | :? IOException as exn -> Printf.bprintf os "%s" exn.Message
 
         | :? UnauthorizedAccessException as exn -> Printf.bprintf os "%s" exn.Message
+
+        | :? InvalidOperationException as exn when exn.Message.Contains "ControlledExecution.Run" -> Printf.bprintf os "%s" exn.Message
 
         | exn ->
             os.AppendString(TargetInvocationExceptionWrapperE().Format exn.Message)

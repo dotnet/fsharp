@@ -252,6 +252,11 @@
         <target state="translated">更多类型支持度量单位</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureExtendedStringInterpolation">
+        <source>Extended string interpolation similar to C# raw string literals.</source>
+        <target state="new">Extended string interpolation similar to C# raw string literals.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">
         <source>fixed-index slice 3d/4d</source>
         <target state="translated">固定索引切片 3d/4d</target>
@@ -522,6 +527,11 @@
         <target state="translated">不能内插字节字符串</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexExtendedStringInterpolationNotSupported">
+        <source>Extended string interpolation is not supported in this version of F#.</source>
+        <target state="new">Extended string interpolation is not supported in this version of F#.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexIfOCaml">
         <source>IF-FSHARP/IF-CAML regions are no longer supported</source>
         <target state="translated">不再支持 IF-FSHARP/IF-CAML 区域</target>
@@ -542,9 +552,24 @@
         <target state="translated">内插字符串无效。在单引号字符串或逐字字符串的内插表达式中不能使用单引号或逐字字符串文本。请考虑对内插表达式使用显式 "let" 绑定，或使用三重引号字符串作为外部字符串文本。</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexTooManyLBracesInTripleQuote">
+        <source>The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive opening braces as content.</source>
+        <target state="new">The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive opening braces as content.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexTooManyPercentsInTripleQuote">
+        <source>The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive '%' characters.</source>
+        <target state="new">The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive '%' characters.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexTripleQuoteInTripleQuote">
         <source>Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.</source>
         <target state="translated">内插字符串无效。在内插表达式中不能使用三重引号字符串文字。请考虑对内插表达式使用显式的 "let" 绑定。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexUnmatchedRBracesInTripleQuote">
+        <source>The interpolated string contains unmatched closing braces.</source>
+        <target state="new">The interpolated string contains unmatched closing braces.</target>
         <note />
       </trans-unit>
       <trans-unit id="listElementHasWrongTypeTuple">
@@ -775,6 +800,11 @@
       <trans-unit id="parsIncompleteTyparExpr2">
         <source>Incomplete operator expression (example a^b) or qualified type invocation (example: ^T.Name)</source>
         <target state="translated">运算符表达式不完整(示例: a^b)或限定类型调用(示例: ^T.Name)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsMissingUnionCaseName">
+        <source>Missing union case name</source>
+        <target state="new">Missing union case name</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNewExprMemberAccess">
@@ -1568,8 +1598,8 @@
         <note />
       </trans-unit>
       <trans-unit id="buildUnrecognizedOption">
-        <source>Unrecognized option: '{0}'</source>
-        <target state="translated">无法识别的选项:“{0}”</target>
+        <source>Unrecognized option: '{0}'. Use '--help' to learn about recognized command line options.</source>
+        <target state="needs-review-translation">无法识别的选项:“{0}”</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidModuleOrNamespaceName">

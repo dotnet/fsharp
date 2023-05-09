@@ -363,9 +363,15 @@ stages:
             displayName: Setup VS Hive
             condition: or(eq(variables['_testKind'], 'testVs'), eq(variables['_testKind'], 'testIntegration'))
 
+          # yes, this is miserable, but - https://github.com/dotnet/arcade/issues/13239
           - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
             displayName: Build / Test
-            continueOnError: ${{ eq(variables['_testKind'], 'testIntegration') }}
+            condition: ne(variables['_testKind'], 'testIntegration')
+          - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
+            displayName: Build / Integration Test
+            continueOnError: true
+            condition: eq(variables['_testKind'], 'testIntegration')
+            
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
@@ -644,16 +650,19 @@ stages:
             displayName: Report dotnet SDK versions
           - script: .\Build.cmd $(_kind) -pack -c $(_BuildConfig)
             displayName: Initial build and prepare packages.
-          - script:  dotnet publish -c $(_BuildConfig)  -bl:\"./bin/$(_BuildConfig)/net7.0/win-x64/publish/Trimming.binlog\"
+          - script:  dotnet publish -c Release -f:net472 -bl:"./artifacts/log/Release/AheadOfTime/SelfContained_Trimming_net472.binlog"
             displayName: Build and publish a trim test package.
-            workingDirectory: $(Build.SourcesDirectory)/tests/projects/SelfContained_Trimming_Test
+            workingDirectory: $(Build.SourcesDirectory)/tests/AheadOfTime/SelfContained_Trimming_Test
+          - script:  dotnet publish -c Release  -f:net7.0 -bl:"./artifacts/log/Release/AheadOfTime/SelfContained_Trimming_net7.0.binlog"
+            displayName: Build and publish a trim test package.
+            workingDirectory: $(Build.SourcesDirectory)/tests/AheadOfTime/SelfContained_Trimming_Test
           - script: .\check.cmd
             displayName: Check the state of the trimmed app.
-            workingDirectory: $(Build.SourcesDirectory)/tests/projects/SelfContained_Trimming_Test
+            workingDirectory: $(Build.SourcesDirectory)/tests/AheadOfTime/SelfContained_Trimming_Test
           - task: PublishPipelineArtifact@1
             displayName: Publish Trim Tests Logs
             inputs:
-              targetPath: '$(Build.SourcesDirectory)/tests/projects/SelfContained_Trimming_Test/bin/$(_BuildConfig)/net7.0/win-x64/publish'
+              targetPath: './artifacts/log/Release/AheadOfTime'
               artifactName: 'Trim Test Logs Attempt $(System.JobAttempt) Logs $(_kind)'
             continueOnError: true
             condition: always()

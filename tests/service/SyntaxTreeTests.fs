@@ -133,7 +133,8 @@ let parseSourceCode (name: string, code: string) =
             SourceText.ofString code,
             { FSharpParsingOptions.Default with
                 SourceFiles = [| location |]
-                IsExe = true }
+                IsExe = true
+                LangVersionText = "preview" }
         )
         |> Async.RunImmediate
 

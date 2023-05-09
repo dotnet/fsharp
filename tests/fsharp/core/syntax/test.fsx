@@ -31,8 +31,8 @@ test "line number test" (__LINE__ = "100")
 test "line number test" (__LINE__ = "102")
 test "line number test" (__SOURCE_FILE__ = "file.fs")
 
-# 29 "original-test-file.fs"
-test "line number test" (__LINE__ = "29")
+# 35 "original-test-file.fs"
+test "line number test" (__LINE__ = "35")
 test "line number test" (__SOURCE_FILE__ = "original-test-file.fs")
 
 

@@ -180,7 +180,7 @@ let test_find () =
          with _ -> true)
 
 module Array = 
-    let findIndexi f (array : array<_>) = 
+    let findIndexi f (array : _ array) = 
         let len = array.Length 
         let rec go n = 
             if n >= len then 
@@ -191,7 +191,7 @@ module Array =
                 go (n+1)
         go 0
 
-    let tryFindIndexi f (array : array<_>) = 
+    let tryFindIndexi f (array : _ array) = 
         let len = array.Length 
         let rec go n = if n >= len then None elif f n array.[n] then Some n else go (n+1)
         go 0 

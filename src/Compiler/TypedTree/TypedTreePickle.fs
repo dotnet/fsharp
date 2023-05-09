@@ -754,11 +754,10 @@ let pickleObjWithDanglingCcus inMem file g scope p x =
         st2
     st2.os
 
-  let finalBytes = phase2bytes
   (st1.os :> System.IDisposable).Dispose()
-  finalBytes
+  phase2bytes
 
-let check (ilscope: ILScopeRef) (inMap : NodeInTable<_, _>) =
+let check (ilscope: ILScopeRef) (inMap: NodeInTable<_, _>) =
     for i = 0 to inMap.Count - 1 do
       let n = inMap.Get i
       if not (inMap.IsLinked n) then
@@ -1661,16 +1660,20 @@ let _ = fill_p_ty2 (fun isStructThisArgPos ty st ->
         p_ty2 isStructThisArgPos r st
 
     | TType_measure unt ->
-        p_byte 6 st; p_measure_expr unt st
+        p_byte 6 st
+        p_measure_expr unt st
 
     | TType_ucase (uc, tinst) ->
-        p_byte 7 st; p_tup2 p_ucref p_tys (uc, tinst) st
+        p_byte 7 st
+        p_ucref uc st
+        p_tys tinst st
 
     // p_byte 8 taken by TType_tuple above
     | TType_anon (anonInfo, l) ->
          p_byte 9 st
          p_anonInfo anonInfo st
-         p_tys l st)
+         p_tys l st
+    )
 
 let _ = fill_u_ty (fun st ->
     let tag = u_byte st
@@ -1752,7 +1755,7 @@ let u_ArgReprInfo st =
     let b = u_option u_ident st
     match a, b with
     | [], None -> ValReprInfo.unnamedTopArg1
-    | _ -> { Attribs = a; Name = b }
+    | _ -> { Attribs = a; Name = b; OtherRange = None }
 
 let u_TyparReprInfo st =
     let a = u_ident st
@@ -2263,6 +2266,7 @@ and u_ValData st =
                      val_defn             = None
                      val_repr_info        = x10
                      val_repr_info_for_display = None
+                     arg_repr_info_for_display = None
                      val_const            = x14
                      val_access           = x13
                      val_xmldoc           = defaultArg x15 XmlDoc.Empty
