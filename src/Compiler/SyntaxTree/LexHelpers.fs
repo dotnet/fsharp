@@ -65,6 +65,7 @@ type LexArgs =
         mutable ifdefStack: LexerIfdefStack
         mutable indentationSyntaxStatus: IndentationAwareSyntaxStatus
         mutable stringNest: LexerInterpolatedStringNesting
+        mutable interpolationDelimiterLength: int
     }
 
 /// possible results of lexing a long Unicode escape sequence in a string literal, e.g. "\U0001F47D",
@@ -93,6 +94,7 @@ let mkLexargs
         applyLineDirectives = applyLineDirectives
         stringNest = []
         pathMap = pathMap
+        interpolationDelimiterLength = 0
     }
 
 /// Register the lexbuf and call the given function

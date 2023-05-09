@@ -54,8 +54,11 @@ type internal FSharpCompletionService
     override _.GetDefaultCompletionListSpan(sourceText, caretIndex) =
         let documentId = workspace.GetDocumentIdInCurrentContext(sourceText.Container)
         let document = workspace.CurrentSolution.GetDocument(documentId)
-        let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)
-        CompletionUtils.getDefaultCompletionListSpan (sourceText, caretIndex, documentId, document.FilePath, defines)
+
+        let defines, langVersion =
+            projectInfoManager.GetCompilationDefinesAndLangVersionForEditingDocument(document)
+
+        CompletionUtils.getDefaultCompletionListSpan (sourceText, caretIndex, documentId, document.FilePath, defines, Some langVersion)
 
 [<Shared>]
 [<ExportLanguageServiceFactory(typeof<CompletionService>, FSharpConstants.FSharpLanguageName)>]

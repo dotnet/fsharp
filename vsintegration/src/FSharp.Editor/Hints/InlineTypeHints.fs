@@ -9,9 +9,9 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open Hints
 
-module InlineTypeHints =
+type InlineTypeHints(parseResults: FSharpParseFileResults, symbol: FSharpMemberOrFunctionOrValue) =
 
-    let private getHintParts (symbol: FSharpMemberOrFunctionOrValue) (symbolUse: FSharpSymbolUse) =
+    let getHintParts (symbol: FSharpMemberOrFunctionOrValue) (symbolUse: FSharpSymbolUse) =
 
         match symbol.GetReturnTypeLayout symbolUse.DisplayContext with
         | Some typeInfo ->
@@ -21,14 +21,32 @@ module InlineTypeHints =
         // not sure when this can happen
         | None -> []
 
-    let private getHint symbol (symbolUse: FSharpSymbolUse) =
+    let getTooltip _ =
+        async {
+            // Done this way because I am not sure if we want to show full-blown types everywhere,
+            // e.g. Microsoft.FSharp.Core.string instead of string.
+            // On the other hand, for user types this could be useful.
+            // Then there should be some smarter algorithm here.
+            let text =
+                if symbol.FullType.HasTypeDefinition then
+                    let typeAsString = symbol.FullType.TypeDefinition.ToString()
+                    $"type {typeAsString}"
+                else
+                    // already includes the word "type"
+                    symbol.FullType.ToString()
+
+            return [ TaggedText(TextTag.Text, text) ]
+        }
+
+    let getHint symbol (symbolUse: FSharpSymbolUse) =
         {
             Kind = HintKind.TypeHint
             Range = symbolUse.Range.EndRange
             Parts = getHintParts symbol symbolUse
+            GetTooltip = getTooltip
         }
 
-    let private isSolved (symbol: FSharpMemberOrFunctionOrValue) =
+    let isSolved (symbol: FSharpMemberOrFunctionOrValue) =
         if symbol.GenericParameters.Count > 0 then
             symbol.GenericParameters |> Seq.forall (fun p -> p.IsSolveAtCompileTime)
 
@@ -38,7 +56,7 @@ module InlineTypeHints =
         else
             true
 
-    let isValidForHint (parseFileResults: FSharpParseFileResults) (symbol: FSharpMemberOrFunctionOrValue) (symbolUse: FSharpSymbolUse) =
+    let isValidForHint (symbolUse: FSharpSymbolUse) =
 
         let isOptionalParameter =
             symbolUse.IsFromDefinition
@@ -53,7 +71,7 @@ module InlineTypeHints =
                 symbolUse.Range.Start
 
         let isNotAnnotatedManually =
-            not (parseFileResults.IsTypeAnnotationGivenAtPosition adjustedRangeStart)
+            not (parseResults.IsTypeAnnotationGivenAtPosition adjustedRangeStart)
 
         let isNotAfterDot = symbolUse.IsFromDefinition && not symbol.IsMemberThisValue
 
@@ -65,4 +83,8 @@ module InlineTypeHints =
         && isNotAfterDot
         && isNotTypeAlias
 
-    let getHints symbol symbolUse = [ getHint symbol symbolUse ]
+    member _.getHints symbolUse =
+        [
+            if isValidForHint symbolUse then
+                getHint symbol symbolUse
+        ]

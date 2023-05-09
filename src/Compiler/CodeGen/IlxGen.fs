@@ -3,6 +3,8 @@
 /// The ILX generator.
 module internal FSharp.Compiler.IlxGen
 
+open FSharp.Compiler.IlxGenSupport
+
 open System.IO
 open System.Reflection
 open System.Collections.Generic
@@ -71,46 +73,6 @@ let iLdcInt64 i = AI_ldc(DT_I8, ILConst.I8 i)
 let iLdcDouble i = AI_ldc(DT_R8, ILConst.R8 i)
 
 let iLdcSingle i = AI_ldc(DT_R4, ILConst.R4 i)
-
-/// Make a method that simply loads a field
-let mkLdfldMethodDef (ilMethName, iLAccess, isStatic, ilTy, ilFieldName, ilPropType, customAttrs) =
-    let ilFieldSpec = mkILFieldSpecInTy (ilTy, ilFieldName, ilPropType)
-    let ilReturn = mkILReturn ilPropType
-
-    let ilMethodDef =
-        if isStatic then
-            let body =
-                mkMethodBody (true, [], 2, nonBranchingInstrsToCode [ mkNormalLdsfld ilFieldSpec ], None, None)
-
-            mkILNonGenericStaticMethod (ilMethName, iLAccess, [], ilReturn, body)
-        else
-            let body =
-                mkMethodBody (true, [], 2, nonBranchingInstrsToCode [ mkLdarg0; mkNormalLdfld ilFieldSpec ], None, None)
-
-            mkILNonGenericInstanceMethod (ilMethName, iLAccess, [], ilReturn, body)
-
-    ilMethodDef.With(customAttrs = mkILCustomAttrs customAttrs).WithSpecialName
-
-/// Make a method that simply stores a field
-let mkStsfldMethodDef (ilMethName, iLAccess, isStatic, ilTy, ilFieldName, ilPropType, customAttrs) =
-    let ilFieldSpec = mkILFieldSpecInTy (ilTy, ilFieldName, ilPropType)
-    let ilParams = [ mkILParamNamed ("value", ilPropType) ]
-    let ilReturn = mkILReturn ILType.Void
-
-    let ilMethodDef =
-        if isStatic then
-            let body =
-                mkMethodBody (true, [], 2, nonBranchingInstrsToCode [ mkLdarg0; mkNormalStsfld ilFieldSpec ], None, None)
-
-            mkILNonGenericStaticMethod (ilMethName, iLAccess, ilParams, ilReturn, body)
-
-        else
-            let body =
-                mkMethodBody (true, [], 2, nonBranchingInstrsToCode [ mkLdarg0; mkLdarg 1us; mkNormalStfld ilFieldSpec ], None, None)
-
-            mkILNonGenericInstanceMethod (ilMethName, iLAccess, ilParams, ilReturn, body)
-
-    ilMethodDef.With(customAttrs = mkILCustomAttrs customAttrs).WithSpecialName
 
 /// Choose the constructor parameter names for fields
 let ChooseParamNames fieldNamesAndTypes =
@@ -604,135 +566,6 @@ type TypeReprEnv(reprs: Map<Stamp, uint16>, count: int, templateReplacement: (Ty
     member eenv.ForTyconRef(tcref: TyconRef) = eenv.ForTycon tcref.Deref
 
 //--------------------------------------------------------------------------
-// Generate Local embeddable versions of framework types when necessary
-//--------------------------------------------------------------------------
-
-let mkFlagsAttribute cenv =
-    mkILCustomAttribute (cenv.g.attrib_FlagsAttribute.TypeRef, [], [], [])
-
-let mkLocalPrivateAttributeWithDefaultConstructor (cenv: cenv, name: string) =
-    let g = cenv.g
-
-    let ilMethods =
-        mkILMethods
-            [
-                g.AddMethodGeneratedAttributes(mkILNonGenericEmptyCtor (g.ilg.typ_Attribute, None, None))
-            ]
-
-    mkILGenericClass (
-        name,
-        ILTypeDefAccess.Private,
-        ILGenericParameterDefs.Empty,
-        g.ilg.typ_Attribute,
-        ILTypes.Empty,
-        ilMethods,
-        emptyILFields,
-        emptyILTypeDefs,
-        emptyILProperties,
-        emptyILEvents,
-        emptyILCustomAttrs,
-        ILTypeInit.BeforeField
-    )
-
-let mkILNonGenericInstanceProperty (name, ilTypeRef, ilType, propertyAttribute, customAttributes) =
-    ILPropertyDef(
-        name = name,
-        attributes = propertyAttribute,
-        setMethod = Some(mkILMethRef (ilTypeRef, ILCallingConv.Instance, "set_" + name, 0, [ ilType ], ILType.Void)),
-        getMethod = Some(mkILMethRef (ilTypeRef, ILCallingConv.Instance, "get_" + name, 0, [], ilType)),
-        callingConv = ILThisConvention.Instance,
-        propertyType = ilType,
-        init = None,
-        args = [],
-        customAttrs = customAttributes
-    )
-
-let mkLocalPrivateAttributeWithPropertyConstructors (cenv, name: string, attrProperties: (string * ILType) list option) =
-    let ilTypeRef = mkILTyRef (ILScopeRef.Local, name)
-    let ilTy = mkILFormalNamedTy ILBoxity.AsObject ilTypeRef []
-
-    let ilElements =
-        attrProperties
-        |> Option.defaultValue []
-        |> List.map (fun (name, ilType) ->
-            let fieldName = name + "@"
-
-            (cenv.g.AddFieldGeneratedAttributes(mkILInstanceField (fieldName, ilType, None, ILMemberAccess.Private))),
-            (cenv.g.AddMethodGeneratedAttributes(
-                mkLdfldMethodDef ($"get_{name}", ILMemberAccess.Public, false, ilTy, fieldName, ilType, [])
-            )),
-            (cenv.g.AddMethodGeneratedAttributes(
-                mkStsfldMethodDef ($"set_{name}", ILMemberAccess.Private, false, ilTy, fieldName, ilType, [])
-            )),
-            (cenv.g.AddPropertyGeneratedAttributes(
-                mkILNonGenericInstanceProperty (name, ilTypeRef, ilType, PropertyAttributes.None, emptyILCustomAttrs)
-            )),
-            (name, fieldName, ilType))
-
-    // Generate constructor with required arguments
-    let ilCtorDef =
-        cenv.g.AddMethodGeneratedAttributes(
-            mkILSimpleStorageCtorWithParamNames (
-                Some cenv.g.ilg.typ_Attribute.TypeSpec,
-                ilTy,
-                [],
-                (ilElements |> List.map (fun (_, _, _, _, fieldInfo) -> fieldInfo)),
-                ILMemberAccess.Public,
-                None,
-                None
-            )
-        )
-
-    mkILGenericClass (
-        name,
-        ILTypeDefAccess.Private,
-        ILGenericParameterDefs.Empty,
-        cenv.g.ilg.typ_Attribute,
-        ILTypes.Empty,
-        mkILMethods (
-            ilCtorDef
-            :: (ilElements
-                |> List.fold (fun acc (_, getter, setter, _, _) -> getter :: (setter :: acc)) [])
-        ),
-        mkILFields (ilElements |> List.map (fun (field, _, _, _, _) -> field)),
-        emptyILTypeDefs,
-        mkILProperties (ilElements |> List.map (fun (_, _, _, property, _) -> property)),
-        emptyILEvents,
-        emptyILCustomAttrs,
-        ILTypeInit.BeforeField
-    )
-
-let mkLocalPrivateInt32Enum (cenv: cenv, tref: ILTypeRef, values: (string * int32) array) =
-    let g = cenv.g
-    let ilType = ILType.Value(mkILNonGenericTySpec (tref))
-
-    let enumFields =
-        values
-        |> Array.map (fun (name, value) -> mkILStaticLiteralField (name, ilType, ILFieldInit.Int32 value, None, ILMemberAccess.Public))
-        |> Array.append
-            [|
-                (mkILInstanceField ("value__", g.ilg.typ_Int32, Some(ILFieldInit.Int32 0), ILMemberAccess.Public))
-                    .WithSpecialName(true)
-            |]
-        |> Array.toList
-
-    mkILGenericClass(
-        tref.Name,
-        ILTypeDefAccess.Private,
-        ILGenericParameterDefs.Empty,
-        g.ilg.typ_Enum,
-        ILTypes.Empty,
-        mkILMethods [],
-        mkILFields enumFields,
-        emptyILTypeDefs,
-        emptyILProperties,
-        emptyILEvents,
-        g.AddGeneratedAttributes(mkILCustomAttrs [ mkFlagsAttribute cenv ]),
-        ILTypeInit.OnAny
-    )
-        .WithSealed(true)
-
-//--------------------------------------------------------------------------
 // Generate type references
 //--------------------------------------------------------------------------
 
@@ -758,86 +591,6 @@ let voidCheck m g permits ty =
 type PtrsOK =
     | PtrTypesOK
     | PtrTypesNotOK
-
-let GetReadOnlyAttribute cenv =
-    let g = cenv.g
-    let tref = g.attrib_IsReadOnlyAttribute.TypeRef
-    g.TryEmbedILType(tref, (fun () -> mkLocalPrivateAttributeWithDefaultConstructor (cenv, tref.Name)))
-    mkILCustomAttribute (g.attrib_IsReadOnlyAttribute.TypeRef, [], [], [])
-
-let GenReadOnlyAttributeIfNecessary cenv ty =
-    if isInByrefTy cenv.g ty then
-        let attr = GetReadOnlyAttribute cenv
-        Some attr
-    else
-        None
-
-let GetDynamicallyAccessedMemberTypes cenv =
-    let tref = cenv.g.enum_DynamicallyAccessedMemberTypes.TypeRef
-
-    if not (cenv.g.compilingFSharpCore) then
-        cenv.g.TryEmbedILType(
-            tref,
-            (fun () ->
-                let values =
-                    [|
-                        ("All", -1)
-                        ("None", 0)
-                        ("PublicParameterlessConstructor", 1)
-                        ("PublicConstructors", 3)
-                        ("NonPublicConstructors", 4)
-                        ("PublicMethods", 8)
-                        ("NonPublicMethods", 16)
-                        ("PublicFields", 32)
-                        ("NonPublicFields", 64)
-                        ("PublicNestedTypes", 128)
-                        ("NonPublicNestedTypes", 256)
-                        ("PublicProperties", 512)
-                        ("NonPublicProperties", 1024)
-                        ("PublicEvents", 2048)
-                        ("NonPublicEvents", 4096)
-                        ("Interfaces", 8192)
-                    |]
-
-                mkLocalPrivateInt32Enum (cenv, tref, values))
-        )
-
-    ILType.Value(mkILNonGenericTySpec (tref))
-
-let GetDynamicDependencyAttribute cenv memberTypes ilType =
-    let tref = cenv.g.attrib_DynamicDependencyAttribute.TypeRef
-
-    cenv.g.TryEmbedILType(
-        tref,
-        (fun () ->
-            let properties =
-                Some
-                    [
-                        "MemberType", GetDynamicallyAccessedMemberTypes cenv
-                        "Type", cenv.g.ilg.typ_Type
-                    ]
-
-            mkLocalPrivateAttributeWithPropertyConstructors (cenv, tref.Name, properties))
-    )
-
-    let typIlMemberTypes =
-        ILType.Value(mkILNonGenericTySpec (cenv.g.enum_DynamicallyAccessedMemberTypes.TypeRef))
-
-    mkILCustomAttribute (
-        tref,
-        [ typIlMemberTypes; cenv.g.ilg.typ_Type ],
-        [ ILAttribElem.Int32 memberTypes; ILAttribElem.Type(Some ilType) ],
-        []
-    )
-
-/// Generate "modreq([mscorlib]System.Runtime.InteropServices.InAttribute)" on inref types.
-let GenReadOnlyModReqIfNecessary (g: TcGlobals) ty ilTy =
-    let add = isInByrefTy g ty && g.attrib_InAttribute.TyconRef.CanDeref
-
-    if add then
-        ILType.Modified(true, g.attrib_InAttribute.TypeRef, ilTy)
-    else
-        ilTy
 
 let rec GenTypeArgAux cenv m tyenv tyarg =
     GenTypeAux cenv m tyenv VoidNotOK PtrTypesNotOK tyarg
@@ -2299,7 +2052,7 @@ type AnonTypeGenerationTable() =
             let ilMethods =
                 [
                     for propName, fldName, fldTy in flds ->
-                        let attrs = if isStruct then [ GetReadOnlyAttribute cenv ] else []
+                        let attrs = if isStruct then [ GetReadOnlyAttribute g ] else []
 
                         mkLdfldMethodDef ("get_" + propName, ILMemberAccess.Public, false, ilTy, fldName, fldTy, attrs)
                         |> g.AddMethodGeneratedAttributes
@@ -2311,7 +2064,8 @@ type AnonTypeGenerationTable() =
             let ilBaseTySpec = (if isStruct then None else Some ilBaseTy.TypeSpec)
 
             let ilCtorDef =
-                mkILSimpleStorageCtorWithParamNames (ilBaseTySpec, ilTy, [], flds, ILMemberAccess.Public, None, None)
+                (mkILSimpleStorageCtorWithParamNames (ilBaseTySpec, ilTy, [], flds, ILMemberAccess.Public, None, None))
+                    .With(customAttrs = mkILCustomAttrs [ GetDynamicDependencyAttribute g 0x660 ilTy ])
 
             // Create a tycon that looks exactly like a record definition, to help drive the generation of equality/comparison code
             let m = range0
@@ -5867,7 +5621,7 @@ and GenSlotParam m cenv eenv slotParam : ILParameter =
     let ilAttribs = GenAttrs cenv eenv attribs
 
     let ilAttribs =
-        match GenReadOnlyAttributeIfNecessary cenv ty with
+        match GenReadOnlyAttributeIfNecessary cenv.g ty with
         | Some attr -> ilAttribs @ [ attr ]
         | None -> ilAttribs
 
@@ -5925,7 +5679,7 @@ and GenFormalReturnType m cenv eenvFormal returnTy : ILReturn =
     match returnTy with
     | None -> ilRet
     | Some ty ->
-        match GenReadOnlyAttributeIfNecessary cenv ty with
+        match GenReadOnlyAttributeIfNecessary cenv.g ty with
         | Some attr -> ilRet.WithCustomAttrs(mkILCustomAttrs (ilRet.CustomAttrs.AsList() @ [ attr ]))
         | None -> ilRet
 
@@ -8972,7 +8726,7 @@ and GenParams
             let ilAttribs = GenAttrs cenv eenv attribs
 
             let ilAttribs =
-                match GenReadOnlyAttributeIfNecessary cenv methodArgTy with
+                match GenReadOnlyAttributeIfNecessary cenv.g methodArgTy with
                 | Some attr -> ilAttribs @ [ attr ]
                 | None -> ilAttribs
 
@@ -9001,7 +8755,7 @@ and GenReturnInfo cenv eenv returnTy ilRetTy (retInfo: ArgReprInfo) : ILReturn =
     let ilAttribs =
         match returnTy with
         | Some retTy ->
-            match GenReadOnlyAttributeIfNecessary cenv retTy with
+            match GenReadOnlyAttributeIfNecessary cenv.g retTy with
             | Some attr -> ilAttribs @ [ attr ]
             | None -> ilAttribs
         | _ -> ilAttribs
@@ -9338,7 +9092,7 @@ and GenMethodForBinding
                 || memberInfo.MemberFlags.MemberKind = SynMemberKind.PropertySet
                 || memberInfo.MemberFlags.MemberKind = SynMemberKind.PropertyGetSet
                 ->
-                match GenReadOnlyAttributeIfNecessary cenv returnTy with
+                match GenReadOnlyAttributeIfNecessary cenv.g returnTy with
                 | Some ilAttr -> ilAttr
                 | _ -> ()
             | _ -> ()
@@ -10588,7 +10342,7 @@ and GenAbstractBinding cenv eenv tref (vref: ValRef) =
                     || memberInfo.MemberFlags.MemberKind = SynMemberKind.PropertySet
                     || memberInfo.MemberFlags.MemberKind = SynMemberKind.PropertyGetSet
                     ->
-                    match GenReadOnlyAttributeIfNecessary cenv returnTy with
+                    match GenReadOnlyAttributeIfNecessary cenv.g returnTy with
                     | Some ilAttr -> ilAttr
                     | _ -> ()
                 | _ -> ()
@@ -11104,7 +10858,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
 
                             let attrs =
                                 if isStruct && not isStatic then
-                                    [ GetReadOnlyAttribute cenv ]
+                                    [ GetReadOnlyAttribute g ]
                                 else
                                     []
 
@@ -11259,16 +11013,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                                 None,
                                 eenv.imports
                             ))
-                                .With(
-                                    customAttrs =
-                                        mkILCustomAttrs
-                                            [
-                                                GetDynamicDependencyAttribute
-                                                    cenv
-                                                    0x660 (*Public and NonPublic Fields and Properties*)
-                                                    ilThisTy
-                                            ]
-                                )
+                                .With(customAttrs = mkILCustomAttrs [ GetDynamicDependencyAttribute g 0x660 ilThisTy ])
 
                         yield ilMethodDef
                         // FSharp 1.0 bug 1988: Explicitly setting the ComVisible(true) attribute on an F# type causes an F# record to be emitted in a way that enables mutation for COM interop scenarios
@@ -11514,16 +11259,18 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                         }
 
                     let layout =
+                        // Structs with no instance fields get size 1, pack 0
                         if isStructTy g thisTy then
                             if
-                                (match ilTypeDefKind with
-                                 | ILTypeDefKind.ValueType -> true
-                                 | _ -> false)
+                                (tycon.AllFieldsArray.Length = 0
+                                 || tycon.AllFieldsArray |> Array.exists (fun f -> not f.IsStatic))
+                                && (alternatives
+                                    |> Array.collect (fun a -> a.FieldDefs)
+                                    |> Array.exists (fun fd -> not fd.ILField.IsStatic))
                             then
-                                // Structs with no instance fields get size 1, pack 0
-                                ILTypeDefLayout.Sequential { Size = Some 1; Pack = Some 0us }
-                            else
                                 ILTypeDefLayout.Sequential { Size = None; Pack = None }
+                            else
+                                ILTypeDefLayout.Sequential { Size = Some 1; Pack = Some 0us }
                         else
                             ILTypeDefLayout.Auto
 
@@ -11581,7 +11328,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                              g.AddFieldGeneratedAttributes,
                              g.AddFieldNeverAttributes,
                              g.MkDebuggerTypeProxyAttribute)
-                            g.ilg
+                            g
                             tref
                             tdef
                             cuinfo

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace FSharp.Editor.Tests.Hints
 
@@ -24,12 +24,35 @@ let s = { Artist = "Moby"; Title = "Porcelain" }
                 {
                     Content = ": Song"
                     Location = (3, 6)
+                    Tooltip = "type Song"
                 }
             ]
 
         let actual = getTypeHints document
 
         Assert.Equal(expected, actual)
+
+    [<Fact>]
+    let ``Hints are correct for builtin types`` () =
+        let code =
+            """
+let songName = "Happy House"
+    """
+
+        let document = getFsDocument code
+
+        let result = getTypeHints document
+
+        let expected =
+            [
+                {
+                    Content = ": string"
+                    Location = (1, 13)
+                    Tooltip = "type string"
+                }
+            ]
+
+        Assert.Equal(expected, result)
 
     [<Fact>]
     let ``Hint is shown for a parameter`` () =
@@ -47,6 +70,7 @@ let whoSings s = s.Artist
                 {
                     Content = ": Song"
                     Location = (3, 15)
+                    Tooltip = "type Song"
                 }
             ]
 
@@ -156,7 +180,15 @@ let iamboring() =
 """
 
         let document = getFsDocument code
-        let expected = [ { Content = ": 'a"; Location = (2, 10) } ]
+
+        let expected =
+            [
+                {
+                    Content = ": 'a"
+                    Location = (2, 10)
+                    Tooltip = "type 'a"
+                }
+            ]
 
         let actual = getTypeHints document
 
@@ -175,10 +207,26 @@ let zip4 (l1: 'a list) (l2: 'b list) (l3: 'c list) (l4: 'd list) =
 
         let expected =
             [
-                { Content = ": 'a"; Location = (3, 25) }
-                { Content = ": 'b"; Location = (3, 30) }
-                { Content = ": 'c"; Location = (3, 34) }
-                { Content = ": 'd"; Location = (3, 38) }
+                {
+                    Content = ": 'a"
+                    Location = (3, 25)
+                    Tooltip = "type 'a"
+                }
+                {
+                    Content = ": 'b"
+                    Location = (3, 30)
+                    Tooltip = "type 'b"
+                }
+                {
+                    Content = ": 'c"
+                    Location = (3, 34)
+                    Tooltip = "type 'c"
+                }
+                {
+                    Content = ": 'd"
+                    Location = (3, 38)
+                    Tooltip = "type 'd"
+                }
             ]
 
         let actual = getTypeHints document
@@ -261,10 +309,12 @@ type Number<'T when IAddition<'T>>(value: 'T) =
                 {
                     Content = ": Number<'T>"
                     Location = (7, 36)
+                    Tooltip = "type Number`1"
                 }
                 {
                     Content = ": Number<'T>"
                     Location = (7, 39)
+                    Tooltip = "type Number`1"
                 }
             ]
 

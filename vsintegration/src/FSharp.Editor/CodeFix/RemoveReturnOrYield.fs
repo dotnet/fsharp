@@ -3,6 +3,7 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
+open System.Collections.Immutable
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
@@ -11,9 +12,7 @@ open Microsoft.CodeAnalysis.CodeFixes
 type internal FSharpRemoveReturnOrYieldCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
-    let fixableDiagnosticIds = set [ "FS0748"; "FS0747" ]
-
-    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0748", "FS0747")
 
     override _.RegisterCodeFixesAsync context =
         asyncMaybe {
@@ -29,11 +28,6 @@ type internal FSharpRemoveReturnOrYieldCodeFixProvider [<ImportingConstructor>] 
             let! exprRange = parseResults.TryRangeOfExprInYieldOrReturn errorRange.Start
             let! exprSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, exprRange)
 
-            let diagnostics =
-                context.Diagnostics
-                |> Seq.filter (fun x -> fixableDiagnosticIds |> Set.contains x.Id)
-                |> Seq.toImmutableArray
-
             let title =
                 let text = sourceText.GetSubText(context.Span).ToString()
 
@@ -42,15 +36,12 @@ type internal FSharpRemoveReturnOrYieldCodeFixProvider [<ImportingConstructor>] 
                 elif text.StartsWith("yield!") then SR.RemoveYieldBang()
                 else SR.RemoveYield()
 
-            let codeFix =
-                CodeFixHelpers.createTextChangeCodeFix (
+            do
+                context.RegisterFsharpFix(
                     CodeFix.RemoveReturnOrYield,
                     title,
-                    context,
-                    (fun () -> asyncMaybe.Return [| TextChange(context.Span, sourceText.GetSubText(exprSpan).ToString()) |])
+                    [| TextChange(context.Span, sourceText.GetSubText(exprSpan).ToString()) |]
                 )
-
-            context.RegisterCodeFix(codeFix, diagnostics)
         }
         |> Async.Ignore
         |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

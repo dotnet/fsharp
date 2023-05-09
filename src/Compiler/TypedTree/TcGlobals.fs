@@ -9,6 +9,7 @@
 module internal FSharp.Compiler.TcGlobals
 
 open System.Collections.Concurrent
+open System.Linq
 open System.Diagnostics
 
 open Internal.Utilities.Library
@@ -88,21 +89,6 @@ module FSharpLib =
 //-------------------------------------------------------------------------
 // Access the initial environment: helpers to build references
 //-------------------------------------------------------------------------
-
-// empty flags
-let v_knownWithoutNull = 0uy
-
-let private mkNonGenericTy tcref = TType_app(tcref, [], v_knownWithoutNull)
-
-let mkNonLocalTyconRef2 ccu path n = mkNonLocalTyconRef (mkNonLocalEntityRef ccu path) n
-
-let mk_MFCore_tcref             ccu n = mkNonLocalTyconRef2 ccu CorePathArray n
-let mk_MFQuotations_tcref       ccu n = mkNonLocalTyconRef2 ccu QuotationsPath n
-let mk_MFLinq_tcref             ccu n = mkNonLocalTyconRef2 ccu LinqPathArray n
-let mk_MFCollections_tcref      ccu n = mkNonLocalTyconRef2 ccu CollectionsPathArray n
-let mk_MFCompilerServices_tcref ccu n = mkNonLocalTyconRef2 ccu CompilerServicesPath n
-let mk_MFRuntimeHelpers_tcref   ccu n = mkNonLocalTyconRef2 ccu RuntimeHelpersPath n
-let mk_MFControl_tcref          ccu n = mkNonLocalTyconRef2 ccu ControlPathArray n
 
 type
     [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
@@ -206,6 +192,21 @@ type TcGlobals(
     noDebugAttributes: bool,
     pathMap: PathMap,
     langVersion: LanguageVersion) =
+
+  // empty flags
+  let v_knownWithoutNull = 0uy
+
+  let mkNonGenericTy tcref = TType_app(tcref, [], v_knownWithoutNull)
+
+  let mkNonLocalTyconRef2 ccu path n = mkNonLocalTyconRef (mkNonLocalEntityRef ccu path) n
+
+  let mk_MFCore_tcref             ccu n = mkNonLocalTyconRef2 ccu CorePathArray n
+  let mk_MFQuotations_tcref       ccu n = mkNonLocalTyconRef2 ccu QuotationsPath n
+  let mk_MFLinq_tcref             ccu n = mkNonLocalTyconRef2 ccu LinqPathArray n
+  let mk_MFCollections_tcref      ccu n = mkNonLocalTyconRef2 ccu CollectionsPathArray n
+  let mk_MFCompilerServices_tcref ccu n = mkNonLocalTyconRef2 ccu CompilerServicesPath n
+  let mk_MFRuntimeHelpers_tcref   ccu n = mkNonLocalTyconRef2 ccu RuntimeHelpersPath n
+  let mk_MFControl_tcref          ccu n = mkNonLocalTyconRef2 ccu ControlPathArray n
 
   let tryFindSysTypeCcu path nm =
     tryFindSysTypeCcuHelper path nm false
@@ -877,16 +878,17 @@ type TcGlobals(
     let attribs =
        match generatedAttribsCache with
        | [] ->
-           let res =
-               [ if not noDebugAttributes then
-                   mkCompilerGeneratedAttribute()
-                   mkDebuggerNonUserCodeAttribute()]
-           generatedAttribsCache <- res
-           res
+            let res = [
+                if not noDebugAttributes then
+                    mkCompilerGeneratedAttribute()
+                    mkDebuggerNonUserCodeAttribute()
+                ]
+            generatedAttribsCache <- res
+            res
        | res -> res
     mkILCustomAttrs (attrs.AsList() @ attribs)
 
-  let addMethodGeneratedAttrs (mdef:ILMethodDef)   = mdef.With(customAttrs   = addGeneratedAttrs mdef.CustomAttrs)
+  let addMethodGeneratedAttrs (mdef:ILMethodDef)   = mdef.With(customAttrs = addGeneratedAttrs mdef.CustomAttrs)
 
   let addPropertyGeneratedAttrs (pdef:ILPropertyDef) = pdef.With(customAttrs = addGeneratedAttrs pdef.CustomAttrs)
 
@@ -1052,7 +1054,7 @@ type TcGlobals(
   member _.embeddedTypeDefs = embeddedILTypeDefs.Values |> Seq.toList
 
   member _.tryRemoveEmbeddedILTypeDefs () = [
-      for key in embeddedILTypeDefs.Keys do
+      for key in embeddedILTypeDefs.Keys.OrderBy(fun k -> k) do
         match (embeddedILTypeDefs.TryRemove(key)) with
         | true, ilTypeDef -> yield ilTypeDef
         | false, _ -> ()

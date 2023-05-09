@@ -55,14 +55,13 @@ module internal QuickInfoViewProvider =
         | TaggedText (TextTag.LineBreak, _) -> Some()
         | _ -> None
 
-    let wrapContent (elements: obj list) =
-        ContainerElement(ContainerElementStyle.Wrapped, elements |> Seq.map box)
+    let wrapContent (elements: obj seq) =
+        ContainerElement(ContainerElementStyle.Wrapped, elements)
 
-    let stackContent (elements: obj list) =
-        ContainerElement(ContainerElementStyle.Stacked, elements |> Seq.map box)
+    let stackContent (elements: obj seq) =
+        ContainerElement(ContainerElementStyle.Stacked, elements)
 
-    let encloseRuns runs =
-        ClassifiedTextElement(runs |> List.rev) |> box
+    let encloseRuns runs : obj = ClassifiedTextElement(runs |> List.rev)
 
     let provideContent
         (
@@ -78,12 +77,12 @@ module internal QuickInfoViewProvider =
                 match (text: TaggedText list) with
                 | [] when runs |> List.isEmpty -> stackContent (stack |> List.rev)
                 | [] -> stackContent (encloseRuns runs :: stack |> List.rev)
-                // smaller gap instead of huge double line break
-                | LineBreak :: rest when runs |> List.isEmpty -> loop rest [] (box (Separator false) :: stack)
+                // smaller paragraph spacing instead of huge double line break
+                | LineBreak :: rest when runs |> List.isEmpty -> loop rest [] (Paragraph :: stack)
                 | LineBreak :: rest -> loop rest [] (encloseRuns runs :: stack)
                 | :? NavigableTaggedText as item :: rest when navigation.IsTargetValid item.Range ->
                     let classificationTag = layoutTagToClassificationTag item.Tag
-                    let action = fun () -> navigation.NavigateTo(item.Range, CancellationToken.None)
+                    let action = fun () -> navigation.NavigateTo(item.Range)
 
                     let run =
                         ClassifiedTextRun(classificationTag, item.Text, action, getTooltip item.Range.FileName)
@@ -93,17 +92,14 @@ module internal QuickInfoViewProvider =
                     let run = ClassifiedTextRun(layoutTagToClassificationTag item.Tag, item.Text)
                     loop rest (run :: runs) stack
 
-            loop text [] [] |> box
+            loop text [] []
 
         let innerElement =
             match imageId with
             | Some imageId -> wrapContent [ stackContent [ ImageElement(imageId) ]; encloseText description ]
             | None -> ContainerElement(ContainerElementStyle.Wrapped, encloseText description)
 
-        wrapContent [ stackContent [ innerElement; encloseText documentation ] ]
+        wrapContent [ stackContent [ innerElement; encloseText documentation ]; CustomLinkStyle ]
 
     let stackWithSeparators elements =
-        elements
-        |> List.map box
-        |> List.intersperse (box (Separator true))
-        |> stackContent
+        elements |> List.map box |> List.intersperse Separator |> stackContent

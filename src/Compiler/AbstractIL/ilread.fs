@@ -228,7 +228,7 @@ type WeakByteFile(fileName: string, chunk: (int * int) option) =
     let fileStamp = FileSystem.GetLastWriteTimeShim fileName
 
     /// The weak handle to the bytes for the file
-    let weakBytes = WeakReference<byte[]>(null)
+    let weakBytes = WeakReference<byte[] MaybeNull>(null)
 
     member _.FileName = fileName
 
@@ -254,7 +254,7 @@ type WeakByteFile(fileName: string, chunk: (int * int) option) =
 
                     weakBytes.SetTarget bytes
 
-                tg
+                nonNull tg
 
             ByteMemory.FromArray(strongBytes).AsReadOnly()
 
@@ -941,10 +941,11 @@ let mkCacheInt32 lowMem _inbase _nm _sz =
         fun f (idx: int32) ->
             let cache =
                 match cache with
-                | null -> cache <- ConcurrentDictionary<int32, _>(Environment.ProcessorCount, 11)
-                | _ -> ()
-
-                cache
+                | Null ->
+                    let v = ConcurrentDictionary<int32, _>(Environment.ProcessorCount, 11)
+                    cache <- v
+                    v
+                | NonNull v -> v
 
             match cache.TryGetValue idx with
             | true, res ->
@@ -969,10 +970,11 @@ let mkCacheGeneric lowMem _inbase _nm _sz =
         fun f (idx: 'T) ->
             let cache =
                 match cache with
-                | null -> cache <- ConcurrentDictionary<_, _>(Environment.ProcessorCount, 11 (* sz: int *) )
-                | _ -> ()
-
-                cache
+                | Null ->
+                    let v = ConcurrentDictionary<_, _>(Environment.ProcessorCount, 11 (* sz: int *) )
+                    cache <- v
+                    v
+                | NonNull v -> v
 
             match cache.TryGetValue idx with
             | true, v ->
