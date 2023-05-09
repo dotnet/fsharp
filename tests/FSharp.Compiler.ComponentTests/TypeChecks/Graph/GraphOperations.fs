@@ -6,6 +6,7 @@ open FSharp.Compiler.GraphChecking
 open FSharp.Test.ProjectGeneration
 open FSharp.Compiler.Text
 open FSharp.Compiler
+open FSharp.Compiler.ParseAndCheckInputs
 
 
 [<Fact>]
@@ -66,13 +67,15 @@ let ``See what this does`` () =
                 let fullGraph =
                     DependencyResolution.mkGraph false filePairs sourceFiles
                     |> fst
-                    |> Graph.map (fun idx -> project.SourceFilePaths[idx] |> Path.GetFileName)
+                    //|> Graph.map (fun idx -> project.SourceFilePaths[idx] |> Path.GetFileName)
 
-                let subGraph = fullGraph |> Graph.subGraphFor "FileF.fs"
+                let subGraph = fullGraph |> Graph.subGraphFor 9  //"FileF.fs"
 
                 let layers = Graph.leafSequence subGraph |> Seq.toList
 
-                ignore layers
+                let transformed = TransformDependencyGraph (subGraph, filePairs)
+
+                ignore (layers, transformed)
 
                 return ()
             }

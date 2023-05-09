@@ -1608,6 +1608,42 @@ let AddSignatureResultToTcImplEnv (tcImports: TcImports, tcGlobals, prefixPathOp
                 tcState.tcsTcSigEnv, EmptyTopAttrs, None, ccuSigForFile
 
             partialResult, tcState
+let TransformDependencyGraph (graph: Graph<FileIndex>, filePairs: FilePairMap) =
+    let mkArtificialImplFile n = NodeToTypeCheck.ArtificialImplFile n
+    let mkPhysicalFile n = NodeToTypeCheck.PhysicalFile n
+
+    /// Map any signature dependencies to the ArtificialImplFile counterparts,
+    /// unless the signature dependency is the backing file of the current (implementation) file.
+    let mapDependencies idx deps =
+        Array.map
+            (fun dep ->
+                if filePairs.IsSignature dep then
+                    let implIdx = filePairs.GetImplementationIndex dep
+
+                    if implIdx = idx then
+                        // This is the matching signature for the implementation.
+                        // Retain the direct dependency onto the signature file.
+                        mkPhysicalFile dep
+                    else
+                        mkArtificialImplFile dep
+                else
+                    mkPhysicalFile dep)
+            deps
+
+    // Transform the graph to include ArtificialImplFile nodes when necessary.
+    graph
+    |> Seq.collect (fun (KeyValue (fileIdx, deps)) ->
+        if filePairs.IsSignature fileIdx then
+            // Add an additional ArtificialImplFile node for the signature file.
+            [|
+                // Mark the current file as physical and map the dependencies.
+                mkPhysicalFile fileIdx, mapDependencies fileIdx deps
+                // Introduce a new node that depends on the signature.
+                mkArtificialImplFile fileIdx, [| mkPhysicalFile fileIdx |]
+            |]
+        else
+            [| mkPhysicalFile fileIdx, mapDependencies fileIdx deps |])
+    |> Graph.make
 
 /// Constructs a file dependency graph and type-checks the files in parallel where possible.
 let CheckMultipleInputsUsingGraphMode
@@ -1630,42 +1666,7 @@ let CheckMultipleInputsUsingGraphMode
     let graph, trie =
         DependencyResolution.mkGraph tcConfig.compilingFSharpCore filePairs sourceFiles
 
-    let nodeGraph =
-        let mkArtificialImplFile n = NodeToTypeCheck.ArtificialImplFile n
-        let mkPhysicalFile n = NodeToTypeCheck.PhysicalFile n
-
-        /// Map any signature dependencies to the ArtificialImplFile counterparts,
-        /// unless the signature dependency is the backing file of the current (implementation) file.
-        let mapDependencies idx deps =
-            Array.map
-                (fun dep ->
-                    if filePairs.IsSignature dep then
-                        let implIdx = filePairs.GetImplementationIndex dep
-
-                        if implIdx = idx then
-                            // This is the matching signature for the implementation.
-                            // Retain the direct dependency onto the signature file.
-                            mkPhysicalFile dep
-                        else
-                            mkArtificialImplFile dep
-                    else
-                        mkPhysicalFile dep)
-                deps
-
-        // Transform the graph to include ArtificialImplFile nodes when necessary.
-        graph
-        |> Seq.collect (fun (KeyValue (fileIdx, deps)) ->
-            if filePairs.IsSignature fileIdx then
-                // Add an additional ArtificialImplFile node for the signature file.
-                [|
-                    // Mark the current file as physical and map the dependencies.
-                    mkPhysicalFile fileIdx, mapDependencies fileIdx deps
-                    // Introduce a new node that depends on the signature.
-                    mkArtificialImplFile fileIdx, [| mkPhysicalFile fileIdx |]
-                |]
-            else
-                [| mkPhysicalFile fileIdx, mapDependencies fileIdx deps |])
-        |> Graph.make
+    let nodeGraph = TransformDependencyGraph (graph, filePairs)
 
     // Persist the graph to a Mermaid diagram if specified.
     if tcConfig.typeCheckingConfig.DumpGraph then

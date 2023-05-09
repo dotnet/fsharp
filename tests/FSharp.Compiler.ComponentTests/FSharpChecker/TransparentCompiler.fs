@@ -132,7 +132,7 @@ let ``Change multiple files at once`` () =
         checkFile "Last" (expectSignatureContains "val f: x: 'a -> (ModuleFirst.TFirstV_2<'a> * ModuleSecond.TSecondV_2<'a>) * (ModuleFirst.TFirstV_2<'a> * ModuleThird.TThirdV_2<'a>) * TLastV_1<'a>")
     }
 
-// TODO: [<Fact>]
+[<Fact>]
 let ``Files depend on signature file if present`` () =
     let project = makeTestProject() |> updateFile "First" addSignatureFile
 
