@@ -50,6 +50,7 @@ module rec Compiler =
         | CS of CSharpCompilationSource
         | IL of ILCompilationSource
         override this.ToString() = match this with | FS fs -> fs.ToString() | _ -> (sprintf "%A" this   )
+        member this.WithStaticLink(staticLink: bool) = match this with | FS fs -> FS { fs with StaticLink = staticLink } | cu -> cu
 
     type FSharpCompilationSource =
         { Source:           SourceCodeFileKind
@@ -589,7 +590,7 @@ module rec Compiler =
                         | Some outputDirectory -> outputDirectory
                         | _ -> defaultOutputDirectory
                     let cmpl =
-                        Compilation.CreateFromSources([fs.Source] @ fs.AdditionalSources, fs.OutputType, options, fs.TargetFramework, refs, name, outDir) |> CompilationReference.CreateFSharp
+                        CompilationReference.CreateFSharp(Compilation.CreateFromSources([fs.Source] @ fs.AdditionalSources, fs.OutputType, options, fs.TargetFramework, refs, name, outDir), fs.StaticLink)
                     loop (cmpl::acc) xs
 
                 | CS cs ->
