@@ -3,6 +3,8 @@
 /// The ILX generator.
 module internal FSharp.Compiler.IlxGen
 
+open FSharp.Compiler.IlxGenSupport
+
 open System.IO
 open System.Reflection
 open System.Collections.Generic
@@ -71,25 +73,6 @@ let iLdcInt64 i = AI_ldc(DT_I8, ILConst.I8 i)
 let iLdcDouble i = AI_ldc(DT_R8, ILConst.R8 i)
 
 let iLdcSingle i = AI_ldc(DT_R4, ILConst.R4 i)
-
-/// Make a method that simply loads a field
-let mkLdfldMethodDef (ilMethName, reprAccess, isStatic, ilTy, ilFieldName, ilPropType, customAttrs) =
-    let ilFieldSpec = mkILFieldSpecInTy (ilTy, ilFieldName, ilPropType)
-    let ilReturn = mkILReturn ilPropType
-
-    let ilMethodDef =
-        if isStatic then
-            let body =
-                mkMethodBody (true, [], 2, nonBranchingInstrsToCode [ mkNormalLdsfld ilFieldSpec ], None, None)
-
-            mkILNonGenericStaticMethod (ilMethName, reprAccess, [], ilReturn, body)
-        else
-            let body =
-                mkMethodBody (true, [], 2, nonBranchingInstrsToCode [ mkLdarg0; mkNormalLdfld ilFieldSpec ], None, None)
-
-            mkILNonGenericInstanceMethod (ilMethName, reprAccess, [], ilReturn, body)
-
-    ilMethodDef.With(customAttrs = mkILCustomAttrs customAttrs).WithSpecialName
 
 /// Choose the constructor parameter names for fields
 let ChooseParamNames fieldNamesAndTypes =
@@ -608,25 +591,6 @@ let voidCheck m g permits ty =
 type PtrsOK =
     | PtrTypesOK
     | PtrTypesNotOK
-
-let GenReadOnlyAttribute (g: TcGlobals) =
-    g.AddEmbeddableSystemAttribute(g.attrib_IsReadOnlyAttribute.TypeRef, [], [], [])
-
-let GenReadOnlyAttributeIfNecessary (g: TcGlobals) ty =
-    if isInByrefTy g ty then
-        let attr = GenReadOnlyAttribute g
-        Some attr
-    else
-        None
-
-/// Generate "modreq([mscorlib]System.Runtime.InteropServices.InAttribute)" on inref types.
-let GenReadOnlyModReqIfNecessary (g: TcGlobals) ty ilTy =
-    let add = isInByrefTy g ty && g.attrib_InAttribute.TyconRef.CanDeref
-
-    if add then
-        ILType.Modified(true, g.attrib_InAttribute.TypeRef, ilTy)
-    else
-        ilTy
 
 let rec GenTypeArgAux cenv m tyenv tyarg =
     GenTypeAux cenv m tyenv VoidNotOK PtrTypesNotOK tyarg
@@ -1316,6 +1280,12 @@ let AddStorageForLocalWitness eenv (w, s) =
 
 let AddStorageForLocalWitnesses witnesses eenv =
     (eenv, witnesses) ||> List.fold AddStorageForLocalWitness
+
+let ForceInitLocals eenv =
+    if eenv.initLocals then
+        eenv
+    else
+        { eenv with initLocals = true }
 
 //--------------------------------------------------------------------------
 // Lookup eenv
@@ -2082,7 +2052,7 @@ type AnonTypeGenerationTable() =
             let ilMethods =
                 [
                     for propName, fldName, fldTy in flds ->
-                        let attrs = if isStruct then [ GenReadOnlyAttribute g ] else []
+                        let attrs = if isStruct then [ GetReadOnlyAttribute g ] else []
 
                         mkLdfldMethodDef ("get_" + propName, ILMemberAccess.Public, false, ilTy, fldName, fldTy, attrs)
                         |> g.AddMethodGeneratedAttributes
@@ -2094,7 +2064,8 @@ type AnonTypeGenerationTable() =
             let ilBaseTySpec = (if isStruct then None else Some ilBaseTy.TypeSpec)
 
             let ilCtorDef =
-                mkILSimpleStorageCtorWithParamNames (ilBaseTySpec, ilTy, [], flds, ILMemberAccess.Public, None, None)
+                (mkILSimpleStorageCtorWithParamNames (ilBaseTySpec, ilTy, [], flds, ILMemberAccess.Public, None, None))
+                    .With(customAttrs = mkILCustomAttrs [ GetDynamicDependencyAttribute g 0x660 ilTy ])
 
             // Create a tycon that looks exactly like a record definition, to help drive the generation of equality/comparison code
             let m = range0
@@ -5934,6 +5905,9 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
     let eenvinner =
         AddTemplateReplacement eenvinner (templateTyconRef, ilCloTypeRef, cloinfo.cloFreeTyvars, templateTypeInst)
 
+    // In MoveNext we're relying on default initialization of locals, so force it in spite of the presence of any SkipLocalsInit
+    let eenvinner = ForceInitLocals eenvinner
+
     let infoReader = InfoReader.InfoReader(g, cenv.amap)
 
     // We codegen the IResumableStateMachine implementation for each generated struct type
@@ -8752,7 +8726,7 @@ and GenParams
             let ilAttribs = GenAttrs cenv eenv attribs
 
             let ilAttribs =
-                match GenReadOnlyAttributeIfNecessary g methodArgTy with
+                match GenReadOnlyAttributeIfNecessary cenv.g methodArgTy with
                 | Some attr -> ilAttribs @ [ attr ]
                 | None -> ilAttribs
 
@@ -9118,7 +9092,7 @@ and GenMethodForBinding
                 || memberInfo.MemberFlags.MemberKind = SynMemberKind.PropertySet
                 || memberInfo.MemberFlags.MemberKind = SynMemberKind.PropertyGetSet
                 ->
-                match GenReadOnlyAttributeIfNecessary g returnTy with
+                match GenReadOnlyAttributeIfNecessary cenv.g returnTy with
                 | Some ilAttr -> ilAttr
                 | _ -> ()
             | _ -> ()
@@ -10368,7 +10342,7 @@ and GenAbstractBinding cenv eenv tref (vref: ValRef) =
                     || memberInfo.MemberFlags.MemberKind = SynMemberKind.PropertySet
                     || memberInfo.MemberFlags.MemberKind = SynMemberKind.PropertyGetSet
                     ->
-                    match GenReadOnlyAttributeIfNecessary g returnTy with
+                    match GenReadOnlyAttributeIfNecessary cenv.g returnTy with
                     | Some ilAttr -> ilAttr
                     | _ -> ()
                 | _ -> ()
@@ -10884,7 +10858,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
 
                             let attrs =
                                 if isStruct && not isStatic then
-                                    [ GenReadOnlyAttribute g ]
+                                    [ GetReadOnlyAttribute g ]
                                 else
                                     []
 
@@ -11030,7 +11004,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                                 Some(g.ilg.typ_Object.TypeSpec)
 
                         let ilMethodDef =
-                            mkILSimpleStorageCtorWithParamNames (
+                            (mkILSimpleStorageCtorWithParamNames (
                                 spec,
                                 ilThisTy,
                                 [],
@@ -11038,7 +11012,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                                 reprAccess,
                                 None,
                                 eenv.imports
-                            )
+                            ))
+                                .With(customAttrs = mkILCustomAttrs [ GetDynamicDependencyAttribute g 0x660 ilThisTy ])
 
                         yield ilMethodDef
                         // FSharp 1.0 bug 1988: Explicitly setting the ComVisible(true) attribute on an F# type causes an F# record to be emitted in a way that enables mutation for COM interop scenarios
@@ -11284,16 +11259,18 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                         }
 
                     let layout =
+                        // Structs with no instance fields get size 1, pack 0
                         if isStructTy g thisTy then
                             if
-                                (match ilTypeDefKind with
-                                 | ILTypeDefKind.ValueType -> true
-                                 | _ -> false)
+                                (tycon.AllFieldsArray.Length = 0
+                                 || tycon.AllFieldsArray |> Array.exists (fun f -> not f.IsStatic))
+                                && (alternatives
+                                    |> Array.collect (fun a -> a.FieldDefs)
+                                    |> Array.exists (fun fd -> not fd.ILField.IsStatic))
                             then
-                                // Structs with no instance fields get size 1, pack 0
-                                ILTypeDefLayout.Sequential { Size = Some 1; Pack = Some 0us }
-                            else
                                 ILTypeDefLayout.Sequential { Size = None; Pack = None }
+                            else
+                                ILTypeDefLayout.Sequential { Size = Some 1; Pack = Some 0us }
                         else
                             ILTypeDefLayout.Auto
 
@@ -11351,7 +11328,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                              g.AddFieldGeneratedAttributes,
                              g.AddFieldNeverAttributes,
                              g.MkDebuggerTypeProxyAttribute)
-                            g.ilg
+                            g
                             tref
                             tdef
                             cuinfo

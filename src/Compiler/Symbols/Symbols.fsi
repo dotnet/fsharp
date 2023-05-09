@@ -945,6 +945,9 @@ type FSharpMemberOrFunctionOrValue =
     /// Indicates if this is a ref cell
     member IsRefCell: bool
 
+    /// Indicates if this is a value that has been referenced
+    member IsReferencedValue: bool
+
     /// Indicated if this is a value
     member IsValue: bool
 
@@ -1072,6 +1075,9 @@ type FSharpType =
 
     /// Get the generic arguments for a tuple type, a function type or a type constructed using a named entity
     member GenericArguments: IList<FSharpType>
+
+    /// Indicates if the type is a measure type.
+    member IsMeasureType: bool
 
     /// Indicates if the type is a tuple type (reference or struct). The GenericArguments property returns the elements of the tuple type.
     member IsTupleType: bool

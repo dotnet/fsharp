@@ -203,9 +203,9 @@ type Miscellaneous() =
             let prjCfg = project.ConfigProvider.GetProjectConfiguration(new ConfigCanonicalName("Debug","AnyCPU")) :> IVsProjectCfg2
             let count = [| 0u |]
             prjCfg.get_OutputGroups(0u, null, count) |> ValidateOK
-            let ogs : array<IVsOutputGroup> = Array.create (int count.[0]) null
+            let ogs : IVsOutputGroup array = Array.create (int count.[0]) null
             prjCfg.get_OutputGroups(count.[0], ogs, count)  |> ValidateOK
-            let ogs : array<IVsOutputGroup2> = ogs |> Array.map (fun x -> downcast x)
+            let ogs : IVsOutputGroup2 array = ogs |> Array.map (fun x -> downcast x)
             let ogInfos = 
                 [for og in ogs do
                     let mutable canonicalName = ""
@@ -218,7 +218,7 @@ type Miscellaneous() =
                     let keyOutputResult = og.get_KeyOutput(&keyOutput)
                     let count = [| 0u |]
                     og.get_Outputs(0u, null, count) |> ValidateOK 
-                    let os : array<IVsOutput2> = Array.create (int count.[0]) null
+                    let os : IVsOutput2 array = Array.create (int count.[0]) null
                     og.get_Outputs(count.[0], os, count) |> ValidateOK 
                     yield canonicalName, description, displayName, keyOutput, keyOutputResult, [
                         for o in os do

@@ -88,15 +88,16 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>]
 
     let formatInfo (container: NavigableContainer) (document: Document) =
         let projectName = document.Project.Name
-        let description = 
+
+        let description =
             match container.Type with
             | NavigableContainerType.File -> $"{Path.GetFileName container.Name} - project {projectName}"
             | NavigableContainerType.Exception
             | NavigableContainerType.Type -> $"in {container.Name} - project {projectName}"
             | NavigableContainerType.Module -> $"module {container.Name} - project {projectName}"
             | NavigableContainerType.Namespace -> $"{container.FullName} - project {projectName}" // or maybe show only project name?
-         
-        if document.IsFSharpSignatureFile then 
+
+        if document.IsFSharpSignatureFile then
             $"signature, {description}"
         else
             description
@@ -116,18 +117,20 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>]
 
     let createMatcherFor searchPattern =
         let patternMatcher =
-                patternMatcherFactory.CreatePatternMatcher(
-                    searchPattern,
-                    PatternMatcherCreationOptions(
-                        cultureInfo = CultureInfo.CurrentUICulture,
-                        flags = PatternMatcherCreationFlags.AllowFuzzyMatching,
-                        containerSplitCharacters = ['.']
-                    )
+            patternMatcherFactory.CreatePatternMatcher(
+                searchPattern,
+                PatternMatcherCreationOptions(
+                    cultureInfo = CultureInfo.CurrentUICulture,
+                    flags = PatternMatcherCreationFlags.AllowFuzzyMatching,
+                    containerSplitCharacters = [ '.' ]
                 )
-        fun (item: NavigableItem) ->  
+            )
+
+        fun (item: NavigableItem) ->
             // PatternMatcher will not match operators and some backtick escaped identifiers.
             // To handle them, we fall back to simple substring match.
             let name = item.Name
+
             if item.NeedsBackticks then
                 match name.IndexOf(searchPattern, StringComparison.CurrentCultureIgnoreCase) with
                 | i when i > 0 -> PatternMatch(PatternMatchKind.Substring, false, false) |> Some
@@ -137,9 +140,7 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>]
             else
                 // full name with dots allows for path matching, e.g.
                 // "f.c.so.elseif" will match "Fantomas.Core.SyntaxOak.ElseIfNode"
-                patternMatcher.TryMatch $"{item.Container.FullName}.{name}"
-                |> Option.ofNullable   
-            
+                patternMatcher.TryMatch $"{item.Container.FullName}.{name}" |> Option.ofNullable
 
     let processDocument (tryMatch: NavigableItem -> PatternMatch option) (kinds: IImmutableSet<string>) (document: Document) =
         async {
@@ -184,10 +185,7 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>]
             async {
                 let tryMatch = createMatcherFor searchPattern
 
-                let! results =
-                    project.Documents
-                    |> Seq.map (processDocument tryMatch kinds)
-                    |> Async.Parallel
+                let! results = project.Documents |> Seq.map (processDocument tryMatch kinds) |> Async.Parallel
 
                 return results |> Array.concat |> Array.toImmutableArray
             }

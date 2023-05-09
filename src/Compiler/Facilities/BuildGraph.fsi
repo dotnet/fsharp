@@ -70,6 +70,12 @@ type NodeCode =
 
     static member Parallel: computations: (NodeCode<'T> seq) -> NodeCode<'T[]>
 
+    static member AwaitAsync: computation: Async<'T> -> NodeCode<'T>
+
+    static member AwaitTask: task: Task<'T> -> NodeCode<'T>
+
+    static member AwaitTask: task: Task -> NodeCode<unit>
+
     /// Execute the cancellable computation synchronously using the ambient cancellation token of
     /// the NodeCode.
     static member FromCancellable: computation: Cancellable<'T> -> NodeCode<'T>
@@ -95,11 +101,7 @@ module internal GraphNode =
 [<Sealed>]
 type internal GraphNode<'T> =
 
-    /// - retryCompute - When set to 'true', subsequent requesters will retry the computation if the first-in request cancels. Retrying computations will have better callstacks.
     /// - computation - The computation code to run.
-    new: retryCompute: bool * computation: NodeCode<'T> -> GraphNode<'T>
-
-    /// By default, 'retryCompute' is 'true'.
     new: computation: NodeCode<'T> -> GraphNode<'T>
 
     /// Creates a GraphNode with given result already cached.

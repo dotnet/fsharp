@@ -708,6 +708,20 @@ type ArrayModule() =
         CheckThrowsArgumentNullException (fun () ->  Array.filter funcStr nullArr |> ignore) 
         
         ()
+
+    [<Fact>]
+    member this.ParallelFilter () = 
+        let assertSameBehavior predicate arr =
+            let sequentialZip = Array.filter predicate arr
+            let paraZip = Array.Parallel.filter predicate arr
+            Assert.AreEqual(sequentialZip, paraZip)
+
+        [| 1..20 |] |> assertSameBehavior (fun x -> x%5 = 0)
+        [|"Lists"; "are"; "a"; "commonly"; "data";"structor" |] |> assertSameBehavior  (fun x -> x.Length > 4) 
+        [| |] |> assertSameBehavior  (fun x -> x%5 = 0)
+        let nullArr = null:int[] 
+        CheckThrowsArgumentNullException (fun () ->  Array.Parallel.filter (fun x -> x%5 = 0) nullArr |> ignore) 
+
         
     [<Fact>]
     member this.Filter2 () =
@@ -734,7 +748,7 @@ type ArrayModule() =
 
             array
 
-        let checkFilter filter (array:array<_>) =
+        let checkFilter filter (array: _ array) =
             let filtered = array |> filter (fun n -> n > 0)
 
             let mutable idx = 0
@@ -1118,6 +1132,41 @@ type ArrayModule() =
         // null array
         let nullArr = null:string[] 
         CheckThrowsArgumentNullException (fun () -> Array.forall (fun x -> true) nullArr |> ignore)  
+        
+        ()
+
+    [<Fact>]
+    member this.ParallelForAll() =
+        let inline assertSame predicate array =
+            let seq = Array.forall predicate array
+            let para = Array.Parallel.forall predicate array    
+            Assert.AreEqual(seq, para, sprintf "%A" array)
+
+        [| 3..2..10 |] |> assertSame (fun x -> x > 15)
+        [| 3..2..10 |] |> assertSame (fun x -> x < 15)
+        [|"Lists"; "are";  "commonly" ; "list" |] |> assertSame (fun (x:string) -> x.Contains("a")) 
+        [||] |> assertSame (fun (x:string) -> x.Contains("a"))
+        [||] |> assertSame (fun (x:string) -> x.Contains("a") |> not)
+       
+        let nullArr = null:string[] 
+        CheckThrowsArgumentNullException (fun () -> Array.Parallel.forall (fun x -> true) nullArr |> ignore)  
+        
+        ()
+
+    [<Fact>]
+    member this.ParallelExists() =
+        let inline assertSame predicate array =
+            let seq = Array.exists predicate array
+            let para = Array.Parallel.exists predicate array    
+            Assert.AreEqual(seq, para, sprintf "%A" array)
+
+        [| 3..2..10 |] |> assertSame (fun x -> x > 2)
+        [|"Lists"; "are";  "commonly" ; "list" |] |> assertSame (fun (x:string) -> x.Contains("a")) 
+        [||] |> assertSame (fun (x:string) -> x.Contains("a"))
+        [||] |> assertSame (fun (x:string) -> x.Contains("a") |> not)
+       
+        let nullArr = null:string[] 
+        CheckThrowsArgumentNullException (fun () -> Array.Parallel.exists (fun x -> true) nullArr |> ignore)  
         
         ()
         
@@ -1539,7 +1588,7 @@ type ArrayModule() =
     member this.``pairwise should not work on null``() =
         CheckThrowsArgumentNullException(fun () -> Array.pairwise null |> ignore)
 
-    member private this.MapTester mapInt (mapString : (string -> int) -> array<string> -> array<int>) =
+    member private this.MapTester mapInt (mapString : (string -> int) -> string array -> int array) =
         // empty array 
         let f x = x + 1
         let result = mapInt f [| |]
@@ -1586,11 +1635,11 @@ type ArrayModule() =
         if result <> [| |] then Assert.Fail ()
         
         // int array
-        let result : array<int*int> = mapiInt f [| 1..2 |]
+        let result : (int*int) array = mapiInt f [| 1..2 |]
         if result <> [| (0,2); (1,3) |] then Assert.Fail ()
         
         // string array
-        let result : array<int*int> = [| "a"; "aa"; "aaa" |] |> mapiString (fun i (s:string) -> i, s.Length) 
+        let result : (int*int) array = [| "a"; "aa"; "aaa" |] |> mapiString (fun i (s:string) -> i, s.Length) 
         if result <> [| (0,1); (1,2); (2,3) |] then Assert.Fail ()
         
         // null array

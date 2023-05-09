@@ -37,7 +37,6 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
 
     let baseArgs = [|
         typeof<FSharpScript>.Assembly.Location;
-        "--noninteractive";
         "--targetprofile:" + computedProfile
         if quiet then "--quiet"
         match langVersion with

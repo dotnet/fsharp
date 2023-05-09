@@ -243,6 +243,10 @@ function BuildSolution([string] $solutionName) {
     # Do not set the property to true explicitly, since that would override value projects might set.
     $suppressExtensionDeployment = if (!$deployExtensions) { "/p:DeployExtension=false" } else { "" }
 
+    $BUILDING_USING_DOTNET_ORIG = $env:BUILDING_USING_DOTNET
+
+    $env:BUILDING_USING_DOTNET="false"
+
     MSBuild $toolsetBuildProj `
         $bl `
         /p:Configuration=$configuration `
@@ -264,6 +268,8 @@ function BuildSolution([string] $solutionName) {
         /v:$verbosity `
         $suppressExtensionDeployment `
         @properties
+        
+    $env:BUILDING_USING_DOTNET=$BUILDING_USING_DOTNET_ORIG
 }
 
 function TestAndAddToPath([string] $testPath) {
@@ -550,7 +556,7 @@ try {
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.UnitTests\"
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Service.Tests\"
         TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Private.Scripting.UnitTests\"
-        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Build.UnitTests\"
+        TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Build.UnitTests\"
         TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Core.UnitTests\"
         
         # Collect output from  background jobs
@@ -565,7 +571,7 @@ try {
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $desktopTargetFramework  -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.UnitTests\"
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Service.Tests\"
         TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $desktopTargetFramework  -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Private.Scripting.UnitTests\"
-        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Build.UnitTests\"
+        TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Build.UnitTests\"
         TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Core.UnitTests\"
         
         # Collect output from  background jobs
@@ -673,14 +679,14 @@ try {
         $exitCode = Exec-Process "$dotnetExe" "restore $RepoRoot\buildtools\checkpackages\FSharp.Compiler.Service_notshipped.fsproj"
         if ($exitCode -eq 0) {
             Write-Host -ForegroundColor Red "Command succeeded but was expected to fail: this means that the fsharp.compiler.service nuget package is already published"
-            Write-Host -ForegroundColor Red "Modify the version number of FSharp.Compiler.Servoce to be published"
+            Write-Host -ForegroundColor Red "Modify the version number of FSharp.Compiler.Service to be published"
             $verifypackageshipstatusFailed = $True
         }
 
         $exitCode = Exec-Process "$dotnetExe" "restore $RepoRoot\buildtools\checkpackages\FSharp.Core_notshipped.fsproj"
         if ($exitCode -eq 0) {
             Write-Host -ForegroundColor Red "Command succeeded but was expected to fail: this means that the fsharp.core nuget package is already published"
-            Write-Host -ForegroundColor Red "Modify the version number of FSharp.Compiler.Servoce to be published"
+            Write-Host -ForegroundColor Red "Modify the version number of FSharp.Compiler.Service to be published"
             $verifypackageshipstatusFailed = $True
         }
         if (-not $verifypackageshipstatusFailed)

@@ -1,4 +1,4 @@
 
 if a then
-b
+    b
 elif c then d

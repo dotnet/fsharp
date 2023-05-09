@@ -16,6 +16,9 @@ module CompletionProviderTests =
 
     let filePath = "C:\\test.fs"
 
+    let mkGetInfo documentId =
+        fun () -> documentId, filePath, [], (Some "preview")
+
     let formatCompletions (completions: string seq) =
         "\n\t" + String.Join("\n\t", completions)
 
@@ -102,7 +105,7 @@ module CompletionProviderTests =
         let sourceText = SourceText.From(fileContents)
 
         let resultSpan =
-            CompletionUtils.getDefaultCompletionListSpan (sourceText, caretPosition, documentId, filePath, [])
+            CompletionUtils.getDefaultCompletionListSpan (sourceText, caretPosition, documentId, filePath, [], None)
 
         Assert.Equal(expected, sourceText.ToString(resultSpan))
 
@@ -130,14 +133,13 @@ System.Console.WriteLine(x + y)
 
             let caretPosition = fileContents.IndexOf(marker) + marker.Length
             let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-            let getInfo () = documentId, filePath, []
 
             let triggered =
                 FSharpCompletionProvider.ShouldTriggerCompletionAux(
                     SourceText.From(fileContents),
                     caretPosition,
                     CompletionTriggerKind.Insertion,
-                    getInfo,
+                    mkGetInfo documentId,
                     IntelliSenseOptions.Default
                 )
 
@@ -152,14 +154,13 @@ System.Console.WriteLine(x + y)
             let fileContents = "System.Console.WriteLine(123)"
             let caretPosition = fileContents.IndexOf("rite")
             let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-            let getInfo () = documentId, filePath, []
 
             let triggered =
                 FSharpCompletionProvider.ShouldTriggerCompletionAux(
                     SourceText.From(fileContents),
                     caretPosition,
                     triggerKind,
-                    getInfo,
+                    mkGetInfo documentId,
                     IntelliSenseOptions.Default
                 )
 
@@ -170,14 +171,13 @@ System.Console.WriteLine(x + y)
         let fileContents = "let literal = \"System.Console.WriteLine()\""
         let caretPosition = fileContents.IndexOf("System.")
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-        let getInfo () = documentId, filePath, []
 
         let triggered =
             FSharpCompletionProvider.ShouldTriggerCompletionAux(
                 SourceText.From(fileContents),
                 caretPosition,
                 CompletionTriggerKind.Insertion,
-                getInfo,
+                mkGetInfo documentId,
                 IntelliSenseOptions.Default
             )
 
@@ -195,14 +195,13 @@ System.Console.WriteLine()
 
         let caretPosition = fileContents.IndexOf("System.")
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-        let getInfo () = documentId, filePath, []
 
         let triggered =
             FSharpCompletionProvider.ShouldTriggerCompletionAux(
                 SourceText.From(fileContents),
                 caretPosition,
                 CompletionTriggerKind.Insertion,
-                getInfo,
+                mkGetInfo documentId,
                 IntelliSenseOptions.Default
             )
 
@@ -233,14 +232,13 @@ let z = $"abc  {System.Console.WriteLine(x + y)} def"
         for (marker, shouldBeTriggered) in testCases do
             let caretPosition = fileContents.IndexOf(marker) + marker.Length
             let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-            let getInfo () = documentId, filePath, []
 
             let triggered =
                 FSharpCompletionProvider.ShouldTriggerCompletionAux(
                     SourceText.From(fileContents),
                     caretPosition,
                     CompletionTriggerKind.Insertion,
-                    getInfo,
+                    mkGetInfo documentId,
                     IntelliSenseOptions.Default
                 )
 
@@ -260,14 +258,13 @@ System.Console.WriteLine()
 
         let caretPosition = fileContents.IndexOf("System.")
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-        let getInfo () = documentId, filePath, []
 
         let triggered =
             FSharpCompletionProvider.ShouldTriggerCompletionAux(
                 SourceText.From(fileContents),
                 caretPosition,
                 CompletionTriggerKind.Insertion,
-                getInfo,
+                mkGetInfo documentId,
                 IntelliSenseOptions.Default
             )
 
@@ -284,14 +281,13 @@ let f() =
 
         let caretPosition = fileContents.IndexOf("|.")
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-        let getInfo () = documentId, filePath, []
 
         let triggered =
             FSharpCompletionProvider.ShouldTriggerCompletionAux(
                 SourceText.From(fileContents),
                 caretPosition,
                 CompletionTriggerKind.Insertion,
-                getInfo,
+                mkGetInfo documentId,
                 IntelliSenseOptions.Default
             )
 
@@ -308,14 +304,13 @@ module Foo = module end
         let marker = "A"
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-        let getInfo () = documentId, filePath, []
 
         let triggered =
             FSharpCompletionProvider.ShouldTriggerCompletionAux(
                 SourceText.From(fileContents),
                 caretPosition,
                 CompletionTriggerKind.Insertion,
-                getInfo,
+                mkGetInfo documentId,
                 IntelliSenseOptions.Default
             )
 
@@ -332,14 +327,13 @@ printfn "%d" !f
         let marker = "!f"
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-        let getInfo () = documentId, filePath, []
 
         let triggered =
             FSharpCompletionProvider.ShouldTriggerCompletionAux(
                 SourceText.From(fileContents),
                 caretPosition,
                 CompletionTriggerKind.Insertion,
-                getInfo,
+                mkGetInfo documentId,
                 IntelliSenseOptions.Default
             )
 
@@ -357,14 +351,13 @@ use ptr = fixed &p
         let marker = "&p"
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-        let getInfo () = documentId, filePath, []
 
         let triggered =
             FSharpCompletionProvider.ShouldTriggerCompletionAux(
                 SourceText.From(fileContents),
                 caretPosition,
                 CompletionTriggerKind.Insertion,
-                getInfo,
+                mkGetInfo documentId,
                 IntelliSenseOptions.Default
             )
 
@@ -391,14 +384,13 @@ xVal**y
         for marker in markers do
             let caretPosition = fileContents.IndexOf(marker) + marker.Length
             let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-            let getInfo () = documentId, filePath, []
 
             let triggered =
                 FSharpCompletionProvider.ShouldTriggerCompletionAux(
                     SourceText.From(fileContents),
                     caretPosition,
                     CompletionTriggerKind.Insertion,
-                    getInfo,
+                    mkGetInfo documentId,
                     IntelliSenseOptions.Default
                 )
 
@@ -413,14 +405,13 @@ l"""
         let marker = "l"
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-        let getInfo () = documentId, filePath, []
 
         let triggered =
             FSharpCompletionProvider.ShouldTriggerCompletionAux(
                 SourceText.From(fileContents),
                 caretPosition,
                 CompletionTriggerKind.Insertion,
-                getInfo,
+                mkGetInfo documentId,
                 IntelliSenseOptions.Default
             )
 
@@ -1339,3 +1330,105 @@ type A =
 
         // Attribute on enum case - All settable properties available
         VerifyCompletionList(fileContents, "| [<Lang(l", [ "langParam"; "LangMember1"; "LangMember2" ], [])
+
+    [<Fact>]
+    let ``Completion list for nested copy and update contains correct record fields, nominal`` () =
+        let fileContents =
+            """
+type AnotherNestedRecTy = { A: int }
+
+type NestdRecTy = { B: string; C: AnotherNestedRecTy }
+
+module F =
+    type RecTy = { D: NestdRecTy; E: string option }
+
+open F
+
+let t1 = { D = { B = "t1"; C = { A = 1; } }; E = None; }
+
+let t2 = { t1 with D.B = "12" }
+
+let t3 = { t2 with F.RecTy.d }
+
+let t4 = { t2 with F.RecTy.D. }
+
+let t5 = { t2 with F.RecTy.D.C. }
+
+let t6 = { t2 with E. }
+
+let t7 = { t2 with D.B. }
+
+let t8 = { t2 with F. }
+
+let t9 = { t2 with d }
+
+let t10 x = { x with d } 
+
+let t11 = { t2 with NestdRecTy.C. }
+
+let t12 x = { x with F.RecTy.d }
+
+let t13 x = { x with RecTy.D. }
+"""
+
+        VerifyCompletionListExactly(fileContents, "t1 with ", [ "D"; "E" ])
+        VerifyCompletionListExactly(fileContents, "t1 with D.", [ "B"; "C" ])
+
+        VerifyCompletionListExactly(fileContents, "let t3 = { t2 with F.RecTy.d", [ "D"; "E" ])
+
+        VerifyCompletionListExactly(fileContents, "let t4 = { t2 with F.RecTy.D.", [ "B"; "C" ])
+
+        VerifyCompletionListExactly(fileContents, "let t5 = { t2 with F.RecTy.D.C.", [ "A" ])
+
+        VerifyNoCompletionList(fileContents, "let t6 = { t2 with E.")
+
+        VerifyNoCompletionList(fileContents, "let t7 = { t2 with D.B.")
+
+        VerifyCompletionListExactly(fileContents, "let t8 = { t2 with F.", [ "D"; "E"; "RecTy" ])
+
+        VerifyCompletionListExactly(fileContents, "let t9 = { t2 with d", [ "D"; "E" ])
+
+        // The type of `x` is not known, so show fields of records in scope
+        VerifyCompletionList(fileContents, "let t10 x = { x with d", [ "A"; "B"; "C"; "D"; "E" ], [])
+
+        VerifyNoCompletionList(fileContents, "let t11 = { t2 with NestdRecTy.C.")
+
+        VerifyCompletionListExactly(fileContents, "let t12 x = { x with F.RecTy.d", [ "D"; "E" ])
+
+        VerifyCompletionListExactly(fileContents, "let t13 x = { x with RecTy.D.", [ "B"; "C" ])
+
+    [<Fact>]
+    let ``Completion list for nested copy and update contains correct record fields, mixed nominal and anonymous`` () =
+        let fileContents =
+            """
+type AnotherNestedRecTy = { A: int }
+
+type NestdRecTy = { B: string; C: {| C: AnotherNestedRecTy |} }
+
+type RecTy = { D: NestdRecTy; E: {| a: string |} }
+
+let t1 x = { x with D.C.C.A = 12; E.a = "a" }
+
+let t2 (x: {| D: NestdRecTy; E: {| a: string |} |}) = {| x with E.a = "a"; D.B = "z" |}
+"""
+
+        VerifyCompletionListExactly(fileContents, "let t1 x = { x with D.", [ "B"; "C" ])
+        VerifyCompletionListExactly(fileContents, "let t1 x = { x with D.C.", [ "C" ])
+        VerifyCompletionListExactly(fileContents, "let t1 x = { x with D.C.C.", [ "A" ])
+        VerifyCompletionListExactly(fileContents, "let t1 x = { x with D.C.C.A = 12; ", [ "D"; "E" ])
+        VerifyCompletionListExactly(fileContents, "let t1 x = { x with D.C.C.A = 12; E.", [ "a" ])
+
+        VerifyCompletionListExactly(fileContents, "let t2 (x: {| D: NestdRecTy; E: {| a: string |} |}) = {| x with ", [ "D"; "E" ])
+        VerifyCompletionListExactly(fileContents, "let t2 (x: {| D: NestdRecTy; E: {| a: string |} |}) = {| x with E.", [ "a" ])
+
+        VerifyCompletionListExactly(
+            fileContents,
+            "let t2 (x: {| D: NestdRecTy; E: {| a: string |} |}) = {| x with E.a = \"a\"; ",
+            [ "D"; "E" ]
+        )
+
+        VerifyCompletionListExactly(
+            fileContents,
+            "let t2 (x: {| D: NestdRecTy; E: {| a: string |} |}) = {| x with E.a = \"a\"; D.",
+            [ "B"; "C" ]
+        )

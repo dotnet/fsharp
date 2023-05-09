@@ -2,6 +2,7 @@ module Tests.Service.SyntaxTree
 
 open System.IO
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
@@ -131,13 +132,15 @@ let parseSourceCode (name: string, code: string) =
             location,
             SourceText.ofString code,
             { FSharpParsingOptions.Default with
-                SourceFiles = [| location |] }
+                SourceFiles = [| location |]
+                IsExe = true
+                LangVersionText = "preview" }
         )
         |> Async.RunImmediate
 
     let tree = parseResults.ParseTree
     let sourceDirectoryValue = $"{RootDirectory}/{FileInfo(location).Directory.Name}"
-    sanitizeAST sourceDirectoryValue tree
+    sanitizeAST sourceDirectoryValue tree, parseResults.Diagnostics
 
 /// Asserts the parsed untyped tree matches the expected baseline.
 ///
@@ -151,9 +154,28 @@ let parseSourceCode (name: string, code: string) =
 let ParseFile fileName =
     let fullPath = Path.Combine(testCasesDir, fileName)
     let contents = File.ReadAllText fullPath
-    let ast = parseSourceCode (fileName, contents)
+    let ast, diagnostics = parseSourceCode (fileName, contents)
     let normalize (s: string) = s.Replace("\r", "")
-    let actual = sprintf "%A" ast |> normalize |> sprintf "%s\n"
+    let actual =
+        if Array.isEmpty diagnostics then
+            $"%A{ast}"
+        else
+            let diagnostics =
+                diagnostics
+                |> Array.map (fun d ->
+                    let severity =
+                        match d.Severity with
+                        | FSharpDiagnosticSeverity.Warning -> "warning"
+                        | FSharpDiagnosticSeverity.Error -> "error"
+                        | FSharpDiagnosticSeverity.Info -> "info"
+                        | FSharpDiagnosticSeverity.Hidden -> "hidden"
+
+                    $"(%d{d.StartLine},%d{d.StartColumn})-(%d{d.EndLine},%d{d.EndColumn}) %s{d.Subcategory} %s{severity} %s{d.Message}"
+                )
+                |> String.concat "\n"
+            $"%A{ast}\n\n%s{diagnostics}"
+        |> normalize
+        |> sprintf "%s\n"
     let bslPath = $"{fullPath}.bsl"
 
     let expected =

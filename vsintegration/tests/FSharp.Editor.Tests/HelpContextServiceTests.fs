@@ -42,7 +42,15 @@ type HelpContextServiceTests() =
                     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
 
                     let classifiedSpans =
-                        Tokenizer.getClassifiedSpans (documentId, sourceText, textLine.Span, Some "test.fs", [], CancellationToken.None)
+                        Tokenizer.getClassifiedSpans (
+                            documentId,
+                            sourceText,
+                            textLine.Span,
+                            Some "test.fs",
+                            [],
+                            None,
+                            CancellationToken.None
+                        )
 
                     FSharpHelpContextService.GetHelpTerm(document, span, classifiedSpans)
                     |> Async.RunSynchronously

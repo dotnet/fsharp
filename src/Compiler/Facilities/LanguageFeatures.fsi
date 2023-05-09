@@ -55,6 +55,8 @@ type LanguageFeature =
     | WarningWhenCopyAndUpdateRecordChangesAllFields
     | StaticMembersInInterfaces
     | NonInlineLiteralsAsPrintfFormat
+    | NestedCopyAndUpdate
+    | ExtendedStringInterpolation
 
 /// LanguageVersion management
 type LanguageVersion =

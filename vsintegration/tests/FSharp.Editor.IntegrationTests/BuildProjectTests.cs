@@ -11,7 +11,7 @@ namespace FSharp.Editor.IntegrationTests;
 
 public class BuildProjectTests : AbstractIntegrationTest
 {
-    [IdeFact(Skip = "Flaky")]
+    [IdeFact]
     public async Task SuccessfulBuild()
     {
         var template = WellKnownProjectTemplates.FSharpNetCoreClassLibrary;
@@ -24,6 +24,7 @@ let answer = 42
 
         await SolutionExplorer.CreateSingleProjectSolutionAsync("Library", template, TestToken);
         await SolutionExplorer.RestoreNuGetPackagesAsync(TestToken);
+        await SolutionExplorer.OpenFileAsync("Library", "Library.fs", TestToken);
         await Editor.SetTextAsync(code, TestToken);
 
         var actualBuildSummary = await SolutionExplorer.BuildSolutionAsync(TestToken);
@@ -31,7 +32,7 @@ let answer = 42
         Assert.Contains(expectedBuildSummary, actualBuildSummary);
     }
 
-    [IdeFact(Skip = "Flaky")]
+    [IdeFact]
     public async Task FailedBuild()
     {
         var template = WellKnownProjectTemplates.FSharpNetCoreClassLibrary;
@@ -45,6 +46,7 @@ let answer =
 
         await SolutionExplorer.CreateSingleProjectSolutionAsync("Library", template, TestToken);
         await SolutionExplorer.RestoreNuGetPackagesAsync(TestToken);
+        await SolutionExplorer.OpenFileAsync("Library", "Library.fs", TestToken);
         await Editor.SetTextAsync(code, TestToken);
 
         var actualBuildSummary = await SolutionExplorer.BuildSolutionAsync(TestToken);

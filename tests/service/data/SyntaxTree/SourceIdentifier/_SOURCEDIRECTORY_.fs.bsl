@@ -9,6 +9,6 @@ ImplFile
                 (SourceIdentifier
                    ("__SOURCE_DIRECTORY__", "/root/SourceIdentifier", (0,0--0,0)),
                  (0,0--0,0)), (0,0--0,0))], PreXmlDocEmpty, [], None,
-          (2,0--2,20), { LeadingKeyword = None })], (true, false),
+          (2,0--2,20), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

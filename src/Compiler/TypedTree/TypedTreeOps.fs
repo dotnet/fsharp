@@ -2841,6 +2841,12 @@ module PrettyTypes =
                           
         choose tps (0, 0) []
 
+    let AssignPrettyTyparNames typars prettyNames =
+        (typars, prettyNames)
+        ||> List.iter2 (fun tp nm -> 
+            if NeedsPrettyTyparName tp  then 
+                tp.typar_id <- ident (nm, tp.Range))  
+    
     let PrettifyThings g foldTys mapTys things = 
         let ftps = foldTys (accFreeInTypeLeftToRight g true false) emptyFreeTyparsLeftToRight things
         let ftps = List.rev ftps
@@ -5445,9 +5451,9 @@ let InferValReprInfoOfExpr g allowTypeDirectedDetupling ty partialArgAttribsL re
             let attribs = 
                 if partialAttribs.Length = tys.Length then partialAttribs 
                 else tys |> List.map (fun _ -> [])
-            (ids, attribs) ||> List.map2 (fun id attribs -> { Name = id; Attribs = attribs }: ArgReprInfo ))
+            (ids, attribs) ||> List.map2 (fun id attribs -> { Name = id; Attribs = attribs; OtherRange = None }: ArgReprInfo ))
 
-    let retInfo: ArgReprInfo = { Attribs = retAttribs; Name = None }
+    let retInfo: ArgReprInfo = { Attribs = retAttribs; Name = None; OtherRange = None }
     let info = ValReprInfo (ValReprInfo.InferTyparInfo tps, curriedArgInfos, retInfo)
     if ValReprInfo.IsEmpty info then ValReprInfo.emptyValData else info
 
@@ -5638,7 +5644,7 @@ and remapPossibleForallTyImpl ctxt tmenv ty =
     remapTypeFull (remapAttribs ctxt tmenv) tmenv ty
 
 and remapArgData ctxt tmenv (argInfo: ArgReprInfo) : ArgReprInfo =
-    { Attribs = remapAttribs ctxt tmenv argInfo.Attribs; Name = argInfo.Name }
+    { Attribs = remapAttribs ctxt tmenv argInfo.Attribs; Name = argInfo.Name; OtherRange = argInfo.OtherRange }
 
 and remapValReprInfo ctxt tmenv (ValReprInfo(tpNames, arginfosl, retInfo)) =
     ValReprInfo(tpNames, List.mapSquared (remapArgData ctxt tmenv) arginfosl, remapArgData ctxt tmenv retInfo)
