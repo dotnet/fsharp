@@ -13,7 +13,7 @@ ImplFile
                           (Id (i, None, false, false, false, (3,6--3,7)),
                            FromParseError (3,8--3,8), (3,6--3,8));
                         Id (j, None, false, false, false, (3,10--3,11))],
-                       (3,5--3,12)), Const (Unit, (3,16--3,18)),
+                       [(3,8--3,9)], (3,5--3,12)), Const (Unit, (3,16--3,18)),
                     Some
                       ([Paren
                           (Tuple

@@ -9,7 +9,7 @@ ImplFile
                 (Lambda
                    (false, false,
                     SimplePats
-                      ([Id (_arg1, None, true, false, false, (3,5--3,6))],
+                      ([Id (_arg1, None, true, false, false, (3,5--3,6))], [],
                        (3,5--3,6)),
                     ArbitraryAfterError ("anonLambdaExpr2", (3,9--3,9)),
                     Some

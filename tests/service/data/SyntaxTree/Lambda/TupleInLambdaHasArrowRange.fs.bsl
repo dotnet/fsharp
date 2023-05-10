@@ -10,7 +10,7 @@ ImplFile
                  SimplePats
                    ([Id (x, None, false, false, false, (2,5--2,6));
                      Id (_arg1, None, true, false, false, (2,8--2,9))],
-                    (2,4--2,10)),
+                    [(2,6--2,7)], (2,4--2,10)),
                  App
                    (NonAtomic, false,
                     App

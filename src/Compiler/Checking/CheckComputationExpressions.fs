@@ -696,7 +696,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
             | [] -> []
             | [v] -> [mkSynSimplePatVar false v.Id]
             | vs -> vs |> List.map (fun v -> mkSynSimplePatVar false v.Id)
-        SynSimplePats.SimplePats (spats, m)
+        SynSimplePats.SimplePats (spats, [], m)
 
     let mkPatForVarSpace m (patvs: Val list) = 
         match patvs with 
@@ -1790,7 +1790,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
         | _ -> mkSynCall "Run" mDelayOrQuoteOrRun [quotedSynExpr]
 
     let lambdaExpr = 
-        SynExpr.Lambda (false, false, SynSimplePats.SimplePats ([mkSynSimplePatVar false (mkSynId mBuilderVal builderValName)], mBuilderVal), runExpr, None, mBuilderVal, SynExprLambdaTrivia.Zero)
+        SynExpr.Lambda (false, false, SynSimplePats.SimplePats ([mkSynSimplePatVar false (mkSynId mBuilderVal builderValName)], [], mBuilderVal), runExpr, None, mBuilderVal, SynExprLambdaTrivia.Zero)
 
     let env =
         match comp with

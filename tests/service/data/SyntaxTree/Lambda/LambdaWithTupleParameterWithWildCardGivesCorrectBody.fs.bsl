@@ -11,17 +11,18 @@ ImplFile
              (Lambda
                 (false, false,
                  SimplePats
-                   ([Id (a, None, false, false, false, (2,4--2,5))], (2,4--2,5)),
+                   ([Id (a, None, false, false, false, (2,4--2,5))], [],
+                    (2,4--2,5)),
                  Lambda
                    (false, true,
                     SimplePats
                       ([Id (b, None, false, false, false, (2,7--2,8));
                         Id (_arg1, None, true, false, false, (2,10--2,11))],
-                       (2,6--2,12)),
+                       [(2,8--2,9)], (2,6--2,12)),
                     Lambda
                       (false, true,
                        SimplePats
-                         ([Id (c, None, false, false, false, (2,13--2,14))],
+                         ([Id (c, None, false, false, false, (2,13--2,14))], [],
                           (2,13--2,14)), Ident x, None, (2,0--2,19),
                        { ArrowRange = Some (2,15--2,17) }), None, (2,0--2,19),
                     { ArrowRange = Some (2,15--2,17) }),
