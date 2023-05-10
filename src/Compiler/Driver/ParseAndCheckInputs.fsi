@@ -163,6 +163,9 @@ type TcState =
 
     member CreatesGeneratedProvidedTypes: bool
 
+
+type PartialResult = TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType
+
 /// Get the initial type checking state for a set of inputs
 val GetInitialTcState: range * string * TcConfig * TcGlobals * TcImports * TcEnv * OpenDeclaration list -> TcState
 
@@ -183,6 +186,18 @@ val CheckOneInput:
     input: ParsedInput ->
         Cancellable<(TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType) * TcState>
 
+val CheckOneInputWithCallback:
+      checkForErrors: (unit -> bool) *
+      tcConfig: TcConfig *
+      tcImports: TcImports *
+      tcGlobals: TcGlobals *
+      prefixPathOpt: LongIdent option *
+      tcSink: TcResultsSink *
+      tcState: TcState *
+      input: ParsedInput *
+      _skipImplIfSigExists: bool -> Cancellable<Finisher<TcState, PartialResult>>
+
+
 val AddCheckResultsToTcState:
     tcGlobals: TcGlobals *
     amap: Import.ImportMap *
@@ -195,8 +210,6 @@ val AddCheckResultsToTcState:
         tcState: TcState ->
             ModuleOrNamespaceType * TcState
 
-type PartialResult = TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType
-
 val AddSignatureResultToTcImplEnv:
     tcImports: TcImports *
     tcGlobals: TcGlobals *
@@ -204,8 +217,7 @@ val AddSignatureResultToTcImplEnv:
     tcSink: TcResultsSink *
     tcState: TcState *
     input: ParsedInput ->
-        (TcState ->
-            PartialResult * TcState)
+        (TcState -> PartialResult * TcState)
 
 val TransformDependencyGraph: graph: Graph<FileIndex> * filePairs: FilePairMap -> Graph<NodeToTypeCheck>
 

@@ -41,6 +41,8 @@ module Activity =
 
     let listenToAll () = listen ""
 
+open Activity
+
 
 [<Fact>]
 let ``Use Transparent Compiler`` () =
@@ -88,6 +90,8 @@ let ``Parallel processing`` () =
 
     ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
         checkFile "E" expectOk
+        updateFile "A" updatePublicSurface
+        checkFile "E" expectSignatureChanged
     }
 
 
@@ -104,9 +108,15 @@ let ``Parallel processing with signatures`` () =
         sourceFile "E" ["B"; "C"; "D"] |> addSignatureFile)
 
     ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
-        checkFile "C" expectOk
-        //updateFile "A" updatePublicSurface
-        //checkFile "E" expectSignatureChanged
+        checkFile "E" expectOk
+        updateFile "A" updatePublicSurface
+        checkFile "E" expectNoChanges
+        regenerateSignature "A"
+        regenerateSignature "B"
+        regenerateSignature "C"
+        regenerateSignature "D"
+        regenerateSignature "E"
+        checkFile "E" expectSignatureChanged
     }
 
 
@@ -159,6 +169,20 @@ let ``Files depend on signature file if present`` () =
         updateFile "First" breakDependentFiles
         saveFile "First"
         checkFile "Second" expectNoChanges
+    }
+
+[<Fact>]
+let ``Signature update`` () =
+    listenToAll ()
+
+    let project = makeTestProject() |> updateFile "First" addSignatureFile
+
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+        updateFile "First" updatePublicSurface
+        saveFile "First"
+        checkFile "Second" expectNoChanges
+        regenerateSignature "First"
+        checkFile "Second" expectSignatureChanged
     }
 
 [<Fact>]

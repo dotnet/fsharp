@@ -33,6 +33,7 @@ open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.NameResolution
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler.TypedTree
+open FSharp.Compiler.CheckDeclarations
 
 type internal FSharpFile =
     {
@@ -54,6 +55,23 @@ type internal BootstrapInfo =
     }
 
 type internal TcIntermediateResult = TcInfo * TcResultsSinkImpl * CheckedImplFile option * string
+
+
+/// Accumulated results of type checking. The minimum amount of state in order to continue type-checking following files.
+[<NoEquality; NoComparison>]
+type internal TcIntermediate =
+    {
+        finisher: Finisher<TcState, PartialResult>
+        //tcEnvAtEndOfFile: TcEnv
+
+        /// Disambiguation table for module names
+        moduleNamesDict: ModuleNamesDict
+
+        /// Accumulated diagnostics, last file first
+        tcDiagnosticsRev:(PhasedDiagnostic * FSharpDiagnosticSeverity)[] list
+
+        tcDependencyFiles: string list
+    }
 
 type internal TransparentCompiler
     (
@@ -602,7 +620,7 @@ type internal TransparentCompiler
             return TransformDependencyGraph(graph, filePairs), filePairs
         }
 
-    let ComputeTcIntermediate (parsedInput: ParsedInput, parseErrors) bootstrapInfo prevTcInfo _key =
+    let ComputeTcIntermediate (parsedInput: ParsedInput, parseErrors) bootstrapInfo (prevTcInfo: TcInfo) _key =
         node {
             let input = parsedInput
             let fileName = input.FileName
@@ -633,8 +651,8 @@ type internal TransparentCompiler
             let input, moduleNamesDict =
                 DeduplicateParsedInputModuleName prevTcInfo.moduleNamesDict input
 
-            let! (tcEnvAtEndOfFile, topAttribs, implFile, ccuSigForFile), tcState =
-                CheckOneInput(
+            let! finisher =
+                CheckOneInputWithCallback(
                     (fun () -> hadParseErrors || diagnosticsLogger.ErrorCount > 0),
                     tcConfig,
                     tcImports,
@@ -642,7 +660,8 @@ type internal TransparentCompiler
                     None,
                     TcResultsSink.WithSink sink,
                     prevTcInfo.tcState,
-                    input
+                    input,
+                    false
                 )
                 |> NodeCode.FromCancellable
 
@@ -651,62 +670,27 @@ type internal TransparentCompiler
             let newErrors =
                 Array.append parseErrors (capturingDiagnosticsLogger.Diagnostics |> List.toArray)
 
-            let tcEnvAtEndOfFile =
-                if keepAllBackgroundResolutions then
-                    tcEnvAtEndOfFile
-                else
-                    tcState.TcEnvFromImpls
-
-            let tcInfo =
+            return
                 {
-                    tcState = tcState
-                    tcEnvAtEndOfFile = tcEnvAtEndOfFile
+                    finisher = finisher
                     moduleNamesDict = moduleNamesDict
-                    latestCcuSigForFile = Some ccuSigForFile
                     tcDiagnosticsRev = [ newErrors ]
-                    topAttribs = Some topAttribs
                     tcDependencyFiles = [ fileName ]
-                    // we shouldn't need this with graph checking (?)
-                    sigNameOpt = None
                 }
-
-            return tcInfo, sink, implFile, fileName
         }
 
-    let mergeIntermediateResults bootstrapInfo =
-        Array.fold (fun (a: TcInfo, _, _, _) (b, sink, implFileOpt: CheckedImplFile option, name) ->
-            // TODO: proper merge
-
-            let amap = bootstrapInfo.TcImports.GetImportMap()
-
-            // TODO: figure out
-            let hadSig = false
-
-            let prefixPathOpt = None
-
-            let ccuSigForFile, tcState =
-                match implFileOpt with 
-                | Some implFile ->
-
-                    let ccuSigForFile, tcState =
-                        AddCheckResultsToTcState
-                            (bootstrapInfo.TcGlobals, amap, hadSig, prefixPathOpt, TcResultsSink.NoSink, a.tcState.TcEnvFromImpls, implFile.QualifiedNameOfFile, implFile.Signature)
-                            b.tcState
-                    Some ccuSigForFile, tcState
-                | None ->
-                    b.latestCcuSigForFile, b.tcState
-
-            { a with
+    let mergeIntermediateResults =
+        Array.fold (fun (tcInfo: TcInfo) (tcIntermediate: TcIntermediate) -> 
+            let (tcEnv, topAttribs, _checkImplFileOpt, ccuSigForFile), tcState = tcInfo.tcState |> tcIntermediate.finisher.Invoke
+            let tcEnvAtEndOfFile = if keepAllBackgroundResolutions then tcEnv else tcState.TcEnvFromImpls
+            { tcInfo with
                 tcState = tcState
-                tcEnvAtEndOfFile = b.tcEnvAtEndOfFile
-                moduleNamesDict = b.moduleNamesDict
-                latestCcuSigForFile = ccuSigForFile
-                tcDiagnosticsRev = b.tcDiagnosticsRev @ a.tcDiagnosticsRev
-                topAttribs = b.topAttribs
-                tcDependencyFiles = b.tcDependencyFiles @ a.tcDependencyFiles
-                // we shouldn't need this with graph checking (?)
-                sigNameOpt = None
-            }, sink, implFileOpt, name)
+                tcEnvAtEndOfFile = tcEnvAtEndOfFile
+                topAttribs = Some topAttribs
+                tcDiagnosticsRev = tcIntermediate.tcDiagnosticsRev @ tcInfo.tcDiagnosticsRev
+                tcDependencyFiles = tcIntermediate.tcDependencyFiles @ tcInfo.tcDependencyFiles
+                latestCcuSigForFile = Some ccuSigForFile })
+
 
     // Type check everything that is needed to check given file
     let ComputeTcPrior (file: FSharpFile) (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshot) _userOpName _key =
@@ -769,28 +753,25 @@ type internal TransparentCompiler
                                     let key = projectSnapshot.UpTo(fileIndex).Key
                                     TcIntermediateCache.Get(key, ComputeTcIntermediate (parsedInput, parseErrors) bootstrapInfo tcInfo)
                                 | NodeToTypeCheck.ArtificialImplFile fileIndex ->
-                                    let parsedInput, _parseErrors, _ = parsedInputs[fileIndex]
-                                    let tcState = tcInfo.tcState
-                                    let prefixPathOpt = None
-                                    
-                                    let (tcEnv , topAttribs , checkedImplFileOpt , _moduleOrNamespaceType), newTcState =
+
+                                    let finisher tcState = 
+                                        let parsedInput, _parseErrors, _ = parsedInputs[fileIndex]
+                                        let prefixPathOpt = None
                                         // Retrieve the type-checked signature information and add it to the TcEnvFromImpls.
                                         AddSignatureResultToTcImplEnv(bootstrapInfo.TcImports, bootstrapInfo.TcGlobals, prefixPathOpt, TcResultsSink.NoSink, tcState, parsedInput) tcState
-                                    let tcInfo =
-                                        { tcInfo with
-                                            tcState = newTcState
-                                            tcEnvAtEndOfFile = tcEnv
-
-                                            topAttribs = Some topAttribs
-                                            // we shouldn't need this with graph checking (?)
-                                            sigNameOpt = None
+                                    let tcIntermediate =
+                                        {
+                                            finisher = finisher
+                                            moduleNamesDict = tcInfo.moduleNamesDict
+                                            tcDiagnosticsRev = []
+                                            tcDependencyFiles = []
                                         }
 
-                                    node.Return(tcInfo, Unchecked.defaultof<_>, checkedImplFileOpt, parsedInput.FileName))
+                                    node.Return(tcIntermediate))
                             |> NodeCode.Parallel
-                        let nodes = layer |> Seq.map (function NodeToTypeCheck.PhysicalFile i -> fileNames[i] | NodeToTypeCheck.ArtificialImplFile i -> $"AIF : {fileNames[i]}") |> String.concat " "
-                        Trace.TraceInformation $"Processed layer {nodes}"
-                        return! processLayer rest (mergeIntermediateResults bootstrapInfo (tcInfo, Unchecked.defaultof<_>, None, "") results |> p14)
+                        //let nodes = layer |> Seq.map (function NodeToTypeCheck.PhysicalFile i -> fileNames[i] | NodeToTypeCheck.ArtificialImplFile i -> $"AIF : {fileNames[i]}") |> String.concat " "
+                        //Trace.TraceInformation $"Processed layer {nodes}"
+                        return! processLayer rest (mergeIntermediateResults tcInfo results)
                 }
 
             return! processLayer layers bootstrapInfo.InitialTcInfo
@@ -836,7 +817,7 @@ type internal TransparentCompiler
                         input = parseTree,
                         parseHadErrors = (parseDiagnostics.Length > 0),
                         // TODO: check if we really need this in parse results
-                        dependencyFiles = [||]
+                        dependencyFiles = Array.ofList tcInfo.tcDependencyFiles
                     )
 
                 let! checkResults =

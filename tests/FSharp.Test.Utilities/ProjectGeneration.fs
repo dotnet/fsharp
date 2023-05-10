@@ -696,6 +696,21 @@ type ProjectWorkflowBuilder
                 return project
             })
 
+    [<CustomOperation "regenerateSignature">]
+    member this.RegenerateSignature(workflow: Async<WorkflowContext>, fileId: string) =
+        workflow
+        |> mapProjectAsync (fun project ->
+            async {
+                use _ =
+                    Activity.start "ProjectWorkflowBuilder.RegenerateSignature" [ Activity.Tags.project, project.Name; "fileId", fileId ]
+                let project, file = project.FindInAllProjects fileId                
+                let! result = checkFile fileId project checker
+                let signature = getSignature result
+                let signatureFileName = getSignatureFilePath project file
+                writeFileIfChanged signatureFileName signature
+                return project
+            })
+
     /// Add a file above given file in the project.
     [<CustomOperation "addFileAbove">]
     member this.AddFileAbove(workflow: Async<WorkflowContext>, addAboveId: string, newFile) =
