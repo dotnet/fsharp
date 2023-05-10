@@ -2654,7 +2654,6 @@ module EstablishTypeDefinitionCores =
                 let rec pats (p: SynSimplePats) =
                     match p with
                     | SynSimplePats.SimplePats (ps, _) -> ps
-                    | SynSimplePats.Typed (ps, _, _) -> pats ps
 
                 let patNames =
                     pats synPats
@@ -3255,8 +3254,7 @@ module EstablishTypeDefinitionCores =
                     if not ctorArgNames.IsEmpty then
                         match spats with
                         | SynSimplePats.SimplePats(_, m) -> errorR (Error(FSComp.SR.parsOnlyClassCanTakeValueArguments(), m))
-                        | SynSimplePats.Typed(_, _, m) -> errorR (Error(FSComp.SR.parsOnlyClassCanTakeValueArguments(), m))
-                
+
             let envinner = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars m) envinner
             let envinner = MakeInnerEnvForTyconRef envinner thisTyconRef false
             
