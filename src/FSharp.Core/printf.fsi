@@ -402,7 +402,7 @@ module Printf =
     ///
     /// kprintf (fun s -> s + ", done!") $"Write three = {1+2}"
     /// </code>
-    /// Evaluates to <c>"Write five = 5, done!"</c>.
+    /// Evaluates to <c>"Write three = 3, done!"</c>.
     /// </example>
     [<CompiledName("PrintFormatThen")>]
     val kprintf: continuation: (string -> 'Result) -> format: StringFormat<'T, 'Result> -> 'T
