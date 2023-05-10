@@ -379,9 +379,9 @@ module Printf =
     ///
     /// let file = File.CreateText("out.txt")
     ///
-    /// kfprintf (fun () -> file.Close()) $"Write three = {1+2}"
+    /// kfprintf (fun () -> file.Close()) file $"Write three = {1+2}"
     /// </code>
-    /// Writes <c>"Write five = 5"</c> to <c>out.txt</c>.
+    /// Writes <c>"Write three = 3"</c> to <c>out.txt</c>.
     /// </example>
     [<CompiledName("PrintFormatToTextWriterThen")>]
     val kfprintf:
