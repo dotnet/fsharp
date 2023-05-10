@@ -2756,7 +2756,7 @@ hardwhiteDefnBindingsTerminator:
 cPrototype:
   | EXTERN cRetType opt_access ident opt_HIGH_PRECEDENCE_APP LPAREN externArgs rparen
       { let mExtern = rhs parseState 1
-        let rty, vis, nm, args = $2, $3, $4, $7
+        let rty, vis, nm, (args, commas) = $2, $3, $4, $7
         let nmm = rhs parseState 3
         let argsm = rhs parseState 6
         let mBindLhs = lhs parseState
@@ -2770,7 +2770,7 @@ cPrototype:
                 SynExpr.Const(SynConst.String("extern was not given a DllImport attribute", SynStringKind.Regular, rhs parseState 8), rhs parseState 8),
                 mRhs)
         (fun attrs _ ->
-            let bindingPat = SynPat.LongIdent(SynLongIdent([nm], [], [None]), None, Some noInferredTypars, SynArgPats.Pats [SynPat.Tuple(false, args, [], argsm)], vis, nmm)
+            let bindingPat = SynPat.LongIdent(SynLongIdent([nm], [], [None]), None, Some noInferredTypars, SynArgPats.Pats [SynPat.Tuple(false, args, commas, argsm)], vis, nmm)
             let mWholeBindLhs = (mBindLhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
             let xmlDoc = grabXmlDoc(parseState, attrs, 1)
             let trivia = { LeadingKeyword = SynLeadingKeyword.Extern mExtern; InlineKeyword = None; EqualsRange = None }
@@ -2783,21 +2783,25 @@ cPrototype:
 /* A list of arguments in an 'extern' DllImport function definition */
 externArgs:
   | externMoreArgs
-     { List.rev $1 }
+     { let args, commas = $1
+       List.rev args, (List.rev commas) }
 
   | externArg
-     { [$1] }
+     { [$1], [] }
   |
-     { [] }
+     { [], [] }
 
 
 /* Part of the list of arguments in an 'extern' DllImport function definition */
 externMoreArgs:
   | externMoreArgs COMMA externArg
-     { $3 :: $1 }
+     { let args, commas = $1
+       let mComma = rhs parseState 2
+       $3 :: args, (mComma :: commas) }
 
   | externArg COMMA externArg
-     { [$3; $1] }
+     { let mComma = rhs parseState 2
+       [$3; $1], [mComma] }
 
 
 /* A single argument in an 'extern' DllImport function definition */
