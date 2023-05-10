@@ -104,7 +104,7 @@
       </trans-unit>
       <trans-unit id="Show_Return_Type_Hints">
         <source>Display return type hints (preview)</source>
-        <target state="new">Display return type hints (preview)</target>
+        <target state="translated">반환 형식 힌트 표시(미리 보기)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_all_symbols">
