@@ -1071,7 +1071,7 @@ type SynPat =
         range: range
 
     /// A tuple pattern
-    | Tuple of isStruct: bool * elementPats: SynPat list * range: range
+    | Tuple of isStruct: bool * elementPats: SynPat list * commaRanges: range list * range: range
 
     /// A parenthesized pattern
     | Paren of pat: SynPat * range: range

@@ -4968,7 +4968,7 @@ and ConvSynPatToSynExpr synPat =
             else SynExpr.LongIdent (false, synLongId, None, m)
         List.fold (fun f x -> mkSynApp1 f (ConvSynPatToSynExpr x) m) e args
 
-    | SynPat.Tuple (isStruct, args, m) ->
+    | SynPat.Tuple (isStruct, args, _, m) ->
         SynExpr.Tuple (isStruct, List.map ConvSynPatToSynExpr args, [], m)
 
     | SynPat.Paren (innerPat, _) ->

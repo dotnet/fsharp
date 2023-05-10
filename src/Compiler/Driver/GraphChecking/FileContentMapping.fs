@@ -539,7 +539,7 @@ let visitPat (p: SynPat) : FileContentEntry list =
                     yield! collectFromOption visitSynValTyparDecls typarDecls
                     yield! visitSynArgPats argPats
                 ]
-        | SynPat.Tuple (_, elementPats, _) ->
+        | SynPat.Tuple (elementPats = elementPats) ->
             let continuations = List.map visit elementPats
             Continuation.concatenate continuations continuation
         | SynPat.ArrayOrList (_, elementPats, _) ->

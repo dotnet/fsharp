@@ -42,10 +42,10 @@ let IgnoreAttribute _ = None
 let (|ExprAsPat|_|) (f: SynExpr) =    
     match f with 
     | SingleIdent v1 | SynExprParen(SingleIdent v1, _, _, _) -> Some (mkSynPatVar None v1)
-    | SynExprParen(SynExpr.Tuple (false, elems, _, _), _, _, _) -> 
+    | SynExprParen(SynExpr.Tuple (false, elems, commas, _), _, _, _) -> 
         let elems = elems |> List.map (|SingleIdent|_|) 
         if elems |> List.forall (fun x -> x.IsSome) then 
-            Some (SynPat.Tuple(false, (elems |> List.map (fun x -> mkSynPatVar None x.Value)), f.Range))
+            Some (SynPat.Tuple(false, (elems |> List.map (fun x -> mkSynPatVar None x.Value)), commas, f.Range))
         else
             None
     | _ -> None
@@ -702,7 +702,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
         match patvs with 
         | [] -> SynPat.Const (SynConst.Unit, m)
         | [v] -> mkSynPatVar None v.Id
-        | vs -> SynPat.Tuple(false, (vs |> List.map (fun x -> mkSynPatVar None x.Id)), m)
+        | vs -> SynPat.Tuple(false, (vs |> List.map (fun x -> mkSynPatVar None x.Id)), [], m)
 
     let (|OptionalSequential|) e = 
         match e with 
@@ -1290,7 +1290,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
             // Check if this is a Bind2Return etc.
             let hasBindReturnN = not (isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mBind ad bindReturnNName builderTy))
             if hasBindReturnN && Option.isSome (convertSimpleReturnToExpr varSpace innerComp) then 
-                let consumePat = SynPat.Tuple(false, pats, letPat.Range)
+                let consumePat = SynPat.Tuple(false, pats, [], letPat.Range)
 
                 // Add the variables to the query variable space, on demand
                 let varSpace = 
@@ -1306,7 +1306,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                 // Check if this is a Bind2 etc.
                 let hasBindN = not (isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mBind ad bindNName builderTy))
                 if hasBindN then 
-                    let consumePat = SynPat.Tuple(false, pats, letPat.Range)
+                    let consumePat = SynPat.Tuple(false, pats, [], letPat.Range)
 
                     // Add the variables to the query variable space, on demand
                     let varSpace = 
@@ -1347,7 +1347,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                                 error(Error(FSComp.SR.tcRequireMergeSourcesOrBindN(bindNName), mBind))
 
                             let source = mkSynCall mergeSourcesName sourcesRange (List.map fst sourcesAndPats)
-                            let pat = SynPat.Tuple(false, List.map snd sourcesAndPats, letPat.Range)
+                            let pat = SynPat.Tuple(false, List.map snd sourcesAndPats, [], letPat.Range)
                             source, pat
 
                         else
@@ -1361,7 +1361,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
 
                             let laterSource, laterPat = mergeSources laterSourcesAndPats
                             let source = mkSynCall mergeSourcesName sourcesRange (List.map fst nowSourcesAndPats @ [laterSource])
-                            let pat = SynPat.Tuple(false, List.map snd nowSourcesAndPats @ [laterPat], letPat.Range)
+                            let pat = SynPat.Tuple(false, List.map snd nowSourcesAndPats @ [laterPat], [], letPat.Range)
                             source, pat
 
                     let mergedSources, consumePat = mergeSources (List.zip sources pats)

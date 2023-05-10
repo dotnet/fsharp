@@ -278,7 +278,7 @@ and TcPat warnOnUpper (cenv: cenv) env valReprInfo vFlags (patEnv: TcPatLinearEn
 
     | SynPat.ListCons(pat1, pat2, m, trivia) ->
         let longDotId = SynLongIdent((mkSynCaseName trivia.ColonColonRange opNameCons), [], [Some (FSharp.Compiler.SyntaxTrivia.IdentTrivia.OriginalNotation "::")])
-        let args = SynArgPats.Pats [ SynPat.Tuple(false, [ pat1; pat2 ], m) ]
+        let args = SynArgPats.Pats [ SynPat.Tuple(false, [ pat1; pat2 ], [], m) ]
         TcPatLongIdent warnOnUpper cenv env ad valReprInfo vFlags patEnv ty (longDotId, None, args, None, m)
 
     | SynPat.Ands (pats, m) ->
@@ -291,7 +291,7 @@ and TcPat warnOnUpper (cenv: cenv) env valReprInfo vFlags (patEnv: TcPatLinearEn
         errorR (Error(FSComp.SR.tcInvalidPattern(), m))
         (fun _ -> TPat_error m), patEnv
 
-    | SynPat.Tuple (isExplicitStruct, args, m) ->
+    | SynPat.Tuple (isExplicitStruct, args, _, m) ->
         TcPatTuple warnOnUpper cenv env vFlags patEnv ty isExplicitStruct args m
 
     | SynPat.Paren (p, _) ->
@@ -646,14 +646,14 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (m
 
             let args = List.ofArray result
             if result.Length = 1 then args, extraPatterns
-            else [ SynPat.Tuple(false, args, m) ], extraPatterns
+            else [ SynPat.Tuple(false, args, [], m) ], extraPatterns
 
     let args, extraPatterns =
         match args with
         | [] -> [], []
 
         // note: the next will always be parenthesized
-        | [SynPatErrorSkip(SynPat.Tuple (false, args, _)) | SynPatErrorSkip(SynPat.Paren(SynPatErrorSkip(SynPat.Tuple (false, args, _)), _))] when numArgTys > 1 -> args, []
+        | [SynPatErrorSkip(SynPat.Tuple (false, args, _, _)) | SynPatErrorSkip(SynPat.Paren(SynPatErrorSkip(SynPat.Tuple (false, args, _, _)), _))] when numArgTys > 1 -> args, []
 
         // note: we allow both 'C _' and 'C (_)' regardless of number of argument of the pattern
         | [SynPatErrorSkip(SynPat.Wild _ as e) | SynPatErrorSkip(SynPat.Paren(SynPatErrorSkip(SynPat.Wild _ as e), _))] -> List.replicate numArgTys e, []

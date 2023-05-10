@@ -301,9 +301,9 @@ let rec SimplePatsOfPat synArgNameGenerator p =
     match p with
     | SynPat.FromParseError (p, _) -> SimplePatsOfPat synArgNameGenerator p
 
-    | SynPat.Tuple (false, ps, m)
+    | SynPat.Tuple (false, ps, _, m)
 
-    | SynPat.Paren (SynPat.Tuple (false, ps, _), m) ->
+    | SynPat.Paren (SynPat.Tuple (false, ps, _, _), m) ->
         let sps = List.map (SimplePatOfPat synArgNameGenerator) ps
 
         let ps2, laterF =
@@ -948,12 +948,14 @@ let rec normalizeTupleExpr exprs commas : SynExpr list * range list =
         innerExprs @ rest, innerCommas @ commas
     | _ -> exprs, commas
 
-let rec normalizeTuplePat pats : SynPat list =
+let rec normalizeTuplePat pats commas : SynPat list * range List =
     match pats with
-    | SynPat.Tuple (false, innerPats, _) :: rest ->
-        let innerExprs = normalizeTuplePat (List.rev innerPats)
-        innerExprs @ rest
-    | _ -> pats
+    | SynPat.Tuple (false, innerPats, innerCommas, _) :: rest ->
+        let innerPats, innerCommas =
+            normalizeTuplePat (List.rev innerPats) (List.rev innerCommas)
+
+        innerPats @ rest, innerCommas @ commas
+    | _ -> pats, commas
 
 /// Remove all members that were captures as SynMemberDefn.GetSetMember
 let rec desugarGetSetMembers (memberDefns: SynMemberDefns) =

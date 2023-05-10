@@ -84,7 +84,8 @@ ImplFile
                        (Tuple
                           (false,
                            [Named (SynIdent (x, None), false, None, (2,5--2,6));
-                            Wild (2,8--2,9)], (2,5--2,9)), (2,4--2,10));
+                            Wild (2,8--2,9)], [(2,6--2,7)], (2,5--2,9)),
+                        (2,4--2,10));
                      Paren
                        (Record
                           ([(([], Y), (3,9--3,10),

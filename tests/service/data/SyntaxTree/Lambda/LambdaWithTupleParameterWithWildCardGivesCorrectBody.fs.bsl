@@ -31,7 +31,8 @@ ImplFile
                        (Tuple
                           (false,
                            [Named (SynIdent (b, None), false, None, (2,7--2,8));
-                            Wild (2,10--2,11)], (2,7--2,11)), (2,6--2,12));
+                            Wild (2,10--2,11)], [(2,8--2,9)], (2,7--2,11)),
+                        (2,6--2,12));
                      Named (SynIdent (c, None), false, None, (2,13--2,14))],
                     Ident x), (2,0--2,19), { ArrowRange = Some (2,15--2,17) }),
               (2,0--2,19))], PreXmlDocEmpty, [], None, (2,0--3,0),

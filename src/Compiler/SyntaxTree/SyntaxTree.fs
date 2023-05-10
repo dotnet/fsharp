@@ -917,7 +917,7 @@ type SynPat =
         accessibility: SynAccess option *
         range: range
 
-    | Tuple of isStruct: bool * elementPats: SynPat list * range: range
+    | Tuple of isStruct: bool * elementPats: SynPat list * commaRanges: range list * range: range
 
     | Paren of pat: SynPat * range: range
 

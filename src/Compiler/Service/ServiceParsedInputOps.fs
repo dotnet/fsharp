@@ -636,7 +636,7 @@ module ParsedInput =
                         List.tryPick walkTyparDecl typars
                         |> Option.orElseWith (fun () -> List.tryPick walkTypeConstraint constraints)))
                 |> Option.orElseWith (fun () -> List.tryPick walkPat pats)
-            | SynPat.Tuple (_, pats, _) -> List.tryPick walkPat pats
+            | SynPat.Tuple (elementPats = pats) -> List.tryPick walkPat pats
             | SynPat.Paren (pat, _) -> walkPat pat
             | SynPat.ArrayOrList (_, pats, _) -> List.tryPick walkPat pats
             | SynPat.IsInst (t, _) -> walkType t
@@ -1380,7 +1380,7 @@ module ParsedInput =
                                 match pat with
                                 | SynPat.Paren (pat, _) ->
                                     match pat with
-                                    | SynPat.Tuple (_, pats, _) -> pats |> List.tryPick visitParam
+                                    | SynPat.Tuple (elementPats = pats) -> pats |> List.tryPick visitParam
                                     | _ -> visitParam pat
                                 | SynPat.Wild range
                                 | SynPat.FromParseError (SynPat.Named _, range) when rangeContainsPos range pos ->
@@ -1636,7 +1636,7 @@ module ParsedInput =
 
         and walkPat pat =
             match pat with
-            | SynPat.Tuple (_, pats, _)
+            | SynPat.Tuple (elementPats = pats)
             | SynPat.ArrayOrList (_, pats, _)
             | SynPat.Ands (pats, _) -> List.iter walkPat pats
             | SynPat.Named (SynIdent (ident, _), _, _, _) -> addIdent ident
