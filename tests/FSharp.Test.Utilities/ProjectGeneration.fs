@@ -23,6 +23,7 @@ open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Text
 open Xunit
 open System.Collections.Concurrent
+open System.Text
 
 #nowarn "57" // Experimental feature use
 
@@ -362,22 +363,24 @@ module ProjectOperations =
 
     let getFileSnapshot (project: SyntheticProject) _options (path: string) =
         async {
-            let file, filePath =
+            let filePath =
                 if path.EndsWith(".fsi") then
                     let implFilePath = path[..path.Length - 2]
                     let f = project.FindByPath implFilePath
-                    f, getSignatureFilePath project f
+                    getSignatureFilePath project f
                 else
                     let f = project.FindByPath path
-                    f, getFilePath project f
+                    getFilePath project f
 
-            let dependencies = file.DependsOn |> String.concat "|"
-            let version = $"{file.PublicVersion}|{file.InternalVersion}|{file.FunctionName}|{file.Source.GetHashCode()}|{file.ExtraSource.GetHashCode()}|{dependencies}"
+            let source = getSourceText project path
+            use md5 = System.Security.Cryptography.MD5.Create()
+            let inputBytes = Encoding.UTF8.GetBytes(source.ToString())
+            let hash = md5.ComputeHash(inputBytes) |> Array.map (fun b -> b.ToString("X2")) |> String.concat ""
 
             return {
                 FileName = filePath
-                Version = version
-                GetSource = fun () -> getSourceText project path |> Task.FromResult
+                Version = hash
+                GetSource = fun () -> source |> Task.FromResult
             }
         }
 

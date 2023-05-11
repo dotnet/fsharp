@@ -163,7 +163,6 @@ type TcState =
 
     member CreatesGeneratedProvidedTypes: bool
 
-
 type PartialResult = TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType
 
 /// Get the initial type checking state for a set of inputs
@@ -187,16 +186,16 @@ val CheckOneInput:
         Cancellable<(TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType) * TcState>
 
 val CheckOneInputWithCallback:
-      checkForErrors: (unit -> bool) *
-      tcConfig: TcConfig *
-      tcImports: TcImports *
-      tcGlobals: TcGlobals *
-      prefixPathOpt: LongIdent option *
-      tcSink: TcResultsSink *
-      tcState: TcState *
-      input: ParsedInput *
-      _skipImplIfSigExists: bool -> Cancellable<Finisher<TcState, PartialResult>>
-
+    checkForErrors: (unit -> bool) *
+    tcConfig: TcConfig *
+    tcImports: TcImports *
+    tcGlobals: TcGlobals *
+    prefixPathOpt: LongIdent option *
+    tcSink: TcResultsSink *
+    tcState: TcState *
+    input: ParsedInput *
+    _skipImplIfSigExists: bool ->
+        Cancellable<Finisher<TcState, PartialResult>>
 
 val AddCheckResultsToTcState:
     tcGlobals: TcGlobals *

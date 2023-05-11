@@ -41,7 +41,7 @@ let ``See what this does`` () =
         sourceFile "E" ["A"; "B"; "C"] |> addSignatureFile,
         sourceFile "F" ["C"; "D"] |> addSignatureFile
     ).Workflow {
-        withProject (fun project checker -> 
+        withProject (fun project checker ->
             async {
                 let options = project.GetProjectOptions checker
                 let options, _ = checker.GetParsingOptionsFromProjectOptions options

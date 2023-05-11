@@ -41,8 +41,6 @@ module Activity =
 
     let listenToAll () = listen ""
 
-open Activity
-
 
 [<Fact>]
 let ``Use Transparent Compiler`` () =
@@ -173,15 +171,18 @@ let ``Files depend on signature file if present`` () =
 
 [<Fact>]
 let ``Signature update`` () =
-    listenToAll ()
+    Activity.listenToAll ()
 
-    let project = makeTestProject() |> updateFile "First" addSignatureFile
+    let project = SyntheticProject.Create(
+        { sourceFile "First" [] with
+            Source = "let f x = x"
+            SignatureFile = Custom "val f: x: int -> int" },
+        { sourceFile "Second" ["First"] with
+            Source = "let a x = ModuleFirst.f x" })
 
     ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
-        updateFile "First" updatePublicSurface
-        saveFile "First"
-        checkFile "Second" expectNoChanges
-        regenerateSignature "First"
+        checkFile "Second" expectOk
+        updateFile "First" (fun f -> { f with SignatureFile = Custom "val f: x: string -> string" })
         checkFile "Second" expectSignatureChanged
     }
 
