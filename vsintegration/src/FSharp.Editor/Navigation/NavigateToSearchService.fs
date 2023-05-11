@@ -17,7 +17,7 @@ open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.Text.PatternMatching
 
 open FSharp.Compiler.EditorServices
-open Internal.Utilities.CancellableTasks
+open CancellableTasks
 
 [<Export(typeof<IFSharpNavigateToSearchService>); Shared>]
 type internal FSharpNavigateToSearchService [<ImportingConstructor>]

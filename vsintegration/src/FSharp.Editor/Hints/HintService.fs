@@ -7,7 +7,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.Symbols
 open Hints
-open Internal.Utilities.CancellableTasks
+open CancellableTasks
 
 module HintService =
 

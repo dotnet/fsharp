@@ -7,7 +7,7 @@ open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.Editor.QuickInfo
 open Xunit
 open FSharp.Editor.Tests.Helpers
-open Internal.Utilities.CancellableTasks
+open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 module QuickInfo =
     open FSharp.Compiler.EditorServices

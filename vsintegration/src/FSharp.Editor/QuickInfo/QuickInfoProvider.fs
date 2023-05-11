@@ -18,7 +18,7 @@ open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.Text
 open Microsoft.IO
 open FSharp.Compiler.EditorServices
-open Internal.Utilities.CancellableTasks
+open CancellableTasks
 
 type internal FSharpAsyncQuickInfoSource
     (

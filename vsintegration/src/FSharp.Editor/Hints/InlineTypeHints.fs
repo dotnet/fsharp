@@ -8,7 +8,7 @@ open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open Hints
-open Internal.Utilities.CancellableTasks
+open CancellableTasks
 
 type InlineTypeHints(parseResults: FSharpParseFileResults, symbol: FSharpMemberOrFunctionOrValue) =
 

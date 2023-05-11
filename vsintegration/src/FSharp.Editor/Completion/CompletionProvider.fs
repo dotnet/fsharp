@@ -20,7 +20,7 @@ open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
-open Internal.Utilities.CancellableTasks
+open CancellableTasks
 
 module Logger = Microsoft.VisualStudio.FSharp.Editor.Logger
 

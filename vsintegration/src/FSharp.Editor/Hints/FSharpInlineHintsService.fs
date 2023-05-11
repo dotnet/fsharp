@@ -7,7 +7,7 @@ open System.ComponentModel.Composition
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.InlineHints
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
-open Internal.Utilities.CancellableTasks
+open CancellableTasks
 open System.Threading.Tasks
 
 // So the Roslyn interface is called IFSharpInlineHintsService

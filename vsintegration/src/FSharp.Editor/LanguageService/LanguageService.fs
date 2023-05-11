@@ -24,8 +24,7 @@ open Microsoft.VisualStudio.Text.Outlining
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
-open Internal.Utilities.CancellableTasks.CancellableTaskBuilder
-open Internal.Utilities.CancellableTasks
+open CancellableTasks
 
 #nowarn "9" // NativePtr.toNativeInt
 #nowarn "57" // Experimental stuff

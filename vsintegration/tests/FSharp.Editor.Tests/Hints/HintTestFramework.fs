@@ -7,8 +7,8 @@ open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.Editor.Hints
 open Hints
 open FSharp.Editor.Tests.Helpers
-open Internal.Utilities.CancellableTasks
 open System.Threading
+open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 module HintTestFramework =
 

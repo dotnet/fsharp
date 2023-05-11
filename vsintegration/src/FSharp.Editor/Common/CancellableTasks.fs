@@ -1,6 +1,6 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Internal.Utilities
+namespace Microsoft.VisualStudio.FSharp.Editor
 
 // Don't warn about the resumable code invocation
 #nowarn "3513"

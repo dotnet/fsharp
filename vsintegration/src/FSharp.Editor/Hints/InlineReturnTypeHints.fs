@@ -7,7 +7,7 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open Hints
-open Internal.Utilities.CancellableTasks
+open CancellableTasks
 
 type InlineReturnTypeHints(parseFileResults: FSharpParseFileResults, symbol: FSharpMemberOrFunctionOrValue) =
 

@@ -16,8 +16,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Classification
 
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Tokenization
-open Internal.Utilities.CancellableTasks.CancellableTaskBuilder
-open Internal.Utilities.CancellableTasks
+open CancellableTasks
 
 // IEditorClassificationService is marked as Obsolete, but is still supported. The replacement (IClassificationService)
 // is internal to Microsoft.CodeAnalysis.Workspaces which we don't have internals visible to. Rather than add yet another
@@ -71,47 +70,45 @@ type DocumentCache<'Value when 'Value: not struct>() =
 [<Export(typeof<IFSharpClassificationService>)>]
 type internal FSharpClassificationService [<ImportingConstructor>] () =
 
-    static let getLexicalClassifications (filePath: string, defines, text: SourceText, textSpan: TextSpan) =
-        cancellableTask {
-            let! ct = CancellableTask.getCurrentCancellationToken ()
+    static let getLexicalClassifications (filePath: string, defines, text: SourceText, textSpan: TextSpan, ct: CancellationToken) =
 
-            let text = text.GetSubText(textSpan)
-            let result = ImmutableArray.CreateBuilder()
+        let text = text.GetSubText(textSpan)
+        let result = ImmutableArray.CreateBuilder()
 
-            let tokenCallback =
-                fun (tok: FSharpToken) ->
-                    let spanKind =
-                        if tok.IsKeyword then
-                            ClassificationTypeNames.Keyword
-                        elif tok.IsNumericLiteral then
-                            ClassificationTypeNames.NumericLiteral
-                        elif tok.IsCommentTrivia then
-                            ClassificationTypeNames.Comment
-                        elif tok.IsStringLiteral then
-                            ClassificationTypeNames.StringLiteral
-                        else
-                            ClassificationTypeNames.Text
+        let tokenCallback =
+            fun (tok: FSharpToken) ->
+                let spanKind =
+                    if tok.IsKeyword then
+                        ClassificationTypeNames.Keyword
+                    elif tok.IsNumericLiteral then
+                        ClassificationTypeNames.NumericLiteral
+                    elif tok.IsCommentTrivia then
+                        ClassificationTypeNames.Comment
+                    elif tok.IsStringLiteral then
+                        ClassificationTypeNames.StringLiteral
+                    else
+                        ClassificationTypeNames.Text
 
-                    match RoslynHelpers.TryFSharpRangeToTextSpan(text, tok.Range) with
-                    | Some span -> result.Add(ClassifiedSpan(TextSpan(textSpan.Start + span.Start, span.Length), spanKind))
-                    | _ -> ()
+                match RoslynHelpers.TryFSharpRangeToTextSpan(text, tok.Range) with
+                | Some span -> result.Add(ClassifiedSpan(TextSpan(textSpan.Start + span.Start, span.Length), spanKind))
+                | _ -> ()
 
-            let flags =
-                FSharpLexerFlags.Default
-                &&& ~~~FSharpLexerFlags.Compiling
-                &&& ~~~FSharpLexerFlags.UseLexFilter
+        let flags =
+            FSharpLexerFlags.Default
+            &&& ~~~FSharpLexerFlags.Compiling
+            &&& ~~~FSharpLexerFlags.UseLexFilter
 
-            FSharpLexer.Tokenize(
-                text.ToFSharpSourceText(),
-                tokenCallback,
-                filePath = filePath,
-                conditionalDefines = defines,
-                flags = flags,
-                ct = ct
-            )
+        FSharpLexer.Tokenize(
+            text.ToFSharpSourceText(),
+            tokenCallback,
+            filePath = filePath,
+            conditionalDefines = defines,
+            flags = flags,
+            ct = ct
+        )
 
-            return result.ToImmutable()
-        }
+        result.ToImmutable()
+        
 
     static let addSemanticClassification
         sourceText
@@ -180,18 +177,27 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
 
                 let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
 
-                let defines, _ = document.GetFSharpQuickDefinesAndLangVersion()
+                let defines, langVersion = document.GetFSharpQuickDefinesAndLangVersion()
                 let! sourceText = document.GetTextAsync(cancellationToken)
 
                 // For closed documents, only get classification for the text within the span.
                 // This may be inaccurate for multi-line tokens such as string literals, but this is ok for now
                 //     as it's better than having to tokenize a big part of a file which in return will allocate a lot and hurt find all references performance.
                 if not (document.Project.Solution.Workspace.IsDocumentOpen document.Id) then
-                    let! classifiedSpans = getLexicalClassifications (document.FilePath, defines, sourceText, textSpan)
+                    let classifiedSpans = getLexicalClassifications (document.FilePath, defines, sourceText, textSpan, cancellationToken)
                     result.AddRange(classifiedSpans)
                 else
-                    let! classifiedSpans = getLexicalClassifications (document.FilePath, defines, sourceText, textSpan)
-                    result.AddRange(classifiedSpans)
+                    result.AddRange(
+                        Tokenizer.getClassifiedSpans (
+                            document.Id,
+                            sourceText,
+                            textSpan,
+                            Some(document.FilePath),
+                            defines,
+                            Some langVersion,
+                            cancellationToken
+                        )
+                    )
             }
             |> CancellableTask.startAsTask cancellationToken
 

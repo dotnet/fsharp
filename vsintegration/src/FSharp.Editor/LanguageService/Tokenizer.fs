@@ -24,8 +24,7 @@ open Microsoft.VisualStudio.Core.Imaging
 open Microsoft.VisualStudio.Imaging
 
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp
-open Internal.Utilities.CancellableTasks.CancellableTaskBuilder
-open Internal.Utilities.CancellableTasks
+open CancellableTasks
 
 type private FSharpGlyph = FSharp.Compiler.EditorServices.FSharpGlyph
 type private Glyph = Microsoft.CodeAnalysis.ExternalAccess.FSharp.FSharpGlyph

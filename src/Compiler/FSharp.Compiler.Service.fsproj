@@ -76,7 +76,6 @@
     <InternalsVisibleTo Include="FSharp.Compiler.Benchmarks" />
     <InternalsVisibleTo Include="HistoricalBenchmark" />
     <InternalsVisibleTo Include="FSharp.Test.Utilities" />
-    <InternalsVisibleTo Include="FSharp.Editor" />
   </ItemGroup>
 
   <ItemGroup>
@@ -92,7 +91,6 @@
     </EmbeddedResource>
     <Compile Include="Utilities\Activity.fsi" />
     <Compile Include="Utilities\Activity.fs" />
-    <Compile Include="Utilities\CancellableTask.fs" />
     <Compile Include="Utilities\sformat.fsi" />
     <Compile Include="Utilities\sformat.fs" />
     <Compile Include="Utilities\sr.fsi" />

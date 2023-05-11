@@ -14,7 +14,7 @@ open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open Microsoft.CodeAnalysis
-open Internal.Utilities.CancellableTasks
+open CancellableTasks
 
 [<Shared>]
 [<ExportLanguageService(typeof<IHelpContextService>, FSharpConstants.FSharpLanguageName)>]

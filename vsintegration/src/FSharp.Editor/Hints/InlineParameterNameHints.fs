@@ -9,7 +9,7 @@ open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open Hints
-open Internal.Utilities.CancellableTasks
+open CancellableTasks
 
 type InlineParameterNameHints(parseResults: FSharpParseFileResults) =
 

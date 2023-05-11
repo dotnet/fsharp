@@ -147,7 +147,7 @@ module internal BlockStructure =
             | _, _ -> None)
 
 open BlockStructure
-open Internal.Utilities.CancellableTasks
+open CancellableTasks
 
 [<Export(typeof<IFSharpBlockStructureService>)>]
 type internal FSharpBlockStructureService [<ImportingConstructor>] () =

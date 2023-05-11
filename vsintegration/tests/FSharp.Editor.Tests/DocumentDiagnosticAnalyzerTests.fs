@@ -7,8 +7,8 @@ open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Editor.Tests.Helpers
 open FSharp.Test
-open Internal.Utilities.CancellableTasks
 open System.Threading
+open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 type DocumentDiagnosticAnalyzerTests() =
     let startMarker = "(*start*)"

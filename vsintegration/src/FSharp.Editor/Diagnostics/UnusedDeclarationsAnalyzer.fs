@@ -10,7 +10,7 @@ open System.Diagnostics
 open Microsoft.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
-open Internal.Utilities.CancellableTasks
+open CancellableTasks
 
 [<Export(typeof<IFSharpUnusedDeclarationsDiagnosticAnalyzer>)>]
 type internal UnusedDeclarationsAnalyzer [<ImportingConstructor>] () =

@@ -9,7 +9,7 @@ open Xunit
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Editor.Tests.Helpers
-open Internal.Utilities.CancellableTasks
+open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 // AppDomain helper
 type Worker() =

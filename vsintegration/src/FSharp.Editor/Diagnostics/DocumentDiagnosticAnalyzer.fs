@@ -13,8 +13,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
 open FSharp.Compiler.Diagnostics
-open Internal.Utilities.CancellableTasks.CancellableTaskBuilder
-open Internal.Utilities.CancellableTasks
+open CancellableTasks
 
 [<RequireQualifiedAccess>]
 type internal DiagnosticsType =

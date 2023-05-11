@@ -4,7 +4,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor.Hints
 
 open Microsoft.CodeAnalysis
 open FSharp.Compiler.Text
-open Internal.Utilities.CancellableTasks
+open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 module Hints =
 

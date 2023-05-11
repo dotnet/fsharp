@@ -10,7 +10,7 @@ open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.CodeAnalysis
 open FSharp.Compiler.Text
 open Hints
-open Internal.Utilities.CancellableTasks
+open CancellableTasks
 
 module NativeToRoslynHintConverter =
 

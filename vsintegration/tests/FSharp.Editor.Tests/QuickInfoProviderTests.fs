@@ -11,7 +11,7 @@ open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.Editor.QuickInfo
 open FSharp.Editor.Tests.Helpers
 open FSharp.Test
-open Internal.Utilities.CancellableTasks
+open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 type public AssemblyResolverTestFixture() =
 

@@ -2,7 +2,7 @@
 
 namespace FSharp.Editor.Tests
 
-open Internal.Utilities.CancellableTasks
+open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 module CompletionProviderTests =
 

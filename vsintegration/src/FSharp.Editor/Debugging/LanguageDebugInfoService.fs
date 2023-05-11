@@ -13,8 +13,7 @@ open Microsoft.CodeAnalysis.Classification
 open FSharp.Compiler.EditorServices
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.Implementation.Debugging
-open Internal.Utilities.CancellableTasks.CancellableTaskBuilder
-open Internal.Utilities.CancellableTasks
+open CancellableTasks
 
 [<Export(typeof<IFSharpLanguageDebugInfoService>)>]
 type internal FSharpLanguageDebugInfoService [<ImportingConstructor>] () =
