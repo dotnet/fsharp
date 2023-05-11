@@ -2078,7 +2078,12 @@ type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
 
         let keyOpt =
             match item with
-            | Item.Value vref -> Some (endPos, vref.DisplayName)
+            | Item.Value vref ->
+                if vref.IsPropertyGetterMethod || vref.IsPropertySetterMethod then
+                    // We don't want to skip a symbol if both getter and setter are present.
+                    Some (endPos, vref.Id.idText)
+                else
+                    Some (endPos, vref.DisplayName)
             | Item.OtherName (ident = Some id) -> Some (endPos, id.idText)
             | _ -> None
 

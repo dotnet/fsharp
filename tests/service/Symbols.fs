@@ -427,3 +427,27 @@ let f2 b1 b2 b3 b4 b5 =
                     mfv.FullType.AllInterfaces.Count |> should equal 0
                 | _ -> ()
             | _ -> ()
+
+module FSharpMemberOrFunctionOrValue =
+    [<Test>]
+    let ``Both Set and Get symbols are present`` () =
+        let _, checkResults = getParseAndCheckResults """
+namespace Foo
+
+type Foo =
+    member _.X
+            with get (y: int) : string = ""
+            and set (a: int) (b: float) = ()
+"""
+
+        let getSymbol = findSymbolUseByName "get_X" checkResults
+        match getSymbol.Symbol with
+        | :? FSharpMemberOrFunctionOrValue as mfv ->
+            Assert.AreEqual(1, mfv.CurriedParameterGroups.[0].Count)
+        | symbol -> Assert.Fail $"Expected {symbol} to be FSharpMemberOrFunctionOrValue"
+
+        let setSymbol = findSymbolUseByName "set_X" checkResults
+        match setSymbol.Symbol with
+        | :? FSharpMemberOrFunctionOrValue as mfv ->
+            Assert.AreEqual(2, mfv.CurriedParameterGroups.[0].Count)
+        | symbol -> Assert.Fail $"Expected {symbol} to be FSharpMemberOrFunctionOrValue"
