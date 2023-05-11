@@ -440,6 +440,11 @@ type Foo =
             and set (a: int) (b: float) = ()
 """
 
+        // "X" resolves a symbol but it will either be the get or set symbol.
+        // Use get_ or set_ to differentiate.
+        let xSymbol = checkResults.GetSymbolUseAtLocation(5, 14, "    member _.X", [ "X" ])
+        Assert.True xSymbol.IsSome
+        
         let getSymbol = findSymbolUseByName "get_X" checkResults
         match getSymbol.Symbol with
         | :? FSharpMemberOrFunctionOrValue as mfv ->
