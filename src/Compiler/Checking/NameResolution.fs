@@ -2079,7 +2079,8 @@ type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
         let keyOpt =
             match item with
             | Item.Value vref ->
-                if vref.IsPropertyGetterMethod || vref.IsPropertySetterMethod then
+                if (vref.IsPropertyGetterMethod || vref.IsPropertySetterMethod)
+                   && not (System.String.IsNullOrWhiteSpace vref.Id.idText) then
                     // We don't want to skip a symbol if both getter and setter are present.
                     Some (endPos, vref.Id.idText)
                 else

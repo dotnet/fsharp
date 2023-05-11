@@ -837,6 +837,7 @@ type internal TypeCheckInfo
                        ||
 #endif
                        nameMatchesResidue tcref.DisplayName)
+            | Item.Value v when (v.IsPropertyGetterMethod || v.IsPropertySetterMethod) -> residue = v.Id.idText
             | _ -> residue = n1)
 
     /// Post-filter items to make sure they have precisely the right name

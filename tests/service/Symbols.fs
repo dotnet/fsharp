@@ -451,3 +451,21 @@ type Foo =
         | :? FSharpMemberOrFunctionOrValue as mfv ->
             Assert.AreEqual(2, mfv.CurriedParameterGroups.[0].Count)
         | symbol -> Assert.Fail $"Expected {symbol} to be FSharpMemberOrFunctionOrValue"
+
+    [<Test>]
+    let ``AutoProperty with get,set has two symbols`` () =
+        let _, checkResults = getParseAndCheckResults """
+namespace Foo
+
+type Foo =
+    member val AutoPropGetSet = 0 with get, set
+"""
+
+        let getSymbol = findSymbolUseByName "get_AutoPropGetSet" checkResults
+        let setSymbol = findSymbolUseByName "set_AutoPropGetSet" checkResults
+
+        match getSymbol.Symbol, setSymbol.Symbol with
+        | :? FSharpMemberOrFunctionOrValue as getMfv,
+          (:? FSharpMemberOrFunctionOrValue as setMfv) ->
+            Assert.AreNotEqual(getMfv.CurriedParameterGroups, setMfv.CurriedParameterGroups)
+        | _ -> Assert.Fail "Expected symbols to be FSharpMemberOrFunctionOrValue"
