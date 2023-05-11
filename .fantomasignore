@@ -90,11 +90,11 @@ src/FSharp.Core/seqcore.fs
 
 src/Compiler/AbstractIL/ilwrite.fs
 src/Compiler/Utilities/lib.fs
-src/Compiler/Utilities/CancellableTask.fs
 src/Compiler/Service/IncrementalBuild.fs
 src/Compiler/Service/ServiceAssemblyContent.fs
 src/Compiler/Service/ServiceDeclarationLists.fs
 src/Compiler/Service/ServiceErrorResolutionHints.fs
+vsintegration/src/FSharp.Editor/Common/CancellableTasks.fs
 
 # Fantomas limitations on signature files  (to investigate)
 
