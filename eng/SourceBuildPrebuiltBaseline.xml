@@ -12,9 +12,6 @@
     <UsagePattern IdentityGlob="Microsoft.NETCore.App.Host.linux-x64/7.0.2" />
     <UsagePattern IdentityGlob="Microsoft.NETCore.App.Ref/7.0.2" />
 
-    <!-- Tracked in https://github.com/dotnet/source-build/issues/3437 -->
-    <UsagePattern IdentityGlob="System.Diagnostics.DiagnosticSource/7.0.2" />
-
     <!-- Tracked in https://github.com/dotnet/source-build/issues/3438 -->
     <UsagePattern IdentityGlob="Microsoft.VisualStudio.Setup.Configuration.Interop/3.2.2146" />
   </IgnorePatterns>
