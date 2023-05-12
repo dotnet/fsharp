@@ -27,7 +27,7 @@ type internal RoslynAdapter [<ImportingConstructor>] (settings: EditorOptions) =
                     return ImmutableArray.Empty
                 else
                     let hintKindsSerialized = hintKinds |> Set.map Hints.serialize |> String.concat ","
-                    TelemetryReporter.ReportSingleEvent (TelemetryEvents.Hints, [| ("hints.kinds", hintKindsSerialized) |])
+                    TelemetryReporter.ReportSingleEvent(TelemetryEvents.Hints, [| ("hints.kinds", hintKindsSerialized) |])
 
                     let! sourceText = document.GetTextAsync cancellationToken |> Async.AwaitTask
                     let! nativeHints = HintService.getHintsForDocument sourceText document hintKinds userOpName cancellationToken

@@ -165,15 +165,16 @@ type internal FSharpWorkspaceServiceFactory [<System.Composition.ImportingConstr
                             TelemetryReporter.ReportSingleEvent(
                                 TelemetryEvents.LanguageServiceStarted,
                                 [|
-                                    nameof enableLiveBuffers, enableLiveBuffers;
-                                    nameof useSyntaxTreeCache, useSyntaxTreeCache;
-                                    nameof enableParallelReferenceResolution, enableParallelReferenceResolution;
-                                    nameof enableFastFindReferences, enableFastFindReferences;
-                                    nameof isInlineParameterNameHintsEnabled, isInlineParameterNameHintsEnabled;
-                                    nameof isInlineTypeHintsEnabled, isInlineTypeHintsEnabled;
-                                    nameof isInlineReturnTypeHintsEnabled, isInlineReturnTypeHintsEnabled;
+                                    nameof enableLiveBuffers, enableLiveBuffers
+                                    nameof useSyntaxTreeCache, useSyntaxTreeCache
+                                    nameof enableParallelReferenceResolution, enableParallelReferenceResolution
+                                    nameof enableFastFindReferences, enableFastFindReferences
+                                    nameof isInlineParameterNameHintsEnabled, isInlineParameterNameHintsEnabled
+                                    nameof isInlineTypeHintsEnabled, isInlineTypeHintsEnabled
+                                    nameof isInlineReturnTypeHintsEnabled, isInlineReturnTypeHintsEnabled
                                     nameof enablePartialTypeChecking, enablePartialTypeChecking
-                                |])
+                                |]
+                            )
 
                             if enableLiveBuffers then
                                 workspace.WorkspaceChanged.Add(fun args ->

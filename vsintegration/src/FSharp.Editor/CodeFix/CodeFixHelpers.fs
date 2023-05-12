@@ -17,23 +17,27 @@ open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
 [<RequireQualifiedAccess>]
 module internal CodeFixHelpers =
-    let private reportCodeFixTelemetry (diagnostics: ImmutableArray<Diagnostic>) (doc: Document) (staticName: string) (additionalProps: (string * obj) array) =
+    let private reportCodeFixTelemetry
+        (diagnostics: ImmutableArray<Diagnostic>)
+        (doc: Document)
+        (staticName: string)
+        (additionalProps: (string * obj) array)
+        =
         let ids =
             diagnostics |> Seq.map (fun d -> d.Id) |> Seq.distinct |> String.concat ","
 
         let defaultProps: (string * obj) array =
             [|
-                "name", staticName;
-                "ids", ids;
-                "context.document.project.id", doc.Project.Id.Id.ToString();
-                "context.document.id", doc.Id.Id.ToString();
+                "name", staticName
+                "ids", ids
+                "context.document.project.id", doc.Project.Id.Id.ToString()
+                "context.document.id", doc.Id.Id.ToString()
                 "context.diagnostics.count", diagnostics.Length
             |]
 
-        let props: (string * obj) array =
-            Array.concat [additionalProps; defaultProps]
+        let props: (string * obj) array = Array.concat [ additionalProps; defaultProps ]
 
-        TelemetryReporter.ReportSingleEvent (TelemetryEvents.CodefixActivated, props)
+        TelemetryReporter.ReportSingleEvent(TelemetryEvents.CodefixActivated, props)
 
     let createFixAllProvider name getChanges =
         FixAllProvider.Create(fun fixAllCtx doc allDiagnostics ->

@@ -11,13 +11,26 @@ open System.Collections.Concurrent
 
 [<RequireQualifiedAccess>]
 module TelemetryEvents =
-    let [<Literal>] CodefixActivated = "codefixactivated"
-    let [<Literal>] Hints = "hints"
-    let [<Literal>] LanguageServiceStarted = "languageservicestarted"
-    let [<Literal>] GetSymbolUsesInProjectsStarted = "getSymbolUsesInProjectsStarted"
-    let [<Literal>] GetSymbolUsesInProjectsFinished = "getSymbolUsesInProjectsFinished"
-    let [<Literal>] AddSyntacticCalssifications = "addsyntacticclassifications"
-    let [<Literal>] AddSemanticCalssifications = "addsemanticclassifications"
+    [<Literal>]
+    let CodefixActivated = "codefixactivated"
+
+    [<Literal>]
+    let Hints = "hints"
+
+    [<Literal>]
+    let LanguageServiceStarted = "languageservicestarted"
+
+    [<Literal>]
+    let GetSymbolUsesInProjectsStarted = "getSymbolUsesInProjectsStarted"
+
+    [<Literal>]
+    let GetSymbolUsesInProjectsFinished = "getSymbolUsesInProjectsFinished"
+
+    [<Literal>]
+    let AddSyntacticCalssifications = "addsyntacticclassifications"
+
+    [<Literal>]
+    let AddSemanticCalssifications = "addsemanticclassifications"
 
 // TODO: needs to be something more sophisticated in future
 [<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
@@ -25,27 +38,35 @@ type TelemetryThrottlingStrategy =
     | NoThrottling
     | Throttle of {| Timeout: TimeSpan |}
     // At most, send one event per 3 seconds.
-    static member Default = Throttle {| Timeout = TimeSpan.FromSeconds(3.0) |}
+    static member Default =
+        Throttle
+            {|
+                Timeout = TimeSpan.FromSeconds(3.0)
+            |}
 
 [<RequireQualifiedAccess>]
 module TelemetryReporter =
     let internal noopDisposable =
         { new IDisposable with
-            member _.Dispose() = () }
+            member _.Dispose() = ()
+        }
 
     let internal lastSentEvents = ConcurrentDictionary<string, DateTime>()
 
-    let [<Literal>] eventPrefix = "dotnet/fsharp/"
-    let [<Literal>] propPrefix = "dotnet.fsharp."
+    [<Literal>]
+    let eventPrefix = "dotnet/fsharp/"
+
+    [<Literal>]
+    let propPrefix = "dotnet.fsharp."
 
     // This should always be inlined.
     let inline createEvent name (props: (string * obj) array) =
         let eventName = eventPrefix + name
         let event = TelemetryEvent(eventName, TelemetrySeverity.Normal)
-        
+
         // TODO:
         // We need to utilize TelemetryEvent's Correlation id, so we can track (for example) events on one document in the project.
-        
+
         // TODO: need to carefully review the code, since it will be a hot path when we are sending telemetry
         // This particular approach is here to avoid alocations for properties, which is likely the case if we destructing them.
         for prop in props do
@@ -54,17 +75,18 @@ module TelemetryReporter =
         event
 
 [<Struct; NoComparison; NoEquality>]
-type TelemetryReporter private (name: string, props: (string * obj) array, stopwatch: Stopwatch) = 
+type TelemetryReporter private (name: string, props: (string * obj) array, stopwatch: Stopwatch) =
 
-    static member ReportSingleEvent (name, props) =
+    static member ReportSingleEvent(name, props) =
         let session = TelemetryService.DefaultSession
         let event = TelemetryReporter.createEvent name props
         session.PostEvent event
 
     // A naïve implementation using stopwatch and returning an IDisposable
     // TODO: needs a careful review, since it will be a hot path when we are sending telemetry
-    static member ReportSingleEventWithDuration (name, props, ?throttlingStrategy) : IDisposable =
-        let throttlingStrategy = defaultArg throttlingStrategy TelemetryThrottlingStrategy.Default
+    static member ReportSingleEventWithDuration(name, props, ?throttlingStrategy) : IDisposable =
+        let throttlingStrategy =
+            defaultArg throttlingStrategy TelemetryThrottlingStrategy.Default
 
         match throttlingStrategy with
         | TelemetryThrottlingStrategy.NoThrottling ->
@@ -79,16 +101,17 @@ type TelemetryReporter private (name: string, props: (string * obj) array, stopw
                 let stopwatch = Stopwatch()
                 stopwatch.Start()
                 new TelemetryReporter(name, props, stopwatch)
-            | _ ->
-                TelemetryReporter.noopDisposable
+            | _ -> TelemetryReporter.noopDisposable
 
     interface IDisposable with
         member _.Dispose() =
             let session = TelemetryService.DefaultSession
             stopwatch.Stop()
-            let event = TelemetryReporter.createEvent name (Array.concat [props; [| "vs_event_duration_ms", stopwatch.ElapsedMilliseconds |]])
+
+            let event =
+                TelemetryReporter.createEvent name (Array.concat [ props; [| "vs_event_duration_ms", stopwatch.ElapsedMilliseconds |] ])
+
             session.PostEvent event
             // Whenever we send an event, we update the last sent time.
-            TelemetryReporter.lastSentEvents.AddOrUpdate(name, DateTime.UtcNow, fun _ _ -> DateTime.UtcNow) |> ignore
-
-    
+            TelemetryReporter.lastSentEvents.AddOrUpdate(name, DateTime.UtcNow, (fun _ _ -> DateTime.UtcNow))
+            |> ignore
