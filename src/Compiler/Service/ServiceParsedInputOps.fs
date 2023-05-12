@@ -636,7 +636,7 @@ module ParsedInput =
                         List.tryPick walkTyparDecl typars
                         |> Option.orElseWith (fun () -> List.tryPick walkTypeConstraint constraints)))
                 |> Option.orElseWith (fun () -> List.tryPick walkPat pats)
-            | SynPat.Tuple (_, pats, _) -> List.tryPick walkPat pats
+            | SynPat.Tuple (elementPats = pats) -> List.tryPick walkPat pats
             | SynPat.Paren (pat, _) -> walkPat pat
             | SynPat.ArrayOrList (_, pats, _) -> List.tryPick walkPat pats
             | SynPat.IsInst (t, _) -> walkType t
@@ -899,7 +899,7 @@ module ParsedInput =
                 | None, Some binding -> walkBinding binding
                 | Some getBinding, Some setBinding -> walkBinding getBinding |> Option.orElseWith (fun () -> walkBinding setBinding)
 
-            | SynMemberDefn.ImplicitCtor (attributes = Attributes attrs; ctorArgs = SynSimplePats.SimplePats (simplePats, _)) ->
+            | SynMemberDefn.ImplicitCtor (attributes = Attributes attrs; ctorArgs = SynSimplePats.SimplePats (pats = simplePats)) ->
                 List.tryPick walkAttribute attrs
                 |> Option.orElseWith (fun () -> List.tryPick walkSimplePat simplePats)
 
@@ -1380,7 +1380,7 @@ module ParsedInput =
                                 match pat with
                                 | SynPat.Paren (pat, _) ->
                                     match pat with
-                                    | SynPat.Tuple (_, pats, _) -> pats |> List.tryPick visitParam
+                                    | SynPat.Tuple (elementPats = pats) -> pats |> List.tryPick visitParam
                                     | _ -> visitParam pat
                                 | SynPat.Wild range
                                 | SynPat.FromParseError (SynPat.Named _, range) when rangeContainsPos range pos ->
@@ -1636,7 +1636,7 @@ module ParsedInput =
 
         and walkPat pat =
             match pat with
-            | SynPat.Tuple (_, pats, _)
+            | SynPat.Tuple (elementPats = pats)
             | SynPat.ArrayOrList (_, pats, _)
             | SynPat.Ands (pats, _) -> List.iter walkPat pats
             | SynPat.Named (SynIdent (ident, _), _, _, _) -> addIdent ident
@@ -1712,7 +1712,7 @@ module ParsedInput =
 
         and walkSimplePats spats =
             match spats with
-            | SynSimplePats.SimplePats (pats, _) -> List.iter walkSimplePat pats
+            | SynSimplePats.SimplePats (pats = pats) -> List.iter walkSimplePat pats
 
         and walkExpr expr =
             match expr with
@@ -1899,7 +1899,7 @@ module ParsedInput =
             | SynMemberDefn.GetSetMember (getBinding, setBinding, _, _) ->
                 Option.iter walkBinding getBinding
                 Option.iter walkBinding setBinding
-            | SynMemberDefn.ImplicitCtor (attributes = Attributes attrs; ctorArgs = SynSimplePats.SimplePats (simplePats, _)) ->
+            | SynMemberDefn.ImplicitCtor (attributes = Attributes attrs; ctorArgs = SynSimplePats.SimplePats (pats = simplePats)) ->
                 List.iter walkAttribute attrs
                 List.iter walkSimplePat simplePats
             | SynMemberDefn.ImplicitInherit (t, e, _, _) ->
