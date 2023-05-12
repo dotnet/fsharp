@@ -8,3 +8,5 @@ FSharp.Compiler.Service.Tests.dll
 FSharp.Compiler.UnitTests.dll
 FSharp.Core.UnitTests.dll
 FSharpSuite.Tests.dll
+ref\FSharp.Compiler.Service.dll
+ref\FSharp.DependencyManager.Nuget.dll

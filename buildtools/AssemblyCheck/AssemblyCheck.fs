@@ -31,7 +31,10 @@ module AssemblyCheck =
             | :? System.BadImageFormatException -> false       // uninterested in embedded pdbs for native dlls
 
         if isManagedDll then
-            if skipVerifyEmbeddedPdb.Contains(Path.GetFileName(filename).ToUpperInvariant()) then
+            if filename.Contains(Path.Combine("\\ref\\", Path.GetFileName(filename)), StringComparison.InvariantCultureIgnoreCase) then
+                // reference assemblies do not require embedded pdbs
+                true
+            elif skipVerifyEmbeddedPdb.Contains(Path.GetFileName(filename).ToUpperInvariant()) then
                 true
             else
                 use fileStream = File.OpenRead(filename)
