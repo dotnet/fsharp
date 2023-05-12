@@ -150,6 +150,8 @@ type internal IBackgroundCompiler =
 
     abstract member ProjectChecked: IEvent<FSharpProjectOptions>
 
+    abstract member CacheEvent: IEvent<string * JobEventType * string array>
+
 type ParseCacheLockToken() =
     interface LockToken
 
@@ -233,6 +235,8 @@ type internal BackgroundCompiler
     let fileParsed = Event<string * FSharpProjectOptions>()
     let fileChecked = Event<string * FSharpProjectOptions>()
     let projectChecked = Event<FSharpProjectOptions>()
+
+    let cacheEvent = Event<string * JobEventType * string array>()
 
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.backgroundCompiler.scriptClosureCache
     /// Information about the derived script closure.
@@ -1377,6 +1381,8 @@ type internal BackgroundCompiler
     static member ActualCheckFileCount = actualCheckFileCount
 
     interface IBackgroundCompiler with
+
+        member _.CacheEvent = cacheEvent.Publish
 
         member _.BeforeBackgroundFileCheck = self.BeforeBackgroundFileCheck
 

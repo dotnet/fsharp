@@ -586,6 +586,8 @@ type FSharpChecker
 
     member _.ProjectChecked = backgroundCompiler.ProjectChecked
 
+    member _.CacheEvent = backgroundCompiler.CacheEvent
+
     static member ActualParseFileCount = BackgroundCompiler.ActualParseFileCount
 
     static member ActualCheckFileCount = BackgroundCompiler.ActualCheckFileCount

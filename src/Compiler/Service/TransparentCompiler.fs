@@ -94,13 +94,17 @@ type internal TransparentCompiler
     // Is having just one of these ok?
     let lexResourceManager = Lexhelp.LexResourceManager()
 
-    let ParseFileCache = AsyncMemoize(name = "ParseFile")
-    let ParseAndCheckFileInProjectCache = AsyncMemoize(name = "ParseAndCheckFileInProject")
-    let FrameworkImportsCache = AsyncMemoize(name = "FrameworkImports")
-    let BootstrapInfoCache = AsyncMemoize(name = "BootstrapInfo")
-    let TcPriorCache = AsyncMemoize(name = "TcPrior")
-    let TcIntermediateCache = AsyncMemoize(name = "TcIntermediate")
-    let DependencyGraphForLastFileCache = AsyncMemoize(name = "DependencyGraphForLastFile")
+    let cacheEvent = new Event<string * JobEventType * string array>()
+
+    let ParseFileCache = 
+        AsyncMemoize(logEvent = fun (e, ((fileName, version), _, _)) -> cacheEvent.Trigger("ParseFile", e, [| fileName; version |] ))
+    let ParseAndCheckFileInProjectCache = AsyncMemoize()
+    let FrameworkImportsCache = AsyncMemoize()
+    let BootstrapInfoStaticCache = AsyncMemoize()
+    let BootstrapInfoCache = AsyncMemoize()
+    let TcPriorCache = AsyncMemoize()
+    let TcIntermediateCache = AsyncMemoize()
+    let DependencyGraphForLastFileCache = AsyncMemoize()
 
     // We currently share one global dependency provider for all scripts for the FSharpChecker.
     // For projects, one is used per project.
@@ -170,6 +174,7 @@ type internal TransparentCompiler
 
     let ComputeFrameworkImports (tcConfig: TcConfig) frameworkDLLs nonFrameworkResolutions _key =
         node {
+            use _ = Activity.start "ComputeFrameworkImports" []
             let tcConfigP = TcConfigProvider.Constant tcConfig
             return! TcImports.BuildFrameworkTcImports(tcConfigP, frameworkDLLs, nonFrameworkResolutions)
         }
@@ -273,8 +278,11 @@ type internal TransparentCompiler
             return tcImports, tcInfo
         }
 
-    let computeBootstrapInfoInner (projectSnapshot: FSharpProjectSnapshot) =
+    /// Bootstrap info that does not depend on contents of the files
+    let ComputeBootstrapInfoStatic (projectSnapshot: FSharpProjectSnapshot) _key =
         node {
+            use _ = Activity.start "ComputeBootstrapInfoStatic" [| Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName |]
+
             let useSimpleResolutionSwitch = "--simpleresolution"
             let commandLineArgs = projectSnapshot.OtherOptions
             let defaultFSharpBinariesDir = FSharpCheckerResultsSettings.defaultFSharpBinariesDir
@@ -455,9 +463,9 @@ type internal TransparentCompiler
 
             let tcConfigP = TcConfigProvider.Constant tcConfig
 
-#if !NO_TYPEPROVIDERS
+    #if !NO_TYPEPROVIDERS
             let importsInvalidatedByTypeProvider = Event<unit>()
-#endif
+    #endif
 
             // Check for the existence of loaded sources and prepend them to the sources list if present.
             let sourceFiles =
@@ -506,10 +514,18 @@ type internal TransparentCompiler
                     dependencyProvider,
                     loadClosureOpt,
                     basicDependencies
-#if !NO_TYPEPROVIDERS
+    #if !NO_TYPEPROVIDERS
                     ,importsInvalidatedByTypeProvider
-#endif
+    #endif
                 )
+            return sourceFiles, tcConfig, tcImports, tcGlobals, initialTcInfo, loadClosureOpt
+        }
+
+    let computeBootstrapInfoInner (projectSnapshot: FSharpProjectSnapshot) =
+        node {
+            let bootstrapStaticKey = projectSnapshot.WithoutFileVersions.Key
+
+            let! sourceFiles, tcConfig, tcImports, tcGlobals, initialTcInfo, loadClosureOpt = BootstrapInfoStaticCache.Get(bootstrapStaticKey, ComputeBootstrapInfoStatic projectSnapshot)
 
             let fileSnapshots = Map [ for f in projectSnapshot.SourceFiles -> f.FileName, f ]
 
@@ -547,6 +563,7 @@ type internal TransparentCompiler
 
     let ComputeBootstrapInfo (projectSnapshot: FSharpProjectSnapshot) _key =
         node {
+            use _ = Activity.start "ComputeBootstrapInfo" [| Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName |]
 
             // Trap and report diagnostics from creation.
             let delayedLogger = CapturingDiagnosticsLogger("IncrementalBuilderCreation")
@@ -580,6 +597,8 @@ type internal TransparentCompiler
 
     let ComputeParseFile (file: FSharpFile) bootstrapInfo _key =
         node {
+            use _ = Activity.start "ComputeParseFile" [| Activity.Tags.fileName, file.Source.FileName |> Path.GetFileName; Activity.Tags.version, file.Source.Version |]
+            
             let tcConfig = bootstrapInfo.TcConfig
 
             let diagnosticsLogger =
@@ -599,6 +618,7 @@ type internal TransparentCompiler
 
     let ComputeDependencyGraphForLastFile parsedInputs (tcConfig: TcConfig) _key =
         node {
+
             let sourceFiles: FileInProject array =
                 parsedInputs
                 |> Seq.toArray
@@ -609,6 +629,8 @@ type internal TransparentCompiler
                         ParsedInput = input
                     })
 
+            use _ = Activity.start "ComputeDependencyGraphForLastFile" [| Activity.Tags.fileName, (sourceFiles |> Array.last).FileName |]    
+            
             let filePairs = FilePairMap(sourceFiles)
 
             // TODO: we will probably want to cache and re-use larger graphs if available
@@ -624,6 +646,9 @@ type internal TransparentCompiler
         node {
             let input = parsedInput
             let fileName = input.FileName
+            
+            use _ = Activity.start "ComputeTcIntermediate" [| Activity.Tags.fileName, fileName |> Path.GetFileName |]
+            
             let tcConfig = bootstrapInfo.TcConfig
             let tcGlobals = bootstrapInfo.TcGlobals
             let tcImports = bootstrapInfo.TcImports
@@ -695,6 +720,8 @@ type internal TransparentCompiler
     // Type check everything that is needed to check given file
     let ComputeTcPrior (file: FSharpFile) (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshot) _userOpName _key =
         node {
+            
+            use _ = Activity.start "ComputeTcPrior" [| Activity.Tags.fileName, file.Source.FileName |> Path.GetFileName |]
 
             // parse required files
             let files =
@@ -779,6 +806,8 @@ type internal TransparentCompiler
 
     let ComputeParseAndCheckFileInProject (fileName: string) (projectSnapshot: FSharpProjectSnapshot) userOpName _key =
         node {
+            
+            use _ = Activity.start "ComputeParseAndCheckFileInProject" [| Activity.Tags.fileName, fileName |> Path.GetFileName |]
 
             let! bootstrapInfoOpt, creationDiags = BootstrapInfoCache.Get(projectSnapshot.Key, ComputeBootstrapInfo projectSnapshot)
 
@@ -854,6 +883,7 @@ type internal TransparentCompiler
         }
 
     interface IBackgroundCompiler with
+        member _.CacheEvent = cacheEvent.Publish
 
         member this.BeforeBackgroundFileCheck: IEvent<string * FSharpProjectOptions> =
             backgroundCompiler.BeforeBackgroundFileCheck

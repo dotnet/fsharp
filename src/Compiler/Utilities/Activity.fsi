@@ -29,6 +29,7 @@ module internal Activity =
         val length: string
         val cache: string
         val buildPhase: string
+        val version: string
 
     module Events =
         val cacheHit: string
