@@ -8204,31 +8204,15 @@ FSharp.Compiler.Syntax.SynSimplePatAlternativeIdInfo: FSharp.Compiler.Syntax.Syn
 FSharp.Compiler.Syntax.SynSimplePatAlternativeIdInfo: Int32 Tag
 FSharp.Compiler.Syntax.SynSimplePatAlternativeIdInfo: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynSimplePatAlternativeIdInfo: System.String ToString()
-FSharp.Compiler.Syntax.SynSimplePats+SimplePats: FSharp.Compiler.Text.Range get_range()
-FSharp.Compiler.Syntax.SynSimplePats+SimplePats: FSharp.Compiler.Text.Range range
-FSharp.Compiler.Syntax.SynSimplePats+SimplePats: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynSimplePat] get_pats()
-FSharp.Compiler.Syntax.SynSimplePats+SimplePats: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynSimplePat] pats
-FSharp.Compiler.Syntax.SynSimplePats+Tags: Int32 SimplePats
-FSharp.Compiler.Syntax.SynSimplePats+Tags: Int32 Typed
-FSharp.Compiler.Syntax.SynSimplePats+Typed: FSharp.Compiler.Syntax.SynSimplePats get_pats()
-FSharp.Compiler.Syntax.SynSimplePats+Typed: FSharp.Compiler.Syntax.SynSimplePats pats
-FSharp.Compiler.Syntax.SynSimplePats+Typed: FSharp.Compiler.Syntax.SynType get_targetType()
-FSharp.Compiler.Syntax.SynSimplePats+Typed: FSharp.Compiler.Syntax.SynType targetType
-FSharp.Compiler.Syntax.SynSimplePats+Typed: FSharp.Compiler.Text.Range get_range()
-FSharp.Compiler.Syntax.SynSimplePats+Typed: FSharp.Compiler.Text.Range range
-FSharp.Compiler.Syntax.SynSimplePats: Boolean IsSimplePats
-FSharp.Compiler.Syntax.SynSimplePats: Boolean IsTyped
-FSharp.Compiler.Syntax.SynSimplePats: Boolean get_IsSimplePats()
-FSharp.Compiler.Syntax.SynSimplePats: Boolean get_IsTyped()
 FSharp.Compiler.Syntax.SynSimplePats: FSharp.Compiler.Syntax.SynSimplePats NewSimplePats(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynSimplePat], FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.SynSimplePats: FSharp.Compiler.Syntax.SynSimplePats NewTyped(FSharp.Compiler.Syntax.SynSimplePats, FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.SynSimplePats: FSharp.Compiler.Syntax.SynSimplePats+SimplePats
-FSharp.Compiler.Syntax.SynSimplePats: FSharp.Compiler.Syntax.SynSimplePats+Tags
-FSharp.Compiler.Syntax.SynSimplePats: FSharp.Compiler.Syntax.SynSimplePats+Typed
 FSharp.Compiler.Syntax.SynSimplePats: FSharp.Compiler.Text.Range Range
 FSharp.Compiler.Syntax.SynSimplePats: FSharp.Compiler.Text.Range get_Range()
+FSharp.Compiler.Syntax.SynSimplePats: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynSimplePats: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynSimplePats: Int32 Tag
 FSharp.Compiler.Syntax.SynSimplePats: Int32 get_Tag()
+FSharp.Compiler.Syntax.SynSimplePats: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynSimplePat] get_pats()
+FSharp.Compiler.Syntax.SynSimplePats: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynSimplePat] pats
 FSharp.Compiler.Syntax.SynSimplePats: System.String ToString()
 FSharp.Compiler.Syntax.SynStaticOptimizationConstraint+Tags: Int32 WhenTyparIsStruct
 FSharp.Compiler.Syntax.SynStaticOptimizationConstraint+Tags: Int32 WhenTyparTyconEqualsTycon
@@ -10133,7 +10117,7 @@ FSharp.Compiler.Tokenization.FSharpLineTokenizer: FSharp.Compiler.Tokenization.F
 FSharp.Compiler.Tokenization.FSharpLineTokenizer: System.Tuple`2[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Tokenization.FSharpTokenInfo],FSharp.Compiler.Tokenization.FSharpTokenizerLexState] ScanToken(FSharp.Compiler.Tokenization.FSharpTokenizerLexState)
 FSharp.Compiler.Tokenization.FSharpSourceTokenizer: FSharp.Compiler.Tokenization.FSharpLineTokenizer CreateBufferTokenizer(Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`3[System.Char[],System.Int32,System.Int32],System.Int32])
 FSharp.Compiler.Tokenization.FSharpSourceTokenizer: FSharp.Compiler.Tokenization.FSharpLineTokenizer CreateLineTokenizer(System.String)
-FSharp.Compiler.Tokenization.FSharpSourceTokenizer: Void .ctor(Microsoft.FSharp.Collections.FSharpList`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.String])
+FSharp.Compiler.Tokenization.FSharpSourceTokenizer: Void .ctor(Microsoft.FSharp.Collections.FSharpList`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.Tokenization.FSharpToken: Boolean IsCommentTrivia
 FSharp.Compiler.Tokenization.FSharpToken: Boolean IsIdentifier
 FSharp.Compiler.Tokenization.FSharpToken: Boolean IsKeyword
@@ -11302,6 +11286,7 @@ FSharp.Compiler.Tokenization.FSharpTokenizerColorState: FSharp.Compiler.Tokeniza
 FSharp.Compiler.Tokenization.FSharpTokenizerColorState: FSharp.Compiler.Tokenization.FSharpTokenizerColorState Comment
 FSharp.Compiler.Tokenization.FSharpTokenizerColorState: FSharp.Compiler.Tokenization.FSharpTokenizerColorState EndLineThenSkip
 FSharp.Compiler.Tokenization.FSharpTokenizerColorState: FSharp.Compiler.Tokenization.FSharpTokenizerColorState EndLineThenToken
+FSharp.Compiler.Tokenization.FSharpTokenizerColorState: FSharp.Compiler.Tokenization.FSharpTokenizerColorState ExtendedInterpolatedString
 FSharp.Compiler.Tokenization.FSharpTokenizerColorState: FSharp.Compiler.Tokenization.FSharpTokenizerColorState IfDefSkip
 FSharp.Compiler.Tokenization.FSharpTokenizerColorState: FSharp.Compiler.Tokenization.FSharpTokenizerColorState InitialState
 FSharp.Compiler.Tokenization.FSharpTokenizerColorState: FSharp.Compiler.Tokenization.FSharpTokenizerColorState SingleLineComment

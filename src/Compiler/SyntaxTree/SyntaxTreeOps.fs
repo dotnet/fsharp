@@ -301,10 +301,6 @@ let rec SimplePatsOfPat synArgNameGenerator p =
     match p with
     | SynPat.FromParseError (p, _) -> SimplePatsOfPat synArgNameGenerator p
 
-    | SynPat.Typed (p', ty, m) ->
-        let p2, laterF = SimplePatsOfPat synArgNameGenerator p'
-        SynSimplePats.Typed(p2, ty, m), laterF
-
     | SynPat.Tuple (false, ps, m)
 
     | SynPat.Paren (SynPat.Tuple (false, ps, _), m) ->
@@ -583,7 +579,6 @@ module SynInfo =
     let rec InferSynArgInfoFromSimplePats x =
         match x with
         | SynSimplePats.SimplePats (ps, _) -> List.map (InferSynArgInfoFromSimplePat []) ps
-        | SynSimplePats.Typed (ps, _, _) -> InferSynArgInfoFromSimplePats ps
 
     /// Infer the syntactic argument info for one or more arguments a pattern.
     let InferSynArgInfoFromPat p =

@@ -437,8 +437,7 @@ module Structure =
 
             | SynExpr.Lambda (args = pats; body = e; range = r) ->
                 match pats with
-                | SynSimplePats.SimplePats (_, pr)
-                | SynSimplePats.Typed (_, _, pr) -> rcheck Scope.Lambda Collapse.Below r (Range.endToEnd pr r)
+                | SynSimplePats.SimplePats (_, pr) -> rcheck Scope.Lambda Collapse.Below r (Range.endToEnd pr r)
 
                 parseExpr e
 

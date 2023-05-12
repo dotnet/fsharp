@@ -560,7 +560,6 @@ module SyntaxTraversal =
                         match traverseSynSimplePats path pats with
                         | None -> traverseSynExpr synExpr
                         | x -> x
-                    | _ -> traverseSynExpr synExpr
 
                 | SynExpr.MatchLambda (_isExnMatch, _argm, synMatchClauseList, _spBind, _wholem) ->
                     synMatchClauseList
@@ -955,7 +954,6 @@ module SyntaxTraversal =
             | SynMemberDefn.ImplicitCtor (ctorArgs = simplePats) ->
                 match simplePats with
                 | SynSimplePats.SimplePats (simplePats, _) -> traverseSynSimplePats path simplePats
-                | _ -> None
             | SynMemberDefn.ImplicitInherit (synType, synExpr, _identOption, range) ->
                 [
                     dive () synType.Range (fun () ->

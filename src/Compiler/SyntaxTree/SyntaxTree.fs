@@ -873,12 +873,9 @@ type SynStaticOptimizationConstraint =
 type SynSimplePats =
     | SimplePats of pats: SynSimplePat list * range: range
 
-    | Typed of pats: SynSimplePats * targetType: SynType * range: range
-
     member x.Range =
         match x with
-        | SynSimplePats.SimplePats (range = range)
-        | SynSimplePats.Typed (range = range) -> range
+        | SynSimplePats.SimplePats (range = range) -> range
 
 [<RequireQualifiedAccess>]
 type SynArgPats =
