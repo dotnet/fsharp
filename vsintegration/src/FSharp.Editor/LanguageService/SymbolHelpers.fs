@@ -78,7 +78,7 @@ module internal SymbolHelpers =
 
             backgroundTask {
                 // TODO: this needs to be a single event with a duration
-                TelemetryReporter.ReportSingleEvent("getSymbolUsesInProjectsStarted", props)
+                TelemetryReporter.ReportSingleEvent(TelemetryEvents.GetSymbolUsesInProjectsStarted, props)
 
                 do!
                     projects
@@ -86,7 +86,7 @@ module internal SymbolHelpers =
                         Task.Run(fun () -> project.FindFSharpReferencesAsync(symbol, onFound, "getSymbolUsesInProjects", ct)))
                     |> Task.WhenAll
 
-                TelemetryReporter.ReportSingleEvent("getSymbolUsesInProjectsFinished", props)
+                TelemetryReporter.ReportSingleEvent(TelemetryEvents.GetSymbolUsesInProjectsFinished, props)
             }
 
     let findSymbolUses (symbolUse: FSharpSymbolUse) (currentDocument: Document) (checkFileResults: FSharpCheckFileResults) onFound =

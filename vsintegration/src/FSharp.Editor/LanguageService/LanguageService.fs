@@ -118,7 +118,7 @@ type internal FSharpWorkspaceServiceFactory [<System.Composition.ImportingConstr
                 | _ ->
                     let checker =
                         lazy
-                            TelemetryReporter.ReportSingleEvent("languageservicestarted", [||])
+                            TelemetryReporter.ReportSingleEvent(TelemetryEvents.LanguageServiceStarted, [||])
 
                             let editorOptions = workspace.Services.GetService<EditorOptions>()
 
@@ -163,7 +163,7 @@ type internal FSharpWorkspaceServiceFactory [<System.Composition.ImportingConstr
                                 )
 
                             TelemetryReporter.ReportSingleEvent(
-                                "languageservicestarted",
+                                TelemetryEvents.LanguageServiceStarted,
                                 [|
                                     nameof enableLiveBuffers, enableLiveBuffers;
                                     nameof useSyntaxTreeCache, useSyntaxTreeCache;

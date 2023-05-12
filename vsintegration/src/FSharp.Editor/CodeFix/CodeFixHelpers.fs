@@ -33,7 +33,7 @@ module internal CodeFixHelpers =
         let props: (string * obj) array =
             Array.concat [additionalProps; defaultProps]
 
-        TelemetryReporter.ReportSingleEvent ("codefixactivated", props)
+        TelemetryReporter.ReportSingleEvent (TelemetryEvents.CodefixActivated, props)
 
     let createFixAllProvider name getChanges =
         FixAllProvider.Create(fun fixAllCtx doc allDiagnostics ->
