@@ -680,6 +680,14 @@ type ProjectWorkflowBuilder
                 return project
             })
 
+    [<CustomOperation "withChecker">]
+    member this.WithChecker(workflow: Async<WorkflowContext>, f) =
+        async {
+            let! ctx = workflow
+            f checker
+            return ctx
+        }
+
     /// Change contents of given file using `processFile` function.
     /// Does not save the file to disk.
     [<CustomOperation "updateFile">]
@@ -737,10 +745,11 @@ type ProjectWorkflowBuilder
     [<CustomOperation "checkFile">]
     member this.CheckFile(workflow: Async<WorkflowContext>, fileId: string, processResults) =
         async {
+            let! ctx = workflow
+
             use _ =
                 Activity.start "ProjectWorkflowBuilder.CheckFile" [ Activity.Tags.project, initialProject.Name; "fileId", fileId ]
 
-            let! ctx = workflow
             let! results = checkFile fileId ctx.Project checker
 
             let oldSignature = ctx.Signatures[fileId]
@@ -753,10 +762,10 @@ type ProjectWorkflowBuilder
 
     member this.CheckFile(workflow: Async<WorkflowContext>, fileId: string, processResults) =
         async {
+            let! ctx = workflow
             use _ =
                 Activity.start "ProjectWorkflowBuilder.CheckFile" [ Activity.Tags.project, initialProject.Name; "fileId", fileId ]
 
-            let! ctx = workflow
             let! results = checkFile fileId ctx.Project checker
             let typeCheckResults = getTypeCheckResult results
 
