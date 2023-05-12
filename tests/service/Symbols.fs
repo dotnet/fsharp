@@ -137,11 +137,11 @@ extern int AccessibleChildren(int* x)
             SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                 SynModuleDecl.Let(false, [ SynBinding(headPat =
                     SynPat.LongIdent(argPats = SynArgPats.Pats [
-                        SynPat.Tuple(_, [
+                        SynPat.Tuple(elementPats = [
                             SynPat.Attrib(pat = SynPat.Typed(targetType = SynType.App(typeName = SynType.LongIdent(
                                 SynLongIdent([nativeptrIdent], [], [Some (IdentTrivia.OriginalNotation "*")])
                                 ))))
-                        ], _)
+                        ])
                     ])) ], _)
                 ])
             ])) ->
@@ -161,11 +161,11 @@ extern int AccessibleChildren(obj& x)
             SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                 SynModuleDecl.Let(false, [ SynBinding(headPat =
                     SynPat.LongIdent(argPats = SynArgPats.Pats [
-                        SynPat.Tuple(_, [
+                        SynPat.Tuple(elementPats = [
                             SynPat.Attrib(pat = SynPat.Typed(targetType = SynType.App(typeName = SynType.LongIdent(
                                 SynLongIdent([byrefIdent], [], [Some (IdentTrivia.OriginalNotation "&")])
                                 ))))
-                        ], _)
+                        ])
                     ])) ], _)
                 ])
             ])) ->
@@ -185,11 +185,11 @@ extern int AccessibleChildren(void* x)
             SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                 SynModuleDecl.Let(false, [ SynBinding(headPat =
                     SynPat.LongIdent(argPats = SynArgPats.Pats [
-                        SynPat.Tuple(_, [
+                        SynPat.Tuple(elementPats = [
                             SynPat.Attrib(pat = SynPat.Typed(targetType = SynType.App(typeName = SynType.LongIdent(
                                 SynLongIdent([nativeintIdent], [], [Some (IdentTrivia.OriginalNotation "void*")])
                                 ))))
-                        ], _)
+                        ])
                     ])) ], _)
                 ])
             ])) ->
