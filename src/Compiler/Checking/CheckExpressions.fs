@@ -7403,7 +7403,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
             error(Error(errorInfo, mWholeExpr))
 
         if isFSharpObjModelTy g overallTy then errorR(Error(FSComp.SR.tcTypeIsNotARecordTypeNeedConstructor(), mWholeExpr))
-        elif not (isRecdTy g overallTy) then errorR(Error(FSComp.SR.tcTypeIsNotARecordType(), mWholeExpr))
+        elif not (isRecdTy g overallTy || fldsList.IsEmpty) then errorR(Error(FSComp.SR.tcTypeIsNotARecordType(), mWholeExpr))
 
     let superInitExprOpt , tpenv =
         match inherits, GetSuperTypeOfType g cenv.amap mWholeExpr overallTy with
