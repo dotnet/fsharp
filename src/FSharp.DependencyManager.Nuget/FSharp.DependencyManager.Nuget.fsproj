@@ -10,6 +10,11 @@
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
+
+    <!--  Add reference assemblies to the nuget package -->
+    <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
+    <ProduceReferenceAssemblyInOutDir>true</ProduceReferenceAssemblyInOutDir>
+    <AddReferenceAssembliesToNugetPackage>true</AddReferenceAssembliesToNugetPackage>
   </PropertyGroup>
 
   <!--  The FSharp.DependencyManager.Nuget dll does not provide a referencable public interface although it's used for testing -->

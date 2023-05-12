@@ -152,4 +152,17 @@
     </PropertyGroup>
   </Target>
 
+  <!-- https://learn.microsoft.com/en-us/nuget/create-packages/select-assemblies-referenced-by-projects#packagereference-support -->
+  <PropertyGroup Condition="'$(AddReferenceAssembliesToNugetPackage)' == 'true'">
+    <NoWarn>$(NoWarn),NU5131</NoWarn>
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);AddRefAssemblyToPackage</TargetsForTfmSpecificContentInPackage>
+  </PropertyGroup>
+  <Target Name="AddRefAssemblyToPackage">
+    <!-- Add reference assembly and XML documentation to 'ref/'. -->
+    <ItemGroup Condition=" Exists('$(BaseOutputPath)$(Configuration)\$(TargetFramework)\ref\$(AssemblyName).dll') ">
+      <TfmSpecificPackageFile Include="$(BaseOutputPath)$(Configuration)\$(TargetFramework)\ref\$(AssemblyName).dll" PackagePath="ref/$(TargetFramework)" />
+      <TfmSpecificPackageFile Include="$(BaseOutputPath)$(Configuration)\$(TargetFramework)\$(AssemblyName).xml" PackagePath="ref/$(TargetFramework)" />
+    </ItemGroup>
+  </Target>
+
 </Project>

@@ -19,6 +19,7 @@
     <files>
         $CommonFileElements$
 
+        <!-- Implementation -->
         <file src="FSharp.Compiler.Service\$Configuration$\netstandard2.0\FSharp.Compiler.Service.dll"                              target="lib\netstandard2.0" />
         <file src="FSharp.Compiler.Service\$Configuration$\netstandard2.0\FSharp.Compiler.Service.xml"                              target="lib\netstandard2.0" />
 
@@ -26,6 +27,13 @@
         <file src="FSharp.DependencyManager.Nuget\$Configuration$\netstandard2.0\FSharp.DependencyManager.Nuget.xml"                target="lib\netstandard2.0" />
 
         <file src="FSharp.Compiler.Service\$Configuration$\netstandard2.0\default.win32manifest"                                    target="lib\netstandard2.0" />
+
+        <!-- reference assemblies -->
+        <file src="FSharp.Compiler.Service\$Configuration$\netstandard2.0\ref\FSharp.Compiler.Service.dll"                          target="ref\netstandard2.0" />
+        <file src="FSharp.Compiler.Service\$Configuration$\netstandard2.0\FSharp.Compiler.Service.xml"                              target="ref\netstandard2.0" />
+
+        <file src="FSharp.DependencyManager.Nuget\$Configuration$\netstandard2.0\ref\FSharp.DependencyManager.Nuget.dll"            target="ref\netstandard2.0" />
+        <file src="FSharp.DependencyManager.Nuget\$Configuration$\netstandard2.0\FSharp.DependencyManager.Nuget.xml"                target="ref\netstandard2.0" />
 
 
         <!-- resources -->
