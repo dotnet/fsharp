@@ -1019,8 +1019,6 @@ type SynStaticOptimizationConstraint =
 type SynSimplePats =
     | SimplePats of pats: SynSimplePat list * range: range
 
-    | Typed of pats: SynSimplePats * targetType: SynType * range: range
-
     member Range: range
 
 /// Represents a syntax tree for arguments patterns

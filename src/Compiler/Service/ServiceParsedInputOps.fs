@@ -1713,9 +1713,6 @@ module ParsedInput =
         and walkSimplePats spats =
             match spats with
             | SynSimplePats.SimplePats (pats, _) -> List.iter walkSimplePat pats
-            | SynSimplePats.Typed (pats, ty, _) ->
-                walkSimplePats pats
-                walkType ty
 
         and walkExpr expr =
             match expr with
