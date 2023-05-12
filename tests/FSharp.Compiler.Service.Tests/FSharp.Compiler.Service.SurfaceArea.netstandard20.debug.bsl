@@ -8206,7 +8206,7 @@ FSharp.Compiler.Syntax.SynSimplePatAlternativeIdInfo: FSharp.Compiler.Syntax.Syn
 FSharp.Compiler.Syntax.SynSimplePatAlternativeIdInfo: Int32 Tag
 FSharp.Compiler.Syntax.SynSimplePatAlternativeIdInfo: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynSimplePatAlternativeIdInfo: System.String ToString()
-FSharp.Compiler.Syntax.SynSimplePats: FSharp.Compiler.Syntax.SynSimplePats NewSimplePats(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynSimplePat], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynSimplePats: FSharp.Compiler.Syntax.SynSimplePats NewSimplePats(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynSimplePat], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynSimplePats: FSharp.Compiler.Text.Range Range
 FSharp.Compiler.Syntax.SynSimplePats: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.SynSimplePats: FSharp.Compiler.Text.Range get_range()
@@ -8215,6 +8215,8 @@ FSharp.Compiler.Syntax.SynSimplePats: Int32 Tag
 FSharp.Compiler.Syntax.SynSimplePats: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynSimplePats: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynSimplePat] get_pats()
 FSharp.Compiler.Syntax.SynSimplePats: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynSimplePat] pats
+FSharp.Compiler.Syntax.SynSimplePats: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range] commaRanges
+FSharp.Compiler.Syntax.SynSimplePats: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range] get_commaRanges()
 FSharp.Compiler.Syntax.SynSimplePats: System.String ToString()
 FSharp.Compiler.Syntax.SynStaticOptimizationConstraint+Tags: Int32 WhenTyparIsStruct
 FSharp.Compiler.Syntax.SynStaticOptimizationConstraint+Tags: Int32 WhenTyparTyconEqualsTycon
