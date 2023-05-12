@@ -1812,7 +1812,8 @@ let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ((Ident list * Ident) * '
                 let fldPath, fldId = fld
                 let frefSet = ResolveField cenv.tcSink cenv.nameResolver env.eNameResEnv ad ty fldPath fldId allFields
                 Some(fld, frefSet, fldExpr)
-            with _ ->
+            with e ->
+                errorR e 
                 None
         )
 
@@ -7420,17 +7421,17 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
             errorR(InternalError("Unexpected failure in getting super type", mWholeExpr))
             None, tpenv
 
-    if fldsList.IsEmpty then
-        error(Error(FSComp.SR.tcRecordFieldInconsistentTypes(), mWholeExpr))
+    if fldsList.IsEmpty && isTyparTy g overallTy then
+        mkDefault (mWholeExpr, overallTy), tpenv
+    else
+        let expr, tpenv = TcRecordConstruction cenv overallTy env tpenv withExprInfoOpt overallTy fldsList mWholeExpr
 
-    let expr, tpenv = TcRecordConstruction cenv overallTy env tpenv withExprInfoOpt overallTy fldsList mWholeExpr
-
-    let expr =
-        match superInitExprOpt  with
-        | _ when isStructTy g overallTy -> expr
-        | Some superInitExpr  -> mkCompGenSequential mWholeExpr superInitExpr  expr
-        | None -> expr
-    expr, tpenv
+        let expr =
+            match superInitExprOpt  with
+            | _ when isStructTy g overallTy -> expr
+            | Some superInitExpr  -> mkCompGenSequential mWholeExpr superInitExpr  expr
+            | None -> expr
+        expr, tpenv
 
 
 // Check '{| .... |}'
