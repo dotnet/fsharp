@@ -3,25 +3,48 @@
 namespace Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
 open Microsoft.VisualStudio.Telemetry
+open System
+open System.Diagnostics
 
+#nowarn "3220" // Ignore warning about direct tuple items access.
+
+[<RequireQualifiedAccess>]
 module TelemetryReporter =
+    let [<Literal>] eventPrefix = "dotnet/fsharp/"
+    let [<Literal>] propPrefix = "dotnet.fsharp."
 
-    let private eventPrefix = "dotnet/fsharp/"
-    let private propPrefix = "dotnet.fsharp."
-
-    let private getFullEventName name = eventPrefix + name
-    let private getFullPropName name = propPrefix + name
-
-    let private createEvent name (props: (string * obj) list) =
-        let event = TelemetryEvent(getFullEventName name)
-
-        props
-        |> List.map (fun (k, v) -> getFullPropName k, v)
-        |> List.iter event.Properties.Add
+    // This should always be inlined.
+    let inline createEvent name (props: (string * obj) array) =
+        let eventName = eventPrefix + name
+        let event = TelemetryEvent(eventName)
+        
+        // TODO: need to carefully review the code, since it will be a hot path when we are sending telemetry
+        // This particular approach is here to avoid alocations for properties, which is likely the case if we destructing them.
+        for prop in props do
+            event.Properties.Add(propPrefix + prop.Item1, prop.Item2)
 
         event
 
-    let reportEvent name props =
+[<Struct; NoComparison; NoEquality>]
+type TelemetryReporter private (name: string, props: (string * obj) array, stopwatch: Stopwatch) = 
+
+    static member ReportSingleEvent (name, props) =
         let session = TelemetryService.DefaultSession
-        let event = createEvent name props
+        let event = TelemetryReporter.createEvent name props
         session.PostEvent event
+
+    // A naïve implementation using stopwatch and returning an IDisposable
+    // TODO: needs a careful review, since it will be a hot path when we are sending telemetry
+    static member ReportSingleEventWithDuration (name, props) : IDisposable =
+        let stopwatch = Stopwatch()
+        stopwatch.Start()
+        new TelemetryReporter(name, props, stopwatch)
+
+    interface IDisposable with
+        member _.Dispose() =
+            let session = TelemetryService.DefaultSession
+            stopwatch.Stop()
+            let event = TelemetryReporter.createEvent name (Array.concat [props; [| "vs_event_duration_ms", stopwatch.ElapsedMilliseconds |]])
+            session.PostEvent event 
+
+    

@@ -17,21 +17,23 @@ open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
 [<RequireQualifiedAccess>]
 module internal CodeFixHelpers =
-    let private reportCodeFixTelemetry (diagnostics: ImmutableArray<Diagnostic>) (doc: Document) (staticName: string) (additionalProps) =
+    let private reportCodeFixTelemetry (diagnostics: ImmutableArray<Diagnostic>) (doc: Document) (staticName: string) (additionalProps: (string * obj) array) =
         let ids =
             diagnostics |> Seq.map (fun d -> d.Id) |> Seq.distinct |> String.concat ","
 
-        let props: (string * obj) list =
-            additionalProps
-            @ [
-                "name", staticName
-                "ids", ids
-                "context.document.project.id", doc.Project.Id.Id.ToString()
-                "context.document.id", doc.Id.Id.ToString()
+        let defaultProps: (string * obj) array =
+            [|
+                "name", staticName;
+                "ids", ids;
+                "context.document.project.id", doc.Project.Id.Id.ToString();
+                "context.document.id", doc.Id.Id.ToString();
                 "context.diagnostics.count", diagnostics.Length
-            ]
+            |]
 
-        TelemetryReporter.reportEvent "codefixactivated" props
+        let props: (string * obj) array =
+            Array.concat [additionalProps; defaultProps]
+
+        TelemetryReporter.ReportSingleEvent ("codefixactivated", props)
 
     let createFixAllProvider name getChanges =
         FixAllProvider.Create(fun fixAllCtx doc allDiagnostics ->
@@ -46,7 +48,7 @@ module internal CodeFixHelpers =
                         allDiagnostics
                         doc
                         name
-                        [ "scope", fixAllCtx.Scope.ToString(); "elapsedMs", sw.ElapsedMilliseconds ]
+                        [| "scope", fixAllCtx.Scope.ToString(); "elapsedMs", sw.ElapsedMilliseconds |]
 
                 return doc
             })
@@ -58,7 +60,7 @@ module internal CodeFixHelpers =
                 backgroundTask {
                     let! sourceText = context.Document.GetTextAsync(cancellationToken)
                     let doc = context.Document.WithText(sourceText.WithChanges(changes))
-                    reportCodeFixTelemetry context.Diagnostics context.Document name []
+                    reportCodeFixTelemetry context.Diagnostics context.Document name [||]
                     return doc
                 }),
             name

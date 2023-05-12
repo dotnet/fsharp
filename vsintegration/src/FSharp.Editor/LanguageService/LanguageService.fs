@@ -118,7 +118,7 @@ type internal FSharpWorkspaceServiceFactory [<System.Composition.ImportingConstr
                 | _ ->
                     let checker =
                         lazy
-                            TelemetryReporter.reportEvent "languageservicestarted" []
+                            TelemetryReporter.ReportSingleEvent("languageservicestarted", [||])
 
                             let editorOptions = workspace.Services.GetService<EditorOptions>()
 
@@ -162,18 +162,18 @@ type internal FSharpWorkspaceServiceFactory [<System.Composition.ImportingConstr
                                     useSyntaxTreeCache = useSyntaxTreeCache
                                 )
 
-                            TelemetryReporter.reportEvent
-                                "languageservicestarted"
-                                [
-                                    nameof enableLiveBuffers, enableLiveBuffers
-                                    nameof useSyntaxTreeCache, useSyntaxTreeCache
-                                    nameof enableParallelReferenceResolution, enableParallelReferenceResolution
-                                    nameof enableFastFindReferences, enableFastFindReferences
-                                    nameof isInlineParameterNameHintsEnabled, isInlineParameterNameHintsEnabled
-                                    nameof isInlineTypeHintsEnabled, isInlineTypeHintsEnabled
-                                    nameof isInlineReturnTypeHintsEnabled, isInlineReturnTypeHintsEnabled
+                            TelemetryReporter.ReportSingleEvent(
+                                "languageservicestarted",
+                                [|
+                                    nameof enableLiveBuffers, enableLiveBuffers;
+                                    nameof useSyntaxTreeCache, useSyntaxTreeCache;
+                                    nameof enableParallelReferenceResolution, enableParallelReferenceResolution;
+                                    nameof enableFastFindReferences, enableFastFindReferences;
+                                    nameof isInlineParameterNameHintsEnabled, isInlineParameterNameHintsEnabled;
+                                    nameof isInlineTypeHintsEnabled, isInlineTypeHintsEnabled;
+                                    nameof isInlineReturnTypeHintsEnabled, isInlineReturnTypeHintsEnabled;
                                     nameof enablePartialTypeChecking, enablePartialTypeChecking
-                                ]
+                                |])
 
                             if enableLiveBuffers then
                                 workspace.WorkspaceChanged.Add(fun args ->
