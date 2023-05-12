@@ -588,7 +588,6 @@ let visitSynSimplePat (pat: SynSimplePat) =
 let visitSynSimplePats (pats: SynSimplePats) =
     match pats with
     | SynSimplePats.SimplePats (pats = pats) -> List.collect visitSynSimplePat pats
-    | SynSimplePats.Typed (pats, t, _) -> [ yield! visitSynSimplePats pats; yield! visitSynType t ]
 
 let visitSynMatchClause (SynMatchClause (pat = pat; whenExpr = whenExpr; resultExpr = resultExpr)) =
     [
