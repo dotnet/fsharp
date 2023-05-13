@@ -258,17 +258,17 @@ let morphILFieldDefs f (fdefs: ILFieldDefs) =
 
 let morphILTypeDefs isInKnownSet f (tdefs: ILTypeDefs) =
     let filtered (tdefs: ILTypeDef array) =
-        let seen = new HashSet<string>()
+        // The key ensures that items in the Known Set are not duplicated everything else may be.
+        let mkKey (i, (td: ILTypeDef)) =
+            if isInKnownSet td.Name then
+                struct (0, td.Name)
+            else
+                struct (i + 1, td.Name)
 
-        [|
-            for td in tdefs do
-                match isInKnownSet td.Name with
-                | true when not (seen.Contains td.Name) ->
-                    seen.Add td.Name |> ignore
-                    yield td
-                | true -> ()
-                | false -> yield td
-        |]
+        tdefs
+        |> Array.indexed
+        |> Array.distinctBy mkKey
+        |> Array.map (fun (_, td) -> td)
 
     mkILTypeDefsFromArray (Array.map f (filtered (tdefs.AsArray())))
 
