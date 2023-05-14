@@ -31,7 +31,7 @@ ImplFile
                                          (3,18--3,21)), (3,15--3,21),
                                       { ArrowRange = (3,15--3,17) }),
                                    (3,10--3,21), { ArrowRange = (3,12--3,14) }),
-                                (3,7--3,23))], (3,6--3,23)), None,
+                                (3,7--3,23))], [], (3,6--3,23)), None,
                          PreXmlDoc ((3,6), FSharp.Compiler.Xml.XmlDocCollector),
                          (3,5--3,6), { AsKeyword = None })], (3,26--3,35)), [],
                   Some
@@ -54,7 +54,7 @@ ImplFile
                                         (3,18--3,21)), (3,15--3,21),
                                      { ArrowRange = (3,15--3,17) }),
                                   (3,10--3,21), { ArrowRange = (3,12--3,14) }),
-                               (3,7--3,23))], (3,6--3,23)), None,
+                               (3,7--3,23))], [], (3,6--3,23)), None,
                         PreXmlDoc ((3,6), FSharp.Compiler.Xml.XmlDocCollector),
                         (3,5--3,6), { AsKeyword = None })), (3,5--3,35),
                   { LeadingKeyword = Type (3,0--3,4)

@@ -14,7 +14,8 @@ ImplFile
                   LongIdent
                     (SynLongIdent ([Meh], [], [None]), None,
                      Some (SynValTyparDecls (None, false)),
-                     Pats [Tuple (false, [], (2,15--2,16))], None, (2,12--2,15)),
+                     Pats [Tuple (false, [], [], (2,15--2,16))], None,
+                     (2,12--2,15)),
                   Some
                     (SynBindingReturnInfo
                        (App
