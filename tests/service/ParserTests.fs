@@ -131,7 +131,7 @@ match () with
     match getSingleExprInModule parseResults with
     | SynExpr.Match (clauses=[ SynMatchClause (pat=pat) ]) ->
         match pat with
-        | SynPat.Paren(SynPat.Or(SynPat.Tuple(_, [SynPat.Named _; SynPat.Wild _], _), SynPat.Named _, _, _), _) -> ()
+        | SynPat.Paren(SynPat.Or(SynPat.Tuple(elementPats = [SynPat.Named _; SynPat.Wild _]), SynPat.Named _, _, _), _) -> ()
         | _ -> failwith "Unexpected pattern"
     | _ -> failwith "Unexpected tree"
 
@@ -183,7 +183,7 @@ let f (x,
     match getSingleDeclInModule parseResults with
     | SynModuleDecl.Let (_, [ SynBinding (headPat = SynPat.LongIdent (argPats = SynArgPats.Pats [ pat ])) ], _) ->
         match pat with
-        | SynPat.FromParseError (SynPat.Paren (SynPat.Tuple(_, [SynPat.Named _; SynPat.Wild _], _), _), _) -> ()
+        | SynPat.FromParseError (SynPat.Paren (SynPat.Tuple(elementPats = [SynPat.Named _; SynPat.Wild _]), _), _) -> ()
         | _ -> failwith "Unexpected tree"
     | _ -> failwith "Unexpected tree"
 
@@ -343,9 +343,9 @@ let ,,, = ()
 """
     let pats = getSingleModuleMemberDecls parseResults |> List.map getLetDeclHeadPattern
     match pats with
-    | [ SynPat.Tuple(_, [SynPat.Wild _ as p11; SynPat.Wild _ as p12], _)
-        SynPat.Tuple(_, [SynPat.Wild _ as p21; SynPat.Wild _ as p22; SynPat.Wild _ as p23], _)
-        SynPat.Tuple(_, [SynPat.Wild _ as p31; SynPat.Wild _ as p32; SynPat.Wild _ as p33; SynPat.Wild _ as p34], _) ] ->
+    | [ SynPat.Tuple(elementPats = [SynPat.Wild _ as p11; SynPat.Wild _ as p12])
+        SynPat.Tuple(elementPats = [SynPat.Wild _ as p21; SynPat.Wild _ as p22; SynPat.Wild _ as p23])
+        SynPat.Tuple(elementPats = [SynPat.Wild _ as p31; SynPat.Wild _ as p32; SynPat.Wild _ as p33; SynPat.Wild _ as p34]) ] ->
             [ p11; p12; p21; p22; p23; p31; p32; p33; p34 ] |> checkNodeOrder
             [ p11; p12; p21; p22; p23; p31; p32; p33; p34 ] |> List.iter assertIsEmptyRange
 
@@ -360,9 +360,9 @@ let 1,1 = ()
 """
     let pats = getSingleModuleMemberDecls parseResults |> List.map getLetDeclHeadPattern
     match pats with
-    | [ SynPat.Tuple(_, [SynPat.Const _ as p11; SynPat.Wild _ as p12], _)
-        SynPat.Tuple(_, [SynPat.Wild _ as p21; SynPat.Const _ as p22], _)
-        SynPat.Tuple(_, [SynPat.Const _ as p31; SynPat.Const _ as p32], _) ] ->
+    | [ SynPat.Tuple(elementPats = [SynPat.Const _ as p11; SynPat.Wild _ as p12])
+        SynPat.Tuple(elementPats = [SynPat.Wild _ as p21; SynPat.Const _ as p22])
+        SynPat.Tuple(elementPats = [SynPat.Const _ as p31; SynPat.Const _ as p32]) ] ->
             [ p11; p12; p21; p22; p31; p32 ] |> checkNodeOrder
             [ p12; p21 ] |> List.iter assertIsEmptyRange
 
@@ -383,15 +383,15 @@ let 1,1,1 = ()
 """
     let pats = getSingleModuleMemberDecls parseResults |> List.map getLetDeclHeadPattern
     match pats with
-    | [ SynPat.Tuple(_, [SynPat.Const _ as p11; SynPat.Wild _ as p12; SynPat.Wild _ as p13], _)
-        SynPat.Tuple(_, [SynPat.Wild _ as p21; SynPat.Const _ as p22; SynPat.Wild _ as p23], _)
-        SynPat.Tuple(_, [SynPat.Wild _ as p31; SynPat.Wild _ as p32; SynPat.Const _ as p33], _)
+    | [ SynPat.Tuple(elementPats = [SynPat.Const _ as p11; SynPat.Wild _ as p12; SynPat.Wild _ as p13])
+        SynPat.Tuple(elementPats = [SynPat.Wild _ as p21; SynPat.Const _ as p22; SynPat.Wild _ as p23])
+        SynPat.Tuple(elementPats = [SynPat.Wild _ as p31; SynPat.Wild _ as p32; SynPat.Const _ as p33])
 
-        SynPat.Tuple(_, [SynPat.Const _ as p41; SynPat.Const _ as p42; SynPat.Wild _ as p43], _)
-        SynPat.Tuple(_, [SynPat.Wild _ as p51; SynPat.Const _ as p52; SynPat.Const _ as p53], _)
-        SynPat.Tuple(_, [SynPat.Const _ as p61; SynPat.Wild _ as p62; SynPat.Const _ as p63], _)
+        SynPat.Tuple(elementPats = [SynPat.Const _ as p41; SynPat.Const _ as p42; SynPat.Wild _ as p43])
+        SynPat.Tuple(elementPats = [SynPat.Wild _ as p51; SynPat.Const _ as p52; SynPat.Const _ as p53])
+        SynPat.Tuple(elementPats = [SynPat.Const _ as p61; SynPat.Wild _ as p62; SynPat.Const _ as p63])
         
-        SynPat.Tuple(_, [SynPat.Const _ as p71; SynPat.Const _ as p72; SynPat.Const _ as p73], _) ] ->
+        SynPat.Tuple(elementPats = [SynPat.Const _ as p71; SynPat.Const _ as p72; SynPat.Const _ as p73]) ] ->
             [ p11; p12; p13; p21; p22; p23; p31; p32; p33
               p41; p42; p43; p51; p52; p53; p61; p62; p63
               p71; p72; p73 ] |> checkNodeOrder
@@ -413,9 +413,9 @@ let (,,,) = ()
 """
     let pats = getSingleModuleMemberDecls parseResults |> List.map (getLetDeclHeadPattern >> getParenPatInnerPattern)
     match pats with
-    | [ SynPat.Tuple(_, [SynPat.Wild _ as p11; SynPat.Wild _ as p12], _)
-        SynPat.Tuple(_, [SynPat.Wild _ as p21; SynPat.Wild _ as p22; SynPat.Wild _ as p23], _)
-        SynPat.Tuple(_, [SynPat.Wild _ as p31; SynPat.Wild _ as p32; SynPat.Wild _ as p33; SynPat.Wild _ as p34], _) ] ->
+    | [ SynPat.Tuple(elementPats = [SynPat.Wild _ as p11; SynPat.Wild _ as p12])
+        SynPat.Tuple(elementPats = [SynPat.Wild _ as p21; SynPat.Wild _ as p22; SynPat.Wild _ as p23])
+        SynPat.Tuple(elementPats = [SynPat.Wild _ as p31; SynPat.Wild _ as p32; SynPat.Wild _ as p33; SynPat.Wild _ as p34]) ] ->
             [ p11; p12; p21; p22; p23; p31; p32; p33; p34 ] |> checkNodeOrder
             [ p11; p12; p21; p22; p23; p31; p32; p33; p34 ] |> List.iter assertIsEmptyRange
 
@@ -430,9 +430,9 @@ let (1,1) = ()
 """
     let pats = getSingleModuleMemberDecls parseResults |> List.map (getLetDeclHeadPattern >> getParenPatInnerPattern)
     match pats with
-    | [ SynPat.Tuple(_, [SynPat.Const _ as p11; SynPat.Wild _ as p12], _)
-        SynPat.Tuple(_, [SynPat.Wild _ as p21; SynPat.Const _ as p22], _)
-        SynPat.Tuple(_, [SynPat.Const _ as p31; SynPat.Const _ as p32], _) ] ->
+    | [ SynPat.Tuple(elementPats = [SynPat.Const _ as p11; SynPat.Wild _ as p12])
+        SynPat.Tuple(elementPats = [SynPat.Wild _ as p21; SynPat.Const _ as p22])
+        SynPat.Tuple(elementPats = [SynPat.Const _ as p31; SynPat.Const _ as p32]) ] ->
             [ p11; p12; p21; p22; p31; p32 ] |> checkNodeOrder
             [ p12; p21 ] |> List.iter assertIsEmptyRange
 
@@ -453,15 +453,15 @@ let (1,1,1) = ()
 """
     let pats = getSingleModuleMemberDecls parseResults |> List.map (getLetDeclHeadPattern >> getParenPatInnerPattern)
     match pats with
-    | [ SynPat.Tuple(_, [SynPat.Const _ as p11; SynPat.Wild _ as p12; SynPat.Wild _ as p13], _)
-        SynPat.Tuple(_, [SynPat.Wild _ as p21; SynPat.Const _ as p22; SynPat.Wild _ as p23], _)
-        SynPat.Tuple(_, [SynPat.Wild _ as p31; SynPat.Wild _ as p32; SynPat.Const _ as p33], _)
+    | [ SynPat.Tuple(elementPats = [SynPat.Const _ as p11; SynPat.Wild _ as p12; SynPat.Wild _ as p13])
+        SynPat.Tuple(elementPats = [SynPat.Wild _ as p21; SynPat.Const _ as p22; SynPat.Wild _ as p23])
+        SynPat.Tuple(elementPats = [SynPat.Wild _ as p31; SynPat.Wild _ as p32; SynPat.Const _ as p33])
 
-        SynPat.Tuple(_, [SynPat.Const _ as p41; SynPat.Const _ as p42; SynPat.Wild _ as p43], _)
-        SynPat.Tuple(_, [SynPat.Wild _ as p51; SynPat.Const _ as p52; SynPat.Const _ as p53], _)
-        SynPat.Tuple(_, [SynPat.Const _ as p61; SynPat.Wild _ as p62; SynPat.Const _ as p63], _)
+        SynPat.Tuple(elementPats = [SynPat.Const _ as p41; SynPat.Const _ as p42; SynPat.Wild _ as p43])
+        SynPat.Tuple(elementPats = [SynPat.Wild _ as p51; SynPat.Const _ as p52; SynPat.Const _ as p53])
+        SynPat.Tuple(elementPats = [SynPat.Const _ as p61; SynPat.Wild _ as p62; SynPat.Const _ as p63])
         
-        SynPat.Tuple(_, [SynPat.Const _ as p71; SynPat.Const _ as p72; SynPat.Const _ as p73], _) ] ->
+        SynPat.Tuple(elementPats = [SynPat.Const _ as p71; SynPat.Const _ as p72; SynPat.Const _ as p73]) ] ->
             [ p11; p12; p13; p21; p22; p23; p31; p32; p33
               p41; p42; p43; p51; p52; p53; p61; p62; p63
               p71; p72; p73 ] |> checkNodeOrder

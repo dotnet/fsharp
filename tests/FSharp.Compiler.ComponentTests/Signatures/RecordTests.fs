@@ -79,7 +79,7 @@ namespace MyApp.Types
 
     new: unit -> MyAttribute
 
-    member SomeValue: SomeEnum
+    member SomeValue: SomeEnum with get, set
 
   type SomeTypeName =
     {
