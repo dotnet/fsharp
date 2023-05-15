@@ -35,10 +35,10 @@ let ``Basics``() =
 
     Assert.Equal<int array>(expected, result)
 
-    let groups = eventLog |> Seq.groupBy (fun e -> e.Key) |> Seq.toList
+    let groups = eventLog |> Seq.groupBy snd |> Seq.toList
     Assert.Equal(3, groups.Length)
     for key, events in groups do
-        Assert.Equal<JobEvent<_> array>([| Started key; Finished key |], events |> Seq.toArray)
+        Assert.Equal<(JobEventType * int) array>([| Started, key; Finished, key |], events |> Seq.toArray)
 
 [<Fact>]
 let ``We can cancel a job`` () =
@@ -67,20 +67,20 @@ let ``We can cancel a job`` () =
 
     resetEvent.WaitOne() |> ignore
 
-    Assert.Equal<JobEvent<_> array>([| Started key |], eventLog |> Seq.toArray )
+    Assert.Equal<(JobEventType * int) array>([| Started, key |], eventLog |> Seq.toArray )
 
     cts1.Cancel()
     cts2.Cancel()
 
     Thread.Sleep 10
 
-    Assert.Equal<JobEvent<_> array>([| Started key |], eventLog |> Seq.toArray )
+    Assert.Equal<(JobEventType * int) array>([| Started, key |], eventLog |> Seq.toArray )
 
     cts3.Cancel()
 
     Thread.Sleep 100
 
-    Assert.Equal<JobEvent<_> array>([| Started key; Canceled key |], eventLog |> Seq.toArray )
+    Assert.Equal<(JobEventType * int) array>([| Started, key; Canceled, key |], eventLog |> Seq.toArray )
 
     try
         Task.WaitAll(_task1, _task2, _task3)
@@ -117,5 +117,5 @@ let ``Job keeps running even if first requestor cancels`` () =
     Assert.Equal(2, result)
 
     Thread.Sleep 1 // Wait for event log to be updated
-    Assert.Equal<JobEvent<_> array>([| Started key; Finished key |], eventLog |> Seq.toArray )
+    Assert.Equal<(JobEventType * int) array>([| Started, key; Finished, key |], eventLog |> Seq.toArray )
 

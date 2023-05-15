@@ -3,7 +3,6 @@ namespace Internal.Utilities.Collections
 open FSharp.Compiler.BuildGraph
 open System.Threading
 open System.Collections.Generic
-open FSharp.Compiler.Diagnostics
 
 type internal Action<'TKey, 'TValue> =
     | GetOrCompute of ('TKey -> NodeCode<'TValue>) * CancellationToken
@@ -16,22 +15,14 @@ type internal Job<'TValue> =
     | Running of NodeCode<'TValue> * CancellationTokenSource
     | Completed of NodeCode<'TValue>
 
-type internal JobEvent<'TKey> =
-    | Started of 'TKey
-    | Finished of 'TKey
-    | Canceled of 'TKey
+type internal JobEventType =
+    | Started
+    | Finished
+    | Canceled
 
-    member this.Key =
-        match this with
-        | Started key -> key
-        | Finished key -> key
-        | Canceled key -> key
-
-type internal AsyncMemoize<'TKey, 'TValue when 'TKey: equality>(?logEvent: (JobEvent<'TKey> -> unit), ?name: string) =
+type internal AsyncMemoize<'TKey, 'TValue when 'TKey: equality>(?logEvent: (JobEventType * 'TKey -> unit)) =
 
     let tok = obj ()
-
-    let name = name |> Option.defaultValue "Unnamed"
 
     let cache =
         MruCache<_, 'TKey, Job<'TValue>>(keepStrongly = 10, areSame = (fun (x, y) -> x = y))
@@ -76,8 +67,7 @@ type internal AsyncMemoize<'TKey, 'TValue when 'TKey: equality>(?logEvent: (JobE
                             Async.StartAsTask(
                                 Async.AwaitNodeCode(
                                     node {
-                                        use _ = Activity.start $"AsyncMemoize.{name}" [||]
-                                        log (Started key)
+                                        log (Started, key)
                                         let! result = computation key
                                         post key JobCompleted
                                         return result
@@ -106,7 +96,7 @@ type internal AsyncMemoize<'TKey, 'TValue when 'TKey: equality>(?logEvent: (JobE
                             cts.Cancel()
                             cache.RemoveAnySimilar(tok, key)
                             requestCounts.Remove key |> ignore
-                            log (Canceled key)
+                            log (Canceled, key)
 
                     | CancelRequest, None
                     | CancelRequest, Some (Completed _) -> ()
@@ -115,10 +105,9 @@ type internal AsyncMemoize<'TKey, 'TValue when 'TKey: equality>(?logEvent: (JobE
                         // TODO: should we re-wrap the result?
                         cache.Set(tok, key, (Completed job))
                         requestCounts.Remove key |> ignore
-                        log (Finished key)
+                        log (Finished, key)
 
                     | JobCompleted, _ -> failwith "If this happens there's a bug"
-
             })
 
     member _.Get(key, computation) =

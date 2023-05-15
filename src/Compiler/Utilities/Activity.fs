@@ -33,6 +33,7 @@ module internal Activity =
         let gc2 = "gc2"
         let outputDllFile = "outputDllFile"
         let buildPhase = "buildPhase"
+        let version = "version"
 
         let AllKnownTags =
             [|

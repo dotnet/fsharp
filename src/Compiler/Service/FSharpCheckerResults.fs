@@ -218,6 +218,11 @@ type FSharpProjectSnapshot =
 
     member this.SourceFileNames = this.SourceFiles |> List.map (fun x -> x.FileName)
 
+    member this.WithoutFileVersions =
+        { this with
+            SourceFiles = this.SourceFiles |> List.map (fun x -> { x with Version = "" })
+        }
+
     override this.ToString() =
         "FSharpProjectSnapshot(" + this.ProjectFileName + ")"
 

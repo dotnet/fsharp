@@ -121,6 +121,9 @@ type FSharpProjectSnapshot =
     /// A snapshot of the same project but only up to the given file (including).
     member UpTo: fileName: string -> FSharpProjectSnapshot
 
+    /// A snapshot of the same project with file versions removed.
+    member WithoutFileVersions: FSharpProjectSnapshot
+
     member Key: FSharpProjectSnapshotKey
 
 and [<NoComparison; CustomEquality>] public FSharpReferencedProjectSnapshot =

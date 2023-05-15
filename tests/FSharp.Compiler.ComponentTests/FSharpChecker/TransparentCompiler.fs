@@ -1,14 +1,11 @@
 ﻿module FSharp.Compiler.ComponentTests.FSharpChecker.TransparentCompiler
 
-open System
-open System.IO
+open System.Collections.Concurrent
 open System.Diagnostics
 
 open Xunit
 
 open FSharp.Test.ProjectGeneration
-open FSharp.Compiler.Text
-open FSharp.Compiler.CodeAnalysis
 
 module Activity =
     let listen (filter: string) =
@@ -40,7 +37,6 @@ module Activity =
         ActivitySource.AddActivityListener(listener)
 
     let listenToAll () = listen ""
-
 
 [<Fact>]
 let ``Use Transparent Compiler`` () =
@@ -92,7 +88,6 @@ let ``Parallel processing`` () =
         checkFile "E" expectSignatureChanged
     }
 
-
 [<Fact>]
 let ``Parallel processing with signatures`` () =
 
@@ -105,7 +100,10 @@ let ``Parallel processing with signatures`` () =
         sourceFile "D" ["A"] |> addSignatureFile,
         sourceFile "E" ["B"; "C"; "D"] |> addSignatureFile)
 
+    let cacheEvents = ConcurrentBag<_>()
+
     ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+        withChecker (fun checker -> checker.CacheEvent.Add cacheEvents.Add)
         checkFile "E" expectOk
         updateFile "A" updatePublicSurface
         checkFile "E" expectNoChanges
@@ -116,7 +114,6 @@ let ``Parallel processing with signatures`` () =
         regenerateSignature "E"
         checkFile "E" expectSignatureChanged
     }
-
 
 let makeTestProject () =
     SyntheticProject.Create(
