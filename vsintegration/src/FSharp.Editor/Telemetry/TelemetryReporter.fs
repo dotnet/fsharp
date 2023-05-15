@@ -47,11 +47,11 @@ module TelemetryEvents =
 type TelemetryThrottlingStrategy =
     | NoThrottling
     | Throttle of {| Timeout: TimeSpan |}
-    // At most, send one event per 3 seconds.
+    // At most, send one event per 5 seconds.
     static member Default =
         Throttle
             {|
-                Timeout = TimeSpan.FromSeconds(3.0)
+                Timeout = TimeSpan.FromSeconds(5.0)
             |}
 
 [<RequireQualifiedAccess>]
@@ -61,7 +61,7 @@ module TelemetryReporter =
             member _.Dispose() = ()
         }
 
-    let internal lastSentEvents = ConcurrentDictionary<string, DateTime>()
+    let internal lastTriggeredEvents = ConcurrentDictionary<string, DateTime>()
 
     [<Literal>]
     let eventPrefix = "dotnet/fsharp/"
@@ -87,13 +87,16 @@ module TelemetryReporter =
 [<Struct; NoComparison; NoEquality>]
 type TelemetryReporter private (name: string, props: (string * obj) array, stopwatch: Stopwatch) =
 
-    static let settings =
+    static member val private SendAdditionalTelemetry =
         lazy
             (let componentModel =
                 Package.GetGlobalService(typeof<ComponentModelHost.SComponentModel>) :?> ComponentModelHost.IComponentModel
-
-             let workspace = componentModel.GetService<VisualStudioWorkspace>()
-             workspace.Services.GetService<EditorOptions>())
+             
+             if componentModel = null then
+                 false
+             else
+                 let workspace = componentModel.GetService<VisualStudioWorkspace>()
+                 workspace.Services.GetService<EditorOptions>().Advanced.SendAdditionalTelemetry)
 
     static member ReportSingleEvent(name, props) =
         let event = TelemetryReporter.createEvent name props
@@ -103,7 +106,7 @@ type TelemetryReporter private (name: string, props: (string * obj) array, stopw
     // TODO: needs a careful review, since it will be a hot path when we are sending telemetry
     static member ReportSingleEventWithDuration(name, props, ?throttlingStrategy) : IDisposable =
 
-        if not settings.Value.Advanced.SendAdditionalTelemetry then
+        if not TelemetryReporter.SendAdditionalTelemetry.Value then
             TelemetryReporter.noopDisposable
         else
             let throttlingStrategy =
@@ -116,13 +119,13 @@ type TelemetryReporter private (name: string, props: (string * obj) array, stopw
                 new TelemetryReporter(name, props, stopwatch)
             | TelemetryThrottlingStrategy.Throttle s ->
                 // This is not "atomic" for now, theoretically multiple threads can send the event as for now.
-                match TelemetryReporter.lastSentEvents.TryGetValue(name) with
-                | false, lastSent
-                | true, lastSent when lastSent + s.Timeout < DateTime.UtcNow ->
+                match TelemetryReporter.lastTriggeredEvents.TryGetValue(name) with
+                | false, lastTriggered
+                | true, lastTriggered when lastTriggered + s.Timeout < DateTime.UtcNow ->
                     let stopwatch = Stopwatch()
                     stopwatch.Start()
-                    // Whenever we create an event, we update the last sent time.
-                    TelemetryReporter.lastSentEvents.AddOrUpdate(name, DateTime.UtcNow, (fun _ _ -> DateTime.UtcNow))
+                    // Whenever we create an event, we update the time.
+                    TelemetryReporter.lastTriggeredEvents.AddOrUpdate(name, DateTime.UtcNow, (fun _ _ -> DateTime.UtcNow))
                     |> ignore
 
                     new TelemetryReporter(name, props, stopwatch)
