@@ -15,6 +15,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
+open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
 [<RequireQualifiedAccess>]
 type internal DiagnosticsType =
@@ -53,6 +54,17 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
 
     static member GetDiagnostics(document: Document, diagnosticType: DiagnosticsType) =
         async {
+
+            let eventProps: (string * obj) array =
+                [|
+                    "context.document.project.id", document.Project.Id.Id.ToString()
+                    "context.document.id", document.Id.Id.ToString()
+                    "context.diagnostics.type", match diagnosticType with DiagnosticsType.Syntax -> "syntax" | DiagnosticsType.Semantic -> "semantic"
+                |]
+            
+            use _eventDuration =
+                TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.GetDiagnosticsForDocument, eventProps)
+
             let! ct = Async.CancellationToken
 
             let! parseResults = document.GetFSharpParseResultsAsync("GetDiagnostics")

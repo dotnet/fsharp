@@ -6,31 +6,25 @@ open Microsoft.VisualStudio.Telemetry
 open System
 open System.Diagnostics
 open System.Collections.Concurrent
+open Microsoft.VisualStudio.Shell
+open Microsoft.VisualStudio
+open Microsoft.VisualStudio.LanguageServices
+open Microsoft.VisualStudio.FSharp.Editor
 
 #nowarn "3220" // Ignore warning about direct tuple items access.
 
 [<RequireQualifiedAccess>]
-module TelemetryEvents =
-    [<Literal>]
-    let CodefixActivated = "codefixactivated"
-
-    [<Literal>]
-    let Hints = "hints"
-
-    [<Literal>]
-    let LanguageServiceStarted = "languageservicestarted"
-
-    [<Literal>]
-    let GetSymbolUsesInProjectsStarted = "getSymbolUsesInProjectsStarted"
-
-    [<Literal>]
-    let GetSymbolUsesInProjectsFinished = "getSymbolUsesInProjectsFinished"
-
-    [<Literal>]
-    let AddSyntacticCalssifications = "addsyntacticclassifications"
-
-    [<Literal>]
-    let AddSemanticCalssifications = "addsemanticclassifications"
+module TelemetryEvents = 
+    let [<Literal>] CodefixActivated = "codefixactivated"
+    let [<Literal>] Hints = "hints"
+    let [<Literal>] LanguageServiceStarted = "languageservicestarted"
+    let [<Literal>] GetSymbolUsesInProjectsStarted = "getSymbolUsesInProjectsStarted"
+    let [<Literal>] GetSymbolUsesInProjectsFinished = "getSymbolUsesInProjectsFinished"
+    let [<Literal>] AddSyntacticCalssifications = "addsyntacticclassifications"
+    let [<Literal>] AddSemanticCalssifications = "addsemanticclassifications"
+    let [<Literal>] GetDiagnosticsForDocument = "getdiagnosticsfordocument"
+    let [<Literal>] ProvideCompletions = "providecompletions"
+    
 
 // TODO: needs to be something more sophisticated in future
 [<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
@@ -53,11 +47,8 @@ module TelemetryReporter =
 
     let internal lastSentEvents = ConcurrentDictionary<string, DateTime>()
 
-    [<Literal>]
-    let eventPrefix = "dotnet/fsharp/"
-
-    [<Literal>]
-    let propPrefix = "dotnet.fsharp."
+    let [<Literal>] eventPrefix = "dotnet/fsharp/"
+    let [<Literal>] propPrefix = "dotnet.fsharp."
 
     // This should always be inlined.
     let inline createEvent name (props: (string * obj) array) =
@@ -77,41 +68,49 @@ module TelemetryReporter =
 [<Struct; NoComparison; NoEquality>]
 type TelemetryReporter private (name: string, props: (string * obj) array, stopwatch: Stopwatch) =
 
+    static let componentModel =
+        Package.GetGlobalService(typeof<ComponentModelHost.SComponentModel>) :?> ComponentModelHost.IComponentModel
+    static let workspace = componentModel.GetService<VisualStudioWorkspace>()
+    static let settings: EditorOptions = workspace.Services.GetService()
+
+    static let session = TelemetryService.DefaultSession
+
     static member ReportSingleEvent(name, props) =
-        let session = TelemetryService.DefaultSession
         let event = TelemetryReporter.createEvent name props
         session.PostEvent event
 
     // A naïve implementation using stopwatch and returning an IDisposable
     // TODO: needs a careful review, since it will be a hot path when we are sending telemetry
     static member ReportSingleEventWithDuration(name, props, ?throttlingStrategy) : IDisposable =
-        let throttlingStrategy =
-            defaultArg throttlingStrategy TelemetryThrottlingStrategy.Default
 
-        match throttlingStrategy with
-        | TelemetryThrottlingStrategy.NoThrottling ->
-            let stopwatch = Stopwatch()
-            stopwatch.Start()
-            new TelemetryReporter(name, props, stopwatch)
-        | TelemetryThrottlingStrategy.Throttle s ->
-            // This is not "atomic" for now, theoretically multiple threads can send the event as for now.
-            match TelemetryReporter.lastSentEvents.TryGetValue(name) with
-            | false, lastSent
-            | true, lastSent when lastSent + s.Timeout < DateTime.UtcNow ->
+        if not settings.Advanced.SendAdditionalTelemetry then
+            TelemetryReporter.noopDisposable
+        else
+            let throttlingStrategy =
+                defaultArg throttlingStrategy TelemetryThrottlingStrategy.Default
+
+            match throttlingStrategy with
+            | TelemetryThrottlingStrategy.NoThrottling ->
                 let stopwatch = Stopwatch()
                 stopwatch.Start()
                 new TelemetryReporter(name, props, stopwatch)
-            | _ -> TelemetryReporter.noopDisposable
+            | TelemetryThrottlingStrategy.Throttle s ->
+                // This is not "atomic" for now, theoretically multiple threads can send the event as for now.
+                match TelemetryReporter.lastSentEvents.TryGetValue(name) with
+                | false, lastSent
+                | true, lastSent when lastSent + s.Timeout < DateTime.UtcNow ->
+                    let stopwatch = Stopwatch()
+                    stopwatch.Start()
+                    // Whenever we create an event, we update the last sent time.
+                    TelemetryReporter.lastSentEvents.AddOrUpdate(name, DateTime.UtcNow, (fun _ _ -> DateTime.UtcNow)) |> ignore
+                    new TelemetryReporter(name, props, stopwatch)
+                | _ -> TelemetryReporter.noopDisposable
 
     interface IDisposable with
         member _.Dispose() =
-            let session = TelemetryService.DefaultSession
             stopwatch.Stop()
 
             let event =
                 TelemetryReporter.createEvent name (Array.concat [ props; [| "vs_event_duration_ms", stopwatch.ElapsedMilliseconds |] ])
 
             session.PostEvent event
-            // Whenever we send an event, we update the last sent time.
-            TelemetryReporter.lastSentEvents.AddOrUpdate(name, DateTime.UtcNow, (fun _ _ -> DateTime.UtcNow))
-            |> ignore

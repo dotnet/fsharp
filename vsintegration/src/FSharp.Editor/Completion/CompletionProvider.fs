@@ -13,6 +13,7 @@ open Microsoft.CodeAnalysis.Completion
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Completion
 
+open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 open Microsoft.VisualStudio.Shell
 
 open FSharp.Compiler.CodeAnalysis
@@ -20,6 +21,7 @@ open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
+
 
 module Logger = Microsoft.VisualStudio.FSharp.Editor.Logger
 
@@ -142,6 +144,7 @@ type internal FSharpCompletionProvider
         ) =
 
         asyncMaybe {
+
             let! parseResults, checkFileResults =
                 document.GetFSharpParseAndCheckResultsAsync("ProvideCompletionsAsyncAux")
                 |> liftAsync
@@ -298,6 +301,16 @@ type internal FSharpCompletionProvider
                 Logger.LogBlockMessage context.Document.Name LogEditorFunctionId.Completion_ProvideCompletionsAsync
 
             let document = context.Document
+
+            let eventProps: (string * obj) array =
+                [|
+                    "context.document.project.id", document.Project.Id.Id.ToString()
+                    "context.document.id", document.Id.Id.ToString()
+                |]
+            
+            use _eventDuration =
+                TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.ProvideCompletions, eventProps)
+
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
             let defines, langVersion = document.GetFSharpQuickDefinesAndLangVersion()
 
