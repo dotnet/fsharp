@@ -91,7 +91,7 @@ type TelemetryReporter private (name: string, props: (string * obj) array, stopw
         lazy
             (let componentModel =
                 Package.GetGlobalService(typeof<ComponentModelHost.SComponentModel>) :?> ComponentModelHost.IComponentModel
-             
+
              if componentModel = null then
                  false
              else
