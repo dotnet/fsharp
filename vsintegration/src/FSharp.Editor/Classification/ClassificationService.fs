@@ -186,8 +186,13 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                 //     as it's better than having to tokenize a big part of a file which in return will allocate a lot and hurt find all references performance.
                 let isOpenDocument = document.Project.Solution.Workspace.IsDocumentOpen document.Id
 
-                let eventProps =
-                    [| "isOpenDocument", isOpenDocument :> obj; "textSpanLength", textSpan.Length |]
+                let eventProps: (string * obj) array =
+                    [|
+                        "context.document.project.id", document.Project.Id.Id.ToString()
+                        "context.document.id", document.Id.Id.ToString()
+                        "isOpenDocument", isOpenDocument
+                        "textSpanLength", textSpan.Length
+                    |]
 
                 use _eventDuration =
                     TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.AddSyntacticCalssifications, eventProps)
@@ -229,9 +234,11 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                 if not isOpenDocument then
                     match! semanticClassificationCache.TryGetValueAsync document with
                     | ValueSome classificationDataLookup ->
-                        let eventProps =
+                        let eventProps: (string * obj) array =
                             [|
-                                "isOpenDocument", isOpenDocument :> obj
+                                "context.document.project.id", document.Project.Id.Id.ToString()
+                                "context.document.id", document.Id.Id.ToString()
+                                "isOpenDocument", isOpenDocument
                                 "textSpanLength", textSpan.Length
                                 "cacheHit", true
                             |]
@@ -256,9 +263,11 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                         do! semanticClassificationCache.SetAsync(document, classificationDataLookup)
                         addSemanticClassificationByLookup sourceText textSpan classificationDataLookup result
                 else
-                    let eventProps =
+                    let eventProps: (string * obj) array =
                         [|
-                            "isOpenDocument", isOpenDocument :> obj
+                            "context.document.project.id", document.Project.Id.Id.ToString()
+                            "context.document.id", document.Id.Id.ToString()
+                            "isOpenDocument", isOpenDocument
                             "textSpanLength", textSpan.Length
                             "cacheHit", false
                         |]
