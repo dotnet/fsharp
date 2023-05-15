@@ -87,23 +87,23 @@ module TelemetryReporter =
 [<Struct; NoComparison; NoEquality>]
 type TelemetryReporter private (name: string, props: (string * obj) array, stopwatch: Stopwatch) =
 
-    static let componentModel =
-        Package.GetGlobalService(typeof<ComponentModelHost.SComponentModel>) :?> ComponentModelHost.IComponentModel
+    static let settings =
+        lazy
+            (let componentModel =
+                Package.GetGlobalService(typeof<ComponentModelHost.SComponentModel>) :?> ComponentModelHost.IComponentModel
 
-    static let workspace = componentModel.GetService<VisualStudioWorkspace>()
-    static let settings: EditorOptions = workspace.Services.GetService()
-
-    static let session = TelemetryService.DefaultSession
+             let workspace = componentModel.GetService<VisualStudioWorkspace>()
+             workspace.Services.GetService<EditorOptions>())
 
     static member ReportSingleEvent(name, props) =
         let event = TelemetryReporter.createEvent name props
-        session.PostEvent event
+        TelemetryService.DefaultSession.PostEvent event
 
     // A naïve implementation using stopwatch and returning an IDisposable
     // TODO: needs a careful review, since it will be a hot path when we are sending telemetry
     static member ReportSingleEventWithDuration(name, props, ?throttlingStrategy) : IDisposable =
 
-        if not settings.Advanced.SendAdditionalTelemetry then
+        if not settings.Value.Advanced.SendAdditionalTelemetry then
             TelemetryReporter.noopDisposable
         else
             let throttlingStrategy =
@@ -135,4 +135,4 @@ type TelemetryReporter private (name: string, props: (string * obj) array, stopw
             let event =
                 TelemetryReporter.createEvent name (Array.concat [ props; [| "vs_event_duration_ms", stopwatch.ElapsedMilliseconds |] ])
 
-            session.PostEvent event
+            TelemetryService.DefaultSession.PostEvent event
