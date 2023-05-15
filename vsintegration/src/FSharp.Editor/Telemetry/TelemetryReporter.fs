@@ -93,7 +93,7 @@ type TelemetryReporter private (name: string, props: (string * obj) array, stopw
                 Package.GetGlobalService(typeof<ComponentModelHost.SComponentModel>) :?> ComponentModelHost.IComponentModel
 
              if componentModel = null then
-                 false
+                 TelemetryService.DefaultSession.IsUserMicrosoftInternal
              else
                  let workspace = componentModel.GetService<VisualStudioWorkspace>()
                  workspace.Services.GetService<EditorOptions>().Advanced.SendAdditionalTelemetry)
@@ -106,9 +106,12 @@ type TelemetryReporter private (name: string, props: (string * obj) array, stopw
     // TODO: needs a careful review, since it will be a hot path when we are sending telemetry
     static member ReportSingleEventWithDuration(name, props, ?throttlingStrategy) : IDisposable =
 
-        if not TelemetryReporter.SendAdditionalTelemetry.Value then
-            TelemetryReporter.noopDisposable
-        else
+        let additionalTelemetryEnabled = not TelemetryReporter.SendAdditionalTelemetry.Value
+
+        let isUserMicrosoftInternal =
+            TelemetryService.DefaultSession.IsUserMicrosoftInternal
+
+        if additionalTelemetryEnabled || isUserMicrosoftInternal then
             let throttlingStrategy =
                 defaultArg throttlingStrategy TelemetryThrottlingStrategy.Default
 
@@ -130,6 +133,8 @@ type TelemetryReporter private (name: string, props: (string * obj) array, stopw
 
                     new TelemetryReporter(name, props, stopwatch)
                 | _ -> TelemetryReporter.noopDisposable
+        else
+            TelemetryReporter.noopDisposable
 
     interface IDisposable with
         member _.Dispose() =
