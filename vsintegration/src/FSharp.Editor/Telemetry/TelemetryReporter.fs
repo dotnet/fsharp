@@ -14,17 +14,33 @@ open Microsoft.VisualStudio.FSharp.Editor
 #nowarn "3220" // Ignore warning about direct tuple items access.
 
 [<RequireQualifiedAccess>]
-module TelemetryEvents = 
-    let [<Literal>] CodefixActivated = "codefixactivated"
-    let [<Literal>] Hints = "hints"
-    let [<Literal>] LanguageServiceStarted = "languageservicestarted"
-    let [<Literal>] GetSymbolUsesInProjectsStarted = "getSymbolUsesInProjectsStarted"
-    let [<Literal>] GetSymbolUsesInProjectsFinished = "getSymbolUsesInProjectsFinished"
-    let [<Literal>] AddSyntacticCalssifications = "addsyntacticclassifications"
-    let [<Literal>] AddSemanticCalssifications = "addsemanticclassifications"
-    let [<Literal>] GetDiagnosticsForDocument = "getdiagnosticsfordocument"
-    let [<Literal>] ProvideCompletions = "providecompletions"
-    
+module TelemetryEvents =
+    [<Literal>]
+    let CodefixActivated = "codefixactivated"
+
+    [<Literal>]
+    let Hints = "hints"
+
+    [<Literal>]
+    let LanguageServiceStarted = "languageservicestarted"
+
+    [<Literal>]
+    let GetSymbolUsesInProjectsStarted = "getSymbolUsesInProjectsStarted"
+
+    [<Literal>]
+    let GetSymbolUsesInProjectsFinished = "getSymbolUsesInProjectsFinished"
+
+    [<Literal>]
+    let AddSyntacticCalssifications = "addsyntacticclassifications"
+
+    [<Literal>]
+    let AddSemanticCalssifications = "addsemanticclassifications"
+
+    [<Literal>]
+    let GetDiagnosticsForDocument = "getdiagnosticsfordocument"
+
+    [<Literal>]
+    let ProvideCompletions = "providecompletions"
 
 // TODO: needs to be something more sophisticated in future
 [<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
@@ -47,8 +63,11 @@ module TelemetryReporter =
 
     let internal lastSentEvents = ConcurrentDictionary<string, DateTime>()
 
-    let [<Literal>] eventPrefix = "dotnet/fsharp/"
-    let [<Literal>] propPrefix = "dotnet.fsharp."
+    [<Literal>]
+    let eventPrefix = "dotnet/fsharp/"
+
+    [<Literal>]
+    let propPrefix = "dotnet.fsharp."
 
     // This should always be inlined.
     let inline createEvent name (props: (string * obj) array) =
@@ -70,6 +89,7 @@ type TelemetryReporter private (name: string, props: (string * obj) array, stopw
 
     static let componentModel =
         Package.GetGlobalService(typeof<ComponentModelHost.SComponentModel>) :?> ComponentModelHost.IComponentModel
+
     static let workspace = componentModel.GetService<VisualStudioWorkspace>()
     static let settings: EditorOptions = workspace.Services.GetService()
 
@@ -102,7 +122,9 @@ type TelemetryReporter private (name: string, props: (string * obj) array, stopw
                     let stopwatch = Stopwatch()
                     stopwatch.Start()
                     // Whenever we create an event, we update the last sent time.
-                    TelemetryReporter.lastSentEvents.AddOrUpdate(name, DateTime.UtcNow, (fun _ _ -> DateTime.UtcNow)) |> ignore
+                    TelemetryReporter.lastSentEvents.AddOrUpdate(name, DateTime.UtcNow, (fun _ _ -> DateTime.UtcNow))
+                    |> ignore
+
                     new TelemetryReporter(name, props, stopwatch)
                 | _ -> TelemetryReporter.noopDisposable
 

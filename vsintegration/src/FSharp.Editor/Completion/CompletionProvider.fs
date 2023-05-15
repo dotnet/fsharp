@@ -22,7 +22,6 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
 
-
 module Logger = Microsoft.VisualStudio.FSharp.Editor.Logger
 
 type internal FSharpCompletionProvider
@@ -307,7 +306,7 @@ type internal FSharpCompletionProvider
                     "context.document.project.id", document.Project.Id.Id.ToString()
                     "context.document.id", document.Id.Id.ToString()
                 |]
-            
+
             use _eventDuration =
                 TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.ProvideCompletions, eventProps)
 

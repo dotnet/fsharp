@@ -59,9 +59,12 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
                 [|
                     "context.document.project.id", document.Project.Id.Id.ToString()
                     "context.document.id", document.Id.Id.ToString()
-                    "context.diagnostics.type", match diagnosticType with DiagnosticsType.Syntax -> "syntax" | DiagnosticsType.Semantic -> "semantic"
+                    "context.diagnostics.type",
+                    match diagnosticType with
+                    | DiagnosticsType.Syntax -> "syntax"
+                    | DiagnosticsType.Semantic -> "semantic"
                 |]
-            
+
             use _eventDuration =
                 TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.GetDiagnosticsForDocument, eventProps)
 
