@@ -871,14 +871,11 @@ type SynStaticOptimizationConstraint =
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynSimplePats =
-    | SimplePats of pats: SynSimplePat list * range: range
-
-    | Typed of pats: SynSimplePats * targetType: SynType * range: range
+    | SimplePats of pats: SynSimplePat list * commaRanges: range list * range: range
 
     member x.Range =
         match x with
-        | SynSimplePats.SimplePats (range = range)
-        | SynSimplePats.Typed (range = range) -> range
+        | SynSimplePats.SimplePats (range = range) -> range
 
 [<RequireQualifiedAccess>]
 type SynArgPats =
@@ -920,7 +917,7 @@ type SynPat =
         accessibility: SynAccess option *
         range: range
 
-    | Tuple of isStruct: bool * elementPats: SynPat list * range: range
+    | Tuple of isStruct: bool * elementPats: SynPat list * commaRanges: range list * range: range
 
     | Paren of pat: SynPat * range: range
 
