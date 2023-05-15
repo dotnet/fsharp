@@ -103,6 +103,9 @@ type public FSharpChecker =
         fileName: string * sourceText: ISourceText * options: FSharpParsingOptions * ?cache: bool * ?userOpName: string ->
             Async<FSharpParseFileResults>
 
+    member ParseFile: fileName: string * projectSnapshot: FSharpProjectSnapshot * ?userOpName: string ->
+        Async<FSharpParseFileResults>
+
     /// <summary>
     /// Parses a source code for a file. Returns an AST that can be traversed for various features.
     /// </summary>

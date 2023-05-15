@@ -13,6 +13,40 @@ open FSharp.Compiler.Symbols
 [<AutoOpen>]
 module private CheckerExtensions =
 
+    let getProjectSnapshot (document: Document, options: FSharpProjectOptions) =
+        async {
+             let project = document.Project
+             let solution = project.Solution
+             // TODO cache?
+             let projects =
+                 solution.Projects
+                 |> Seq.map (fun p -> p.FilePath, p.Documents |> Seq.map (fun d -> d.FilePath, d) |> Map)
+                 |> Map
+
+             let getFileSnapshot (options: FSharpProjectOptions) path =
+                 async {
+                     let project = projects[options.ProjectFileName]
+                     let document = project[path]
+                     let! version = document.GetTextVersionAsync() |> Async.AwaitTask
+
+                     let getSource () =
+                         task {
+                             let! sourceText = document.GetTextAsync()
+                             return sourceText.ToFSharpSourceText()
+                         }
+
+                     return
+                         {
+                             FileName = path
+                             Version = version.ToString()
+                             GetSource = getSource
+                         }
+                 }
+
+             return! FSharpProjectSnapshot.FromOptions(options, getFileSnapshot)
+        }
+
+
     type FSharpChecker with
 
         /// Parse the source text from the Roslyn document.
@@ -24,6 +58,12 @@ module private CheckerExtensions =
                 return! checker.ParseFile(document.FilePath, sourceText.ToFSharpSourceText(), parsingOptions, userOpName = userOpName)
             }
 
+        member checker.ParseDocumentUsingTransparentCompiler(document: Document, options: FSharpProjectOptions, userOpName: string) =
+            async {
+                let! projectSnapshot = getProjectSnapshot(document, options)
+                return! checker.ParseFile(document.FilePath, projectSnapshot, userOpName = userOpName)
+            }
+
         member checker.ParseAndCheckDocumentUsingTransparentCompiler
             (
                 document: Document,
@@ -31,36 +71,7 @@ module private CheckerExtensions =
                 userOpName: string
             ) =
             async {
-
-                let project = document.Project
-                let solution = project.Solution
-                // TODO cache?
-                let projects =
-                    solution.Projects
-                    |> Seq.map (fun p -> p.FilePath, p.Documents |> Seq.map (fun d -> d.FilePath, d) |> Map)
-                    |> Map
-
-                let getFileSnapshot (options: FSharpProjectOptions) path =
-                    async {
-                        let project = projects[options.ProjectFileName]
-                        let document = project[path]
-                        let! version = document.GetTextVersionAsync() |> Async.AwaitTask
-
-                        let getSource () =
-                            task {
-                                let! sourceText = document.GetTextAsync()
-                                return sourceText.ToFSharpSourceText()
-                            }
-
-                        return
-                            {
-                                FileName = path
-                                Version = version.ToString()
-                                GetSource = getSource
-                            }
-                    }
-
-                let! projectSnapshot = FSharpProjectSnapshot.FromOptions(options, getFileSnapshot)
+                let! projectSnapshot = getProjectSnapshot(document, options)
 
                 let! (parseResults, checkFileAnswer) = checker.ParseAndCheckFileInProject(document.FilePath, projectSnapshot, userOpName)
 
@@ -152,7 +163,7 @@ module private CheckerExtensions =
             ) =
             async {
 
-                if document.Project.UseTransparentCompiiler then
+                if document.Project.UseTransparentCompiler then
                     return! checker.ParseAndCheckDocumentUsingTransparentCompiler(document, options, userOpName)
                 else
                     let allowStaleResults =
@@ -251,8 +262,11 @@ type Document with
     /// Parses the given F# document.
     member this.GetFSharpParseResultsAsync(userOpName) =
         async {
-            let! checker, _, parsingOptions, _ = this.GetFSharpCompilationOptionsAsync(userOpName)
-            return! checker.ParseDocument(this, parsingOptions, userOpName)
+            let! checker, _, parsingOptions, options = this.GetFSharpCompilationOptionsAsync(userOpName)
+            if this.Project.UseTransparentCompiler then
+                return! checker.ParseDocumentUsingTransparentCompiler(this, options, userOpName)
+            else
+                return! checker.ParseDocument(this, parsingOptions, userOpName)
         }
 
     /// Parses and checks the given F# document.

@@ -22,12 +22,12 @@ let ``Basics``() =
 
     let task =
         NodeCode.Parallel(seq {
-            memoize.Get(5, computation)
-            memoize.Get(5, computation)
-            memoize.Get(2, computation)
-            memoize.Get(5, computation)
-            memoize.Get(3, computation)
-            memoize.Get(2, computation)
+            memoize.Get(5, computation 5)
+            memoize.Get(5, computation 5)
+            memoize.Get(2, computation 2)
+            memoize.Get(5, computation 5)
+            memoize.Get(3, computation 3)
+            memoize.Get(2, computation 2)
         }) |> NodeCode.StartAsTask_ForTesting
 
     let result = task.Result
@@ -61,9 +61,9 @@ let ``We can cancel a job`` () =
 
     let key = 1
 
-    let _task1 = NodeCode.StartAsTask_ForTesting(memoize.Get(key, computation), cts1.Token)
-    let _task2 = NodeCode.StartAsTask_ForTesting(memoize.Get(key, computation), cts2.Token)
-    let _task3 = NodeCode.StartAsTask_ForTesting(memoize.Get(key, computation), cts3.Token)
+    let _task1 = NodeCode.StartAsTask_ForTesting(memoize.Get(key, computation key), cts1.Token)
+    let _task2 = NodeCode.StartAsTask_ForTesting(memoize.Get(key, computation key), cts2.Token)
+    let _task3 = NodeCode.StartAsTask_ForTesting(memoize.Get(key, computation key), cts3.Token)
 
     resetEvent.WaitOne() |> ignore
 
@@ -104,9 +104,9 @@ let ``Job keeps running even if first requestor cancels`` () =
 
     let key = 1
 
-    let _task1 = NodeCode.StartAsTask_ForTesting(memoize.Get(key, computation), cts1.Token)
-    let _task2 = NodeCode.StartAsTask_ForTesting(memoize.Get(key, computation), cts2.Token)
-    let _task3 = NodeCode.StartAsTask_ForTesting(memoize.Get(key, computation), cts3.Token)
+    let _task1 = NodeCode.StartAsTask_ForTesting(memoize.Get(key, computation key), cts1.Token)
+    let _task2 = NodeCode.StartAsTask_ForTesting(memoize.Get(key, computation key), cts2.Token)
+    let _task3 = NodeCode.StartAsTask_ForTesting(memoize.Get(key, computation key), cts3.Token)
 
     Thread.Sleep 10
 

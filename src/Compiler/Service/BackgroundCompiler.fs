@@ -134,6 +134,10 @@ type internal IBackgroundCompiler =
     abstract member ParseFile:
         fileName: string * sourceText: ISourceText * options: FSharpParsingOptions * cache: bool * userOpName: string ->
             Async<FSharpParseFileResults>
+            
+    abstract member ParseFile:
+        fileName: string * projectSnapshot: FSharpProjectSnapshot * userOpName: string ->
+            NodeCode<FSharpParseFileResults>
 
     /// Try to get recent approximate type check results for a file.
     abstract member TryGetRecentCheckResultsForFile:
@@ -1529,6 +1533,9 @@ type internal BackgroundCompiler
                 userOpName: string
             ) : Async<FSharpParseFileResults> =
             self.ParseFile(fileName, sourceText, options, cache, userOpName)
+
+        member _.ParseFile(_fileName: string, _projectSnapshot: FSharpProjectSnapshot, _userOpName: string) =
+            raise (System.NotImplementedException())
 
         member _.ProjectChecked: IEvent<FSharpProjectOptions> = self.ProjectChecked
 

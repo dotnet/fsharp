@@ -206,7 +206,7 @@ let ``Changes in a referenced project`` () =
         { makeTestProject() with DependsOn = [library] }
         |> updateFile "First" (addDependency "Library")
 
-    project.Workflow {
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
         updateFile "Library" updatePublicSurface
         saveFile "Library"
         checkFile "Last" expectSignatureChanged

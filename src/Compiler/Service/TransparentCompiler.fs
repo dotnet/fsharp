@@ -172,7 +172,7 @@ type internal TransparentCompiler
                         }
         ]
 
-    let ComputeFrameworkImports (tcConfig: TcConfig) frameworkDLLs nonFrameworkResolutions _key =
+    let ComputeFrameworkImports (tcConfig: TcConfig) frameworkDLLs nonFrameworkResolutions =
         node {
             use _ = Activity.start "ComputeFrameworkImports" []
             let tcConfigP = TcConfigProvider.Constant tcConfig
@@ -279,7 +279,7 @@ type internal TransparentCompiler
         }
 
     /// Bootstrap info that does not depend on contents of the files
-    let ComputeBootstrapInfoStatic (projectSnapshot: FSharpProjectSnapshot) _key =
+    let ComputeBootstrapInfoStatic (projectSnapshot: FSharpProjectSnapshot) =
         node {
             use _ = Activity.start "ComputeBootstrapInfoStatic" [| Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName |]
 
@@ -561,7 +561,7 @@ type internal TransparentCompiler
                     }
         }
 
-    let ComputeBootstrapInfo (projectSnapshot: FSharpProjectSnapshot) _key =
+    let ComputeBootstrapInfo (projectSnapshot: FSharpProjectSnapshot) =
         node {
             use _ = Activity.start "ComputeBootstrapInfo" [| Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName |]
 
@@ -595,7 +595,7 @@ type internal TransparentCompiler
             return bootstrapInfoOpt, diagnostics
         }
 
-    let ComputeParseFile (file: FSharpFile) bootstrapInfo _key =
+    let ComputeParseFile (file: FSharpFile) bootstrapInfo =
         node {
             use _ = Activity.start "ComputeParseFile" [| Activity.Tags.fileName, file.Source.FileName |> Path.GetFileName; Activity.Tags.version, file.Source.Version |]
             
@@ -616,7 +616,7 @@ type internal TransparentCompiler
             return input, diagnosticsLogger.GetDiagnostics(), sourceText
         }
 
-    let ComputeDependencyGraphForLastFile parsedInputs (tcConfig: TcConfig) _key =
+    let ComputeDependencyGraphForLastFile parsedInputs (tcConfig: TcConfig) =
         node {
 
             let sourceFiles: FileInProject array =
@@ -642,7 +642,7 @@ type internal TransparentCompiler
             return TransformDependencyGraph(graph, filePairs), filePairs
         }
 
-    let ComputeTcIntermediate (parsedInput: ParsedInput, parseErrors) bootstrapInfo (prevTcInfo: TcInfo) _key =
+    let ComputeTcIntermediate (parsedInput: ParsedInput, parseErrors) bootstrapInfo (prevTcInfo: TcInfo) =
         node {
             let input = parsedInput
             let fileName = input.FileName
@@ -718,7 +718,7 @@ type internal TransparentCompiler
 
 
     // Type check everything that is needed to check given file
-    let ComputeTcPrior (file: FSharpFile) (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshot) _userOpName _key =
+    let ComputeTcPrior (file: FSharpFile) (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshot) _userOpName =
         node {
             
             use _ = Activity.start "ComputeTcPrior" [| Activity.Tags.fileName, file.Source.FileName |> Path.GetFileName |]
@@ -804,7 +804,7 @@ type internal TransparentCompiler
             return! processLayer layers bootstrapInfo.InitialTcInfo
         }
 
-    let ComputeParseAndCheckFileInProject (fileName: string) (projectSnapshot: FSharpProjectSnapshot) userOpName _key =
+    let ComputeParseAndCheckFileInProject (fileName: string) (projectSnapshot: FSharpProjectSnapshot) userOpName =
         node {
             
             use _ = Activity.start "ComputeParseAndCheckFileInProject" [| Activity.Tags.fileName, fileName |> Path.GetFileName |]
@@ -874,6 +874,46 @@ type internal TransparentCompiler
                     |> NodeCode.FromCancellable
 
                 return (parseResults, FSharpCheckFileAnswer.Succeeded checkResults)
+        }
+
+    member _.ParseFile(fileName, projectSnapshot: FSharpProjectSnapshot, _userOpName) = 
+        node {
+            use _ = Activity.start "ParseFile" [| Activity.Tags.fileName, fileName |> Path.GetFileName |]
+            
+            let! bootstrapInfoOpt, creationDiags = BootstrapInfoCache.Get(projectSnapshot.Key, ComputeBootstrapInfo projectSnapshot)
+
+            match bootstrapInfoOpt with
+            | None ->
+                let parseTree = EmptyParsedInput(fileName, (false, false))
+                return FSharpParseFileResults(creationDiags, parseTree, true, [||])
+
+            | Some bootstrapInfo ->
+                
+                let file =
+                    bootstrapInfo.SourceFiles |> List.tryFind (fun f -> f.Source.FileName = fileName) |> Option.defaultWith (fun _ -> failwith ($"File {fileName} not found in project snapshot. Files in project: \n\n" + (bootstrapInfo.SourceFiles |> Seq.map (fun f -> f.Source.FileName) |> String.concat " \n")))
+
+                let! parseTree, parseDiagnostics, _sourceText =
+                    ParseFileCache.Get((file.Source.Key, file.IsLastCompiland, file.IsExe), ComputeParseFile file bootstrapInfo)
+
+                let parseDiagnostics =
+                    DiagnosticHelpers.CreateDiagnostics(
+                        bootstrapInfo.TcConfig.diagnosticsOptions,
+                        false,
+                        fileName,
+                        parseDiagnostics,
+                        suggestNamesForErrors
+                    )
+
+                let diagnostics = [| yield! creationDiags; yield! parseDiagnostics |]
+
+                return
+                    FSharpParseFileResults(
+                        diagnostics = diagnostics,
+                        input = parseTree,
+                        parseHadErrors = (parseDiagnostics.Length > 0),
+                        // TODO: check if we really need this in parse results
+                        dependencyFiles = [||]
+                    )
         }
 
     member _.ParseAndCheckFileInProject(fileName: string, projectSnapshot: FSharpProjectSnapshot, userOpName: string) =
@@ -1031,6 +1071,9 @@ type internal TransparentCompiler
 
         member _.ParseAndCheckProject(options: FSharpProjectOptions, userOpName: string) : NodeCode<FSharpCheckProjectResults> =
             backgroundCompiler.ParseAndCheckProject(options, userOpName)
+        
+        member this.ParseFile(fileName, projectSnapshot, userOpName) = 
+            this.ParseFile(fileName, projectSnapshot, userOpName)
 
         member _.ParseFile
             (

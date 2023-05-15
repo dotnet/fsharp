@@ -5,7 +5,7 @@ open System.Threading
 open System.Collections.Generic
 
 type internal Action<'TKey, 'TValue> =
-    | GetOrCompute of ('TKey -> NodeCode<'TValue>) * CancellationToken
+    | GetOrCompute of NodeCode<'TValue> * CancellationToken
     | CancelRequest
     | JobCompleted
 
@@ -68,7 +68,7 @@ type internal AsyncMemoize<'TKey, 'TValue when 'TKey: equality>(?logEvent: (JobE
                                 Async.AwaitNodeCode(
                                     node {
                                         log (Started, key)
-                                        let! result = computation key
+                                        let! result = computation
                                         post key JobCompleted
                                         return result
                                     }

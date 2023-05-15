@@ -307,6 +307,11 @@ type FSharpChecker
         let userOpName = defaultArg userOpName "Unknown"
         backgroundCompiler.ParseFile(fileName, sourceText, options, cache, userOpName)
 
+    member _.ParseFile(fileName, projectSnapshot, ?userOpName) =
+        let userOpName = defaultArg userOpName "Unknown"
+        backgroundCompiler.ParseFile(fileName, projectSnapshot, userOpName)
+        |> Async.AwaitNodeCode
+
     member ic.ParseFileInProject(fileName, source: string, options, ?cache: bool, ?userOpName: string) =
         let parsingOptions, _ = ic.GetParsingOptionsFromProjectOptions(options)
         ic.ParseFile(fileName, SourceText.ofString source, parsingOptions, ?cache = cache, ?userOpName = userOpName)
