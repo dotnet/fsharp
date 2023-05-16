@@ -243,5 +243,4 @@ module EditorOptionsExtensions =
         member this.IsFastFindReferencesEnabled =
             this.EditorOptions.LanguageServicePerformance.EnableFastFindReferencesAndRename
 
-        member this.UseTransparentCompiler =
-            this.EditorOptions.Advanced.UseTransparentCompiler
+        member this.UseTransparentCompiler = this.EditorOptions.Advanced.UseTransparentCompiler

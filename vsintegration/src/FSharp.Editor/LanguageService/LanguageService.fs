@@ -177,7 +177,8 @@ type internal FSharpWorkspaceServiceFactory [<System.Composition.ImportingConstr
                                     nameof isInlineReturnTypeHintsEnabled, isInlineReturnTypeHintsEnabled
                                     nameof enablePartialTypeChecking, enablePartialTypeChecking
                                     nameof useTransparentCompiler, useTransparentCompiler
-                                |])
+                                |]
+                            )
 
                             if enableLiveBuffers then
                                 workspace.WorkspaceChanged.Add(fun args ->

@@ -15,37 +15,36 @@ module private CheckerExtensions =
 
     let getProjectSnapshot (document: Document, options: FSharpProjectOptions) =
         async {
-             let project = document.Project
-             let solution = project.Solution
-             // TODO cache?
-             let projects =
-                 solution.Projects
-                 |> Seq.map (fun p -> p.FilePath, p.Documents |> Seq.map (fun d -> d.FilePath, d) |> Map)
-                 |> Map
+            let project = document.Project
+            let solution = project.Solution
+            // TODO cache?
+            let projects =
+                solution.Projects
+                |> Seq.map (fun p -> p.FilePath, p.Documents |> Seq.map (fun d -> d.FilePath, d) |> Map)
+                |> Map
 
-             let getFileSnapshot (options: FSharpProjectOptions) path =
-                 async {
-                     let project = projects[options.ProjectFileName]
-                     let document = project[path]
-                     let! version = document.GetTextVersionAsync() |> Async.AwaitTask
+            let getFileSnapshot (options: FSharpProjectOptions) path =
+                async {
+                    let project = projects[options.ProjectFileName]
+                    let document = project[path]
+                    let! version = document.GetTextVersionAsync() |> Async.AwaitTask
 
-                     let getSource () =
-                         task {
-                             let! sourceText = document.GetTextAsync()
-                             return sourceText.ToFSharpSourceText()
-                         }
+                    let getSource () =
+                        task {
+                            let! sourceText = document.GetTextAsync()
+                            return sourceText.ToFSharpSourceText()
+                        }
 
-                     return
-                         {
-                             FileName = path
-                             Version = version.ToString()
-                             GetSource = getSource
-                         }
-                 }
+                    return
+                        {
+                            FileName = path
+                            Version = version.ToString()
+                            GetSource = getSource
+                        }
+                }
 
-             return! FSharpProjectSnapshot.FromOptions(options, getFileSnapshot)
+            return! FSharpProjectSnapshot.FromOptions(options, getFileSnapshot)
         }
-
 
     type FSharpChecker with
 
@@ -60,7 +59,7 @@ module private CheckerExtensions =
 
         member checker.ParseDocumentUsingTransparentCompiler(document: Document, options: FSharpProjectOptions, userOpName: string) =
             async {
-                let! projectSnapshot = getProjectSnapshot(document, options)
+                let! projectSnapshot = getProjectSnapshot (document, options)
                 return! checker.ParseFile(document.FilePath, projectSnapshot, userOpName = userOpName)
             }
 
@@ -71,7 +70,7 @@ module private CheckerExtensions =
                 userOpName: string
             ) =
             async {
-                let! projectSnapshot = getProjectSnapshot(document, options)
+                let! projectSnapshot = getProjectSnapshot (document, options)
 
                 let! (parseResults, checkFileAnswer) = checker.ParseAndCheckFileInProject(document.FilePath, projectSnapshot, userOpName)
 
@@ -263,6 +262,7 @@ type Document with
     member this.GetFSharpParseResultsAsync(userOpName) =
         async {
             let! checker, _, parsingOptions, options = this.GetFSharpCompilationOptionsAsync(userOpName)
+
             if this.Project.UseTransparentCompiler then
                 return! checker.ParseDocumentUsingTransparentCompiler(this, options, userOpName)
             else

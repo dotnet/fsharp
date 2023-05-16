@@ -134,10 +134,9 @@ type internal IBackgroundCompiler =
     abstract member ParseFile:
         fileName: string * sourceText: ISourceText * options: FSharpParsingOptions * cache: bool * userOpName: string ->
             Async<FSharpParseFileResults>
-            
+
     abstract member ParseFile:
-        fileName: string * projectSnapshot: FSharpProjectSnapshot * userOpName: string ->
-            NodeCode<FSharpParseFileResults>
+        fileName: string * projectSnapshot: FSharpProjectSnapshot * userOpName: string -> NodeCode<FSharpParseFileResults>
 
     /// Try to get recent approximate type check results for a file.
     abstract member TryGetRecentCheckResultsForFile:

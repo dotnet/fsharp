@@ -126,6 +126,11 @@ type SyntheticProject =
         |> List.tryFind (fun f -> this.ProjectDir ++ f.FileName = path)
         |> Option.defaultWith (fun () -> failwith $"File {path} not found in project {this.Name}.")
 
+    member this.FindInAllProjectsByPath path =
+        this.GetAllFiles()
+        |> List.tryFind (fun (p, f) -> p.ProjectDir ++ f.FileName = path)
+        |> Option.defaultWith (fun () -> failwith $"File {path} not found in any project.")
+
     member this.ProjectFileName = this.ProjectDir ++ $"{this.Name}.fsproj"
 
     member this.OutputFilename = this.ProjectDir ++ $"{this.Name}.dll"
@@ -367,14 +372,14 @@ module ProjectOperations =
 
     let getFileSnapshot (project: SyntheticProject) _options (path: string) =
         async {
-            let filePath =
+            let project, filePath =
                 if path.EndsWith(".fsi") then
                     let implFilePath = path[..path.Length - 2]
-                    let f = project.FindByPath implFilePath
-                    getSignatureFilePath project f
+                    let p, f = project.FindInAllProjectsByPath implFilePath
+                    p, getSignatureFilePath p f
                 else
-                    let f = project.FindByPath path
-                    getFilePath project f
+                    let p, f = project.FindInAllProjectsByPath path
+                    p, getFilePath p f
 
             let source = getSourceText project path
             use md5 = System.Security.Cryptography.MD5.Create()

@@ -309,6 +309,7 @@ type FSharpChecker
 
     member _.ParseFile(fileName, projectSnapshot, ?userOpName) =
         let userOpName = defaultArg userOpName "Unknown"
+
         backgroundCompiler.ParseFile(fileName, projectSnapshot, userOpName)
         |> Async.AwaitNodeCode
 
