@@ -105,6 +105,7 @@ type AdvancedOptions =
         IsInlineParameterNameHintsEnabled: bool
         IsInlineReturnTypeHintsEnabled: bool
         IsLiveBuffersEnabled: bool
+        SendAdditionalTelemetry: bool
     }
 
     static member Default =
@@ -115,6 +116,7 @@ type AdvancedOptions =
             IsInlineParameterNameHintsEnabled = false
             IsInlineReturnTypeHintsEnabled = false
             IsLiveBuffersEnabled = FSharpExperimentalFeaturesEnabledAutomatically
+            SendAdditionalTelemetry = FSharpExperimentalFeaturesEnabledAutomatically
         }
 
 [<CLIMutable>]
