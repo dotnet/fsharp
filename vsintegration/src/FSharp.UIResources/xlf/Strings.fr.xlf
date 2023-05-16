@@ -2,6 +2,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="fr" original="../Strings.resx">
     <body>
+      <trans-unit id="AdditionalTelemetry">
+        <source>Additional performance telemetry (experimental)</source>
+        <target state="new">Additional performance telemetry (experimental)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Always_place_opens_at_top_level">
         <source>Always place open statements at the top level</source>
         <target state="translated">Placer toujours les instructions open au niveau supérieur</target>
@@ -90,6 +95,11 @@
       <trans-unit id="Preferred_description_width_in_characters">
         <source>Preferred description width in characters</source>
         <target state="translated">Largeur de description préférée en caractères</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Send_Additional_Telemetry">
+        <source>Send additional performance telemetry</source>
+        <target state="new">Send additional performance telemetry</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Parameter_Name_Hints">
