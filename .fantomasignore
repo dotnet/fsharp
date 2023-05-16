@@ -12,7 +12,11 @@ vsintegration/*
 !vsintegration/tests/FSharp.Editor.Tests
 artifacts/
 
-# Explicitly unformatted implementation 
+# For some reason, it tries to format files from remotes (Processing .\.git\refs\remotes\<remote>\FSComp.fsi)
+.git/
+
+
+# Explicitly unformatted implementation
 src/Compiler/Checking/AccessibilityLogic.fs
 src/Compiler/Checking/AttributeChecking.fs
 src/Compiler/Checking/AugmentWithHashCompare.fs
@@ -114,4 +118,3 @@ src/FSharp.Core/list.fsi
 src/FSharp.Core/Query.fsi
 src/FSharp.Core/resumable.fsi
 src/FSharp.Core/async.fsi
-

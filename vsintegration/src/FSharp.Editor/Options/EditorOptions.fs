@@ -106,6 +106,7 @@ type AdvancedOptions =
         IsInlineReturnTypeHintsEnabled: bool
         IsLiveBuffersEnabled: bool
         UseTransparentCompiler: bool
+        SendAdditionalTelemetry: bool
     }
 
     static member Default =
@@ -116,6 +117,7 @@ type AdvancedOptions =
             IsInlineParameterNameHintsEnabled = false
             IsInlineReturnTypeHintsEnabled = false
             IsLiveBuffersEnabled = FSharpExperimentalFeaturesEnabledAutomatically
+            SendAdditionalTelemetry = FSharpExperimentalFeaturesEnabledAutomatically
             UseTransparentCompiler = false
         }
 

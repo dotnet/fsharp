@@ -42,6 +42,10 @@
                     <CheckBox x:Name="toggleTransparentCompiler" IsChecked="{Binding UseTransparentCompiler}"
                               Content="{x:Static local:Strings.Use_Transparent_Compiler}"/>
                 </GroupBox>
+                <GroupBox Header="{x:Static local:Strings.AdditionalTelemetry}">
+                    <CheckBox x:Name="toggleSendAdditionalTelemetry" IsChecked="{Binding SendAdditionalTelemetry}"
+                              Content="{x:Static local:Strings.Send_Additional_Telemetry}"/>
+                </GroupBox>
             </StackPanel>
         </ScrollViewer>
     </Grid>
