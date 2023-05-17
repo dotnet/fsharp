@@ -137,6 +137,7 @@ type DirectoryAttribute(dir: string) =
             References        = []
             OutputDirectory   = outputDirectory
             TargetFramework   = TargetFramework.Current
+            StaticLink = false
             } |> FS
 
     member _.BaselineSuffix with get() = baselineSuffix and set v = baselineSuffix <- v
