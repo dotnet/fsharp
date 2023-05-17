@@ -674,11 +674,13 @@ let mkSynMemberDefnGetSet
                         let args =
                             if id.idText = "set" then
                                 match args with
-                                | [ SynPat.Paren (SynPat.Tuple (false, indexPats, _), indexPatRange); valuePat ] when id.idText = "set" ->
+                                | [ SynPat.Paren (SynPat.Tuple (false, indexPats, commas, _), indexPatRange); valuePat ] when
+                                    id.idText = "set"
+                                    ->
                                     [
-                                        SynPat.Tuple(false, indexPats @ [ valuePat ], unionRanges indexPatRange valuePat.Range)
+                                        SynPat.Tuple(false, indexPats @ [ valuePat ], commas, unionRanges indexPatRange valuePat.Range)
                                     ]
-                                | [ indexPat; valuePat ] -> [ SynPat.Tuple(false, args, unionRanges indexPat.Range valuePat.Range) ]
+                                | [ indexPat; valuePat ] -> [ SynPat.Tuple(false, args, [], unionRanges indexPat.Range valuePat.Range) ]
                                 | [ valuePat ] -> [ valuePat ]
                                 | _ -> raiseParseErrorAt m (FSComp.SR.parsSetSyntax ())
                             else

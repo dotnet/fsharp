@@ -8,7 +8,7 @@ ImplFile
              (Lambda
                 (false, false,
                  SimplePats
-                   ([Id (_arg1, None, true, false, false, (2,4--2,13))],
+                   ([Id (_arg1, None, true, false, false, (2,4--2,13))], [],
                     (2,4--2,13)),
                  Match
                    (NoneAtInvisible, Ident _arg1,

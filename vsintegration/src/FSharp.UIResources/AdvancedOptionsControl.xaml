@@ -38,6 +38,10 @@
                     <CheckBox x:Name="toggleLiveBuffers" IsChecked="{Binding IsLiveBuffersEnabled}"
                               Content="{x:Static local:Strings.Enable_Live_Buffers}"/>
                 </GroupBox>
+                <GroupBox Header="{x:Static local:Strings.AdditionalTelemetry}">
+                    <CheckBox x:Name="toggleSendAdditionalTelemetry" IsChecked="{Binding SendAdditionalTelemetry}"
+                              Content="{x:Static local:Strings.Send_Additional_Telemetry}"/>
+                </GroupBox>
             </StackPanel>
         </ScrollViewer>
     </Grid>

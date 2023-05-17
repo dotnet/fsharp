@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace FSharp.Compiler.UnitTests
 
@@ -100,7 +100,7 @@ module Inner =
       member blah: unit -> int list
             
       /// auto-property-level docs
-      member Name: string
+      member Name: string with get, set
     
     /// module-level binding docs
     val module_member: unit
@@ -127,6 +127,58 @@ module Inner =
       /// union member
       member Thing: int
   """
+    
+    [<Test>]
+    let ``can generate signatures for autoproperties`` () = 
+        """
+namespace Sample
+
+module Inner =
+    type Facts(name1: string, name2: string) =
+
+        let mutable name3 = ""
+        let mutable value = 1
+        
+        member val SomeAutoProp = name1 with get, set
+        
+        member val SomeAutoPropWithGetOnly = name1 with get
+        
+        member this.PropWithExplGetterOnly
+            with get() = name2
+            
+        member this.PropWithExplSetterOnly
+            with set (s: string) (i: float) = name3 <- s
+
+        member this.PropWithExplGetterAndSetter
+            with set (s: string) (i: float) = name3 <- s
+            and get(j: int) = name3
+            
+        abstract Property1 : int with get, set
+        default this.Property1 with get() = value and set(v : int) = value <- v
+        """
+        |> sigShouldBe """namespace Sample
+
+  module Inner =
+
+    type Facts =
+
+      new: name1: string * name2: string -> Facts
+
+      member PropWithExplGetterAndSetter: s: string -> float with set
+
+      member PropWithExplGetterAndSetter: j: int -> string with get
+
+      member PropWithExplGetterOnly: string
+
+      member PropWithExplSetterOnly: s: string -> float with set
+
+      override Property1: int with get, set
+
+      abstract Property1: int with get, set
+
+      member SomeAutoProp: string with get, set
+
+      member SomeAutoPropWithGetOnly: string"""
 
     [<Test>]
     let ``can generate attributes for implicit namespace`` () = 
