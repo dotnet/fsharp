@@ -284,9 +284,16 @@ type Document with
         async {
             let! checker, _, _, projectOptions = this.GetFSharpCompilationOptionsAsync(userOpName)
 
-            match! checker.GetBackgroundSemanticClassificationForFile(this.FilePath, projectOptions) with
-            | Some results -> return results
-            | _ -> return raise (System.OperationCanceledException("Unable to get FSharp semantic classification."))
+            let! result =
+                if this.Project.UseTransparentCompiler then
+                    async {
+                        let! projectSnapshot = getProjectSnapshot (this, projectOptions)
+                        return! checker.GetBackgroundSemanticClassificationForFile(this.FilePath, projectSnapshot)
+                    }
+                else
+                    checker.GetBackgroundSemanticClassificationForFile(this.FilePath, projectOptions)
+
+            return result |> Option.defaultWith (fun _ -> raise (System.OperationCanceledException("Unable to get FSharp semantic classification.")))
         }
 
     /// Find F# references in the given F# document.

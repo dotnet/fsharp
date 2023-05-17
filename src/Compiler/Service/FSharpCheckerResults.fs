@@ -129,6 +129,8 @@ type FSharpProjectSnapshotKey =
         IsIncompleteTypeCheckEnvironment: bool
         UseScriptResolutionRules: bool
     }
+    member this.LastFile = this.SourceFiles |> List.last
+
 
 [<NoComparison; CustomEquality>]
 type FSharpFileSnapshot =
@@ -194,14 +196,17 @@ type FSharpProjectSnapshot =
 
     member po.ProjectDirectory = Path.GetDirectoryName(po.ProjectFileName)
 
+    member this.IndexOf fileName =
+        this.SourceFiles
+        |> List.tryFindIndex (fun x -> x.FileName = fileName)
+        |> Option.defaultWith (fun () -> failwith (sprintf "Unable to find file %s in project %s" fileName this.ProjectFileName))
+
     member this.UpTo fileIndex =
         { this with
             SourceFiles = this.SourceFiles[..fileIndex]
         }
 
-    member this.UpTo fileName =
-        let fileIndex = this.SourceFiles |> List.findIndex (fun x -> x.FileName = fileName)
-        this.UpTo fileIndex
+    member this.UpTo fileName = this.UpTo (this.IndexOf fileName)
 
     member this.Key =
         {

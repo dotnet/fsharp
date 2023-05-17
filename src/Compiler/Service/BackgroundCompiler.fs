@@ -113,6 +113,10 @@ type internal IBackgroundCompiler =
         fileName: string * options: FSharpProjectOptions * userOpName: string ->
             NodeCode<FSharp.Compiler.EditorServices.SemanticClassificationView option>
 
+    abstract member GetSemanticClassificationForFile:
+        fileName: string * snapshot: FSharpProjectSnapshot * userOpName: string ->
+            NodeCode<FSharp.Compiler.EditorServices.SemanticClassificationView option>
+
     abstract member InvalidateConfiguration: options: FSharpProjectOptions * userOpName: string -> unit
 
     abstract member NotifyFileChanged: fileName: string * options: FSharpProjectOptions * userOpName: string -> NodeCode<unit>
@@ -153,7 +157,7 @@ type internal IBackgroundCompiler =
 
     abstract member ProjectChecked: IEvent<FSharpProjectOptions>
 
-    abstract member CacheEvent: IEvent<string * JobEventType * string array>
+    abstract member CacheEvent: IEvent<string * JobEventType * obj>
 
 type ParseCacheLockToken() =
     interface LockToken
@@ -239,7 +243,7 @@ type internal BackgroundCompiler
     let fileChecked = Event<string * FSharpProjectOptions>()
     let projectChecked = Event<FSharpProjectOptions>()
 
-    let cacheEvent = Event<string * JobEventType * string array>()
+    let cacheEvent = Event<string * JobEventType * obj>()
 
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.backgroundCompiler.scriptClosureCache
     /// Information about the derived script closure.
@@ -1492,6 +1496,14 @@ type internal BackgroundCompiler
                 userOpName: string
             ) : NodeCode<EditorServices.SemanticClassificationView option> =
             self.GetSemanticClassificationForFile(fileName, options, userOpName)
+
+        member _.GetSemanticClassificationForFile
+            (
+                fileName: string,
+                snapshot: FSharpProjectSnapshot,
+                userOpName: string
+            ) : NodeCode<EditorServices.SemanticClassificationView option> =
+            self.GetSemanticClassificationForFile(fileName, snapshot.ToOptions(), userOpName)
 
         member _.InvalidateConfiguration(options: FSharpProjectOptions, userOpName: string) : unit =
             self.InvalidateConfiguration(options, userOpName)

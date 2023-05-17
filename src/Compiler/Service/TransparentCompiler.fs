@@ -34,6 +34,7 @@ open FSharp.Compiler.NameResolution
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.CheckDeclarations
+open FSharp.Compiler.EditorServices
 
 type internal FSharpFile =
     {
@@ -71,6 +72,8 @@ type internal TcIntermediate =
         tcDiagnosticsRev:(PhasedDiagnostic * FSharpDiagnosticSeverity)[] list
 
         tcDependencyFiles: string list
+
+        sink: TcResultsSinkImpl
     }
 
 type internal TransparentCompiler
@@ -94,17 +97,19 @@ type internal TransparentCompiler
     // Is having just one of these ok?
     let lexResourceManager = Lexhelp.LexResourceManager()
 
-    let cacheEvent = new Event<string * JobEventType * string array>()
+    let cacheEvent = new Event<string * JobEventType * obj>()
+    let triggerCacheEvent name (e, k) = cacheEvent.Trigger(name, e, k)
 
     let ParseFileCache =
-        AsyncMemoize(logEvent = fun (e, ((fileName, version), _, _)) -> cacheEvent.Trigger("ParseFile", e, [| fileName; version |] ))
-    let ParseAndCheckFileInProjectCache = AsyncMemoize()
-    let FrameworkImportsCache = AsyncMemoize()
-    let BootstrapInfoStaticCache = AsyncMemoize()
-    let BootstrapInfoCache = AsyncMemoize()
-    let TcPriorCache = AsyncMemoize()
-    let TcIntermediateCache = AsyncMemoize()
-    let DependencyGraphForLastFileCache = AsyncMemoize()
+        AsyncMemoize(triggerCacheEvent "ParseFile")
+    let ParseAndCheckFileInProjectCache = AsyncMemoize(triggerCacheEvent "ParseAndCheckFileInProject")
+    let FrameworkImportsCache = AsyncMemoize(triggerCacheEvent "FrameworkImports")
+    let BootstrapInfoStaticCache = AsyncMemoize(triggerCacheEvent "BootstrapInfoStatic")
+    let BootstrapInfoCache = AsyncMemoize(triggerCacheEvent "BootstrapInfo")
+    let TcPriorCache = AsyncMemoize(triggerCacheEvent "TcPrior")
+    let TcIntermediateCache = AsyncMemoize(triggerCacheEvent "TcIntermediate")
+    let DependencyGraphForLastFileCache = AsyncMemoize(triggerCacheEvent "DependencyGraphForLastFile")
+    let SemanticClassificationCache = AsyncMemoize(triggerCacheEvent "SemanticClassification")
 
     // We currently share one global dependency provider for all scripts for the FSharpChecker.
     // For projects, one is used per project.
@@ -704,6 +709,7 @@ type internal TransparentCompiler
                     moduleNamesDict = moduleNamesDict
                     tcDiagnosticsRev = [ newErrors ]
                     tcDependencyFiles = [ fileName ]
+                    sink = sink
                 }
         })
 
@@ -720,7 +726,7 @@ type internal TransparentCompiler
                 latestCcuSigForFile = Some ccuSigForFile })
 
     // Type check everything that is needed to check given file
-    let ComputeTcPrior (file: FSharpFile) (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshot) _userOpName =
+    let ComputeTcPrior (file: FSharpFile) (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshot) =
 
         let priorSnapshot = projectSnapshot.UpTo file.Source.FileName
         let key = priorSnapshot.Key
@@ -785,6 +791,7 @@ type internal TransparentCompiler
                                             moduleNamesDict = tcInfo.moduleNamesDict
                                             tcDiagnosticsRev = []
                                             tcDependencyFiles = []
+                                            sink = Unchecked.defaultof<_>
                                         }
 
                                     node.Return(tcIntermediate))
@@ -796,26 +803,24 @@ type internal TransparentCompiler
             return! processLayer layers bootstrapInfo.InitialTcInfo
         })
 
-    let ComputeParseAndCheckFileInProject (fileName: string) (projectSnapshot: FSharpProjectSnapshot) userOpName =
+    let ComputeParseAndCheckFileInProject (fileName: string) (projectSnapshot: FSharpProjectSnapshot) =
         let key = fileName, projectSnapshot.Key
         ParseAndCheckFileInProjectCache.Get(key, node {
 
             use _ = Activity.start "ComputeParseAndCheckFileInProject" [| Activity.Tags.fileName, fileName |> Path.GetFileName |]
 
-            let! bootstrapInfoOpt, creationDiags = ComputeBootstrapInfo projectSnapshot
-
-            match bootstrapInfoOpt with
-            | None ->
+            match! ComputeBootstrapInfo projectSnapshot with
+            | None, creationDiags ->
                 let parseTree = EmptyParsedInput(fileName, (false, false))
                 let parseResults = FSharpParseFileResults(creationDiags, parseTree, true, [||])
                 return (parseResults, FSharpCheckFileAnswer.Aborted)
 
-            | Some bootstrapInfo ->
+            | Some bootstrapInfo, creationDiags ->
 
                 let file =
                     bootstrapInfo.SourceFiles |> List.tryFind (fun f -> f.Source.FileName = fileName) |> Option.defaultWith (fun _ -> failwith ($"File {fileName} not found in project snapshot. Files in project: \n\n" + (bootstrapInfo.SourceFiles |> Seq.map (fun f -> f.Source.FileName) |> String.concat " \n")))
 
-                let! tcInfo = ComputeTcPrior file bootstrapInfo projectSnapshot userOpName
+                let! tcInfo = ComputeTcPrior file bootstrapInfo projectSnapshot
 
                 // We could also bubble this through ComputeTcPrior
                 let! parseTree, parseDiagnostics, sourceText = ComputeParseFile bootstrapInfo file
@@ -867,6 +872,34 @@ type internal TransparentCompiler
                 return (parseResults, FSharpCheckFileAnswer.Succeeded checkResults)
         })
 
+    let ComputeSemanticClassification(fileName: string, projectSnapshot: FSharpProjectSnapshot): NodeCode<EditorServices.SemanticClassificationView option> =
+        let key = (projectSnapshot.UpTo fileName).Key
+        SemanticClassificationCache.Get(key, node {
+            use _ = Activity.start "ComputeSemanticClassification" [| Activity.Tags.fileName, fileName |> Path.GetFileName |]
+
+            match! ComputeBootstrapInfo projectSnapshot with
+            | None, _ -> return None
+            | Some bootstrapInfo, _creationDiags ->
+
+                let file =
+                    bootstrapInfo.SourceFiles |> List.tryFind (fun f -> f.Source.FileName = fileName) |> Option.defaultWith (fun _ -> failwith ($"File {fileName} not found in project snapshot. Files in project: \n\n" + (bootstrapInfo.SourceFiles |> Seq.map (fun f -> f.Source.FileName) |> String.concat " \n")))
+
+                let! tcInfo = ComputeTcPrior file bootstrapInfo projectSnapshot
+                let! parseTree, parseDiagnostics, _sourceText = ComputeParseFile bootstrapInfo file
+
+                let fileIndex = projectSnapshot.IndexOf fileName
+                let! { sink = sink } = ComputeTcIntermediate projectSnapshot fileIndex (parseTree, parseDiagnostics) bootstrapInfo tcInfo
+
+                let sResolutions = sink.GetResolutions()
+
+                let semanticClassification = sResolutions.GetSemanticClassification(bootstrapInfo.TcGlobals, bootstrapInfo.TcImports.GetImportMap(), sink.GetFormatSpecifierLocations(), None)
+
+                let sckBuilder = SemanticClassificationKeyStoreBuilder()
+                sckBuilder.WriteAll semanticClassification
+
+                return sckBuilder.TryBuildAndReset() |> Option.map (fun sck -> sck.GetView())
+        })
+
     member _.ParseFile(fileName, projectSnapshot: FSharpProjectSnapshot, _userOpName) =
         node {
             use _ = Activity.start "ParseFile" [| Activity.Tags.fileName, fileName |> Path.GetFileName |]
@@ -907,7 +940,8 @@ type internal TransparentCompiler
         }
 
     member _.ParseAndCheckFileInProject(fileName: string, projectSnapshot: FSharpProjectSnapshot, userOpName: string) =
-        ComputeParseAndCheckFileInProject fileName projectSnapshot userOpName
+        ignore userOpName
+        ComputeParseAndCheckFileInProject fileName projectSnapshot
 
 
     interface IBackgroundCompiler with
@@ -1025,6 +1059,15 @@ type internal TransparentCompiler
                 optionsStamp,
                 userOpName
             )
+
+        member _.GetSemanticClassificationForFile
+            (
+                fileName: string,
+                snapshot: FSharpProjectSnapshot,
+                userOpName: string
+            ) =
+            ignore userOpName
+            ComputeSemanticClassification(fileName, snapshot)
 
         member _.GetSemanticClassificationForFile
             (

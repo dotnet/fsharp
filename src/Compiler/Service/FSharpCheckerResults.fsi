@@ -52,6 +52,8 @@ type FSharpProjectSnapshotKey =
       IsIncompleteTypeCheckEnvironment: bool
       UseScriptResolutionRules: bool }
 
+    member LastFile: FSharpFileKey
+
 [<NoComparison; CustomEquality>]
 type FSharpFileSnapshot =
     { FileName: string
@@ -114,6 +116,8 @@ type FSharpProjectSnapshot =
     member internal ProjectDirectory: string
 
     member SourceFileNames: string list
+
+    member IndexOf: fileName: string -> FileIndex
 
     /// A snapshot of the same project but only up to the given file index (including).
     member UpTo: fileIndex: int -> FSharpProjectSnapshot

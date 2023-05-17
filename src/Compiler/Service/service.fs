@@ -485,6 +485,12 @@ type FSharpChecker
         backgroundCompiler.GetSemanticClassificationForFile(fileName, options, userOpName)
         |> Async.AwaitNodeCode
 
+    member _.GetBackgroundSemanticClassificationForFile(fileName: string, snapshot: FSharpProjectSnapshot, ?userOpName) =
+        let userOpName = defaultArg userOpName "Unknown"
+
+        backgroundCompiler.GetSemanticClassificationForFile(fileName, snapshot, userOpName)
+        |> Async.AwaitNodeCode
+
     /// For a given script file, get the ProjectOptions implied by the #load closure
     member _.GetProjectOptionsFromScript
         (

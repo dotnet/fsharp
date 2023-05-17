@@ -347,6 +347,17 @@ type public FSharpChecker =
             Async<SemanticClassificationView option>
 
     /// <summary>
+    /// <para>Get semantic classification for a file.</para>
+    /// </summary>
+    ///
+    /// <param name="fileName">The file name for the file.</param>
+    /// <param name="snapshot">The project snapshot for which we want to get the semantic classification.</param>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member GetBackgroundSemanticClassificationForFile:
+        fileName: string * snapshot: FSharpProjectSnapshot * ?userOpName: string ->
+            Async<SemanticClassificationView option>
+
+    /// <summary>
     /// Compile using the given flags.  Source files names are resolved via the FileSystem API.
     /// The output file must be given by a -o flag.
     /// The first argument is ignored and can just be "fsc.exe".
@@ -431,7 +442,7 @@ type public FSharpChecker =
     /// The event may be raised on a background thread.
     member ProjectChecked: IEvent<FSharpProjectOptions>
 
-    member internal CacheEvent: IEvent<string * Internal.Utilities.Collections.JobEventType * string array>
+    member internal CacheEvent: IEvent<string * Internal.Utilities.Collections.JobEventType * obj>
 
     [<Obsolete("Please create an instance of FSharpChecker using FSharpChecker.Create")>]
     static member Instance: FSharpChecker

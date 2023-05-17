@@ -2,10 +2,13 @@
 
 open System.Collections.Concurrent
 open System.Diagnostics
+open FSharp.Compiler.CodeAnalysis
+open Internal.Utilities.Collections
 
 open Xunit
 
 open FSharp.Test.ProjectGeneration
+open System.IO
 
 
 [<Fact>]
@@ -174,3 +177,32 @@ let ``Changes in a referenced project`` () =
         saveFile "Library"
         checkFile "Last" expectSignatureChanged
     }
+
+[<Fact>]
+let ``We don't check files that are not depended on`` () =
+    let project = SyntheticProject.Create(
+        sourceFile "First" [],
+        sourceFile "Second" ["First"],
+        sourceFile "Third" ["First"],
+        sourceFile "Last" ["Third"])
+
+    let cacheEvents = ResizeArray()
+
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+        withChecker (fun checker -> checker.CacheEvent.Add cacheEvents.Add)
+        updateFile "First" updatePublicSurface
+        checkFile "Last" expectOk
+    } |> ignore
+
+    let intermediateTypeChecks =
+        cacheEvents
+        |> Seq.choose (function
+            | ("TcIntermediate", e, k) -> Some ((k :?> FSharpProjectSnapshotKey).LastFile |> fst |> Path.GetFileName, e)
+            | _ -> None)
+        |> Seq.groupBy fst
+        |> Seq.map (fun (k, g) -> k, g |> Seq.map snd |> Seq.toList)
+        |> Map
+
+    Assert.Equal<JobEventType list>([Started; Finished], intermediateTypeChecks["FileFirst.fs"])
+    Assert.Equal<JobEventType list>([Started; Finished], intermediateTypeChecks["FileThird.fs"])
+    Assert.False (intermediateTypeChecks.ContainsKey "FileSecond.fs")
