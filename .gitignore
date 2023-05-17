@@ -126,3 +126,4 @@ nCrunchTemp_*
 
 tests/FSharp.Compiler.Service.Tests/FSharp.CompilerService.SurfaceArea.netstandard.actual
 *.vsp
+/tests/AheadOfTime/Trimming/output.txt
