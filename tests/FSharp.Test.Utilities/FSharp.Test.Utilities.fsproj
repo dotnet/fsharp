@@ -11,6 +11,7 @@
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <ItemGroup>
