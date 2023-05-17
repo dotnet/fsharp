@@ -1812,8 +1812,7 @@ let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ((Ident list * Ident) * '
                 let fldPath, fldId = fld
                 let frefSet = ResolveField cenv.tcSink cenv.nameResolver env.eNameResEnv ad ty fldPath fldId allFields
                 Some(fld, frefSet, fldExpr)
-            with e ->
-                errorR e 
+            with _ ->
                 None
         )
 

@@ -474,3 +474,18 @@ type Foo =
           (:? FSharpMemberOrFunctionOrValue as setMfv) ->
             Assert.AreNotEqual(getMfv.CurriedParameterGroups, setMfv.CurriedParameterGroups)
         | _ -> Assert.Fail "Expected symbols to be FSharpMemberOrFunctionOrValue"
+
+module Expressions =
+    [<Test>]
+    let ``Unresolved record field 01`` () =
+        let _, checkResults = getParseAndCheckResults """
+type R1 =
+    { F1: int
+      F2: int }
+
+{ F = 1
+  F2 = 1 }
+"""
+        getSymbolUses checkResults
+        |> Seq.exists (fun symbolUse -> symbolUse.IsFromUse && symbolUse.Symbol.DisplayName = "F2")
+        |> shouldEqual true
