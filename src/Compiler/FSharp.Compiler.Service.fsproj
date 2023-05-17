@@ -221,7 +221,6 @@
     </FsLex>
     <FsYacc Include="pars.fsy">
       <OtherFlags>-v --module FSharp.Compiler.Parser --open FSharp.Compiler --open FSharp.Compiler.Syntax --open FSharp.Compiler.Text --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing --buffer-type-argument char</OtherFlags>
-      <OtherFlags>-v --module FSharp.Compiler.Parser --open FSharp.Compiler --open FSharp.Compiler.Syntax --open FSharp.Compiler.Text --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
       <Link>SyntaxTree\pars.fsy</Link>
     </FsYacc>
     <None Include="pplex.fsl">
@@ -257,9 +256,6 @@
     <Compile Include="$(FsYaccOutputFolder)pars.fsi">
       <Link>SyntaxTree\FsYaccOutput\pars.fsi</Link>
     </Compile>
-<!--    <Compile Include="$(FsYaccOutputFolder)pars.fsi">-->
-<!--      <Link>SyntaxTree\FsYaccOutput\pars.fsi</Link>-->
-<!--    </Compile>-->
     <Compile Include="$(FsYaccOutputFolder)pars.fs">
       <Link>SyntaxTree\FsYaccOutput\pars.fs</Link>
     </Compile>
