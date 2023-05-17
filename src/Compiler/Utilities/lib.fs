@@ -464,17 +464,14 @@ type DisposablesTracker() =
 module ArrayParallel =
 
     let inline iteri f (arr: 'T []) =
-        match arr with
-        | [||] -> ()
-        | arr ->
-            let parallelOptions = ParallelOptions(MaxDegreeOfParallelism = Environment.ProcessorCount)
-            try
-                Parallel.For(0, arr.Length, parallelOptions, fun i ->
-                    f i arr[i]
-                ) |> ignore
-            with
-            | :? AggregateException as ex when ex.InnerExceptions.Count = 1 ->
-                raise(ex.InnerExceptions[0])
+        let parallelOptions = ParallelOptions(MaxDegreeOfParallelism = max (min Environment.ProcessorCount arr.Length) 1)
+        try
+            Parallel.For(0, arr.Length, parallelOptions, fun i ->
+                f i arr[i]
+            ) |> ignore
+        with
+        | :? AggregateException as ex when ex.InnerExceptions.Count = 1 ->
+            raise(ex.InnerExceptions[0])
 
     let inline iter f (arr: 'T []) =
         arr |> iteri (fun _ item -> f item)
