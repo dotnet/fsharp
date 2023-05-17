@@ -129,8 +129,8 @@ type FSharpProjectSnapshotKey =
         IsIncompleteTypeCheckEnvironment: bool
         UseScriptResolutionRules: bool
     }
-    member this.LastFile = this.SourceFiles |> List.last
 
+    member this.LastFile = this.SourceFiles |> List.last
 
 [<NoComparison; CustomEquality>]
 type FSharpFileSnapshot =
@@ -206,7 +206,7 @@ type FSharpProjectSnapshot =
             SourceFiles = this.SourceFiles[..fileIndex]
         }
 
-    member this.UpTo fileName = this.UpTo (this.IndexOf fileName)
+    member this.UpTo fileName = this.UpTo(this.IndexOf fileName)
 
     member this.Key =
         {

@@ -293,7 +293,9 @@ type Document with
                 else
                     checker.GetBackgroundSemanticClassificationForFile(this.FilePath, projectOptions)
 
-            return result |> Option.defaultWith (fun _ -> raise (System.OperationCanceledException("Unable to get FSharp semantic classification.")))
+            return
+                result
+                |> Option.defaultWith (fun _ -> raise (System.OperationCanceledException("Unable to get FSharp semantic classification.")))
         }
 
     /// Find F# references in the given F# document.
