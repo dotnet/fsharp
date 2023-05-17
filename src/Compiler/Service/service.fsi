@@ -333,6 +333,10 @@ type public FSharpChecker =
         ?userOpName: string ->
             Async<range seq>
 
+    member FindBackgroundReferencesInFile:
+        fileName: string * projectSnapshot: FSharpProjectSnapshot * symbol: FSharpSymbol * ?userOpName: string ->
+            Async<range seq>
+
     /// <summary>
     /// <para>Get semantic classification for a file.</para>
     /// <para>All files are read from the FileSystem API, including the file being checked.</para>

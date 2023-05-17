@@ -304,13 +304,20 @@ type Document with
             let! checker, _, _, projectOptions = this.GetFSharpCompilationOptionsAsync(userOpName)
 
             let! symbolUses =
-                checker.FindBackgroundReferencesInFile(
-                    this.FilePath,
-                    projectOptions,
-                    symbol,
-                    canInvalidateProject = false,
-                    fastCheck = this.Project.IsFastFindReferencesEnabled
-                )
+
+                if this.Project.UseTransparentCompiler then
+                    async {
+                        let! projectSnapshot = getProjectSnapshot (this, projectOptions)
+                        return! checker.FindBackgroundReferencesInFile(this.FilePath, projectSnapshot, symbol)
+                    }
+                else
+                    checker.FindBackgroundReferencesInFile(
+                        this.FilePath,
+                        projectOptions,
+                        symbol,
+                        canInvalidateProject = false,
+                        fastCheck = this.Project.IsFastFindReferencesEnabled
+                    )
 
             for symbolUse in symbolUses do
                 do! onFound symbolUse

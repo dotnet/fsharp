@@ -1,6 +1,7 @@
 namespace FSharp.Compiler.CodeAnalysis.TransparentCompiler
 
 open System
+open System.Collections.Generic
 open System.Diagnostics
 open System.IO
 
@@ -35,6 +36,7 @@ open Internal.Utilities.Library.Extras
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.EditorServices
+open FSharp.Compiler.CodeAnalysis
 
 type internal FSharpFile =
     {
@@ -110,6 +112,7 @@ type internal TransparentCompiler
     let TcIntermediateCache = AsyncMemoize(triggerCacheEvent "TcIntermediate")
     let DependencyGraphForLastFileCache = AsyncMemoize(triggerCacheEvent "DependencyGraphForLastFile")
     let SemanticClassificationCache = AsyncMemoize(triggerCacheEvent "SemanticClassification")
+    let ItemKeyStoreCache = AsyncMemoize(triggerCacheEvent "ItemKeyStore")
 
     // We currently share one global dependency provider for all scripts for the FSharpChecker.
     // For projects, one is used per project.
@@ -872,9 +875,8 @@ type internal TransparentCompiler
                 return (parseResults, FSharpCheckFileAnswer.Succeeded checkResults)
         })
 
-    let ComputeSemanticClassification(fileName: string, projectSnapshot: FSharpProjectSnapshot): NodeCode<EditorServices.SemanticClassificationView option> =
-        let key = (projectSnapshot.UpTo fileName).Key
-        SemanticClassificationCache.Get(key, node {
+    let tryGetSink fileName (projectSnapshot: FSharpProjectSnapshot) =
+        node {
             use _ = Activity.start "ComputeSemanticClassification" [| Activity.Tags.fileName, fileName |> Path.GetFileName |]
 
             match! ComputeBootstrapInfo projectSnapshot with
@@ -890,14 +892,48 @@ type internal TransparentCompiler
                 let fileIndex = projectSnapshot.IndexOf fileName
                 let! { sink = sink } = ComputeTcIntermediate projectSnapshot fileIndex (parseTree, parseDiagnostics) bootstrapInfo tcInfo
 
-                let sResolutions = sink.GetResolutions()
+                return Some (sink, bootstrapInfo)
+        }
 
-                let semanticClassification = sResolutions.GetSemanticClassification(bootstrapInfo.TcGlobals, bootstrapInfo.TcImports.GetImportMap(), sink.GetFormatSpecifierLocations(), None)
+    let ComputeSemanticClassification(fileName: string, projectSnapshot: FSharpProjectSnapshot) =
+        let key = (projectSnapshot.UpTo fileName).Key
+        SemanticClassificationCache.Get(key, node {
+            use _ = Activity.start "ComputeSemanticClassification" [| Activity.Tags.fileName, fileName |> Path.GetFileName |]
+            let! sinkOpt = tryGetSink fileName projectSnapshot
+            return
+                sinkOpt
+                |> Option.bind (fun (sink, bootstrapInfo) ->
+                    let sResolutions = sink.GetResolutions()
+                    let semanticClassification = sResolutions.GetSemanticClassification(bootstrapInfo.TcGlobals, bootstrapInfo.TcImports.GetImportMap(), sink.GetFormatSpecifierLocations(), None)
 
-                let sckBuilder = SemanticClassificationKeyStoreBuilder()
-                sckBuilder.WriteAll semanticClassification
+                    let sckBuilder = SemanticClassificationKeyStoreBuilder()
+                    sckBuilder.WriteAll semanticClassification
 
-                return sckBuilder.TryBuildAndReset() |> Option.map (fun sck -> sck.GetView())
+                    sckBuilder.TryBuildAndReset())
+                |> Option.map (fun sck -> sck.GetView())
+        })
+
+    let ComputeItemKeyStore(fileName: string, projectSnapshot: FSharpProjectSnapshot) =
+        let key = (projectSnapshot.UpTo fileName).Key
+        ItemKeyStoreCache.Get(key, node {
+            use _ = Activity.start "ComputeItemKeyStore" [| Activity.Tags.fileName, fileName |> Path.GetFileName |]
+            let! sinkOpt = tryGetSink fileName projectSnapshot
+            return
+                sinkOpt
+                |> Option.bind (fun (sink, _) ->
+                    let sResolutions = sink.GetResolutions()
+
+                    let builder = ItemKeyStoreBuilder()
+                    let preventDuplicates = HashSet({ new IEqualityComparer<struct(pos * pos)> with
+                                                        member _.Equals((s1, e1): struct(pos * pos), (s2, e2): struct(pos * pos)) = Position.posEq s1 s2 && Position.posEq e1 e2
+                                                        member _.GetHashCode o = o.GetHashCode() })
+                    sResolutions.CapturedNameResolutions
+                    |> Seq.iter (fun cnr ->
+                        let r = cnr.Range
+                        if preventDuplicates.Add struct(r.Start, r.End) then
+                            builder.Write(cnr.Range, cnr.Item))
+
+                    builder.TryBuildAndReset())
         })
 
     member _.ParseFile(fileName, projectSnapshot: FSharpProjectSnapshot, _userOpName) =
@@ -943,8 +979,22 @@ type internal TransparentCompiler
         ignore userOpName
         ComputeParseAndCheckFileInProject fileName projectSnapshot
 
+    member _.FindReferencesInFile
+        (
+            fileName: string,
+            projectSnapshot: FSharpProjectSnapshot,
+            symbol: FSharpSymbol,
+            userOpName: string
+        ) =
+        ignore userOpName
+        node {
+            match! ComputeItemKeyStore(fileName, projectSnapshot) with
+            | None -> return Seq.empty
+            | Some itemKeyStore -> return itemKeyStore.FindAll symbol.Item
+        }
 
     interface IBackgroundCompiler with
+
         member _.CacheEvent = cacheEvent.Publish
 
         member this.BeforeBackgroundFileCheck: IEvent<string * FSharpProjectOptions> =
@@ -1000,6 +1050,8 @@ type internal TransparentCompiler
                 userOpName: string
             ) : NodeCode<seq<range>> =
             backgroundCompiler.FindReferencesInFile(fileName, options, symbol, canInvalidateProject, userOpName)
+
+        member this.FindReferencesInFile(fileName, projectSnapshot, symbol, userOpName) = this.FindReferencesInFile(fileName, projectSnapshot, symbol, userOpName)
 
         member _.FrameworkImportsCache: FrameworkImportsCache =
             backgroundCompiler.FrameworkImportsCache

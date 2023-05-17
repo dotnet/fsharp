@@ -479,6 +479,22 @@ type FSharpChecker
         }
         |> Async.AwaitNodeCode
 
+    member _.FindBackgroundReferencesInFile(fileName: string, projectSnapshot: FSharpProjectSnapshot, symbol: FSharpSymbol, ?userOpName: string) =
+        let userOpName = defaultArg userOpName "Unknown"
+
+        node {
+            let! parseResults = backgroundCompiler.ParseFile(fileName, projectSnapshot, userOpName)
+
+            if
+                parseResults.ParseTree.Identifiers |> Set.contains symbol.DisplayNameCore
+                || parseResults.ParseTree.Identifiers |> NamesContainAttribute symbol
+            then
+                return! backgroundCompiler.FindReferencesInFile(fileName, projectSnapshot, symbol, userOpName)
+            else
+                return Seq.empty
+        }
+        |> Async.AwaitNodeCode
+
     member _.GetBackgroundSemanticClassificationForFile(fileName: string, options: FSharpProjectOptions, ?userOpName) =
         let userOpName = defaultArg userOpName "Unknown"
 

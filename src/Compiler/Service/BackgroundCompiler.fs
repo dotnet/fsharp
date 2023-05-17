@@ -80,6 +80,10 @@ type internal IBackgroundCompiler =
         userOpName: string ->
             NodeCode<seq<FSharp.Compiler.Text.range>>
 
+    abstract member FindReferencesInFile:
+        fileName: string * projectSnapshot: FSharpProjectSnapshot * symbol: FSharp.Compiler.Symbols.FSharpSymbol * userOpName: string ->
+            NodeCode<seq<FSharp.Compiler.Text.range>>
+
     abstract member GetAssemblyData:
         options: FSharpProjectOptions * userOpName: string -> NodeCode<FSharp.Compiler.CompilerConfig.ProjectAssemblyDataResult>
 
@@ -1430,6 +1434,9 @@ type internal BackgroundCompiler
                 userOpName: string
             ) : NodeCode<seq<range>> =
             self.FindReferencesInFile(fileName, options, symbol, canInvalidateProject, userOpName)
+
+        member this.FindReferencesInFile(fileName, projectSnapshot, symbol, userOpName) =
+            this.FindReferencesInFile(fileName, projectSnapshot.ToOptions(), symbol, true, userOpName)
 
         member _.FrameworkImportsCache: FrameworkImportsCache = self.FrameworkImportsCache
 
