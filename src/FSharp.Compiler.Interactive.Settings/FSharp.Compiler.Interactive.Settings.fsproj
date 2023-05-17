@@ -7,6 +7,7 @@
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <AssemblyName>FSharp.Compiler.Interactive.Settings</AssemblyName>
     <AllowCrossTargeting>true</AllowCrossTargeting>
+    <Configurations>Debug;Release;ReleaseCompressed</Configurations>
   </PropertyGroup>
 
   <!--  The FSharp.Compiler.Interactive.Settings dll provides a referencable public interface to tool builders  -->
