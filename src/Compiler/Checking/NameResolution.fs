@@ -3684,7 +3684,7 @@ let ResolveFieldPrim sink (ncenv: NameResolver) nenv ad ty (mp, id: Ident) allFi
         let resInfo, item, rest =
             modulSearch ad () +++ tyconSearch ad +++ modulSearch AccessibleFromSomeFSharpCode +++ tyconSearch AccessibleFromSomeFSharpCode
             |> AtMostOneResult m
-            |> ForceRaise
+            |> (function Exception e -> error e | Result r -> r)
 
         if not (isNil rest) then
             errorR(Error(FSComp.SR.nrInvalidFieldLabel(), (List.head rest).idRange))
