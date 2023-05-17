@@ -137,11 +137,11 @@ extern int AccessibleChildren(int* x)
             SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                 SynModuleDecl.Let(false, [ SynBinding(headPat =
                     SynPat.LongIdent(argPats = SynArgPats.Pats [
-                        SynPat.Tuple(_, [
+                        SynPat.Tuple(elementPats = [
                             SynPat.Attrib(pat = SynPat.Typed(targetType = SynType.App(typeName = SynType.LongIdent(
                                 SynLongIdent([nativeptrIdent], [], [Some (IdentTrivia.OriginalNotation "*")])
                                 ))))
-                        ], _)
+                        ])
                     ])) ], _)
                 ])
             ])) ->
@@ -161,11 +161,11 @@ extern int AccessibleChildren(obj& x)
             SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                 SynModuleDecl.Let(false, [ SynBinding(headPat =
                     SynPat.LongIdent(argPats = SynArgPats.Pats [
-                        SynPat.Tuple(_, [
+                        SynPat.Tuple(elementPats = [
                             SynPat.Attrib(pat = SynPat.Typed(targetType = SynType.App(typeName = SynType.LongIdent(
                                 SynLongIdent([byrefIdent], [], [Some (IdentTrivia.OriginalNotation "&")])
                                 ))))
-                        ], _)
+                        ])
                     ])) ], _)
                 ])
             ])) ->
@@ -185,11 +185,11 @@ extern int AccessibleChildren(void* x)
             SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                 SynModuleDecl.Let(false, [ SynBinding(headPat =
                     SynPat.LongIdent(argPats = SynArgPats.Pats [
-                        SynPat.Tuple(_, [
+                        SynPat.Tuple(elementPats = [
                             SynPat.Attrib(pat = SynPat.Typed(targetType = SynType.App(typeName = SynType.LongIdent(
                                 SynLongIdent([nativeintIdent], [], [Some (IdentTrivia.OriginalNotation "void*")])
                                 ))))
-                        ], _)
+                        ])
                     ])) ], _)
                 ])
             ])) ->
@@ -427,3 +427,50 @@ let f2 b1 b2 b3 b4 b5 =
                     mfv.FullType.AllInterfaces.Count |> should equal 0
                 | _ -> ()
             | _ -> ()
+
+module FSharpMemberOrFunctionOrValue =
+    [<Test>]
+    let ``Both Set and Get symbols are present`` () =
+        let _, checkResults = getParseAndCheckResults """
+namespace Foo
+
+type Foo =
+    member _.X
+            with get (y: int) : string = ""
+            and set (a: int) (b: float) = ()
+"""
+
+        // "X" resolves a symbol but it will either be the get or set symbol.
+        // Use get_ or set_ to differentiate.
+        let xSymbol = checkResults.GetSymbolUseAtLocation(5, 14, "    member _.X", [ "X" ])
+        Assert.True xSymbol.IsSome
+        
+        let getSymbol = findSymbolUseByName "get_X" checkResults
+        match getSymbol.Symbol with
+        | :? FSharpMemberOrFunctionOrValue as mfv ->
+            Assert.AreEqual(1, mfv.CurriedParameterGroups.[0].Count)
+        | symbol -> Assert.Fail $"Expected {symbol} to be FSharpMemberOrFunctionOrValue"
+
+        let setSymbol = findSymbolUseByName "set_X" checkResults
+        match setSymbol.Symbol with
+        | :? FSharpMemberOrFunctionOrValue as mfv ->
+            Assert.AreEqual(2, mfv.CurriedParameterGroups.[0].Count)
+        | symbol -> Assert.Fail $"Expected {symbol} to be FSharpMemberOrFunctionOrValue"
+
+    [<Test>]
+    let ``AutoProperty with get,set has two symbols`` () =
+        let _, checkResults = getParseAndCheckResults """
+namespace Foo
+
+type Foo =
+    member val AutoPropGetSet = 0 with get, set
+"""
+
+        let getSymbol = findSymbolUseByName "get_AutoPropGetSet" checkResults
+        let setSymbol = findSymbolUseByName "set_AutoPropGetSet" checkResults
+
+        match getSymbol.Symbol, setSymbol.Symbol with
+        | :? FSharpMemberOrFunctionOrValue as getMfv,
+          (:? FSharpMemberOrFunctionOrValue as setMfv) ->
+            Assert.AreNotEqual(getMfv.CurriedParameterGroups, setMfv.CurriedParameterGroups)
+        | _ -> Assert.Fail "Expected symbols to be FSharpMemberOrFunctionOrValue"

@@ -23,6 +23,10 @@ open FSharp.Compiler.Text
 open Xunit
 open System.Collections.Concurrent
 
+open OpenTelemetry
+open OpenTelemetry.Resources
+open OpenTelemetry.Trace
+
 #nowarn "57" // Experimental feature use
 
 let private projectRoot = "test-projects"
@@ -546,6 +550,8 @@ type ProjectWorkflowBuilder
     let useChangeNotifications = defaultArg useChangeNotifications false
 
     let mutable latestProject = initialProject
+    let mutable activity = None
+    let mutable tracerProvider = None
 
     let getSource (filePath: string) =
         if filePath.EndsWith(".fsi") then
@@ -600,10 +606,21 @@ type ProjectWorkflowBuilder
 
     member this.Checker = checker
 
-    member this.Yield _ =
-        match initialContext with
-        | Some ctx -> async.Return ctx
-        | _ -> SaveAndCheckProject initialProject checker
+    member this.Yield _ = async {
+        let! ctx =
+            match initialContext with
+            | Some ctx -> async.Return ctx
+            | _ -> SaveAndCheckProject initialProject checker
+        tracerProvider <-
+            Sdk.CreateTracerProviderBuilder()
+                .AddSource("fsc")
+                .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName="F#", serviceVersion = "1"))
+                .AddJaegerExporter()
+                .Build()
+            |> Some
+        activity <- Activity.start ctx.Project.Name [ Activity.Tags.project, ctx.Project.Name ] |> Some
+        return ctx
+    }
 
     member this.DeleteProjectDir() =
         if Directory.Exists initialProject.ProjectDir then
@@ -615,6 +632,10 @@ type ProjectWorkflowBuilder
         finally
             if initialContext.IsNone then
                 this.DeleteProjectDir()
+            activity |> Option.iter (fun x -> x.Dispose())
+            tracerProvider |> Option.iter (fun x ->
+                x.ForceFlush() |> ignore
+                x.Dispose())
 
     /// Change contents of given file using `processFile` function.
     /// Does not save the file to disk.
