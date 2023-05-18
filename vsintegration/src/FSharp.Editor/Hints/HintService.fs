@@ -27,12 +27,7 @@ module HintService =
                 |> Seq.collect (InlineParameterNameHints(parseResults).GetHintsForUnionCase symbol)
             | _ -> []
 
-        let rec loop hintKinds acc =
-            match hintKinds with
-            | [] -> acc
-            | hintKind :: hintKinds -> (getHintsPerKind hintKind) :: (loop hintKinds acc)
-
-        loop (hintKinds |> Set.toList) []
+        hintKinds |> Set.toList |> List.map getHintsPerKind
 
     let private getHintsForSymbol (sourceText: SourceText) parseResults hintKinds (symbol, symbolUses) =
         let hints = getHints sourceText parseResults hintKinds symbolUses symbol

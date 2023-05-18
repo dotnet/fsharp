@@ -109,7 +109,6 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
         )
 
         result.ToImmutable()
-        
 
     static let addSemanticClassification
         sourceText
@@ -198,7 +197,9 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                     TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.AddSyntacticCalssifications, eventProps)
 
                 if not isOpenDocument then
-                    let classifiedSpans = getLexicalClassifications (document.FilePath, defines, sourceText, textSpan, cancellationToken)
+                    let classifiedSpans =
+                        getLexicalClassifications (document.FilePath, defines, sourceText, textSpan, cancellationToken)
+
                     result.AddRange(classifiedSpans)
                 else
                     result.AddRange(
