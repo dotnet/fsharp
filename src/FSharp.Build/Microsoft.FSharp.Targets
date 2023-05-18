@@ -72,8 +72,14 @@ this file.
 
     <PropertyGroup Condition="'$(FSharp_Shim_Present)' == 'true' and '$(FSharpPreferNetFrameworkTools)' == 'true'">
 
-        <FSharpPreferAnyCpuTools Condition="'$(FSharpPreferAnyCpuTools)' == '' and '$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture)' == 'Arm64'">false</FSharpPreferAnyCpuTools>
-        <FSharpPreferAnyCpuTools Condition="'$(FSharpPreferAnyCpuTools)' == '' and '$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture)' != 'Arm64'">$(FSharpPrefer64BitTools)</FSharpPreferAnyCpuTools>
+
+        <!-- Nothing set so use default, Arm, default to native arm, X64 default to AnyCpu -->
+        <FSharpPreferAnyCpuTools Condition="'$(FSharpPreferAnyCpuTools)' == '' and '$(FSharpPrefer64BitTools)' == '' and '$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture)' == 'Arm64'">false</FSharpPreferAnyCpuTools>
+        <FSharpPreferAnyCpuTools Condition="'$(FSharpPreferAnyCpuTools)' == '' and '$(FSharpPrefer64BitTools)' == '' and '$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture)' != 'Arm64'">true</FSharpPreferAnyCpuTools>
+
+        <!-- FSharpPreferAnyCpuTools not yet set, use whatever value has: FSharpPrefer64BitTools -->
+        <FSharpPreferAnyCpuTools Condition="'$(FSharpPreferAnyCpuTools)' == ''">$(FSharpPrefer64BitTools)</FSharpPreferAnyCpuTools>
+
         <FscToolPath>$(Fsc_NetFramework_ToolPath)</FscToolPath>
         <FscToolExe Condition="'$(FSharpPreferAnyCpuTools)' != 'false'">$(Fsc_NetFramework_AnyCpu_ToolExe)</FscToolExe>
         <FscToolExe Condition="'$(FSharpPreferAnyCpuTools)' == 'false'">$(Fsc_NetFramework_PlatformSpecific_ToolExe)</FscToolExe>
