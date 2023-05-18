@@ -40,9 +40,9 @@ type internal DelayedILModuleReader =
 /// <summary>Unused in this API</summary>
 type public FSharpUnresolvedReferencesSet = internal FSharpUnresolvedReferencesSet of UnresolvedAssemblyReference list
 
-type FSharpFileKey = string * string
+type internal FSharpFileKey = string * string
 
-type FSharpProjectSnapshotKey =
+type internal FSharpProjectSnapshotKey =
     { ProjectFileName: string
       SourceFiles: FSharpFileKey list
       OtherOptions: string list
@@ -60,7 +60,7 @@ type FSharpFileSnapshot =
       Version: string
       GetSource: unit -> Task<ISourceText> }
 
-    member Key: FSharpFileKey
+    member internal Key: FSharpFileKey
 
 [<NoComparison>]
 type FSharpProjectSnapshot =
@@ -131,7 +131,7 @@ type FSharpProjectSnapshot =
     /// A snapshot of the same project with file versions removed.
     member WithoutFileVersions: FSharpProjectSnapshot
 
-    member Key: FSharpProjectSnapshotKey
+    member internal Key: FSharpProjectSnapshotKey
 
 and [<NoComparison; CustomEquality>] public FSharpReferencedProjectSnapshot =
     internal

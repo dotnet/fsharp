@@ -2098,8 +2098,6 @@ FSharp.Compiler.CodeAnalysis.FSharpFileSnapshot: System.String ToString()
 FSharp.Compiler.CodeAnalysis.FSharpFileSnapshot: System.String Version
 FSharp.Compiler.CodeAnalysis.FSharpFileSnapshot: System.String get_FileName()
 FSharp.Compiler.CodeAnalysis.FSharpFileSnapshot: System.String get_Version()
-FSharp.Compiler.CodeAnalysis.FSharpFileSnapshot: System.Tuple`2[System.String,System.String] Key
-FSharp.Compiler.CodeAnalysis.FSharpFileSnapshot: System.Tuple`2[System.String,System.String] get_Key()
 FSharp.Compiler.CodeAnalysis.FSharpFileSnapshot: Void .ctor(System.String, System.String, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.Threading.Tasks.Task`1[FSharp.Compiler.Text.ISourceText]])
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsBindingALambdaAtPosition(FSharp.Compiler.Text.Position)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsPosContainedInApplication(FSharp.Compiler.Text.Position)
@@ -2206,8 +2204,6 @@ FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot: FSharp.Compiler.CodeAnalysis
 FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot: FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot UpTo(System.String)
 FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot: FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot WithoutFileVersions
 FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot: FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot get_WithoutFileVersions()
-FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot: FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey Key
-FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot: FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey get_Key()
 FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot: Int32 GetHashCode()
 FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot: Int32 IndexOf(System.String)
@@ -2234,30 +2230,6 @@ FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot: System.String ProjectFileNam
 FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot: System.String ToString()
 FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot: System.String get_ProjectFileName()
 FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot: Void .ctor(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpFileSnapshot], Microsoft.FSharp.Collections.FSharpList`1[System.String], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpReferencedProjectSnapshot], Boolean, Boolean, System.DateTime, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.FSharpUnresolvedReferencesSet], Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`3[FSharp.Compiler.Text.Range,System.String,System.String]], Microsoft.FSharp.Core.FSharpOption`1[System.Int64])
-FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey)
-FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey: Boolean Equals(System.Object)
-FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey: Boolean IsIncompleteTypeCheckEnvironment
-FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey: Boolean UseScriptResolutionRules
-FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey: Boolean get_IsIncompleteTypeCheckEnvironment()
-FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey: Boolean get_UseScriptResolutionRules()
-FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey: Int32 CompareTo(FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey)
-FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey: Int32 CompareTo(System.Object)
-FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey: Int32 CompareTo(System.Object, System.Collections.IComparer)
-FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey: Int32 GetHashCode()
-FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey: Int32 GetHashCode(System.Collections.IEqualityComparer)
-FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey] ReferencedProjects
-FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey] get_ReferencedProjects()
-FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey: Microsoft.FSharp.Collections.FSharpList`1[System.String] OtherOptions
-FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_OtherOptions()
-FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.String,System.String]] SourceFiles
-FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.String,System.String]] get_SourceFiles()
-FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey: System.String ProjectFileName
-FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey: System.String ToString()
-FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey: System.String get_ProjectFileName()
-FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey: System.Tuple`2[System.String,System.String] LastFile
-FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey: System.Tuple`2[System.String,System.String] get_LastFile()
-FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey: Void .ctor(System.String, Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.String,System.String]], Microsoft.FSharp.Collections.FSharpList`1[System.String], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey], Boolean, Boolean)
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: Boolean Equals(System.Object)
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: FSharp.Compiler.CodeAnalysis.FSharpReferencedProject CreateFSharp(System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions)
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: FSharp.Compiler.CodeAnalysis.FSharpReferencedProject CreateFromILModuleReader(System.String, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.DateTime], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,FSharp.Compiler.AbstractIL.ILBinaryReader+ILModuleReader])
@@ -2309,35 +2281,6 @@ FSharp.Compiler.CodeAnalysis.FSharpUnresolvedReferencesSet: Boolean Equals(Syste
 FSharp.Compiler.CodeAnalysis.FSharpUnresolvedReferencesSet: Int32 GetHashCode()
 FSharp.Compiler.CodeAnalysis.FSharpUnresolvedReferencesSet: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.FSharpUnresolvedReferencesSet: System.String ToString()
-FSharp.Compiler.CodeAnalysis.FrameworkImportsCacheKey: Boolean Equals(FSharp.Compiler.CodeAnalysis.FrameworkImportsCacheKey)
-FSharp.Compiler.CodeAnalysis.FrameworkImportsCacheKey: Boolean Equals(System.Object)
-FSharp.Compiler.CodeAnalysis.FrameworkImportsCacheKey: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-FSharp.Compiler.CodeAnalysis.FrameworkImportsCacheKey: FSharp.Compiler.CodeAnalysis.FrameworkImportsCacheKey NewFrameworkImportsCacheKey(Microsoft.FSharp.Collections.FSharpList`1[System.String], System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String], System.String, System.Decimal)
-FSharp.Compiler.CodeAnalysis.FrameworkImportsCacheKey: Int32 CompareTo(FSharp.Compiler.CodeAnalysis.FrameworkImportsCacheKey)
-FSharp.Compiler.CodeAnalysis.FrameworkImportsCacheKey: Int32 CompareTo(System.Object)
-FSharp.Compiler.CodeAnalysis.FrameworkImportsCacheKey: Int32 CompareTo(System.Object, System.Collections.IComparer)
-FSharp.Compiler.CodeAnalysis.FrameworkImportsCacheKey: Int32 GetHashCode()
-FSharp.Compiler.CodeAnalysis.FrameworkImportsCacheKey: Int32 GetHashCode(System.Collections.IEqualityComparer)
-FSharp.Compiler.CodeAnalysis.FrameworkImportsCacheKey: Int32 Tag
-FSharp.Compiler.CodeAnalysis.FrameworkImportsCacheKey: Int32 get_Tag()
-FSharp.Compiler.CodeAnalysis.FrameworkImportsCacheKey: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_resolvedpath()
-FSharp.Compiler.CodeAnalysis.FrameworkImportsCacheKey: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_targetFrameworkDirectories()
-FSharp.Compiler.CodeAnalysis.FrameworkImportsCacheKey: Microsoft.FSharp.Collections.FSharpList`1[System.String] resolvedpath
-FSharp.Compiler.CodeAnalysis.FrameworkImportsCacheKey: Microsoft.FSharp.Collections.FSharpList`1[System.String] targetFrameworkDirectories
-FSharp.Compiler.CodeAnalysis.FrameworkImportsCacheKey: System.Decimal get_langVersion()
-FSharp.Compiler.CodeAnalysis.FrameworkImportsCacheKey: System.Decimal langVersion
-FSharp.Compiler.CodeAnalysis.FrameworkImportsCacheKey: System.String ToString()
-FSharp.Compiler.CodeAnalysis.FrameworkImportsCacheKey: System.String assemblyName
-FSharp.Compiler.CodeAnalysis.FrameworkImportsCacheKey: System.String fsharpBinaries
-FSharp.Compiler.CodeAnalysis.FrameworkImportsCacheKey: System.String get_assemblyName()
-FSharp.Compiler.CodeAnalysis.FrameworkImportsCacheKey: System.String get_fsharpBinaries()
-FSharp.Compiler.CodeAnalysis.Helpers: Boolean AreSameForChecking2(System.Tuple`2[System.String,FSharp.Compiler.CodeAnalysis.FSharpProjectOptions], System.Tuple`2[System.String,FSharp.Compiler.CodeAnalysis.FSharpProjectOptions])
-FSharp.Compiler.CodeAnalysis.Helpers: Boolean AreSameForChecking3(System.Tuple`3[System.String,System.Int64,FSharp.Compiler.CodeAnalysis.FSharpProjectOptions], System.Tuple`3[System.String,System.Int64,FSharp.Compiler.CodeAnalysis.FSharpProjectOptions])
-FSharp.Compiler.CodeAnalysis.Helpers: Boolean AreSameForParsing[a](System.Tuple`3[System.String,System.Int64,a], System.Tuple`3[System.String,System.Int64,a])
-FSharp.Compiler.CodeAnalysis.Helpers: Boolean AreSimilarForParsing[a,b,c,d,e](System.Tuple`3[a,b,c], System.Tuple`3[a,d,e])
-FSharp.Compiler.CodeAnalysis.Helpers: Boolean AreSubsumable2(System.Tuple`2[System.String,FSharp.Compiler.CodeAnalysis.FSharpProjectOptions], System.Tuple`2[System.String,FSharp.Compiler.CodeAnalysis.FSharpProjectOptions])
-FSharp.Compiler.CodeAnalysis.Helpers: Boolean AreSubsumable3[a,b](System.Tuple`3[System.String,a,FSharp.Compiler.CodeAnalysis.FSharpProjectOptions], System.Tuple`3[System.String,b,FSharp.Compiler.CodeAnalysis.FSharpProjectOptions])
-FSharp.Compiler.CodeAnalysis.Helpers: Boolean NamesContainAttribute(FSharp.Compiler.Symbols.FSharpSymbol, Microsoft.FSharp.Collections.FSharpSet`1[System.String])
 FSharp.Compiler.CodeAnalysis.ILegacyReferenceResolver: FSharp.Compiler.CodeAnalysis.LegacyResolvedFile[] Resolve(FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment, System.Tuple`2[System.String,System.String][], System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String], System.String, System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String], System.String, Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.Unit], Microsoft.FSharp.Core.FSharpFunc`2[System.Boolean,Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.Unit]]])
 FSharp.Compiler.CodeAnalysis.ILegacyReferenceResolver: System.String DotNetFrameworkReferenceAssembliesRootDirectory
 FSharp.Compiler.CodeAnalysis.ILegacyReferenceResolver: System.String HighestInstalledNetFrameworkVersion()

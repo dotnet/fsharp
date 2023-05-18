@@ -184,7 +184,7 @@ module EnvMisc =
         GetEnvInteger "FCS_frameworkTcImportsCacheStrongSizeDefault" 8
 
 [<AutoOpen>]
-module Helpers =
+module internal Helpers =
 
     /// Determine whether two (fileName,options) keys are identical w.r.t. affect on checking
     let AreSameForChecking2 ((fileName1: string, options1: FSharpProjectOptions), (fileName2, options2)) =
