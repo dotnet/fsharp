@@ -121,8 +121,7 @@ type internal TransparentCompiler
     let TcPriorCache = AsyncMemoize(triggerCacheEvent "TcPrior")
     let TcIntermediateCache = AsyncMemoize(triggerCacheEvent "TcIntermediate")
 
-    let DependencyGraphForLastFileCache =
-        AsyncMemoize(triggerCacheEvent "DependencyGraphForLastFile")
+    let DependencyGraphCache = AsyncMemoize(triggerCacheEvent "DependencyGraph")
 
     let SemanticClassificationCache =
         AsyncMemoize(triggerCacheEvent "SemanticClassification")
@@ -663,10 +662,10 @@ type internal TransparentCompiler
             }
         )
 
-    let ComputeDependencyGraphForLastFile (priorSnapshot: FSharpProjectSnapshot) parsedInputs (tcConfig: TcConfig) =
+    let ComputeDependencyGraph (priorSnapshot: FSharpProjectSnapshot) parsedInputs (tcConfig: TcConfig) =
         let key = priorSnapshot.SourceFiles |> List.map (fun s -> s.Key)
 
-        DependencyGraphForLastFileCache.Get(
+        DependencyGraphCache.Get(
             key,
             node {
 
@@ -681,7 +680,7 @@ type internal TransparentCompiler
                         })
 
                 use _ =
-                    Activity.start "ComputeDependencyGraphForLastFile" [| Activity.Tags.fileName, (sourceFiles |> Array.last).FileName |]
+                    Activity.start "ComputeDependencyGraph" [| Activity.Tags.fileName, (sourceFiles |> Array.last).FileName |]
 
                 let filePairs = FilePairMap(sourceFiles)
 
@@ -691,22 +690,24 @@ type internal TransparentCompiler
                     |> fst
                     |> Graph.subGraphFor (sourceFiles |> Array.last).Idx
 
-                return TransformDependencyGraph(graph, filePairs)
+                let fileIndexes =
+                    graph.Values |> Seq.collect id |> Seq.append graph.Keys |> Seq.distinct |> Set
+
+                return TransformDependencyGraph(graph, filePairs), fileIndexes
             }
         )
 
     let ComputeTcIntermediate
         (projectSnapshot: FSharpProjectSnapshot)
+        (dependencyFiles: Set<FileIndex>)
         (fileIndex: FileIndex)
         (parsedInput: ParsedInput, parseErrors)
         bootstrapInfo
         (prevTcInfo: TcInfo)
         =
-        // TODO: we need to construct cache key based on only relevant files from the dependency graph
-        let key = projectSnapshot.UpTo(fileIndex).Key
 
         TcIntermediateCache.Get(
-            key,
+            projectSnapshot.UpTo(fileIndex).OnlyWith(dependencyFiles).Key,
             node {
                 let input = parsedInput
                 let fileName = input.FileName
@@ -812,7 +813,7 @@ type internal TransparentCompiler
 
                 let! parsedInputs = files |> Seq.map (ComputeParseFile bootstrapInfo) |> NodeCode.Parallel
 
-                let! graph = ComputeDependencyGraphForLastFile priorSnapshot (parsedInputs |> Seq.map p13) bootstrapInfo.TcConfig
+                let! graph, dependencyFiles = ComputeDependencyGraph priorSnapshot (parsedInputs |> Seq.map p13) bootstrapInfo.TcConfig
 
                 let fileNames =
                     parsedInputs
@@ -845,7 +846,14 @@ type internal TransparentCompiler
                                     match fileNode with
                                     | NodeToTypeCheck.PhysicalFile fileIndex ->
                                         let parsedInput, parseErrors, _ = parsedInputs[fileIndex]
-                                        ComputeTcIntermediate projectSnapshot fileIndex (parsedInput, parseErrors) bootstrapInfo tcInfo
+
+                                        ComputeTcIntermediate
+                                            projectSnapshot
+                                            dependencyFiles
+                                            fileIndex
+                                            (parsedInput, parseErrors)
+                                            bootstrapInfo
+                                            tcInfo
                                     | NodeToTypeCheck.ArtificialImplFile fileIndex ->
 
                                         let finisher tcState =
@@ -876,7 +884,8 @@ type internal TransparentCompiler
                             return! processLayer rest (mergeIntermediateResults tcInfo results)
                     }
 
-                return! processLayer layers bootstrapInfo.InitialTcInfo
+                let! tcInfo = processLayer layers bootstrapInfo.InitialTcInfo
+                return tcInfo, dependencyFiles
             }
         )
 
@@ -930,7 +939,7 @@ type internal TransparentCompiler
                     let! parseResults, sourceText = getParseResult bootstrapInfo creationDiags fileName
 
                     let file = bootstrapInfo.GetFile fileName
-                    let! tcInfo = ComputeTcPrior file bootstrapInfo projectSnapshot
+                    let! tcInfo, _ = ComputeTcPrior file bootstrapInfo projectSnapshot
 
                     let! checkResults =
                         FSharpCheckFileResults.CheckOneFile(
@@ -971,11 +980,13 @@ type internal TransparentCompiler
 
                 let file = bootstrapInfo.GetFile fileName
 
-                let! tcInfo = ComputeTcPrior file bootstrapInfo projectSnapshot
+                let! tcInfo, dependencyFiles = ComputeTcPrior file bootstrapInfo projectSnapshot
                 let! parseTree, parseDiagnostics, _sourceText = ComputeParseFile bootstrapInfo file
 
                 let fileIndex = projectSnapshot.IndexOf fileName
-                let! { sink = sink } = ComputeTcIntermediate projectSnapshot fileIndex (parseTree, parseDiagnostics) bootstrapInfo tcInfo
+
+                let! { sink = sink } =
+                    ComputeTcIntermediate projectSnapshot dependencyFiles fileIndex (parseTree, parseDiagnostics) bootstrapInfo tcInfo
 
                 return Some(sink, bootstrapInfo)
         }

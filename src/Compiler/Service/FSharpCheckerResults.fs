@@ -208,6 +208,15 @@ type FSharpProjectSnapshot =
 
     member this.UpTo fileName = this.UpTo(this.IndexOf fileName)
 
+    member this.OnlyWith fileIndexes =
+        { this with
+            SourceFiles =
+                fileIndexes
+                |> Set.toList
+                |> List.sort
+                |> List.choose (fun x -> this.SourceFiles |> List.tryItem x)
+        }
+
     member this.Key =
         {
             ProjectFileName = this.ProjectFileName

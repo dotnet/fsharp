@@ -206,3 +206,42 @@ let ``We don't check files that are not depended on`` () =
     Assert.Equal<JobEventType list>([Started; Finished], intermediateTypeChecks["FileFirst.fs"])
     Assert.Equal<JobEventType list>([Started; Finished], intermediateTypeChecks["FileThird.fs"])
     Assert.False (intermediateTypeChecks.ContainsKey "FileSecond.fs")
+
+[<Fact>]
+let ``Files that are not depended on don't ivalidate cache`` () =
+    let project = SyntheticProject.Create(
+        sourceFile "First" [],
+        sourceFile "Second" ["First"],
+        sourceFile "Third" ["First"],
+        sourceFile "Last" ["Third"])
+
+    let cacheEvents = ResizeArray()
+
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+        checkFile "Last" expectOk
+        withChecker (fun checker -> checker.CacheEvent.Add cacheEvents.Add)
+        updateFile "Second" updatePublicSurface
+        checkFile "Last" expectOk
+    } |> ignore
+
+    let intermediateTypeChecks =
+        cacheEvents
+        |> Seq.choose (function
+            | ("TcIntermediate", e, k) -> Some ((k :?> FSharpProjectSnapshotKey).LastFile |> fst |> Path.GetFileName, e)
+            | _ -> None)
+        |> Seq.groupBy fst
+        |> Seq.map (fun (k, g) -> k, g |> Seq.map snd |> Seq.toList)
+        |> Map
+
+    let graphConstructions =
+        cacheEvents
+        |> Seq.choose (function
+            | ("DependencyGraph", e, k) -> Some ((k :?> FSharpFileKey list) |> List.last |> fst |> Path.GetFileName, e)
+            | _ -> None)
+        |> Seq.groupBy fst
+        |> Seq.map (fun (k, g) -> k, g |> Seq.map snd |> Seq.toList)
+        |> Map
+
+    Assert.Equal<JobEventType list>([Started; Finished], graphConstructions["FileLast.fs"])
+
+    Assert.True intermediateTypeChecks.IsEmpty

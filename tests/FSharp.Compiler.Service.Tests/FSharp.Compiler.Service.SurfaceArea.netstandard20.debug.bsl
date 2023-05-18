@@ -2060,9 +2060,11 @@ FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.CodeAnalysis.FSharpParseFileResults] ParseFileInProject(System.String, System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer]] CheckFileInProjectAllowingStaleCachedResults(FSharp.Compiler.CodeAnalysis.FSharpParseFileResults, System.String, Int32, System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.EditorServices.SemanticClassificationView]] GetBackgroundSemanticClassificationForFile(System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
+FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.EditorServices.SemanticClassificationView]] GetBackgroundSemanticClassificationForFile(System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] NotifyFileChanged(System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] NotifyProjectCleaned(FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[System.Collections.Generic.IEnumerable`1[FSharp.Compiler.Text.Range]] FindBackgroundReferencesInFile(System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, FSharp.Compiler.Symbols.FSharpSymbol, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.String])
+FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[System.Collections.Generic.IEnumerable`1[FSharp.Compiler.Text.Range]] FindBackgroundReferencesInFile(System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot, FSharp.Compiler.Symbols.FSharpSymbol, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[System.Tuple`2[FSharp.Compiler.CodeAnalysis.FSharpParseFileResults,FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer]] ParseAndCheckFileInProject(System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[System.Tuple`2[FSharp.Compiler.CodeAnalysis.FSharpParseFileResults,FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer]] ParseAndCheckFileInProject(System.String, Int32, FSharp.Compiler.Text.ISourceText, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[System.Tuple`2[FSharp.Compiler.CodeAnalysis.FSharpParseFileResults,FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults]] GetBackgroundCheckResultsForFileInProject(System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
@@ -2199,6 +2201,7 @@ FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot: Boolean UseScriptResolutionR
 FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot: Boolean get_IsIncompleteTypeCheckEnvironment()
 FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot: Boolean get_UseScriptResolutionRules()
 FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot: FSharp.Compiler.CodeAnalysis.FSharpProjectOptions ToOptions()
+FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot: FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot OnlyWith(Microsoft.FSharp.Collections.FSharpSet`1[System.Int32])
 FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot: FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot UpTo(Int32)
 FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot: FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot UpTo(System.String)
 FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot: FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot WithoutFileVersions
@@ -2207,6 +2210,7 @@ FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot: FSharp.Compiler.CodeAnalysis
 FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot: FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey get_Key()
 FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot: Int32 GetHashCode()
 FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot: Int32 IndexOf(System.String)
 FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpFileSnapshot] SourceFiles
 FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpFileSnapshot] get_SourceFiles()
 FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshot: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpReferencedProjectSnapshot] ReferencedProjects
@@ -2251,6 +2255,8 @@ FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey: Microsoft.FSharp.Collecti
 FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey: System.String ProjectFileName
 FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey: System.String ToString()
 FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey: System.String get_ProjectFileName()
+FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey: System.Tuple`2[System.String,System.String] LastFile
+FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey: System.Tuple`2[System.String,System.String] get_LastFile()
 FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey: Void .ctor(System.String, Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.String,System.String]], Microsoft.FSharp.Collections.FSharpList`1[System.String], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpProjectSnapshotKey], Boolean, Boolean)
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: Boolean Equals(System.Object)
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: FSharp.Compiler.CodeAnalysis.FSharpReferencedProject CreateFSharp(System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions)

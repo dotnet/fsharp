@@ -125,6 +125,9 @@ type FSharpProjectSnapshot =
     /// A snapshot of the same project but only up to the given file (including).
     member UpTo: fileName: string -> FSharpProjectSnapshot
 
+    /// A snapshot of the same project but only with source files specified by given indexes.
+    member OnlyWith: fileIndexes: Set<FileIndex> -> FSharpProjectSnapshot
+
     /// A snapshot of the same project with file versions removed.
     member WithoutFileVersions: FSharpProjectSnapshot
 
