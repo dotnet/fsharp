@@ -57,6 +57,10 @@ type internal BootstrapInfo =
         LoadClosure: LoadClosure option
     }
 
+    member this.GetFile fileName =
+        this.SourceFiles |> List.tryFind (fun f -> f.Source.FileName = fileName) |> Option.defaultWith (fun _ -> failwith ($"File {fileName} not found in project snapshot. Files in project: \n\n" + (this.SourceFiles |> Seq.map (fun f -> f.Source.FileName) |> String.concat " \n")))
+
+
 type internal TcIntermediateResult = TcInfo * TcResultsSinkImpl * CheckedImplFile option * string
 
 
@@ -216,10 +220,8 @@ type internal TransparentCompiler
             unresolvedReferences,
             dependencyProvider,
             loadClosureOpt: LoadClosure option,
-            basicDependencies
-#if !NO_TYPEPROVIDERS
-            ,importsInvalidatedByTypeProvider: Event<unit>
-#endif
+            basicDependencies,
+            importsInvalidatedByTypeProvider: Event<unit>
         ) =
 
         node {
@@ -240,6 +242,7 @@ type internal TransparentCompiler
                                 dependencyProvider
                             )
 #if !NO_TYPEPROVIDERS
+                        // TODO: review and handle the event
                         tcImports.GetCcusExcludingBase()
                         |> Seq.iter (fun ccu ->
                             // When a CCU reports an invalidation, merge them together and just report a
@@ -472,9 +475,9 @@ type internal TransparentCompiler
 
             let tcConfigP = TcConfigProvider.Constant tcConfig
 
-    #if !NO_TYPEPROVIDERS
+
             let importsInvalidatedByTypeProvider = Event<unit>()
-    #endif
+
 
             // Check for the existence of loaded sources and prepend them to the sources list if present.
             let sourceFiles =
@@ -522,17 +525,15 @@ type internal TransparentCompiler
                     unresolvedReferences,
                     dependencyProvider,
                     loadClosureOpt,
-                    basicDependencies
-    #if !NO_TYPEPROVIDERS
-                    ,importsInvalidatedByTypeProvider
-    #endif
+                    basicDependencies,
+                    importsInvalidatedByTypeProvider
                 )
-            return sourceFiles, tcConfig, tcImports, tcGlobals, initialTcInfo, loadClosureOpt
+            return sourceFiles, tcConfig, tcImports, tcGlobals, initialTcInfo, loadClosureOpt, importsInvalidatedByTypeProvider
         })
 
     let computeBootstrapInfoInner (projectSnapshot: FSharpProjectSnapshot) =
         node {
-            let! sourceFiles, tcConfig, tcImports, tcGlobals, initialTcInfo, loadClosureOpt = ComputeBootstrapInfoStatic projectSnapshot
+            let! sourceFiles, tcConfig, tcImports, tcGlobals, initialTcInfo, loadClosureOpt, _importsInvalidatedByTypeProvider = ComputeBootstrapInfoStatic projectSnapshot
 
             let fileSnapshots = Map [ for f in projectSnapshot.SourceFiles -> f.FileName, f ]
 
@@ -565,6 +566,7 @@ type internal TransparentCompiler
                         InitialTcInfo = initialTcInfo
                         SourceFiles = sourceFiles
                         LoadClosure = loadClosureOpt
+                        //ImportsInvalidatedByTypeProvider = importsInvalidatedByTypeProvider
                     }
         }
 
@@ -806,6 +808,37 @@ type internal TransparentCompiler
             return! processLayer layers bootstrapInfo.InitialTcInfo
         })
 
+    let getParseResult (bootstrapInfo: BootstrapInfo) creationDiags fileName =
+        node {
+            let file = bootstrapInfo.GetFile fileName
+
+            let! parseTree, parseDiagnostics, sourceText = ComputeParseFile bootstrapInfo file
+
+            let parseDiagnostics =
+                DiagnosticHelpers.CreateDiagnostics(
+                    bootstrapInfo.TcConfig.diagnosticsOptions,
+                    false,
+                    fileName,
+                    parseDiagnostics,
+                    suggestNamesForErrors
+                )
+
+            let diagnostics = [| yield! creationDiags; yield! parseDiagnostics |]
+
+            return
+                FSharpParseFileResults(
+                    diagnostics = diagnostics,
+                    input = parseTree,
+                    parseHadErrors = (parseDiagnostics.Length > 0),
+                    // TODO: check if we really need this in parse results
+                    dependencyFiles = [||]
+                ), sourceText
+        }
+
+    let emptyParseResult fileName diagnostics =
+        let parseTree = EmptyParsedInput(fileName, (false, false))
+        FSharpParseFileResults(diagnostics, parseTree, true, [||])
+
     let ComputeParseAndCheckFileInProject (fileName: string) (projectSnapshot: FSharpProjectSnapshot) =
         let key = fileName, projectSnapshot.Key
         ParseAndCheckFileInProjectCache.Get(key, node {
@@ -814,39 +847,15 @@ type internal TransparentCompiler
 
             match! ComputeBootstrapInfo projectSnapshot with
             | None, creationDiags ->
-                let parseTree = EmptyParsedInput(fileName, (false, false))
-                let parseResults = FSharpParseFileResults(creationDiags, parseTree, true, [||])
-                return (parseResults, FSharpCheckFileAnswer.Aborted)
+                return emptyParseResult fileName creationDiags, FSharpCheckFileAnswer.Aborted
 
             | Some bootstrapInfo, creationDiags ->
 
-                let file =
-                    bootstrapInfo.SourceFiles |> List.tryFind (fun f -> f.Source.FileName = fileName) |> Option.defaultWith (fun _ -> failwith ($"File {fileName} not found in project snapshot. Files in project: \n\n" + (bootstrapInfo.SourceFiles |> Seq.map (fun f -> f.Source.FileName) |> String.concat " \n")))
+                let file = bootstrapInfo.GetFile fileName
+
+                let! parseResults, sourceText = getParseResult bootstrapInfo creationDiags fileName
 
                 let! tcInfo = ComputeTcPrior file bootstrapInfo projectSnapshot
-
-                // We could also bubble this through ComputeTcPrior
-                let! parseTree, parseDiagnostics, sourceText = ComputeParseFile bootstrapInfo file
-
-                let parseDiagnostics =
-                    DiagnosticHelpers.CreateDiagnostics(
-                        bootstrapInfo.TcConfig.diagnosticsOptions,
-                        false,
-                        fileName,
-                        parseDiagnostics,
-                        suggestNamesForErrors
-                    )
-
-                let diagnostics = [| yield! creationDiags; yield! parseDiagnostics |]
-
-                let parseResults =
-                    FSharpParseFileResults(
-                        diagnostics = diagnostics,
-                        input = parseTree,
-                        parseHadErrors = (parseDiagnostics.Length > 0),
-                        // TODO: check if we really need this in parse results
-                        dependencyFiles = Array.ofList tcInfo.tcDependencyFiles
-                    )
 
                 let! checkResults =
                     FSharpCheckFileResults.CheckOneFile(
@@ -939,40 +948,11 @@ type internal TransparentCompiler
     member _.ParseFile(fileName, projectSnapshot: FSharpProjectSnapshot, _userOpName) =
         node {
             use _ = Activity.start "ParseFile" [| Activity.Tags.fileName, fileName |> Path.GetFileName |]
-
-            let! bootstrapInfoOpt, creationDiags = ComputeBootstrapInfo projectSnapshot
-
-            match bootstrapInfoOpt with
-            | None ->
-                let parseTree = EmptyParsedInput(fileName, (false, false))
-                return FSharpParseFileResults(creationDiags, parseTree, true, [||])
-
-            | Some bootstrapInfo ->
-
-                let file =
-                    bootstrapInfo.SourceFiles |> List.tryFind (fun f -> f.Source.FileName = fileName) |> Option.defaultWith (fun _ -> failwith ($"File {fileName} not found in project snapshot. Files in project: \n\n" + (bootstrapInfo.SourceFiles |> Seq.map (fun f -> f.Source.FileName) |> String.concat " \n")))
-
-                let! parseTree, parseDiagnostics, _sourceText = ComputeParseFile bootstrapInfo file
-
-                let parseDiagnostics =
-                    DiagnosticHelpers.CreateDiagnostics(
-                        bootstrapInfo.TcConfig.diagnosticsOptions,
-                        false,
-                        fileName,
-                        parseDiagnostics,
-                        suggestNamesForErrors
-                    )
-
-                let diagnostics = [| yield! creationDiags; yield! parseDiagnostics |]
-
-                return
-                    FSharpParseFileResults(
-                        diagnostics = diagnostics,
-                        input = parseTree,
-                        parseHadErrors = (parseDiagnostics.Length > 0),
-                        // TODO: check if we really need this in parse results
-                        dependencyFiles = [||]
-                    )
+            match! ComputeBootstrapInfo projectSnapshot with
+            | None, creationDiags -> return emptyParseResult fileName creationDiags
+            | Some bootstrapInfo, creationDiags ->
+                let! parseResult, _ = getParseResult bootstrapInfo creationDiags fileName
+                return parseResult
         }
 
     member _.ParseAndCheckFileInProject(fileName: string, projectSnapshot: FSharpProjectSnapshot, userOpName: string) =
