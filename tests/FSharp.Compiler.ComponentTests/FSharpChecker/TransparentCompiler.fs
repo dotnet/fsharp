@@ -189,7 +189,11 @@ let ``We don't check files that are not depended on`` () =
     let cacheEvents = ResizeArray()
 
     ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
-        withChecker (fun checker -> checker.CacheEvent.Add cacheEvents.Add)
+        withChecker (fun checker ->
+            async {
+                do! Async.Sleep 50 // wait for events from initial project check
+                checker.CacheEvent.Add cacheEvents.Add
+            })
         updateFile "First" updatePublicSurface
         checkFile "Last" expectOk
     } |> ignore
@@ -208,7 +212,7 @@ let ``We don't check files that are not depended on`` () =
     Assert.False (intermediateTypeChecks.ContainsKey "FileSecond.fs")
 
 [<Fact>]
-let ``Files that are not depended on don't ivalidate cache`` () =
+let ``Files that are not depended on don't invalidate cache`` () =
     let project = SyntheticProject.Create(
         sourceFile "First" [],
         sourceFile "Second" ["First"],

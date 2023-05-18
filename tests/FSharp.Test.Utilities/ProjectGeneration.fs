@@ -700,7 +700,7 @@ type ProjectWorkflowBuilder
 
     [<CustomOperation "withProject">]
     member this.WithProject(workflow: Async<WorkflowContext>, f) =
-        workflow |> mapProjectAsync (fun project -> 
+        workflow |> mapProjectAsync (fun project ->
             async {
                 do! f project checker
                 return project
@@ -711,6 +711,14 @@ type ProjectWorkflowBuilder
         async {
             let! ctx = workflow
             f checker
+            return ctx
+        }
+
+    [<CustomOperation "withChecker">]
+    member this.WithChecker(workflow: Async<WorkflowContext>, f) =
+        async {
+            let! ctx = workflow
+            do! f checker
             return ctx
         }
 
