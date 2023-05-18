@@ -22,7 +22,7 @@ module internal SymbolHelpers =
         asyncMaybe {
             let userOpName = "getSymbolUsesOfSymbolAtLocationInDocument"
             let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(userOpName) |> liftAsync
-            let! defines = document.GetFSharpCompilationDefinesAsync(userOpName) |> liftAsync
+            let! defines, langVersion = document.GetFSharpCompilationDefinesAndLangVersionAsync(userOpName) |> liftAsync
 
             let! cancellationToken = Async.CancellationToken |> liftAsync
             let! sourceText = document.GetTextAsync(cancellationToken)
@@ -40,6 +40,7 @@ module internal SymbolHelpers =
                     SymbolLookupKind.Greedy,
                     false,
                     false,
+                    Some langVersion,
                     cancellationToken
                 )
 
@@ -71,11 +72,13 @@ module internal SymbolHelpers =
         | firstProject :: _ ->
             let isFastFindReferencesEnabled = firstProject.IsFastFindReferencesEnabled
 
+            // TODO: this needs to use already boxed boolean instead of boxing it every time.
             let props =
-                [ nameof isFastFindReferencesEnabled, isFastFindReferencesEnabled :> obj ]
+                [| nameof isFastFindReferencesEnabled, isFastFindReferencesEnabled :> obj |]
 
             backgroundTask {
-                TelemetryReporter.reportEvent "getSymbolUsesInProjectsStarted" props
+                // TODO: this needs to be a single event with a duration
+                TelemetryReporter.ReportSingleEvent(TelemetryEvents.GetSymbolUsesInProjectsStarted, props)
 
                 do!
                     projects
@@ -83,7 +86,7 @@ module internal SymbolHelpers =
                         Task.Run(fun () -> project.FindFSharpReferencesAsync(symbol, onFound, "getSymbolUsesInProjects", ct)))
                     |> Task.WhenAll
 
-                TelemetryReporter.reportEvent "getSymbolUsesInProjectsFinished" props
+                TelemetryReporter.ReportSingleEvent(TelemetryEvents.GetSymbolUsesInProjectsFinished, props)
             }
 
     let findSymbolUses (symbolUse: FSharpSymbolUse) (currentDocument: Document) (checkFileResults: FSharpCheckFileResults) onFound =

@@ -2,6 +2,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="de" original="../Strings.resx">
     <body>
+      <trans-unit id="AdditionalTelemetry">
+        <source>Additional performance telemetry (experimental)</source>
+        <target state="new">Additional performance telemetry (experimental)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Always_place_opens_at_top_level">
         <source>Always place open statements at the top level</source>
         <target state="translated">open-Anweisungen immer an oberster Ebene platzieren</target>
@@ -52,11 +57,6 @@
         <target state="translated">Diagnose</target>
         <note />
       </trans-unit>
-      <trans-unit id="Enable_Parallel_Checking_With_Signature_Files">
-        <source>Enable parallel type checking with signature files</source>
-        <target state="translated">Parallele Typüberprüfung mit Signaturdateien aktivieren</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Enable_Parallel_Reference_Resolution">
         <source>Enable parallel reference resolution</source>
         <target state="translated">Parallele Verweisauflösung aktivieren</target>
@@ -97,6 +97,11 @@
         <target state="translated">Bevorzugte Beschreibungsbreite in Zeichen</target>
         <note />
       </trans-unit>
+      <trans-unit id="Send_Additional_Telemetry">
+        <source>Send additional performance telemetry</source>
+        <target state="new">Send additional performance telemetry</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Show_Inline_Parameter_Name_Hints">
         <source>Display inline parameter name hints (preview)</source>
         <target state="translated">Hinweise zu Inlineparameternamen anzeigen (Vorschau)</target>
@@ -125,11 +130,6 @@
       <trans-unit id="Show_completion_list_after_a_character_is_typed">
         <source>_Show completion list after a character is typed</source>
         <target state="translated">_Vervoll­ständigungsliste nach Eingabe eines Zeichens anzeigen</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Enable_in_memory_cross_project_references">
-        <source>_Enable in-memory cross project references</source>
-        <target state="translated">Proj_ektübergreifende Verweise im Arbeitsspeicher aktivieren</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_navigation_links_as">
@@ -205,11 +205,6 @@
       <trans-unit id="Enable_Stale_IntelliSense_Results">
         <source>Enable stale data for IntelliSense features</source>
         <target state="translated">Veraltete Daten für IntelliSense-Features aktivieren</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Tooltip_in_memory_cross_project_references">
-        <source>In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</source>
-        <target state="translated">Bei projektübergreifenden In-Memory-Verweisen werden Daten auf Projektebene im Arbeitsspeicher abgelegt, damit IDE-Features projektübergreifend verwendet werden können.</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_key_always">

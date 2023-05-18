@@ -539,14 +539,17 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap: Import.Impor
     if g.langVersion.SupportsFeature(LanguageFeature.CSharpExtensionAttributeNotRequired) then
         let ty = generalizedTyconRef g tcrefOfStaticClass
       
-        let minfos =
-            GetImmediateIntrinsicMethInfosOfType (None, AccessorDomain.AccessibleFromSomeFSharpCode) g amap m ty
-            |> List.filter (IsMethInfoPlainCSharpStyleExtensionMember g m true)
+        let csharpStyleExtensionMembers = 
+            if IsTyconRefUsedForCSharpStyleExtensionMembers g m tcrefOfStaticClass || tcrefOfStaticClass.IsLocalRef then
+                GetImmediateIntrinsicMethInfosOfType (None, AccessorDomain.AccessibleFromSomeFSharpCode) g amap m ty
+                |> List.filter (IsMethInfoPlainCSharpStyleExtensionMember g m true)
+            else
+                []
 
-        if IsTyconRefUsedForCSharpStyleExtensionMembers g m tcrefOfStaticClass || not minfos.IsEmpty then
+        if not csharpStyleExtensionMembers.IsEmpty then
             let pri = NextExtensionMethodPriority()
 
-            [ for minfo in minfos do
+            [ for minfo in csharpStyleExtensionMembers do
                 let ilExtMem = ILExtMem (tcrefOfStaticClass, minfo, pri)
 
                 // The results are indexed by the TyconRef of the first 'this' argument, if any.
@@ -2075,7 +2078,13 @@ type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
 
         let keyOpt =
             match item with
-            | Item.Value vref -> Some (endPos, vref.DisplayName)
+            | Item.Value vref ->
+                if (vref.IsPropertyGetterMethod || vref.IsPropertySetterMethod)
+                   && not (System.String.IsNullOrWhiteSpace vref.Id.idText) then
+                    // We don't want to skip a symbol if both getter and setter are present.
+                    Some (endPos, vref.Id.idText)
+                else
+                    Some (endPos, vref.DisplayName)
             | Item.OtherName (ident = Some id) -> Some (endPos, id.idText)
             | _ -> None
 

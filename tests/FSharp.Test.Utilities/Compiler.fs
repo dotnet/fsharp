@@ -50,6 +50,7 @@ module rec Compiler =
         | CS of CSharpCompilationSource
         | IL of ILCompilationSource
         override this.ToString() = match this with | FS fs -> fs.ToString() | _ -> (sprintf "%A" this   )
+        member this.WithStaticLink(staticLink: bool) = match this with | FS fs -> FS { fs with StaticLink = staticLink } | cu -> cu
 
     type FSharpCompilationSource =
         { Source:           SourceCodeFileKind
@@ -62,6 +63,7 @@ module rec Compiler =
           IgnoreWarnings:   bool
           References:       CompilationUnit list
           TargetFramework:  TargetFramework
+          StaticLink:       bool
           }
 
         member this.CreateOutputDirectory() =
@@ -213,6 +215,7 @@ module rec Compiler =
             IgnoreWarnings    = false
             References        = []
             TargetFramework   = TargetFramework.Current
+            StaticLink        = false
         }
 
     let private csFromString (source: SourceCodeFileKind) : CSharpCompilationSource =
@@ -260,11 +263,12 @@ module rec Compiler =
     let private getWarnings diagnostics = diagnostics |> List.filter (fun e -> match e.Error with Warning _ -> true | _ -> false)
 
     let private adjustRange (range: Range) (adjust: int) : Range =
-        { range with
-                StartLine   = range.StartLine   - adjust
-                StartColumn = range.StartColumn + 1
-                EndLine     = range.EndLine     - adjust
-                EndColumn   = range.EndColumn   + 1 }
+        {
+            StartLine   = range.StartLine   - adjust
+            StartColumn = range.StartColumn + 1
+            EndLine     = range.EndLine     - adjust
+            EndColumn   = range.EndColumn   + 1
+        }
 
     let FsxSourceCode source =
         SourceCodeFileKind.Fsx({FileName="test.fsx"; SourceText=Some source})
@@ -323,6 +327,7 @@ module rec Compiler =
             IgnoreWarnings    = false
             References        = []
             TargetFramework   = TargetFramework.Current
+            StaticLink        = false
         } |> FS
 
     let CSharp (source: string) : CompilationUnit =
@@ -361,6 +366,12 @@ module rec Compiler =
         withOptionsHelper [ $"-r:{compilerServiceAssemblyLocation}" ] "withReferenceFSharpCompilerService is only supported for F#" cUnit
 
     let withReferences (references: CompilationUnit list) (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS fs -> FS { fs with References = fs.References @ references }
+        | CS cs -> CS { cs with References = cs.References @ references }
+        | IL _ -> failwith "References are not supported in IL"
+
+    let withStaticLink (references: CompilationUnit list) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
         | FS fs -> FS { fs with References = fs.References @ references }
         | CS cs -> CS { cs with References = cs.References @ references }
@@ -579,7 +590,7 @@ module rec Compiler =
                         | Some outputDirectory -> outputDirectory
                         | _ -> defaultOutputDirectory
                     let cmpl =
-                        Compilation.CreateFromSources([fs.Source] @ fs.AdditionalSources, fs.OutputType, options, fs.TargetFramework, refs, name, outDir) |> CompilationReference.CreateFSharp
+                        CompilationReference.CreateFSharp(Compilation.CreateFromSources([fs.Source] @ fs.AdditionalSources, fs.OutputType, options, fs.TargetFramework, refs, name, outDir), fs.StaticLink)
                     loop (cmpl::acc) xs
 
                 | CS cs ->
@@ -838,6 +849,7 @@ module rec Compiler =
                 fun (name: string) ->
                     Map.tryFind name project
                     |> Option.bind (Option.map SourceText.ofString)
+                    |> async.Return
 
             let sourceFiles = Array.map fst sourceFiles
             CompilerAssert.TypeCheckProject(options, sourceFiles, getSourceText)

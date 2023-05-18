@@ -115,8 +115,7 @@ and ValidateOptArgOrder (synSimplePats: SynSimplePats) =
 
     let rec getPats synSimplePats =
         match synSimplePats with
-        | SynSimplePats.SimplePats(p, m) -> p, m
-        | SynSimplePats.Typed(p, _, _) -> getPats p
+        | SynSimplePats.SimplePats(p, _, m) -> p, m
 
     let rec isOptArg pat =
         match pat with
@@ -141,7 +140,7 @@ and TcSimplePats (cenv: cenv) optionalArgsOK checkConstraints ty env patEnv synS
     ValidateOptArgOrder synSimplePats
 
     match synSimplePats with
-    | SynSimplePats.SimplePats ([], m) ->
+    | SynSimplePats.SimplePats ([],_, m) ->
         // Unit "()" patterns in argument position become SynSimplePats.SimplePats([], _) in the
         // syntactic translation when building bindings. This is done because the
         // use of "()" has special significance for arity analysis and argument counting.
@@ -157,26 +156,14 @@ and TcSimplePats (cenv: cenv) optionalArgsOK checkConstraints ty env patEnv synS
         let patEnvR = TcPatLinearEnv(tpenv, namesR, takenNamesR)
         [id.idText], patEnvR
 
-    | SynSimplePats.SimplePats ([synSimplePat], _) ->
+    | SynSimplePats.SimplePats (pats = [synSimplePat]) ->
         let v, patEnv = TcSimplePat optionalArgsOK checkConstraints cenv ty env patEnv synSimplePat
         [v], patEnv
 
-    | SynSimplePats.SimplePats (ps, m) ->
+    | SynSimplePats.SimplePats (ps, _, m) ->
         let ptys = UnifyRefTupleType env.eContextInfo cenv env.DisplayEnv m ty ps
         let ps', patEnvR = (patEnv, List.zip ptys ps) ||> List.mapFold (fun patEnv (ty, pat) -> TcSimplePat optionalArgsOK checkConstraints cenv ty env patEnv pat)
         ps', patEnvR
-
-    | SynSimplePats.Typed (p, cty, m) ->
-        let ctyR, tpenv = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv cty
-
-        match p with
-        // Solitary optional arguments on members
-        | SynSimplePats.SimplePats([SynSimplePat.Id(_, _, _, _, true, _)], _) -> UnifyTypes cenv env m ty (mkOptionTy g ctyR)
-        | _ -> UnifyTypes cenv env m ty ctyR
-
-        let patEnvR = TcPatLinearEnv(tpenv, names, takenNames)
-
-        TcSimplePats cenv optionalArgsOK checkConstraints ty env patEnvR p
 
 and TcSimplePatsOfUnknownType (cenv: cenv) optionalArgsOK checkConstraints env tpenv synSimplePats =
     let g = cenv.g
@@ -291,7 +278,7 @@ and TcPat warnOnUpper (cenv: cenv) env valReprInfo vFlags (patEnv: TcPatLinearEn
 
     | SynPat.ListCons(pat1, pat2, m, trivia) ->
         let longDotId = SynLongIdent((mkSynCaseName trivia.ColonColonRange opNameCons), [], [Some (FSharp.Compiler.SyntaxTrivia.IdentTrivia.OriginalNotation "::")])
-        let args = SynArgPats.Pats [ SynPat.Tuple(false, [ pat1; pat2 ], m) ]
+        let args = SynArgPats.Pats [ SynPat.Tuple(false, [ pat1; pat2 ], [], m) ]
         TcPatLongIdent warnOnUpper cenv env ad valReprInfo vFlags patEnv ty (longDotId, None, args, None, m)
 
     | SynPat.Ands (pats, m) ->
@@ -304,7 +291,7 @@ and TcPat warnOnUpper (cenv: cenv) env valReprInfo vFlags (patEnv: TcPatLinearEn
         errorR (Error(FSComp.SR.tcInvalidPattern(), m))
         (fun _ -> TPat_error m), patEnv
 
-    | SynPat.Tuple (isExplicitStruct, args, m) ->
+    | SynPat.Tuple (isExplicitStruct, args, _, m) ->
         TcPatTuple warnOnUpper cenv env vFlags patEnv ty isExplicitStruct args m
 
     | SynPat.Paren (p, _) ->
@@ -659,14 +646,14 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (m
 
             let args = List.ofArray result
             if result.Length = 1 then args, extraPatterns
-            else [ SynPat.Tuple(false, args, m) ], extraPatterns
+            else [ SynPat.Tuple(false, args, [], m) ], extraPatterns
 
     let args, extraPatterns =
         match args with
         | [] -> [], []
 
         // note: the next will always be parenthesized
-        | [SynPatErrorSkip(SynPat.Tuple (false, args, _)) | SynPatErrorSkip(SynPat.Paren(SynPatErrorSkip(SynPat.Tuple (false, args, _)), _))] when numArgTys > 1 -> args, []
+        | [SynPatErrorSkip(SynPat.Tuple (false, args, _, _)) | SynPatErrorSkip(SynPat.Paren(SynPatErrorSkip(SynPat.Tuple (false, args, _, _)), _))] when numArgTys > 1 -> args, []
 
         // note: we allow both 'C _' and 'C (_)' regardless of number of argument of the pattern
         | [SynPatErrorSkip(SynPat.Wild _ as e) | SynPatErrorSkip(SynPat.Paren(SynPatErrorSkip(SynPat.Wild _ as e), _))] -> List.replicate numArgTys e, []

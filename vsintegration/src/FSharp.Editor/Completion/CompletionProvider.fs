@@ -13,6 +13,7 @@ open Microsoft.CodeAnalysis.Completion
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Completion
 
+open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 open Microsoft.VisualStudio.Shell
 
 open FSharp.Compiler.CodeAnalysis
@@ -102,7 +103,7 @@ type internal FSharpCompletionProvider
             sourceText: SourceText,
             caretPosition: int,
             trigger: CompletionTriggerKind,
-            getInfo: (unit -> DocumentId * string * string list),
+            getInfo: (unit -> DocumentId * string * string list * string option),
             intelliSenseOptions: IntelliSenseOptions
         ) =
         if caretPosition = 0 then
@@ -127,9 +128,9 @@ type internal FSharpCompletionProvider
             then
                 false
             else
-                let documentId, filePath, defines = getInfo ()
+                let documentId, filePath, defines, langVersion = getInfo ()
 
-                CompletionUtils.shouldProvideCompletion (documentId, filePath, defines, sourceText, triggerPosition)
+                CompletionUtils.shouldProvideCompletion (documentId, filePath, defines, langVersion, sourceText, triggerPosition)
                 && (triggerChar = '.'
                     || (intelliSenseOptions.ShowAfterCharIsTyped
                         && CompletionUtils.isStartingNewWord (sourceText, triggerPosition)))
@@ -142,6 +143,7 @@ type internal FSharpCompletionProvider
         ) =
 
         asyncMaybe {
+
             let! parseResults, checkFileResults =
                 document.GetFSharpParseAndCheckResultsAsync("ProvideCompletionsAsyncAux")
                 |> liftAsync
@@ -287,8 +289,8 @@ type internal FSharpCompletionProvider
         let getInfo () =
             let documentId = workspace.GetDocumentIdInCurrentContext(sourceText.Container)
             let document = workspace.CurrentSolution.GetDocument(documentId)
-            let defines = document.GetFSharpQuickDefines()
-            (documentId, document.FilePath, defines)
+            let defines, langVersion = document.GetFSharpQuickDefinesAndLangVersion()
+            (documentId, document.FilePath, defines, Some langVersion)
 
         FSharpCompletionProvider.ShouldTriggerCompletionAux(sourceText, caretPosition, trigger.Kind, getInfo, settings.IntelliSense)
 
@@ -298,12 +300,29 @@ type internal FSharpCompletionProvider
                 Logger.LogBlockMessage context.Document.Name LogEditorFunctionId.Completion_ProvideCompletionsAsync
 
             let document = context.Document
+
+            let eventProps: (string * obj) array =
+                [|
+                    "context.document.project.id", document.Project.Id.Id.ToString()
+                    "context.document.id", document.Id.Id.ToString()
+                |]
+
+            use _eventDuration =
+                TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.ProvideCompletions, eventProps)
+
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
-            let defines = document.GetFSharpQuickDefines()
+            let defines, langVersion = document.GetFSharpQuickDefinesAndLangVersion()
 
             do!
                 Option.guard (
-                    CompletionUtils.shouldProvideCompletion (document.Id, document.FilePath, defines, sourceText, context.Position)
+                    CompletionUtils.shouldProvideCompletion (
+                        document.Id,
+                        document.FilePath,
+                        defines,
+                        Some langVersion,
+                        sourceText,
+                        context.Position
+                    )
                 )
 
             let getAllSymbols (fileCheckResults: FSharpCheckFileResults) =

@@ -759,6 +759,7 @@ type internal FxResolver
                 "System.Runtime.Serialization.Xml"
                 "System.Security"
                 "System.Security.Claims"
+                "System.Security.Cryptography"
                 "System.Security.Cryptography.Algorithms"
                 "System.Security.Cryptography.Cng"
                 "System.Security.Cryptography.Csp"

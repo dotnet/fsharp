@@ -61,6 +61,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Additional performance telemetry (experimental).
+        /// </summary>
+        public static string AdditionalTelemetry {
+            get {
+                return ResourceManager.GetString("AdditionalTelemetry", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Always place open statements at the top level.
         /// </summary>
         public static string Always_place_opens_at_top_level {
@@ -133,29 +142,11 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to _Enable in-memory cross project references.
-        /// </summary>
-        public static string Enable_in_memory_cross_project_references {
-            get {
-                return ResourceManager.GetString("Enable_in_memory_cross_project_references", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Use live (unsaved) buffers for checking (restart required).
         /// </summary>
         public static string Enable_Live_Buffers {
             get {
                 return ResourceManager.GetString("Enable_Live_Buffers", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Enable parallel type checking with signature files.
-        /// </summary>
-        public static string Enable_Parallel_Checking_With_Signature_Files {
-            get {
-                return ResourceManager.GetString("Enable_Parallel_Checking_With_Signature_Files", resourceCulture);
             }
         }
         
@@ -331,6 +322,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Send additional performance telemetry.
+        /// </summary>
+        public static string Send_Additional_Telemetry {
+            get {
+                return ResourceManager.GetString("Send_Additional_Telemetry", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Show s_ymbols in unopened namespaces.
         /// </summary>
         public static string Show_all_symbols {
@@ -453,15 +453,6 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Time_until_stale_completion {
             get {
                 return ResourceManager.GetString("Time_until_stale_completion", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to In-memory cross-project references store project-level data in memory to allow IDE features to work across projects..
-        /// </summary>
-        public static string Tooltip_in_memory_cross_project_references {
-            get {
-                return ResourceManager.GetString("Tooltip_in_memory_cross_project_references", resourceCulture);
             }
         }
         

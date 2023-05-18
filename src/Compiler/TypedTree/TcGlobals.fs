@@ -90,21 +90,6 @@ module FSharpLib =
 // Access the initial environment: helpers to build references
 //-------------------------------------------------------------------------
 
-// empty flags
-let v_knownWithoutNull = 0uy
-
-let private mkNonGenericTy tcref = TType_app(tcref, [], v_knownWithoutNull)
-
-let mkNonLocalTyconRef2 ccu path n = mkNonLocalTyconRef (mkNonLocalEntityRef ccu path) n
-
-let mk_MFCore_tcref             ccu n = mkNonLocalTyconRef2 ccu CorePathArray n
-let mk_MFQuotations_tcref       ccu n = mkNonLocalTyconRef2 ccu QuotationsPath n
-let mk_MFLinq_tcref             ccu n = mkNonLocalTyconRef2 ccu LinqPathArray n
-let mk_MFCollections_tcref      ccu n = mkNonLocalTyconRef2 ccu CollectionsPathArray n
-let mk_MFCompilerServices_tcref ccu n = mkNonLocalTyconRef2 ccu CompilerServicesPath n
-let mk_MFRuntimeHelpers_tcref   ccu n = mkNonLocalTyconRef2 ccu RuntimeHelpersPath n
-let mk_MFControl_tcref          ccu n = mkNonLocalTyconRef2 ccu ControlPathArray n
-
 type
     [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     BuiltinAttribInfo =
@@ -207,6 +192,21 @@ type TcGlobals(
     noDebugAttributes: bool,
     pathMap: PathMap,
     langVersion: LanguageVersion) =
+
+  // empty flags
+  let v_knownWithoutNull = 0uy
+
+  let mkNonGenericTy tcref = TType_app(tcref, [], v_knownWithoutNull)
+
+  let mkNonLocalTyconRef2 ccu path n = mkNonLocalTyconRef (mkNonLocalEntityRef ccu path) n
+
+  let mk_MFCore_tcref             ccu n = mkNonLocalTyconRef2 ccu CorePathArray n
+  let mk_MFQuotations_tcref       ccu n = mkNonLocalTyconRef2 ccu QuotationsPath n
+  let mk_MFLinq_tcref             ccu n = mkNonLocalTyconRef2 ccu LinqPathArray n
+  let mk_MFCollections_tcref      ccu n = mkNonLocalTyconRef2 ccu CollectionsPathArray n
+  let mk_MFCompilerServices_tcref ccu n = mkNonLocalTyconRef2 ccu CompilerServicesPath n
+  let mk_MFRuntimeHelpers_tcref   ccu n = mkNonLocalTyconRef2 ccu RuntimeHelpersPath n
+  let mk_MFControl_tcref          ccu n = mkNonLocalTyconRef2 ccu ControlPathArray n
 
   let tryFindSysTypeCcu path nm =
     tryFindSysTypeCcuHelper path nm false
@@ -332,28 +332,39 @@ type TcGlobals(
       let tcref = mkNonLocalTyconRef2 ccu (Array.ofList path) typeName
       AttribInfo(tref, tcref)
 
-  let findOrEmbedSysPublicAttribute nm =
-        let sysAttrib = findPublicSysAttrib nm
-        if sysAttrib.TyconRef.CanDeref then
-            sysAttrib
-        else
-            let attrRef = ILTypeRef.Create(ILScopeRef.Local, [], nm)
-            let attrTycon =
-                Construct.NewTycon(
-                    Some (CompPath(ILScopeRef.Local, [])),
-                    attrRef.Name,
-                    range0,
-                    taccessInternal,
-                    taccessInternal,
-                    TyparKind.Type,
-                    LazyWithContext.NotLazy [],
-                    FSharp.Compiler.Xml.XmlDoc.Empty,
-                    false,
-                    false,
-                    false,
-                    MaybeLazy.Strict(Construct.NewEmptyModuleOrNamespaceType ModuleOrType)
-                )
-            AttribInfo(attrRef, mkLocalTyconRef attrTycon)
+  // Well known set of generated embeddable attribute names
+  static let isInEmbeddableKnownSet name =
+      match name with
+      | "System.Runtime.CompilerServices.IsReadOnlyAttribute"
+      | "System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute"
+      | "System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes" -> true
+      | _ -> false
+
+  let findOrEmbedSysPublicType nm =
+
+      assert (isInEmbeddableKnownSet nm)                        //Ensure that the named type is in known set of embedded types
+
+      let sysAttrib = findPublicSysAttrib nm
+      if sysAttrib.TyconRef.CanDeref then
+          sysAttrib
+      else
+          let attrRef = ILTypeRef.Create(ILScopeRef.Local, [], nm)
+          let attrTycon =
+             Construct.NewTycon(
+                 Some (CompPath(ILScopeRef.Local, [])),
+                 attrRef.Name,
+                 range0,
+                 taccessInternal,
+                  taccessInternal,
+                  TyparKind.Type,
+                  LazyWithContext.NotLazy [],
+                  FSharp.Compiler.Xml.XmlDoc.Empty,
+                  false,
+                  false,
+                  false,
+                  MaybeLazy.Strict(Construct.NewEmptyModuleOrNamespaceType ModuleOrType)
+              )
+          AttribInfo(attrRef, mkLocalTyconRef attrTycon)
 
   let mkSysNonGenericTy path n = mkNonGenericTy(findSysTyconRef path n)
   let tryMkSysNonGenericTy path n = tryFindSysTyconRef path n |> Option.map mkNonGenericTy
@@ -1051,6 +1062,8 @@ type TcGlobals(
 
   member _.ilg = ilg
 
+  static member IsInEmbeddableKnownSet name = isInEmbeddableKnownSet name
+
   member _.embeddedTypeDefs = embeddedILTypeDefs.Values |> Seq.toList
 
   member _.tryRemoveEmbeddedILTypeDefs () = [
@@ -1421,9 +1434,9 @@ type TcGlobals(
 
   // We use 'findSysAttrib' here because lookup on attribute is done by name comparison, and can proceed
   // even if the type is not found in a system assembly.
-  member val attrib_IsReadOnlyAttribute = findOrEmbedSysPublicAttribute "System.Runtime.CompilerServices.IsReadOnlyAttribute"
-  member val attrib_DynamicDependencyAttribute = findOrEmbedSysPublicAttribute "System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute"
-  member val enum_DynamicallyAccessedMemberTypes = findOrEmbedSysPublicAttribute "System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes"
+  member val attrib_IsReadOnlyAttribute = findOrEmbedSysPublicType "System.Runtime.CompilerServices.IsReadOnlyAttribute"
+  member val attrib_DynamicDependencyAttribute = findOrEmbedSysPublicType "System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute"
+  member val enum_DynamicallyAccessedMemberTypes = findOrEmbedSysPublicType "System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes"
 
   member val attrib_SystemObsolete = findSysAttrib "System.ObsoleteAttribute"
   member val attrib_DllImportAttribute = tryFindSysAttrib "System.Runtime.InteropServices.DllImportAttribute"

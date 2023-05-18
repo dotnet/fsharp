@@ -17,7 +17,7 @@ ImplFile
                          SimplePats
                            ([Typed
                                (Id (i, None, false, false, false, (3,7--3,8)),
-                                FromParseError (3,9--3,9), (3,7--3,9))],
+                                FromParseError (3,9--3,9), (3,7--3,9))], [],
                             (3,6--3,10)), None,
                          PreXmlDoc ((3,6), FSharp.Compiler.Xml.XmlDocCollector),
                          (3,5--3,6), { AsKeyword = None })], (3,13--3,22)), [],
@@ -27,7 +27,7 @@ ImplFile
                         SimplePats
                           ([Typed
                               (Id (i, None, false, false, false, (3,7--3,8)),
-                               FromParseError (3,9--3,9), (3,7--3,9))],
+                               FromParseError (3,9--3,9), (3,7--3,9))], [],
                            (3,6--3,10)), None,
                         PreXmlDoc ((3,6), FSharp.Compiler.Xml.XmlDocCollector),
                         (3,5--3,6), { AsKeyword = None })), (3,5--3,22),

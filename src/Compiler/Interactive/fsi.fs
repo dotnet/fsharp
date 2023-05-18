@@ -1814,7 +1814,8 @@ type internal FsiDynamicCompiler
 
         // Rewrite references to local types to their respective dynamic assemblies
         let ilxMainModule =
-            ilxMainModule |> Morphs.morphILTypeRefsInILModuleMemoized emEnv.MapTypeRef
+            ilxMainModule
+            |> Morphs.morphILTypeRefsInILModuleMemoized TcGlobals.IsInEmbeddableKnownSet emEnv.MapTypeRef
 
         let opts =
             {
@@ -1943,7 +1944,10 @@ type internal FsiDynamicCompiler
         ReportTime tcConfig "Assembly refs Normalised"
 
         let ilxMainModule =
-            Morphs.morphILScopeRefsInILModuleMemoized (NormalizeAssemblyRefs(ctok, ilGlobals, tcImports)) ilxMainModule
+            Morphs.morphILScopeRefsInILModuleMemoized
+                TcGlobals.IsInEmbeddableKnownSet
+                (NormalizeAssemblyRefs(ctok, ilGlobals, tcImports))
+                ilxMainModule
 
         diagnosticsLogger.AbortOnError(fsiConsoleOutput)
 
@@ -3487,7 +3491,7 @@ type FsiStdinLexerProvider
 
         IndentationAwareSyntaxStatus(initialIndentationAwareSyntaxStatus, warn = false)
 
-    let LexbufFromLineReader (fsiStdinSyphon: FsiStdinSyphon) readF =
+    let LexbufFromLineReader (fsiStdinSyphon: FsiStdinSyphon) (readF: unit -> string MaybeNull) =
         UnicodeLexing.FunctionAsLexbuf(
             true,
             tcConfigB.langVersion,
@@ -3499,7 +3503,11 @@ type FsiStdinLexerProvider
                     with :? EndOfStreamException ->
                         None
 
-                inputOption |> Option.iter (fun t -> fsiStdinSyphon.Add(t + "\n"))
+                inputOption
+                |> Option.iter (fun t ->
+                    match t with
+                    | Null -> ()
+                    | NonNull t -> fsiStdinSyphon.Add(t + "\n"))
 
                 match inputOption with
                 | Some null
@@ -3526,11 +3534,14 @@ type FsiStdinLexerProvider
     // Reading stdin as a lex stream
     //----------------------------------------------------------------------------
 
-    let removeZeroCharsFromString (str: string) =
-        if str <> null && str.Contains("\000") then
-            String(str |> Seq.filter (fun c -> c <> '\000') |> Seq.toArray)
-        else
-            str
+    let removeZeroCharsFromString (str: string MaybeNull) : string MaybeNull =
+        match str with
+        | Null -> str
+        | NonNull str ->
+            if str.Contains("\000") then
+                String(str |> Seq.filter (fun c -> c <> '\000') |> Seq.toArray)
+            else
+                str
 
     let CreateLexerForLexBuffer (sourceFileName, lexbuf, diagnosticsLogger) =
 
@@ -4616,7 +4627,7 @@ type FsiEvaluationSession
             resolveAssemblyRef
         )
 
-    let controlledExecution = ControlledExecution()
+    let controlledExecution = ControlledExecution(fsiOptions.Interact)
 
     let fsiInterruptController =
         FsiInterruptController(fsiOptions, controlledExecution, fsiConsoleOutput)

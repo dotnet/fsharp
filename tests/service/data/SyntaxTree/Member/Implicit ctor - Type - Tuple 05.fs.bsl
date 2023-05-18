@@ -28,7 +28,7 @@ ImplFile
                                     Type
                                       (LongIdent
                                          (SynLongIdent ([c], [], [None])))],
-                                   (3,10--3,17)), (3,7--3,17))], (3,6--3,19)),
+                                   (3,10--3,17)), (3,7--3,17))], [], (3,6--3,19)),
                          None,
                          PreXmlDoc ((3,6), FSharp.Compiler.Xml.XmlDocCollector),
                          (3,5--3,6), { AsKeyword = None })], (3,22--3,31)), [],
@@ -47,7 +47,7 @@ ImplFile
                                    Star (3,14--3,15);
                                    Type
                                      (LongIdent (SynLongIdent ([c], [], [None])))],
-                                  (3,10--3,17)), (3,7--3,17))], (3,6--3,19)),
+                                  (3,10--3,17)), (3,7--3,17))], [], (3,6--3,19)),
                         None,
                         PreXmlDoc ((3,6), FSharp.Compiler.Xml.XmlDocCollector),
                         (3,5--3,6), { AsKeyword = None })), (3,5--3,31),

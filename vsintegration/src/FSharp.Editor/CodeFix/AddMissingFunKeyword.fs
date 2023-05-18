@@ -4,6 +4,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Composition
+open System.Collections.Immutable
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
@@ -14,10 +15,9 @@ open FSharp.Compiler.CodeAnalysis
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.AddMissingFunKeyword); Shared>]
 type internal FSharpAddMissingFunKeywordCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
+    static let title = SR.AddMissingFunKeyword()
 
-    let fixableDiagnosticIds = set [ "FS0010" ]
-
-    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0010")
 
     override _.RegisterCodeFixesAsync context =
         asyncMaybe {
@@ -28,8 +28,8 @@ type internal FSharpAddMissingFunKeywordCodeFixProvider [<ImportingConstructor>]
             // Only trigger when failing to parse `->`, which arises when `fun` is missing
             do! Option.guard (textOfError = "->")
 
-            let! defines =
-                document.GetFSharpCompilationDefinesAsync(nameof (FSharpAddMissingFunKeywordCodeFixProvider))
+            let! defines, langVersion =
+                document.GetFSharpCompilationDefinesAndLangVersionAsync(nameof (FSharpAddMissingFunKeywordCodeFixProvider))
                 |> liftAsync
 
             let adjustedPosition =
@@ -51,27 +51,13 @@ type internal FSharpAddMissingFunKeywordCodeFixProvider [<ImportingConstructor>]
                     SymbolLookupKind.Greedy,
                     false,
                     false,
+                    Some langVersion,
                     context.CancellationToken
                 )
 
             let! intendedArgSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, intendedArgLexerSymbol.Range)
 
-            let diagnostics =
-                context.Diagnostics
-                |> Seq.filter (fun x -> fixableDiagnosticIds |> Set.contains x.Id)
-                |> Seq.toImmutableArray
-
-            let title = SR.AddMissingFunKeyword()
-
-            let codeFix =
-                CodeFixHelpers.createTextChangeCodeFix (
-                    CodeFix.AddMissingFunKeyword,
-                    title,
-                    context,
-                    (fun () -> asyncMaybe.Return [| TextChange(TextSpan(intendedArgSpan.Start, 0), "fun ") |])
-                )
-
-            context.RegisterCodeFix(codeFix, diagnostics)
+            do context.RegisterFsharpFix(CodeFix.AddMissingFunKeyword, title, [| TextChange(TextSpan(intendedArgSpan.Start, 0), "fun ") |])
         }
         |> Async.Ignore
         |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
