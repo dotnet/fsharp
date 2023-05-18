@@ -164,13 +164,13 @@ module private ParallelOptimization =
 
         /// Asynchronously wait for dependencies of a node
         let getNodeInputs (node: Node) =
-            task {
+            backgroundTask {
                 let prevPhaseNode = { node with Phase = node.Phase - 1 }
                 let prevFileNode = { node with FileIdx = node.FileIdx - 1 }
 
                 let prevPhaseTask =
                     if node.Phase > 0 then
-                        task {
+                        backgroundTask {
                             // Make sure that creating the task does not block before other node tasks finish
                             do! Task.Yield()
                             return! getTask prevPhaseNode
@@ -181,7 +181,7 @@ module private ParallelOptimization =
 
                 let prevFileTask =
                     if node.FileIdx > 0 then
-                        task {
+                        backgroundTask {
                             // Make sure that creating the task does not block before other node tasks finish
                             do! Task.Yield()
                             return! getTask prevFileNode
@@ -206,7 +206,7 @@ module private ParallelOptimization =
             }
 
         let startNodeTask (phase: PhaseInfo) (node: Node) =
-            task {
+            backgroundTask {
                 // Make sure that creating the task does not block before other node tasks finish
                 do! Task.Yield()
                 let! inputs = getNodeInputs node
