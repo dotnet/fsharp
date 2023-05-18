@@ -556,11 +556,10 @@ module SyntaxTraversal =
 
                 | SynExpr.Lambda (args = synSimplePats; body = synExpr) ->
                     match synSimplePats with
-                    | SynSimplePats.SimplePats (pats, _) ->
+                    | SynSimplePats.SimplePats (pats = pats) ->
                         match traverseSynSimplePats path pats with
                         | None -> traverseSynExpr synExpr
                         | x -> x
-                    | _ -> traverseSynExpr synExpr
 
                 | SynExpr.MatchLambda (_isExnMatch, _argm, synMatchClauseList, _spBind, _wholem) ->
                     synMatchClauseList
@@ -798,7 +797,7 @@ module SyntaxTraversal =
                 | SynPat.Or (p1, p2, _, _)
                 | SynPat.ListCons (p1, p2, _, _) -> [ p1; p2 ] |> List.tryPick (traversePat path)
                 | SynPat.Ands (ps, _)
-                | SynPat.Tuple (_, ps, _)
+                | SynPat.Tuple (elementPats = ps)
                 | SynPat.ArrayOrList (_, ps, _) -> ps |> List.tryPick (traversePat path)
                 | SynPat.Attrib (p, attributes, m) ->
                     match traversePat path p with
@@ -954,8 +953,7 @@ module SyntaxTraversal =
 
             | SynMemberDefn.ImplicitCtor (ctorArgs = simplePats) ->
                 match simplePats with
-                | SynSimplePats.SimplePats (simplePats, _) -> traverseSynSimplePats path simplePats
-                | _ -> None
+                | SynSimplePats.SimplePats (pats = simplePats) -> traverseSynSimplePats path simplePats
             | SynMemberDefn.ImplicitInherit (synType, synExpr, _identOption, range) ->
                 [
                     dive () synType.Range (fun () ->

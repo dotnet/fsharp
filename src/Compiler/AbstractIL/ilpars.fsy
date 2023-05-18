@@ -4,21 +4,7 @@
 
 #nowarn "1182"  // the generated code often has unused variable "parseState"
 
-open Internal.Utilities
 open Internal.Utilities.Library
-open Internal.Utilities.Text
-
-open FSharp.Compiler.AbstractIL 
-open FSharp.Compiler.AbstractIL 
-open FSharp.Compiler.AbstractIL.AsciiConstants 
-open FSharp.Compiler.AbstractIL.Diagnostics 
-open FSharp.Compiler.AbstractIL.ILX.Types 
-open FSharp.Compiler.AbstractIL.IL 
-
-  
-let pfailwith s = 
-    stderr.WriteLine ("*** error: "+s); 
-    raise Parsing.RecoverableParseError 
 
 type ResolvedAtMethodSpecScope<'T> = 
     ResolvedAtMethodSpecScope of (ILGenericParameterDefs -> 'T)

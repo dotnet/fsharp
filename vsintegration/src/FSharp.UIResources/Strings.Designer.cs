@@ -61,6 +61,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Additional performance telemetry (experimental).
+        /// </summary>
+        public static string AdditionalTelemetry {
+            get {
+                return ResourceManager.GetString("AdditionalTelemetry", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Always place open statements at the top level.
         /// </summary>
         public static string Always_place_opens_at_top_level {
@@ -309,6 +318,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Project_Performance {
             get {
                 return ResourceManager.GetString("Project_Performance", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Send additional performance telemetry.
+        /// </summary>
+        public static string Send_Additional_Telemetry {
+            get {
+                return ResourceManager.GetString("Send_Additional_Telemetry", resourceCulture);
             }
         }
         
