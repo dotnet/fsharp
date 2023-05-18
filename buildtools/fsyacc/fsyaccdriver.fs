@@ -157,7 +157,8 @@ type GeneratorState =
    compat: bool
    generate_nonterminal_name: Identifier -> string
    map_action_to_int: Action -> int
-   anyMarker: int }
+   anyMarker: int
+   bufferTypeArgument: string }
    with 
    static member Default = 
     {  input = ""
@@ -172,7 +173,8 @@ type GeneratorState =
        compat = false
        generate_nonterminal_name = generic_nt_name
        map_action_to_int = actionCoding
-       anyMarker = anyMarker }
+       anyMarker = anyMarker
+       bufferTypeArgument = "'cty" }
 
 let writeSpecToFile (generatorState: GeneratorState) (spec: ParserSpec) (compiledSpec: CompiledSpec) = 
       let output, outputi = deriveOutputFileNames (generatorState.input, generatorState.output)
@@ -299,8 +301,6 @@ let writeSpecToFile (generatorState: GeneratorState) (spec: ParserSpec) (compile
             id
             (match typ with Some _ -> "_fsyacc_x" | None -> "")
             (match typ with Some _ -> "Microsoft.FSharp.Core.Operators.box _fsyacc_x" | None -> "(null : System.Object)")
-
-      let tychar = "'cty" 
 
       for key,_ in spec.Types |> Seq.countBy fst |> Seq.filter (fun (_,n) -> n > 1)  do
             failwithf "%s is given multiple %%type declarations" key;
@@ -539,7 +539,7 @@ let writeSpecToFile (generatorState: GeneratorState) (spec: ParserSpec) (compile
           if not (types.ContainsKey id) then 
             failwith ("a %type declaration is required for start token "+id);
           let ty = types.[id] in 
-          writer.WriteLineInterface "val %s : (%s.LexBuffer<%s> -> token) -> %s.LexBuffer<%s> -> (%s) " id generatorState.lexlib tychar generatorState.lexlib tychar ty;
+          writer.WriteLineInterface "val %s : (%s.LexBuffer<%s> -> token) -> %s.LexBuffer<%s> -> (%s) " id generatorState.lexlib generatorState.bufferTypeArgument generatorState.lexlib generatorState.bufferTypeArgument ty;
 
 
 let compileSpec (spec: ParserSpec) (logger: Logger) = 

@@ -21,8 +21,6 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
-open FSharp.Compiler.SyntaxTreeOps
-open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Xml
@@ -2756,7 +2754,7 @@ hardwhiteDefnBindingsTerminator:
 cPrototype:
   | EXTERN cRetType opt_access ident opt_HIGH_PRECEDENCE_APP LPAREN externArgs rparen
       { let mExtern = rhs parseState 1
-        let rty, vis, nm, args = $2, $3, $4, $7
+        let rty, vis, nm, (args, commas) = $2, $3, $4, $7
         let nmm = rhs parseState 3
         let argsm = rhs parseState 6
         let mBindLhs = lhs parseState
@@ -2770,7 +2768,7 @@ cPrototype:
                 SynExpr.Const(SynConst.String("extern was not given a DllImport attribute", SynStringKind.Regular, rhs parseState 8), rhs parseState 8),
                 mRhs)
         (fun attrs _ ->
-            let bindingPat = SynPat.LongIdent(SynLongIdent([nm], [], [None]), None, Some noInferredTypars, SynArgPats.Pats [SynPat.Tuple(false, args, argsm)], vis, nmm)
+            let bindingPat = SynPat.LongIdent(SynLongIdent([nm], [], [None]), None, Some noInferredTypars, SynArgPats.Pats [SynPat.Tuple(false, args, commas, argsm)], vis, nmm)
             let mWholeBindLhs = (mBindLhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
             let xmlDoc = grabXmlDoc(parseState, attrs, 1)
             let trivia = { LeadingKeyword = SynLeadingKeyword.Extern mExtern; InlineKeyword = None; EqualsRange = None }
@@ -2783,21 +2781,25 @@ cPrototype:
 /* A list of arguments in an 'extern' DllImport function definition */
 externArgs:
   | externMoreArgs
-     { List.rev $1 }
+     { let args, commas = $1
+       List.rev args, (List.rev commas) }
 
   | externArg
-     { [$1] }
+     { [$1], [] }
   |
-     { [] }
+     { [], [] }
 
 
 /* Part of the list of arguments in an 'extern' DllImport function definition */
 externMoreArgs:
   | externMoreArgs COMMA externArg
-     { $3 :: $1 }
+     { let args, commas = $1
+       let mComma = rhs parseState 2
+       $3 :: args, (mComma :: commas) }
 
   | externArg COMMA externArg
-     { [$3; $1] }
+     { let mComma = rhs parseState 2
+       [$3; $1], [mComma] }
 
 
 /* A single argument in an 'extern' DllImport function definition */
@@ -3108,9 +3110,10 @@ simplePatternCommaList:
       { $1 }
 
   | simplePattern COMMA simplePatternCommaList
-      { match $3 with
-        | SynPat.Tuple(_, pats, _) -> SynPat.Tuple(false, $1 :: pats, rhs2 parseState 1 3)
-        | _ -> SynPat.Tuple(false, [$1; $3], rhs2 parseState 1 3) }
+      { let mComma = rhs parseState 2
+        match $3 with
+        | SynPat.Tuple(_, pats, commas, _) -> SynPat.Tuple(false, $1 :: pats, mComma :: commas, rhs2 parseState 1 3)
+        | _ -> SynPat.Tuple(false, [$1; $3], [mComma], rhs2 parseState 1 3) }
 
 simplePatterns:
   | LPAREN simplePatternCommaList rparen
@@ -3125,7 +3128,7 @@ simplePatterns:
 
   | LPAREN simplePatternCommaList recover
       { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedParen())
-        let parenPat = SynPat.Paren(SynPat.Tuple(false, [], rhs2 parseState 1 2), rhs2 parseState 1 2) // todo: report parsed pats anyway?
+        let parenPat = SynPat.Paren(SynPat.Tuple(false, [], [], rhs2 parseState 1 2), rhs2 parseState 1 2) // todo: report parsed pats anyway?
         let simplePats, _ = SimplePatsOfPat parseState.SynArgNameGenerator parenPat
         simplePats }
 
@@ -3154,9 +3157,10 @@ headBindingPattern:
         SynPat.ListCons($1, $3, rhs2 parseState 1 3, { ColonColonRange = mColonColon }) }
 
   | tuplePatternElements %prec pat_tuple
-      { let pats = normalizeTuplePat $1
+      { let pats, commas = $1
+        let pats, commas = normalizeTuplePat pats commas
         let m = (rhs parseState 1, pats) ||> unionRangeWithListBy (fun p -> p.Range)
-        SynPat.Tuple(false, List.rev pats, m) }
+        SynPat.Tuple(false, List.rev pats, List.rev commas, m) }
 
   | conjPatternElements %prec pat_conj
       { SynPat.Ands(List.rev $1, lhs parseState) }
@@ -3166,35 +3170,37 @@ headBindingPattern:
 
 tuplePatternElements:
   | tuplePatternElements COMMA headBindingPattern
-      { $3 :: $1 }
+      { let pats, commas = $1
+        $3 :: pats, (rhs parseState 2 :: commas) }
 
   | headBindingPattern COMMA headBindingPattern
-      { [$3; $1] }
+      { [$3; $1], [rhs parseState 2] }
 
   | tuplePatternElements COMMA ends_coming_soon_or_recover
-        { let commaRange = rhs parseState 2
+        { let pats, commas = $1
+          let commaRange = rhs parseState 2
           reportParseErrorAt commaRange (FSComp.SR.parsExpectingPatternInTuple ())
           let pat2 = SynPat.Wild(commaRange.EndRange)
-          pat2 :: $1 }
+          pat2 :: pats, (commaRange :: commas) }
 
   | headBindingPattern COMMA ends_coming_soon_or_recover
       { let commaRange = rhs parseState 2
         reportParseErrorAt commaRange (FSComp.SR.parsExpectingPatternInTuple ())
         let pat2 = SynPat.Wild(commaRange.EndRange)
-        [pat2; $1] }
+        [pat2; $1], [commaRange] }
 
   | COMMA headBindingPattern
       { let commaRange = rhs parseState 1
         reportParseErrorAt commaRange (FSComp.SR.parsExpectingPatternInTuple ())
         let pat1 = SynPat.Wild(commaRange.StartRange)
-        [$2; pat1] }
+        [$2; pat1], [commaRange] }
 
   | COMMA ends_coming_soon_or_recover
       { let commaRange = rhs parseState 1
         if not $2 then reportParseErrorAt commaRange (FSComp.SR.parsExpectedPatternAfterToken ())
         let pat1 = SynPat.Wild(commaRange.StartRange)
         let pat2 = SynPat.Wild(commaRange.EndRange)
-        [pat2; pat1] }
+        [pat2; pat1], [commaRange] }
 
 conjPatternElements:
   | conjPatternElements AMP headBindingPattern
@@ -3362,11 +3368,13 @@ atomicPattern:
         patFromParseError parenPat }
 
   | STRUCT LPAREN tupleParenPatternElements rparen
-      { SynPat.Tuple(true, List.rev $3, lhs parseState) }
+      { let pats, commas = $3
+        SynPat.Tuple(true, List.rev pats, List.rev commas, lhs parseState) }
 
   | STRUCT LPAREN tupleParenPatternElements recover
       { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnmatchedParen())
-        SynPat.Tuple(true, List.rev $3, lhs parseState) }
+        let pats, commas = $3
+        SynPat.Tuple(true, List.rev pats, List.rev commas, lhs parseState) }
 
   | STRUCT LPAREN error rparen
       { (* silent recovery *) SynPat.Wild(lhs parseState) }
@@ -3416,9 +3424,10 @@ parenPattern:
         SynPat.Or($1, $3, rhs2 parseState 1 3, { BarRange = mBar }) }
 
   | tupleParenPatternElements
-      { let pats = normalizeTuplePat $1
+      { let pats, commas = $1
+        let pats, commas = normalizeTuplePat pats commas
         let m = (rhs parseState 1, pats) ||> unionRangeWithListBy (fun p -> p.Range)
-        SynPat.Tuple(false, List.rev pats, m) }
+        SynPat.Tuple(false, List.rev pats, List.rev commas, m) }
 
   | conjParenPatternElements
       { SynPat.Ands(List.rev $1, rhs2 parseState 1 3) }
@@ -3444,35 +3453,39 @@ parenPattern:
 
 tupleParenPatternElements:
   | tupleParenPatternElements COMMA parenPattern
-      { $3 :: $1 }
+      { let pats, commas = $1
+        let mComma = rhs parseState 2
+        $3 :: pats, (mComma :: commas) }
 
   | parenPattern COMMA parenPattern
-      { [$3; $1] }
+      { let mComma = rhs parseState 2
+        [$3; $1], [mComma] }
 
   | tupleParenPatternElements COMMA ends_coming_soon_or_recover
-        { let commaRange = rhs parseState 2
+        { let pats, commas = $1
+          let commaRange = rhs parseState 2
           reportParseErrorAt commaRange (FSComp.SR.parsExpectingPatternInTuple())
           let pat2 = SynPat.Wild(commaRange.EndRange)
-          pat2 :: $1 }
+          pat2 :: pats, (commaRange :: commas) }
 
   | parenPattern COMMA ends_coming_soon_or_recover
       { let commaRange = rhs parseState 2
         reportParseErrorAt commaRange (FSComp.SR.parsExpectingPatternInTuple())
         let pat2 = SynPat.Wild(commaRange.EndRange)
-        [pat2; $1] }
+        [pat2; $1], [commaRange] }
 
   | COMMA parenPattern
       { let commaRange = rhs parseState 1
         reportParseErrorAt commaRange (FSComp.SR.parsExpectingPatternInTuple())
         let pat1 = SynPat.Wild(commaRange.StartRange)
-        [$2; pat1] }
+        [$2; pat1], [commaRange] }
 
   | COMMA ends_coming_soon_or_recover
       { let commaRange = rhs parseState 1
         if not $2 then reportParseErrorAt commaRange (FSComp.SR.parsExpectedPatternAfterToken ())
         let pat1 = SynPat.Wild(commaRange.StartRange)
         let pat2 = SynPat.Wild(commaRange.EndRange)
-        [pat2; pat1] }
+        [pat2; pat1], [commaRange] }
 
 conjParenPatternElements:
   | conjParenPatternElements AMP parenPattern

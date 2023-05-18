@@ -14,6 +14,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
 open FSharp.Compiler.Diagnostics
 open CancellableTasks
+open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
 [<RequireQualifiedAccess>]
 type internal DiagnosticsType =
@@ -52,6 +53,20 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
 
     static member GetDiagnostics(document: Document, diagnosticType: DiagnosticsType) =
         cancellableTask {
+
+            let eventProps: (string * obj) array =
+                [|
+                    "context.document.project.id", document.Project.Id.Id.ToString()
+                    "context.document.id", document.Id.Id.ToString()
+                    "context.diagnostics.type",
+                    match diagnosticType with
+                    | DiagnosticsType.Syntax -> "syntax"
+                    | DiagnosticsType.Semantic -> "semantic"
+                |]
+
+            use _eventDuration =
+                TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.GetDiagnosticsForDocument, eventProps)
+
             let! ct = CancellableTask.getCurrentCancellationToken ()
 
             let! parseResults = document.GetFSharpParseResultsAsync("GetDiagnostics")

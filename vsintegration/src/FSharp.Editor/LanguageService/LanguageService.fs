@@ -107,7 +107,7 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                 | _ ->
                     let checker =
                         lazy
-                            TelemetryReporter.reportEvent "languageservicestarted" []
+                            TelemetryReporter.ReportSingleEvent(TelemetryEvents.LanguageServiceStarted, [||])
 
                             let editorOptions = workspace.Services.GetService<EditorOptions>()
 
@@ -151,9 +151,9 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                                     useSyntaxTreeCache = useSyntaxTreeCache
                                 )
 
-                            TelemetryReporter.reportEvent
-                                "languageservicestarted"
-                                [
+                            TelemetryReporter.ReportSingleEvent(
+                                TelemetryEvents.LanguageServiceStarted,
+                                [|
                                     nameof enableLiveBuffers, enableLiveBuffers
                                     nameof useSyntaxTreeCache, useSyntaxTreeCache
                                     nameof enableParallelReferenceResolution, enableParallelReferenceResolution
@@ -162,7 +162,8 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                                     nameof isInlineTypeHintsEnabled, isInlineTypeHintsEnabled
                                     nameof isInlineReturnTypeHintsEnabled, isInlineReturnTypeHintsEnabled
                                     nameof enablePartialTypeChecking, enablePartialTypeChecking
-                                ]
+                                |]
+                            )
 
                             if enableLiveBuffers then
                                 workspace.WorkspaceChanged.Add(fun args ->

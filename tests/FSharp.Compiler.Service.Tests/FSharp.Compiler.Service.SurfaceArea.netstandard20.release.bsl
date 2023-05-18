@@ -8006,6 +8006,8 @@ FSharp.Compiler.Syntax.SynPat+Tuple: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynPat+Tuple: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynPat+Tuple: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynPat] elementPats
 FSharp.Compiler.Syntax.SynPat+Tuple: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynPat] get_elementPats()
+FSharp.Compiler.Syntax.SynPat+Tuple: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range] commaRanges
+FSharp.Compiler.Syntax.SynPat+Tuple: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range] get_commaRanges()
 FSharp.Compiler.Syntax.SynPat+Typed: FSharp.Compiler.Syntax.SynPat get_pat()
 FSharp.Compiler.Syntax.SynPat+Typed: FSharp.Compiler.Syntax.SynPat pat
 FSharp.Compiler.Syntax.SynPat+Typed: FSharp.Compiler.Syntax.SynType get_targetType()
@@ -8074,7 +8076,7 @@ FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Syntax.SynPat NewOr(FSharp.Compil
 FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Syntax.SynPat NewParen(FSharp.Compiler.Syntax.SynPat, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Syntax.SynPat NewQuoteExpr(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Syntax.SynPat NewRecord(Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`3[System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident],FSharp.Compiler.Syntax.Ident],FSharp.Compiler.Text.Range,FSharp.Compiler.Syntax.SynPat]], FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Syntax.SynPat NewTuple(Boolean, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynPat], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Syntax.SynPat NewTuple(Boolean, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynPat], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Syntax.SynPat NewTyped(FSharp.Compiler.Syntax.SynPat, FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Syntax.SynPat NewWild(FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Syntax.SynPat+Ands
@@ -8204,31 +8206,17 @@ FSharp.Compiler.Syntax.SynSimplePatAlternativeIdInfo: FSharp.Compiler.Syntax.Syn
 FSharp.Compiler.Syntax.SynSimplePatAlternativeIdInfo: Int32 Tag
 FSharp.Compiler.Syntax.SynSimplePatAlternativeIdInfo: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynSimplePatAlternativeIdInfo: System.String ToString()
-FSharp.Compiler.Syntax.SynSimplePats+SimplePats: FSharp.Compiler.Text.Range get_range()
-FSharp.Compiler.Syntax.SynSimplePats+SimplePats: FSharp.Compiler.Text.Range range
-FSharp.Compiler.Syntax.SynSimplePats+SimplePats: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynSimplePat] get_pats()
-FSharp.Compiler.Syntax.SynSimplePats+SimplePats: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynSimplePat] pats
-FSharp.Compiler.Syntax.SynSimplePats+Tags: Int32 SimplePats
-FSharp.Compiler.Syntax.SynSimplePats+Tags: Int32 Typed
-FSharp.Compiler.Syntax.SynSimplePats+Typed: FSharp.Compiler.Syntax.SynSimplePats get_pats()
-FSharp.Compiler.Syntax.SynSimplePats+Typed: FSharp.Compiler.Syntax.SynSimplePats pats
-FSharp.Compiler.Syntax.SynSimplePats+Typed: FSharp.Compiler.Syntax.SynType get_targetType()
-FSharp.Compiler.Syntax.SynSimplePats+Typed: FSharp.Compiler.Syntax.SynType targetType
-FSharp.Compiler.Syntax.SynSimplePats+Typed: FSharp.Compiler.Text.Range get_range()
-FSharp.Compiler.Syntax.SynSimplePats+Typed: FSharp.Compiler.Text.Range range
-FSharp.Compiler.Syntax.SynSimplePats: Boolean IsSimplePats
-FSharp.Compiler.Syntax.SynSimplePats: Boolean IsTyped
-FSharp.Compiler.Syntax.SynSimplePats: Boolean get_IsSimplePats()
-FSharp.Compiler.Syntax.SynSimplePats: Boolean get_IsTyped()
-FSharp.Compiler.Syntax.SynSimplePats: FSharp.Compiler.Syntax.SynSimplePats NewSimplePats(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynSimplePat], FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.SynSimplePats: FSharp.Compiler.Syntax.SynSimplePats NewTyped(FSharp.Compiler.Syntax.SynSimplePats, FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.SynSimplePats: FSharp.Compiler.Syntax.SynSimplePats+SimplePats
-FSharp.Compiler.Syntax.SynSimplePats: FSharp.Compiler.Syntax.SynSimplePats+Tags
-FSharp.Compiler.Syntax.SynSimplePats: FSharp.Compiler.Syntax.SynSimplePats+Typed
+FSharp.Compiler.Syntax.SynSimplePats: FSharp.Compiler.Syntax.SynSimplePats NewSimplePats(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynSimplePat], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynSimplePats: FSharp.Compiler.Text.Range Range
 FSharp.Compiler.Syntax.SynSimplePats: FSharp.Compiler.Text.Range get_Range()
+FSharp.Compiler.Syntax.SynSimplePats: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynSimplePats: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynSimplePats: Int32 Tag
 FSharp.Compiler.Syntax.SynSimplePats: Int32 get_Tag()
+FSharp.Compiler.Syntax.SynSimplePats: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynSimplePat] get_pats()
+FSharp.Compiler.Syntax.SynSimplePats: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynSimplePat] pats
+FSharp.Compiler.Syntax.SynSimplePats: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range] commaRanges
+FSharp.Compiler.Syntax.SynSimplePats: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range] get_commaRanges()
 FSharp.Compiler.Syntax.SynSimplePats: System.String ToString()
 FSharp.Compiler.Syntax.SynStaticOptimizationConstraint+Tags: Int32 WhenTyparIsStruct
 FSharp.Compiler.Syntax.SynStaticOptimizationConstraint+Tags: Int32 WhenTyparTyconEqualsTycon

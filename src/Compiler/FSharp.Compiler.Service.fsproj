@@ -154,14 +154,14 @@
     <Compile Include="Facilities\BuildGraph.fsi" />
     <Compile Include="Facilities\BuildGraph.fs" />
     <FsLex Include="AbstractIL\illex.fsl">
-      <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
+      <OtherFlags>--module FSharp.Compiler.AbstractIL.AsciiLexer --internal --open Internal.Utilities.Text.Lexing --open FSharp.Compiler.AbstractIL.AsciiParser --unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
       <Link>AbstractIL\illex.fsl</Link>
     </FsLex>
     <None Include="AbstractIL\illex.fsl">
       <Link>AbstractIL\illex.fsl</Link>
     </None>
     <FsYacc Include="AbstractIL\ilpars.fsy">
-      <OtherFlags>--module FSharp.Compiler.AbstractIL.AsciiParser --open FSharp.Compiler.AbstractIL --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <OtherFlags>--module FSharp.Compiler.AbstractIL.AsciiParser --open FSharp.Compiler.AbstractIL.AsciiConstants --open FSharp.Compiler.AbstractIL.IL --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing --buffer-type-argument char</OtherFlags>
       <Link>AbstractIL\ilpars.fsy</Link>
     </FsYacc>
     <None Include="AbstractIL\ilpars.fsy">
@@ -173,8 +173,14 @@
     <Compile Include="AbstractIL\ilx.fs" />
     <Compile Include="AbstractIL\ilascii.fsi" />
     <Compile Include="AbstractIL\ilascii.fs" />
+    <Compile Include="$(FsYaccOutputFolder)ilpars.fsi">
+      <Link>AbstractIL\FsYaccOut\ilpars.fsi</Link>
+    </Compile>
     <Compile Include="$(FsYaccOutputFolder)ilpars.fs">
       <Link>AbstractIL\FsYaccOut\ilpars.fs</Link>
+    </Compile>
+    <Compile Include="$(FsLexOutputFolder)illex.fsi">
+      <Link>AbstractIL\FsLexOut\illex.fsi</Link>
     </Compile>
     <Compile Include="$(FsLexOutputFolder)illex.fs">
       <Link>AbstractIL\FsLexOut\illex.fs</Link>
@@ -202,19 +208,19 @@
     <Compile Include="SyntaxTree\PrettyNaming.fsi" />
     <Compile Include="SyntaxTree\PrettyNaming.fs" />
     <FsLex Include="pplex.fsl">
-      <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
+      <OtherFlags>--module FSharp.Compiler.PPLexer --internal --open FSharp.Compiler.Lexhelp --open Internal.Utilities.Text.Lexing --open FSharp.Compiler.PPParser --unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
       <Link>SyntaxTree\pplex.fsl</Link>
     </FsLex>
     <FsYacc Include="pppars.fsy">
-      <OtherFlags>--module FSharp.Compiler.PPParser --open FSharp.Compiler --open FSharp.Compiler.Syntax --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <OtherFlags>--module FSharp.Compiler.PPParser --open FSharp.Compiler.ParseHelpers --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing --buffer-type-argument char</OtherFlags>
       <Link>SyntaxTree\pppars.fsy</Link>
     </FsYacc>
     <FsLex Include="lex.fsl">
-      <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
+      <OtherFlags>--module FSharp.Compiler.Lexer --open FSharp.Compiler.Lexhelp --open Internal.Utilities.Text.Lexing --open FSharp.Compiler.Parser --open FSharp.Compiler.Text --open FSharp.Compiler.ParseHelpers --internal --unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
       <Link>SyntaxTree\lex.fsl</Link>
     </FsLex>
     <FsYacc Include="pars.fsy">
-      <OtherFlags>-v --module FSharp.Compiler.Parser --open FSharp.Compiler --open FSharp.Compiler.Syntax --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <OtherFlags>-v --module FSharp.Compiler.Parser --open FSharp.Compiler --open FSharp.Compiler.Syntax --open FSharp.Compiler.Text --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing --buffer-type-argument char</OtherFlags>
       <Link>SyntaxTree\pars.fsy</Link>
     </FsYacc>
     <None Include="pplex.fsl">
@@ -241,8 +247,14 @@
     <Compile Include="SyntaxTree\SyntaxTreeOps.fs" />
     <Compile Include="SyntaxTree\ParseHelpers.fsi" />
     <Compile Include="SyntaxTree\ParseHelpers.fs" />
+    <Compile Include="$(FsYaccOutputFolder)pppars.fsi">
+      <Link>SyntaxTree\FsYaccOutput\pppars.fsi</Link>
+    </Compile>
     <Compile Include="$(FsYaccOutputFolder)pppars.fs">
       <Link>SyntaxTree\FsYaccOutput\pppars.fs</Link>
+    </Compile>
+    <Compile Include="$(FsYaccOutputFolder)pars.fsi">
+      <Link>SyntaxTree\FsYaccOutput\pars.fsi</Link>
     </Compile>
     <Compile Include="$(FsYaccOutputFolder)pars.fs">
       <Link>SyntaxTree\FsYaccOutput\pars.fs</Link>
@@ -253,8 +265,14 @@
     <Compile Include="SyntaxTree\LexHelpers.fs">
       <Link>SyntaxTree\LexHelpers.fs</Link>
     </Compile>
+    <Compile Include="$(FsYaccOutputFolder)pplex.fsi">
+      <Link>SyntaxTree\FsLexOutput\pplex.fsi</Link>
+    </Compile>
     <Compile Include="$(FsYaccOutputFolder)pplex.fs">
       <Link>SyntaxTree\FsLexOutput\pplex.fs</Link>
+    </Compile>
+    <Compile Include="$(FsYaccOutputFolder)\lex.fsi">
+      <Link>SyntaxTree\FsLexOutput\lex.fsi</Link>
     </Compile>
     <Compile Include="$(FsYaccOutputFolder)\lex.fs">
       <Link>SyntaxTree\FsLexOutput\lex.fs</Link>

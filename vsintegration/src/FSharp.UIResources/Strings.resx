@@ -237,6 +237,12 @@
   <data name="LiveBuffers" xml:space="preserve">
     <value>Live Buffers (experimental)</value>
   </data>
+  <data name="AdditionalTelemetry" xml:space="preserve">
+    <value>Additional performance telemetry (experimental)</value>
+  </data>
+  <data name="Send_Additional_Telemetry" xml:space="preserve">
+    <value>Send additional performance telemetry</value>
+  </data>
   <data name="Use_syntax_tree_cache" xml:space="preserve">
     <value>Cache parsing results (experimental)</value>
   </data>

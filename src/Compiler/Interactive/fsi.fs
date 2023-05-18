@@ -1814,7 +1814,8 @@ type internal FsiDynamicCompiler
 
         // Rewrite references to local types to their respective dynamic assemblies
         let ilxMainModule =
-            ilxMainModule |> Morphs.morphILTypeRefsInILModuleMemoized emEnv.MapTypeRef
+            ilxMainModule
+            |> Morphs.morphILTypeRefsInILModuleMemoized TcGlobals.IsInEmbeddableKnownSet emEnv.MapTypeRef
 
         let opts =
             {
@@ -1943,7 +1944,10 @@ type internal FsiDynamicCompiler
         ReportTime tcConfig "Assembly refs Normalised"
 
         let ilxMainModule =
-            Morphs.morphILScopeRefsInILModuleMemoized (NormalizeAssemblyRefs(ctok, ilGlobals, tcImports)) ilxMainModule
+            Morphs.morphILScopeRefsInILModuleMemoized
+                TcGlobals.IsInEmbeddableKnownSet
+                (NormalizeAssemblyRefs(ctok, ilGlobals, tcImports))
+                ilxMainModule
 
         diagnosticsLogger.AbortOnError(fsiConsoleOutput)
 

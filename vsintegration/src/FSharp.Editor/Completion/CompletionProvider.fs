@@ -13,6 +13,7 @@ open Microsoft.CodeAnalysis.Completion
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Completion
 
+open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 open Microsoft.VisualStudio.Shell
 
 open FSharp.Compiler.CodeAnalysis
@@ -317,6 +318,16 @@ type internal FSharpCompletionProvider
             let! ct = CancellableTask.getCurrentCancellationToken ()
 
             let document = context.Document
+
+            let eventProps: (string * obj) array =
+                [|
+                    "context.document.project.id", document.Project.Id.Id.ToString()
+                    "context.document.id", document.Id.Id.ToString()
+                |]
+
+            use _eventDuration =
+                TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.ProvideCompletions, eventProps)
+
             let! sourceText = context.Document.GetTextAsync(ct)
             let defines, langVersion = document.GetFSharpQuickDefinesAndLangVersion()
 

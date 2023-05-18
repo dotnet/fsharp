@@ -12,6 +12,9 @@ vsintegration/*
 !vsintegration/tests/FSharp.Editor.Tests
 artifacts/
 
+# For some reason, it tries to format files from remotes (Processing .\.git\refs\remotes\<remote>\FSComp.fsi)
+.git/
+
 # Explicitly unformatted implementation
 src/Compiler/Checking/AccessibilityLogic.fs
 src/Compiler/Checking/AttributeChecking.fs
