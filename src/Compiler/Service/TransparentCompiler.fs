@@ -280,6 +280,9 @@ type internal TransparentCompiler
                                 | true, tg -> tg.Trigger()
                                 | _ -> ()))
 #endif
+#if NO_TYPEPROVIDERS
+                        ignore importsInvalidatedByTypeProvider
+#endif
                         return tcImports
                     with exn ->
                         Debug.Assert(false, sprintf "Could not BuildAllReferencedDllTcImports %A" exn)
@@ -924,10 +927,9 @@ type internal TransparentCompiler
 
                 | Some bootstrapInfo, creationDiags ->
 
-                    let file = bootstrapInfo.GetFile fileName
-
                     let! parseResults, sourceText = getParseResult bootstrapInfo creationDiags fileName
 
+                    let file = bootstrapInfo.GetFile fileName
                     let! tcInfo = ComputeTcPrior file bootstrapInfo projectSnapshot
 
                     let! checkResults =
@@ -954,7 +956,7 @@ type internal TransparentCompiler
                         )
                         |> NodeCode.FromCancellable
 
-                    return (parseResults, FSharpCheckFileAnswer.Succeeded checkResults)
+                    return parseResults, FSharpCheckFileAnswer.Succeeded checkResults
             }
         )
 
@@ -967,16 +969,7 @@ type internal TransparentCompiler
             | None, _ -> return None
             | Some bootstrapInfo, _creationDiags ->
 
-                let file =
-                    bootstrapInfo.SourceFiles
-                    |> List.tryFind (fun f -> f.Source.FileName = fileName)
-                    |> Option.defaultWith (fun _ ->
-                        failwith (
-                            $"File {fileName} not found in project snapshot. Files in project: \n\n"
-                            + (bootstrapInfo.SourceFiles
-                               |> Seq.map (fun f -> f.Source.FileName)
-                               |> String.concat " \n")
-                        ))
+                let file = bootstrapInfo.GetFile fileName
 
                 let! tcInfo = ComputeTcPrior file bootstrapInfo projectSnapshot
                 let! parseTree, parseDiagnostics, _sourceText = ComputeParseFile bootstrapInfo file
