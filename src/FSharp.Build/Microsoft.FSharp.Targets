@@ -77,7 +77,7 @@ this file.
         <FSharpPreferAnyCpuTools Condition="'$(FSharpPreferAnyCpuTools)' == '' and '$(FSharpPrefer64BitTools)' == '' and '$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture)' == 'Arm64'">false</FSharpPreferAnyCpuTools>
         <FSharpPreferAnyCpuTools Condition="'$(FSharpPreferAnyCpuTools)' == '' and '$(FSharpPrefer64BitTools)' == '' and '$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture)' != 'Arm64'">true</FSharpPreferAnyCpuTools>
 
-        <!-- FSharpPreferAnyCpuTools not yet set, use whatever value has: FSharpPrefer64BitTools -->
+        <!-- FSharpPreferAnyCpuTools not yet set, use whatever value FSharpPrefer64BitTools is set to -->
         <FSharpPreferAnyCpuTools Condition="'$(FSharpPreferAnyCpuTools)' == ''">$(FSharpPrefer64BitTools)</FSharpPreferAnyCpuTools>
 
         <FscToolPath>$(Fsc_NetFramework_ToolPath)</FscToolPath>
