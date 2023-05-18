@@ -970,7 +970,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
             lexargs.ifdefStack <- ifdefs
             lexargs.stringNest <- stringNest
             lexargs.interpolationDelimiterLength <- delimLen
-            use buf = ByteBuffer.Create Lexer.StringCapacity
+            use buf = ByteBuffer.Create StringCapacity
             let args = (buf, LexerStringFinisher.Default, m, kind, lexargs)
 
             match style with
