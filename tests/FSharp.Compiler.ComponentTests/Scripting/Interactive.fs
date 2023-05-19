@@ -16,6 +16,13 @@ module ``Interactive tests`` =
         |> withEvalValueEquals 2
 
     [<Fact>]
+    let ``Pretty print void pointer``() =
+        Fsx "System.IntPtr.Zero.ToPointer()"
+        |> runFsi
+        |> shouldSucceed
+        |> withStdOutContains "val it: voidptr = 0n"
+
+    [<Fact>]
     let ``EntryPoint attribute in FSI should produce a compiler warning`` () =
         Fsx "[<EntryPoint>] let myFunc _ = 0"
         |> eval
