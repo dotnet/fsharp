@@ -962,15 +962,18 @@ module rec Compiler =
                                     opts.Add($"-I:\"{(outputDirectory.Value.FullName)}\"")
                         | _ -> ()
                     opts.ToArray()
-                let errors = CompilerAssert.RunScriptWithOptionsAndReturnResult options source
+                let errors, stdOut = CompilerAssert.RunScriptWithOptionsAndReturnResult options source
 
+                let executionOutputwithStdOut: RunOutput option =
+                    ExecutionOutput { StdOut = stdOut; ExitCode = 0; StdErr = "" }
+                    |> Some
                 let result =
                     { OutputPath   = None
                       Dependencies = []
                       Adjust       = 0
                       Diagnostics  = []
                       PerFileErrors= []
-                      Output       = None
+                      Output       = executionOutputwithStdOut
                       Compilation  = cUnit }
 
                 if errors.Count > 0 then
