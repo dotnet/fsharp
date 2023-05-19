@@ -2,64 +2,34 @@
 
 namespace FSharp.Compiler.ComponentTests.CompilerOptions
 
+open System
+
 open Xunit
-open FSharp.Test
 open FSharp.Test.Compiler
+
 
 //# Sanity check - simply check that the option is valid
 module crossoptimize =
 
     //  SOURCE=crossoptimize.fs SCFLAGS="--crossoptimize" 
-    [<Fact>]
-    let ``crossoptimize_fs --crossoptimize``() =
+    [<InlineData("--crossoptimize")>]
+    [<InlineData("--crossoptimize+")>]
+    [<InlineData("--crossoptimize-")>]
+    [<Theory>]
+    let ``crossoptimize_flag_fs`` option =
         Fs """printfn "Hello, World!!!" """
         |> asExe
-        |> withOptions ["--crossoptimize"]
+        |> withOptions  (if String.IsNullOrWhiteSpace option then [] else [option])
         |> compile
         |> shouldSucceed
 
-    //  SOURCE=crossoptimize.fs SCFLAGS="--crossoptimize+" 
-    [<Fact>]
-    let ``crossoptimize_fs --crossoptimize+``() =
-        Fs """printfn "Hello, World!!!" """
-        |> asExe
-        |> withOptions ["--crossoptimize+"]
-        |> compile
-        |> shouldSucceed
-
-    //  SOURCE=crossoptimize.fs SCFLAGS="--crossoptimize-" 
-    [<Fact>]
-    let ``crossoptimize_fs --crossoptimize-``() =
-        Fs """printfn "Hello, World!!!" """
-        |> asExe
-        |> withOptions ["--crossoptimize-"]
-        |> compile
-        |> shouldSucceed
-
-    //  SOURCE=crossoptimize01.fs SCFLAGS="--crossoptimize"   FSIMODE=EXEC COMPILE_ONLY=1
-    [<Fact>]
-    let ``crossoptimize_fsx --crossoptimize``() =
+    [<InlineData("--crossoptimize")>]
+    [<InlineData("--crossoptimize+")>]
+    [<InlineData("--crossoptimize-")>]
+    [<Theory>]
+    let ``crossoptimize_flag_fsx`` option =
         Fsx """printfn "Hello, World!!!" """
         |> asExe
-        |> withOptions ["--crossoptimize"]
+        |> withOptions (if String.IsNullOrWhiteSpace option then [] else [option])
         |> compile
         |> shouldSucceed
-
-    //  SOURCE=crossoptimize01.fs SCFLAGS="--crossoptimize+"  FSIMODE=EXEC COMPILE_ONLY=1
-    [<Fact>]
-    let ``crossoptimize_fsx --crossoptimize+``() =
-        Fsx """printfn "Hello, World!!!" """
-        |> asExe
-        |> withOptions ["--crossoptimize+"]
-        |> compile
-        |> shouldSucceed
-
-    //  SOURCE=crossoptimize01.fs SCFLAGS="--crossoptimize-"  FSIMODE=EXEC COMPILE_ONLY=1
-    [<Fact>]
-    let ``crossoptimize_fsx --crossoptimize-``() =
-        Fsx """printfn "Hello, World!!!" """
-        |> asExe
-        |> withOptions ["--crossoptimize-"]
-        |> compile
-        |> shouldSucceed
-
