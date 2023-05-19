@@ -554,4 +554,9 @@
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="Driver\parallel-optimization.md" />
+    <None Include="Driver\parallel-optimization.drawio.svg" />
+  </ItemGroup>
+
 </Project>
