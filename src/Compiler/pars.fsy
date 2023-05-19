@@ -3734,7 +3734,8 @@ declExpr:
         $3 $2 mIf false }
 
   | IF declExpr recover %prec expr_if
-      { let ifExpr = $2
+      { errorR (Error(FSComp.SR.parsIncompleteIf (), rhs parseState 1))
+        let ifExpr = $2
         let mIf = rhs parseState 1
         let mThen = ifExpr.Range.EndRange
         let m = unionRanges mIf mThen
@@ -3743,7 +3744,8 @@ declExpr:
         SynExpr.IfThenElse($2, arbExpr ("if1", mThen), None, spIfToThen, true, m, trivia) }
 
   | IF recover %prec expr_if
-      { let m = rhs parseState 1
+      { errorR (Error(FSComp.SR.parsIncompleteIf (), rhs parseState 1))
+        let m = rhs parseState 1
         let mEnd = m.EndRange
         let spIfToThen = DebugPointAtBinding.Yes mEnd
         let trivia = { IfKeyword = m; IsElif = false; ThenKeyword = m; ElseKeyword = None; IfToThenRange = m }

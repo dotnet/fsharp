@@ -19,3 +19,4 @@ ImplFile
         CodeComments = [] }, set []))
 
 (3,8)-(5,0) parse error Incomplete structured construct at or before this point in expression
+(3,0)-(3,2) parse error Incomplete conditional. Expected 'if <expr> then <expr>' or 'if <expr> then <expr> else <expr>'.
