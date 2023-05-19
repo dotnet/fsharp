@@ -7,6 +7,7 @@ module internal FSharp.Compiler.CompilerOptions
 open System
 open System.Diagnostics
 open System.IO
+open FSharp.Compiler.Optimizer
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler.AbstractIL.IL
@@ -1384,6 +1385,11 @@ let testFlag tcConfigB =
                         DumpGraph = true
                     }
             | "DumpSignatureData" -> tcConfigB.dumpSignatureData <- true
+            | "ParallelOptimization" ->
+                tcConfigB.optSettings <-
+                    { tcConfigB.optSettings with
+                        processingMode = OptimizationProcessingMode.Parallel
+                    }
 #if DEBUG
             | "ShowParserStackOnParseError" -> showParserStackOnParseError <- true
 #endif
