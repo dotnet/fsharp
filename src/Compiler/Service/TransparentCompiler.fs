@@ -690,7 +690,6 @@ type internal TransparentCompiler
                     |> fst
                     |> Graph.subGraphFor (sourceFiles |> Array.last).Idx
 
-
                 let fileIndexes =
                     graph.Values |> Seq.collect id |> Seq.append graph.Keys |> Seq.distinct |> Set
 
@@ -834,7 +833,6 @@ type internal TransparentCompiler
                 let! parsedInputs = files |> Seq.map (ComputeParseFile bootstrapInfo) |> NodeCode.Parallel
 
                 let! graph, dependencyFiles = ComputeDependencyGraph priorSnapshot (parsedInputs |> Seq.map p13) bootstrapInfo.TcConfig
-
 
                 // layers that can be processed in parallel
                 let layers = Graph.leafSequence graph |> Seq.toList
