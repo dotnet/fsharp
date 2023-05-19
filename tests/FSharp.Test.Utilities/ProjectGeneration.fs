@@ -616,12 +616,13 @@ type ProjectWorkflowBuilder
         ?useGetSource,
         ?useChangeNotifications,
         ?useSyntaxTreeCache,
-        ?useTransparentCompiler
+        ?useTransparentCompiler,
+        ?runTimeout
     ) =
 
-    let useGetSource = defaultArg useGetSource false
-    let useChangeNotifications = defaultArg useChangeNotifications false
     let useTransparentCompiler = defaultArg useTransparentCompiler false
+    let useGetSource = not useTransparentCompiler && defaultArg useGetSource false
+    let useChangeNotifications = not useTransparentCompiler && defaultArg useChangeNotifications false
 
     let mutable latestProject = initialProject
     let mutable activity = None
@@ -652,26 +653,29 @@ type ProjectWorkflowBuilder
 
     let mapProject f = mapProjectAsync (f >> async.Return)
 
+    let getInitialContext() =
+        match initialContext with
+        | Some ctx -> async.Return ctx
+        | None -> SaveAndCheckProject initialProject checker
+
     /// Creates a ProjectWorkflowBuilder which will already have the project
     /// saved and checked so time won't be spent on that.
     /// Also the project won't be deleted after the computation expression is evaluated
     member this.CreateBenchmarkBuilder() =
-        let ctx = this.Yield() |> Async.RunSynchronously
+        let ctx = getInitialContext() |> Async.RunSynchronously
 
         ProjectWorkflowBuilder(
             ctx.Project,
             ctx,
             useGetSource = useGetSource,
-            useChangeNotifications = useChangeNotifications
-        )
+            useChangeNotifications = useChangeNotifications,
+            useTransparentCompiler = useTransparentCompiler,
+            ?runTimeout = runTimeout)
 
     member this.Checker = checker
 
     member this.Yield _ = async {
-        let! ctx =
-            match initialContext with
-            | Some ctx -> async.Return ctx
-            | _ -> SaveAndCheckProject initialProject checker
+        let! ctx = getInitialContext()
         tracerProvider <-
             Sdk.CreateTracerProviderBuilder()
                 .AddSource("fsc")
@@ -679,7 +683,7 @@ type ProjectWorkflowBuilder
                 .AddJaegerExporter()
                 .Build()
             |> Some
-        activity <- Activity.start ctx.Project.Name [ Activity.Tags.project, ctx.Project.Name ] |> Some
+        activity <- Activity.start ctx.Project.Name [ Activity.Tags.project, ctx.Project.Name; "UsingTransparentCompiler", useTransparentCompiler.ToString() ] |> Some
         return ctx
     }
 
@@ -689,7 +693,7 @@ type ProjectWorkflowBuilder
 
     member this.Run(workflow: Async<WorkflowContext>) =
         try
-            Async.RunSynchronously workflow
+            Async.RunSynchronously(workflow, timeout = defaultArg runTimeout 60_000)
         finally
             if initialContext.IsNone then
                 this.DeleteProjectDir()

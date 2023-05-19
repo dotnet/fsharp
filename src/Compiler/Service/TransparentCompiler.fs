@@ -690,10 +690,30 @@ type internal TransparentCompiler
                     |> fst
                     |> Graph.subGraphFor (sourceFiles |> Array.last).Idx
 
+
                 let fileIndexes =
                     graph.Values |> Seq.collect id |> Seq.append graph.Keys |> Seq.distinct |> Set
 
-                return TransformDependencyGraph(graph, filePairs), fileIndexes
+                let nodeGraph = TransformDependencyGraph(graph, filePairs)
+
+                let fileNames =
+                    parsedInputs
+                    |> Seq.mapi (fun idx input -> idx, Path.GetFileName input.FileName)
+                    |> Map.ofSeq
+
+                let debugGraph =
+                    nodeGraph
+                    |> Graph.map (function
+                        | NodeToTypeCheck.PhysicalFile i -> i, fileNames[i]
+                        | NodeToTypeCheck.ArtificialImplFile i -> -(i + 1), $"AIF : {fileNames[i]}")
+                    |> Graph.serialiseToMermaid
+
+                Trace.TraceInformation("\n" + debugGraph)
+
+                if Activity.Current <> null then
+                    Activity.Current.AddTag("graph", debugGraph) |> ignore
+
+                return nodeGraph, fileIndexes
             }
         )
 
@@ -815,18 +835,6 @@ type internal TransparentCompiler
 
                 let! graph, dependencyFiles = ComputeDependencyGraph priorSnapshot (parsedInputs |> Seq.map p13) bootstrapInfo.TcConfig
 
-                let fileNames =
-                    parsedInputs
-                    |> Seq.mapi (fun idx (input, _, _) -> idx, Path.GetFileName input.FileName)
-                    |> Map.ofSeq
-
-                let debugGraph =
-                    graph
-                    |> Graph.map (function
-                        | NodeToTypeCheck.PhysicalFile i -> i, fileNames[i]
-                        | NodeToTypeCheck.ArtificialImplFile i -> -(i + 1), $"AIF : {fileNames[i]}")
-
-                Trace.TraceInformation("\n" + (debugGraph |> Graph.serialiseToMermaid))
 
                 // layers that can be processed in parallel
                 let layers = Graph.leafSequence graph |> Seq.toList
