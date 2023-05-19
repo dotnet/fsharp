@@ -24,7 +24,6 @@ open System.Reflection.PortableExecutable
 
 open FSharp.Test.CompilerAssertHelpers
 open TestFramework
-open System.Reflection.Metadata
 
 module rec Compiler =
     type BaselineFile =
