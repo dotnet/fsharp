@@ -15,9 +15,9 @@ module highentropyva =
         if not (result.HasFlag expected) then
             raise (new Exception $"CoffHeader.Characteristics does not contain expected flag:\nFound: {result}\n Expected: {expected}")
 
-    let shouldNotHaveFlag (expected: DllCharacteristics) (result: DllCharacteristics) =
-        if result.HasFlag expected then
-            raise (new Exception $"DllCharacteristics does not contain expected flag:\nFound: {result}\nExpected: {expected}")
+    let shouldNotHaveFlag (notexpected: DllCharacteristics) (result: DllCharacteristics) =
+        if result.HasFlag notexpected then
+            raise (new Exception $"DllCharacteristics contains the unexpected flag:\nFound: {result}\nNot expected: {notexpected}")
 
     let shouldNotGenerateHighEntropyVirtualAddressSpace platform options =
         Fs """printfn "Hello, World!!!" """
