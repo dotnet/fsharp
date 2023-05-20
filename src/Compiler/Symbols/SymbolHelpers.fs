@@ -109,7 +109,7 @@ module internal SymbolHelpers =
         | Item.CtorGroup(_, minfos) -> minfos |> List.tryPick (rangeOfMethInfo g preferFlag)
         | Item.ActivePatternResult(APInfo _, _, _, m) -> Some m
         | Item.SetterArg (_, item) -> rangeOfItem g preferFlag item
-        | Item.ArgName (_, _, _, m) -> Some m
+        | Item.OtherName (range = m) -> Some m
         | Item.CustomOperation (_, _, implOpt) -> implOpt |> Option.bind (rangeOfMethInfo g preferFlag)
         | Item.ImplicitOp (_, {contents = Some(TraitConstraintSln.FSMethSln(vref=vref))}) -> Some vref.Range
         | Item.ImplicitOp _ -> None
@@ -168,7 +168,7 @@ module internal SymbolHelpers =
                 |> Option.bind ccuOfValRef
                 |> Option.orElseWith (fun () -> pinfo.DeclaringTyconRef |> computeCcuOfTyconRef))
 
-        | Item.ArgName (_, _, meth, _) ->
+        | Item.OtherName (container = meth) ->
             match meth with
             | None -> None
             | Some (ArgumentContainer.Method minfo) -> ccuOfMethInfo g minfo
@@ -228,14 +228,6 @@ module internal SymbolHelpers =
                 | None     -> file
                 | Some dir -> Path.Combine(dir, file)
          else file
-
-    /// Cut long filenames to make them visually appealing 
-    let cutFileName s = if String.length s > 40 then String.sub s 0 10 + "..."+String.sub s (String.length s - 27) 27 else s
-
-    let libFileOfEntityRef x =
-        match x with
-        | ERefLocal _ -> None
-        | ERefNonLocal nlref -> nlref.Ccu.FileName      
 
     let ParamNameAndTypesOfUnaryCustomOperation g minfo = 
         match minfo with 
@@ -317,7 +309,7 @@ module internal SymbolHelpers =
         | Item.CtorGroup(_, minfo :: _) ->
             mkXmlComment (GetXmlDocSigOfMethInfo infoReader  m minfo)
 
-        | Item.ArgName(_, _, Some argContainer, _) ->
+        | Item.OtherName(container = Some argContainer) ->
             match argContainer with 
             | ArgumentContainer.Method minfo -> mkXmlComment (GetXmlDocSigOfMethInfo infoReader m minfo)
             | ArgumentContainer.Type tcref -> mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
@@ -330,7 +322,7 @@ module internal SymbolHelpers =
 
         // These do not have entires in XML doc files
         | Item.CustomOperation _
-        | Item.ArgName _
+        | Item.OtherName _
         | Item.ActivePatternResult _
         | Item.AnonRecdField _
         | Item.ImplicitOp _
@@ -401,7 +393,7 @@ module internal SymbolHelpers =
               // These are never expected to have duplicates in declaration lists etc
               | Item.ActivePatternResult _
               | Item.AnonRecdField _
-              | Item.ArgName _
+              | Item.OtherName _
               | Item.FakeInterfaceCtor _
               | Item.ImplicitOp _
               | Item.NewDef _
@@ -507,7 +499,7 @@ module internal SymbolHelpers =
               // These are not expected to occur, see InEqualityRelation and ItemWhereTypIsPreferred
               | Item.ActivePatternResult _
               | Item.AnonRecdField _
-              | Item.ArgName _
+              | Item.OtherName _
               | Item.FakeInterfaceCtor _
               | Item.ImplicitOp _
               | Item.NewDef _
@@ -517,14 +509,6 @@ module internal SymbolHelpers =
               | Item.DelegateCtor _
               | Item.ModuleOrNamespaces [] -> 0
               ) }
-
-    let ItemWithTypeDisplayPartialEquality g = 
-        let itemComparer = ItemDisplayPartialEquality g
-        
-        { new IPartialEqualityComparer<Item * _> with
-            member x.InEqualityRelation ((item, _)) = itemComparer.InEqualityRelation item
-            member x.Equals((item1, _), (item2, _)) = itemComparer.Equals(item1, item2)
-            member x.GetHashCode ((item, _)) = itemComparer.GetHashCode item }
     
     /// Remove all duplicate items
     let RemoveDuplicateItems g (items: ItemWithInst list) =     
@@ -594,7 +578,7 @@ module internal SymbolHelpers =
             let definiteNamespace = modrefs |> List.forall (fun modref -> modref.IsNamespace)
             if definiteNamespace then fullDisplayTextOfModRef modref else modref.DisplayName
         | Item.TypeVar _
-        | Item.ArgName _ -> item.DisplayName
+        | Item.OtherName _ -> item.DisplayName
         | Item.SetterArg (_, item) -> FullNameOfItem g item
         | Item.ImplicitOp(id, _) -> id.idText
         | Item.UnionCaseField (UnionCaseInfo (_, ucref), fieldIndex) -> ucref.FieldByIndex(fieldIndex).DisplayName
@@ -694,7 +678,7 @@ module internal SymbolHelpers =
             else
                 GetXmlCommentForItemAux None infoReader m item
 
-        | Item.ArgName (_, _, argContainer, _) ->
+        | Item.OtherName (container = argContainer) ->
             let doc =
                 match argContainer with
                 | Some(ArgumentContainer.Method minfo) ->
@@ -950,7 +934,7 @@ module internal SymbolHelpers =
         | Item.MethodGroup(_, [], _) 
         | Item.CustomOperation (_, _, None)   // "into"
         | Item.NewDef _ // "let x$yz = ..." - no keyword
-        | Item.ArgName _ // no keyword on named parameters 
+        | Item.OtherName _ // no keyword on named parameters 
         | Item.Trait _
         | Item.UnionCaseField _
         | Item.TypeVar _ 
@@ -994,7 +978,7 @@ module internal SymbolHelpers =
         | Item.CustomBuilder _
         | Item.ActivePatternCase _
         | Item.AnonRecdField _
-        | Item.ArgName _
+        | Item.OtherName _
         | Item.ImplicitOp _
         | Item.ModuleOrNamespaces _
         | Item.SetterArg _

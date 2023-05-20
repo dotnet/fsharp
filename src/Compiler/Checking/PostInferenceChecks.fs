@@ -85,9 +85,6 @@ type env =
       /// "module remap info", i.e. hiding information down the signature chain, used to compute what's hidden by a signature
       sigToImplRemapInfo: (Remap * SignatureHidingInfo) list 
 
-      /// Constructor limited - are we in the prelude of a constructor, prior to object initialization
-      ctorLimitedZone: bool
-
       /// Are we in a quotation?
       quote : bool 
 
@@ -119,9 +116,7 @@ let BindTypars g env (tps: Typar list) =
     if isNil tps then env else
     // Here we mutate to provide better names for generalized type parameters 
     let nms = PrettyTypes.PrettyTyparNames (fun _ -> true) env.boundTyparNames tps
-    (tps, nms) ||> List.iter2 (fun tp nm -> 
-            if PrettyTypes.NeedsPrettyTyparName tp  then 
-                tp.typar_id <- ident (nm, tp.Range))      
+    PrettyTypes.AssignPrettyTyparNames tps nms    
     List.fold BindTypar env tps 
 
 /// Set the set of vals which are arguments in the active lambda. We are allowed to return 
@@ -305,12 +300,24 @@ let BindVal cenv env (v: Val) =
     //printfn "binding %s..." v.DisplayName
     let alreadyDone = cenv.boundVals.ContainsKey v.Stamp
     cenv.boundVals[v.Stamp] <- 1
+    
+    let topLevelBindingHiddenBySignatureFile () =
+        let parentHasSignatureFile () =
+            match v.TryDeclaringEntity with
+            | ParentNone -> false
+            | Parent p ->
+                match p.TryDeref with
+                | ValueNone -> false
+                | ValueSome e -> e.HasSignatureFile
+
+        v.IsModuleBinding && not v.HasSignatureFile && parentHasSignatureFile ()
+    
     if not env.external &&
        not alreadyDone &&
        cenv.reportErrors && 
        not v.HasBeenReferenced && 
-       not v.IsCompiledAsTopLevel && 
-       not (v.DisplayName.StartsWithOrdinal("_")) && 
+       (not v.IsCompiledAsTopLevel || topLevelBindingHiddenBySignatureFile ()) &&
+       not (v.DisplayName.StartsWithOrdinal("_")) &&
        not v.IsCompilerGenerated then 
 
         if v.IsCtorThisVal then
@@ -679,16 +686,13 @@ let CheckTypeNoInnerByrefs cenv env m ty = CheckType PermitByRefType.NoInnerByRe
 let CheckTypeInstNoByrefs cenv env m tyargs =
     tyargs |> List.iter (CheckTypeNoByrefs cenv env m)
 
-let CheckTypeInstPermitAllByrefs cenv env m tyargs =
-    tyargs |> List.iter (CheckTypePermitAllByrefs cenv env m)
-
 let CheckTypeInstNoInnerByrefs cenv env m tyargs =
     tyargs |> List.iter (CheckTypeNoInnerByrefs cenv env m)
 
 /// Applied functions get wrapped in coerce nodes for subsumption coercions
 let (|OptionalCoerce|) expr =  
     match stripDebugPoints expr with
-    | Expr.Op (TOp.Coerce _, _, [DebugPoints(Expr.App (f, _, _, [], _), _)], _) -> f 
+    | Expr.Op (TOp.Coerce, _, [DebugPoints(Expr.App (f, _, _, [], _), _)], _) -> f 
     | _ -> expr
 
 /// Check an expression doesn't contain a 'reraise'
@@ -1143,7 +1147,7 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (ctxt: PermitByRefExpr) : Limit =
 
     | Expr.Sequential (e1, e2, ThenDoSeq, _) -> 
         CheckExprNoByrefs cenv env e1
-        CheckExprNoByrefs cenv {env with ctorLimitedZone=false} e2
+        CheckExprNoByrefs cenv env e2
         NoLimit
 
     | Expr.Const (_, m, ty) -> 
@@ -1425,9 +1429,6 @@ and CheckNoResumableStmtConstructs cenv _env expr =
 and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
     let g = cenv.g
 
-    let ctorLimitedZoneCheck() = 
-        if env.ctorLimitedZone then errorR(Error(FSComp.SR.chkObjCtorsCantUseExceptionHandling(), m))
-
     // Ensure anonymous record type requirements are recorded
     match op with
     | TOp.AnonRecdGet (anonInfo, _) 
@@ -1444,7 +1445,6 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
 
     | TOp.TryFinally _, [_], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], e2, _, _)] ->
         CheckTypeInstNoInnerByrefs cenv env m tyargs  // result of a try/finally can be a byref 
-        ctorLimitedZoneCheck()
         let limit = CheckExpr cenv env e1 ctxt   // result of a try/finally can be a byref if in a position where the overall expression is can be a byref
         CheckExprNoByrefs cenv env e2
         limit
@@ -1455,7 +1455,6 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
 
     | TOp.TryWith _, [_], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], _e2, _, _); Expr.Lambda (_, _, _, [_], e3, _, _)] ->
         CheckTypeInstNoInnerByrefs cenv env m tyargs  // result of a try/catch can be a byref 
-        ctorLimitedZoneCheck()
         let limit1 = CheckExpr cenv env e1 ctxt // result of a try/catch can be a byref if in a position where the overall expression is can be a byref
         // [(* e2; -- don't check filter body - duplicates logic in 'catch' body *) e3]
         let limit2 = CheckExpr cenv env e3 ctxt // result of a try/catch can be a byref if in a position where the overall expression is can be a byref
@@ -1547,7 +1546,7 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
         else
             { scope = 1; flags = LimitFlags.None }
 
-    | TOp.LValueOp (LSet _, vref), _, [arg] -> 
+    | TOp.LValueOp (LSet, vref), _, [arg] -> 
         let isVrefLimited = not (HasLimitFlag LimitFlags.StackReferringSpanLike (GetLimitVal cenv env m vref.Deref))
         let isArgLimited = HasLimitFlag LimitFlags.StackReferringSpanLike (CheckExprPermitByRefLike cenv env arg)
         if isVrefLimited && isArgLimited then 
@@ -1827,11 +1826,6 @@ and CheckExprsPermitByRefLike cenv env exprs : Limit =
     |> List.map (CheckExprPermitByRefLike cenv env)
     |> CombineLimits
 
-and CheckExprsPermitReturnableByRef cenv env exprs : Limit = 
-    exprs 
-    |> List.map (CheckExprPermitReturnableByRef cenv env)
-    |> CombineLimits
-
 and CheckExprPermitByRefLike cenv env expr : Limit = 
     CheckExpr cenv env expr PermitByRefExpr.Yes
 
@@ -1909,7 +1903,7 @@ and CheckAttribArgExpr cenv env expr =
         | Const.Double _
         | Const.Single _
         | Const.Char _
-        | Const.Zero _
+        | Const.Zero
         | Const.String _  -> ()
         | _ -> 
             if cenv.reportErrors then 
@@ -2010,8 +2004,6 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
         let access =  AdjustAccess (IsHiddenVal env.sigToImplRemapInfo v) (fun () -> v.DeclaringEntity.CompilationPath) v.Accessibility
         CheckTypeForAccess cenv env (fun () -> NicePrint.stringOfQualifiedValOrMember cenv.denv cenv.infoReader vref) access v.Range v.Type
     
-    let env = if v.IsConstructor && not v.IsIncrClassConstructor then { env with ctorLimitedZone=true } else env
-
     if cenv.reportErrors  then 
 
         // Check top-level let-bound values
@@ -2224,10 +2216,6 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
     end
 
     CheckBinding cenv { env with returnScope = 1 } true PermitByRefExpr.Yes bind |> ignore
-
-let CheckModuleBindings cenv env binds = 
-    for bind in binds do
-        CheckModuleBinding cenv env bind
 
 //--------------------------------------------------------------------------
 // check tycons
@@ -2607,6 +2595,7 @@ and CheckModuleSpec cenv env mbind =
 let CheckImplFileContents cenv env implFileTy implFileContents  = 
     let rpi, mhi = ComputeRemappingFromImplementationToSignature cenv.g implFileContents implFileTy
     let env = { env with sigToImplRemapInfo = (mkRepackageRemapping rpi, mhi) :: env.sigToImplRemapInfo }
+    UpdatePrettyTyparNames.updateModuleOrNamespaceType implFileTy
     CheckDefnInModule cenv env implFileContents
     
 let CheckImplFile (g, amap, reportErrors, infoReader, internalsVisibleToPaths, viewCcu, tcValF, denv, implFileTy, implFileContents, extraAttribs, isLastCompiland: bool*bool, isInternalTestSpanStackReferring) =
@@ -2615,7 +2604,7 @@ let CheckImplFile (g, amap, reportErrors, infoReader, internalsVisibleToPaths, v
           reportErrors = reportErrors 
           boundVals = Dictionary<_, _>(100, HashIdentity.Structural) 
           limitVals = Dictionary<_, _>(100, HashIdentity.Structural) 
-          stackGuard = StackGuard(PostInferenceChecksStackGuardDepth)
+          stackGuard = StackGuard(PostInferenceChecksStackGuardDepth, "CheckImplFile")
           potentialUnboundUsesOfVals = Map.empty 
           anonRecdTypes = StampMap.Empty
           usesQuotations = false 
@@ -2643,7 +2632,6 @@ let CheckImplFile (g, amap, reportErrors, infoReader, internalsVisibleToPaths, v
     let env = 
         { sigToImplRemapInfo=[]
           quote=false
-          ctorLimitedZone=false 
           boundTyparNames=[]
           argVals = ValMap.Empty
           boundTypars= TyparMap.Empty

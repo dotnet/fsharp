@@ -2,34 +2,44 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="tr" original="../Strings.resx">
     <body>
+      <trans-unit id="AdditionalTelemetry">
+        <source>Additional performance telemetry (experimental)</source>
+        <target state="new">Additional performance telemetry (experimental)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Always_place_opens_at_top_level">
         <source>Always place open statements at the top level</source>
         <target state="translated">Açık deyimleri her zaman en üst düzeye yerleştir</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens">
-        <source>CodeLens</source>
-        <target state="translated">CodeLens</target>
+      <trans-unit id="Enable_Fast_Find_References">
+        <source>Enable fast find references &amp; rename (experimental)</source>
+        <target state="translated">Başvuruları hızlı bulma ve yeniden adlandırmayı etkinleştir (deneysel)</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens_Replace_LineLens">
-        <source>Show annotations to the right instead of above the line</source>
-        <target state="translated">Ek açıklamaları satırın üstü yerine sağ tarafta göster</target>
+      <trans-unit id="Enable_Live_Buffers">
+        <source>Use live (unsaved) buffers for checking (restart required)</source>
+        <target state="translated">Denetim için canlı (kaydedilmemiş) arabellekler kullanın (yeniden başlatma gerekir)</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens_Switch">
-        <source>Enable CodeLens (Experimental)</source>
-        <target state="translated">CodeLens’i Etkinleştir (Deneysel)</target>
+      <trans-unit id="Enable_partial_type_checking">
+        <source>Enable partial type checking</source>
+        <target state="translated">Kısmi tür denetlemeyi etkinleştir</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens_Prefix">
-        <source>Annotation prefix</source>
-        <target state="translated">Ek açıklama ön eki</target>
+      <trans-unit id="Find_References_Performance">
+        <source>Find References Performance Options</source>
+        <target state="translated">Başvuruları Bul Performans Seçenekleri</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens_UseColors">
-        <source>Use colors in annotations</source>
-        <target state="translated">Ek açıklamalarda renk kullan</target>
+      <trans-unit id="Formatting">
+        <source>Formatting</source>
+        <target state="translated">Biçimlendirme</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Inline_Hints">
+        <source>Inline Hints</source>
+        <target state="translated">Satır İçi İpuçları</target>
         <note />
       </trans-unit>
       <trans-unit id="Code_Fixes">
@@ -47,6 +57,11 @@
         <target state="translated">Tanılama</target>
         <note />
       </trans-unit>
+      <trans-unit id="Enable_Parallel_Reference_Resolution">
+        <source>Enable parallel reference resolution</source>
+        <target state="translated">Paralel başvuru çözümlemeyi etkinleştir</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Language_Service_Performance">
         <source>Performance</source>
         <target state="translated">Performans</target>
@@ -62,9 +77,44 @@
         <target state="translated">N_okta alt çizgi</target>
         <note />
       </trans-unit>
+      <trans-unit id="LiveBuffers">
+        <source>Live Buffers (experimental)</source>
+        <target state="translated">Canlı Arabellekler (deneysel)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Navigation_links">
         <source>Navigation links</source>
         <target state="translated">Gezinti bağlantıları</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parallelization">
+        <source>Parallelization (requires restart)</source>
+        <target state="translated">Paralelleştirme (yeniden başlatma gerektirir)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Preferred_description_width_in_characters">
+        <source>Preferred description width in characters</source>
+        <target state="translated">Karakter olarak tercih edilen açıklama genişliği</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Send_Additional_Telemetry">
+        <source>Send additional performance telemetry</source>
+        <target state="new">Send additional performance telemetry</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Inline_Parameter_Name_Hints">
+        <source>Display inline parameter name hints (preview)</source>
+        <target state="translated">Satır içi parametre adı ipuçlarını görüntüle (önizleme)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Inline_Type_Hints">
+        <source>Display inline type hints (preview)</source>
+        <target state="translated">Satır içi tür ipuçlarını görüntüle (önizleme)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Return_Type_Hints">
+        <source>Display return type hints (preview)</source>
+        <target state="new">Display return type hints (preview)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_all_symbols">
@@ -80,16 +130,6 @@
       <trans-unit id="Show_completion_list_after_a_character_is_typed">
         <source>_Show completion list after a character is typed</source>
         <target state="translated">Bir karakter yazıldıktan sonra tamamlanma listesini _göster</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Enable_in_memory_cross_project_references">
-        <source>_Enable in-memory cross project references</source>
-        <target state="translated">_Bellek içi çapraz proje başvurularını etkinleştir</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Project_check_cache_size">
-        <source>Number of projects whose data is cached in memory</source>
-        <target state="translated">Verileri bellekte önbelleğe alınan proje sayısı</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_navigation_links_as">
@@ -110,6 +150,11 @@
       <trans-unit id="Text_hover">
         <source>Text hover</source>
         <target state="translated">Metni vurgulama</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Tooltip_preferred_description_width_in_characters">
+        <source>Format signature to the given width by adding line breaks conforming with F# syntax rules. </source>
+        <target state="translated">F# söz dizimi kurallarına uyan satır sonları ekleyerek imzayı belirtilen genişliğe biçimlendirin. </target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
@@ -162,16 +207,6 @@
         <target state="translated">IntelliSense özellikleri için eski verileri etkinleştir</target>
         <note />
       </trans-unit>
-      <trans-unit id="Tooltip_in_memory_cross_project_references">
-        <source>In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</source>
-        <target state="translated">Bellek içi projeler arası başvurular, IDE özelliklerinin farklı projelerde çalışmasına imkan tanımak için bellekte proje düzeyi veriler depolar.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Tooltip_project_check_cache_size">
-        <source>Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</source>
-        <target state="translated">IDE özellikleri için proje verileri önbelleğe alınır. Değer yüksek olduğunda daha fazla proje önbelleğe alındığından daha fazla bellek kullanılır. Bu değerin ayarlanması küçük veya orta ölçekli çözümleri etkilememelidir.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Enter_key_always">
         <source>Always add new line on enter</source>
         <target state="translated">Enter'a basıldığında her zaman yeni satır ekle</target>
@@ -200,6 +235,11 @@
       <trans-unit id="Suggest_names_for_errors_code_fix">
         <source>Suggest names for unresolved identifiers</source>
         <target state="translated">Çözümlenmemiş tanımlayıcılar için ad öner</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Use_syntax_tree_cache">
+        <source>Cache parsing results (experimental)</source>
+        <target state="translated">Ayrıştırma sonuçlarını önbelleğe al (deneysel)</target>
         <note />
       </trans-unit>
     </body>

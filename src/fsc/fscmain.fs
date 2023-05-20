@@ -34,12 +34,10 @@ let main (argv) =
         else
             "fsc.exe"
 
-    // Set the garbage collector to batch mode, which improves overall performance.
-    GCSettings.LatencyMode <- GCLatencyMode.Batch
     Thread.CurrentThread.Name <- "F# Main Thread"
 
     // Set the initial phase to garbage collector to batch mode, which improves overall performance.
-    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+    use _ = UseBuildPhase BuildPhase.Parameter
 
     // An SDL recommendation
     UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption()
@@ -74,19 +72,6 @@ let main (argv) =
                     stats.rawMemoryFileCount
                     stats.weakByteFileCount)
 
-        // This object gets invoked when two many errors have been accumulated, or an abort-on-error condition
-        // has been reached (e.g. type checking failed, so don't proceed to optimization).
-        let quitProcessExiter =
-            { new Exiter with
-                member _.Exit(n) =
-                    try
-                        exit n
-                    with _ ->
-                        ()
-
-                    failwithf "%s" (FSComp.SR.elSysEnvExitDidntExit ())
-            }
-
         // Get the handler for legacy resolution of references via MSBuild.
         let legacyReferenceResolver = LegacyMSBuildReferenceResolver.getResolver ()
 
@@ -103,7 +88,7 @@ let main (argv) =
             false,
             ReduceMemoryFlag.No,
             CopyFSharpCoreFlag.Yes,
-            quitProcessExiter,
+            QuitProcessExiter,
             ConsoleLoggerProvider(),
             None,
             None

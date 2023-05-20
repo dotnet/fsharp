@@ -41,7 +41,7 @@ module Basic =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 841, Line 7, Col 12, Line 7, Col 49, "This attribute is not valid for use on this language element. Assembly attributes should be attached to a 'do ()' declaration, if necessary within an F# module.")
+            (Error 841, Line 7, Col 3, Line 7, Col 111, "This attribute is not valid for use on this language element. Assembly attributes should be attached to a 'do ()' declaration, if necessary within an F# module.")
         ]
 
     // SOURCE=E_AttributeApplication02.fs     SCFLAGS="--test:ErrorRanges"	# E_AttributeApplication02.fs
@@ -103,11 +103,11 @@ module Basic =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 1, Line 10, Col 3, Line 10, Col 59, "This expression was expected to have type\n    'int[]'    \nbut here has type\n    'unit'    ")
+            (Error 1, Line 10, Col 3, Line 10, Col 59, "This expression was expected to have type\n    'int array'    \nbut here has type\n    'unit'    ")
             (Error 267, Line 10, Col 3, Line 10, Col 59, "This is not a valid constant expression or custom attribute value")
             (Error 850, Line 10, Col 3, Line 10, Col 59, "This attribute cannot be used in this version of F#")
-            (Error 850, Line 13, Col 3, Line 13, Col 52, "This attribute cannot be used in this version of F#")
-            (Error 850, Line 16, Col 13, Line 16, Col 37, "This attribute cannot be used in this version of F#")
+            (Error 850, Line 13, Col 3, Line 13, Col 101, "This attribute cannot be used in this version of F#")
+            (Error 850, Line 16, Col 3, Line 16, Col 50, "This attribute cannot be used in this version of F#")
         ]
 
     // SOURCE=E_AttributeTargetSpecifications.fs						# E_AttributeTargetSpecifications.fs
@@ -305,7 +305,7 @@ module Basic =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 429, Line 16, Col 28, Line 16, Col 31, "The attribute type 'CA1' has 'AllowMultiple=false'. Multiple instances of this attribute cannot be attached to a single language element.")
+            (Error 429, Line 16, Col 28, Line 16, Col 37, "The attribute type 'CA1' has 'AllowMultiple=false'. Multiple instances of this attribute cannot be attached to a single language element.")
         ]
 
     // SOURCE=W_StructLayoutExplicit01.fs   SCFLAGS="--test:ErrorRanges" PEVER="/Exp_Fail"	# W_StructLayoutExplicit01.fs
@@ -339,4 +339,70 @@ module Basic =
         |> verifyCompile
         |> shouldSucceed
 
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"EnsureValidCustomAttributeBlob.fs"|])>]
+    let ``EnsureValidCustomAttributeBlob_fs`` compilation =
+        compilation
+        |> verifyCompileAndRun
+        |> shouldSucceed
 
+    [<Fact>]
+    let ``StructLayoutAttribute doesn't have size=1 for struct DUs with instance fields`` () =
+        Fsx """
+        [<Struct>] type Option<'T> = None | Some of 'T
+        """
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+        """
+        .class sequential autochar serializable sealed nested public beforefieldinit Option`1<T>
+        extends [runtime]System.ValueType
+        implements class [runtime]System.IEquatable`1<valuetype Test/Option`1<!T>>,
+                   [runtime]System.Collections.IStructuralEquatable,
+                   class [runtime]System.IComparable`1<valuetype Test/Option`1<!T>>,
+                   [runtime]System.IComparable,
+                   [runtime]System.Collections.IStructuralComparable
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.StructAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [runtime]System.Diagnostics.DebuggerDisplayAttribute::.ctor(string) = ( 01 00 15 7B 5F 5F 44 65 62 75 67 44 69 73 70 6C   
+                                                                                                  61 79 28 29 2C 6E 71 7D 00 00 )                   
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 01 00 00 00 00 00 ) 
+    .class abstract auto ansi sealed nested public Tags<T>
+          extends [runtime]System.Object
+    {
+      .field public static literal int32 None = int32(0x00000000)
+      .field public static literal int32 Some = int32(0x00000001)
+    } 
+        """
+        ]
+
+    [<Fact>]
+    let ``StructLayoutAttribute has size=1 for struct DUs with no instance fields`` () =
+        Fsx """
+        [<Struct>] type Option<'T> = None | Some
+        """
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+        """
+        .class sequential autochar serializable sealed nested public beforefieldinit Option`1<T>
+        extends [runtime]System.ValueType
+        implements class [runtime]System.IEquatable`1<valuetype Test/Option`1<!T>>,
+                   [runtime]System.Collections.IStructuralEquatable,
+                   class [runtime]System.IComparable`1<valuetype Test/Option`1<!T>>,
+                   [runtime]System.IComparable,
+                   [runtime]System.Collections.IStructuralComparable
+  {
+    .pack 0
+    .size 1
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.StructAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [runtime]System.Diagnostics.DebuggerDisplayAttribute::.ctor(string) = ( 01 00 15 7B 5F 5F 44 65 62 75 67 44 69 73 70 6C   
+                                                                                                  61 79 28 29 2C 6E 71 7D 00 00 )                   
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 01 00 00 00 00 00 ) 
+    .class abstract auto ansi sealed nested public Tags<T>
+          extends [runtime]System.Object
+    {
+      .field public static literal int32 None = int32(0x00000000)
+      .field public static literal int32 Some = int32(0x00000001)
+    } 
+        """
+        ]

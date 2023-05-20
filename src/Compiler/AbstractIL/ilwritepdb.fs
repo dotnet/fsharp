@@ -316,10 +316,10 @@ let pdbGetDebugInfo
 let getDebugFileName outfile =
     (FileSystemUtils.chopExtension outfile) + ".pdb"
 
-let sortMethods showTimes info =
-    reportTime showTimes (sprintf "PDB: Defined %d documents" info.Documents.Length)
+let sortMethods info =
+    reportTime (sprintf "PDB: Defined %d documents" info.Documents.Length)
     Array.sortInPlaceBy (fun x -> x.MethToken) info.Methods
-    reportTime showTimes (sprintf "PDB: Sorted %d methods" info.Methods.Length)
+    reportTime (sprintf "PDB: Sorted %d methods" info.Methods.Length)
     ()
 
 let getRowCounts tableRowCounts =
@@ -345,7 +345,6 @@ type PortablePdbGenerator
         embedSourceList: string list,
         sourceLink: string,
         checksumAlgorithm,
-        showTimes,
         info: PdbData,
         pathMap: PathMap
     ) =
@@ -784,7 +783,7 @@ type PortablePdbGenerator
         | Some scope -> writeMethodScopes minfo.MethToken scope
 
     member _.Emit() =
-        sortMethods showTimes info
+        sortMethods info
         metadata.SetCapacity(TableIndex.MethodDebugInformation, info.Methods.Length)
 
         defineModuleImportScope ()
@@ -823,7 +822,7 @@ type PortablePdbGenerator
         let contentId = serializer.Serialize blobBuilder
         let portablePdbStream = new MemoryStream()
         blobBuilder.WriteContentTo portablePdbStream
-        reportTime showTimes "PDB: Created"
+        reportTime "PDB: Created"
         (portablePdbStream.Length, contentId, portablePdbStream, algorithmName, contentHash)
 
 let generatePortablePdb
@@ -831,12 +830,11 @@ let generatePortablePdb
     (embedSourceList: string list)
     (sourceLink: string)
     checksumAlgorithm
-    showTimes
     (info: PdbData)
     (pathMap: PathMap)
     =
     let generator =
-        PortablePdbGenerator(embedAllSource, embedSourceList, sourceLink, checksumAlgorithm, showTimes, info, pathMap)
+        PortablePdbGenerator(embedAllSource, embedSourceList, sourceLink, checksumAlgorithm, info, pathMap)
 
     generator.Emit()
 
@@ -1037,6 +1035,6 @@ let rec pushShadowedLocals (stackGuard: StackGuard) (localsToPush: PdbLocalVar[]
 //     adding the text " (shadowed)" to the names of those with name conflicts.
 let unshadowScopes rootScope =
     // Avoid stack overflow when writing linearly nested scopes
-    let stackGuard = StackGuard(100)
+    let stackGuard = StackGuard(100, "ILPdbWriter.unshadowScopes")
     let result, _ = pushShadowedLocals stackGuard [||] rootScope
     result

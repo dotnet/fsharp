@@ -73,8 +73,6 @@ let doubleOfBits (x: int64) = BitConverter.Int64BitsToDouble x
 let align alignment n =
     ((n + alignment - 0x1) / alignment) * alignment
 
-let uncodedToken (tab: TableName) idx = ((tab.Index <<< 24) ||| idx)
-
 let i32ToUncodedToken tok =
     let idx = tok &&& 0xffffff
     let tab = tok >>>& 24
@@ -230,7 +228,7 @@ type WeakByteFile(fileName: string, chunk: (int * int) option) =
     let fileStamp = FileSystem.GetLastWriteTimeShim fileName
 
     /// The weak handle to the bytes for the file
-    let weakBytes = WeakReference<byte[]>(null)
+    let weakBytes = WeakReference<byte[] MaybeNull>(null)
 
     member _.FileName = fileName
 
@@ -256,7 +254,7 @@ type WeakByteFile(fileName: string, chunk: (int * int) option) =
 
                     weakBytes.SetTarget bytes
 
-                tg
+                nonNull tg
 
             ByteMemory.FromArray(strongBytes).AsReadOnly()
 
@@ -328,8 +326,6 @@ let seekReadUserString mdv addr =
     let struct (len, addr) = seekReadCompressedUInt32 mdv addr
     let bytes = seekReadBytes mdv addr (len - 1)
     Encoding.Unicode.GetString(bytes, 0, bytes.Length)
-
-let seekReadGuid mdv addr = seekReadBytes mdv addr 0x10
 
 let seekReadUncodedToken mdv addr =
     i32ToUncodedToken (seekReadInt32 mdv addr)
@@ -748,9 +744,6 @@ let rec getTwoByteInstr i =
 
 type ImageChunk = { size: int32; addr: int32 }
 
-let chunk sz next = ({ addr = next; size = sz }, next + sz)
-let nochunk next = ({ addr = 0x0; size = 0x0 }, next)
-
 type RowElementKind =
     | UShort
     | ULong
@@ -838,9 +831,6 @@ let kindExportedType = RowKind [ ULong; ULong; SString; SString; Implementation 
 
 let kindAssembly =
     RowKind [ ULong; UShort; UShort; UShort; UShort; ULong; Blob; SString; SString ]
-
-let kindGenericParam_v1_1 =
-    RowKind [ UShort; UShort; TypeOrMethodDef; SString; TypeDefOrRefOrSpec ]
 
 let kindGenericParam_v2_0 = RowKind [ UShort; UShort; TypeOrMethodDef; SString ]
 let kindMethodSpec = RowKind [ MethodDefOrRef; Blob ]
@@ -951,10 +941,11 @@ let mkCacheInt32 lowMem _inbase _nm _sz =
         fun f (idx: int32) ->
             let cache =
                 match cache with
-                | null -> cache <- ConcurrentDictionary<int32, _>(Environment.ProcessorCount, 11)
-                | _ -> ()
-
-                cache
+                | Null ->
+                    let v = ConcurrentDictionary<int32, _>(Environment.ProcessorCount, 11)
+                    cache <- v
+                    v
+                | NonNull v -> v
 
             match cache.TryGetValue idx with
             | true, res ->
@@ -979,10 +970,11 @@ let mkCacheGeneric lowMem _inbase _nm _sz =
         fun f (idx: 'T) ->
             let cache =
                 match cache with
-                | null -> cache <- ConcurrentDictionary<_, _>(Environment.ProcessorCount, 11 (* sz: int *) )
-                | _ -> ()
-
-                cache
+                | Null ->
+                    let v = ConcurrentDictionary<_, _>(Environment.ProcessorCount, 11 (* sz: int *) )
+                    cache <- v
+                    v
+                | NonNull v -> v
 
             match cache.TryGetValue idx with
             | true, v ->
@@ -996,17 +988,6 @@ let mkCacheGeneric lowMem _inbase _nm _sz =
 //-----------------------------------------------------------------------
 // Polymorphic general helpers for searching for particular rows.
 // ----------------------------------------------------------------------
-
-let seekFindRow numRows rowChooser =
-    let mutable i = 1
-
-    while (i <= numRows && not (rowChooser i)) do
-        i <- i + 1
-
-    if i > numRows then
-        dprintn "warning: seekFindRow: row not found"
-
-    i
 
 // search for rows satisfying predicate
 let seekReadIndexedRows (numRows, rowReader, keyFunc, keyComparer, binaryChop, rowConverter) =

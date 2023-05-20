@@ -207,6 +207,7 @@ function TestUsingNUnit() {
 }
 
 function BuildSolution {
+  BUILDING_USING_DOTNET=false
   BuildCategory="Build"
   BuildMessage="Error preparing build"
   local solution="FSharp.sln"
@@ -255,22 +256,25 @@ function BuildSolution {
       rm -fr $bootstrap_dir
     fi
     if [ ! -f "$bootstrap_dir/fslex.dll" ]; then
+      local bltools=""
+      if [[ "$bl" != "" ]]; then
+        bltools=$bl+".lex.binlog"
+      fi
       BuildMessage="Error building tools"
-      MSBuild "$repo_root/buildtools/buildtools.proj" \
-        /restore \
-        /p:Configuration=$bootstrap_config
+      MSBuild "$repo_root/buildtools/buildtools.proj" /restore "$bltools" /p:Configuration=$bootstrap_config
 
       mkdir -p "$bootstrap_dir"
-      cp -pr $artifacts_dir/bin/fslex/$bootstrap_config/net6.0 $bootstrap_dir/fslex
-      cp -pr $artifacts_dir/bin/fsyacc/$bootstrap_config/net6.0 $bootstrap_dir/fsyacc
+      cp -pr $artifacts_dir/bin/fslex/$bootstrap_config/net7.0 $bootstrap_dir/fslex
+      cp -pr $artifacts_dir/bin/fsyacc/$bootstrap_config/net7.0 $bootstrap_dir/fsyacc
     fi
     if [ ! -f "$bootstrap_dir/fsc.exe" ]; then
+      local bltools=""
+      if [[ "$bl" != "" ]]; then
+        bltools=$bl+".bootstrap.binlog"
+      fi
       BuildMessage="Error building bootstrap"
-      MSBuild "$repo_root/Proto.sln" \
-        /restore \
-        /p:Configuration=$bootstrap_config
-
-      cp -pr $artifacts_dir/bin/fsc/$bootstrap_config/net6.0 $bootstrap_dir/fsc
+      MSBuild "$repo_root/Proto.sln" /restore "$bltools" /p:Configuration=$bootstrap_config
+      cp -pr $artifacts_dir/bin/fsc/$bootstrap_config/net7.0 $bootstrap_dir/fsc
     fi
   fi
 
@@ -312,17 +316,17 @@ InitializeDotNetCli $restore
 BuildSolution
 
 if [[ "$test_core_clr" == true ]]; then
-  coreclrtestframework=net6.0
+  coreclrtestframework=net7.0
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj" --targetframework $coreclrtestframework  --notestfilter 
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj" --targetframework $coreclrtestframework  --notestfilter 
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.UnitTests/FSharp.Compiler.UnitTests.fsproj" --targetframework $coreclrtestframework
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj" --targetframework $coreclrtestframework
-  TestUsingNUnit --testproject "$repo_root/tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj" --targetframework $coreclrtestframework
+  TestUsingXUnit --testproject "$repo_root/tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj" --targetframework $coreclrtestframework
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj" --targetframework $coreclrtestframework
 fi
 
 if [[ "$test_compilercomponent_tests" == true ]]; then
-  coreclrtestframework=net6.0
+  coreclrtestframework=net7.0
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj" --targetframework $coreclrtestframework  --notestfilter 
 fi
 

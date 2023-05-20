@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Project Sdk="Microsoft.NET.Sdk">
 
@@ -13,8 +13,8 @@
     <AssemblyName>FSharp.Compiler.Service</AssemblyName>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
-    <DefineConstants Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">$(DefineConstants);USE_SHIPPED_FSCORE</DefineConstants>
-    <OtherFlags>$(OtherFlags) --extraoptimizationloops:1 --times</OtherFlags>
+    <DefineConstants Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">$(DefineConstants);FSHARPCORE_USE_PACKAGE</DefineConstants>
+    <OtherFlags>$(OtherFlags) --extraoptimizationloops:1</OtherFlags>
     <!-- 1182: Unused variables -->
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <!-- 3218: ArgumentsInSigAndImplMismatch -->
@@ -27,9 +27,9 @@
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <FsYaccOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsYaccOutputFolder>
-    <FsLexOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsLexOutputFolder>
+  <!--  The FSharp.Compiler.Service dll provides a referencable public interface for tool builders -->
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
+    <CompressMetadata Condition="'$(CompressAllMetadata)' != 'true'">false</CompressMetadata>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -51,25 +51,10 @@
     <NuspecProperty Include="MicrosoftBuildUtilitiesCorePackageVersion=$(MicrosoftBuildUtilitiesCoreVersion)" />
     <NuspecProperty Include="SystemBuffersPackageVersion=$(SystemBuffersVersion)" />
     <NuspecProperty Include="SystemCollectionsImmutablePackageVersion=$(SystemCollectionsImmutableVersion)" />
-    <NuspecProperty Include="SystemDiagnosticsProcessPackageVersion=$(SystemDiagnosticsProcessVersion)" />
-    <NuspecProperty Include="SystemDiagnosticsTraceSourcePackageVersion=$(SystemDiagnosticsTraceSourceVersion)" />
-    <NuspecProperty Include="SystemLinqExpressionsPackageVersion=$(SystemLinqExpressionsVersion)" />
-    <NuspecProperty Include="SystemLinqQueryablePackageVersion=$(SystemLinqQueryableVersion)" />
     <NuspecProperty Include="SystemMemoryPackageVersion=$(SystemMemoryVersion)" />
-    <NuspecProperty Include="SystemNetRequestsPackageVersion=$(SystemNetRequestsVersion)" />
-    <NuspecProperty Include="SystemNetSecurityPackageVersion=$(SystemNetSecurityVersion)" />
+    <NuspecProperty Include="SystemDiagnosticsDiagnosticSourcePackageVersion=$(SystemDiagnosticsDiagnosticSourceVersion)" />
     <NuspecProperty Include="SystemReflectionEmitPackageVersion=$(SystemReflectionEmitVersion)" />
     <NuspecProperty Include="SystemReflectionMetadataPackageVersion=$(SystemReflectionMetadataVersion)" />
-    <NuspecProperty Include="SystemReflectionTypeExtensionsPackageVersion=$(SystemReflectionTypeExtensionsVersion)" />
-    <NuspecProperty Include="SystemRuntimePackageVersion=$(SystemRuntimeVersion)" />
-    <NuspecProperty Include="SystemRuntimeInteropServicesPackageVersion=$(SystemRuntimeInteropServicesVersion)" />
-    <NuspecProperty Include="SystemRuntimeLoaderPackageVersion=$(SystemRuntimeLoaderVersion)" />
-    <NuspecProperty Include="SystemSecurityClaimsPackageVersion=$(SystemSecurityClaimsVersion)" />
-    <NuspecProperty Include="SystemSecurityCryptographyAlgorithmsPackageVersion=$(SystemSecurityCryptographyAlgorithmsVersion)" />
-    <NuspecProperty Include="SystemSecurityPrincipalPackageVersion=$(SystemSecurityPrincipalVersion)" />
-    <NuspecProperty Include="SystemThreadingTasksParallelPackageVersion=$(SystemThreadingTasksParallelVersion)" />
-    <NuspecProperty Include="SystemThreadingThreadPackageVersion=$(SystemThreadingThreadVersion)" />
-    <NuspecProperty Include="SystemThreadingThreadPoolPackageVersion=$(SystemThreadingThreadPoolVersion)" />
     <NuspecProperty Include="SystemRuntimeCompilerServicesUnsafePackageVersion=$(SystemRuntimeCompilerServicesUnsafeVersion)" />
   </ItemGroup>
 
@@ -80,9 +65,9 @@
     <InternalsVisibleTo Include="fsi" />
     <InternalsVisibleTo Include="fsiAnyCpu" />
     <InternalsVisibleTo Include="fsiArm64" />
-    <InternalsVisibleTo Include="FSharp.Compiler.Server.Shared" />
     <InternalsVisibleTo Include="VisualFSharp.Salsa" />
     <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
+    <InternalsVisibleTo Include="FSharp.Compiler.ComponentTests" />
     <InternalsVisibleTo Include="FSharp.Compiler.UnitTests" />
     <InternalsVisibleTo Include="FSharp.Compiler.Service.Tests" />
     <InternalsVisibleTo Include="HostedCompilerServer" />
@@ -90,6 +75,7 @@
     <InternalsVisibleTo Include="LanguageServiceProfiling" />
     <InternalsVisibleTo Include="FSharp.Compiler.Benchmarks" />
     <InternalsVisibleTo Include="HistoricalBenchmark" />
+    <InternalsVisibleTo Include="FSharp.Test.Utilities" />
   </ItemGroup>
 
   <ItemGroup>
@@ -103,6 +89,8 @@
       <Link>FSStrings.resx</Link>
       <LogicalName>FSStrings.resources</LogicalName>
     </EmbeddedResource>
+    <Compile Include="Utilities\Activity.fsi" />
+    <Compile Include="Utilities\Activity.fs" />
     <Compile Include="Utilities\sformat.fsi" />
     <Compile Include="Utilities\sformat.fs" />
     <Compile Include="Utilities\sr.fsi" />
@@ -143,8 +131,6 @@
     <Compile Include="Utilities\range.fsi" />
     <Compile Include="Utilities\range.fs" />
     <EmbeddedText Include="Facilities\UtilsStrings.txt" />
-    <Compile Include="Facilities\Logger.fsi" />
-    <Compile Include="Facilities\Logger.fs" />
     <Compile Include="Facilities\LanguageFeatures.fsi" />
     <Compile Include="Facilities\LanguageFeatures.fs" />
     <Compile Include="Facilities\DiagnosticOptions.fsi" />
@@ -168,14 +154,14 @@
     <Compile Include="Facilities\BuildGraph.fsi" />
     <Compile Include="Facilities\BuildGraph.fs" />
     <FsLex Include="AbstractIL\illex.fsl">
-      <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
+      <OtherFlags>--module FSharp.Compiler.AbstractIL.AsciiLexer --internal --open Internal.Utilities.Text.Lexing --open FSharp.Compiler.AbstractIL.AsciiParser --unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
       <Link>AbstractIL\illex.fsl</Link>
     </FsLex>
     <None Include="AbstractIL\illex.fsl">
       <Link>AbstractIL\illex.fsl</Link>
     </None>
     <FsYacc Include="AbstractIL\ilpars.fsy">
-      <OtherFlags>--module FSharp.Compiler.AbstractIL.AsciiParser --open FSharp.Compiler.AbstractIL --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <OtherFlags>--module FSharp.Compiler.AbstractIL.AsciiParser --open FSharp.Compiler.AbstractIL.AsciiConstants --open FSharp.Compiler.AbstractIL.IL --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing --buffer-type-argument char</OtherFlags>
       <Link>AbstractIL\ilpars.fsy</Link>
     </FsYacc>
     <None Include="AbstractIL\ilpars.fsy">
@@ -187,8 +173,14 @@
     <Compile Include="AbstractIL\ilx.fs" />
     <Compile Include="AbstractIL\ilascii.fsi" />
     <Compile Include="AbstractIL\ilascii.fs" />
+    <Compile Include="$(FsYaccOutputFolder)ilpars.fsi">
+      <Link>AbstractIL\FsYaccOut\ilpars.fsi</Link>
+    </Compile>
     <Compile Include="$(FsYaccOutputFolder)ilpars.fs">
       <Link>AbstractIL\FsYaccOut\ilpars.fs</Link>
+    </Compile>
+    <Compile Include="$(FsLexOutputFolder)illex.fsi">
+      <Link>AbstractIL\FsLexOut\illex.fsi</Link>
     </Compile>
     <Compile Include="$(FsLexOutputFolder)illex.fs">
       <Link>AbstractIL\FsLexOut\illex.fs</Link>
@@ -216,19 +208,19 @@
     <Compile Include="SyntaxTree\PrettyNaming.fsi" />
     <Compile Include="SyntaxTree\PrettyNaming.fs" />
     <FsLex Include="pplex.fsl">
-      <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
+      <OtherFlags>--module FSharp.Compiler.PPLexer --internal --open FSharp.Compiler.Lexhelp --open Internal.Utilities.Text.Lexing --open FSharp.Compiler.PPParser --unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
       <Link>SyntaxTree\pplex.fsl</Link>
     </FsLex>
     <FsYacc Include="pppars.fsy">
-      <OtherFlags>--module FSharp.Compiler.PPParser --open FSharp.Compiler --open FSharp.Compiler.Syntax --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <OtherFlags>--module FSharp.Compiler.PPParser --open FSharp.Compiler.ParseHelpers --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing --buffer-type-argument char</OtherFlags>
       <Link>SyntaxTree\pppars.fsy</Link>
     </FsYacc>
     <FsLex Include="lex.fsl">
-      <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
+      <OtherFlags>--module FSharp.Compiler.Lexer --open FSharp.Compiler.Lexhelp --open Internal.Utilities.Text.Lexing --open FSharp.Compiler.Parser --open FSharp.Compiler.Text --open FSharp.Compiler.ParseHelpers --internal --unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
       <Link>SyntaxTree\lex.fsl</Link>
     </FsLex>
     <FsYacc Include="pars.fsy">
-      <OtherFlags>-v --module FSharp.Compiler.Parser --open FSharp.Compiler --open FSharp.Compiler.Syntax --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <OtherFlags>-v --module FSharp.Compiler.Parser --open FSharp.Compiler --open FSharp.Compiler.Syntax --open FSharp.Compiler.Text --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing --buffer-type-argument char</OtherFlags>
       <Link>SyntaxTree\pars.fsy</Link>
     </FsYacc>
     <None Include="pplex.fsl">
@@ -255,8 +247,14 @@
     <Compile Include="SyntaxTree\SyntaxTreeOps.fs" />
     <Compile Include="SyntaxTree\ParseHelpers.fsi" />
     <Compile Include="SyntaxTree\ParseHelpers.fs" />
+    <Compile Include="$(FsYaccOutputFolder)pppars.fsi">
+      <Link>SyntaxTree\FsYaccOutput\pppars.fsi</Link>
+    </Compile>
     <Compile Include="$(FsYaccOutputFolder)pppars.fs">
       <Link>SyntaxTree\FsYaccOutput\pppars.fs</Link>
+    </Compile>
+    <Compile Include="$(FsYaccOutputFolder)pars.fsi">
+      <Link>SyntaxTree\FsYaccOutput\pars.fsi</Link>
     </Compile>
     <Compile Include="$(FsYaccOutputFolder)pars.fs">
       <Link>SyntaxTree\FsYaccOutput\pars.fs</Link>
@@ -267,8 +265,14 @@
     <Compile Include="SyntaxTree\LexHelpers.fs">
       <Link>SyntaxTree\LexHelpers.fs</Link>
     </Compile>
+    <Compile Include="$(FsYaccOutputFolder)pplex.fsi">
+      <Link>SyntaxTree\FsLexOutput\pplex.fsi</Link>
+    </Compile>
     <Compile Include="$(FsYaccOutputFolder)pplex.fs">
       <Link>SyntaxTree\FsLexOutput\pplex.fs</Link>
+    </Compile>
+    <Compile Include="$(FsYaccOutputFolder)\lex.fsi">
+      <Link>SyntaxTree\FsLexOutput\lex.fsi</Link>
     </Compile>
     <Compile Include="$(FsYaccOutputFolder)\lex.fs">
       <Link>SyntaxTree\FsLexOutput\lex.fs</Link>
@@ -292,6 +296,8 @@
     <Compile Include="TypedTree\TypedTreeOps.fs" />
     <Compile Include="TypedTree\TypedTreePickle.fsi" />
     <Compile Include="TypedTree\TypedTreePickle.fs" />
+    <Compile Include="TypedTree\UpdatePrettyTyparNames.fsi" />
+    <Compile Include="TypedTree\UpdatePrettyTyparNames.fs" />
     <Compile Include="Checking\import.fsi" />
     <Compile Include="Checking\import.fs" />
     <Compile Include="Checking\TypeHierarchy.fsi" />
@@ -330,6 +336,10 @@
     <Compile Include="Checking\QuotationTranslator.fs" />
     <Compile Include="Checking\PostInferenceChecks.fsi" />
     <Compile Include="Checking\PostInferenceChecks.fs" />
+    <Compile Include="Checking\CheckBasics.fsi" />
+    <Compile Include="Checking\CheckBasics.fs" />
+    <Compile Include="Checking\CheckRecordSyntaxHelpers.fsi" />
+    <Compile Include="Checking\CheckRecordSyntaxHelpers.fs" />
     <Compile Include="Checking\CheckExpressions.fsi" />
     <Compile Include="Checking\CheckExpressions.fs" />
     <Compile Include="Checking\CheckPatterns.fsi" />
@@ -356,6 +366,8 @@
     <Compile Include="Optimize\LowerStateMachines.fs" />
     <Compile Include="Optimize\LowerLocalMutables.fsi" />
     <Compile Include="Optimize\LowerLocalMutables.fs" />
+    <Compile Include="CodeGen\IlxGenSupport.fsi" />
+    <Compile Include="CodeGen\IlxGenSupport.fs" />
     <Compile Include="CodeGen\EraseClosures.fsi" />
     <Compile Include="CodeGen\EraseClosures.fs" />
     <Compile Include="CodeGen\EraseUnions.fsi" />
@@ -388,6 +400,23 @@
     <Compile Include="Driver\CompilerImports.fs" />
     <Compile Include="Driver\CompilerDiagnostics.fsi" />
     <Compile Include="Driver\CompilerDiagnostics.fs" />
+    <Compile Include="Driver\GraphChecking\Continuation.fsi" />
+    <Compile Include="Driver\GraphChecking\Continuation.fs" />
+    <Compile Include="Driver\GraphChecking\Types.fsi" />
+    <Compile Include="Driver\GraphChecking\Types.fs" />
+    <Compile Include="Driver\GraphChecking\Graph.fsi" />
+    <Compile Include="Driver\GraphChecking\Graph.fs" />
+    <Compile Include="Driver\GraphChecking\TrieMapping.fsi" />
+    <Compile Include="Driver\GraphChecking\TrieMapping.fs" />
+    <Compile Include="Driver\GraphChecking\FileContentMapping.fsi" />
+    <Compile Include="Driver\GraphChecking\FileContentMapping.fs" />
+    <Compile Include="Driver\GraphChecking\DependencyResolution.fsi" />
+    <Compile Include="Driver\GraphChecking\DependencyResolution.fs" />
+    <Compile Include="Driver\GraphChecking\GraphProcessing.fsi" />
+    <Compile Include="Driver\GraphChecking\GraphProcessing.fs" />
+    <Compile Include="Driver\GraphChecking\TypeCheckingGraphProcessing.fsi" />
+    <Compile Include="Driver\GraphChecking\TypeCheckingGraphProcessing.fs" />
+    <Content Include="Driver\GraphChecking\Docs.md" />
     <Compile Include="Driver\ParseAndCheckInputs.fsi" />
     <Compile Include="Driver\ParseAndCheckInputs.fs" />
     <Compile Include="Driver\ScriptClosure.fsi" />
@@ -425,8 +454,8 @@
     <Compile Include="Service\ItemKey.fsi" />
     <Compile Include="Service\ItemKey.fs" />
     <Compile Include="Service\SemanticClassificationKey.fsi" />
-	  <Compile Include="Service\SemanticClassificationKey.fs" />
-	  <Compile Include="Service\FSharpSource.fsi" />
+    <Compile Include="Service\SemanticClassificationKey.fs" />
+    <Compile Include="Service\FSharpSource.fsi" />
     <Compile Include="Service\FSharpSource.fs" />
     <Compile Include="Service\IncrementalBuild.fsi" />
     <Compile Include="Service\IncrementalBuild.fs" />
@@ -465,12 +494,12 @@
     <Compile Include="Service\ServiceStructure.fs" />
     <Compile Include="Service\ServiceAnalysis.fsi" />
     <Compile Include="Service\ServiceAnalysis.fs" />
+    <Compile Include="Interactive\FSharpInteractiveServer.fsi" />
+    <Compile Include="Interactive\FSharpInteractiveServer.fs" />
     <Compile Include="Interactive\ControlledExecution.fs" />
     <Compile Include="Interactive\fsi.fsi" />
     <Compile Include="Interactive\fsi.fs" />
     <!-- A legacy resolver used to help with scripting diagnostics in the Visual Studio tools -->
-    <Compile Include="Legacy\LegacyMSBuildReferenceResolver.fsi" Condition="'$(MonoPackaging)' != 'true'" />
-    <Compile Include="Legacy\LegacyMSBuildReferenceResolver.fs" Condition="'$(MonoPackaging)' != 'true'" />
     <!-- an old API for testing the compiler and gathering diagnostics in-memory -->
     <Compile Include="Legacy\LegacyHostedCompilerForTesting.fs" Condition="'$(MonoPackaging)' != 'true'" />
   </ItemGroup>
@@ -479,6 +508,27 @@
     <None Include="default.win32manifest">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
+    <OutputPath>$(ArtifactsDir)/bin/$(MSBuildProjectName)/$(Configuration)/</OutputPath>
+    <IntermediateOutputPath>$(ArtifactsDir)obj/$(MSBuildProjectName)/$(Configuration)/</IntermediateOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
+    <!-- We are setting TFM explicitly here, since we are only using fslexyacc's dlls in msbuild -->
+    <ProjectReference Include="$(RepoRoot)\buildtools\fslex\fslex.fsproj" ReferenceOutputAssembly="False">
+      <SetTargetFramework>TargetFramework=net7.0</SetTargetFramework>
+      <ExcludeAssets>compile</ExcludeAssets>
+    </ProjectReference>
+    <ProjectReference Include="$(RepoRoot)\buildtools\fsyacc\fsyacc.fsproj" ReferenceOutputAssembly="False">
+      <SetTargetFramework>TargetFramework=net7.0</SetTargetFramework>
+      <ExcludeAssets>compile</ExcludeAssets>
+    </ProjectReference>
+    <ProjectReference Include="$(RepoRoot)\buildtools\AssemblyCheck\AssemblyCheck.fsproj" ReferenceOutputAssembly="False">
+      <SetTargetFramework>TargetFramework=net7.0</SetTargetFramework>
+      <ExcludeAssets>compile</ExcludeAssets>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>
@@ -494,31 +544,18 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderVersion)" />
     <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" />
-    <PackageReference Include="System.Diagnostics.Process" Version="$(SystemDiagnosticsProcessVersion)" />
-    <PackageReference Include="System.Diagnostics.TraceSource" Version="$(SystemDiagnosticsTraceSourceVersion)" />
-    <PackageReference Include="System.Linq.Expressions" Version="$(SystemLinqExpressionsVersion)" />
-    <PackageReference Include="System.Linq.Queryable" Version="$(SystemLinqExpressionsVersion)" />
-    <PackageReference Include="System.Net.Requests" Version="$(SystemNetRequestsVersion)" />
-    <PackageReference Include="System.Net.Security" Version="$(SystemNetSecurityVersion)" />
     <PackageReference Include="System.Reflection.Emit" Version="$(SystemReflectionEmitVersion)" />
     <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
-    <PackageReference Include="System.Reflection.TypeExtensions" Version="$(SystemReflectionTypeExtensionsVersion)" />
-    <PackageReference Include="System.Runtime" Version="$(SystemRuntimeVersion)" />
-    <PackageReference Include="System.Runtime.InteropServices" Version="$(SystemRuntimeInteropServicesVersion)" />
-    <PackageReference Include="System.Security.Claims" Version="$(SystemSecurityClaimsVersion)" />
-    <PackageReference Include="System.Security.Cryptography.Algorithms" Version="$(SystemSecurityCryptographyAlgorithmsVersion)" />
-    <PackageReference Include="System.Security.Principal" Version="$(SystemSecurityPrincipalVersion)" />
-    <PackageReference Include="System.Threading.Tasks.Parallel" Version="$(SystemThreadingTasksParallelVersion)" />
-    <PackageReference Include="System.Threading.Thread" Version="$(SystemThreadingThreadVersion)" />
-    <PackageReference Include="System.Threading.ThreadPool" Version="$(SystemThreadingThreadPoolVersion)" />
     <PackageReference Include="System.Buffers" Version="$(SystemBuffersVersion)" />
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="$(SystemDiagnosticsDiagnosticSourceVersion)" />
     <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" />
-    <PackageReference Include="Microsoft.Build.Framework" Version="$(MicrosoftBuildVersion)" />
-    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="$(MicrosoftBuildVersion)" />
-    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="$(MicrosoftBuildVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Driver\parallel-optimization.md" />
+    <None Include="Driver\parallel-optimization.drawio.svg" />
   </ItemGroup>
 
 </Project>

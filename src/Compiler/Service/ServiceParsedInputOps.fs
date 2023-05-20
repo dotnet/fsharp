@@ -62,10 +62,11 @@ type CompletionContext =
 
     | RangeOperator
 
-    /// Completing named parameters\setters in parameter list of constructor\method calls
+    /// Completing named parameters\setters in parameter list of attributes\constructor\method calls
     /// end of name ast node * list of properties\parameters that were already set
     | ParameterList of pos * HashSet<string>
 
+    /// Completing an attribute name, outside of the constructor
     | AttributeApplication
 
     | OpenDeclaration of isOpenType: bool
@@ -233,6 +234,19 @@ module Entity =
 
 module ParsedInput =
 
+    /// A pattern that collects all sequential expressions to avoid StackOverflowException
+    let internal (|Sequentials|_|) expr =
+
+        let rec collect expr acc =
+            match expr with
+            | SynExpr.Sequential (_, _, e1, (SynExpr.Sequential _ as e2), _) -> collect e2 (e1 :: acc)
+            | SynExpr.Sequential (_, _, e1, e2, _) -> e2 :: e1 :: acc
+            | _ -> acc
+
+        match collect expr [] with
+        | [] -> None
+        | exprs -> Some(List.rev exprs)
+
     let emptyStringSet = HashSet<string>()
 
     let GetRangeOfExprLeftOfDot (pos: pos, parsedInput) =
@@ -330,7 +344,7 @@ module ParsedInput =
                                 Some(unionRanges synExpr.Range r)
 
                     // get this for e.g. "bar()."
-                    | SynExpr.DiscardAfterMissingQualificationAfterDot (synExpr, _) ->
+                    | SynExpr.DiscardAfterMissingQualificationAfterDot (synExpr, _, _) ->
                         if SyntaxTraversal.rangeContainsPosLeftEdgeInclusive synExpr.Range pos then
                             traverseSynExpr synExpr
                         else
@@ -452,7 +466,7 @@ module ParsedInput =
 
                     if not (rangeContainsPos expr.Range pos) then
                         match expr with
-                        | SynExpr.DiscardAfterMissingQualificationAfterDot (e, _m) ->
+                        | SynExpr.DiscardAfterMissingQualificationAfterDot (e, _, _m) ->
                             // This happens with e.g. "f(x)  .   $" when you bring up a completion list a few spaces after a dot.  The cursor is not 'in the parse tree',
                             // but the dive algorithm will dive down into this node, and this is the one case where we do want to give a result despite the cursor
                             // not properly being in a node.
@@ -526,7 +540,7 @@ module ParsedInput =
                                 // the cursor is left of the dot
                                 None
 
-                        | SynExpr.DiscardAfterMissingQualificationAfterDot (e, m) ->
+                        | SynExpr.DiscardAfterMissingQualificationAfterDot (e, _, m) ->
                             match traverseSynExpr e with
                             | None ->
                                 if posEq m.End pos then
@@ -556,22 +570,15 @@ module ParsedInput =
         let (|ConstructorPats|) pats =
             match pats with
             | SynArgPats.Pats ps -> ps
-            | SynArgPats.NamePatPairs (xs, _) -> List.map (fun (_, _, pat) -> pat) xs
-
-        /// A recursive pattern that collect all sequential expressions to avoid StackOverflowException
-        let rec (|Sequentials|_|) expr =
-            match expr with
-            | SynExpr.Sequential (_, _, e, Sequentials es, _) -> Some(e :: es)
-            | SynExpr.Sequential (_, _, e1, e2, _) -> Some [ e1; e2 ]
-            | _ -> None
+            | SynArgPats.NamePatPairs (pats = xs) -> List.map (fun (_, _, pat) -> pat) xs
 
         let inline isPosInRange range = rangeContainsPos range pos
 
         let inline ifPosInRange range f =
             if isPosInRange range then f () else None
 
-        let rec walkImplFileInput (ParsedImplFileInput (modules = moduleOrNamespaceList)) =
-            List.tryPick (walkSynModuleOrNamespace true) moduleOrNamespaceList
+        let rec walkImplFileInput (file: ParsedImplFileInput) =
+            List.tryPick (walkSynModuleOrNamespace true) file.Contents
 
         and walkSynModuleOrNamespace isTopLevel inp =
             let (SynModuleOrNamespace (decls = decls; attribs = Attributes attrs; range = r)) =
@@ -581,7 +588,7 @@ module ParsedInput =
             |> Option.orElseWith (fun () -> ifPosInRange r (fun _ -> List.tryPick (walkSynModuleDecl isTopLevel) decls))
 
         and walkAttribute (attr: SynAttribute) =
-            if isPosInRange attr.Range then
+            if isPosInRange attr.TypeName.Range then
                 Some EntityKind.Attribute
             else
                 None
@@ -607,7 +614,7 @@ module ParsedInput =
             | SynTypeConstraint.WhereTyparIsComparable (t, _) -> walkTypar t
             | SynTypeConstraint.WhereTyparIsEquatable (t, _) -> walkTypar t
             | SynTypeConstraint.WhereTyparSubtypeOfType (t, ty, _) -> walkTypar t |> Option.orElseWith (fun () -> walkType ty)
-            | SynTypeConstraint.WhereTyparSupportsMember (ts, sign, _) ->
+            | SynTypeConstraint.WhereTyparSupportsMember (TypesForTypar ts, sign, _) ->
                 List.tryPick walkType ts |> Option.orElseWith (fun () -> walkMemberSig sign)
             | SynTypeConstraint.WhereTyparIsEnum (t, ts, _) -> walkTypar t |> Option.orElseWith (fun () -> List.tryPick walkType ts)
             | SynTypeConstraint.WhereTyparIsDelegate (t, ts, _) -> walkTypar t |> Option.orElseWith (fun () -> List.tryPick walkType ts)
@@ -619,7 +626,8 @@ module ParsedInput =
             | SynPat.As (pat1, pat2, _) -> List.tryPick walkPat [ pat1; pat2 ]
             | SynPat.Typed (pat, t, _) -> walkPat pat |> Option.orElseWith (fun () -> walkType t)
             | SynPat.Attrib (pat, Attributes attrs, _) -> walkPat pat |> Option.orElseWith (fun () -> List.tryPick walkAttribute attrs)
-            | SynPat.Or (pat1, pat2, _, _) -> List.tryPick walkPat [ pat1; pat2 ]
+            | SynPat.Or (pat1, pat2, _, _)
+            | SynPat.ListCons (pat1, pat2, _, _) -> List.tryPick walkPat [ pat1; pat2 ]
             | SynPat.LongIdent (typarDecls = typars; argPats = ConstructorPats pats; range = r) ->
                 ifPosInRange r (fun _ -> kind)
                 |> Option.orElseWith (fun () ->
@@ -628,7 +636,7 @@ module ParsedInput =
                         List.tryPick walkTyparDecl typars
                         |> Option.orElseWith (fun () -> List.tryPick walkTypeConstraint constraints)))
                 |> Option.orElseWith (fun () -> List.tryPick walkPat pats)
-            | SynPat.Tuple (_, pats, _) -> List.tryPick walkPat pats
+            | SynPat.Tuple (elementPats = pats) -> List.tryPick walkPat pats
             | SynPat.Paren (pat, _) -> walkPat pat
             | SynPat.ArrayOrList (_, pats, _) -> List.tryPick walkPat pats
             | SynPat.IsInst (t, _) -> walkType t
@@ -646,7 +654,7 @@ module ParsedInput =
             |> Option.orElseWith (fun () -> walkExpr e)
             |> Option.orElseWith (fun () ->
                 match returnInfo with
-                | Some (SynBindingReturnInfo (t, _, _)) -> walkType t
+                | Some (SynBindingReturnInfo (typeName = t)) -> walkType t
                 | None -> None)
 
         and walkInterfaceImpl (SynInterfaceImpl (bindings = bindings)) = List.tryPick walkBinding bindings
@@ -667,10 +675,18 @@ module ParsedInput =
             | SynType.Fun (argType = t1; returnType = t2) -> walkType t1 |> Option.orElseWith (fun () -> walkType t2)
             | SynType.WithGlobalConstraints (t, _, _) -> walkType t
             | SynType.HashConstraint (t, _) -> walkType t
-            | SynType.MeasureDivide (t1, t2, _) -> walkType t1 |> Option.orElseWith (fun () -> walkType t2)
+            | SynType.Or (t1, t2, _, _) -> walkType t1 |> Option.orElseWith (fun () -> walkType t2)
             | SynType.MeasurePower (t, _, _) -> walkType t
-            | SynType.Paren (t, _) -> walkType t
-            | _ -> None
+            | SynType.Paren (t, _)
+            | SynType.SignatureParameter (usedType = t) -> walkType t
+            | SynType.StaticConstantExpr (e, _) -> walkExpr e
+            | SynType.StaticConstantNamed (ident, value, _) -> List.tryPick walkType [ ident; value ]
+            | SynType.Anon _
+            | SynType.AnonRecd _
+            | SynType.LongIdent _
+            | SynType.Var _
+            | SynType.StaticConstant _
+            | SynType.FromParseError _ -> None
 
         and walkClause clause =
             let (SynMatchClause (pat = pat; whenExpr = e1; resultExpr = e2)) = clause
@@ -830,7 +846,7 @@ module ParsedInput =
 
             | SynExpr.DoBang (e, _) -> walkExprWithKind parentKind e
 
-            | SynExpr.TraitCall (ts, sign, e, _) ->
+            | SynExpr.TraitCall (TypesForTypar ts, sign, e, _) ->
                 List.tryPick walkType ts
                 |> Option.orElseWith (fun () -> walkMemberSig sign)
                 |> Option.orElseWith (fun () -> walkExprWithKind parentKind e)
@@ -848,7 +864,7 @@ module ParsedInput =
             | _ -> None
 
         and walkField synField =
-            let (SynField (Attributes attrs, _, _, t, _, _, _, _)) = synField
+            let (SynField (attributes = Attributes attrs; fieldType = t)) = synField
             List.tryPick walkAttribute attrs |> Option.orElseWith (fun () -> walkType t)
 
         and walkValSig synValSig =
@@ -859,7 +875,7 @@ module ParsedInput =
             match membSig with
             | SynMemberSig.Inherit (t, _) -> walkType t
 
-            | SynMemberSig.Member (vs, _, _) -> walkValSig vs
+            | SynMemberSig.Member (memberSig = vs) -> walkValSig vs
 
             | SynMemberSig.Interface (t, _) -> walkType t
 
@@ -872,7 +888,7 @@ module ParsedInput =
 
         and walkMember memb =
             match memb with
-            | SynMemberDefn.AbstractSlot (valSig, _, _) -> walkValSig valSig
+            | SynMemberDefn.AbstractSlot (slotSig = valSig) -> walkValSig valSig
 
             | SynMemberDefn.Member (binding, _) -> walkBinding binding
 
@@ -883,7 +899,7 @@ module ParsedInput =
                 | None, Some binding -> walkBinding binding
                 | Some getBinding, Some setBinding -> walkBinding getBinding |> Option.orElseWith (fun () -> walkBinding setBinding)
 
-            | SynMemberDefn.ImplicitCtor (_, Attributes attrs, SynSimplePats.SimplePats (simplePats, _), _, _, _) ->
+            | SynMemberDefn.ImplicitCtor (attributes = Attributes attrs; ctorArgs = SynSimplePats.SimplePats (pats = simplePats)) ->
                 List.tryPick walkAttribute attrs
                 |> Option.orElseWith (fun () -> List.tryPick walkSimplePat simplePats)
 
@@ -897,7 +913,7 @@ module ParsedInput =
 
             | SynMemberDefn.Inherit (t, _, _) -> walkType t
 
-            | SynMemberDefn.ValField (field, _) -> walkField field
+            | SynMemberDefn.ValField (fieldInfo = field) -> walkField field
 
             | SynMemberDefn.NestedType (tdef, _, _) -> walkTypeDefn tdef
 
@@ -1253,278 +1269,285 @@ module ParsedInput =
     /// Try to determine completion context for the given pair (row, columns)
     let TryGetCompletionContext (pos, parsedInput: ParsedInput, lineStr: string) : CompletionContext option =
 
-        match GetEntityKind(pos, parsedInput) with
-        | Some EntityKind.Attribute -> Some CompletionContext.AttributeApplication
-        | _ ->
+        let visitor =
+            { new SyntaxVisitorBase<_>() with
+                member _.VisitExpr(path, _, defaultTraverse, expr) =
 
-            let visitor =
-                { new SyntaxVisitorBase<_>() with
-                    member _.VisitExpr(path, _, defaultTraverse, expr) =
-
-                        if isAtRangeOp path then
-                            match defaultTraverse expr with
-                            | None -> Some CompletionContext.RangeOperator // nothing was found - report that we were in the context of range operator
-                            | x -> x // ok, we found something - return it
-                        else
-                            match expr with
-                            // new A($)
-                            | SynExpr.Const (SynConst.Unit, m) when rangeContainsPos m pos ->
-                                match path with
-                                | SyntaxNode.SynExpr (NewObjectOrMethodCall args) :: _ -> Some(CompletionContext.ParameterList args)
-                                | _ -> defaultTraverse expr
-
-                            // new (... A$)
-                            | SynExpr.Ident id
-                            | SynExpr.LongIdent(longDotId = SynLongIdent ([ id ], [], [ Some _ ])) when id.idRange.End = pos ->
-                                match path with
-                                | PartOfParameterList pos None args -> Some(CompletionContext.ParameterList args)
-                                | _ -> defaultTraverse expr
-
-                            // new (A$ = 1)
-                            // new (A = 1, $)
-                            | Setter id when id.idRange.End = pos || rangeBeforePos expr.Range pos ->
-                                let precedingArgument = if id.idRange.End = pos then None else Some expr
-
-                                match path with
-                                | PartOfParameterList pos precedingArgument args -> Some(CompletionContext.ParameterList args)
-                                | _ -> defaultTraverse expr
-
-                            | SynExpr.Record (None, None, [], _) -> Some(CompletionContext.RecordField RecordContext.Empty)
-
-                            // Unchecked.defaultof<str$>
-                            | SynExpr.TypeApp (typeArgsRange = range) when rangeContainsPos range pos -> Some CompletionContext.PatternType
+                    if isAtRangeOp path then
+                        match defaultTraverse expr with
+                        | None -> Some CompletionContext.RangeOperator // nothing was found - report that we were in the context of range operator
+                        | x -> x // ok, we found something - return it
+                    else
+                        match expr with
+                        // new A($)
+                        | SynExpr.Const (SynConst.Unit, m) when rangeContainsPos m pos ->
+                            match path with
+                            | SyntaxNode.SynExpr (NewObjectOrMethodCall args) :: _ -> Some(CompletionContext.ParameterList args)
                             | _ -> defaultTraverse expr
 
-                    member _.VisitRecordField(path, copyOpt, field) =
-                        let contextFromTreePath completionPath =
-                            // detect records usage in constructor
+                        // new (... A$)
+                        | SynExpr.Ident id
+                        | SynExpr.LongIdent(longDotId = SynLongIdent ([ id ], [], [ Some _ ])) when id.idRange.End = pos ->
                             match path with
-                            | SyntaxNode.SynExpr _ :: SyntaxNode.SynBinding _ :: SyntaxNode.SynMemberDefn _ :: SyntaxNode.SynTypeDefn (SynTypeDefn(typeInfo = SynComponentInfo(longId = [ id ]))) :: _ ->
-                                RecordContext.Constructor(id.idText)
+                            | PartOfParameterList pos None args -> Some(CompletionContext.ParameterList args)
+                            | _ -> defaultTraverse expr
 
-                            | SyntaxNode.SynExpr (SynExpr.Record (None, _, fields, _)) :: _ ->
-                                let isFirstField =
-                                    match field, fields with
-                                    | Some contextLid, SynExprRecordField(fieldName = lid, _) :: _ -> contextLid.Range = lid.Range
-                                    | _ -> false
+                        // new (A$ = 1)
+                        // new (A = 1, $)
+                        | Setter id when id.idRange.End = pos || rangeBeforePos expr.Range pos ->
+                            let precedingArgument = if id.idRange.End = pos then None else Some expr
 
-                                RecordContext.New(completionPath, isFirstField)
+                            match path with
+                            | PartOfParameterList pos precedingArgument args -> Some(CompletionContext.ParameterList args)
+                            | _ -> defaultTraverse expr
 
-                            // Unfinished `{ xxx }` expression considered a record field by the tree visitor.
-                            | SyntaxNode.SynExpr (SynExpr.ComputationExpr _) :: _ -> RecordContext.New(completionPath, true)
+                        | SynExpr.Record (None, None, [], _) -> Some(CompletionContext.RecordField RecordContext.Empty)
 
-                            | _ -> RecordContext.New(completionPath, false)
+                        // Unchecked.defaultof<str$>
+                        | SynExpr.TypeApp (typeArgsRange = range) when rangeContainsPos range pos -> Some CompletionContext.PatternType
+                        | _ -> defaultTraverse expr
 
-                        match field with
-                        | Some field ->
-                            match parseLid pos field with
-                            | Some completionPath ->
-                                let recordContext =
-                                    match copyOpt with
-                                    | Some (s: SynExpr) -> RecordContext.CopyOnUpdate(s.Range, completionPath)
-                                    | None -> contextFromTreePath completionPath
+                member _.VisitRecordField(path, copyOpt, field) =
+                    let contextFromTreePath completionPath =
+                        // detect records usage in constructor
+                        match path with
+                        | SyntaxNode.SynExpr _ :: SyntaxNode.SynBinding _ :: SyntaxNode.SynMemberDefn _ :: SyntaxNode.SynTypeDefn (SynTypeDefn(typeInfo = SynComponentInfo(longId = [ id ]))) :: _ ->
+                            RecordContext.Constructor(id.idText)
 
-                                Some(CompletionContext.RecordField recordContext)
-                            | None -> None
-                        | None ->
+                        | SyntaxNode.SynExpr (SynExpr.Record (None, _, fields, _)) :: _ ->
+                            let isFirstField =
+                                match field, fields with
+                                | Some contextLid, SynExprRecordField(fieldName = lid, _) :: _ -> contextLid.Range = lid.Range
+                                | _ -> false
+
+                            RecordContext.New(completionPath, isFirstField)
+
+                        // Unfinished `{ xxx }` expression considered a record field by the tree visitor.
+                        | SyntaxNode.SynExpr (SynExpr.ComputationExpr _) :: _ -> RecordContext.New(completionPath, true)
+
+                        | _ -> RecordContext.New(completionPath, false)
+
+                    match field with
+                    | Some field ->
+                        match parseLid pos field with
+                        | Some completionPath ->
                             let recordContext =
                                 match copyOpt with
-                                | Some s -> RecordContext.CopyOnUpdate(s.Range, ([], None))
-                                | None -> contextFromTreePath ([], None)
+                                | Some (s: SynExpr) -> RecordContext.CopyOnUpdate(s.Range, completionPath)
+                                | None -> contextFromTreePath completionPath
 
                             Some(CompletionContext.RecordField recordContext)
+                        | None -> None
+                    | None ->
+                        let recordContext =
+                            match copyOpt with
+                            | Some s -> RecordContext.CopyOnUpdate(s.Range, ([], None))
+                            | None -> contextFromTreePath ([], None)
 
-                    member _.VisitInheritSynMemberDefn(_, componentInfo, typeDefnKind, synType, _, _) =
-                        match synType with
-                        | SynType.LongIdent lidwd ->
-                            match parseLid pos lidwd with
-                            | Some completionPath -> GetCompletionContextForInheritSynMember(componentInfo, typeDefnKind, completionPath)
-                            | None -> Some CompletionContext.Invalid // A $ .B -> no completion list
+                        Some(CompletionContext.RecordField recordContext)
 
-                        | _ -> None
+                member _.VisitInheritSynMemberDefn(_, componentInfo, typeDefnKind, synType, _, _) =
+                    match synType with
+                    | SynType.LongIdent lidwd ->
+                        match parseLid pos lidwd with
+                        | Some completionPath -> GetCompletionContextForInheritSynMember(componentInfo, typeDefnKind, completionPath)
+                        | None -> Some CompletionContext.Invalid // A $ .B -> no completion list
 
-                    member _.VisitBinding(_, defaultTraverse, (SynBinding (headPat = headPat) as synBinding)) =
+                    | _ -> None
 
-                        let visitParam (SkipFromParseErrorPat pat) =
-                            match pat with
-                            | SynPat.Named (range = range)
-                            | SynPat.As (_, SynPat.Named (range = range), _) when rangeContainsPos range pos ->
-                                // parameter without type hint, no completion
-                                Some CompletionContext.Invalid
-                            | SynPat.Typed (SynPat.Named (_, _, _, range), _, _) when rangeContainsPos range pos ->
-                                // parameter with type hint, but we are on its name, no completion
-                                Some CompletionContext.Invalid
-                            | _ -> defaultTraverse synBinding
+                member _.VisitBinding(_, defaultTraverse, (SynBinding (headPat = headPat) as synBinding)) =
 
-                        match headPat with
-                        | SynPat.LongIdent (longDotId = lidwd) when rangeContainsPos lidwd.Range pos ->
-                            // let fo|o x = ()
-                            Some CompletionContext.Invalid
-                        | SynPat.LongIdent (argPats = ctorArgs) ->
-                            match ctorArgs with
-                            | SynArgPats.Pats pats ->
-                                pats
-                                |> List.tryPick (fun (SkipFromParseErrorPat pat) ->
-                                    match pat with
-                                    | SynPat.Paren (pat, _) ->
-                                        match pat with
-                                        | SynPat.Tuple (_, pats, _) -> pats |> List.tryPick visitParam
-                                        | _ -> visitParam pat
-                                    | SynPat.Wild range
-                                    | SynPat.FromParseError (SynPat.Named _, range) when rangeContainsPos range pos ->
-                                        // let foo (x|
-                                        Some CompletionContext.Invalid
-                                    | _ -> visitParam pat)
-                            | _ -> defaultTraverse synBinding
+                    let visitParam (SkipFromParseErrorPat pat) =
+                        match pat with
                         | SynPat.Named (range = range)
                         | SynPat.As (_, SynPat.Named (range = range), _) when rangeContainsPos range pos ->
-                            // let fo|o = 1
+                            // parameter without type hint, no completion
+                            Some CompletionContext.Invalid
+                        | SynPat.Typed (SynPat.Named (_, _, _, range), _, _) when rangeContainsPos range pos ->
+                            // parameter with type hint, but we are on its name, no completion
                             Some CompletionContext.Invalid
                         | _ -> defaultTraverse synBinding
 
-                    member _.VisitHashDirective(_, _directive, range) =
-                        // No completions in a directive
-                        if rangeContainsPos range pos then
-                            Some CompletionContext.Invalid
-                        else
-                            None
-
-                    member _.VisitModuleOrNamespace(_, SynModuleOrNamespace (longId = idents)) =
-                        match List.tryLast idents with
-                        | Some lastIdent when
-                            pos.Line = lastIdent.idRange.EndLine
-                            && lastIdent.idRange.EndColumn >= 0
-                            && pos.Column <= lineStr.Length
-                            ->
-                            let stringBetweenModuleNameAndPos =
-                                lineStr[lastIdent.idRange.EndColumn .. pos.Column - 1]
-
-                            if stringBetweenModuleNameAndPos |> Seq.forall (fun x -> x = ' ' || x = '.') then
-                                // No completions in a top level a module or namespace identifier
-                                Some CompletionContext.Invalid
-                            else
-                                None
-                        | _ -> None
-
-                    member _.VisitComponentInfo(_, SynComponentInfo (range = range)) =
-                        // No completions in component info (unless it's within an attribute)
-                        // /// XmlDo|
-                        // type R = class end
-                        if rangeContainsPos range pos then
-                            Some CompletionContext.Invalid
-                        else
-                            None
-
-                    member _.VisitLetOrUse(_, _, _, bindings, range) =
-                        match bindings with
-                        | [] when range.StartLine = pos.Line -> Some CompletionContext.Invalid
-                        | _ -> None
-
-                    member _.VisitSimplePats(_, pats) =
-                        pats
-                        |> List.tryPick (fun pat ->
-                            // No completions in an identifier in a pattern
-                            match pat with
-                            // fun x| ->
-                            | SynSimplePat.Id (range = range) when rangeContainsPos range pos -> Some CompletionContext.Invalid
-                            | SynSimplePat.Typed (SynSimplePat.Id (range = idRange), synType, _) ->
-                                // fun (x|: int) ->
-                                if rangeContainsPos idRange pos then
+                    match headPat with
+                    | SynPat.LongIdent (longDotId = lidwd) when rangeContainsPos lidwd.Range pos ->
+                        // let fo|o x = ()
+                        Some CompletionContext.Invalid
+                    | SynPat.LongIdent (argPats = ctorArgs; range = range) when rangeContainsPos range pos ->
+                        match ctorArgs with
+                        | SynArgPats.Pats pats ->
+                            pats
+                            |> List.tryPick (fun (SkipFromParseErrorPat pat) ->
+                                match pat with
+                                | SynPat.Paren (pat, _) ->
+                                    match pat with
+                                    | SynPat.Tuple (elementPats = pats) -> pats |> List.tryPick visitParam
+                                    | _ -> visitParam pat
+                                | SynPat.Wild range
+                                | SynPat.FromParseError (SynPat.Named _, range) when rangeContainsPos range pos ->
+                                    // let foo (x|
                                     Some CompletionContext.Invalid
-                                // fun (x: int|) ->
-                                elif rangeContainsPos synType.Range pos then
-                                    Some CompletionContext.PatternType
-                                else
-                                    None
-                            | _ -> None)
+                                | _ -> visitParam pat)
+                        | _ -> defaultTraverse synBinding
+                    | SynPat.Named (range = range)
+                    | SynPat.As (_, SynPat.Named (range = range), _) when rangeContainsPos range pos ->
+                        // let fo|o = 1
+                        Some CompletionContext.Invalid
+                    | _ -> defaultTraverse synBinding
 
-                    member _.VisitPat(_, defaultTraverse, pat) =
-                        match pat with
-                        | SynPat.IsInst (_, range) when rangeContainsPos range pos -> Some CompletionContext.PatternType
-                        | _ -> defaultTraverse pat
+                member _.VisitHashDirective(_, _directive, range) =
+                    // No completions in a directive
+                    if rangeContainsPos range pos then
+                        Some CompletionContext.Invalid
+                    else
+                        None
 
-                    member _.VisitModuleDecl(_, defaultTraverse, decl) =
-                        match decl with
-                        | SynModuleDecl.Open (target, m) ->
-                            // in theory, this means we're "in an open"
-                            // in practice, because the parse tree/visitors do not handle attributes well yet, need extra check below to ensure not e.g. $here$
-                            //     open System
-                            //     [<Attr$
-                            //     let f() = ()
-                            // inside an attribute on the next item
-                            let pos = mkPos pos.Line (pos.Column - 1) // -1 because for e.g. "open System." the dot does not show up in the parse tree
+                member _.VisitModuleOrNamespace(_, SynModuleOrNamespace (longId = idents)) =
+                    match List.tryLast idents with
+                    | Some lastIdent when
+                        pos.Line = lastIdent.idRange.EndLine
+                        && lastIdent.idRange.EndColumn >= 0
+                        && pos.Column <= lineStr.Length
+                        ->
+                        let stringBetweenModuleNameAndPos =
+                            lineStr[lastIdent.idRange.EndColumn .. pos.Column - 1]
 
-                            if rangeContainsPos m pos then
-                                let isOpenType =
-                                    match target with
-                                    | SynOpenDeclTarget.Type _ -> true
-                                    | SynOpenDeclTarget.ModuleOrNamespace _ -> false
-
-                                Some(CompletionContext.OpenDeclaration isOpenType)
-                            else
-                                None
-                        | _ -> defaultTraverse decl
-
-                    member _.VisitType(_, defaultTraverse, ty) =
-                        match ty with
-                        | SynType.LongIdent _ when rangeContainsPos ty.Range pos -> Some CompletionContext.PatternType
-                        | _ -> defaultTraverse ty
-
-                    member _.VisitRecordDefn(_, fields, range) =
-                        fields
-                        |> List.tryPick (fun (SynField (idOpt = idOpt; range = fieldRange)) ->
-                            match idOpt with
-                            | Some id when rangeContainsPos id.idRange pos ->
-                                Some(CompletionContext.RecordField(RecordContext.Declaration true))
-                            | _ when rangeContainsPos fieldRange pos -> Some(CompletionContext.RecordField(RecordContext.Declaration false))
-                            | _ -> None)
-                        // No completions in a record outside of all fields
-                        |> Option.orElseWith (fun () ->
-                            if rangeContainsPos range pos then
-                                Some CompletionContext.Invalid
-                            else
-                                None)
-
-                    member _.VisitUnionDefn(_, cases, _) =
-                        cases
-                        |> List.tryPick (fun (SynUnionCase (ident = SynIdent (id, _); caseType = caseType)) ->
-                            if rangeContainsPos id.idRange pos then
-                                // No completions in a union case identifier
-                                Some CompletionContext.Invalid
-                            else
-                                match caseType with
-                                | SynUnionCaseKind.Fields fieldCases ->
-                                    fieldCases
-                                    |> List.tryPick (fun (SynField (idOpt = fieldIdOpt; range = fieldRange)) ->
-                                        match fieldIdOpt with
-                                        // No completions in a union case field identifier
-                                        | Some id when rangeContainsPos id.idRange pos -> Some CompletionContext.Invalid
-                                        | _ ->
-                                            if rangeContainsPos fieldRange pos then
-                                                Some CompletionContext.UnionCaseFieldsDeclaration
-                                            else
-                                                None)
-                                | _ -> None)
-
-                    member _.VisitEnumDefn(_, _, range) =
-                        // No completions anywhere in an enum
-                        if rangeContainsPos range pos then
+                        if stringBetweenModuleNameAndPos |> Seq.forall (fun x -> x = ' ' || x = '.') then
+                            // No completions in a top level a module or namespace identifier
                             Some CompletionContext.Invalid
                         else
                             None
+                    | _ -> None
 
-                    member _.VisitTypeAbbrev(_, _, range) =
-                        if rangeContainsPos range pos then
-                            Some CompletionContext.TypeAbbreviationOrSingleCaseUnion
+                member _.VisitComponentInfo(_, SynComponentInfo (range = range)) =
+                    // No completions in component info (unless it's within an attribute)
+                    // /// XmlDo|
+                    // type R = class end
+                    if rangeContainsPos range pos then
+                        Some CompletionContext.Invalid
+                    else
+                        None
+
+                member _.VisitLetOrUse(_, _, _, bindings, range) =
+                    match bindings with
+                    | [] when range.StartLine = pos.Line -> Some CompletionContext.Invalid
+                    | _ -> None
+
+                member _.VisitSimplePats(_, pats) =
+                    pats
+                    |> List.tryPick (fun pat ->
+                        // No completions in an identifier in a pattern
+                        match pat with
+                        // fun x| ->
+                        | SynSimplePat.Id (range = range) when rangeContainsPos range pos -> Some CompletionContext.Invalid
+                        | SynSimplePat.Typed (SynSimplePat.Id (range = idRange), synType, _) ->
+                            // fun (x|: int) ->
+                            if rangeContainsPos idRange pos then
+                                Some CompletionContext.Invalid
+                            // fun (x: int|) ->
+                            elif rangeContainsPos synType.Range pos then
+                                Some CompletionContext.PatternType
+                            else
+                                None
+                        | _ -> None)
+
+                member _.VisitPat(_, defaultTraverse, pat) =
+                    match pat with
+                    | SynPat.IsInst (_, range) when rangeContainsPos range pos -> Some CompletionContext.PatternType
+                    | _ -> defaultTraverse pat
+
+                member _.VisitModuleDecl(_, defaultTraverse, decl) =
+                    match decl with
+                    | SynModuleDecl.Open (target, m) ->
+                        // in theory, this means we're "in an open"
+                        // in practice, because the parse tree/visitors do not handle attributes well yet, need extra check below to ensure not e.g. $here$
+                        //     open System
+                        //     [<Attr$
+                        //     let f() = ()
+                        // inside an attribute on the next item
+                        let pos = mkPos pos.Line (pos.Column - 1) // -1 because for e.g. "open System." the dot does not show up in the parse tree
+
+                        if rangeContainsPos m pos then
+                            let isOpenType =
+                                match target with
+                                | SynOpenDeclTarget.Type _ -> true
+                                | SynOpenDeclTarget.ModuleOrNamespace _ -> false
+
+                            Some(CompletionContext.OpenDeclaration isOpenType)
                         else
                             None
-                }
 
-            let ctxt = SyntaxTraversal.Traverse(pos, parsedInput, visitor)
+                    // module Namespace.Top
+                    // module Neste|
+                    | SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = [ ident ])) when rangeContainsPos ident.idRange pos ->
+                        Some CompletionContext.Invalid
 
-            match ctxt with
-            | Some _ -> ctxt
-            | _ -> TryGetCompletionContextOfAttributes(pos, lineStr)
+                    | _ -> defaultTraverse decl
+
+                member _.VisitType(_, defaultTraverse, ty) =
+                    match ty with
+                    | SynType.LongIdent _ when rangeContainsPos ty.Range pos -> Some CompletionContext.PatternType
+                    | _ -> defaultTraverse ty
+
+                member _.VisitRecordDefn(_, fields, _) =
+                    fields
+                    |> List.tryPick (fun (SynField (idOpt = idOpt; range = fieldRange)) ->
+                        match idOpt with
+                        | Some id when rangeContainsPos id.idRange pos ->
+                            Some(CompletionContext.RecordField(RecordContext.Declaration true))
+                        | _ when rangeContainsPos fieldRange pos -> Some(CompletionContext.RecordField(RecordContext.Declaration false))
+                        | _ -> None)
+                    // No completions in a record outside of all fields, except in attributes, which is established earlier in VisitAttributeApplication
+                    |> Option.orElse (Some CompletionContext.Invalid)
+
+                member _.VisitUnionDefn(_, cases, _) =
+                    cases
+                    |> List.tryPick (fun (SynUnionCase (ident = SynIdent (id, _); caseType = caseType)) ->
+                        if rangeContainsPos id.idRange pos then
+                            // No completions in a union case identifier
+                            Some CompletionContext.Invalid
+                        else
+                            match caseType with
+                            | SynUnionCaseKind.Fields fieldCases ->
+                                fieldCases
+                                |> List.tryPick (fun (SynField (idOpt = fieldIdOpt; range = fieldRange)) ->
+                                    match fieldIdOpt with
+                                    // No completions in a union case field identifier
+                                    | Some id when rangeContainsPos id.idRange pos -> Some CompletionContext.Invalid
+                                    | _ ->
+                                        if rangeContainsPos fieldRange pos then
+                                            Some CompletionContext.UnionCaseFieldsDeclaration
+                                        else
+                                            None)
+                            | _ -> None)
+
+                member _.VisitEnumDefn(_, _, _) =
+                    // No completions anywhere in an enum, except in attributes, which is established earlier in VisitAttributeApplication
+                    Some CompletionContext.Invalid
+
+                member _.VisitTypeAbbrev(_, _, range) =
+                    if rangeContainsPos range pos then
+                        Some CompletionContext.TypeAbbreviationOrSingleCaseUnion
+                    else
+                        None
+
+                member _.VisitAttributeApplication(_, attributes) =
+                    attributes.Attributes
+                    |> List.tryPick (fun att ->
+                        // [<Att|()>]
+                        if rangeContainsPos att.TypeName.Range pos then
+                            Some CompletionContext.AttributeApplication
+                        // [<Att(M| = )>]
+                        elif rangeContainsPos att.ArgExpr.Range pos then
+                            Some(CompletionContext.ParameterList(att.TypeName.Range.End, findSetters att.ArgExpr))
+                        else
+                            None)
+            }
+
+        let ctxt = SyntaxTraversal.Traverse(pos, parsedInput, visitor)
+
+        match ctxt with
+        | Some _ -> ctxt
+        | _ -> TryGetCompletionContextOfAttributes(pos, lineStr)
 
     //--------------------------------------------------------------------------------------------
     // TryGetInsertionContext
@@ -1549,17 +1572,10 @@ module ParsedInput =
         SyntaxTraversal.Traverse(pos, parsedInput, visitor) |> ignore
         path |> List.map (fun x -> x.idText) |> List.toArray
 
-    /// An recursive pattern that collect all sequential expressions to avoid StackOverflowException
-    let rec (|Sequentials|_|) expr =
-        match expr with
-        | SynExpr.Sequential (_, _, e, Sequentials es, _) -> Some(e :: es)
-        | SynExpr.Sequential (_, _, e1, e2, _) -> Some [ e1; e2 ]
-        | _ -> None
-
     let (|ConstructorPats|) pats =
         match pats with
         | SynArgPats.Pats ps -> ps
-        | SynArgPats.NamePatPairs (xs, _) -> List.map (fun (_, _, pat) -> pat) xs
+        | SynArgPats.NamePatPairs (pats = xs) -> List.map (fun (_, _, pat) -> pat) xs
 
     /// Returns all `Ident`s and `LongIdent`s found in an untyped AST.
     let getLongIdents (parsedInput: ParsedInput) : IDictionary<pos, LongIdent> =
@@ -1582,8 +1598,8 @@ module ParsedInput =
         let addIdent (ident: Ident) =
             identsByEndPos[ident.idRange.End] <- [ ident ]
 
-        let rec walkImplFileInput (ParsedImplFileInput (modules = moduleOrNamespaceList)) =
-            List.iter walkSynModuleOrNamespace moduleOrNamespaceList
+        let rec walkImplFileInput (file: ParsedImplFileInput) =
+            List.iter walkSynModuleOrNamespace file.Contents
 
         and walkSynModuleOrNamespace (SynModuleOrNamespace (decls = decls; attribs = Attributes attrs)) =
             List.iter walkAttribute attrs
@@ -1613,14 +1629,14 @@ module ParsedInput =
             | SynTypeConstraint.WhereTyparIsDelegate (t, ts, _) ->
                 walkTypar t
                 List.iter walkType ts
-            | SynTypeConstraint.WhereTyparSupportsMember (ts, sign, _) ->
+            | SynTypeConstraint.WhereTyparSupportsMember (TypesForTypar ts, sign, _) ->
                 List.iter walkType ts
                 walkMemberSig sign
             | SynTypeConstraint.WhereSelfConstrained (ty, _) -> walkType ty
 
         and walkPat pat =
             match pat with
-            | SynPat.Tuple (_, pats, _)
+            | SynPat.Tuple (elementPats = pats)
             | SynPat.ArrayOrList (_, pats, _)
             | SynPat.Ands (pats, _) -> List.iter walkPat pats
             | SynPat.Named (SynIdent (ident, _), _, _, _) -> addIdent ident
@@ -1631,7 +1647,8 @@ module ParsedInput =
                 walkPat pat
                 List.iter walkAttribute attrs
             | SynPat.As (pat1, pat2, _)
-            | SynPat.Or (pat1, pat2, _, _) -> List.iter walkPat [ pat1; pat2 ]
+            | SynPat.Or (pat1, pat2, _, _)
+            | SynPat.ListCons (pat1, pat2, _, _) -> List.iter walkPat [ pat1; pat2 ]
             | SynPat.LongIdent (longDotId = ident; typarDecls = typars; argPats = ConstructorPats pats) ->
                 addLongIdentWithDots ident
 
@@ -1652,7 +1669,9 @@ module ParsedInput =
             List.iter walkAttribute attrs
             walkPat pat
             walkExpr e
-            returnInfo |> Option.iter (fun (SynBindingReturnInfo (t, _, _)) -> walkType t)
+
+            returnInfo
+            |> Option.iter (fun (SynBindingReturnInfo (typeName = t)) -> walkType t)
 
         and walkInterfaceImpl (SynInterfaceImpl (bindings = bindings)) = List.iter walkBinding bindings
 
@@ -1661,9 +1680,10 @@ module ParsedInput =
             | SynType.Array (_, t, _)
             | SynType.HashConstraint (t, _)
             | SynType.MeasurePower (t, _, _)
-            | SynType.Paren (t, _) -> walkType t
+            | SynType.Paren (t, _)
+            | SynType.SignatureParameter (usedType = t) -> walkType t
             | SynType.Fun (argType = t1; returnType = t2)
-            | SynType.MeasureDivide (t1, t2, _) ->
+            | SynType.Or (t1, t2, _, _) ->
                 walkType t1
                 walkType t2
             | SynType.LongIdent ident -> addLongIdentWithDots ident
@@ -1675,7 +1695,15 @@ module ParsedInput =
             | SynType.WithGlobalConstraints (t, typeConstraints, _) ->
                 walkType t
                 List.iter walkTypeConstraint typeConstraints
-            | _ -> ()
+            | SynType.StaticConstantExpr (e, _) -> walkExpr e
+            | SynType.StaticConstantNamed (ident, value, _) ->
+                walkType ident
+                walkType value
+            | SynType.Anon _
+            | SynType.AnonRecd _
+            | SynType.Var _
+            | SynType.StaticConstant _
+            | SynType.FromParseError _ -> ()
 
         and walkClause (SynMatchClause (pat = pat; whenExpr = e1; resultExpr = e2)) =
             walkPat pat
@@ -1684,10 +1712,7 @@ module ParsedInput =
 
         and walkSimplePats spats =
             match spats with
-            | SynSimplePats.SimplePats (pats, _) -> List.iter walkSimplePat pats
-            | SynSimplePats.Typed (pats, ty, _) ->
-                walkSimplePats pats
-                walkType ty
+            | SynSimplePats.SimplePats (pats = pats) -> List.iter walkSimplePat pats
 
         and walkExpr expr =
             match expr with
@@ -1803,7 +1828,7 @@ module ParsedInput =
                     walkExpr eAndBang
 
                 walkExpr e2
-            | SynExpr.TraitCall (ts, sign, e, _) ->
+            | SynExpr.TraitCall (TypesForTypar ts, sign, e, _) ->
                 List.iter walkType ts
                 walkMemberSig sign
                 walkExpr e
@@ -1834,7 +1859,7 @@ module ParsedInput =
                 walkType t
             | _ -> ()
 
-        and walkField (SynField (Attributes attrs, _, _, t, _, _, _, _)) =
+        and walkField (SynField (attributes = Attributes attrs; fieldType = t)) =
             List.iter walkAttribute attrs
             walkType t
 
@@ -1850,7 +1875,7 @@ module ParsedInput =
             match membSig with
             | SynMemberSig.Inherit (t, _)
             | SynMemberSig.Interface (t, _) -> walkType t
-            | SynMemberSig.Member (vs, _, _) -> walkValSig vs
+            | SynMemberSig.Member (memberSig = vs) -> walkValSig vs
             | SynMemberSig.ValField (f, _) -> walkField f
             | SynMemberSig.NestedType (nestedType = typeDefn) ->
                 let (SynTypeDefnSig (typeInfo = info; typeRepr = repr; members = memberSigs)) =
@@ -1869,12 +1894,12 @@ module ParsedInput =
 
         and walkMember memb =
             match memb with
-            | SynMemberDefn.AbstractSlot (valSig, _, _) -> walkValSig valSig
+            | SynMemberDefn.AbstractSlot (slotSig = valSig) -> walkValSig valSig
             | SynMemberDefn.Member (binding, _) -> walkBinding binding
             | SynMemberDefn.GetSetMember (getBinding, setBinding, _, _) ->
                 Option.iter walkBinding getBinding
                 Option.iter walkBinding setBinding
-            | SynMemberDefn.ImplicitCtor (_, Attributes attrs, SynSimplePats.SimplePats (simplePats, _), _, _, _) ->
+            | SynMemberDefn.ImplicitCtor (attributes = Attributes attrs; ctorArgs = SynSimplePats.SimplePats (pats = simplePats)) ->
                 List.iter walkAttribute attrs
                 List.iter walkSimplePat simplePats
             | SynMemberDefn.ImplicitInherit (t, e, _, _) ->
@@ -1885,7 +1910,7 @@ module ParsedInput =
                 walkType t
                 members |> Option.iter (List.iter walkMember)
             | SynMemberDefn.Inherit (t, _, _) -> walkType t
-            | SynMemberDefn.ValField (field, _) -> walkField field
+            | SynMemberDefn.ValField (fieldInfo = field) -> walkField field
             | SynMemberDefn.NestedType (tdef, _, _) -> walkTypeDefn tdef
             | SynMemberDefn.AutoProperty (attributes = Attributes attrs; typeOpt = t; synExpr = e) ->
                 List.iter walkAttribute attrs
@@ -2020,10 +2045,7 @@ module ParsedInput =
                     result <- Some(oldScope, oldPos, true)
                 | Some (oldScope, oldPos, _), _ ->
                     match kind, oldScope.Kind with
-                    | (Namespace
-                      | NestedModule
-                      | TopModule),
-                      OpenDeclaration
+                    | (Namespace | NestedModule | TopModule), OpenDeclaration
                     | _ when oldPos.Line <= line ->
                         result <-
                             Some(
@@ -2054,8 +2076,8 @@ module ParsedInput =
                 | _ -> None
                 |> Option.map (fun r -> r.StartColumn)
 
-        let rec walkImplFileInput (ParsedImplFileInput (modules = moduleOrNamespaceList)) =
-            List.iter (walkSynModuleOrNamespace []) moduleOrNamespaceList
+        let rec walkImplFileInput (file: ParsedImplFileInput) =
+            List.iter (walkSynModuleOrNamespace []) file.Contents
 
         and walkSynModuleOrNamespace (parent: LongIdent) modul =
             let (SynModuleOrNamespace (longId = ident; kind = kind; decls = decls; range = range)) =

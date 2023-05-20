@@ -8,6 +8,7 @@ open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.ComponentModelHost
 
 module internal OptionsUIHelpers =
+    open System
 
     [<AbstractClass>]
     type AbstractOptionPage<'options>() as this =
@@ -23,9 +24,9 @@ module internal OptionsUIHelpers =
             // lazy, so GetService is called from UI thread
             lazy
                 let scm = this.Site.GetService(typeof<SComponentModel>) :?> IComponentModel
-                scm.GetService<IPersistSettings>()
+                scm.GetService<SettingsStore.ISettingsStore>()
 
-        abstract CreateView : unit -> FrameworkElement
+        abstract CreateView: unit -> FrameworkElement
 
         override this.Child = upcast view.Value
 
@@ -36,7 +37,7 @@ module internal OptionsUIHelpers =
                 view.Value.DataContext <- optionService.Value.LoadSettings<'options>()
                 needsLoadOnNextActivate <- false
 
-        override this.SaveSettingsToStorage() = 
+        override this.SaveSettingsToStorage() =
             downcast view.Value.DataContext |> optionService.Value.SaveSettings<'options>
             // Make sure we load the next time the page is activated, in case if options changed
             // programmatically between now and the next time the page is activated
@@ -54,24 +55,66 @@ module internal OptionsUIHelpers =
             // This second one is tricky, because we don't actually want to update our controls
             // right then, because they'd be wrong the next time the page opens -- it's possible
             // they may have been changed programmatically. Therefore, we'll set a flag so we load
-            // next time         
+            // next time
             needsLoadOnNextActivate <- true
 
-        member this.GetService<'T when 'T : not struct>() =
+        member this.GetService<'T when 'T: not struct>() =
             let scm = this.Site.GetService(typeof<SComponentModel>) :?> IComponentModel
             scm.GetService<'T>()
 
     //data binding helpers
     let radioButtonCoverter =
-      { new IValueConverter with
-            member this.Convert(value, _, parameter, _) =
-                upcast value.Equals(parameter)
-            member this.ConvertBack(value, _, parameter, _) =
-                if value.Equals(true) then parameter else Binding.DoNothing }
-                
+        { new IValueConverter with
+            member _.Convert(value, _, parameter, _) = upcast value.Equals(parameter)
+
+            member _.ConvertBack(value, _, parameter, _) =
+                if value.Equals(true) then parameter else Binding.DoNothing
+        }
+
     let bindRadioButton (radioButton: RadioButton) path value =
-        let binding = Binding (path, Converter = radioButtonCoverter, ConverterParameter = value)
+        let binding =
+            Binding(path, Converter = radioButtonCoverter, ConverterParameter = value)
+
         radioButton.SetBinding(RadioButton.IsCheckedProperty, binding) |> ignore
 
     let bindCheckBox (checkBox: CheckBox) (path: string) =
         checkBox.SetBinding(CheckBox.IsCheckedProperty, path) |> ignore
+
+    let bindDescriptionWidthTextBox (tb: TextBox) path =
+        let intOptionConverter =
+            { new IValueConverter with
+                member _.Convert(value, _, _, _) =
+                    try
+                        value :?> int option
+                        |> Option.map Convert.ToString
+                        |> Option.defaultValue ""
+                        |> box
+                    with _ ->
+                        Binding.DoNothing
+
+                member _.ConvertBack(value, _, _, _) =
+                    try
+                        Convert.ToInt32(value) |> Some |> box
+                    with _ ->
+                        None
+            }
+
+        let binding =
+            Binding(path, Converter = intOptionConverter, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged)
+
+        binding.ValidationRules.Add(
+            { new ValidationRule() with
+                member _.Validate(value, _) =
+                    try
+                        if String.IsNullOrWhiteSpace(downcast value) then
+                            ValidationResult.ValidResult
+                        else
+                            match Convert.ToInt32(value) with
+                            | n when n >= 20 -> ValidationResult.ValidResult
+                            | _ -> ValidationResult(false, "")
+                    with _ ->
+                        ValidationResult(false, "")
+            }
+        )
+
+        tb.SetBinding(TextBox.TextProperty, binding) |> ignore

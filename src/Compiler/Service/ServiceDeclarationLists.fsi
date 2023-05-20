@@ -17,6 +17,8 @@ open FSharp.Compiler.AccessibilityLogic
 [<RequireQualifiedAccess>]
 type public ToolTipElementData = 
     {
+      Symbol: FSharpSymbol option
+
       MainDescription: TaggedText[]
 
       XmlDoc: FSharpXmlDoc
@@ -31,6 +33,8 @@ type public ToolTipElementData =
       ParamName: string option
     }
 
+    static member internal Create: layout: TaggedText[] * xml: FSharpXmlDoc * ?typeMapping: TaggedText[] list * ?paramName: string * ?remarks: TaggedText[] * ?symbol: FSharpSymbol  -> ToolTipElementData
+
 /// A single tool tip display element
 //
 // Note: instances of this type do not hold any references to any compiler resources.
@@ -44,7 +48,7 @@ type public ToolTipElement =
     /// An error occurred formatting this element
     | CompositionError of errorText: string
 
-    static member Single: layout: TaggedText[] * xml: FSharpXmlDoc * ?typeMapping: TaggedText[] list * ?paramName: string * ?remarks: TaggedText[]  -> ToolTipElement
+    static member Single: layout: TaggedText[] * xml: FSharpXmlDoc * ?typeMapping: TaggedText[] list * ?paramName: string * ?remarks: TaggedText[] * ?symbol: FSharpSymbol  -> ToolTipElement
 
 /// Information for building a tool tip box.
 //
@@ -224,7 +228,7 @@ type public MethodGroup =
     static member internal Empty: MethodGroup
 
 module internal DeclarationListHelpers =
-    val FormatStructuredDescriptionOfItem: isDecl:bool -> InfoReader -> AccessorDomain -> range -> DisplayEnv -> ItemWithInst -> ToolTipElement
+    val FormatStructuredDescriptionOfItem: isDecl:bool -> InfoReader -> AccessorDomain -> range -> DisplayEnv -> ItemWithInst -> FSharpSymbol option -> int option -> ToolTipElement
 
     val RemoveDuplicateCompletionItems: TcGlobals -> CompletionItem list -> CompletionItem list
 

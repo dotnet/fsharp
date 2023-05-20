@@ -128,11 +128,11 @@
 - System reserved names, including 'CON', 'AUX', PRN', 'COM1' or 'LPT2' 
 - contain only '.'
 - have any of the following characters: / ? : &amp;  \ * " &lt; &gt; | # %</source>
-        <target state="translated">Файлы и папки не могут:
+        <target state="translated">Имена файлов и папок не могут:
 – быть пустыми строками; 
 – совпадать с именами, зарезервированными системой, например CON, AUX, PRN, COM1 или LPT2; 
 – содержать только "."; 
-– содержать символы / ? : &amp; \ * " &lt; &gt; | # %.</target>
+– содержать символы / ? : &amp;  \ * " &lt; &gt; | # %</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorInvalidProjectName">
@@ -672,7 +672,7 @@
       </trans-unit>
       <trans-unit id="NoZeroImpactProjects">
         <source>Microsoft Visual F# does not support zero-impact projects. To create an F# project from this project template, either go to the Visual Studio menu 'Tools, Options..., Projects and Solutions, General' and check the box marked 'Save new projects when created', or specify &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt; in the &lt;TemplateData&gt; section of this project template's .vstemplate file, and then retry this operation.</source>
-        <target state="translated">Microsoft Visual F# не поддерживает проекты с нулевым влиянием. Чтобы создать проект F# из этого шаблона проекта, последовательно выберите в меню Visual Studio "Сервис" команды "Параметры", "Проекты и решения", "Общие", а затем установите флажок "Сохранять новые проекты в момент создания" либо укажите &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt; в разделе &lt;TemplateData&gt; файла .vstemplate этого шаблона, а затем повторите операцию.</target>
+        <target state="translated">Microsoft Visual F# не поддерживает временные проекты. Чтобы создать проект F# из этого шаблона, в меню Visual Studio "Сервис" последовательно выберите "Параметры…", "Проекты и решения", "Общие" и установите флажок "Сохранять новые проекты в момент создания" либо в файле .vstemplate этого шаблона укажите в разделе &lt;TemplateData&gt; значение &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt;, после чего повторите операцию.</target>
         <note />
       </trans-unit>
       <trans-unit id="NoWildcardsInProject">

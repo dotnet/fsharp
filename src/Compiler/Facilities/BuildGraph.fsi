@@ -3,6 +3,7 @@
 module internal FSharp.Compiler.BuildGraph
 
 open System
+open System.Diagnostics
 open System.Threading
 open System.Threading.Tasks
 open FSharp.Compiler.DiagnosticsLogger
@@ -43,9 +44,11 @@ type NodeCodeBuilder =
 
     member Combine: x1: NodeCode<unit> * x2: NodeCode<'T> -> NodeCode<'T>
 
-    /// A limited form 'use' for establishing the compilation globals.  (Note
-    /// that a proper generic 'use' could be implemented but has not currently been necessary)
+    /// A limited form 'use' for establishing the compilation globals.
     member Using: CompilationGlobalsScope * (CompilationGlobalsScope -> NodeCode<'T>) -> NodeCode<'T>
+
+    /// A generic 'use' that disposes of the IDisposable at the end of the computation.
+    member Using: IDisposable * (IDisposable -> NodeCode<'T>) -> NodeCode<'T>
 
 /// Specifies code that can be run as part of the build graph.
 val node: NodeCodeBuilder
@@ -64,6 +67,14 @@ type NodeCode =
     static member CancellationToken: NodeCode<CancellationToken>
 
     static member Sequential: computations: NodeCode<'T> seq -> NodeCode<'T[]>
+
+    static member Parallel: computations: (NodeCode<'T> seq) -> NodeCode<'T[]>
+
+    static member AwaitAsync: computation: Async<'T> -> NodeCode<'T>
+
+    static member AwaitTask: task: Task<'T> -> NodeCode<'T>
+
+    static member AwaitTask: task: Task -> NodeCode<unit>
 
     /// Execute the cancellable computation synchronously using the ambient cancellation token of
     /// the NodeCode.
@@ -90,12 +101,11 @@ module internal GraphNode =
 [<Sealed>]
 type internal GraphNode<'T> =
 
-    /// - retryCompute - When set to 'true', subsequent requesters will retry the computation if the first-in request cancels. Retrying computations will have better callstacks.
     /// - computation - The computation code to run.
-    new: retryCompute: bool * computation: NodeCode<'T> -> GraphNode<'T>
-
-    /// By default, 'retryCompute' is 'true'.
     new: computation: NodeCode<'T> -> GraphNode<'T>
+
+    /// Creates a GraphNode with given result already cached.
+    static member FromResult: 'T -> GraphNode<'T>
 
     /// Return NodeCode which, when executed, will get the value of the computation if already computed, or
     /// await an existing in-progress computation for the node if one exists, or else will synchronously

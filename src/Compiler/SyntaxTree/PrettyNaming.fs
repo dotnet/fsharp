@@ -224,6 +224,7 @@ let keywordsWithDescription: (string * string) list =
         "rec", FSComp.SR.keywordDescriptionRec ()
         "return", FSComp.SR.keywordDescriptionReturn ()
         "return!", FSComp.SR.keywordDescriptionReturnBang ()
+        "sig", FSComp.SR.keywordDescriptionSig ()
         "static", FSComp.SR.keywordDescriptionStatic ()
         "struct", FSComp.SR.keywordDescriptionStruct ()
         "then", FSComp.SR.keywordDescriptionThen ()
@@ -1075,13 +1076,6 @@ let mkExceptionFieldName =
 let FsiDynamicModulePrefix = "FSI_"
 
 [<RequireQualifiedAccess>]
-module FSharpLib =
-    let Root = "Microsoft.FSharp"
-    let RootPath = IL.splitNamespace Root
-    let Core = Root + ".Core"
-    let CorePath = IL.splitNamespace Core
-
-[<RequireQualifiedAccess>]
 module CustomOperations =
     [<Literal>]
     let Into = "into"
@@ -1097,15 +1091,23 @@ let GetLongNameFromString x = SplitNamesForILPath x
 // Resource format for pickled data
 //--------------------------------------------------------------------------
 
+// Uncompressed OptimizationData/SignatureData name for embedded resource
 let FSharpOptimizationDataResourceName = "FSharpOptimizationData."
 
 let FSharpSignatureDataResourceName = "FSharpSignatureData."
 
+// Compressed OptimizationData/SignatureData name for embedded resource
+let FSharpOptimizationCompressedDataResourceName =
+    "FSharpOptimizationCompressedData."
+
+let FSharpSignatureCompressedDataResourceName = "FSharpSignatureCompressedData."
+
 // For historical reasons, we use a different resource name for FSharp.Core, so older F# compilers
 // don't complain when they see the resource. The prefix of these names must not be 'FSharpOptimizationData'
 // or 'FSharpSignatureData'
-let FSharpOptimizationDataResourceName2 = "FSharpOptimizationInfo."
 
+// Uncompressed OptimizationData/SignatureData name for FSharp.Core embedded resources
+let FSharpOptimizationDataResourceName2 = "FSharpOptimizationInfo."
 let FSharpSignatureDataResourceName2 = "FSharpSignatureInfo."
 
 [<Literal>]

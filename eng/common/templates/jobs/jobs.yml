@@ -21,7 +21,7 @@ parameters:
     # Optional: Include toolset dependencies in the generated graph files
     includeToolset: false
     
-  # Required: A collection of jobs to run - https://docs.microsoft.com/en-us/azure/devops/pipelines/yaml-schema?view=vsts&tabs=schema#job
+  # Required: A collection of jobs to run - https://learn.microsoft.com/azure/devops/pipelines/yaml-schema?view=vsts&tabs=schema#job
   jobs: []
 
   # Optional: Override automatically derived dependsOn value for "publish build assets" job
@@ -88,15 +88,6 @@ jobs:
             - ${{ job.job }}
         - ${{ if eq(parameters.enableSourceBuild, true) }}:
           - Source_Build_Complete
-        pool:
-          # We don't use the collection uri here because it might vary (.visualstudio.com vs. dev.azure.com)
-          ${{ if eq(variables['System.TeamProject'], 'DevDiv') }}:
-            name: VSEngSS-MicroBuild2022-1ES
-            demands: Cmd
-          # If it's not devdiv, it's dnceng
-          ${{ if ne(variables['System.TeamProject'], 'DevDiv') }}:
-            name: NetCore1ESPool-Internal
-            demands: ImageOverride -equals Build.Server.Amd64.VS2019
 
         runAsPublic: ${{ parameters.runAsPublic }}
         publishUsingPipelines: ${{ parameters.enablePublishUsingPipelines }}

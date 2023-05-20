@@ -57,62 +57,11 @@
     <Compile Include="LegacyProjectSystem\Tests.ProjectSystem.References.fs" />
     <Compile Include="LegacyProjectSystem\Tests.ProjectSystem.RoundTrip.fs" />
     <Compile Include="LegacyProjectSystem\Tests.ProjectSystem.UpToDate.fs" />
+	  <Compile Include="DocCommentIdParserTests.fs">
+		  <Link>CompilerService\DocCommentIdParserTests.fs</Link>
+	  </Compile>
     <Compile Include="UnusedOpensTests.fs">
       <Link>CompilerService\UnusedOpensTests.fs</Link>
-    </Compile>
-    <Compile Include="ProjectOptionsBuilder.fs">
-      <Link>Editor\ProjectOptionsBuilder.fs</Link>
-    </Compile>
-    <Compile Include="SyntacticColorizationServiceTests.fs">
-      <Link>Editor\SyntacticColorizationServiceTests.fs</Link>
-    </Compile>
-    <Compile Include="SemanticColorizationServiceTests.fs">
-      <Link>Editor\SemanticColorizationServiceTests.fs</Link>
-    </Compile>
-    <Compile Include="BraceMatchingServiceTests.fs">
-      <Link>Editor\BraceMatchingServiceTests.fs</Link>
-    </Compile>
-    <Compile Include="EditorFormattingServiceTests.fs">
-        <Link>Editor\EditorFormattingServiceTests.fs</Link>
-    </Compile>
-    <Compile Include="RoslynSourceTextTests.fs">
-      <Link>Editor\RoslynSourceTextTests.fs</Link>
-    </Compile>
-    <Compile Include="IndentationServiceTests.fs">
-      <Link>Editor\IndentationServiceTests.fs</Link>
-    </Compile>
-    <Compile Include="BreakpointResolutionService.fs">
-      <Link>Editor\BreakpointResolutionService.fs</Link>
-    </Compile>
-    <Compile Include="LanguageDebugInfoServiceTests.fs">
-      <Link>Editor\LanguageDebugInfoServiceTests.fs</Link>
-    </Compile>
-    <Compile Include="DocumentDiagnosticAnalyzerTests.fs">
-      <Link>Editor\DocumentDiagnosticAnalyzerTests.fs</Link>
-    </Compile>
-    <Compile Include="CompletionProviderTests.fs">
-      <Link>Editor\CompletionProviderTests.fs</Link>
-    </Compile>
-    <Compile Include="FsxCompletionProviderTests.fs">
-      <Link>Editor\FsxCompletionProviderTests.fs</Link>
-    </Compile>
-    <Compile Include="SignatureHelpProviderTests.fs">
-      <Link>Editor\SignatureHelpProviderTests.fs</Link>
-    </Compile>
-    <Compile Include="QuickInfoTests.fs">
-      <Link>Editor\QuickInfoTests.fs</Link>
-    </Compile>
-    <Compile Include="GoToDefinitionServiceTests.fs">
-      <Link>Editor\GoToDefinitionServiceTests.fs</Link>
-    </Compile>
-    <Compile Include="QuickInfoProviderTests.fs">
-      <Link>Editor\QuickInfoProviderTests.fs</Link>
-    </Compile>
-    <Compile Include="HelpContextServiceTests.fs">
-      <Link>Editor\HelpContextServiceTests.fs</Link>
-    </Compile>
-    <Compile Include="DocumentHighlightsServiceTests.fs">
-      <Link>Editor\DocumentHighlightsServiceTests.fs</Link>
     </Compile>
     <NoneSubstituteText Include="App.config">
       <Pattern1>{{FSCoreVersion}}</Pattern1>
@@ -165,9 +114,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures.Text" Version="$(MicrosoftCodeAnalysisEditorFeaturesTextVersion)" />
-    <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures" Version="$(MicrosoftCodeAnalysisEditorFeaturesVersion)" />
     <PackageReference Include="Microsoft.CodeAnalysis.ExternalAccess.FSharp" Version="$(MicrosoftCodeAnalysisExternalAccessFSharpVersion)" />
-    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(MicrosoftCodeAnalysisWorkspacesCommonVersion)" />
     <PackageReference Include="Microsoft.Internal.VisualStudio.Interop" Version="$(MicrosoftInternalVisualStudioInteropVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.VisualStudio.ComponentModelHost" Version="$(MicrosoftVisualStudioComponentModelHostVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.CoreUtility" Version="$(MicrosoftVisualStudioCoreUtilityVersion)" />
@@ -192,8 +139,8 @@
     <PackageReference Include="Microsoft.VisualStudio.Threading" Version="$(MicrosoftVisualStudioThreadingVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.Utilities" Version="$(MicrosoftVisualStudioUtilitiesVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.Validation" Version="$(MicrosoftVisualStudioValidationVersion)" />
-    <PackageReference Include="Nerdbank.Streams" Version="$(NerdbankStreamsVersion)" />
     <PackageReference Include="StreamJsonRpc" Version="$(StreamJsonRpcVersion)" />
+    <PackageReference Include="Nerdbank.Streams" Version="$(NerdbankStreamsVersion)" />
   </ItemGroup>
 
 </Project>

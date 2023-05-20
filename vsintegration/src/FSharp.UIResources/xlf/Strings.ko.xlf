@@ -2,34 +2,44 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ko" original="../Strings.resx">
     <body>
+      <trans-unit id="AdditionalTelemetry">
+        <source>Additional performance telemetry (experimental)</source>
+        <target state="new">Additional performance telemetry (experimental)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Always_place_opens_at_top_level">
         <source>Always place open statements at the top level</source>
         <target state="translated">항상 최상위에 open 문 배치</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens">
-        <source>CodeLens</source>
-        <target state="translated">CodeLens</target>
+      <trans-unit id="Enable_Fast_Find_References">
+        <source>Enable fast find references &amp; rename (experimental)</source>
+        <target state="translated">빠른 찾기 참조 및 이름 바꾸기 사용(실험적)</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens_Replace_LineLens">
-        <source>Show annotations to the right instead of above the line</source>
-        <target state="translated">선 위가 아니라 오른쪽에 주석 표시</target>
+      <trans-unit id="Enable_Live_Buffers">
+        <source>Use live (unsaved) buffers for checking (restart required)</source>
+        <target state="translated">확인에 라이브(저장되지 않은) 버퍼 사용(다시 시작 필요)</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens_Switch">
-        <source>Enable CodeLens (Experimental)</source>
-        <target state="translated">CodeLens 사용(실험적)</target>
+      <trans-unit id="Enable_partial_type_checking">
+        <source>Enable partial type checking</source>
+        <target state="translated">부분 형식 검사 사용</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens_Prefix">
-        <source>Annotation prefix</source>
-        <target state="translated">주석 접두사</target>
+      <trans-unit id="Find_References_Performance">
+        <source>Find References Performance Options</source>
+        <target state="translated">참조 성능 옵션 찾기</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens_UseColors">
-        <source>Use colors in annotations</source>
-        <target state="translated">주석에서 색 사용</target>
+      <trans-unit id="Formatting">
+        <source>Formatting</source>
+        <target state="translated">서식</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Inline_Hints">
+        <source>Inline Hints</source>
+        <target state="translated">인라인 힌트</target>
         <note />
       </trans-unit>
       <trans-unit id="Code_Fixes">
@@ -47,6 +57,11 @@
         <target state="translated">진단</target>
         <note />
       </trans-unit>
+      <trans-unit id="Enable_Parallel_Reference_Resolution">
+        <source>Enable parallel reference resolution</source>
+        <target state="translated">병렬 참조 해상도 사용</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Language_Service_Performance">
         <source>Performance</source>
         <target state="translated">성능</target>
@@ -62,9 +77,44 @@
         <target state="translated">점 밑줄(_O)</target>
         <note />
       </trans-unit>
+      <trans-unit id="LiveBuffers">
+        <source>Live Buffers (experimental)</source>
+        <target state="translated">라이브 버퍼(실험적)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Navigation_links">
         <source>Navigation links</source>
         <target state="translated">탐색 링크</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parallelization">
+        <source>Parallelization (requires restart)</source>
+        <target state="translated">병렬화(다시 시작 필요)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Preferred_description_width_in_characters">
+        <source>Preferred description width in characters</source>
+        <target state="translated">기본 설정 설명 너비(문자)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Send_Additional_Telemetry">
+        <source>Send additional performance telemetry</source>
+        <target state="new">Send additional performance telemetry</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Inline_Parameter_Name_Hints">
+        <source>Display inline parameter name hints (preview)</source>
+        <target state="translated">인라인 매개 변수 이름 힌트 표시(미리 보기)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Inline_Type_Hints">
+        <source>Display inline type hints (preview)</source>
+        <target state="translated">인라인 형식 힌트 표시(미리 보기)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Return_Type_Hints">
+        <source>Display return type hints (preview)</source>
+        <target state="new">Display return type hints (preview)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_all_symbols">
@@ -80,16 +130,6 @@
       <trans-unit id="Show_completion_list_after_a_character_is_typed">
         <source>_Show completion list after a character is typed</source>
         <target state="translated">문자를 입력하면 완성 목록 표시(_S)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Enable_in_memory_cross_project_references">
-        <source>_Enable in-memory cross project references</source>
-        <target state="translated">메모리 내 크로스 프로젝트 참조 사용(_E)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Project_check_cache_size">
-        <source>Number of projects whose data is cached in memory</source>
-        <target state="translated">메모리에 데이터가 캐시된 프로젝트 수</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_navigation_links_as">
@@ -110,6 +150,11 @@
       <trans-unit id="Text_hover">
         <source>Text hover</source>
         <target state="translated">텍스트 호버</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Tooltip_preferred_description_width_in_characters">
+        <source>Format signature to the given width by adding line breaks conforming with F# syntax rules. </source>
+        <target state="translated">F# 구문 규칙에 맞는 줄 바꿈을 추가하여 지정된 너비에 시그니처의 서식을 지정합니다. </target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
@@ -162,16 +207,6 @@
         <target state="translated">IntelliSense 기능에 대해 부실 데이터 사용</target>
         <note />
       </trans-unit>
-      <trans-unit id="Tooltip_in_memory_cross_project_references">
-        <source>In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</source>
-        <target state="translated">메모리 내 크로스 프로젝트 참조가 메모리에 프로젝트 수준 데이터를 저장하여 IDE 기능이 프로젝트에서 작동하도록 합니다.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Tooltip_project_check_cache_size">
-        <source>Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</source>
-        <target state="translated">프로젝트 데이터가 IDE 기능에 대해 캐시됩니다. 값이 클수록 프로제트가 더 많이 캐시되므로 메모리를 더 많이 사용합니다. 이 값을 조정해도 중소 규모 솔루션에 영향을 미치지 않습니다.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Enter_key_always">
         <source>Always add new line on enter</source>
         <target state="translated">입력 시 새 줄 항상 추가</target>
@@ -200,6 +235,11 @@
       <trans-unit id="Suggest_names_for_errors_code_fix">
         <source>Suggest names for unresolved identifiers</source>
         <target state="translated">확인되지 않은 식별자의 이름 제안</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Use_syntax_tree_cache">
+        <source>Cache parsing results (experimental)</source>
+        <target state="translated">캐시 구문 분석 결과(실험적)</target>
         <note />
       </trans-unit>
     </body>

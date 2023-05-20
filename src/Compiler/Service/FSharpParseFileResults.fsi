@@ -40,7 +40,7 @@ type public FSharpParseFileResults =
     member TryRangeOfFunctionOrMethodBeingApplied: pos: pos -> range option
 
     /// Gets the ranges of all arguments, if they can be found, for a function application at the given position.
-    member GetAllArgumentsForFunctionApplicationAtPostion: pos: pos -> range list option
+    member GetAllArgumentsForFunctionApplicationAtPosition: pos: pos -> range list option
 
     /// <summary>
     /// Given the position of an expression, attempts to find the range of the
@@ -51,6 +51,10 @@ type public FSharpParseFileResults =
 
     /// Gets the range of an expression being dereferenced. For `!expr`, gives the range of `expr`
     member TryRangeOfExpressionBeingDereferencedContainingPos: expressionPos: pos -> range option
+
+    /// Gets the range of where a return type hint could be placed for a function binding. This will be right in front of the equals sign.
+    /// Returns None if type annotation is present.
+    member TryRangeOfReturnTypeHint: symbolUseStart: pos * ?skipLambdas: bool -> range option
 
     /// Notable parse info for ParameterInfo at a given location
     member FindParameterLocations: pos: pos -> ParameterLocations option

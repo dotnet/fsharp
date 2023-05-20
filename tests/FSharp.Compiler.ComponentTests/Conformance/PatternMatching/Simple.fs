@@ -57,7 +57,7 @@ module Simple =
         | _ -> failwith "Match failed"
         """
         |> asExe
-        |> withLangVersionPreview
+        |> withLangVersion60
         |> compileExeAndRun
         |> shouldSucceed
 

@@ -26,9 +26,6 @@ type WCHAR = Char
 type WORD = uint16
 
 let inline WORD s = uint16 s
-let inline DWORD s = uint32 s
-let inline WCHAR s = char s
-let inline BYTE s = byte s
 
 type ResourceException(name: string, ?inner: Exception MaybeNull) =
     inherit Exception(name, Option.toObj inner)

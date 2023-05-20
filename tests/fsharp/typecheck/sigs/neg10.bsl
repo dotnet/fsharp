@@ -29,7 +29,7 @@ neg10.fs(25,16,25,53): typecheck error FS0001: This type parameter cannot be ins
 
 neg10.fs(54,17,54,20): typecheck error FS0060: Override implementations in augmentations are now deprecated. Override implementations should be given as part of the initial declaration of a type.
 
-neg10.fs(66,19,66,21): typecheck error FS0069: Interface implementations in augmentations are now deprecated. Interface implementations should be given on the initial declaration of a type.
+neg10.fs(66,19,66,21): typecheck error FS0069: Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using #nowarn "69" if you have checked this is not the case.
 
 neg10.fs(77,13,77,34): typecheck error FS0896: Enumerations cannot have members
 
@@ -245,5 +245,3 @@ neg10.fs(455,25,455,26): typecheck error FS0001: The type 'C' does not support a
 neg10.fs(456,24,456,25): typecheck error FS0001: The type 'C' does not support a conversion to the type 'int64'
 
 neg10.fs(457,26,457,27): typecheck error FS0001: The type 'C' does not support a conversion to the type 'decimal'
-
-neg10.fsi(1,1,1,1): typecheck error FS0240: The signature file 'Neg10' does not have a corresponding implementation file. If an implementation file exists then check the 'module' and 'namespace' declarations in the signature and implementation files match.

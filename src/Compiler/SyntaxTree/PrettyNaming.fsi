@@ -58,6 +58,8 @@ val IsIdentifierName: name: string -> bool
 /// TBD: needs unit testing
 val IsActivePatternName: name: string -> bool
 
+val internal DoesIdentifierNeedBackticks: string -> bool
+
 /// Adds double backticks if necessary to make a valid identifier, e.g.
 ///     op_Addition  -->  op_Addition
 ///     +            -->  ``+``    (this is not op_Addition)
@@ -255,12 +257,6 @@ val internal mkExceptionFieldName: (int -> string)
 /// The prefix of the names used for the fake namespace path added to all dynamic code entries in FSI.EXE
 val FsiDynamicModulePrefix: string
 
-module internal FSharpLib =
-    val Root: string
-    val RootPath: string list
-    val Core: string
-    val CorePath: string list
-
 module internal CustomOperations =
     [<Literal>]
     val Into: string = "into"
@@ -270,6 +266,10 @@ val internal unassignedTyparName: string
 val internal FSharpOptimizationDataResourceName: string
 
 val internal FSharpSignatureDataResourceName: string
+
+val internal FSharpOptimizationCompressedDataResourceName: string
+
+val internal FSharpSignatureCompressedDataResourceName: string
 
 val internal FSharpOptimizationDataResourceName2: string
 

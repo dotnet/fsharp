@@ -20,7 +20,7 @@ module UnionTestsWithSignature =
     Hello.Goodbye.Utils.test "vwehlevw3" (not a.IsC)
 
 #if TESTS_AS_APP
-    let RUN() = !failures
+    let RUN() = !Hello.Goodbye.Utils.failures
 #else
     let aa =
       if not (!Hello.Goodbye.Utils.failures).IsEmpty then 

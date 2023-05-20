@@ -81,8 +81,6 @@ and MatchClause =
     member c.Target = let (MatchClause(_, _, tg, _)) = c in tg
     member c.BoundVals = let (MatchClause(_p, _whenOpt, TTarget(vs, _, _), _m)) = c in vs
 
-let debug = false
-
 //---------------------------------------------------------------------------
 // Nasty stuff to permit obscure generic bindings such as
 //     let x, y = [], []
@@ -143,7 +141,6 @@ let GetSubExprOfInput g (gtps, tyargs, tinst) (SubExpr(accessf, (ve2, v2))) =
 // The ints record which choices taken, e.g. tuple/record fields.
 type Path =
     | PathQuery of Path * Unique
-    | PathConj of Path * int
     | PathTuple of Path * TypeInst * int
     | PathRecd of Path * TyconRef * TypeInst * int
     | PathUnionConstr of Path * UnionCaseRef * TypeInst * int
@@ -154,7 +151,6 @@ type Path =
 let rec pathEq p1 p2 =
     match p1, p2 with
     | PathQuery(p1, n1), PathQuery(p2, n2) -> (n1 = n2) && pathEq p1 p2
-    | PathConj(p1, n1), PathConj(p2, n2) -> (n1 = n2) && pathEq p1 p2
     | PathTuple(p1, _, n1), PathTuple(p2, _, n2) -> (n1 = n2) && pathEq p1 p2
     | PathRecd(p1, _, _, n1), PathRecd(p2, _, _, n2) -> (n1 = n2) && pathEq p1 p2
     | PathUnionConstr(p1, _, _, n1), PathUnionConstr(p2, _, _, n2) -> (n1 = n2) && pathEq p1 p2
@@ -203,8 +199,6 @@ let RefuteDiscrimSet g m path discrims =
     let rec go path tm =
         match path with
         | PathQuery _ -> raise CannotRefute
-        | PathConj (p, _j) ->
-            go p tm
         | PathTuple (p, tys, j) ->
             let k, eCoversVals = mkOneKnown tm j tys
             go p (fun _ -> mkRefTupled g m k tys, eCoversVals)
@@ -391,8 +385,6 @@ type Frontier = Frontier of ClauseNumber * Actives * ValMap<Expr>
 type InvestigationPoint = Investigation of ClauseNumber * DecisionTreeTest * Path
 
 // Note: actives must be a SortedDictionary
-// REVIEW: improve these data structures, though surprisingly these functions don't tend to show up
-// on profiling runs
 let rec isMemOfActives p1 actives =
     match actives with
     | [] -> false
@@ -654,9 +646,9 @@ let isDiscrimSubsumedBy g amap m discrim taken =
     match taken, discrim with
     | DecisionTreeTest.IsInst (_, tgtTy1), DecisionTreeTest.IsInst (_, tgtTy2) ->
         computeWhatFailingTypeTestImpliesAboutTypeTest g amap m tgtTy1 tgtTy2 = Implication.Fails
-    | DecisionTreeTest.IsNull _, DecisionTreeTest.IsInst (_, tgtTy2) ->
+    | DecisionTreeTest.IsNull, DecisionTreeTest.IsInst (_, tgtTy2) ->
         computeWhatFailingNullTestImpliesAboutTypeTest g tgtTy2 = Implication.Fails
-    | DecisionTreeTest.IsInst (_, tgtTy1), DecisionTreeTest.IsNull _ ->
+    | DecisionTreeTest.IsInst (_, tgtTy1), DecisionTreeTest.IsNull ->
         computeWhatFailingTypeTestImpliesAboutNullTest g tgtTy1 = Implication.Fails
     | _ ->
         false
@@ -696,7 +688,7 @@ let discrimWithinSimultaneousClass g amap m discrim prev =
         // Check that each previous test in the set, if successful, gives some information about this test
         prev |> List.forall (fun edge -> 
             match edge with
-            | DecisionTreeTest.IsNull _ -> true
+            | DecisionTreeTest.IsNull -> true
             | DecisionTreeTest.IsInst (_, tgtTy1) -> computeWhatSuccessfulTypeTestImpliesAboutNullTest g tgtTy1 <> Implication.Nothing
             | _ -> false)
 
@@ -704,7 +696,7 @@ let discrimWithinSimultaneousClass g amap m discrim prev =
         // Check that each previous test in the set, if successful, gives some information about this test
         prev |> List.forall (fun edge -> 
             match edge with
-            | DecisionTreeTest.IsNull _ -> true
+            | DecisionTreeTest.IsNull -> true
             | DecisionTreeTest.IsInst (_, tgtTy1) -> computeWhatSuccessfulTypeTestImpliesAboutTypeTest g amap m tgtTy1 tgtTy2 <> Implication.Nothing
             | _ -> false)
 
@@ -898,14 +890,6 @@ let rec layoutPat pat =
     | TPat_tuple (_, pats, _, _)
     | TPat_array (pats, _, _) -> Layout.bracketL (Layout.tupleL (List.map layoutPat pats))
     | _ -> Layout.wordL (TaggedText.tagText "?")
-
-let layoutPath _p = Layout.wordL (TaggedText.tagText "<path>")
-
-let layoutActive (Active (path, _subexpr, pat)) =
-    Layout.(--) (Layout.wordL (TaggedText.tagText "Active")) (Layout.tupleL [layoutPath path; layoutPat pat])
-
-let layoutFrontier (Frontier (i, actives, _)) =
-    Layout.(--) (Layout.wordL (TaggedText.tagText "Frontier ")) (Layout.tupleL [intL i; Layout.listL layoutActive actives])
 #endif
 
 let mkFrontiers investigations clauseNumber =
@@ -993,8 +977,6 @@ let rec isPatternDisjunctive inpPat =
 //---------------------------------------------------------------------------
 // The algorithm
 //---------------------------------------------------------------------------
-
-let getDiscrim (EdgeDiscrim(_, discrim, _)) = discrim
 
 let CompilePatternBasic
         (g: TcGlobals) denv amap tcVal infoReader mExpr mMatch
@@ -1507,7 +1489,7 @@ let CompilePatternBasic
                         // F# exception definitions are sealed.
                         []
 
-                | DecisionTreeTest.IsNull _ ->
+                | DecisionTreeTest.IsNull ->
                     match computeWhatSuccessfulNullTestImpliesAboutTypeTest g tgtTy1 with
                     | Implication.Succeeds -> [Frontier (i, newActives, valMap)]
                     | Implication.Fails -> []
@@ -1543,7 +1525,7 @@ let CompilePatternBasic
                     | Implication.Nothing ->
                         [frontier]
 
-                | DecisionTreeTest.IsNull _ ->
+                | DecisionTreeTest.IsNull ->
                     match computeWhatSuccessfulNullTestImpliesAboutTypeTest g tgtTy1 with
                     | Implication.Succeeds -> [Frontier (i, newActives, valMap)]
                     | Implication.Fails -> []
@@ -1624,7 +1606,7 @@ let CompilePatternBasic
             subPats |> List.collect (fun subPat -> BindProjectionPattern (Active(inpPath, inpExpr, subPat)) activeState)
 
         | TPat_conjs(subPats, _m) ->
-            let newActives = List.mapi (mkSubActive (fun path j -> PathConj(path, j)) (fun _j -> inpAccess)) subPats
+            let newActives = List.mapi (mkSubActive (fun path _j -> path) (fun _j -> inpAccess)) subPats
             BindProjectionPatterns newActives activeState
 
         | TPat_range (c1, c2, m) ->

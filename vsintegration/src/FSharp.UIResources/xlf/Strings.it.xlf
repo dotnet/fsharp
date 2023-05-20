@@ -2,34 +2,44 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="it" original="../Strings.resx">
     <body>
+      <trans-unit id="AdditionalTelemetry">
+        <source>Additional performance telemetry (experimental)</source>
+        <target state="new">Additional performance telemetry (experimental)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Always_place_opens_at_top_level">
         <source>Always place open statements at the top level</source>
         <target state="translated">Inserisci sempre le istruzioni OPEN al primo livello</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens">
-        <source>CodeLens</source>
-        <target state="translated">CodeLens</target>
+      <trans-unit id="Enable_Fast_Find_References">
+        <source>Enable fast find references &amp; rename (experimental)</source>
+        <target state="translated">Abilitare la ricerca rapida dei riferimenti e la ridenominazione (sperimentale)</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens_Replace_LineLens">
-        <source>Show annotations to the right instead of above the line</source>
-        <target state="translated">Mostra le annotazioni a destra anziché sopra la riga</target>
+      <trans-unit id="Enable_Live_Buffers">
+        <source>Use live (unsaved) buffers for checking (restart required)</source>
+        <target state="translated">Usa buffer in tempo reale (non salvati) per il controllo (riavvio necessario)</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens_Switch">
-        <source>Enable CodeLens (Experimental)</source>
-        <target state="translated">Abilita CodeLens (sperimentale)</target>
+      <trans-unit id="Enable_partial_type_checking">
+        <source>Enable partial type checking</source>
+        <target state="translated">Abilita il controllo parziale dei tipi</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens_Prefix">
-        <source>Annotation prefix</source>
-        <target state="translated">Prefisso annotazione</target>
+      <trans-unit id="Find_References_Performance">
+        <source>Find References Performance Options</source>
+        <target state="translated">Trovare opzioni prestazioni riferimenti</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens_UseColors">
-        <source>Use colors in annotations</source>
-        <target state="translated">Usa colori nelle annotazioni</target>
+      <trans-unit id="Formatting">
+        <source>Formatting</source>
+        <target state="translated">Formattazione</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Inline_Hints">
+        <source>Inline Hints</source>
+        <target state="translated">Suggerimenti inline</target>
         <note />
       </trans-unit>
       <trans-unit id="Code_Fixes">
@@ -47,6 +57,11 @@
         <target state="translated">Diagnostica</target>
         <note />
       </trans-unit>
+      <trans-unit id="Enable_Parallel_Reference_Resolution">
+        <source>Enable parallel reference resolution</source>
+        <target state="translated">Abilitare risoluzione riferimenti paralleli</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Language_Service_Performance">
         <source>Performance</source>
         <target state="translated">Prestazioni</target>
@@ -62,9 +77,44 @@
         <target state="translated">Sottolineatura _punteggiata</target>
         <note />
       </trans-unit>
+      <trans-unit id="LiveBuffers">
+        <source>Live Buffers (experimental)</source>
+        <target state="translated">Buffer in tempo reale (sperimentale)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Navigation_links">
         <source>Navigation links</source>
         <target state="translated">Collegamenti di navigazione</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parallelization">
+        <source>Parallelization (requires restart)</source>
+        <target state="translated">Parallelizzazione (richiede il riavvio)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Preferred_description_width_in_characters">
+        <source>Preferred description width in characters</source>
+        <target state="translated">Larghezza descrizione preferita in caratteri</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Send_Additional_Telemetry">
+        <source>Send additional performance telemetry</source>
+        <target state="new">Send additional performance telemetry</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Inline_Parameter_Name_Hints">
+        <source>Display inline parameter name hints (preview)</source>
+        <target state="translated">Visualizza suggerimenti per i nomi di parametro inline (anteprima)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Inline_Type_Hints">
+        <source>Display inline type hints (preview)</source>
+        <target state="translated">Visualizza suggerimenti di tipo inline (anteprima)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Return_Type_Hints">
+        <source>Display return type hints (preview)</source>
+        <target state="new">Display return type hints (preview)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_all_symbols">
@@ -80,16 +130,6 @@
       <trans-unit id="Show_completion_list_after_a_character_is_typed">
         <source>_Show completion list after a character is typed</source>
         <target state="translated">Mo_stra elenco di completamento dopo la digitazione di un carattere</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Enable_in_memory_cross_project_references">
-        <source>_Enable in-memory cross project references</source>
-        <target state="translated">_Abilita i riferimenti tra progetti in memoria</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Project_check_cache_size">
-        <source>Number of projects whose data is cached in memory</source>
-        <target state="translated">Numero di progetti i cui dati sono disponibili nella cache in memoria</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_navigation_links_as">
@@ -110,6 +150,11 @@
       <trans-unit id="Text_hover">
         <source>Text hover</source>
         <target state="translated">Passaggio del puntatore sul testo</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Tooltip_preferred_description_width_in_characters">
+        <source>Format signature to the given width by adding line breaks conforming with F# syntax rules. </source>
+        <target state="translated">Consente di formattare la firma in base alla larghezza specificata aggiungendo interruzioni di riga conformi alle regole di sintassi F#. </target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
@@ -162,16 +207,6 @@
         <target state="translated">Abilita dati non aggiornati per le funzionalità IntelliSense</target>
         <note />
       </trans-unit>
-      <trans-unit id="Tooltip_in_memory_cross_project_references">
-        <source>In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</source>
-        <target state="translated">I riferimenti tra progetti in memoria consentono di archiviare in memoria i dati a livello di progetto per consentire l'uso di funzionalità IDE tra progetti.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Tooltip_project_check_cache_size">
-        <source>Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</source>
-        <target state="translated">I dati del progetto sono memorizzati nella cache per le funzionalità IDE. Con valori più elevati viene usata una maggiore quantità di memoria perché nella cache viene memorizzato un numero maggiore di progetti. La disattivazione di questo valore non dovrebbe influire su soluzioni di piccole e medie dimensioni.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Enter_key_always">
         <source>Always add new line on enter</source>
         <target state="translated">Aggiungi sempre una nuova riga dopo INVIO</target>
@@ -200,6 +235,11 @@
       <trans-unit id="Suggest_names_for_errors_code_fix">
         <source>Suggest names for unresolved identifiers</source>
         <target state="translated">Suggerisci nomi per gli identificatori non risolti</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Use_syntax_tree_cache">
+        <source>Cache parsing results (experimental)</source>
+        <target state="translated">Risultati dell'analisi della cache (sperimentale)</target>
         <note />
       </trans-unit>
     </body>

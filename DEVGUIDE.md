@@ -44,12 +44,12 @@ This will update your fork with the latest from `dotnet/fsharp` on your machine 
 
 ## Developing on Windows
 
-Install the latest released [Visual Studio](https://www.visualstudio.com/downloads/), as that is what the `main` branch's tools are synced with. Select the following workloads:
+Install the latest released [Visual Studio](https://visualstudio.microsoft.com/vs/preview/) preview, as that is what the `main` branch's tools are synced with. Select the following workloads:
 
 * .NET desktop development (also check F# desktop support, as this will install some legacy templates)
 * Visual Studio extension development
 
-You will also need the latest .NET 6 SDK installed from [here](https://dotnet.microsoft.com/download/dotnet/6.0).
+You will also need the latest .NET 7 SDK installed from [here](https://dotnet.microsoft.com/download/dotnet/7.0).
 
 Building is simple:
 
@@ -73,10 +73,10 @@ If you don't have everything installed yet, you'll get prompted by Visual Studio
 
 If you are just developing the core compiler and library then building ``FSharp.sln`` will be enough.
 
-We recommend installing the latest released Visual Studio and using that if you are on Windows. However, if you prefer not to do that, you will need to install the following:
+We recommend installing the latest Visual Studio preview and using that if you are on Windows. However, if you prefer not to do that, you will need to install the following:
 
 * [.NET Framework 4.7.2](https://dotnet.microsoft.com/download/dotnet-framework/net472)
-* [.NET 6](https://dotnet.microsoft.com/download/dotnet/6.0)
+* [.NET 7](https://dotnet.microsoft.com/download/dotnet/7.0)
 
 You'll need to pass an additional flag to the build script:
 
@@ -108,6 +108,7 @@ You can find all test options as separate flags. For example `build -testAll`:
 
 ```shell
   -testAll                  Run all tests
+  -testAllButIntegration    Run all but integration tests
   -testCambridge            Run Cambridge tests
   -testCompiler             Run FSharpCompiler unit tests
   -testCompilerService      Run FSharpCompilerService unit tests
@@ -120,6 +121,18 @@ You can find all test options as separate flags. For example `build -testAll`:
 ```
 
 Running any of the above will build the latest changes and run tests against them.
+
+## Using your custom compiler to build other projects
+
+Building the compiler using `build.cmd` or `build.sh` will output artifacts in `artifacts\bin`. 
+
+To use your custom build of `Fsc`, add the `DotnetFscCompilerPath` property to your project's `.fsproj` file, adjusted to point at your local build directory, build configuration, and target framework as appropriate:
+
+```xml
+<PropertyGroup>
+    <DotnetFscCompilerPath>D:\Git\fsharp\artifacts\bin\fsc\Debug\net7.0\fsc.dll</DotnetFscCompilerPath>
+</PropertyGroup>
+```
 
 ## Updating FSComp.fs, FSComp.resx and XLF
 
@@ -136,7 +149,7 @@ sh build.sh -c Release
 
 ## Updating baselines in tests
 
-Some tests use "baseline" files.  There is sometimes a way to update these baselines en-masse in your local build,
+Some tests use "baseline" (.bsl) files.  There is sometimes a way to update these baselines en-masse in your local build,
 useful when some change affects many baselines.  For example, in the `fsharpqa` and `FSharp.Compiler.ComponentTests` tests the baselines
 are updated using scripts or utilities that allow the following environment variable to be set:
 
@@ -169,20 +182,20 @@ or
 `./Build.cmd -c Release -testDesktop` to update Release .NET Framework baselines.
 
 > **Note**
-> Please note, that by default, **Release** version of IL baseline baseline tests will be running in CI, so when updating baseline files, make sure to add `-c Release` flag to the build command.
+> Please note, that by default, **Release** version of IL baseline tests will be running in CI, so when updating baseline (.bsl) files, make sure to add `-c Release` flag to the build command.
 
 ## Automated Source Code Formatting
 
 Some of the code in this repository is formatted automatically by [Fantomas](https://github.com/fsprojects/fantomas). To format all files use:
 
 ```cmd
-dotnet fantomas src -r
+dotnet fantomas . -r
 ```
 
 The formatting is checked automatically by CI:
 
 ```cmd
-dotnet fantomas src -r --check
+dotnet fantomas . -r --check
 ```
 
 At the time of writing only a subset of signature files (`*.fsi`) are formatted. See the settings in `.fantomasignore` and `.editorconfig`.
@@ -207,8 +220,9 @@ devenv.exe /rootsuffix RoslynDev
 
 ### Deploy your changes into a current Visual Studio installation
 
-If you'd like to "run with your changes", you can produce a VSIX and install it into your current Visual Studio instance:
+If you'd like to "run with your changes", you can produce a VSIX and install it into your current Visual Studio instance.
 
+For this, run the following using the VS Developer PowerShell from the repo root:
 ```shell
 VSIXInstaller.exe /u:"VisualFSharp"
 VSIXInstaller.exe artifacts\VSSetup\Release\VisualFSharpDebug.vsix
@@ -235,7 +249,7 @@ Where `<version>` corresponds to the latest Visual Studio version on your machin
 
 * Coding conventions vary from file to file
 
-* Format using [the F# style guide](https://docs.microsoft.com/en-us/dotnet/fsharp/style-guide/)
+* Format using [the F# style guide](https://learn.microsoft.com/dotnet/fsharp/style-guide/)
 
 * Avoid tick identifiers like `body'`. They are generally harder to read and can't be inspected in the debugger as things stand. Generally use R suffix instead, e.g. `bodyR`. The R can stand for "rewritten" or "result"
 
@@ -415,4 +429,4 @@ See the "Debugging The Compiler" section of this [article](https://medium.com/@w
 
 If you are behind a proxy server, NuGet client tool must be configured to use it:
 
-See the Nuget config file documention for use with a proxy server [https://docs.microsoft.com/en-us/nuget/reference/nuget-config-file](https://docs.microsoft.com/en-us/nuget/reference/nuget-config-file)
+See the Nuget config file documention for use with a proxy server [https://learn.microsoft.com/nuget/reference/nuget-config-file](https://learn.microsoft.com/nuget/reference/nuget-config-file)

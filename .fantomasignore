@@ -7,20 +7,71 @@ fcs-samples/
 scripts/
 setup/
 tests/
-vsintegration/
+vsintegration/*
+!vsintegration/src/FSharp.Editor
+!vsintegration/tests/FSharp.Editor.Tests
 artifacts/
 
-# Explicitly unformatted implementation files
+# For some reason, it tries to format files from remotes (Processing .\.git\refs\remotes\<remote>\FSComp.fsi)
+.git/
 
-src/Compiler/Checking/**/*.fs
-src/Compiler/DependencyManager/**/*.fs
-src/Compiler/Facilities/**/*.fs
-src/Compiler/Interactive/**/*.fs
-src/Compiler/Legacy/**/*.fs
-src/Compiler/Optimize/**/*.fs
-src/Compiler/Symbols/**/*.fs
-src/Compiler/TypedTree/**/*.fs
 
+# Explicitly unformatted implementation
+src/Compiler/Checking/AccessibilityLogic.fs
+src/Compiler/Checking/AttributeChecking.fs
+src/Compiler/Checking/AugmentWithHashCompare.fs
+src/Compiler/Checking/CheckBasics.fs
+src/Compiler/Checking/CheckComputationExpressions.fs
+src/Compiler/Checking/CheckDeclarations.fs
+src/Compiler/Checking/CheckExpressions.fs
+src/Compiler/Checking/CheckFormatStrings.fs
+src/Compiler/Checking/CheckIncrementalClasses.fs
+src/Compiler/Checking/CheckPatterns.fs
+src/Compiler/Checking/ConstraintSolver.fs
+src/Compiler/Checking/FindUnsolved.fs
+src/Compiler/Checking/import.fs
+src/Compiler/Checking/InfoReader.fs
+src/Compiler/Checking/infos.fs
+src/Compiler/Checking/MethodCalls.fs
+src/Compiler/Checking/MethodOverrides.fs
+src/Compiler/Checking/NameResolution.fs
+src/Compiler/Checking/NicePrint.fs
+src/Compiler/Checking/PatternMatchCompilation.fs
+src/Compiler/Checking/PostInferenceChecks.fs
+src/Compiler/Checking/QuotationTranslator.fs
+src/Compiler/Checking/SignatureConformance.fs
+src/Compiler/Checking/TypeHierarchy.fs
+src/Compiler/Checking/TypeRelations.fs
+
+# Incorrectly formatted: https://github.com/dotnet/fsharp/pull/14645/commits/49443a67ea8a17670c8a7c80c8bdf91f82231e91 or https://github.com/fsprojects/fantomas/issues/2733
+# This CompilerImports.fs behavior is not fixed yet, following up in  https://github.com/fsprojects/fantomas/issues/2733
+src/Compiler/Driver/CompilerImports.fs
+# The following files were formatted, but the "format, --check" loop is not stable.
+# Fantomas formats them, but still thinks they need formatting
+src/Compiler/Optimize/DetupleArgs.fs
+src/Compiler/Optimize/InnerLambdasToTopLevelFuncs.fs
+src/Compiler/Optimize/LowerCalls.fs
+src/Compiler/Optimize/LowerComputedCollections.fs
+src/Compiler/Optimize/LowerLocalMutables.fs
+src/Compiler/Optimize/LowerSequences.fs
+src/Compiler/Optimize/LowerStateMachines.fs
+src/Compiler/Optimize/Optimizer.fs
+
+src/Compiler/Symbols/Exprs.fs
+src/Compiler/Symbols/FSharpDiagnostic.fs
+src/Compiler/Symbols/SymbolHelpers.fs
+src/Compiler/Symbols/SymbolPatterns.fs
+src/Compiler/Symbols/Symbols.fs
+
+src/Compiler/TypedTree/CompilerGlobalState.fs
+src/Compiler/TypedTree/QuotationPickler.fs
+src/Compiler/TypedTree/tainted.fs
+src/Compiler/TypedTree/TcGlobals.fs
+src/Compiler/TypedTree/TypedTree.fs
+src/Compiler/TypedTree/TypedTreeBasics.fs
+src/Compiler/TypedTree/TypedTreeOps.fs
+src/Compiler/TypedTree/TypedTreePickle.fs
+src/Compiler/TypedTree/TypeProviders.fs
 # Explicitly unformatted file that needs more care to get it to format well
 
 src/Compiler/SyntaxTree/LexFilter.fs
@@ -38,9 +89,6 @@ src/FSharp.Core/printf.fs
 src/FSharp.Core/Query.fs
 src/FSharp.Core/seqcore.fs
 
-# Fantomas limitation https://github.com/fsprojects/fantomas/issues/2264
-
-src/FSharp.Core/SI.fs
 
 # Fantomas limitations on implementation files  (to investigate)
 
@@ -69,9 +117,3 @@ src/FSharp.Core/list.fsi
 src/FSharp.Core/Query.fsi
 src/FSharp.Core/resumable.fsi
 src/FSharp.Core/async.fsi
-
-# Fantomas limitations on signature files in FSharp.Core (https://github.com/fsprojects/fantomas/issues/2230)
-
-src/FSharp.Core/array.fsi
-src/FSharp.Core/tasks.fsi
-src/FSharp.Core/seq.fsi

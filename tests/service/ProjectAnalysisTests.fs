@@ -2232,7 +2232,9 @@ let ``Test Project13 all symbols`` () =
                 "type System.IFormattable"
                 "type System.IConvertible"
 #if NETCOREAPP
+                "type System.IParsable<System.DateTime>";
                 "type System.ISpanFormattable"
+                "type System.ISpanParsable<System.DateTime>"
 #endif
                 "type System.Runtime.Serialization.ISerializable"
                 "type System.IComparable<System.DateTime>"
@@ -3452,16 +3454,20 @@ let ``Test Project24 all symbols`` () =
             ("``.ctor``", "file1", ((4, 5), (4, 23)), ["defn"], ["member"; "ctor"]);
             ("NameGetSet", "file1", ((5, 13), (5, 23)), ["defn"], ["member"; "getter"]);
             ("int", "file1", ((7, 20), (7, 23)), ["type"], ["abbrev"]);
+            ("NameGetSet", "file1", ((5, 13), (5, 23)), ["defn"], ["member"; "setter"]);
             ("NameGet", "file1", ((9, 13), (9, 20)), ["defn"], ["member"; "getter"]);
             ("int", "file1", ((11, 20), (11, 23)), ["type"], ["abbrev"]);
+            ("NameGet", "file1", ((9, 13), (9, 20)), ["defn"], ["member"; "setter"]);
             ("int", "file1", ((14, 21), (14, 24)), ["type"], ["abbrev"]);
             ("NameSet", "file1", ((13, 13), (13, 20)), ["defn"], ["member"; "setter"]);
             ("StaticNameGetSet", "file1", ((16, 18), (16, 34)), ["defn"],
              ["member"; "getter"]);
-            ("int", "file1", ((18, 20), (18, 23)), ["type"], ["abbrev"]);
+            ("int", "file1", ((18, 20), (18, 23)), ["type"], ["abbrev"])
+            ("StaticNameGetSet", "file1", ((16, 18), (16, 34)), ["defn"], ["member"; "setter"]);
             ("StaticNameGet", "file1", ((20, 18), (20, 31)), ["defn"],
              ["member"; "getter"]);
-            ("int", "file1", ((22, 20), (22, 23)), ["type"], ["abbrev"]);
+            ("int", "file1", ((22, 20), (22, 23)), ["type"], ["abbrev"])
+            ("StaticNameGet", "file1", ((20, 18), (20, 31)), ["defn"], ["member"; "setter"]);
             ("int", "file1", ((25, 21), (25, 24)), ["type"], ["abbrev"]);
             ("StaticNameSet", "file1", ((24, 18), (24, 31)), ["defn"],
              ["member"; "setter"]);
@@ -3469,10 +3475,12 @@ let ``Test Project24 all symbols`` () =
              ["member"; "getter"]);
             ("AutoPropGetSet", "file1", ((28, 15), (28, 29)), ["defn"],
              ["member"; "getter"]);
+            ("AutoPropGetSet", "file1", ((28, 15), (28, 29)), ["defn"], ["member"; "setter"])
             ("StaticAutoPropGet", "file1", ((30, 22), (30, 39)), ["defn"],
              ["member"; "getter"]);
             ("StaticAutoPropGetSet", "file1", ((31, 22), (31, 42)), ["defn"],
-             ["member"; "getter"]);
+             ["member"; "getter"])
+            ("StaticAutoPropGetSet", "file1", ((31, 22), (31, 42)), ["defn"], ["member"; "setter"]);
             ("x", "file1", ((5, 11), (5, 12)), ["defn"], []);
             ("int", "file1", ((7, 20), (7, 23)), ["type"], ["abbrev"]);
             ("v", "file1", ((7, 17), (7, 18)), ["defn"], []);
@@ -3558,22 +3566,28 @@ let ``Test symbol uses of properties with both getters and setters`` () =
           [|("TypeWithProperties", "file1", ((4, 5), (4, 23)), ["class"]);
             ("``.ctor``", "file1", ((4, 5), (4, 23)), ["member"; "ctor"]);
             ("NameGetSet", "file1", ((5, 13), (5, 23)), ["member"; "getter"]);
-            ("int", "file1", ((7, 20), (7, 23)), ["abbrev"]);
+            ("int", "file1", ((7, 20), (7, 23)), ["abbrev"])
+            ("NameGetSet", "file1", ((5, 13), (5, 23)), ["member"; "setter"]);
             ("NameGet", "file1", ((9, 13), (9, 20)), ["member"; "getter"]);
-            ("int", "file1", ((11, 20), (11, 23)), ["abbrev"]);
+            ("int", "file1", ((11, 20), (11, 23)), ["abbrev"])
+            ("NameGet", "file1", ((9, 13), (9, 20)), ["member"; "setter"]);
             ("int", "file1", ((14, 21), (14, 24)), ["abbrev"]);
             ("NameSet", "file1", ((13, 13), (13, 20)), ["member"; "setter"]);
             ("StaticNameGetSet", "file1", ((16, 18), (16, 34)), ["member"; "getter"]);
-            ("int", "file1", ((18, 20), (18, 23)), ["abbrev"]);
+            ("int", "file1", ((18, 20), (18, 23)), ["abbrev"])
+            ("StaticNameGetSet", "file1", ((16, 18), (16, 34)), ["member"; "setter"]);
             ("StaticNameGet", "file1", ((20, 18), (20, 31)), ["member"; "getter"]);
-            ("int", "file1", ((22, 20), (22, 23)), ["abbrev"]);
+            ("int", "file1", ((22, 20), (22, 23)), ["abbrev"])
+            ("StaticNameGet", "file1", ((20, 18), (20, 31)), ["member"; "setter"]);
             ("int", "file1", ((25, 21), (25, 24)), ["abbrev"]);
             ("StaticNameSet", "file1", ((24, 18), (24, 31)), ["member"; "setter"]);
             ("AutoPropGet", "file1", ((27, 15), (27, 26)), ["member"; "getter"]);
-            ("AutoPropGetSet", "file1", ((28, 15), (28, 29)), ["member"; "getter"]);
+            ("AutoPropGetSet", "file1", ((28, 15), (28, 29)), ["member"; "getter"])
+            ("AutoPropGetSet", "file1", ((28, 15), (28, 29)), ["member"; "setter"]);
             ("StaticAutoPropGet", "file1", ((30, 22), (30, 39)), ["member"; "getter"]);
             ("StaticAutoPropGetSet", "file1", ((31, 22), (31, 42)),
-             ["member"; "getter"]);
+             ["member"; "getter"])
+            ("StaticAutoPropGetSet", "file1", ((31, 22), (31, 42)), ["member"; "setter"])
             ("x", "file1", ((5, 11), (5, 12)), []);
             ("int", "file1", ((7, 20), (7, 23)), ["abbrev"]);
             ("v", "file1", ((7, 17), (7, 18)), []);
@@ -3635,7 +3649,7 @@ let ``Test symbol uses of properties with both getters and setters`` () =
             ("PropertyTest", "file1", ((2, 7), (2, 19)), ["module"])|]
 
     let getSampleSymbolUseOpt =
-        backgroundTypedParse1.GetSymbolUseAtLocation(9,20,"",["NameGet"])
+        backgroundTypedParse1.GetSymbolUseAtLocation(9,20,"",["get_NameGet"])
 
 
     let getSampleSymbol = getSampleSymbolUseOpt.Value.Symbol
@@ -4024,7 +4038,7 @@ let ``Test project28 all symbols in signature`` () =
         ("FSharpEntity", "Use", "T:M.Use");
         ("FSharpMemberOrFunctionOrValue", "``.ctor``", "M:M.Use.#ctor");
         ("FSharpMemberOrFunctionOrValue", "Test", "M:M.Use.Test``1(``0)");
-        ("FSharpGenericParameter", "``?``", "")|]
+        ("FSharpGenericParameter", "a", "")|]
     |> Array.iter (fun x ->
         if xmlDocSigs |> Array.exists (fun y -> x = y) |> not then
             failwithf "%A does not exist in the collection." x
@@ -5728,7 +5742,7 @@ let checkContentAsScript content =
     // set).
     // because of this we have to do it all manually
     let scriptName = "test.fsx"
-    let tempDir = Path.GetTempPath()
+    let tempDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)
     let scriptFullPath = Path.Combine(tempDir, scriptName)
     let sourceText = SourceText.ofString content
     let projectOptions, _ = checker.GetProjectOptionsFromScript(scriptFullPath, sourceText, useSdkRefs = true, assumeDotNetFramework = false) |>    Async.RunImmediate

@@ -19,6 +19,8 @@ open Microsoft.VisualStudio.Editor
 open Microsoft.VisualStudio.Text.Editor
 open Microsoft.VisualStudio.Utilities
 
+open Microsoft.VisualStudio.FSharp.Interactive.Session
+
 type VSStd2KCmdID = VSConstants.VSStd2KCmdID // nested type
 type VSStd97CmdID = VSConstants.VSStd97CmdID // nested type
 type IOleServiceProvider = Microsoft.VisualStudio.OLE.Interop.IServiceProvider
@@ -36,15 +38,13 @@ module internal Locals =
     let defaultVSRegistryRoot = @"Software\Microsoft\VisualStudio\15.0"
     let settingsRegistrySubKey = @"General"
     let debugPromptRegistryValue = "FSharpHideScriptDebugWarning"
-    // Prompts come through as "SERVER-PROMPT>\n" (when in "server mode").
+    // Prompts come through as "SERVER-PROMPT>" (when in "server mode").
     // In fsi.exe, the newline is needed to get the output send through to VS.
     // Here the reverse mapping is applied.
-    let prompt = "SERVER-PROMPT>"
-
     let fixServerPrompt (str:string) =
         (* Replace 'prompt' by ">" throughout string, add newline, unless ending in prompt *)
-        let str = if str.EndsWith(prompt) then str + " " else str + Environment.NewLine
-        let str = str.Replace(prompt,">")
+        let str = if str.EndsWith(SessionsProperties.ServerPrompt) then str + " " else str
+        let str = str.Replace(SessionsProperties.ServerPrompt,">")
         str
 
 
@@ -212,20 +212,20 @@ type internal FsiToolWindow() as this =
             
     // Buffer the output and error events. This makes text updates *MUCH* faster (since they are done as a block).
     // Also, the buffering invokes to the GUI thread.
-    let bufferMS = 50         
+    let bufferMS = 50
     let flushResponseBuffer,responseBufferE = Session.bufferEvent bufferMS  responseE
 
     // Wire up session outputs to write to textLines.
     // Recover the chunks (consecutive runs of stderr or stdout) and write as a single item.
     // responseEventE always triggers on Gui thread, so calling writeTextAndScroll is safe
     let writeKeyChunk = function
-        | StdOut,strs -> writeTextAndScroll (String.concat Environment.NewLine strs)  // later: stdout and stderr may color differently
-        | StdErr,strs -> writeTextAndScroll (String.concat Environment.NewLine strs)  // later: hence keep them split.
+        | StdOut,strs -> writeTextAndScroll (String.concat "" strs)  // later: stdout and stderr may color differently
+        | StdErr,strs -> writeTextAndScroll (String.concat "" strs)  // later: hence keep them split.
     do  responseBufferE.Add(fun keyStrings -> let keyChunks : (Response * string list) list = chunkKeyValues keyStrings
                                               List.iter writeKeyChunk keyChunks)
     let showInitialMessageNetCore scroll =
         if Session.SessionsProperties.fsiUseNetCore then
-            writeText scroll ((VFSIstrings.SR.sessionInitialMessageNetCore()+Environment.NewLine+prompt))
+            writeText scroll ((VFSIstrings.SR.sessionInitialMessageNetCore() + Environment.NewLine + SessionsProperties.ServerPrompt))
 
     // Write message on a session termination. Should be called on Gui thread.
     let recordTermination () = 
@@ -233,7 +233,7 @@ type internal FsiToolWindow() as this =
             synchronizationContext.Post(
                 System.Threading.SendOrPostCallback(
                     fun _ -> 
-                        writeTextAndScroll ((VFSIstrings.SR.sessionTerminationDetected())+Environment.NewLine)
+                        writeTextAndScroll ((VFSIstrings.SR.sessionTerminationDetected()) + Environment.NewLine)
                         showInitialMessageNetCore true
             ), null)
             
@@ -300,10 +300,10 @@ type internal FsiToolWindow() as this =
                 strHandle.Free()
         )
 
-    let executeTextNoHistory sourceFile (text:string) =
+    let executeTextNoHistory sourceFile (text: unit -> string) =
         sessions.Ensure(sourceFile)
         textStream.DirectWriteLine()
-        sessions.SendInput(text)
+        sessions.SendInput(text())
         setCursorAtEndOfBuffer()
         
     let executeUserInput() = 
@@ -530,21 +530,32 @@ type internal FsiToolWindow() as this =
         try
             showNoActivate()
             let directiveC  = sprintf "# 1 \"stdin\""    (* stdin line number reset code *)                
-            let text = "\n" + text + "\n" + directiveC + "\n;;\n"
+            let text() = "\n" + text + "\n" + directiveC + "\n;;\n"
             executeTextNoHistory null text
         with _ -> ()
 
-    let executeInteraction dbgBreak dir (filename: string) topLine text =
-        // Preserving previous functionality, including the #directives...
-        let interaction =
-            "\n"
-          + (sprintf "# silentCd @\"%s\" ;; " dir) + "\n"
-          + (if dbgBreak then "# dbgbreak\n" else "")
-          + (sprintf "# %d @\"%s\" " topLine filename) + "\n"
-          + text + "\n"
-          + "# 1 \"stdin\"" + "\n" (* stdin line number reset code *)
-          + ";;" + "\n"
+    let hide () =
+        if sessions.SupportsInteractivePrompt then
+            """#interactiveprompt "hide" """
+        else
+            ""
 
+    let show () =
+        if sessions.SupportsInteractivePrompt then
+            """#interactiveprompt "show" """
+        else
+            ""
+
+    let executeInteraction dbgBreak dir filename topLine (text:string) =
+        let interaction() = $"""
+{    hide()}
+#silentCd @"{dir}";;
+{if dbgBreak then "#dbgbreak" else ""}
+#{topLine} @"{filename}"
+{text.ToString()}
+#1 "stdin"
+{    show()};;
+"""
         executeTextNoHistory filename interaction
 
     let sendSelectionToFSI action =
@@ -555,8 +566,8 @@ type internal FsiToolWindow() as this =
             | DebugSelection -> true, false
 
         try
-            let dte = provider.GetService(typeof<DTE>) :?> DTE        
-            let activeD = dte.ActiveDocument            
+            let dte = provider.GetService(typeof<DTE>) :?> DTE
+            let activeD = dte.ActiveDocument
             match activeD.Selection with
             | :? TextSelection as selection when selectLine || selection.Text = "" ->
                 selection.SelectLine()

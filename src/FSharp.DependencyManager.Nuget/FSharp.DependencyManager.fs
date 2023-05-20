@@ -132,7 +132,7 @@ module FSharpDependencyManager =
                 | Some "timeout", None -> raise (ArgumentException(SR.missingTimeoutValue ()))
                 | Some "timeout", value ->
                     match value with
-                    | Some v when v.GetType() = typeof<string> ->
+                    | Some v when Type.op_Equality (v.GetType(), typeof<string>) ->
                         let parsed, value = Int32.TryParse(v)
 
                         if parsed && value >= 0 then
@@ -347,6 +347,7 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
 
     let prepareDependencyResolutionFiles
         (
+            scriptDirectory: string,
             scriptExt: string,
             directiveLines: (string * string) seq,
             targetFrameworkMoniker: string,
@@ -368,28 +369,36 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
             |> List.map FSharpDependencyManager.formatPackageReference
             |> Seq.concat
 
+        let generatedNugetSources =
+            generateSourcesFromNugetConfigs scriptDirectory projectDirectory.Value timeout
+
         let packageReferenceText = String.Join(Environment.NewLine, packageReferenceLines)
 
         let projectPath = Path.Combine(projectDirectory.Value, "Project.fsproj")
+        let nugetPath = Path.Combine(projectDirectory.Value, "NuGet.config")
 
         let generateAndBuildProjectArtifacts =
             let writeFile path body =
                 if not (generatedScripts.ContainsKey(body.GetHashCode().ToString())) then
                     emitFile path body
 
-            let generateProjBody =
-                generateProjectBody
+            let generateProjectFile =
+                generateProjectFile
                     .Replace("$(TARGETFRAMEWORK)", targetFrameworkMoniker)
                     .Replace("$(RUNTIMEIDENTIFIER)", runtimeIdentifier)
                     .Replace("$(PACKAGEREFERENCES)", packageReferenceText)
                     .Replace("$(SCRIPTEXTENSION)", scriptExt)
+
+            let generateProjectNugetConfigFile =
+                generateProjectNugetConfigFile.Replace("$(NUGET_SOURCES)", generatedNugetSources)
 
             let timeout =
                 match package_timeout with
                 | Some _ -> package_timeout
                 | None -> Some timeout
 
-            writeFile projectPath generateProjBody
+            writeFile projectPath generateProjectFile
+            writeFile nugetPath generateProjectNugetConfigFile
             buildProject projectPath binLogPath timeout
 
         generateAndBuildProjectArtifacts
@@ -469,15 +478,10 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
             | _ -> "#r @\""
 
         let generateAndBuildProjectArtifacts =
-            let configIncludes =
-                generateSourcesFromNugetConfigs scriptDirectory projectDirectory.Value timeout
-
-            let directiveLines = Seq.append packageManagerTextLines configIncludes
-
             let resolutionHash =
                 FSharpDependencyManager.computeHashForResolutionInputs (
                     scriptExt,
-                    directiveLines,
+                    packageManagerTextLines,
                     targetFrameworkMoniker,
                     runtimeIdentifier
                 )
@@ -486,7 +490,15 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
                 match tryGetResultsForResolutionHash resolutionHash projectDirectory with
                 | Some resolutionResult -> true, resolutionResult
                 | None ->
-                    false, prepareDependencyResolutionFiles (scriptExt, directiveLines, targetFrameworkMoniker, runtimeIdentifier, timeout)
+                    false,
+                    prepareDependencyResolutionFiles (
+                        scriptDirectory,
+                        scriptExt,
+                        packageManagerTextLines,
+                        targetFrameworkMoniker,
+                        runtimeIdentifier,
+                        timeout
+                    )
 
             match resolutionResult.resolutionsFile with
             | Some file ->
