@@ -829,7 +829,7 @@ let convAlternativeDef
 
             let baseTesterMeths, baseTesterProps =
                 if
-                    ilg.langVersion.SupportsFeature LanguageFeature.UnionIsPropertiesVisible
+                    g.langVersion.SupportsFeature LanguageFeature.UnionIsPropertiesVisible
                     && cud.HasHelpers = AllHelpers
                 then
                     [], []
