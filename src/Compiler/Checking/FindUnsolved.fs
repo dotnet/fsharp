@@ -30,12 +30,12 @@ type cenv =
     override _.ToString() = "<cenv>"
 
 /// Walk types, collecting type variables
-let accTy cenv _env (r: Range option) ty =
+let accTy cenv _env (fallbackRange: Range option) ty =
     let normalizedTy = tryNormalizeMeasureInType cenv.g ty
     (freeInType CollectTyparsNoCaching normalizedTy).FreeTypars |> Zset.iter (fun tp -> 
         if (tp.Rigidity <> TyparRigidity.Rigid) then
-            if Option.isSome r then
-                tp.SetIdent (FSharp.Compiler.Syntax.Ident(tp.typar_id.idText, r.Value))    
+            if Option.isSome fallbackRange && tp.Range = Range.range0 then
+                tp.SetIdent (FSharp.Compiler.Syntax.Ident(tp.typar_id.idText, fallbackRange.Value))    
             cenv.unsolved <- tp :: cenv.unsolved) 
 
 let accTypeInst cenv env tyargs =
