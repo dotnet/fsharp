@@ -2218,18 +2218,20 @@ let TcSequenceExpressionEntry (cenv: cenv) env (overallTy: OverallTy) tpenv (has
         
     TcSequenceExpression cenv env tpenv comp overallTy m
 
-let TcArrayOrListComputedExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (isArray, comp) m  =
+let TcArrayOrListComputedExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (cType: CollectionType, comp) m  =
     let g = cenv.g
 
     // The syntax '[ n .. m ]' and '[ n .. step .. m ]' is not really part of array or list syntax.
     // It could be in the future, e.g. '[ 1; 2..30; 400 ]'
     //
     // The elaborated form of '[ n .. m ]' is 'List.ofSeq (seq (op_Range n m))' and this shouldn't change
+    let mkType =
+        match cType with CollectionType.Array -> mkArrayType | CollectionType.List -> mkListTy | CollectionType.ImmutableArray -> mkBlockType
     match RewriteRangeExpr comp with
     | Some replacementExpr -> 
         let genCollElemTy = NewInferenceType g
 
-        let genCollTy = (if isArray then mkArrayType else mkListTy) cenv.g genCollElemTy
+        let genCollTy = mkType cenv.g genCollElemTy
 
         UnifyTypes cenv env m overallTy.Commit genCollTy
 
@@ -2248,10 +2250,13 @@ let TcArrayOrListComputedExpression (cenv: cenv) env (overallTy: OverallTy) tpen
         let expr = mkCoerceExpr(expr, exprTy, expr.Range, overallTy.Commit)
 
         let expr = 
-            if isArray then 
+            match cType with
+            | CollectionType.Array ->
                 mkCallSeqToArray cenv.g m genCollElemTy expr
-            else 
+            | CollectionType.List ->
                 mkCallSeqToList cenv.g m genCollElemTy expr
+            | CollectionType.ImmutableArray ->
+                mkCallSeqToBlock cenv.g m genCollElemTy expr
         expr, tpenv
 
     | None ->
@@ -2268,29 +2273,29 @@ let TcArrayOrListComputedExpression (cenv: cenv) env (overallTy: OverallTy) tpen
         | _ when validateExpressionWithIfRequiresParenthesis -> errorR(Deprecated(FSComp.SR.tcExpressionWithIfRequiresParenthesis(), m))
         | _ -> ()
 
-        let replacementExpr = 
-            if isArray then 
+        let replacementExpr =
+            match cType with
+            | CollectionType.Array ->
                 // This are to improve parsing/processing speed for parser tables by converting to an array blob ASAP 
                 let nelems = elems.Length 
                 if nelems > 0 && List.forall (function SynExpr.Const (SynConst.UInt16 _, _) -> true | _ -> false) elems 
                 then SynExpr.Const (SynConst.UInt16s (Array.ofList (List.map (function SynExpr.Const (SynConst.UInt16 x, _) -> x | _ -> failwith "unreachable") elems)), m)
                 elif nelems > 0 && List.forall (function SynExpr.Const (SynConst.Byte _, _) -> true | _ -> false) elems 
                 then SynExpr.Const (SynConst.Bytes (Array.ofList (List.map (function SynExpr.Const (SynConst.Byte x, _) -> x | _ -> failwith "unreachable") elems), SynByteStringKind.Regular, m), m)
-                else SynExpr.ArrayOrList (isArray, elems, m)
-            else
-                if cenv.g.langVersion.SupportsFeature(LanguageFeature.ReallyLongLists) then
-                     SynExpr.ArrayOrList (isArray, elems, m)
-                 else
-                    if elems.Length > 500 then 
-                        error(Error(FSComp.SR.tcListLiteralMaxSize(), m))
-                    SynExpr.ArrayOrList (isArray, elems, m)
+                else SynExpr.ArrayOrList (cType, elems, m)
+            | CollectionType.ImmutableArray -> // NOTE: if the compiler moves internally from array to immarray then the optimization above should be moved here
+                SynExpr.ArrayOrList (cType, elems, m)
+            | CollectionType.List ->
+                if elems.Length > 500 then 
+                    error(Error(FSComp.SR.tcListLiteralMaxSize(), m))
+                SynExpr.ArrayOrList (cType, elems, m)
 
         TcExprUndelayed cenv overallTy env tpenv replacementExpr
     | _ -> 
 
       let genCollElemTy = NewInferenceType g
 
-      let genCollTy = (if isArray then mkArrayType else mkListTy) cenv.g genCollElemTy
+      let genCollTy = mkType cenv.g genCollElemTy
 
       // Propagating type directed conversion, e.g. for 
       //     let x : seq<int64>  = [ yield 1; if true then yield 2 ]
@@ -2315,9 +2320,12 @@ let TcArrayOrListComputedExpression (cenv: cenv) env (overallTy: OverallTy) tpen
         let expr = mkCoerceExpr(expr, exprTy, expr.Range, overallTy.Commit)
 
         let expr = 
-            if isArray then 
+            match cType with
+            | CollectionType.Array ->
                 mkCallSeqToArray cenv.g m genCollElemTy expr
-            else 
+            | CollectionType.List ->
                 mkCallSeqToList cenv.g m genCollElemTy expr
+            | CollectionType.ImmutableArray ->
+                mkCallSeqToBlock cenv.g m genCollElemTy expr
                 
         expr, tpenv)

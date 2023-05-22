@@ -93,7 +93,7 @@ type ContextInfo =
     | TupleInRecordFields
 
     /// The type equation comes from a list or array constructor
-    | CollectionElement of bool * range
+    | CollectionElement of CollectionType * range
 
     /// The type equation comes from a return in a computation expression.
     | ReturnInComputationExpression

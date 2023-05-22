@@ -7,9 +7,19 @@
         <target state="translated">Wszystkie elementy tablicy muszą być niejawnie konwertowalne na typ pierwszego elementu, który w tym miejscu jest krotką o długości {0} typu\n    {1}    \nTen element jest krotką o długości {2} typu\n    {3}    \n</target>
         <note />
       </trans-unit>
+      <trans-unit id="blockElementHasWrongTypeTuple">
+        <source>All elements of a block must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</source>
+        <target state="new">All elements of a block must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</target>
+        <note />
+      </trans-unit>
       <trans-unit id="buildDuplicateFile">
         <source>The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</source>
         <target state="translated">Plik źródłowy „{0}” (na pozycji {1}/{2}) już pojawił się na liście kompilacji (na pozycji {3}/{4}). Sprawdź, czy jest on uwzględniony tylko raz w pliku projektu.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="blockElementHasWrongType">
+        <source>All elements of a block must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</source>
+        <target state="new">All elements of a block must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidSourceFileExtensionML">
@@ -835,6 +845,11 @@
       <trans-unit id="reprResumableCodeContainsConstrainedGenericLet">
         <source>A constrained generic construct occured in the resumable code specification</source>
         <target state="translated">W specyfikacji kodu z możliwością wznowienia wystąpiła ograniczona konstrukcja ogólna</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsUnmatchedBracketColon">
+        <source>Unmatched '[:'</source>
+        <target state="new">Unmatched '[:'</target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsDynamicResumeAtInBody">

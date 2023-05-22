@@ -169,6 +169,7 @@
     <Compile Include="ErrorMessages\InterfaceImplInAugmentationsTests.fs" />	
     <Compile Include="Language\IndexerSetterParamArray.fs" />
     <Compile Include="Language\MultiDimensionalArrayTests.fs" />
+    <Compile Include="Language\ImmArrayTests.fs" />
     <Compile Include="Language\RegressionTests.fs" />
     <Compile Include="Language\AttributeCheckingTests.fs" />
     <Compile Include="Language\ObsoleteAttributeCheckingTests.fs" />
@@ -187,6 +188,9 @@
     <Compile Include="Language\PrintfFormatTests.fs" />
 	<Compile Include="Language\InterfaceTests.fs" />
 	<Compile Include="Language\CopyAndUpdateTests.fs" />
+	<None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
+      <Link>%(RelativeDir)TestSource\%(Filename)%(Extension)</Link>
+    </None>
     <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="ConstraintSolver\MemberConstraints.fs" />
     <Compile Include="Interop\DeeplyNestedCSharpClasses.fs" />
@@ -251,11 +255,7 @@
     <Compile Include="FSharpChecker\FindReferences.fs" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
-      <Link>%(RelativeDir)TestSource\%(Filename)%(Extension)</Link>
-    </None>
-  </ItemGroup>
+  <ItemGroup />
 
   <ItemGroup>
     <None Include="**\*.bsl">

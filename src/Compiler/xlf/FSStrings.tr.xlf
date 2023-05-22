@@ -17,6 +17,11 @@
         <target state="translated">Küçük harf ayrımlı birleşim durumlarına yalnızca RequireQualifiedAccess özniteliği kullanılırken izin verilir</target>
         <note />
       </trans-unit>
+      <trans-unit id="Parser.TOKEN.COLON.RBRACK">
+        <source>symbol ':]'</source>
+        <target state="new">symbol ':]'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
         <source>symbol '..^'</source>
         <target state="translated">'..^' sembolü</target>
@@ -40,6 +45,11 @@
       <trans-unit id="Parser.TOKEN.INTERP.STRING.PART">
         <source>interpolated string (part)</source>
         <target state="translated">düz metin arasına kod eklenmiş dize (parça)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.LBRACK.COLON">
+        <source>symbol '[:'</source>
+        <target state="new">symbol '[:'</target>
         <note />
       </trans-unit>
       <trans-unit id="SeeAlso">

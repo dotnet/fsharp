@@ -85,6 +85,12 @@ module SynLongIdentHelpers =
     let LongIdentWithDots (lid, dots) =
         SynLongIdent(lid, dots, List.replicate lid.Length None)
 
+[<Struct; RequireQualifiedAccess>]
+type CollectionType =
+    | List
+    | Array
+    | ImmutableArray
+
 [<RequireQualifiedAccess>]
 type ParserDetail =
     | Ok
@@ -489,7 +495,7 @@ type SynExpr =
         range: range *
         trivia: SynExprAnonRecdTrivia
 
-    | ArrayOrList of isArray: bool * exprs: SynExpr list * range: range
+    | ArrayOrList of cType: CollectionType * exprs: SynExpr list * range: range
 
     | Record of
         baseInfo: (SynType * SynExpr * range * BlockSeparator option * range) option *
@@ -532,7 +538,7 @@ type SynExpr =
         bodyExpr: SynExpr *
         range: range
 
-    | ArrayOrListComputed of isArray: bool * expr: SynExpr * range: range
+    | ArrayOrListComputed of cType: CollectionType * expr: SynExpr * range: range
 
     | IndexRange of expr1: SynExpr option * opm: range * expr2: SynExpr option * range1: range * range2: range * range: range
 
@@ -921,7 +927,7 @@ type SynPat =
 
     | Paren of pat: SynPat * range: range
 
-    | ArrayOrList of isArray: bool * elementPats: SynPat list * range: range
+    | ArrayOrList of cType:CollectionType * elementPats: SynPat list * range: range
 
     | Record of fieldPats: ((LongIdent * Ident) * range * SynPat) list * range: range
 

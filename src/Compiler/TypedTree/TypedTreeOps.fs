@@ -5257,6 +5257,7 @@ and accFreeInOp opts op acc =
     | TOp.Coerce 
     | TOp.RefAddrGet _
     | TOp.Array 
+    | TOp.Block
     | TOp.While _
     | TOp.Goto _ | TOp.Label _ | TOp.Return 
     | TOp.TupleFieldGet _ -> acc
@@ -6441,6 +6442,8 @@ let mkMethodTy g argTys retTy = mkIteratedFunTy g (List.map (mkRefTupledTy g) ar
 
 let mkArrayType (g: TcGlobals) ty = TType_app (g.array_tcr_nice, [ty], g.knownWithoutNull)
 
+let mkBlockType (g: TcGlobals) (ty:TType) = TType_app (g.block_tcr, [ty], g.knownWithoutNull)
+
 let mkByteArrayTy (g: TcGlobals) = mkArrayType g g.byte_ty
 
 //---------------------------------------------------------------------------
@@ -6501,6 +6504,7 @@ let rec tyOfExpr g expr =
         | TOp.AnonRecd anonInfo -> mkAnyAnonRecdTy g anonInfo tinst
         | TOp.IntegerForLoop _ | TOp.While _ -> g.unit_ty
         | TOp.Array -> (match tinst with [ty] -> mkArrayType g ty | _ -> failwith "bad TOp.Array node")
+        | TOp.Block -> (match tinst with [ty] -> mkBlockType g ty | _ -> failwith "bad TOp.Array node")
         | TOp.TryWith _ | TOp.TryFinally _ -> (match tinst with [ty] -> ty | _ -> failwith "bad TOp_try node")
         | TOp.ValFieldGetAddr (fref, readonly) -> mkByrefTyWithFlag g readonly (actualTyOfRecdFieldRef fref tinst)
         | TOp.ValFieldGet fref -> actualTyOfRecdFieldRef fref tinst
@@ -7769,7 +7773,10 @@ let mkCallSeqToArray g m elemTy arg1 =
                   
 let mkCallSeqToList g m elemTy arg1 = 
     mkApps g (typedExprForIntrinsic g m g.seq_to_list_info, [[elemTy]], [ arg1 ], m) 
-                  
+
+let mkCallSeqToBlock (g: TcGlobals) (m: range) (elemTy: TType) (arg1: Expr) =
+    mkApps g (typedExprForIntrinsic g m g.seq_to_array_info, [[elemTy]], [ arg1 ], m)
+
 let mkCallSeqMap g m inpElemTy genElemTy arg1 arg2 = 
     mkApps g (typedExprForIntrinsic g m g.seq_map_info, [[inpElemTy;genElemTy]], [ arg1; arg2 ], m) 
                   

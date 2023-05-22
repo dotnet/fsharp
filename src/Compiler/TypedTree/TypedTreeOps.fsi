@@ -1519,6 +1519,9 @@ val mkVoidPtrTy: TcGlobals -> TType
 /// Build a single-dimensional array type
 val mkArrayType: TcGlobals -> TType -> TType
 
+/// Build a single-dimensional block type
+val mkBlockType: TcGlobals -> TType -> TType
+
 /// Determine if a type is a value option type
 val isValueOptionTy: TcGlobals -> TType -> bool
 
@@ -2144,6 +2147,8 @@ val mkCallSeqOfFunctions: TcGlobals -> range -> TType -> TType -> Expr -> Expr -
 val mkCallSeqToArray: TcGlobals -> range -> TType -> Expr -> Expr
 
 val mkCallSeqToList: TcGlobals -> range -> TType -> Expr -> Expr
+
+val mkCallSeqToBlock: TcGlobals -> range -> TType -> Expr -> Expr
 
 val mkCallSeqMap: TcGlobals -> range -> TType -> TType -> Expr -> Expr -> Expr
 

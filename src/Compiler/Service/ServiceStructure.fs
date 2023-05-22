@@ -341,8 +341,9 @@ module Structure =
                 parseExpr e1
                 parseExpr e2
 
-            | SynExpr.ArrayOrListComputed (isArray, e, r) ->
-                let collapse = Range.modBoth (if isArray then 2 else 1) (if isArray then 2 else 1) r
+            | SynExpr.ArrayOrListComputed (cType, e, r) ->
+                let pos = match cType with CollectionType.Array | CollectionType.ImmutableArray -> 2 | CollectionType.List -> 1
+                let collapse = Range.modBoth pos pos r
                 rcheck Scope.ArrayOrList Collapse.Same r collapse
                 parseExpr e
 

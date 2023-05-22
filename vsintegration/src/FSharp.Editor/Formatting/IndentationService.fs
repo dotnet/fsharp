@@ -63,6 +63,7 @@ type internal FSharpIndentationService [<ImportingConstructor>] () =
             | Eq FSharpTokenTag.LPAREN // (
             | Eq FSharpTokenTag.LBRACK // [
             | Eq FSharpTokenTag.LBRACK_BAR // [|
+            | Eq FSharpTokenTag.LBRACK_COLON // [:
             | Eq FSharpTokenTag.LBRACK_LESS // [<
             | Eq FSharpTokenTag.LBRACE // {
             | Eq FSharpTokenTag.BEGIN // begin

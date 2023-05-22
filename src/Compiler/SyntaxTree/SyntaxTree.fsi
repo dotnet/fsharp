@@ -6,6 +6,7 @@ open System
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Xml
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTrivia
 
 /// Represents an identifier in F# code
@@ -68,6 +69,12 @@ type ParserDetail =
 
     /// The construct arises from error recovery
     | ErrorRecovery
+
+[<Struct; RequireQualifiedAccess>]
+type CollectionType =
+    | List
+    | Array
+    | ImmutableArray
 
 /// Represents whether a type parameter has a static requirement or not (^T or 'T)
 [<RequireQualifiedAccess>]
@@ -562,7 +569,7 @@ type SynExpr =
         trivia: SynExprAnonRecdTrivia
 
     /// F# syntax: [ e1; ...; en ], [| e1; ...; en |]
-    | ArrayOrList of isArray: bool * exprs: SynExpr list * range: range
+    | ArrayOrList of cType: CollectionType * exprs: SynExpr list * range: range
 
     /// F# syntax: { f1=e1; ...; fn=en }
     /// inherit includes location of separator (for tooling)
@@ -616,7 +623,7 @@ type SynExpr =
         range: range
 
     /// F# syntax: [ expr ], [| expr |]
-    | ArrayOrListComputed of isArray: bool * expr: SynExpr * range: range
+    | ArrayOrListComputed of cType: CollectionType * expr: SynExpr * range: range
 
     /// F# syntax: expr..
     /// F# syntax: ..expr
@@ -1077,7 +1084,7 @@ type SynPat =
     | Paren of pat: SynPat * range: range
 
     /// An array or a list as a pattern
-    | ArrayOrList of isArray: bool * elementPats: SynPat list * range: range
+    | ArrayOrList of cType: CollectionType * elementPats: SynPat list * range: range
 
     /// A record pattern
     | Record of fieldPats: ((LongIdent * Ident) * range * SynPat) list * range: range

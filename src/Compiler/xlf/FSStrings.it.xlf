@@ -17,6 +17,11 @@
         <target state="translated">I casi di unione discriminati minuscoli sono consentiti solo quando si usa l'attributo RequireQualifiedAccess</target>
         <note />
       </trans-unit>
+      <trans-unit id="Parser.TOKEN.COLON.RBRACK">
+        <source>symbol ':]'</source>
+        <target state="new">symbol ':]'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
         <source>symbol '..^'</source>
         <target state="translated">simbolo '..^'</target>
@@ -40,6 +45,11 @@
       <trans-unit id="Parser.TOKEN.INTERP.STRING.PART">
         <source>interpolated string (part)</source>
         <target state="translated">stringa interpolata (parte)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.LBRACK.COLON">
+        <source>symbol '[:'</source>
+        <target state="new">symbol '[:'</target>
         <note />
       </trans-unit>
       <trans-unit id="SeeAlso">

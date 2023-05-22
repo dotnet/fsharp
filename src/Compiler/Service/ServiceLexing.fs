@@ -49,6 +49,8 @@ module FSharpTokenTag =
     let GREATER = tagOfToken (GREATER true)
     let LBRACK_BAR = tagOfToken LBRACK_BAR
     let BAR_RBRACK = tagOfToken BAR_RBRACK
+    let LBRACK_COLON = tagOfToken LBRACK_COLON
+    let COLON_RBRACK = tagOfToken COLON_RBRACK
     let PLUS_MINUS_OP = tagOfToken (PLUS_MINUS_OP "a")
     let MINUS = tagOfToken MINUS
     let STAR = tagOfToken STAR
@@ -284,6 +286,7 @@ module internal TokenClassifications =
         | LBRACK
         | LBRACE _
         | LBRACK_BAR
+        | LBRACK_COLON
         | LBRACE_BAR -> (FSharpTokenColorKind.Punctuation, FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.MatchBraces)
 
         | GREATER_RBRACK
@@ -295,6 +298,7 @@ module internal TokenClassifications =
         | RBRACE_COMING_SOON
         | RBRACE_IS_HERE
         | BAR_RBRACK
+        | COLON_RBRACK
         | BAR_RBRACE -> (FSharpTokenColorKind.Punctuation, FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.MatchBraces)
 
         | PUBLIC
@@ -1338,6 +1342,7 @@ type FSharpTokenKind =
     | Minus
     | Dollar
     | BarRightBracket
+    | ColonRightBracket
     | BarRightBrace
     | Underscore
     | Semicolon
@@ -1346,6 +1351,7 @@ type FSharpTokenKind =
     | Equals
     | LeftBracket
     | LeftBracketBar
+    | LeftBracketColon
     | LeftBraceBar
     | LeftBracketLess
     | LeftBrace
@@ -1548,12 +1554,14 @@ type FSharpToken =
         | MINUS -> FSharpTokenKind.Minus
         | DOLLAR -> FSharpTokenKind.Dollar
         | BAR_RBRACK -> FSharpTokenKind.BarRightBracket
+        | COLON_RBRACK -> FSharpTokenKind.ColonRightBracket
         | BAR_RBRACE -> FSharpTokenKind.BarRightBrace
         | UNDERSCORE -> FSharpTokenKind.Underscore
         | SEMICOLON_SEMICOLON -> FSharpTokenKind.SemicolonSemicolon
         | LARROW -> FSharpTokenKind.LeftArrow
         | EQUALS -> FSharpTokenKind.Equals
         | LBRACK -> FSharpTokenKind.LeftBracket
+        | LBRACK_COLON -> FSharpTokenKind.LeftBracketColon
         | LBRACK_BAR -> FSharpTokenKind.LeftBracketBar
         | LBRACE_BAR -> FSharpTokenKind.LeftBraceBar
         | LBRACK_LESS -> FSharpTokenKind.LeftBracketLess

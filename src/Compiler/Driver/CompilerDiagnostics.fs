@@ -627,11 +627,14 @@ let OutputNameSuggestions (os: StringBuilder) suggestNames suggestionsF idText =
 let OutputTypesNotInEqualityRelationContextInfo contextInfo ty1 ty2 m (os: StringBuilder) fallback =
     match contextInfo with
     | ContextInfo.IfExpression range when equals range m -> os.AppendString(FSComp.SR.ifExpression (ty1, ty2))
-    | ContextInfo.CollectionElement (isArray, range) when equals range m ->
-        if isArray then
+    | ContextInfo.CollectionElement (cType, range) when equals range m ->
+        match cType with
+        | CollectionType.Array ->
             os.AppendString(FSComp.SR.arrayElementHasWrongType (ty1, ty2))
-        else
+        | CollectionType.List ->
             os.AppendString(FSComp.SR.listElementHasWrongType (ty1, ty2))
+        | CollectionType.ImmutableArray ->
+            os.AppendString(FSComp.SR.blockElementHasWrongType (ty1, ty2))
     | ContextInfo.OmittedElseBranch range when equals range m -> os.AppendString(FSComp.SR.missingElseBranch (ty2))
     | ContextInfo.ElseBranchResult range when equals range m -> os.AppendString(FSComp.SR.elseBranchHasWrongType (ty1, ty2))
     | ContextInfo.FollowingPatternMatchClause range when equals range m ->
@@ -743,11 +746,14 @@ type Exception with
                     os.AppendString(FSComp.SR.elseBranchHasWrongTypeTuple messageArgs)
                 | ContextInfo.FollowingPatternMatchClause range when equals range m ->
                     os.AppendString(FSComp.SR.followingPatternMatchClauseHasWrongTypeTuple messageArgs)
-                | ContextInfo.CollectionElement (isArray, range) when equals range m ->
-                    if isArray then
+                | ContextInfo.CollectionElement (cType, range) when equals range m ->
+                    match cType with
+                    | CollectionType.Array ->
                         os.AppendString(FSComp.SR.arrayElementHasWrongTypeTuple messageArgs)
-                    else
+                    | CollectionType.List ->
                         os.AppendString(FSComp.SR.listElementHasWrongTypeTuple messageArgs)
+                    | CollectionType.ImmutableArray ->
+                        os.AppendString(FSComp.SR.blockElementHasWrongTypeTuple messageArgs)
                 | _ -> os.AppendString(ErrorFromAddingTypeEquationTuplesE().Format tl1.Length ty1 tl2.Length ty2 tpcs)
 
         | ErrorFromAddingTypeEquation (g, denv, ty1, ty2, e, _) ->
@@ -1093,8 +1099,10 @@ type Exception with
                 | Parser.TOKEN_LBRACK -> SR.GetString("Parser.TOKEN.LBRACK")
                 | Parser.TOKEN_LBRACE_BAR -> SR.GetString("Parser.TOKEN.LBRACE.BAR")
                 | Parser.TOKEN_LBRACK_BAR -> SR.GetString("Parser.TOKEN.LBRACK.BAR")
+                | Parser.TOKEN_LBRACK_COLON -> SR.GetString("Parser.TOKEN.LBRACK.COLON")
                 | Parser.TOKEN_LBRACK_LESS -> SR.GetString("Parser.TOKEN.LBRACK.LESS")
                 | Parser.TOKEN_LBRACE -> SR.GetString("Parser.TOKEN.LBRACE")
+                | Parser.TOKEN_COLON_RBRACK -> SR.GetString("Parser.TOKEN.COLON.RBRACK")
                 | Parser.TOKEN_BAR_RBRACK -> SR.GetString("Parser.TOKEN.BAR.RBRACK")
                 | Parser.TOKEN_BAR_RBRACE -> SR.GetString("Parser.TOKEN.BAR.RBRACE")
                 | Parser.TOKEN_GREATER_RBRACK -> SR.GetString("Parser.TOKEN.GREATER.RBRACK")

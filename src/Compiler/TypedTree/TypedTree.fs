@@ -4933,6 +4933,9 @@ type TOp =
     /// An operation representing the creation of an array value
     | Array
 
+    /// An operation representing the creation of a block value
+    | Block
+
     /// Constant byte arrays (used for parser tables and other embedded data)
     | Bytes of byte[]
 
@@ -5048,6 +5051,7 @@ type TOp =
         | AnonRecd _anonInfo -> "AnonRecd(..)"
         | AnonRecdGet _ -> "AnonRecdGet(..)"
         | Array -> "NewArray"
+        | Block -> "NewBlock"
         | Bytes _ -> "Bytes(..)"
         | UInt16s _ -> "UInt16s(..)"
         | While _ -> "While"
