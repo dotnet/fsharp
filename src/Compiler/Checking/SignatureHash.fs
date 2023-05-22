@@ -116,7 +116,7 @@ module HashIL =
         |> hashAllVia (hashILType ilTyparSubst) 
         |> addToHash res
 
-module PrintTypes = 
+module rec PrintTypes = 
 
     let hashAccessibility (TAccess access) itemHash =
         let isInternalCompPath x = 
@@ -167,27 +167,13 @@ module PrintTypes =
         hashTyparRef typar @@ hashTyparAttribs g typar.Attribs
       
     /// Hash type parameter constraints, taking TypeSimplificationInfo into account 
-    let rec hashConstraintsWithInfo (* denv *) env cxs = 
-        
-        // Internally member constraints get attached to each type variable in their support. 
-        // This means we get too many constraints being printed. 
-        // So we normalize the constraints to eliminate duplicate member constraints 
-        let cxs = 
-            cxs
-            |> ListSet.setify (fun (_, cx1) (_, cx2) ->
-                match cx1, cx2 with 
-                | TyparConstraint.MayResolveMember(traitInfo1, _),
-                  TyparConstraint.MayResolveMember(traitInfo2, _) -> traitsAEquiv (* denv *).g TypeEquivEnv.Empty traitInfo1 traitInfo2
-                | _ -> false)
-
-        let cxsL = List.collect (hashConstraintWithInfo (* denv *) env) cxs
-        match cxsL with 
-        | [] -> 0 (* empty hash *) 
-        | _ ->  hashText (tagKeyword "when") ^^ sepListL (hashText (tagKeyword "and")) cxsL
+    let hashConstraintsWithInfo env cxs = 
+        cxs
+        |> hashAllVia (hashConstraintWithInfo env)
                 
 
     /// Hash constraints, taking TypeSimplificationInfo into account 
-    and hashConstraintWithInfo (* denv *) env (tp, tpc) =
+    let hashConstraintWithInfo (* denv *) env (tp, tpc) =
         let tpHash = hashTyparRefWithInfo env tp
         //let longConstraintPrefix l = (hashTyparRefWithInfo (* denv *) env tp |> addColonL) ^^ l
         match tpc with 
@@ -214,10 +200,11 @@ module PrintTypes =
             tpHash @@ 6
 
         | TyparConstraint.IsDelegate(aty, bty, _) ->
-            if (* denv *).shortConstraints then 
-                [WordL.keywordDelegate]
-            else
-                [hashTypeAppWithInfoAndPrec (* denv *) env WordL.keywordDelegate 2 true [aty;bty] |> longConstraintPrefix]
+            tpHash @@ 7 @@ hashTypeAppWithInfoAndPrec env aty @@ hashTypeAppWithInfoAndPrec env bty  
+            //if (* denv *).shortConstraints then 
+            //    [WordL.keywordDelegate]
+            //else
+            //    [hashTypeAppWithInfoAndPrec (* denv *) env WordL.keywordDelegate 2 true [aty;bty] |> longConstraintPrefix]
 
         | TyparConstraint.SupportsNull _ ->
             tpHash @@ 8
@@ -232,20 +219,14 @@ module PrintTypes =
             tpHash @@ 11
 
         | TyparConstraint.SimpleChoice(tys, _) ->
-            [bracketL (sepListL (sepL (tagPunctuation "|")) (List.map (hashTypeWithInfo (* denv *) env) tys)) |> longConstraintPrefix]
+            tpHash @@ 12 @@ (tys |> hashAllVia (hashTypeWithInfo env))
+            //[bracketL (sepListL (sepL (tagPunctuation "|")) (List.map (hashTypeWithInfo (* denv *) env) tys)) |> longConstraintPrefix]
 
         | TyparConstraint.RequiresDefaultConstructor _ -> 
-            if (* denv *).shortConstraints then 
-                [hashText (tagKeyword "default") ^^ hashText (tagKeyword "constructor")]
-            else
-                [bracketL (
-                    (WordL.keywordNew |> addColonL) ^^
-                    WordL.structUnit ^^ 
-                    WordL.arrow ^^
-                    (hashTyparRefWithInfo (* denv *) env tp)) |> longConstraintPrefix]
+            tpHash @@ 13
 
-    and hashTraitWithInfo (* denv *) env traitInfo =
-        let g = (* denv *).g
+    let hashTraitWithInfo  env traitInfo =
+        let g = env
         let (TTrait(tys, _, memFlags, _, _, _)) = traitInfo
         let nm = traitInfo.MemberDisplayNameCore
         let nameL = ConvertValLogicalNameToDisplayLayout false (tagMember >> hashText) nm
@@ -289,7 +270,7 @@ module PrintTypes =
             (tysL |> addColonL) --- bracketL (stat ++ (nameL |> addColonL) --- sigL --- getterSetterL)
 
     /// Hash a unit of measure expression 
-    and hashMeasure (* denv *) unt =
+    let hashMeasure (* denv *) unt =
         let sortVars vs = vs |> List.sortBy (fun (tp: Typar, _) -> tp.DisplayName) 
         let sortCons cs = cs |> List.sortBy (fun (tcref: TyconRef, _) -> tcref.DisplayName) 
         let negvs, posvs = ListMeasureVarOccsWithNonZeroExponents unt |> sortVars |> List.partition (fun (_, e) -> SignRational e < 0)
@@ -307,7 +288,7 @@ module PrintTypes =
         | _ -> prefix ^^ sepL (tagPunctuation "/") ^^ (if List.length negvs + List.length negcs > 1 then sepL (tagPunctuation "(") ^^ postfix ^^ sepL (tagPunctuation ")") else postfix)
 
     /// Hash type arguments, either NAME<ty, ..., ty> or (ty, ..., ty) NAME *)
-    and hashTypeAppWithInfoAndPrec (* denv *) env tcL prec prefix argTys =
+    let hashTypeAppWithInfoAndPrec (* denv *) env tcL prec prefix argTys =
         if prefix then 
             match argTys with
             | [] -> tcL
@@ -320,7 +301,7 @@ module PrintTypes =
             | args -> bracketIfL (prec <= 1) (bracketL (hashTypesWithInfoAndPrec (* denv *) env 2 (sepL (tagPunctuation ",")) args) --- tcL)
     
     /// Hash a type, taking precedence into account to insert brackets where needed
-    and hashTypeWithInfoAndPrec (* denv *) env prec ty =
+    let hashTypeWithInfoAndPrec (* denv *) env prec ty =
         let g = (* denv *).g
         match stripTyparEqns ty with 
 
@@ -384,16 +365,16 @@ module PrintTypes =
         | TType_measure unt -> hashMeasure (* denv *) unt
 
     /// Hash a list of types, separated with the given separator, either '*' or ','
-    and hashTypesWithInfoAndPrec (* denv *) env prec sep typl = 
+    let hashTypesWithInfoAndPrec (* denv *) env prec sep typl = 
         sepListL sep (List.map (hashTypeWithInfoAndPrec (* denv *) env prec) typl)
 
-    and hashReturnType (* denv *) env retTy = hashTypeWithInfoAndPrec (* denv *) env 4 retTy
+    let hashReturnType (* denv *) env retTy = hashTypeWithInfoAndPrec (* denv *) env 4 retTy
 
     /// Hash a single type, taking TypeSimplificationInfo into account 
-    and hashTypeWithInfo (* denv *) env ty = 
+    let hashTypeWithInfo (* denv *) env ty = 
         hashTypeWithInfoAndPrec (* denv *) env 5 ty
 
-    and hashType (* denv *) ty = 
+    let hashType (* denv *) ty = 
         hashTypeWithInfo (* denv *) SimplifyTypes.typeSimplificationInfo0 ty
 
     // Format each argument, including its name and type 
