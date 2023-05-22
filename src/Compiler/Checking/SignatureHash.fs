@@ -38,6 +38,11 @@ let inline combineHash x y  : Hash= (x <<< 1) + y + 631
 let inline addToHash (acc:Hash) (value:Hash)  = combineHash acc value
 let inline hashAndAdd (value) (acc:Hash) = addToHash (hash value) (acc)
 let inline combineHashes (hashes: Hash list) = (0,hashes) ||> List.fold (fun acc curr -> combineHash acc curr)
+let inline hashAllVia func (items: 'T list) : Hash =
+    let mutable acc = 0
+    for i in items do
+        acc <- addToHash acc (func i)
+    acc
 let (@@) (h1:Hash) (h2:Hash) = combineHash h1 h2
 let (^^) (h1:Hash) (h2:Hash) = combineHash h1 h2
 
@@ -75,313 +80,94 @@ module internal HashUtilities =
         let demangled = tcref.DisplayNameWithStaticParameters
         let tyconHash = hashEntityRefName g tcref demangled
 
-        tcref.CompilationPath.DemangledPath  
-        |> List.map hash
-        |> combineHashes
+        tcref.CompilationPath.AccessPath
+        |> hashAllVia (fst >> hashText) 
         |> addToHash tyconHash
 
 
     let hashBuiltinAttribute g (attrib: BuiltinAttribInfo) = hashTyconRefImpl g attrib.TyconRef
         
-module PrintIL = 
+module HashIL = 
 
-    //let fullySplitILTypeRef (tref: ILTypeRef) = 
-    //    (List.collect splitNamespace (tref.Enclosing @ [DemangleGenericTypeName tref.Name])) 
-
-    //let hashILTypeRefName (* denv *) path =
-    //    let path = 
-    //        match path with 
-    //        | [ "System"; "Void" ] -> ["unit"]
-    //        | [ "System"; "Object" ] -> ["obj"]
-    //        | [ "System"; "String" ] -> ["string"]
-    //        | [ "System"; "Single" ] -> ["float32"]
-    //        | [ "System"; "Double" ] -> ["float"]
-    //        | [ "System"; "Decimal"] -> ["decimal"]
-    //        | [ "System"; "Char" ] -> ["char"]
-    //        | [ "System"; "Byte" ] -> ["byte"]
-    //        | [ "System"; "SByte" ] -> ["sbyte"]
-    //        | [ "System"; "Int16" ] -> ["int16"]
-    //        | [ "System"; "Int32" ] -> ["int" ]
-    //        | [ "System"; "Int64" ] -> ["int64" ]
-    //        | [ "System"; "UInt16" ] -> ["uint16" ]
-    //        | [ "System"; "UInt32" ] -> ["uint" ]
-    //        | [ "System"; "UInt64" ] -> ["uint64" ]
-    //        | [ "System"; "IntPtr" ] -> ["nativeint" ]
-    //        | [ "System"; "UIntPtr" ] -> ["unativeint" ]
-    //        | [ "System"; "Boolean"] -> ["bool"]
-    //        | _ -> path
-    //    let p2, n = List.frontAndBack path
-    //    let tagged = if n = "obj" || n = "string" then tagClass n else tagStruct n
-    //    leftL (tagNamespace (trimPathByDisplayEnv (* denv *) p2)) ^^ hashText tagged
-            
-
-    let hashILTypeRef (* denv *) (tref: ILTypeRef) =
+    let hashILTypeRef (tref: ILTypeRef) =
         tref.Enclosing
-        |> List.map hash
-        |> combineHashes
+        |> hashAllVia hashText      
         |> hashAndAdd tref.Name
 
     let hashILArrayShape ( sh:ILArrayShape) = sh.Rank  
 
-    let paramsL (ps: Hash list) : Hash = ps |> combineHashes      
-
-    let pruneParams (className: string) (ilTyparSubst: Hash list) =
-        let numParams = 
-            // can't find a way to see the number of generic parameters for *this* class (the GenericParams also include type variables for enclosing classes); this will have to do
-            let rightMost = className |> SplitNamesForILPath |> List.last
-            match Int32.TryParse(rightMost, NumberStyles.Integer, CultureInfo.InvariantCulture) with 
-            | true, n -> n
-            | false, _ -> 0 // looks like it's non-generic
-        ilTyparSubst |> List.rev |> List.truncate numParams |> List.rev
+    let paramsL (ps: Hash list) : Hash = ps |> combineHashes 
  
     let rec hashILType (ilTyparSubst: Hash list) (ty: ILType) : Hash =
         match ty with
         | ILType.Void -> hash ILType.Void
         | ILType.Array (sh, t) -> hashILType ilTyparSubst t ^^ hashILArrayShape sh
         | ILType.Value t
-        | ILType.Boxed t -> hashILTypeRef  t.TypeRef ^^ (t.GenericArgs |> List.map (hashILType ilTyparSubst) |> paramsL)
+        | ILType.Boxed t -> hashILTypeRef  t.TypeRef ^^ (t.GenericArgs |> hashAllVia (hashILType ilTyparSubst))
         | ILType.Ptr t
         | ILType.Byref t -> hashILType  ilTyparSubst t
         | ILType.FunctionPointer t -> hashILCallingSignature ilTyparSubst None t
         | ILType.TypeVar n -> List.item (int n) ilTyparSubst
         | ILType.Modified (_, _, t) -> hashILType ilTyparSubst t
 
-    /// Hash a function pointer signature using type-only-F#-style. No argument names are printed.
-    and hashILCallingSignature (* denv *) ilTyparSubst cons (signature: ILCallingSignature) =
-        // We need a special case for
-        // constructors (Their return types are reported as `void`, but this is
-        // incorrect; so if we're dealing with a constructor we require that the
-        // return type be passed along as the `cons` parameter.)
-        let args = signature.ArgTypes |> List.map (hashILType (* denv *) ilTyparSubst) 
-        let res = 
-            match cons with
-            | Some className -> 
-                let names = SplitNamesForILPath (DemangleGenericTypeName className)
-                // special case for constructor return-type (viz., the class itself)
-                hashILTypeRefName (* denv *) names ^^ (pruneParams className ilTyparSubst |> paramsL) 
-            | None -> 
-                signature.ReturnType |> hashILType (* denv *) ilTyparSubst
-        
-        match args with
-        | [] -> WordL.structUnit ^^ WordL.arrow ^^ res
-        | [x] -> x ^^ WordL.arrow ^^ res
-        | _ -> sepListL WordL.star args ^^ WordL.arrow ^^ res
-
-    let hashILFieldInit x =  Unchecked.defaulto
-    let hashILEnumCase nm litVal =
-        let nameL = ConvertLogicalNameToDisplayLayout (tagEnum >> hashText) nm
-        WordL.bar ^^ nameL ^^ hashILFieldInit litVal
+    and hashILCallingSignature (* denv *) ilTyparSubst cons (signature: ILCallingSignature) =       
+        let res = signature.ReturnType |> hashILType  ilTyparSubst   
+        signature.ArgTypes
+        |> hashAllVia (hashILType ilTyparSubst) 
+        |> addToHash res
 
 module PrintTypes = 
-    // Note: We need nice printing of constants in order to print literals and attributes 
-    let hashConst g ty c =
-        let str = 
-            match c with
-            | Const.Bool x -> if x then keywordTrue else keywordFalse
-            | Const.SByte x -> (x |> string)+"y" |> tagNumericLiteral
-            | Const.Byte x -> (x |> string)+"uy" |> tagNumericLiteral
-            | Const.Int16 x -> (x |> string)+"s" |> tagNumericLiteral
-            | Const.UInt16 x -> (x |> string)+"us" |> tagNumericLiteral
-            | Const.Int32 x -> (x |> string) |> tagNumericLiteral
-            | Const.UInt32 x -> (x |> string)+"u" |> tagNumericLiteral
-            | Const.Int64 x -> (x |> string)+"L" |> tagNumericLiteral
-            | Const.UInt64 x -> (x |> string)+"UL" |> tagNumericLiteral
-            | Const.IntPtr x -> (x |> string)+"n" |> tagNumericLiteral
-            | Const.UIntPtr x -> (x |> string)+"un" |> tagNumericLiteral
-            | Const.Single d -> 
-                 let s = d.ToString("g12", CultureInfo.InvariantCulture)
-                 let s = ensureFloat s
-                 (s + "f") |> tagNumericLiteral
-            | Const.Double d -> 
-                let s = d.ToString("g12", CultureInfo.InvariantCulture)
-                let s = ensureFloat s
-                s |> tagNumericLiteral
-            | Const.Char c -> "'" + c.ToString() + "'" |> tagStringLiteral
-            | Const.String bs -> "\"" + bs + "\"" |> tagNumericLiteral
-            | Const.Unit -> "()" |> tagPunctuation
-            | Const.Decimal bs -> string bs + "M" |> tagNumericLiteral
-            // either "null" or "the default value for a struct"
-            | Const.Zero -> tagKeyword(if isRefTy g ty then "null" else "default")
-        hashText str
 
-    let hashAccessibilityCore ((* denv *): DisplayEnv) accessibility =
+    let hashAccessibility (TAccess access) itemHash =
         let isInternalCompPath x = 
             match x with 
             | CompPath(ILScopeRef.Local, []) -> true 
             | _ -> false
-        let (|Public|Internal|Private|) (TAccess p) = 
-            match p with 
-            | [] -> Public 
-            | _ when List.forall isInternalCompPath p -> Internal 
-            | _ -> Private
-        match (* denv *).contextAccessibility, accessibility with
-        | Public, Internal -> WordL.keywordInternal
-        | Public, Private -> WordL.keywordPrivate
-        | Internal, Private -> WordL.keywordPrivate
-        | _ -> 0 (* empty hash *)
-    
-    let hashAccessibility ((* denv *): DisplayEnv) accessibility itemL =
-        hashAccessibilityCore (* denv *) accessibility ++ itemL
+
+        match  access with     
+            | [] -> itemHash 
+            | _ when List.forall isInternalCompPath access  -> itemHash * 0 // TODO handle internals visible to attribute 
+            | _ -> 0
 
     /// Hash a reference to a type 
-    let hashTyconRef (* denv *) tcref = hashTyconRefImpl false (* denv *) tcref
+    let hashTyconRef (g:TcGlobals) tcref = hashTyconRefImpl g tcref
 
     /// Hash the flags of a member 
-    let hashMemberFlags (memFlags: SynMemberFlags) = 
-        let stat = 
-            if memFlags.IsInstance || (memFlags.MemberKind = SynMemberKind.Constructor) then 0 (* empty hash *) 
-            else WordL.keywordStatic
-
-        let stat = 
-            if memFlags.IsOverrideOrExplicitImpl then stat ++ WordL.keywordOverride
-            else stat
-
-        let stat = 
-            if memFlags.IsDispatchSlot then stat ++ WordL.keywordAbstract
-            elif memFlags.IsOverrideOrExplicitImpl then stat
-            else
-                match memFlags.MemberKind with 
-                | SynMemberKind.ClassConstructor 
-                | SynMemberKind.Constructor 
-                | SynMemberKind.PropertyGetSet -> stat
-                | SynMemberKind.Member 
-                | SynMemberKind.PropertyGet 
-                | SynMemberKind.PropertySet -> stat ++ WordL.keywordMember
-
-        // let stat = if memFlags.IsFinal then stat ++ hashText "final" else stat in
-        stat
-
-    /// Hash a single attribute arg, following the cases of 'gen_attr_arg' in ilxgen.fs
-    /// This is the subset of expressions we display in the NicePrint pretty printer 
-    /// See also dataExprL - there is overlap between these that should be removed 
-    let rec hashAttribArg (* denv *) arg = 
-        match arg with 
-        | Expr.Const (c, _, ty) -> 
-            if isEnumTy (* denv *).g ty then 
-                WordL.keywordEnum ^^ angleL (hashType (* denv *) ty) ^^ bracketL (hashConst (* denv *).g ty c)
-            else
-                hashConst (* denv *).g ty c
-
-        | Expr.Op (TOp.Array, [_elemTy], args, _) ->
-            LeftL.leftBracketBar ^^ semiListL (List.map (hashAttribArg (* denv *)) args) ^^ RightL.rightBracketBar
-
-        // Detect 'typeof<ty>' calls 
-        | TypeOfExpr (* denv *).g ty ->
-            LeftL.keywordTypeof ^^ hashText (tagPunctuation "<") ^^ hashType (* denv *) ty ^^ rightL (tagPunctuation ">")
-
-        // Detect 'typedefof<ty>' calls 
-        | TypeDefOfExpr (* denv *).g ty ->
-            LeftL.keywordTypedefof ^^ hashText (tagPunctuation "<") ^^ hashType (* denv *) ty ^^ rightL (tagPunctuation ">")
-
-        | Expr.Op (TOp.Coerce, [tgtTy;_], [arg2], _) ->
-            leftL (tagPunctuation "(") ^^ hashAttribArg (* denv *) arg2 ^^ hashText (tagPunctuation ":>") ^^ hashType (* denv *) tgtTy ^^ rightL (tagPunctuation ")")
-
-        | AttribBitwiseOrExpr (* denv *).g (arg1, arg2) ->
-            hashAttribArg (* denv *) arg1 ^^ hashText (tagPunctuation "|||") ^^ hashAttribArg (* denv *) arg2
-
-        // Detect explicit enum values 
-        | EnumExpr (* denv *).g arg1 ->
-            WordL.keywordEnum ++ bracketL (hashAttribArg (* denv *) arg1)
-
-        | _ -> comment "(* unsupported attribute argument *)"
-
-    /// Hash arguments of an attribute 'arg1, ..., argN' 
-    and hashAttribArgs (* denv *) args props = 
-        let argsL =  args |> List.map (fun (AttribExpr(e1, _)) -> hashAttribArg (* denv *) e1)
-        let propsL =
-            props
-            |> List.map (fun (AttribNamedArg(name,_, _, AttribExpr(e1, _))) ->
-                hashText (tagProperty name) ^^ WordL.equals ^^ hashAttribArg (* denv *) e1)
-        sepListL (rightL (tagPunctuation ",")) (argsL @ propsL)
+    let hashMemberFlags (memFlags: SynMemberFlags) = hash memFlags 
 
     /// Hash an attribute 'Type(arg1, ..., argN)' 
-    and hashAttrib (* denv *) (Attrib(tcref, _, args, props, _, _, _)) = 
-        let tcrefL = hashTyconRefImpl true (* denv *) tcref
-        let argsL = bracketL (hashAttribArgs (* denv *) args props)
-        if List.isEmpty args && List.isEmpty props then
-            tcrefL
-        else
-            tcrefL ++ argsL
-
-    and hashILAttribElement (* denv *) arg = Unchecked.defaultof<_>
-    // Why null? Because for hash of a signature, contents of attribute should not matter
+    let hashAttrib (g:TcGlobals) (Attrib(tyconRef = tcref)) = 
+        hashTyconRefImpl g tcref
 
 
-    and hashILAttrib (* denv *) (ty, args) = 
-        let argsL = bracketL (sepListL (rightL (tagPunctuation ",")) (List.map (hashILAttribElement (* denv *)) args))
-        PrintIL.hashILType (* denv *) [] ty ++ argsL
+    let hashILAttrib (ty, args) = HashIL.hashILType [] ty
+   
+    let hashAttribs (g:TcGlobals) startOpt isLiteral kind attrs restL = 
+        let mutable acc = 0
+        for a in attrs do
+            acc <- addToHash acc  (hashAttrib g a)
 
-    /// Hash '[<attribs>]' above another block 
-    and hashAttribs (* denv *) startOpt isLiteral kind attrs restL = 
-        
-        let attrsL = 
-            [ if (* denv *).showAttributes then
-                for attr in attrs do
-                    hashAttrib (* denv *) attr
+        acc <- addToHash acc (hash startOpt)
+        acc <- addToHash acc (hash isLiteral)
+        acc <- addToHash acc (hash kind)
 
-              // Always show the 'Struct', 'Class, 'Interface' attributes if needed
-              match startOpt with 
-              | Some "struct" ->
-                  hashText (tagClass "Struct")
-              | Some "class" ->
-                  hashText (tagClass "Class")
-              | Some "interface" ->
-                  hashText (tagClass "Interface")
-              | _ ->
-                  ()
-
-              // Always show the 'Literal' attribute if needed
-              if isLiteral then
-                hashText (tagClass "Literal")
-
-              // Always show the 'Measure' attribute if needed
-              if kind = TyparKind.Measure then
-                hashText (tagClass "Measure")
-            ]
-
-        match attrsL with 
-        | [] -> restL 
-        | _ -> squareAngleL (sepListL (rightL (tagPunctuation ";")) attrsL) @@ restL
+        acc
             
-    and hashTyparAttribs (* denv *) kind attrs restL =
-        match attrs, kind with
-        | [], TyparKind.Type -> restL 
-        | _, _ -> squareAngleL (sepListL (rightL (tagPunctuation ";")) ((match kind with TyparKind.Type -> [] | TyparKind.Measure -> [hashText (tagText "Measure")]) @ List.map (hashAttrib (* denv *)) attrs)) ^^ restL
+    let hashTyparAttribs (g:TcGlobals) attrs  =
+        attrs
+        |> hashAllVia (hashAttrib g)     
 
-    and hashTyparRef (* denv *) (typar: Typar) =
-        tagTypeParameter 
-            (sprintf "%s%s%s"
-                (prefixOfStaticReq typar.StaticReq )
-                (prefixOfInferenceTypar typar )
-                typar.DisplayName)
-        |> mkNav typar.Range
-        |> hashText
+    let hashTyparRef (typar: Typar) =
+        hashText typar.DisplayName
+        |> hashAndAdd (typar.Rigidity)
+        |> hashAndAdd (typar.StaticReq)      
 
-    /// Hash a single type parameter declaration, taking TypeSimplificationInfo into account
-    /// There are several printing-cases for a typar:
-    ///
-    ///  'a              - is multiple occurrence.
-    ///  _               - singleton occurrence, an underscore preferred over 'b. (OCaml accepts but does not print)
-    ///  #Type           - inplace coercion constraint and singleton.
-    ///  ('a :> Type)    - inplace coercion constraint not singleton.
-    ///  ('a.opM: S->T) - inplace operator constraint.
-    ///
-    and hashTyparRefWithInfo (* denv *) (env: SimplifyTypes.TypeSimplificationInfo) (typar: Typar) =
-        let varL = hashTyparRef (* denv *) typar
-        let varL =  hashTyparAttribs (* denv *) typar.Kind typar.Attribs varL 
-
-        match Zmap.tryFind typar env.inplaceConstraints with
-        | Some typarConstraintTy ->
-            if Zset.contains typar env.singletons then
-                leftL (tagPunctuation "#") ^^ hashTypeWithInfo (* denv *) env typarConstraintTy
-            else
-                (varL ^^ sepL (tagPunctuation ":>") ^^ hashTypeWithInfo (* denv *) env typarConstraintTy) |> bracketL
-
-        | _ -> varL
-
+    
+    let hashTyparRefWithInfo (g:TcGlobals) (env: SimplifyTypes.TypeSimplificationInfo) (typar: Typar) =
+        hashTyparRef typar @@ hashTyparAttribs g typar.Attribs
       
     /// Hash type parameter constraints, taking TypeSimplificationInfo into account 
-    and hashConstraintsWithInfo (* denv *) env cxs = 
+    let rec hashConstraintsWithInfo (* denv *) env cxs = 
         
         // Internally member constraints get attached to each type variable in their support. 
         // This means we get too many constraints being printed. 
@@ -1765,7 +1551,7 @@ module TashDefinitionHashes =
             | TILObjectRepr _ when tycon.ILTyconRawMetadata.IsEnum ->
                 infoReader.GetILFieldInfosOfType (None, ad, m, ty) 
                 |> List.filter (fun x -> x.FieldName <> "value__")
-                |> List.map (fun x -> PrintIL.hashILEnumCase x.FieldName x.LiteralValue)
+                |> List.map (fun x -> hash x.FieldName)
                 |> combineHashes
                 |> addLhs
 
