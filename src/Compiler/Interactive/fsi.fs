@@ -6,6 +6,7 @@ module FSharp.Compiler.Interactive.Shell
 #nowarn "57"
 
 #nowarn "55"
+#nowarn "9"
 
 [<assembly: System.Runtime.InteropServices.ComVisible(false)>]
 [<assembly: System.CLSCompliant(true)>]
@@ -102,9 +103,25 @@ module internal Utilities =
             member _.FsiAnyToLayout(options, o: obj, ty: Type) =
                 Display.fsi_any_to_layout options ((Unchecked.unbox o: 'T), ty)
 
-    let getAnyToLayoutCall ty =
-        let specialized = typedefof<AnyToLayoutSpecialization<_>>.MakeGenericType [| ty |]
-        Activator.CreateInstance(specialized) :?> IAnyToLayoutCall
+    let getAnyToLayoutCall (ty: Type) =
+        if ty.IsPointer then
+            let pointerToNativeInt (o: obj) : nativeint =
+                System.Reflection.Pointer.Unbox o
+                |> NativeInterop.NativePtr.ofVoidPtr<nativeptr<byte>>
+                |> NativeInterop.NativePtr.toNativeInt
+
+            { new IAnyToLayoutCall with
+                member _.AnyToLayout(options, o: obj, ty: Type) =
+                    let n = pointerToNativeInt o
+                    Display.any_to_layout options (n, n.GetType())
+
+                member _.FsiAnyToLayout(options, o: obj, ty: Type) =
+                    let n = pointerToNativeInt o
+                    Display.any_to_layout options (n, n.GetType())
+            }
+        else
+            let specialized = typedefof<AnyToLayoutSpecialization<_>>.MakeGenericType [| ty |]
+            Activator.CreateInstance(specialized) :?> IAnyToLayoutCall
 
     let callStaticMethod (ty: Type) name args =
         ty.InvokeMember(
