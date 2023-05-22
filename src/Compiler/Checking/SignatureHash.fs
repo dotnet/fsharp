@@ -163,7 +163,7 @@ module PrintTypes =
         |> hashAndAdd (typar.StaticReq)      
 
     
-    let hashTyparRefWithInfo (g:TcGlobals) (env: SimplifyTypes.TypeSimplificationInfo) (typar: Typar) =
+    let hashTyparRefWithInfo (g:TcGlobals) (typar: Typar) =
         hashTyparRef typar @@ hashTyparAttribs g typar.Attribs
       
     /// Hash type parameter constraints, taking TypeSimplificationInfo into account 
@@ -188,36 +188,30 @@ module PrintTypes =
 
     /// Hash constraints, taking TypeSimplificationInfo into account 
     and hashConstraintWithInfo (* denv *) env (tp, tpc) =
-        let longConstraintPrefix l = (hashTyparRefWithInfo (* denv *) env tp |> addColonL) ^^ l
+        let tpHash = hashTyparRefWithInfo env tp
+        //let longConstraintPrefix l = (hashTyparRefWithInfo (* denv *) env tp |> addColonL) ^^ l
         match tpc with 
         | TyparConstraint.CoercesTo(tgtTy, _) -> 
-            [hashTyparRefWithInfo (* denv *) env tp ^^ hashText (tagOperator ":>") --- hashTypeWithInfo (* denv *) env tgtTy]
+            tpHash @@ 1 @@ hashTypeWithInfo env tgtTy            
 
         | TyparConstraint.MayResolveMember(traitInfo, _) ->
-            [hashTraitWithInfo (* denv *) env traitInfo]
+            tpHash @@ 2 @@ hashTraitWithInfo (* denv *) env traitInfo
 
         | TyparConstraint.DefaultsTo(_, ty, _) ->
-              if (* denv *).showTyparDefaultConstraints then 
-                  [hashText (tagKeyword "default") ^^ (hashTyparRefWithInfo (* denv *) env tp  |> addColonL) ^^ hashTypeWithInfo (* denv *) env ty]
-              else []
+            tpHash @@ 3 @@ hashTypeWithInfo env ty  
 
         | TyparConstraint.IsEnum(ty, _) ->
-            if (* denv *).shortConstraints then 
-                [hashText (tagKeyword "enum")]
-            else
-                [longConstraintPrefix (hashTypeAppWithInfoAndPrec (* denv *) env (hashText (tagKeyword "enum")) 2 true [ty])]
+            tpHash @@ 4 @@ hashTypeAppWithInfoAndPrec env ty  
+            //if (* denv *).shortConstraints then 
+            //    [hashText (tagKeyword "enum")]
+            //else
+            //    [longConstraintPrefix (hashTypeAppWithInfoAndPrec (* denv *) env (hashText (tagKeyword "enum")) 2 true [ty])]
 
         | TyparConstraint.SupportsComparison _ ->
-            if (* denv *).shortConstraints then 
-                [hashText (tagKeyword "comparison")]
-            else
-                [hashText (tagKeyword "comparison") |> longConstraintPrefix]
+            tpHash @@ 5
 
         | TyparConstraint.SupportsEquality _ ->
-            if (* denv *).shortConstraints then 
-                [hashText (tagKeyword "equality")]
-            else
-                [hashText (tagKeyword "equality") |> longConstraintPrefix]
+            tpHash @@ 6
 
         | TyparConstraint.IsDelegate(aty, bty, _) ->
             if (* denv *).shortConstraints then 
@@ -226,25 +220,16 @@ module PrintTypes =
                 [hashTypeAppWithInfoAndPrec (* denv *) env WordL.keywordDelegate 2 true [aty;bty] |> longConstraintPrefix]
 
         | TyparConstraint.SupportsNull _ ->
-            [hashText (tagKeyword "null") |> longConstraintPrefix]
+            tpHash @@ 8
 
         | TyparConstraint.IsNonNullableStruct _ ->
-            if (* denv *).shortConstraints then 
-                [hashText (tagText "value type")]
-            else
-                [WordL.keywordStruct |> longConstraintPrefix]
+            tpHash @@ 9
 
         | TyparConstraint.IsUnmanaged _ ->
-            if (* denv *).shortConstraints then
-                [hashText (tagKeyword "unmanaged")]
-            else
-                [hashText (tagKeyword "unmanaged") |> longConstraintPrefix]
+            tpHash @@ 10
 
         | TyparConstraint.IsReferenceType _ ->
-            if (* denv *).shortConstraints then 
-                [hashText (tagText "reference type")]
-            else
-                [(hashText (tagKeyword "not") ^^ hashText(tagKeyword "struct")) |> longConstraintPrefix]
+            tpHash @@ 11
 
         | TyparConstraint.SimpleChoice(tys, _) ->
             [bracketL (sepListL (sepL (tagPunctuation "|")) (List.map (hashTypeWithInfo (* denv *) env) tys)) |> longConstraintPrefix]
