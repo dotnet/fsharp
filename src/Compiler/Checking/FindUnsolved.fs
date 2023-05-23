@@ -34,8 +34,9 @@ let accTy cenv _env (fallbackRange: Range option) ty =
     let normalizedTy = tryNormalizeMeasureInType cenv.g ty
     (freeInType CollectTyparsNoCaching normalizedTy).FreeTypars |> Zset.iter (fun tp -> 
         if (tp.Rigidity <> TyparRigidity.Rigid) then
-            if Option.isSome fallbackRange && tp.Range = Range.range0 then
-                tp.SetIdent (FSharp.Compiler.Syntax.Ident(tp.typar_id.idText, fallbackRange.Value))    
+            match fallbackRange with
+            | Some r when tp.Range = Range.range0 -> tp.SetIdent (FSharp.Compiler.Syntax.Ident(tp.typar_id.idText, r))
+            | _ -> ()
             cenv.unsolved <- tp :: cenv.unsolved) 
 
 let accTypeInst cenv env tyargs =
