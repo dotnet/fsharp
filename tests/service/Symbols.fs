@@ -474,3 +474,96 @@ type Foo =
           (:? FSharpMemberOrFunctionOrValue as setMfv) ->
             Assert.AreNotEqual(getMfv.CurriedParameterGroups, setMfv.CurriedParameterGroups)
         | _ -> Assert.Fail "Expected symbols to be FSharpMemberOrFunctionOrValue"
+
+module Expressions =
+    [<Test>]
+    let ``Unresolved record field 01`` () =
+        let _, checkResults = getParseAndCheckResults """
+type R =
+    { F1: int
+      F2: int }
+
+{ F = 1
+  F2 = 1 }
+"""
+        getSymbolUses checkResults
+        |> Seq.exists (fun symbolUse -> symbolUse.IsFromUse && symbolUse.Symbol.DisplayName = "F2")
+        |> shouldEqual true
+
+    [<Test>]
+    let ``Unresolved record field 02`` () =
+        let _, checkResults = getParseAndCheckResults """
+[<RequireQualifiedAccess>]
+type R =
+    { F1: int
+      F2: int }
+
+{ F1 = 1
+  R.F2 = 1 }
+"""
+        getSymbolUses checkResults
+        |> Seq.exists (fun symbolUse -> symbolUse.IsFromUse && symbolUse.Symbol.DisplayName = "F2")
+        |> shouldEqual true
+
+    [<Test>]
+    let ``Unresolved record field 03`` () =
+        let _, checkResults = getParseAndCheckResults """
+[<RequireQualifiedAccess>]
+type R =
+    { F1: int
+      F2: int }
+
+{ R.F2 = 1
+  F1 = 1 }
+"""
+        getSymbolUses checkResults
+        |> Seq.exists (fun symbolUse -> symbolUse.IsFromUse && symbolUse.Symbol.DisplayName = "F2")
+        |> shouldEqual true
+
+    [<Test>]
+    let ``Unresolved record field 04`` () =
+        let _, checkResults = getParseAndCheckResults """
+type R =
+    { F1: int
+      F2: int }
+
+match Unchecked.defaultof<R> with
+{ F = 1
+  F2 = 1 } -> ()
+"""
+        getSymbolUses checkResults
+        |> Seq.exists (fun symbolUse -> symbolUse.IsFromUse && symbolUse.Symbol.DisplayName = "F2")
+        |> shouldEqual true
+
+    [<Test>]
+    let ``Unresolved record field 05`` () =
+        let _, checkResults = getParseAndCheckResults """
+[<RequireQualifiedAccess>]
+type R =
+    { F1: int
+      F2: int }
+
+match Unchecked.defaultof<R> with
+{ F = 1
+  R.F2 = 1 } -> ()
+"""
+        getSymbolUses checkResults
+        |> Seq.exists (fun symbolUse -> symbolUse.IsFromUse && symbolUse.Symbol.DisplayName = "F2")
+        |> shouldEqual true
+
+
+    [<Test>]
+    let ``Unresolved record field 06`` () =
+        let _, checkResults = getParseAndCheckResults """
+[<RequireQualifiedAccess>]
+type R =
+    { F1: int
+      F2: int }
+
+match Unchecked.defaultof<R> with
+{ R.F2 = 1
+  F = 1 } -> ()
+"""
+        getSymbolUses checkResults
+        |> Seq.exists (fun symbolUse -> symbolUse.IsFromUse && symbolUse.Symbol.DisplayName = "F2")
+        |> shouldEqual true
