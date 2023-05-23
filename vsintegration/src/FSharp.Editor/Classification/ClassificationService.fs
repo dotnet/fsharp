@@ -250,9 +250,11 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
 
                         addSemanticClassificationByLookup sourceText textSpan classificationDataLookup result
                     | _ ->
-                        let eventProps =
+                        let eventProps : (string * obj) array =
                             [|
-                                "isOpenDocument", isOpenDocument :> obj
+                                "context.document.project.id", document.Project.Id.Id.ToString()
+                                "context.document.id", document.Id.Id.ToString()
+                                "isOpenDocument", isOpenDocument
                                 "textSpanLength", textSpan.Length
                                 "cacheHit", false
                             |]
