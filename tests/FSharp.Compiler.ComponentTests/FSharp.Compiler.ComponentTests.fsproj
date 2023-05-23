@@ -233,7 +233,6 @@
     <Compile Include="OCamlCompat\OCamlCompat.fs" />
     <Compile Include="Miscellaneous\ListLiterals.fs" />
     <Compile Include="Miscellaneous\SemanticClassificationKeyBuilder.fs" />
-    <Compile Include="Miscellaneous\FindUnsolvedTests.fs" />
     <Compile Include="Miscellaneous\XmlDoc.fs" />
     <Compile Include="Miscellaneous\FsharpSuiteMigrated.fs" />
     <Compile Include="Miscellaneous\MigratedCoreTests.fs" />
