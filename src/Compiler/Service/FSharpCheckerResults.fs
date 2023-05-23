@@ -2219,7 +2219,16 @@ module internal ParseAndCheckFile =
 
         let collectOne severity diagnostic =
             for diagnostic in
-                DiagnosticHelpers.ReportDiagnostic(options, false, mainInputFileName, fileInfo, diagnostic, severity, suggestNamesForErrors, flatErrors) do
+                DiagnosticHelpers.ReportDiagnostic(
+                    options,
+                    false,
+                    mainInputFileName,
+                    fileInfo,
+                    diagnostic,
+                    severity,
+                    suggestNamesForErrors,
+                    flatErrors
+                ) do
                 diagnosticsCollector.Add diagnostic
 
                 if severity = FSharpDiagnosticSeverity.Error then
@@ -2598,7 +2607,14 @@ module internal ParseAndCheckFile =
 
             // Initialize the error handler
             let errHandler =
-                DiagnosticsHandler(true, mainInputFileName, tcConfig.diagnosticsOptions, sourceText, suggestNamesForErrors, tcConfig.flatErrors)
+                DiagnosticsHandler(
+                    true,
+                    mainInputFileName,
+                    tcConfig.diagnosticsOptions,
+                    sourceText,
+                    suggestNamesForErrors,
+                    tcConfig.flatErrors
+                )
 
             use _ = UseDiagnosticsLogger errHandler.DiagnosticsLogger
 

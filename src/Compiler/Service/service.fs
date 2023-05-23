@@ -137,7 +137,8 @@ module CompileHelpers =
     /// Compile using the given flags.  Source files names are resolved via the FileSystem API. The output file must be given by a -o flag.
     let compileFromArgs (ctok, argv: string[], legacyReferenceResolver, tcImportsCapture, dynamicAssemblyCreator) =
 
-        let diagnostics, diagnosticsLogger, loggerProvider = mkCompilationDiagnosticsHandlers (argv |> Array.contains "--flaterrors")
+        let diagnostics, diagnosticsLogger, loggerProvider =
+            mkCompilationDiagnosticsHandlers (argv |> Array.contains "--flaterrors")
 
         let result =
             tryCompile diagnosticsLogger (fun exiter ->
@@ -507,7 +508,15 @@ type BackgroundCompiler
                     Interlocked.Increment(&actualParseFileCount) |> ignore
 
                     let parseDiagnostics, parseTree, anyErrors =
-                        ParseAndCheckFile.parseFile (sourceText, fileName, options, userOpName, suggestNamesForErrors, flatErrors, captureIdentifiersWhenParsing)
+                        ParseAndCheckFile.parseFile (
+                            sourceText,
+                            fileName,
+                            options,
+                            userOpName,
+                            suggestNamesForErrors,
+                            flatErrors,
+                            captureIdentifiersWhenParsing
+                        )
 
                     let res = FSharpParseFileResults(parseDiagnostics, parseTree, anyErrors, options.SourceFiles)
                     parseCacheLock.AcquireLock(fun ltok -> parseFileCache.Set(ltok, (fileName, hash, options), res))
@@ -537,7 +546,14 @@ type BackgroundCompiler
                 let parseTree, _, _, parseDiagnostics = builder.GetParseResultsForFile fileName
 
                 let parseDiagnostics =
-                    DiagnosticHelpers.CreateDiagnostics(builder.TcConfig.diagnosticsOptions, false, fileName, parseDiagnostics, suggestNamesForErrors, builder.TcConfig.flatErrors)
+                    DiagnosticHelpers.CreateDiagnostics(
+                        builder.TcConfig.diagnosticsOptions,
+                        false,
+                        fileName,
+                        parseDiagnostics,
+                        suggestNamesForErrors,
+                        builder.TcConfig.flatErrors
+                    )
 
                 let diagnostics = [| yield! creationDiags; yield! parseDiagnostics |]
 
@@ -836,12 +852,26 @@ type BackgroundCompiler
                 let diagnosticsOptions = builder.TcConfig.diagnosticsOptions
 
                 let parseDiagnostics =
-                    DiagnosticHelpers.CreateDiagnostics(diagnosticsOptions, false, fileName, parseDiagnostics, suggestNamesForErrors, builder.TcConfig.flatErrors)
+                    DiagnosticHelpers.CreateDiagnostics(
+                        diagnosticsOptions,
+                        false,
+                        fileName,
+                        parseDiagnostics,
+                        suggestNamesForErrors,
+                        builder.TcConfig.flatErrors
+                    )
 
                 let parseDiagnostics = [| yield! creationDiags; yield! parseDiagnostics |]
 
                 let tcDiagnostics =
-                    DiagnosticHelpers.CreateDiagnostics(diagnosticsOptions, false, fileName, tcDiagnostics, suggestNamesForErrors, builder.TcConfig.flatErrors)
+                    DiagnosticHelpers.CreateDiagnostics(
+                        diagnosticsOptions,
+                        false,
+                        fileName,
+                        tcDiagnostics,
+                        suggestNamesForErrors,
+                        builder.TcConfig.flatErrors
+                    )
 
                 let tcDiagnostics = [| yield! creationDiags; yield! tcDiagnostics |]
 
@@ -995,7 +1025,14 @@ type BackgroundCompiler
                 let tcDependencyFiles = tcInfo.tcDependencyFiles
 
                 let tcDiagnostics =
-                    DiagnosticHelpers.CreateDiagnostics(diagnosticsOptions, true, fileName, tcDiagnostics, suggestNamesForErrors, builder.TcConfig.flatErrors)
+                    DiagnosticHelpers.CreateDiagnostics(
+                        diagnosticsOptions,
+                        true,
+                        fileName,
+                        tcDiagnostics,
+                        suggestNamesForErrors,
+                        builder.TcConfig.flatErrors
+                    )
 
                 let diagnostics = [| yield! creationDiags; yield! tcDiagnostics |]
 
@@ -1101,7 +1138,7 @@ type BackgroundCompiler
 
             let otherFlags = defaultArg otherFlags extraFlags
 
-            use diagnostics = new DiagnosticsScope (otherFlags |> Array.contains "--flaterrors")
+            use diagnostics = new DiagnosticsScope(otherFlags |> Array.contains "--flaterrors")
 
             let useSimpleResolution = otherFlags |> Array.exists (fun x -> x = "--simpleresolution")
 
@@ -1160,7 +1197,8 @@ type BackgroundCompiler
 
             let diags =
                 loadClosure.LoadClosureRootFileDiagnostics
-                |> List.map (fun (exn, isError) -> FSharpDiagnostic.CreateFromException(exn, isError, range.Zero, false, options.OtherOptions |> Array.contains "--flaterrors"))
+                |> List.map (fun (exn, isError) ->
+                    FSharpDiagnostic.CreateFromException(exn, isError, range.Zero, false, options.OtherOptions |> Array.contains "--flaterrors"))
 
             return options, (diags @ diagnostics.Diagnostics)
         }
@@ -1651,7 +1689,7 @@ type FSharpChecker
     member _.GetParsingOptionsFromCommandLineArgs(sourceFiles, argv, ?isInteractive, ?isEditing) =
         let isEditing = defaultArg isEditing false
         let isInteractive = defaultArg isInteractive false
-        use errorScope = new DiagnosticsScope (argv |> List.contains "--flaterrors")
+        use errorScope = new DiagnosticsScope(argv |> List.contains "--flaterrors")
 
         let tcConfigB =
             TcConfigBuilder.CreateNew(

@@ -76,7 +76,11 @@ type public FSharpDiagnostic =
             FSharpDiagnostic
 
     static member internal CreateFromException:
-        diagnostic: PhasedDiagnostic * severity: FSharpDiagnosticSeverity * range * suggestNames: bool * flatErrors: bool ->
+        diagnostic: PhasedDiagnostic *
+        severity: FSharpDiagnosticSeverity *
+        range *
+        suggestNames: bool *
+        flatErrors: bool ->
             FSharpDiagnostic
 
     /// Newlines are recognized and replaced with (ASCII 29, the 'group separator'),
