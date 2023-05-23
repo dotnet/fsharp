@@ -107,8 +107,6 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                 | _ ->
                     let checker =
                         lazy
-                            TelemetryReporter.ReportSingleEvent(TelemetryEvents.LanguageServiceStarted, [||])
-
                             let editorOptions = workspace.Services.GetService<EditorOptions>()
 
                             let enableParallelReferenceResolution =
@@ -132,6 +130,22 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                             let enablePartialTypeChecking =
                                 editorOptions.LanguageServicePerformance.EnablePartialTypeChecking
 
+                            use _eventDuration =
+                                TelemetryReporter.ReportSingleEventWithDuration(
+                                    TelemetryEvents.LanguageServiceStarted,
+                                    [|
+                                        nameof enableLiveBuffers, enableLiveBuffers
+                                        nameof useSyntaxTreeCache, useSyntaxTreeCache
+                                        nameof enableParallelReferenceResolution, enableParallelReferenceResolution
+                                        nameof enableFastFindReferences, enableFastFindReferences
+                                        nameof isInlineParameterNameHintsEnabled, isInlineParameterNameHintsEnabled
+                                        nameof isInlineTypeHintsEnabled, isInlineTypeHintsEnabled
+                                        nameof isInlineReturnTypeHintsEnabled, isInlineReturnTypeHintsEnabled
+                                        nameof enablePartialTypeChecking, enablePartialTypeChecking
+                                    |],
+                                    TelemetryThrottlingStrategy.NoThrottling
+                                )
+
                             let checker =
                                 FSharpChecker.Create(
                                     projectCacheSize = 5000, // We do not care how big the cache is. VS will actually tell FCS to clear caches, so this is fine.
@@ -151,19 +165,7 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                                     useSyntaxTreeCache = useSyntaxTreeCache
                                 )
 
-                            TelemetryReporter.ReportSingleEvent(
-                                TelemetryEvents.LanguageServiceStarted,
-                                [|
-                                    nameof enableLiveBuffers, enableLiveBuffers
-                                    nameof useSyntaxTreeCache, useSyntaxTreeCache
-                                    nameof enableParallelReferenceResolution, enableParallelReferenceResolution
-                                    nameof enableFastFindReferences, enableFastFindReferences
-                                    nameof isInlineParameterNameHintsEnabled, isInlineParameterNameHintsEnabled
-                                    nameof isInlineTypeHintsEnabled, isInlineTypeHintsEnabled
-                                    nameof isInlineReturnTypeHintsEnabled, isInlineReturnTypeHintsEnabled
-                                    nameof enablePartialTypeChecking, enablePartialTypeChecking
-                                |]
-                            )
+                            
 
                             if enableLiveBuffers then
                                 workspace.WorkspaceChanged.Add(fun args ->
