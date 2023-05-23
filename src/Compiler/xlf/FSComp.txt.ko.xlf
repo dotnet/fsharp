@@ -1077,6 +1077,11 @@
         <target state="translated">다음 필수 속성을 초기화해야 합니다. {0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcMultipleRecdTypeChoice">
+        <source>Multiple type matches were found:\n{0}\nThe type '{1}' was used. Due to the overlapping field names\n{2}\nconsider using type annotations or change the order of open statements.</source>
+        <target state="new">Multiple type matches were found:\n{0}\nThe type '{1}' was used. Due to the overlapping field names\n{2}\nconsider using type annotations or change the order of open statements.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcNoEagerConstraintApplicationAttribute">
         <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:6.0 or later</source>
         <target state="translated">'NoEagerConstraintApplicationAttribute'와 함께 메서드를 사용하려면 /langversion:6.0 이상이 필요합니다.</target>

@@ -44,3 +44,195 @@ let r = { Size=3; Height=4; Wall=1 }
             (Error 39, Line 9, Col 29, Line 9, Col 33, "The record label 'Wall' is not defined. Maybe you want one of the following:" + System.Environment.NewLine + "   Walls" + System.Environment.NewLine + "   Wallis")
             (Error 764, Line 9, Col 9, Line 9, Col 37, "No assignment given for field 'Wallis' of type 'Test.F'")
         ]
+
+    [<Fact>]
+    let MultipleRecdTypeChoiceWarningWith1Alternative () =
+        FSharp """
+namespace N
+
+module Module1 =
+
+    type OtherThing = 
+        { Name: string }
+
+module Module2 =
+
+    type Person = 
+        { Name: string
+          City: string }
+
+module Lib =
+
+    open Module2
+    open Module1
+
+    let F thing = 
+        let x = thing.Name
+        thing.City
+"""
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 3566, Line 22, Col 9, Line 22, Col 19, "Multiple type matches were found:\n    N.Module1.OtherThing\n    N.Module2.Person\nThe type 'N.Module1.OtherThing' was used. Due to the overlapping field names\n    Name\nconsider using type annotations or change the order of open statements.")
+            (Error 39, Line 22, Col 15, Line 22, Col 19, "The type 'OtherThing' does not define the field, constructor or member 'City'.")
+        ]
+
+    [<Fact>]
+    let MultipleRecdTypeChoiceWarningWith2Alternative () =
+        FSharp """
+namespace N
+
+module Module1 =
+
+    type OtherThing = 
+        { Name: string
+          Planet: string }
+
+module Module2 =
+
+    type Person = 
+        { Name: string
+          City: string
+          Planet: string }
+
+module Module3 =
+
+    type Cafe = 
+        { Name: string
+          City: string
+          Country: string
+          Planet: string }
+
+module Lib =
+
+    open Module3
+    open Module2
+    open Module1
+
+    let F thing = 
+        let x = thing.Name
+        thing.City
+"""
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 3566, Line 33, Col 9, Line 33, Col 19, "Multiple type matches were found:\n    N.Module1.OtherThing\n    N.Module2.Person\n    N.Module3.Cafe\nThe type 'N.Module1.OtherThing' was used. Due to the overlapping field names\n    Name\n    Planet\nconsider using type annotations or change the order of open statements.")
+            (Error 39, Line 33, Col 15, Line 33, Col 19, "The type 'OtherThing' does not define the field, constructor or member 'City'.")
+        ]
+
+    [<Fact>]
+    let MultipleRecdTypeChoiceWarningNotRaisedWithCorrectOpenStmtsOrdering () =
+        FSharp """
+namespace N
+
+module Module1 =
+
+    type OtherThing = 
+        { Name: string
+          Planet: string }
+
+module Module2 =
+
+    type Person = 
+        { Name: string
+          City: string
+          Planet: string }
+
+module Module3 =
+
+    type Cafe = 
+        { Name: string
+          City: string
+          Country: string
+          Planet: string }
+
+module Lib =
+
+    open Module3
+    open Module1
+    open Module2
+
+    let F thing = 
+        let x = thing.Name
+        thing.City
+"""
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
+    let MultipleRecdTypeChoiceWarningNotRaisedWithoutOverlaps () =
+        FSharp """
+namespace N
+
+module Module1 =
+
+    type OtherThing = 
+        { NameX: string
+          Planet: string }
+
+module Module2 =
+
+    type Person = 
+        { Name: string
+          City: string
+          Planet: string }
+
+module Module3 =
+
+    type Cafe = 
+        { NameX: string
+          City: string
+          Country: string
+          Planet: string }
+
+module Lib =
+
+    open Module3
+    open Module2
+    open Module1
+
+    let F thing = 
+        let x = thing.Name
+        thing.City
+"""
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
+    let MultipleRecdTypeChoiceWarningNotRaisedWithTypeAnnotations () =
+        FSharp """
+namespace N
+
+module Module1 =
+
+    type OtherThing = 
+        { NameX: string
+          Planet: string }
+
+module Module2 =
+
+    type Person = 
+        { Name: string
+          City: string
+          Planet: string }
+
+module Module3 =
+
+    type Cafe = 
+        { NameX: string
+          City: string
+          Country: string
+          Planet: string }
+
+module Lib =
+
+    open Module3
+    open Module2
+    open Module1
+
+    let F (thing: Person) = 
+        let x = thing.Name
+        thing.City
+"""
+        |> typecheck
+        |> shouldSucceed

@@ -1692,3 +1692,4 @@ featureEscapeBracesInFormattableString,"Escapes curly braces before calling Form
 3563,lexInvalidIdentifier,"This is not a valid identifier"
 3564,parsMissingUnionCaseName,"Missing union case name"
 3565,parsExpectingType,"Expecting type"
+3566,tcMultipleRecdTypeChoice,"Multiple type matches were found:\n%s\nThe type '%s' was used. Due to the overlapping field names\n%s\nconsider using type annotations or change the order of open statements."

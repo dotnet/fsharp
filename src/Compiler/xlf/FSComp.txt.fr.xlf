@@ -1077,6 +1077,11 @@
         <target state="translated">Les propriétés requises suivantes doivent être initialisées :{0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcMultipleRecdTypeChoice">
+        <source>Multiple type matches were found:\n{0}\nThe type '{1}' was used. Due to the overlapping field names\n{2}\nconsider using type annotations or change the order of open statements.</source>
+        <target state="new">Multiple type matches were found:\n{0}\nThe type '{1}' was used. Due to the overlapping field names\n{2}\nconsider using type annotations or change the order of open statements.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcNoEagerConstraintApplicationAttribute">
         <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:6.0 or later</source>
         <target state="translated">L’utilisation de méthodes avec « NoEagerConstraintApplicationAttribute » requiert/langversion:6.0 ou ultérieur</target>

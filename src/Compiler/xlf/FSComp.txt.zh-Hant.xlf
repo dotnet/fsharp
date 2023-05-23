@@ -1077,6 +1077,11 @@
         <target state="translated">下列必要的屬性必須初始化:{0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcMultipleRecdTypeChoice">
+        <source>Multiple type matches were found:\n{0}\nThe type '{1}' was used. Due to the overlapping field names\n{2}\nconsider using type annotations or change the order of open statements.</source>
+        <target state="new">Multiple type matches were found:\n{0}\nThe type '{1}' was used. Due to the overlapping field names\n{2}\nconsider using type annotations or change the order of open statements.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcNoEagerConstraintApplicationAttribute">
         <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:6.0 or later</source>
         <target state="translated">使用具有 'NoEagerConstraintApplicationAttribute' 的方法需要 /langversion:6.0 或更新版本</target>
