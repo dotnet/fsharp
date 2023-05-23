@@ -71,11 +71,12 @@ type public FSharpDiagnostic =
         severity: FSharpDiagnosticSeverity *
         range *
         lastPosInFile: (int * int) *
-        suggestNames: bool ->
+        suggestNames: bool *
+        flatErrors: bool ->
             FSharpDiagnostic
 
     static member internal CreateFromException:
-        diagnostic: PhasedDiagnostic * severity: FSharpDiagnosticSeverity * range * suggestNames: bool ->
+        diagnostic: PhasedDiagnostic * severity: FSharpDiagnosticSeverity * range * suggestNames: bool * flatErrors: bool ->
             FSharpDiagnostic
 
     /// Newlines are recognized and replaced with (ASCII 29, the 'group separator'),
@@ -95,7 +96,7 @@ type internal DiagnosticsScope =
 
     interface IDisposable
 
-    new: unit -> DiagnosticsScope
+    new: bool -> DiagnosticsScope
 
     member Diagnostics: FSharpDiagnostic list
 
@@ -122,7 +123,8 @@ module internal DiagnosticHelpers =
         fileInfo: (int * int) *
         diagnostic: PhasedDiagnostic *
         severity: FSharpDiagnosticSeverity *
-        suggestNames: bool ->
+        suggestNames: bool *
+        flatErrors: bool ->
             FSharpDiagnostic list
 
     val CreateDiagnostics:
@@ -130,5 +132,6 @@ module internal DiagnosticHelpers =
         allErrors: bool *
         mainInputFileName: string *
         seq<PhasedDiagnostic * FSharpDiagnosticSeverity> *
-        suggestNames: bool ->
+        suggestNames: bool *
+        flatErrors: bool ->
             FSharpDiagnostic[]

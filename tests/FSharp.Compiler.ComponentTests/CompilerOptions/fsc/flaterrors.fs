@@ -59,11 +59,13 @@ module flaterrors =
 
     [<InlineData("--FlatErrors")>]                          //Invalid case
     [<InlineData("--FLATERRORS")>]                          //Even more invalid case
-    [<InlineData("--flaterrors-;--flaterrors+")>]           // no + or - options
+    [<InlineData("--flaterrors-")>]                         // no + allowed
+    [<InlineData("--flaterrors-")>]                         // no - allowed
     [<Theory>]
-    let ``E_MultiLine04_fs`` (options: string) =
+    let ``E_MultiLine04_fs`` (option: string) =
         Fs """List.rev {1..10} |> ignore"""
-        |> compile options
+        |> compile option
         |> shouldFail
         |> withDiagnostics [
+            (Error 243, Line 0, Col 1, Line 0, Col 1, $"Unrecognized option: '{option}'. Use '--help' to learn about recognized command line options.")
         ]

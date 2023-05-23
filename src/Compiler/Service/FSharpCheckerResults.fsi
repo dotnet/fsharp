@@ -537,6 +537,7 @@ module internal ParseAndCheckFile =
         options: FSharpParsingOptions *
         userOpName: string *
         suggestNamesForErrors: bool *
+        flatErrors: bool *
         identCapture: bool ->
             FSharpDiagnostic[] * ParsedInput * bool
 

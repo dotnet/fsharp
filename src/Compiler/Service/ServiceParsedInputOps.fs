@@ -2012,7 +2012,7 @@ module ParsedInput =
         // We ignore all diagnostics during this operation
         //
         // Based on an initial review, no diagnostics should be generated.  However the code should be checked more closely.
-        use _ignoreAllDiagnostics = new DiagnosticsScope()
+        use _ignoreAllDiagnostics = new DiagnosticsScope(false)
 
         let mutable result = None
         let mutable ns = None
@@ -2175,7 +2175,7 @@ module ParsedInput =
             // We ignore all diagnostics during this operation
             //
             // Based on an initial review, no diagnostics should be generated.  However the code should be checked more closely.
-            use _ignoreAllDiagnostics = new DiagnosticsScope()
+            use _ignoreAllDiagnostics = new DiagnosticsScope(false)
 
             match res with
             | None -> [||]
