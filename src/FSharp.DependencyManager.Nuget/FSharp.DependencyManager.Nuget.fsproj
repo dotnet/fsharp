@@ -9,7 +9,7 @@
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
-    <!-- .tail annotations always emitted for this binary, even in debug mode -->
+    <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
     <Configurations>Debug;Release;ReleaseCompressed</Configurations>
   </PropertyGroup>
 
