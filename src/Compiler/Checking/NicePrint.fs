@@ -211,18 +211,7 @@ module internal PrintUtilities =
                         if i <> -1 then
                             s.Substring(0, i)+"<...>" // apparently has static params, shorten
                         else
-                            // Verify the name does not end in `1
-                            let tickIdx = s.LastIndexOf("`")
-                            if tickIdx = -1 && tickIdx < s.Length - 1 then
-                                s
-                            else
-                            
-                            match Int32.TryParse(s.Substring(tickIdx + 1)) with
-                            | false, _ -> s
-                            | true, idx ->
-                                match List.tryItem (idx - 1) tcref.TyparsNoRange with
-                                | None -> s
-                                | Some typar -> String.Concat(s.Substring(0, tickIdx), "<'", typar.typar_id.idText, ">")
+                            s
                     )
             let pathText = trimPathByDisplayEnv denv path
             if pathText = "" then tyconTextL else leftL (tagUnknownEntity pathText) ^^ tyconTextL
@@ -914,9 +903,14 @@ module PrintTypes =
         | TType_ucase (UnionCaseRef(tc, _), args)
         | TType_app (tc, args, _) ->
           let prefix = usePrefix denv tc
-          let partsWithTick = tc.CompilationPath.DemangledPath |> List.sumBy (fun p -> if p.Contains("`") then 1 else 0)
+          let pathWithGenericParameters =
+              tc.CompilationPath.AccessPath
+              |> List.sumBy (fun p ->
+                  match p with
+                  | _, ModuleOrType gps -> gps.Length
+                  | _ -> 0)
           // Very specific check for types like System.Collections.Immutable.ImmutableArray<'T>.Builder
-          if partsWithTick = args.Length then
+          if pathWithGenericParameters = args.Length then
               layoutTypeAppWithInfoAndPrec denv env (layoutTyconRef denv tc) prec prefix []
           else
               layoutTypeAppWithInfoAndPrec denv env (layoutTyconRef denv tc) prec prefix args

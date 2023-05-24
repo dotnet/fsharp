@@ -301,7 +301,7 @@ type ModuleOrNamespaceKind =
     | FSharpModuleWithSuffix
 
     /// Indicates that a module is compiled to a class with the same name as the original module
-    | ModuleOrType
+    | ModuleOrType of genericParameters: string list
 
     /// Indicates that a 'module' is really a namespace
     | Namespace of

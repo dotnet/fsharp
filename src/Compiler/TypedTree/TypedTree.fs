@@ -482,7 +482,7 @@ type ModuleOrNamespaceKind =
     | FSharpModuleWithSuffix 
 
     /// Indicates that a module is compiled to a class with the same name as the original module 
-    | ModuleOrType 
+    | ModuleOrType of genericParameters: string list
 
     /// Indicates that a 'module' is really a namespace 
     | Namespace of
@@ -495,7 +495,7 @@ type ModuleOrNamespaceKind =
         | :? ModuleOrNamespaceKind as kind ->
             match this, kind with
             | FSharpModuleWithSuffix, FSharpModuleWithSuffix
-            | ModuleOrType, ModuleOrType
+            | ModuleOrType _ , ModuleOrType _
             | Namespace _, Namespace _ -> true
             | _ -> false
         | _ -> false
@@ -503,7 +503,7 @@ type ModuleOrNamespaceKind =
     override this.GetHashCode () =
         match this with
         | FSharpModuleWithSuffix -> 0
-        | ModuleOrType -> 1
+        | ModuleOrType _ -> 1
         | Namespace _ -> 2
 
 /// A public path records where a construct lives within the global namespace
@@ -542,6 +542,25 @@ type CompilationPath =
     static member DemangleEntityName nm k =  
         match k with 
         | FSharpModuleWithSuffix -> String.dropSuffix nm FSharpModuleSuffix
+        | ModuleOrType genericParameters ->
+            if genericParameters.IsEmpty then
+                nm
+            else
+                // Replace `number with parameter name
+                // let indexes = nm |> Array.filter (fun c -> c = '`')
+                // indexes
+                let evaluator =
+                    System.Text.RegularExpressions.MatchEvaluator (fun m ->
+                        let idx = m.Value.Substring(1) |> int
+                        match List.tryItem (idx - 1) genericParameters with
+                        | None -> m.Value
+                        | Some gp ->
+                            let prefix = if idx = 1 then "<" else ""
+                            let suffix = if idx = genericParameters.Length then ">" else ""
+                            $"{prefix}'{gp}{suffix}"
+                    )
+                System.Text.RegularExpressions.Regex.Replace(nm, @"\`\d+", evaluator)
+                
         | _ -> nm
 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
@@ -1252,7 +1271,7 @@ type Entity =
                     | [] -> ILTypeRef.Create(sref, [], textOfPath (List.rev (item :: racc)))
                     | (h, isType) :: t -> 
                         match isType with 
-                        | FSharpModuleWithSuffix | ModuleOrType -> 
+                        | FSharpModuleWithSuffix | ModuleOrType _ -> 
                             let outerTypeName = (textOfPath (List.rev (h :: racc)))
                             ILTypeRef.Create(sref, (outerTypeName :: List.map fst t), item)
                         | _ -> 
@@ -5930,7 +5949,7 @@ type Construct() =
             entity_range = id.idRange
             entity_tycon_tcaug = TyconAugmentation.Create()
             entity_pubpath = cpath |> Option.map (fun (cp: CompilationPath) -> cp.NestedPublicPath id)
-            entity_modul_type = MaybeLazy.Strict (Construct.NewEmptyModuleOrNamespaceType ModuleOrType)
+            entity_modul_type = MaybeLazy.Strict (Construct.NewEmptyModuleOrNamespaceType (ModuleOrType []))
             entity_cpath = cpath
             entity_typars = LazyWithContext.NotLazy []
             entity_tycon_repr = TNoRepr

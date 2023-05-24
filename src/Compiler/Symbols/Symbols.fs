@@ -859,7 +859,7 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef) =
                     let rec getOpenPath accessPath acc =
                         match accessPath with
                         | [] -> acc
-                        | (name, ModuleOrNamespaceKind.ModuleOrType) :: accessPath ->
+                        | (name, ModuleOrNamespaceKind.ModuleOrType _) :: accessPath ->
                             getOpenPath accessPath (name :: acc)
                         | (name, ModuleOrNamespaceKind.Namespace _) :: accessPath ->
                             getOpenPath accessPath (name :: acc)
@@ -875,7 +875,7 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef) =
                 match entity.CompilationPathOpt with
                 | Some cpath ->
                     match cpath.AccessPath with
-                    | (_, ModuleOrNamespaceKind.ModuleOrType) :: _ ->
+                    | (_, ModuleOrNamespaceKind.ModuleOrType _) :: _ ->
                         match this.DeclaringEntity with
                         | Some (declaringEntity: FSharpEntity) -> not declaringEntity.IsFSharpModule
                         | _ -> false

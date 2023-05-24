@@ -504,8 +504,9 @@ let multisetDiscriminateAndMap nodef tipf (items: ('Key list * 'Value) list) =
 /// Import an IL type definition as a new F# TAST Entity node.
 let rec ImportILTypeDef amap m scoref (cpath: CompilationPath) enc nm (tdef: ILTypeDef)  =
     let lazyModuleOrNamespaceTypeForNestedTypes = 
-        lazy 
-            let cpath = cpath.NestedCompPath nm ModuleOrType
+        lazy
+            let genericParameters = tdef.GenericParams |> List.map (fun gp -> gp.Name) 
+            let cpath = cpath.NestedCompPath nm (ModuleOrType genericParameters)
             ImportILTypeDefs amap m scoref cpath (enc@[tdef]) tdef.NestedTypes
     // Add the type itself. 
     Construct.NewILTycon 
@@ -539,7 +540,14 @@ and ImportILTypeDefList amap m (cpath: CompilationPath) enc items =
                 let (scoref2, lazyTypeDef: ILPreTypeDef) = info.Force()
                 ImportILTypeDef amap m scoref2 cpath enc n (lazyTypeDef.GetTypeDef()))
 
-    let kind = match enc with [] -> Namespace true | _ -> ModuleOrType
+    let kind =
+        match enc with
+        | [] -> Namespace true
+        | [ tdef ] ->
+            tdef.GenericParams
+            |> List.map (fun gp -> gp.Name)
+            |> ModuleOrType
+        | _ -> ModuleOrType []
     Construct.NewModuleOrNamespaceType kind entities []
       
 /// Import a table of IL types as a ModuleOrNamespaceType.

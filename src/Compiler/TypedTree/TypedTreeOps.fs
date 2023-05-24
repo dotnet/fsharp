@@ -4709,7 +4709,7 @@ let accValRemap g aenv (msigty: ModuleOrNamespaceType) (implVal: Val) (mrpi, mhi
 
 let getCorrespondingSigTy nm (msigty: ModuleOrNamespaceType) = 
     match NameMap.tryFind nm msigty.AllEntitiesByCompiledAndLogicalMangledNames with 
-    | None -> Construct.NewEmptyModuleOrNamespaceType ModuleOrType 
+    | None -> Construct.NewEmptyModuleOrNamespaceType (ModuleOrType []) 
     | Some sigsubmodul -> sigsubmodul.ModuleOrNamespaceType
 
 let rec accEntityRemapFromModuleOrNamespaceType (mty: ModuleOrNamespaceType) (msigty: ModuleOrNamespaceType) acc = 

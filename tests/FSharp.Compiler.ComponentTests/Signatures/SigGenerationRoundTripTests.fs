@@ -1,20 +1,17 @@
 ﻿module FSharp.Compiler.ComponentTests.Signatures.SigGenerationRoundTripTests
 
 open Xunit
-open FSharp.Test
 open FSharp.Test.Compiler
 open System.IO
 
 let testCasesDir = Path.Combine(__SOURCE_DIRECTORY__,"TestCasesForGenerationRoundTrip")
-let allTestCases = 
+let commonTestCases = 
     Directory.EnumerateFiles(testCasesDir) 
     |> Seq.toArray 
     |> Array.map Path.GetFileName
     |> Array.map (fun f -> [|f :> obj|])
 
-[<Theory>]
-[<MemberData(nameof(allTestCases))>]
-let ``Generate and compile`` implFileName =    
+let private generateAndCompileAux testCasesDir implFileName =
     let implContents = File.ReadAllText (Path.Combine(testCasesDir,implFileName))
 
     let generatedSignature = 
@@ -31,4 +28,24 @@ let ``Generate and compile`` implFileName =
     |> asExe
     |> compile
     |> shouldSucceed
+
+[<Theory>]
+[<MemberData(nameof(commonTestCases))>]
+let ``Generate and compile`` implFileName =
+    generateAndCompileAux testCasesDir implFileName
+    
+#if NETCOREAPP
+let netcoreOnlyTestDir =  Path.Combine(__SOURCE_DIRECTORY__, "TestCasesForGenerationRoundTrip", "netcoreonly")
+let netcoreOnlyTestCases = 
+    Directory.EnumerateFiles(netcoreOnlyTestDir) 
+    |> Seq.toArray 
+    |> Array.map Path.GetFileName
+    |> Array.map (fun f -> [|f :> obj|])
+
+[<Theory>]
+[<MemberData(nameof(netcoreOnlyTestCases))>]
+let ``Generate and compile netcore`` implFileName =
+    generateAndCompileAux netcoreOnlyTestDir implFileName
+#endif
+
 
