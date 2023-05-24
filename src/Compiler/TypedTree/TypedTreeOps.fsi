@@ -635,6 +635,8 @@ val destMeasureTy: TcGlobals -> TType -> Measure
 
 val tryDestForallTy: TcGlobals -> TType -> Typars * TType
 
+val nullnessOfTy: TcGlobals -> TType -> Nullness
+
 val isFunTy: TcGlobals -> TType -> bool
 
 val isForallTy: TcGlobals -> TType -> bool
@@ -1613,7 +1615,7 @@ val destArrayTy: TcGlobals -> TType -> TType
 val destListTy: TcGlobals -> TType -> TType
 
 /// Build an array type of the given rank
-val mkArrayTy: TcGlobals -> int -> TType -> range -> TType
+val mkArrayTy: TcGlobals -> int -> Nullness -> TType -> range -> TType
 
 /// Check if a type definition is one of the artificial type definitions used for array types of different ranks
 val isArrayTyconRef: TcGlobals -> TyconRef -> bool
@@ -1738,15 +1740,19 @@ val ModuleNameIsMangled: TcGlobals -> Attribs -> bool
 
 val CompileAsEvent: TcGlobals -> Attribs -> bool
 
-val TypeNullIsExtraValue: TcGlobals -> range -> TType -> bool
-
 val TypeNullIsTrueValue: TcGlobals -> TType -> bool
 
-val TypeNullNotLiked: TcGlobals -> range -> TType -> bool
+val TypeNullIsExtraValueNew: TcGlobals -> range -> TType -> bool
+
+val TypeNullIsExtraValue: TcGlobals -> range -> TType -> bool
+
+val TyconRefNullIsExtraValue: TcGlobals -> range -> TyconRef -> bool
+
+val TyconRefNullIsExtraValueNew: TcGlobals -> range -> TyconRef -> bool
 
 val TypeNullNever: TcGlobals -> TType -> bool
 
-val TypeSatisfiesNullConstraint: TcGlobals -> range -> TType -> bool
+val TypeHasDefaultValueNew: TcGlobals -> range -> TType -> bool
 
 val TypeHasDefaultValue: TcGlobals -> range -> TType -> bool
 

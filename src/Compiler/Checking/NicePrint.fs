@@ -769,6 +769,9 @@ module PrintTypes =
         | TyparConstraint.SupportsNull _ ->
             [wordL (tagKeyword "null") |> longConstraintPrefix]
 
+        | TyparConstraint.NotSupportsNull _ ->
+                [(wordL (tagKeyword "__notnull") (* ^^ wordL(tagKeyword "null") *) ) |> longConstraintPrefix]
+
         | TyparConstraint.IsNonNullableStruct _ ->
             if denv.shortConstraints then 
                 [wordL (tagText "value type")]
@@ -874,6 +877,12 @@ module PrintTypes =
             | [] -> tcL
             | [arg] -> layoutTypeWithInfoAndPrec denv env 2 arg ^^ tcL
             | args -> bracketIfL (prec <= 1) (bracketL (layoutTypesWithInfoAndPrec denv env 2 (sepL (tagPunctuation ",")) args) --- tcL)
+
+    and layoutNullness part2 (nullness: Nullness) =
+        match nullness.Evaluate() with
+        | NullnessInfo.WithNull -> part2 ^^ wordL (tagText "__withnull")
+        | NullnessInfo.WithoutNull -> part2
+        | NullnessInfo.AmbivalentToNull -> part2 ^^ wordL (tagText "__maybenull")  // TODO NULLNESS: emit this optionally ^^ wordL (tagText "%")
     
     /// Layout a type, taking precedence into account to insert brackets where needed
     and layoutTypeWithInfoAndPrec denv env prec ty =
@@ -934,8 +943,10 @@ module PrintTypes =
             bracketIfL (prec <= 4) funcTyL
 
         // Layout a type variable . 
-        | TType_var (r, _) ->
-            layoutTyparRefWithInfo denv env r
+        | TType_var (r, nullness) ->
+            let part1 = layoutTyparRefWithInfo denv env r
+            let part2 = layoutNullness part1 nullness
+            part2
 
         | TType_measure unt -> layoutMeasure denv unt
 
@@ -2684,7 +2695,7 @@ let minimalStringsOfTwoTypes denv ty1 ty2 =
         let denv = denv.SetOpenPaths []
         let denv = { denv with includeStaticParametersInTypeNames=true }
         let makeName t =
-            let assemblyName = PrintTypes.layoutAssemblyName denv t |> function | null | "" -> "" | name -> sprintf " (%s)" name
+            let assemblyName = PrintTypes.layoutAssemblyName denv t |> function "" -> "" | name -> sprintf " (%s)" name
             sprintf "%s%s" (stringOfTy denv t) assemblyName
 
         (makeName ty1, makeName ty2, stringOfTyparConstraints denv tpcs)

@@ -37,9 +37,10 @@ module internal PervasiveAutoOpens =
         | [ _ ] -> true
         | _ -> false
 
-    type 'T MaybeNull when 'T: null and 'T: not struct = 'T
-
     let inline isNotNull (x: 'T) = not (isNull x)
+
+#if NO_CHECKNULLS
+    type 'T MaybeNull when 'T: null and 'T: not struct = 'T
 
     let inline (|NonNullQuick|) (x: 'T MaybeNull) =
         match x with
@@ -60,6 +61,10 @@ module internal PervasiveAutoOpens =
         match x with
         | null -> raise (ArgumentNullException(paramName))
         | v -> v
+#else
+    type 'T MaybeNull when 'T: __notnull and 'T: not struct = 'T __withnull
+
+#endif
 
     let inline (===) x y = LanguagePrimitives.PhysicalEquality x y
 
@@ -279,10 +284,7 @@ module Array =
     /// ~0.8x slower for ints
     let inline areEqual (xs: 'T[]) (ys: 'T[]) =
         match xs, ys with
-        | null, null -> true
         | [||], [||] -> true
-        | null, _
-        | _, null -> false
         | _ when xs.Length <> ys.Length -> false
         | _ ->
             let mutable break' = false

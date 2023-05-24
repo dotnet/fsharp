@@ -395,7 +395,7 @@ let OptionalArgInfoOfProvidedParameter (amap: ImportMap) m (provParam : Tainted<
 let GetAndSanityCheckProviderMethod m (mi: Tainted<'T :> ProvidedMemberInfo>) (get : 'T -> ProvidedMethodInfo MaybeNull) err = 
     match mi.PApply((fun mi -> (get mi :> ProvidedMethodBase MaybeNull)),m) with 
     | Tainted.Null -> error(Error(err(mi.PUntaint((fun mi -> mi.Name),m),mi.PUntaint((fun mi -> (nonNull<ProvidedType> mi.DeclaringType).Name), m)), m))   // TODO NULLNESS: type isntantiation should not be needed
-    | meth -> meth
+    | Tainted.NonNull meth -> meth
 
 /// Try to get an arbitrary ProvidedMethodInfo associated with a property.
 let ArbitraryMethodInfoOfPropertyInfo (pi: Tainted<ProvidedPropertyInfo>) m =
@@ -1262,7 +1262,7 @@ type MethInfo =
                     // For non-generic type providers there is no difference
                     let formalParams =
                         [ [ for p in mi.PApplyArray((fun mi -> mi.GetParameters()), "GetParameters", m) do
-                                let paramName = p.PUntaint((fun p -> match p.Name with null -> None | s -> Some s), m)
+                                let paramName = p.PUntaint((fun p -> match p.Name with "" -> None | s -> Some s), m)
                                 let paramTy = ImportProvidedType amap m (p.PApply((fun p -> p.ParameterType), m))
                                 let isIn, isOut, isOptional = p.PUntaint((fun p -> p.IsIn, p.IsOut, p.IsOptional), m)
                                 yield TSlotParam(paramName, paramTy, isIn, isOut, isOptional, []) ] ]
@@ -1291,7 +1291,7 @@ type MethInfo =
                 [ [for p in mi.PApplyArray((fun mi -> mi.GetParameters()), "GetParameters", m) do
                         let paramName =
                             match p.PUntaint((fun p -> p.Name), m) with
-                            | null -> None
+                            | "" -> None
                             | name -> Some (mkSynId m name)
                         let paramTy =
                             match p.PApply((fun p -> p.ParameterType), m) with
@@ -1509,7 +1509,7 @@ type RecdFieldInfo =
     member x.FieldType = actualTyOfRecdFieldRef x.RecdFieldRef x.TypeInst
 
     /// Get the enclosing (declaring) type of the field in an F#-declared record, class or struct type
-    member x.DeclaringType = TType_app (x.RecdFieldRef.TyconRef, x.TypeInst, 0uy)
+    member x.DeclaringType = TType_app (x.RecdFieldRef.TyconRef, x.TypeInst, KnownWithoutNull) // TODO NULLNESS - qualify this 
 
     override x.ToString() = x.TyconRef.ToString() + "::" + x.LogicalName
 
@@ -1938,7 +1938,7 @@ type PropInfo =
 #if !NO_TYPEPROVIDERS
         | ProvidedProp (_, pi, m) ->
             [ for p in pi.PApplyArray((fun pi -> pi.GetIndexParameters()), "GetIndexParameters", m) do
-                let paramName = p.PUntaint((fun p -> match p.Name with null -> None | s -> Some (mkSynId m s)), m)
+                let paramName = p.PUntaint((fun p -> match p.Name with "" -> None | s -> Some (mkSynId m s)), m)
                 let paramTy = ImportProvidedType amap m (p.PApply((fun p -> p.ParameterType), m))
                 yield ParamNameAndType(paramName, paramTy) ]
 #endif

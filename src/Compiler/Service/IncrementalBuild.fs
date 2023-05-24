@@ -584,9 +584,7 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, generate
 
     let sigData =
         let _sigDataAttributes, sigDataResources = EncodeSignatureData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, true)
-        [ for r in sigDataResources  do
-            GetResourceNameAndSignatureDataFunc r
-        ]
+        GetResourceNameAndSignatureDataFuncs sigDataResources
 
     let autoOpenAttrs = topAttrs.assemblyAttrs |> List.choose (List.singleton >> TryFindFSharpStringAttribute tcGlobals tcGlobals.attrib_AutoOpenAttribute)
 

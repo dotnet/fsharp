@@ -36,8 +36,69 @@ let testConfig = getTestsDirectory >> testConfig
 [<NonParallelizable; SetUICulture("en-US"); SetCulture("en-US")>]
 module CoreTests =
 
+
 #if !NETCOREAPP
-// This test stays in FsharpSuite for a later migration phases, it uses hardcoded #r to a C# compiled cslib.dll inside
+    [<Test>]
+    let ``subtype-langversion-preview-checknulls`` () =
+        let cfg = testConfig "core/subtype"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsc cfg "%s -o:test-checknulls.exe -g --langversion:preview --checknulls" cfg.fsc_flags ["test.fsx"]
+
+        exec cfg ("." ++ "test-checknulls.exe") ""
+
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``subtype-langversion-preview-no-checknulls`` () =
+        let cfg = testConfig "core/subtype"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsc cfg "%s -o:test-no-checknulls.exe -g --langversion:preview --checknulls-" cfg.fsc_flags ["test.fsx"]
+
+        exec cfg ("." ++ "test-no-checknulls.exe") ""
+
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``subtype-langversion-46`` () =
+        let cfg = testConfig "core/subtype"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsc cfg "%s -o:test-langversion-46.exe -g --langversion:4.6" cfg.fsc_flags ["test.fsx"]
+
+        exec cfg ("." ++ "test-langversion-46.exe") ""
+
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let nullness_no_checknulls () =
+        let cfg = testConfig "core/nullness"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsc cfg "%s -o:test-no-checknulls.exe -g --langversion:preview --define:NO_CHECKNULLS" cfg.fsc_flags ["test.fsx"]
+
+        exec cfg ("." ++ "test-no-checknulls.exe") ""
+
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let nullness_checknulls () =
+        let cfg = testConfig "core/nullness"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsc cfg "%s -o:test-checknulls.exe -g --checknulls --langversion:preview" cfg.fsc_flags ["test.fsx"]
+
+        exec cfg ("." ++ "test-checknulls.exe") ""
+
+        testOkFile.CheckExists()
+
+    // This test stays in FsharpSuite for a later migration phases, it uses hardcoded #r to a C# compiled cslib.dll inside
     [<Test>]
     let ``quotes-FSC-FSC_DEBUG`` () = singleTestBuildAndRun "core/quotes" FSC_DEBUG
 
@@ -1024,6 +1085,31 @@ module CoreTests =
 
     [<Test>]
     let ``libtest-FSC_NETFX_TEST_ROUNDTRIP_AS_DLL`` () = singleTestBuildAndRun "core/libtest" FSC_NETFX_TEST_ROUNDTRIP_AS_DLL
+
+    [<Test>]
+    let ``libtest-langversion-preview-checknulls`` () =
+        let cfg = testConfig "core/libtest"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsc cfg "%s -o:test-checknulls.exe -g --langversion:preview --checknulls" cfg.fsc_flags ["test.fsx"]
+
+        exec cfg ("." ++ "test-checknulls.exe") ""
+
+        testOkFile.CheckExists()
+
+ 
+    [<Test>]
+    let ``libtest-langversion-46`` () =
+        let cfg = testConfig "core/libtest"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsc cfg "%s -o:test-langversion-46.exe -g --langversion:4.6" cfg.fsc_flags ["test.fsx"]
+
+        exec cfg ("." ++ "test-langversion-46.exe") ""
+
+        testOkFile.CheckExists()
 
     [<Test>]
     let ``no-warn-2003-tests`` () =

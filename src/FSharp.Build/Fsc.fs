@@ -223,16 +223,13 @@ type public Fsc() as this =
         // checksumAlgorithm
         builder.AppendSwitchIfNotNull(
             "--checksumalgorithm:",
-            let ToUpperInvariant (s: string) =
-                if s = null then
-                    null
-                else
-                    s.ToUpperInvariant()
-
-            match ToUpperInvariant(checksumAlgorithm) with
-            | "SHA1" -> "Sha1"
-            | "SHA256" -> "Sha256"
-            | _ -> null
+            match checksumAlgorithm with
+            | Null -> null
+            | NonNull checksumAlgorithm ->
+                match checksumAlgorithm.ToUpperInvariant() with
+                | "SHA1" -> "Sha1"
+                | "SHA256" -> "Sha256"
+                | _ -> null
         )
 
         // Resources

@@ -395,6 +395,9 @@ module internal TokenClassifications =
         | HIGH_PRECEDENCE_PAREN_APP
         | FIXED
         | HIGH_PRECEDENCE_BRACK_APP
+        | MAYBENULL__
+        | NOTNULL__
+        | WITHNULL__
         | TYPE_COMING_SOON
         | TYPE_IS_HERE
         | MODULE_COMING_SOON

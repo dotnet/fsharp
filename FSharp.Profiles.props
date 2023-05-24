@@ -1,6 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Project>
+  <PropertyGroup>
+    <!-- This turns on/off the feature in FSharp.Core. -->
+    <CheckNulls>false</CheckNulls>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">
+    <!-- nullness checking isn't possible when using shipped FSharp.Core package until it's updated -->
+    <CheckNulls>false</CheckNulls>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Proto'">
+    <DefineConstants>BUILDING_WITH_LKG;NO_NULLCHECKING_LIB_SUPPORT;$(DefineConstants)</DefineConstants>
+    <NullCheckingSupportInLibrary>false</NullCheckingSupportInLibrary>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
+    <OtherFlags>$(OtherFlags) /langversion:preview</OtherFlags>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(CheckNulls)' == 'true'">
+    <OtherFlags>$(OtherFlags) /checknulls</OtherFlags>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(CheckNulls)' == 'false'">
+    <!-- 3271: warning nullness annotations being ignored -->
+    <NoWarn>$(NoWarn);3271</NoWarn>
+    <DefineConstants>NO_CHECKNULLS;$(DefineConstants)</DefineConstants>
+  </PropertyGroup>
 
   <Choose>
     <When Condition=" '$(TargetFrameworkIdentifier)' == '.NETFramework' ">

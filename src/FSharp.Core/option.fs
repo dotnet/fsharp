@@ -152,6 +152,7 @@ module Option =
         else
             None
 
+#if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
     [<CompiledName("OfObj")>]
     let inline ofObj value =
         match value with
@@ -163,6 +164,19 @@ module Option =
         match value with
         | None -> null
         | Some x -> x
+#else
+    [<CompiledName("OfObj")>]
+    let inline ofObj (value: 'T __withnull) : 'T option when 'T: not struct and 'T : __notnull = 
+        match value with
+        | null -> None
+        | _ -> Some value
+
+    [<CompiledName("ToObj")>]
+    let inline toObj (value: 'T option) : 'T __withnull when 'T: not struct (* and 'T : __notnull *)  =
+        match value with
+        | None -> null
+        | Some x -> x
+#endif
 
 module ValueOption =
 
@@ -315,6 +329,7 @@ module ValueOption =
         else
             ValueNone
 
+#if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
     [<CompiledName("OfObj")>]
     let ofObj value =
         match value with
@@ -326,3 +341,16 @@ module ValueOption =
         match value with
         | ValueNone -> null
         | ValueSome x -> x
+#else
+    [<CompiledName("OfObj")>]
+    let ofObj (value: 'T __withnull) : 'T voption when 'T: not struct and 'T : __notnull  = 
+        match value with
+        | null -> ValueNone
+        | _ -> ValueSome value
+
+    [<CompiledName("ToObj")>]
+    let toObj (value : 'T voption) : 'T __withnull when 'T: not struct (* and 'T : __notnull *) = 
+        match value with
+        | ValueNone -> null
+        | ValueSome x -> x
+#endif

@@ -28,7 +28,6 @@
     <!-- .tail annotations always emitted for this binary, even in debug mode -->
     <Tailcalls>true</Tailcalls>
     <NGenBinary>true</NGenBinary>
-
     <PreRelease>true</PreRelease>
     <PackageId>FSharp.Core</PackageId>
     <PackageVersionPrefix>$(FSCorePackageVersion)</PackageVersionPrefix>

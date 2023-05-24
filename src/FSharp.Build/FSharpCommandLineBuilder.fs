@@ -15,7 +15,7 @@ do ()
 // Shim to match nullness checking library support in preview
 [<AutoOpen>]
 module Utils =
-
+#if NO_CHECKNULLS
     /// Match on the nullness of an argument.
     let inline (|Null|NonNull|) (x: 'T) : Choice<unit, 'T> =
         match x with
@@ -24,7 +24,12 @@ module Utils =
 
     /// Indicates that a type may be null. 'MaybeNull<string>' used internally in the F# compiler as unchecked
     /// replacement for 'string?' for example for future FS-1060.
-    type 'T MaybeNull when 'T: null and 'T: not struct = 'T
+    type MaybeNull<'T when 'T : null> = 'T
+#else
+    /// Indicates that a type may be null. 'MaybeNull<string>' used internally in the F# compiler as unchecked
+    /// replacement for 'string?' for example for future FS-1060.
+    type MaybeNull<'T when 'T : __notnull and 'T : not struct> = 'T __withnull
+#endif
 
 type FSharpCommandLineBuilder() =
 

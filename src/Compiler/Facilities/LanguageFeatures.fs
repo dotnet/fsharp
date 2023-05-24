@@ -37,6 +37,7 @@ type LanguageFeature =
     | StringInterpolation
     | OverloadsForCustomOperations
     | ExpandedMeasurables
+    | NullnessChecking
     | StructActivePattern
     | PrintfBinaryFormat
     | IndexerNotationWithoutDot
@@ -144,6 +145,7 @@ type LanguageVersion(versionText) =
 
                 // F# preview
                 LanguageFeature.FromEndSlicing, previewVersion
+                LanguageFeature.NullnessChecking, previewVersion
                 LanguageFeature.MatchNotAllowedForUnionCaseWithNoData, previewVersion
                 LanguageFeature.CSharpExtensionAttributeNotRequired, previewVersion
                 LanguageFeature.ErrorForNonVirtualMembersOverrides, previewVersion
@@ -238,6 +240,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.FromEndSlicing -> FSComp.SR.featureFromEndSlicing ()
         | LanguageFeature.FixedIndexSlice3d4d -> FSComp.SR.featureFixedIndexSlice3d4d ()
         | LanguageFeature.AndBang -> FSComp.SR.featureAndBang ()
+        | LanguageFeature.NullnessChecking -> FSComp.SR.featureNullnessChecking ()
         | LanguageFeature.ResumableStateMachines -> FSComp.SR.featureResumableStateMachines ()
         | LanguageFeature.NullableOptionalInterop -> FSComp.SR.featureNullableOptionalInterop ()
         | LanguageFeature.DefaultInterfaceMemberConsumption -> FSComp.SR.featureDefaultInterfaceMemberConsumption ()

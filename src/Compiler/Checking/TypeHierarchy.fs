@@ -46,7 +46,7 @@ let GetSuperTypeOfType g amap m ty =
 #if !NO_TYPEPROVIDERS
         | ProvidedTypeMetadata info ->
             let st = info.ProvidedType
-            let superOpt = st.PApplyOption((fun st -> match st.BaseType with null -> None | t -> Some t), m)
+            let superOpt = st.PApplyOption((fun st -> match st.BaseType with null -> None | t -> Some (nonNull t)), m)
             match superOpt with
             | None -> None
             | Some super -> Some(ImportProvidedType amap m super)
@@ -81,7 +81,13 @@ let GetSuperTypeOfType g amap m ty =
             else
                 None
 
-    resBeforeNull
+    match resBeforeNull with 
+    | Some superTy ->
+        let nullness = nullnessOfTy g ty
+        let superTyWithNull = addNullnessToTy nullness superTy
+        Some superTyWithNull
+    | None -> 
+        None
 
 /// Make a type for System.Collections.Generic.IList<ty>
 let mkSystemCollectionsGenericIListTy (g: TcGlobals) ty =
@@ -264,6 +270,7 @@ let FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst skipUnref visitor
                           | TyparConstraint.IsEnum _
                           | TyparConstraint.IsDelegate _
                           | TyparConstraint.SupportsNull _
+                          | TyparConstraint.NotSupportsNull _
                           | TyparConstraint.IsNonNullableStruct _
                           | TyparConstraint.IsUnmanaged _
                           | TyparConstraint.IsReferenceType _
@@ -395,6 +402,8 @@ let CopyTyparConstraints m tprefInst (tporig: Typar) =
                TyparConstraint.IsEnum (instType tprefInst underlyingTy, m)
            | TyparConstraint.SupportsComparison _ ->
                TyparConstraint.SupportsComparison m
+           | TyparConstraint.NotSupportsNull _ -> 
+               TyparConstraint.NotSupportsNull m
            | TyparConstraint.SupportsEquality _ ->
                TyparConstraint.SupportsEquality m
            | TyparConstraint.IsDelegate(argTys, retTy, _) ->

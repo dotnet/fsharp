@@ -194,11 +194,14 @@ type IRawFSharpAssemblyData =
     abstract TryGetILModuleDef: unit -> ILModuleDef option
 
     ///  The raw F# signature data in the assembly, if any
-    abstract GetRawFSharpSignatureData: range * ilShortAssemName: string * fileName: string -> (string * (unit -> ReadOnlyByteMemory)) list
+    abstract GetRawFSharpSignatureData:
+        range * ilShortAssemName: string * fileName: string ->
+            (string * ((unit -> ReadOnlyByteMemory) * (unit -> ReadOnlyByteMemory) option)) list
 
     ///  The raw F# optimization data in the assembly, if any
     abstract GetRawFSharpOptimizationData:
-        range * ilShortAssemName: string * fileName: string -> (string * (unit -> ReadOnlyByteMemory)) list
+        range * ilShortAssemName: string * fileName: string ->
+            (string * ((unit -> ReadOnlyByteMemory) * (unit -> ReadOnlyByteMemory) option)) list
 
     ///  The table of type forwarders in the assembly
     abstract GetRawTypeForwarders: unit -> ILExportedTypesAndForwarders
@@ -439,6 +442,7 @@ type TcConfigBuilder =
         mutable embedResources: string list
         mutable diagnosticsOptions: FSharpDiagnosticOptions
         mutable mlCompatibility: bool
+        mutable checkNullness: bool
         mutable checkOverflow: bool
         mutable showReferenceResolutions: bool
         mutable outputDir: string option
@@ -673,6 +677,7 @@ type TcConfigBuilder =
             subsystemVersion = 4, 0 // per spec for 357994
             useHighEntropyVA = false
             mlCompatibility = false
+            checkNullness = false
             checkOverflow = false
             showReferenceResolutions = false
             outputDir = None
@@ -1246,6 +1251,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.embedResources = data.embedResources
     member _.diagnosticsOptions = data.diagnosticsOptions
     member _.mlCompatibility = data.mlCompatibility
+    member _.checkNullness = data.checkNullness
     member _.checkOverflow = data.checkOverflow
     member _.showReferenceResolutions = data.showReferenceResolutions
     member _.outputDir = data.outputDir

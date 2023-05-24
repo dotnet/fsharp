@@ -680,7 +680,7 @@ module internal DescriptionListsImpl =
                 |> Array.map (fun sp -> 
                     let ty = Import.ImportProvidedType amap m (sp.PApply((fun x -> x.ParameterType), m))
                     let spKind = NicePrint.prettyLayoutOfType denv ty
-                    let spName = sp.PUntaint((fun sp -> sp.Name), m)
+                    let spName = sp.PUntaint((fun sp -> nonNull sp.Name), m)
                     let spOpt = sp.PUntaint((fun sp -> sp.IsOptional), m)
                     let display = (if spOpt then SepL.questionMark else emptyL) ^^ wordL (tagParameter spName) ^^ RightL.colon ^^ spKind
                     let display = toArray display

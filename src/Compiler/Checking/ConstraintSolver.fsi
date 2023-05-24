@@ -174,6 +174,26 @@ exception ConstraintSolverTypesNotInSubsumptionRelation of
 
 exception ConstraintSolverMissingConstraint of displayEnv: DisplayEnv * Typar * TyparConstraint * range * range
 
+exception ConstraintSolverNullnessWarningEquivWithTypes of
+    DisplayEnv *
+    TType *
+    TType *
+    NullnessInfo *
+    NullnessInfo *
+    range *
+    range
+
+exception ConstraintSolverNullnessWarningWithTypes of
+    DisplayEnv *
+    TType *
+    TType *
+    NullnessInfo *
+    NullnessInfo *
+    range *
+    range
+
+exception ConstraintSolverNullnessWarningWithType of DisplayEnv * TType * NullnessInfo * range * range
+exception ConstraintSolverNonNullnessWarningWithType of DisplayEnv * TType * NullnessInfo * range * range
 exception ConstraintSolverError of string * range * range
 
 exception ErrorFromApplyingDefault of
@@ -295,6 +315,10 @@ val AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed:
     DisplayEnv -> ConstraintSolverState -> range -> extraRigidTypars: FreeTypars -> TType -> TType -> bool
 
 val AddCxMethodConstraint: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TraitConstraintInfo -> unit
+
+val AddCxTypeDefnNotSupportsNull: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
+
+val AddCxTypeDefnSupportsNull: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
 
 val AddCxTypeUseSupportsNull: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
 

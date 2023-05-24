@@ -195,6 +195,8 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Editor.Tests", "vsin
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FSharp.Editor.IntegrationTests", "vsintegration\tests\FSharp.Editor.IntegrationTests\FSharp.Editor.IntegrationTests.csproj", "{E31F9B59-FCF1-4D04-8762-C7BB60285A7B}"
 EndProject
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "nullness", "tests\fsharp\core\nullness\nullness.fsproj", "{6992D926-AB1C-4CD4-94D5-0319D14DB54B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1033,6 +1035,18 @@ Global
 		{E31F9B59-FCF1-4D04-8762-C7BB60285A7B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E31F9B59-FCF1-4D04-8762-C7BB60285A7B}.Release|x86.ActiveCfg = Release|Any CPU
 		{E31F9B59-FCF1-4D04-8762-C7BB60285A7B}.Release|x86.Build.0 = Release|Any CPU
+		{6992D926-AB1C-4CD4-94D5-0319D14DB54B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6992D926-AB1C-4CD4-94D5-0319D14DB54B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6992D926-AB1C-4CD4-94D5-0319D14DB54B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6992D926-AB1C-4CD4-94D5-0319D14DB54B}.Debug|x86.Build.0 = Debug|Any CPU
+		{6992D926-AB1C-4CD4-94D5-0319D14DB54B}.Proto|Any CPU.ActiveCfg = Debug|Any CPU
+		{6992D926-AB1C-4CD4-94D5-0319D14DB54B}.Proto|Any CPU.Build.0 = Debug|Any CPU
+		{6992D926-AB1C-4CD4-94D5-0319D14DB54B}.Proto|x86.ActiveCfg = Debug|Any CPU
+		{6992D926-AB1C-4CD4-94D5-0319D14DB54B}.Proto|x86.Build.0 = Debug|Any CPU
+		{6992D926-AB1C-4CD4-94D5-0319D14DB54B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6992D926-AB1C-4CD4-94D5-0319D14DB54B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6992D926-AB1C-4CD4-94D5-0319D14DB54B}.Release|x86.ActiveCfg = Release|Any CPU
+		{6992D926-AB1C-4CD4-94D5-0319D14DB54B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1114,6 +1128,7 @@ Global
 		{FE23BB65-276A-4E41-8CC7-F7752241DEBA} = {39CDF34B-FB23-49AE-AB27-0975DA379BB5}
 		{CBC96CC7-65AB-46EA-A82E-F6A788DABF80} = {F7876C9B-FB6A-4EFB-B058-D6967DB75FB2}
 		{E31F9B59-FCF1-4D04-8762-C7BB60285A7B} = {F7876C9B-FB6A-4EFB-B058-D6967DB75FB2}
+		{6992D926-AB1C-4CD4-94D5-0319D14DB54B} = {CFE3259A-2D30-4EB0-80D5-E8B5F3D01449}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {48EDBBBE-C8EE-4E3C-8B19-97184A487B37}

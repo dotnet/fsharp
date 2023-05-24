@@ -860,6 +860,14 @@ let errorsAndWarningsFlags (tcConfigB: TcConfigBuilder) =
         )
 
         CompilerOption(
+            "checknulls",
+            tagNone,
+            OptionSwitch(fun switch -> tcConfigB.checkNullness <- switch = OptionSwitch.On),
+            None,
+            Some(FSComp.SR.optsCheckNulls ())
+        )
+
+        CompilerOption(
             "consolecolors",
             tagNone,
             OptionSwitch(fun switch -> enableConsoleColoring <- switch = OptionSwitch.On),

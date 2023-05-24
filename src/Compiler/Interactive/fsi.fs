@@ -1570,7 +1570,7 @@ let rec ConvReflectionTypeToILType (reflectionTy: Type) =
 
             if
                 ctors.Length = 1
-                && ctors[ 0 ].GetCustomAttribute<CompilerGeneratedAttribute>() <> null
+                && not (isNull (box (ctors[ 0 ].GetCustomAttribute<CompilerGeneratedAttribute>())))
                 && not ctors[0].IsPublic
                 && IsCompilerGeneratedName reflectionTy.Name
             then
@@ -3283,7 +3283,7 @@ type internal MagicAssemblyResolution() =
             fsiDynamicCompiler: FsiDynamicCompiler,
             fsiConsoleOutput: FsiConsoleOutput,
             fullAssemName: string
-        ) =
+        ) : Assembly MaybeNull =
 
         try
             // Grab the name of the assembly

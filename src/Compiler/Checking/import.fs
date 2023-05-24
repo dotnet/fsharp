@@ -163,8 +163,24 @@ let CanImportILTypeRef (env: ImportMap) m (tref: ILTypeRef) =
 /// 
 /// Prefer the F# abbreviation for some built-in types, e.g. 'string' rather than 
 /// 'System.String', since we prefer the F# abbreviation to the .NET equivalents. 
-let ImportTyconRefApp (env: ImportMap) tcref tyargs = 
-    env.g.improveType tcref tyargs 
+let ImportTyconRefApp (env: ImportMap) tcref tyargs nullness = 
+    env.g.improveType tcref tyargs nullness
+
+let ImportNullness (g: TcGlobals) =
+    ignore g
+    // if g.langFeatureNullness && g.assumeNullOnImport then
+    //     KnownWithNull
+    // else
+    // TODO NULLNESS
+    KnownAmbivalentToNull
+
+let ImportNullnessForTyconRef (g: TcGlobals) (m: range) (tcref: TyconRef) =
+    ignore (g, tcref, m)
+    // if g.langFeatureNullness && g.assumeNullOnImport && TyconRefNullIsExtraValue g m tcref then
+    //     KnownWithNull
+    // else
+    // TODO NULLNESS
+    KnownAmbivalentToNull
 
 /// Import an IL type as an F# type.
 let rec ImportILType (env: ImportMap) m tinst ty =  
@@ -175,12 +191,14 @@ let rec ImportILType (env: ImportMap) m tinst ty =
     | ILType.Array(bounds, ty) -> 
         let n = bounds.Rank
         let elemTy = ImportILType env m tinst ty
-        mkArrayTy env.g n elemTy m
+        let nullness = ImportNullness env.g
+        mkArrayTy env.g n nullness elemTy m
 
     | ILType.Boxed  tspec | ILType.Value tspec ->
         let tcref = ImportILTypeRef env m tspec.TypeRef 
         let inst = tspec.GenericArgs |> List.map (ImportILType env m tinst) 
-        ImportTyconRefApp env tcref inst
+        let nullness = ImportNullnessForTyconRef env.g m tcref
+        ImportTyconRefApp env tcref inst nullness
 
     | ILType.Byref ty -> mkByrefTy env.g (ImportILType env m tinst ty)
 
@@ -192,6 +210,7 @@ let rec ImportILType (env: ImportMap) m tinst ty =
 
     | ILType.Modified(_, _, ty) -> 
          // All custom modifiers are ignored
+         // NULLNESS TODO: pick up the optional attributes at this point and fold the array of nullness information into the conversion
          ImportILType env m tinst ty
 
     | ILType.TypeVar u16 -> 
@@ -200,7 +219,9 @@ let rec ImportILType (env: ImportMap) m tinst ty =
                 List.item (int u16) tinst
             with _ -> 
                 error(Error(FSComp.SR.impNotEnoughTypeParamsInScopeWhileImporting(), m))
-        ty
+        let nullness = ImportNullness env.g
+        let tyWithNullness = addNullnessToTy nullness ty
+        tyWithNullness
 
 /// Determines if an IL type can be imported as an F# type
 let rec CanImportILType (env: ImportMap) m ty =  
@@ -286,7 +307,8 @@ let rec ImportProvidedType (env: ImportMap) (m: range) (* (tinst: TypeInst) *) (
     let g = env.g
     if st.PUntaint((fun st -> st.IsArray), m) then 
         let elemTy = ImportProvidedType env m (* tinst *) (st.PApply((fun st -> st.GetElementType()), m))
-        mkArrayTy g (st.PUntaint((fun st -> st.GetArrayRank()), m))  elemTy m
+        let nullness = ImportNullness env.g
+        mkArrayTy g (st.PUntaint((fun st -> st.GetArrayRank()), m)) nullness elemTy m
     elif st.PUntaint((fun st -> st.IsByRef), m) then 
         let elemTy = ImportProvidedType env m (* tinst *) (st.PApply((fun st -> st.GetElementType()), m))
         mkByrefTy g elemTy
@@ -358,7 +380,9 @@ let rec ImportProvidedType (env: ImportMap) (m: range) (* (tinst: TypeInst) *) (
                 else
                     genericArg)
 
-        ImportTyconRefApp env tcref genericArgs
+        let nullness = ImportNullnessForTyconRef env.g m tcref
+
+        ImportTyconRefApp env tcref genericArgs nullness
 
 /// Import a provided method reference as an Abstract IL method reference
 let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: range) (mbase: Tainted<ProvidedMethodBase>) = 

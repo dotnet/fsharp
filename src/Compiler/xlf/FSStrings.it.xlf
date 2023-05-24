@@ -2,6 +2,26 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="it" original="../FSStrings.resx">
     <body>
+      <trans-unit id="ConstraintSolverNonNullnessWarningWithType">
+        <source>Nullness warning: The type '{0}' supports a null value but a constraint requires the type to be non-null.</source>
+        <target state="new">Nullness warning: The type '{0}' supports a null value but a constraint requires the type to be non-null.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningEquivWithTypes">
+        <source>Nullness warning: The types '{0}' and '{1}' do not have equivalent nullability '{2}' and '{3}'.</source>
+        <target state="new">Nullness warning: The types '{0}' and '{1}' do not have equivalent nullability '{2}' and '{3}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningWithType">
+        <source>Nullness warning: The type '{0}' does not support nullness.</source>
+        <target state="new">Nullness warning: The type '{0}' does not support nullness.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningWithTypes">
+        <source>Nullness warning: The types '{0}' and '{1}' do not have compatible nullability '{2}' and '{3}'.</source>
+        <target state="new">Nullness warning: The types '{0}' and '{1}' do not have compatible nullability '{2}' and '{3}'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ErrorFromAddingTypeEquationTuples">
         <source>Type mismatch. Expecting a tuple of length {0} of type\n    {1}    \nbut given a tuple of length {2} of type\n    {3}    {4}\n</source>
         <target state="translated">Tipo non corrispondente. È prevista una tupla di lunghezza {0} di tipo\n   {1}    \n, ma è stata specificata una tupla di lunghezza {2} di tipo\n    {3}{4}\n</target>
@@ -40,6 +60,16 @@
       <trans-unit id="Parser.TOKEN.INTERP.STRING.PART">
         <source>interpolated string (part)</source>
         <target state="translated">stringa interpolata (parte)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.NOTNULL__">
+        <source>keyword '__notnull'</source>
+        <target state="new">keyword '__notnull'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.WITHNULL__">
+        <source>keyword '__withnull'</source>
+        <target state="new">keyword '__withnull'</target>
         <note />
       </trans-unit>
       <trans-unit id="SeeAlso">

@@ -397,6 +397,10 @@ module Keywords =
             FSHARP, "__token_ODO", ODO
             FSHARP, "__token_OLET", OLET(true)
             FSHARP, "__token_constraint", CONSTRAINT
+            (*------- for prototyping *)
+            FSHARP, "__maybenull", MAYBENULL__
+            FSHARP, "__notnull", NOTNULL__
+            FSHARP, "__withnull", WITHNULL__
         ]
         (*------- reserved keywords which are ml-compatibility ids *)
         @ List.map

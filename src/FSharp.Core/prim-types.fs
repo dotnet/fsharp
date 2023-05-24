@@ -9,6 +9,8 @@
 #nowarn "69" // Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using #nowarn "69" if you have checked this is not the case.
 #nowarn "77" // Member constraints with the name 'Exp' are given special status by the F# compiler...
 #nowarn "3218" // mismatch of parameter name for 'fst' and 'snd'
+#nowarn "3244" // no nullness checking
+#nowarn "3245" // no nullness checking
 
 namespace Microsoft.FSharp.Core
 
@@ -4222,8 +4224,8 @@ namespace Microsoft.FSharp.Core
             | _ -> None
 
         [<CompiledName("IsNull")>]
-        let inline isNull (value : 'T) = 
-            match value with 
+        let inline isNull (value : 'T when 'T : null) = 
+            match box value with 
             | null -> true 
             | _ -> false
 
@@ -4232,6 +4234,62 @@ namespace Microsoft.FSharp.Core
             match value with 
             | null -> false 
             | _ -> true
+
+#if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
+
+        [<CompiledName("IsNullV")>]
+        let inline isNullV (value : Nullable<'T>) = not value.HasValue
+
+        [<CompiledName("NonNull")>]
+        let inline nonNull (value : 'T __withnull when 'T : __notnull and 'T : not struct) = 
+            match box value with 
+            | null -> raise (NullReferenceException()) 
+            | _ -> (# "" value : 'T #)
+
+        [<CompiledName("NonNullV")>]
+        let inline nonNullV (value : Nullable<'T>) = 
+            if value.HasValue then 
+                value.Value
+            else 
+                raise (NullReferenceException())
+
+        [<CompiledName("NullMatchPattern")>]
+        let inline (|Null|NonNull|) (value : 'T __withnull when 'T : __notnull and 'T : not struct) = 
+            match value with 
+            | null -> Null () 
+            | _ -> NonNull (# "" value : 'T #)
+
+        [<CompiledName("NullValueMatchPattern")>]
+        let inline (|NullV|NonNullV|) (value : Nullable<'T>) = 
+            if value.HasValue then NonNullV value.Value
+            else NullV ()
+
+        [<CompiledName("NonNullQuickPattern")>]
+        let inline (|NonNullQuick|) (value : 'T __withnull when 'T : __notnull and 'T : not struct) =
+            match box value with 
+            | null -> raise (NullReferenceException()) 
+            | _ -> (# "" value : 'T #)
+
+        [<CompiledName("NonNullQuickValuePattern")>]
+        let inline (|NonNullQuickV|) (value : Nullable<'T>) =
+            if value.HasValue then value.Value
+            else raise (NullReferenceException()) 
+
+        [<CompiledName("WithNull")>]
+        let inline withNull (value : 'T when 'T : __notnull and 'T : not struct) = (# "" value : 'T __withnull #)
+
+        [<CompiledName("WithNullV")>]
+        let inline withNullV (value : 'T) : Nullable<'T> = Nullable<'T>(value)
+
+        [<CompiledName("NullV")>]
+        let inline nullV<'T when 'T : struct and 'T : (new : unit -> 'T) and 'T :> ValueType>  = Nullable<'T>()
+
+        [<CompiledName("NullArgCheck")>]
+        let inline nullArgCheck (argumentName:string) (value: 'T __withnull when 'T : __notnull and 'T : not struct) = 
+            match value with 
+            | null -> raise (new ArgumentNullException(argumentName))        
+            | _ ->  (# "" value : 'T #)
+#endif
 
         [<CompiledName("Raise")>]
         let inline raise (exn: exn) =
@@ -4324,6 +4382,16 @@ namespace Microsoft.FSharp.Core
         
         [<CompiledName("DefaultValueArg")>]
         let defaultValueArg arg defaultValue = match arg with ValueNone -> defaultValue | ValueSome v -> v
+
+#if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
+        [<CompiledName("DefaultIfNull")>]
+        let inline defaultIfNull defaultValue (arg: 'T __withnull when 'T : __notnull and 'T : not struct) = 
+            match arg with null -> defaultValue | _ -> (# "" arg : 'T #)
+        
+        [<CompiledName("DefaultIfNullV")>]
+        let inline defaultIfNullV defaultValue (arg: Nullable<'T>) = 
+            if arg.HasValue then arg.Value else defaultValue
+#endif
 
         [<NoDynamicInvocation(isLegacy=true)>]
         let inline (~-) (n: ^T) : ^T = 

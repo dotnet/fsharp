@@ -7,6 +7,18 @@ open System.Text
 open System.Collections.Generic
 open FSharp.Compiler.DiagnosticsLogger
 
+[<AutoOpen>]
+module internal ConsoleHelpers =
+
+#if NO_CHECKNULLS
+  type MaybeNull<'T when 'T : null> = 'T
+
+  // Shim to match nullness checking library support in preview
+  let inline (|Null|NonNull|) (x: 'T) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
+#else
+  type MaybeNull<'T when 'T : __notnull> = 'T __withnull
+#endif
+
 type internal Style =
     | Prompt
     | Out
@@ -29,23 +41,19 @@ type internal History() =
         list.Clear()
         current <- -1
 
-    member _.Add line =
-        match line with
-        | null
+    member _.Add (line: string MaybeNull) = 
+        match line with 
+        | Null
         | "" -> ()
-        | _ -> list.Add(line)
+        | NonNull line -> list.Add(line)
 
-    member _.AddLast line =
-        match line with
-        | null
+    member _.AddLast (line: string MaybeNull) =  
+        match line with 
+        | Null
         | "" -> ()
-        | _ ->
+        | NonNull line ->
             list.Add(line)
             current <- list.Count
-
-    // Dead code
-    // member x.First() = current <- 0; x.Current
-    // member x.Last() = current <- list.Count - 1; x.Current
 
     member x.Previous() =
         if (list.Count > 0) then
