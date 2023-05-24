@@ -4,7 +4,7 @@
 //<Expects status="success">val ``+`` : bool = true</Expects>
 //<Expects status="success">val ``\.\.`` : bool = true</Expects>
 //<Expects status="success">val ``\.\. \.\.`` : bool = true</Expects>
-//<Expects status="success">val ``(+)`` : bool = true</Expects>
+//<Expects status="success">val ``(\+)`` : bool = true</Expects>
 //<Expects status="success">val ``land`` : bool = true</Expects>
 //<Expects status="success">val ``type`` : bool = true</Expects>
 //<Expects status="success">val ``or`` : bool = true</Expects>
