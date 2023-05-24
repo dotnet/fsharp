@@ -8,6 +8,7 @@ open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 module Hints =
 
+    [<RequireQualifiedAccess>]
     type HintKind =
         | TypeHint
         | ParameterNameHint
@@ -24,6 +25,6 @@ module Hints =
 
     let inline serialize kind =
         match kind with
-        | TypeHint -> "type"
-        | ParameterNameHint -> "parameterName"
-        | ReturnTypeHint -> "returnType"
+        | HintKind.TypeHint -> "type"
+        | HintKind.ParameterNameHint -> "parameterName"
+        | HintKind.ReturnTypeHint -> "returnType"

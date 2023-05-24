@@ -30,9 +30,6 @@ type internal FSharpInlineHintsService [<ImportingConstructor>] (settings: Edito
                 cancellableTask {
                     let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
 
-                    let hintKindsSerialized = hintKinds |> Set.map Hints.serialize |> String.concat ","
-                    TelemetryReporter.ReportSingleEvent(TelemetryEvents.Hints, [| ("hints.kinds", hintKindsSerialized) |])
-
                     let! sourceText = document.GetTextAsync cancellationToken
                     let! nativeHints = HintService.getHintsForDocument sourceText document hintKinds userOpName
 

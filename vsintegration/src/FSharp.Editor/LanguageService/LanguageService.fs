@@ -130,6 +130,22 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                             let enablePartialTypeChecking =
                                 editorOptions.LanguageServicePerformance.EnablePartialTypeChecking
 
+                            // Default should be false
+                            let keepAllBackgroundResolutions =
+                                editorOptions.LanguageServicePerformance.KeepAllBackgroundResolutions
+
+                            // Default should be false
+                            let keepAllBackgroundSymbolUses =
+                                editorOptions.LanguageServicePerformance.KeepAllBackgroundSymbolUses
+
+                            // Default should be true
+                            let enableBackgroundItemKeyStoreAndSemanticClassification =
+                                editorOptions.LanguageServicePerformance.EnableBackgroundItemKeyStoreAndSemanticClassification
+
+                            // Default should be true
+                            let captureIdentifiersWhenParsing =
+                                editorOptions.LanguageServicePerformance.CaptureIdentifiersWhenParsing
+
                             use _eventDuration =
                                 TelemetryReporter.ReportSingleEventWithDuration(
                                     TelemetryEvents.LanguageServiceStarted,
@@ -142,6 +158,10 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                                         nameof isInlineTypeHintsEnabled, isInlineTypeHintsEnabled
                                         nameof isInlineReturnTypeHintsEnabled, isInlineReturnTypeHintsEnabled
                                         nameof enablePartialTypeChecking, enablePartialTypeChecking
+                                        nameof keepAllBackgroundResolutions, keepAllBackgroundResolutions
+                                        nameof keepAllBackgroundSymbolUses, keepAllBackgroundSymbolUses
+                                        nameof enableBackgroundItemKeyStoreAndSemanticClassification, enableBackgroundItemKeyStoreAndSemanticClassification
+                                        nameof captureIdentifiersWhenParsing, captureIdentifiersWhenParsing
                                     |],
                                     TelemetryThrottlingStrategy.NoThrottling
                                 )
@@ -149,14 +169,14 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                             let checker =
                                 FSharpChecker.Create(
                                     projectCacheSize = 5000, // We do not care how big the cache is. VS will actually tell FCS to clear caches, so this is fine.
-                                    keepAllBackgroundResolutions = false,
+                                    keepAllBackgroundResolutions = keepAllBackgroundResolutions,
                                     legacyReferenceResolver = LegacyMSBuildReferenceResolver.getResolver (),
                                     tryGetMetadataSnapshot = tryGetMetadataSnapshot,
-                                    keepAllBackgroundSymbolUses = false,
-                                    enableBackgroundItemKeyStoreAndSemanticClassification = true,
+                                    keepAllBackgroundSymbolUses = keepAllBackgroundSymbolUses,
+                                    enableBackgroundItemKeyStoreAndSemanticClassification = enableBackgroundItemKeyStoreAndSemanticClassification,
                                     enablePartialTypeChecking = enablePartialTypeChecking,
                                     parallelReferenceResolution = enableParallelReferenceResolution,
-                                    captureIdentifiersWhenParsing = true,
+                                    captureIdentifiersWhenParsing = captureIdentifiersWhenParsing,
                                     documentSource =
                                         (if enableLiveBuffers then
                                              DocumentSource.Custom getSource

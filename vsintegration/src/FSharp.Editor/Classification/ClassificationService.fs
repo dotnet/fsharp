@@ -29,45 +29,6 @@ open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 type SemanticClassificationData = SemanticClassificationView
 type SemanticClassificationLookup = IReadOnlyDictionary<int, ResizeArray<SemanticClassificationItem>>
 
-[<Sealed>]
-type DocumentCache<'Value when 'Value: not struct>() =
-    /// Anything under two seconds, the caching stops working, meaning it won't actually cache the item.
-    /// Two seconds is just enough to keep the data around long enough to handle a flood of a requests asking for the same data
-    ///     in a short period of time.
-    [<Literal>]
-    let slidingExpirationSeconds = 2.
-
-    let cache = new MemoryCache("fsharp-cache")
-
-    let policy =
-        CacheItemPolicy(SlidingExpiration = TimeSpan.FromSeconds slidingExpirationSeconds)
-
-    member _.TryGetValueAsync(doc: Document) =
-        cancellableTask {
-            let! ct = CancellableTask.getCurrentCancellationToken ()
-            let! currentVersion = doc.GetTextVersionAsync ct
-
-            match cache.Get(doc.Id.ToString()) with
-            | null -> return ValueNone
-            | :? (VersionStamp * 'Value) as value ->
-                if fst value = currentVersion then
-                    return ValueSome(snd value)
-                else
-                    return ValueNone
-            | _ -> return ValueNone
-        }
-
-    member _.SetAsync(doc: Document, value: 'Value) =
-        cancellableTask {
-            let! ct = CancellableTask.getCurrentCancellationToken ()
-            let! currentVersion = doc.GetTextVersionAsync ct
-            cache.Set(doc.Id.ToString(), (currentVersion, value), policy)
-        }
-
-    interface IDisposable with
-
-        member _.Dispose() = cache.Dispose()
-
 [<Export(typeof<IFSharpClassificationService>)>]
 type internal FSharpClassificationService [<ImportingConstructor>] () =
 
@@ -159,7 +120,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
 
         Collections.ObjectModel.ReadOnlyDictionary lookup :> IReadOnlyDictionary<_, _>
 
-    let semanticClassificationCache = new DocumentCache<SemanticClassificationLookup>()
+    let semanticClassificationCache = new DocumentCache<SemanticClassificationLookup>("fsharp-semantic-classification-cache")
 
     interface IFSharpClassificationService with
         // Do not perform classification if we don't have project options (#defines matter)
