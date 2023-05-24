@@ -208,8 +208,22 @@ module internal PrintUtilities =
                 else
                     path |> List.map (fun s -> 
                         let i = s.IndexOf(',')
-                        if i <> -1 then s.Substring(0, i)+"<...>" // apparently has static params, shorten
-                        else s)
+                        if i <> -1 then
+                            s.Substring(0, i)+"<...>" // apparently has static params, shorten
+                        else
+                            // Verify the name does not end in `1
+                            let tickIdx = s.LastIndexOf("`")
+                            if tickIdx = -1 && tickIdx < s.Length - 1 then
+                                s
+                            else
+                            
+                            match Int32.TryParse(s.Substring(tickIdx + 1)) with
+                            | false, _ -> s
+                            | true, idx ->
+                                match List.tryItem (idx - 1) tcref.TyparsNoRange with
+                                | None -> s
+                                | Some typar -> String.Concat(s.Substring(0, tickIdx), "<'", typar.typar_id.idText, ">")
+                    )
             let pathText = trimPathByDisplayEnv denv path
             if pathText = "" then tyconTextL else leftL (tagUnknownEntity pathText) ^^ tyconTextL
 
@@ -900,7 +914,12 @@ module PrintTypes =
         | TType_ucase (UnionCaseRef(tc, _), args)
         | TType_app (tc, args, _) ->
           let prefix = usePrefix denv tc
-          layoutTypeAppWithInfoAndPrec denv env (layoutTyconRef denv tc) prec prefix args
+          let partsWithTick = tc.CompilationPath.DemangledPath |> List.sumBy (fun p -> if p.Contains("`") then 1 else 0)
+          // Very specific check for types like System.Collections.Immutable.ImmutableArray<'T>.Builder
+          if partsWithTick = args.Length then
+              layoutTypeAppWithInfoAndPrec denv env (layoutTyconRef denv tc) prec prefix []
+          else
+              layoutTypeAppWithInfoAndPrec denv env (layoutTyconRef denv tc) prec prefix args
 
         // Layout a tuple type 
         | TType_anon (anonInfo, tys) ->
