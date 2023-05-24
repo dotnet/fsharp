@@ -2615,7 +2615,7 @@ let stringOfFSAttrib denv x = x |> PrintTypes.layoutAttrib denv |> squareAngleL 
 
 let stringOfILAttrib denv x = x |> PrintTypes.layoutILAttrib denv |> squareAngleL |> showL
 
-let fqnOfEntityRef (tcref: EntityRef) = $"""{String.Join(".", tcref.CompilationPath.DemangledPath)}.{tcref.LogicalName}"""
+let fqnOfEntityRef g x = x |> layoutTyconRefImpl false (DisplayEnv.Empty g) |> showL
 
 let layoutImpliedSignatureOfModuleOrNamespace showHeader denv infoReader ad m contents =
     InferredSigPrinting.layoutImpliedSignatureOfModuleOrNamespace showHeader denv infoReader ad m contents 
