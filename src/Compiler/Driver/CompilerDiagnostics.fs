@@ -690,8 +690,7 @@ type Exception with
 
             let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
 
-            os.Append(ConstraintSolverNullnessWarningWithTypesE().Format t1 t2)
-            |> ignore
+            os.Append(ConstraintSolverNullnessWarningWithTypesE().Format t1 t2) |> ignore
 
             if m.StartLine <> m2.StartLine then
                 os.Append(SeeAlsoE().Format(stringOfRange m)) |> ignore
