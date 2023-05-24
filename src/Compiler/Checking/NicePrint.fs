@@ -878,11 +878,14 @@ module PrintTypes =
             | [arg] -> layoutTypeWithInfoAndPrec denv env 2 arg ^^ tcL
             | args -> bracketIfL (prec <= 1) (bracketL (layoutTypesWithInfoAndPrec denv env 2 (sepL (tagPunctuation ",")) args) --- tcL)
 
-    and layoutNullness part2 (nullness: Nullness) =
-        match nullness.Evaluate() with
-        | NullnessInfo.WithNull -> part2 ^^ wordL (tagText "__withnull")
-        | NullnessInfo.WithoutNull -> part2
-        | NullnessInfo.AmbivalentToNull -> part2 ^^ wordL (tagText "__maybenull")  // TODO NULLNESS: emit this optionally ^^ wordL (tagText "%")
+    and layoutNullness (denv: DisplayEnv) part2 (nullness: Nullness) =
+        if denv.showNullnessAnnotations then
+            match nullness.Evaluate() with
+            | NullnessInfo.WithNull -> part2 ^^ wordL (tagText "__withnull")
+            | NullnessInfo.WithoutNull -> part2
+            | NullnessInfo.AmbivalentToNull -> part2 //^^ wordL (tagText "__maybenull")
+        else
+            part2
     
     /// Layout a type, taking precedence into account to insert brackets where needed
     and layoutTypeWithInfoAndPrec denv env prec ty =
@@ -903,13 +906,18 @@ module PrintTypes =
 
         // Always prefer 'float' to 'float<1>'
         | TType_app (tc, args, _) when tc.IsMeasureableReprTycon && List.forall (isDimensionless g) args ->
-          layoutTypeWithInfoAndPrec denv env prec (reduceTyconRefMeasureableOrProvided g tc args)
+            layoutTypeWithInfoAndPrec denv env prec (reduceTyconRefMeasureableOrProvided g tc args)
 
         // Layout a type application
-        | TType_ucase (UnionCaseRef(tc, _), args)
-        | TType_app (tc, args, _) ->
-          let prefix = usePrefix denv tc
-          layoutTypeAppWithInfoAndPrec denv env (layoutTyconRef denv tc) prec prefix args
+        | TType_ucase (UnionCaseRef(tc, _), args) ->
+            let prefix = usePrefix denv tc
+            layoutTypeAppWithInfoAndPrec denv env (layoutTyconRef denv tc) prec prefix args
+
+        | TType_app (tc, args, nullness) ->
+            let prefix = usePrefix denv tc
+            let part1 = layoutTypeAppWithInfoAndPrec denv env (layoutTyconRef denv tc) prec prefix args
+            let part2 = layoutNullness denv part1 nullness
+            part2
 
         // Layout a tuple type 
         | TType_anon (anonInfo, tys) ->
@@ -935,17 +943,19 @@ module PrintTypes =
             | [h] -> layoutTyparRefWithInfo denv env h ^^ rightL (tagPunctuation ".") --- tauL
             | h :: t -> spaceListL (List.map (layoutTyparRefWithInfo denv env) (h :: t)) ^^ rightL (tagPunctuation ".") --- tauL
 
-        | TType_fun _ ->
+        | TType_fun (_, _, nullness) ->
             let argTys, retTy = stripFunTy g ty
             let retTyL = layoutTypeWithInfoAndPrec denv env 5 retTy
             let argTysL = argTys |> List.map (layoutTypeWithInfoAndPrec denv env 4)
             let funcTyL = curriedLayoutsL "->" argTysL retTyL
-            bracketIfL (prec <= 4) funcTyL
+            let part1 = bracketIfL (prec <= 4) funcTyL
+            let part2 = layoutNullness denv part1 nullness
+            part2
 
         // Layout a type variable . 
         | TType_var (r, nullness) ->
             let part1 = layoutTyparRefWithInfo denv env r
-            let part2 = layoutNullness part1 nullness
+            let part2 = layoutNullness denv part1 nullness
             part2
 
         | TType_measure unt -> layoutMeasure denv unt
@@ -2650,7 +2660,7 @@ let minimalStringsOfTwoTypes denv ty1 ty2 =
 
     // try denv + no type annotations 
     let attempt1 = 
-        let denv = { denv with showInferenceTyparAnnotations=false; showStaticallyResolvedTyparAnnotations=false }
+        let denv = { denv with showInferenceTyparAnnotations=false; showStaticallyResolvedTyparAnnotations=false; showNullnessAnnotations=false }
         let min1 = stringOfTy denv ty1
         let min2 = stringOfTy denv ty2
         if min1 <> min2 then Some (min1, min2, "") else None
@@ -2661,7 +2671,7 @@ let minimalStringsOfTwoTypes denv ty1 ty2 =
 
     // try denv + no type annotations + show full paths
     let attempt2 = 
-        let denv = { denv with showInferenceTyparAnnotations=false; showStaticallyResolvedTyparAnnotations=false }.SetOpenPaths []
+        let denv = { denv with showInferenceTyparAnnotations=false; showStaticallyResolvedTyparAnnotations=false; showNullnessAnnotations=false }.SetOpenPaths []
         let min1 = stringOfTy denv ty1
         let min2 = stringOfTy denv ty2
         if min1 <> min2 then Some (min1, min2, "") else None
@@ -2670,6 +2680,7 @@ let minimalStringsOfTwoTypes denv ty1 ty2 =
     | Some res -> res
     | None -> 
 
+    // try denv
     let attempt3 = 
         let min1 = stringOfTy denv ty1
         let min2 = stringOfTy denv ty2
@@ -2702,13 +2713,13 @@ let minimalStringsOfTwoTypes denv ty1 ty2 =
     
 // Note: Always show imperative annotations when comparing value signatures 
 let minimalStringsOfTwoValues denv infoReader vref1 vref2 = 
-    let denvMin = { denv with showInferenceTyparAnnotations=true; showStaticallyResolvedTyparAnnotations=false }
+    let denvMin = { denv with showInferenceTyparAnnotations=true; showStaticallyResolvedTyparAnnotations=false; showNullnessAnnotations=false }
     let min1 = buildString (fun buf -> outputQualifiedValOrMember denvMin infoReader buf vref1)
     let min2 = buildString (fun buf -> outputQualifiedValOrMember denvMin infoReader buf vref2) 
     if min1 <> min2 then 
         (min1, min2) 
     else
-        let denvMax = { denv with showInferenceTyparAnnotations=true; showStaticallyResolvedTyparAnnotations=true }
+        let denvMax = { denv with showInferenceTyparAnnotations=true; showStaticallyResolvedTyparAnnotations=true; showNullnessAnnotations=false }
         let max1 = buildString (fun buf -> outputQualifiedValOrMember denvMax infoReader buf vref1)
         let max2 = buildString (fun buf -> outputQualifiedValOrMember denvMax infoReader buf vref2) 
         max1, max2

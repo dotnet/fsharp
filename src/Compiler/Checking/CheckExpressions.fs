@@ -4000,7 +4000,7 @@ let rec TcTyparConstraint ridx (cenv: cenv) newOk checkConstraints occ (env: TcE
         tpenv
 
     | SynTypeConstraint.WhereTyparSupportsNull(tp, m) ->
-        TcSimpleTyparConstraint cenv env newOk tpenv tp m AddCxTypeDefnSupportsNull
+        TcSimpleTyparConstraint cenv env newOk tpenv tp m AddCxTypeUseSupportsNull
 
     | SynTypeConstraint.WhereTyparNotSupportsNull(tp, m) ->
         if g.langFeatureNullness then 
@@ -5615,9 +5615,7 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
 
     | SynExpr.Null m ->
         TcNonControlFlowExpr env <| fun env ->
-        // Which?
         AddCxTypeUseSupportsNull env.DisplayEnv cenv.css m NoTrace overallTy.Commit
-        //AddCxTypeDefnSupportsNull env.DisplayEnv cenv.css m NoTrace overallTy.Commit
         let tyWithNull = addNullnessToTy KnownWithNull overallTy.Commit
         mkNull m tyWithNull, tpenv
 

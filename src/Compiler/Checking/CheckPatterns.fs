@@ -461,8 +461,6 @@ and TcRecordPat warnOnUpper cenv env vFlags patEnv ty fieldPats m =
 and TcNullPat cenv env patEnv ty m =
     try
         AddCxTypeUseSupportsNull env.DisplayEnv cenv.css m NoTrace ty
-        // Which?
-        //AddCxTypeDefnSupportsNull env.DisplayEnv cenv.css m NoTrace ty
     with exn ->
         errorRecovery exn m
     (fun _ -> TPat_null m), patEnv

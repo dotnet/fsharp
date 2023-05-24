@@ -2,9 +2,6 @@
 
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
-    <FscToolPath>..\..\..\..\artifacts\bin\fsc\$(Configuration)\net472</FscToolPath>
-    <FscToolExe>fsc.exe</FscToolExe>
-    <DotnetFscCompilerPath></DotnetFscCompilerPath>
     <OutputType>Exe</OutputType>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <!-- Turn off "This function is for use by compiled F# code and should not be used directly" -->
@@ -16,7 +13,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-	<Compile Include="test.fsx" />
+	<Compile Include="existing/positive.fs" />
+	<Compile Include="enabled/positive.fs" />
+	<!-- <Compile Include="library/positive.fs" /> -->
   <ProjectReference Include="..\..\..\..\src\FSharp.Core\FSharp.Core.fsproj" />
   </ItemGroup>
 

@@ -3078,6 +3078,7 @@ type DisplayEnv =
       showAttributes: bool
       showOverrides: bool
       showStaticallyResolvedTyparAnnotations: bool
+      showNullnessAnnotations: bool
       abbreviateAdditionalConstraints: bool
       showTyparDefaultConstraints: bool
       showDocumentation: bool
@@ -3112,6 +3113,7 @@ type DisplayEnv =
         showAttributes = false
         showOverrides = true
         showStaticallyResolvedTyparAnnotations = true
+        showNullnessAnnotations = true
         showDocumentation = false
         abbreviateAdditionalConstraints = false
         showTyparDefaultConstraints = false
@@ -8895,19 +8897,6 @@ let TypeNullNever g ty =
     isByrefTy g underlyingTy ||
     isNonNullableStructTyparTy g ty
 
-let TyconRefNullIsExtraValueAux isNew g m (tcref: TyconRef) = 
-    not tcref.IsStructOrEnumTycon &&
-    not (isByrefLikeTyconRef g m tcref) && 
-    (if tcref.IsILTycon then 
-        // Putting AllowNullLiteralAttribute(false) on an IL or provided type means 'null' can't be used with that type
-        (not isNew && TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref <> Some false)
-     else 
-// Putting AllowNullLiteralAttribute(true) on an F# type means it always admits null even in the new model
-        (TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some true))
-
-let TyconRefNullIsExtraValue g m tcref = TyconRefNullIsExtraValueAux false g m tcref
-let TyconRefNullIsExtraValueNew g m tcref = TyconRefNullIsExtraValueAux true g m tcref
-
 /// The F# 4.5 logic about whether a type admits the use of 'null' as a value.
 let TypeNullIsExtraValue g m ty = 
     if isILReferenceTy g ty || isDelegateTy g ty then
@@ -8936,6 +8925,8 @@ let TypeNullIsExtraValue g m ty =
 /// The new logic about whether a type admits the use of 'null' as a value.
 let TypeNullIsExtraValueNew g m ty = 
     let sty = stripTyparEqns ty
+    isObjTy g sty
+    ||
     (match tryTcrefOfAppTy g sty with 
      | ValueSome tcref -> 
         not tcref.IsStructOrEnumTycon &&
@@ -8964,10 +8955,6 @@ let TypeNullNotLiked g m ty =
        not (TypeNullIsExtraValue g m ty) 
     && not (TypeNullIsTrueValue g ty) 
     && not (TypeNullNever g ty) 
-
-// The non-inferring counter-part to SolveTypeUseSupportsNull
-let TypeSatisfiesNullConstraint g m ty = 
-    TypeNullIsExtraValue g m ty  
 
 let rec TypeHasDefaultValueAux isNew g m ty = 
     let ty = stripTyEqnsAndMeasureEqns g ty
@@ -9001,7 +8988,7 @@ let rec TypeHasDefaultValueAux isNew g m ty =
       (isNonNullableStructTyparTy g ty &&
         (destTyparTy g ty).Constraints |> List.exists (function TyparConstraint.RequiresDefaultConstructor _ -> true | _ -> false))
 
-let TypeHasDefaultValue g m ty = TypeHasDefaultValueAux false g m ty  
+let TypeHasDefaultValue (g: TcGlobals) m ty = TypeHasDefaultValueAux false g m ty  
 
 let TypeHasDefaultValueNew g m ty = TypeHasDefaultValueAux true g m ty  
 

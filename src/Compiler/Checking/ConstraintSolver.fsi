@@ -193,7 +193,9 @@ exception ConstraintSolverNullnessWarningWithTypes of
     range
 
 exception ConstraintSolverNullnessWarningWithType of DisplayEnv * TType * NullnessInfo * range * range
-exception ConstraintSolverNonNullnessWarningWithType of DisplayEnv * TType * NullnessInfo * range * range
+
+exception ConstraintSolverNullnessWarning of string * range * range
+
 exception ConstraintSolverError of string * range * range
 
 exception ErrorFromApplyingDefault of
@@ -317,8 +319,6 @@ val AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed:
 val AddCxMethodConstraint: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TraitConstraintInfo -> unit
 
 val AddCxTypeDefnNotSupportsNull: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
-
-val AddCxTypeDefnSupportsNull: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
 
 val AddCxTypeUseSupportsNull: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
 

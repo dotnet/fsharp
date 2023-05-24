@@ -1061,6 +1061,7 @@ type DisplayEnv =
         showAttributes: bool
         showOverrides: bool
         showStaticallyResolvedTyparAnnotations: bool
+        showNullnessAnnotations: bool
         abbreviateAdditionalConstraints: bool
         showTyparDefaultConstraints: bool
         /// If set, signatures will be rendered with XML documentation comments for members if they exist
@@ -1742,19 +1743,15 @@ val CompileAsEvent: TcGlobals -> Attribs -> bool
 
 val TypeNullIsTrueValue: TcGlobals -> TType -> bool
 
-val TypeNullIsExtraValueNew: TcGlobals -> range -> TType -> bool
-
 val TypeNullIsExtraValue: TcGlobals -> range -> TType -> bool
 
-val TyconRefNullIsExtraValue: TcGlobals -> range -> TyconRef -> bool
-
-val TyconRefNullIsExtraValueNew: TcGlobals -> range -> TyconRef -> bool
+val TypeNullIsExtraValueNew: TcGlobals -> range -> TType -> bool
 
 val TypeNullNever: TcGlobals -> TType -> bool
 
-val TypeHasDefaultValueNew: TcGlobals -> range -> TType -> bool
-
 val TypeHasDefaultValue: TcGlobals -> range -> TType -> bool
+
+val TypeHasDefaultValueNew: TcGlobals -> range -> TType -> bool
 
 val isAbstractTycon: Tycon -> bool
 
