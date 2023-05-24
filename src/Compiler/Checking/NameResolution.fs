@@ -2736,17 +2736,17 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
                     let intersect = Set.intersect fieldsOfAlternatives fieldsOfResolvedType
 
                     if not intersect.IsEmpty then
-                        let resolvedTypeName = $"""{System.String.Join(".", tcref.CompilationPath.DemangledPath)}.{tcref.LogicalName}"""
+                        let resolvedTypeName = NicePrint.fqnOfEntityRef tcref
                         let namesOfAlternatives =
                             fieldLabels
-                            |> List.map (fun l -> $"""    %s{System.String.Join(".", l.Tycon.CompilationPath.DemangledPath)}.{l.Tycon.LogicalName}""")
-                            |> fun names -> $"""    {resolvedTypeName}""" :: names
+                            |> List.map (fun l -> $"    %s{NicePrint.fqnOfEntityRef l.TyconRef}")
+                            |> fun names -> $"    %s{resolvedTypeName}" :: names
                         let candidates = System.String.Join("\n", namesOfAlternatives)
                         let overlappingNames =
                             intersect
                             |> Set.toArray
                             |> Array.sort
-                            |> Array.map (fun s -> $"    {s}")
+                            |> Array.map (fun s -> $"    %s{s}")
                             |> fun a -> System.String.Join("\n", a)
                         warning(Error(FSComp.SR.tcMultipleRecdTypeChoice(candidates, resolvedTypeName, overlappingNames), m))
                     ()

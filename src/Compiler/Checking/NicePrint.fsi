@@ -135,6 +135,8 @@ val stringOfFSAttrib: denv: DisplayEnv -> x: Attrib -> string
 
 val stringOfILAttrib: denv: DisplayEnv -> ILType * ILAttribElem list -> string
 
+val fqnOfEntityRef: EntityRef -> string
+
 val layoutImpliedSignatureOfModuleOrNamespace:
     showHeader: bool ->
     denv: DisplayEnv ->
