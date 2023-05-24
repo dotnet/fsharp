@@ -17,6 +17,7 @@ let mutable inputCodePage = None
 let mutable light = None
 let mutable modname = None
 let mutable internal_module = false
+let mutable opens = []
 let mutable lexlib = "FSharp.Text.Lexing"
 let mutable unicode = false
 let mutable caseInsensitive = false
@@ -25,6 +26,7 @@ let usage =
   [ ArgInfo ("-o", ArgType.String (fun s -> out <- Some s), "Name the output file.")
     ArgInfo ("--module", ArgType.String (fun s -> modname <- Some s), "Define the F# module name to host the generated parser.");
     ArgInfo ("--internal", ArgType.Unit (fun () -> internal_module <- true), "Generate an internal module");
+    ArgInfo("--open", ArgType.String (fun s -> opens <- opens @ [s]), "Add the given module to the list of those to open in both the generated signature and implementation."); 
     ArgInfo ("--codepage", ArgType.Int (fun i -> inputCodePage <- Some i), "Assume input lexer specification file is encoded with the given codepage.")
     ArgInfo ("--light", ArgType.Unit (fun () ->  light <- Some true), "(ignored)")
     ArgInfo ("--light-off", ArgType.Unit (fun () ->  light <- Some false), "Add #light \"off\" to the top of the generated file")
@@ -74,6 +76,7 @@ let main() =
           generatedModuleName = modname
           disableLightMode = light
           generateInternalModule = internal_module
+          opens = opens
           lexerLibraryName = lexlib
           domain = if unicode then Unicode else ASCII }
     writeSpecToFile state spec perRuleData dfaNodes

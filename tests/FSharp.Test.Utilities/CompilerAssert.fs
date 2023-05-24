@@ -575,7 +575,7 @@ module rec CompilerAssertHelpers =
         let runtimeconfig = """
 {
     "runtimeOptions": {
-        "tfm": "net7.0",
+        "tfm": "net8.0",
         "framework": {
             "name": "Microsoft.NETCore.App",
             "version": "7.0"
@@ -940,10 +940,10 @@ Updated automatically, please check diffs in your pull request, changes must be 
         | Choice2Of2 ex -> errorMessages.Add(ex.Message)
         | _ -> ()
 
-        errorMessages
+        errorMessages, outStream.ToString()
 
     static member RunScriptWithOptions options (source: string) (expectedErrorMessages: string list) =
-        let errorMessages = CompilerAssert.RunScriptWithOptionsAndReturnResult options source
+        let errorMessages, _ = CompilerAssert.RunScriptWithOptionsAndReturnResult options source
         if expectedErrorMessages.Length <> errorMessages.Count then
             Assert.Fail(sprintf "Expected error messages: %A \n\n Actual error messages: %A" expectedErrorMessages errorMessages)
         else

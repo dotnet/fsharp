@@ -13,9 +13,9 @@
   <PropertyGroup>
     <PreReleaseVersionLabel>beta</PreReleaseVersionLabel>
     <!-- F# Version components -->
-    <FSMajorVersion>7</FSMajorVersion>
+    <FSMajorVersion>8</FSMajorVersion>
     <FSMinorVersion>0</FSMinorVersion>
-    <FSBuildVersion>400</FSBuildVersion>
+    <FSBuildVersion>100</FSBuildVersion>
     <FSRevisionVersion>0</FSRevisionVersion>
     <!-- -->
     <!-- F# Language version -->
@@ -32,7 +32,7 @@
     <!-- -->
     <!-- FSharp.Compiler.Service version -->
     <FCSMajorVersion>43</FCSMajorVersion>
-    <FCSMinorVersion>7</FCSMinorVersion>
+    <FCSMinorVersion>8</FCSMinorVersion>
     <FCSBuildVersion>$(FSBuildVersion)</FCSBuildVersion>
     <FCSRevisionVersion>$(FSRevisionVersion)</FCSRevisionVersion>
     <FSharpCompilerServicePackageVersion>$(FCSMajorVersion).$(FCSMinorVersion).$(FCSBuildVersion)</FSharpCompilerServicePackageVersion>
@@ -47,7 +47,7 @@
     <!-- -->
     <!-- FSharp tools for Visual Studio version number -->
     <FSToolsMajorVersion>12</FSToolsMajorVersion>
-    <FSToolsMinorVersion>7</FSToolsMinorVersion>
+    <FSToolsMinorVersion>8</FSToolsMinorVersion>
     <FSToolsBuildVersion>0</FSToolsBuildVersion>
     <FSToolsRevisionVersion>$(FSRevisionVersion)</FSToolsRevisionVersion>
     <FSProductVersionPrefix>$(FSToolsMajorVersion).$(FSToolsMinorVersion).$(FSToolsBuildVersion)</FSProductVersionPrefix>

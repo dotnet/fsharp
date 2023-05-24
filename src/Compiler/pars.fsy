@@ -21,8 +21,6 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
-open FSharp.Compiler.SyntaxTreeOps
-open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Xml
@@ -3734,22 +3732,22 @@ declExpr:
         $3 $2 mIf false }
 
   | IF declExpr recover %prec expr_if
-      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsIncompleteIf())
-        // Produce an approximate expression during error recovery.
-        // Include expressions to make sure they get type checked in case that generates useful results for intellisense.
-        // Generate a throwAway for the expression so it isn't forced to have a type 'bool'
-        // from the context it is used in.
-        exprFromParseError $2 }
+      { errorR (Error(FSComp.SR.parsIncompleteIf (), rhs parseState 1))
+        let ifExpr = $2
+        let mIf = rhs parseState 1
+        let mThen = ifExpr.Range.EndRange
+        let m = unionRanges mIf mThen
+        let spIfToThen = DebugPointAtBinding.Yes m
+        let trivia = { IfKeyword = mIf; IsElif = false; ThenKeyword = mThen; ElseKeyword = None; IfToThenRange = m }
+        SynExpr.IfThenElse($2, arbExpr ("if1", mThen), None, spIfToThen, true, m, trivia) }
 
   | IF recover %prec expr_if
-      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsIncompleteIf())
-        // Produce an approximate expression during error recovery. There can still be value in doing this even
-        // for this pathological case.
+      { errorR (Error(FSComp.SR.parsIncompleteIf (), rhs parseState 1))
         let m = rhs parseState 1
         let mEnd = m.EndRange
         let spIfToThen = DebugPointAtBinding.Yes mEnd
         let trivia = { IfKeyword = m; IsElif = false; ThenKeyword = m; ElseKeyword = None; IfToThenRange = m }
-        exprFromParseError (SynExpr.IfThenElse(arbExpr ("ifGuard1", mEnd), arbExpr ("thenBody1", mEnd), None, spIfToThen, true, m, trivia)) }
+        SynExpr.IfThenElse(arbExpr ("if2", mEnd), arbExpr ("if3", mEnd), None, spIfToThen, true, m, trivia) }
 
   | LAZY declExpr %prec expr_lazy
       { SynExpr.Lazy($2, unionRanges (rhs parseState 1) $2.Range) }
@@ -4320,12 +4318,24 @@ ifExprThen:
   | THEN declExpr %prec prec_then_if
       { $2, rhs parseState 1 }
 
+  | THEN recover %prec prec_then_if
+      { let mThen = rhs parseState 1
+        arbExpr ("ifThen1", mThen.EndRange), mThen }
+
   | OTHEN OBLOCKBEGIN typedSequentialExpr oblockend %prec prec_then_if
       { $3, rhs parseState 1 }
 
   | OTHEN OBLOCKBEGIN typedSequentialExpr recover %prec prec_then_if
       { if not $4 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileThen())
         exprFromParseError $3, rhs parseState 1 }
+
+  | OTHEN recover %prec prec_then_if
+      { let mThen = rhs parseState 1
+        arbExpr ("ifThen2", mThen.EndRange), mThen }
+
+  | OTHEN OBLOCKBEGIN recover %prec prec_then_if
+      { let mThen = rhs parseState 1
+        arbExpr ("ifThen3", mThen.EndRange), mThen }
 
 ifExprElifs:
   | /* EMPTY */
