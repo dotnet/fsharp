@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <FscToolPath>..\..\..\..\artifacts\bin\fsc\$(Configuration)\net472</FscToolPath>
+    <FscToolExe>fsc.exe</FscToolExe>
+    <DotnetFscCompilerPath></DotnetFscCompilerPath>
+    <OutputType>Exe</OutputType>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <!-- Turn off "This function is for use by compiled F# code and should not be used directly" -->
+	<OtherFlags>$(OtherFlags) --nowarn:1204</OtherFlags>
+    <!-- Turn off "Experimental" -->
+	<OtherFlags>$(OtherFlags) --nowarn:57</OtherFlags>
+	<OtherFlags>$(OtherFlags) --langversion:preview</OtherFlags>
+<!--	<OtherFlags>$(OtherFlags) /checknulls /define:CHECKNULLS /sig:out.fsi</OtherFlags> -->
+  </PropertyGroup>
+
+  <ItemGroup>
+	<Compile Include="test.fsx" />
+  <ProjectReference Include="..\..\..\..\src\FSharp.Core\FSharp.Core.fsproj" />
+  </ItemGroup>
+
+</Project>
