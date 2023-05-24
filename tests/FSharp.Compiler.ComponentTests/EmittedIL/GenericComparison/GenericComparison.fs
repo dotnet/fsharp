@@ -210,3 +210,23 @@ module GenericComparison =
     let ``Equals09_fsx`` compilation =
         compilation
         |> verifyCompilation
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NativeIntComparison.fs"|])>]
+    let ``NativeIntComparison_fs`` compilation =
+        compilation
+        |> asExe
+        |> withOptimize
+        |> withEmbeddedPdb
+        |> withEmbedAllSource
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"VoidPtrComparison.fs"|])>]
+    let ``VoidPtrComparison_fs`` compilation =
+        compilation
+        |> asExe
+        |> withOptimize
+        |> withEmbeddedPdb
+        |> withEmbedAllSource
+        |> compileAndRun
+        |> shouldSucceed
