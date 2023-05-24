@@ -1,4 +1,6 @@
-dotnet build src\fsc\fscProject -f net472 -c Proto -p ProtoDebug=true
+REM devenv FSharp.sln /ProjectConfig Proto
+
+REM dotnet build src\fsc\fscProject -f net472 -c Proto -p ProtoDebug=true
 
 fsc.exe tests\adhoc\nullness\micro.fs -i
 fsc.exe tests\adhoc\nullness\micro.fsi tests\adhoc\nullness\micro.fs -i
@@ -32,4 +34,3 @@ artifacts\bin\fsc\Proto\net472\fsc.exe tests\adhoc\nullness\enabled\positive.fs 
 
 REM -------------
 
-artifacts\bin\fsc\Proto\net472\fsc.exe tests\adhoc\nullness\test.fsx -i --langversion:preview

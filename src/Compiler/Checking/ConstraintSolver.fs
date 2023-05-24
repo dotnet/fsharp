@@ -2457,7 +2457,38 @@ and AddConstraint (csenv: ConstraintSolverEnv) ndeep m2 trace tp newConstraint  
             ()
     }
 
-// This version prefers to constrain the nullness annotation for a type annotation usage
+// preferConstraint: if the type is a type variable with an uncertain nullness, then
+// this indicates whether we prefer to add a nullness constraint to the type variable itself,
+// or whether we prefer to solve the nullness annotation.
+//
+// This is relevant for code like this:
+//
+//    let isNull (value : 'T when 'T : null) = 
+//        match box value with 
+//        | null -> true 
+//        | _ -> false
+//
+//    let checkNonNull argName arg =
+//        if isNull arg then
+//            failwith (argName + " is null")
+//
+// Here the `'T: null` constraint is propagated by inference to checkNonNull. Which of these two types do we expect?
+//
+//    val checkNonNull1: argName: string -> arg: 'T -> unit when 'T: null
+//
+//    val checkNonNull2: argName: string -> arg: 'T __withnull -> unit
+//
+// When null checking is fully enabled, we prefer the latter. We can't always prefer it because it is a breaking change.
+//
+// Likewise consider
+//
+//    let x = null
+//
+// What's the generalized type?
+//    val x: 'a when 'a: null
+//    val x: 'a __withnull when 'a: not null
+//
+// When null checking is fully enabled, we prefer the latter. We can't always prefer it because it is a breaking change.
 and SolveTypeUseSupportsNull (csenv:ConstraintSolverEnv) ndeep m2 trace ty = trackErrors {
     let g = csenv.g
     let m = csenv.m
@@ -2470,9 +2501,10 @@ and SolveTypeUseSupportsNull (csenv:ConstraintSolverEnv) ndeep m2 trace ty = tra
         else
             match tryDestTyparTy g ty with
             | ValueSome tp ->
-                do! SolveTypeIsReferenceType csenv ndeep m2 trace ty
                 let nullness = nullnessOfTy g ty
                 match nullness.TryEvaluate() with
+                | ValueNone when not g.checkNullness ->
+                    return! AddConstraint csenv ndeep m2 trace tp (TyparConstraint.SupportsNull m)
                 | ValueSome NullnessInfo.WithoutNull ->
                     return! AddConstraint csenv ndeep m2 trace tp (TyparConstraint.SupportsNull m)
                 | _ ->

@@ -1654,7 +1654,7 @@ val isFSharpDelegateTy: TcGlobals -> TType -> bool
 /// Determine if a type is an interface type
 val isInterfaceTy: TcGlobals -> TType -> bool
 
-/// Determine if a type is a FSharpRef type
+/// Determine if a type is a reference type
 val isRefTy: TcGlobals -> TType -> bool
 
 /// Determine if a type is a function (including generic). Not the same as isFunTy.

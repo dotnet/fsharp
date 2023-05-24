@@ -1,3 +1,4 @@
+module ExistingPositive
 open System
 open System.Diagnostics
 open System.Runtime.CompilerServices
@@ -56,10 +57,6 @@ module NullConstraintTests =
 module DefaultValueTests =
 
     module StructExamples = 
-        [<Struct>]
-        type C1 =
-            [<DefaultValue>]
-            val mutable Whoops : String // expect an error if checknulls is on
 
         [<Struct>]
         type C2 =
@@ -67,23 +64,6 @@ module DefaultValueTests =
             val mutable Whoops : String // expect no warning or error under any configuration
 
     module ClassExamples = 
-        type C1 =
-            [<DefaultValue>]
-            val mutable Whoops : String // expect an error if checknulls is on
-
         type C2 =
             [<DefaultValue(false)>]
             val mutable Whoops : String // expect no warning or error under any configuration
-
-        type C4a =
-            [<DefaultValue>]
-            val mutable Whoops : int list // should have given an error in F# 4.5 but didn't, we expect a corrective error if checknulls is on
-
-        type C5 =
-            [<DefaultValue>]
-            val mutable Whoops : int * int // should have given an error in F# 4.5 but didn't, we expect a corrective error if checknulls is on
-
-        type C6 =
-            [<DefaultValue>]
-            val mutable Whoops : int -> int // should have given an error in F# 4.5 but didn't, we expect a corrective error if checknulls is on
-

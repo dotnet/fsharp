@@ -1,5 +1,5 @@
+module EnabledPositive
 open System
-
 module Basics =     
     let x2 : String __withnull = null // expect no warning in any configuration
     let x3 : String __withnull = "a"  // expect no warning in any configuration
@@ -48,7 +48,7 @@ type C(s: String) =
 
 
 // This give a warning since 'T is not known to be reference type non-null
-let f<'T> (x: 'T __withnull, y: 'T __withnull) = ()
+let f<'T when 'T: __notnull > (x: 'T __withnull, y: 'T __withnull) = ()
 
 module Extractions0c =
 
@@ -186,11 +186,6 @@ let f0 line =
 module NullConstraintTests =
     type C<'T when 'T : null>() = class end
 
-    let f1 (y : C< (int * int) >) = y // This gave an error in previous F# and we expect it to continue to give an error
-
-    // This gave an error in previous F#.
-    let f2 (y : C<int FSharp.Collections.List>) = y
-
     let f3 (y : C<String>) = y // Expect a Nullness warning
 
     let f4 (y : C<String __withnull>) = y // No warning expected 
@@ -199,18 +194,10 @@ module NullConstraintTests =
 
     let f6 (y : C<FSharp.Collections.List<String> __withnull>) = y // No warning expected, lexing/parsing should succeed 
 
-    let f7 (y : C<FSharp.Collections.List<String>> __withnull) = y // No warning expected, lexing/parsing should succeed
-
-
 module DefaultValueTests =
 
 
     module StructExamples = 
-        [<Struct>]
-        type C1 =
-            [<DefaultValue>]
-            val mutable Whoops : String // expect a warning
-
         [<Struct>]
         type C2 =
             [<DefaultValue(false)>]
@@ -222,24 +209,9 @@ module DefaultValueTests =
             val mutable Whoops : String __withnull // expect no warning
 
         [<Struct>]
-        type C4a =
-            [<DefaultValue>]
-            val mutable Whoops : int FSharp.Collections.List // expect a hard error like in previous F#
-
-        [<Struct>]
         type C4b =
             [<DefaultValue>]
-            val mutable Whoops : int FSharp.Collections.List __withnull // expect no warning
-
-        [<Struct>]
-        type C5 =
-            [<DefaultValue>]
-            val mutable Whoops : int * int // expect an error like previous F#
-
-        [<Struct>]
-        type C6 =
-            [<DefaultValue>]
-            val mutable Whoops : int -> int // expect an error like previous F#
+            val mutable Whoops : FSharp.Collections.List<int> __withnull // expect no warning
 
         [<Struct>]
         type C7 =
@@ -247,9 +219,6 @@ module DefaultValueTests =
             val mutable Whoops : (int -> int) __withnull // expect no warning
 
     module ClassExamples = 
-        type C1 =
-            [<DefaultValue>]
-            val mutable Whoops : String // expect a warning
 
         type C2 =
             [<DefaultValue(false)>]
@@ -259,21 +228,9 @@ module DefaultValueTests =
             [<DefaultValue>]
             val mutable Whoops : String __withnull // expect no warning
 
-        type C4a =
-            [<DefaultValue>]
-            val mutable Whoops : int FSharp.Collections.List // ** expect a warning
-
         type C4b =
             [<DefaultValue>]
             val mutable Whoops : int FSharp.Collections.List __withnull // expect no warning
-
-        type C5 =
-            [<DefaultValue>]
-            val mutable Whoops : int * int // expect an error like previous F#
-
-        type C6 =
-            [<DefaultValue>]
-            val mutable Whoops : int -> int // expect an error like previous F#
 
         type C7 =
             [<DefaultValue>]

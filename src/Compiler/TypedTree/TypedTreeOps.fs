@@ -8882,13 +8882,22 @@ let isNonNullableStructTyparTy g ty =
     | ValueNone ->
         false
 
-// Note, isRefTy does not include type parameters with the ': not struct' constraint
+// Note, isRefTy does not include type parameters with the ': not struct' or ': null' constraints
 // This predicate is used to detect those type parameters.
 let isReferenceTyparTy g ty = 
     match tryDestTyparTy g ty with 
     | ValueSome tp -> 
-        tp.Constraints |> List.exists (function TyparConstraint.IsReferenceType _ -> true | _ -> false)
+        tp.Constraints |> List.exists (function
+            | TyparConstraint.IsReferenceType _ -> true
+            | TyparConstraint.SupportsNull _ -> true
+            | _ -> false)
     | ValueNone ->
+        false
+
+let isSupportsNullTyparTy g ty = 
+    if isReferenceTyparTy g ty then
+        (destTyparTy g ty).Constraints |> List.exists (function TyparConstraint.SupportsNull _ -> true | _ -> false)
+    else
         false
 
 let TypeNullNever g ty = 
@@ -8917,16 +8926,16 @@ let TypeNullIsExtraValue g m ty =
         | ValueNone -> 
 
         // Consider type parameters
-        if isReferenceTyparTy g ty then
-            (destTyparTy g ty).Constraints |> List.exists (function TyparConstraint.SupportsNull _ -> true | _ -> false)
-        else
-            false
+        isSupportsNullTyparTy g ty
 
 /// The new logic about whether a type admits the use of 'null' as a value.
 let TypeNullIsExtraValueNew g m ty = 
     let sty = stripTyparEqns ty
+
+    // Check if the type is 'obj'
     isObjTy g sty
     ||
+    // Check if the type has AllowNullLiteral
     (match tryTcrefOfAppTy g sty with 
      | ValueSome tcref -> 
         not tcref.IsStructOrEnumTycon &&
@@ -8934,13 +8943,14 @@ let TypeNullIsExtraValueNew g m ty =
         (TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some true)
      | _ -> false) 
     ||
+    // Check if the type has a nullness annotation
     (match (nullnessOfTy g sty).Evaluate() with 
      | NullnessInfo.AmbivalentToNull -> false
      | NullnessInfo.WithoutNull -> false
      | NullnessInfo.WithNull -> true)
     ||
-    (isReferenceTyparTy g ty &&
-     (destTyparTy g ty).Constraints |> List.exists (function TyparConstraint.SupportsNull _ -> true | _ -> false))
+    // Check if the type has a ': null' constraint
+    isSupportsNullTyparTy g ty
 
 /// The F# 4.5 and 5.0 logic about whether a type uses 'null' as a true representation value
 let TypeNullIsTrueValue g ty =

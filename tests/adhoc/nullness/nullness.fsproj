@@ -9,14 +9,14 @@
     <!-- Turn off "Experimental" -->
 	<OtherFlags>$(OtherFlags) --nowarn:57</OtherFlags>
 	<OtherFlags>$(OtherFlags) --langversion:preview</OtherFlags>
-<!--	<OtherFlags>$(OtherFlags) /checknulls /define:CHECKNULLS /sig:out.fsi</OtherFlags> -->
+	<OtherFlags>$(OtherFlags) /checknulls /sig:out.fsi</OtherFlags> 
   </PropertyGroup>
 
   <ItemGroup>
 	<Compile Include="existing/positive.fs" />
 	<Compile Include="enabled/positive.fs" />
 	<!-- <Compile Include="library/positive.fs" /> -->
-  <ProjectReference Include="..\..\..\..\src\FSharp.Core\FSharp.Core.fsproj" />
+  <ProjectReference Include="..\..\..\src\FSharp.Core\FSharp.Core.fsproj" />
   </ItemGroup>
 
 </Project>

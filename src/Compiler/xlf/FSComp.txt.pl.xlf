@@ -92,11 +92,6 @@
         <target state="translated">Użycie elementu „incr” z biblioteki języka F# jest przestarzałe. Sprawdź stronę https://aka.ms/fsharp-refcell-ops. Na przykład zmień wyrażenie „incr cell” na „cell.Value &lt;- cell.Value + 1”.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkValueWithDefaultValueMustHaveDefaultValueNulls">
-        <source>Nullness warning. The 'DefaultValue' attribute is used but the type (or one of its fields if a struct) is non-nullable.</source>
-        <target state="new">Nullness warning. The 'DefaultValue' attribute is used but the type (or one of its fields if a struct) is non-nullable.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="chkInstanceLetBindingOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Instance let bindings are not allowed.</source>
         <target state="translated">Jeśli typ używa obu atrybutów [&lt;Sealed&gt;] i [&lt; AbstractClass&gt;], oznacza to, że jest on statyczny. Połączenia let wystąpienia są niedozwolone.</target>
@@ -178,13 +173,13 @@
         <note />
       </trans-unit>
       <trans-unit id="csTypeHasNullAsExtraValue">
-        <source>The type '{0}' has 'null' as an extra value but a constraint does not permit this</source>
-        <target state="new">The type '{0}' has 'null' as an extra value but a constraint does not permit this</target>
+        <source>The type '{0}' supports 'null' but a non-null type is expected</source>
+        <target state="new">The type '{0}' supports 'null' but a non-null type is expected</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypeHasNullAsTrueValue">
-        <source>The type '{0}' has 'null' as a true representation value but a constraint does not permit this</source>
-        <target state="new">The type '{0}' has 'null' as a true representation value but a constraint does not permit this</target>
+        <source>The type '{0}' uses 'null' as a representation value but a non-null type is expected</source>
+        <target state="new">The type '{0}' uses 'null' as a representation value but a non-null type is expected</target>
         <note />
       </trans-unit>
       <trans-unit id="elseBranchHasWrongTypeTuple">
@@ -1000,11 +995,6 @@
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
         <target state="translated">Atrybutów nie można stosować do rozszerzeń typu.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcDefaultStructConstructorCallNulls">
-        <source>Nullness warning. The default constructor of a struct type is required but one of the fields of struct type is non-nullable.</source>
-        <target state="new">Nullness warning. The default constructor of a struct type is required but one of the fields of struct type is non-nullable.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">
