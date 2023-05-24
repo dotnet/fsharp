@@ -74,30 +74,6 @@ module CoreTests =
 
         testOkFile.CheckExists()
 
-    [<Test>]
-    let nullness_no_checknulls () =
-        let cfg = testConfig "core/nullness"
-
-        use testOkFile = fileguard cfg "test.ok"
-
-        fsc cfg "%s -o:test-no-checknulls.exe -g --langversion:preview --define:NO_CHECKNULLS" cfg.fsc_flags ["test.fsx"]
-
-        exec cfg ("." ++ "test-no-checknulls.exe") ""
-
-        testOkFile.CheckExists()
-
-    [<Test>]
-    let nullness_checknulls () =
-        let cfg = testConfig "core/nullness"
-
-        use testOkFile = fileguard cfg "test.ok"
-
-        fsc cfg "%s -o:test-checknulls.exe -g --checknulls --langversion:preview" cfg.fsc_flags ["test.fsx"]
-
-        exec cfg ("." ++ "test-checknulls.exe") ""
-
-        testOkFile.CheckExists()
-
     // This test stays in FsharpSuite for a later migration phases, it uses hardcoded #r to a C# compiled cslib.dll inside
     [<Test>]
     let ``quotes-FSC-FSC_DEBUG`` () = singleTestBuildAndRun "core/quotes" FSC_DEBUG
