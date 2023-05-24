@@ -120,7 +120,8 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
 
         Collections.ObjectModel.ReadOnlyDictionary lookup :> IReadOnlyDictionary<_, _>
 
-    let semanticClassificationCache = new DocumentCache<SemanticClassificationLookup>("fsharp-semantic-classification-cache")
+    let semanticClassificationCache =
+        new DocumentCache<SemanticClassificationLookup>("fsharp-semantic-classification-cache")
 
     interface IFSharpClassificationService with
         // Do not perform classification if we don't have project options (#defines matter)

@@ -56,6 +56,7 @@ type internal FSharpBreakpointResolutionService [<ImportingConstructor>] () =
             ) : Task<FSharpBreakpointResolutionResult> =
             cancellableTask {
                 let! range = FSharpBreakpointResolutionService.GetBreakpointLocation(document, textSpan)
+
                 match range with
                 | None -> return Unchecked.defaultof<_>
                 | Some range ->
@@ -64,8 +65,7 @@ type internal FSharpBreakpointResolutionService [<ImportingConstructor>] () =
 
                     match span with
                     | None -> return Unchecked.defaultof<_>
-                    | Some span ->
-                        return FSharpBreakpointResolutionResult.CreateSpanResult(document, span)
+                    | Some span -> return FSharpBreakpointResolutionResult.CreateSpanResult(document, span)
             }
             |> CancellableTask.start cancellationToken
 

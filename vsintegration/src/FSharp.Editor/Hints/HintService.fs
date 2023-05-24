@@ -14,7 +14,8 @@ open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
 module HintService =
 
-    let semanticClassificationCache = new DocumentCache<NativeHint list>("fsharp-hints-cache")
+    let semanticClassificationCache =
+        new DocumentCache<NativeHint list>("fsharp-hints-cache")
 
     let private getHints sourceText parseResults hintKinds symbolUses (symbol: FSharpSymbol) =
 
@@ -44,12 +45,22 @@ module HintService =
                 return List.empty
             else
                 let hintKindsSerialized = hintKinds |> Set.map Hints.serialize |> String.concat ","
+
                 match! semanticClassificationCache.TryGetValueAsync document with
                 | ValueSome nativeHints ->
-                    do TelemetryReporter.ReportSingleEvent(TelemetryEvents.Hints, [| ("hints.kinds", hintKindsSerialized); ("cacheHit", true) |])
+                    do
+                        TelemetryReporter.ReportSingleEvent(
+                            TelemetryEvents.Hints,
+                            [| ("hints.kinds", hintKindsSerialized); ("cacheHit", true) |]
+                        )
+
                     return nativeHints
                 | ValueNone ->
-                    do TelemetryReporter.ReportSingleEvent(TelemetryEvents.Hints, [| ("hints.kinds", hintKindsSerialized); ("cacheHit", false) |])
+                    do
+                        TelemetryReporter.ReportSingleEvent(
+                            TelemetryEvents.Hints,
+                            [| ("hints.kinds", hintKindsSerialized); ("cacheHit", false) |]
+                        )
 
                     let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
                     let! parseResults, checkResults = document.GetFSharpParseAndCheckResultsAsync userOpName
