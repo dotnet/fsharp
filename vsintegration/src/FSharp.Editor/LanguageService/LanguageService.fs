@@ -185,8 +185,6 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                                     useSyntaxTreeCache = useSyntaxTreeCache
                                 )
 
-                            
-
                             if enableLiveBuffers then
                                 workspace.WorkspaceChanged.Add(fun args ->
                                     if args.DocumentId <> null then
