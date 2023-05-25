@@ -2,6 +2,7 @@
 
 open Xunit
 open FsUnit
+open FSharp.Test
 open FSharp.Test.Compiler
 open FSharp.Compiler.ComponentTests.Signatures.TestHelpers
 
@@ -79,8 +80,7 @@ module Sample
 
 val f: g: Lib.Root<System.TimeSpan,System.TimeSpan,System.TimeSpan,System.TimeSpan,System.TimeSpan>.Foo<int,float,string,System.DateTime>.Bar<char,int,string> -> unit"""
 
-#if NETCOREAPP
-[<Fact>]
+[<FactForNETCOREAPP>]
 let ``ImmutableArray<'T>.Builder roundtrip`` () =
     let impl =
         """
@@ -97,4 +97,3 @@ type ImmutableArrayViaBuilder<'T>(builder: ImmutableArray<'T>.Builder) = class e
     |> withAdditionalSourceFile (FsSource impl)
     |> compile
     |> shouldSucceed
-#endif
