@@ -950,6 +950,12 @@ namespace Microsoft.FSharp.Core
         /// <returns>NoCompilerInliningAttribute</returns>
         new: unit -> NoCompilerInliningAttribute
 
+    [<AttributeUsage(AttributeTargets.Method,AllowMultiple=false)>]
+    [<Sealed>]
+    type TailCallAttribute =
+        inherit System.Attribute
+        new : unit -> TailCallAttribute
+
 namespace System.Diagnostics.CodeAnalysis
 
     open System
