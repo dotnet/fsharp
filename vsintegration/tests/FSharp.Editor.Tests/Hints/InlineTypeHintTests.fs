@@ -1,13 +1,14 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace FSharp.Editor.Tests.Hints
 
-open NUnit.Framework
+open Xunit
 open HintTestFramework
+open FSharp.Test
 
 module InlineTypeHintTests =
 
-    [<Test>]
+    [<Fact>]
     let ``Hint is shown for a let binding`` () =
         let code =
             """
@@ -23,14 +24,37 @@ let s = { Artist = "Moby"; Title = "Porcelain" }
                 {
                     Content = ": Song"
                     Location = (3, 6)
+                    Tooltip = "type Song"
                 }
             ]
 
         let actual = getTypeHints document
 
-        Assert.AreEqual(expected, actual)
+        Assert.Equal(expected, actual)
 
-    [<Test>]
+    [<Fact>]
+    let ``Hints are correct for builtin types`` () =
+        let code =
+            """
+let songName = "Happy House"
+    """
+
+        let document = getFsDocument code
+
+        let result = getTypeHints document
+
+        let expected =
+            [
+                {
+                    Content = ": string"
+                    Location = (1, 13)
+                    Tooltip = "type string"
+                }
+            ]
+
+        Assert.Equal(expected, result)
+
+    [<Fact>]
     let ``Hint is shown for a parameter`` () =
         let code =
             """
@@ -46,14 +70,15 @@ let whoSings s = s.Artist
                 {
                     Content = ": Song"
                     Location = (3, 15)
+                    Tooltip = "type Song"
                 }
             ]
 
         let actual = getTypeHints document
 
-        Assert.AreEqual(expected, actual)
+        Assert.Equal(expected, actual)
 
-    [<Test>]
+    [<Fact>]
     let ``Hints are not shown in signature files`` () =
         let fsiCode =
             """
@@ -69,13 +94,13 @@ module Test
 let numbers = [|42|]
 """
 
-        let fsiDocument, _ = getFsiAndFsDocuments fsiCode fsCode
+        let fsiDocument = getFsiAndFsDocuments fsiCode fsCode |> Seq.head
 
         let result = getTypeHints fsiDocument
 
-        Assert.IsEmpty(result)
+        Assert.Empty(result)
 
-    [<Test>]
+    [<Fact>]
     let ``Hints are not shown for let-bound functions yet`` () =
         let code =
             """
@@ -86,9 +111,9 @@ let setConsoleOut = System.Console.SetOut
 
         let result = getTypeHints document
 
-        Assert.IsEmpty(result)
+        Assert.Empty(result)
 
-    [<Test>]
+    [<Fact>]
     let ``Hint is not shown for a let binding when the type is manually specified`` () =
         let code =
             """
@@ -101,9 +126,9 @@ let s: Song = { Artist = "Moby"; Title = "Porcelain" }
 
         let result = getTypeHints document
 
-        Assert.IsEmpty(result)
+        Assert.Empty(result)
 
-    [<Test>]
+    [<Fact>]
     let ``Hint is not shown for a parameter when the type is manually specified`` () =
         let code =
             """
@@ -116,9 +141,9 @@ let whoSings (s: Song) = s.Artist
 
         let result = getTypeHints document
 
-        Assert.IsEmpty(result)
+        Assert.Empty(result)
 
-    [<Test>] // here we don't want a hint after "this"
+    [<Fact>] // here we don't want a hint after "this"
     let ``Hint is not shown for type self-identifiers`` () =
         let code =
             """
@@ -130,9 +155,9 @@ type Song() =
 
         let result = getTypeHints document
 
-        Assert.IsEmpty(result)
+        Assert.Empty(result)
 
-    [<Test>] // here we don't want a hint after "x"
+    [<Fact>] // here we don't want a hint after "x"
     let ``Hint is not shown for type aliases`` () =
         let code =
             """
@@ -144,10 +169,10 @@ type Song() as x =
 
         let result = getTypeHints document
 
-        Assert.IsEmpty(result)
+        Assert.Empty(result)
 
-    [<Test>]
-    let ``Hints are shown for lambdas`` () =
+    [<Fact>]
+    let ``Hints are shown within lambdas`` () =
         let code =
             """
 let iamboring() =
@@ -155,14 +180,22 @@ let iamboring() =
 """
 
         let document = getFsDocument code
-        let expected = [ { Content = ": 'a"; Location = (2, 10) } ]
+
+        let expected =
+            [
+                {
+                    Content = ": 'a"
+                    Location = (2, 10)
+                    Tooltip = "type 'a"
+                }
+            ]
 
         let actual = getTypeHints document
 
-        Assert.AreEqual(expected, actual)
+        Assert.Equal(expected, actual)
 
-    [<Test>]
-    let ``Hints are shown for lambdas with tuples`` () =
+    [<Fact>]
+    let ``Hints are shown within lambdas with tuples`` () =
         let code =
             """
 let zip4 (l1: 'a list) (l2: 'b list) (l3: 'c list) (l4: 'd list) =
@@ -174,42 +207,73 @@ let zip4 (l1: 'a list) (l2: 'b list) (l3: 'c list) (l4: 'd list) =
 
         let expected =
             [
-                { Content = ": 'a"; Location = (3, 25) }
-                { Content = ": 'b"; Location = (3, 30) }
-                { Content = ": 'c"; Location = (3, 34) }
-                { Content = ": 'd"; Location = (3, 38) }
+                {
+                    Content = ": 'a"
+                    Location = (3, 25)
+                    Tooltip = "type 'a"
+                }
+                {
+                    Content = ": 'b"
+                    Location = (3, 30)
+                    Tooltip = "type 'b"
+                }
+                {
+                    Content = ": 'c"
+                    Location = (3, 34)
+                    Tooltip = "type 'c"
+                }
+                {
+                    Content = ": 'd"
+                    Location = (3, 38)
+                    Tooltip = "type 'd"
+                }
             ]
 
         let actual = getTypeHints document
 
-        CollectionAssert.AreEquivalent(expected, actual)
+        actual |> Assert.shouldBeEquivalentTo expected
 
-    [<Test>]
+    [<Fact>]
+    let ``Hints are not shown for lambda return types`` () =
+        let code =
+            """
+let func = fun () -> 3
+"""
+
+        let document = getFsDocument code
+
+        let result = getTypeHints document
+
+        Assert.Empty(result)
+
+    [<Fact>]
     let ``Hints are not shown for unfinished expressions`` () =
         let code =
             """
 let x
 """
+
         let document = getFsDocument code
 
         let result = getTypeHints document
 
-        Assert.IsEmpty(result)
+        Assert.Empty(result)
 
-    [<Test>]
-    let ``Hints are not shown for unsolved types in _for_ expressions in collections`` () = 
+    [<Fact>]
+    let ``Hints are not shown for unsolved types in _for_ expressions in collections`` () =
         let code =
             """
 let _ = [ for x ]
 """
+
         let document = getFsDocument code
 
         let result = getTypeHints document
 
-        Assert.IsEmpty(result)
+        Assert.Empty(result)
 
-    [<Test>]
-    let ``Hints are not shown for unsolved types in _for_ expressions within computational expressions`` () = 
+    [<Fact>]
+    let ``Hints are not shown for unsolved types in _for_ expressions within computational expressions`` () =
         let code =
             """
 do task {
@@ -218,13 +282,14 @@ do task {
     do! Task.Delay 0
     }
 """
+
         let document = getFsDocument code
 
         let result = getTypeHints document
 
-        Assert.IsEmpty(result)
+        Assert.Empty(result)
 
-    [<Test>]
+    [<Fact>]
     let ``Hints are shown for IWSAM`` () =
         let code =
             """
@@ -236,14 +301,40 @@ type Number<'T when IAddition<'T>>(value: 'T) =
     interface IAddition<Number<'T>> with
         static member op_Addition(a, b) = Number(a.Value + b.Value)
 """
+
         let document = getFsDocument code
 
         let expected =
             [
-                { Content = ": Number<'T>"; Location = (7, 36) }
-                { Content = ": Number<'T>"; Location = (7, 39) }
+                {
+                    Content = ": Number<'T>"
+                    Location = (7, 36)
+                    Tooltip = "type Number`1"
+                }
+                {
+                    Content = ": Number<'T>"
+                    Location = (7, 39)
+                    Tooltip = "type Number`1"
+                }
             ]
 
         let actual = getTypeHints document
 
-        CollectionAssert.AreEquivalent(expected, actual)
+        actual |> Assert.shouldBeEquivalentTo expected
+
+    [<Fact>]
+    let ``Hints are not shown when type is specified`` () =
+        let code =
+            """
+type MyType() =
+
+    member _.MyMethod(?beep: int, ?bap: int, ?boop: int) = ()
+
+    member this.Foo = this.MyMethod(bap = 3, boop = 4)
+"""
+
+        let document = getFsDocument code
+
+        let result = getTypeHints document
+
+        Assert.Empty(result)

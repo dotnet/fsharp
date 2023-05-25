@@ -148,6 +148,9 @@ type SyntaxVisitorBase<'T> =
     abstract VisitTypeAbbrev: path: SyntaxVisitorPath * synType: SynType * range: range -> 'T option
     default VisitTypeAbbrev: path: SyntaxVisitorPath * synType: SynType * range: range -> 'T option
 
+    abstract VisitAttributeApplication: path: SyntaxVisitorPath * attributes: SynAttributeList -> 'T option
+    default VisitAttributeApplication: path: SyntaxVisitorPath * attributes: SynAttributeList -> 'T option
+
 module public SyntaxTraversal =
 
     val internal rangeContainsPosLeftEdgeInclusive: m1: range -> p: pos -> bool

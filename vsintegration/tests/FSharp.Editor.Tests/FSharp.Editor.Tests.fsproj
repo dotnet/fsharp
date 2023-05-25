@@ -2,11 +2,15 @@
 
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
-    <UnitTestType>nunit</UnitTestType>
+    <UnitTestType>xunit</UnitTestType>
     <IsPackable>false</IsPackable>
     <GenerateProgramFile>false</GenerateProgramFile>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 
   <ItemGroup>
     <Compile Include="Helpers\RoslynHelpers.fs" />
@@ -21,17 +25,21 @@
     <Compile Include="LanguageDebugInfoServiceTests.fs" />
     <Compile Include="IndentationServiceTests.fs" />
     <Compile Include="CompletionProviderTests.fs" />
+    <Compile Include="FindReferencesTests.fs" />
     <Compile Include="GoToDefinitionServiceTests.fs" />
     <Compile Include="HelpContextServiceTests.fs" />
     <Compile Include="QuickInfoTests.fs" />
+    <Compile Include="TaskListServiceTests.fs" />
+    <Compile Include="NavigateToSearchServiceTests.fs" />
     <Compile Include="Hints\HintTestFramework.fs" />
     <Compile Include="Hints\OptionParserTests.fs" />
     <Compile Include="Hints\InlineParameterNameHintTests.fs" />
     <Compile Include="Hints\InlineTypeHintTests.fs" />
+    <Compile Include="hints\InlineReturnTypeHintTests.fs" />
     <Compile Include="Hints\OverallHintExperienceTests.fs" />
     <Compile Include="EditorFormattingServiceTests.fs" />
     <Compile Include="RoslynSourceTextTests.fs" />
-    <Compile Include="SemanticColorizationServiceTests.fs" />
+    <Compile Include="SemanticClassificationServiceTests.fs" />
     <Compile Include="SyntacticColorizationServiceTests.fs" />
     <Compile Include="DocumentHighlightsServiceTests.fs" />
   </ItemGroup>
@@ -40,10 +48,12 @@
     <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures.Text" Version="$(MicrosoftCodeAnalysisEditorFeaturesTextVersion)" />
     <PackageReference Include="Microsoft.CodeAnalysis.ExternalAccess.FSharp" Version="$(MicrosoftCodeAnalysisExternalAccessFSharpVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.Editor" Version="$(MicrosoftVisualStudioEditorVersion)" />
+    <PackageReference Include="Microsoft.VisualStudio.Platform.VSEditor" Version="$(MicrosoftVisualStudioPlatformVSEditorVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.Threading" Version="$(MicrosoftVisualStudioThreadingVersion)" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\tests\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
     <ProjectReference Include="..\..\src\FSharp.Editor\FSharp.Editor.fsproj" />
   </ItemGroup>
 

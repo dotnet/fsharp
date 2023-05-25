@@ -3,101 +3,108 @@
 namespace FSharp.Editor.Tests
 
 open System
-open NUnit.Framework
+open Xunit
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
+open Microsoft.VisualStudio.FSharp.Editor.QuickInfo
 open FSharp.Editor.Tests.Helpers
+open FSharp.Test
 
-[<SetUpFixture>]
 type public AssemblyResolverTestFixture() =
 
-    [<OneTimeSetUp>]
     member public __.Init() = AssemblyResolver.addResolver ()
 
 module QuickInfoProviderTests =
+    type Expected =
+        | QuickInfo of description: string * docs: string
+        | Desc of string
+        | Empty
+        | Error
 
-    let filePath = "C:\\test.fs"
-
-    let internal projectOptions =
-        {
-            ProjectFileName = "C:\\test.fsproj"
-            ProjectId = None
-            SourceFiles = [| filePath |]
-            ReferencedProjects = [||]
-            OtherOptions = [||]
-            IsIncompleteTypeCheckEnvironment = true
-            UseScriptResolutionRules = false
-            LoadTime = DateTime.MaxValue
-            OriginalLoadReferences = []
-            UnresolvedReferences = None
-            Stamp = None
-        }
+    type TestCase = TestCase of prompt: string * Expected
 
     let private normalizeLineEnds (s: string) =
         s.Replace("\r\n", "\n").Replace("\n\n", "\n")
 
-    let private tooltipTextToRawString (ToolTipText elements) : string =
-        let rec parseElement =
-            function
-            | ToolTipElement.None -> ""
-            | ToolTipElement.Group (xs) ->
-                let descriptions = xs |> List.map (fun item -> item.MainDescription)
+    let mkFull prompt desc docs =
+        TestCase(prompt, QuickInfo(normalizeLineEnds desc, normalizeLineEnds docs))
 
-                let descriptionTexts =
-                    descriptions
-                    |> List.map (fun taggedTexts -> taggedTexts |> Array.map (fun taggedText -> taggedText.Text))
+    let mkDesc prompt desc =
+        TestCase(prompt, Desc(normalizeLineEnds desc))
 
-                let descriptionText = descriptionTexts |> Array.concat |> String.concat ""
+    let mkNone prompt = TestCase(prompt, Empty)
 
-                let remarks = xs |> List.choose (fun item -> item.Remarks)
+    let filePath = "C:\\test.fs"
 
-                let remarkTexts =
-                    remarks |> Array.concat |> Array.map (fun taggedText -> taggedText.Text)
+    let private tooltipElementToExpected expected =
+        function
+        | ToolTipElement.None -> Empty
+        | ToolTipElement.Group (xs) ->
+            let descriptions = xs |> List.map (fun item -> item.MainDescription)
 
-                let remarkText =
-                    (match remarks with
-                     | [] -> ""
-                     | _ -> "\n" + String.concat "" remarkTexts)
+            let descriptionTexts =
+                descriptions
+                |> List.map (fun taggedTexts -> taggedTexts |> Array.map (fun taggedText -> taggedText.Text))
 
-                let tps = xs |> List.collect (fun item -> item.TypeMapping)
+            let descriptionText = descriptionTexts |> Array.concat |> String.concat ""
 
-                let tpTexts =
-                    tps |> List.map (fun x -> x |> Array.map (fun y -> y.Text) |> String.concat "")
+            let remarks = xs |> List.choose (fun item -> item.Remarks)
 
-                let tpText =
-                    (match tps with
-                     | [] -> ""
-                     | _ -> "\n" + String.concat "\n" tpTexts)
+            let remarkTexts =
+                remarks |> Array.concat |> Array.map (fun taggedText -> taggedText.Text)
 
-                descriptionText + remarkText + tpText
-            | ToolTipElement.CompositionError (error) -> error
+            let remarkText =
+                (match remarks with
+                 | [] -> ""
+                 | _ -> "\n" + String.concat "" remarkTexts)
 
-        elements |> List.map parseElement |> String.concat "\n" |> normalizeLineEnds
+            let tps = xs |> List.collect (fun item -> item.TypeMapping)
+
+            let tpTexts =
+                tps |> List.map (fun x -> x |> Array.map (fun y -> y.Text) |> String.concat "")
+
+            let tpText =
+                (match tps with
+                 | [] -> ""
+                 | _ -> "\n" + String.concat "\n" tpTexts)
+
+            let collectDocs (element: ToolTipElementData) =
+                match element.XmlDoc with
+                | FSharp.Compiler.Symbols.FSharpXmlDoc.FromXmlText xmlDoc -> xmlDoc.UnprocessedLines |> String.concat "\n"
+                | _ -> ""
+
+            let desc =
+                [ descriptionText; remarkText; tpText ] |> String.concat "" |> normalizeLineEnds
+
+            let docs = xs |> List.map collectDocs |> String.concat "" |> normalizeLineEnds
+
+            match expected with
+            | QuickInfo _ -> QuickInfo(desc, docs)
+            | _ -> Desc desc
+
+        | ToolTipElement.CompositionError (error) -> Error
 
     let executeQuickInfoTest (programText: string) testCases =
-        let document, _ =
-            RoslynTestHelpers.CreateSingleDocumentSolution(filePath, programText)
+        let document =
+            RoslynTestHelpers.CreateSolution(programText)
+            |> RoslynTestHelpers.GetSingleDocument
 
-        Assert.Multiple(fun _ ->
-            for (symbol: string, expected: string option) in testCases do
-                let expected =
-                    expected
-                    |> Option.map normalizeLineEnds
-                    |> Option.map (fun s -> s.Replace("___", ""))
+        for TestCase (symbol, expected) in testCases do
+            let caretPosition = programText.IndexOf(symbol) + symbol.Length - 1
 
-                let caretPosition = programText.IndexOf(symbol) + symbol.Length - 1
+            let quickInfo =
+                FSharpAsyncQuickInfoSource.TryGetToolTip(document, caretPosition)
+                |> Async.RunSynchronously
 
-                let quickInfo =
-                    FSharpAsyncQuickInfoSource.ProvideQuickInfo(document, caretPosition)
-                    |> Async.RunSynchronously
+            let actual =
+                quickInfo
+                |> Option.map (fun (_, _, _, ToolTipText elements) -> elements |> List.map (tooltipElementToExpected expected))
+                |> Option.defaultValue [ Empty ]
 
-                let actual =
-                    quickInfo |> Option.map (fun qi -> tooltipTextToRawString qi.StructuredText)
+            actual.Head |> Assert.shouldBeEqualWith expected $"Symbol: {symbol}"
 
-                Assert.AreEqual(expected, actual, "Symbol: " + symbol))
-
-    [<Test>]
+    [<Fact>]
     let ShouldShowQuickInfoAtCorrectPositions () =
         let fileContents =
             """
@@ -108,25 +115,25 @@ System.Console.WriteLine(x + y)
 
         let testCases =
             [
-                "let", Some "let___Used to associate, or bind, a name to a value or function."
-                "x", Some "val x: int\nFull name: Test.x"
-                "y", Some "val y: int\nFull name: Test.y"
-                "1", None
-                "2", None
-                "x +",
-                Some
+                mkFull "let" "let" "Used to associate, or bind, a name to a value or function."
+                mkDesc "x" "val x: int\nFull name: Test.x"
+                mkDesc "y" "val y: int\nFull name: Test.y"
+                mkNone "1"
+                mkNone "2"
+                mkDesc
+                    "x +"
                     """val (+) : x: 'T1 -> y: 'T2 -> 'T3 (requires member (+))
 Full name: Microsoft.FSharp.Core.Operators.(+)
 'T1 is int
 'T2 is int
 'T3 is int"""
-                "System", Some "namespace System"
-                "WriteLine", Some "System.Console.WriteLine(value: int) : unit"
+                mkDesc "System" "namespace System"
+                mkDesc "WriteLine" "System.Console.WriteLine(value: int) : unit"
             ]
 
         executeQuickInfoTest fileContents testCases
 
-    [<Test>]
+    [<Fact>]
     let ShouldShowQuickKeywordInfoAtCorrectPositionsForSignatureFiles () =
         let fileContents =
             """
@@ -137,22 +144,25 @@ module internal MyModule =
 
         let testCases =
             [
-                "namespace",
-                Some
-                    "namespace___Used to associate a name with a group of related types and modules, to logically separate it from other code."
-                "module",
-                Some
-                    "module___Used to associate a name with a group of related types, values, and functions, to logically separate it from other code."
-                "internal", Some "internal___Used to specify that a member is visible inside an assembly but not outside it."
-                "val", Some "val___Used in a signature to indicate a value, or in a type to declare a member, in limited situations."
-                "->",
-                Some
-                    "->___In function types, delimits arguments and return values. Yields an expression (in sequence expressions); equivalent to the yield keyword. Used in match expressions"
+                mkFull
+                    "namespace"
+                    "namespace"
+                    "Used to associate a name with a group of related types and modules, to logically separate it from other code."
+                mkFull
+                    "module"
+                    "module"
+                    "Used to associate a name with a group of related types, values, and functions, to logically separate it from other code."
+                mkFull "internal" "internal" "Used to specify that a member is visible inside an assembly but not outside it."
+                mkFull "val" "val" "Used in a signature to indicate a value, or in a type to declare a member, in limited situations."
+                mkFull
+                    "->"
+                    "->"
+                    "In function types, delimits arguments and return values. Yields an expression (in sequence expressions); equivalent to the yield keyword. Used in match expressions"
             ]
 
         executeQuickInfoTest fileContents testCases
 
-    [<Test>]
+    [<Fact>]
     let ShouldShowQuickKeywordInfoAtCorrectPositionsWithinComputationExpressions () =
         let fileContents =
             """
@@ -172,17 +182,17 @@ let x =
 
         let testCases =
             [
-                "let!", Some "let!___Used in computation expressions to bind a name to the result of another computation expression."
-                "return", Some "return___Used to provide a value for the result of the containing computation expression."
+                mkFull "let!" "let!" "Used in computation expressions to bind a name to the result of another computation expression."
+                mkFull "return" "return" "Used to provide a value for the result of the containing computation expression."
             ]
 
         executeQuickInfoTest fileContents testCases
 
-    [<Test>]
+    [<Fact>]
     let ShouldShowQuickInfoForGenericParameters () =
         let fileContents =
             """
-
+    
 type C() = 
     member x.FSharpGenericMethodExplitTypeParams<'T>(a:'T, y:'T) = (a,y)
 
@@ -209,97 +219,97 @@ let res8 = abs 5.0<kg>
         let testCases =
 
             [
-                ("GroupBy",
-                 Some
-                     "(extension) System.Collections.Generic.IEnumerable.GroupBy<'TSource,'TKey>(keySelector: System.Func<'TSource,'TKey>) : System.Collections.Generic.IEnumerable<IGrouping<'TKey,'TSource>>
+                mkDesc
+                    "GroupBy"
+                    "(extension) System.Collections.Generic.IEnumerable.GroupBy<'TSource,'TKey>(keySelector: System.Func<'TSource,'TKey>) : System.Collections.Generic.IEnumerable<IGrouping<'TKey,'TSource>>
 'TSource is int * string
-'TKey is int");
-                ("Sort",
-                 Some
-                     "System.Array.Sort<'T>(array: 'T array) : unit
-'T is int");
-                ("let test4 x = C().FSharpGenericMethodExplitTypeParams",
-                 Some
-                     "member C.FSharpGenericMethodExplitTypeParams: a: 'T0 * y: 'T0 -> 'T0 * 'T0
-'T is 'a list");
-                ("let test5<'U> (x: 'U) = C().FSharpGenericMethodExplitTypeParams",
-                 Some
-                     "member C.FSharpGenericMethodExplitTypeParams: a: 'T0 * y: 'T0 -> 'T0 * 'T0
-'T is 'U list");
-                ("let test6 = C().FSharpGenericMethodExplitTypeParams",
-                 Some
-                     "member C.FSharpGenericMethodExplitTypeParams: a: 'T0 * y: 'T0 -> 'T0 * 'T0
-'T is int");
-                ("let test7 x = C().FSharpGenericMethodInferredTypeParams",
-                 Some
-                     "member C.FSharpGenericMethodInferredTypeParams: a: 'a1 * y: 'b2 -> 'a1 * 'b2
+'TKey is int"
+                mkDesc
+                    "Sort"
+                    "System.Array.Sort<'T>(array: 'T array) : unit
+'T is int"
+                mkDesc
+                    "let test4 x = C().FSharpGenericMethodExplitTypeParams"
+                    "member C.FSharpGenericMethodExplitTypeParams: a: 'T0 * y: 'T0 -> 'T0 * 'T0
+'T is 'a list"
+                mkDesc
+                    "let test5<'U> (x: 'U) = C().FSharpGenericMethodExplitTypeParams"
+                    "member C.FSharpGenericMethodExplitTypeParams: a: 'T0 * y: 'T0 -> 'T0 * 'T0
+'T is 'U list"
+                mkDesc
+                    "let test6 = C().FSharpGenericMethodExplitTypeParams"
+                    "member C.FSharpGenericMethodExplitTypeParams: a: 'T0 * y: 'T0 -> 'T0 * 'T0
+'T is int"
+                mkDesc
+                    "let test7 x = C().FSharpGenericMethodInferredTypeParams"
+                    "member C.FSharpGenericMethodInferredTypeParams: a: 'a1 * y: 'b2 -> 'a1 * 'b2
 'a is 'a0 list
-'b is 'a0 list");
-                ("let test8 = C().FSharpGenericMethodInferredTypeParams",
-                 Some
-                     "member C.FSharpGenericMethodInferredTypeParams: a: 'a0 * y: 'b1 -> 'a0 * 'b1
+'b is 'a0 list"
+                mkDesc
+                    "let test8 = C().FSharpGenericMethodInferredTypeParams"
+                    "member C.FSharpGenericMethodInferredTypeParams: a: 'a0 * y: 'b1 -> 'a0 * 'b1
 'a is int
-'b is int");
-                ("let test9<'U> (x: 'U) = C().FSharpGenericMethodInferredTypeParams",
-                 Some
-                     "member C.FSharpGenericMethodInferredTypeParams: a: 'a0 * y: 'b1 -> 'a0 * 'b1
+'b is int"
+                mkDesc
+                    "let test9<'U> (x: 'U) = C().FSharpGenericMethodInferredTypeParams"
+                    "member C.FSharpGenericMethodInferredTypeParams: a: 'a0 * y: 'b1 -> 'a0 * 'b1
 'a is 'U list
-'b is 'U list");
-                ("let res3 = [1] |>",
-                 Some
-                     "val (|>) : arg: 'T1 -> func: ('T1 -> 'U) -> 'U
+'b is 'U list"
+                mkDesc
+                    "let res3 = [1] |>"
+                    "val (|>) : arg: 'T1 -> func: ('T1 -> 'U) -> 'U
 Full name: Microsoft.FSharp.Core.Operators.(|>)
 'T1 is int list
-'U is int list");
-                ("let res3 = [1] |> List.map id",
-                 Some
-                     "val id: x: 'T -> 'T
+'U is int list"
+                mkDesc
+                    "let res3 = [1] |> List.map id"
+                    "val id: x: 'T -> 'T
 Full name: Microsoft.FSharp.Core.Operators.id
-'T is int");
-                ("let res4 = (1.0,[1]) ||>",
-                 Some
-                     "val (||>) : arg1: 'T1 * arg2: 'T2 -> func: ('T1 -> 'T2 -> 'U) -> 'U
+'T is int"
+                mkDesc
+                    "let res4 = (1.0,[1]) ||>"
+                    "val (||>) : arg1: 'T1 * arg2: 'T2 -> func: ('T1 -> 'T2 -> 'U) -> 'U
 Full name: Microsoft.FSharp.Core.Operators.(||>)
 'T1 is float
 'T2 is int list
-'U is float");
-                ("let res4 = (1.0,[1]) ||> List.fold",
-                 Some
-                     "val fold: folder: ('State -> 'T -> 'State) -> state: 'State -> list: 'T list -> 'State
+'U is float"
+                mkDesc
+                    "let res4 = (1.0,[1]) ||> List.fold"
+                    "val fold: folder: ('State -> 'T -> 'State) -> state: 'State -> list: 'T list -> 'State
 Full name: Microsoft.FSharp.Collections.List.fold
 'T is int
-'State is float");
-                ("let res4 = (1.0,[1]) ||> List.fold (fun s x -> string s +",
-                 Some
-                     "val (+) : x: 'T1 -> y: 'T2 -> 'T3 (requires member (+))
+'State is float"
+                mkDesc
+                    "let res4 = (1.0,[1]) ||> List.fold (fun s x -> string s +"
+                    "val (+) : x: 'T1 -> y: 'T2 -> 'T3 (requires member (+))
 Full name: Microsoft.FSharp.Core.Operators.(+)
 'T1 is string
 'T2 is string
-'T3 is float");
-                ("let res5 = 1 +",
-                 Some
-                     "val (+) : x: 'T1 -> y: 'T2 -> 'T3 (requires member (+))
+'T3 is float"
+                mkDesc
+                    "let res5 = 1 +"
+                    "val (+) : x: 'T1 -> y: 'T2 -> 'T3 (requires member (+))
 Full name: Microsoft.FSharp.Core.Operators.(+)
 'T1 is int
 'T2 is int
-'T3 is int");
-                ("let res6 = System.DateTime.Now +",
-                 Some
-                     "val (+) : x: 'T1 -> y: 'T2 -> 'T3 (requires member (+))
+'T3 is int"
+                mkDesc
+                    "let res6 = System.DateTime.Now +"
+                    "val (+) : x: 'T1 -> y: 'T2 -> 'T3 (requires member (+))
 Full name: Microsoft.FSharp.Core.Operators.(+)
 'T1 is System.DateTime
 'T2 is System.TimeSpan
-'T3 is System.DateTime");
-                ("let res7 = sin",
-                 Some
-                     "val sin: value: 'T -> 'T (requires member Sin)
+'T3 is System.DateTime"
+                mkDesc
+                    "let res7 = sin"
+                    "val sin: value: 'T -> 'T (requires member Sin)
 Full name: Microsoft.FSharp.Core.Operators.sin
-'T is float");
-                ("let res8 = abs",
-                 Some
-                     "val abs: value: 'T -> 'T (requires member Abs)
+'T is float"
+                mkDesc
+                    "let res8 = abs"
+                    "val abs: value: 'T -> 'T (requires member Abs)
 Full name: Microsoft.FSharp.Core.Operators.abs
-'T is int");
+'T is int"
             ]
 
         executeQuickInfoTest fileContents testCases

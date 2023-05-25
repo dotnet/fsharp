@@ -62,12 +62,6 @@ module internal PrintUtilities =
             s + ".0" 
         else s
 
-    let layoutsL (ls: Layout list) : Layout =
-        match ls with
-        | [] -> emptyL
-        | [x] -> x
-        | x :: xs -> List.fold (^^) x xs 
-
     // Layout a curried function type. Over multiple lines breaking takes some care, e.g.
     //
     // val SampleFunctionTupledAllBreakA:
@@ -321,6 +315,11 @@ module internal PrintUtilities =
         else
             restL
 
+    let squashToWidth width layout =
+        match width with
+        | Some w -> Display.squashTo w layout
+        | None -> layout
+        
 module PrintIL = 
 
     let fullySplitILTypeRef (tref: ILTypeRef) = 
@@ -1387,8 +1386,6 @@ module PrintTastMemberOrVals =
     let prettyLayoutOfValOrMemberNoInst denv infoReader v =
         prettyLayoutOfValOrMember denv infoReader emptyTyparInst v |> snd
 
-let layoutTrait denv x = x |> PrintTypes.layoutTrait denv
-
 let layoutTyparConstraint denv x = x |> PrintTypes.layoutTyparConstraint denv
 
 let outputType denv os x = x |> PrintTypes.layoutType denv |> bufferL os
@@ -1727,9 +1724,19 @@ module TastDefinitionPrinting =
     let layoutPropInfo denv (infoReader: InfoReader) m (pinfo: PropInfo) =
         let amap = infoReader.amap
 
+        let isPublicGetterSetter (getter: MethInfo) (setter: MethInfo) =
+            let isPublicAccess access = access = TAccess []
+            match getter.ArbitraryValRef, setter.ArbitraryValRef with
+            | Some gRef, Some sRef -> isPublicAccess gRef.Accessibility && isPublicAccess sRef.Accessibility
+            | _ -> false
+
         match pinfo.ArbitraryValRef with
         | Some vref ->
-            PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader vref
+            let propL = PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader vref
+            if pinfo.HasGetter && pinfo.HasSetter && not pinfo.IsIndexer && isPublicGetterSetter pinfo.GetterMethod pinfo.SetterMethod then
+                propL ^^ wordL (tagKeyword "with") ^^ wordL (tagText "get, set")
+            else
+                propL
         | None ->
 
             let modifierAndMember =
@@ -2120,9 +2127,10 @@ module TastDefinitionPrinting =
 
             | _ when isNil allDecls ->
                 lhsL
-
+#if !NO_TYPEPROVIDERS
             | TProvidedNamespaceRepr _
             | TProvidedTypeRepr _
+#endif
             | TNoRepr -> 
                 allDecls
                 |> applyMaxMembers denv.maxMembers
@@ -2348,29 +2356,32 @@ module InferredSigPrinting =
 
             if mspec.IsImplicitNamespace then
                 // The current mspec is a namespace that belongs to the `def` child (nested) module(s).                
-                let fullModuleName, def, denv =
+                let fullModuleName, def, denv, moduleAttribs =
                     let rec (|NestedModule|_|) (currentContents:ModuleOrNamespaceContents) =
                         match currentContents with
-                        | ModuleOrNamespaceContents.TMDefRec (bindings = [ ModuleOrNamespaceBinding.Module(mn, NestedModule(path, contents)) ]) ->
-                            Some ([ yield mn.DisplayNameCore; yield! path ], contents)
-                        | ModuleOrNamespaceContents.TMDefs [ ModuleOrNamespaceContents.TMDefRec (bindings = [ ModuleOrNamespaceBinding.Module(mn, NestedModule(path, contents)) ]) ] ->
-                            Some ([ yield mn.DisplayNameCore; yield! path ], contents)
+                        | ModuleOrNamespaceContents.TMDefRec (bindings = [ ModuleOrNamespaceBinding.Module(mn, NestedModule(path, contents, attribs)) ]) ->
+                            Some ([ yield mn.DisplayNameCore; yield! path ], contents, List.append mn.Attribs attribs)
+                        | ModuleOrNamespaceContents.TMDefs [ ModuleOrNamespaceContents.TMDefRec (bindings = [ ModuleOrNamespaceBinding.Module(mn, NestedModule(path, contents, attribs)) ]) ] ->
+                            Some ([ yield mn.DisplayNameCore; yield! path ], contents, List.append mn.Attribs attribs)
                         | ModuleOrNamespaceContents.TMDefs [ ModuleOrNamespaceContents.TMDefRec (bindings = [ ModuleOrNamespaceBinding.Module(mn, nestedModuleContents) ]) ] ->
-                            Some ([ mn.DisplayNameCore ], nestedModuleContents)
+                            Some ([ mn.DisplayNameCore ], nestedModuleContents, mn.Attribs)
                         | _ ->
                             None
 
                     match def with
-                    | NestedModule(path, nestedModuleContents) ->
+                    | NestedModule(path, nestedModuleContents, moduleAttribs) ->
                         let fullPath = mspec.DisplayNameCore :: path
-                        fullPath, nestedModuleContents, denv.AddOpenPath(fullPath)
-                    | _ -> [ mspec.DisplayNameCore ], def, denv
+                        fullPath, nestedModuleContents, denv.AddOpenPath(fullPath), moduleAttribs
+                    | _ -> [ mspec.DisplayNameCore ], def, denv, List.empty
                 
                 let nmL = List.map (tagModule >> wordL) fullModuleName |> sepListL SepL.dot
                 let nmL = layoutAccessibility denv mspec.Accessibility nmL
                 let denv = denv.AddAccessibility mspec.Accessibility
                 let basic = imdefL denv def
-                let modNameL = wordL (tagKeyword "module") ^^ nmL
+                let attribs: Attribs = List.append mspec.Attribs moduleAttribs
+                let modNameL =
+                    wordL (tagKeyword "module") ^^ nmL
+                    |> layoutAttribs denv None false mspec.TypeOrMeasureKind attribs
                 let basicL = modNameL @@ basic
                 layoutXmlDoc denv true mspec.XmlDoc basicL
             elif mspec.IsNamespace then

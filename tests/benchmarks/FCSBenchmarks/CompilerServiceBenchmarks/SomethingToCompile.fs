@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
 
 // Taken from Utilities/illib.fs
 
@@ -62,7 +62,7 @@ module internal PervasiveAutoOpens =
 
     let inline (===) x y = LanguagePrimitives.PhysicalEquality x y
 
-    /// Per the docs the threshold for the Large Object Heap is 85000 bytes: https://docs.microsoft.com/en-us/dotnet/standard/garbage-collection/large-object-heap#how-an-object-ends-up-on-the-large-object-heap-and-how-gc-handles-them
+    /// Per the docs the threshold for the Large Object Heap is 85000 bytes: https://learn.microsoft.com/dotnet/standard/garbage-collection/large-object-heap#how-an-object-ends-up-on-the-large-object-heap-and-how-gc-handles-them
     /// We set the limit to be 80k to account for larger pointer sizes for when F# is running 64-bit.
     let LOH_SIZE_THRESHOLD_BYTES = 80_000
 
@@ -191,7 +191,7 @@ module Array =
         Array.length l1 = Array.length l2 && Array.forall2 p l1 l2
 
     let order (eltOrder: IComparer<'T>) =
-        { new IComparer<array<'T>> with
+        { new IComparer<'T array> with
             member _.Compare(xs, ys) =
                 let c = compare xs.Length ys.Length
 

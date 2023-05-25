@@ -2,21 +2,21 @@
 
 namespace FSharp.Editor.Tests
 
-open NUnit.Framework
+open Xunit
 open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Editor.Tests.Helpers
+open FSharp.Test
 
-[<TestFixture>]
 type DocumentDiagnosticAnalyzerTests() =
-    let filePath = "C:\\test.fs"
     let startMarker = "(*start*)"
     let endMarker = "(*end*)"
 
     let getDiagnostics (fileContents: string) =
         async {
-            let document, _ =
-                RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents)
+            let document =
+                RoslynTestHelpers.CreateSolution(fileContents)
+                |> RoslynTestHelpers.GetSingleDocument
 
             let! syntacticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax)
             let! semanticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic)
@@ -28,7 +28,7 @@ type DocumentDiagnosticAnalyzerTests() =
         let errors = getDiagnostics fileContents
 
         if not errors.IsEmpty then
-            Assert.Fail("There should be no errors generated", errors)
+            failwith $"There should be no errors generated: {errors}"
 
     member private this.VerifyErrorAtMarker(fileContents: string, expectedMarker: string, ?expectedMessage: string) =
         let errors =
@@ -36,17 +36,25 @@ type DocumentDiagnosticAnalyzerTests() =
             |> Seq.filter (fun e -> e.Severity = DiagnosticSeverity.Error)
             |> Seq.toArray
 
-        Assert.AreEqual(1, errors.Length, "There should be exactly one error generated")
+        errors.Length
+        |> Assert.shouldBeEqualWith 1 "There should be exactly one error generated"
+
         let actualError = errors.[0]
 
         if expectedMessage.IsSome then
-            Assert.AreEqual(expectedMessage.Value, actualError.GetMessage(), "Error messages should match")
+            actualError.GetMessage()
+            |> Assert.shouldBeEqualWith expectedMessage.Value "Error messages should match"
 
-        Assert.AreEqual(DiagnosticSeverity.Error, actualError.Severity)
+        Assert.Equal(DiagnosticSeverity.Error, actualError.Severity)
         let expectedStart = fileContents.IndexOf(expectedMarker)
-        Assert.AreEqual(expectedStart, actualError.Location.SourceSpan.Start, "Error start positions should match")
+
+        actualError.Location.SourceSpan.Start
+        |> Assert.shouldBeEqualWith expectedStart "Error start positions should match"
+
         let expectedEnd = expectedStart + expectedMarker.Length
-        Assert.AreEqual(expectedEnd, actualError.Location.SourceSpan.End, "Error end positions should match")
+
+        actualError.Location.SourceSpan.End
+        |> Assert.shouldBeEqualWith expectedEnd "Error end positions should match"
 
     member private this.VerifyDiagnosticBetweenMarkers
         (
@@ -59,14 +67,24 @@ type DocumentDiagnosticAnalyzerTests() =
             |> Seq.filter (fun e -> e.Severity = expectedSeverity)
             |> Seq.toArray
 
-        Assert.AreEqual(1, errors.Length, "There should be exactly one error generated")
+        errors.Length
+        |> Assert.shouldBeEqualWith 1 "There should be exactly one error generated"
+
         let actualError = errors.[0]
-        Assert.AreEqual(expectedSeverity, actualError.Severity)
-        Assert.AreEqual(expectedMessage, actualError.GetMessage(), "Error messages should match")
+        Assert.Equal(expectedSeverity, actualError.Severity)
+
+        actualError.GetMessage()
+        |> Assert.shouldBeEqualWith expectedMessage "Error messages should match"
+
         let expectedStart = fileContents.IndexOf(startMarker) + startMarker.Length
-        Assert.AreEqual(expectedStart, actualError.Location.SourceSpan.Start, "Error start positions should match")
+
+        actualError.Location.SourceSpan.Start
+        |> Assert.shouldBeEqualWith expectedStart "Error start positions should match"
+
         let expectedEnd = fileContents.IndexOf(endMarker)
-        Assert.AreEqual(expectedEnd, actualError.Location.SourceSpan.End, "Error end positions should match")
+
+        actualError.Location.SourceSpan.End
+        |> Assert.shouldBeEqualWith expectedEnd "Error end positions should match"
 
     member private this.VerifyErrorBetweenMarkers(fileContents: string, expectedMessage: string) =
         this.VerifyDiagnosticBetweenMarkers(fileContents, expectedMessage, DiagnosticSeverity.Error)
@@ -74,7 +92,7 @@ type DocumentDiagnosticAnalyzerTests() =
     member private this.VerifyWarningBetweenMarkers(fileContents: string, expectedMessage: string) =
         this.VerifyDiagnosticBetweenMarkers(fileContents, expectedMessage, DiagnosticSeverity.Warning)
 
-    [<Test>]
+    [<Fact>]
     member public this.Error_Expression_IllegalIntegerLiteral() =
         this.VerifyErrorBetweenMarkers(
             fileContents =
@@ -85,7 +103,7 @@ let a = 0.1(*start*).(*end*)0
             expectedMessage = "Missing qualification after '.'"
         )
 
-    [<Test>]
+    [<Fact>]
     member public this.Error_Expression_IncompleteDefine() =
         this.VerifyErrorBetweenMarkers(
             fileContents =
@@ -95,7 +113,7 @@ let a = (*start*);(*end*)
             expectedMessage = "Unexpected symbol ';' in binding"
         )
 
-    [<Test>]
+    [<Fact>]
     member public this.Error_Expression_KeywordAsValue() =
         this.VerifyErrorBetweenMarkers(
             fileContents =
@@ -106,7 +124,7 @@ let b =
             expectedMessage = "Incomplete structured construct at or before this point in binding"
         )
 
-    [<Test>]
+    [<Fact>]
     member public this.Error_Type_WithoutName() =
         this.VerifyErrorBetweenMarkers(
             fileContents =
@@ -116,7 +134,7 @@ type (*start*)=(*end*)
             expectedMessage = "Unexpected symbol '=' in type name"
         )
 
-    [<Test>]
+    [<Fact>]
     member public this.AbstractClasses_Constructors_PositiveTests_1() =
         this.VerifyNoErrors(
             """
@@ -127,7 +145,7 @@ type C(a : int) =
             """
         )
 
-    [<Test>]
+    [<Fact>]
     member public this.AbstractClasses_Constructors_PositiveTests_2() =
         this.VerifyNoErrors(
             """
@@ -138,7 +156,7 @@ type C(a : int) =
             """
         )
 
-    [<Test>]
+    [<Fact>]
     member public this.AbstractClasses_Constructors_PositiveTests_3() =
         this.VerifyNoErrors(
             """
@@ -148,7 +166,7 @@ type O(o : int) =
             """
         )
 
-    [<Test>]
+    [<Fact>]
     member public this.AbstractClasses_Constructors_PositiveTests_4() =
         this.VerifyNoErrors(
             """
@@ -158,7 +176,7 @@ type O(o : int) =
             """
         )
 
-    [<Test>]
+    [<Fact>]
     member public this.AbstractClasses_Constructors_PositiveTests_5() =
         this.VerifyNoErrors(
             """
@@ -168,7 +186,7 @@ type O(o : int) =
             """
         )
 
-    [<Test>]
+    [<Fact>]
     member public this.AbstractClasses_Constructors_PositiveTests_6() =
         this.VerifyNoErrors(
             """
@@ -181,7 +199,7 @@ type E =
             """
         )
 
-    [<Test>]
+    [<Fact>]
     member public this.AbstractClasses_Constructors_NegativeTests_1() =
         this.VerifyErrorAtMarker(
             fileContents =
@@ -194,7 +212,7 @@ type D =
             expectedMarker = "D()"
         )
 
-    [<Test>]
+    [<Fact>]
     member public this.AbstractClasses_Constructors_NegativeTests_2() =
         this.VerifyErrorAtMarker(
             fileContents =
@@ -207,7 +225,7 @@ type Z () =
             expectedMarker = "Z()"
         )
 
-    [<Test>]
+    [<Fact>]
     member public this.AbstractClasses_Constructors_NegativeTests_3() =
         this.VerifyErrorAtMarker(
             fileContents =
@@ -223,8 +241,8 @@ type Y() =
             expectedMarker = "new X()"
         )
 
-    [<Test>]
-    member public this.Waring_Construct_TypeMatchWithoutAnnotation() =
+    [<Fact>]
+    member public this.Warning_Construct_TypeMatchWithoutAnnotation() =
         this.VerifyWarningBetweenMarkers(
             fileContents =
                 """
@@ -240,7 +258,7 @@ let f () =
                 + "type 'string'."
         )
 
-    [<Test>]
+    [<Fact>]
     member public this.Error_Identifer_IllegalFloatPointLiteral() =
         this.VerifyErrorBetweenMarkers(
             fileContents =
@@ -250,7 +268,7 @@ let x: float = 1.2(*start*).(*end*)3
             expectedMessage = "Missing qualification after '.'"
         )
 
-    [<Test>]
+    [<Fact>]
     member public this.Error_TypeCheck_ParseError_Bug67133() =
         this.VerifyErrorBetweenMarkers(
             fileContents =
@@ -261,7 +279,7 @@ let gDateTime (arr: (*start*)DateTime(*end*)[]) =
             expectedMessage = "The type 'DateTime' is not defined."
         )
 
-    [<Test>]
+    [<Fact>]
     member public this.Error_CyclicalDeclarationDoesNotCrash() =
         this.VerifyErrorBetweenMarkers(
             fileContents =
@@ -271,7 +289,7 @@ type (*start*)A(*end*) = int * A
             expectedMessage = "This type definition involves an immediate cyclic reference through an abbreviation"
         )
 
-    [<Test>]
+    [<Fact>]
     member public this.Warning_FlagsAndSettings_TargetOptionsRespected() =
         this.VerifyWarningBetweenMarkers(
             fileContents =
@@ -283,7 +301,7 @@ let y = (*start*)fn(*end*) 1
             expectedMessage = "This construct is deprecated. x"
         )
 
-    [<Test>]
+    [<Fact>]
     member public this.Basic_Case() =
         this.VerifyErrorBetweenMarkers(
             fileContents =
@@ -295,7 +313,7 @@ let arr = [| 1; 2; 3 |]
             expectedMessage = "This value is not a function and cannot be applied."
         )
 
-    [<Test>]
+    [<Fact>]
     member public this.Multiline_Bug5449() =
         this.VerifyErrorBetweenMarkers(
             fileContents =
@@ -306,7 +324,7 @@ let r = (*start*)f 3(*end*) 4
             expectedMessage = "This value is not a function and cannot be applied."
         )
 
-    [<Test>]
+    [<Fact>]
     member public this.InComputationExpression_Bug6095_A() =
         this.VerifyWarningBetweenMarkers(
             fileContents =
@@ -321,7 +339,7 @@ let a = async {
                 "Incomplete pattern matches on this expression. For example, the value '[|_; _; _|]' may indicate a case not covered by the pattern(s)."
         )
 
-    [<Test>]
+    [<Fact>]
     member public this.InComputationExpression_Bug6095_B() =
         this.VerifyWarningBetweenMarkers(
             fileContents =
@@ -332,7 +350,7 @@ let f = (*start*)function(*end*) | [| a;b |] -> ()
                 "Incomplete pattern matches on this expression. For example, the value '[|_; _; _|]' may indicate a case not covered by the pattern(s)."
         )
 
-    [<Test>]
+    [<Fact>]
     member public this.InComputationExpression_Bug6095_C() =
         this.VerifyWarningBetweenMarkers(
             fileContents =
@@ -343,7 +361,7 @@ for (*start*)[|a;b|](*end*) in [| [|42|] |] do ()
                 "Incomplete pattern matches on this expression. For example, the value '[|_; _; _|]' may indicate a case not covered by the pattern(s). Unmatched elements will be ignored."
         )
 
-    [<Test>]
+    [<Fact>]
     member public this.InComputationExpression_Bug914685() =
         this.VerifyErrorAtMarker(
             fileContents =
@@ -353,7 +371,7 @@ async { if true then return 1 } |> ignore
             expectedMarker = "if true then"
         )
 
-    [<Test>]
+    [<Fact>]
     member public this.ExtraEndif() =
         this.VerifyErrorBetweenMarkers(
             fileContents =
@@ -368,7 +386,7 @@ async { if true then return 1 } |> ignore
             expectedMessage = "#endif has no matching #if in implementation file"
         )
 
-    [<Test>]
+    [<Fact>]
     member public this.Squiggles_HashNotFirstSymbol_If() =
         this.VerifyErrorAtMarker(
             fileContents =
@@ -383,7 +401,7 @@ async { if true then return 1 } |> ignore
             expectedMessage = "#if directive must appear as the first non-whitespace character on a line"
         )
 
-    [<Test>]
+    [<Fact>]
     member public this.Squiggles_HashNotFirstSymbol_Endif() =
         this.VerifyErrorAtMarker(
             fileContents =
@@ -398,7 +416,7 @@ async { if true then return 1 } |> ignore
             expectedMessage = "#endif directive must appear as the first non-whitespace character on a line"
         )
 
-    [<Test>]
+    [<Fact>]
     member public this.Squiggles_HashIfWithMultilineComment() =
         this.VerifyErrorAtMarker(
             fileContents =
@@ -410,7 +428,7 @@ async { if true then return 1 } |> ignore
             expectedMessage = "Expected single line comment or end of line"
         )
 
-    [<Test>]
+    [<Fact>]
     member public this.Squiggles_HashIfWithUnexpected() =
         this.VerifyErrorAtMarker(
             fileContents =
@@ -422,7 +440,7 @@ async { if true then return 1 } |> ignore
             expectedMessage = "Incomplete preprocessor expression"
         )
 
-    [<Test>]
+    [<Fact>]
     member public this.OverloadsAndExtensionMethodsForGenericTypes() =
         this.VerifyNoErrors(
             fileContents =
@@ -442,7 +460,7 @@ let g (t : T) = t.Count()
             """
         )
 
-    [<Test>]
+    [<Fact>]
     member public this.DocumentDiagnosticsDontReportProjectErrors_Bug1596() =
         // https://github.com/dotnet/fsharp/issues/1596
         this.VerifyNoErrors(

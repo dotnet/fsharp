@@ -2,10 +2,9 @@
 
 namespace FSharp.Editor.Tests.Hints
 
-open System.Threading
+open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.Editor.Hints
-open Microsoft.CodeAnalysis.Text
 open Hints
 open FSharp.Editor.Tests.Helpers
 
@@ -13,9 +12,13 @@ module HintTestFramework =
 
     // another representation for extra convenience
     type TestHint =
-        { Content: string; Location: int * int }
+        {
+            Content: string
+            Location: int * int
+            Tooltip: string
+        }
 
-    let private convert hint =
+    let private convert (hint, tooltip) =
         let content =
             hint.Parts |> Seq.map (fun hintPart -> hintPart.Text) |> String.concat ""
 
@@ -27,31 +30,63 @@ module HintTestFramework =
         {
             Content = content
             Location = location
+            Tooltip = tooltip
         }
 
     let getFsDocument code =
-        use project = SingleFileProject code
-        let fileName = fst project.Files.Head
-        let document, _ = RoslynTestHelpers.CreateSingleDocumentSolution(fileName, code)
-        document
+        // I don't know, without this lib some symbols are just not loaded
+        let options =
+            { RoslynTestHelpers.DefaultProjectOptions with
+                OtherOptions = [| "--targetprofile:netcore" |]
+            }
+
+        RoslynTestHelpers.CreateSolution(code, options = options)
+        |> RoslynTestHelpers.GetSingleDocument
 
     let getFsiAndFsDocuments (fsiCode: string) (fsCode: string) =
-        RoslynTestHelpers.CreateTwoDocumentSolution("test.fsi", SourceText.From fsiCode, "test.fs", SourceText.From fsCode)
+        let projectId = ProjectId.CreateNewId()
+        let projFilePath = "C:\\test.fsproj"
 
-    let getHints document hintKinds =
+        let fsiDocInfo =
+            RoslynTestHelpers.CreateDocumentInfo projectId "C:\\test.fsi" fsiCode
+
+        let fsDocInfo = RoslynTestHelpers.CreateDocumentInfo projectId "C:\\test.fs" fsCode
+
+        let projInfo =
+            RoslynTestHelpers.CreateProjectInfo projectId projFilePath [ fsiDocInfo; fsDocInfo ]
+
+        let solution = RoslynTestHelpers.CreateSolution [ projInfo ]
+        let project = solution.Projects |> Seq.exactlyOne
+        project.Documents
+
+    let getHints (document: Document) hintKinds =
         async {
-            let! hints = HintService.getHintsForDocument document hintKinds "test" CancellationToken.None
-            return hints |> Seq.map convert
+            let! ct = Async.CancellationToken
+
+            let getTooltip hint =
+                async {
+                    let! roslynTexts = hint.GetTooltip document
+                    return roslynTexts |> Seq.map (fun roslynText -> roslynText.Text) |> String.concat ""
+                }
+
+            let! sourceText = document.GetTextAsync ct |> Async.AwaitTask
+            let! hints = HintService.getHintsForDocument sourceText document hintKinds "test" ct
+            let! tooltips = hints |> Seq.map getTooltip |> Async.Parallel
+            return tooltips |> Seq.zip hints |> Seq.map convert
         }
         |> Async.RunSynchronously
 
     let getTypeHints document =
-        getHints document (Set.empty.Add(HintKind.TypeHint))
+        getHints document (set [ HintKind.TypeHint ])
+
+    let getReturnTypeHints document =
+        getHints document (set [ HintKind.ReturnTypeHint ])
 
     let getParameterNameHints document =
-        getHints document (Set.empty.Add(HintKind.ParameterNameHint))
+        getHints document (set [ HintKind.ParameterNameHint ])
 
     let getAllHints document =
-        let hintKinds = Set.empty.Add(HintKind.TypeHint).Add(HintKind.ParameterNameHint)
+        let hintKinds =
+            set [ HintKind.TypeHint; HintKind.ParameterNameHint; HintKind.ReturnTypeHint ]
 
         getHints document hintKinds

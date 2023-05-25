@@ -15,11 +15,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="BackgroundCompilerBenchmarks.fs" />
     <Compile Include="SourceText.fs" />
     <Compile Include="DecentlySizedStandAloneFileBenchmark.fs" />
     <Compile Include="CompilerServiceBenchmarks.fs" />
     <Compile Include="FileCascadeBenchmarks.fs" />
+    <Compile Include="GraphTypeCheckingBenchmarks.fs" />
+    <Compile Include="BackgroundCompilerBenchmarks.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

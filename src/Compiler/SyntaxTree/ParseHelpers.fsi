@@ -102,6 +102,7 @@ type LexerStringStyle =
     | Verbatim
     | TripleQuote
     | SingleQuote
+    | ExtendedInterpolated
 
 [<RequireQualifiedAccess; Struct>]
 type LexerStringKind =
@@ -117,7 +118,7 @@ type LexerStringKind =
 
     static member String: LexerStringKind
 
-type LexerInterpolatedStringNesting = (int * LexerStringStyle * range) list
+type LexerInterpolatedStringNesting = (int * LexerStringStyle * int * range) list
 
 [<RequireQualifiedAccess; NoComparison; NoEquality>]
 type LexerContinuation =
@@ -128,6 +129,7 @@ type LexerContinuation =
         nesting: LexerInterpolatedStringNesting *
         style: LexerStringStyle *
         kind: LexerStringKind *
+        delimLen: int *
         range: range
     | Comment of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * int * range: range
     | SingleLineComment of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * int * range: range
@@ -164,9 +166,9 @@ val raiseParseErrorAt: range -> (int * string) -> 'a
 
 val mkSynMemberDefnGetSet:
     parseState: IParseState ->
-    opt_inline: bool ->
+    opt_inline: range option ->
     mWith: range ->
-    classDefnMemberGetSetElements: (bool * SynAttributeList list * (SynPat * range) * (range option * SynReturnInfo) option * range option * SynExpr * range) list ->
+    classDefnMemberGetSetElements: (range option * SynAttributeList list * (SynPat * range) * (range option * SynReturnInfo) option * range option * SynExpr * range) list ->
     mAnd: range option ->
     mWhole: range ->
     propertyNameBindingPat: SynPat ->

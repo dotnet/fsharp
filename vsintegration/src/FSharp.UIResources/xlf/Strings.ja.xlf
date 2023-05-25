@@ -2,6 +2,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ja" original="../Strings.resx">
     <body>
+      <trans-unit id="AdditionalTelemetry">
+        <source>Additional performance telemetry (experimental)</source>
+        <target state="new">Additional performance telemetry (experimental)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Always_place_opens_at_top_level">
         <source>Always place open statements at the top level</source>
         <target state="translated">Open ステートメントを常に最上位に配置する</target>
@@ -9,17 +14,32 @@
       </trans-unit>
       <trans-unit id="Enable_Fast_Find_References">
         <source>Enable fast find references &amp; rename (experimental)</source>
-        <target state="new">Enable fast find references &amp; rename (experimental)</target>
+        <target state="translated">高速検索参照の有効化と名前の変更 (試験段階)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enable_Live_Buffers">
+        <source>Use live (unsaved) buffers for checking (restart required)</source>
+        <target state="translated">ライブ (未保存) バッファーをチェックに使用する (再起動が必要)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enable_partial_type_checking">
+        <source>Enable partial type checking</source>
+        <target state="translated">部分型チェックを有効にする</target>
         <note />
       </trans-unit>
       <trans-unit id="Find_References_Performance">
         <source>Find References Performance Options</source>
-        <target state="new">Find References Performance Options</target>
+        <target state="translated">参照の検索のパフォーマンス オプション</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Formatting">
+        <source>Formatting</source>
+        <target state="translated">書式設定</target>
         <note />
       </trans-unit>
       <trans-unit id="Inline_Hints">
         <source>Inline Hints</source>
-        <target state="new">Inline Hints</target>
+        <target state="translated">インラインのヒント</target>
         <note />
       </trans-unit>
       <trans-unit id="Code_Fixes">
@@ -37,14 +57,9 @@
         <target state="translated">診断</target>
         <note />
       </trans-unit>
-      <trans-unit id="Enable_Parallel_Checking_With_Signature_Files">
-        <source>Enable parallel type checking with signature files</source>
-        <target state="new">Enable parallel type checking with signature files</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Enable_Parallel_Reference_Resolution">
         <source>Enable parallel reference resolution</source>
-        <target state="new">Enable parallel reference resolution</target>
+        <target state="translated">並列参照解決を有効にする</target>
         <note />
       </trans-unit>
       <trans-unit id="Language_Service_Performance">
@@ -62,6 +77,11 @@
         <target state="translated">点線の下線(_O)</target>
         <note />
       </trans-unit>
+      <trans-unit id="LiveBuffers">
+        <source>Live Buffers (experimental)</source>
+        <target state="translated">ライブ バッファー (試験段階)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Navigation_links">
         <source>Navigation links</source>
         <target state="translated">ナビゲーション リンク</target>
@@ -69,17 +89,32 @@
       </trans-unit>
       <trans-unit id="Parallelization">
         <source>Parallelization (requires restart)</source>
-        <target state="new">Parallelization (requires restart)</target>
+        <target state="translated">並列化 (再起動が必要)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Preferred_description_width_in_characters">
+        <source>Preferred description width in characters</source>
+        <target state="translated">優先する説明の文字幅</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Send_Additional_Telemetry">
+        <source>Send additional performance telemetry</source>
+        <target state="new">Send additional performance telemetry</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Parameter_Name_Hints">
-        <source>Display inline parameter name hints (experimental)</source>
-        <target state="new">Display inline parameter name hints (experimental)</target>
+        <source>Display inline parameter name hints (preview)</source>
+        <target state="translated">インライン パラメーター名のヒントを表示する (プレビュー)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Type_Hints">
-        <source>Display inline type hints (experimental)</source>
-        <target state="new">Display inline type hints (experimental)</target>
+        <source>Display inline type hints (preview)</source>
+        <target state="translated">インライン型のヒントを表示する (プレビュー)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Return_Type_Hints">
+        <source>Display return type hints (preview)</source>
+        <target state="translated">戻り値型のヒントを表示する (プレビュー)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_all_symbols">
@@ -95,11 +130,6 @@
       <trans-unit id="Show_completion_list_after_a_character_is_typed">
         <source>_Show completion list after a character is typed</source>
         <target state="translated">文字が入力された後に入力候補一覧を表示する(_S)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Enable_in_memory_cross_project_references">
-        <source>_Enable in-memory cross project references</source>
-        <target state="translated">メモリ内のプロジェクト間参照を有効にする(_E)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_navigation_links_as">
@@ -120,6 +150,11 @@
       <trans-unit id="Text_hover">
         <source>Text hover</source>
         <target state="translated">テキスト ホバー</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Tooltip_preferred_description_width_in_characters">
+        <source>Format signature to the given width by adding line breaks conforming with F# syntax rules. </source>
+        <target state="translated">F# 構文規則に準拠した改行を追加して、署名を指定された幅に書式設定します。</target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
@@ -172,11 +207,6 @@
         <target state="translated">IntelliSense 機能に対して古いデータを有効にする</target>
         <note />
       </trans-unit>
-      <trans-unit id="Tooltip_in_memory_cross_project_references">
-        <source>In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</source>
-        <target state="translated">メモリ内のプロジェクト間参照に、プロジェクトをまたいで IDE 機能を動作可能にするプロジェクト レベルのデータが格納されます。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Enter_key_always">
         <source>Always add new line on enter</source>
         <target state="translated">Enter を押すと常に新しい行を追加します</target>
@@ -205,6 +235,11 @@
       <trans-unit id="Suggest_names_for_errors_code_fix">
         <source>Suggest names for unresolved identifiers</source>
         <target state="translated">未解決の識別子の名前を提案します</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Use_syntax_tree_cache">
+        <source>Cache parsing results (experimental)</source>
+        <target state="translated">キャッシュ解析の結果 (試験段階)</target>
         <note />
       </trans-unit>
     </body>

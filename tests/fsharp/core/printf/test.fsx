@@ -447,8 +447,9 @@ module CheckDisplayAttributes12 =
        member internal x.Hello = "Hello"
        override x.ToString() = "x"
 
+    let tName = typeof<Foo>.FullName
     // this should produce an error
-    test "cenwoiwe12" (lazy(sprintf "%A" (Foo()))) "<StructuredFormatDisplay exception: Method 'Test+CheckDisplayAttributes12+Foo.Val{Hello' not found.>"
+    test "cenwoiwe12" (lazy(sprintf "%A" (Foo()))) ("<StructuredFormatDisplay exception: Method '"+tName+".Val{Hello' not found.>")
 
 // Check one with an unmatched closing bracket
 module CheckDisplayAttributes13 =

@@ -18,7 +18,7 @@
     <InternalsVisibleTo Include="VisualFSharp.Salsa" />
   </ItemGroup>
 
-  <ItemGroup>
+  <ItemGroup>    
     <EmbeddedResource Include="FSharp.Editor.resx">
       <GenerateSource>true</GenerateSource>
       <GeneratedModuleName>Microsoft.VisualStudio.FSharp.Editor.SR</GeneratedModuleName>
@@ -40,9 +40,10 @@
     <Compile Include="Common\FSharpCodeAnalysisExtensions.fs" />
     <Compile Include="Common\CodeAnalysisExtensions.fs" />
     <Compile Include="Common\Vs.fs" />
-    <Compile Include="Options\SettingsPersistence.fs" />
+    <Compile Include="Options\SettingsStore.fs" />
     <Compile Include="Options\UIHelpers.fs" />
     <Compile Include="Options\EditorOptions.fs" />
+    <Compile Include="Telemetry\TelemetryReporter.fs" />
     <Compile Include="LanguageService\ProvideBraceCompletionAttribute.fs" />
     <Compile Include="LanguageService\FSharpEditorFactory.fs" />
     <Compile Include="LanguageService\TextViewCreationListener.fs" />
@@ -56,8 +57,8 @@
     <Compile Include="LanguageService\SingleFileWorkspaceMap.fs" />
     <Compile Include="LanguageService\LegacyProjectWorkspaceMap.fs" />
     <Compile Include="LanguageService\FSharpAnalysisSaveFileCommandHandler.fs" />
-    <Compile Include="LanguageService\LanguageService.fs" />
     <Compile Include="LanguageService\WorkspaceExtensions.fs" />
+    <Compile Include="LanguageService\LanguageService.fs" />
     <Compile Include="LanguageService\AssemblyContentProvider.fs" />
     <Compile Include="LanguageService\SymbolHelpers.fs" />
     <Compile Include="Classification\ClassificationDefinitions.fs" />
@@ -72,6 +73,7 @@
     <Compile Include="Diagnostics\UnusedDeclarationsAnalyzer.fs" />
     <Compile Include="Diagnostics\UnusedOpensDiagnosticAnalyzer.fs" />
     <Compile Include="DocComments\XMLDocumentation.fs" />
+    <Compile Include="TaskList\TaskListService.fs" />
     <Compile Include="Completion\CompletionUtils.fs" />
     <Compile Include="Completion\CompletionProvider.fs" />
     <Compile Include="Completion\PathCompletionUtilities.fs" />
@@ -86,8 +88,8 @@
     <Compile Include="Navigation\NavigationBarItemService.fs" />
     <Compile Include="Navigation\NavigateToSearchService.fs" />
     <Compile Include="Navigation\FindUsagesService.fs" />
-    <Compile Include="QuickInfo\NavigableTextRun.fs" />
-    <Compile Include="QuickInfo\WpfNagivableTextRunViewElementFactory.fs" />
+    <Compile Include="Navigation\FindDefinitionService.fs" />
+    <Compile Include="QuickInfo\WpfFactories.fs" />
     <Compile Include="QuickInfo\Views.fs" />
     <Compile Include="QuickInfo\QuickInfoProvider.fs" />
     <Compile Include="Structure\BlockStructureService.fs" />
@@ -135,6 +137,7 @@
     <Compile Include="AutomaticCompletion\BraceCompletionSessionProvider.fs" />
     <Compile Include="Hints\Hints.fs" />
     <Compile Include="Hints\InlineTypeHints.fs" />
+    <Compile Include="hints\InlineReturnTypeHints.fs" />
     <Compile Include="Hints\InlineParameterNameHints.fs" />
     <Compile Include="Hints\HintService.fs" />
     <Compile Include="Hints\NativeToRoslynHintConverter.fs" />
@@ -145,7 +148,6 @@
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\Compiler\FSharp.Compiler.Service.fsproj" />
-    <ProjectReference Include="..\FSharp.PatternMatcher\FSharp.PatternMatcher.csproj" />
     <ProjectReference Include="..\FSharp.UIResources\FSharp.UIResources.csproj" />
     <ProjectReference Include="..\FSharp.VS.FSI\FSharp.VS.FSI.fsproj" />
   </ItemGroup>

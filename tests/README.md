@@ -52,7 +52,7 @@ The following test frameworks and libraries will be used for new test projects *
 * F# compiler component test which is verifying generated IL for computation expression will have category `Compiler` and subcategories `EmittedIL` and `ComputationExpressions`.
 * F# compiler service unit test which is testing F# tokenizer, will have category `Compiler.Service` and subcategory `Tokenizer`.
 
-Please, refer to [File and project structure](#File-and-project-structure) for more information on how tests will be organized on the filesystem.
+Please, refer to [File and project structure](#file-and-project-structure) for more information on how tests will be organized on the filesystem.
 
 ## File and project structure
 
@@ -63,7 +63,7 @@ The proposed naming schema for test projects is: `FSharp.Category.Subcategory.Te
 
 ### Projects organization
 
-Please refer to the "[Naming schema](#Naming-schema)" section above for more information on the projects naming.
+Please refer to the "[Naming schema](#naming-schema)" section above for more information on the projects naming.
 
 New test projects will be grouped by category and test type, all subcategories are just test folders/files in the test project.
 

@@ -159,6 +159,14 @@ type SynExprMatchBangTrivia =
         WithKeyword: range
     }
 
+/// Represents additional information for SynExpr.AnonRecd
+[<NoEquality; NoComparison>]
+type SynExprAnonRecdTrivia =
+    {
+        /// The syntax range of the `{|` token.
+        OpeningBraceRange: range
+    }
+
 /// Represents additional information for SynMatchClause
 [<NoEquality; NoComparison>]
 type SynMatchClauseTrivia =
@@ -287,6 +295,9 @@ type SynBindingTrivia =
         /// Used leading keyword of SynBinding
         LeadingKeyword: SynLeadingKeyword
 
+        /// The syntax range of the `inline` keyword
+        InlineKeyword: range option
+
         /// The syntax range of the `=` token.
         EqualsRange: range option
     }
@@ -362,6 +373,9 @@ type SynValSigTrivia =
         /// but in case of `SynMemberDefn.AutoProperty` or `SynMemberDefn.AbstractSlot` it could be something else.
         LeadingKeyword: SynLeadingKeyword
 
+        /// The syntax range of the `inline` keyword
+        InlineKeyword: range option
+
         /// The syntax range of the `with` keyword
         WithKeyword: range option
 
@@ -383,6 +397,9 @@ type SynTypeFunTrivia =
 [<NoEquality; NoComparison>]
 type SynMemberGetSetTrivia =
     {
+        /// The syntax range of the `inline` keyword
+        InlineKeyword: range option
+
         /// The syntax range of the `with` keyword
         WithKeyword: range
 
@@ -394,6 +411,14 @@ type SynMemberGetSetTrivia =
 
         /// The syntax range of the `set` keyword
         SetKeyword: range option
+    }
+
+/// Represents additional information for SynMemberDefn.ImplicitCtor
+[<NoEquality; NoComparison>]
+type SynMemberDefnImplicitCtorTrivia =
+    {
+        /// The syntax range of the `as` keyword
+        AsKeyword: range option
     }
 
 /// Represents additional information for SynArgPats.NamePatPairs

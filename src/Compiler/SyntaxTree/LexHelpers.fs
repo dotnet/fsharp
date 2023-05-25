@@ -65,6 +65,7 @@ type LexArgs =
         mutable ifdefStack: LexerIfdefStack
         mutable indentationSyntaxStatus: IndentationAwareSyntaxStatus
         mutable stringNest: LexerInterpolatedStringNesting
+        mutable interpolationDelimiterLength: int
     }
 
 /// possible results of lexing a long Unicode escape sequence in a string literal, e.g. "\U0001F47D",
@@ -93,6 +94,7 @@ let mkLexargs
         applyLineDirectives = applyLineDirectives
         stringNest = []
         pathMap = pathMap
+        interpolationDelimiterLength = 0
     }
 
 /// Register the lexbuf and call the given function
@@ -202,6 +204,10 @@ type LexerStringFinisher =
                     else SynStringKind.Regular
 
                 STRING(stringBufferAsString buf, synStringKind, cont))
+
+type LexerStringArgs = ByteBuffer * LexerStringFinisher * range * LexerStringKind * LexArgs
+type SingleLineCommentArgs = (range * StringBuilder) option * int * range * range * LexArgs
+type BlockCommentArgs = int * range * LexArgs
 
 let addUnicodeString (buf: ByteBuffer) (x: string) =
     buf.EmitBytes(Encoding.Unicode.GetBytes x)
@@ -429,8 +435,6 @@ module Keywords =
 
         tab
 
-    let KeywordToken s = keywordTable[s]
-
     let IdentifierToken args (lexbuf: Lexbuf) (s: string) =
         if IsCompilerGeneratedName s then
             warning (Error(FSComp.SR.lexhlpIdentifiersContainingAtSymbolReserved (), lexbuf.LexemeRange))
@@ -480,3 +484,7 @@ module Keywords =
             | "__SOURCE_FILE__" -> KEYWORD_STRING(s, System.IO.Path.GetFileName(FileIndex.fileOfFileIndex lexbuf.StartPos.FileIndex))
             | "__LINE__" -> KEYWORD_STRING(s, string lexbuf.StartPos.Line)
             | _ -> IdentifierToken args lexbuf s
+
+/// Arbitrary value
+[<Literal>]
+let StringCapacity = 100

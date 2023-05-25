@@ -471,10 +471,18 @@ let _ =  printf "           %a" (fun _ _ -> ()) 2
 let _ =  printf "            %*a" 3 (fun _ _ -> ()) 2
 """
 
-    let file = "/home/user/Test.fsx"
+    let file = System.IO.Path.Combine [| "home"; "user"; "Test.fsx" |]
     let parseResult, typeCheckResults = parseAndCheckScript(file, input)
 
-    typeCheckResults.Diagnostics |> shouldEqual [||]
+    typeCheckResults.Diagnostics
+        |> Array.map (fun d -> d.ErrorNumber, d.StartLine, d.StartColumn, d.EndLine, d.EndColumn, d.Message)
+        |> shouldEqual [|
+            (3376, 23, 16, 23, 22, "Bad format specifier: '%'")
+            (3376, 24, 16, 24, 24, "Bad format specifier: '%'")
+            (3376, 25, 16, 25, 26, "Bad format specifier: '%'")
+            (3376, 27, 16, 27, 28, "Bad format specifier: '%'")
+            (3376, 32, 16, 32, 33, "Bad format specifier: '%'") |]
+
     typeCheckResults.GetFormatSpecifierLocationsAndArity()
     |> Array.map (fun (range,numArgs) -> range.StartLine, range.StartColumn, range.EndLine, range.EndColumn, numArgs)
     |> shouldEqual
@@ -578,7 +586,9 @@ let s3 = $"abc %d{s.Length}
 [<Test>]
 let ``Printf specifiers for triple quote interpolated strings`` () =
     let input =
-      "let _ = $\"\"\"abc %d{1} and %d{2+3}def\"\"\"  "
+      "let _ = $\"\"\"abc %d{1} and %d{2+3}def\"\"\"
+let _ = $$\"\"\"abc %%d{{1}} and %%d{{2}}def\"\"\"
+let _ = $$$\"\"\"%% %%%d{{{4}}} % %%%d{{{5}}}\"\"\" "
 
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults = parseAndCheckScriptWithOptions(file, input, [| "/langversion:preview" |])
@@ -587,7 +597,9 @@ let ``Printf specifiers for triple quote interpolated strings`` () =
     typeCheckResults.GetFormatSpecifierLocationsAndArity()
     |> Array.map (fun (range,numArgs) -> range.StartLine, range.StartColumn, range.EndLine, range.EndColumn, numArgs)
     |> shouldEqual
-        [|(1, 16, 1, 18, 1); (1, 26, 1, 28, 1)|]
+        [|(1, 16, 1, 18, 1); (1, 26, 1, 28, 1)
+          (2, 17, 2, 20, 1); (2, 30, 2, 33, 1)
+          (3, 17, 3, 21, 1); (3, 31, 3, 35, 1)|]
 #endif // ASSUME_PREVIEW_FSHARP_CORE
 
 

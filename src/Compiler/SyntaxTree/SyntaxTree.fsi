@@ -518,6 +518,9 @@ type SynType =
     /// F# syntax: ^a or ^b, used in trait calls
     | Or of lhsType: SynType * rhsType: SynType * range: range * trivia: SynTypeOrTrivia
 
+    /// A type arising from a parse error
+    | FromParseError of range: range
+
     /// Gets the syntax range of this construct
     member Range: range
 
@@ -554,8 +557,9 @@ type SynExpr =
     | AnonRecd of
         isStruct: bool *
         copyInfo: (SynExpr * BlockSeparator) option *
-        recordFields: (Ident * range option * SynExpr) list *
-        range: range
+        recordFields: (SynLongIdent * range option * SynExpr) list *
+        range: range *
+        trivia: SynExprAnonRecdTrivia
 
     /// F# syntax: [ e1; ...; en ], [| e1; ...; en |]
     | ArrayOrList of isArray: bool * exprs: SynExpr list * range: range
@@ -904,7 +908,7 @@ type SynExpr =
     | FromParseError of expr: SynExpr * range: range
 
     /// Inserted for error recovery when there is "expr." and missing tokens or error recovery after the dot
-    | DiscardAfterMissingQualificationAfterDot of expr: SynExpr * range: range
+    | DiscardAfterMissingQualificationAfterDot of expr: SynExpr * dotRange: range * range: range
 
     /// 'use x = fixed expr'
     | Fixed of expr: SynExpr * range: range
@@ -1013,9 +1017,7 @@ type SynStaticOptimizationConstraint =
 /// "fun v -> match v with ..."
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynSimplePats =
-    | SimplePats of pats: SynSimplePat list * range: range
-
-    | Typed of pats: SynSimplePats * targetType: SynType * range: range
+    | SimplePats of pats: SynSimplePat list * commaRanges: range list * range: range
 
     member Range: range
 
@@ -1024,7 +1026,7 @@ type SynSimplePats =
 type SynArgPats =
     | Pats of pats: SynPat list
 
-    | NamePatPairs of pats: (Ident * range * SynPat) list * range: range * trivia: SynArgPatsNamePatPairsTrivia
+    | NamePatPairs of pats: (Ident * range option * SynPat) list * range: range * trivia: SynArgPatsNamePatPairsTrivia
 
     member Patterns: SynPat list
 
@@ -1069,7 +1071,7 @@ type SynPat =
         range: range
 
     /// A tuple pattern
-    | Tuple of isStruct: bool * elementPats: SynPat list * range: range
+    | Tuple of isStruct: bool * elementPats: SynPat list * commaRanges: range list * range: range
 
     /// A parenthesized pattern
     | Paren of pat: SynPat * range: range
@@ -1349,8 +1351,7 @@ type SynEnumCase =
     | SynEnumCase of
         attributes: SynAttributes *
         ident: SynIdent *
-        value: SynConst *
-        valueRange: range *
+        valueExpr: SynExpr *
         xmlDoc: PreXmlDoc *
         range: range *
         trivia: SynEnumCaseTrivia
@@ -1589,7 +1590,8 @@ type SynMemberDefn =
         ctorArgs: SynSimplePats *
         selfIdentifier: Ident option *
         xmlDoc: PreXmlDoc *
-        range: range
+        range: range *
+        trivia: SynMemberDefnImplicitCtorTrivia
 
     /// An implicit inherit definition, 'inherit <typ>(args...) as base'
     | ImplicitInherit of inheritType: SynType * inheritArgs: SynExpr * inheritAlias: Ident option * range: range
@@ -1955,5 +1957,5 @@ type ParsedInput =
     /// Gets the #nowarn and other scoped pragmas
     member ScopedPragmas: ScopedPragma list
 
-    /// Gets a set of all identifiers used in this parsed input
+    /// Gets a set of all identifiers used in this parsed input. Only populated if captureIdentifiersWhenParsing option was used.
     member Identifiers: Set<string>

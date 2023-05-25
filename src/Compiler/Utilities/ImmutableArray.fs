@@ -74,36 +74,6 @@ module ImmutableArray =
 
             builder.MoveToImmutable()
 
-    let map2 (mapper: 'T1 -> 'T2 -> 'T) (arr1: ImmutableArray<'T1>) (arr2: ImmutableArray<'T2>) : ImmutableArray<_> =
-        if arr1.Length <> arr2.Length then
-            invalidOp "Block lengths do not match."
-
-        match arr1.Length with
-        | 0 -> ImmutableArray.Empty
-        | 1 -> ImmutableArray.Create(mapper arr1[0] arr2[0])
-        | n ->
-            let builder = ImmutableArray.CreateBuilder(n)
-
-            for i = 0 to n - 1 do
-                builder.Add(mapper arr1[i] arr2[i])
-
-            builder.MoveToImmutable()
-
-    let mapi2 (mapper: int -> 'T1 -> 'T2 -> 'T) (arr1: ImmutableArray<'T1>) (arr2: ImmutableArray<'T2>) : ImmutableArray<_> =
-        if arr1.Length <> arr2.Length then
-            invalidOp "Block lengths do not match."
-
-        match arr1.Length with
-        | 0 -> ImmutableArray.Empty
-        | 1 -> ImmutableArray.Create(mapper 0 arr1[0] arr2[0])
-        | n ->
-            let builder = ImmutableArray.CreateBuilder(n)
-
-            for i = 0 to n - 1 do
-                builder.Add(mapper i arr1[i] arr2[i])
-
-            builder.MoveToImmutable()
-
     let concat (arrs: ImmutableArray<ImmutableArray<'T>>) : ImmutableArray<'T> =
         match arrs.Length with
         | 0 -> ImmutableArray.Empty

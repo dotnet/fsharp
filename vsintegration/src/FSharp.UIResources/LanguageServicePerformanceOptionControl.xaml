@@ -19,10 +19,12 @@
             <StackPanel>
                 <GroupBox Header="{x:Static local:Strings.Project_Performance}">
                     <StackPanel>
-                        <CheckBox x:Name="enableInMemoryCrossProjectReferences"
-                                  IsChecked="{Binding EnableInMemoryCrossProjectReferences}"
-                                  Content="{x:Static local:Strings.Enable_in_memory_cross_project_references}"
-                                  ToolTip="{x:Static local:Strings.Tooltip_in_memory_cross_project_references}"/>
+                        <CheckBox x:Name="enablePartialTypeChecking"
+                                  IsChecked="{Binding EnablePartialTypeChecking}"
+                                  Content="{x:Static local:Strings.Enable_partial_type_checking}" />
+                        <CheckBox x:Name="enableSyntaxTreeCache"
+                                  IsChecked="{Binding UseSyntaxTreeCache}"
+                                  Content="{x:Static local:Strings.Use_syntax_tree_cache}" />
                     </StackPanel>
                 </GroupBox>
                 <GroupBox Header="{x:Static local:Strings.IntelliSense_Performance}">
@@ -56,9 +58,6 @@
                 </GroupBox>
                 <GroupBox Header="{x:Static local:Strings.Parallelization}">
                     <StackPanel>
-                        <CheckBox x:Name="enableParallelCheckingWithSignatureFiles"
-                                  IsChecked="{Binding EnableParallelCheckingWithSignatureFiles}"
-                                  Content="{x:Static local:Strings.Enable_Parallel_Checking_With_Signature_Files}"/>
                         <CheckBox x:Name="enableParallelReferenceResolution"
                                   IsChecked="{Binding EnableParallelReferenceResolution}"
                                   Content="{x:Static local:Strings.Enable_Parallel_Reference_Resolution}"/>
@@ -66,8 +65,8 @@
                 </GroupBox>
                 <GroupBox Header="{x:Static local:Strings.Find_References_Performance}">
                     <StackPanel>
-                        <CheckBox x:Name="enableFastFindReferences"
-                                  IsChecked="{Binding EnableFastFindReferences}"
+                        <CheckBox x:Name="enableFastFindReferencesAndRename"
+                                  IsChecked="{Binding EnableFastFindReferencesAndRename}"
                                   Content="{x:Static local:Strings.Enable_Fast_Find_References}"/>
                     </StackPanel>
                 </GroupBox>

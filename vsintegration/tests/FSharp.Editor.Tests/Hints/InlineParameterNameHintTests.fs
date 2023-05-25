@@ -2,12 +2,13 @@
 
 namespace FSharp.Editor.Tests.Hints
 
-open NUnit.Framework
+open Xunit
 open HintTestFramework
+open FSharp.Test
 
 module InlineParameterNameHintTests =
 
-    [<Test>]
+    [<Fact>]
     let ``Hint is shown for a let binding`` () =
         let code =
             """
@@ -22,14 +23,15 @@ let greeting = greet "darkness"
                 {
                     Content = "friend = "
                     Location = (2, 22)
+                    Tooltip = "parameter friend"
                 }
             ]
 
         let actual = getParameterNameHints document
 
-        Assert.AreEqual(expected, actual)
+        Assert.Equal(expected, actual)
 
-    [<Test>]
+    [<Fact>]
     let ``Hints are shown for multiple function calls`` () =
         let code =
             """
@@ -45,18 +47,20 @@ let greeting2 = greet "Liam"
                 {
                     Content = "friend = "
                     Location = (2, 23)
+                    Tooltip = "parameter friend"
                 }
                 {
                     Content = "friend = "
                     Location = (3, 23)
+                    Tooltip = "parameter friend"
                 }
             ]
 
         let actual = getParameterNameHints document
 
-        Assert.AreEqual(expected, actual)
+        Assert.Equal(expected, actual)
 
-    [<Test>]
+    [<Fact>]
     let ``Hints are shown for multiple parameters`` () =
         let code =
             """
@@ -71,18 +75,20 @@ let greeting = greet "Liam" "Noel"
                 {
                     Content = "friend1 = "
                     Location = (2, 22)
+                    Tooltip = "parameter friend1"
                 }
                 {
                     Content = "friend2 = "
                     Location = (2, 29)
+                    Tooltip = "parameter friend2"
                 }
             ]
 
         let actual = getParameterNameHints document
 
-        Assert.AreEqual(expected, actual)
+        Assert.Equal(expected, actual)
 
-    [<Test>]
+    [<Fact>]
     let ``Hints are shown for tuple items`` () =
         let code =
             """
@@ -97,18 +103,20 @@ let greeting = greet ("Liam", "Noel")
                 {
                     Content = "friend1 = "
                     Location = (2, 23)
+                    Tooltip = "parameter friend1"
                 }
                 {
                     Content = "friend2 = "
                     Location = (2, 31)
+                    Tooltip = "parameter friend2"
                 }
             ]
 
         let actual = getParameterNameHints document
 
-        Assert.AreEqual(expected, actual)
+        Assert.Equal(expected, actual)
 
-    [<Test>]
+    [<Fact>]
     let ``Hints are shown for active patterns`` () =
         let code =
             """
@@ -132,18 +140,20 @@ let odd = evenOrOdd 41
                 {
                     Content = "number = "
                     Location = (10, 22)
+                    Tooltip = "parameter number"
                 }
                 {
                     Content = "number = "
                     Location = (11, 21)
+                    Tooltip = "parameter number"
                 }
             ]
 
         let actual = getParameterNameHints document
 
-        Assert.AreEqual(expected, actual)
+        Assert.Equal(expected, actual)
 
-    [<Test>] // here we don't want an empty hint before "x"
+    [<Fact>] // here we don't want an empty hint before "x"
     let ``Hints are not shown for nameless parameters`` () =
         let code =
             """
@@ -157,9 +167,9 @@ let exists predicate option =
 
         let result = getParameterNameHints document
 
-        Assert.IsEmpty(result)
+        Assert.Empty(result)
 
-    [<Test>] // here we don't want a useless (?) hint "value = "
+    [<Fact>] // here we don't want a useless (?) hint "value = "
     let ``Hints are not shown for parameters of built-in operators`` () =
         let code =
             """
@@ -170,9 +180,9 @@ let postTrue = not true
 
         let result = getParameterNameHints document
 
-        Assert.IsEmpty(result)
+        Assert.Empty(result)
 
-    [<Test>]
+    [<Fact>]
     let ``Hints are not shown for parameters of custom operators`` () =
         let code =
             """
@@ -185,9 +195,9 @@ let c = "javascript" === "javascript"
 
         let result = getParameterNameHints document
 
-        Assert.IsEmpty(result)
+        Assert.Empty(result)
 
-    [<Test>]
+    [<Fact>]
     let ``Hints are shown for method parameters`` () =
         let code =
             """
@@ -201,14 +211,15 @@ let theAnswer = System.Console.WriteLine 42
                 {
                     Content = "value = "
                     Location = (1, 42)
+                    Tooltip = "parameter value"
                 }
             ]
 
         let actual = getParameterNameHints document
 
-        Assert.AreEqual(expected, actual)
+        Assert.Equal(expected, actual)
 
-    [<Test>]
+    [<Fact>]
     let ``Hints are shown for parameters of overloaded and curried methods`` () =
         let code =
             """
@@ -231,31 +242,40 @@ let a = c.Normal "hmm"
                 {
                     Content = "curr1 = "
                     Location = (8, 20)
+                    Tooltip = "parameter curr1"
                 }
                 {
                     Content = "curr2 = "
                     Location = (8, 27)
+                    Tooltip = "parameter curr2"
                 }
-                { Content = "x = "; Location = (8, 30) }
+                {
+                    Content = "x = "
+                    Location = (8, 30)
+                    Tooltip = "parameter x"
+                }
                 {
                     Content = "what = "
                     Location = (9, 19)
+                    Tooltip = "parameter what"
                 }
                 {
                     Content = "what2 = "
                     Location = (9, 26)
+                    Tooltip = "parameter what2"
                 }
                 {
                     Content = "alone = "
                     Location = (10, 18)
+                    Tooltip = "parameter alone"
                 }
             ]
 
         let actual = getParameterNameHints document
 
-        Assert.AreEqual(expected, actual)
+        Assert.Equal(expected, actual)
 
-    [<Test>]
+    [<Fact>]
     let ``Hints are shown for constructor parameters`` () =
         let code =
             """
@@ -272,22 +292,25 @@ let a = C (1, "")
                 {
                     Content = "blahFirst = "
                     Location = (2, 40)
+                    Tooltip = "parameter blahFirst"
                 }
                 {
                     Content = "blah = "
                     Location = (4, 12)
+                    Tooltip = "parameter blah"
                 }
                 {
                     Content = "blah2 = "
                     Location = (4, 15)
+                    Tooltip = "parameter blah2"
                 }
             ]
 
         let actual = getParameterNameHints document
 
-        Assert.AreEqual(expected, actual)
+        Assert.Equal(expected, actual)
 
-    [<Test>]
+    [<Fact>]
     let ``Hints are shown for discriminated union case fields with explicit names`` () =
         let code =
             """
@@ -306,22 +329,25 @@ let b = Rectangle (1, 2)
                 {
                     Content = "side = "
                     Location = (5, 16)
+                    Tooltip = "field side"
                 }
                 {
                     Content = "width = "
                     Location = (6, 20)
+                    Tooltip = "field width"
                 }
                 {
                     Content = "height = "
                     Location = (6, 23)
+                    Tooltip = "field height"
                 }
             ]
 
         let actual = getParameterNameHints document
 
-        Assert.AreEqual(expected, actual)
+        Assert.Equal(expected, actual)
 
-    [<Test>]
+    [<Fact>]
     let ``Hints for discriminated union case fields are not shown when names are generated`` () =
         let code =
             """
@@ -340,18 +366,20 @@ let d = Circle 1
                 {
                     Content = "side1 = "
                     Location = (5, 19)
+                    Tooltip = "field side1"
                 }
                 {
                     Content = "side3 = "
                     Location = (5, 25)
+                    Tooltip = "field side3"
                 }
             ]
 
         let actual = getParameterNameHints document
 
-        Assert.AreEqual(expected, actual)
+        Assert.Equal(expected, actual)
 
-    [<Test>]
+    [<Fact>]
     let ``Hints for discriminated union case fields are not shown when provided arguments don't match the expected count`` () =
         let code =
             """
@@ -366,9 +394,9 @@ let c = Triangle (1, 2)
 
         let actual = getParameterNameHints document
 
-        Assert.IsEmpty(actual)
+        Assert.Empty(actual)
 
-    [<Test>]
+    [<Fact>]
     let ``Hints for discriminated union case fields are not shown for Cons`` () =
         let code =
             """
@@ -380,4 +408,234 @@ type X =
 
         let actual = getParameterNameHints document
 
-        Assert.IsEmpty(actual)
+        Assert.Empty(actual)
+
+    [<Fact>]
+    let ``Hints are not shown in front of indexes`` () =
+        let code =
+            """
+let x = "test".Split("").[0].Split("");
+"""
+
+        let document = getFsDocument code
+
+        let expected =
+            [
+                {
+                    Content = "separator = "
+                    Location = (1, 22)
+                    Tooltip = "parameter separator"
+                }
+                {
+                    Content = "separator = "
+                    Location = (1, 36)
+                    Tooltip = "parameter separator"
+                }
+            ]
+
+        let actual = getParameterNameHints document
+
+        Assert.Equal(expected, actual)
+
+    [<Fact>]
+    let ``Hints are not shown for optional parameters with specified names`` () =
+        let code =
+            """
+type MyType() =
+
+    member _.MyMethod(?beep: int, ?bap: int, ?boop: int) = ()
+
+    member this.Foo = this.MyMethod(3, boop = 4)
+"""
+
+        let document = getFsDocument code
+
+        let expected =
+            [
+                {
+                    Content = "beep = "
+                    Location = (5, 37)
+                    Tooltip = "parameter beep"
+                }
+            ]
+
+        let actual = getParameterNameHints document
+
+        Assert.Equal(expected, actual)
+
+    [<Fact>]
+    let ``Hints are not shown when all optional parameters are named`` () =
+        let code =
+            """
+type MyType() =
+
+    member _.MyMethod(?beep: int, ?bap : int, ?boop : int) = ()
+
+    member this.Foo = this.MyMethod(bap = 3, beep = 4)
+"""
+
+        let document = getFsDocument code
+
+        let actual = getParameterNameHints document
+
+        Assert.Empty(actual)
+
+    [<Fact>]
+    let ``Hints are shown correctly for inner bindings`` () =
+        let code =
+            """
+let test sequences = 
+    sequences
+    |> Seq.map (fun sequence -> sequence |> Seq.map (fun sequence' -> sequence' |> Seq.map (fun item -> item)))
+"""
+
+        let document = getFsDocument code
+
+        let expected =
+            [
+                {
+                    Content = "mapping = "
+                    Location = (3, 16)
+                    Tooltip = "parameter mapping"
+                }
+                {
+                    Content = "mapping = "
+                    Location = (3, 53)
+                    Tooltip = "parameter mapping"
+                }
+                {
+                    Content = "mapping = "
+                    Location = (3, 92)
+                    Tooltip = "parameter mapping"
+                }
+            ]
+
+        let actual = getParameterNameHints document
+
+        Assert.Equal(expected, actual)
+
+    [<Fact>]
+    let ``Hints are shown correctly for custom operations`` () =
+        let code =
+            """
+let q = query { for x in { 1 .. 10 } do select x }
+"""
+
+        let document = getFsDocument code
+
+        let expected =
+            [
+                {
+                    Content = "projection = "
+                    Location = (1, 48)
+                    Tooltip = "parameter projection"
+                }
+            ]
+
+        let actual = getParameterNameHints document
+
+        Assert.Equal(expected, actual)
+
+    [<Fact>]
+    let ``Hints are not shown for custom operations with only 1 parameter`` () =
+        let code =
+            """
+let q = query { for _ in { 1 .. 10 } do count }
+"""
+
+        let document = getFsDocument code
+
+        let actual = getParameterNameHints document
+
+        Assert.Empty(actual)
+
+    [<Fact>]
+    let ``Hints are not shown when parameter names coincide with variable names`` () =
+        let code =
+            """
+let getFullName name surname = $"{name} {surname}"
+
+let name = "Robert"
+let lastName = "Smith"
+let fullName = getFullName name lastName
+"""
+
+        let document = getFsDocument code
+
+        let expected =
+            [
+                {
+                    Content = "surname = "
+                    Location = (5, 33)
+                    Tooltip = "parameter surname"
+                }
+            ]
+
+        let actual = getParameterNameHints document
+
+        Assert.Equal(expected, actual)
+
+    [<Fact>]
+    let ``Hints don't break with multi-line arguments`` () =
+        let code =
+            """
+None
+|> Option.map (fun x ->
+    x + 5
+    )
+|> ignore
+        """
+
+        let document = getFsDocument code
+
+        let expected =
+            [
+                {
+                    Content = "mapping = "
+                    Location = (2, 15)
+                    Tooltip = "parameter mapping"
+                }
+            ]
+
+        let actual = getParameterNameHints document
+
+        Assert.Equal(expected, actual)
+
+    [<Fact>]
+    let ``Hints are shown correctly in type constructors mixed with functions`` () =
+        let code =
+            """
+type X = | X of a: int list * b: string
+
+let x = X(List.map id [ 42 ], "")
+        """
+
+        let document = getFsDocument code
+
+        let expected =
+            [
+                {
+                    Content = "a = "
+                    Location = (3, 11)
+                    Tooltip = "field a"
+                }
+                {
+                    Content = "mapping = "
+                    Location = (3, 20)
+                    Tooltip = "parameter mapping"
+                }
+                {
+                    Content = "list = "
+                    Location = (3, 23)
+                    Tooltip = "parameter list"
+                }
+                {
+                    Content = "b = "
+                    Location = (3, 31)
+                    Tooltip = "field b"
+                }
+            ]
+
+        let actual = getParameterNameHints document
+
+        actual |> Assert.shouldBeEquivalentTo expected

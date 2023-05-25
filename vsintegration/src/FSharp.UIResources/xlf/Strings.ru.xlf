@@ -2,6 +2,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ru" original="../Strings.resx">
     <body>
+      <trans-unit id="AdditionalTelemetry">
+        <source>Additional performance telemetry (experimental)</source>
+        <target state="new">Additional performance telemetry (experimental)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Always_place_opens_at_top_level">
         <source>Always place open statements at the top level</source>
         <target state="translated">Всегда располагайте открытые операторы на верхнем уровне</target>
@@ -9,17 +14,32 @@
       </trans-unit>
       <trans-unit id="Enable_Fast_Find_References">
         <source>Enable fast find references &amp; rename (experimental)</source>
-        <target state="new">Enable fast find references &amp; rename (experimental)</target>
+        <target state="translated">Включить быстрый поиск ссылок и переименование (экспериментальная версия)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enable_Live_Buffers">
+        <source>Use live (unsaved) buffers for checking (restart required)</source>
+        <target state="translated">Использовать динамические (несохраненные) буферы для проверки (требуется перезагрузка)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enable_partial_type_checking">
+        <source>Enable partial type checking</source>
+        <target state="translated">Включить частичную проверку типов</target>
         <note />
       </trans-unit>
       <trans-unit id="Find_References_Performance">
         <source>Find References Performance Options</source>
-        <target state="new">Find References Performance Options</target>
+        <target state="translated">Параметры производительности поиска ссылок</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Formatting">
+        <source>Formatting</source>
+        <target state="translated">Форматирование</target>
         <note />
       </trans-unit>
       <trans-unit id="Inline_Hints">
         <source>Inline Hints</source>
-        <target state="new">Inline Hints</target>
+        <target state="translated">Встроенные подсказки</target>
         <note />
       </trans-unit>
       <trans-unit id="Code_Fixes">
@@ -37,14 +57,9 @@
         <target state="translated">Диагностика</target>
         <note />
       </trans-unit>
-      <trans-unit id="Enable_Parallel_Checking_With_Signature_Files">
-        <source>Enable parallel type checking with signature files</source>
-        <target state="new">Enable parallel type checking with signature files</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Enable_Parallel_Reference_Resolution">
         <source>Enable parallel reference resolution</source>
-        <target state="new">Enable parallel reference resolution</target>
+        <target state="translated">Включить параллельное разрешение ссылок</target>
         <note />
       </trans-unit>
       <trans-unit id="Language_Service_Performance">
@@ -62,6 +77,11 @@
         <target state="translated">Пу_нктирное подчеркивание</target>
         <note />
       </trans-unit>
+      <trans-unit id="LiveBuffers">
+        <source>Live Buffers (experimental)</source>
+        <target state="translated">Динамические буферы (экспериментальная функция)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Navigation_links">
         <source>Navigation links</source>
         <target state="translated">Ссылки навигации</target>
@@ -69,17 +89,32 @@
       </trans-unit>
       <trans-unit id="Parallelization">
         <source>Parallelization (requires restart)</source>
-        <target state="new">Parallelization (requires restart)</target>
+        <target state="translated">Параллелизация (требуется перезапуск)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Preferred_description_width_in_characters">
+        <source>Preferred description width in characters</source>
+        <target state="translated">Предпочитаемая ширина описания в символах</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Send_Additional_Telemetry">
+        <source>Send additional performance telemetry</source>
+        <target state="new">Send additional performance telemetry</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Parameter_Name_Hints">
-        <source>Display inline parameter name hints (experimental)</source>
-        <target state="new">Display inline parameter name hints (experimental)</target>
+        <source>Display inline parameter name hints (preview)</source>
+        <target state="translated">Отображение подсказок для имен встроенных параметров (предварительная версия)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Type_Hints">
-        <source>Display inline type hints (experimental)</source>
-        <target state="new">Display inline type hints (experimental)</target>
+        <source>Display inline type hints (preview)</source>
+        <target state="translated">Отображение подсказок для встроенных типов (предварительная версия)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Return_Type_Hints">
+        <source>Display return type hints (preview)</source>
+        <target state="translated">Отображение подсказок типа возвращаемого значения (предварительная версия)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_all_symbols">
@@ -95,11 +130,6 @@
       <trans-unit id="Show_completion_list_after_a_character_is_typed">
         <source>_Show completion list after a character is typed</source>
         <target state="translated">_Показывать список завершения после ввода знака</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Enable_in_memory_cross_project_references">
-        <source>_Enable in-memory cross project references</source>
-        <target state="translated">_Включить перекрестные ссылки между проектами в памяти</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_navigation_links_as">
@@ -120,6 +150,11 @@
       <trans-unit id="Text_hover">
         <source>Text hover</source>
         <target state="translated">Текст, отображаемый при наведении</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Tooltip_preferred_description_width_in_characters">
+        <source>Format signature to the given width by adding line breaks conforming with F# syntax rules. </source>
+        <target state="translated">Форматирование подписи до заданной ширины путем добавления разрывов строк, соответствующих правилам синтаксиса F#. </target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
@@ -172,11 +207,6 @@
         <target state="translated">Включение устаревших данных для функций IntelliSense</target>
         <note />
       </trans-unit>
-      <trans-unit id="Tooltip_in_memory_cross_project_references">
-        <source>In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</source>
-        <target state="translated">Перекрестные ссылки между проектами в памяти хранят данные уровня проекта в памяти, поэтому функции и компоненты IDE могут работать в разных проектах.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Enter_key_always">
         <source>Always add new line on enter</source>
         <target state="translated">Всегда добавлять новую строку при нажатии клавиши ВВОД</target>
@@ -205,6 +235,11 @@
       <trans-unit id="Suggest_names_for_errors_code_fix">
         <source>Suggest names for unresolved identifiers</source>
         <target state="translated">Предлагать имена для неразрешенных идентификаторов</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Use_syntax_tree_cache">
+        <source>Cache parsing results (experimental)</source>
+        <target state="translated">Результаты анализа кэша (экспериментальная функция)</target>
         <note />
       </trans-unit>
     </body>

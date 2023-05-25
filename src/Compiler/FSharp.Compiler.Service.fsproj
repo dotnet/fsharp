@@ -25,16 +25,12 @@
     <FsYaccOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsYaccOutputFolder>
     <FsLexOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsLexOutputFolder>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <Configurations>Debug;Release;ReleaseCompressed</Configurations>
   </PropertyGroup>
 
   <!--  The FSharp.Compiler.Service dll provides a referencable public interface for tool builders -->
   <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
     <CompressMetadata Condition="'$(CompressAllMetadata)' != 'true'">false</CompressMetadata>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <FsYaccOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsYaccOutputFolder>
-    <FsLexOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsLexOutputFolder>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -80,6 +76,7 @@
     <InternalsVisibleTo Include="LanguageServiceProfiling" />
     <InternalsVisibleTo Include="FSharp.Compiler.Benchmarks" />
     <InternalsVisibleTo Include="HistoricalBenchmark" />
+    <InternalsVisibleTo Include="FSharp.Test.Utilities" />
   </ItemGroup>
 
   <ItemGroup>
@@ -158,14 +155,14 @@
     <Compile Include="Facilities\BuildGraph.fsi" />
     <Compile Include="Facilities\BuildGraph.fs" />
     <FsLex Include="AbstractIL\illex.fsl">
-      <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
+      <OtherFlags>--module FSharp.Compiler.AbstractIL.AsciiLexer --internal --open Internal.Utilities.Text.Lexing --open FSharp.Compiler.AbstractIL.AsciiParser --unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
       <Link>AbstractIL\illex.fsl</Link>
     </FsLex>
     <None Include="AbstractIL\illex.fsl">
       <Link>AbstractIL\illex.fsl</Link>
     </None>
     <FsYacc Include="AbstractIL\ilpars.fsy">
-      <OtherFlags>--module FSharp.Compiler.AbstractIL.AsciiParser --open FSharp.Compiler.AbstractIL --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <OtherFlags>--module FSharp.Compiler.AbstractIL.AsciiParser --open FSharp.Compiler.AbstractIL.AsciiConstants --open FSharp.Compiler.AbstractIL.IL --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing --buffer-type-argument char</OtherFlags>
       <Link>AbstractIL\ilpars.fsy</Link>
     </FsYacc>
     <None Include="AbstractIL\ilpars.fsy">
@@ -177,8 +174,14 @@
     <Compile Include="AbstractIL\ilx.fs" />
     <Compile Include="AbstractIL\ilascii.fsi" />
     <Compile Include="AbstractIL\ilascii.fs" />
+    <Compile Include="$(FsYaccOutputFolder)ilpars.fsi">
+      <Link>AbstractIL\FsYaccOut\ilpars.fsi</Link>
+    </Compile>
     <Compile Include="$(FsYaccOutputFolder)ilpars.fs">
       <Link>AbstractIL\FsYaccOut\ilpars.fs</Link>
+    </Compile>
+    <Compile Include="$(FsLexOutputFolder)illex.fsi">
+      <Link>AbstractIL\FsLexOut\illex.fsi</Link>
     </Compile>
     <Compile Include="$(FsLexOutputFolder)illex.fs">
       <Link>AbstractIL\FsLexOut\illex.fs</Link>
@@ -206,19 +209,19 @@
     <Compile Include="SyntaxTree\PrettyNaming.fsi" />
     <Compile Include="SyntaxTree\PrettyNaming.fs" />
     <FsLex Include="pplex.fsl">
-      <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
+      <OtherFlags>--module FSharp.Compiler.PPLexer --internal --open FSharp.Compiler.Lexhelp --open Internal.Utilities.Text.Lexing --open FSharp.Compiler.PPParser --unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
       <Link>SyntaxTree\pplex.fsl</Link>
     </FsLex>
     <FsYacc Include="pppars.fsy">
-      <OtherFlags>--module FSharp.Compiler.PPParser --open FSharp.Compiler --open FSharp.Compiler.Syntax --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <OtherFlags>--module FSharp.Compiler.PPParser --open FSharp.Compiler.ParseHelpers --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing --buffer-type-argument char</OtherFlags>
       <Link>SyntaxTree\pppars.fsy</Link>
     </FsYacc>
     <FsLex Include="lex.fsl">
-      <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
+      <OtherFlags>--module FSharp.Compiler.Lexer --open FSharp.Compiler.Lexhelp --open Internal.Utilities.Text.Lexing --open FSharp.Compiler.Parser --open FSharp.Compiler.Text --open FSharp.Compiler.ParseHelpers --internal --unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
       <Link>SyntaxTree\lex.fsl</Link>
     </FsLex>
     <FsYacc Include="pars.fsy">
-      <OtherFlags>-v --module FSharp.Compiler.Parser --open FSharp.Compiler --open FSharp.Compiler.Syntax --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <OtherFlags>-v --module FSharp.Compiler.Parser --open FSharp.Compiler --open FSharp.Compiler.Syntax --open FSharp.Compiler.Text --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing --buffer-type-argument char</OtherFlags>
       <Link>SyntaxTree\pars.fsy</Link>
     </FsYacc>
     <None Include="pplex.fsl">
@@ -245,8 +248,14 @@
     <Compile Include="SyntaxTree\SyntaxTreeOps.fs" />
     <Compile Include="SyntaxTree\ParseHelpers.fsi" />
     <Compile Include="SyntaxTree\ParseHelpers.fs" />
+    <Compile Include="$(FsYaccOutputFolder)pppars.fsi">
+      <Link>SyntaxTree\FsYaccOutput\pppars.fsi</Link>
+    </Compile>
     <Compile Include="$(FsYaccOutputFolder)pppars.fs">
       <Link>SyntaxTree\FsYaccOutput\pppars.fs</Link>
+    </Compile>
+    <Compile Include="$(FsYaccOutputFolder)pars.fsi">
+      <Link>SyntaxTree\FsYaccOutput\pars.fsi</Link>
     </Compile>
     <Compile Include="$(FsYaccOutputFolder)pars.fs">
       <Link>SyntaxTree\FsYaccOutput\pars.fs</Link>
@@ -257,8 +266,14 @@
     <Compile Include="SyntaxTree\LexHelpers.fs">
       <Link>SyntaxTree\LexHelpers.fs</Link>
     </Compile>
+    <Compile Include="$(FsYaccOutputFolder)pplex.fsi">
+      <Link>SyntaxTree\FsLexOutput\pplex.fsi</Link>
+    </Compile>
     <Compile Include="$(FsYaccOutputFolder)pplex.fs">
       <Link>SyntaxTree\FsLexOutput\pplex.fs</Link>
+    </Compile>
+    <Compile Include="$(FsYaccOutputFolder)\lex.fsi">
+      <Link>SyntaxTree\FsLexOutput\lex.fsi</Link>
     </Compile>
     <Compile Include="$(FsYaccOutputFolder)\lex.fs">
       <Link>SyntaxTree\FsLexOutput\lex.fs</Link>
@@ -282,6 +297,8 @@
     <Compile Include="TypedTree\TypedTreeOps.fs" />
     <Compile Include="TypedTree\TypedTreePickle.fsi" />
     <Compile Include="TypedTree\TypedTreePickle.fs" />
+    <Compile Include="TypedTree\UpdatePrettyTyparNames.fsi" />
+    <Compile Include="TypedTree\UpdatePrettyTyparNames.fs" />
     <Compile Include="Checking\import.fsi" />
     <Compile Include="Checking\import.fs" />
     <Compile Include="Checking\TypeHierarchy.fsi" />
@@ -322,6 +339,8 @@
     <Compile Include="Checking\PostInferenceChecks.fs" />
     <Compile Include="Checking\CheckBasics.fsi" />
     <Compile Include="Checking\CheckBasics.fs" />
+    <Compile Include="Checking\CheckRecordSyntaxHelpers.fsi" />
+    <Compile Include="Checking\CheckRecordSyntaxHelpers.fs" />
     <Compile Include="Checking\CheckExpressions.fsi" />
     <Compile Include="Checking\CheckExpressions.fs" />
     <Compile Include="Checking\CheckPatterns.fsi" />
@@ -348,6 +367,8 @@
     <Compile Include="Optimize\LowerStateMachines.fs" />
     <Compile Include="Optimize\LowerLocalMutables.fsi" />
     <Compile Include="Optimize\LowerLocalMutables.fs" />
+    <Compile Include="CodeGen\IlxGenSupport.fsi" />
+    <Compile Include="CodeGen\IlxGenSupport.fs" />
     <Compile Include="CodeGen\EraseClosures.fsi" />
     <Compile Include="CodeGen\EraseClosures.fs" />
     <Compile Include="CodeGen\EraseUnions.fsi" />
@@ -380,6 +401,23 @@
     <Compile Include="Driver\CompilerImports.fs" />
     <Compile Include="Driver\CompilerDiagnostics.fsi" />
     <Compile Include="Driver\CompilerDiagnostics.fs" />
+    <Compile Include="Driver\GraphChecking\Continuation.fsi" />
+    <Compile Include="Driver\GraphChecking\Continuation.fs" />
+    <Compile Include="Driver\GraphChecking\Types.fsi" />
+    <Compile Include="Driver\GraphChecking\Types.fs" />
+    <Compile Include="Driver\GraphChecking\Graph.fsi" />
+    <Compile Include="Driver\GraphChecking\Graph.fs" />
+    <Compile Include="Driver\GraphChecking\TrieMapping.fsi" />
+    <Compile Include="Driver\GraphChecking\TrieMapping.fs" />
+    <Compile Include="Driver\GraphChecking\FileContentMapping.fsi" />
+    <Compile Include="Driver\GraphChecking\FileContentMapping.fs" />
+    <Compile Include="Driver\GraphChecking\DependencyResolution.fsi" />
+    <Compile Include="Driver\GraphChecking\DependencyResolution.fs" />
+    <Compile Include="Driver\GraphChecking\GraphProcessing.fsi" />
+    <Compile Include="Driver\GraphChecking\GraphProcessing.fs" />
+    <Compile Include="Driver\GraphChecking\TypeCheckingGraphProcessing.fsi" />
+    <Compile Include="Driver\GraphChecking\TypeCheckingGraphProcessing.fs" />
+    <Content Include="Driver\GraphChecking\Docs.md" />
     <Compile Include="Driver\ParseAndCheckInputs.fsi" />
     <Compile Include="Driver\ParseAndCheckInputs.fs" />
     <Compile Include="Driver\ScriptClosure.fsi" />
@@ -473,6 +511,27 @@
     </None>
   </ItemGroup>
 
+  <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
+    <OutputPath>$(ArtifactsDir)/bin/$(MSBuildProjectName)/$(Configuration)/</OutputPath>
+    <IntermediateOutputPath>$(ArtifactsDir)obj/$(MSBuildProjectName)/$(Configuration)/</IntermediateOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
+    <!-- We are setting TFM explicitly here, since we are only using fslexyacc's dlls in msbuild -->
+    <ProjectReference Include="$(RepoRoot)\buildtools\fslex\fslex.fsproj" ReferenceOutputAssembly="False">
+      <SetTargetFramework>TargetFramework=net7.0</SetTargetFramework>
+      <ExcludeAssets>compile</ExcludeAssets>
+    </ProjectReference>
+    <ProjectReference Include="$(RepoRoot)\buildtools\fsyacc\fsyacc.fsproj" ReferenceOutputAssembly="False">
+      <SetTargetFramework>TargetFramework=net7.0</SetTargetFramework>
+      <ExcludeAssets>compile</ExcludeAssets>
+    </ProjectReference>
+    <ProjectReference Include="$(RepoRoot)\buildtools\AssemblyCheck\AssemblyCheck.fsproj" ReferenceOutputAssembly="False">
+      <SetTargetFramework>TargetFramework=net7.0</SetTargetFramework>
+      <ExcludeAssets>compile</ExcludeAssets>
+    </ProjectReference>
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.Nuget.fsproj" />
   </ItemGroup>
@@ -493,6 +552,11 @@
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="$(SystemDiagnosticsDiagnosticSourceVersion)" />
     <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Driver\parallel-optimization.md" />
+    <None Include="Driver\parallel-optimization.drawio.svg" />
   </ItemGroup>
 
 </Project>

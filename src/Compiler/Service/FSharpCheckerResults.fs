@@ -11,6 +11,7 @@ open System.IO
 open System.Reflection
 open System.Threading
 open FSharp.Compiler.IO
+open FSharp.Compiler.NicePrint
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Core.Printf
@@ -258,9 +259,30 @@ type FSharpSymbolUse(denv: DisplayEnv, symbol: FSharpSymbol, inst: TyparInstanti
 
     member _.Range = range
 
+    member this.IsPrivateToFileAndSignatureFile =
+
+        let couldBeParameter, declarationLocation =
+            match this.Symbol with
+            | :? FSharpParameter as p -> true, Some p.DeclarationLocation
+            | :? FSharpMemberOrFunctionOrValue as m when not m.IsModuleValueOrMember -> true, Some m.DeclarationLocation
+            | _ -> false, None
+
+        let thisIsSignature = SourceFileImpl.IsSignatureFile this.Range.FileName
+
+        let signatureLocation = this.Symbol.SignatureLocation
+
+        couldBeParameter
+        && (thisIsSignature
+            || (signatureLocation.IsSome && signatureLocation <> declarationLocation))
+
     member this.IsPrivateToFile =
+
         let isPrivate =
             match this.Symbol with
+            | _ when this.IsPrivateToFileAndSignatureFile -> false
+            | :? FSharpMemberOrFunctionOrValue as m when not m.IsModuleValueOrMember ->
+                // local binding or parameter
+                true
             | :? FSharpMemberOrFunctionOrValue as m ->
                 let fileSignatureLocation =
                     m.DeclaringEntity |> Option.bind (fun e -> e.SignatureLocation)
@@ -270,12 +292,9 @@ type FSharpSymbolUse(denv: DisplayEnv, symbol: FSharpSymbol, inst: TyparInstanti
 
                 let fileHasSignatureFile = fileSignatureLocation <> fileDeclarationLocation
 
-                let symbolIsNotInSignatureFile = m.SignatureLocation = Some m.DeclarationLocation
-
-                fileHasSignatureFile && symbolIsNotInSignatureFile
-                || not m.IsModuleValueOrMember
-                || m.Accessibility.IsPrivate
+                fileHasSignatureFile && not m.HasSignatureFile || m.Accessibility.IsPrivate
             | :? FSharpEntity as m -> m.Accessibility.IsPrivate
+            | :? FSharpParameter -> true
             | :? FSharpGenericParameter -> true
             | :? FSharpUnionCase as m -> m.Accessibility.IsPrivate
             | :? FSharpField as m -> m.Accessibility.IsPrivate
@@ -352,7 +371,10 @@ type internal TypeCheckInfo
     // this unchanged file. Keyed on lineStr though to prevent a change to the currently line
     // being available against a stale scope.
     let getToolTipTextCache =
-        AgedLookup<AnyCallerThreadToken, int * int * string, ToolTipText>(getToolTipTextSize, areSimilar = (fun (x, y) -> x = y))
+        AgedLookup<AnyCallerThreadToken, int * int * string * int option, ToolTipText>(
+            getToolTipTextSize,
+            areSimilar = (fun (x, y) -> x = y)
+        )
 
     let amap = tcImports.GetImportMap()
     let infoReader = InfoReader(g, amap)
@@ -575,7 +597,7 @@ type internal TypeCheckInfo
                 x
                 |> List.choose (fun (ParamData (_isParamArray, _isInArg, _isOutArg, _optArgInfo, _callerInfo, name, _, ty)) ->
                     match name with
-                    | Some id -> Some(Item.ArgName(Some id, ty, Some(ArgumentContainer.Method meth), id.idRange))
+                    | Some id -> Some(Item.OtherName(Some id, ty, None, Some(ArgumentContainer.Method meth), id.idRange))
                     | None -> None)
             | _ -> [])
 
@@ -645,24 +667,54 @@ type internal TypeCheckInfo
         let thereWereSomeQuals = not (Array.isEmpty quals)
         thereWereSomeQuals, quals
 
-    /// obtains captured typing for the given position
-    /// if type of captured typing is record - returns list of record fields
-    let GetRecdFieldsForExpr (r: range) =
-        let _, quals = GetExprTypingForPosition(r.End)
+    /// Returns the list of available record fields, taking into account potential nesting
+    let GetRecdFieldsForCopyAndUpdateExpr (identRange: range, plid: string list) =
+        let rec dive ty (denv: DisplayEnv) ad m plid isPastTypePrefix wasPathEmpty =
+            if isRecdTy denv.g ty then
+                let fields =
+                    ncenv.InfoReader.GetRecordOrClassFieldsOfType(None, ad, m, ty)
+                    |> List.filter (fun rfref -> not rfref.IsStatic && IsFieldInfoAccessible ad rfref)
 
-        let bestQual =
-            match quals with
-            | [||] -> None
-            | quals ->
-                quals
-                |> Array.tryFind (fun (_, _, _, rq) ->
-                    ignore (r) // for breakpoint
-                    posEq r.Start rq.Start)
+                match plid with
+                | [] ->
+                    if wasPathEmpty || isPastTypePrefix then
+                        Some(fields |> List.map Item.RecdField, denv, m)
+                    else
+                        None
+                | id :: rest ->
+                    match fields |> List.tryFind (fun f -> f.LogicalName = id) with
+                    | Some f -> dive f.RecdField.FormalType denv ad m rest true wasPathEmpty
+                    | _ ->
+                        // Field name can be optionally qualified.
+                        // If we haven't matched a field name yet, keep peeling off the prefix.
+                        if isPastTypePrefix then
+                            Some([], denv, m)
+                        else
+                            dive ty denv ad m rest false wasPathEmpty
+            else
+                match tryDestAnonRecdTy denv.g ty with
+                | ValueSome (anonInfo, tys) ->
+                    match plid with
+                    | [] ->
+                        let items =
+                            [
+                                for i in 0 .. anonInfo.SortedIds.Length - 1 do
+                                    Item.AnonRecdField(anonInfo, tys, i, anonInfo.SortedIds[i].idRange)
+                            ]
 
-        match bestQual with
-        | Some (ty, nenv, ad, m) when isRecdTy nenv.DisplayEnv.g ty ->
-            let items = ResolveRecordOrClassFieldsOfType ncenv m ad ty false
-            Some(items, nenv.DisplayEnv, m)
+                        Some(items, denv, m)
+                    | id :: rest ->
+                        match anonInfo.SortedNames |> Array.tryFindIndex (fun x -> x = id) with
+                        | Some i -> dive tys[i] denv ad m rest true wasPathEmpty
+                        | _ -> Some([], denv, m)
+                | ValueNone -> Some([], denv, m)
+
+        match
+            GetExprTypingForPosition identRange.End
+            |> snd
+            |> Array.tryFind (fun (_, _, _, rq) -> posEq identRange.Start rq.Start)
+        with
+        | Some (ty, nenv, ad, m) -> dive ty nenv.DisplayEnv ad m plid false plid.IsEmpty
         | _ -> None
 
     /// Looks at the exact expression types at the position to the left of the
@@ -785,6 +837,7 @@ type internal TypeCheckInfo
                        ||
 #endif
                        nameMatchesResidue tcref.DisplayName)
+            | Item.Value v when (v.IsPropertyGetterMethod || v.IsPropertySetterMethod) -> residue = v.Id.idText || residue = n1
             | _ -> residue = n1)
 
     /// Post-filter items to make sure they have precisely the right name
@@ -834,7 +887,7 @@ type internal TypeCheckInfo
             if p >= 0 then Some p else None
 
     /// Build a CompetionItem
-    let CompletionItem (ty: ValueOption<TyconRef>) (assemblySymbol: ValueOption<AssemblySymbol>) (item: ItemWithInst) =
+    let CompletionItem (ty: TyconRef voption) (assemblySymbol: AssemblySymbol voption) (item: ItemWithInst) =
         let kind =
             match item.Item with
             | Item.FakeInterfaceCtor _
@@ -868,7 +921,7 @@ type internal TypeCheckInfo
             | Item.NewDef _
             | Item.SetterArg _
             | Item.CustomBuilder _
-            | Item.ArgName _
+            | Item.OtherName _
             | Item.ActivePatternCase _ -> CompletionItemKind.Other
 
         let isUnresolved =
@@ -1249,8 +1302,8 @@ type internal TypeCheckInfo
                 GetEnvironmentLookupResolutionsIncludingRecordFieldsAtPosition cursorPos [] envItems
 
             // Completion at ' { XXX = ... with ... } "
-            | Some (CompletionContext.RecordField (RecordContext.CopyOnUpdate (r, (plid, _)))) ->
-                match GetRecdFieldsForExpr(r) with
+            | Some (CompletionContext.RecordField (RecordContext.CopyOnUpdate (identRange, (plid, _)))) ->
+                match GetRecdFieldsForCopyAndUpdateExpr(identRange, plid) with
                 | None ->
                     Some(GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid, false))
                     |> Option.map toCompletionItems
@@ -1258,13 +1311,14 @@ type internal TypeCheckInfo
 
             // Completion at ' { XXX = ... with ... } "
             | Some (CompletionContext.RecordField (RecordContext.Constructor (typeName))) ->
-                Some(GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, [ typeName ], false))
-                |> Option.map toCompletionItems
+                GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, [ typeName ], false)
+                |> toCompletionItems
+                |> Some
 
             // No completion at '...: string'
             | Some (CompletionContext.RecordField (RecordContext.Declaration true)) -> None
 
-            // Completion at ' SomeMethod( ... ) ' with named arguments
+            // Completion at ' SomeMethod( ... ) ' or ' [<SomeAttribute( ... )>] ' with named arguments
             | Some (CompletionContext.ParameterList (endPos, fields)) ->
                 let results = GetNamedParametersAndSettableFields endPos
 
@@ -1437,7 +1491,7 @@ type internal TypeCheckInfo
 
     member _.GetVisibleNamespacesAndModulesAtPosition(cursorPos: pos) : ModuleOrNamespaceRef list =
         let (nenv, ad), m = GetBestEnvForPos cursorPos
-        GetVisibleNamespacesAndModulesAtPoint ncenv nenv m ad
+        GetVisibleNamespacesAndModulesAtPoint ncenv nenv OpenQualified m ad
 
     /// Determines if a long ident is resolvable at a specific point.
     member _.IsRelativeNameResolvable(cursorPos: pos, plid: string list, item: Item) : bool =
@@ -1616,7 +1670,7 @@ type internal TypeCheckInfo
                 [])
 
     /// Get the "reference resolution" tooltip for at a location
-    member _.GetReferenceResolutionStructuredToolTipText(line, col) =
+    member _.GetReferenceResolutionStructuredToolTipText(line, col, width) =
 
         let pos = mkPos line col
 
@@ -1646,6 +1700,8 @@ type internal TypeCheckInfo
                 let tip =
                     wordL (TaggedText.tagStringLiteral ((resolved.prepareToolTip ()).TrimEnd([| '\n' |])))
 
+                let tip = PrintUtilities.squashToWidth width tip
+
                 let tip = LayoutRender.toArray tip
                 ToolTipText.ToolTipText [ ToolTipElement.Single(tip, FSharpXmlDoc.None) ]
 
@@ -1668,6 +1724,7 @@ type internal TypeCheckInfo
                         [
                             for line in lines ->
                                 let tip = wordL (TaggedText.tagStringLiteral line)
+                                let tip = PrintUtilities.squashToWidth width tip
                                 let tip = LayoutRender.toArray tip
                                 ToolTipElement.Single(tip, FSharpXmlDoc.None)
                         ]
@@ -1690,12 +1747,12 @@ type internal TypeCheckInfo
             }
 
         let toolTipElement =
-            FormatStructuredDescriptionOfItem displayFullName infoReader accessorDomain m denv itemWithInst
+            FormatStructuredDescriptionOfItem displayFullName infoReader accessorDomain m denv itemWithInst (Some symbol) None
 
         ToolTipText [ toolTipElement ]
 
     // GetToolTipText: return the "pop up" (or "Quick Info") text given a certain context.
-    member _.GetStructuredToolTipText(line, lineStr, colAtEndOfNames, names) =
+    member _.GetStructuredToolTipText(line, lineStr, colAtEndOfNames, names, width) =
         let Compute () =
             DiagnosticsScope.Protect
                 range0
@@ -1720,7 +1777,9 @@ type internal TypeCheckInfo
                     | Some (items, denv, _, m) ->
                         ToolTipText(
                             items
-                            |> List.map (fun x -> FormatStructuredDescriptionOfItem false infoReader tcAccessRights m denv x.ItemWithInst)
+                            |> List.map (fun x ->
+                                let symbol = Some(FSharpSymbol.Create(cenv, x.Item))
+                                FormatStructuredDescriptionOfItem false infoReader tcAccessRights m denv x.ItemWithInst symbol width)
                         ))
 
                 (fun err ->
@@ -1728,7 +1787,7 @@ type internal TypeCheckInfo
                     ToolTipText [ ToolTipElement.CompositionError err ])
 
         // See devdiv bug 646520 for rationale behind truncating and caching these quick infos (they can be big!)
-        let key = line, colAtEndOfNames, lineStr
+        let key = line, colAtEndOfNames, lineStr, width
 
         match getToolTipTextCache.TryGet(AnyCallerThread, key) with
         | Some res -> res
@@ -2294,7 +2353,7 @@ module internal ParseAndCheckFile =
 
             let rec matchBraces stack =
                 match lexfun lexbuf, stack with
-                | tok2, (tok1, m1) :: stackAfterMatch when parenTokensBalance tok1 tok2 ->
+                | tok2, (tok1, braceOffset, m1) :: stackAfterMatch when parenTokensBalance tok1 tok2 ->
                     let m2 = lexbuf.LexemeRange
 
                     // For INTERP_STRING_PART and INTERP_STRING_END grab the one character
@@ -2302,7 +2361,11 @@ module internal ParseAndCheckFile =
                     let m2Start =
                         match tok2 with
                         | INTERP_STRING_PART _
-                        | INTERP_STRING_END _ -> mkFileIndexRange m2.FileIndex m2.Start (mkPos m2.Start.Line (m2.Start.Column + 1))
+                        | INTERP_STRING_END _ ->
+                            mkFileIndexRange
+                                m2.FileIndex
+                                (mkPos m2.Start.Line (m2.Start.Column - braceOffset))
+                                (mkPos m2.Start.Line (m2.Start.Column + 1))
                         | _ -> m2
 
                     matchingBraces.Add(m1, m2Start)
@@ -2313,15 +2376,15 @@ module internal ParseAndCheckFile =
                         match tok2 with
                         | INTERP_STRING_PART _ ->
                             let m2End =
-                                mkFileIndexRange m2.FileIndex (mkPos m2.End.Line (max (m2.End.Column - 1) 0)) m2.End
+                                mkFileIndexRange m2.FileIndex (mkPos m2.End.Line (max (m2.End.Column - 1 - braceOffset) 0)) m2.End
 
-                            (tok2, m2End) :: stackAfterMatch
+                            (tok2, braceOffset, m2End) :: stackAfterMatch
                         | _ -> stackAfterMatch
 
                     matchBraces stackAfterMatch
 
                 | LPAREN | LBRACE _ | LBRACK | LBRACE_BAR | LBRACK_BAR | LQUOTE _ | LBRACK_LESS as tok, _ ->
-                    matchBraces ((tok, lexbuf.LexemeRange) :: stack)
+                    matchBraces ((tok, 0, lexbuf.LexemeRange) :: stack)
 
                 // INTERP_STRING_BEGIN_PART corresponds to $"... {" at the start of an interpolated string
                 //
@@ -2331,12 +2394,18 @@ module internal ParseAndCheckFile =
                 //
                 // Either way we start a new potential match at the last character
                 | INTERP_STRING_BEGIN_PART _ | INTERP_STRING_PART _ as tok, _ ->
+                    let braceOffset =
+                        match tok with
+                        | INTERP_STRING_BEGIN_PART (_, SynStringKind.TripleQuote, (LexerContinuation.Token (_, (_, _, dl, _) :: _))) ->
+                            dl - 1
+                        | _ -> 0
+
                     let m = lexbuf.LexemeRange
 
                     let m2 =
-                        mkFileIndexRange m.FileIndex (mkPos m.End.Line (max (m.End.Column - 1) 0)) m.End
+                        mkFileIndexRange m.FileIndex (mkPos m.End.Line (max (m.End.Column - 1 - braceOffset) 0)) m.End
 
-                    matchBraces ((tok, m2) :: stack)
+                    matchBraces ((tok, braceOffset, m2) :: stack)
 
                 | (EOF _ | LEX_FAILURE _), _ -> ()
                 | _ -> matchBraces stack
@@ -2345,9 +2414,19 @@ module internal ParseAndCheckFile =
 
         matchingBraces.ToArray()
 
-    let parseFile (sourceText: ISourceText, fileName, options: FSharpParsingOptions, userOpName: string, suggestNamesForErrors: bool) =
+    let parseFile
+        (
+            sourceText: ISourceText,
+            fileName,
+            options: FSharpParsingOptions,
+            userOpName: string,
+            suggestNamesForErrors: bool,
+            identCapture: bool
+        ) =
         Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "parseFile", fileName)
-        use act = Activity.start "ParseAndCheckFile.parseFile" [| "fileName", fileName |]
+
+        use act =
+            Activity.start "ParseAndCheckFile.parseFile" [| Activity.Tags.fileName, fileName |]
 
         let errHandler =
             DiagnosticsHandler(true, fileName, options.DiagnosticOptions, sourceText, suggestNamesForErrors)
@@ -2375,7 +2454,9 @@ module internal ParseAndCheckFile =
                         lexbuf,
                         None,
                         fileName,
-                        (isLastCompiland, isExe)
+                        (isLastCompiland, isExe),
+                        identCapture,
+                        Some userOpName
                     )
                 with e ->
                     errHandler.DiagnosticsLogger.StopProcessingRecovery e range0 // don't re-raise any exceptions, we must return None.
@@ -2504,7 +2585,12 @@ module internal ParseAndCheckFile =
 
         cancellable {
             use _ =
-                Activity.start "ParseAndCheckFile.CheckOneFile" [| "fileName", mainInputFileName; "length", sourceText.Length.ToString() |]
+                Activity.start
+                    "ParseAndCheckFile.CheckOneFile"
+                    [|
+                        Activity.Tags.fileName, mainInputFileName
+                        Activity.Tags.length, sourceText.Length.ToString()
+                    |]
 
             let parsedMainInput = parseResults.ParseTree
 
@@ -2662,26 +2748,21 @@ type FSharpCheckFileResults
                     | None -> ()
                     | Some kwDescription ->
                         let kwText = kw |> TaggedText.tagKeyword |> wordL |> LayoutRender.toArray
-                        let kwTip = ToolTipElementData.Create(kwText, FSharpXmlDoc.None)
-
-                        let descText = kwDescription |> TaggedText.tagText |> wordL |> LayoutRender.toArray
-                        let descTip = ToolTipElementData.Create(descText, FSharpXmlDoc.None)
-
-                        yield ToolTipElement.Group [ kwTip; descTip ]
+                        yield ToolTipElement.Single(kwText, FSharpXmlDoc.FromXmlText(Xml.XmlDoc([| kwDescription |], range.Zero)))
             ]
 
     /// Resolve the names at the given location to give a data tip
-    member _.GetToolTip(line, colAtEndOfNames, lineText, names, tokenTag) =
+    member _.GetToolTip(line, colAtEndOfNames, lineText, names, tokenTag, width) =
         match tokenTagToTokenId tokenTag with
         | TOKEN_IDENT ->
             match details with
             | None -> emptyToolTip
-            | Some (scope, _builderOpt) -> scope.GetStructuredToolTipText(line, lineText, colAtEndOfNames, names)
+            | Some (scope, _builderOpt) -> scope.GetStructuredToolTipText(line, lineText, colAtEndOfNames, names, width)
         | TOKEN_STRING
         | TOKEN_STRING_TEXT ->
             match details with
             | None -> emptyToolTip
-            | Some (scope, _builderOpt) -> scope.GetReferenceResolutionStructuredToolTipText(line, colAtEndOfNames)
+            | Some (scope, _builderOpt) -> scope.GetReferenceResolutionStructuredToolTipText(line, colAtEndOfNames, width)
         | _ -> emptyToolTip
 
     member _.GetDescription(symbol: FSharpSymbol, inst: (FSharpGenericParameter * FSharpType) list, displayFullName, range: range) =
@@ -3173,7 +3254,14 @@ type FsiInteractiveChecker(legacyReferenceResolver, tcConfig: TcConfig, tcGlobal
                 FSharpParsingOptions.FromTcConfig(tcConfig, [| fileName |], true)
 
             let parseErrors, parsedInput, anyErrors =
-                ParseAndCheckFile.parseFile (sourceText, fileName, parsingOptions, userOpName, suggestNamesForErrors)
+                ParseAndCheckFile.parseFile (
+                    sourceText,
+                    fileName,
+                    parsingOptions,
+                    userOpName,
+                    suggestNamesForErrors,
+                    tcConfig.captureIdentifiersWhenParsing
+                )
 
             let dependencyFiles = [||] // interactions have no dependencies
 

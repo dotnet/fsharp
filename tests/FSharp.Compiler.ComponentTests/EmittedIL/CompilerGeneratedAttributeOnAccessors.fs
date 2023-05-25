@@ -185,3 +185,22 @@ module ``Auto-generated accessors have CompilerGenerated attribute`` =
         |> getMethod "get_Age"
         |> should haveAttribute "CompilerGeneratedAttribute"
         |> should haveAttribute "DebuggerNonUserCodeAttribute"
+
+// Regression: https://github.com/dotnet/fsharp/issues/14652
+module ``Let bindings in classes shoulnd't have DebuggerNonUserCodeAttribute`` =
+
+    [<Fact>]
+    let ``let binding doesn't have DebuggerNonUserCodeAttribute`` () =
+        FSharp
+            """
+            module Test
+
+            type User() =
+                let moo x = x + 1
+                member this.Age
+                    with get() = moo 9000
+            """
+        |> compileAssembly
+        |> getType "Test+User"
+        |> getPrivateMethod "moo"
+        |> shouldn't haveAttribute "DebuggerNonUserCodeAttribute"

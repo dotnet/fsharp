@@ -3,47 +3,50 @@
 namespace Microsoft.VisualStudio.FSharp.Editor.Hints
 
 open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
-open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
 open Hints
 
 module HintService =
-    let private getHintsForSymbol parseResults hintKinds (symbolUse: FSharpSymbolUse) =
-        match symbolUse.Symbol with
-        | :? FSharpMemberOrFunctionOrValue as symbol 
-          when hintKinds |> Set.contains HintKind.TypeHint 
-            && InlineTypeHints.isValidForHint parseResults symbol symbolUse ->
-            
-            InlineTypeHints.getHints symbol symbolUse
-        
-        | :? FSharpMemberOrFunctionOrValue as symbol
-          when hintKinds |> Set.contains HintKind.ParameterNameHint 
-            && InlineParameterNameHints.isMemberOrFunctionOrValueValidForHint symbol symbolUse ->
 
-            InlineParameterNameHints.getHintsForMemberOrFunctionOrValue parseResults symbol symbolUse
+    let private getHints sourceText parseResults hintKinds symbolUses (symbol: FSharpSymbol) =
 
-        | :? FSharpUnionCase as symbol
-          when hintKinds |> Set.contains HintKind.ParameterNameHint
-            && InlineParameterNameHints.isUnionCaseValidForHint symbol symbolUse ->
+        let getHintsPerKind hintKind =
+            match hintKind, symbol with
+            | HintKind.TypeHint, (:? FSharpMemberOrFunctionOrValue as symbol) ->
+                symbolUses |> Seq.collect (InlineTypeHints(parseResults, symbol)).getHints
+            | HintKind.ReturnTypeHint, (:? FSharpMemberOrFunctionOrValue as symbol) ->
+                symbolUses |> Seq.collect (InlineReturnTypeHints(parseResults, symbol).getHints)
+            | HintKind.ParameterNameHint, (:? FSharpMemberOrFunctionOrValue as symbol) ->
+                symbolUses
+                |> Seq.collect (InlineParameterNameHints(parseResults).getHintsForMemberOrFunctionOrValue sourceText symbol)
+            | HintKind.ParameterNameHint, (:? FSharpUnionCase as symbol) ->
+                symbolUses
+                |> Seq.collect (InlineParameterNameHints(parseResults).getHintsForUnionCase symbol)
+            | _ -> []
 
-          InlineParameterNameHints.getHintsForUnionCase parseResults symbol symbolUse
+        let rec getHints hintKinds acc =
+            match hintKinds with
+            | [] -> acc
+            | hintKind :: hintKinds -> getHintsPerKind hintKind :: acc |> getHints hintKinds
 
-        // we'll be adding other stuff gradually here
-        | _ -> 
-            []
+        getHints (hintKinds |> Set.toList) []
 
-    let getHintsForDocument (document: Document) hintKinds userOpName cancellationToken = 
+    let private getHintsForSymbol (sourceText: SourceText) parseResults hintKinds (symbol, symbolUses) =
+        let hints = getHints sourceText parseResults hintKinds symbolUses symbol
+        Seq.concat hints
+
+    let getHintsForDocument sourceText (document: Document) hintKinds userOpName cancellationToken =
         async {
-            if isSignatureFile document.FilePath
-            then 
+            if isSignatureFile document.FilePath then
                 return []
             else
-                let! parseResults, checkResults = 
-                    document.GetFSharpParseAndCheckResultsAsync userOpName 
-                
-                return 
+                let! parseResults, checkResults = document.GetFSharpParseAndCheckResultsAsync userOpName
+
+                return
                     checkResults.GetAllUsesOfAllSymbolsInFile cancellationToken
+                    |> Seq.groupBy (fun symbolUse -> symbolUse.Symbol)
+                    |> Seq.collect (getHintsForSymbol sourceText parseResults hintKinds)
                     |> Seq.toList
-                    |> List.collect (getHintsForSymbol parseResults hintKinds)
         }

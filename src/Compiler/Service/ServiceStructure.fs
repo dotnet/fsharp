@@ -5,6 +5,7 @@ namespace FSharp.Compiler.EditorServices
 open Internal.Utilities.Library
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
@@ -62,18 +63,6 @@ module Structure =
         | ls ->
             ls
             |> List.map (fun (SynTyparDecl (_, typarg)) -> typarg.Range)
-            |> List.reduce unionRanges
-
-    let rangeOfSynPatsElse other (synPats: SynSimplePat list) =
-        match synPats with
-        | [] -> other
-        | ls ->
-            ls
-            |> List.map (fun x ->
-                match x with
-                | SynSimplePat.Attrib (range = r)
-                | SynSimplePat.Id (range = r)
-                | SynSimplePat.Typed (range = r) -> r)
             |> List.reduce unionRanges
 
     /// Collapse indicates the way a range/snapshot should be collapsed. `Same` is for a scope inside
@@ -447,9 +436,7 @@ module Structure =
                 parseExpr e
 
             | SynExpr.Lambda (args = pats; body = e; range = r) ->
-                match pats with
-                | SynSimplePats.SimplePats (_, pr)
-                | SynSimplePats.Typed (_, _, pr) -> rcheck Scope.Lambda Collapse.Below r (Range.endToEnd pr r)
+                rcheck Scope.Lambda Collapse.Below r (Range.endToEnd pats.Range r)
 
                 parseExpr e
 
@@ -753,6 +740,64 @@ module Structure =
                     Some(mkRange "" (mkPos r.StartLine prefixLength) r.End)
                 | _ -> None)
 
+        let collectConditionalDirectives directives sourceLines =
+            let rec group directives stack (sourceLines: string array) =
+                match directives with
+                | [] -> ()
+                | ConditionalDirectiveTrivia.If _ as ifDirective :: directives -> group directives (ifDirective :: stack) sourceLines
+                | ConditionalDirectiveTrivia.Else elseRange as elseDirective :: directives ->
+                    match stack with
+                    | ConditionalDirectiveTrivia.If (_, ifRange) :: stack ->
+                        let startLineIndex = elseRange.StartLine - 2
+
+                        if startLineIndex >= 0 then
+                            // start of #if until the end of the line directly above #else
+                            let range =
+                                mkFileIndexRange
+                                    ifRange.FileIndex
+                                    ifRange.Start
+                                    (mkPos (elseRange.StartLine - 1) sourceLines[startLineIndex].Length)
+
+                            {
+                                Scope = Scope.HashDirective
+                                Collapse = Collapse.Same
+                                Range = range
+                                CollapseRange = range
+                            }
+                            |> acc.Add
+
+                        group directives (elseDirective :: stack) sourceLines
+                    | _ -> group directives stack sourceLines
+                | ConditionalDirectiveTrivia.EndIf endIfRange :: directives ->
+                    match stack with
+                    | ConditionalDirectiveTrivia.If (_, ifRange) :: stack ->
+                        let range = Range.startToEnd ifRange endIfRange
+
+                        {
+                            Scope = Scope.HashDirective
+                            Collapse = Collapse.Same
+                            Range = range
+                            CollapseRange = range
+                        }
+                        |> acc.Add
+
+                        group directives stack sourceLines
+                    | ConditionalDirectiveTrivia.Else elseRange :: stack ->
+                        let range = Range.startToEnd elseRange endIfRange
+
+                        {
+                            Scope = Scope.HashDirective
+                            Collapse = Collapse.Same
+                            Range = range
+                            CollapseRange = range
+                        }
+                        |> acc.Add
+
+                        group directives stack sourceLines
+                    | _ -> group directives stack sourceLines
+
+            group directives [] sourceLines
+
         let rec parseDeclaration (decl: SynModuleDecl) =
             match decl with
             | SynModuleDecl.Let (_, bindings, r) ->
@@ -803,7 +848,7 @@ module Structure =
             elif line.StartsWithOrdinal("//") then Some SingleLine
             else None
 
-        let getCommentRanges (lines: string[]) =
+        let getCommentRanges trivia (lines: string[]) =
             let rec loop (lastLineNum, currentComment, result as state) (lines: string list) lineNum =
                 match lines with
                 | [] -> state
@@ -856,6 +901,18 @@ module Structure =
                     CollapseRange = range
                 })
             |> acc.AddRange
+
+            for trivia in trivia do
+                match trivia with
+                | CommentTrivia.BlockComment m when m.StartLine <> m.EndLine ->
+                    {
+                        Scope = Scope.Comment
+                        Collapse = Collapse.Same
+                        Range = m
+                        CollapseRange = m
+                    }
+                    |> acc.Add
+                | _ -> ()
 
         //=======================================//
         //     Signature File AST Traversal      //
@@ -1059,9 +1116,11 @@ module Structure =
         match parsedInput with
         | ParsedInput.ImplFile file ->
             file.Contents |> List.iter parseModuleOrNamespace
-            getCommentRanges sourceLines
+            collectConditionalDirectives file.Trivia.ConditionalDirectives sourceLines
+            getCommentRanges file.Trivia.CodeComments sourceLines
         | ParsedInput.SigFile file ->
             file.Contents |> List.iter parseModuleOrNamespaceSigs
-            getCommentRanges sourceLines
+            collectConditionalDirectives file.Trivia.ConditionalDirectives sourceLines
+            getCommentRanges file.Trivia.CodeComments sourceLines
 
         acc :> seq<_>

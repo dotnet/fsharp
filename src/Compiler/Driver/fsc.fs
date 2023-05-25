@@ -536,6 +536,7 @@ let main1
         // Rather than start processing, just collect names, then process them.
         try
             let files = ProcessCommandLineFlags(tcConfigB, lcidFromCodePage, argv)
+            let files = CheckAndReportSourceFileDuplicates(ResizeArray.ofList files)
             AdjustForScriptCompile(tcConfigB, files, lexResourceManager, dependencyProvider)
         with e ->
             errorRecovery e rangeStartup
@@ -576,6 +577,20 @@ let main1
             delayForFlagsLogger.CommitDelayedDiagnostics(diagnosticsLoggerProvider, tcConfigB, exiter)
             exiter.Exit 1
 
+    if tcConfig.showTimes then
+        Activity.Profiling.addConsoleListener () |> disposables.Register
+
+    tcConfig.writeTimesToFile
+    |> Option.iter (fun f ->
+        Activity.CsvExport.addCsvFileListener f |> disposables.Register
+
+        Activity.start
+            "FSC compilation"
+            [
+                Activity.Tags.project, tcConfig.outputFile |> Option.defaultValue String.Empty
+            ]
+        |> disposables.Register)
+
     let diagnosticsLogger = diagnosticsLoggerProvider.CreateLogger(tcConfigB, exiter)
 
     // Install the global error logger and never remove it. This logger does have all command-line flags considered.
@@ -588,7 +603,7 @@ let main1
         AbortOnError(diagnosticsLogger, exiter)
 
     // Resolve assemblies
-    ReportTime tcConfig "Import mscorlib and FSharp.Core.dll"
+    ReportTime tcConfig "Import mscorlib+FSharp.Core"
     let foundationalTcConfigP = TcConfigProvider.Constant tcConfig
 
     let sysRes, otherRes, knownUnresolved =
@@ -762,7 +777,7 @@ let main2
     if tcConfig.printSignature || tcConfig.printAllSignatureFiles then
         InterfaceFileWriter.WriteInterfaceFile(tcGlobals, tcConfig, InfoReader(tcGlobals, tcImports.GetImportMap()), typedImplFiles)
 
-    ReportTime tcConfig "Write XML document signatures"
+    ReportTime tcConfig "Write XML doc signatures"
 
     if tcConfig.xmlDocOutputFile.IsSome then
         XmlDocWriter.ComputeXmlDocSigs(tcGlobals, generatedCcu)
@@ -915,13 +930,11 @@ let main4
     | None -> ()
     | Some f -> f tcImports
 
-    // Compute a static linker, it gets called later.
-    let ilGlobals = tcGlobals.ilg
-
     if tcConfig.standalone && generatedCcu.UsesFSharp20PlusQuotations then
         error (Error(FSComp.SR.fscQuotationLiteralsStaticLinking0 (), rangeStartup))
 
-    let staticLinker = StaticLink(ctok, tcConfig, tcImports, ilGlobals)
+    // Compute a static linker, it gets called later.
+    let staticLinker = StaticLink(ctok, tcConfig, tcImports, tcGlobals)
 
     ReportTime tcConfig "TAST -> IL"
     use _ = UseBuildPhase BuildPhase.IlxGen
@@ -1087,7 +1100,6 @@ let main6
                             pdbfile = None
                             emitTailcalls = tcConfig.emitTailcalls
                             deterministic = tcConfig.deterministic
-                            showTimes = tcConfig.showTimes
                             portablePDB = false
                             embeddedPDB = false
                             embedAllSource = tcConfig.embedAllSource
@@ -1118,7 +1130,6 @@ let main6
                             pdbfile = pdbfile
                             emitTailcalls = tcConfig.emitTailcalls
                             deterministic = tcConfig.deterministic
-                            showTimes = tcConfig.showTimes
                             portablePDB = tcConfig.portablePDB
                             embeddedPDB = tcConfig.embeddedPDB
                             embedAllSource = tcConfig.embedAllSource

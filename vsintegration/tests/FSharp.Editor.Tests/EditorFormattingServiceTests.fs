@@ -2,32 +2,17 @@
 
 namespace FSharp.Editor.Tests
 
-open System
-open NUnit.Framework
+open Xunit
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.CodeAnalysis
 open Microsoft.CodeAnalysis.Formatting
+open FSharp.Editor.Tests.Helpers
+open FSharp.Test
 
-[<TestFixture>]
 type EditorFormattingServiceTests() =
     let filePath = "C:\\test.fs"
-
-    let projectOptions: FSharpProjectOptions =
-        {
-            ProjectFileName = "C:\\test.fsproj"
-            ProjectId = None
-            SourceFiles = [| filePath |]
-            ReferencedProjects = [||]
-            OtherOptions = [||]
-            IsIncompleteTypeCheckEnvironment = true
-            UseScriptResolutionRules = false
-            LoadTime = DateTime.MaxValue
-            OriginalLoadReferences = []
-            UnresolvedReferences = None
-            Stamp = None
-        }
 
     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
     let indentStyle = FormattingOptions.IndentStyle.Smart
@@ -66,21 +51,23 @@ marker2
 
 marker4"""
 
-    [<TestCase("marker1", "]")>]
-    [<TestCase("marker2", "}")>]
-    [<TestCase("marker3", "    |]")>]
-    [<TestCase("marker4", "    )")>]
+    [<Theory>]
+    [<InlineData("marker1", "]")>]
+    [<InlineData("marker2", "}")>]
+    [<InlineData("marker3", "    |]")>]
+    [<InlineData("marker4", "    )")>]
     member this.TestIndentation(marker: string, expectedLine: string) =
         let checker = FSharpChecker.Create()
         let position = indentTemplate.IndexOf(marker)
-        Assert.IsTrue(position >= 0, "Precondition failed: unable to find marker in template")
+        Assert.True(position >= 0, "Precondition failed: unable to find marker in template")
 
         let sourceText = SourceText.From(indentTemplate)
 
         let lineNumber =
             sourceText.Lines |> Seq.findIndex (fun line -> line.Span.Contains position)
 
-        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
+        let parsingOptions, _ =
+            checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
 
         let changesOpt =
             FSharpEditorFormattingService.GetFormattingChanges(
@@ -90,23 +77,27 @@ marker4"""
                 checker,
                 indentStyle,
                 parsingOptions,
-                position
+                position,
+                System.Threading.CancellationToken.None
             )
             |> Async.RunSynchronously
 
         match changesOpt with
-        | None -> Assert.Fail("Expected a text change, but got None")
+        | None -> failwith "Expected a text change, but got None"
         | Some changes ->
             let changedText = sourceText.WithChanges(changes)
             let lineText = changedText.Lines.[lineNumber].ToString()
-            Assert.IsTrue(lineText.StartsWith(expectedLine), "Changed line does not start with expected text")
+            Assert.True(lineText.StartsWith(expectedLine), "Changed line does not start with expected text")
 
-    [<TestCase(true, "")>]
-    [<TestCase(true, "        ")>]
-    [<TestCase(false, "")>]
+    [<Theory>]
+    [<InlineData(true, "")>]
+    [<InlineData(true, "        ")>]
+    [<InlineData(false, "")>]
     member this.TestPasteChanges_PastingOntoIndentedLine(enabled: bool, prefix: string) =
         let checker = FSharpChecker.Create()
-        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
+
+        let parsingOptions, _ =
+            checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
 
         let clipboard =
             prefix
@@ -159,16 +150,20 @@ somethingElseHere
             match changesOpt with
             | Some changes ->
                 let changedText = sourceText.WithChanges(changes).ToString()
-                Assert.AreEqual(expected, changedText)
-            | _ -> Assert.Fail(sprintf "Expected text changes, but got %+A" changesOpt)
+                Assert.Equal(expected, changedText)
+            | _ -> failwithf "Expected text changes, but got %+A" changesOpt
         else
-            Assert.AreEqual(None, changesOpt, "Expected no changes as FormatOnPaste is disabled")
+            changesOpt
+            |> Assert.shouldBeEqualWith None "Expected no changes as FormatOnPaste is disabled"
 
-    [<TestCase "">]
-    [<TestCase "        ">]
+    [<Theory>]
+    [<InlineData "">]
+    [<InlineData "        ">]
     member this.TestPasteChanges_PastingOntoEmptyLine(prefix: string) =
         let checker = FSharpChecker.Create()
-        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
+
+        let parsingOptions, _ =
+            checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
 
         let clipboard =
             prefix
@@ -220,13 +215,15 @@ somethingElseHere
         match changesOpt with
         | Some changes ->
             let changedText = sourceText.WithChanges(changes).ToString()
-            Assert.AreEqual(expected, changedText)
-        | _ -> Assert.Fail(sprintf "Expected a changes, but got %+A" changesOpt)
+            Assert.Equal(expected, changedText)
+        | _ -> failwithf "Expected a changes, but got %+A" changesOpt
 
-    [<Test>]
+    [<Fact>]
     member this.TestPasteChanges_PastingWithAutoIndentationInPasteSpan() =
         let checker = FSharpChecker.Create()
-        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
+
+        let parsingOptions, _ =
+            checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
 
         let clipboard =
             """[<Class>]
@@ -281,5 +278,5 @@ somethingElseHere
         match changesOpt with
         | Some changes ->
             let changedText = sourceText.WithChanges(changes).ToString()
-            Assert.AreEqual(expected, changedText)
-        | _ -> Assert.Fail(sprintf "Expected a changes, but got %+A" changesOpt)
+            Assert.Equal(expected, changedText)
+        | _ -> failwithf "Expected a changes, but got %+A" changesOpt

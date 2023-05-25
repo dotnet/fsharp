@@ -6,6 +6,7 @@ open System.Collections.Immutable
 open System.ComponentModel.Composition
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.InlineHints
 open Microsoft.VisualStudio.FSharp.Editor
+open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
 // So the Roslyn interface is called IFSharpInlineHintsService
 // but our implementation is called just HintsService.
@@ -13,9 +14,7 @@ open Microsoft.VisualStudio.FSharp.Editor
 // e.g. signature hints above the line, pipeline hints on the side and so on.
 
 [<Export(typeof<IFSharpInlineHintsService>)>]
-type internal RoslynAdapter 
-    [<ImportingConstructor>]
-    (settings: EditorOptions) =
+type internal RoslynAdapter [<ImportingConstructor>] (settings: EditorOptions) =
 
     static let userOpName = "Hints"
 
@@ -27,17 +26,15 @@ type internal RoslynAdapter
                 if hintKinds.IsEmpty then
                     return ImmutableArray.Empty
                 else
+                    let hintKindsSerialized = hintKinds |> Set.map Hints.serialize |> String.concat ","
+                    TelemetryReporter.ReportSingleEvent(TelemetryEvents.Hints, [| ("hints.kinds", hintKindsSerialized) |])
+
                     let! sourceText = document.GetTextAsync cancellationToken |> Async.AwaitTask
-                    let! nativeHints =
-                        HintService.getHintsForDocument 
-                            document 
-                            hintKinds
-                            userOpName 
-                            cancellationToken
-                    
-                    let roslynHints = 
-                        nativeHints 
-                        |> Seq.map (NativeToRoslynHintConverter.convert sourceText)
-                    
+                    let! nativeHints = HintService.getHintsForDocument sourceText document hintKinds userOpName cancellationToken
+
+                    let roslynHints =
+                        nativeHints |> Seq.map (NativeToRoslynHintConverter.convert sourceText)
+
                     return roslynHints.ToImmutableArray()
-            } |> RoslynHelpers.StartAsyncAsTask cancellationToken
+            }
+            |> RoslynHelpers.StartAsyncAsTask cancellationToken

@@ -16,26 +16,40 @@
     "tasks": [
         {
             "label": "Build (Debug)",
-            "command": "./build.sh",
+            "command": "dotnet",
             "type": "shell",
             "args": [
-                "-c Debug"
+                "build",
+                "-c Debug",
+                "FSharp.Compiler.Service.sln"
             ],
             "windows": {
-                "command": "${workspaceFolder}/Build.cmd",
+                "command": "dotnet",
+                "args": [
+                    "build",
+                    "-c Debug",
+                    "FSharp.Compiler.Service.sln"
+                ],
             },
             "problemMatcher": "$msCompile",
             "group": "build",
         },
         {
             "label": "Build (Release)",
-            "command": "./build.sh",
+            "command": "dotnet",
             "type": "shell",
             "args": [
-                "-c Release"
+                "build",
+                "-c Release",
+                "FSharp.Compiler.Service.sln"
             ],
             "windows": {
-                "command": "${workspaceFolder}/Build.cmd",
+                "command": "dotnet",
+                "args": [
+                    "build",
+                    "-c Release",
+                    "FSharp.Compiler.Service.sln"
+                ],
             },
             "problemMatcher": "$msCompile",
             "group": "build",
@@ -54,20 +68,6 @@
             },
             "problemMatcher": "$msCompile",
             "group": "build"
-        },
-        {
-            "label": "Run tests (all)",
-            "command": "./build.sh",
-            "type": "shell",
-            "args": [
-                "-testAll"
-            ],
-            "windows": {
-                "command": "${workspaceFolder}/Build.cmd",
-            },
-            "problemMatcher": "$msCompile",
-            "group": "test"
         }
-        // TODO: Add more test tasks if necessary.
     ]
 }

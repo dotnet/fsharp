@@ -98,7 +98,7 @@ let TcImplicitCtorLhs_Phase2A(cenv: cenv, env, tpenv, tcref: TyconRef, vis, attr
 
     // Type check arguments by processing them as 'simple' patterns 
     //     NOTE: if we allow richer patterns here this is where we'd process those patterns 
-    let ctorArgNames, patEnv = TcSimplePatsOfUnknownType cenv true CheckCxs env tpenv (SynSimplePats.SimplePats (spats, m))
+    let ctorArgNames, patEnv = TcSimplePatsOfUnknownType cenv true CheckCxs env tpenv (SynSimplePats.SimplePats (spats, [], m))
 
     let (TcPatLinearEnv(_, names, _)) = patEnv
         
@@ -128,9 +128,9 @@ let TcImplicitCtorLhs_Phase2A(cenv: cenv, env, tpenv, tcref: TyconRef, vis, attr
         let valSynData = SynValInfo([synArgInfos], SynInfo.unnamedRetVal)
         let id = ident ("new", m)
 
-        CheckForNonAbstractInterface ModuleOrMemberBinding tcref memberFlags id.idRange
+        CheckForNonAbstractInterface g ModuleOrMemberBinding tcref memberFlags false id.idRange
         let memberInfo = MakeMemberDataAndMangledNameForMemberVal(g, tcref, false, attribs, [], memberFlags, valSynData, id, false)
-        let prelimValReprInfo = TranslateSynValInfo m (TcAttributes cenv env) valSynData
+        let prelimValReprInfo = TranslateSynValInfo cenv m (TcAttributes cenv env) valSynData
         let prelimTyschemeG = GeneralizedType(copyOfTyconTypars, ctorTy)
         let isComplete = ComputeIsComplete copyOfTyconTypars [] ctorTy
         let varReprInfo = InferGenericArityFromTyScheme prelimTyschemeG prelimValReprInfo
@@ -152,9 +152,9 @@ let TcImplicitCtorLhs_Phase2A(cenv: cenv, env, tpenv, tcref: TyconRef, vis, attr
             let cctorTy = mkFunTy g g.unit_ty g.unit_ty
             let valSynData = SynValInfo([[]], SynInfo.unnamedRetVal)
             let id = ident ("cctor", m)
-            CheckForNonAbstractInterface ModuleOrMemberBinding tcref ClassCtorMemberFlags id.idRange
+            CheckForNonAbstractInterface g ModuleOrMemberBinding tcref ClassCtorMemberFlags false id.idRange
             let memberInfo = MakeMemberDataAndMangledNameForMemberVal(g, tcref, false, [], [], ClassCtorMemberFlags, valSynData, id, false)
-            let prelimValReprInfo = TranslateSynValInfo m (TcAttributes cenv env) valSynData
+            let prelimValReprInfo = TranslateSynValInfo cenv m (TcAttributes cenv env) valSynData
             let prelimTyschemeG = GeneralizedType(copyOfTyconTypars, cctorTy)
             let valReprInfo = InferGenericArityFromTyScheme prelimTyschemeG prelimValReprInfo
             let cctorValScheme = ValScheme(id, prelimTyschemeG, Some valReprInfo, None, Some memberInfo, false, ValInline.Never, NormalVal, Some (SynAccess.Private Range.Zero), false, true, false, false)
