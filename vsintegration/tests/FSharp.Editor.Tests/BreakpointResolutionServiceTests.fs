@@ -3,6 +3,7 @@
 namespace FSharp.Editor.Tests
 
 open System
+open System.Threading
 open Xunit
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
@@ -59,8 +60,8 @@ let main argv =
             TextSpan.FromBounds(searchPosition, searchPosition + searchToken.Length)
 
         let actualResolutionOption =
-            FSharpBreakpointResolutionService.GetBreakpointLocation(document, searchSpan)
-            |> Async.RunSynchronously
+            let task = FSharpBreakpointResolutionService.GetBreakpointLocation(document, searchSpan) CancellationToken.None
+            task.Result
 
         match actualResolutionOption with
         | None -> Assert.True(expectedResolution.IsNone, "BreakpointResolutionService failed to resolve breakpoint position")
