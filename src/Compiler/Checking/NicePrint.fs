@@ -176,12 +176,11 @@ module internal PrintUtilities =
     /// <param name="tcref"></param>
     /// <param name="demangledPath">
     /// Used in the case the TyconRef is a nested type from another assembly which has generic type parameters in the path.
-    /// Choice1Of2 means the original path string and Choice2Of2 contains a string replacement.
     /// For example: System.Collections.Immutable.ImmutableArray&gt;'T&lt;.Builder
     /// Lead to access path: System.Collections.Immutable.ImmutableArray`1
     /// ImmutableArray`1 will be transformed to ImmutableArray&gt;'t&lt; 
     /// </param>
-    let layoutTyconRefImpl isAttribute (denv: DisplayEnv) (tcref: TyconRef) (demangledPath: Choice<string,string> list option) =
+    let layoutTyconRefImpl isAttribute (denv: DisplayEnv) (tcref: TyconRef) (demangledPath: string list option) =
 
         let prefix = usePrefix denv tcref
         let isArray = not prefix && isArrayTyconRef denv.g tcref
@@ -214,21 +213,15 @@ module internal PrintUtilities =
         if denv.shortTypeNames then 
             tyconTextL
         else
-            let mapPath (s:string) =
-                let i = s.IndexOf(',')
-                if i <> -1 then
-                    s.Substring(0, i)+"<...>" // apparently has static params, shorten
-                else
-                    s
-
             let path =
-                match demangledPath with
-                | None -> tcref.CompilationPath.DemangledPath |> List.map mapPath
-                | Some demangled ->
-                    demangled
-                    |> List.map (function
-                        | Choice1Of2 s -> mapPath s
-                        | Choice2Of2 s -> s)
+                if denv.includeStaticParametersInTypeNames then
+                    Option.defaultValue tcref.CompilationPath.DemangledPath demangledPath
+                else
+                    tcref.CompilationPath.DemangledPath
+                    |> List.map (fun s -> 
+                        let i = s.IndexOf(',')
+                        if i <> -1 then s.Substring(0, i)+"<...>" // apparently has static params, shorten
+                        else s)
 
             let pathText = trimPathByDisplayEnv denv path
             if pathText = "" then tyconTextL else leftL (tagUnknownEntity pathText) ^^ tyconTextL
@@ -920,33 +913,36 @@ module PrintTypes =
         | TType_ucase (UnionCaseRef(tc, _), args)
         | TType_app (tc, args, _) ->
           let prefix = usePrefix denv tc
-          let demangledCompilationPath, args =
-              let regex = System.Text.RegularExpressions.Regex(@"\`\d+")
-              let path, skip =
-                  (0, tc.CompilationPath.DemangledPath)
-                  ||> List.mapFold (fun skip path ->
-                      // Verify the path does not contain a generic parameter count.
-                      // For example Foo`3 indicates that there are three parameters in args that belong to this path.
-                      let m = regex.Match(path)
-                      if not m.Success then
-                          Choice1Of2 path, skip
-                      else
-                          let take = m.Value.Replace("`", "") |> int
-                          let genericArgs =
-                              List.skip skip args
-                              |> List.take take
-                              |> List.map (layoutTypeWithInfoAndPrec denv env prec >> showL)
-                              |> String.concat ","
-                              |> sprintf "<%s>"
-                          Choice2Of2 (String.Concat(path.Substring(0, m.Index), genericArgs)), (skip + take)
-                  )
+          let demangledCompilationPathOpt, args =
+              if not denv.includeStaticParametersInTypeNames then
+                  None, args
+              else
+                  let regex = System.Text.RegularExpressions.Regex(@"\`\d+")
+                  let path, skip =
+                      (0, tc.CompilationPath.DemangledPath)
+                      ||> List.mapFold (fun skip path ->
+                          // Verify the path does not contain a generic parameter count.
+                          // For example Foo`3 indicates that there are three parameters in args that belong to this path.
+                          let m = regex.Match(path)
+                          if not m.Success then
+                              path, skip
+                          else
+                              let take = m.Value.Replace("`", "") |> int
+                              let genericArgs =
+                                  List.skip skip args
+                                  |> List.take take
+                                  |> List.map (layoutTypeWithInfoAndPrec denv env prec >> showL)
+                                  |> String.concat ","
+                                  |> sprintf "<%s>"
+                              String.Concat(path.Substring(0, m.Index), genericArgs), (skip + take)
+                      )
 
-              path, List.skip skip args
+                  Some path, List.skip skip args
 
           layoutTypeAppWithInfoAndPrec
               denv
               env
-              (layoutTyconRefImpl false denv tc (Some demangledCompilationPath))
+              (layoutTyconRefImpl false denv tc demangledCompilationPathOpt)
               prec
               prefix
               args
