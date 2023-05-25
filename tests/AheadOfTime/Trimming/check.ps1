@@ -37,7 +37,7 @@ function CheckTrim($root, $tfm, $outputfile, $expected_len) {
 
 
 # Check net7.0 trimmed assemblies
-CheckTrim -root "SelfContained_Trimming_Test" -tfm "net7.0" -outputfile "FSharp.Core.dll" -expected_len 287744
+CheckTrim -root "SelfContained_Trimming_Test" -tfm "net7.0" -outputfile "FSharp.Core.dll" -expected_len (If ($compressAllMetadata) {300544} Else {288768})
 
 # Check net472 trimmed assemblies -- net472 doesn't actually trim, this just checks that everything is usable when published trimmed
 CheckTrim -root "SelfContained_Trimming_Test" -tfm "net472" -outputfile "FSharp.Core.dll" -expected_len -1
