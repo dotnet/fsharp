@@ -168,7 +168,20 @@ module internal PrintUtilities =
         | GenericParameterStyle.Prefix -> true
         | GenericParameterStyle.Suffix -> false
 
-    let layoutTyconRefImpl isAttribute (denv: DisplayEnv) (tcref: TyconRef) =
+    /// <summary>
+    /// Creates a layout for TyconRef.
+    /// </summary>
+    /// <param name="isAttribute"></param>
+    /// <param name="denv"></param>
+    /// <param name="tcref"></param>
+    /// <param name="demangledPath">
+    /// Used in the case the TyconRef is a nested type from another assembly which has generic type parameters in the path.
+    /// Choice1Of2 means the original path string and Choice2Of2 contains a string replacement.
+    /// For example: System.Collections.Immutable.ImmutableArray&gt;'T&lt;.Builder
+    /// Lead to access path: System.Collections.Immutable.ImmutableArray`1
+    /// ImmutableArray`1 will be transformed to ImmutableArray&gt;'t&lt; 
+    /// </param>
+    let layoutTyconRefImpl isAttribute (denv: DisplayEnv) (tcref: TyconRef) (demangledPath: Choice<string,string> list option) =
 
         let prefix = usePrefix denv tcref
         let isArray = not prefix && isArrayTyconRef denv.g tcref
@@ -201,24 +214,28 @@ module internal PrintUtilities =
         if denv.shortTypeNames then 
             tyconTextL
         else
-            let path = tcref.CompilationPath.DemangledPath
-            let path =
-                if denv.includeStaticParametersInTypeNames then
-                    path
+            let mapPath (s:string) =
+                let i = s.IndexOf(',')
+                if i <> -1 then
+                    s.Substring(0, i)+"<...>" // apparently has static params, shorten
                 else
-                    path |> List.map (fun s -> 
-                        let i = s.IndexOf(',')
-                        if i <> -1 then
-                            s.Substring(0, i)+"<...>" // apparently has static params, shorten
-                        else
-                            s
-                    )
+                    s
+
+            let path =
+                match demangledPath with
+                | None -> tcref.CompilationPath.DemangledPath |> List.map mapPath
+                | Some demangled ->
+                    demangled
+                    |> List.map (function
+                        | Choice1Of2 s -> mapPath s
+                        | Choice2Of2 s -> s)
+
             let pathText = trimPathByDisplayEnv denv path
             if pathText = "" then tyconTextL else leftL (tagUnknownEntity pathText) ^^ tyconTextL
 
     let layoutBuiltinAttribute (denv: DisplayEnv) (attrib: BuiltinAttribInfo) =
         let tcref = attrib.TyconRef
-        squareAngleL (layoutTyconRefImpl true denv tcref)
+        squareAngleL (layoutTyconRefImpl true denv tcref None)
 
     /// layout the xml docs immediately before another block
     let layoutXmlDoc (denv: DisplayEnv) alwaysAddEmptyLine (xml: XmlDoc) restL =
@@ -502,7 +519,7 @@ module PrintTypes =
         layoutAccessibilityCore denv accessibility ++ itemL
 
     /// Layout a reference to a type 
-    let layoutTyconRef denv tcref = layoutTyconRefImpl false denv tcref
+    let layoutTyconRef denv tcref = layoutTyconRefImpl false denv tcref None
 
     /// Layout the flags of a member 
     let layoutMemberFlags (memFlags: SynMemberFlags) = 
@@ -574,7 +591,7 @@ module PrintTypes =
 
     /// Layout an attribute 'Type(arg1, ..., argN)' 
     and layoutAttrib denv (Attrib(tcref, _, args, props, _, _, _)) = 
-        let tcrefL = layoutTyconRefImpl true denv tcref
+        let tcrefL = layoutTyconRefImpl true denv tcref None
         let argsL = bracketL (layoutAttribArgs denv args props)
         if List.isEmpty args && List.isEmpty props then
             tcrefL
@@ -903,17 +920,36 @@ module PrintTypes =
         | TType_ucase (UnionCaseRef(tc, _), args)
         | TType_app (tc, args, _) ->
           let prefix = usePrefix denv tc
-          let pathWithGenericParameters =
-              tc.CompilationPath.AccessPath
-              |> List.sumBy (fun p ->
-                  match p with
-                  | _, ModuleOrType gps -> gps.Length
-                  | _ -> 0)
-          // Very specific check for types like System.Collections.Immutable.ImmutableArray<'T>.Builder
-          if pathWithGenericParameters = args.Length then
-              layoutTypeAppWithInfoAndPrec denv env (layoutTyconRef denv tc) prec prefix []
-          else
-              layoutTypeAppWithInfoAndPrec denv env (layoutTyconRef denv tc) prec prefix args
+          let demangledCompilationPath, args =
+              let regex = System.Text.RegularExpressions.Regex(@"\`\d+")
+              let path, skip =
+                  (0, tc.CompilationPath.DemangledPath)
+                  ||> List.mapFold (fun skip path ->
+                      // Verify the path does not contain a generic parameter count.
+                      // For example Foo`3 indicates that there are three parameters in args that belong to this path.
+                      let m = regex.Match(path)
+                      if not m.Success then
+                          Choice1Of2 path, skip
+                      else
+                          let take = m.Value.Replace("`", "") |> int
+                          let genericArgs =
+                              List.skip skip args
+                              |> List.take take
+                              |> List.map (layoutTypeWithInfoAndPrec denv env prec >> showL)
+                              |> String.concat ","
+                              |> sprintf "<%s>"
+                          Choice2Of2 (String.Concat(path.Substring(0, m.Index), genericArgs)), (skip + take)
+                  )
+
+              path, List.skip skip args
+
+          layoutTypeAppWithInfoAndPrec
+              denv
+              env
+              (layoutTyconRefImpl false denv tc (Some demangledCompilationPath))
+              prec
+              prefix
+              args
 
         // Layout a tuple type 
         | TType_anon (anonInfo, tys) ->
@@ -1634,7 +1670,7 @@ module TastDefinitionPrinting =
     let layoutExtensionMember denv infoReader (vref: ValRef) =
         let (@@*) = if denv.printVerboseSignatures then (@@----) else (@@--)
         let tycon = vref.MemberApparentEntity.Deref
-        let nameL = layoutTyconRefImpl false denv vref.MemberApparentEntity
+        let nameL = layoutTyconRefImpl false denv vref.MemberApparentEntity None
         let nameL = layoutAccessibility denv tycon.Accessibility nameL // "type-accessibility"
         let tps =
             match PartitionValTyparsForApparentEnclosingType denv.g vref.Deref with
