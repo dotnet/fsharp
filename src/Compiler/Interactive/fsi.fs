@@ -1660,7 +1660,7 @@ let internal mkBoundValueTypedImpl tcGlobals m moduleName name ty =
             Parent(TypedTreeBasics.ERefLocal entity)
         )
 
-    mty <- ModuleOrNamespaceType(ModuleOrNamespaceKind.ModuleOrType [], QueueList.one v, QueueList.empty)
+    mty <- ModuleOrNamespaceType(ModuleOrNamespaceKind.ModuleOrType, QueueList.one v, QueueList.empty)
 
     let bindExpr = mkCallDefaultOf tcGlobals range0 ty
     let binding = Binding.TBind(v, bindExpr, DebugPointAtBinding.NoneAtLet)

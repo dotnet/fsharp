@@ -2502,7 +2502,7 @@ module EstablishTypeDefinitionCores =
     let ComputeModuleOrNamespaceKind g isModule typeNames attribs nm = 
         if not isModule then (Namespace true)
         elif ModuleNameIsMangled g attribs || Set.contains nm typeNames then FSharpModuleWithSuffix 
-        else ModuleOrType []
+        else ModuleOrType
 
     let AdjustModuleName moduleKind nm =
         match moduleKind with
@@ -2638,7 +2638,7 @@ module EstablishTypeDefinitionCores =
         let visOfRepr, _ = ComputeAccessAndCompPath env None id.idRange synVisOfRepr None parent
         let visOfRepr = combineAccess vis visOfRepr 
         // If we supported nested types and modules then additions would be needed here
-        let lmodTy = MaybeLazy.Strict (Construct.NewEmptyModuleOrNamespaceType (ModuleOrType []))
+        let lmodTy = MaybeLazy.Strict (Construct.NewEmptyModuleOrNamespaceType ModuleOrType)
 
         // '<param>' documentation is allowed for delegates
         let paramNames =
@@ -2910,8 +2910,7 @@ module EstablishTypeDefinitionCores =
                     error(Error(FSComp.SR.etErasedTypeUsedInGeneration(desig, nm), m))
 
                 // Embed the type into the module we're compiling
-                let genericParameters = eref.TyparsNoRange |> List.map (fun (typar: Typar) -> typar.typar_id.idText)
-                let cpath = eref.CompilationPath.NestedCompPath eref.LogicalName (ModuleOrNamespaceKind.ModuleOrType genericParameters)
+                let cpath = eref.CompilationPath.NestedCompPath eref.LogicalName ModuleOrNamespaceKind.ModuleOrType
                 let access = combineAccess tycon.Accessibility (if st.PUntaint((fun st -> st.IsPublic || st.IsNestedPublic), m) then taccessPublic else taccessPrivate cpath)
 
                 let nestedTycon = Construct.NewProvidedTycon(resolutionEnvironment, st, 

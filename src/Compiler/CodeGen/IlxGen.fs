@@ -400,7 +400,7 @@ let CompLocForSubModuleOrNamespace cloc (submod: ModuleOrNamespace) =
 
     match submod.ModuleOrNamespaceType.ModuleOrNamespaceKind with
     | FSharpModuleWithSuffix
-    | ModuleOrType _ ->
+    | ModuleOrType ->
         { cloc with
             Enclosing = cloc.Enclosing @ [ n ]
         }
@@ -2078,9 +2078,7 @@ type AnonTypeGenerationTable() =
                 ]
 
             let tycon =
-                let lmtyp =
-                    MaybeLazy.Strict(Construct.NewEmptyModuleOrNamespaceType(ModuleOrType []))
-
+                let lmtyp = MaybeLazy.Strict(Construct.NewEmptyModuleOrNamespaceType ModuleOrType)
                 let cpath = CompPath(ilTypeRef.Scope, [])
 
                 Construct.NewTycon(

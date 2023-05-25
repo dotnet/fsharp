@@ -507,8 +507,7 @@ let MakeInnerEnvForTyconRef env tcref isExtrinsicExtension =
         // Regular members get access to protected stuff
         let env = EnterFamilyRegion tcref env
         // Note: assumes no nesting
-        let genericParameters = tcref.TyparsNoRange |> List.map (fun typar -> typar.typar_id.idText)
-        let eAccessPath = env.eCompPath.NestedCompPath tcref.LogicalName (ModuleOrType genericParameters)
+        let eAccessPath = env.eCompPath.NestedCompPath tcref.LogicalName ModuleOrType
         { env with
              eAccessRights = ComputeAccessRights eAccessPath env.eInternalsVisibleCompPaths env.eFamilyType // update this computed field
              eAccessPath = eAccessPath }

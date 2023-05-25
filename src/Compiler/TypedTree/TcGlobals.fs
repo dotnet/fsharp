@@ -362,7 +362,7 @@ type TcGlobals(
                   false,
                   false,
                   false,
-                  MaybeLazy.Strict(Construct.NewEmptyModuleOrNamespaceType (ModuleOrType []))
+                  MaybeLazy.Strict(Construct.NewEmptyModuleOrNamespaceType ModuleOrType)
               )
           AttribInfo(attrRef, mkLocalTyconRef attrTycon)
 

@@ -1774,7 +1774,7 @@ let p_ranges x st =
 let p_istype x st =
     match x with
     | FSharpModuleWithSuffix -> p_byte 0 st
-    | ModuleOrType _          -> p_byte 1 st
+    | ModuleOrType           -> p_byte 1 st
     | Namespace _            -> p_byte 2 st
 
 let p_cpath (CompPath(a, b)) st =
@@ -1786,7 +1786,7 @@ let u_istype st =
     let tag = u_byte st
     match tag with
     | 0 -> FSharpModuleWithSuffix
-    | 1 -> ModuleOrType []
+    | 1 -> ModuleOrType
     | 2 -> Namespace true
     | _ -> ufailwith st "u_istype"
 
