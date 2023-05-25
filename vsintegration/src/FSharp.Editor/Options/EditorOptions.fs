@@ -124,7 +124,7 @@ type AdvancedOptions =
             IsInlineParameterNameHintsEnabled = false
             IsInlineReturnTypeHintsEnabled = false
             IsLiveBuffersEnabled = FSharpExperimentalFeaturesEnabledAutomatically
-            SendAdditionalTelemetry = FSharpExperimentalFeaturesEnabledAutomatically
+            SendAdditionalTelemetry = true
         }
 
 [<CLIMutable>]
