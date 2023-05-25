@@ -1448,10 +1448,11 @@ module rec Compiler =
                 let expectedContent = File.ReadAllText(path) |> normalizeNewLines
                 let actualErrors = renderToString result                
 
-                match Environment.GetEnvironmentVariable("TEST_UPDATE_BSL") with
-                | null -> ()
-                | _ when expectedContent = actualErrors -> ()
-                | _ -> File.WriteAllText(path, actualErrors)
+                //match Environment.GetEnvironmentVariable("TEST_UPDATE_BSL") with
+                //| null -> ()
+                //| _ when expectedContent = actualErrors -> ()
+                //| _ -> File.WriteAllText(path, actualErrors)
+                File.WriteAllText(path, actualErrors)
 
                 match Assert.shouldBeSameMultilineStringSets expectedContent actualErrors with
                 | None -> () 

@@ -117,11 +117,6 @@
         <target state="translated">사용 가능한 오버로드:\n{0}</target>
         <note />
       </trans-unit>
-      <trans-unit id="csDelegateComparisonConstraintInconsistent">
-        <source>The constraints 'delegate' and 'comparison' are inconsistent</source>
-        <target state="new">The constraints 'delegate' and 'comparison' are inconsistent</target>
-        <note />
-      </trans-unit>
       <trans-unit id="csGenericConstructRequiresStructOrReferenceConstraint">
         <source>A generic construct requires that a generic type parameter be known as a struct or reference type. Consider adding a type annotation.</source>
         <target state="translated">제네릭 구문을 사용하려면 구조체 또는 참조 형식의 제네릭 형식 매개 변수가 필요합니다. 형식 주석을 추가하세요.</target>
@@ -165,11 +160,6 @@
       <trans-unit id="csOverloadCandidateNamedArgumentTypeMismatch">
         <source>Argument '{0}' doesn't match</source>
         <target state="translated">'{0}' 인수가 일치하지 않습니다.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="csStructNullConstraintInconsistent">
-        <source>The constraints 'struct' and 'null' are inconsistent</source>
-        <target state="new">The constraints 'struct' and 'null' are inconsistent</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypeHasNullAsExtraValue">

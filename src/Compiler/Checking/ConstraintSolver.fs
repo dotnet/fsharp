@@ -1074,7 +1074,7 @@ and SolveTypMeetsTyparConstraints (csenv: ConstraintSolverEnv) ndeep m2 trace ty
 
 // nullness1: actual
 // nullness2: expected
-and SolveNullnessEquiv (csenv:ConstraintSolverEnv) m2 (trace: OptionalTrace) ty1 ty2 nullness1 nullness2 =
+and SolveNullnessEquiv (csenv: ConstraintSolverEnv) m2 (trace: OptionalTrace) ty1 ty2 nullness1 nullness2 =
     match nullness1, nullness2 with
     | Nullness.Variable nv1, Nullness.Variable nv2 when nv1 === nv2 -> 
         CompleteD
@@ -1095,7 +1095,7 @@ and SolveNullnessEquiv (csenv:ConstraintSolverEnv) m2 (trace: OptionalTrace) ty1
         | NullnessInfo.WithNull, NullnessInfo.WithNull -> CompleteD
         | NullnessInfo.WithoutNull, NullnessInfo.WithoutNull -> CompleteD
         // Allow expected of WithNull and actual of WithoutNull
-        // TODO NULLNESS:  this is not sound in contravariant cases etc.
+        // TODO NULLNESS:  this is not sound in contravariant cases etc. It is assuming covariance.
         | NullnessInfo.WithNull, NullnessInfo.WithoutNull -> CompleteD
         | _ -> 
             // NOTE: we never give nullness warnings for the 'obj' type
@@ -1109,7 +1109,7 @@ and SolveNullnessEquiv (csenv:ConstraintSolverEnv) m2 (trace: OptionalTrace) ty1
         
 // nullness1: target
 // nullness2: source
-and SolveNullnessSubsumesNullness (csenv:ConstraintSolverEnv) m2 (trace: OptionalTrace) ty1 ty2 nullness1 nullness2 =
+and SolveNullnessSubsumesNullness (csenv: ConstraintSolverEnv) m2 (trace: OptionalTrace) ty1 ty2 nullness1 nullness2 =
     match nullness1, nullness2 with
     | Nullness.Variable nv1, Nullness.Variable nv2 when nv1 === nv2 -> 
         CompleteD
@@ -1208,7 +1208,7 @@ and SolveAnonInfoEqualsAnonInfo (csenv: ConstraintSolverEnv) m2 (anonInfo1: Anon
 
 /// Add the constraint "ty1 = ty2" to the constraint problem. 
 /// Propagate all effects of adding this constraint, e.g. to solve type variables 
-and SolveTypeEqualsType (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) (cxsln:(TraitConstraintInfo * TraitConstraintSln) option) ty1 ty2 = 
+and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) (cxsln:(TraitConstraintInfo * TraitConstraintSln) option) ty1 ty2 = 
     let ndeep = ndeep + 1
     let aenv = csenv.EquivEnv
     let g = csenv.g
@@ -1309,7 +1309,8 @@ and SolveTypeEqualsType (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTra
            SolveNullnessEquiv csenv m2 trace ty1 ty2 nullness1 nullness2
         )
 
-    | TType_app _, TType_app _ ->  localAbortD
+    | TType_app _, TType_app _ ->
+        localAbortD
 
     | TType_tuple (tupInfo1, l1), TType_tuple (tupInfo2, l2) -> 
         if evalTupInfoIsStruct tupInfo1 <> evalTupInfoIsStruct tupInfo2 then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m, m2)) else
@@ -2310,19 +2311,9 @@ and EnforceConstraintConsistency (csenv: ConstraintSolverEnv) ndeep m2 trace ret
         do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argsTy1 argsTy2
         return! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy1 retTy2
 
-    | TyparConstraint.SupportsComparison _, TyparConstraint.IsDelegate _  
-    | TyparConstraint.IsDelegate _ , TyparConstraint.SupportsComparison _ ->
-        return! ErrorD (Error(FSComp.SR.csDelegateComparisonConstraintInconsistent(), m))
-    
-    | TyparConstraint.NotSupportsNull _, TyparConstraint.SupportsNull _     
-    | TyparConstraint.SupportsNull _, TyparConstraint.NotSupportsNull _     ->
-        return! ErrorD (Error(FSComp.SR.csNullNotNullConstraintInconsistent(), m))
-    
-    | TyparConstraint.SupportsNull _, TyparConstraint.IsNonNullableStruct _     
-    | TyparConstraint.IsNonNullableStruct _, TyparConstraint.SupportsNull _    ->
-        return! ErrorD (Error(FSComp.SR.csStructNullConstraintInconsistent(), m))
-    
-    | TyparConstraint.IsNonNullableStruct _, TyparConstraint.IsReferenceType _     
+    | TyparConstraint.SupportsComparison _, TyparConstraint.IsDelegate _
+    | TyparConstraint.IsDelegate _, TyparConstraint.SupportsComparison _
+    | TyparConstraint.IsNonNullableStruct _, TyparConstraint.IsReferenceType _
     | TyparConstraint.IsReferenceType _, TyparConstraint.IsNonNullableStruct _   ->
         return! ErrorD (Error(FSComp.SR.csStructConstraintInconsistent(), m))
 
@@ -2489,7 +2480,7 @@ and AddConstraint (csenv: ConstraintSolverEnv) ndeep m2 trace tp newConstraint  
 //    val x: 'a __withnull when 'a: not null
 //
 // When null checking is fully enabled, we prefer the latter. We can't always prefer it because it is a breaking change.
-and SolveTypeUseSupportsNull (csenv:ConstraintSolverEnv) ndeep m2 trace ty = trackErrors {
+and SolveTypeUseSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 trace ty = trackErrors {
     let g = csenv.g
     let m = csenv.m
     let denv = csenv.DisplayEnv

@@ -1,4 +1,12 @@
 
-neg119b.fs(40,9,40,17): typecheck error FS0030: Value restriction. The value 'res2n3n4' has been inferred to have generic type
-    val res2n3n4: ^_a when (^_b or Applicatives.ZipList<int> or ^_a) : (static member (<*>) : ^_b * Applicatives.ZipList<int> -> ^_a) and (^_c or obj or ^_b) : (static member (<*>) : ^_c * obj -> ^_b) and (Applicatives.Ap or ^_c) : (static member Return: ^_c * Applicatives.Ap -> ((int -> int -> int) -> ^_c))    
-Either define 'res2n3n4' as a simple data term, make it a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.
+neg119b.fs(40,20,40,22): typecheck error FS0071: Type constraint mismatch when applying the default type 'obj' for a type inference variable. No overloads match for method 'Return'.
+
+Known return type: ((int -> int -> int) -> obj)
+
+Known type parameters: < obj , Applicatives.Ap >
+
+Available overloads:
+ - static member Applicatives.Ap.Return: ('r -> 'a) * Ap: Applicatives.Ap -> (('a -> 'r -> 'a2) -> 'a3 -> 'a -> 'r -> 'a2) // Argument at index 1 doesn't match
+ - static member Applicatives.Ap.Return: System.Tuple<'a> * Ap: Applicatives.Ap -> ('a -> System.Tuple<'a>) // Argument at index 1 doesn't match
+ - static member Applicatives.Ap.Return: r: ^R * obj -> ('a1 -> ^R) when ^R: (static member Return: 'a1 -> ^R) // Argument 'r' doesn't match
+ - static member Applicatives.Ap.Return: seq<'a> * Ap: Applicatives.Ap -> ('a -> seq<'a>) // Argument at index 1 doesn't match Consider adding further type constraints

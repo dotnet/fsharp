@@ -117,11 +117,6 @@
         <target state="translated">使用可能なオーバーロード:\n{0}</target>
         <note />
       </trans-unit>
-      <trans-unit id="csDelegateComparisonConstraintInconsistent">
-        <source>The constraints 'delegate' and 'comparison' are inconsistent</source>
-        <target state="new">The constraints 'delegate' and 'comparison' are inconsistent</target>
-        <note />
-      </trans-unit>
       <trans-unit id="csGenericConstructRequiresStructOrReferenceConstraint">
         <source>A generic construct requires that a generic type parameter be known as a struct or reference type. Consider adding a type annotation.</source>
         <target state="translated">ジェネリック コンストラクトでは、ジェネリック型パラメーターが構造体または参照型として認識されている必要があります。型の注釈の追加を検討してください。</target>
@@ -165,11 +160,6 @@
       <trans-unit id="csOverloadCandidateNamedArgumentTypeMismatch">
         <source>Argument '{0}' doesn't match</source>
         <target state="translated">引数 '{0}' が一致しません</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="csStructNullConstraintInconsistent">
-        <source>The constraints 'struct' and 'null' are inconsistent</source>
-        <target state="new">The constraints 'struct' and 'null' are inconsistent</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypeHasNullAsExtraValue">

@@ -117,11 +117,6 @@
         <target state="translated">Surcharges disponibles :\n{0}</target>
         <note />
       </trans-unit>
-      <trans-unit id="csDelegateComparisonConstraintInconsistent">
-        <source>The constraints 'delegate' and 'comparison' are inconsistent</source>
-        <target state="new">The constraints 'delegate' and 'comparison' are inconsistent</target>
-        <note />
-      </trans-unit>
       <trans-unit id="csGenericConstructRequiresStructOrReferenceConstraint">
         <source>A generic construct requires that a generic type parameter be known as a struct or reference type. Consider adding a type annotation.</source>
         <target state="translated">L'utilisation d'une construction générique est possible uniquement si un paramètre de type générique est connu en tant que type struct ou type référence. Ajoutez une annotation de type.</target>
@@ -165,11 +160,6 @@
       <trans-unit id="csOverloadCandidateNamedArgumentTypeMismatch">
         <source>Argument '{0}' doesn't match</source>
         <target state="translated">L'argument '{0}' ne correspond pas</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="csStructNullConstraintInconsistent">
-        <source>The constraints 'struct' and 'null' are inconsistent</source>
-        <target state="new">The constraints 'struct' and 'null' are inconsistent</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypeHasNullAsExtraValue">

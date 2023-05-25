@@ -1520,8 +1520,6 @@ notAFunctionButMaybeDeclaration,"This value is not a function and cannot be appl
 #3261 reserved for ConstraintSolverNullnessWarningWithType
 #3261 reserved for ConstraintSolverNullnessWarning
 3268,csNullNotNullConstraintInconsistent,"The constraints 'null' and 'not null' are inconsistent"
-3269,csStructNullConstraintInconsistent,"The constraints 'struct' and 'null' are inconsistent"
-3270,csDelegateComparisonConstraintInconsistent,"The constraints 'delegate' and 'comparison' are inconsistent"
 3271,tcNullnessCheckingNotEnabled,"The 'nullness checking' language feature is not enabled. This use of a nullness checking construct will be ignored."
 csTypeHasNullAsTrueValue,"The type '%s' uses 'null' as a representation value but a non-null type is expected"
 csTypeHasNullAsExtraValue,"The type '%s' supports 'null' but a non-null type is expected"

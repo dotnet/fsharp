@@ -117,11 +117,6 @@
         <target state="translated">可用的多載:\n{0}</target>
         <note />
       </trans-unit>
-      <trans-unit id="csDelegateComparisonConstraintInconsistent">
-        <source>The constraints 'delegate' and 'comparison' are inconsistent</source>
-        <target state="new">The constraints 'delegate' and 'comparison' are inconsistent</target>
-        <note />
-      </trans-unit>
       <trans-unit id="csGenericConstructRequiresStructOrReferenceConstraint">
         <source>A generic construct requires that a generic type parameter be known as a struct or reference type. Consider adding a type annotation.</source>
         <target state="translated">泛型建構要求泛型型別參數必須指定為結構或參考型別。請考慮新增型別註解。</target>
@@ -165,11 +160,6 @@
       <trans-unit id="csOverloadCandidateNamedArgumentTypeMismatch">
         <source>Argument '{0}' doesn't match</source>
         <target state="translated">引數 '{0}' 不相符</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="csStructNullConstraintInconsistent">
-        <source>The constraints 'struct' and 'null' are inconsistent</source>
-        <target state="new">The constraints 'struct' and 'null' are inconsistent</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypeHasNullAsExtraValue">

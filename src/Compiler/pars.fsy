@@ -1547,22 +1547,21 @@ tyconDefn:
            SynTypeDefn($1, SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.None($1.Range), $1.Range), [], None, $1.Range, trivia) }
 
   | typeNameInfo opt_equals tyconDefnRhsBlock
-     { //match $2 with
-       //| Some _ -> ()
-       //| None ->
-       //     let (SynComponentInfo(_, _, _, lid, _, _, _, _)) = $1
-       //     // While the spec doesn't allow long idents here, the parser doesn't enforce this, so take one ident
-       //     let typeNameId = List.last lid
-       //     raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsEqualsMissingInTypeDefinition(typeNameId.ToString()))
+     { match $2 with
+       | Some _ -> ()
+       | None ->
+            let (SynComponentInfo(_, _, _, lid, _, _, _, _)) = $1
+            // While the spec doesn't allow long idents here, the parser doesn't enforce this, so take one ident
+            let typeNameId = List.last lid
+            raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsEqualsMissingInTypeDefinition(typeNameId.ToString()))
 
        let nameRange = rhs parseState 1
        let (tcDefRepr: SynTypeDefnRepr), mWith, members = $3 nameRange
        let declRange = unionRanges (rhs parseState 1) tcDefRepr.Range
        let mWhole = (declRange, members) ||> unionRangeWithListBy (fun (mem: SynMemberDefn) -> mem.Range)
-       let mEquals = rhs parseState 2
 
        fun leadingKeyword ->
-           let trivia: SynTypeDefnTrivia = { LeadingKeyword = leadingKeyword; EqualsRange = Some mEquals; WithKeyword = mWith }
+           let trivia: SynTypeDefnTrivia = { LeadingKeyword = leadingKeyword; EqualsRange = $2; WithKeyword = mWith }
            SynTypeDefn($1, tcDefRepr, members, None, mWhole, trivia) }
 
   | typeNameInfo tyconDefnAugmentation
@@ -2313,7 +2312,7 @@ typeConstraint:
      { SynTypeConstraint.WhereTyparIsValueType($1, lhs parseState) }
 
   | typar COLON IDENT STRUCT
-     { if $3 <> "not" then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier($3 + " (1)"))
+     { if $3 <> "not" then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier($3))
        SynTypeConstraint.WhereTyparIsReferenceType($1, lhs parseState) }
 
   | typar COLON NULL
@@ -5583,7 +5582,7 @@ appType:
 */
 
   | appType arrayTypeSuffix
-      {  SynType.Array($2, $1, lhs parseState) }
+      { SynType.Array($2, $1, lhs parseState) }
 
   | appType HIGH_PRECEDENCE_BRACK_APP arrayTypeSuffix /* only HPA for "name[]" allowed here */
       { SynType.Array($3, $1, lhs parseState) }
