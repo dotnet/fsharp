@@ -160,7 +160,8 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                                         nameof enablePartialTypeChecking, enablePartialTypeChecking
                                         nameof keepAllBackgroundResolutions, keepAllBackgroundResolutions
                                         nameof keepAllBackgroundSymbolUses, keepAllBackgroundSymbolUses
-                                        nameof enableBackgroundItemKeyStoreAndSemanticClassification, enableBackgroundItemKeyStoreAndSemanticClassification
+                                        nameof enableBackgroundItemKeyStoreAndSemanticClassification,
+                                        enableBackgroundItemKeyStoreAndSemanticClassification
                                         nameof captureIdentifiersWhenParsing, captureIdentifiersWhenParsing
                                     |],
                                     TelemetryThrottlingStrategy.NoThrottling
@@ -173,7 +174,8 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                                     legacyReferenceResolver = LegacyMSBuildReferenceResolver.getResolver (),
                                     tryGetMetadataSnapshot = tryGetMetadataSnapshot,
                                     keepAllBackgroundSymbolUses = keepAllBackgroundSymbolUses,
-                                    enableBackgroundItemKeyStoreAndSemanticClassification = enableBackgroundItemKeyStoreAndSemanticClassification,
+                                    enableBackgroundItemKeyStoreAndSemanticClassification =
+                                        enableBackgroundItemKeyStoreAndSemanticClassification,
                                     enablePartialTypeChecking = enablePartialTypeChecking,
                                     parallelReferenceResolution = enableParallelReferenceResolution,
                                     captureIdentifiersWhenParsing = captureIdentifiersWhenParsing,

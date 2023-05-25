@@ -13,9 +13,10 @@ type DocumentCache<'Value when 'Value: not struct>(name: string, ?cacheItemPolic
 
     let cache = new MemoryCache(name)
 
-    let policy = defaultArg cacheItemPolicy (CacheItemPolicy(SlidingExpiration = (TimeSpan.FromSeconds defaultSlidingExpiration)))
+    let policy =
+        defaultArg cacheItemPolicy (CacheItemPolicy(SlidingExpiration = (TimeSpan.FromSeconds defaultSlidingExpiration)))
 
-    member  _.TryGetValueAsync(doc: Document) =
+    member _.TryGetValueAsync(doc: Document) =
         cancellableTask {
             let! ct = CancellableTask.getCurrentCancellationToken ()
             let! currentVersion = doc.GetTextVersionAsync ct
@@ -30,7 +31,7 @@ type DocumentCache<'Value when 'Value: not struct>(name: string, ?cacheItemPolic
             | _ -> return ValueNone
         }
 
-    member  _.SetAsync(doc: Document, value: 'Value) =
+    member _.SetAsync(doc: Document, value: 'Value) =
         cancellableTask {
             let! ct = CancellableTask.getCurrentCancellationToken ()
             let! currentVersion = doc.GetTextVersionAsync ct
