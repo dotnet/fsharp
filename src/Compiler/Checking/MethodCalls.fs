@@ -1184,8 +1184,12 @@ let BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst objA
         // Build a 'call' to a struct default constructor 
         | DefaultStructCtor (g, ty) -> 
             if g.langFeatureNullness && g.checkNullness then
-                if not (TypeHasDefaultValueNew g m ty) then 
+                if not (TypeHasDefaultValue g m ty) then 
                     errorR(Error(FSComp.SR.tcDefaultStructConstructorCall(), m))
+                // If the condition is detected because of a variation in logic introduced because
+                // of nullness checking, then only a warning is emitted.
+                elif not (TypeHasDefaultValueNew g m ty) then 
+                    warning(Error(FSComp.SR.tcDefaultStructConstructorCall(), m))
             else
                 if not (TypeHasDefaultValue g m ty) then 
                     errorR(Error(FSComp.SR.tcDefaultStructConstructorCall(), m))

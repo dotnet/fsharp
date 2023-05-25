@@ -2540,8 +2540,12 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                 let zeroInitUnsafe = TryFindFSharpBoolAttribute g g.attrib_DefaultValueAttribute f.FieldAttribs
                 if zeroInitUnsafe = Some true then
                     let ty = f.FormalType
-                    if not (TypeHasDefaultValueNew g m ty) then 
+                    // If the condition is detected because of a variation in logic introduced because
+                    // of nullness checking, then only a warning is emitted.
+                    if not (TypeHasDefaultValue g m ty) then 
                         errorR(Error(FSComp.SR.chkValueWithDefaultValueMustHaveDefaultValue(), m))
+                    elif not (TypeHasDefaultValueNew g m ty) then 
+                        warning(Error(FSComp.SR.chkValueWithDefaultValueMustHaveDefaultValue(), m))
 
         // These are the old rules (not g.langFeatureNullness or not g.checkNullness), mistakenly only applied to structs
         elif tycon.IsStructOrEnumTycon then 
