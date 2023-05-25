@@ -60,7 +60,9 @@ let main argv =
             TextSpan.FromBounds(searchPosition, searchPosition + searchToken.Length)
 
         let actualResolutionOption =
-            let task = FSharpBreakpointResolutionService.GetBreakpointLocation(document, searchSpan) CancellationToken.None
+            let task =
+                FSharpBreakpointResolutionService.GetBreakpointLocation (document, searchSpan) CancellationToken.None
+
             task.Result
 
         match actualResolutionOption with
