@@ -6,6 +6,7 @@
     <IsPackable>false</IsPackable>
     <GenerateProgramFile>false</GenerateProgramFile>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <NoWarn>$(NoWarn);FS3511</NoWarn> <!-- This state machine is not statically compilable. -->
   </PropertyGroup>
 
   <ItemGroup>
@@ -42,6 +43,10 @@
     <Compile Include="SemanticClassificationServiceTests.fs" />
     <Compile Include="SyntacticColorizationServiceTests.fs" />
     <Compile Include="DocumentHighlightsServiceTests.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Runtime.Caching" />
   </ItemGroup>
 
   <ItemGroup>

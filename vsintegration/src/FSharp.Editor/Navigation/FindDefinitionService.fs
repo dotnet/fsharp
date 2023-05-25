@@ -20,5 +20,5 @@ type internal FSharpFindDefinitionService [<ImportingConstructor>] (metadataAsSo
         member _.FindDefinitionsAsync(document: Document, position: int, cancellationToken: CancellationToken) =
             let navigation = FSharpNavigation(metadataAsSource, document, rangeStartup)
 
-            let definitions = navigation.FindDefinitions(position, cancellationToken)
+            let definitions = navigation.FindDefinitions(position, cancellationToken) // TODO: probably will need to be async all the way down
             ImmutableArray.CreateRange(definitions) |> Task.FromResult

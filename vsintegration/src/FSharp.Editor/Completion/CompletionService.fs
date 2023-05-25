@@ -4,7 +4,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
 open System.Collections.Immutable
-
+open System.Threading
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Completion
 open Microsoft.CodeAnalysis.Host
@@ -58,7 +58,15 @@ type internal FSharpCompletionService
         let defines, langVersion =
             projectInfoManager.GetCompilationDefinesAndLangVersionForEditingDocument(document)
 
-        CompletionUtils.getDefaultCompletionListSpan (sourceText, caretIndex, documentId, document.FilePath, defines, Some langVersion)
+        CompletionUtils.getDefaultCompletionListSpan (
+            sourceText,
+            caretIndex,
+            documentId,
+            document.FilePath,
+            defines,
+            Some langVersion,
+            CancellationToken.None
+        )
 
 [<Shared>]
 [<ExportLanguageServiceFactory(typeof<CompletionService>, FSharpConstants.FSharpLanguageName)>]
@@ -71,7 +79,7 @@ type internal FSharpCompletionServiceFactory [<ImportingConstructor>]
     interface ILanguageServiceFactory with
         member _.CreateLanguageService(hostLanguageServices: HostLanguageServices) : ILanguageService =
             upcast
-                new FSharpCompletionService(
+                FSharpCompletionService(
                     hostLanguageServices.WorkspaceServices.Workspace,
                     serviceProvider,
                     assemblyContentProvider,
