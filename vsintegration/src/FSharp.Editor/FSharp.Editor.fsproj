@@ -26,6 +26,8 @@
      <EmbeddedText Include="$(MSBuildThisFileDirectory)..\..\..\src\LegacyMSBuildResolver\LegacyResolver.txt">
       <Link>LegacyResolver.txt</Link>
     </EmbeddedText>
+    <Compile Include="Common\CancellableTasks.fs" />
+    <Compile Include="Common\DocumentCache.fs" />
     <Compile Include="$(MSBuildThisFileDirectory)..\..\..\src\LegacyMSBuildResolver\LegacyMSBuildReferenceResolver.fsi" />
     <Compile Include="$(MSBuildThisFileDirectory)..\..\..\src\LegacyMSBuildResolver\LegacyMSBuildReferenceResolver.fs" />
     <Compile Include="Common\AssemblyInfo.fs" />
@@ -142,7 +144,7 @@
     <Compile Include="Hints\HintService.fs" />
     <Compile Include="Hints\NativeToRoslynHintConverter.fs" />
     <Compile Include="Hints\OptionParser.fs" />
-    <Compile Include="Hints\RoslynAdapter.fs" />
+    <Compile Include="Hints\FSharpInlineHintsService.fs" />
   </ItemGroup>
 
   <ItemGroup>
