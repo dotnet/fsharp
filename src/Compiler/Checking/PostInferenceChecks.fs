@@ -2542,10 +2542,11 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                     let ty = f.FormalType
                     // If the condition is detected because of a variation in logic introduced because
                     // of nullness checking, then only a warning is emitted.
-                    if not (TypeHasDefaultValue g m ty) then 
-                        errorR(Error(FSComp.SR.chkValueWithDefaultValueMustHaveDefaultValue(), m))
-                    elif not (TypeHasDefaultValueNew g m ty) then 
-                        warning(Error(FSComp.SR.chkValueWithDefaultValueMustHaveDefaultValue(), m))
+                    if not (TypeHasDefaultValueNew g m ty) then 
+                        if not (TypeHasDefaultValue g m ty) then 
+                            errorR(Error(FSComp.SR.chkValueWithDefaultValueMustHaveDefaultValue(), m))
+                        else
+                            warning(Error(FSComp.SR.chkValueWithDefaultValueMustHaveDefaultValue(), m))
 
         // These are the old rules (not g.langFeatureNullness or not g.checkNullness), mistakenly only applied to structs
         elif tycon.IsStructOrEnumTycon then 

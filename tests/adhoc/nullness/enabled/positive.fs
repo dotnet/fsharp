@@ -228,3 +228,10 @@ module DefaultValueTests =
             [<DefaultValue>]
             val mutable Whoops : String __withnull // expect no warning
 
+        type C4b =
+            [<DefaultValue>]
+            val mutable Whoops : int FSharp.Collections.List __withnull // expect no warning
+
+        type C7 =
+            [<DefaultValue>]
+            val mutable Whoops : (int -> int) __withnull // expect no warning

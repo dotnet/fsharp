@@ -2494,6 +2494,8 @@ and SolveTypeUseSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 trace ty = tr
             | ValueSome tp ->
                 let nullness = nullnessOfTy g ty
                 match nullness.TryEvaluate() with
+                // NULLNESS TODO: This rule means turning on checkNullness changes type inference results for the cases
+                // mentioned in the comment above. THat's OK but needs to be documented in the RFC.
                 | ValueNone when not g.checkNullness ->
                     return! AddConstraint csenv ndeep m2 trace tp (TyparConstraint.SupportsNull m)
                 | ValueSome NullnessInfo.WithoutNull ->

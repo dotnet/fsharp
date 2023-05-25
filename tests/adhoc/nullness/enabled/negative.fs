@@ -43,10 +43,6 @@ module NullConstraintTests =
             [<DefaultValue>]
             val mutable Whoops : int FSharp.Collections.List // expect an error if checknulls is on
 
-        type C4b =
-            [<DefaultValue>]
-            val mutable Whoops : int FSharp.Collections.List __withnull // expect no warning
-
         type C5 =
             [<DefaultValue>]
             val mutable Whoops : int * int // expect an error like previous F#
@@ -54,7 +50,3 @@ module NullConstraintTests =
         type C6 =
             [<DefaultValue>]
             val mutable Whoops : int -> int // expect an error like previous F#
-
-        type C7 =
-            [<DefaultValue>]
-            val mutable Whoops : (int -> int) __withnull // expect no warning
