@@ -12,6 +12,7 @@
     <OtherFlags>$(OtherFlags) /checknulls /sig:out.fsi</OtherFlags> 
     <!-- Suppress nullness warnings to get this co compile in CI -->
     <OtherFlags>$(OtherFlags) --nowarn:3261</OtherFlags>
+    <OtherFlags>$(OtherFlags) --nowarn:444</OtherFlags>
   </PropertyGroup>
 
   <ItemGroup>

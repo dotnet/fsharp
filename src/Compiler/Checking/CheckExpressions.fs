@@ -4747,10 +4747,6 @@ and TcStaticConstantParameter (cenv: cenv) (env: TcEnv) tpenv kind (StripParenTy
         | _ -> ()
 
     match v with
-    | SynType.StaticConstantNull _ when typeEquiv g g.string_ty kind ->
-        record(g.string_ty)
-        null, tpenv
-
     | SynType.StaticConstant(sc, _) ->
         let v =
             match sc with
