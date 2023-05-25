@@ -422,6 +422,11 @@
         <target state="translated">Genera avvisi quando 'let inline ... =' viene usato insieme all'attributo [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;]. La funzione non viene resa inline.</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureWarningWhenMultipleRecdTypeChoice">
+        <source>Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</source>
+        <target state="new">Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
         <source>wild card in for loop</source>
         <target state="translated">carattere jolly nel ciclo for</target>

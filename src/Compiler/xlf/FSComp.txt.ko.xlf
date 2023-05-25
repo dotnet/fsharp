@@ -422,6 +422,11 @@
         <target state="translated">'let inline ... ='을(를) [&lt;MethodImpl(MethodImplOptions.NoInlining)&gt;] 특성과 함께 사용하는 경우 경고를 발생합니다. 함수가 인라인되지 않습니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureWarningWhenMultipleRecdTypeChoice">
+        <source>Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</source>
+        <target state="new">Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
         <source>wild card in for loop</source>
         <target state="translated">for 루프의 와일드카드</target>
