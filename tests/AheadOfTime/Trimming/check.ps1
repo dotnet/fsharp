@@ -47,4 +47,4 @@ CheckTrim -root "SelfContained_Trimming_Test" -tfm "net472" -outputfile "FSharp.
 CheckTrim -root "StaticLinkedFSharpCore_Trimming_Test" -tfm "net472" -outputfile "StaticLinkedFSharpCore_Trimming_Test.exe" -expected_len -1
 
 # Check net7.0 trimmed assemblies
-CheckTrim -root "StaticLinkedFSharpCore_Trimming_Test" -tfm "net7.0" -outputfile "StaticLinkedFSharpCore_Trimming_Test.dll" -expected_len 8820736
+CheckTrim -root "StaticLinkedFSharpCore_Trimming_Test" -tfm "net7.0" -outputfile "StaticLinkedFSharpCore_Trimming_Test.dll" -expected_len (If ($compressAllMetadata) {8821760} Else {8821760})
