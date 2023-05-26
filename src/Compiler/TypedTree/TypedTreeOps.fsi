@@ -1061,7 +1061,7 @@ type DisplayEnv =
         showAttributes: bool
         showOverrides: bool
         showStaticallyResolvedTyparAnnotations: bool
-        showNullnessAnnotations: bool
+        showNullnessAnnotations: bool option
         abbreviateAdditionalConstraints: bool
         showTyparDefaultConstraints: bool
         /// If set, signatures will be rendered with XML documentation comments for members if they exist

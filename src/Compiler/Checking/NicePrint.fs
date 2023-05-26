@@ -320,6 +320,13 @@ module internal PrintUtilities =
         | Some w -> Display.squashTo w layout
         | None -> layout
         
+    // When showing types in diagnostics, we don't show nullness annotations by default
+    // unless the diagnostic is specifically about nullness.
+    let suppressNullnessAnnotations denv =
+        match denv.showNullnessAnnotations with
+        | None -> { denv with showNullnessAnnotations = Some false }
+        | _ -> denv
+
 module PrintIL = 
 
     let fullySplitILTypeRef (tref: ILTypeRef) = 
@@ -879,7 +886,8 @@ module PrintTypes =
             | args -> bracketIfL (prec <= 1) (bracketL (layoutTypesWithInfoAndPrec denv env 2 (sepL (tagPunctuation ",")) args) --- tcL)
 
     and layoutNullness (denv: DisplayEnv) part2 (nullness: Nullness) =
-        if denv.showNullnessAnnotations then
+        // Show nullness annotations unless explicitly turned off
+        if denv.showNullnessAnnotations <> Some false then
             match nullness.Evaluate() with
             | NullnessInfo.WithNull -> part2 ^^ wordL (tagText "__withnull")
             | NullnessInfo.WithoutNull -> part2
@@ -1227,6 +1235,7 @@ module PrintTastMemberOrVals =
         nameL
 
     let prettyLayoutOfMemberShortOption denv typarInst (v: Val) short =
+        let denv = suppressNullnessAnnotations denv
         let vref = mkLocalValRef v
         let membInfo = Option.get vref.MemberInfo
         let stat = layoutMemberFlags membInfo.MemberFlags
@@ -2658,9 +2667,11 @@ let prettyLayoutOfInstAndSig denv x = PrintTypes.prettyLayoutOfInstAndSig denv x
 let minimalStringsOfTwoTypes denv ty1 ty2 =
     let (ty1, ty2), tpcs = PrettyTypes.PrettifyTypePair denv.g (ty1, ty2)
 
+    let denv = suppressNullnessAnnotations denv
+
     // try denv + no type annotations 
     let attempt1 = 
-        let denv = { denv with showInferenceTyparAnnotations=false; showStaticallyResolvedTyparAnnotations=false; showNullnessAnnotations=false }
+        let denv = { denv with showInferenceTyparAnnotations=false; showStaticallyResolvedTyparAnnotations=false }
         let min1 = stringOfTy denv ty1
         let min2 = stringOfTy denv ty2
         if min1 <> min2 then Some (min1, min2, "") else None
@@ -2671,7 +2682,7 @@ let minimalStringsOfTwoTypes denv ty1 ty2 =
 
     // try denv + no type annotations + show full paths
     let attempt2 = 
-        let denv = { denv with showInferenceTyparAnnotations=false; showStaticallyResolvedTyparAnnotations=false; showNullnessAnnotations=false }.SetOpenPaths []
+        let denv = { denv with showInferenceTyparAnnotations=false; showStaticallyResolvedTyparAnnotations=false }.SetOpenPaths []
         let min1 = stringOfTy denv ty1
         let min2 = stringOfTy denv ty2
         if min1 <> min2 then Some (min1, min2, "") else None
@@ -2713,18 +2724,20 @@ let minimalStringsOfTwoTypes denv ty1 ty2 =
     
 // Note: Always show imperative annotations when comparing value signatures 
 let minimalStringsOfTwoValues denv infoReader vref1 vref2 = 
-    let denvMin = { denv with showInferenceTyparAnnotations=true; showStaticallyResolvedTyparAnnotations=false; showNullnessAnnotations=false }
+    let denv = suppressNullnessAnnotations denv
+    let denvMin = { denv with showInferenceTyparAnnotations=true; showStaticallyResolvedTyparAnnotations=false }
     let min1 = buildString (fun buf -> outputQualifiedValOrMember denvMin infoReader buf vref1)
     let min2 = buildString (fun buf -> outputQualifiedValOrMember denvMin infoReader buf vref2) 
     if min1 <> min2 then 
         (min1, min2) 
     else
-        let denvMax = { denv with showInferenceTyparAnnotations=true; showStaticallyResolvedTyparAnnotations=true; showNullnessAnnotations=false }
+        let denvMax = { denv with showInferenceTyparAnnotations=true; showStaticallyResolvedTyparAnnotations=true }
         let max1 = buildString (fun buf -> outputQualifiedValOrMember denvMax infoReader buf vref1)
         let max2 = buildString (fun buf -> outputQualifiedValOrMember denvMax infoReader buf vref2) 
         max1, max2
     
 let minimalStringOfType denv ty = 
     let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
+    let denv = suppressNullnessAnnotations denv
     let denvMin = { denv with showInferenceTyparAnnotations=false; showStaticallyResolvedTyparAnnotations=false }
     showL (PrintTypes.layoutTypeWithInfoAndPrec denvMin SimplifyTypes.typeSimplificationInfo0 2 ty)

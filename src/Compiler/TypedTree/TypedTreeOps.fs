@@ -863,8 +863,6 @@ let destAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, tinst, _)
 
 let tcrefOfAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tcref | _ -> failwith "tcrefOfAppTy") 
 
-let nullnessOfTy g ty = ty |> stripTyEqns g |> (function TType_app(_, _, nullness) | TType_fun (_, _, nullness) | TType_var (_, nullness) -> nullness | _ -> g.knownWithoutNull) 
-
 let argsOfAppTy g ty = ty |> stripTyEqns g |> (function TType_app(_, tinst, _) -> tinst | _ -> [])
 
 let tryDestTyparTy g ty = ty |> stripTyEqns g |> (function TType_var (v, _) -> ValueSome v | _ -> ValueNone)
@@ -3078,7 +3076,7 @@ type DisplayEnv =
       showAttributes: bool
       showOverrides: bool
       showStaticallyResolvedTyparAnnotations: bool
-      showNullnessAnnotations: bool
+      showNullnessAnnotations: bool option
       abbreviateAdditionalConstraints: bool
       showTyparDefaultConstraints: bool
       showDocumentation: bool
@@ -3113,7 +3111,7 @@ type DisplayEnv =
         showAttributes = false
         showOverrides = true
         showStaticallyResolvedTyparAnnotations = true
-        showNullnessAnnotations = true
+        showNullnessAnnotations = None
         showDocumentation = false
         abbreviateAdditionalConstraints = false
         showTyparDefaultConstraints = false
@@ -8906,16 +8904,16 @@ let TypeNullNever g ty =
     isByrefTy g underlyingTy ||
     isNonNullableStructTyparTy g ty
 
-/// The F# 4.5 logic about whether a type admits the use of 'null' as a value.
+/// The pre-nullness logic about whether a type admits the use of 'null' as a value.
 let TypeNullIsExtraValue g m ty = 
     if isILReferenceTy g ty || isDelegateTy g ty then
         match tryTcrefOfAppTy g ty with 
         | ValueSome tcref -> 
-            // In F# 4.x, putting AllowNullLiteralAttribute(false) on an IL or provided 
+            // Putting AllowNullLiteralAttribute(false) on an IL or provided 
             // type means 'null' can't be used with that type, otherwise it can
             TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref <> Some false 
         | _ -> 
-            // In F# 4.5, other IL reference types (e.g. arrays) always support null
+            // In pre-nullness, other IL reference types (e.g. arrays) always support null
             true
     elif TypeNullNever g ty then 
         false
@@ -8927,6 +8925,23 @@ let TypeNullIsExtraValue g m ty =
 
         // Consider type parameters
         isSupportsNullTyparTy g ty
+
+// Any mention of a type with AllowNullLiteral(true) is considered to be with-null
+let intrinsicNullnessOfTyconRef g (tcref: TyconRef) =
+    match TryFindTyconRefBoolAttribute g tcref.Range g.attrib_AllowNullLiteralAttribute tcref with
+    | Some true -> g.knownWithNull
+    | _ -> g.knownWithoutNull
+
+let nullnessOfTy g ty =
+    ty
+    |> stripTyEqns g
+    |> function
+        | TType_app(tcref, _, nullness) ->
+            let nullness2 = intrinsicNullnessOfTyconRef g tcref
+            combineNullness nullness nullness2
+        | TType_fun (_, _, nullness) | TType_var (_, nullness) ->
+            nullness
+        | _ -> g.knownWithoutNull
 
 /// The new logic about whether a type admits the use of 'null' as a value.
 let TypeNullIsExtraValueNew g m ty = 
@@ -8952,7 +8967,7 @@ let TypeNullIsExtraValueNew g m ty =
     // Check if the type has a ': null' constraint
     isSupportsNullTyparTy g ty
 
-/// The F# 4.5 and 5.0 logic about whether a type uses 'null' as a true representation value
+/// The pre-nullness logic about whether a type uses 'null' as a true representation value
 let TypeNullIsTrueValue g ty =
     (match tryTcrefOfAppTy g ty with
      | ValueSome tcref -> IsUnionTypeWithNullAsTrueValue g tcref.Deref
