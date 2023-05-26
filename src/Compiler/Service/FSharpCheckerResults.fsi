@@ -130,7 +130,6 @@ and [<NoComparison; CustomEquality; RequireQualifiedAccess>] FSharpReferencedPro
     /// </summary>
     member OutputFile: string
 
-
 /// Represents the use of an F# symbol from F# source code
 [<Sealed>]
 type public FSharpSymbolUse =

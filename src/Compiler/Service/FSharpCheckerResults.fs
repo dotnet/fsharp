@@ -68,7 +68,7 @@ type DelayedILModuleReader =
     val mutable private getStream: (CancellationToken -> Stream option)
     val mutable private result: ILModuleReader
 
-    new (name, getStream) =
+    new(name, getStream) =
         {
             name = name
             gate = obj ()
