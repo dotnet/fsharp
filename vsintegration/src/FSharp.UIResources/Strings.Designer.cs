@@ -88,6 +88,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Capture identifiers while parsing.
+        /// </summary>
+        public static string Capture_Identifiers_When_Parsing {
+            get {
+                return ResourceManager.GetString("Capture_Identifiers_When_Parsing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Code Fixes.
         /// </summary>
         public static string Code_Fixes {
@@ -129,6 +138,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Dot_underline {
             get {
                 return ResourceManager.GetString("Dot_underline", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Keep background symbol keys.
+        /// </summary>
+        public static string Enable_Background_ItemKeyStore_And_Semantic_Classification {
+            get {
+                return ResourceManager.GetString("Enable_Background_ItemKeyStore_And_Semantic_Classification", resourceCulture);
             }
         }
         
@@ -259,11 +277,38 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Keep all background intermediate resolutions (increases memory usage).
+        /// </summary>
+        public static string Keep_All_Background_Resolutions {
+            get {
+                return ResourceManager.GetString("Keep_All_Background_Resolutions", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Keep all background symbol uses (increases memory usage).
+        /// </summary>
+        public static string Keep_All_Background_Symbol_Uses {
+            get {
+                return ResourceManager.GetString("Keep_All_Background_Symbol_Uses", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Performance.
         /// </summary>
         public static string Language_Service_Performance {
             get {
                 return ResourceManager.GetString("Language_Service_Performance", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Language service settings (advanced).
+        /// </summary>
+        public static string Language_Service_Settings {
+            get {
+                return ResourceManager.GetString("Language_Service_Settings", resourceCulture);
             }
         }
         

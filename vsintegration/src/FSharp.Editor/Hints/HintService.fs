@@ -2,51 +2,76 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor.Hints
 
+open System
+
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.Symbols
 open Hints
+open CancellableTasks
+open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
 module HintService =
+
+    let semanticClassificationCache =
+        new DocumentCache<NativeHint list>("fsharp-hints-cache")
 
     let private getHints sourceText parseResults hintKinds symbolUses (symbol: FSharpSymbol) =
 
         let getHintsPerKind hintKind =
             match hintKind, symbol with
             | HintKind.TypeHint, (:? FSharpMemberOrFunctionOrValue as symbol) ->
-                symbolUses |> Seq.collect (InlineTypeHints(parseResults, symbol)).getHints
+                symbolUses |> Seq.collect (InlineTypeHints(parseResults, symbol)).GetHints
             | HintKind.ReturnTypeHint, (:? FSharpMemberOrFunctionOrValue as symbol) ->
-                symbolUses |> Seq.collect (InlineReturnTypeHints(parseResults, symbol).getHints)
+                symbolUses |> Seq.collect (InlineReturnTypeHints(parseResults, symbol).GetHints)
             | HintKind.ParameterNameHint, (:? FSharpMemberOrFunctionOrValue as symbol) ->
                 symbolUses
-                |> Seq.collect (InlineParameterNameHints(parseResults).getHintsForMemberOrFunctionOrValue sourceText symbol)
+                |> Seq.collect (InlineParameterNameHints(parseResults).GetHintsForMemberOrFunctionOrValue sourceText symbol)
             | HintKind.ParameterNameHint, (:? FSharpUnionCase as symbol) ->
                 symbolUses
-                |> Seq.collect (InlineParameterNameHints(parseResults).getHintsForUnionCase symbol)
+                |> Seq.collect (InlineParameterNameHints(parseResults).GetHintsForUnionCase symbol)
             | _ -> []
 
-        let rec getHints hintKinds acc =
-            match hintKinds with
-            | [] -> acc
-            | hintKind :: hintKinds -> getHintsPerKind hintKind :: acc |> getHints hintKinds
-
-        getHints (hintKinds |> Set.toList) []
+        hintKinds |> Set.toList |> List.map getHintsPerKind
 
     let private getHintsForSymbol (sourceText: SourceText) parseResults hintKinds (symbol, symbolUses) =
         let hints = getHints sourceText parseResults hintKinds symbolUses symbol
         Seq.concat hints
 
-    let getHintsForDocument sourceText (document: Document) hintKinds userOpName cancellationToken =
-        async {
+    let getHintsForDocument sourceText (document: Document) hintKinds userOpName =
+        cancellableTask {
             if isSignatureFile document.FilePath then
-                return []
+                return List.empty
             else
-                let! parseResults, checkResults = document.GetFSharpParseAndCheckResultsAsync userOpName
+                let hintKindsSerialized = hintKinds |> Set.map Hints.serialize |> String.concat ","
 
-                return
-                    checkResults.GetAllUsesOfAllSymbolsInFile cancellationToken
-                    |> Seq.groupBy (fun symbolUse -> symbolUse.Symbol)
-                    |> Seq.collect (getHintsForSymbol sourceText parseResults hintKinds)
-                    |> Seq.toList
+                match! semanticClassificationCache.TryGetValueAsync document with
+                | ValueSome nativeHints ->
+                    do
+                        TelemetryReporter.ReportSingleEvent(
+                            TelemetryEvents.Hints,
+                            [| ("hints.kinds", hintKindsSerialized); ("cacheHit", true) |]
+                        )
+
+                    return nativeHints
+                | ValueNone ->
+                    do
+                        TelemetryReporter.ReportSingleEvent(
+                            TelemetryEvents.Hints,
+                            [| ("hints.kinds", hintKindsSerialized); ("cacheHit", false) |]
+                        )
+
+                    let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+                    let! parseResults, checkResults = document.GetFSharpParseAndCheckResultsAsync userOpName
+
+                    let nativeHints =
+                        checkResults.GetAllUsesOfAllSymbolsInFile cancellationToken
+                        |> Seq.groupBy (fun symbolUse -> symbolUse.Symbol)
+                        |> Seq.collect (getHintsForSymbol sourceText parseResults hintKinds)
+                        |> Seq.toList
+
+                    do! semanticClassificationCache.SetAsync(document, nativeHints)
+
+                    return nativeHints
         }

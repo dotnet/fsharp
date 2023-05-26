@@ -2137,14 +2137,16 @@ type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
             if allowedRange m then
                 if replace then
                     remove m
-                elif not (isAlreadyDone endPos item m) then
+
+                if not (isAlreadyDone endPos item m) then
                     capturedNameResolutions.Add(CapturedNameResolution(item, tpinst, occurenceType, nenv, ad, m))
 
         member sink.NotifyMethodGroupNameResolution(endPos, item, itemMethodGroup, tpinst, occurenceType, nenv, ad, m, replace) =
             if allowedRange m then
                 if replace then
                     remove m
-                elif not (isAlreadyDone endPos item m) then
+
+                if not (isAlreadyDone endPos item m) then
                     capturedNameResolutions.Add(CapturedNameResolution(item, tpinst, occurenceType, nenv, ad, m))
                     capturedMethodGroupResolutions.Add(CapturedNameResolution(itemMethodGroup, [], occurenceType, nenv, ad, m))
 
