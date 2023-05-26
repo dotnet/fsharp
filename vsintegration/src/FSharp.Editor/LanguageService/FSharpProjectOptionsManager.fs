@@ -279,7 +279,9 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                         match! tryComputeOptions referencedProject ct with
                         | None -> canBail <- true
                         | Some (_, projectOptions) ->
-                            referencedProjects.Add(FSharpReferencedProject.FSharpReference(referencedProject.OutputFilePath, projectOptions))
+                            referencedProjects.Add(
+                                FSharpReferencedProject.FSharpReference(referencedProject.OutputFilePath, projectOptions)
+                            )
                     elif referencedProject.SupportsCompilation then
                         let! comp = referencedProject.GetCompilationAsync(ct) |> Async.AwaitTask
                         let peRef = createPEReference referencedProject comp
