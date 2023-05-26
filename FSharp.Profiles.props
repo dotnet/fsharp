@@ -3,7 +3,8 @@
 <Project>
   <PropertyGroup>
     <!-- This turns on/off the use of the feature within the codebase -->
-    <CheckNulls>true</CheckNulls>
+    <!-- The default is off - it is selectively enabled -->
+    <CheckNulls Condition="'$(CheckNulls)' == ''">false</CheckNulls>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">
