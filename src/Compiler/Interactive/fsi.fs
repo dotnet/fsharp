@@ -3439,7 +3439,7 @@ type internal MagicAssemblyResolution() =
             fsiDynamicCompiler: FsiDynamicCompiler,
             fsiConsoleOutput: FsiConsoleOutput,
             fullAssemName: string
-        ) =
+        ) : Assembly MaybeNull =
 
         //Eliminate recursive calls to Resolve which can happen via our callout to msbuild resolution
         if MagicAssemblyResolution.resolving then
@@ -3527,14 +3527,14 @@ type FsiStdinLexerProvider
                     | NonNull t -> fsiStdinSyphon.Add(t + "\n"))
 
                 match inputOption with
-                | Some null
+                | Some Null
                 | None ->
                     if progress then
                         fprintfn fsiConsoleOutput.Out "End of file from TextReader.ReadLine"
 
                     0
-                | Some (input: string) ->
-                    let input = input + "\n"
+                | Some (NonNull input) ->
+                    let input = nonNull input + "\n"
 
                     if input.Length > len then
                         fprintf fsiConsoleOutput.Error "%s" (FSIstrings.SR.fsiLineTooLong ())

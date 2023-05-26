@@ -12,7 +12,8 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Proto'">
-    <DefineConstants>BUILDING_WITH_LKG;NO_NULLCHECKING_LIB_SUPPORT;$(DefineConstants)</DefineConstants>
+    <CheckNulls>false</CheckNulls>
+    <DefineConstants>NO_CHECKNULLS;BUILDING_WITH_LKG;NO_NULLCHECKING_LIB_SUPPORT;$(DefineConstants)</DefineConstants>
     <NullCheckingSupportInLibrary>false</NullCheckingSupportInLibrary>
   </PropertyGroup>
 

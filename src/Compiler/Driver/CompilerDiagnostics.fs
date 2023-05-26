@@ -678,6 +678,9 @@ type Exception with
 
         | ConstraintSolverNullnessWarningEquivWithTypes (denv, ty1, ty2, _nullness1, _nullness2, m, m2) ->
 
+            // Turn on nullness annotations for messages about nullness
+            let denv = { denv with showNullnessAnnotations = Some true }
+
             let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
 
             os.Append(ConstraintSolverNullnessWarningEquivWithTypesE().Format t1 t2)
@@ -688,6 +691,9 @@ type Exception with
 
         | ConstraintSolverNullnessWarningWithTypes (denv, ty1, ty2, _nullness1, _nullness2, m, m2) ->
 
+            // Turn on nullness annotations for messages about nullness
+            let denv = { denv with showNullnessAnnotations = Some true }
+
             let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
 
             os.Append(ConstraintSolverNullnessWarningWithTypesE().Format t1 t2) |> ignore
@@ -696,6 +702,9 @@ type Exception with
                 os.Append(SeeAlsoE().Format(stringOfRange m)) |> ignore
 
         | ConstraintSolverNullnessWarningWithType (denv, ty, _, m, m2) ->
+
+            // Turn on nullness annotations for messages about nullness
+            let denv = { denv with showNullnessAnnotations = Some true }
 
             let t = NicePrint.minimalStringOfType denv ty
             os.Append(ConstraintSolverNullnessWarningWithTypeE().Format(t)) |> ignore

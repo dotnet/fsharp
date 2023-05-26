@@ -196,6 +196,9 @@ type TcGlobals(
 
   let v_langFeatureNullness = langVersion.SupportsFeature LanguageFeature.NullnessChecking
 
+  let v_knownWithNull =
+      if v_langFeatureNullness then KnownWithNull else KnownAmbivalentToNull
+
   let v_knownWithoutNull =
       if v_langFeatureNullness then KnownWithoutNull else KnownAmbivalentToNull
 
@@ -1090,6 +1093,8 @@ type TcGlobals(
   member _.checkNullness = checkNullness
 
   member _.langFeatureNullness = v_langFeatureNullness
+
+  member _.knownWithNull = v_knownWithNull
 
   member _.knownWithoutNull = v_knownWithoutNull
 
