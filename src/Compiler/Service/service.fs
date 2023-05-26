@@ -254,7 +254,7 @@ type BackgroundCompiler
                             member x.FileName = nm
                         }
 
-                | FSharpReferencedProject.PEReference (nm, getStamp, delayedReader) ->
+                | FSharpReferencedProject.PEReference (getStamp, delayedReader) ->
                     { new IProjectReference with
                         member x.EvaluateRawContents() =
                             node {
@@ -272,7 +272,7 @@ type BackgroundCompiler
                             }
 
                         member x.TryGetLogicalTimeStamp _ = getStamp () |> Some
-                        member x.FileName = nm
+                        member x.FileName = delayedReader.OutputFile
                     }
 
                 | FSharpReferencedProject.ILModuleReference (nm, getStamp, getReader) ->
