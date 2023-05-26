@@ -2,8 +2,9 @@
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Project>
   <PropertyGroup>
-    <!-- This turns on/off the feature in FSharp.Core. -->
-    <CheckNulls>false</CheckNulls>
+    <!-- This turns on/off the use of the feature within the codebase -->
+    <!-- The default is off - it is selectively enabled -->
+    <CheckNulls Condition="'$(CheckNulls)' == ''">false</CheckNulls>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">
