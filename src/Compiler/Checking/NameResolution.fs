@@ -541,8 +541,9 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap: Import.Impor
       
         let csharpStyleExtensionMembers = 
             if IsTyconRefUsedForCSharpStyleExtensionMembers g m tcrefOfStaticClass || tcrefOfStaticClass.IsLocalRef then
-                GetImmediateIntrinsicMethInfosOfType (None, AccessorDomain.AccessibleFromSomeFSharpCode) g amap m ty
-                |> List.filter (IsMethInfoPlainCSharpStyleExtensionMember g m true)
+                protectAssemblyExploration [] (fun () ->
+                    GetImmediateIntrinsicMethInfosOfType (None, AccessorDomain.AccessibleFromSomeFSharpCode) g amap m ty
+                    |> List.filter (IsMethInfoPlainCSharpStyleExtensionMember g m true))
             else
                 []
 
