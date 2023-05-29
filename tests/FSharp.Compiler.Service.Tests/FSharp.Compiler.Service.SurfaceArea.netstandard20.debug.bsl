@@ -20,7 +20,7 @@ FSharp.Compiler.AbstractIL.IL+ILArgConvention: Boolean IsCDecl
 FSharp.Compiler.AbstractIL.IL+ILArgConvention: Boolean IsDefault
 FSharp.Compiler.AbstractIL.IL+ILArgConvention: Boolean IsFastCall
 FSharp.Compiler.AbstractIL.IL+ILArgConvention: Boolean IsStdCall
-FSharp.Compiler.AbstractIL.IL+ILArgConvention: Boolean IsThisCall
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: Boolean IsThisCal
 FSharp.Compiler.AbstractIL.IL+ILArgConvention: Boolean IsVarArg
 FSharp.Compiler.AbstractIL.IL+ILArgConvention: Boolean get_IsCDecl()
 FSharp.Compiler.AbstractIL.IL+ILArgConvention: Boolean get_IsDefault()
@@ -5130,6 +5130,8 @@ FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Symbols.FSharpXmlDoc Xm
 FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Symbols.FSharpXmlDoc get_XmlDoc()
 FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Text.Range DeclarationLocation
 FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Text.Range get_DeclarationLocation()
+FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Symbols.FSharpEntity DeclaringEntity
+FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Symbols.FSharpEntity get_DeclaringEntity()
 FSharp.Compiler.Symbols.FSharpUnionCase: Int32 GetHashCode()
 FSharp.Compiler.Symbols.FSharpUnionCase: System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpAttribute] Attributes
 FSharp.Compiler.Symbols.FSharpUnionCase: System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpAttribute] get_Attributes()
