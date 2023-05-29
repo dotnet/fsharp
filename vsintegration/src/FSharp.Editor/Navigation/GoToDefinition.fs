@@ -467,7 +467,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
         use __ = statusBar.Animate()
         statusBar.Message(SR.NavigatingTo())
 
-        let rec textOpt =
+        let textOpt =
             match targetSymbolUse.Symbol with
             | :? FSharpEntity as symbol -> symbol.TryGetMetadataText() |> Option.map (fun text -> text, symbol.DisplayName)
             | :? FSharpMemberOrFunctionOrValue as symbol ->
