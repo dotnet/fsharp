@@ -229,47 +229,16 @@ module rec PrintTypes =
             tpHash @@ 13
 
     let hashTraitWithInfo  env traitInfo =
-        let g = env
-        let (TTrait(tys, _, memFlags, _, _, _)) = traitInfo
-        let nm = traitInfo.MemberDisplayNameCore
-        let nameL = ConvertValLogicalNameToDisplayLayout false (tagMember >> hashText) nm
+        let nameHash = hashText traitInfo.MemberLogicalName
+        let memberHash = hashMemberFlags traitInfo.MemberFlags    
+        let returnTypeHash = match traitInfo.CompiledReturnType with Some t -> hashType t | _ -> -1
 
-
-        let retTy = traitInfo.GetReturnType(g)
-        let argTys = traitInfo.GetLogicalArgumentTypes(g)
-        let argTys, retTy =
-            match memFlags.MemberKind with
-            | SynMemberKind.PropertySet ->
-                match List.tryFrontAndBack argTys with
-                | Some res -> res
-                | None -> argTys, retTy
-            | _ ->
-                argTys, retTy
-
-        let stat = hashMemberFlags memFlags
-        let tys = ListSet.setify (typeEquiv g) tys
-        let tysL = 
-            match tys with 
-            | [ty] -> hashTypeWithInfo (* denv *) env ty 
-            | tys -> bracketL (hashTypesWithInfoAndPrec (* denv *) env 2 (hashText ((* string to tag was here *) "or")) tys)
-
-        let retTyL = hashReturnType (* denv *) env retTy
-        let sigL =
-            match argTys with
-            // Empty arguments indicates a non-indexer property constraint
-            | [] -> retTyL
-            | _ ->
-                let argTysL = hashTypesWithInfoAndPrec (* denv *) env 2 (hashText (tagPunctuation "*")) argTys
-                hashCurriedFunc [argTysL] retTyL
-        let getterSetterL =
-            match memFlags.MemberKind with
-            | SynMemberKind.PropertyGet when not argTys.IsEmpty ->
-                hashText ((* string to tag was here *) "with") ^^ hashText (tagText "get")
-            | SynMemberKind.PropertySet ->
-                hashText ((* string to tag was here *) "with") ^^ hashText (tagText "set")
-            | _ ->
-                0 (* empty hash *)
-        (tysL |> addColonL) --- bracketL (stat ++ (nameL |> addColonL) --- sigL --- getterSetterL)
+        traitInfo.CompiledObjectAndArgumentTypes
+        |> hashAllVia (hashType)
+        |> addToHash (nameHash)
+        |> addToHash (returnTypeHash)
+        |> addToHash memberHash
+       
 
     /// Hash a unit of measure expression 
     let hashMeasure (* denv *) unt =
