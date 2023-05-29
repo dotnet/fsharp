@@ -170,6 +170,9 @@ module rec PrintTypes =
     let hashConstraintsWithInfo env cxs = 
         cxs
         |> hashAllVia (hashConstraintWithInfo env)
+
+    let hashTypeWithInfo x y = failwith "TODO"
+    let hashTypeAppWithInfoAndPrec x y = failwith "TODO"
                 
 
     /// Hash constraints, taking TypeSimplificationInfo into account 
@@ -189,9 +192,9 @@ module rec PrintTypes =
         | TyparConstraint.IsEnum(ty, _) ->
             tpHash @@ 4 @@ hashTypeAppWithInfoAndPrec env ty  
             //if (* denv *).shortConstraints then 
-            //    [hashText (tagKeyword "enum")]
+            //    [hashText ((* string to tag was here *) "enum")]
             //else
-            //    [longConstraintPrefix (hashTypeAppWithInfoAndPrec (* denv *) env (hashText (tagKeyword "enum")) 2 true [ty])]
+            //    [longConstraintPrefix (hashTypeAppWithInfoAndPrec (* denv *) env (hashText ((* string to tag was here *) "enum")) 2 true [ty])]
 
         | TyparConstraint.SupportsComparison _ ->
             tpHash @@ 5
@@ -230,44 +233,43 @@ module rec PrintTypes =
         let (TTrait(tys, _, memFlags, _, _, _)) = traitInfo
         let nm = traitInfo.MemberDisplayNameCore
         let nameL = ConvertValLogicalNameToDisplayLayout false (tagMember >> hashText) nm
-        if (* denv *).shortConstraints then 
-            WordL.keywordMember ^^ nameL
-        else
-            let retTy = traitInfo.GetReturnType(g)
-            let argTys = traitInfo.GetLogicalArgumentTypes(g)
-            let argTys, retTy =
-                match memFlags.MemberKind with
-                | SynMemberKind.PropertySet ->
-                    match List.tryFrontAndBack argTys with
-                    | Some res -> res
-                    | None -> argTys, retTy
-                | _ ->
-                    argTys, retTy
 
-            let stat = hashMemberFlags memFlags
-            let tys = ListSet.setify (typeEquiv g) tys
-            let tysL = 
-                match tys with 
-                | [ty] -> hashTypeWithInfo (* denv *) env ty 
-                | tys -> bracketL (hashTypesWithInfoAndPrec (* denv *) env 2 (hashText (tagKeyword "or")) tys)
 
-            let retTyL = hashReturnType (* denv *) env retTy
-            let sigL =
-                match argTys with
-                // Empty arguments indicates a non-indexer property constraint
-                | [] -> retTyL
-                | _ ->
-                    let argTysL = hashTypesWithInfoAndPrec (* denv *) env 2 (hashText (tagPunctuation "*")) argTys
-                    hashCurriedFunc [argTysL] retTyL
-            let getterSetterL =
-                match memFlags.MemberKind with
-                | SynMemberKind.PropertyGet when not argTys.IsEmpty ->
-                    hashText (tagKeyword "with") ^^ hashText (tagText "get")
-                | SynMemberKind.PropertySet ->
-                    hashText (tagKeyword "with") ^^ hashText (tagText "set")
-                | _ ->
-                    0 (* empty hash *)
-            (tysL |> addColonL) --- bracketL (stat ++ (nameL |> addColonL) --- sigL --- getterSetterL)
+        let retTy = traitInfo.GetReturnType(g)
+        let argTys = traitInfo.GetLogicalArgumentTypes(g)
+        let argTys, retTy =
+            match memFlags.MemberKind with
+            | SynMemberKind.PropertySet ->
+                match List.tryFrontAndBack argTys with
+                | Some res -> res
+                | None -> argTys, retTy
+            | _ ->
+                argTys, retTy
+
+        let stat = hashMemberFlags memFlags
+        let tys = ListSet.setify (typeEquiv g) tys
+        let tysL = 
+            match tys with 
+            | [ty] -> hashTypeWithInfo (* denv *) env ty 
+            | tys -> bracketL (hashTypesWithInfoAndPrec (* denv *) env 2 (hashText ((* string to tag was here *) "or")) tys)
+
+        let retTyL = hashReturnType (* denv *) env retTy
+        let sigL =
+            match argTys with
+            // Empty arguments indicates a non-indexer property constraint
+            | [] -> retTyL
+            | _ ->
+                let argTysL = hashTypesWithInfoAndPrec (* denv *) env 2 (hashText (tagPunctuation "*")) argTys
+                hashCurriedFunc [argTysL] retTyL
+        let getterSetterL =
+            match memFlags.MemberKind with
+            | SynMemberKind.PropertyGet when not argTys.IsEmpty ->
+                hashText ((* string to tag was here *) "with") ^^ hashText (tagText "get")
+            | SynMemberKind.PropertySet ->
+                hashText ((* string to tag was here *) "with") ^^ hashText (tagText "set")
+            | _ ->
+                0 (* empty hash *)
+        (tysL |> addColonL) --- bracketL (stat ++ (nameL |> addColonL) --- sigL --- getterSetterL)
 
     /// Hash a unit of measure expression 
     let hashMeasure (* denv *) unt =
@@ -614,7 +616,7 @@ module PrintTastMemberOrVals =
 
     let mkInlineL (* denv *) (v: Val) nameL = 
         if v.MustInline && not (* denv *).suppressInlineKeyword then 
-            hashText (tagKeyword "inline") ++ nameL 
+            hashText ((* string to tag was here *) "inline") ++ nameL 
         else 
             nameL
 
@@ -765,7 +767,7 @@ module PrintTastMemberOrVals =
         let nameL = hashAccessibility (* denv *) v.Accessibility nameL
         let nameL = 
             if v.IsMutable && not (* denv *).suppressMutableKeyword then 
-                hashText (tagKeyword "mutable") ++ nameL 
+                hashText ((* string to tag was here *) "mutable") ++ nameL 
                 else 
                     nameL
         let nameL = mkInlineL (* denv *) v nameL
@@ -921,7 +923,7 @@ module InfoMemberPrinting =
         let retTy = if minfo.IsConstructor then minfo.ApparentEnclosingType else minfo.GetFSharpReturnType(amap, m, minst) 
         let hash = 
             if minfo.IsExtensionMember then
-                LeftL.leftParen ^^ hashText (tagKeyword (FSComp.SR.typeInfoExtension())) ^^ RightL.rightParen
+                LeftL.leftParen ^^ hashText ((* string to tag was here *) (FSComp.SR.typeInfoExtension())) ^^ RightL.rightParen
             else 0 (* empty hash *)
         let hash = 
             hash ^^
@@ -1007,11 +1009,11 @@ module InfoMemberPrinting =
         let getterSetter =
             match pinfo.HasGetter, pinfo.HasSetter with
             | true, false ->
-                hashText (tagKeyword "with") ^^ hashText (tagText "get")
+                hashText ((* string to tag was here *) "with") ^^ hashText (tagText "get")
             | false, true ->
-                hashText (tagKeyword "with") ^^ hashText (tagText "set")
+                hashText ((* string to tag was here *) "with") ^^ hashText (tagText "set")
             | true, true ->
-                hashText (tagKeyword "with") ^^ hashText (tagText "get, set")
+                hashText ((* string to tag was here *) "with") ^^ hashText (tagText "get, set")
             | false, false ->
                 0 (* empty hash *)
 
@@ -1059,7 +1061,7 @@ module TashDefinitionHashes =
     let hashRecdField prefix isClassDecl (* denv *) infoReader (enclosingTcref: TyconRef) (fld: RecdField) =
         let lhs = ConvertLogicalNameToDisplayLayout (tagRecordField >> mkNav fld.DefinitionRange >> hashText) fld.DisplayNameCore
         let lhs = (if isClassDecl then hashAccessibility (* denv *) fld.Accessibility lhs else lhs)
-        let lhs = if fld.IsMutable then hashText (tagKeyword "mutable") --- lhs else lhs
+        let lhs = if fld.IsMutable then hashText ((* string to tag was here *) "mutable") --- lhs else lhs
         let fieldL =
             let rhs =
                 match stripTyparEqns fld.FormalType with
@@ -1153,7 +1155,7 @@ module TashDefinitionHashes =
         | Some vref ->
             let propL = PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst (* denv *) infoReader vref
             if pinfo.HasGetter && pinfo.HasSetter && not pinfo.IsIndexer && isPublicGetterSetter pinfo.GetterMethod pinfo.SetterMethod then
-                propL ^^ hashText (tagKeyword "with") ^^ hashText (tagText "get, set")
+                propL ^^ hashText ((* string to tag was here *) "with") ^^ hashText (tagText "get, set")
             else
                 propL
         | None ->
@@ -1203,7 +1205,7 @@ module TashDefinitionHashes =
             if isFirstType then
                 WordL.keywordType
             else
-                hashText (tagKeyword "and") ^^ hashAttribs (* denv *) start false tycon.TypeOrMeasureKind tycon.Attribs 0 (* empty hash *)
+                hashText ((* string to tag was here *) "and") ^^ hashAttribs (* denv *) start false tycon.TypeOrMeasureKind tycon.Attribs 0 (* empty hash *)
 
         let nameL = ConvertLogicalNameToDisplayLayout (tagger >> mkNav tycon.DefinitionRange >> hashText) tycon.DisplayNameCore
 
@@ -1244,7 +1246,7 @@ module TashDefinitionHashes =
 
         let iimplsLs =
             iimpls
-            |> List.map (fun intfTy -> hashText (tagKeyword (if isInterfaceTy g ty then "inherit" else "interface")) -* hashType (* denv *) intfTy)
+            |> List.map (fun intfTy -> hashText ((* string to tag was here *) (if isInterfaceTy g ty then "inherit" else "interface")) -* hashType (* denv *) intfTy)
 
         let props =
             GetImmediateIntrinsicPropInfosOfType (None, ad) g amap m ty
@@ -1367,7 +1369,7 @@ module TashDefinitionHashes =
 
         let inheritsL = 
             inherits
-            |> List.map (fun super -> hashText (tagKeyword "inherit") ^^ (hashType (* denv *) super))
+            |> List.map (fun super -> hashText ((* string to tag was here *) "inherit") ^^ (hashType (* denv *) super))
 
         let allDecls = inheritsL @ iimplsLs @ ctorLs @ instanceValLs @ methLs @ ilFieldsL @ propLs @ eventLs @ staticValLs @ nestedTypeLs
 
@@ -1550,7 +1552,7 @@ module TashDefinitionHashes =
         let exnc = exncref.Deref
         let nameL = ConvertLogicalNameToDisplayLayout (tagClass >> mkNav exncref.DefinitionRange >> hashText) exnc.DisplayNameCore
         let nameL = hashAccessibility (* denv *) exnc.TypeReprAccessibility nameL
-        let exnL = hashText (tagKeyword "exception") ^^ nameL // need to tack on the Exception at the right of the name for goto definition
+        let exnL = hashText ((* string to tag was here *) "exception") ^^ nameL // need to tack on the Exception at the right of the name for goto definition
         let reprL = 
             match exnc.ExceptionInfo with 
             | TExnAbbrevRepr ecref -> WordL.equals -* hashTyconRef (* denv *) ecref
@@ -1600,7 +1602,7 @@ module TashDefinitionHashes =
             if mspec.IsNamespace then
                 // This is a container namespace. We print the header when we get to the first concrete module.
                 let pathL = path |> List.map (ConvertLogicalNameToDisplayLayout (tagNamespace >> hashText))
-                hashText (tagKeyword "namespace") ^^ sepListL SepL.dot pathL
+                hashText ((* string to tag was here *) "namespace") ^^ sepListL SepL.dot pathL
             else
                 // This is a module 
                 let name = path |> List.last
@@ -1614,7 +1616,7 @@ module TashDefinitionHashes =
                         let innerPathL = innerPath |> List.map (ConvertLogicalNameToDisplayLayout (tagNamespace >> hashText))
                         sepListL SepL.dot innerPathL ^^ SepL.dot ^^ nameL
 
-                let modNameL = hashText (tagKeyword "module") ^^ nameL
+                let modNameL = hashText ((* string to tag was here *) "module") ^^ nameL
                 let modNameEqualsL = modNameL ^^ WordL.equals
                 let modIsEmpty =
                     mspec.ModuleOrNamespaceType.AllEntities |> Seq.isEmpty &&
@@ -1626,7 +1628,7 @@ module TashDefinitionHashes =
                     // If so print a "module" declaration
                     modNameL
                 elif modIsEmpty then
-                    modNameEqualsL ^^ hashText (tagKeyword "begin") ^^ WordL.keywordEnd
+                    modNameEqualsL ^^ hashText ((* string to tag was here *) "begin") ^^ WordL.keywordEnd
                 else
                     // Otherwise this is an outer module contained immediately in a namespace
                     // We already printed the namespace declaration earlier. So just print the 
@@ -1770,7 +1772,7 @@ let calculateHashOfImpliedSignature (infoReader:InfoReader) (ad:AccessorDomain) 
             let nmL = hashAccessibility (* denv *) mspec.Accessibility nmL
             let (* denv *) = (* denv *).AddAccessibility mspec.Accessibility
             let basic = imdefL (* denv *) def
-            let modNameL = hashText (tagKeyword "module") ^^ nmL
+            let modNameL = hashText ((* string to tag was here *) "module") ^^ nmL
             let basicL = modNameL @@ basic
             basicL
         elif mspec.IsNamespace then
@@ -1781,7 +1783,7 @@ let calculateHashOfImpliedSignature (infoReader:InfoReader) (ad:AccessorDomain) 
                     let pathL = innerPath |> List.map (fst >> ConvertLogicalNameToDisplayLayout (tagNamespace >> hashText))
                     // This is a container namespace. We print the header when we get to the first concrete module.
                     let headerL =
-                        hashText (tagKeyword "namespace") ^^ sepListL SepL.dot pathL
+                        hashText ((* string to tag was here *) "namespace") ^^ sepListL SepL.dot pathL
                     headerL @@* basic
                 else
                     // This is a namespace that only contains namespaces. Skip the header
@@ -1797,7 +1799,7 @@ let calculateHashOfImpliedSignature (infoReader:InfoReader) (ad:AccessorDomain) 
             let (* denv *) = (* denv *).AddAccessibility mspec.Accessibility
             let basic = imdefL (* denv *) def
             let modNameL =
-                hashText (tagKeyword "module") ^^ nmL
+                hashText ((* string to tag was here *) "module") ^^ nmL
                 |> hashAttribs (* denv *) None false mspec.TypeOrMeasureKind mspec.Attribs
             let modNameEqualsL = modNameL ^^ WordL.equals
             let isNamespace = function | Namespace _ -> true | _ -> false
@@ -1826,7 +1828,7 @@ let calculateHashOfImpliedSignature (infoReader:InfoReader) (ad:AccessorDomain) 
                 else
                     // OK, this is a nested module, with indentation
                     if isEmptyL basic then 
-                        ((modNameEqualsL ^^ hashText (tagKeyword"begin")) @@* basic) @@ WordL.keywordEnd
+                        ((modNameEqualsL ^^ hashText ((* string to tag was here *)"begin")) @@* basic) @@ WordL.keywordEnd
                     else
                         modNameEqualsL @@* basic
             basicL
@@ -1841,7 +1843,7 @@ let calculateHashOfImpliedSignature (infoReader:InfoReader) (ad:AccessorDomain) 
             else
                 "module"
 
-        hashText (tagKeyword keyword) ^^ sepListL SepL.dot pathL
+        hashText ((* string to tag was here *) keyword) ^^ sepListL SepL.dot pathL
 
     imdefL (* denv *) expr
 
