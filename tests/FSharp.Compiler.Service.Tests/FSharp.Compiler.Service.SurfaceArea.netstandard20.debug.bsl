@@ -20,7 +20,7 @@ FSharp.Compiler.AbstractIL.IL+ILArgConvention: Boolean IsCDecl
 FSharp.Compiler.AbstractIL.IL+ILArgConvention: Boolean IsDefault
 FSharp.Compiler.AbstractIL.IL+ILArgConvention: Boolean IsFastCall
 FSharp.Compiler.AbstractIL.IL+ILArgConvention: Boolean IsStdCall
-FSharp.Compiler.AbstractIL.IL+ILArgConvention: Boolean IsThisCal
+FSharp.Compiler.AbstractIL.IL+ILArgConvention: Boolean IsThisCall
 FSharp.Compiler.AbstractIL.IL+ILArgConvention: Boolean IsVarArg
 FSharp.Compiler.AbstractIL.IL+ILArgConvention: Boolean get_IsCDecl()
 FSharp.Compiler.AbstractIL.IL+ILArgConvention: Boolean get_IsDefault()
