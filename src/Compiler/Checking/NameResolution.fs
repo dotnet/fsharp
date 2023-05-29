@@ -2726,6 +2726,36 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
 
         let errorTextF s =
             match tryTcrefOfAppTy g ty with
+            | ValueSome tcref when tcref.IsRecordTycon ->
+                let alternative = nenv.eFieldLabels |> Map.tryFind nm
+                match alternative with
+                | Some fieldLabels ->
+                    let fieldsOfResolvedType = tcref.AllFieldsArray  |> Array.map (fun f -> f.LogicalName) |> Set.ofArray
+                    let fieldsOfAlternatives =
+                        fieldLabels
+                        |> Seq.collect (fun l -> l.Tycon.AllFieldsArray |> Array.map (fun f -> f.LogicalName))
+                        |> Set.ofSeq
+                    let intersect = Set.intersect fieldsOfAlternatives fieldsOfResolvedType
+
+                    if not intersect.IsEmpty then
+                        let resolvedTypeName = NicePrint.fqnOfEntityRef g tcref
+                        let namesOfAlternatives =
+                            fieldLabels
+                            |> List.map (fun l -> $"    %s{NicePrint.fqnOfEntityRef g l.TyconRef}")
+                            |> fun names -> $"    %s{resolvedTypeName}" :: names
+                        let candidates = System.String.Join("\n", namesOfAlternatives)
+                        let overlappingNames =
+                            intersect
+                            |> Set.toArray
+                            |> Array.sort
+                            |> Array.map (fun s -> $"    %s{s}")
+                            |> fun a -> System.String.Join("\n", a)
+                        if g.langVersion.SupportsFeature(LanguageFeature.WarningWhenMultipleRecdTypeChoice) then
+                            warning(Error(FSComp.SR.tcMultipleRecdTypeChoice(candidates, resolvedTypeName, overlappingNames), m))
+                        else
+                            informationalWarning(Error(FSComp.SR.tcMultipleRecdTypeChoice(candidates, resolvedTypeName, overlappingNames), m))
+                | _ -> ()
+                FSComp.SR.undefinedNameFieldConstructorOrMemberWhenTypeIsKnown(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars, s)
             | ValueSome tcref ->
                 FSComp.SR.undefinedNameFieldConstructorOrMemberWhenTypeIsKnown(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars, s)
             | _ ->
