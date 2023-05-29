@@ -2199,7 +2199,8 @@ module internal ParseAndCheckFile =
             mainInputFileName,
             diagnosticsOptions: FSharpDiagnosticOptions,
             sourceText: ISourceText,
-            suggestNamesForErrors: bool
+            suggestNamesForErrors: bool,
+            flatErrors: bool
         ) =
         let mutable options = diagnosticsOptions
         let diagnosticsCollector = ResizeArray<_>()
@@ -2210,7 +2211,16 @@ module internal ParseAndCheckFile =
 
         let collectOne severity diagnostic =
             for diagnostic in
-                DiagnosticHelpers.ReportDiagnostic(options, false, mainInputFileName, fileInfo, diagnostic, severity, suggestNamesForErrors) do
+                DiagnosticHelpers.ReportDiagnostic(
+                    options,
+                    false,
+                    mainInputFileName,
+                    fileInfo,
+                    diagnostic,
+                    severity,
+                    suggestNamesForErrors,
+                    flatErrors
+                ) do
                 diagnosticsCollector.Add diagnostic
 
                 if severity = FSharpDiagnosticSeverity.Error then
@@ -2319,7 +2329,7 @@ module internal ParseAndCheckFile =
 
         usingLexbufForParsing (createLexbuf options.LangVersionText sourceText, fileName) (fun lexbuf ->
             let errHandler =
-                DiagnosticsHandler(false, fileName, options.DiagnosticOptions, sourceText, suggestNamesForErrors)
+                DiagnosticsHandler(false, fileName, options.DiagnosticOptions, sourceText, suggestNamesForErrors, false)
 
             let lexfun = createLexerFunction fileName options lexbuf errHandler
 
@@ -2413,6 +2423,7 @@ module internal ParseAndCheckFile =
             options: FSharpParsingOptions,
             userOpName: string,
             suggestNamesForErrors: bool,
+            flatErrors: bool,
             identCapture: bool
         ) =
         Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "parseFile", fileName)
@@ -2421,7 +2432,7 @@ module internal ParseAndCheckFile =
             Activity.start "ParseAndCheckFile.parseFile" [| Activity.Tags.fileName, fileName |]
 
         let errHandler =
-            DiagnosticsHandler(true, fileName, options.DiagnosticOptions, sourceText, suggestNamesForErrors)
+            DiagnosticsHandler(true, fileName, options.DiagnosticOptions, sourceText, suggestNamesForErrors, flatErrors)
 
         use _ = UseDiagnosticsLogger errHandler.DiagnosticsLogger
 
@@ -2588,7 +2599,14 @@ module internal ParseAndCheckFile =
 
             // Initialize the error handler
             let errHandler =
-                DiagnosticsHandler(true, mainInputFileName, tcConfig.diagnosticsOptions, sourceText, suggestNamesForErrors)
+                DiagnosticsHandler(
+                    true,
+                    mainInputFileName,
+                    tcConfig.diagnosticsOptions,
+                    sourceText,
+                    suggestNamesForErrors,
+                    tcConfig.flatErrors
+                )
 
             use _ = UseDiagnosticsLogger errHandler.DiagnosticsLogger
 
@@ -3252,6 +3270,7 @@ type FsiInteractiveChecker(legacyReferenceResolver, tcConfig: TcConfig, tcGlobal
                     parsingOptions,
                     userOpName,
                     suggestNamesForErrors,
+                    tcConfig.flatErrors,
                     tcConfig.captureIdentifiersWhenParsing
                 )
 
