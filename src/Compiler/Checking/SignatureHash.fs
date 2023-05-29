@@ -242,21 +242,11 @@ module rec PrintTypes =
 
     /// Hash a unit of measure expression 
     let hashMeasure (* denv *) unt =
-        let sortVars vs = vs |> List.sortBy (fun (tp: Typar, _) -> tp.DisplayName) 
-        let sortCons cs = cs |> List.sortBy (fun (tcref: TyconRef, _) -> tcref.DisplayName) 
-        let negvs, posvs = ListMeasureVarOccsWithNonZeroExponents unt |> sortVars |> List.partition (fun (_, e) -> SignRational e < 0)
-        let negcs, poscs = ListMeasureConOccsWithNonZeroExponents (* denv *).g false unt |> sortCons |> List.partition (fun (_, e) -> SignRational e < 0)
-        let unparL uv = hashTyparRef (* denv *) uv
-        let unconL tc = hashTyconRef (* denv *) tc
-        let rationalL e = hashText (tagNumericLiteral (RationalToString e))
-        let measureToPowerL x e = if e = OneRational then x else x -- hashText (tagPunctuation "^") -- rationalL e
-        let prefix = spaceListL (List.map (fun (v, e) -> measureToPowerL (unparL v) e) posvs @
-                                 List.map (fun (c, e) -> measureToPowerL (unconL c) e) poscs)
-        let postfix = spaceListL (List.map (fun (v, e) -> measureToPowerL (unparL v) (NegRational e)) negvs @
-                                  List.map (fun (c, e) -> measureToPowerL (unconL c) (NegRational e)) negcs)
-        match (negvs, negcs) with 
-        | [], [] -> (match posvs, poscs with [], [] -> hashText (tagNumericLiteral "1") | _ -> prefix)
-        | _ -> prefix ^^ sepL (tagPunctuation "/") ^^ (if List.length negvs + List.length negcs > 1 then sepL (tagPunctuation "(") ^^ postfix ^^ sepL (tagPunctuation ")") else postfix)
+        let measuresWithExponents = ListMeasureVarOccsWithNonZeroExponents unt |> List.sortBy (fun (tp: Typar, _) -> tp.DisplayName) 
+        measuresWithExponents
+        |> hashAllVia (fun (typar,exp: Rational) -> hashTyparRef typar @@ hash exp)
+        
+
 
     /// Hash type arguments, either NAME<ty, ..., ty> or (ty, ..., ty) NAME *)
     let hashTypeAppWithInfoAndPrec (* denv *) env tcL prec prefix argTys =
