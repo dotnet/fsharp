@@ -988,6 +988,10 @@ type FSharpUnionCase(cenv, v: UnionCaseRef) =
         checkIsResolved()
         v.Range
 
+    member _.DeclaringEntity =
+        checkIsResolved()
+        FSharpEntity(cenv, v.TyconRef)
+
     member _.HasFields =
         if isUnresolved() then false else
         v.UnionCase.RecdFieldsArray.Length <> 0
