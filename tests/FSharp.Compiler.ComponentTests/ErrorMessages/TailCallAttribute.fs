@@ -21,14 +21,14 @@ let rec fact n acc =
         |> typecheck
         |> shouldFail
         |> withResults [
-            { Error = Warning 3566
+            { Error = Warning 3567
               Range = { StartLine = 8
                         StartColumn = 11
                         EndLine = 8
                         EndColumn = 33 }
               Message =
                "The member or function 'fact' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
-            { Error = Warning 3566
+            { Error = Warning 3567
               Range = { StartLine = 8
                         StartColumn = 11
                         EndLine = 8
@@ -52,14 +52,14 @@ let rec fact n acc =
         |> typecheck
         |> shouldFail
         |> withResults [
-            { Error = Warning 3566
+            { Error = Warning 3567
               Range = { StartLine = 8
                         StartColumn = 13
                         EndLine = 8
                         EndColumn = 35 }
               Message =
                "The member or function 'fact' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
-            { Error = Warning 3566
+            { Error = Warning 3567
               Range = { StartLine = 8
                         StartColumn = 13
                         EndLine = 8
@@ -85,14 +85,14 @@ let rec fact n acc =
         |> typecheck
         |> shouldFail
         |> withResults [
-            { Error = Warning 3566
+            { Error = Warning 3567
               Range = { StartLine = 8
                         StartColumn = 13
                         EndLine = 8
                         EndColumn = 35 }
               Message =
                "The member or function 'fact' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
-            { Error = Warning 3566
+            { Error = Warning 3567
               Range = { StartLine = 8
                         StartColumn = 13
                         EndLine = 8
