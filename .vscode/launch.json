@@ -54,9 +54,6 @@
             // If you have changed target frameworks, make sure to update the program path.
             "program": "${workspaceFolder}/artifacts/bin/fsc/Debug/net7.0/fsc.dll",
             "args": [
-                "--target:library",
-                "Lib.fsi",
-                "Lib.fs",
                 "${input:fscArgsPrompt}"
             ],
             "cwd": "${workspaceFolder}",
