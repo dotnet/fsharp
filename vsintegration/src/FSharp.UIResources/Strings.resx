@@ -231,6 +231,21 @@
   <data name="Find_References_Performance" xml:space="preserve">
     <value>Find References Performance Options</value>
   </data>
+  <data name="Language_Service_Settings" xml:space="preserve">
+    <value>Language service settings (advanced)</value>
+  </data>
+  <data name="Keep_All_Background_Resolutions" xml:space="preserve">
+    <value>Keep all background intermediate resolutions (increases memory usage)</value>
+  </data>
+  <data name="Keep_All_Background_Symbol_Uses" xml:space="preserve">
+    <value>Keep all background symbol uses (increases memory usage)</value>
+  </data>
+  <data name="Enable_Background_ItemKeyStore_And_Semantic_Classification" xml:space="preserve">
+    <value>Keep background symbol keys</value>
+  </data>
+  <data name="Capture_Identifiers_When_Parsing" xml:space="preserve">
+    <value>Capture identifiers while parsing</value>
+  </data>
   <data name="Enable_Live_Buffers" xml:space="preserve">
     <value>Use live (unsaved) buffers for checking (restart required)</value>
   </data>

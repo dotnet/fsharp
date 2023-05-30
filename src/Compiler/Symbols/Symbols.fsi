@@ -454,6 +454,9 @@ type FSharpUnionCase =
     /// Get the range of the name of the case
     member DeclarationLocation: range
 
+    /// Get the declaring entity of the case
+    member DeclaringEntity: FSharpEntity
+
     /// Indicates if the union case has field definitions
     member HasFields: bool
 
