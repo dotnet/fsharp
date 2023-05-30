@@ -1266,8 +1266,20 @@ let BuildNewDelegateExpr (eventInfoOpt: EventInfo option, g, amap, delegateTy, d
             if List.exists (isByrefTy g) delArgTys then
                     error(Error(FSComp.SR.tcFunctionRequiresExplicitLambda(delArgTys.Length), m)) 
 
+            let delFuncArgNames =
+                match delFuncExpr with
+                | Expr.Val (valRef = vref) -> vref.ValReprInfo |> Option.map (fun repr -> repr.ArgNames)
+                | _ -> None
+
             let delArgVals =
-                delArgTys |> List.mapi (fun i argTy -> fst (mkCompGenLocal m ("delegateArg" + string i) argTy)) 
+                delArgTys
+                |> List.mapi (fun i argTy ->
+                    let argName =
+                        match delFuncArgNames with
+                        | Some argNames -> argNames[i]
+                        | None -> "delegateArg" + string i
+
+                    fst (mkCompGenLocal m argName argTy)) 
 
             let expr = 
                 let args = 
