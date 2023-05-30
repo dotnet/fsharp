@@ -933,7 +933,10 @@ and CheckForOverAppliedExceptionRaisingPrimitive (cenv: cenv) (env: env) expr =
                             let (nowArgs, laterArgs), returnTy = 
                                 let _tps, tau = destTopForallTy g topValInfo _fty
                                 let curriedArgInfos, returnTy = GetTopTauTypeInFSharpForm cenv.g topValInfo.ArgInfos tau _m
-                                (List.splitAfter curriedArgInfos.Length argsl), returnTy
+                                if argsl.Length >= curriedArgInfos.Length then
+                                    (List.splitAfter curriedArgInfos.Length argsl), returnTy
+                                else
+                                    ([], argsl), returnTy
                             let _,_,isNewObj,isSuperInit,isSelfInit,_,_,_ = GetMemberCallInfo cenv.g (vref,valUseFlags) 
                             let isCCall = 
                                 match valUseFlags with
