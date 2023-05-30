@@ -36,9 +36,15 @@ type Hash = int
 let inline hashText (s:string) : Hash = hash s
 let inline combineHash x y  : Hash= (x <<< 1) + y + 631
 let inline addToHash (acc:Hash) (value:Hash)  = combineHash acc value
+let inline pipeToHash (value:Hash) (acc:Hash)   = combineHash acc value  
 let inline hashAndAdd (value) (acc:Hash) = addToHash (hash value) (acc)
 let inline combineHashes (hashes: Hash list) = (0,hashes) ||> List.fold (fun acc curr -> combineHash acc curr)
 let inline hashAllVia func (items: 'T list) : Hash =
+    let mutable acc = 0
+    for i in items do
+        acc <- addToHash acc (func i)
+    acc
+let inline hashArrayVia func (items: 'T[]) : Hash =
     let mutable acc = 0
     for i in items do
         acc <- addToHash acc (func i)
@@ -52,7 +58,7 @@ module internal HashUtilities =
  
     let hashCurriedFunc (argTysL: Hash list) (retTyL: Hash) =
         combineHashes argTysL
-        |> addToHash retTyL
+        |> pipeToHash retTyL
     
     let hashEntityRefName (g:TcGlobals) (xref: EntityRef) name =    
         let tag = 
@@ -82,7 +88,7 @@ module internal HashUtilities =
 
         tcref.CompilationPath.AccessPath
         |> hashAllVia (fst >> hashText) 
-        |> addToHash tyconHash
+        |> pipeToHash tyconHash
 
 
     let hashBuiltinAttribute g (attrib: BuiltinAttribInfo) = hashTyconRefImpl g attrib.TyconRef
@@ -172,10 +178,9 @@ module rec PrintTypes =
         |> hashAllVia (hashConstraintWithInfo env)
 
     let hashTypeWithInfo x y = failwith "TODO"
-    let hashTypeAppWithInfoAndPrec x y = failwith "TODO"
-                
+    let hashTypeAppWithInfoAndPrec x y = failwith "TODO"                
 
-    /// Hash constraints, taking TypeSimplificationInfo into account 
+
     let hashConstraintWithInfo (* denv *) env (tp, tpc) =
         let tpHash = hashTyparRefWithInfo env tp
         //let longConstraintPrefix l = (hashTyparRefWithInfo (* denv *) env tp |> addColonL) ^^ l
@@ -235,9 +240,9 @@ module rec PrintTypes =
 
         traitInfo.CompiledObjectAndArgumentTypes
         |> hashAllVia (hashType)
-        |> addToHash (nameHash)
-        |> addToHash (returnTypeHash)
-        |> addToHash memberHash
+        |> pipeToHash (nameHash)
+        |> pipeToHash (returnTypeHash)
+        |> pipeToHash memberHash
        
 
     /// Hash a unit of measure expression 
@@ -245,95 +250,47 @@ module rec PrintTypes =
         let measuresWithExponents = ListMeasureVarOccsWithNonZeroExponents unt |> List.sortBy (fun (tp: Typar, _) -> tp.DisplayName) 
         measuresWithExponents
         |> hashAllVia (fun (typar,exp: Rational) -> hashTyparRef typar @@ hash exp)
-        
-
-
-    /// Hash type arguments, either NAME<ty, ..., ty> or (ty, ..., ty) NAME *)
-    let hashTypeAppWithInfoAndPrec (* denv *) env tcL prec prefix argTys =
-        if prefix then 
-            match argTys with
-            | [] -> tcL
-            | [argTy] -> tcL ^^ sepL (tagPunctuation "<") ^^ (hashTypeWithInfoAndPrec (* denv *) env 4 argTy) ^^ rightL (tagPunctuation">")
-            | _ -> bracketIfL (prec <= 1) (tcL ^^ angleL (hashTypesWithInfoAndPrec (* denv *) env 2 (sepL (tagPunctuation ",")) argTys))
-        else
-            match argTys with
-            | [] -> tcL
-            | [arg] -> hashTypeWithInfoAndPrec (* denv *) env 2 arg ^^ tcL
-            | args -> bracketIfL (prec <= 1) (bracketL (hashTypesWithInfoAndPrec (* denv *) env 2 (sepL (tagPunctuation ",")) args) --- tcL)
     
     /// Hash a type, taking precedence into account to insert brackets where needed
-    let hashTypeWithInfoAndPrec (* denv *) env prec ty =
-        let g = (* denv *).g
+    let hashTType (g:TcGlobals) env  ty =  
+      
         match stripTyparEqns ty with 
-
-        // Always prefer to format 'byref<ty, ByRefKind.In>' as 'inref<ty>'
-        | ty when isInByrefTy g ty && (match ty with TType_app (tc, _, _) when g.inref_tcr.CanDeref && tyconRefEq g tc g.byref2_tcr -> true | _ -> false) ->
-            hashTypeWithInfoAndPrec (* denv *) env prec (mkInByrefTy g (destByrefTy g ty))
-
-        // Always prefer to format 'byref<ty, ByRefKind.Out>' as 'outref<ty>'
-        | ty when isOutByrefTy g ty && (match ty with TType_app (tc, _, _) when g.outref_tcr.CanDeref && tyconRefEq g tc g.byref2_tcr -> true | _ -> false) ->
-            hashTypeWithInfoAndPrec (* denv *) env prec (mkOutByrefTy g (destByrefTy g ty))
-
-        // Always prefer to format 'byref<ty, ByRefKind.InOut>' as 'byref<ty>'
-        | ty when isByrefTy g ty && (match ty with TType_app (tc, _, _) when g.byref_tcr.CanDeref && tyconRefEq g tc g.byref2_tcr -> true | _ -> false) ->
-            hashTypeWithInfoAndPrec (* denv *) env prec (mkByrefTy g (destByrefTy g ty))
-
-        // Always prefer 'float' to 'float<1>'
-        | TType_app (tc, args, _) when tc.IsMeasureableReprTycon && List.forall (isDimensionless g) args ->
-          hashTypeWithInfoAndPrec (* denv *) env prec (reduceTyconRefMeasureableOrProvided g tc args)
-
-        // Hash a type application
         | TType_ucase (UnionCaseRef(tc, _), args)
         | TType_app (tc, args, _) ->
-          let prefix = true
-          hashTypeAppWithInfoAndPrec (* denv *) env (hashTyconRef (* denv *) tc) prec prefix args
-
-        // Hash a tuple type 
+          args
+          |> hashAllVia (hashTType g env)        
+          |> pipeToHash (hashTyconRef g tc)
         | TType_anon (anonInfo, tys) ->
-            let core = sepListL (rightL (tagPunctuation ";")) (List.map2 (fun nm ty -> hashText (tagField nm) ^^ rightL (tagPunctuation ":") ^^ hashTypeWithInfoAndPrec (* denv *) env prec ty) (Array.toList anonInfo.SortedNames) tys)
-            if evalAnonInfoIsStruct anonInfo then 
-                WordL.keywordStruct --- braceBarL core
-            else 
-                braceBarL core
-
-        // Hash a tuple type 
+            tys
+            |> hashAllVia (hashTType g env)
+            |> pipeToHash (anonInfo.SortedNames |> hashArrayVia hashText)            
+            |> hashAndAdd (evalAnonInfoIsStruct anonInfo)    
         | TType_tuple (tupInfo, t) ->
-            let elsL = hashTypesWithInfoAndPrec (* denv *) env 2 (hashText (tagPunctuation "*")) t
-            if evalTupInfoIsStruct tupInfo then 
-                WordL.keywordStruct --- bracketL elsL
-            else 
-                bracketIfL (prec <= 2) elsL
-
+            t
+            |> hashAllVia (hashTType g env)
+            |> hashAndAdd (evalTupInfoIsStruct tupInfo) 
         // Hash a first-class generic type. 
         | TType_forall (tps, tau) ->
-            let tauL = hashTypeWithInfoAndPrec (* denv *) env prec tau
-            match tps with 
-            | [] -> tauL
-            | [h] -> hashTyparRefWithInfo (* denv *) env h ^^ rightL (tagPunctuation ".") --- tauL
-            | h :: t -> spaceListL (List.map (hashTyparRefWithInfo (* denv *) env) (h :: t)) ^^ rightL (tagPunctuation ".") --- tauL
-
+            tps
+            |> hashAllVia (hashTyparRef)
+            |> pipeToHash (hashTType g env tau)  
         | TType_fun _ ->
-            let argTys, retTy = stripFunTy g ty
-            let retTyL = hashTypeWithInfoAndPrec (* denv *) env 5 retTy
-            let argTysL = argTys |> List.map (hashTypeWithInfoAndPrec (* denv *) env 4)
-            let funcTyL = hashCurriedFunc argTysL retTyL
-            bracketIfL (prec <= 4) funcTyL
-
-        // Hash a type variable . 
-        | TType_var (r, _) ->
-            hashTyparRefWithInfo (* denv *) env r
-
-        | TType_measure unt -> hashMeasure (* denv *) unt
+            let argTys, retTy = stripFunTy g ty    
+            argTys
+            |> hashAllVia (hashTType g env)
+            |> pipeToHash (hashTType g env retTy)
+        | TType_var (r, _) -> hashTyparRefWithInfo g r
+        | TType_measure unt -> hashMeasure unt
 
     /// Hash a list of types, separated with the given separator, either '*' or ','
     let hashTypesWithInfoAndPrec (* denv *) env prec sep typl = 
-        sepListL sep (List.map (hashTypeWithInfoAndPrec (* denv *) env prec) typl)
+        sepListL sep (List.map (hashTType (* denv *) env prec) typl)
 
-    let hashReturnType (* denv *) env retTy = hashTypeWithInfoAndPrec (* denv *) env 4 retTy
+    let hashReturnType (* denv *) env retTy = hashTType (* denv *) env 4 retTy
 
     /// Hash a single type, taking TypeSimplificationInfo into account 
     let hashTypeWithInfo (* denv *) env ty = 
-        hashTypeWithInfoAndPrec (* denv *) env 5 ty
+        hashTType (* denv *) env 5 ty
 
     let hashType (* denv *) ty = 
         hashTypeWithInfo (* denv *) SimplifyTypes.typeSimplificationInfo0 ty
@@ -352,11 +309,11 @@ module rec PrintTypes =
             let idL = ConvertValLogicalNameToDisplayLayout false (tagParameter >> rightL) id.idText
             LeftL.questionMark ^^ 
             (idL |> addColonL) ^^
-            hashTypeWithInfoAndPrec (* denv *) env 2 ty 
+            hashTType (* denv *) env 2 ty 
 
         // Hash an unnamed argument 
         | None, _, _, _ -> 
-            hashTypeWithInfoAndPrec (* denv *) env 2 ty
+            hashTType (* denv *) env 2 ty
 
         // Hash a named argument 
         | Some id, _, isParamArray, _ -> 
@@ -366,7 +323,7 @@ module rec PrintTypes =
                     hashBuiltinAttribute (* denv *) g.attrib_ParamArrayAttribute ^^ idL
                 else
                     idL
-            (prefix |> addColonL) ^^ hashTypeWithInfoAndPrec (* denv *) env 2 ty
+            (prefix |> addColonL) ^^ hashTType (* denv *) env 2 ty
 
     let hashCurriedArgInfos (* denv *) env argInfos =
         argInfos 
@@ -381,7 +338,7 @@ module rec PrintTypes =
         ^^
         (
           genParamTys
-          |> List.map (hashTypeWithInfoAndPrec (* denv *) env 4)
+          |> List.map (hashTType (* denv *) env 4)
           |> sepListL (hashText (tagPunctuation ","))
         ) 
         ^^
@@ -536,7 +493,7 @@ module rec PrintTypes =
         let ty, cxs = PrettyTypes.PrettifyType (* denv *).g ty
         let env = SimplifyTypes.CollectInfo true [ty] cxs
         let cxsL = hashConstraintsWithInfo (* denv *) env env.postfixConstraints
-        hashTypeWithInfoAndPrec (* denv *) env 2 ty --- cxsL
+        hashTType (* denv *) env 2 ty --- cxsL
 
     let prettyLayoutOfTrait (* denv *) traitInfo =
         let compgenId = SyntaxTreeOps.mkSynId Range.range0 unassignedTyparName
@@ -553,7 +510,7 @@ module rec PrintTypes =
 
     let prettyLayoutOfTypeNoConstraints (* denv *) ty =
         let ty, _cxs = PrettyTypes.PrettifyType (* denv *).g ty
-        hashTypeWithInfoAndPrec (* denv *) SimplifyTypes.typeSimplificationInfo0 5 ty
+        hashTType (* denv *) SimplifyTypes.typeSimplificationInfo0 5 ty
 
     let hashOfValReturnType (* denv *) (vref: ValRef) =
         match vref.ValReprInfo with 
@@ -1036,7 +993,7 @@ module TashDefinitionHashes =
 
     let hashUnionOrExceptionField (* denv *) infoReader isGenerated enclosingTcref i (fld: RecdField) =
         if isGenerated i fld then
-            hashTypeWithInfoAndPrec (* denv *) SimplifyTypes.typeSimplificationInfo0 2 fld.FormalType
+            hashTType (* denv *) SimplifyTypes.typeSimplificationInfo0 2 fld.FormalType
         else
             hashRecdField id false (* denv *) infoReader enclosingTcref fld
     
