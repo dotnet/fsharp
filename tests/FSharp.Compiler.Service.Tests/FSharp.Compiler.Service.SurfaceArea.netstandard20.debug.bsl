@@ -4958,6 +4958,7 @@ FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSh
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption`1[System.Object] LiteralValue
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption`1[System.Object] get_LiteralValue()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption`1[System.String[]] TryGetFullCompiledOperatorNameIdents()
+FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption`1[System.String] GetValSignatureText(FSharp.Compiler.Symbols.FSharpDisplayContext, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption`1[System.String] TryGetFullDisplayName()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[System.String,System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpParameter]]] GetWitnessPassingInfo()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpAbstractSignature] ImplementedAbstractSignatures
@@ -5156,14 +5157,14 @@ FSharp.Compiler.Symbols.FSharpUnionCase: Boolean get_HasFields()
 FSharp.Compiler.Symbols.FSharpUnionCase: Boolean get_IsUnresolved()
 FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Symbols.FSharpAccessibility Accessibility
 FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Symbols.FSharpAccessibility get_Accessibility()
+FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Symbols.FSharpEntity DeclaringEntity
+FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Symbols.FSharpEntity get_DeclaringEntity()
 FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Symbols.FSharpType ReturnType
 FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Symbols.FSharpType get_ReturnType()
 FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Symbols.FSharpXmlDoc XmlDoc
 FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Symbols.FSharpXmlDoc get_XmlDoc()
 FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Text.Range DeclarationLocation
 FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Text.Range get_DeclarationLocation()
-FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Symbols.FSharpEntity DeclaringEntity
-FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Symbols.FSharpEntity get_DeclaringEntity()
 FSharp.Compiler.Symbols.FSharpUnionCase: Int32 GetHashCode()
 FSharp.Compiler.Symbols.FSharpUnionCase: System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpAttribute] Attributes
 FSharp.Compiler.Symbols.FSharpUnionCase: System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpAttribute] get_Attributes()

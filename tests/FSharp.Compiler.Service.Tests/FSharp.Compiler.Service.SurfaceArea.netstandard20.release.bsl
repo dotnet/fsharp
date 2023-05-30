@@ -4958,6 +4958,7 @@ FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSh
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption`1[System.Object] LiteralValue
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption`1[System.Object] get_LiteralValue()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption`1[System.String[]] TryGetFullCompiledOperatorNameIdents()
+FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption`1[System.String] GetValSignatureText(FSharp.Compiler.Symbols.FSharpDisplayContext, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption`1[System.String] TryGetFullDisplayName()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[System.String,System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpParameter]]] GetWitnessPassingInfo()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpAbstractSignature] ImplementedAbstractSignatures
