@@ -12,7 +12,10 @@ vsintegration/*
 !vsintegration/tests/FSharp.Editor.Tests
 artifacts/
 
-# Explicitly unformatted implementation 
+# For some reason, it tries to format files from remotes (Processing .\.git\refs\remotes\<remote>\FSComp.fsi)
+.git/
+
+# Explicitly unformatted implementation
 src/Compiler/Checking/AccessibilityLogic.fs
 src/Compiler/Checking/AttributeChecking.fs
 src/Compiler/Checking/AugmentWithHashCompare.fs
@@ -40,31 +43,10 @@ src/Compiler/Checking/TypeHierarchy.fs
 src/Compiler/Checking/TypeRelations.fs
 
 # Incorrectly formatted: https://github.com/dotnet/fsharp/pull/14645/commits/49443a67ea8a17670c8a7c80c8bdf91f82231e91 or https://github.com/fsprojects/fantomas/issues/2733
+# This CompilerImports.fs behavior is not fixed yet, following up in  https://github.com/fsprojects/fantomas/issues/2733
 src/Compiler/Driver/CompilerImports.fs
-
-src/Compiler/DependencyManager/AssemblyResolveHandler.fs
-src/Compiler/DependencyManager/DependencyProvider.fs
-src/Compiler/DependencyManager/NativeDllResolveHandler.fs
-
-src/Compiler/Facilities/BuildGraph.fs
-src/Compiler/Facilities/CompilerLocation.fs
-src/Compiler/Facilities/DiagnosticOptions.fs
-src/Compiler/Facilities/DiagnosticResolutionHints.fs
-src/Compiler/Facilities/DiagnosticsLogger.fs
-src/Compiler/Facilities/LanguageFeatures.fs
-src/Compiler/Facilities/Logger.fs
-src/Compiler/Facilities/prim-lexing.fs
-src/Compiler/Facilities/prim-parsing.fs
-src/Compiler/Facilities/ReferenceResolver.fs
-src/Compiler/Facilities/SimulatedMSBuildReferenceResolver.fs
-src/Compiler/Facilities/TextLayoutRender.fs
-
-src/Compiler/Interactive/ControlledExecution.fs
-src/Compiler/Interactive/fsi.fs
-
-src/Compiler/Legacy/LegacyHostedCompilerForTesting.fs
-src/Compiler/Legacy/LegacyMSBuildReferenceResolver.fs
-
+# The following files were formatted, but the "format, --check" loop is not stable.
+# Fantomas formats them, but still thinks they need formatting
 src/Compiler/Optimize/DetupleArgs.fs
 src/Compiler/Optimize/InnerLambdasToTopLevelFuncs.fs
 src/Compiler/Optimize/LowerCalls.fs
@@ -89,7 +71,6 @@ src/Compiler/TypedTree/TypedTreeBasics.fs
 src/Compiler/TypedTree/TypedTreeOps.fs
 src/Compiler/TypedTree/TypedTreePickle.fs
 src/Compiler/TypedTree/TypeProviders.fs
-
 # Explicitly unformatted file that needs more care to get it to format well
 
 src/Compiler/SyntaxTree/LexFilter.fs
@@ -116,6 +97,7 @@ src/Compiler/Service/IncrementalBuild.fs
 src/Compiler/Service/ServiceAssemblyContent.fs
 src/Compiler/Service/ServiceDeclarationLists.fs
 src/Compiler/Service/ServiceErrorResolutionHints.fs
+vsintegration/src/FSharp.Editor/Common/CancellableTasks.fs
 
 # Fantomas limitations on signature files  (to investigate)
 
@@ -135,4 +117,3 @@ src/FSharp.Core/list.fsi
 src/FSharp.Core/Query.fsi
 src/FSharp.Core/resumable.fsi
 src/FSharp.Core/async.fsi
-

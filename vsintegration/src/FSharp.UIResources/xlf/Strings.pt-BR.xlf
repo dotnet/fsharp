@@ -2,9 +2,24 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="pt-BR" original="../Strings.resx">
     <body>
+      <trans-unit id="AdditionalTelemetry">
+        <source>Additional performance telemetry (experimental)</source>
+        <target state="new">Additional performance telemetry (experimental)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Always_place_opens_at_top_level">
         <source>Always place open statements at the top level</source>
         <target state="translated">Sempre coloque as instruções abertas no nível superior</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Capture_Identifiers_When_Parsing">
+        <source>Capture identifiers while parsing</source>
+        <target state="new">Capture identifiers while parsing</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enable_Background_ItemKeyStore_And_Semantic_Classification">
+        <source>Keep background symbol keys</source>
+        <target state="new">Keep background symbol keys</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_Fast_Find_References">
@@ -52,14 +67,19 @@
         <target state="translated">Diagnóstico</target>
         <note />
       </trans-unit>
-      <trans-unit id="Enable_Parallel_Checking_With_Signature_Files">
-        <source>Enable parallel type checking with signature files</source>
-        <target state="translated">Habilitar a verificação de tipo paralelo com arquivos de assinatura</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Enable_Parallel_Reference_Resolution">
         <source>Enable parallel reference resolution</source>
         <target state="translated">Habilitar a resolução de referência paralela</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Keep_All_Background_Resolutions">
+        <source>Keep all background intermediate resolutions (increases memory usage)</source>
+        <target state="new">Keep all background intermediate resolutions (increases memory usage)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Keep_All_Background_Symbol_Uses">
+        <source>Keep all background symbol uses (increases memory usage)</source>
+        <target state="new">Keep all background symbol uses (increases memory usage)</target>
         <note />
       </trans-unit>
       <trans-unit id="Language_Service_Performance">
@@ -75,6 +95,11 @@
       <trans-unit id="Dot_underline">
         <source>D_ot underline</source>
         <target state="translated">Sublinhado p_ontilhado</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Language_Service_Settings">
+        <source>Language service settings (advanced)</source>
+        <target state="new">Language service settings (advanced)</target>
         <note />
       </trans-unit>
       <trans-unit id="LiveBuffers">
@@ -95,6 +120,11 @@
       <trans-unit id="Preferred_description_width_in_characters">
         <source>Preferred description width in characters</source>
         <target state="translated">Largura de descrição preferencial em caracteres</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Send_Additional_Telemetry">
+        <source>Send additional performance telemetry</source>
+        <target state="new">Send additional performance telemetry</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Parameter_Name_Hints">
@@ -125,11 +155,6 @@
       <trans-unit id="Show_completion_list_after_a_character_is_typed">
         <source>_Show completion list after a character is typed</source>
         <target state="translated">_Mostrar lista de conclusão depois que um caractere é digitado</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Enable_in_memory_cross_project_references">
-        <source>_Enable in-memory cross project references</source>
-        <target state="translated">_Habilitar referências de projeto cruzado na memória</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_navigation_links_as">
@@ -205,11 +230,6 @@
       <trans-unit id="Enable_Stale_IntelliSense_Results">
         <source>Enable stale data for IntelliSense features</source>
         <target state="translated">Habilitar dados obsoletos para os recursos do IntelliSense</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Tooltip_in_memory_cross_project_references">
-        <source>In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</source>
-        <target state="translated">As referências entre projetos na memória armazenam os dados de nível de projeto na memória para permitir que os recursos do IDE funcionem nos projetos.</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_key_always">

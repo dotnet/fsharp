@@ -133,7 +133,8 @@ let parseSourceCode (name: string, code: string) =
             SourceText.ofString code,
             { FSharpParsingOptions.Default with
                 SourceFiles = [| location |]
-                IsExe = true }
+                IsExe = true
+                LangVersionText = "preview" }
         )
         |> Async.RunImmediate
 
@@ -175,7 +176,9 @@ let ParseFile fileName =
             $"%A{ast}\n\n%s{diagnostics}"
         |> normalize
         |> sprintf "%s\n"
+
     let bslPath = $"{fullPath}.bsl"
+    let actualPath = $"{fullPath}.actual"
 
     let expected =
         if File.Exists bslPath then
@@ -183,9 +186,14 @@ let ParseFile fileName =
         else
             "No baseline was found"
 
+    let equals = expected = actual
     let testUpdateBSLEnv = System.Environment.GetEnvironmentVariable("TEST_UPDATE_BSL")
 
     if not (isNull testUpdateBSLEnv) && testUpdateBSLEnv.Trim() = "1" then
         File.WriteAllText(bslPath, actual)
+    elif not equals then
+        File.WriteAllText(actualPath, actual)
+    else
+        File.Delete(actualPath)
 
     Assert.AreEqual(expected, actual)

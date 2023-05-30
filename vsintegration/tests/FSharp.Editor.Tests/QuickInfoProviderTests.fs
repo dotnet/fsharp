@@ -3,6 +3,7 @@
 namespace FSharp.Editor.Tests
 
 open System
+open System.Threading
 open Xunit
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.CodeAnalysis
@@ -10,6 +11,7 @@ open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.Editor.QuickInfo
 open FSharp.Editor.Tests.Helpers
 open FSharp.Test
+open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 type public AssemblyResolverTestFixture() =
 
@@ -94,8 +96,11 @@ module QuickInfoProviderTests =
             let caretPosition = programText.IndexOf(symbol) + symbol.Length - 1
 
             let quickInfo =
-                FSharpAsyncQuickInfoSource.TryGetToolTip(document, caretPosition)
-                |> Async.RunSynchronously
+                let task =
+                    FSharpAsyncQuickInfoSource.TryGetToolTip(document, caretPosition)
+                    |> CancellableTask.start CancellationToken.None
+
+                task.Result
 
             let actual =
                 quickInfo

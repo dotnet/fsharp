@@ -2,7 +2,6 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-open System
 open System.Composition
 open System.Collections.Immutable
 open System.Collections.Generic
@@ -13,8 +12,9 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
-open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
+open CancellableTasks
+open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
 [<RequireQualifiedAccess>]
 type internal DiagnosticsType =
@@ -52,16 +52,30 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
         }
 
     static member GetDiagnostics(document: Document, diagnosticType: DiagnosticsType) =
-        async {
-            let! ct = Async.CancellationToken
+        cancellableTask {
+
+            let eventProps: (string * obj) array =
+                [|
+                    "context.document.project.id", document.Project.Id.Id.ToString()
+                    "context.document.id", document.Id.Id.ToString()
+                    "context.diagnostics.type",
+                    match diagnosticType with
+                    | DiagnosticsType.Syntax -> "syntax"
+                    | DiagnosticsType.Semantic -> "semantic"
+                |]
+
+            use _eventDuration =
+                TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.GetDiagnosticsForDocument, eventProps)
+
+            let! ct = CancellableTask.getCurrentCancellationToken ()
 
             let! parseResults = document.GetFSharpParseResultsAsync("GetDiagnostics")
 
-            let! sourceText = document.GetTextAsync(ct) |> Async.AwaitTask
+            let! sourceText = document.GetTextAsync(ct)
             let filePath = document.FilePath
 
             let! errors =
-                async {
+                cancellableTask {
                     match diagnosticType with
                     | DiagnosticsType.Semantic ->
                         let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync("GetDiagnostics")
@@ -106,20 +120,20 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
 
     interface IFSharpDocumentDiagnosticAnalyzer with
 
-        member this.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken) : Task<ImmutableArray<Diagnostic>> =
-            if document.Project.IsFSharpMetadata then
-                Task.FromResult(ImmutableArray.Empty)
-            else
-                FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax)
-                |> liftAsync
-                |> Async.map (Option.defaultValue ImmutableArray<Diagnostic>.Empty)
-                |> RoslynHelpers.StartAsyncAsTask cancellationToken
+        member _.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken) : Task<ImmutableArray<Diagnostic>> =
+            cancellableTask {
+                if document.Project.IsFSharpMetadata then
+                    return ImmutableArray.Empty
+                else
+                    return! FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax)
+            }
+            |> CancellableTask.start cancellationToken
 
-        member this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken) : Task<ImmutableArray<Diagnostic>> =
-            if document.Project.IsFSharpMiscellaneousOrMetadata && not document.IsFSharpScript then
-                Task.FromResult(ImmutableArray.Empty)
-            else
-                FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic)
-                |> liftAsync
-                |> Async.map (Option.defaultValue ImmutableArray<Diagnostic>.Empty)
-                |> RoslynHelpers.StartAsyncAsTask cancellationToken
+        member _.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken) : Task<ImmutableArray<Diagnostic>> =
+            cancellableTask {
+                if document.Project.IsFSharpMiscellaneousOrMetadata && not document.IsFSharpScript then
+                    return ImmutableArray.Empty
+                else
+                    return! FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic)
+            }
+            |> CancellableTask.start cancellationToken

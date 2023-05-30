@@ -85,13 +85,9 @@ module private FSharpProjectOptionsHelpers =
                            let v2 = p2.GetDependentVersionAsync(ct).Result
                            v1 <> v2))
 
-    let isProjectInvalidated (oldProject: Project) (newProject: Project) ct =
-        let hasProjectVersionChanged = hasProjectVersionChanged oldProject newProject
-
-        if newProject.AreFSharpInMemoryCrossProjectReferencesEnabled then
-            hasProjectVersionChanged || hasDependentVersionChanged oldProject newProject ct
-        else
-            hasProjectVersionChanged
+    let inline isProjectInvalidated (oldProject: Project) (newProject: Project) ct =
+        hasProjectVersionChanged oldProject newProject
+        || hasDependentVersionChanged oldProject newProject ct
 
 [<RequireQualifiedAccess>]
 type private FSharpProjectOptionsMessage =
@@ -183,7 +179,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
             let getStamp = fun () -> stamp
 
             let fsRefProj =
-                FSharpReferencedProject.CreatePortableExecutable(referencedProject.OutputFilePath, getStamp, getStream)
+                FSharpReferencedProject.PEReference(getStamp, DelayedILModuleReader(referencedProject.OutputFilePath, getStream))
 
             weakPEReferences.Add(comp, fsRefProj)
             fsRefProj
@@ -276,21 +272,20 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
 
                 let referencedProjects = ResizeArray()
 
-                if project.AreFSharpInMemoryCrossProjectReferencesEnabled then
-                    for projectReference in project.ProjectReferences do
-                        let referencedProject = project.Solution.GetProject(projectReference.ProjectId)
+                for projectReference in project.ProjectReferences do
+                    let referencedProject = project.Solution.GetProject(projectReference.ProjectId)
 
-                        if referencedProject.Language = FSharpConstants.FSharpLanguageName then
-                            match! tryComputeOptions referencedProject ct with
-                            | None -> canBail <- true
-                            | Some (_, projectOptions) ->
-                                referencedProjects.Add(
-                                    FSharpReferencedProject.CreateFSharp(referencedProject.OutputFilePath, projectOptions)
-                                )
-                        elif referencedProject.SupportsCompilation then
-                            let! comp = referencedProject.GetCompilationAsync(ct) |> Async.AwaitTask
-                            let peRef = createPEReference referencedProject comp
-                            referencedProjects.Add(peRef)
+                    if referencedProject.Language = FSharpConstants.FSharpLanguageName then
+                        match! tryComputeOptions referencedProject ct with
+                        | None -> canBail <- true
+                        | Some (_, projectOptions) ->
+                            referencedProjects.Add(
+                                FSharpReferencedProject.FSharpReference(referencedProject.OutputFilePath, projectOptions)
+                            )
+                    elif referencedProject.SupportsCompilation then
+                        let! comp = referencedProject.GetCompilationAsync(ct) |> Async.AwaitTask
+                        let peRef = createPEReference referencedProject comp
+                        referencedProjects.Add(peRef)
 
                 if canBail then
                     return None
@@ -533,10 +528,10 @@ type internal FSharpProjectOptionsManager(checker: FSharpChecker, workspace: Wor
     member _.ClearSingleFileOptionsCache(documentId) =
         reactor.ClearSingleFileOptionsCache(documentId)
 
-    /// Get compilation defines relevant for syntax processing.
+    /// Get compilation defines and language version relevant for syntax processing.
     /// Quicker then TryGetOptionsForDocumentOrProject as it doesn't need to recompute the exact project
     /// options for a script.
-    member _.GetCompilationDefinesForEditingDocument(document: Document) =
+    member _.GetCompilationDefinesAndLangVersionForEditingDocument(document: Document) =
         let parsingOptions =
             match reactor.TryGetCachedOptionsByProjectId(document.Project.Id) with
             | Some (_, parsingOptions, _) -> parsingOptions
@@ -546,7 +541,7 @@ type internal FSharpProjectOptionsManager(checker: FSharpChecker, workspace: Wor
                     IsInteractive = CompilerEnvironment.IsScriptFile document.Name
                 }
 
-        CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions
+        CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions, parsingOptions.LangVersionText
 
     member _.TryGetOptionsByProject(project) =
         reactor.TryGetOptionsByProjectAsync(project)

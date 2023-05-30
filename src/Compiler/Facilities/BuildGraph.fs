@@ -105,7 +105,7 @@ type NodeCodeBuilder() =
                     (value :> IDisposable).Dispose()
             }
         )
-    
+
     [<DebuggerHidden; DebuggerStepThrough>]
     member _.Using(value: IDisposable, binder: IDisposable -> NodeCode<'U>) =
         Node(
@@ -114,7 +114,6 @@ type NodeCodeBuilder() =
                 return! binder value |> Async.AwaitNodeCode
             }
         )
-        
 
 let node = NodeCodeBuilder()
 
@@ -192,12 +191,9 @@ type NodeCode private () =
 
             return results.ToArray()
         }
-    
-    static member Parallel (computations: NodeCode<'T> seq) =
-        computations
-        |> Seq.map (fun (Node x) -> x)
-        |> Async.Parallel
-        |> Node
+
+    static member Parallel(computations: NodeCode<'T> seq) =
+        computations |> Seq.map (fun (Node x) -> x) |> Async.Parallel |> Node
 
 [<RequireQualifiedAccess>]
 module GraphNode =
@@ -238,6 +234,7 @@ type GraphNode<'T> private (computation: NodeCode<'T>, cachedResult: ValueOption
         else
             node {
                 Interlocked.Increment(&requestCount) |> ignore
+
                 try
                     let! ct = NodeCode.CancellationToken
 
@@ -255,8 +252,8 @@ type GraphNode<'T> private (computation: NodeCode<'T>, cachedResult: ValueOption
                                 .ContinueWith(
                                     (fun _ -> taken <- true),
                                     (TaskContinuationOptions.NotOnCanceled
-                                        ||| TaskContinuationOptions.NotOnFaulted
-                                        ||| TaskContinuationOptions.ExecuteSynchronously)
+                                     ||| TaskContinuationOptions.NotOnFaulted
+                                     ||| TaskContinuationOptions.ExecuteSynchronously)
                                 )
                             |> NodeCode.AwaitTask
 
@@ -283,7 +280,8 @@ type GraphNode<'T> private (computation: NodeCode<'T>, cachedResult: ValueOption
 
                             return! tcs.Task |> NodeCode.AwaitTask
                     finally
-                        if taken then semaphore.Release() |> ignore
+                        if taken then
+                            semaphore.Release() |> ignore
                 finally
                     Interlocked.Decrement(&requestCount) |> ignore
             }

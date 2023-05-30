@@ -13,6 +13,7 @@ open Microsoft.CodeAnalysis.Classification
 open FSharp.Compiler.EditorServices
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.Implementation.Debugging
+open CancellableTasks
 
 [<Export(typeof<IFSharpLanguageDebugInfoService>)>]
 type internal FSharpLanguageDebugInfoService [<ImportingConstructor>] () =
@@ -45,23 +46,31 @@ type internal FSharpLanguageDebugInfoService [<ImportingConstructor>] () =
     interface IFSharpLanguageDebugInfoService with
 
         // FSROSLYNTODO: This is used to get function names in breakpoint window. It should return fully qualified function name and line offset from the start of the function.
-        member this.GetLocationInfoAsync(_, _, _) : Task<FSharpDebugLocationInfo> =
+        member _.GetLocationInfoAsync(_, _, _) : Task<FSharpDebugLocationInfo> =
             Task.FromResult(Unchecked.defaultof<FSharpDebugLocationInfo>)
 
-        member this.GetDataTipInfoAsync
+        member _.GetDataTipInfoAsync
             (
                 document: Document,
                 position: int,
                 cancellationToken: CancellationToken
             ) : Task<FSharpDebugDataTipInfo> =
-            async {
-                let defines = document.GetFSharpQuickDefines()
-                let! cancellationToken = Async.CancellationToken
-                let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+            cancellableTask {
+                let defines, langVersion = document.GetFSharpQuickDefinesAndLangVersion()
+                let! cancellationToken = CancellableTask.getCurrentCancellationToken ()
+                let! sourceText = document.GetTextAsync(cancellationToken)
                 let textSpan = TextSpan.FromBounds(0, sourceText.Length)
 
                 let classifiedSpans =
-                    Tokenizer.getClassifiedSpans (document.Id, sourceText, textSpan, Some(document.Name), defines, cancellationToken)
+                    Tokenizer.getClassifiedSpans (
+                        document.Id,
+                        sourceText,
+                        textSpan,
+                        Some(document.Name),
+                        defines,
+                        Some langVersion,
+                        cancellationToken
+                    )
 
                 let result =
                     match FSharpLanguageDebugInfoService.GetDataTipInformation(sourceText, position, classifiedSpans) with
@@ -70,4 +79,4 @@ type internal FSharpLanguageDebugInfoService [<ImportingConstructor>] () =
 
                 return result
             }
-            |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
+            |> CancellableTask.start cancellationToken

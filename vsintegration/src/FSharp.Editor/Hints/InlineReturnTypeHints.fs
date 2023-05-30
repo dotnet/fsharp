@@ -7,6 +7,7 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open Hints
+open CancellableTasks
 
 type InlineReturnTypeHints(parseFileResults: FSharpParseFileResults, symbol: FSharpMemberOrFunctionOrValue) =
 
@@ -19,6 +20,13 @@ type InlineReturnTypeHints(parseFileResults: FSharpParseFileResults, symbol: FSh
                 TaggedText(TextTag.Space, " ")
             ])
 
+    let getTooltip _ =
+        cancellableTask {
+            let typeAsString = symbol.ReturnParameter.Type.TypeDefinition.ToString()
+            let text = $"type {typeAsString}"
+            return [ TaggedText(TextTag.Text, text) ]
+        }
+
     let getHint symbolUse range =
         getHintParts symbolUse
         |> Option.map (fun parts ->
@@ -26,11 +34,14 @@ type InlineReturnTypeHints(parseFileResults: FSharpParseFileResults, symbol: FSh
                 Kind = HintKind.ReturnTypeHint
                 Range = range
                 Parts = parts
+                GetTooltip = getTooltip
             })
 
-    member _.getHints(symbolUse: FSharpSymbolUse) =
+    let isValidForHint (symbol: FSharpMemberOrFunctionOrValue) = symbol.IsFunction
+
+    member _.GetHints(symbolUse: FSharpSymbolUse) =
         [
-            if symbol.IsFunction then
+            if isValidForHint symbol then
                 yield!
                     parseFileResults.TryRangeOfReturnTypeHint symbolUse.Range.Start
                     |> Option.bind (getHint symbolUse)

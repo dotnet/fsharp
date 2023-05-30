@@ -24,6 +24,7 @@ open Microsoft.VisualStudio.Core.Imaging
 open Microsoft.VisualStudio.Imaging
 
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp
+open CancellableTasks
 
 type private FSharpGlyph = FSharp.Compiler.EditorServices.FSharpGlyph
 type private Glyph = Microsoft.CodeAnalysis.ExternalAccess.FSharp.FSharpGlyph
@@ -695,12 +696,13 @@ module internal Tokenizer =
             textSpan: TextSpan,
             fileName: string option,
             defines: string list,
+            langVersion,
             cancellationToken: CancellationToken
         ) : ResizeArray<ClassifiedSpan> =
         let result = new ResizeArray<ClassifiedSpan>()
 
         try
-            let sourceTokenizer = FSharpSourceTokenizer(defines, fileName)
+            let sourceTokenizer = FSharpSourceTokenizer(defines, fileName, langVersion)
             let lines = sourceText.Lines
             let sourceTextData = getSourceTextData (documentKey, defines, lines.Count)
 
@@ -896,10 +898,11 @@ module internal Tokenizer =
             position: int,
             fileName: string,
             defines: string list,
+            langVersion,
             cancellationToken
         ) =
         let textLinePos = sourceText.Lines.GetLinePosition(position)
-        let sourceTokenizer = FSharpSourceTokenizer(defines, Some fileName)
+        let sourceTokenizer = FSharpSourceTokenizer(defines, Some fileName, langVersion)
         // We keep incremental data per-document. When text changes we correlate text line-by-line (by hash codes of lines)
         let sourceTextData =
             getSourceTextData (documentKey, defines, sourceText.Lines.Count)
@@ -912,10 +915,10 @@ module internal Tokenizer =
 
         lineData, textLinePos, contents
 
-    let tokenizeLine (documentKey, sourceText, position, fileName, defines, cancellationToken) =
+    let tokenizeLine (documentKey, sourceText, position, fileName, defines, langVersion, cancellationToken) =
         try
             let lineData, _, _ =
-                getCachedSourceLineData (documentKey, sourceText, position, fileName, defines, cancellationToken)
+                getCachedSourceLineData (documentKey, sourceText, position, fileName, defines, langVersion, cancellationToken)
 
             lineData.SavedTokens
         with ex ->
@@ -932,12 +935,13 @@ module internal Tokenizer =
             lookupKind: SymbolLookupKind,
             wholeActivePatterns: bool,
             allowStringToken: bool,
+            langVersion,
             cancellationToken
         ) : LexerSymbol option =
 
         try
             let lineData, textLinePos, lineContents =
-                getCachedSourceLineData (documentKey, sourceText, position, fileName, defines, cancellationToken)
+                getCachedSourceLineData (documentKey, sourceText, position, fileName, defines, langVersion, cancellationToken)
 
             getSymbolFromSavedTokens (
                 fileName,

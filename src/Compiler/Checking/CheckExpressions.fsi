@@ -852,6 +852,7 @@ val TcValSpec:
 /// giving the names and attributes relevant to arguments and return, but before type
 /// parameters have been fully inferred via generalization.
 val TranslateSynValInfo:
+    cenv: TcFileState ->
     range ->
     tcAttributes: (AttributeTargets -> SynAttribute list -> Attrib list) ->
     synValInfo: SynValInfo ->
@@ -894,7 +895,7 @@ val BuildFieldMap:
     ty: TType ->
     flds: ((Ident list * Ident) * 'T) list ->
     m: range ->
-        TypeInst * TyconRef * Map<string, 'T> * (string * 'T) list
+        (TypeInst * TyconRef * Map<string, 'T> * (string * 'T) list) option
 
 /// Check a long identifier 'Case' or 'Case argsR' that has been resolved to an active pattern case
 val TcPatLongIdentActivePatternCase:
