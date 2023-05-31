@@ -176,3 +176,51 @@ type C () =
         |> FSharp
         |> typecheck
         |> shouldSucceed
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Don't warn for valid tailcalls in type methods`` () =
+        """
+type C () =
+    [<TailCall>]
+    member this.M1() =
+        this.M2()    // ok
+
+    [<TailCall>]
+    member this.M2() =
+        this.M1()     // ok
+        """
+        |> FSharp
+        |> typecheck
+        |> shouldSucceed
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Warn successfully for invalid tailcalls in type methods`` () =
+        """
+type F () =
+    [<TailCall>]
+    member this.M1() =
+        this.M2() + 1   // should warn
+
+    [<TailCall>]
+    member this.M2() =
+        this.M1() + 2    // should warn
+        """
+        |> FSharp
+        |> typecheck
+        |> shouldFail
+        |> withResults [
+            { Error = Warning 3567
+              Range = { StartLine = 5
+                        StartColumn = 9
+                        EndLine = 5
+                        EndColumn = 18 }
+              Message =
+               "The member or function 'M2' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+            { Error = Warning 3567
+              Range = { StartLine = 9
+                        StartColumn = 9
+                        EndLine = 9
+                        EndColumn = 18 }
+              Message =
+               "The member or function 'M1' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+        ]
