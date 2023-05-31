@@ -169,6 +169,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %type <SynExpr> atomicExprAfterType
 %type <SynExpr> typedSequentialExprBlock
 %type <SynExpr * bool> atomicExpr
+%type <SynExpr list * range list> tupleExpr
 %type <SynTypeDefnSimpleRepr> tyconDefnOrSpfnSimpleRepr
 %type <Choice<SynEnumCase, SynUnionCase> list> unionTypeRepr
 %type <range * SynMemberDefns> tyconDefnAugmentation
@@ -3732,22 +3733,22 @@ declExpr:
         $3 $2 mIf false }
 
   | IF declExpr recover %prec expr_if
-      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsIncompleteIf())
-        // Produce an approximate expression during error recovery.
-        // Include expressions to make sure they get type checked in case that generates useful results for intellisense.
-        // Generate a throwAway for the expression so it isn't forced to have a type 'bool'
-        // from the context it is used in.
-        exprFromParseError $2 }
+      { errorR (Error(FSComp.SR.parsIncompleteIf (), rhs parseState 1))
+        let ifExpr = $2
+        let mIf = rhs parseState 1
+        let mThen = ifExpr.Range.EndRange
+        let m = unionRanges mIf mThen
+        let spIfToThen = DebugPointAtBinding.Yes m
+        let trivia = { IfKeyword = mIf; IsElif = false; ThenKeyword = mThen; ElseKeyword = None; IfToThenRange = m }
+        SynExpr.IfThenElse($2, arbExpr ("if1", mThen), None, spIfToThen, true, m, trivia) }
 
   | IF recover %prec expr_if
-      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsIncompleteIf())
-        // Produce an approximate expression during error recovery. There can still be value in doing this even
-        // for this pathological case.
+      { errorR (Error(FSComp.SR.parsIncompleteIf (), rhs parseState 1))
         let m = rhs parseState 1
         let mEnd = m.EndRange
         let spIfToThen = DebugPointAtBinding.Yes mEnd
         let trivia = { IfKeyword = m; IsElif = false; ThenKeyword = m; ElseKeyword = None; IfToThenRange = m }
-        exprFromParseError (SynExpr.IfThenElse(arbExpr ("ifGuard1", mEnd), arbExpr ("thenBody1", mEnd), None, spIfToThen, true, m, trivia)) }
+        SynExpr.IfThenElse(arbExpr ("if2", mEnd), arbExpr ("if3", mEnd), None, spIfToThen, true, m, trivia) }
 
   | LAZY declExpr %prec expr_lazy
       { SynExpr.Lazy($2, unionRanges (rhs parseState 1) $2.Range) }
@@ -4017,162 +4018,174 @@ declExpr:
 
   | tupleExpr %prec expr_tuple
      { let exprs, commas = $1
-       let exprs, commas =
-           // Nested non-struct tuple is only possible during error recovery,
-           // in other situations there are intermediate nodes.
-           match exprs with
-           | SynExpr.Tuple(false, _, _, _) :: _ -> normalizeTupleExpr exprs commas
-           | _ -> exprs, commas
-
-       SynExpr.Tuple(false, List.rev exprs, List.rev commas, (commas.Head, exprs) ||> unionRangeWithListBy (fun e -> e.Range)) }
+       let m = unionRanges exprs.Head.Range (List.last exprs).Range
+       SynExpr.Tuple(false, List.rev exprs, List.rev commas, m) }
 
   | declExpr JOIN_IN declExpr
      { SynExpr.JoinIn($1, rhs parseState 2, $3, unionRanges $1.Range $3.Range) }
 
+  | declExpr JOIN_IN ends_coming_soon_or_recover
+     { let mOp = rhs parseState 2
+       reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression "in")
+       mkSynInfix mOp $1 "@in" (arbExpr ("declExprInfixJoinIn", mOp.EndRange)) }
+
   | declExpr BAR_BAR declExpr
      { mkSynInfix (rhs parseState 2) $1 "||" $3 }
+
+  | declExpr BAR_BAR ends_coming_soon_or_recover
+     { let mOp = rhs parseState 2
+       reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression "||")
+       mkSynInfix mOp $1 "||" (arbExpr ("declExprInfixBarBar", mOp.EndRange)) }
 
   | declExpr INFIX_BAR_OP declExpr
      { mkSynInfix (rhs parseState 2) $1 $2 $3 }
 
+  | declExpr INFIX_BAR_OP ends_coming_soon_or_recover
+     { let mOp = rhs parseState 2
+       reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression $2)
+       mkSynInfix mOp $1 $2 (arbExpr ("declExprInfixBarOp", mOp.EndRange)) }
+
   | declExpr OR declExpr
      { mkSynInfix (rhs parseState 2) $1 "or" $3 }
+
+  | declExpr OR ends_coming_soon_or_recover
+     { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression "or")
+       mkSynInfix (rhs parseState 2) $1 "or" (arbExpr ("declExprInfixOr", (rhs parseState 3).StartRange)) }
 
   | declExpr AMP declExpr
      { mkSynInfix (rhs parseState 2) $1 "&" $3 }
 
+  | declExpr AMP ends_coming_soon_or_recover
+     { let mOp = rhs parseState 2
+       reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression "&")
+       mkSynInfix mOp $1 "&" (arbExpr ("declExprInfixAmp", mOp.EndRange)) }
+
   | declExpr AMP_AMP declExpr
      { mkSynInfix (rhs parseState 2) $1 "&&" $3 }
+
+  | declExpr AMP_AMP ends_coming_soon_or_recover
+     { let mOp = rhs parseState 2
+       reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression "&&")
+       mkSynInfix mOp $1 "&&" (arbExpr ("declExprInfixAmpAmp", mOp.EndRange)) }
 
   | declExpr INFIX_AMP_OP declExpr
      { mkSynInfix (rhs parseState 2) $1 $2 $3 }
 
+  | declExpr INFIX_AMP_OP ends_coming_soon_or_recover
+     { let mOp = rhs parseState 2
+       reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression $2)
+       mkSynInfix mOp $1 $2 (arbExpr ("declExprInfixAmpOp", (rhs parseState 3).StartRange)) }
+
   | declExpr EQUALS declExpr
      { mkSynInfix (rhs parseState 2) $1 "=" $3 }
+
+  | declExpr EQUALS ends_coming_soon_or_recover
+     { let mOp = rhs parseState 2
+       reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression "=")
+       mkSynInfix mOp $1 "=" (arbExpr ("declExprInfixEquals", mOp.EndRange)) }
 
   | declExpr INFIX_COMPARE_OP declExpr
      { mkSynInfix (rhs parseState 2) $1 $2 $3 }
 
+  | declExpr INFIX_COMPARE_OP ends_coming_soon_or_recover
+     { let mOp = rhs parseState 2
+       reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression $2)
+       mkSynInfix mOp $1 $2 (arbExpr ("declExprInfix", mOp.EndRange)) }
+
   | declExpr DOLLAR declExpr
      { mkSynInfix (rhs parseState 2) $1 "$" $3 }
+
+  | declExpr DOLLAR ends_coming_soon_or_recover
+     { let mOp = rhs parseState 2
+       reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression "$")
+       mkSynInfix mOp $1 "$" (arbExpr ("declExprInfixDollar", mOp.EndRange)) }
 
   | declExpr LESS declExpr
      { mkSynInfix (rhs parseState 2) $1 "<" $3 }
 
-  | declExpr LESS recover
-     { if not $3 then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression("<"))
-       exprFromParseError (mkSynInfix (rhs parseState 2) $1 "<" (arbExpr ("declExprInfix", (rhs parseState 3).StartRange))) }
+  | declExpr LESS ends_coming_soon_or_recover
+     { let mOp = rhs parseState 2
+       reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression "<")
+       mkSynInfix mOp $1 "<" (arbExpr ("declExprInfixLess", mOp.EndRange)) }
 
   | declExpr GREATER declExpr
      { mkSynInfix (rhs parseState 2) $1 ">" $3 }
 
+  | declExpr GREATER ends_coming_soon_or_recover
+     { let mOp = rhs parseState 2
+       reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression ">")
+       mkSynInfix mOp $1 ">" (arbExpr ("declExprInfixGreater", mOp.EndRange)) }
+
   | declExpr INFIX_AT_HAT_OP declExpr
      { mkSynInfix (rhs parseState 2) $1 $2 $3 }
+
+  | declExpr INFIX_AT_HAT_OP ends_coming_soon_or_recover %prec infix_at_hat_op_binary
+     { let mOp = rhs parseState 2
+       reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression $2)
+       mkSynInfix mOp $1 $2 (arbExpr ("declExprInfix", mOp.EndRange)) }
 
   | declExpr PERCENT_OP declExpr
      { mkSynInfix (rhs parseState 2) $1 $2 $3 }
 
+  | declExpr PERCENT_OP ends_coming_soon_or_recover
+     { let mOp = rhs parseState 2
+       reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression $2)
+       mkSynInfix mOp $1 $2 (arbExpr ("declExprInfixPercent", mOp.EndRange)) }
+
   | declExpr COLON_COLON declExpr
-     { let tupExpr = SynExpr.Tuple(false, [$1;$3], [rhs parseState 2], unionRanges $1.Range $3.Range)
-       let identExpr = mkSynOperator (rhs parseState 2) "::"
-       SynExpr.App(ExprAtomicFlag.NonAtomic, true, identExpr, tupExpr, unionRanges $1.Range $3.Range) }
+     { let mOp = rhs parseState 2
+       let m = unionRanges $1.Range $3.Range
+       let tupExpr = SynExpr.Tuple(false, [$1; $3], [mOp], m)
+       let identExpr = mkSynOperator mOp "::"
+       SynExpr.App(ExprAtomicFlag.NonAtomic, true, identExpr, tupExpr, m) }
+
+  | declExpr COLON_COLON ends_coming_soon_or_recover
+     { let mOp = rhs parseState 2
+       let m = unionRanges $1.Range mOp
+       reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression "::")
+       let identExpr = mkSynOperator mOp "::"
+       let tupExpr = SynExpr.Tuple(false, [$1; (arbExpr ("declExprInfixColonColon", mOp.EndRange))], [mOp], m)
+       SynExpr.App(ExprAtomicFlag.NonAtomic, true, identExpr, tupExpr, m) }
 
   | declExpr PLUS_MINUS_OP declExpr
      { mkSynInfix (rhs parseState 2) $1 $2 $3 }
 
+  | declExpr PLUS_MINUS_OP ends_coming_soon_or_recover
+     { let mOp = rhs parseState 2
+       reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression $2)
+       mkSynInfix mOp $1 $2 (arbExpr ("declExprInfixPlusMinus", mOp.EndRange)) }
+
   | declExpr MINUS declExpr
      { mkSynInfix (rhs parseState 2) $1 "-" $3 }
+
+  | declExpr MINUS ends_coming_soon_or_recover
+      { let mOp = rhs parseState 2
+        reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression "-")
+        mkSynInfix mOp $1 "-" (arbExpr ("declExprInfixMinus", mOp.EndRange)) }
 
   | declExpr STAR declExpr
      { mkSynInfix (rhs parseState 2) $1 "*" $3 }
 
+  | declExpr STAR ends_coming_soon_or_recover
+     { let mOp = rhs parseState 2
+       reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression "*")
+       mkSynInfix mOp $1 "*" (arbExpr ("declExprInfixStar", mOp.EndRange)) }
+
   | declExpr INFIX_STAR_DIV_MOD_OP declExpr
      { mkSynInfix (rhs parseState 2) $1 $2 $3 }
+
+  | declExpr INFIX_STAR_DIV_MOD_OP ends_coming_soon_or_recover
+     { let mOp = rhs parseState 2
+       reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression $2)
+       mkSynInfix mOp $1 $2 (arbExpr ("declExprInfixStarDivMod", mOp.EndRange)) }
 
   | declExpr INFIX_STAR_STAR_OP declExpr
      { mkSynInfix (rhs parseState 2) $1 $2 $3 }
 
-  | declExpr JOIN_IN OBLOCKEND_COMING_SOON
-     { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression("in"))
-       exprFromParseError(mkSynInfix (rhs parseState 2) $1 "@in" (arbExpr ("declExprInfix", (rhs parseState 3).StartRange))) }
-
-  | declExpr BAR_BAR OBLOCKEND_COMING_SOON
-     { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression("||"))
-       exprFromParseError(mkSynInfix (rhs parseState 2) $1 "||" (arbExpr ("declExprInfix", (rhs parseState 3).StartRange))) }
-
-  | declExpr INFIX_BAR_OP OBLOCKEND_COMING_SOON
-     { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression($2))
-       exprFromParseError(mkSynInfix (rhs parseState 2) $1 $2 (arbExpr ("declExprInfix", (rhs parseState 3).StartRange))) }
-
-  | declExpr OR OBLOCKEND_COMING_SOON
-     { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression("or"))
-       exprFromParseError(mkSynInfix (rhs parseState 2) $1 "or" (arbExpr ("declExprInfix", (rhs parseState 3).StartRange))) }
-
-  | declExpr AMP OBLOCKEND_COMING_SOON
-     { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression("&"))
-       exprFromParseError(mkSynInfix (rhs parseState 2) $1 "&" (arbExpr ("declExprInfix", (rhs parseState 3).StartRange))) }
-
-  | declExpr AMP_AMP OBLOCKEND_COMING_SOON
-     { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression("&&"))
-       exprFromParseError(mkSynInfix (rhs parseState 2) $1 "&&" (arbExpr ("declExprInfix", (rhs parseState 3).StartRange))) }
-
-  | declExpr INFIX_AMP_OP OBLOCKEND_COMING_SOON
-     { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression($2))
-       exprFromParseError(mkSynInfix (rhs parseState 2) $1 $2 (arbExpr ("declExprInfix", (rhs parseState 3).StartRange))) }
-
-  | declExpr EQUALS OBLOCKEND_COMING_SOON
-     { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression("="))
-       exprFromParseError(mkSynInfix (rhs parseState 2) $1 "=" (arbExpr ("declExprInfix", (rhs parseState 3).StartRange))) }
-
-  | declExpr INFIX_COMPARE_OP OBLOCKEND_COMING_SOON
-     { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression($2))
-       exprFromParseError(mkSynInfix (rhs parseState 2) $1 $2 (arbExpr ("declExprInfix", (rhs parseState 3).StartRange))) }
-
-  | declExpr DOLLAR OBLOCKEND_COMING_SOON
-     { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression("$"))
-       exprFromParseError(mkSynInfix (rhs parseState 2) $1 "$" (arbExpr ("declExprInfix", (rhs parseState 3).StartRange))) }
-
-  | declExpr LESS OBLOCKEND_COMING_SOON
-     { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression("<"))
-       exprFromParseError(mkSynInfix (rhs parseState 2) $1 "<" (arbExpr ("declExprInfix", (rhs parseState 3).StartRange))) }
-
-  | declExpr GREATER OBLOCKEND_COMING_SOON
-     { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression(">"))
-       exprFromParseError(mkSynInfix (rhs parseState 2) $1 ">" (arbExpr ("declExprInfix", (rhs parseState 3).StartRange))) }
-
-  | declExpr INFIX_AT_HAT_OP OBLOCKEND_COMING_SOON  %prec infix_at_hat_op_binary
-     { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression($2))
-       exprFromParseError(mkSynInfix (rhs parseState 2) $1 $2 (arbExpr ("declExprInfix", (rhs parseState 3).StartRange))) }
-
-  | declExpr PERCENT_OP OBLOCKEND_COMING_SOON
-     { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression($2))
-       exprFromParseError(mkSynInfix (rhs parseState 2) $1 $2 (arbExpr ("declExprInfix", (rhs parseState 3).StartRange))) }
-
-  | declExpr COLON_COLON OBLOCKEND_COMING_SOON
-     { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression("::"))
-       let identExpr = mkSynOperator (rhs parseState 2) "::"
-       let tupExpr = SynExpr.Tuple(false, [$1;(arbExpr ("declExprInfix", (rhs parseState 3).StartRange))], [rhs parseState 2], unionRanges $1.Range (rhs parseState 3).StartRange)
-       SynExpr.App(ExprAtomicFlag.NonAtomic, true, identExpr, tupExpr, unionRanges $1.Range (rhs parseState 3).StartRange) }
-
-  | declExpr PLUS_MINUS_OP OBLOCKEND_COMING_SOON
-     { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression($2))
-       exprFromParseError(mkSynInfix (rhs parseState 2) $1 $2 (arbExpr ("declExprInfix", (rhs parseState 3).StartRange))) }
-
-  | declExpr MINUS OBLOCKEND_COMING_SOON
-     { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression("-"))
-       exprFromParseError(mkSynInfix (rhs parseState 2) $1 "-" (arbExpr ("declExprInfix", (rhs parseState 3).StartRange))) }
-
-  | declExpr STAR OBLOCKEND_COMING_SOON
-     { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression("*"))
-       exprFromParseError(mkSynInfix (rhs parseState 2) $1 "*" (arbExpr ("declExprInfix", (rhs parseState 3).StartRange))) }
-
-  | declExpr INFIX_STAR_DIV_MOD_OP OBLOCKEND_COMING_SOON
-     { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression($2))
-       exprFromParseError(mkSynInfix (rhs parseState 2) $1 $2 (arbExpr ("declExprInfix", (rhs parseState 3).StartRange))) }
-
-  | declExpr INFIX_STAR_STAR_OP OBLOCKEND_COMING_SOON
-     { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression($2))
-       exprFromParseError(mkSynInfix (rhs parseState 2) $1 $2 (arbExpr ("declExprInfix", (rhs parseState 3).StartRange))) }
+  | declExpr INFIX_STAR_STAR_OP ends_coming_soon_or_recover
+     { let mOp = rhs parseState 2
+       reportParseErrorAt mOp (FSComp.SR.parsUnfinishedExpression $2)
+       mkSynInfix mOp $1 $2 (arbExpr ("declExprInfixStarStar", mOp.EndRange)) }
 
   | declExpr DOT_DOT declExpr
       { let wholem = rhs2 parseState 1 3
@@ -4318,12 +4331,24 @@ ifExprThen:
   | THEN declExpr %prec prec_then_if
       { $2, rhs parseState 1 }
 
+  | THEN recover %prec prec_then_if
+      { let mThen = rhs parseState 1
+        arbExpr ("ifThen1", mThen.EndRange), mThen }
+
   | OTHEN OBLOCKBEGIN typedSequentialExpr oblockend %prec prec_then_if
       { $3, rhs parseState 1 }
 
   | OTHEN OBLOCKBEGIN typedSequentialExpr recover %prec prec_then_if
       { if not $4 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileThen())
         exprFromParseError $3, rhs parseState 1 }
+
+  | OTHEN recover %prec prec_then_if
+      { let mThen = rhs parseState 1
+        arbExpr ("ifThen2", mThen.EndRange), mThen }
+
+  | OTHEN OBLOCKBEGIN recover %prec prec_then_if
+      { let mThen = rhs parseState 1
+        arbExpr ("ifThen3", mThen.EndRange), mThen }
 
 ifExprElifs:
   | /* EMPTY */
@@ -4368,23 +4393,47 @@ tupleExpr:
         let exprs, commas = $1
         arbExpr ("tupleExpr1", commaRange.EndRange) :: exprs, commaRange :: commas }
 
+  | tupleExpr COMMA COMMA declExpr
+      { let exprs, commas = $1
+        let mComma1 = rhs parseState 2
+        let mComma2 = rhs parseState 3
+        reportParseErrorAt mComma2 (FSComp.SR.parsExpectingExpressionInTuple ())
+        let expr = arbExpr ("tupleExpr2", mComma1.EndRange)
+        $4 :: expr :: exprs, (mComma2 :: mComma1 :: commas) }
+
+  | tupleExpr COMMA COMMA ends_coming_soon_or_recover
+      { let exprs, commas = $1
+        let mComma1 = rhs parseState 2
+        let mComma2 = rhs parseState 3
+        reportParseErrorAt mComma2 (FSComp.SR.parsExpectingExpressionInTuple ())
+        if not $4 then reportParseErrorAt mComma2 (FSComp.SR.parsExpectedExpressionAfterToken ())
+        let expr1 = arbExpr ("tupleExpr3", mComma1.EndRange)
+        let expr2 = arbExpr ("tupleExpr4", mComma2.EndRange)
+        expr2 :: expr1 :: exprs, mComma2 :: mComma1 :: commas }
+
   | declExpr COMMA ends_coming_soon_or_recover
       { let commaRange = rhs parseState 2
         if not $3 then reportParseErrorAt commaRange (FSComp.SR.parsExpectedExpressionAfterToken ())
-        [arbExpr ("tupleExpr2", commaRange.EndRange); $1], [commaRange] }
+        [arbExpr ("tupleExpr5", commaRange.EndRange); $1], [commaRange] }
 
   | declExpr COMMA declExpr
       { [$3; $1], [rhs parseState 2] }
 
-  | COMMA declExpr
-      { let commaRange = rhs parseState 1
-        reportParseErrorAt commaRange (FSComp.SR.parsExpectingExpressionInTuple ())
-        [$2; arbExpr ("tupleExpr3", commaRange.StartRange)], [commaRange] }
+  | declExpr COMMA COMMA ends_coming_soon_or_recover
+      { let mComma1 = rhs parseState 2
+        let mComma2 = rhs parseState 3
+        reportParseErrorAt mComma2 (FSComp.SR.parsExpectingExpressionInTuple ())
+        if not $4 then reportParseErrorAt mComma2 (FSComp.SR.parsExpectedExpressionAfterToken ())
+        let expr1 = arbExpr ("tupleExpr6", mComma1.EndRange)
+        let expr2 = arbExpr ("tupleExpr7", mComma2.EndRange)
+        [expr2; expr1; $1], [mComma2; mComma1] }
 
-  | COMMA ends_coming_soon_or_recover
-      { let commaRange = rhs parseState 1
-        if not $2 then reportParseErrorAt commaRange (FSComp.SR.parsExpectedExpressionAfterToken ())
-        [arbExpr ("tupleExpr4", commaRange.EndRange); arbExpr ("tupleExpr5", commaRange.StartRange)], [commaRange] }
+  | declExpr COMMA COMMA declExpr
+      { let mComma1 = rhs parseState 2
+        let mComma2 = rhs parseState 3
+        reportParseErrorAt mComma2 (FSComp.SR.parsExpectingExpressionInTuple ())
+        let expr = arbExpr ("tupleExpr8", mComma1.EndRange)
+        [$4; expr; $1], [mComma2; mComma1] }
 
 minusExpr:
   | INFIX_AT_HAT_OP minusExpr
@@ -4731,6 +4780,19 @@ parenExpr:
         // let mLeftParen = rhs parseState 1
         //let mLhs = if $2 then unionRangeWithPos mLeftParen (rhs parseState 2).Start else mLeftParen
         //arbExpr ("parenExpr2", mLhs) }
+
+  | LPAREN COMMA declExpr rparen
+      { let mComma = rhs parseState 2
+        let mLparen = rhs parseState 1
+        let mRparen = rhs parseState 3
+        let errorExpr = arbExpr ("tupleExpr3", mComma.EndRange)
+        let mTuple = unionRanges mComma $3.Range
+        let tupleExpr =
+            match $3 with
+            | SynExpr.Tuple(false, exprs, commas, m) ->
+                SynExpr.Tuple(false, errorExpr :: exprs, mComma :: commas, mTuple)
+            | expr -> SynExpr.Tuple(false, [errorExpr; expr], [mComma], mTuple)
+        SynExpr.Paren(tupleExpr, mLparen, Some mRparen, rhs2 parseState 1 4) }
 
 parenExprBody:
   | typars COLON LPAREN classMemberSpfn rparen typedSequentialExpr

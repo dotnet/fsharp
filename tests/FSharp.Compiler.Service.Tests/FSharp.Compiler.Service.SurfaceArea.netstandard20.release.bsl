@@ -1945,6 +1945,9 @@ FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryRe
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+Shim
+FSharp.Compiler.CodeAnalysis.DelayedILModuleReader: System.String OutputFile
+FSharp.Compiler.CodeAnalysis.DelayedILModuleReader: System.String get_OutputFile()
+FSharp.Compiler.CodeAnalysis.DelayedILModuleReader: Void .ctor(System.String, Microsoft.FSharp.Core.FSharpFunc`2[System.Threading.CancellationToken,Microsoft.FSharp.Core.FSharpOption`1[System.IO.Stream]])
 FSharp.Compiler.CodeAnalysis.DocumentSource+Custom: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.ISourceText]]] Item
 FSharp.Compiler.CodeAnalysis.DocumentSource+Custom: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.ISourceText]]] get_Item()
 FSharp.Compiler.CodeAnalysis.DocumentSource+Tags: Int32 Custom
@@ -2165,11 +2168,40 @@ FSharp.Compiler.CodeAnalysis.FSharpProjectOptions: System.String[] SourceFiles
 FSharp.Compiler.CodeAnalysis.FSharpProjectOptions: System.String[] get_OtherOptions()
 FSharp.Compiler.CodeAnalysis.FSharpProjectOptions: System.String[] get_SourceFiles()
 FSharp.Compiler.CodeAnalysis.FSharpProjectOptions: Void .ctor(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.String], System.String[], System.String[], FSharp.Compiler.CodeAnalysis.FSharpReferencedProject[], Boolean, Boolean, System.DateTime, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.FSharpUnresolvedReferencesSet], Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`3[FSharp.Compiler.Text.Range,System.String,System.String]], Microsoft.FSharp.Core.FSharpOption`1[System.Int64])
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+FSharpReference: FSharp.Compiler.CodeAnalysis.FSharpProjectOptions get_options()
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+FSharpReference: FSharp.Compiler.CodeAnalysis.FSharpProjectOptions options
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+FSharpReference: System.String get_projectOutputFile()
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+FSharpReference: System.String projectOutputFile
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+ILModuleReference: Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,FSharp.Compiler.AbstractIL.ILBinaryReader+ILModuleReader] getReader
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+ILModuleReference: Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,FSharp.Compiler.AbstractIL.ILBinaryReader+ILModuleReader] get_getReader()
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+ILModuleReference: Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.DateTime] getStamp
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+ILModuleReference: Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.DateTime] get_getStamp()
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+ILModuleReference: System.String get_projectOutputFile()
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+ILModuleReference: System.String projectOutputFile
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+PEReference: FSharp.Compiler.CodeAnalysis.DelayedILModuleReader delayedReader
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+PEReference: FSharp.Compiler.CodeAnalysis.DelayedILModuleReader get_delayedReader()
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+PEReference: Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.DateTime] getStamp
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+PEReference: Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.DateTime] get_getStamp()
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+Tags: Int32 FSharpReference
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+Tags: Int32 ILModuleReference
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+Tags: Int32 PEReference
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: Boolean Equals(System.Object)
-FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: FSharp.Compiler.CodeAnalysis.FSharpReferencedProject CreateFSharp(System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions)
-FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: FSharp.Compiler.CodeAnalysis.FSharpReferencedProject CreateFromILModuleReader(System.String, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.DateTime], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,FSharp.Compiler.AbstractIL.ILBinaryReader+ILModuleReader])
-FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: FSharp.Compiler.CodeAnalysis.FSharpReferencedProject CreatePortableExecutable(System.String, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.DateTime], Microsoft.FSharp.Core.FSharpFunc`2[System.Threading.CancellationToken,Microsoft.FSharp.Core.FSharpOption`1[System.IO.Stream]])
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: Boolean IsFSharpReference
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: Boolean IsILModuleReference
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: Boolean IsPEReference
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: Boolean get_IsFSharpReference()
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: Boolean get_IsILModuleReference()
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: Boolean get_IsPEReference()
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: FSharp.Compiler.CodeAnalysis.FSharpReferencedProject NewFSharpReference(System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions)
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: FSharp.Compiler.CodeAnalysis.FSharpReferencedProject NewILModuleReference(System.String, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.DateTime], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,FSharp.Compiler.AbstractIL.ILBinaryReader+ILModuleReader])
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: FSharp.Compiler.CodeAnalysis.FSharpReferencedProject NewPEReference(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.DateTime], FSharp.Compiler.CodeAnalysis.DelayedILModuleReader)
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+FSharpReference
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+ILModuleReference
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+PEReference
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: FSharp.Compiler.CodeAnalysis.FSharpReferencedProject+Tags
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: Int32 GetHashCode()
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: Int32 Tag
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: Int32 get_Tag()
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: System.String OutputFile
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: System.String ToString()
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: System.String get_OutputFile()
@@ -5130,6 +5162,8 @@ FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Symbols.FSharpXmlDoc Xm
 FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Symbols.FSharpXmlDoc get_XmlDoc()
 FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Text.Range DeclarationLocation
 FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Text.Range get_DeclarationLocation()
+FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Symbols.FSharpEntity DeclaringEntity
+FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Symbols.FSharpEntity get_DeclaringEntity()
 FSharp.Compiler.Symbols.FSharpUnionCase: Int32 GetHashCode()
 FSharp.Compiler.Symbols.FSharpUnionCase: System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpAttribute] Attributes
 FSharp.Compiler.Symbols.FSharpUnionCase: System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpAttribute] get_Attributes()

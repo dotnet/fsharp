@@ -473,6 +473,18 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
             | :? FSharpMemberOrFunctionOrValue as symbol ->
                 symbol.ApparentEnclosingEntity.TryGetMetadataText()
                 |> Option.map (fun text -> text, symbol.ApparentEnclosingEntity.DisplayName)
+            | :? FSharpField as symbol ->
+                match symbol.DeclaringEntity with
+                | Some entity ->
+                    let text = entity.TryGetMetadataText()
+
+                    match text with
+                    | Some text -> Some(text, entity.DisplayName)
+                    | None -> None
+                | None -> None
+            | :? FSharpUnionCase as symbol ->
+                symbol.DeclaringEntity.TryGetMetadataText()
+                |> Option.map (fun text -> text, symbol.DisplayName)
             | _ -> None
 
         let result =
@@ -523,6 +535,9 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                                         symbol1.DisplayName = symbol2.DisplayName
                                     | (:? FSharpMemberOrFunctionOrValue as symbol1), (:? FSharpMemberOrFunctionOrValue as symbol2) ->
                                         symbol1.DisplayName = symbol2.DisplayName
+                                        && (match symbol1.DeclaringEntity, symbol2.DeclaringEntity with
+                                            | Some e1, Some e2 -> e1.CompiledName = e2.CompiledName
+                                            | _ -> false)
                                         && symbol1.GenericParameters.Count = symbol2.GenericParameters.Count
                                         && symbol1.CurriedParameterGroups.Count = symbol2.CurriedParameterGroups.Count
                                         && ((symbol1.CurriedParameterGroups, symbol2.CurriedParameterGroups)
@@ -530,6 +545,14 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                                                 pg1.Count = pg2.Count
                                                 && ((pg1, pg2) ||> Seq.forall2 (fun p1 p2 -> areTypesEqual p1.Type p2.Type))))
                                         && areTypesEqual symbol1.ReturnParameter.Type symbol2.ReturnParameter.Type
+                                    | (:? FSharpField as symbol1), (:? FSharpField as symbol2) when x.IsFromDefinition ->
+                                        symbol1.DisplayName = symbol2.DisplayName
+                                        && (match symbol1.DeclaringEntity, symbol2.DeclaringEntity with
+                                            | Some e1, Some e2 -> e1.CompiledName = e2.CompiledName
+                                            | _ -> false)
+                                    | (:? FSharpUnionCase as symbol1), (:? FSharpUnionCase as symbol2) ->
+                                        symbol1.DisplayName = symbol2.DisplayName
+                                        && symbol1.DeclaringEntity.CompiledName = symbol2.DeclaringEntity.CompiledName
                                     | _ -> false)
                                 |> Option.map (fun x -> x.Range)
 

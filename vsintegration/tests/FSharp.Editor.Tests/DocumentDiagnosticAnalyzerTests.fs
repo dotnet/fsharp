@@ -7,22 +7,27 @@ open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Editor.Tests.Helpers
 open FSharp.Test
+open System.Threading
+open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 type DocumentDiagnosticAnalyzerTests() =
     let startMarker = "(*start*)"
     let endMarker = "(*end*)"
 
     let getDiagnostics (fileContents: string) =
-        async {
-            let document =
-                RoslynTestHelpers.CreateSolution(fileContents)
-                |> RoslynTestHelpers.GetSingleDocument
+        let task =
+            cancellableTask {
+                let document =
+                    RoslynTestHelpers.CreateSolution(fileContents)
+                    |> RoslynTestHelpers.GetSingleDocument
 
-            let! syntacticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax)
-            let! semanticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic)
-            return syntacticDiagnostics.AddRange(semanticDiagnostics)
-        }
-        |> Async.RunSynchronously
+                let! syntacticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax)
+                let! semanticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic)
+                return syntacticDiagnostics.AddRange(semanticDiagnostics)
+            }
+            |> CancellableTask.start CancellationToken.None
+
+        task.Result
 
     member private this.VerifyNoErrors(fileContents: string, ?additionalFlags: string[]) =
         let errors = getDiagnostics fileContents

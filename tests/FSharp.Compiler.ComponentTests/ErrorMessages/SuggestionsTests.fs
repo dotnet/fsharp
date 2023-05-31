@@ -173,8 +173,10 @@ let r = { Field1 = "hallo"; Field2 = 1 }
         """
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Error 39, Line 8, Col 11, Line 8, Col 17,
-                                 ("The record label 'Field1' is not defined. Maybe you want one of the following:" + Environment.NewLine + "   MyRecord.Field1"))
+        |> withDiagnostics [
+            (Error 39, Line 8, Col 11, Line 8, Col 17, "The record label 'Field1' is not defined. Maybe you want one of the following:" + Environment.NewLine + "   MyRecord.Field1")
+            (Error 39, Line 8, Col 29, Line 8, Col 35, "The record label 'Field2' is not defined. Maybe you want one of the following:" + Environment.NewLine + "   MyRecord.Field2")
+        ]
 
     [<Fact>]
     let ``Suggest Type Parameters`` () =
