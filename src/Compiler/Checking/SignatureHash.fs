@@ -296,9 +296,9 @@ module rec PrintTypes =
 
     /// Hash type parameters
     let hashTyparDecls (g:TcGlobals) (typars: Typars) =      
-        let tpcs = typars |> List.collect (fun tp -> List.map (fun tpc -> tp, tpc) tp.Constraints) 
-        tpcs 
-        |> hashAllVia (hashConstraint g)  
+        typars 
+        |> hashAllVia (fun tp -> tp.Constraints |> hashAllVia (fun tpc -> hashConstraint g (tp,tpc)))
+
 
     let hashTrait (g:TcGlobals) traitInfo =
         hashTraitWithInfo g  traitInfo
@@ -306,16 +306,14 @@ module rec PrintTypes =
     //let hashTyparConstraint (g:TcGlobals)  (tp, tpc) =
     //    hashConstraint g (tp, tpc)  
 
-    let prettyLayoutOfInstAndSig (* denv *) (typarInst, tys, retTy) =
-        let (prettyTyparInst, prettyTys, prettyRetTy), cxs = PrettyTypes.PrettifyInstAndSig (* denv *).g (typarInst, tys, retTy)
-        let env = SimplifyTypes.CollectInfo true (prettyRetTy :: prettyTys) cxs
-        let prettyTysL = List.map (hashTypeWithInfo (* denv *) env) prettyTys
-        let prettyRetTyL = hashTopType (* denv *) env [[]] prettyRetTy []
-        prettyTyparInst, (prettyTys, prettyRetTy), (prettyTysL, prettyRetTyL), hashConstraints (* denv *) env env.postfixConstraints
+    let prettyLayoutOfInstAndSig (g:TcGlobals) (typarInst:TyparInstantiation, tys, retTy) =
+        typarInst
+        |> hashAllVia (fun (typar,ttype) -> hashTyparRef typar @@ hashTType g ttype)
+        |> pipeToHash (hashTType g retTy)
+        |> pipeToHash (tys |> hashAllVia (hashTType g))
 
-    let prettyLayoutOfTopTypeInfoAux (* denv *) prettyArgInfos prettyRetTy cxs = 
-        let env = SimplifyTypes.CollectInfo true (prettyRetTy :: List.collect (List.map fst) prettyArgInfos) cxs
-        hashTopType (* denv *) env prettyArgInfos prettyRetTy env.postfixConstraints
+    let prettyLayoutOfTopTypeInfoAux (g:TcGlobals) prettyArgInfos prettyRetTy cxs =        
+        hashTopType g prettyArgInfos prettyRetTy cxs
 
     // Oddly this is called in multiple places with argInfos=[] and (* denv *).useColonForReturnType=true, as a complex
     // way of giving give ": ty"
@@ -363,7 +361,7 @@ module rec PrintTypes =
         let _, niceMethodTypars, tauL = prettyLayoutOfMemberSigCore (* denv *) memberToParentInst (emptyTyparInst, methTypars, argInfos, retTy)
         let nameL = ConvertValLogicalNameToDisplayLayout false (tagMember >> hashText) nm
         let nameL =
-            if (* denv *).showTyparBinding then
+            if true then
                 hashTyparDecls (* denv *) nameL true niceMethodTypars
             else
                 nameL
@@ -464,11 +462,11 @@ module PrintTastMemberOrVals =
     let hashMemberName ((* denv *): DisplayEnv) (vref: ValRef) niceMethodTypars tagFunction name =
         let nameL = ConvertValLogicalNameToDisplayLayout vref.IsBaseVal (tagFunction >> mkNav vref.DefinitionRange >> hashText) name
         let nameL =
-            if (* denv *).showMemberContainers then 
+            if true then 
                 hashTyconRef (* denv *) vref.MemberApparentEntity ^^ SepL.dot ^^ nameL
             else
                 nameL
-        let nameL = if (* denv *).showTyparBinding then hashTyparDecls (* denv *) nameL true niceMethodTypars else nameL
+        let nameL = if true then hashTyparDecls (* denv *) nameL true niceMethodTypars else nameL
         let nameL = hashAccessibility (* denv *) vref.Accessibility nameL
         nameL
 
@@ -616,7 +614,7 @@ module PrintTastMemberOrVals =
         let isOverGeneric = List.length (Zset.elements (freeInType CollectTyparsNoCaching tau).FreeTypars) < List.length tps // Bug: 1143 
         let isTyFunction = v.IsTypeFunction // Bug: 1143, and innerpoly tests 
         let typarBindingsL = 
-            if isTyFunction || isOverGeneric || (* denv *).showTyparBinding then 
+            if isTyFunction || isOverGeneric || true then 
                 hashTyparDecls (* denv *) nameL true tps 
             else nameL
         let valAndTypeL = (WordL.keywordVal ^^ (typarBindingsL |> addColonL)) --- hashTopType (* denv *) env argInfos retTy cxs
@@ -651,26 +649,6 @@ module PrintTastMemberOrVals =
 
     let prettyLayoutOfValOrMemberNoInst (* denv *) infoReader v =
         prettyLayoutOfValOrMember (* denv *) infoReader emptyTyparInst v |> snd
-
-let hashTyparConstraint (* denv *) x = x |> PrintTypes.hashConstraint (* denv *)
-
-let outputType (* denv *) os x = x |> PrintTypes.hashType (* denv *) |> bufferL os
-
-let hashType (* denv *) x = x |> PrintTypes.hashType (* denv *)
-
-let outputTypars (* denv *) nm os x = x |> PrintTypes.hashTyparDecls (* denv *) (hashText nm) true |> bufferL os
-
-let outputTyconRef (* denv *) os x = x |> PrintTypes.hashTyconRef (* denv *) |> bufferL os
-
-let hashTyconRef (* denv *) x = x |> PrintTypes.hashTyconRef (* denv *)
-
-let hashConst g ty c = PrintTypes.hashConst g ty c
-
-let prettyLayoutOfMemberSig (* denv *) x = x |> PrintTypes.prettyLayoutOfMemberSig (* denv *) 
-
-let prettyLayoutOfUncurriedSig (* denv *) argInfos tau = PrintTypes.prettyLayoutOfUncurriedSig (* denv *) argInfos tau
-
-let prettyLayoutsOfUnresolvedOverloading (* denv *) argInfos retTy genericParameters = PrintTypes.prettyLayoutsOfUnresolvedOverloading (* denv *) argInfos retTy genericParameters
 
 //-------------------------------------------------------------------------
 
@@ -709,8 +687,6 @@ module InfoMemberPrinting =
             (idL  |> addColonL) ^^
             PrintTypes.hashType (* denv *) pty
 
-    let formatParamDataToBuffer (* denv *) os pd =
-        hashParamData (* denv *) pd |> bufferL os
         
     /// Format a method info using "F# style".
     //
@@ -755,123 +731,7 @@ module InfoMemberPrinting =
 
             hash ^^ retL 
 
-    /// Format a method info using "half C# style".
-    //
-    // That is, this style:
-    //          Container(argName1: argType1, ..., argNameN: argTypeN) : retType
-    //          Container.Method(argName1: argType1, ..., argNameN: argTypeN) : retType
-    let hashMethInfoCSharpStyle amap m (* denv *) (minfo: MethInfo) minst =
-        let retTy = if minfo.IsConstructor then minfo.ApparentEnclosingType else minfo.GetFSharpReturnType(amap, m, minst) 
-        let hash = 
-            if minfo.IsExtensionMember then
-                LeftL.leftParen ^^ hashText ((* string to tag was here *) (FSComp.SR.typeInfoExtension())) ^^ RightL.rightParen
-            else 0 (* empty hash *)
-        let hash = 
-            hash ^^
-                if isAppTy minfo.TcGlobals minfo.ApparentEnclosingAppType then
-                    let tcref = minfo.ApparentEnclosingTyconRef 
-                    PrintTypes.hashTyconRef (* denv *) tcref
-                else
-                    0 (* empty hash *)
-        let hash = 
-            hash ^^
-                if minfo.IsConstructor then
-                    SepL.leftParen
-                else
-                    let idL = ConvertValLogicalNameToDisplayLayout false (tagMethod >> tagNavArbValRef minfo.ArbitraryValRef >> hashText) minfo.LogicalName
-                    SepL.dot ^^
-                    PrintTypes.hashTyparDecls (* denv *) idL true minfo.FormalMethodTypars ^^
-                    SepL.leftParen
 
-        let paramDatas = minfo.GetParamDatas (amap, m, minst)
-        let hash = hash ^^ sepListL RightL.comma ((List.concat >> List.map (hashParamData (* denv *))) paramDatas)
-        hash ^^ RightL.rightParen ^^ WordL.colon ^^ PrintTypes.hashType (* denv *) retTy
-
-    // Prettify an ILMethInfo
-    let prettifyILMethInfo (amap: Import.ImportMap) m (minfo: MethInfo) typarInst ilMethInfo = 
-        let (ILMethInfo(_, apparentTy, dty, mdef, _)) = ilMethInfo
-        let (prettyTyparInst, prettyTys), _ = PrettyTypes.PrettifyInstAndTypes amap.g (typarInst, (apparentTy :: minfo.FormalMethodInst))
-        match prettyTys with
-        | prettyApparentTy :: prettyFormalMethInst ->
-            let prettyMethInfo = 
-                match dty with 
-                | None -> MethInfo.CreateILMeth (amap, m, prettyApparentTy, mdef)
-                | Some declaringTyconRef -> MethInfo.CreateILExtensionMeth(amap, m, prettyApparentTy, declaringTyconRef, minfo.ExtensionMemberPriorityOption, mdef)
-            prettyTyparInst, prettyMethInfo, prettyFormalMethInst
-        | _ -> failwith "prettifyILMethInfo - prettyTys empty"
-
-    /// Format a method to a buffer using "standalone" display style. 
-    /// For example, these are the formats used when printing signatures of methods that have not been overridden,
-    /// and the format used when showing the individual member in QuickInfo and DeclarationInfo.
-    /// The formats differ between .NET/provided methods and F# methods. Surprisingly people don't really seem 
-    /// to notice this, or they find it helpful. It feels that moving from this position should not be done lightly.
-    //
-    // For F# members:
-    //          new: unit -> retType
-    //          new: argName1: argType1 * ... * argNameN: argTypeN -> retType
-    //          Container.Method: unit -> retType
-    //          Container.Method: argName1: argType1 * ... * argNameN: argTypeN -> retType
-    //
-    // For F# extension members:
-    //          ApparentContainer.Method: argName1: argType1 * ... * argNameN: argTypeN -> retType
-    //
-    // For C# and provided members:
-    //          Container(argName1: argType1, ..., argNameN: argTypeN) : retType
-    //          Container.Method(argName1: argType1, ..., argNameN: argTypeN) : retType
-    //
-    // For C# extension members:
-    //          ApparentContainer.Method(argName1: argType1, ..., argNameN: argTypeN) : retType
-    let prettyLayoutOfMethInfoFreeStyle (infoReader: InfoReader) m (* denv *) typarInst methInfo =
-        let amap = infoReader.amap
-
-        match methInfo with 
-        | DefaultStructCtor _ -> 
-            let prettyTyparInst, _ = PrettyTypes.PrettifyInst amap.g typarInst 
-            let resL = PrintTypes.hashTyconRef (* denv *) methInfo.ApparentEnclosingTyconRef ^^ hashText (tagPunctuation "()")
-            prettyTyparInst, resL
-        | FSMeth(_, _, vref, _) -> 
-            let prettyTyparInst, resL = PrintTastMemberOrVals.prettyLayoutOfValOrMember { (* denv *) with showMemberContainers=true } infoReader typarInst vref
-            prettyTyparInst, resL
-        | ILMeth(_, ilminfo, _) -> 
-            let prettyTyparInst, prettyMethInfo, minst = prettifyILMethInfo amap m methInfo typarInst ilminfo
-            let resL = hashMethInfoCSharpStyle amap m (* denv *) prettyMethInfo minst
-            prettyTyparInst, resL
-#if !NO_TYPEPROVIDERS
-        | ProvidedMeth _ -> 
-            let prettyTyparInst, _ = PrettyTypes.PrettifyInst amap.g typarInst 
-            prettyTyparInst, hashMethInfoCSharpStyle amap m (* denv *) methInfo methInfo.FormalMethodInst
-    #endif
-
-    let prettyLayoutOfPropInfoFreeStyle g amap m (* denv *) (pinfo: PropInfo) =
-        let retTy = pinfo.GetPropertyType(amap, m) 
-        let retTy = if pinfo.IsIndexer then mkFunTy g (mkRefTupledTy g (pinfo.GetParamTypes(amap, m))) retTy else  retTy 
-        let retTy, _ = PrettyTypes.PrettifyType g retTy
-        let nameL = ConvertValLogicalNameToDisplayLayout false (tagProperty >> tagNavArbValRef pinfo.ArbitraryValRef >> hashText) pinfo.PropertyName
-        let getterSetter =
-            match pinfo.HasGetter, pinfo.HasSetter with
-            | true, false ->
-                hashText ((* string to tag was here *) "with") ^^ hashText (tagText "get")
-            | false, true ->
-                hashText ((* string to tag was here *) "with") ^^ hashText (tagText "set")
-            | true, true ->
-                hashText ((* string to tag was here *) "with") ^^ hashText (tagText "get, set")
-            | false, false ->
-                0 (* empty hash *)
-
-        hashText (tagText (FSComp.SR.typeInfoProperty())) ^^
-        hashTyconRef (* denv *) pinfo.ApparentEnclosingTyconRef ^^
-        SepL.dot ^^
-        (nameL  |> addColonL) ^^
-        hashType (* denv *) retTy ^^
-        getterSetter
-
-    let formatPropInfoToBufferFreeStyle g amap m (* denv *) os (pinfo: PropInfo) = 
-        let resL = prettyLayoutOfPropInfoFreeStyle g amap m (* denv *) pinfo 
-        resL |> bufferL os
-
-    let formatMethInfoToBufferFreeStyle amap m (* denv *) os (minfo: MethInfo) = 
-        let _, resL = prettyLayoutOfMethInfoFreeStyle amap m (* denv *) emptyTyparInst minfo 
-        resL |> bufferL os
 
     /// Format a method to a hash (actually just containing a string) using "free style" (aka "standalone"). 
     let hashMethInfoFSharpStyle amap m (* denv *) (minfo: MethInfo) =
@@ -884,7 +744,7 @@ module TashDefinitionHashes =
     open PrintTypes
 
     let hashExtensionMember (* denv *) infoReader (vref: ValRef) =
-        let (@@*) = if (* denv *).printVerboseSignatures then (@@----) else (@@--)
+        let (@@*) = if true then (@@----) else (@@--)
         let tycon = vref.MemberApparentEntity.Deref
         let nameL = hashTyconRefImpl false (* denv *) vref.MemberApparentEntity
         let nameL = hashAccessibility (* denv *) tycon.Accessibility nameL // "type-accessibility"
@@ -1015,8 +875,8 @@ module TashDefinitionHashes =
     let hashTyconDefn ((* denv *): DisplayEnv) (infoReader: InfoReader) ad m simplified isFirstType (tcref: TyconRef) =        
         let g = (* denv *).g
         // use 4-indent 
-        let (-*) = if (* denv *).printVerboseSignatures then (-----) else (---)
-        let (@@*) = if (* denv *).printVerboseSignatures then (@@----) else (@@--)
+        let (-*) = if true then (-----) else (---)
+        let (@@*) = if true then (@@----) else (@@--)
         let amap = infoReader.amap
         let tycon = tcref.Deref
         let repr = tycon.TypeReprInfo
@@ -1028,14 +888,14 @@ module TashDefinitionHashes =
                 // Always show [<Struct>] whether verbose or not
                 Some "struct", tagStruct
             elif isInterfaceTy g ty then
-                if (* denv *).printVerboseSignatures then
+                if true then
                     Some "interface", tagInterface
                 else
                     None, tagInterface
             elif isMeasure then
                 None, tagClass
             elif isClassTy g ty then
-                if (* denv *).printVerboseSignatures then
+                if true then
                     (if simplified then None else Some "class"), tagClass
                 else
                     None, tagClass
@@ -1389,7 +1249,7 @@ module TashDefinitionHashes =
 
     // Hash: exception definition
     let hashExnDefn (* denv *) infoReader (exncref: EntityRef) =
-        let (-*) = if (* denv *).printVerboseSignatures then (-----) else (---)
+        let (-*) = if true then (-----) else (---)
         let exnc = exncref.Deref
         let nameL = ConvertLogicalNameToDisplayLayout (tagClass >> mkNav exncref.DefinitionRange >> hashText) exnc.DisplayNameCore
         let nameL = hashAccessibility (* denv *) exnc.TypeReprAccessibility nameL
@@ -1428,105 +1288,6 @@ module TashDefinitionHashes =
         else
             acc, mspec
 
-    let rec hashModuleOrNamespace ((* denv *): DisplayEnv) (infoReader: InfoReader) ad m isFirstTopLevel (mspec: ModuleOrNamespace) =
-        let (@@*) = if (* denv *).printVerboseSignatures then (@@----) else (@@--)
-
-        let outerPath = mspec.CompilationPath.AccessPath
-
-        let path, mspec = fullPath mspec [mspec.DisplayNameCore]
-
-        let (* denv *) =
-            let outerPath = outerPath |> List.map fst
-            (* denv *).AddOpenPath (outerPath @ path)
-
-        let headerL =
-            if mspec.IsNamespace then
-                // This is a container namespace. We print the header when we get to the first concrete module.
-                let pathL = path |> List.map (ConvertLogicalNameToDisplayLayout (tagNamespace >> hashText))
-                hashText ((* string to tag was here *) "namespace") ^^ sepListL SepL.dot pathL
-            else
-                // This is a module 
-                let name = path |> List.last
-                let nameL = ConvertLogicalNameToDisplayLayout (tagModule >> mkNav mspec.DefinitionRange >> hashText) name
-                let nameL = 
-                    match path with
-                    | [_] -> 
-                        nameL
-                    | _ ->
-                        let innerPath = path[..path.Length - 2]
-                        let innerPathL = innerPath |> List.map (ConvertLogicalNameToDisplayLayout (tagNamespace >> hashText))
-                        sepListL SepL.dot innerPathL ^^ SepL.dot ^^ nameL
-
-                let modNameL = hashText ((* string to tag was here *) "module") ^^ nameL
-                let modNameEqualsL = modNameL ^^ WordL.equals
-                let modIsEmpty =
-                    mspec.ModuleOrNamespaceType.AllEntities |> Seq.isEmpty &&
-                    mspec.ModuleOrNamespaceType.AllValsAndMembers |> Seq.isEmpty
-
-                // Check if its an outer module or a nested module
-                let isNamespace = function | Namespace _ -> true | _ -> false
-                if (outerPath |> List.forall (fun (_, istype) -> isNamespace istype)) && isNil outerPath then
-                    // If so print a "module" declaration
-                    modNameL
-                elif modIsEmpty then
-                    modNameEqualsL ^^ hashText ((* string to tag was here *) "begin") ^^ WordL.keywordEnd
-                else
-                    // Otherwise this is an outer module contained immediately in a namespace
-                    // We already printed the namespace declaration earlier. So just print the 
-                    // module now.
-                    modNameEqualsL
-
-        let headerL =
-            hashAttribs (* denv *) None false mspec.TypeOrMeasureKind mspec.Attribs headerL
-
-        let shouldShow (v: Val) =
-            ((* denv *).showObsoleteMembers || not (CheckFSharpAttributesForObsolete (* denv *).g v.Attribs)) &&
-            ((* denv *).showHiddenMembers || not (CheckFSharpAttributesForHidden (* denv *).g v.Attribs))
-
-        let entityLs =
-            if mspec.IsNamespace then []
-            else
-                mspec.ModuleOrNamespaceType.AllEntities
-                |> QueueList.toList
-                |> List.map (fun entity -> hashEntityDefn (* denv *) infoReader ad m (mkLocalEntityRef entity))
-            
-        let valLs =
-            if mspec.IsNamespace then []
-            else
-                mspec.ModuleOrNamespaceType.AllValsAndMembers
-                |> QueueList.toList
-                |> List.filter shouldShow
-                |> List.sortBy (fun v -> v.DisplayNameCore)
-                |> List.map (mkLocalValRef >> PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst (* denv *) infoReader)
-
-        if List.isEmpty entityLs && List.isEmpty valLs then
-            headerL
-        else
-            let entitiesL =
-                entityLs
-                |> combineHashes
-
-            let valsL =
-                valLs
-                |> combineHashes
-
-            if isFirstTopLevel then
-                combineHashes
-                    [
-                        headerL
-                        entitiesL
-                        valsL
-                    ]
-            else
-                headerL @@* entitiesL @@ valsL
-
-    and hashEntityDefn ((* denv *): DisplayEnv) (infoReader: InfoReader) ad m (eref: EntityRef) =
-        if eref.IsModuleOrNamespace then
-            hashModuleOrNamespace (* denv *) infoReader ad m false eref.Deref       
-        elif eref.IsFSharpException then
-            hashExnDefn (* denv *) infoReader eref
-        else
-            hashTyconDefn (* denv *) infoReader ad m true true eref
 
 open PrintTypes
 
@@ -1686,6 +1447,10 @@ let calculateHashOfImpliedSignature (infoReader:InfoReader) (ad:AccessorDomain) 
 
         hashText ((* string to tag was here *) keyword) ^^ sepListL SepL.dot pathL
 
-    imdefL (* denv *) expr
+    match expr with
+    | EmptyModuleOrNamespaces mspecs when showHeader ->
+        List.map emptyModuleOrNamespace mspecs
+        |> aboveListL
+    | expr -> imdefL denv expr
 
 //--------------------------------------------------------------------------
