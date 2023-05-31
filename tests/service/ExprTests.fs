@@ -661,7 +661,9 @@ let testMutableVar = mutableVar 1
 let testMutableConst = mutableConst ()
     """
 
-    let createOptions() = createOptionsAux [fileSource1; fileSource2] []
+    let createOptionsWithArgs args = createOptionsAux [ fileSource1; fileSource2 ] args
+
+    let createOptions() = createOptionsWithArgs []
 
     let operatorTests = """
 module OperatorTests{0}
@@ -732,7 +734,7 @@ let ignoreTestIfStackOverflowExpected () =
 /// This test is run in unison with its optimized counterpart below
 [<Test>]
 let ``Test Unoptimized Declarations Project1`` () =
-    let cleanup, options = Project1.createOptions()
+    let cleanup, options = Project1.createOptionsWithArgs [ "--langversion:preview" ]
     use _holder = cleanup
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
@@ -867,7 +869,7 @@ let ``Test Unoptimized Declarations Project1`` () =
 
 [<Test>]
 let ``Test Optimized Declarations Project1`` () =
-    let cleanup, options = Project1.createOptions()
+    let cleanup, options = Project1.createOptionsWithArgs [ "--langversion:preview" ]
     use _holder = cleanup
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
