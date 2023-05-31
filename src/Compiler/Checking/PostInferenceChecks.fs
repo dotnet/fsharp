@@ -959,10 +959,10 @@ and CheckForOverAppliedExceptionRaisingPrimitive (cenv: cenv) (env: env) expr =
                 if not canTailCall then 
                     warning(Error(FSComp.SR.chkNotTailRecursive(vref.DisplayName), _m));
 
-                CheckExprNoByrefs { cenv with isTailCall = (IsTailCall.Yes true) } env f
+                ()
 
             | _ -> 
-                CheckExprNoByrefs { cenv with isTailCall = IsTailCall.No } env f 
+                ()
         | _ -> ()
 
 and CheckCallLimitArgs cenv env m returnTy limitArgs (ctxt: PermitByRefExpr) =
