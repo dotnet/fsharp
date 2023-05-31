@@ -5,7 +5,7 @@ open FSharp.Test.Compiler
 
 module ObjInference =
 
-    let message = "A type inference variable has been implicitly inferred to have type `obj`. Consider adding explicit type annotations. This warning is off by default and has been explicitly enabled for this project. You may suppress this warning by using #nowarn \"3525\"."
+    let message = "A type has been implicitly inferred as 'obj', which may be unintended. Consider adding explicit type annotations. You can disable this warning by using '#nowarn \"3559\"' or '--nowarn:3559'."
 
     let warningCases =
         [
