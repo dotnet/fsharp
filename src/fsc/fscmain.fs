@@ -4,12 +4,10 @@ module internal FSharp.Compiler.CommandLineMain
 
 open System
 open System.Reflection
-open System.Runtime
 open System.Runtime.CompilerServices
 open System.Threading
 
 open Internal.Utilities.Library
-open Internal.Utilities.Library.Extras
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.CompilerConfig
@@ -38,9 +36,6 @@ let main (argv) =
 
     // Set the initial phase to garbage collector to batch mode, which improves overall performance.
     use _ = UseBuildPhase BuildPhase.Parameter
-
-    // An SDL recommendation
-    UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption()
 
     try
 
