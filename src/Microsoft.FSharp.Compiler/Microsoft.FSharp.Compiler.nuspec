@@ -54,11 +54,11 @@
         <file src="FSharp.Build\ReleaseCompressed\netstandard2.0\**\FSharp.Build.resources.dll"              target="lib\net7.0" />
         <file src="FSharp.DependencyManager.Nuget\ReleaseCompressed\netstandard2.0\**\FSharp.DependencyManager.Nuget.resources.dll"
                                                                                                            target="lib\net7.0" />
-        <file src="$artifactsPackagesDir$Shipping\FSharp.Core.$fSharpCorePreviewPackageVersion$*nupkg"     target="contentFiles\Shipping" />
-        <file src="$artifactsPackagesDir$Release\FSharp.Core.$fSharpCorePackageVersion$*nupkg"             target="contentFiles\Release" />
-        <file src="$artifactsPackagesDir$Shipping\FSharp.Compiler.Service.$fSharpCompilerServicePreviewPackageVersion$*nupkg"
+        <file src="$artifactsPackagesDir$Dependecies\Shipping\FSharp.Core.$fSharpCorePreviewPackageVersion$*nupkg"     target="contentFiles\Shipping" />
+        <file src="$artifactsPackagesDir$Dependecies\Release\FSharp.Core.$fSharpCorePackageVersion$*nupkg"             target="contentFiles\Release" />
+        <file src="$artifactsPackagesDir$Dependecies\Shipping\FSharp.Compiler.Service.$fSharpCompilerServicePreviewPackageVersion$*nupkg"
                                                                                                            target="contentFiles\Shipping" />
-        <file src="$artifactsPackagesDir$Release\FSharp.Compiler.Service.$fSharpCompilerServicePackageVersion$*nupkg"
+        <file src="$artifactsPackagesDir$Dependecies\Release\FSharp.Compiler.Service.$fSharpCompilerServicePackageVersion$*nupkg"
                                                                                                            target="contentFiles\Release" />
         <file src="FSharp.Build\ReleaseCompressed\netstandard2.0\Shipping\Microsoft.FSharp.Core.NetSdk.props"
                                                                                                            target="contentFiles\Shipping" />
