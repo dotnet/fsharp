@@ -93,7 +93,7 @@
 
   <Target Name="PackDependentProjectsCore">
     <PropertyGroup>
-      <DependentPackagesDir>$([MSBuild]::NormalizeDirectory( '$(ArtifactsDir)', 'packages', '$(Configuration)', 'Dependecies' ))</DependentPackagesDir>
+      <DependentPackagesDir>$([MSBuild]::NormalizeDirectory( '$(ArtifactsDir)', 'packages', '$(Configuration)', 'Dependency' ))</DependentPackagesDir>
     </PropertyGroup>
     <MSBuild Projects="@(DependentProjects)" Targets="Pack" Properties="Restore=true;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);ArtifactsPackagesDir=$(DependentPackagesDir)" />
   </Target>
