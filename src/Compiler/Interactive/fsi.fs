@@ -4623,9 +4623,9 @@ type FsiEvaluationSession
         | Some assembly -> Some(Choice2Of2 assembly)
         | None ->
 #endif
-            match tcImports.TryFindExistingFullyQualifiedPathByExactAssemblyRef aref with
-            | Some resolvedPath -> Some(Choice1Of2 resolvedPath)
-            | None -> None
+        match tcImports.TryFindExistingFullyQualifiedPathByExactAssemblyRef aref with
+        | Some resolvedPath -> Some(Choice1Of2 resolvedPath)
+        | None -> None
 
     let fsiDynamicCompiler =
         FsiDynamicCompiler(
@@ -4740,7 +4740,7 @@ type FsiEvaluationSession
     member _.ReportUnhandledExceptionSafe _isFromThreadException (exn: exn) =
         fsi.EventLoopInvoke(fun () ->
             fprintfn fsiConsoleOutput.Error "%s" (exn.ToString())
-            diagnosticsLogger.SetError()            
+            diagnosticsLogger.SetError()
             diagnosticsLogger.AbortOnError(fsiConsoleOutput))
 
     member _.PartialAssemblySignatureUpdated =
