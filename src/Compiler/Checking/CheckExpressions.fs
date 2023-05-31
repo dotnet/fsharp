@@ -2224,18 +2224,21 @@ module GeneralizationHelpers =
 //-------------------------------------------------------------------------
 
 let ComputeInlineFlag (memFlagsOption: SynMemberFlags option) isInline isMutable g attrs m =
-    let hasNoCompilerInliningAttribute() = HasFSharpAttribute g g.attrib_NoCompilerInliningAttribute attrs  
-    let isCtorOrAbstractSlot() =
+    let hasNoCompilerInliningAttribute () = HasFSharpAttribute g g.attrib_NoCompilerInliningAttribute attrs  
+
+    let isCtorOrAbstractSlot () =
         match memFlagsOption with
         | None -> false
         | Some x -> (x.MemberKind = SynMemberKind.Constructor) || x.IsDispatchSlot || x.IsOverrideOrExplicitImpl
+
+    let isExtern () = HasFSharpAttributeOpt g g.attrib_DllImportAttribute attrs
 
     let inlineFlag, reportIncorrectInlineKeywordUsage =
         // Mutable values may never be inlined
         // Constructors may never be inlined
         // Calls to virtual/abstract slots may never be inlined
         // Values marked with NoCompilerInliningAttribute or [<MethodImpl(MethodImplOptions.NoInlining)>] may never be inlined
-        if isMutable || isCtorOrAbstractSlot() || hasNoCompilerInliningAttribute() then
+        if isMutable || isCtorOrAbstractSlot() || hasNoCompilerInliningAttribute() || isExtern () then
             ValInline.Never, errorR
         elif HasMethodImplNoInliningAttribute g attrs then
             ValInline.Never, 
