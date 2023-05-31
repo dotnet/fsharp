@@ -1268,7 +1268,10 @@ let BuildNewDelegateExpr (eventInfoOpt: EventInfo option, g, amap, delegateTy, d
 
             let delFuncArgNames =
                 match delFuncExpr with
-                | Expr.Val (valRef = vref) -> vref.ValReprInfo |> Option.map (fun repr -> repr.ArgNames)
+                | Expr.Val (valRef = vref) ->
+                    match vref.ValReprInfo with
+                    | Some repr when repr.ArgNames.Length = delArgTys.Length -> Some repr.ArgNames
+                    | _ -> None
                 | _ -> None
 
             let delArgVals =
