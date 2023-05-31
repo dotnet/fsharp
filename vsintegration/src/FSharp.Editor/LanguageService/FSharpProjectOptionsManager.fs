@@ -179,7 +179,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
             let getStamp = fun () -> stamp
 
             let fsRefProj =
-                FSharpReferencedProject.CreatePortableExecutable(referencedProject.OutputFilePath, getStamp, getStream)
+                FSharpReferencedProject.PEReference(getStamp, DelayedILModuleReader(referencedProject.OutputFilePath, getStream))
 
             weakPEReferences.Add(comp, fsRefProj)
             fsRefProj
@@ -279,7 +279,9 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                         match! tryComputeOptions referencedProject ct with
                         | None -> canBail <- true
                         | Some (_, projectOptions) ->
-                            referencedProjects.Add(FSharpReferencedProject.CreateFSharp(referencedProject.OutputFilePath, projectOptions))
+                            referencedProjects.Add(
+                                FSharpReferencedProject.FSharpReference(referencedProject.OutputFilePath, projectOptions)
+                            )
                     elif referencedProject.SupportsCompilation then
                         let! comp = referencedProject.GetCompilationAsync(ct) |> Async.AwaitTask
                         let peRef = createPEReference referencedProject comp

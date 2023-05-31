@@ -34,8 +34,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\fsi\fsiProject\fsi.fsproj" />
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\fsc\fscProject\fsc.fsproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\fsi\fsiProject\fsi.fsproj">
+        <AdditionalProperties>Configuration=ReleaseCompressed;CompressAllMetadata=true</AdditionalProperties>
+    </ProjectReference>
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\fsc\fscProject\fsc.fsproj">
+        <AdditionalProperties>Configuration=ReleaseCompressed;CompressAllMetadata=true</AdditionalProperties>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>
