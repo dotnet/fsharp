@@ -292,12 +292,16 @@ module rec PrintTypes =
         let cxsHash = hashConstraints g cxs
         let argHash = hashCurriedArgInfos g argInfos
 
-        retTypeHash @@ cxsHash @@ argHash       
+        retTypeHash @@ cxsHash @@ argHash  
+        
+    let hashTyparInclConstraints  (g:TcGlobals) (typar: Typar) = 
+        typar.Constraints |> hashAllVia (fun tpc -> hashConstraint g (typar,tpc))
+        |> pipeToHash (hashTyparRef typar)
 
     /// Hash type parameters
     let hashTyparDecls (g:TcGlobals) (typars: Typars) =      
         typars 
-        |> hashAllVia (fun tp -> tp.Constraints |> hashAllVia (fun tpc -> hashConstraint g (tp,tpc)))
+        |> hashAllVia (hashTyparInclConstraints g)
 
 
     let hashTrait (g:TcGlobals) traitInfo =
@@ -315,25 +319,24 @@ module rec PrintTypes =
     let prettyLayoutOfTopTypeInfoAux (g:TcGlobals) prettyArgInfos prettyRetTy cxs =        
         hashTopType g prettyArgInfos prettyRetTy cxs
 
-    // Oddly this is called in multiple places with argInfos=[] and (* denv *).useColonForReturnType=true, as a complex
-    // way of giving give ": ty"
-    let prettyLayoutOfUncurriedSig (* denv *) typarInst argInfos retTy = 
-        let (prettyTyparInst, prettyArgInfos, prettyRetTy), cxs = PrettyTypes.PrettifyInstAndUncurriedSig (* denv *).g (typarInst, argInfos, retTy)
-        prettyTyparInst, prettyLayoutOfTopTypeInfoAux (* denv *) [prettyArgInfos] prettyRetTy cxs
+    let prettyLayoutOfUncurriedSig (g:TcGlobals) typarInst argInfos retTy = 
+        typarInst
+        |> hashAllVia (fun (typar,ttype) -> hashTyparInclConstraints g typar @@ hashTType g ttype)
+        |> pipeToHash (hashTopType g argInfos retTy [])       
 
-    let prettyLayoutOfCurriedMemberSig (* denv *) typarInst argInfos retTy parentTyparTys = 
-        let (prettyTyparInst, parentTyparTys, argInfos, retTy), cxs = PrettyTypes.PrettifyInstAndCurriedSig (* denv *).g (typarInst, parentTyparTys, argInfos, retTy)
-        // Filter out the parent typars, which don't get shown in the member signature 
-        let cxs = cxs |> List.filter (fun (tp, _) -> not (parentTyparTys |> List.exists (fun ty -> match tryDestTyparTy (* denv *).g ty with ValueSome destTypar -> typarEq tp destTypar | _ -> false))) 
-        prettyTyparInst, prettyLayoutOfTopTypeInfoAux (* denv *) argInfos retTy cxs
+    let prettyLayoutOfCurriedMemberSig (g:TcGlobals) typarInst argInfos retTy parentTyparTys = 
+        typarInst
+        |> hashAllVia (fun (typar,ttype) -> hashTyparInclConstraints g typar @@ hashTType g ttype)
+        |> pipeToHash (hashTopType g argInfos retTy []) 
+        |> pipeToHash (parentTyparTys |> hashAllVia (hashTType g))
 
-    let prettyArgInfos (* denv *) allTyparInst =
-        function 
-        | [] -> [((* denv *).g.unit_ty, ValReprInfo.unnamedTopArg1)] 
-        | infos -> infos |> List.map (map1Of2 (instType allTyparInst)) 
+    //let prettyArgInfos (g:TcGlobals)  allTyparInst =
+    //    function 
+    //    | [] -> [(g.unit_ty, ValReprInfo.unnamedTopArg1)] 
+    //    | infos -> infos |> List.map (map1Of2 (instType allTyparInst)) 
 
     // Hash: type spec - class, datatype, record, abbrev 
-    let prettyLayoutOfMemberSigCore (* denv *) memberToParentInst (typarInst, methTypars: Typars, argInfos, retTy) = 
+    let prettyLayoutOfMemberSigCore (g:TcGlobals) memberToParentInst (typarInst, methTypars: Typars, argInfos, retTy) = 
         let niceMethodTypars, allTyparInst = 
             let methTyparNames = methTypars |> List.mapi (fun i tp -> if (PrettyTypes.NeedsPrettyTyparName tp) then sprintf "a%d" (List.length memberToParentInst + i) else tp.Name)
             PrettyTypes.NewPrettyTypars memberToParentInst methTypars methTyparNames
