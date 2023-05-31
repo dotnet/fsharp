@@ -86,7 +86,7 @@ type env =
       sigToImplRemapInfo: (Remap * SignatureHidingInfo) list 
 
       /// Values in this recursive scope that have been marked [<TailCall>]
-      mustTailCall: Zset<Val>;
+      mutable mustTailCall: Zset<Val>
 
       /// Are we in a quotation?
       quote : bool 
@@ -326,6 +326,9 @@ let BindVal cenv env (v: Val) =
     //printfn "binding %s..." v.DisplayName
     let alreadyDone = cenv.boundVals.ContainsKey v.Stamp
     cenv.boundVals[v.Stamp] <- 1
+
+    if HasFSharpAttribute cenv.g cenv.g.attrib_TailCallAttribute v.Attribs then
+        env.mustTailCall <- Zset.add v env.mustTailCall
     
     let topLevelBindingHiddenBySignatureFile () =
         let parentHasSignatureFile () =
@@ -356,10 +359,6 @@ let BindVals cenv env vs = List.iter (BindVal cenv env) vs
 let RecordAnonRecdInfo cenv (anonInfo: AnonRecdTypeInfo) =
     if not (cenv.anonRecdTypes.ContainsKey anonInfo.Stamp) then 
          cenv.anonRecdTypes <- cenv.anonRecdTypes.Add(anonInfo.Stamp, anonInfo)
-
-let ComputeMustTailCallForRecVals cenv env (binds: Bindings) = 
-    let mustTailCall =  [ for b in binds do if HasFSharpAttribute cenv.g cenv.g.attrib_TailCallAttribute b.Var.Attribs then yield b.Var ]
-    { env with mustTailCall = Zset.addList mustTailCall env.mustTailCall }
 
 //--------------------------------------------------------------------------
 // approx walk of type
@@ -2180,13 +2179,11 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
     CheckLambdas isTop (Some v) {cenv with isTailCall = isTailCall } env v.MustInline valReprInfo alwaysCheckNoReraise bindRhs v.Range v.Type ctxt
 
 and CheckBindings cenv env binds = 
-    let env = ComputeMustTailCallForRecVals cenv env binds
     for bind in binds do
         CheckBinding cenv env false PermitByRefExpr.Yes bind |> ignore
 
 // Top binds introduce expression, check they are reraise free.
 let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
-    let env = ComputeMustTailCallForRecVals cenv env [bind]
     let g = cenv.g
     let isExplicitEntryPoint = HasFSharpAttribute g g.attrib_EntryPointAttribute v.Attribs
     if isExplicitEntryPoint then 
