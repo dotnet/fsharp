@@ -1749,6 +1749,9 @@ let isArrayTyconRef (g: TcGlobals) tcref =
     g.il_arr_tcr_map
     |> Array.exists (tyconRefEq g tcref)
 
+let isSeqTyconRef (g: TcGlobals) tcref =
+    tyconRefEq g g.seq_tcr tcref
+
 let rankOfArrayTyconRef (g: TcGlobals) tcref =
     match g.il_arr_tcr_map |> Array.tryFindIndex (tyconRefEq g tcref) with
     | Some idx ->
