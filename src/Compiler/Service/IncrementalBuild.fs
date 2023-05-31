@@ -1599,16 +1599,18 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
          }
 
         let diagnostics =
-            match builderOpt with
-            | Some builder ->
-                let diagnosticsOptions = builder.TcConfig.diagnosticsOptions
-                let diagnosticsLogger = CompilationDiagnosticLogger("IncrementalBuilderCreation", diagnosticsOptions)
-                delayedLogger.CommitDelayedDiagnostics diagnosticsLogger
-                diagnosticsLogger.GetDiagnostics()
-            | _ ->
-                Array.ofList delayedLogger.Diagnostics
+            let diagnostics, flatErrors =
+                match builderOpt with
+                | Some builder ->
+                    let diagnosticsOptions = builder.TcConfig.diagnosticsOptions
+                    let diagnosticsLogger = CompilationDiagnosticLogger("IncrementalBuilderCreation", diagnosticsOptions)
+                    delayedLogger.CommitDelayedDiagnostics diagnosticsLogger
+                    diagnosticsLogger.GetDiagnostics(), builder.TcConfig.flatErrors
+                | _ ->
+                    Array.ofList delayedLogger.Diagnostics, false
+            diagnostics
             |> Array.map (fun (diagnostic, severity) ->
-                FSharpDiagnostic.CreateFromException(diagnostic, severity, range.Zero, suggestNamesForErrors))
+                FSharpDiagnostic.CreateFromException(diagnostic, severity, range.Zero, suggestNamesForErrors, flatErrors))
 
         return builderOpt, diagnostics
       }

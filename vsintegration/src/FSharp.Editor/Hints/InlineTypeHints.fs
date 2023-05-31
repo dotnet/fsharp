@@ -8,6 +8,7 @@ open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open Hints
+open CancellableTasks
 
 type InlineTypeHints(parseResults: FSharpParseFileResults, symbol: FSharpMemberOrFunctionOrValue) =
 
@@ -22,7 +23,7 @@ type InlineTypeHints(parseResults: FSharpParseFileResults, symbol: FSharpMemberO
         | None -> []
 
     let getTooltip _ =
-        async {
+        cancellableTask {
             // Done this way because I am not sure if we want to show full-blown types everywhere,
             // e.g. Microsoft.FSharp.Core.string instead of string.
             // On the other hand, for user types this could be useful.
@@ -83,7 +84,7 @@ type InlineTypeHints(parseResults: FSharpParseFileResults, symbol: FSharpMemberO
         && isNotAfterDot
         && isNotTypeAlias
 
-    member _.getHints symbolUse =
+    member _.GetHints symbolUse =
         [
             if isValidForHint symbolUse then
                 getHint symbol symbolUse
