@@ -2089,6 +2089,36 @@ type internal TypeCheckInfo
                 Trace.TraceInformation(sprintf "FCS: recovering from error in GetSymbolUseAtLocation: '%s'" msg)
                 None)
 
+    member _.GetSymbolUsesAtLocation(line, lineStr, colAtEndOfNames, names) =
+        DiagnosticsScope.Protect
+            range0
+            (fun () ->
+                let declItemsOpt =
+                    GetDeclItemsForNamesAtPosition(
+                        None,
+                        Some names,
+                        None,
+                        None,
+                        line,
+                        lineStr,
+                        colAtEndOfNames,
+                        ResolveTypeNamesToCtors,
+                        ResolveOverloads.Yes,
+                        None,
+                        (fun () -> [])
+                    )
+
+                match declItemsOpt with
+                | None -> List.empty
+                | Some (items, denv, _, m) ->
+                    items
+                    |> List.map (fun item ->
+                        let symbol = FSharpSymbol.Create(cenv, item.Item)
+                        symbol, item.ItemWithInst, denv, m))
+            (fun msg ->
+                Trace.TraceInformation(sprintf "FCS: recovering from error in GetSymbolUsesAtLocation: '%s'" msg)
+                List.empty)
+
     member _.PartialAssemblySignatureForFile =
         FSharpAssemblySignature(g, thisCcu, ccuSigForFile, tcImports, None, ccuSigForFile)
 
@@ -2802,6 +2832,14 @@ type FSharpCheckFileResults
         | Some (scope, _builderOpt) ->
             scope.GetSymbolUseAtLocation(line, lineText, colAtEndOfNames, names)
             |> Option.map (fun (sym, itemWithInst, denv, m) ->
+                FSharpSymbolUse(denv, sym, itemWithInst.TyparInstantiation, ItemOccurence.Use, m))
+
+    member _.GetSymbolUsesAtLocation(line, colAtEndOfNames, lineText, names) =
+        match details with
+        | None -> List.empty
+        | Some (scope, _builderOpt) ->
+            scope.GetSymbolUsesAtLocation(line, lineText, colAtEndOfNames, names)
+            |> List.map (fun (sym, itemWithInst, denv, m) ->
                 FSharpSymbolUse(denv, sym, itemWithInst.TyparInstantiation, ItemOccurence.Use, m))
 
     member _.GetMethodsAsSymbols(line, colAtEndOfNames, lineText, names) =
