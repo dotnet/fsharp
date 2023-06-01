@@ -57,6 +57,7 @@ type LanguageFeature =
     | NonInlineLiteralsAsPrintfFormat
     | NestedCopyAndUpdate
     | ExtendedStringInterpolation
+    | WarningWhenMultipleRecdTypeChoice
 
 /// LanguageVersion management
 type LanguageVersion =

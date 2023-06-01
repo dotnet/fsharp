@@ -7,6 +7,7 @@ open System
 open System.Collections.Concurrent
 open System.Runtime.InteropServices
 open System.IO
+open FSharp.Compiler.Optimizer
 open Internal.Utilities
 open Internal.Utilities.FSharpEnvironment
 open Internal.Utilities.Library
@@ -748,7 +749,14 @@ type TcConfigBuilder =
             doTLR = false
             doFinalSimplify = false
             optsOn = false
-            optSettings = Optimizer.OptimizationSettings.Defaults
+            optSettings =
+                { OptimizationSettings.Defaults with
+                    processingMode =
+                        if FSharpExperimentalFeaturesEnabledAutomatically then
+                            OptimizationProcessingMode.Parallel
+                        else
+                            OptimizationProcessingMode.Sequential
+                }
             emitTailcalls = true
             deterministic = false
             concurrentBuild = true

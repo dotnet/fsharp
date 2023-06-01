@@ -211,7 +211,10 @@
     <Compile Include="CompilerOptions\fsc\checked\checked.fs" />
     <Compile Include="CompilerOptions\fsc\cliversion.fs" />
     <Compile Include="CompilerOptions\fsc\codepage\codepage.fs" />
+    <Compile Include="CompilerOptions\fsc\crossoptimize.fs" />
     <Compile Include="CompilerOptions\fsc\debug.fs" />
+    <Compile Include="CompilerOptions\fsc\flaterrors.fs" />
+    <Compile Include="CompilerOptions\fsc\highentropyva.fs" />
     <Compile Include="CompilerOptions\fsc\langversion.fs" />
     <Compile Include="CompilerOptions\fsc\misc\misc.fs" />
     <Compile Include="CompilerOptions\fsc\noframework\noframework.fs" />

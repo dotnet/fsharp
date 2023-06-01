@@ -624,7 +624,12 @@ type internal TransparentCompiler
                         diagnosticsLogger.GetDiagnostics()
                     | _ -> Array.ofList delayedLogger.Diagnostics
                     |> Array.map (fun (diagnostic, severity) ->
-                        FSharpDiagnostic.CreateFromException(diagnostic, severity, range.Zero, suggestNamesForErrors))
+                        let flatErrors =
+                            bootstrapInfoOpt
+                            |> Option.map (fun bootstrapInfo -> bootstrapInfo.TcConfig.flatErrors)
+                            |> Option.defaultValue false // TODO: do we need to figure this out?
+
+                        FSharpDiagnostic.CreateFromException(diagnostic, severity, range.Zero, suggestNamesForErrors, flatErrors))
 
                 return bootstrapInfoOpt, diagnostics
             }
@@ -907,7 +912,8 @@ type internal TransparentCompiler
                     false,
                     fileName,
                     parseDiagnostics,
-                    suggestNamesForErrors
+                    suggestNamesForErrors,
+                    bootstrapInfo.TcConfig.flatErrors
                 )
 
             let diagnostics = [| yield! creationDiags; yield! parseDiagnostics |]
@@ -1260,9 +1266,10 @@ type internal TransparentCompiler
                 sourceText: ISourceText,
                 options: FSharpParsingOptions,
                 cache: bool,
+                flatErrors: bool,
                 userOpName: string
             ) : Async<FSharpParseFileResults> =
-            backgroundCompiler.ParseFile(fileName, sourceText, options, cache, userOpName)
+            backgroundCompiler.ParseFile(fileName, sourceText, options, cache, flatErrors, userOpName)
 
         member _.ProjectChecked: IEvent<FSharpProjectOptions> =
             backgroundCompiler.ProjectChecked

@@ -70,6 +70,23 @@
                                   Content="{x:Static local:Strings.Enable_Fast_Find_References}"/>
                     </StackPanel>
                 </GroupBox>
+                <GroupBox Header="{x:Static local:Strings.Language_Service_Settings}">
+                    <StackPanel>
+                        <CheckBox x:Name="keepAllBackgroundResolutions"
+                                  IsChecked="{Binding KeepAllBackgroundResolutions}"
+                                  Content="{x:Static local:Strings.Keep_All_Background_Resolutions}"/>
+                        <CheckBox x:Name="keepAllBackgroundSymbolUses"
+                                  IsChecked="{Binding KeepAllBackgroundSymbolUses}"
+                                  Content="{x:Static local:Strings.Keep_All_Background_Symbol_Uses}"/>
+                        <CheckBox x:Name="enableBackgroundItemKeyStoreAndSemanticClassification"
+                                  IsChecked="{Binding EnableBackgroundItemKeyStoreAndSemanticClassification}"
+                                  Content="{x:Static local:Strings.Enable_Background_ItemKeyStore_And_Semantic_Classification}"/>
+                        <CheckBox x:Name="captureIdentifiersWhenParsing"
+                                  IsChecked="{Binding CaptureIdentifiersWhenParsing}"
+                                  Content="{x:Static local:Strings.Capture_Identifiers_When_Parsing}"/>                        
+                    </StackPanel>
+                </GroupBox>
+
             </StackPanel>
         </ScrollViewer>
     </Grid>

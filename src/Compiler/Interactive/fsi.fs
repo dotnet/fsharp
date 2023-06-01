@@ -6,6 +6,7 @@ module FSharp.Compiler.Interactive.Shell
 #nowarn "57"
 
 #nowarn "55"
+#nowarn "9"
 
 [<assembly: System.Runtime.InteropServices.ComVisible(false)>]
 [<assembly: System.CLSCompliant(true)>]
@@ -102,9 +103,25 @@ module internal Utilities =
             member _.FsiAnyToLayout(options, o: obj, ty: Type) =
                 Display.fsi_any_to_layout options ((Unchecked.unbox o: 'T), ty)
 
-    let getAnyToLayoutCall ty =
-        let specialized = typedefof<AnyToLayoutSpecialization<_>>.MakeGenericType [| ty |]
-        Activator.CreateInstance(specialized) :?> IAnyToLayoutCall
+    let getAnyToLayoutCall (ty: Type) =
+        if ty.IsPointer then
+            let pointerToNativeInt (o: obj) : nativeint =
+                System.Reflection.Pointer.Unbox o
+                |> NativeInterop.NativePtr.ofVoidPtr<nativeptr<byte>>
+                |> NativeInterop.NativePtr.toNativeInt
+
+            { new IAnyToLayoutCall with
+                member _.AnyToLayout(options, o: obj, ty: Type) =
+                    let n = pointerToNativeInt o
+                    Display.any_to_layout options (n, n.GetType())
+
+                member _.FsiAnyToLayout(options, o: obj, ty: Type) =
+                    let n = pointerToNativeInt o
+                    Display.any_to_layout options (n, n.GetType())
+            }
+        else
+            let specialized = typedefof<AnyToLayoutSpecialization<_>>.MakeGenericType [| ty |]
+            Activator.CreateInstance(specialized) :?> IAnyToLayoutCall
 
     let callStaticMethod (ty: Type) name args =
         ty.InvokeMember(
@@ -4446,8 +4463,6 @@ type FsiEvaluationSession
         legacyReferenceResolver: LegacyReferenceResolver option
     ) =
 
-    do UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption() (* SDL recommendation *)
-
     // Explanation: When FsiEvaluationSession.Create is called we do a bunch of processing. For fsi.exe
     // and fsiAnyCpu.exe there are no other active threads at this point, so we can assume this is the
     // unique compilation thread.  For other users of FsiEvaluationSession it is reasonable to assume that
@@ -4608,9 +4623,9 @@ type FsiEvaluationSession
         | Some assembly -> Some(Choice2Of2 assembly)
         | None ->
 #endif
-            match tcImports.TryFindExistingFullyQualifiedPathByExactAssemblyRef aref with
-            | Some resolvedPath -> Some(Choice1Of2 resolvedPath)
-            | None -> None
+        match tcImports.TryFindExistingFullyQualifiedPathByExactAssemblyRef aref with
+        | Some resolvedPath -> Some(Choice1Of2 resolvedPath)
+        | None -> None
 
     let fsiDynamicCompiler =
         FsiDynamicCompiler(
@@ -4672,7 +4687,7 @@ type FsiEvaluationSession
         let errs = diagnosticsLogger.GetDiagnostics()
 
         let errorInfos =
-            DiagnosticHelpers.CreateDiagnostics(errorOptions, true, scriptFile, errs, true)
+            DiagnosticHelpers.CreateDiagnostics(errorOptions, true, scriptFile, errs, true, tcConfigB.flatErrors)
 
         let userRes =
             match res with
@@ -4722,68 +4737,11 @@ type FsiEvaluationSession
     /// A host calls this to report an unhandled exception in a standard way, e.g. an exception on the GUI thread gets printed to stderr
     member x.ReportUnhandledException exn = x.ReportUnhandledExceptionSafe true exn
 
-    member _.ReportUnhandledExceptionSafe isFromThreadException (exn: exn) =
+    member _.ReportUnhandledExceptionSafe _isFromThreadException (exn: exn) =
         fsi.EventLoopInvoke(fun () ->
             fprintfn fsiConsoleOutput.Error "%s" (exn.ToString())
             diagnosticsLogger.SetError()
-
-            try
-                diagnosticsLogger.AbortOnError(fsiConsoleOutput)
-            with StopProcessing ->
-                // BUG 664864 some window that use System.Windows.Forms.DataVisualization types (possible FSCharts) was created in FSI.
-                // at some moment one chart has raised InvalidArgumentException from OnPaint, this exception was intercepted by the code in higher layer and
-                // passed to Application.OnThreadException. FSI has already attached its own ThreadException handler, inside it will log the original error
-                // and then raise StopProcessing exception to unwind the stack (and possibly shut down current Application) and get to DriveFsiEventLoop.
-                // DriveFsiEventLoop handles StopProcessing by suppressing it and restarting event loop from the beginning.
-                // This schema works almost always except when FSI is started as 64 bit process (FsiAnyCpu) on Windows 7.
-
-                // http://msdn.microsoft.com/en-us/library/windows/desktop/ms633573(v=vs.85).aspx
-                // Remarks:
-                // If your application runs on a 32-bit version of Windows operating system, uncaught exceptions from the callback
-                // will be passed onto higher-level exception handlers of your application when available.
-                // The system then calls the unhandled exception filter to handle the exception prior to terminating the process.
-                // If the PCA is enabled, it will offer to fix the problem the next time you run the application.
-                // However, if your application runs on a 64-bit version of Windows operating system or WOW64,
-                // you should be aware that a 64-bit operating system handles uncaught exceptions differently based on its 64-bit processor architecture,
-                // exception architecture, and calling convention.
-                // The following table summarizes all possible ways that a 64-bit Windows operating system or WOW64 handles uncaught exceptions.
-                // 1. The system suppresses any uncaught exceptions.
-                // 2. The system first terminates the process, and then the Program Compatibility Assistant (PCA) offers to fix it the next time
-                // you run the application. You can disable the PCA mitigation by adding a Compatibility section to the application manifest.
-                // 3. The system calls the exception filters but suppresses any uncaught exceptions when it leaves the callback scope,
-                // without invoking the associated handlers.
-                // Behavior type 2 only applies to the 64-bit version of the Windows 7 operating system.
-
-                // NOTE: tests on Win8 box showed that 64 bit version of the Windows 8 always apply type 2 behavior
-
-                // Effectively this means that when StopProcessing exception is raised from ThreadException callback - it won't be intercepted in DriveFsiEventLoop.
-                // Instead it will be interpreted as unhandled exception and crash the whole process.
-
-                // FIX: detect if current process in 64 bit running on Windows 7 or Windows 8 and if yes - swallow the StopProcessing and ScheduleRestart instead.
-                // Visible behavior should not be different, previously exception unwinds the stack and aborts currently running Application.
-                // After that it will be intercepted and suppressed in DriveFsiEventLoop.
-                // Now we explicitly shut down Application so after execution of callback will be completed the control flow
-                // will also go out of WinFormsEventLoop.Run and again get to DriveFsiEventLoop => restart the loop. I'd like the fix to be  as conservative as possible
-                // so we use special case for problematic case instead of just always scheduling restart.
-
-                // http://msdn.microsoft.com/en-us/library/windows/desktop/ms724832(v=vs.85).aspx
-                let os = Environment.OSVersion
-                // Win7 6.1
-                let isWindows7 = os.Version.Major = 6 && os.Version.Minor = 1
-                // Win8 6.2
-                let isWindows8Plus = os.Version >= Version(6, 2, 0, 0)
-
-                if
-                    isFromThreadException
-                    && ((isWindows7 && (IntPtr.Size = 8) && isWindows8Plus))
-#if DEBUG
-                    // for debug purposes
-                    && Environment.GetEnvironmentVariable("FSI_SCHEDULE_RESTART_WITH_ERRORS") = null
-#endif
-                then
-                    fsi.EventLoopScheduleRestart()
-                else
-                    reraise ())
+            diagnosticsLogger.AbortOnError(fsiConsoleOutput))
 
     member _.PartialAssemblySignatureUpdated =
         fsiInteractionProcessor.PartialAssemblySignatureUpdated

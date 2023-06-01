@@ -84,6 +84,10 @@ type LanguageServicePerformanceOptions =
         EnableFastFindReferencesAndRename: bool
         EnablePartialTypeChecking: bool
         UseSyntaxTreeCache: bool
+        KeepAllBackgroundResolutions: bool
+        KeepAllBackgroundSymbolUses: bool
+        EnableBackgroundItemKeyStoreAndSemanticClassification: bool
+        CaptureIdentifiersWhenParsing: bool
     }
 
     static member Default =
@@ -94,6 +98,10 @@ type LanguageServicePerformanceOptions =
             EnableFastFindReferencesAndRename = true
             EnablePartialTypeChecking = true
             UseSyntaxTreeCache = FSharpExperimentalFeaturesEnabledAutomatically
+            KeepAllBackgroundResolutions = false
+            KeepAllBackgroundSymbolUses = false
+            EnableBackgroundItemKeyStoreAndSemanticClassification = true
+            CaptureIdentifiersWhenParsing = true
         }
 
 [<CLIMutable>]
@@ -117,8 +125,8 @@ type AdvancedOptions =
             IsInlineParameterNameHintsEnabled = false
             IsInlineReturnTypeHintsEnabled = false
             IsLiveBuffersEnabled = FSharpExperimentalFeaturesEnabledAutomatically
-            SendAdditionalTelemetry = FSharpExperimentalFeaturesEnabledAutomatically
             UseTransparentCompiler = false
+            SendAdditionalTelemetry = true
         }
 
 [<CLIMutable>]

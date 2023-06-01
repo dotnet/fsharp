@@ -47,14 +47,14 @@ type DocumentSource =
 type IsResultObsolete = IsResultObsolete of (unit -> bool)
 
 module CompileHelpers =
-    let mkCompilationDiagnosticsHandlers () =
+    let mkCompilationDiagnosticsHandlers (flatErrors) =
         let diagnostics = ResizeArray<_>()
 
         let diagnosticsLogger =
             { new DiagnosticsLogger("CompileAPI") with
 
                 member _.DiagnosticSink(diag, isError) =
-                    diagnostics.Add(FSharpDiagnostic.CreateFromException(diag, isError, range0, true)) // Suggest names for errors
+                    diagnostics.Add(FSharpDiagnostic.CreateFromException(diag, isError, range0, true, flatErrors)) // Suggest names for errors
 
                 member _.ErrorCount =
                     diagnostics
@@ -85,7 +85,8 @@ module CompileHelpers =
     /// Compile using the given flags.  Source files names are resolved via the FileSystem API. The output file must be given by a -o flag.
     let compileFromArgs (ctok, argv: string[], legacyReferenceResolver, tcImportsCapture, dynamicAssemblyCreator) =
 
-        let diagnostics, diagnosticsLogger, loggerProvider = mkCompilationDiagnosticsHandlers ()
+        let diagnostics, diagnosticsLogger, loggerProvider =
+            mkCompilationDiagnosticsHandlers (argv |> Array.contains "--flaterrors")
 
         let result =
             tryCompile diagnosticsLogger (fun exiter ->
@@ -305,7 +306,7 @@ type FSharpChecker
     member _.ParseFile(fileName, sourceText, options, ?cache, ?userOpName: string) =
         let cache = defaultArg cache true
         let userOpName = defaultArg userOpName "Unknown"
-        backgroundCompiler.ParseFile(fileName, sourceText, options, cache, userOpName)
+        backgroundCompiler.ParseFile(fileName, sourceText, options, cache, false, userOpName)
 
     member _.ParseFile(fileName, projectSnapshot, ?userOpName) =
         let userOpName = defaultArg userOpName "Unknown"
@@ -575,7 +576,7 @@ type FSharpChecker
     member _.GetParsingOptionsFromCommandLineArgs(sourceFiles, argv, ?isInteractive, ?isEditing) =
         let isEditing = defaultArg isEditing false
         let isInteractive = defaultArg isInteractive false
-        use errorScope = new DiagnosticsScope()
+        use errorScope = new DiagnosticsScope(argv |> List.contains "--flaterrors")
 
         let tcConfigB =
             TcConfigBuilder.CreateNew(

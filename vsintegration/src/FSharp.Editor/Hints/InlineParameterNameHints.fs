@@ -9,11 +9,12 @@ open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open Hints
+open CancellableTasks
 
 type InlineParameterNameHints(parseResults: FSharpParseFileResults) =
 
     let getTooltip (symbol: FSharpSymbol) _ =
-        async {
+        cancellableTask {
             // This brings little value as of now. Basically just discerns fields from parameters
             // and fills the tooltip bubble which otherwise looks like a visual glitch.
             //
@@ -109,7 +110,7 @@ type InlineParameterNameHints(parseResults: FSharpParseFileResults) =
         // If a case does not use field names, don't even bother getting applied argument ranges
         && symbol.Fields |> Seq.exists fieldNameExists
 
-    member _.getHintsForMemberOrFunctionOrValue
+    member _.GetHintsForMemberOrFunctionOrValue
         (sourceText: SourceText)
         (symbol: FSharpMemberOrFunctionOrValue)
         (symbolUse: FSharpSymbolUse)
@@ -146,7 +147,7 @@ type InlineParameterNameHints(parseResults: FSharpParseFileResults) =
         else
             []
 
-    member _.getHintsForUnionCase (symbol: FSharpUnionCase) (symbolUse: FSharpSymbolUse) =
+    member _.GetHintsForUnionCase (symbol: FSharpUnionCase) (symbolUse: FSharpSymbolUse) =
         if isUnionCaseValidForHint symbol symbolUse then
 
             let fields = Seq.toList symbol.Fields

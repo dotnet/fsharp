@@ -140,7 +140,7 @@ type internal IBackgroundCompiler =
     abstract member ParseAndCheckProject: options: FSharpProjectOptions * userOpName: string -> NodeCode<FSharpCheckProjectResults>
 
     abstract member ParseFile:
-        fileName: string * sourceText: ISourceText * options: FSharpParsingOptions * cache: bool * userOpName: string ->
+        fileName: string * sourceText: ISourceText * options: FSharpParsingOptions * cache: bool * flatErrors: bool * userOpName: string ->
             Async<FSharpParseFileResults>
 
     abstract member ParseFile:
@@ -300,7 +300,7 @@ type internal BackgroundCompiler
                             member x.FileName = nm
                         }
 
-                | FSharpReferencedProject.PEReference (nm, getStamp, delayedReader) ->
+                | FSharpReferencedProject.PEReference (getStamp, delayedReader) ->
                     { new IProjectReference with
                         member x.EvaluateRawContents() =
                             node {
@@ -318,7 +318,7 @@ type internal BackgroundCompiler
                             }
 
                         member x.TryGetLogicalTimeStamp _ = getStamp () |> Some
-                        member x.FileName = nm
+                        member x.FileName = delayedReader.OutputFile
                     }
 
                 | FSharpReferencedProject.ILModuleReference (nm, getStamp, getReader) ->
@@ -549,7 +549,15 @@ type internal BackgroundCompiler
                 checkFileInProjectCache.Set(ltok, key, res)
                 res)
 
-    member _.ParseFile(fileName: string, sourceText: ISourceText, options: FSharpParsingOptions, cache: bool, userOpName: string) =
+    member _.ParseFile
+        (
+            fileName: string,
+            sourceText: ISourceText,
+            options: FSharpParsingOptions,
+            cache: bool,
+            flatErrors: bool,
+            userOpName: string
+        ) =
         async {
             use _ =
                 Activity.start
@@ -575,6 +583,7 @@ type internal BackgroundCompiler
                             options,
                             userOpName,
                             suggestNamesForErrors,
+                            flatErrors,
                             captureIdentifiersWhenParsing
                         )
 
@@ -585,7 +594,15 @@ type internal BackgroundCompiler
                     return res
             else
                 let parseDiagnostics, parseTree, anyErrors =
-                    ParseAndCheckFile.parseFile (sourceText, fileName, options, userOpName, false, captureIdentifiersWhenParsing)
+                    ParseAndCheckFile.parseFile (
+                        sourceText,
+                        fileName,
+                        options,
+                        userOpName,
+                        false,
+                        flatErrors,
+                        captureIdentifiersWhenParsing
+                    )
 
                 return FSharpParseFileResults(parseDiagnostics, parseTree, anyErrors, options.SourceFiles)
         }
@@ -613,7 +630,8 @@ type internal BackgroundCompiler
                         false,
                         fileName,
                         parseDiagnostics,
-                        suggestNamesForErrors
+                        suggestNamesForErrors,
+                        builder.TcConfig.flatErrors
                     )
 
                 let diagnostics = [| yield! creationDiags; yield! parseDiagnostics |]
@@ -888,7 +906,8 @@ type internal BackgroundCompiler
                             parsingOptions,
                             userOpName,
                             suggestNamesForErrors,
-                            captureIdentifiersWhenParsing
+                            captureIdentifiersWhenParsing,
+                            builder.TcConfig.flatErrors
                         )
 
                     let parseResults =
@@ -966,12 +985,26 @@ type internal BackgroundCompiler
                 let diagnosticsOptions = builder.TcConfig.diagnosticsOptions
 
                 let parseDiagnostics =
-                    DiagnosticHelpers.CreateDiagnostics(diagnosticsOptions, false, fileName, parseDiagnostics, suggestNamesForErrors)
+                    DiagnosticHelpers.CreateDiagnostics(
+                        diagnosticsOptions,
+                        false,
+                        fileName,
+                        parseDiagnostics,
+                        suggestNamesForErrors,
+                        builder.TcConfig.flatErrors
+                    )
 
                 let parseDiagnostics = [| yield! creationDiags; yield! parseDiagnostics |]
 
                 let tcDiagnostics =
-                    DiagnosticHelpers.CreateDiagnostics(diagnosticsOptions, false, fileName, tcDiagnostics, suggestNamesForErrors)
+                    DiagnosticHelpers.CreateDiagnostics(
+                        diagnosticsOptions,
+                        false,
+                        fileName,
+                        tcDiagnostics,
+                        suggestNamesForErrors,
+                        builder.TcConfig.flatErrors
+                    )
 
                 let tcDiagnostics = [| yield! creationDiags; yield! tcDiagnostics |]
 
@@ -1131,7 +1164,14 @@ type internal BackgroundCompiler
                 let tcDependencyFiles = tcInfo.tcDependencyFiles
 
                 let tcDiagnostics =
-                    DiagnosticHelpers.CreateDiagnostics(diagnosticsOptions, true, fileName, tcDiagnostics, suggestNamesForErrors)
+                    DiagnosticHelpers.CreateDiagnostics(
+                        diagnosticsOptions,
+                        true,
+                        fileName,
+                        tcDiagnostics,
+                        suggestNamesForErrors,
+                        builder.TcConfig.flatErrors
+                    )
 
                 let diagnostics = [| yield! creationDiags; yield! tcDiagnostics |]
 
@@ -1226,8 +1266,6 @@ type internal BackgroundCompiler
                 [| Activity.Tags.fileName, fileName; Activity.Tags.userOpName, _userOpName |]
 
         cancellable {
-            use diagnostics = new DiagnosticsScope()
-
             // Do we add a reference to FSharp.Compiler.Interactive.Settings by default?
             let useFsiAuxLib = defaultArg useFsiAuxLib true
             let useSdkRefs = defaultArg useSdkRefs true
@@ -1244,6 +1282,8 @@ type internal BackgroundCompiler
                     [||]
 
             let otherFlags = defaultArg otherFlags extraFlags
+
+            use diagnostics = new DiagnosticsScope(otherFlags |> Array.contains "--flaterrors")
 
             let useSimpleResolution =
                 otherFlags |> Array.exists (fun x -> x = "--simpleresolution")
@@ -1303,7 +1343,14 @@ type internal BackgroundCompiler
 
             let diags =
                 loadClosure.LoadClosureRootFileDiagnostics
-                |> List.map (fun (exn, isError) -> FSharpDiagnostic.CreateFromException(exn, isError, range.Zero, false))
+                |> List.map (fun (exn, isError) ->
+                    FSharpDiagnostic.CreateFromException(
+                        exn,
+                        isError,
+                        range.Zero,
+                        false,
+                        options.OtherOptions |> Array.contains "--flaterrors"
+                    ))
 
             return options, (diags @ diagnostics.Diagnostics)
         }
@@ -1548,9 +1595,10 @@ type internal BackgroundCompiler
                 sourceText: ISourceText,
                 options: FSharpParsingOptions,
                 cache: bool,
+                flatErrors: bool,
                 userOpName: string
             ) : Async<FSharpParseFileResults> =
-            self.ParseFile(fileName, sourceText, options, cache, userOpName)
+            self.ParseFile(fileName, sourceText, options, cache, flatErrors, userOpName)
 
         member _.ParseFile(_fileName: string, _projectSnapshot: FSharpProjectSnapshot, _userOpName: string) =
             raise (System.NotImplementedException())

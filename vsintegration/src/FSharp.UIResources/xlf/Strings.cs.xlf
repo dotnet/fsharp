@@ -12,6 +12,16 @@
         <target state="translated">Vždy umístit otevřené příkazy na nejvyšší úroveň</target>
         <note />
       </trans-unit>
+      <trans-unit id="Capture_Identifiers_When_Parsing">
+        <source>Capture identifiers while parsing</source>
+        <target state="new">Capture identifiers while parsing</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enable_Background_ItemKeyStore_And_Semantic_Classification">
+        <source>Keep background symbol keys</source>
+        <target state="new">Keep background symbol keys</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Enable_Fast_Find_References">
         <source>Enable fast find references &amp; rename (experimental)</source>
         <target state="translated">Povolit odkazy rychlého hledání a přejmenování (experimentální)</target>
@@ -62,6 +72,16 @@
         <target state="translated">Povolit paralelní referenční rozlišení</target>
         <note />
       </trans-unit>
+      <trans-unit id="Keep_All_Background_Resolutions">
+        <source>Keep all background intermediate resolutions (increases memory usage)</source>
+        <target state="new">Keep all background intermediate resolutions (increases memory usage)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Keep_All_Background_Symbol_Uses">
+        <source>Keep all background symbol uses (increases memory usage)</source>
+        <target state="new">Keep all background symbol uses (increases memory usage)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Language_Service_Performance">
         <source>Performance</source>
         <target state="translated">Výkon</target>
@@ -75,6 +95,11 @@
       <trans-unit id="Dot_underline">
         <source>D_ot underline</source>
         <target state="translated">_Tečkované podtržení</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Language_Service_Settings">
+        <source>Language service settings (advanced)</source>
+        <target state="new">Language service settings (advanced)</target>
         <note />
       </trans-unit>
       <trans-unit id="LiveBuffers">

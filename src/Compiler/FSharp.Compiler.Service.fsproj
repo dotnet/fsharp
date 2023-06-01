@@ -25,6 +25,7 @@
     <FsYaccOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsYaccOutputFolder>
     <FsLexOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsLexOutputFolder>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <Configurations>Debug;Release;ReleaseCompressed</Configurations>
   </PropertyGroup>
 
   <!--  The FSharp.Compiler.Service dll provides a referencable public interface for tool builders -->
@@ -554,6 +555,11 @@
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="$(SystemDiagnosticsDiagnosticSourceVersion)" />
     <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Driver\parallel-optimization.md" />
+    <None Include="Driver\parallel-optimization.drawio.svg" />
   </ItemGroup>
 
 </Project>
