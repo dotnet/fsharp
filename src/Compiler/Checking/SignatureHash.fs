@@ -310,348 +310,80 @@ module rec PrintTypes =
     //let hashTyparConstraint (g:TcGlobals)  (tp, tpc) =
     //    hashConstraint g (tp, tpc)  
 
-    let prettyLayoutOfInstAndSig (g:TcGlobals) (typarInst:TyparInstantiation, tys, retTy) =
-        typarInst
-        |> hashAllVia (fun (typar,ttype) -> hashTyparRef typar @@ hashTType g ttype)
-        |> pipeToHash (hashTType g retTy)
-        |> pipeToHash (tys |> hashAllVia (hashTType g))
+    //let prettyLayoutOfInstAndSig (g:TcGlobals) (typarInst:TyparInstantiation, tys, retTy) =
+    //    typarInst
+    //    |> hashAllVia (fun (typar,ttype) -> hashTyparRef typar @@ hashTType g ttype)
+    //    |> pipeToHash (hashTType g retTy)
+    //    |> pipeToHash (tys |> hashAllVia (hashTType g))
 
-    let prettyLayoutOfTopTypeInfoAux (g:TcGlobals) prettyArgInfos prettyRetTy cxs =        
-        hashTopType g prettyArgInfos prettyRetTy cxs
+    //let prettyLayoutOfTopTypeInfoAux (g:TcGlobals) prettyArgInfos prettyRetTy cxs =        
+    //    hashTopType g prettyArgInfos prettyRetTy cxs
 
-    let prettyLayoutOfUncurriedSig (g:TcGlobals) typarInst argInfos retTy = 
+    let hashUncurriedSig (g:TcGlobals) typarInst argInfos retTy = 
         typarInst
         |> hashAllVia (fun (typar,ttype) -> hashTyparInclConstraints g typar @@ hashTType g ttype)
-        |> pipeToHash (hashTopType g argInfos retTy [])       
+        |> pipeToHash (hashTopType g argInfos retTy [])     
 
-    let prettyLayoutOfCurriedMemberSig (g:TcGlobals) typarInst argInfos retTy parentTyparTys = 
+    // Hash: type spec - class, datatype, record, abbrev 
+    let hashMemberSigCore (g:TcGlobals) memberToParentInst (typarInst, methTypars: Typars, argInfos, retTy) = 
         typarInst
         |> hashAllVia (fun (typar,ttype) -> hashTyparInclConstraints g typar @@ hashTType g ttype)
         |> pipeToHash (hashTopType g argInfos retTy []) 
-        |> pipeToHash (parentTyparTys |> hashAllVia (hashTType g))
+        |> pipeToHash (memberToParentInst |> hashAllVia (fun (typar,ty) -> hashTyparRef typar @@ hashTType g ty))
+        |> pipeToHash (hashTyparDecls g methTypars)
 
-    //let prettyArgInfos (g:TcGlobals)  allTyparInst =
-    //    function 
-    //    | [] -> [(g.unit_ty, ValReprInfo.unnamedTopArg1)] 
-    //    | infos -> infos |> List.map (map1Of2 (instType allTyparInst)) 
-
-    // Hash: type spec - class, datatype, record, abbrev 
-    let prettyLayoutOfMemberSigCore (g:TcGlobals) memberToParentInst (typarInst, methTypars: Typars, argInfos, retTy) = 
-        let niceMethodTypars, allTyparInst = 
-            let methTyparNames = methTypars |> List.mapi (fun i tp -> if (PrettyTypes.NeedsPrettyTyparName tp) then sprintf "a%d" (List.length memberToParentInst + i) else tp.Name)
-            PrettyTypes.NewPrettyTypars memberToParentInst methTypars methTyparNames
-
-        let retTy = instType allTyparInst retTy
-        let argInfos = argInfos |> List.map (prettyArgInfos (* denv *) allTyparInst) 
-
-        // Also format dummy types corresponding to any type variables on the container to make sure they 
-        // aren't chosen as names for displayed variables. 
-        let memberParentTypars = List.map fst memberToParentInst
-        let parentTyparTys = List.map (mkTyparTy >> instType allTyparInst) memberParentTypars
-        let prettyTyparInst, hash = prettyLayoutOfCurriedMemberSig (* denv *) typarInst argInfos retTy parentTyparTys
-
-        prettyTyparInst, niceMethodTypars, hash
-
-    let prettyLayoutOfMemberType (* denv *) vref typarInst argInfos retTy = 
-        match PartitionValRefTypars (* denv *).g vref with
+    let hashMemberType (g:TcGlobals) vref typarInst argInfos retTy = 
+        match PartitionValRefTypars g vref with
         | Some(_, _, memberMethodTypars, memberToParentInst, _) ->
-            prettyLayoutOfMemberSigCore (* denv *) memberToParentInst (typarInst, memberMethodTypars, argInfos, retTy)
+            hashMemberSigCore g memberToParentInst (typarInst, memberMethodTypars, argInfos, retTy)
         | None -> 
-            let prettyTyparInst, hash = prettyLayoutOfUncurriedSig (* denv *) typarInst (List.concat argInfos) retTy 
-            prettyTyparInst, [], hash
-
-    let prettyLayoutOfMemberSig (* denv *) (memberToParentInst, nm, methTypars, argInfos, retTy) = 
-        let _, niceMethodTypars, tauL = prettyLayoutOfMemberSigCore (* denv *) memberToParentInst (emptyTyparInst, methTypars, argInfos, retTy)
-        let nameL = ConvertValLogicalNameToDisplayLayout false (tagMember >> hashText) nm
-        let nameL =
-            if true then
-                hashTyparDecls (* denv *) nameL true niceMethodTypars
-            else
-                nameL
-        (nameL |> addColonL) ^^ tauL
-
-    /// hashs the elements of an unresolved overloaded method call:
-    /// argInfos: unammed and named arguments
-    /// retTy: return type
-    /// genParamTy: generic parameter types
-    let prettyLayoutsOfUnresolvedOverloading (* denv *) argInfos retTy genParamTys =
-
-        let _niceMethodTypars, typarInst =
-            let memberToParentInst = List.empty
-            let typars = argInfos |> List.choose (function TType_var (typar, _),_ -> Some typar | _ -> None)
-            let methTyparNames = typars |> List.mapi (fun i tp -> if (PrettyTypes.NeedsPrettyTyparName tp) then sprintf "a%d" (List.length memberToParentInst + i) else tp.Name)
-            PrettyTypes.NewPrettyTypars memberToParentInst typars methTyparNames
-
-        let retTy = instType typarInst retTy
-        let argInfos = prettyArgInfos (* denv *) typarInst argInfos
-        let argInfos,retTy,genParamTys, cxs =
-            // using 0, 1, 2 as discriminant for return, arguments and generic parameters
-            // respectively, in order to easily retrieve each of the types with their
-            // expected quality below.
-            let typesWithDiscrimants =
-                [
-                    yield 0, retTy 
-                    for ty,_ in argInfos do
-                        yield 1, ty
-                    for ty in genParamTys do
-                        yield 2, ty
-                ]
-            let typesWithDiscrimants,typarsAndCxs = PrettyTypes.PrettifyDiscriminantAndTypePairs (* denv *).g typesWithDiscrimants
-            let retTy = typesWithDiscrimants |> List.find (function 0, _ -> true | _ -> false) |> snd
-            let argInfos = 
-                typesWithDiscrimants
-                |> List.choose (function 1,ty -> Some ty | _ -> None)
-                |> List.map2 (fun (_, argInfo) tTy -> tTy, argInfo) argInfos
-            let genParamTys = 
-                typesWithDiscrimants
-                |> List.choose (function 2,ty -> Some ty | _ -> None)
-              
-            argInfos, retTy, genParamTys, typarsAndCxs
-
-        let env = SimplifyTypes.CollectInfo true (List.collect (List.map fst) [argInfos]) cxs
-        let cxsL = hashConstraints (* denv *) env env.postfixConstraints
-
-        (List.foldBack (---) (hashCurriedArgInfos (* denv *) env [argInfos]) cxsL,
-            hashReturnType (* denv *) env retTy,
-            hashGenericParameterTypes (* denv *) env genParamTys)
-
-    let prettyLayoutOfType (* denv *) ty = 
-        let ty, cxs = PrettyTypes.PrettifyType (* denv *).g ty
-        let env = SimplifyTypes.CollectInfo true [ty] cxs
-        let cxsL = hashConstraints (* denv *) env env.postfixConstraints
-        hashTType (* denv *) env 2 ty --- cxsL
-
-    let prettyLayoutOfTrait (* denv *) traitInfo =
-        let compgenId = SyntaxTreeOps.mkSynId Range.range0 unassignedTyparName
-        let fakeTypar = Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, SynTypar(compgenId, TyparStaticReq.None, true), false, TyparDynamicReq.No, [], false, false)
-        fakeTypar.SetConstraints [TyparConstraint.MayResolveMember(traitInfo, Range.range0)]
-        let ty, cxs = PrettyTypes.PrettifyType (* denv *).g (mkTyparTy fakeTypar)
-        let env = SimplifyTypes.CollectInfo true [ty] cxs
-        // We expect one constraint, since we put one in.
-        match env.postfixConstraints with
-        | cx :: _ ->
-             // We expect at most one per constraint
-             sepListL 0 (* empty hash *) (hashConstraint (* denv *) env cx)
-        | [] -> 0 (* empty hash *)
-
-    let prettyLayoutOfTypeNoConstraints (* denv *) ty =
-        let ty, _cxs = PrettyTypes.PrettifyType (* denv *).g ty
-        hashTType (* denv *) SimplifyTypes.typeSimplificationInfo0 5 ty
-
-    let hashOfValReturnType (* denv *) (vref: ValRef) =
-        match vref.ValReprInfo with 
-        | None ->
-            let tau = vref.TauType
-            let _argTysl, retTy = stripFunTy (* denv *).g tau
-            hashReturnType (* denv *) SimplifyTypes.typeSimplificationInfo0 retTy
-        | Some (ValReprInfo(_typars, argInfos, _retInfo)) -> 
-            let tau = vref.TauType
-            let _c, retTy = GetTopTauTypeInFSharpForm (* denv *).g argInfos tau Range.range0
-            hashReturnType (* denv *) SimplifyTypes.typeSimplificationInfo0 retTy
-
-    let hashAssemblyName _(* denv *) (ty: TType) =
-        ty.GetAssemblyName()
+            hashUncurriedSig g typarInst argInfos retTy 
 
 /// Printing TAST objects
 module PrintTastMemberOrVals =
     open PrintTypes 
 
-    let mkInlineL (* denv *) (v: Val) nameL = 
-        if v.MustInline && not (* denv *).suppressInlineKeyword then 
-            hashText ((* string to tag was here *) "inline") ++ nameL 
-        else 
-            nameL
-
-    let hashMemberName ((* denv *): DisplayEnv) (vref: ValRef) niceMethodTypars tagFunction name =
-        let nameL = ConvertValLogicalNameToDisplayLayout vref.IsBaseVal (tagFunction >> mkNav vref.DefinitionRange >> hashText) name
-        let nameL =
-            if true then 
-                hashTyconRef (* denv *) vref.MemberApparentEntity ^^ SepL.dot ^^ nameL
-            else
-                nameL
-        let nameL = if true then hashTyparDecls (* denv *) nameL true niceMethodTypars else nameL
-        let nameL = hashAccessibility (* denv *) vref.Accessibility nameL
-        nameL
-
-    let prettyLayoutOfMemberShortOption (* denv *) typarInst (v: Val) short =
+    let hashMember (g:TcGlobals) typarInst (v: Val)  =
         let vref = mkLocalValRef v
         let membInfo = Option.get vref.MemberInfo
-        let stat = hashMemberFlags membInfo.MemberFlags
-        let _tps, argInfos, retTy, _ = GetTypeOfMemberInFSharpForm (* denv *).g vref
-        
-        if short then
-            for argInfo in argInfos do
-                for _,info in argInfo do
-                    info.Attribs <- []
-                    info.Name <- None
+        let _tps, argInfos, retTy, _ = GetTypeOfMemberInFSharpForm g vref     
 
-        let prettyTyparInst, memberL =
-            match membInfo.MemberFlags.MemberKind with
-            | SynMemberKind.Member ->
-                let prettyTyparInst, niceMethodTypars,tauL = prettyLayoutOfMemberType (* denv *) vref typarInst argInfos retTy
-                let resL =
-                    if short then tauL
-                    else
-                        let nameL = hashMemberName (* denv *) vref niceMethodTypars tagMember vref.DisplayNameCoreMangled
-                        let nameL = if short then nameL else mkInlineL (* denv *) vref.Deref nameL
-                        stat --- ((nameL  |> addColonL) ^^ tauL)
-                prettyTyparInst, resL
+        let memberFlagsHash = hashMemberFlags membInfo.MemberFlags
+        let parentTypeHash = hashTyconRef g membInfo.ApparentEnclosingEntity
+        let memberTypeHash = hashMemberType g vref typarInst argInfos retTy
+        let flagsHash = hash v.val_flags.PickledBits
+        let nameHash = hashText v.DisplayNameCoreMangled
+        let attribsHash = hashAttributeList g v.Attribs
 
-            | SynMemberKind.ClassConstructor
-            | SynMemberKind.Constructor ->
-                let prettyTyparInst, _, tauL = prettyLayoutOfMemberType (* denv *) vref typarInst argInfos retTy
-                let resL = 
-                    if short then tauL
-                    else
-                        let newL = hashAccessibility (* denv *) vref.Accessibility WordL.keywordNew
-                        stat ++ (newL |> addColonL) ^^ tauL
-                prettyTyparInst, resL
+        let combinedHash = memberFlagsHash @@ parentTypeHash @@ memberTypeHash @@ flagsHash @@ nameHash @@ attribsHash
 
-            | SynMemberKind.PropertyGetSet ->
-                emptyTyparInst, stat
+        hashAccessibility vref.Accessibility combinedHash
 
-            | SynMemberKind.PropertyGet ->
-                if isNil argInfos then
-                    // use error recovery because intellisense on an incomplete file will show this
-                    errorR(Error(FSComp.SR.tastInvalidFormForPropertyGetter(), vref.Id.idRange))
-                    let nameL = hashMemberName (* denv *) vref [] tagProperty vref.DisplayNameCoreMangled
-                    let resL =
-                        if short then nameL --- (WordL.keywordWith ^^ WordL.keywordGet)
-                        else stat --- nameL --- (WordL.keywordWith ^^ WordL.keywordGet)
-                    emptyTyparInst, resL
-                else
-                    let argInfos =
-                        match argInfos with
-                        | [[(ty, _)]] when isUnitTy (* denv *).g ty -> []
-                        | _ -> argInfos
-                    let prettyTyparInst, niceMethodTypars,tauL = prettyLayoutOfMemberType (* denv *) vref typarInst argInfos retTy
-                    let resL =
-                        if short then
-                            if isNil argInfos then tauL
-                            else tauL --- (WordL.keywordWith ^^ WordL.keywordGet)
-                        else
-                            let nameL = hashMemberName (* denv *) vref niceMethodTypars tagProperty vref.DisplayNameCoreMangled
-                            stat --- ((nameL  |> addColonL) ^^ (if isNil argInfos then tauL else tauL --- (WordL.keywordWith ^^ WordL.keywordGet)))
-                    prettyTyparInst, resL
-
-            | SynMemberKind.PropertySet ->
-                if argInfos.Length <> 1 || isNil argInfos.Head then
-                    // use error recovery because intellisense on an incomplete file will show this
-                    errorR(Error(FSComp.SR.tastInvalidFormForPropertySetter(), vref.Id.idRange))
-                    let nameL = hashMemberName (* denv *) vref [] tagProperty vref.DisplayNameCoreMangled
-                    let resL = stat --- nameL --- (WordL.keywordWith ^^ WordL.keywordSet)
-                    emptyTyparInst, resL
-                else
-                    let argInfos, valueInfo = List.frontAndBack argInfos.Head
-                    let prettyTyparInst, niceMethodTypars, tauL = prettyLayoutOfMemberType (* denv *) vref typarInst (if isNil argInfos then [] else [argInfos]) (fst valueInfo)
-                    let resL =
-                        if short then
-                            (tauL --- (WordL.keywordWith ^^ WordL.keywordSet))
-                        else
-                            let nameL = hashMemberName (* denv *) vref niceMethodTypars tagProperty vref.DisplayNameCoreMangled
-                            stat --- ((nameL |> addColonL) ^^ (tauL --- (WordL.keywordWith ^^ WordL.keywordSet)))
-                    prettyTyparInst, resL
-
-        prettyTyparInst, memberL
-
-    let prettyLayoutOfMember (* denv *) typarInst (v:Val) = prettyLayoutOfMemberShortOption (* denv *) typarInst v false
-
-    let prettyLayoutOfMemberNoInstShort (* denv *) v = 
-        prettyLayoutOfMemberShortOption (* denv *) emptyTyparInst v true |> snd
-
-    let hashOfLiteralValue literalValue =
-        let literalValue =
-            match literalValue with
-            | Const.Bool value -> if value then WordL.keywordTrue else WordL.keywordFalse
-            | Const.SByte _
-            | Const.Byte _
-            | Const.Int16 _
-            | Const.UInt16 _
-            | Const.Int32 _
-            | Const.UInt32 _
-            | Const.Int64 _
-            | Const.UInt64 _
-            | Const.IntPtr _
-            | Const.UIntPtr _
-            | Const.Single _
-            | Const.Double _
-            | Const.Decimal _ -> literalValue.ToString() |> tagNumericLiteral |> hashText
-            | Const.Char _
-            | Const.String _ -> literalValue.ToString() |> tagStringLiteral |> hashText
-            | Const.Unit
-            | Const.Zero -> literalValue.ToString() |> tagText |> hashText
-        WordL.equals ++ literalValue
-
-    let hashNonMemberVal (* denv *) (tps, v: Val, tau, cxs) =
-        let env = SimplifyTypes.CollectInfo true [tau] cxs
-        let cxs = env.postfixConstraints
+    let hashNonMemberVal (g:TcGlobals) (tps, v: Val, tau, cxs) =
         let valReprInfo = arityOfValForDisplay v
-        let argInfos, retTy = GetTopTauTypeInFSharpForm (* denv *).g valReprInfo.ArgInfos tau v.Range
-        let nameL =
 
-            let tagF =
-                if isForallFunctionTy (* denv *).g v.Type && not (isDiscard v.DisplayNameCore) then
-                    if IsOperatorDisplayName v.DisplayName then
-                        tagOperator
-                    else
-                        tagFunction
-                elif not v.IsCompiledAsTopLevel && not(isDiscard v.DisplayNameCore) then
-                    tagLocal
-                elif v.IsModuleBinding then
-                    tagModuleBinding
-                else
-                    tagUnknownEntity
+        let nameHash = hashText v.DisplayNameCoreMangled
+        let typarHash = hashTyparDecls g tps
+        let argInfos, retTy = GetTopTauTypeInFSharpForm g valReprInfo.ArgInfos tau v.Range
+        let typeHash = hashTopType g argInfos retTy cxs
+        let flagsHash = hash v.val_flags.PickledBits
+        let attribsHash = hashAttributeList g v.Attribs
 
-            v.DisplayName
-            |> tagF
-            |> mkNav v.DefinitionRange
-            |> hashText 
-        let nameL = hashAccessibility (* denv *) v.Accessibility nameL
-        let nameL = 
-            if v.IsMutable && not (* denv *).suppressMutableKeyword then 
-                hashText ((* string to tag was here *) "mutable") ++ nameL 
-                else 
-                    nameL
-        let nameL = mkInlineL (* denv *) v nameL
+        let combinedHash = nameHash @@ typarHash @@ typeHash @@ flagsHash @@ attribsHash
 
-        let isOverGeneric = List.length (Zset.elements (freeInType CollectTyparsNoCaching tau).FreeTypars) < List.length tps // Bug: 1143 
-        let isTyFunction = v.IsTypeFunction // Bug: 1143, and innerpoly tests 
-        let typarBindingsL = 
-            if isTyFunction || isOverGeneric || true then 
-                hashTyparDecls (* denv *) nameL true tps 
-            else nameL
-        let valAndTypeL = (WordL.keywordVal ^^ (typarBindingsL |> addColonL)) --- hashTopType (* denv *) env argInfos retTy cxs
-        let valAndTypeL =
-            match (* denv *).generatedValueLayout v with
-            | None -> valAndTypeL
-            | Some rhsL -> (valAndTypeL ++ WordL.equals) --- rhsL
-        match v.LiteralValue with
-        | Some literalValue -> valAndTypeL --- hashOfLiteralValue literalValue
-        | None -> valAndTypeL
+        hashAccessibility v.Accessibility combinedHash
 
-    let prettyLayoutOfValOrMember (* denv *) infoReader typarInst (vref: ValRef) =
-        let prettyTyparInst, valL =
-            match vref.MemberInfo with 
-            | None ->
-                let tps, tau = vref.GeneralizedType
 
-                // adjust the type in case this is the 'this' pointer stored in a reference cell
-                let tau = StripSelfRefCell((* denv *).g, vref.BaseOrThisInfo, tau)
-
-                let (prettyTyparInst, prettyTypars, prettyTauTy), cxs = PrettyTypes.PrettifyInstAndTyparsAndType (* denv *).g (typarInst, tps, tau)
-                let resL = hashNonMemberVal (* denv *) (prettyTypars, vref.Deref, prettyTauTy, cxs)
-                prettyTyparInst, resL
-            | Some _ -> 
-                prettyLayoutOfMember (* denv *) typarInst vref.Deref
-
-        let valL =
-            valL
-            |> hashAttribs (* denv *) None vref.LiteralValue.IsSome TyparKind.Type vref.Attribs     
-
-        prettyTyparInst, valL
-
-    let prettyLayoutOfValOrMemberNoInst (* denv *) infoReader v =
-        prettyLayoutOfValOrMember (* denv *) infoReader emptyTyparInst v |> snd
+    let hashValOrMemberNoInst (g:TcGlobals) (vref: ValRef) =
+        match vref.MemberInfo with 
+        | None ->
+            let tps, tau = vref.GeneralizedType
+            // adjust the type in case this is the 'this' pointer stored in a reference cell
+            let tau = StripSelfRefCell(g, vref.BaseOrThisInfo, tau)
+            let (_prettyTyparInst, prettyTypars, prettyTauTy), cxs = PrettyTypes.PrettifyInstAndTyparsAndType g (emptyTyparInst, tps, tau)
+            hashNonMemberVal g (tps, vref.Deref, prettyTauTy, cxs)               
+        | Some _ -> 
+            hashMember g emptyTyparInst vref.Deref
 
 //-------------------------------------------------------------------------
 
@@ -702,7 +434,7 @@ module InfoMemberPrinting =
 
         match minfo.ArbitraryValRef with
         | Some vref ->
-            PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst (* denv *) infoReader vref
+            PrintTastMemberOrVals.hashValOrMemberNoInst (* denv *) infoReader vref
         | None ->
             let hash = 
                 if not minfo.IsConstructor && not minfo.IsInstance then WordL.keywordStatic
@@ -756,7 +488,7 @@ module TashDefinitionHashes =
               | Some(_, memberParentTypars, _, _, _) -> memberParentTypars
               | None -> []
         let lhsL = WordL.keywordType ^^ hashTyparDecls (* denv *) nameL tycon.IsPrefixDisplay tps
-        let memberL = PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst (* denv *) infoReader vref
+        let memberL = PrintTastMemberOrVals.hashValOrMemberNoInst (* denv *) infoReader vref
         (lhsL ^^ WordL.keywordWith) @@* memberL
 
     let hashExtensionMembers (* denv *) infoReader vs =
@@ -857,7 +589,7 @@ module TashDefinitionHashes =
 
         match pinfo.ArbitraryValRef with
         | Some vref ->
-            let propL = PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst (* denv *) infoReader vref
+            let propL = PrintTastMemberOrVals.hashValOrMemberNoInst (* denv *) infoReader vref
             if pinfo.HasGetter && pinfo.HasSetter && not pinfo.IsIndexer && isPublicGetterSetter pinfo.GetterMethod pinfo.SetterMethod then
                 propL ^^ hashText ((* string to tag was here *) "with") ^^ hashText (tagText "get, set")
             else
@@ -1327,7 +1059,7 @@ let calculateHashOfImpliedSignature (infoReader:InfoReader) (ad:AccessorDomain) 
                 |> valsOfBinds 
                 |> List.filter filterVal
                 |> List.map mkLocalValRef
-                |> List.map (PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst (* denv *) infoReader)
+                |> List.map (PrintTastMemberOrVals.hashValOrMemberNoInst (* denv *) infoReader)
                 |> combineHashes) @@
 
             (mbinds 
@@ -1339,7 +1071,7 @@ let calculateHashOfImpliedSignature (infoReader:InfoReader) (ad:AccessorDomain) 
             ([bind.Var] 
                 |> List.filter filterVal 
                 |> List.map mkLocalValRef
-                |> List.map (PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst (* denv *) infoReader) 
+                |> List.map (PrintTastMemberOrVals.hashValOrMemberNoInst (* denv *) infoReader) 
                 |> combineHashes)
 
         | TMDefOpens _ -> 0 (* empty hash *)
