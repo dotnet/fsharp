@@ -402,7 +402,7 @@ module InfoMemberPrinting =
         | Some vref ->
             HashTastMemberOrVals.hashValOrMemberNoInst g vref
         | None ->
-            -1
+            minfo.ComputeHashCode()
 
 //-------------------------------------------------------------------------
 
@@ -458,25 +458,15 @@ module TashDefinitionHashes =
         |> pipeToHash nameHash
         |> pipeToHash attribHash
 
-    let hashUnionCases  (g:TcGlobals)  ucases =
+    let hashUnionCases (g:TcGlobals)  ucases =
         ucases
         |> hashAllVia (hashUnionCase g)
-
       
-    let hashILFieldInfo (* denv *) (infoReader: InfoReader) m (finfo: ILFieldInfo) =
-        let staticL = if finfo.IsStatic then WordL.keywordStatic else 0 (* empty hash *)
-        let nameL = ConvertLogicalNameToDisplayLayout (tagField >> hashText) finfo.FieldName
-        let typL = hashType (* denv *) (finfo.FieldType(infoReader.amap, m))
-        let fieldL = staticL ^^ WordL.keywordVal ^^ (nameL |> addColonL) ^^ typL
-        fieldL
+    let hashILFieldInfo (finfo: ILFieldInfo) =
+        finfo.ComputeHashCode()
 
-    let hashEventInfo (* denv *) (infoReader: InfoReader) m (einfo: EventInfo) =
-        let amap = infoReader.amap
-        let staticL = if einfo.IsStatic then WordL.keywordStatic else 0 (* empty hash *)
-        let nameL = ConvertValLogicalNameToDisplayLayout false (tagEvent >> tagNavArbValRef einfo.ArbitraryValRef >> hashText) einfo.EventName
-        let typL = hashType (* denv *) (einfo.GetDelegateType(amap, m))
-        let overallL = staticL ^^ WordL.keywordMember ^^ (nameL |> addColonL) ^^ typL
-        overallL
+    let hashEventInfo (einfo: EventInfo) =
+        einfo.ComputeHashCode()
 
     let hashPropInfo (* denv *) (infoReader: InfoReader) m (pinfo: PropInfo) =
         let amap = infoReader.amap
