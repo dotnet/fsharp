@@ -75,3 +75,20 @@ namespace Foo.Types
     val EndLine: int
 
     val EndColumn: int"""
+
+[<Fact>]
+let ``Type extension uses type parameters names from source`` () =
+    FSharp """
+module Extensions
+
+type List<'E> with
+
+    member this.X = this.Head
+"""
+    |> printSignatures
+    |> should equal
+        """
+module Extensions
+type List<'E> with
+
+  member X: 'E"""
