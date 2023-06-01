@@ -8,7 +8,7 @@ open FSharp.Test.Compiler
 module ArgumentNames =
 
     [<Fact>]
-    let ``Implied argument names are taken from the called method or constructor``() =
+    let ``Implied argument names are taken from method or constructor``() =
         FSharp """
 module ArgumentNames
 
@@ -46,7 +46,69 @@ let test2 = M.Open
 } """ ]
 
     [<Fact>]
-    let ``Implied argument names are taken from the called DU case constructor or exception``() =
+    let ``Implied argument names are taken from curried method``() =
+        FSharp """
+module ArgumentNames
+
+type M =
+    [<System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)>]
+    static member Write (fileName: string, offset: int) (data: byte[]) = ()
+
+let test1 = M.Write
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+        |> verifyIL ["""
+.method public static void  test1(string fileName,
+                                  int32 offset,
+                                  uint8[] data) cil managed
+{
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 02 00 00 00 01 00 00 00 00 00 ) 
+
+  .maxstack  8
+  IL_0000:  ldarg.0
+  IL_0001:  ldarg.1
+  IL_0002:  ldarg.2
+  IL_0003:  call       void ArgumentNames/M::Write(string,
+                                                   int32,
+                                                   uint8[])
+  IL_0008:  ret
+} """ ]
+
+    [<Fact>]
+    let ``Implied argument names are taken from C#-style extension method``() =
+        FSharp """
+module ArgumentNames
+
+open System.Runtime.CompilerServices
+
+[<Extension>]
+type Ext =
+    [<System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)>]
+    [<Extension>]
+    static member Print(x: int, yy: string) = printfn "%d%s" x yy
+
+let test1 = (3).Print
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+        |> verifyIL ["""
+        Invoke(string yy) cil managed
+{
+  
+  .maxstack  8
+  IL_0000:  ldc.i4.3
+  IL_0001:  ldarg.1
+  IL_0002:  call       void ArgumentNames/Ext::Print(int32,
+                                                     string)
+  IL_0007:  ldnull
+  IL_0008:  ret
+} """ ]
+
+    [<Fact>]
+    let ``Implied argument names are taken from DU case constructor or exception``() =
         FSharp """
 module ArgumentNames
 
