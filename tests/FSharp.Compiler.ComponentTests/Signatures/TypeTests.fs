@@ -92,3 +92,43 @@ module Extensions
 type List<'E> with
 
   member X: 'E"""
+
+[<Fact>]
+let ``Type extension with constraints uses type parameters names from source`` () =
+    FSharp """
+module Extensions
+
+type Map<'K, 'V when 'K: comparison> with
+
+    member m.X (t: 'T) (k: 'K) = Some k, ({| n = [|k|] |}, 0)
+"""
+    |> printSignatures
+    |> should equal
+        """
+module Extensions
+type Map<'K,'V when 'K: comparison> with
+
+  member X: t: 'T -> k: 'K -> 'K option * ({| n: 'K array |} * int) when 'K: comparison"""
+ 
+[<Fact>]
+let ``Type extension with lowercase type parameters names from source`` () =
+    FSharp """
+module Extensions
+
+open System.Collections.Concurrent
+
+type ConcurrentDictionary<'key, 'value> with
+
+  member x.TryFind key =
+    match x.TryGetValue key with
+    | true, value -> Some value
+    | _ -> None
+"""
+    |> printSignatures
+    |> should equal
+        """
+module Extensions
+type System.Collections.Concurrent.ConcurrentDictionary<'key,'value> with
+
+  member TryFind: key: 'key -> 'value option"""
+  
