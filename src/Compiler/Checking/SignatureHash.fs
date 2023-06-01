@@ -42,12 +42,19 @@ let inline combineHashes (hashes: Hash list) = (0,hashes) ||> List.fold (fun acc
 let inline hashAllVia func (items: 'T list) : Hash =
     let mutable acc = 0
     for i in items do
-        acc <- addToHash acc (func i)
+        let valHash = func i
+        // We are calling hashallVia for things like list of types, list of properties, list of fields etc. The ones which are visibility-hidden will return 0, and are ommited.
+        if valHash <> 0 then
+            acc <- addToHash acc valHash
     acc
+
 let inline hashArrayVia func (items: 'T[]) : Hash =
     let mutable acc = 0
     for i in items do
-        acc <- addToHash acc (func i)
+        let valHash = func i
+        // We are calling hashallVia for things like list of types, list of properties, list of fields etc. The ones which are visibility-hidden will return 0, and are ommited.
+        if valHash <> 0 then
+            acc <- addToHash acc valHash
     acc
 let (@@) (h1:Hash) (h2:Hash) = combineHash h1 h2
 let (^^) (h1:Hash) (h2:Hash) = combineHash h1 h2
@@ -340,7 +347,7 @@ module rec PrintTypes =
             hashUncurriedSig g typarInst argInfos retTy 
 
 /// Printing TAST objects
-module PrintTastMemberOrVals =
+module HashTastMemberOrVals =
     open PrintTypes 
 
     let hashMember (g:TcGlobals) typarInst (v: Val)  =
@@ -388,89 +395,14 @@ module PrintTastMemberOrVals =
 //-------------------------------------------------------------------------
 
 /// Printing info objects
-module InfoMemberPrinting = 
+module InfoMemberPrinting =         
 
-    /// Format the arguments of a method
-    let hashParamData (* denv *) (ParamData(isParamArray, _isInArg, _isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty)) =
-        let isOptArg = optArgInfo.IsOptional
-        // detect parameter type, if ptyOpt is None - this is .NET style optional argument
-        let ptyOpt = tryDestOptionTy (* denv *).g pty
-
-        match isParamArray, nmOpt, isOptArg with 
-        // Hash an optional argument 
-        | _, Some id, true -> 
-            let idL = ConvertValLogicalNameToDisplayLayout false (tagParameter >> rightL) id.idText
-            let pty = match ptyOpt with ValueSome x -> x | _ -> pty
-            LeftL.questionMark ^^
-            (idL |> addColonL) ^^
-            PrintTypes.hashType (* denv *) pty
-
-        // Hash an unnamed argument 
-        | _, None, _ -> 
-            PrintTypes.hashType (* denv *) pty
-
-        // Hash a named ParamArray argument 
-        | true, Some id, _ -> 
-            let idL = ConvertValLogicalNameToDisplayLayout false (tagParameter >> hashText) id.idText
-            hashBuiltinAttribute (* denv *) (* denv *).g.attrib_ParamArrayAttribute ^^
-            (idL  |> addColonL) ^^
-            PrintTypes.hashType (* denv *) pty
-
-        // Hash a named normal argument 
-        | false, Some id, _ -> 
-            let idL = ConvertValLogicalNameToDisplayLayout false (tagParameter >> hashText) id.idText
-            (idL  |> addColonL) ^^
-            PrintTypes.hashType (* denv *) pty
-
-        
-    /// Format a method info using "F# style".
-    //
-    // That is, this style:
-    //     new: argName1: argType1 * ... * argNameN: argTypeN -> retType
-    //     Method: argName1: argType1 * ... * argNameN: argTypeN -> retType
-    //
-    let hashMethInfoFSharpStyleCore (infoReader: InfoReader) m (* denv *) (minfo: MethInfo) minst =
-        let amap = infoReader.amap
-
+    let hashMethInfoFSharpStyle  (g:TcGlobals) (minfo: MethInfo) =
         match minfo.ArbitraryValRef with
         | Some vref ->
-            PrintTastMemberOrVals.hashValOrMemberNoInst (* denv *) infoReader vref
+            HashTastMemberOrVals.hashValOrMemberNoInst g vref
         | None ->
-            let hash = 
-                if not minfo.IsConstructor && not minfo.IsInstance then WordL.keywordStatic
-                else 0 (* empty hash *)
-
-            let nameL =
-                if minfo.IsConstructor then
-                    WordL.keywordNew
-                else
-                    let idL = ConvertValLogicalNameToDisplayLayout false (tagMethod >> tagNavArbValRef minfo.ArbitraryValRef >> hashText) minfo.LogicalName
-                    WordL.keywordMember ^^
-                    PrintTypes.hashTyparDecls (* denv *) idL true minfo.FormalMethodTypars
-
-            let hash = hash ^^ (nameL |> addColonL)        
-
-            let paramsL =
-                let paramDatas = minfo.GetParamDatas(amap, m, minst)
-                if List.forall isNil paramDatas then
-                    WordL.structUnit
-                else
-                    sepListL WordL.arrow (List.map ((List.map (hashParamData (* denv *))) >> sepListL WordL.star) paramDatas)
-
-            let hash = hash ^^ paramsL
-            
-            let retL =
-                let retTy = minfo.GetFSharpReturnType(amap, m, minst)
-                WordL.arrow ^^
-                PrintTypes.hashType (* denv *) retTy
-
-            hash ^^ retL 
-
-
-
-    /// Format a method to a hash (actually just containing a string) using "free style" (aka "standalone"). 
-    let hashMethInfoFSharpStyle amap m (* denv *) (minfo: MethInfo) =
-        hashMethInfoFSharpStyleCore amap m (* denv *) minfo minfo.FormalMethodInst
+            -1
 
 //-------------------------------------------------------------------------
 
@@ -478,90 +410,58 @@ module InfoMemberPrinting =
 module TashDefinitionHashes = 
     open PrintTypes
 
-    let hashExtensionMember (* denv *) infoReader (vref: ValRef) =
-        let (@@*) = if true then (@@----) else (@@--)
-        let tycon = vref.MemberApparentEntity.Deref
-        let nameL = hashTyconRefImpl false (* denv *) vref.MemberApparentEntity
-        let nameL = hashAccessibility (* denv *) tycon.Accessibility nameL // "type-accessibility"
-        let tps =
-            match PartitionValTyparsForApparentEnclosingType (* denv *).g vref.Deref with
-              | Some(_, memberParentTypars, _, _, _) -> memberParentTypars
-              | None -> []
-        let lhsL = WordL.keywordType ^^ hashTyparDecls (* denv *) nameL tycon.IsPrefixDisplay tps
-        let memberL = PrintTastMemberOrVals.hashValOrMemberNoInst (* denv *) infoReader vref
-        (lhsL ^^ WordL.keywordWith) @@* memberL
+    let hashExtensionMember (g:TcGlobals) (vref: ValRef) =
+        HashTastMemberOrVals.hashValOrMemberNoInst g vref
 
-    let hashExtensionMembers (* denv *) infoReader vs =
-        combineHashes (List.map (hashExtensionMember (* denv *) infoReader) vs) 
+    let hashExtensionMembers (g:TcGlobals) vs =
+        vs 
+        |> hashAllVia (hashExtensionMember g)      
 
-    let hashRecdField prefix isClassDecl (* denv *) infoReader (enclosingTcref: TyconRef) (fld: RecdField) =
-        let lhs = ConvertLogicalNameToDisplayLayout (tagRecordField >> mkNav fld.DefinitionRange >> hashText) fld.DisplayNameCore
-        let lhs = (if isClassDecl then hashAccessibility (* denv *) fld.Accessibility lhs else lhs)
-        let lhs = if fld.IsMutable then hashText ((* string to tag was here *) "mutable") --- lhs else lhs
-        let fieldL =
-            let rhs =
-                match stripTyparEqns fld.FormalType with
-                | TType_fun _ -> LeftL.leftParen ^^ hashType (* denv *) fld.FormalType ^^ RightL.rightParen
-                | _ -> hashType (* denv *) fld.FormalType
-            
-            (lhs |> addColonL) --- rhs
-        let fieldL = prefix fieldL
-        let fieldL = fieldL |> hashAttribs (* denv *) None false TyparKind.Type (fld.FieldAttribs @ fld.PropertyAttribs)
+    let hashRecdField (g:TcGlobals) (fld: RecdField) =
+        let nameHash = hashText fld.DisplayNameCore
+        let attribHash = hashAttributeList g  fld.FieldAttribs @@ hashAttributeList g fld.PropertyAttribs
+        let typeHash = hashTType g fld.FormalType
 
-        // The enclosing TyconRef might be a union and we can only get fields from union cases, so we need ignore unions here.
-        fieldL
+        let combined = nameHash @@ attribHash @@ typeHash @@ (hash fld.IsStatic) @@ (hash fld.IsVolatile) @@ (hash fld.IsMutable)        
 
-    let hashUnionOrExceptionField (* denv *) infoReader isGenerated enclosingTcref i (fld: RecdField) =
-        if isGenerated i fld then
-            hashTType (* denv *) SimplifyTypes.typeSimplificationInfo0 2 fld.FormalType
-        else
-            hashRecdField id false (* denv *) infoReader enclosingTcref fld
+        hashAccessibility fld.Accessibility combined
+
+
+    //let hashUnionOrExceptionField (g:TcGlobals) infoReader isGenerated enclosingTcref i (fld: RecdField) =
+        
+    //    if isGenerated i fld then
+    //        hashTType (* denv *) SimplifyTypes.typeSimplificationInfo0 2 fld.FormalType
+    //    else
+    //        hashRecdField id false (* denv *) infoReader enclosingTcref fld
     
-    let isGeneratedUnionCaseField pos (f: RecdField) = 
-        if pos < 0 then f.LogicalName = "Item"
-        else f.LogicalName = "Item" + string (pos + 1)
+    //let isGeneratedUnionCaseField pos (f: RecdField) = 
+    //    if pos < 0 then f.LogicalName = "Item"
+    //    else f.LogicalName = "Item" + string (pos + 1)
 
-    let isGeneratedExceptionField pos (f: RecdField) = 
-        f.LogicalName = "Data" + (string pos)
+    //let isGeneratedExceptionField pos (f: RecdField) = 
+    //    f.LogicalName = "Data" + (string pos)
 
-    let hashUnionCaseFields (* denv *) infoReader isUnionCase enclosingTcref fields = 
-        match fields with
-        | [f] when isUnionCase ->
-            hashUnionOrExceptionField (* denv *) infoReader isGeneratedUnionCaseField enclosingTcref -1 f
-        | _ -> 
-            let isGenerated = if isUnionCase then isGeneratedUnionCaseField else isGeneratedExceptionField
-            sepListL WordL.star (List.mapi (hashUnionOrExceptionField (* denv *) infoReader isGenerated enclosingTcref) fields)
+    //let hashUnionCaseFields (* denv *) infoReader isUnionCase enclosingTcref fields = 
+    //    match fields with
+    //    | [f] when isUnionCase ->
+    //        hashUnionOrExceptionField (* denv *) infoReader isGeneratedUnionCaseField enclosingTcref -1 f
+    //    | _ -> 
+    //        let isGenerated = if isUnionCase then isGeneratedUnionCaseField else isGeneratedExceptionField
+    //        sepListL WordL.star (List.mapi (hashUnionOrExceptionField (* denv *) infoReader isGenerated enclosingTcref) fields)
 
-    let hashUnionCase (* denv *) infoReader prefixL enclosingTcref (ucase: UnionCase) =
-        let nmL = ConvertLogicalNameToDisplayLayout (tagUnionCase >> mkNav ucase.DefinitionRange >> hashText) ucase.Id.idText
-        //let nmL = hashAccessibility (* denv *) ucase.Accessibility nmL
-        let caseL =
-            match ucase.RecdFields with
-            | []     -> (prefixL ^^ nmL)
-            | fields -> (prefixL ^^ nmL ^^ WordL.keywordOf) --- hashUnionCaseFields (* denv *) infoReader true enclosingTcref fields
-        caseL
+    let hashUnionCase (g:TcGlobals) (ucase: UnionCase) =
+        let nameHash = hashText ucase.Id.idText
+        let attribHash = hashAttributeList g ucase.Attribs
 
-    let hashUnionCases (* denv *) infoReader enclosingTcref ucases =
-        let prefixL = WordL.bar // See bug://2964 - always prefix in case preceded by accessibility modifier
-        List.map (hashUnionCase (* denv *) infoReader prefixL enclosingTcref) ucases
+        ucase.RecdFieldsArray
+        |> hashArrayVia (fun rf -> hashRecdField g rf)
+        |> pipeToHash nameHash
+        |> pipeToHash attribHash
 
-    /// When to force a break? "type tyname = <HERE> repn"
-    /// When repn is class or datatype constructors (not single one).
-    let breakTypeDefnEqn repr =
-        match repr with 
-        | TILObjectRepr _ -> true
-        | TFSharpObjectRepr _ -> true
-        | TFSharpRecdRepr _ -> true
-        | TFSharpUnionRepr r ->
-             not (isNilOrSingleton r.CasesTable.UnionCasesAsList) ||
-             r.CasesTable.UnionCasesAsList |> List.exists (fun uc -> not uc.XmlDoc.IsEmpty)
-        | TAsmRepr _ 
-        | TMeasureableRepr _ 
-#if !NO_TYPEPROVIDERS
-        | TProvidedTypeRepr _
-        | TProvidedNamespaceRepr _
-#endif
-        | TNoRepr -> false
+    let hashUnionCases  (g:TcGlobals)  ucases =
+        ucases
+        |> hashAllVia (hashUnionCase g)
+
       
     let hashILFieldInfo (* denv *) (infoReader: InfoReader) m (finfo: ILFieldInfo) =
         let staticL = if finfo.IsStatic then WordL.keywordStatic else 0 (* empty hash *)
@@ -589,7 +489,7 @@ module TashDefinitionHashes =
 
         match pinfo.ArbitraryValRef with
         | Some vref ->
-            let propL = PrintTastMemberOrVals.hashValOrMemberNoInst (* denv *) infoReader vref
+            let propL = HashTastMemberOrVals.hashValOrMemberNoInst (* denv *) infoReader vref
             if pinfo.HasGetter && pinfo.HasSetter && not pinfo.IsIndexer && isPublicGetterSetter pinfo.GetterMethod pinfo.SetterMethod then
                 propL ^^ hashText ((* string to tag was here *) "with") ^^ hashText (tagText "get, set")
             else
@@ -1059,7 +959,7 @@ let calculateHashOfImpliedSignature (infoReader:InfoReader) (ad:AccessorDomain) 
                 |> valsOfBinds 
                 |> List.filter filterVal
                 |> List.map mkLocalValRef
-                |> List.map (PrintTastMemberOrVals.hashValOrMemberNoInst (* denv *) infoReader)
+                |> List.map (HashTastMemberOrVals.hashValOrMemberNoInst (* denv *) infoReader)
                 |> combineHashes) @@
 
             (mbinds 
@@ -1071,7 +971,7 @@ let calculateHashOfImpliedSignature (infoReader:InfoReader) (ad:AccessorDomain) 
             ([bind.Var] 
                 |> List.filter filterVal 
                 |> List.map mkLocalValRef
-                |> List.map (PrintTastMemberOrVals.hashValOrMemberNoInst (* denv *) infoReader) 
+                |> List.map (HashTastMemberOrVals.hashValOrMemberNoInst (* denv *) infoReader) 
                 |> combineHashes)
 
         | TMDefOpens _ -> 0 (* empty hash *)
