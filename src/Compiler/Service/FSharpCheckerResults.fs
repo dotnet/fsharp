@@ -2826,13 +2826,9 @@ type FSharpCheckFileResults
         | None -> emptyFindDeclResult
         | Some (scope, _builderOpt) -> scope.GetDeclarationLocation(line, lineText, colAtEndOfNames, names, preferFlag)
 
-    member _.GetSymbolUseAtLocation(line, colAtEndOfNames, lineText, names) =
-        match details with
-        | None -> None
-        | Some (scope, _builderOpt) ->
-            scope.GetSymbolUseAtLocation(line, lineText, colAtEndOfNames, names)
-            |> Option.map (fun (sym, itemWithInst, denv, m) ->
-                FSharpSymbolUse(denv, sym, itemWithInst.TyparInstantiation, ItemOccurence.Use, m))
+    member this.GetSymbolUseAtLocation(line, colAtEndOfNames, lineText, names) =
+        this.GetSymbolUsesAtLocation(line, colAtEndOfNames, lineText, names)
+        |> List.tryHead
 
     member _.GetSymbolUsesAtLocation(line, colAtEndOfNames, lineText, names) =
         match details with
