@@ -6,9 +6,7 @@ open System
 open System.Collections.Generic
 open System.IO
 open System.Text
-open System.Threading
 open System.Threading.Tasks
-open System.Runtime.InteropServices
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 
@@ -381,48 +379,6 @@ type Dumper(x:obj) =
      [<DebuggerBrowsable(DebuggerBrowsableState.Collapsed)>]
      member self.Dump = sprintf "%A" x
 #endif
-//---------------------------------------------------------------------------
-// EnableHeapTerminationOnCorruption()
-//---------------------------------------------------------------------------
-
-// USAGE: call UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption() from "main()".
-// Note: This is not SDL required but recommended.
-module UnmanagedProcessExecutionOptions =
-
-    [<DllImport("kernel32.dll")>]
-    extern UIntPtr private GetProcessHeap()
-
-    [<DllImport("kernel32.dll")>]
-    extern bool private HeapSetInformation(
-        UIntPtr _HeapHandle,
-        UInt32 _HeapInformationClass,
-        UIntPtr _HeapInformation,
-        UIntPtr _HeapInformationLength)
-
-    [<DllImport("kernel32.dll")>]
-    extern UInt32 private GetLastError()
-
-    // Translation of C# from http://swikb/v1/DisplayOnlineDoc.aspx?entryID=826 and copy in bug://5018
-    [<System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.Assert, UnmanagedCode = true)>]
-    let EnableHeapTerminationOnCorruption() =
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) &&  Environment.OSVersion.Version.Major >= 6 && // If OS is Vista or higher
-            Environment.Version.Major < 3) then // and CLR not 3.0 or higher
-            // "The flag HeapSetInformation sets is available in Windows XP SP3 and later.
-            //  The data structure used for heap information is available on earlier versions of Windows.
-            //  The call will either return TRUE (found and set the flag) or false (flag not found).
-            //  Not a problem in native code, so the program will merrily continue running.
-            //  In managed code, the call to HeapSetInformation is a p/invoke.
-            //  If HeapSetInformation returns FALSE then an exception will be thrown.
-            //  If we are not running an OS which supports this (XP SP3, Vista, Server 2008, and Win7)
-            //  then the call should not be made." -- see bug://5018.
-            // See also:
-            //  http://blogs.msdn.com/michael_howard/archive/2008/02/18/faq-about-heapsetinformation-in-windows-vista-and-heap-based-buffer-overruns.aspx
-            let HeapEnableTerminationOnCorruption = 1u : uint32
-            if not (HeapSetInformation(GetProcessHeap(), HeapEnableTerminationOnCorruption, UIntPtr.Zero, UIntPtr.Zero)) then
-                  raise (System.Security.SecurityException(
-                            "Unable to enable unmanaged process execution option TerminationOnCorruption. " +
-                            "HeapSetInformation() returned FALSE; LastError = 0x" +
-                            GetLastError().ToString("X").PadLeft(8, '0') + "."))
 
 [<RequireQualifiedAccess>]
 type MaybeLazy<'T> =
