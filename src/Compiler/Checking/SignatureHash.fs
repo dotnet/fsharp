@@ -82,7 +82,7 @@ module internal HashUtilities =
             elif xref.IsRecordTycon then TextTag.Record
             else TextTag.Class
 
-        combineHash (hash tag) (hash name)
+        combineHash (hash tag) (hashText name)
 
     let hashTyconRefImpl (g:TcGlobals) (tcref: TyconRef) =
         let demangled = tcref.DisplayNameWithStaticParameters
@@ -110,7 +110,7 @@ module HashIL =
         | ILType.Ptr t
         | ILType.Byref t -> hashILType   t
         | ILType.FunctionPointer t -> hashILCallingSignature t
-        | ILType.TypeVar n -> n 
+        | ILType.TypeVar n -> hash n 
         | ILType.Modified (_, _, t) -> hashILType  t
 
     and hashILCallingSignature   (signature: ILCallingSignature) =       
@@ -480,51 +480,17 @@ module TashDefinitionHashes =
             | None ->
                 pinfo.ComputeHashCode()
 
-    let hashTyconDefn ((* denv *): DisplayEnv) (infoReader: InfoReader) ad m simplified isFirstType (tcref: TyconRef) =        
-        let g = (* denv *).g
-        // use 4-indent 
-        let (-*) = if true then (-----) else (---)
-        let (@@*) = if true then (@@----) else (@@--)
-        let amap = infoReader.amap
+                // (* ((* denv : DisplayEnv) (infoReader: InfoReader) ad m simplified isFirstType *)
+    let hashTyconDefn (g:TcGlobals)   (tcref: TyconRef) =  
         let tycon = tcref.Deref
         let repr = tycon.TypeReprInfo
-        let isMeasure = (tycon.TypeOrMeasureKind = TyparKind.Measure)
-        let ty = generalizedTyconRef g tcref 
 
-        let start, tagger =
-            if isStructTy g ty && not tycon.TypeAbbrev.IsSome then
-                // Always show [<Struct>] whether verbose or not
-                Some "struct", tagStruct
-            elif isInterfaceTy g ty then
-                if true then
-                    Some "interface", tagInterface
-                else
-                    None, tagInterface
-            elif isMeasure then
-                None, tagClass
-            elif isClassTy g ty then
-                if true then
-                    (if simplified then None else Some "class"), tagClass
-                else
-                    None, tagClass
-            else
-                None, tagUnknownType
+        let tyconHash = PrintTypes.hashTyconRef g tcref
+        let attribHash = hashAttributeList tcref.Attribs
+        let typarsHash = hashTyparDecls g tycon.TyparsNoRange
 
-        let typehashText =
-            if isFirstType then
-                WordL.keywordType
-            else
-                hashText ((* string to tag was here *) "and") ^^ hashAttribs (* denv *) start false tycon.TypeOrMeasureKind tycon.Attribs 0 (* empty hash *)
-
-        let nameL = ConvertLogicalNameToDisplayLayout (tagger >> mkNav tycon.DefinitionRange >> hashText) tycon.DisplayNameCore
-
-        let nameL = hashAccessibility (* denv *) tycon.Accessibility nameL
-        let (* denv *) = (* denv *).AddAccessibility tycon.Accessibility 
-
-        let lhsL =
-            let tps = tycon.TyparsNoRange
-            let tpsL = hashTyparDecls (* denv *) nameL tycon.IsPrefixDisplay tps
-            typehashText ^^ tpsL
+        let combined = tyconHash @@ attribHash @@ typarsHash
+        hashAccessibility tycon.Accessibility combined   
 
 
         let sortKey (minfo: MethInfo) = 
@@ -678,34 +644,12 @@ module TashDefinitionHashes =
 
         let inheritsL = 
             inherits
-            |> List.map (fun super -> hashText ((* string to tag was here *) "inherit") ^^ (hashType (* denv *) super))
+            |> hashAllVia (hashTType g)
+         
 
         let allDecls = inheritsL @ iimplsLs @ ctorLs @ instanceValLs @ methLs @ ilFieldsL @ propLs @ eventLs @ staticValLs @ nestedTypeLs
 
-        let needsStartEnd =
-            match start with 
-            | Some "class" ->
-                // 'inherits' is not enough for F# type kind inference to infer a class
-                // inherits.IsEmpty &&
-                ilFields.IsEmpty &&
-                // 'abstract' is not enough for F# type kind inference to infer a class by default in signatures
-                // 'static member' is surprisingly not enough for F# type kind inference to infer a class by default in signatures
-                // 'overrides' is surprisingly not enough for F# type kind inference to infer a class by default in signatures
-                //(meths |> List.forall (fun m -> m.IsAbstract || m.IsDefiniteFSharpOverride || not m.IsInstance)) &&
-                //(props |> List.forall (fun m -> (not m.HasGetter || m.GetterMethod.IsAbstract))) &&
-                //(props |> List.forall (fun m -> (not m.HasSetter || m.SetterMethod.IsAbstract))) &&
-                ctors.IsEmpty &&
-                instanceVals.IsEmpty &&
-                staticVals.IsEmpty
-            | Some "struct" -> 
-                true
-            | Some "interface" -> 
-                meths.IsEmpty &&
-                props.IsEmpty
-            | _ ->
-                false
 
-        let start = if needsStartEnd then start else None
         
         let addMaxMembers reprL =
             if isNil allDecls then
@@ -731,72 +675,27 @@ module TashDefinitionHashes =
 
             match repr with 
             | TFSharpRecdRepr _ ->
-                let (* denv *) = (* denv *).AddAccessibility tycon.TypeReprAccessibility 
+                tycon.AllFieldsArray
+                |> hashArrayVia (fun f -> hashRecdField g)
 
-                // For records, use multi-line hash as soon as there is XML doc 
-                //   type R =
-                //     { 
-                //         /// ABC
-                //         Field1: int 
-                //
-                //         /// ABC
-                //         Field2: int 
-                //     }
-                //
-                // For records, use multi-line hash as soon as there is more than one field
-                //   type R =
-                //     { 
-                //         Field1: int 
-                //         Field2: int 
-                //     }
-                let useMultiLine =
-                    let members =
-                        match (* denv *).maxMembers with 
-                        | None -> tycon.TrueFieldsAsList
-                        | Some n -> tycon.TrueFieldsAsList |> List.truncate n
-                    members.Length > 1 ||
-                    members |> List.exists (fun m -> not m.XmlDoc.IsEmpty)
-
-                tycon.TrueFieldsAsList
-                |> List.map (hashRecdField id false (* denv *) infoReader tcref)           
-                |> combineHashes
-                |> (if useMultiLine then braceMultiLineL else braceL)
-                |> addReprAccessRecord
-                |> addMaxMembers
-                |> addLhs
-
-            | TFSharpUnionRepr _ -> 
-                let (* denv *) = (* denv *).AddAccessibility tycon.TypeReprAccessibility 
-                tycon.UnionCasesAsList
-                |> hashUnionCases (* denv *) infoReader tcref           
-                |> combineHashes
-                |> addReprAccessL
-                |> addMaxMembers
-                |> addLhs
+            | TFSharpUnionRepr _ ->               
+                tycon.UnionCasesArray
+                |> hashArrayVia (fun uc -> hashUnionCase g)               
                   
             | TFSharpObjectRepr { fsobjmodel_kind = TFSharpDelegate slotSig } ->
                 let (TSlotSig(_, _, _, _, paraml, retTy)) = slotSig
-                let retTy = GetFSharpViewOfReturnType (* denv *).g retTy
-                let delegateL = WordL.keywordDelegate ^^ WordL.keywordOf -* hashTopType (* denv *) SimplifyTypes.typeSimplificationInfo0 (paraml |> List.mapSquared (fun sp -> (sp.Type, ValReprInfo.unnamedTopArg1))) retTy []
-                delegateL
-                |> addLhs
+
+                hashTType g (GetFSharpViewOfReturnType g retTy)
+                @@
+                (paraml |> hashAllVia (fun pl -> pl |> hashAllVia (fun sp -> hashTType g sp.Type)))               
 
             // Measure declarations are '[<Measure>] type kg' unless abbreviations
             | TFSharpObjectRepr _ when isMeasure ->
                 lhsL
 
             | TFSharpObjectRepr { fsobjmodel_kind = TFSharpEnum } ->
-                tycon.TrueFieldsAsList
-                |> List.map (fun f -> 
-                    match f.LiteralValue with 
-                    | None -> 0 (* empty hash *)
-                    | Some c ->
-                        WordL.bar ^^
-                        hashText (tagField f.DisplayName) ^^
-                        WordL.equals ^^ 
-                        hashConst (* denv *).g ty c)
-                |> combineHashes
-                |> addLhs
+                tycon.AllFieldsArray
+                |> hashArrayVia (fun f -> hashText f.DisplayNameCore)               
 
             | TFSharpObjectRepr objRepr when isNil allDecls ->
                 match objRepr.fsobjmodel_kind with
@@ -816,14 +715,11 @@ module TashDefinitionHashes =
                 |> combineHashes
                 |> addLhs
 
-            | TAsmRepr _ -> 
-                let asmL = hashText (tagText "(# \"<Common IL Type Omitted>\" #)")
-                asmL
-                |> addLhs
+            | TAsmRepr ilType -> 
+                HashIL.hashILType ilType               
 
             | TMeasureableRepr ty ->
-                hashType (* denv *) ty
-                |> addLhs
+                hashTType g ty               
 
             | TILObjectRepr _ when tycon.ILTyconRawMetadata.IsEnum ->
                 infoReader.GetILFieldInfosOfType (None, ad, m, ty) 
