@@ -2660,7 +2660,7 @@ let stringOfFSAttrib denv x = x |> PrintTypes.layoutAttrib denv |> squareAngleL 
 
 let stringOfILAttrib denv x = x |> PrintTypes.layoutILAttrib denv |> squareAngleL |> showL
 
-let fqnOfEntityRef g x = x |> layoutTyconRefImpl false (DisplayEnv.Empty g) |> showL
+let fqnOfEntityRef g x = layoutTyconRefImpl false (DisplayEnv.Empty g) x None |> showL
 
 let layoutImpliedSignatureOfModuleOrNamespace showHeader denv infoReader ad m contents =
     InferredSigPrinting.layoutImpliedSignatureOfModuleOrNamespace showHeader denv infoReader ad m contents 
