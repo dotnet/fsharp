@@ -61,13 +61,9 @@ let (^^) (h1:Hash) (h2:Hash) = combineHash h1 h2
 
 
 [<AutoOpen>]
-module internal HashUtilities =   
- 
-    let hashCurriedFunc (argTysL: Hash list) (retTyL: Hash) =
-        combineHashes argTysL
-        |> pipeToHash retTyL
+module internal HashUtilities =  
     
-    let hashEntityRefName (g:TcGlobals) (xref: EntityRef) name =    
+    let private hashEntityRefName (g:TcGlobals) (xref: EntityRef) name =    
         let tag = 
             if xref.IsNamespace then TextTag.Namespace
             elif xref.IsModule then TextTag.Module
@@ -88,7 +84,6 @@ module internal HashUtilities =
 
         combineHash (hash tag) (hash name)
 
-
     let hashTyconRefImpl (g:TcGlobals) (tcref: TyconRef) =
         let demangled = tcref.DisplayNameWithStaticParameters
         let tyconHash = hashEntityRefName g tcref demangled
@@ -96,37 +91,32 @@ module internal HashUtilities =
         tcref.CompilationPath.AccessPath
         |> hashAllVia (fst >> hashText) 
         |> pipeToHash tyconHash
-
-
-    let hashBuiltinAttribute g (attrib: BuiltinAttribInfo) = hashTyconRefImpl g attrib.TyconRef
         
 module HashIL = 
 
-    let hashILTypeRef (tref: ILTypeRef) =
+    let private hashILTypeRef (tref: ILTypeRef) =
         tref.Enclosing
         |> hashAllVia hashText      
         |> hashAndAdd tref.Name
 
-    let hashILArrayShape ( sh:ILArrayShape) = sh.Rank  
-
-    let paramsL (ps: Hash list) : Hash = ps |> combineHashes 
+    let private hashILArrayShape ( sh:ILArrayShape) = sh.Rank  
  
-    let rec hashILType (ilTyparSubst: Hash list) (ty: ILType) : Hash =
+    let rec hashILType (ty: ILType) : Hash =
         match ty with
         | ILType.Void -> hash ILType.Void
-        | ILType.Array (sh, t) -> hashILType ilTyparSubst t ^^ hashILArrayShape sh
+        | ILType.Array (sh, t) -> hashILType  t ^^ hashILArrayShape sh
         | ILType.Value t
-        | ILType.Boxed t -> hashILTypeRef  t.TypeRef ^^ (t.GenericArgs |> hashAllVia (hashILType ilTyparSubst))
+        | ILType.Boxed t -> hashILTypeRef  t.TypeRef ^^ (t.GenericArgs |> hashAllVia (hashILType ))
         | ILType.Ptr t
-        | ILType.Byref t -> hashILType  ilTyparSubst t
-        | ILType.FunctionPointer t -> hashILCallingSignature ilTyparSubst None t
-        | ILType.TypeVar n -> List.item (int n) ilTyparSubst
-        | ILType.Modified (_, _, t) -> hashILType ilTyparSubst t
+        | ILType.Byref t -> hashILType   t
+        | ILType.FunctionPointer t -> hashILCallingSignature t
+        | ILType.TypeVar n -> n 
+        | ILType.Modified (_, _, t) -> hashILType  t
 
-    and hashILCallingSignature (* denv *) ilTyparSubst cons (signature: ILCallingSignature) =       
-        let res = signature.ReturnType |> hashILType  ilTyparSubst   
+    and hashILCallingSignature   (signature: ILCallingSignature) =       
+        let res = signature.ReturnType |> hashILType     
         signature.ArgTypes
-        |> hashAllVia (hashILType ilTyparSubst) 
+        |> hashAllVia (hashILType ) 
         |> addToHash res
 
 module rec PrintTypes = 
@@ -153,7 +143,7 @@ module rec PrintTypes =
         hashTyconRefImpl g tcref
 
 
-    let hashILAttrib (ty, args) = HashIL.hashILType [] ty
+    let hashILAttrib (ty, args) = HashIL.hashILType  ty
    
     let hashAttribs (g:TcGlobals) startOpt isLiteral kind attrs restL = 
         let mutable acc = 0
@@ -226,7 +216,7 @@ module rec PrintTypes =
        
 
     /// Hash a unit of measure expression 
-    let hashMeasure unt =
+    let private hashMeasure unt =
         let measuresWithExponents = ListMeasureVarOccsWithNonZeroExponents unt |> List.sortBy (fun (tp: Typar, _) -> tp.DisplayName) 
         measuresWithExponents
         |> hashAllVia (fun (typar,exp: Rational) -> hashTyparRef typar @@ hash exp)
@@ -462,40 +452,33 @@ module TashDefinitionHashes =
         ucases
         |> hashAllVia (hashUnionCase g)
       
-    let hashILFieldInfo (finfo: ILFieldInfo) =
-        finfo.ComputeHashCode()
+    let hashILFieldInfo (finfo: ILFieldInfo) =    
+        finfo.ComputeHashCode() @@ HashIL.hashILType  finfo.ILFieldType
 
-    let hashEventInfo (einfo: EventInfo) =
-        einfo.ComputeHashCode()
+    let hashEventInfo (g:TcGlobals) (einfo: EventInfo) =
+        einfo.ComputeHashCode() @@
+        ( match einfo.ArbitraryValRef with | Some vref -> HashTastMemberOrVals.hashValOrMemberNoInst g vref | _ -> -1)
 
-    let hashPropInfo (* denv *) (infoReader: InfoReader) m (pinfo: PropInfo) =
-        let amap = infoReader.amap
+    let hashPropInfo (g:TcGlobals) (pinfo: PropInfo) =
+        let getterHash = 
+            match pinfo.HasGetter, pinfo.GetterMethod.ArbitraryValRef with
+            | true, Some avr -> hashAccessibility avr.Accessibility 17
+            | _ -> 0
+        let setterHash = 
+            match pinfo.HasSetter, pinfo.SetterMethod.ArbitraryValRef with
+            | true, Some avr -> hashAccessibility avr.Accessibility 19
+            | _ -> 0 
 
-        let isPublicGetterSetter (getter: MethInfo) (setter: MethInfo) =
-            let isPublicAccess access = access = TAccess []
-            match getter.ArbitraryValRef, setter.ArbitraryValRef with
-            | Some gRef, Some sRef -> isPublicAccess gRef.Accessibility && isPublicAccess sRef.Accessibility
-            | _ -> false
 
-        match pinfo.ArbitraryValRef with
-        | Some vref ->
-            let propL = HashTastMemberOrVals.hashValOrMemberNoInst (* denv *) infoReader vref
-            if pinfo.HasGetter && pinfo.HasSetter && not pinfo.IsIndexer && isPublicGetterSetter pinfo.GetterMethod pinfo.SetterMethod then
-                propL ^^ hashText ((* string to tag was here *) "with") ^^ hashText (tagText "get, set")
-            else
-                propL
-        | None ->
-
-            let modifierAndMember =
-                if pinfo.IsStatic then
-                    WordL.keywordStatic ^^ WordL.keywordMember
-                else
-                    WordL.keywordMember
-        
-            let nameL = ConvertValLogicalNameToDisplayLayout false (tagProperty >> tagNavArbValRef pinfo.ArbitraryValRef >> hashText) pinfo.PropertyName
-            let typL = hashType (* denv *) (pinfo.GetPropertyType(amap, m))
-            let overallL = modifierAndMember ^^ (nameL |> addColonL) ^^ typL
-            overallL
+        if getterHash = 0 && setterHash = 0 then
+            0
+        else
+            (hash pinfo.IsIndexer @@ getterHash @@ setterHash @@ hash pinfo.IsStatic)
+            @@
+            match pinfo.ArbitraryValRef with
+            | Some vref -> HashTastMemberOrVals.hashValOrMemberNoInst g vref         
+            | None ->
+                pinfo.ComputeHashCode()
 
     let hashTyconDefn ((* denv *): DisplayEnv) (infoReader: InfoReader) ad m simplified isFirstType (tcref: TyconRef) =        
         let g = (* denv *).g
