@@ -145,6 +145,22 @@ and [<TailCall>] baz x =
         |> FSharp
         |> typecheck
         |> shouldFail
+        |> withResults [
+            { Error = Warning 3567
+              Range = { StartLine = 13
+                        StartColumn = 9
+                        EndLine = 13
+                        EndColumn = 20 }
+              Message =
+               "The member or function 'bar' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+            { Error = Warning 3567
+              Range = { StartLine = 13
+                        StartColumn = 9
+                        EndLine = 13
+                        EndColumn = 12 }
+              Message =
+               "The member or function 'bar' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+        ]
 
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Warn successfully for invalid tailcall in type method`` () =
