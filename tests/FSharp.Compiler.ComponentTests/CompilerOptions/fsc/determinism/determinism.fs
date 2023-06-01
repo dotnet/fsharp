@@ -120,13 +120,13 @@ module Determinism
                 FsFromPath (Path.Combine(__SOURCE_DIRECTORY__,  @"PathMap1\pathmap.fs"))
                 |> withOutputDirectory thisTestDirectory
             compilation
-            |> withOptionsString $"""--pathmap:{compilation.OutputDirectory}\PathMap1=/src,F:\=/etc;--deterministic;--embed;--debug:portable"""
+            |> withOptionsString $"""--pathmap:{compilation.OutputDirectory}/PathMap1=/src,F:\=/etc;--deterministic;--embed;--debug:portable"""
             |> asExe
             |> compile
 
         let pathMap2 =
             let compilation =
-                FsFromPath (Path.Combine(__SOURCE_DIRECTORY__,  @"PathMap2\pathmap.fs"))
+                FsFromPath (Path.Combine(__SOURCE_DIRECTORY__,  @"PathMap2/pathmap.fs"))
                 |> withOutputDirectory thisTestDirectory
             compilation
             |> withOptionsString $"""--pathmap:{compilation.OutputDirectory}\PathMap2=/src,F:\=/etc;--deterministic;--embed;--debug:portable"""
