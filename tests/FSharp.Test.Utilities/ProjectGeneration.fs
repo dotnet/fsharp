@@ -167,7 +167,7 @@ type SyntheticProject =
                            yield! this.OtherOptions |]
                     ReferencedProjects =
                         [| for p in this.DependsOn do
-                               FSharpReferencedProject.CreateFSharp(p.OutputFilename, p.GetProjectOptions checker) |]
+                               FSharpReferencedProject.FSharpReference(p.OutputFilename, p.GetProjectOptions checker) |]
                     IsIncompleteTypeCheckEnvironment = false
                     UseScriptResolutionRules = false
                     LoadTime = DateTime()
