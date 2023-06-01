@@ -28,11 +28,11 @@ module highentropyva =
     [<InlineData(ExecutionPlatform.Arm64, "--highentropyva-")>]
     [<InlineData(ExecutionPlatform.Arm, "--highentropyva-")>]
     [<Theory>]
-    let shouldNotGenerateHighEntropyVirtualAddressSpace platform option =
+    let shouldNotGenerateHighEntropyVirtualAddressSpace platform options =
         Fs """printfn "Hello, World!!!" """
         |> asExe
         |> withPlatform platform
-        |> withOptions (if String.IsNullOrWhiteSpace option then [] else [option])
+        |> withOptions (if String.IsNullOrWhiteSpace options then [] else [options])
         |> compile
         |> shouldSucceed
         |> withPeReader(fun rdr -> rdr.PEHeaders.PEHeader.DllCharacteristics)
@@ -47,11 +47,11 @@ module highentropyva =
     [<InlineData(ExecutionPlatform.Arm, "--highentropyva")>]
     [<InlineData(ExecutionPlatform.Arm, "--highentropyva+")>]
     [<Theory>]
-    let shouldGenerateHighEntropyVirtualAddressSpace platform option =
+    let shouldGenerateHighEntropyVirtualAddressSpace platform options =
         Fs """printfn "Hello, World!!!" """
         |> asExe
         |> withPlatform platform
-        |> withOptions  (if String.IsNullOrWhiteSpace option then [] else [option])
+        |> withOptions  (if String.IsNullOrWhiteSpace options then [] else [options])
         |> compile
         |> shouldSucceed
         |> withPeReader(fun rdr -> rdr.PEHeaders.PEHeader.DllCharacteristics)
