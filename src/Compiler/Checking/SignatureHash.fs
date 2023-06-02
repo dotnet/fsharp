@@ -333,17 +333,6 @@ module HashTastMemberOrVals =
         | Some _ -> 
             hashMember g emptyTyparInst vref.Deref
 
-//-------------------------------------------------------------------------
-
-/// Printing info objects
-module InfoMemberPrinting =         
-
-    let hashMethInfoFSharpStyle  (g:TcGlobals) (minfo: MethInfo) =
-        match minfo.ArbitraryValRef with
-        | Some vref ->
-            HashTastMemberOrVals.hashValOrMemberNoInst g vref
-        | None ->
-            minfo.ComputeHashCode()
 
 //-------------------------------------------------------------------------
 
@@ -351,14 +340,7 @@ module InfoMemberPrinting =
 module TashDefinitionHashes = 
     open HashTypes
 
-    let private hashExtensionMember (g:TcGlobals) (vref: ValRef) =
-        HashTastMemberOrVals.hashValOrMemberNoInst g vref
-
-    let hashExtensionMembers (g:TcGlobals) vs =
-        vs 
-        |> hashListOrderIndependent (hashExtensionMember g)      
-
-    let hashRecdField (g:TcGlobals) (fld: RecdField) =
+    let private hashRecdField (g:TcGlobals) (fld: RecdField) =
         let nameHash = hashText fld.DisplayNameCore
         let attribHash = hashAttributeList g  fld.FieldAttribs @@ hashAttributeList g fld.PropertyAttribs
         let typeHash = hashTType g fld.FormalType
@@ -366,29 +348,6 @@ module TashDefinitionHashes =
         let combined = nameHash @@ attribHash @@ typeHash @@ (hash fld.IsStatic) @@ (hash fld.IsVolatile) @@ (hash fld.IsMutable)        
 
         hashAccessibility fld.Accessibility combined
-
-
-    //let hashUnionOrExceptionField (g:TcGlobals) infoReader isGenerated enclosingTcref i (fld: RecdField) =
-        
-    //    if isGenerated i fld then
-    //        hashTType (* denv *) SimplifyTypes.typeSimplificationInfo0 2 fld.FormalType
-    //    else
-    //        hashRecdField id false (* denv *) infoReader enclosingTcref fld
-    
-    //let isGeneratedUnionCaseField pos (f: RecdField) = 
-    //    if pos < 0 then f.LogicalName = "Item"
-    //    else f.LogicalName = "Item" + string (pos + 1)
-
-    //let isGeneratedExceptionField pos (f: RecdField) = 
-    //    f.LogicalName = "Data" + (string pos)
-
-    //let hashUnionCaseFields (* denv *) infoReader isUnionCase enclosingTcref fields = 
-    //    match fields with
-    //    | [f] when isUnionCase ->
-    //        hashUnionOrExceptionField (* denv *) infoReader isGeneratedUnionCaseField enclosingTcref -1 f
-    //    | _ -> 
-    //        let isGenerated = if isUnionCase then isGeneratedUnionCaseField else isGeneratedExceptionField
-    //        sepListL WordL.star (List.mapi (hashUnionOrExceptionField (* denv *) infoReader isGenerated enclosingTcref) fields)
 
     let private hashUnionCase (g:TcGlobals) (ucase: UnionCase) =
         let nameHash = hashText ucase.Id.idText
@@ -400,52 +359,23 @@ module TashDefinitionHashes =
         |> pipeToHash attribHash
         |> hashAccessibility ucase.Accessibility
 
-    let hashUnionCases (g:TcGlobals)  ucases =
+    let private hashUnionCases (g:TcGlobals)  ucases =
         ucases
         // Why order matters here?
         // Union cases come with generated Tag members, on which code in higher-level project can depend -> if order of union cases changes, higher-level project has to be also recompiled.
         // Correct me if I am wrong here pls.
         |> hashListOrderMatters (hashUnionCase g)
-      
-    let hashILFieldInfo (finfo: ILFieldInfo) =    
-        finfo.ComputeHashCode() @@ HashIL.hashILType  finfo.ILFieldType
 
-    let hashFsharpDelegate g slotSig = 
+    let private hashFsharpDelegate g slotSig = 
         let (TSlotSig(_, _, _, _, paraml, retTy)) = slotSig  
         (paraml |> hashListOrderMatters (fun pl -> pl |> hashListOrderMatters (fun sp -> hashTType g sp.Type)))
         |> pipeToHash (hashTType g (GetFSharpViewOfReturnType g retTy))
 
-    let hashFsharpEnum (tycon:Tycon) =
+    let private hashFsharpEnum (tycon:Tycon) =
         tycon.AllFieldsArray
         |> hashListOrderIndependent (fun f -> hashText f.DisplayNameCore) 
 
-    //let hashEventInfo (g:TcGlobals) (einfo: EventInfo) =
-    //    einfo.ComputeHashCode() @@
-    //    ( match einfo.ArbitraryValRef with | Some vref -> HashTastMemberOrVals.hashValOrMemberNoInst g vref | _ -> -1)
-
-    //let hashPropInfo (g:TcGlobals) (pinfo: PropInfo) =
-    //    let getterHash = 
-    //        match pinfo.HasGetter, pinfo.GetterMethod.ArbitraryValRef with
-    //        | true, Some avr -> hashAccessibility avr.Accessibility 17
-    //        | _ -> 0
-    //    let setterHash = 
-    //        match pinfo.HasSetter, pinfo.SetterMethod.ArbitraryValRef with
-    //        | true, Some avr -> hashAccessibility avr.Accessibility 19
-    //        | _ -> 0 
-
-
-    //    if getterHash = 0 && setterHash = 0 then
-    //        0
-    //    else
-    //        (hash pinfo.IsIndexer @@ getterHash @@ setterHash @@ hash pinfo.IsStatic)
-    //        @@
-    //        match pinfo.ArbitraryValRef with
-    //        | Some vref -> HashTastMemberOrVals.hashValOrMemberNoInst g vref         
-    //        | None ->
-    //            pinfo.ComputeHashCode()
-
-                // (* ((* denv : DisplayEnv) (infoReader: InfoReader) ad m simplified isFirstType *)
-    let hashTyconDefn (g:TcGlobals)   (tcref: TyconRef) =  
+    let private hashTyconDefn (g:TcGlobals)   (tcref: TyconRef) =  
         let tycon = tcref.Deref
         let repr = tycon.TypeReprInfo
 
@@ -467,7 +397,7 @@ module TashDefinitionHashes =
         /// Properties, methods, constructors
         let membersHash() =
             tycon.MembersOfFSharpTyconByName       
-            |> hashListOrderIndependent (fun kvp -> kvp.Value |> hashListOrderIndependent HashTastMemberOrVals.hashValOrMemberNoInst g )
+            |> hashListOrderIndependent (fun kvp -> kvp.Value |> hashListOrderIndependent (HashTastMemberOrVals.hashValOrMemberNoInst g) )
 
         /// Super type or obj
         let inheritsHash() = 
@@ -480,7 +410,14 @@ module TashDefinitionHashes =
             | TFSharpUnionRepr _ ->  hashUnionCases g tycon.UnionCasesArray  
             | TFSharpObjectRepr { fsobjmodel_kind = TFSharpDelegate slotSig } -> hashFsharpDelegate g slotSig
             | TFSharpObjectRepr { fsobjmodel_kind = TFSharpEnum } -> hashFsharpEnum tycon             
-            | TFSharpObjectRepr { fsobjmodel_kind = TFSharpClass | TFSharpInterface | TFSharpStruct as tfor}  -> iimplsHash() @@ fieldsHash() @@ membersHash() @@ inheritsHash() @@ (hash tfor)
+            | TFSharpObjectRepr { fsobjmodel_kind = TFSharpClass | TFSharpInterface | TFSharpStruct as tfor}  -> 
+                iimplsHash() @@ fieldsHash() @@ membersHash() @@ inheritsHash()
+                |> pipeToHash 
+                    (match tfor with
+                    | TFSharpClass -> 1
+                    | TFSharpInterface -> 2
+                    | TFSharpStruct -> 3
+                    | _ -> 4)
             | TAsmRepr ilType -> HashIL.hashILType ilType  
             | TMeasureableRepr ty -> hashTType g ty 
             | TILObjectRepr _ -> iimplsHash() @@ fieldsHash() @@ membersHash() @@ inheritsHash()
@@ -526,7 +463,7 @@ module TashDefinitionHashes =
 open HashTypes
 
 /// Hash the inferred signature of a compilation unit
-let calculateHashOfImpliedSignature (infoReader:InfoReader) (ad:AccessorDomain) (m:range) (expr:ModuleOrNamespaceContents) =
+let calculateHashOfImpliedSignature (g:TcGlobals) (infoReader:InfoReader) (ad:AccessorDomain) (m:range) (expr:ModuleOrNamespaceContents) =
 
     let rec isConcreteNamespace x = 
         match x with 
@@ -537,49 +474,23 @@ let calculateHashOfImpliedSignature (infoReader:InfoReader) (ad:AccessorDomain) 
         | TMDefOpens _ -> false
         | TMDefs defs -> defs |> List.exists isConcreteNamespace 
 
-    let rec imdefsL (* denv *) x = combineHashes (x |> List.map imdefL )
+    and hashModuleOrNameSpaceBinding (monb:ModuleOrNamespaceBinding) =
+        match monb with
+        | ModuleOrNamespaceBinding.Binding b -> HashTastMemberOrVals.hashValOrMemberNoInst g (mkLocalValRef b.Var)
+        | ModuleOrNamespaceBinding.Module moduleInfo,contents -> hashSingleModuleOrNameSpaceIncludingName (moduleInfo,contents)
 
-    and imdefL  x = 
-        let filterVal (v: Val) = not v.IsCompilerGenerated && Option.isNone v.MemberInfo
-        let filterExtMem (v: Val) = v.IsExtensionMember
-
+    and hashSingleModuleOrNamespaceContents  x =        
         match x with 
         | TMDefRec(_, _opens, tycons, mbinds, _) -> 
-            TashDefinitionHashes.hashTyconDefns (* denv *) infoReader ad m tycons @@ 
-            (mbinds 
-                |> List.choose (function ModuleOrNamespaceBinding.Binding bind -> Some bind | _ -> None) 
-                |> valsOfBinds 
-                |> List.filter filterExtMem
-                |> List.map mkLocalValRef
-                |> TashDefinitionHashes.hashExtensionMembers (* denv *) infoReader) @@
-
-            (mbinds 
-                |> List.choose (function ModuleOrNamespaceBinding.Binding bind -> Some bind | _ -> None) 
-                |> valsOfBinds 
-                |> List.filter filterVal
-                |> List.map mkLocalValRef
-                |> List.map (HashTastMemberOrVals.hashValOrMemberNoInst (* denv *) infoReader)
-                |> combineHashes) @@
-
-            (mbinds 
-                |> List.choose (function ModuleOrNamespaceBinding.Module (mspec, def) -> Some (mspec, def) | _ -> None) 
-                |> List.map (imbindL (* denv *)) 
-                |> combineHashes)
-
-        | TMDefLet(bind, _) -> 
-            ([bind.Var] 
-                |> List.filter filterVal 
-                |> List.map mkLocalValRef
-                |> List.map (HashTastMemberOrVals.hashValOrMemberNoInst (* denv *) infoReader) 
-                |> combineHashes)
-
+            mbinds
+            |> hashListOrderIndependent (hashModuleOrNameSpaceBinding)
+            |> pipeToHash (TashDefinitionHashes.hashTyconDefns g tycons)
+        | TMDefLet(bind, _) -> HashTastMemberOrVals.hashValOrMemberNoInst g (mkLocalValRef bind.Var)
         | TMDefOpens _ -> 0 (* empty hash *)
-
-        | TMDefs defs -> imdefsL (* denv *) defs
-
+        | TMDefs defs -> defs |> hashListOrderIndependent hashSingleModuleOrNamespaceContents
         | TMDefDo _ -> 0 (* empty hash *)
 
-    and imbindL (* denv *) (mspec, def) = 
+    and hashSingleModuleOrNameSpaceIncludingName (* denv *) (mspec, def) = 
         let innerPath = (fullCompPathOfModuleOrNamespace mspec).AccessPath
         let outerPath = mspec.CompilationPath.AccessPath
 
@@ -607,12 +518,12 @@ let calculateHashOfImpliedSignature (infoReader:InfoReader) (ad:AccessorDomain) 
             let nmL = List.map (tagModule >> hashText) fullModuleName |> sepListL SepL.dot
             let nmL = hashAccessibility (* denv *) mspec.Accessibility nmL
             let (* denv *) = (* denv *).AddAccessibility mspec.Accessibility
-            let basic = imdefL (* denv *) def
+            let basic = hashSingleModuleOrNamespaceContents (* denv *) def
             let modNameL = hashText ((* string to tag was here *) "module") @@ nmL
             let basicL = modNameL @@ basic
             basicL
         elif mspec.IsNamespace then
-            let basic = imdefL (* denv *) def
+            let basic = hashSingleModuleOrNamespaceContents (* denv *) def
             let basicL =
                 // Check if this namespace contains anything interesting
                 if isConcreteNamespace def then
@@ -633,7 +544,7 @@ let calculateHashOfImpliedSignature (infoReader:InfoReader) (ad:AccessorDomain) 
             let nmL = ConvertLogicalNameToDisplayLayout (tagModule >> mkNav mspec.DefinitionRange >> hashText) mspec.DisplayNameCore
             let nmL = hashAccessibility (* denv *) mspec.Accessibility nmL
             let (* denv *) = (* denv *).AddAccessibility mspec.Accessibility
-            let basic = imdefL (* denv *) def
+            let basic = hashSingleModuleOrNamespaceContents (* denv *) def
             let modNameL =
                 hashText ((* string to tag was here *) "module") @@ nmL
                 |> hashAttribs (* denv *) None false mspec.TypeOrMeasureKind mspec.Attribs
@@ -685,6 +596,6 @@ let calculateHashOfImpliedSignature (infoReader:InfoReader) (ad:AccessorDomain) 
     | EmptyModuleOrNamespaces mspecs when showHeader ->
         List.map emptyModuleOrNamespace mspecs
         |> aboveListL
-    | expr -> imdefL denv expr
+    | expr -> hashSingleModuleOrNamespaceContents denv expr
 
 //--------------------------------------------------------------------------
