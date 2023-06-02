@@ -463,7 +463,7 @@ module TashDefinitionHashes =
 open HashTypes
 
 /// Hash the inferred signature of a compilation unit
-let calculateHashOfImpliedSignature (g:TcGlobals) (infoReader:InfoReader) (ad:AccessorDomain) (m:range) (expr:ModuleOrNamespaceContents) =
+let calculateHashOfImpliedSignature (g:TcGlobals)  (_ad:AccessorDomain)  (expr:ModuleOrNamespaceContents) =
 
 
     let rec  hashModuleOrNameSpaceBinding (monb:ModuleOrNamespaceBinding) =
