@@ -477,7 +477,7 @@ let calculateHashOfImpliedSignature (g:TcGlobals) (infoReader:InfoReader) (ad:Ac
     and hashModuleOrNameSpaceBinding (monb:ModuleOrNamespaceBinding) =
         match monb with
         | ModuleOrNamespaceBinding.Binding b -> HashTastMemberOrVals.hashValOrMemberNoInst g (mkLocalValRef b.Var)
-        | ModuleOrNamespaceBinding.Module moduleInfo,contents -> hashSingleModuleOrNameSpaceIncludingName (moduleInfo,contents)
+        | ModuleOrNamespaceBinding.Module (moduleInfo,contents) -> hashSingleModuleOrNameSpaceIncludingName (moduleInfo,contents)
 
     and hashSingleModuleOrNamespaceContents  x =        
         match x with 
@@ -491,111 +491,19 @@ let calculateHashOfImpliedSignature (g:TcGlobals) (infoReader:InfoReader) (ad:Ac
         | TMDefDo _ -> 0 (* empty hash *)
 
     and hashSingleModuleOrNameSpaceIncludingName (* denv *) (mspec, def) = 
-        let innerPath = (fullCompPathOfModuleOrNamespace mspec).AccessPath
-        let outerPath = mspec.CompilationPath.AccessPath
+        let outerPathHash = mspec.CompilationPath.MangledPath |> hashListOrderMatters hashText
+        let thisNameHash = hashText mspec.entity_logical_name
 
+        let fullNameHash = outerPathHash @@ thisNameHash @@ (hash mspec.IsModule)
+        let contentHash = hashSingleModuleOrNamespaceContents def
 
-        if mspec.IsImplicitNamespace then
-            // The current mspec is a namespace that belongs to the `def` child (nested) module(s).                
-            let fullModuleName, def, (* denv *) =
-                let rec (|NestedModule|_|) (currentContents:ModuleOrNamespaceContents) =
-                    match currentContents with
-                    | ModuleOrNamespaceContents.TMDefRec (bindings = [ ModuleOrNamespaceBinding.Module(mn, NestedModule(path, contents)) ]) ->
-                        Some ([ yield mn.DisplayNameCore; yield! path ], contents)
-                    | ModuleOrNamespaceContents.TMDefs [ ModuleOrNamespaceContents.TMDefRec (bindings = [ ModuleOrNamespaceBinding.Module(mn, NestedModule(path, contents)) ]) ] ->
-                        Some ([ yield mn.DisplayNameCore; yield! path ], contents)
-                    | ModuleOrNamespaceContents.TMDefs [ ModuleOrNamespaceContents.TMDefRec (bindings = [ ModuleOrNamespaceBinding.Module(mn, nestedModuleContents) ]) ] ->
-                        Some ([ mn.DisplayNameCore ], nestedModuleContents)
-                    | _ ->
-                        None
-
-                match def with
-                | NestedModule(path, nestedModuleContents) ->
-                    let fullPath = mspec.DisplayNameCore :: path
-                    fullPath, nestedModuleContents, (* denv *).AddOpenPath(fullPath)
-                | _ -> [ mspec.DisplayNameCore ], def, (* denv *)
-                
-            let nmL = List.map (tagModule >> hashText) fullModuleName |> sepListL SepL.dot
-            let nmL = hashAccessibility (* denv *) mspec.Accessibility nmL
-            let (* denv *) = (* denv *).AddAccessibility mspec.Accessibility
-            let basic = hashSingleModuleOrNamespaceContents (* denv *) def
-            let modNameL = hashText ((* string to tag was here *) "module") @@ nmL
-            let basicL = modNameL @@ basic
-            basicL
-        elif mspec.IsNamespace then
-            let basic = hashSingleModuleOrNamespaceContents (* denv *) def
-            let basicL =
-                // Check if this namespace contains anything interesting
-                if isConcreteNamespace def then
-                    let pathL = innerPath |> List.map (fst >> ConvertLogicalNameToDisplayLayout (tagNamespace >> hashText))
-                    // This is a container namespace. We print the header when we get to the first concrete module.
-                    let headerL =
-                        hashText ((* string to tag was here *) "namespace") @@ sepListL SepL.dot pathL
-                    headerL @@* basic
-                else
-                    // This is a namespace that only contains namespaces. Skip the header
-                    basic
-            // NOTE: explicitly not calling `hashXmlDoc` here, because even though
-            // `ModuleOrNamespace` has a field for XmlDoc, it is never present at the parser
-            // level for namespaces.  This should be changed if the parser/spec changes.
-            basicL
+        if contentHash = 0 then
+            0
         else
-            // This is a module 
-            let nmL = ConvertLogicalNameToDisplayLayout (tagModule >> mkNav mspec.DefinitionRange >> hashText) mspec.DisplayNameCore
-            let nmL = hashAccessibility (* denv *) mspec.Accessibility nmL
-            let (* denv *) = (* denv *).AddAccessibility mspec.Accessibility
-            let basic = hashSingleModuleOrNamespaceContents (* denv *) def
-            let modNameL =
-                hashText ((* string to tag was here *) "module") @@ nmL
-                |> hashAttribs (* denv *) None false mspec.TypeOrMeasureKind mspec.Attribs
-            let modNameEqualsL = modNameL @@ WordL.equals
-            let isNamespace = function | Namespace _ -> true | _ -> false
-            let modIsOuter = (outerPath |> List.forall (fun (_, istype) -> isNamespace istype) )
-            let basicL =
-                // Check if its an outer module or a nested module
-                if modIsOuter then
-                    // OK, this is an outer module
-                    if showHeader then
-                        // OK, we're not in F# Interactive
-                        // Check if this is an outer module with no namespace
-                        if isNil outerPath then
-                            // If so print a "module" declaration, no indentation
-                            modNameL @@ basic
-                        else
-                            // Otherwise this is an outer module contained immediately in a namespace
-                            // We already printed the namespace declaration earlier. So just print the
-                            // module now.
-                            if isEmptyL basic then 
-                                modNameEqualsL @@ WordL.keywordBegin @@ WordL.keywordEnd
-                            else
-                                modNameEqualsL @@* basic
-                    else
-                        // OK, we're in F# Interactive, presumably the implicit module for each interaction.
-                        basic
-                else
-                    // OK, this is a nested module, with indentation
-                    if isEmptyL basic then 
-                        ((modNameEqualsL @@ hashText ((* string to tag was here *)"begin")) @@* basic) @@ WordL.keywordEnd
-                    else
-                        modNameEqualsL @@* basic
-            basicL
+            let combined = fullNameHash @@ contentHash
+            hashAccessibility mspec.Accessibility combined
 
-    let emptyModuleOrNamespace mspec =
-        let innerPath = (fullCompPathOfModuleOrNamespace mspec).AccessPath
-        let pathL = innerPath |> List.map (fst >> ConvertLogicalNameToDisplayLayout (tagNamespace >> hashText))
 
-        let keyword =
-            if not mspec.IsImplicitNamespace && mspec.IsNamespace then
-                "namespace"
-            else
-                "module"
+    hashSingleModuleOrNamespaceContents expr
 
-        hashText ((* string to tag was here *) keyword) @@ sepListL SepL.dot pathL
 
-    match expr with
-    | EmptyModuleOrNamespaces mspecs when showHeader ->
-        List.map emptyModuleOrNamespace mspecs
-        |> aboveListL
-    | expr -> hashSingleModuleOrNamespaceContents denv expr
-
-//--------------------------------------------------------------------------
