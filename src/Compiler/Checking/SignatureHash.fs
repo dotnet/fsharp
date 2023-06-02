@@ -465,16 +465,8 @@ open HashTypes
 /// Hash the inferred signature of a compilation unit
 let calculateHashOfImpliedSignature (g:TcGlobals) (infoReader:InfoReader) (ad:AccessorDomain) (m:range) (expr:ModuleOrNamespaceContents) =
 
-    let rec isConcreteNamespace x = 
-        match x with 
-        | TMDefRec(_, _opens, tycons, mbinds, _) -> 
-            not (isNil tycons) || (mbinds |> List.exists (function ModuleOrNamespaceBinding.Binding _ -> true | ModuleOrNamespaceBinding.Module(x, _) -> not x.IsNamespace))
-        | TMDefLet _ -> true
-        | TMDefDo _ -> true
-        | TMDefOpens _ -> false
-        | TMDefs defs -> defs |> List.exists isConcreteNamespace 
 
-    and hashModuleOrNameSpaceBinding (monb:ModuleOrNamespaceBinding) =
+    let rec  hashModuleOrNameSpaceBinding (monb:ModuleOrNamespaceBinding) =
         match monb with
         | ModuleOrNamespaceBinding.Binding b -> HashTastMemberOrVals.hashValOrMemberNoInst g (mkLocalValRef b.Var)
         | ModuleOrNamespaceBinding.Module (moduleInfo,contents) -> hashSingleModuleOrNameSpaceIncludingName (moduleInfo,contents)
@@ -507,3 +499,5 @@ let calculateHashOfImpliedSignature (g:TcGlobals) (infoReader:InfoReader) (ad:Ac
     hashSingleModuleOrNamespaceContents expr
 
 
+
+//--------------------------------------------------------------------------
