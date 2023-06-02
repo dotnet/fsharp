@@ -247,9 +247,6 @@ val inline cacheOptRef: cache: 'a option ref -> f: (unit -> 'a) -> 'a
 
 val inline tryGetCacheValue: cache: cache<'a> -> NonNullSlot<'a> voption
 
-module UnmanagedProcessExecutionOptions =
-    val EnableHeapTerminationOnCorruption: unit -> unit
-
 [<RequireQualifiedAccess>]
 type MaybeLazy<'T> =
     | Strict of 'T
