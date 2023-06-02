@@ -93,7 +93,7 @@ module internal HashUtilities =
         
 module HashIL = 
 
-    let private hashILTypeRef (tref: ILTypeRef) =
+    let hashILTypeRef (tref: ILTypeRef) =
         tref.Enclosing
         |> hashListOrderMatters hashText      
         |> hashAndAdd tref.Name
@@ -410,6 +410,15 @@ module TashDefinitionHashes =
     let hashILFieldInfo (finfo: ILFieldInfo) =    
         finfo.ComputeHashCode() @@ HashIL.hashILType  finfo.ILFieldType
 
+    let hashFsharpDelegate g slotSig = 
+        let (TSlotSig(_, _, _, _, paraml, retTy)) = slotSig  
+        (paraml |> hashListOrderMatters (fun pl -> pl |> hashListOrderMatters (fun sp -> hashTType g sp.Type)))
+        |> pipeToHash (hashTType g (GetFSharpViewOfReturnType g retTy))
+
+    let hashFsharpEnum (tycon:Tycon) =
+        tycon.AllFieldsArray
+        |> hashListOrderIndependent (fun f -> hashText f.DisplayNameCore) 
+
     //let hashEventInfo (g:TcGlobals) (einfo: EventInfo) =
     //    einfo.ComputeHashCode() @@
     //    ( match einfo.ArbitraryValRef with | Some vref -> HashTastMemberOrVals.hashValOrMemberNoInst g vref | _ -> -1)
@@ -441,149 +450,67 @@ module TashDefinitionHashes =
         let repr = tycon.TypeReprInfo
 
         let tyconHash = HashTypes.hashTyconRef g tcref
-        let attribHash = hashAttributeList tcref.Attribs
+        let attribHash = hashAttributeList g tcref.Attribs
         let typarsHash = hashTyparDecls g tycon.TyparsNoRange
+        let topLevelDeclarationHash = tyconHash @@ attribHash @@ typarsHash
 
-        let combined = tyconHash @@ attribHash @@ typarsHash
-        hashAccessibility tycon.Accessibility combined   
-
-        let iimplsHash =
+        // Interface implementation
+        let iimplsHash() =
             tycon.ImmediateInterfacesOfFSharpTycon
-            |> hashListOrderIndependent (fun (ttype,_,_) -> hashTType g)
+            |> hashListOrderIndependent (fun (ttype,_,_) -> hashTType g ttype)
 
         // Fields, static fields, val declarations
-        let fieldsHash =
+        let fieldsHash() =
             tycon.AllFieldsArray
             |> hashListOrderIndependent (hashRecdField g)
 
         /// Properties, methods, constructors
-        let membersHash =
-            tycon.MembersOfFSharpTyconByName
-            |> hashListOrderIndependent (HashTastMemberOrVals.hashValOrMemberNoInst g)
+        let membersHash() =
+            tycon.MembersOfFSharpTyconByName       
+            |> hashListOrderIndependent (fun kvp -> kvp.Value |> hashListOrderIndependent HashTastMemberOrVals.hashValOrMemberNoInst g )
 
+        /// Super type or obj
+        let inheritsHash() = 
+            superOfTycon g tycon 
+            |> hashTType g 
 
-        let inheritsHash = 
-            match superOfTycon g tycon with
-            | None -> 0
-            | Some superType -> hashTType g superType
-          
-         
-
-        let allDecls = iimplsHash @@ fieldsHash @@ membersHash @@ inheritsHash
-
-
-        
-
-
-        let typeDeclL = 
-
+        let specializedHash = 
             match repr with 
-            | TFSharpRecdRepr _ ->
-                tycon.AllFieldsArray
-                |> hashListOrderIndependent (fun f -> hashRecdField g)
-
-            | TFSharpUnionRepr _ ->               
-                hashUnionCases g tycon.UnionCasesArray              
-                  
-            | TFSharpObjectRepr { fsobjmodel_kind = TFSharpDelegate slotSig } ->
-                let (TSlotSig(_, _, _, _, paraml, retTy)) = slotSig
-
-                hashTType g (GetFSharpViewOfReturnType g retTy)
-                @@
-                (paraml |> hashListOrderMatters (fun pl -> pl |> hashListOrderMatters (fun sp -> hashTType g sp.Type)))               
-
-            // Measure declarations are '[<Measure>] type kg' unless abbreviations
-            | TFSharpObjectRepr _ when isMeasure ->
-                lhsL
-
-            | TFSharpObjectRepr { fsobjmodel_kind = TFSharpEnum } ->
-                tycon.AllFieldsArray
-                |> hashListOrderIndependent (fun f -> hashText f.DisplayNameCore)               
-
-            | TFSharpObjectRepr objRepr when isNil allDecls ->
-                match objRepr.fsobjmodel_kind with
-                | TFSharpClass ->
-                    WordL.keywordClass @@ WordL.keywordEnd
-                    |> addLhs
-                | TFSharpInterface ->
-                    WordL.keywordInterface @@ WordL.keywordEnd
-                    |> addLhs
-                | TFSharpStruct ->
-                    WordL.keywordStruct @@ WordL.keywordEnd
-                    |> addLhs
-                | _ -> lhsL
-
-            | TFSharpObjectRepr _ ->
-                allDecls          
-                |> combineHashes
-                |> addLhs
-
-            | TAsmRepr ilType -> 
-                HashIL.hashILType ilType               
-
-            | TMeasureableRepr ty ->
-                hashTType g ty               
-
-            | TILObjectRepr _ when tycon.ILTyconRawMetadata.IsEnum ->
-                infoReader.GetILFieldInfosOfType (None, ad, m, ty) 
-                |> List.filter (fun x -> x.FieldName <> "value__")
-                |> List.map (fun x -> hash x.FieldName)
-                |> combineHashes
-                |> addLhs
-
-            | TILObjectRepr _ ->
-                allDecls          
-                |> combineHashes
-                |> addLhs
-
+            | TFSharpRecdRepr _ -> fieldsHash()
+            | TFSharpUnionRepr _ ->  hashUnionCases g tycon.UnionCasesArray  
+            | TFSharpObjectRepr { fsobjmodel_kind = TFSharpDelegate slotSig } -> hashFsharpDelegate g slotSig
+            | TFSharpObjectRepr { fsobjmodel_kind = TFSharpEnum } -> hashFsharpEnum tycon             
+            | TFSharpObjectRepr { fsobjmodel_kind = TFSharpClass | TFSharpInterface | TFSharpStruct as tfor}  -> iimplsHash() @@ fieldsHash() @@ membersHash() @@ inheritsHash() @@ (hash tfor)
+            | TAsmRepr ilType -> HashIL.hashILType ilType  
+            | TMeasureableRepr ty -> hashTType g ty 
+            | TILObjectRepr _ -> iimplsHash() @@ fieldsHash() @@ membersHash() @@ inheritsHash()
             | TNoRepr when tycon.TypeAbbrev.IsSome ->
                 let abbreviatedTy = tycon.TypeAbbrev.Value
-                (lhsL @@ WordL.equals) -* (hashType { (* denv *) with shortTypeNames = false } abbreviatedTy)
-
-            | _ when isNil allDecls ->
-                lhsL
+                hashTType g abbreviatedTy
+            | TNoRepr when tycon.IsFSharpException -> 
+                match tycon.ExceptionInfo with
+                | TExnAbbrevRepr exnTcRef -> hashTyconRef g exnTcRef
+                | TExnAsmRepr iLTypeRef -> HashIL.hashILTypeRef iLTypeRef
+                | TExnNone -> 0
+                | TExnFresh _ -> fieldsHash()
+               
 #if !NO_TYPEPROVIDERS
             | TProvidedNamespaceRepr _
             | TProvidedTypeRepr _
 #endif
-            | TNoRepr -> 
-                allDecls      
-                |> combineHashes
-                |> addLhs
+            | TNoRepr -> iimplsHash() @@ fieldsHash() @@ membersHash() @@ inheritsHash()
 
-        typeDeclL 
-        |> fun tdl -> if isFirstType then hashAttribs (* denv *) start false tycon.TypeOrMeasureKind tycon.Attribs tdl else tdl  
 
-    // Hash: exception definition
-    let hashExnDefn (* denv *) infoReader (exncref: EntityRef) =
-        let (-*) = if true then (-----) else (---)
-        let exnc = exncref.Deref
-        let nameL = ConvertLogicalNameToDisplayLayout (tagClass >> mkNav exncref.DefinitionRange >> hashText) exnc.DisplayNameCore
-        let nameL = hashAccessibility (* denv *) exnc.TypeReprAccessibility nameL
-        let exnL = hashText ((* string to tag was here *) "exception") @@ nameL // need to tack on the Exception at the right of the name for goto definition
-        let reprL = 
-            match exnc.ExceptionInfo with 
-            | TExnAbbrevRepr ecref -> WordL.equals -* hashTyconRef (* denv *) ecref
-            | TExnAsmRepr _ -> WordL.equals -* hashText (tagText "(# ... #)")
-            | TExnNone -> 0 (* empty hash *)
-            | TExnFresh r -> 
-                match r.TrueFieldsAsList with
-                | [] -> 0 (* empty hash *)
-                | r -> WordL.keywordOf -* hashUnionCaseFields (* denv *) infoReader false exncref r
-
-        let overallL = exnL @@ reprL
-        overallL
+        specializedHash 
+        |> pipeToHash topLevelDeclarationHash
+        |> hashAccessibility tycon.Accessibility
 
     // Hash: module spec 
 
-    let hashTyconDefns (* denv *) infoReader ad m (tycons: Tycon list) =
-        match tycons with 
-        | [] -> 0 (* empty hash *)
-        | [h] when h.IsFSharpException -> hashExnDefn (* denv *) infoReader (mkLocalEntityRef h)
-        | h :: t -> 
-            let x = hashTyconDefn (* denv *) infoReader ad m false true (mkLocalEntityRef h)
-            let xs = List.map (mkLocalEntityRef >> hashTyconDefn (* denv *) infoReader ad m false false) t
-            combineHashes (x :: xs)
+    let hashTyconDefns (g:TcGlobals)  (tycons: Tycon list) =
+        tycons
+        |> hashListOrderIndependent (mkLocalEntityRef >> (hashTyconDefn g))
+      
 
     let rec fullPath (mspec: ModuleOrNamespace) acc =
         if mspec.IsNamespace then
