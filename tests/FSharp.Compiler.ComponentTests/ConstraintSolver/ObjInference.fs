@@ -17,6 +17,7 @@ module ObjInference =
 let deserialize<'v> (s : string) : 'v = failwith ""
 let x = deserialize "" |> f""", 3, 9, 3, 28
             "let f = typedefof<_>", 1, 19, 1, 20
+            "let f = Unchecked.defaultof<_>"
         ]
         |> List.map (fun (str, line1, col1, line2, col2) -> [| box str ; line1 ; col1 ; line2 ; col2 |])
 
@@ -29,6 +30,10 @@ let x = deserialize "" |> f""", 3, 9, 3, 28
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Warning 3559, Line line1, Col col1, Line line2, Col col2, message)
+
+    let f () =
+        let (a : 'a) = failwith<'a> ""
+        unbox<'a> a
 
     [<Fact>]
     let ``Three types refined to obj are all warned`` () =
@@ -55,6 +60,8 @@ let x = deserialize "" |> f""", 3, 9, 3, 28
             """let x<[<Measure>]'m> : int<'m> = failwith ""
 let f () = x = x |> ignore""" // measure is inferred as 1, but that's not covered by this warning
             "let a = 5 |> unbox<obj> in let b = a in ()" // explicit obj annotation
+            "let f () : int = Unchecked.defaultof<_>"
+            "let f () = Unchecked.defaultof<int>"
         ]
         |> List.map Array.singleton
 
