@@ -7,19 +7,29 @@ module ObjInference =
 
     let message = "A type has been implicitly inferred as 'obj', which may be unintended. Consider adding explicit type annotations. You can disable this warning by using '#nowarn \"3559\"' or '--nowarn:3559'."
 
-    let warningCases =
+    let quotableWarningCases =
         [
-            "let f() = ([] = [])", 1, 17, 1, 19
             """System.Object.ReferenceEquals(null, "hello") |> ignore""", 1, 31, 1, 35
             """System.Object.ReferenceEquals("hello", null) |> ignore""", 1, 40, 1, 44
+            "([] = []) |> ignore", 1, 7, 1, 9
             "<@ [] = [] @> |> ignore", 1, 9, 1, 11
+            "let _ = Unchecked.defaultof<_> in ()", 1, 29, 1, 30
+        ]
+        |> List.map (fun (str, line1, col1, line2, col2) -> [| box str ; line1 ; col1 ; line2 ; col2 |])
+
+    let unquotableWarningCases =
+        [
+            "let f() = ([] = [])", 1, 17, 1, 19
             """let f<'b> (x : 'b) : int = failwith ""
 let deserialize<'v> (s : string) : 'v = failwith ""
 let x = deserialize "" |> f""", 3, 9, 3, 28
             "let f = typedefof<_>", 1, 19, 1, 20
-            "let f = Unchecked.defaultof<_>"
+            """let f<'b> () : 'b = (let a = failwith "" in unbox a)""", 1, 30, 1, 41
         ]
         |> List.map (fun (str, line1, col1, line2, col2) -> [| box str ; line1 ; col1 ; line2 ; col2 |])
+
+    let warningCases =
+        quotableWarningCases @ unquotableWarningCases
 
     [<Theory>]
     [<MemberData(nameof(warningCases))>]
@@ -31,25 +41,18 @@ let x = deserialize "" |> f""", 3, 9, 3, 28
         |> shouldFail
         |> withSingleDiagnostic (Warning 3559, Line line1, Col col1, Line line2, Col col2, message)
 
-    let f () =
-        let (a : 'a) = failwith<'a> ""
-        unbox<'a> a
+    let quotableNoWarningCases =
+        [
+            "let a = 5 |> unbox<obj> in let b = a in ()" // explicit obj annotation
+            "let add x y = x + y in ()" // inferred as int
+            "let f() = ([] = ([] : obj list)) in ()" // obj is inferred, but is annotated
+            "let f() = (([] : obj list) = []) in ()" // obj is inferred, but is annotated
+            "let f () : int = Unchecked.defaultof<_> in ()" // explicitly int
+            "let f () = Unchecked.defaultof<int> in ()" // explicitly int
+        ]
+        |> List.map Array.singleton
 
-    [<Fact>]
-    let ``Three types refined to obj are all warned`` () =
-        FSharp """let f<'b> () : 'b = (let a = failwith "" in unbox a)"""
-        |> withErrorRanges
-        |> withWarnOn 3559
-        |> typecheck
-        |> shouldFail
-        |> withDiagnostics
-            [
-                // The `failwith` case
-                Warning 3559, Line 1, Col 30, Line 1, Col 41, message
-                // Warning 3559, Line 1, Col 45, Line 1, Col 52, message
-            ]
-
-    let noWarningCases =
+    let unquotableNoWarningCases =
         [
             "let add x y = x + y" // inferred as int
             "let inline add x y = x + y" // inferred with SRTP
@@ -59,11 +62,13 @@ let x = deserialize "" |> f""", 3, 9, 3, 28
             "let f() = (([] : obj list) = [])" // obj is inferred, but is annotated
             """let x<[<Measure>]'m> : int<'m> = failwith ""
 let f () = x = x |> ignore""" // measure is inferred as 1, but that's not covered by this warning
-            "let a = 5 |> unbox<obj> in let b = a in ()" // explicit obj annotation
-            "let f () : int = Unchecked.defaultof<_>"
-            "let f () = Unchecked.defaultof<int>"
+            "let f () : int = Unchecked.defaultof<_>" // explicitly int
+            "let f () = Unchecked.defaultof<int>" // explicitly int
+            "let f () = Unchecked.defaultof<_>" // generic
         ]
         |> List.map Array.singleton
+
+    let noWarningCases = quotableNoWarningCases @ unquotableNoWarningCases
 
     [<Theory>]
     [<MemberData(nameof(noWarningCases))>]
@@ -82,7 +87,7 @@ let f () = x = x |> ignore""" // measure is inferred as 1, but that's not covere
 
     [<Theory>]
     [<MemberData(nameof(nullNoWarningCases))>]
-    let ``Don't warn on an explicit null``(expr: string) =
+    let ``Don't warn on an explicitly annotated null``(expr: string) =
         sprintf "%s |> ignore" expr
         |> FSharp
         |> withWarnOn 3559
@@ -91,31 +96,36 @@ let f () = x = x |> ignore""" // measure is inferred as 1, but that's not covere
 
     [<Theory>]
     [<MemberData(nameof(nullNoWarningCases))>]
-    let ``Don't warn on an explicit null, inside quotations``(expr: string) =
+    let ``Don't warn on an explicitly annotated null, inside quotations``(expr: string) =
         sprintf "<@ %s @> |> ignore" expr
         |> FSharp
         |> withWarnOn 3559
         |> typecheck
         |> shouldSucceed
 
-    let quotationNoWarningCases =
-        [
-            "<@ List.map ignore [1;2;3] @>"
-        ]
-        |> List.map Array.singleton
+    [<Theory>]
+    [<MemberData(nameof(quotableWarningCases))>]
+    let ``Warn also inside quotations of acceptable code``(expr: string, line1: int, col1: int, line2: int, col2: int) =
+        sprintf "<@ %s @> |> ignore" expr
+        |> FSharp
+        |> withWarnOn 3559
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 3559, Line line1, Col (col1 + 3), Line line2, Col (col2 + 3), message)
 
     [<Theory>]
-    [<MemberData(nameof(quotationNoWarningCases))>]
+    [<MemberData(nameof(quotableNoWarningCases))>]
     let ``Don't warn inside quotations of acceptable code``(expr: string) =
-        sprintf "%s |> ignore" expr
+        sprintf "<@ %s @> |> ignore" expr
         |> FSharp
         |> withWarnOn 3559
         |> typecheck
         |> shouldSucceed
 
-    [<Fact>]
-    let ``Warning is off by default``() =
-        "<@ [] = [] @> |> ignore"
+    [<Theory>]
+    [<MemberData(nameof(warningCases))>]
+    let ``Warning is off by default``(expr: string, _: int, _: int, _: int, _: int) =
+        expr
         |> FSharp
         |> typecheck
         |> shouldSucceed
