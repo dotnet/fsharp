@@ -642,27 +642,16 @@ module TashDefinitionHashes =
                 | _ -> ()
             ]
 
-        let inheritsL = 
-            inherits
-            |> hashAllVia (hashTType g)
+        let inheritsHash = 
+            match superOfTycon g tycon with
+            | None -> 0
+            | Some superType -> hashTType g superType
+          
          
 
-        let allDecls = inheritsL @ iimplsLs @ ctorLs @ instanceValLs @ methLs @ ilFieldsL @ propLs @ eventLs @ staticValLs @ nestedTypeLs
+        let allDecls = inheritsHash @ iimplsLs @ ctorLs @ instanceValLs @ methLs @ ilFieldsL @ propLs @ eventLs @ staticValLs @ nestedTypeLs
 
 
-        
-        let addMaxMembers reprL =
-            if isNil allDecls then
-                reprL
-            else
-                let memberLs = allDecls
-                reprL @@ combineHashes memberLs
-
-        let addReprAccessL l =
-            hashAccessibility (* denv *) tycon.TypeReprAccessibility l 
-
-        let addReprAccessRecord l =
-            hashAccessibilityCore (* denv *) tycon.TypeReprAccessibility --- l
         
         let addLhs rhsL =
             let brk = not (isNil allDecls) || breakTypeDefnEqn repr
