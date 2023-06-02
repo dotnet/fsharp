@@ -33,6 +33,7 @@
         <file src="FSharp.Compiler.Service\ReleaseCompressed\netstandard2.0\FSharp.Compiler.Service.dll"     target="lib\net8.0" />
         <file src="FSharp.Build\ReleaseCompressed\netstandard2.0\FSharp.Build.dll"                           target="lib\net8.0" />
         <file src="FSharp.DependencyManager.Nuget\ReleaseCompressed\netstandard2.0\FSharp.DependencyManager.Nuget.dll"
+                                                                                                             target="lib\net8.0" />
         <file src="FSharp.Compiler.Interactive.Settings\ReleaseCompressed\netstandard2.0\FSharp.Compiler.Interactive.Settings.dll"
                                                                                                              target="lib\net8.0" />
         <!-- additional files -->
