@@ -39,8 +39,8 @@ let accTy cenv _env (fallbackRange: Range option) ty =
             | _ -> ()
             cenv.unsolved <- tp :: cenv.unsolved) 
 
-let accTypeInst cenv env tyargs =
-    tyargs |> List.iter (accTy cenv env None)
+let accTypeInst cenv env backup tyargs =
+    tyargs |> List.iter (accTy cenv env (Some backup))
 
 /// Walk expressions, collecting type variables
 let rec accExpr (cenv: cenv) (env: env) expr =
@@ -71,9 +71,9 @@ let rec accExpr (cenv: cenv) (env: env) expr =
         accMethods cenv env basev overrides 
         accIntfImpls cenv env basev iimpls
 
-    | LinearOpExpr (_op, tyargs, argsHead, argLast, _m) ->
+    | LinearOpExpr (_op, tyargs, argsHead, argLast, m) ->
         // Note, LinearOpExpr doesn't include any of the "special" cases for accOp
-        accTypeInst cenv env tyargs
+        accTypeInst cenv env m tyargs
         accExprs cenv env argsHead
         // tailcall
         accExpr cenv env argLast
@@ -83,7 +83,7 @@ let rec accExpr (cenv: cenv) (env: env) expr =
 
     | Expr.App (f, fty, tyargs, argsl, m) ->
         accTy cenv env (Some m) fty
-        accTypeInst cenv env tyargs
+        accTypeInst cenv env m tyargs
         accExpr cenv env f
         accExprs cenv env argsl
 
@@ -120,8 +120,8 @@ let rec accExpr (cenv: cenv) (env: env) expr =
             | TTyconIsStruct(ty1) -> 
                 accTy cenv env (Some m) ty1)
 
-    | Expr.WitnessArg (traitInfo, _m) ->
-        accTraitInfo cenv env traitInfo
+    | Expr.WitnessArg (traitInfo, m) ->
+        accTraitInfo cenv env m traitInfo
 
     | Expr.Link eref ->
         accExpr cenv env eref.Value
@@ -143,25 +143,25 @@ and accIntfImpl cenv env baseValOpt (ty, overrides) =
     accTy cenv env None ty
     accMethods cenv env baseValOpt overrides 
 
-and accOp cenv env (op, tyargs, args, _m) =
+and accOp cenv env (op, tyargs, args, m) =
     // Special cases 
-    accTypeInst cenv env tyargs
+    accTypeInst cenv env m tyargs
     accExprs cenv env args
     match op with 
     // Handle these as special cases since mutables are allowed inside their bodies 
     | TOp.ILCall (_, _, _, _, _, _, _, _, enclTypeInst, methInst, retTys) ->
-        accTypeInst cenv env enclTypeInst
-        accTypeInst cenv env methInst
-        accTypeInst cenv env retTys
+        accTypeInst cenv env m enclTypeInst
+        accTypeInst cenv env m methInst
+        accTypeInst cenv env m retTys
     | TOp.TraitCall traitInfo -> 
-        accTraitInfo cenv env traitInfo
+        accTraitInfo cenv env m traitInfo
         
     | TOp.ILAsm (_, retTys) ->
-        accTypeInst cenv env retTys
+        accTypeInst cenv env m retTys
     | _ ->    ()
 
-and accTraitInfo cenv env (TTrait(tys, _nm, _, argTys, retTy, _sln)) =
-    argTys |> accTypeInst cenv env 
+and accTraitInfo cenv env (backupRange : range) (TTrait(tys, _nm, _, argTys, retTy, _sln)) =
+    argTys |> accTypeInst cenv env backupRange
     retTy |> Option.iter (accTy cenv env None)
     tys |> List.iter (accTy cenv env None)
 
@@ -194,21 +194,21 @@ and accDTree cenv env dtree =
     | TDBind(bind, rest) -> accBind cenv env bind; accDTree cenv env rest 
     | TDSwitch (e, cases, dflt, m) -> accSwitch cenv env (e, cases, dflt, m)
 
-and accSwitch cenv env (e, cases, dflt, _m) =
+and accSwitch cenv env (e, cases, dflt, m) =
     accExpr cenv env e
-    cases |> List.iter (fun (TCase(discrim, e)) -> accDiscrim cenv env discrim; accDTree cenv env e) 
+    cases |> List.iter (fun (TCase(discrim, e)) -> accDiscrim cenv env discrim m; accDTree cenv env e)
     dflt |> Option.iter (accDTree cenv env) 
 
-and accDiscrim cenv env d =
+and accDiscrim cenv env d backupRange =
     match d with 
-    | DecisionTreeTest.UnionCase(_ucref, tinst) -> accTypeInst cenv env tinst 
+    | DecisionTreeTest.UnionCase(_ucref, tinst) -> accTypeInst cenv env backupRange tinst
     | DecisionTreeTest.ArrayLength(_, ty) -> accTy cenv env None ty
     | DecisionTreeTest.Const _
     | DecisionTreeTest.IsNull -> ()
     | DecisionTreeTest.IsInst (srcTy, tgtTy) -> accTy cenv env None srcTy; accTy cenv env None tgtTy
     | DecisionTreeTest.ActivePatternCase (exp, tys, _, _, _, _) -> 
         accExpr cenv env exp
-        accTypeInst cenv env tys
+        accTypeInst cenv env backupRange tys
     | DecisionTreeTest.Error _ -> ()
 
 and accAttrib cenv env (Attrib(_, _k, args, props, _, _, m)) = 

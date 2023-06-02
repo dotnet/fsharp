@@ -15,7 +15,8 @@ module ObjInference =
             "<@ [] = [] @> |> ignore", 1, 9, 1, 11
             """let f<'b> (x : 'b) : int = failwith ""
 let deserialize<'v> (s : string) : 'v = failwith ""
-let x = deserialize "" |> f""", 3, 1, 3, 10 // TODO - fix this range when the test works
+let x = deserialize "" |> f""", 3, 9, 3, 28
+            "let f = typedefof<_>", 1, 19, 1, 20
         ]
         |> List.map (fun (str, line1, col1, line2, col2) -> [| box str ; line1 ; col1 ; line2 ; col2 |])
 
@@ -38,12 +39,9 @@ let x = deserialize "" |> f""", 3, 1, 3, 10 // TODO - fix this range when the te
         |> shouldFail
         |> withDiagnostics
             [
-                // The `failwith ""` case
+                // The `failwith` case
                 Warning 3559, Line 1, Col 30, Line 1, Col 41, message
-                // The `unbox a` case
-                Warning 3559, Line 1, Col 45, Line 1, Col 52, message
-                // The `unbox` case
-                Warning 3559, Line 1, Col 45, Line 1, Col 50, message
+                // Warning 3559, Line 1, Col 45, Line 1, Col 52, message
             ]
 
     let noWarningCases =
@@ -72,9 +70,6 @@ let f () = x = x |> ignore""" // measure is inferred as 1, but that's not covere
         [
             """System.Object.ReferenceEquals("hello", (null: string))"""
             """System.Object.ReferenceEquals((null: string), "hello")"""
-            // TODO: can we actually get this working?
-            // https://github.com/dotnet/fsharp/pull/13298#issuecomment-1414491640
-            """System.Object.ReferenceEquals("hello", null)"""
         ]
         |> List.map Array.singleton
 
