@@ -25,15 +25,7 @@ open System.Reflection.PortableExecutable
 open FSharp.Test.CompilerAssertHelpers
 open TestFramework
 
-open System.Runtime.CompilerServices
-open System.Runtime.InteropServices
-
-
 module rec Compiler =
-    [<AutoOpen>]
-    type SourceUtilities () =
-        static member getCurrentMethodName([<CallerMemberName; Optional; DefaultParameterValue("")>] memberName: string) = memberName
-
     type BaselineFile =
         {
             FilePath: string
@@ -57,15 +49,6 @@ module rec Compiler =
         | CS of CSharpCompilationSource
         | IL of ILCompilationSource
         override this.ToString() = match this with | FS fs -> fs.ToString() | _ -> (sprintf "%A" this   )
-        member this.OutputDirectory =
-            let toString diOpt =
-                match diOpt: DirectoryInfo option with
-                | Some di -> di.FullName
-                | None -> ""
-            match this with
-            | FS fs -> fs.OutputDirectory |> toString
-            | CS cs -> cs.OutputDirectory |> toString
-            | _ -> raise (Exception "Not supported for this compilation type")
         member this.WithStaticLink(staticLink: bool) = match this with | FS fs -> FS { fs with StaticLink = staticLink } | cu -> cu
 
     type FSharpCompilationSource =
@@ -207,47 +190,6 @@ module rec Compiler =
         | Arm64 = 6
 
     let private defaultOptions : string list = []
-
-    let normalizePathSeparator (text:string) = text.Replace(@"\", "/")
-
-    let normalizeName name =
-        let invalidPathChars = Array.concat [Path.GetInvalidPathChars(); [| ':'; '\\'; '/'; ' '; '.' |]]
-        let result = invalidPathChars |> Array.fold(fun (acc:string) (c:char) -> acc.Replace(string(c), "_")) name
-        result
-
-    let getTestOutputDirectory dir testCaseName extraDirectory =
-        // If the executing assembly has 'artifacts\bin' in it's path then we are operating normally in the CI or dev tests
-        // Thus the output directory will be in a subdirectory below where we are executing.
-        // The subdirectory will be relative to the source directory containing the test source file,
-        // E.g
-        //    When the source code is in:
-        //        $(repo-root)\tests\FSharp.Compiler.ComponentTests\Conformance\PseudoCustomAttributes
-        //    and the test is running in the FSharp.Compiler.ComponentTeststest library
-        //    The output directory will be:
-        //        artifacts\bin\FSharp.Compiler.ComponentTests\$(Flavour)\$(TargetFramework)\tests\FSharp.Compiler.ComponentTests\Conformance\PseudoCustomAttributes
-        //
-        //    If we can't find anything then we execute in the directory containing the source
-        //
-        try
-            let testlibraryLocation = normalizePathSeparator (Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location))
-            let pos = testlibraryLocation.IndexOf("artifacts/bin",StringComparison.OrdinalIgnoreCase)
-            if pos > 0 then
-                // Running under CI or dev build
-                let testRoot = Path.Combine(testlibraryLocation.Substring(0, pos), @"tests/")
-                let testSourceDirectory =
-                    let dirInfo = normalizePathSeparator (Path.GetFullPath(dir))
-                    let testPaths = dirInfo.Replace(testRoot, "").Split('/')
-                    testPaths[0] <- "tests"
-                    Path.Combine(testPaths)
-                let n = Path.Combine(testlibraryLocation, testSourceDirectory.Trim('/'), normalizeName testCaseName, extraDirectory)
-                let outputDirectory = new DirectoryInfo(n)
-                Some outputDirectory
-            else
-                raise (new InvalidOperationException($"Failed to find the test output directory:\nTest Library Location: '{testlibraryLocation}'\n Pos: {pos}"))
-                None
-
-        with | e ->
-            raise (new InvalidOperationException($" '{e.Message}'.  Can't get the location of the executing assembly"))
 
     // Not very safe version of reading stuff from file, but we want to fail fast for now if anything goes wrong.
     let private getSource (src: TestType) : string =
@@ -466,13 +408,9 @@ module rec Compiler =
     let withOptions (options: string list) (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper options "withOptions is only supported for F#" cUnit
 
-    let withOptionsString (options: string) (cUnit: CompilationUnit) : CompilationUnit =
-        let options = if String.IsNullOrWhiteSpace options then [] else (options.Split([|';'|])) |> Array.toList
-        withOptionsHelper options "withOptionsString is only supported for F#" cUnit
-
-    let withOutputDirectory (path: DirectoryInfo option) (cUnit: CompilationUnit) : CompilationUnit =
+    let withOutputDirectory (path: string) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
-        | FS fs -> FS { fs with OutputDirectory = path }
+        | FS fs -> FS { fs with OutputDirectory = Some (DirectoryInfo(path)) }
         | _ -> failwith "withOutputDirectory is only supported on F#"
 
     let withBufferWidth (width: int)(cUnit: CompilationUnit) : CompilationUnit =
@@ -511,7 +449,7 @@ module rec Compiler =
     let withAssemblyVersion (version:string) (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ $"--version:{version}" ] "withAssemblyVersion is only supported on F#" cUnit
 
-    let withWarnOn  (cUnit: CompilationUnit) warning : CompilationUnit =
+    let withWarnOn warning (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ $"--warnon:{warning}" ] "withWarnOn is only supported for F#" cUnit
 
     let withNoWarn warning (cUnit: CompilationUnit) : CompilationUnit =
