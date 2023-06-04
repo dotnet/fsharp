@@ -583,7 +583,7 @@ let _ =
         return x + y
     }
     """
-            [|(FSharpDiagnosticSeverity.Error, 3343, (6, 9, 6, 25), "The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a 'Bind2' method or appropriate 'MergeSource' and 'Bind' methods")|]
+            [|(FSharpDiagnosticSeverity.Error, 3343, (6, 9, 6, 25), "The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a 'Bind2' method or appropriate 'MergeSources' and 'Bind' methods")|]
 
     [<Test>]
     let ``AndBang Negative TraceApplicative missing Bind and BindReturn`` () =
