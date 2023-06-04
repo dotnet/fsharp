@@ -150,3 +150,5 @@ type System.Random with
         |> shouldFail
         |> withSingleDiagnostic (Error 909, Line 3, Col 15, Line 3, Col 33,
                                  """All implemented interfaces should be declared on the initial declaration of the type""")
+
+ 
