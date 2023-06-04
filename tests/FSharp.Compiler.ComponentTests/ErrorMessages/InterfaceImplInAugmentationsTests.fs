@@ -151,4 +151,17 @@ type System.Random with
         |> withSingleDiagnostic (Error 909, Line 3, Col 15, Line 3, Col 33,
                                  """All implemented interfaces should be declared on the initial declaration of the type""")
 
- 
+    [<Fact>]
+    let ``Interface member with tuple argument should give error message with better solution``() =
+        FSharp """
+type IFoo = 
+  abstract member Bar: (int * int) -> int
+  
+type Foo =
+  interface IFoo with
+    member _.Bar (x, y) = x + y
+"""
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Error 3577, Line 7, Col 14, Line 7, Col 17,
+                                 """This override takes a tuple instead of multiple arguments. Try to add additional layer of parentheses at the call site, or remove parentheses at abstract method declaration.""")
