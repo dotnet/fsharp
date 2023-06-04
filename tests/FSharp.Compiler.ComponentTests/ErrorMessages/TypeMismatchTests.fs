@@ -293,3 +293,18 @@ type Derived3() =
                 (Error 856, Line 8,  Col 16, Line 8,  Col 22, "This override takes a different number of arguments to the corresponding abstract member. The following abstract members were found:" + System.Environment.NewLine + "   abstract Base.Member: int * string -> string")
                 (Error 856, Line 12, Col 16, Line 12, Col 22, "This override takes a different number of arguments to the corresponding abstract member. The following abstract members were found:" + System.Environment.NewLine + "   abstract Base.Member: int * string -> string")
                 (Error 1,   Line 16, Col 24, Line 16, Col 34, "This expression was expected to have type\n    'int'    \nbut here has type\n    'string'    ")]
+
+    [<Fact>]
+    let ``Interface member with tuple argument should give error message with better solution``() =
+        FSharp """
+type IFoo = 
+  abstract member Bar: (int * int) -> int
+  
+type Foo =
+  interface IFoo with
+    member _.Bar (x, y) = x + y
+"""
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Error 3577, Line 7, Col 14, Line 7, Col 17,
+                                 """This override takes a tuple instead of multiple arguments. Try to add an additional layer of parentheses at the call site, or remove parentheses at the abstract method declaration.""")

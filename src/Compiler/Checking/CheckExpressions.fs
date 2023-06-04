@@ -11106,8 +11106,10 @@ and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (_: Val option) (a
                              // https://github.com/dotnet/fsharp/issues/15307
                              // check if abstract method expects tuple, give better error message
                              | TType_fun(_,TType_fun(TType_tuple _,_,_),_) ->
-                                 errorR(Error(FSComp.SR.tcOverrideUsesMultipleArgumentsInsteadOfTuple(), memberId.idRange))
-                                 []
+                                 if not slot.NumArgs.IsEmpty && slot.NumArgs.Head = 1 then 
+                                     errorR(Error(FSComp.SR.tcOverrideUsesMultipleArgumentsInsteadOfTuple(), memberId.idRange))
+                                     []
+                                 else raiseGenericArityMismatch()
                              | _ -> raiseGenericArityMismatch()
                          | _ -> raiseGenericArityMismatch()
                      | _ -> [] // check that method to override is sealed is located at CheckOverridesAreAllUsedOnce (typrelns.fs)
