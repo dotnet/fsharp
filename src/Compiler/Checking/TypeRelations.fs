@@ -182,7 +182,7 @@ let ChooseTyparSolutionAndRange (g: TcGlobals) amap (tp:Typar) =
     match tp.Kind with
     | TyparKind.Type ->
         if not isRefined then
-            warning(Error(FSComp.SR.typrelNeverRefinedAwayFromTop(), m))
+            informationalWarning(Error(FSComp.SR.typrelNeverRefinedAwayFromTop(), m))
     | TyparKind.Measure -> ()
 
     maxTy, m
