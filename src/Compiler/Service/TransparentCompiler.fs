@@ -312,7 +312,7 @@ type internal TransparentCompiler
             for r in project.ReferencedProjects do
 
                 match r with
-                | FSharpReferencedProjectSnapshot.FSharpReference (nm, opts) ->
+                | FSharpReferencedProjectSnapshot.FSharpReference (nm, projectSnapshot) ->
                     // Don't use cross-project references for FSharp.Core, since various bits of code
                     // require a concrete FSharp.Core to exist on-disk. The only solutions that have
                     // these cross-project references to FSharp.Core are VisualFSharp.sln and FSharp.sln. The ramification
@@ -330,7 +330,7 @@ type internal TransparentCompiler
                                 node {
                                     Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "GetAssemblyData", nm)
 
-                                    return! self.GetAssemblyData(opts, userOpName + ".CheckReferencedProject(" + nm + ")")
+                                    return! self.GetAssemblyData(projectSnapshot, userOpName + ".CheckReferencedProject(" + nm + ")")
                                 }
 
                             member x.TryGetLogicalTimeStamp(cache) =

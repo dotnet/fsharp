@@ -267,13 +267,15 @@ let ``Files that are not depended on don't invalidate cache part 2`` () =
         sourceFile "E" ["C"])
 
     let cacheEvents = ResizeArray()
-    let allEvents = ResizeArray()
 
     ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
-        withChecker (fun checker -> checker.CacheEvent.Add allEvents.Add)
         updateFile "A" updatePublicSurface
         checkFile "D" expectOk
-        withChecker (fun checker -> checker.CacheEvent.Add cacheEvents.Add)
+        withChecker (fun checker ->
+            async {
+                do! Async.Sleep 50 // wait for events from initial project check
+                checker.CacheEvent.Add cacheEvents.Add
+            })
         updateFile "B" updatePublicSurface
         checkFile "E" expectOk
     } |> ignore
@@ -298,4 +300,4 @@ let ``Files that are not depended on don't invalidate cache part 2`` () =
 
     Assert.Equal<JobEventType list>([Started; Finished], graphConstructions["FileE.fs"])
 
-    Assert.True intermediateTypeChecks.IsEmpty
+    Assert.Equal<string * JobEventType list>([], intermediateTypeChecks |> Map.toList)
