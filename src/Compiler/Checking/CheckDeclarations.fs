@@ -3948,7 +3948,17 @@ module TcDeclarations =
             let resInfo = TypeNameResolutionStaticArgsInfo.FromTyArgs synTypars.Length
             let _, tcref =
                 match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.Binding OpenQualified envForDecls.NameEnv ad longPath resInfo PermitDirectReferenceToGeneratedType.No with
-                | Result res -> res
+                | Result res ->
+                    // Update resolved type parameters with the names from the source.
+                    let _, tcref = res
+                    if tcref.TyparsNoRange.Length = synTypars.Length then
+                        (tcref.TyparsNoRange, synTypars)
+                        ||> List.zip
+                        |> List.iter (fun (typar, SynTyparDecl.SynTyparDecl(_, SynTypar(ident = untypedIdent))) ->
+                            typar.SetIdent(untypedIdent)
+                        )
+
+                    res
                 | res when inSig && List.isSingleton longPath ->
                     errorR(Deprecated(FSComp.SR.tcReservedSyntaxForAugmentation(), m))
                     ForceRaise res
