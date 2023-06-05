@@ -1618,9 +1618,6 @@ val mkArrayTy: TcGlobals -> int -> TType -> range -> TType
 /// Check if a type definition is one of the artificial type definitions used for array types of different ranks
 val isArrayTyconRef: TcGlobals -> TyconRef -> bool
 
-/// Check if a type definition is of Microsoft.FSharp.Collections.seq`1
-val isSeqTyconRef: TcGlobals -> TyconRef -> bool
-
 /// Determine the rank of one of the artificial type definitions used for array types
 val rankOfArrayTyconRef: TcGlobals -> TyconRef -> int
 
@@ -2704,3 +2701,7 @@ val tryAddExtensionAttributeIfNotAlreadyPresent:
 
 /// Serialize an entity to a very basic json structure.
 val serializeEntity: path: string -> entity: Entity -> unit
+
+/// Updates the IsPrefixDisplay to false for the Microsoft.FSharp.Collections.seq`1 entity
+/// Meant to be called with the FSharp.Core module spec right after it was unpickled.
+val updateSeqTypeIsPrefix: fsharpCoreMSpec: ModuleOrNamespace -> unit

@@ -164,7 +164,7 @@ module internal PrintUtilities =
 
     let usePrefix (denv: DisplayEnv) (tcref: TyconRef) =
         match denv.genericParameterStyle with
-        | GenericParameterStyle.Implicit -> not (isSeqTyconRef denv.g tcref) && tcref.IsPrefixDisplay
+        | GenericParameterStyle.Implicit -> tcref.IsPrefixDisplay
         | GenericParameterStyle.Prefix -> true
         | GenericParameterStyle.Suffix -> false
 

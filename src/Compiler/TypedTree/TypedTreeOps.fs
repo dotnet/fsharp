@@ -1749,9 +1749,6 @@ let isArrayTyconRef (g: TcGlobals) tcref =
     g.il_arr_tcr_map
     |> Array.exists (tyconRefEq g tcref)
 
-let isSeqTyconRef (g: TcGlobals) tcref =
-    tyconRefEq g g.seq_tcr tcref
-
 let rankOfArrayTyconRef (g: TcGlobals) tcref =
     match g.il_arr_tcr_map |> Array.tryFindIndex (tyconRefEq g tcref) with
     | Some idx ->
@@ -10609,3 +10606,29 @@ let rec serializeEntity path (entity: Entity) =
     let json = sw.ToString()
     use out = FileSystem.OpenFileForWriteShim(path, fileMode = System.IO.FileMode.Create)
     out.WriteAllText(json)
+
+let updateSeqTypeIsPrefix (fsharpCoreMSpec: ModuleOrNamespace) =
+    let findModuleOrNamespace (name: string) (entity: Entity) =
+        if not entity.IsModuleOrNamespace then
+            None
+        else
+            entity.ModuleOrNamespaceType.ModulesAndNamespacesByDemangledName
+            |> Map.tryFind name
+
+    findModuleOrNamespace "Microsoft" fsharpCoreMSpec
+    |> Option.bind (findModuleOrNamespace "FSharp")
+    |> Option.bind (findModuleOrNamespace "Collections")
+    |> Option.iter (fun collectionsEntity ->
+        collectionsEntity.ModuleOrNamespaceType.AllEntitiesByLogicalMangledName
+        |> Map.tryFind "seq`1"
+        |> Option.iter (fun seqEntity ->
+            seqEntity.entity_flags <-
+                EntityFlags(
+                    false,
+                    seqEntity.entity_flags.IsModuleOrNamespace,
+                    seqEntity.entity_flags.PreEstablishedHasDefaultConstructor,
+                    seqEntity.entity_flags.HasSelfReferentialConstructor,
+                    seqEntity.entity_flags.IsStructRecordOrUnionType
+                )
+        )
+    )
