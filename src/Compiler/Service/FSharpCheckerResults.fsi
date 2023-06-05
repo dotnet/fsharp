@@ -508,6 +508,15 @@ type public FSharpCheckFileResults =
     member GetSymbolUseAtLocation:
         line: int * colAtEndOfNames: int * lineText: string * names: string list -> FSharpSymbolUse option
 
+    /// <summary>Similar to GetSymbolUseAtLocation, but returns all found symbols if there are multiple.</summary>
+    ///
+    /// <param name="line">The line number where the information is being requested.</param>
+    /// <param name="colAtEndOfNames">The column number at the end of the identifiers where the information is being requested.</param>
+    /// <param name="lineText">The text of the line where the information is being requested.</param>
+    /// <param name="names">The identifiers at the location where the information is being requested.</param>
+    member GetSymbolUsesAtLocation:
+        line: int * colAtEndOfNames: int * lineText: string * names: string list -> FSharpSymbolUse list
+
     /// <summary>Get any extra colorization info that is available after the typecheck</summary>
     member GetSemanticClassification: range option -> SemanticClassificationItem[]
 
