@@ -24,7 +24,7 @@ module ObjInference =
 let deserialize<'v> (s : string) : 'v = failwith ""
 let x = deserialize "" |> f""", 3, 9, 3, 28
             "let f = typedefof<_>", 1, 19, 1, 20
-            """let f<'b> () : 'b = (let a = failwith "" in unbox a)""", 1, 30, 1, 41
+            """let f<'b> () : 'b = (let a = failwith "" in unbox a)""", 1, 26, 1, 27
         ]
         |> List.map (fun (str, line1, col1, line2, col2) -> [| box str ; line1 ; col1 ; line2 ; col2 |])
 
@@ -39,7 +39,7 @@ let x = deserialize "" |> f""", 3, 9, 3, 28
         |> withWarnOn 3559
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Warning 3559, Line line1, Col col1, Line line2, Col col2, message)
+        |> withSingleDiagnostic (Information 3559, Line line1, Col col1, Line line2, Col col2, message)
 
     let quotableNoWarningCases =
         [
@@ -111,7 +111,7 @@ let f () = x = x |> ignore""" // measure is inferred as 1, but that's not covere
         |> withWarnOn 3559
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Warning 3559, Line line1, Col (col1 + 3), Line line2, Col (col2 + 3), message)
+        |> withSingleDiagnostic (Information 3559, Line line1, Col (col1 + 3), Line line2, Col (col2 + 3), message)
 
     [<Theory>]
     [<MemberData(nameof(quotableNoWarningCases))>]
