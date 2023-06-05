@@ -493,3 +493,9 @@ let calculateHashOfImpliedSignature g observer  (expr:ModuleOrNamespaceContents)
                 fullNameHash @@ contentHash
 
     hashSingleModuleOrNamespaceContents expr
+
+
+let calculateSignatureHashOfFiles (files:CheckedImplFile list) g observer= 
+    use _ = FSharp.Compiler.Diagnostics.Activity.startNoTags "calculateSignatureHashOfFiles"
+    files
+    |> hashListOrderMatters (fun f -> calculateHashOfImpliedSignature g observer f.Contents)

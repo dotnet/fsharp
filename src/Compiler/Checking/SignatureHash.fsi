@@ -7,5 +7,5 @@ type ObserverVisibility =
     | PublicOnly
     | PublicAndInternal
 
-
 val calculateHashOfImpliedSignature: g:TcGlobals -> observer:ObserverVisibility ->  expr:ModuleOrNamespaceContents -> int
+val calculateSignatureHashOfFiles: files:CheckedImplFile list -> g:TcGlobals -> observer:ObserverVisibility -> int

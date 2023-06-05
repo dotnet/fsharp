@@ -842,6 +842,18 @@ let main3
             errorRecoveryNoRange e
             exiter.Exit 1
 
+    let refAssemblySignatureHash = 
+        match tcConfig.emitMetadataAssembly with
+        | MetadataAssemblyGeneration.None -> None
+        | MetadataAssemblyGeneration.ReferenceOnly
+        | MetadataAssemblyGeneration.ReferenceOut _ ->
+            try
+                Fsharp.Compiler.SignatureHash.calculateSignatureHashOfFiles typedImplFiles tcGlobals Fsharp.Compiler.SignatureHash.PublicOnly
+                |> Some
+            with e ->
+                printfn "Unexpected error when hashing implied signature, will hash the all of .NET metadata instead. Error: %O " e
+                None
+
     let metadataVersion =
         match tcConfig.metadataVersion with
         | Some v -> v
@@ -898,7 +910,8 @@ let main3
         signingInfo,
         metadataVersion,
         exiter,
-        ilSourceDocs
+        ilSourceDocs,
+        refAssemblySignatureHash
     )
 
 /// Fourth phase of compilation.
@@ -924,7 +937,8 @@ let main4
            signingInfo,
            metadataVersion,
            exiter: Exiter,
-           ilSourceDocs))
+           ilSourceDocs,
+           refAssemblySignatureHash))
     =
     match tcImportsCapture with
     | None -> ()
@@ -1007,7 +1021,8 @@ let main4
         ilxMainModule,
         signingInfo,
         exiter,
-        ilSourceDocs
+        ilSourceDocs,
+        refAssemblySignatureHash
     )
 
 /// Fifth phase of compilation.
@@ -1024,7 +1039,8 @@ let main5
            ilxMainModule,
            signingInfo,
            exiter: Exiter,
-           ilSourceDocs))
+           ilSourceDocs,
+           refAssemblySignatureHash))
     =
 
     use _ = UseBuildPhase BuildPhase.Output
@@ -1040,7 +1056,7 @@ let main5
     AbortOnError(diagnosticsLogger, exiter)
 
     // Pass on only the minimum information required for the next phase
-    Args(ctok, tcConfig, tcImports, tcGlobals, diagnosticsLogger, ilxMainModule, outfile, pdbfile, signingInfo, exiter, ilSourceDocs)
+    Args(ctok, tcConfig, tcImports, tcGlobals, diagnosticsLogger, ilxMainModule, outfile, pdbfile, signingInfo, exiter, ilSourceDocs, refAssemblySignatureHash)
 
 /// Sixth phase of compilation.
 ///   -  write the binaries
@@ -1056,7 +1072,8 @@ let main6
            pdbfile,
            signingInfo,
            exiter: Exiter,
-           ilSourceDocs))
+           ilSourceDocs,
+           refAssemblySignatureHash))
     =
     ReportTime tcConfig "Write .NET Binary"
 
@@ -1111,6 +1128,7 @@ let main6
                             dumpDebugInfo = tcConfig.dumpDebugInfo
                             referenceAssemblyOnly = true
                             referenceAssemblyAttribOpt = referenceAssemblyAttribOpt
+                            referenceAssemblySignatureHash = refAssemblySignatureHash
                             pathMap = tcConfig.pathMap
                         },
                         ilxMainModule,
@@ -1141,6 +1159,7 @@ let main6
                             dumpDebugInfo = tcConfig.dumpDebugInfo
                             referenceAssemblyOnly = false
                             referenceAssemblyAttribOpt = None
+                            referenceAssemblySignatureHash = None
                             pathMap = tcConfig.pathMap
                         },
                         ilxMainModule,
