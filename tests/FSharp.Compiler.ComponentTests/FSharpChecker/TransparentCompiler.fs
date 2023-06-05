@@ -230,7 +230,11 @@ let ``Files that are not depended on don't invalidate cache`` () =
     ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
         updateFile "First" updatePublicSurface
         checkFile "Last" expectOk
-        withChecker (fun checker -> checker.CacheEvent.Add cacheEvents.Add)
+        withChecker (fun checker ->
+            async {
+                do! Async.Sleep 50 // wait for events from initial project check
+                checker.CacheEvent.Add cacheEvents.Add
+            })
         updateFile "Second" updatePublicSurface
         checkFile "Last" expectOk
     } |> ignore
@@ -255,7 +259,7 @@ let ``Files that are not depended on don't invalidate cache`` () =
 
     Assert.Equal<JobEventType list>([Started; Finished], graphConstructions["FileLast.fs"])
 
-    Assert.True intermediateTypeChecks.IsEmpty
+    Assert.Equal<string * JobEventType list>([], intermediateTypeChecks |> Map.toList)
 
 [<Fact>]
 let ``Files that are not depended on don't invalidate cache part 2`` () =
