@@ -891,7 +891,29 @@ module rec Compiler =
         | FS fsSource ->
             let source = fsSource.Source.GetSourceText |> Option.defaultValue ""
             let fileName = fsSource.Source.ChangeExtension.GetSourceFileName
-            let options = fsSource.Options |> Array.ofList
+
+            let references =
+                let disposals = ResizeArray<IDisposable>()
+                let outputDirectory =
+                    match fsSource.OutputDirectory with
+                    | Some di -> di
+                    | None -> DirectoryInfo(tryCreateTemporaryDirectory())
+                let references = processReferences fsSource.References outputDirectory
+                if references.IsEmpty then
+                    Array.empty
+                else
+                    outputDirectory.Create()
+                    disposals.Add({ new IDisposable with member _.Dispose() = outputDirectory.Delete(true) })
+                    // Note that only the references are relevant here
+                    let compilation = Compilation.Compilation([], CompileOutput.Exe,Array.empty, TargetFramework.Current, references, None, None)
+                    evaluateReferences outputDirectory disposals fsSource.IgnoreWarnings compilation
+                    |> fst
+            
+            let options =
+                [|
+                    yield! fsSource.Options |> Array.ofList
+                    yield! references
+                |]
             CompilerAssert.TypeCheck(options, fileName, source)
         | _ -> failwith "Typecheck only supports F#"
 
