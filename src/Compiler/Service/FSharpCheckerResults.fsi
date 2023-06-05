@@ -419,6 +419,8 @@ type public FSharpCheckFileResults =
     /// Lays out and returns the formatted signature for the typechecked file as source text.
     member GenerateSignature: ?pageWidth: int -> ISourceText option
 
+    member internal CalculateSignatureHash: unit -> int option
+
     /// Internal constructor
     static member internal MakeEmpty:
         fileName: string * creationErrors: FSharpDiagnostic[] * keepAssemblyContents: bool -> FSharpCheckFileResults
