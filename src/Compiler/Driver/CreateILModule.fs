@@ -303,8 +303,11 @@ module MainModuleBuilder =
 
         RequireCompilationThread ctok
 
+        let isEmbeddableTypeWithLocalSourceImplementation (td:ILTypeDef) =
+            (TcGlobals.IsInEmbeddableKnownSet td.Name) && not (codegenResults.ilTypeDefs |> List.exists(fun r -> r.Name = td.Name))
+
         let ilTypeDefs =
-            mkILTypeDefs (codegenResults.ilTypeDefs @ tcGlobals.tryRemoveEmbeddedILTypeDefs ())
+            mkILTypeDefs (codegenResults.ilTypeDefs @ (tcGlobals.tryRemoveEmbeddedILTypeDefs ()|> List.filter isEmbeddableTypeWithLocalSourceImplementation))
 
         let mainModule =
             let hashAlg =
