@@ -2,10 +2,13 @@
 
 namespace FSharp.Editor.Tests
 
+open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
+
 module CompletionProviderTests =
 
     open System
     open System.Linq
+    open System.Threading
     open Microsoft.CodeAnalysis
     open Microsoft.CodeAnalysis.Completion
     open Microsoft.CodeAnalysis.Text
@@ -30,10 +33,11 @@ module CompletionProviderTests =
             |> RoslynTestHelpers.GetSingleDocument
 
         let results =
-            FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> []))
-            |> Async.RunSynchronously
-            |> Option.defaultValue (ResizeArray())
-            |> Seq.map (fun result -> result.DisplayText)
+            let task =
+                FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> []))
+                |> CancellableTask.start CancellationToken.None
+
+            task.Result |> Seq.map (fun result -> result.DisplayText)
 
         let expectedFound = expected |> List.filter results.Contains
 
@@ -77,9 +81,11 @@ module CompletionProviderTests =
             |> RoslynTestHelpers.GetSingleDocument
 
         let actual =
-            FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> []))
-            |> Async.RunSynchronously
-            |> Option.defaultValue (ResizeArray())
+            let task =
+                FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> []))
+                |> CancellableTask.start CancellationToken.None
+
+            task.Result
             |> Seq.toList
             // sort items as Roslyn do - by `SortText`
             |> List.sortBy (fun x -> x.SortText)
@@ -105,7 +111,7 @@ module CompletionProviderTests =
         let sourceText = SourceText.From(fileContents)
 
         let resultSpan =
-            CompletionUtils.getDefaultCompletionListSpan (sourceText, caretPosition, documentId, filePath, [], None)
+            CompletionUtils.getDefaultCompletionListSpan (sourceText, caretPosition, documentId, filePath, [], None, CancellationToken.None)
 
         Assert.Equal(expected, sourceText.ToString(resultSpan))
 
@@ -140,7 +146,8 @@ System.Console.WriteLine(x + y)
                     caretPosition,
                     CompletionTriggerKind.Insertion,
                     mkGetInfo documentId,
-                    IntelliSenseOptions.Default
+                    IntelliSenseOptions.Default,
+                    CancellationToken.None
                 )
 
             triggered
@@ -161,7 +168,8 @@ System.Console.WriteLine(x + y)
                     caretPosition,
                     triggerKind,
                     mkGetInfo documentId,
-                    IntelliSenseOptions.Default
+                    IntelliSenseOptions.Default,
+                    CancellationToken.None
                 )
 
             Assert.False(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
@@ -178,7 +186,8 @@ System.Console.WriteLine(x + y)
                 caretPosition,
                 CompletionTriggerKind.Insertion,
                 mkGetInfo documentId,
-                IntelliSenseOptions.Default
+                IntelliSenseOptions.Default,
+                CancellationToken.None
             )
 
         Assert.False(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
@@ -202,7 +211,8 @@ System.Console.WriteLine()
                 caretPosition,
                 CompletionTriggerKind.Insertion,
                 mkGetInfo documentId,
-                IntelliSenseOptions.Default
+                IntelliSenseOptions.Default,
+                CancellationToken.None
             )
 
         Assert.False(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
@@ -239,7 +249,8 @@ let z = $"abc  {System.Console.WriteLine(x + y)} def"
                     caretPosition,
                     CompletionTriggerKind.Insertion,
                     mkGetInfo documentId,
-                    IntelliSenseOptions.Default
+                    IntelliSenseOptions.Default,
+                    CancellationToken.None
                 )
 
             triggered
@@ -265,7 +276,8 @@ System.Console.WriteLine()
                 caretPosition,
                 CompletionTriggerKind.Insertion,
                 mkGetInfo documentId,
-                IntelliSenseOptions.Default
+                IntelliSenseOptions.Default,
+                CancellationToken.None
             )
 
         Assert.False(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
@@ -288,7 +300,8 @@ let f() =
                 caretPosition,
                 CompletionTriggerKind.Insertion,
                 mkGetInfo documentId,
-                IntelliSenseOptions.Default
+                IntelliSenseOptions.Default,
+                CancellationToken.None
             )
 
         Assert.False(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger on operators")
@@ -311,7 +324,8 @@ module Foo = module end
                 caretPosition,
                 CompletionTriggerKind.Insertion,
                 mkGetInfo documentId,
-                IntelliSenseOptions.Default
+                IntelliSenseOptions.Default,
+                CancellationToken.None
             )
 
         Assert.True(triggered, "Completion should trigger on Attributes.")
@@ -334,7 +348,8 @@ printfn "%d" !f
                 caretPosition,
                 CompletionTriggerKind.Insertion,
                 mkGetInfo documentId,
-                IntelliSenseOptions.Default
+                IntelliSenseOptions.Default,
+                CancellationToken.None
             )
 
         Assert.True(triggered, "Completion should trigger after typing an identifier that follows a dereference operator (!).")
@@ -358,7 +373,8 @@ use ptr = fixed &p
                 caretPosition,
                 CompletionTriggerKind.Insertion,
                 mkGetInfo documentId,
-                IntelliSenseOptions.Default
+                IntelliSenseOptions.Default,
+                CancellationToken.None
             )
 
         Assert.True(triggered, "Completion should trigger after typing an identifier that follows an addressOf operator (&).")
@@ -391,7 +407,8 @@ xVal**y
                     caretPosition,
                     CompletionTriggerKind.Insertion,
                     mkGetInfo documentId,
-                    IntelliSenseOptions.Default
+                    IntelliSenseOptions.Default,
+                    CancellationToken.None
                 )
 
             Assert.True(triggered, "Completion should trigger after typing an identifier that follows a mathematical operation")
@@ -412,7 +429,8 @@ l"""
                 caretPosition,
                 CompletionTriggerKind.Insertion,
                 mkGetInfo documentId,
-                IntelliSenseOptions.Default
+                IntelliSenseOptions.Default,
+                CancellationToken.None
             )
 
         Assert.True(

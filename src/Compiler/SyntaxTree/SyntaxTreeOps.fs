@@ -939,15 +939,6 @@ let mkDynamicArgExpr expr =
     | SynExpr.Paren (expr = e) -> e
     | e -> e
 
-let rec normalizeTupleExpr exprs commas : SynExpr list * range list =
-    match exprs with
-    | SynExpr.Tuple (false, innerExprs, innerCommas, _) :: rest ->
-        let innerExprs, innerCommas =
-            normalizeTupleExpr (List.rev innerExprs) (List.rev innerCommas)
-
-        innerExprs @ rest, innerCommas @ commas
-    | _ -> exprs, commas
-
 let rec normalizeTuplePat pats commas : SynPat list * range List =
     match pats with
     | SynPat.Tuple (false, innerPats, innerCommas, _) :: rest ->

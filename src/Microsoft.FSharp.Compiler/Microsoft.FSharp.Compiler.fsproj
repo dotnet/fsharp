@@ -34,14 +34,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\fsi\fsiProject\fsi.fsproj" />
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\fsc\fscProject\fsc.fsproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\fsi\fsiProject\fsi.fsproj">
+        <AdditionalProperties>Configuration=ReleaseCompressed;CompressAllMetadata=true</AdditionalProperties>
+    </ProjectReference>
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\fsc\fscProject\fsc.fsproj">
+        <AdditionalProperties>Configuration=ReleaseCompressed;CompressAllMetadata=true</AdditionalProperties>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>
-    <DependentProjects Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj">
-        <AdditionalProperties>TargetFrameworks=netstandard2.1;netstandard2.0</AdditionalProperties>
-    </DependentProjects>
     <DependentProjects Include="$(MSBuildThisFileDirectory)..\FSharp.Build\FSharp.Build.fsproj">
         <AdditionalProperties>TargetFrameworks=netstandard2.0</AdditionalProperties>
     </DependentProjects>
@@ -50,6 +51,9 @@
     </DependentProjects>
     <DependentProjects Include="$(MSBuildThisFileDirectory)..\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.Nuget.fsproj">
         <AdditionalProperties>TargetFrameworks=netstandard2.0</AdditionalProperties>
+    </DependentProjects>
+    <DependentProjects Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj">
+        <AdditionalProperties>TargetFrameworks=netstandard2.1;netstandard2.0</AdditionalProperties>
     </DependentProjects>
     <DependentProjects Include="$(MSBuildThisFileDirectory)..\Compiler\FSharp.Compiler.Service.fsproj">
         <AdditionalProperties>TargetFrameworks=netstandard2.0</AdditionalProperties>
@@ -60,13 +64,43 @@
     <Compile Include="Program.fs" />
   </ItemGroup>
 
+  <!--
+     The targets below manages Arcade Release/Shipping nuget package manahement.
+     This is particularly tricky because we generate fsharp.core and fsharp.compiler.service 
+     nupkgs and embedd both the shipping and release nuget packages inside the final 
+     microsoft.fsharp.compiler.nupkg which we insert into the dotnet sdk
+  -->
+  <Target Name="PackageReleaseDependentPackages" AfterTargets="Pack" Condition="'$(DotNetFinalVersionKind)' == ''">
+    <Message Text="Building release versions of NuGet packages" Importance="high" />
+
+    <Error Text="PreReleaseVersionLabel must be non-empty when using NuGet Repack tool." Condition="'$(PreReleaseVersionLabel)' == ''" />
+    
+    <ItemGroup>
+      <_BuiltPackages Include="$(DependentPackagesDir)Shipping\*.nupkg" />
+    </ItemGroup>
+
+    <!-- Force references among packages to use exact versions (see https://github.com/NuGet/Home/issues/7213) -->
+    <Microsoft.DotNet.Tools.UpdatePackageVersionTask VersionKind="release" Packages="@(_BuiltPackages)" OutputDirectory="$(DependentPackagesDir)Release" AllowPreReleaseDependencies="true" ExactVersions="true" />
+
+    <!-- Rewrite the version ranges of per-build pre-release packages (see https://github.com/NuGet/Home/issues/7213) -->
+    <Microsoft.DotNet.Tools.UpdatePackageVersionTask Packages="@(_BuiltPackages)" OutputDirectory="$(DependentPackagesDir)Shipping" ExactVersions="true"/>
+  </Target>
+
+  <Target Name="PackageReleasePackages" AfterTargets="Pack" Condition="'$(DotNetFinalVersionKind)' == ''">
+    <!-- override sdk PackageReleasePackages to do nothing. -->
+  </Target>
+
+
   <Target Name="PackDependentProjectsCore">
-    <MSBuild Projects="@(DependentProjects)" Targets="Pack" Properties="Restore=true;Pack=true;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
+    <PropertyGroup>
+      <DependentPackagesDir>$([MSBuild]::NormalizeDirectory( '$(ArtifactsDir)', 'packages', '$(Configuration)', 'Dependency' ))</DependentPackagesDir>
+    </PropertyGroup>
+    <MSBuild Projects="@(DependentProjects)" Targets="Pack" Properties="Restore=true;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);ArtifactsPackagesDir=$(DependentPackagesDir)" />
   </Target>
 
   <Target Name="PackDependentProjects"
     BeforeTargets="Build"
-    DependsOnTargets="PackDependentProjectsCore;PackageReleasePackages">
+    DependsOnTargets="PackDependentProjectsCore;PackageReleaseDependentPackages">
   </Target>
 
 </Project>
