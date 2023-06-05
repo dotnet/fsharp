@@ -315,8 +315,6 @@
     <Compile Include="Checking\InfoReader.fs" />
     <Compile Include="Checking\NicePrint.fsi" />
     <Compile Include="Checking\NicePrint.fs" />
-    <Compile Include="Checking\SignatureHash.fsi" />
-    <Compile Include="Checking\SignatureHash.fs" />
     <Compile Include="Checking\AugmentWithHashCompare.fsi" />
     <Compile Include="Checking\AugmentWithHashCompare.fs" />
     <Compile Include="Checking\NameResolution.fsi" />
@@ -353,6 +351,8 @@
     <Compile Include="Checking\CheckIncrementalClasses.fs" />
     <Compile Include="Checking\CheckDeclarations.fsi" />
     <Compile Include="Checking\CheckDeclarations.fs" />
+	<Compile Include="Checking\SignatureHash.fsi" />
+	<Compile Include="Checking\SignatureHash.fs" />
     <Compile Include="Optimize\Optimizer.fsi" />
     <Compile Include="Optimize\Optimizer.fs" />
     <Compile Include="Optimize\DetupleArgs.fsi" />

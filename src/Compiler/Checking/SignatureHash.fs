@@ -9,6 +9,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.CheckDeclarations
 
 
 type ObserverVisibility =
@@ -499,3 +500,18 @@ let calculateSignatureHashOfFiles (files:CheckedImplFile list) g observer=
     use _ = FSharp.Compiler.Diagnostics.Activity.startNoTags "calculateSignatureHashOfFiles"
     files
     |> hashListOrderMatters (fun f -> calculateHashOfImpliedSignature g observer f.Contents)
+
+let calculateHashOfAssemblyTopAttributes (attrs:TopAttribs) (platform:ILPlatform option) = 
+    let platformHash = 
+        match platform with
+        | None -> 0
+        | Some AMD64 -> 1
+        | Some IA64 -> 2
+        | Some ARM -> 3
+        | Some ARM64 -> 4
+        | Some X86 -> 5
+
+    HashTypes.hashAttributeList attrs.assemblyAttrs
+    @@ HashTypes.hashAttributeList attrs.mainMethodAttrs
+    @@ HashTypes.hashAttributeList attrs.netModuleAttrs
+    @@ platformHash

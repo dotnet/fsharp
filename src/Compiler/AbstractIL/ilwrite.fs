@@ -4134,7 +4134,7 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
             [| hCode
                hData
                match options.referenceAssemblyOnly, options.referenceAssemblySignatureHash with
-               | true, Some hash -> System.BitConverter.GetBytes(hash)
+               | true, Some impliedSigHash -> System.BitConverter.GetBytes(impliedSigHash)
                | _ -> sha.ComputeHash metadata |] 
             |> Array.collect id 
             |> sha.ComputeHash

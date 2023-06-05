@@ -849,6 +849,7 @@ let main3
         | MetadataAssemblyGeneration.ReferenceOut _ ->
             try
                 Fsharp.Compiler.SignatureHash.calculateSignatureHashOfFiles typedImplFiles tcGlobals Fsharp.Compiler.SignatureHash.PublicOnly
+                + Fsharp.Compiler.SignatureHash.calculateHashOfAssemblyTopAttributes topAttrs tcConfig.platform           
                 |> Some
             with e ->
                 printfn "Unexpected error when hashing implied signature, will hash the all of .NET metadata instead. Error: %O " e
