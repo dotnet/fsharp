@@ -30,17 +30,17 @@ type cenv =
     override _.ToString() = "<cenv>"
 
 /// Walk types, collecting type variables
-let accTy cenv _env (fallbackRange: Range) ty =
+let accTy cenv _env (mFallback: range) ty =
     let normalizedTy = tryNormalizeMeasureInType cenv.g ty
     (freeInType CollectTyparsNoCaching normalizedTy).FreeTypars |> Zset.iter (fun tp ->
         if (tp.Rigidity <> TyparRigidity.Rigid) then
-            match fallbackRange with
+            match mFallback with
             | r when tp.Range = Range.range0 -> tp.SetIdent (FSharp.Compiler.Syntax.Ident(tp.typar_id.idText, r))
             | _ -> ()
             cenv.unsolved <- tp :: cenv.unsolved)
 
-let accTypeInst cenv env backup tyargs =
-    tyargs |> List.iter (accTy cenv env backup)
+let accTypeInst cenv env mFallback tyargs =
+    tyargs |> List.iter (accTy cenv env mFallback)
 
 /// Walk expressions, collecting type variables
 let rec accExpr (cenv: cenv) (env: env) expr =
@@ -136,11 +136,11 @@ and accMethod cenv env _baseValOpt (TObjExprMethod(_slotsig, _attribs, _tps, vs,
     vs |> List.iterSquared (accVal cenv env)
     accExpr cenv env bodyExpr
 
-and accIntfImpls cenv env baseValOpt (backupRange: range) l =
-    List.iter (accIntfImpl cenv env baseValOpt backupRange) l
+and accIntfImpls cenv env baseValOpt (mFallback: range) l =
+    List.iter (accIntfImpl cenv env baseValOpt mFallback) l
 
-and accIntfImpl cenv env (baseValOpt: Val option) (backupRange: range) (ty, overrides) =
-    accTy cenv env backupRange ty
+and accIntfImpl cenv env (baseValOpt: Val option) (mFallback: range) (ty, overrides) =
+    accTy cenv env mFallback ty
     accMethods cenv env baseValOpt overrides
 
 and accOp cenv env (op, tyargs, args, m) =
@@ -160,10 +160,10 @@ and accOp cenv env (op, tyargs, args, m) =
         accTypeInst cenv env m retTys
     | _ ->    ()
 
-and accTraitInfo cenv env (backupRange : range) (TTrait(tys, _nm, _, argTys, retTy, _sln)) =
-    argTys |> accTypeInst cenv env backupRange
-    retTy |> Option.iter (accTy cenv env backupRange)
-    tys |> List.iter (accTy cenv env backupRange)
+and accTraitInfo cenv env (mFallback : range) (TTrait(tys, _nm, _, argTys, retTy, _sln)) =
+    argTys |> accTypeInst cenv env mFallback
+    retTy |> Option.iter (accTy cenv env mFallback)
+    tys |> List.iter (accTy cenv env mFallback)
 
 and accLambdas cenv env valReprInfo expr exprTy =
     match stripDebugPoints expr with
@@ -199,16 +199,16 @@ and accSwitch cenv env (e, cases, dflt, m) =
     cases |> List.iter (fun (TCase(discrim, e)) -> accDiscrim cenv env discrim m; accDTree cenv env e)
     dflt |> Option.iter (accDTree cenv env)
 
-and accDiscrim cenv env d backupRange =
+and accDiscrim cenv env d mFallback =
     match d with
-    | DecisionTreeTest.UnionCase(_ucref, tinst) -> accTypeInst cenv env backupRange tinst
-    | DecisionTreeTest.ArrayLength(_, ty) -> accTy cenv env backupRange ty
+    | DecisionTreeTest.UnionCase(_ucref, tinst) -> accTypeInst cenv env mFallback tinst
+    | DecisionTreeTest.ArrayLength(_, ty) -> accTy cenv env mFallback ty
     | DecisionTreeTest.Const _
     | DecisionTreeTest.IsNull -> ()
-    | DecisionTreeTest.IsInst (srcTy, tgtTy) -> accTy cenv env backupRange srcTy; accTy cenv env backupRange tgtTy
+    | DecisionTreeTest.IsInst (srcTy, tgtTy) -> accTy cenv env mFallback srcTy; accTy cenv env mFallback tgtTy
     | DecisionTreeTest.ActivePatternCase (exp, tys, _, _, _, _) ->
         accExpr cenv env exp
-        accTypeInst cenv env backupRange tys
+        accTypeInst cenv env mFallback tys
     | DecisionTreeTest.Error _ -> ()
 
 and accAttrib cenv env (Attrib(_, _k, args, props, _, _, m)) =
