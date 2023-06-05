@@ -140,6 +140,19 @@ type internal PartialCheckResults =
 
     member TimeStamp: DateTime
 
+[<Sealed>]
+type internal RawFSharpAssemblyDataBackedByLanguageService =
+    new:
+        tcConfig: TcConfig *
+        tcGlobals: TcGlobals *
+        generatedCcu: CcuThunk *
+        outfile: string *
+        topAttrs: TopAttribs *
+        assemblyName: string *
+        ilAssemRef: FSharp.Compiler.AbstractIL.IL.ILAssemblyRef ->
+            RawFSharpAssemblyDataBackedByLanguageService
+    interface IRawFSharpAssemblyData
+
 /// Manages an incremental build graph for the build of an F# project
 [<Class>]
 type internal IncrementalBuilder =

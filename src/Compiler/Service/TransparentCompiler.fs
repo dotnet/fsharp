@@ -2,6 +2,7 @@ namespace FSharp.Compiler.CodeAnalysis.TransparentCompiler
 
 open System
 open System.Collections.Generic
+open System.Runtime.CompilerServices
 open System.Diagnostics
 open System.IO
 
@@ -37,6 +38,8 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.CreateILModule
+open FSharp.Compiler.TypedTreeOps
 
 type internal FSharpFile =
     {
@@ -49,6 +52,8 @@ type internal FSharpFile =
 /// Things we need to start parsing and checking files for a given project snapshot
 type internal BootstrapInfo =
     {
+        AssemblyName: string
+        OutFile: string
         TcConfig: TcConfig
         TcImports: TcImports
         TcGlobals: TcGlobals
@@ -86,6 +91,19 @@ type internal TcIntermediate =
         sink: TcResultsSinkImpl
     }
 
+[<RequireQualifiedAccess>]
+type internal DependencyGraphType =
+    /// A dependency graph for a single file - it will be missing files which this file does not depend on
+    | File
+    /// A dependency graph for a project - it will contain all files in the project
+    | Project
+
+[<Extension>]
+type internal Extensions =
+    [<Extension>]
+    static member Key(fileSnapshots: FSharpFileSnapshot list) =
+        fileSnapshots |> List.map (fun f -> f.Key)
+
 type internal TransparentCompiler
     (
         legacyReferenceResolver,
@@ -102,7 +120,7 @@ type internal TransparentCompiler
         getSource: (string -> Async<ISourceText option>) option,
         useChangeNotifications,
         useSyntaxTreeCache
-    ) =
+    ) as self =
 
     // Is having just one of these ok?
     let lexResourceManager = Lexhelp.LexResourceManager()
@@ -115,6 +133,9 @@ type internal TransparentCompiler
     let ParseAndCheckFileInProjectCache =
         AsyncMemoize(triggerCacheEvent "ParseAndCheckFileInProject")
 
+    let ParseAndCheckFullProjectCache =
+        AsyncMemoize(triggerCacheEvent "ParseAndCheckFullProject")
+
     let FrameworkImportsCache = AsyncMemoize(triggerCacheEvent "FrameworkImports")
     let BootstrapInfoStaticCache = AsyncMemoize(triggerCacheEvent "BootstrapInfoStatic")
     let BootstrapInfoCache = AsyncMemoize(triggerCacheEvent "BootstrapInfo")
@@ -122,6 +143,8 @@ type internal TransparentCompiler
     let TcIntermediateCache = AsyncMemoize(triggerCacheEvent "TcIntermediate")
 
     let DependencyGraphCache = AsyncMemoize(triggerCacheEvent "DependencyGraph")
+
+    let AssemblyDataCache = AsyncMemoize(triggerCacheEvent "AssemblyData")
 
     let SemanticClassificationCache =
         AsyncMemoize(triggerCacheEvent "SemanticClassification")
@@ -155,44 +178,6 @@ type internal TransparentCompiler
             useSyntaxTreeCache
         )
         :> IBackgroundCompiler
-
-    let getProjectReferences (project: FSharpProjectSnapshot) userOpName =
-        [
-            for r in project.ReferencedProjects do
-
-                match r with
-                | FSharpReferencedProjectSnapshot.FSharpReference (nm, opts) ->
-                    // Don't use cross-project references for FSharp.Core, since various bits of code
-                    // require a concrete FSharp.Core to exist on-disk. The only solutions that have
-                    // these cross-project references to FSharp.Core are VisualFSharp.sln and FSharp.sln. The ramification
-                    // of this is that you need to build FSharp.Core to get intellisense in those projects.
-
-                    if
-                        (try
-                            Path.GetFileNameWithoutExtension(nm)
-                         with _ ->
-                             "")
-                        <> GetFSharpCoreLibraryName()
-                    then
-                        { new IProjectReference with
-                            member x.EvaluateRawContents() =
-                                node {
-                                    Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "GetAssemblyData", nm)
-
-                                    return!
-                                        backgroundCompiler.GetAssemblyData(
-                                            opts.ToOptions(),
-                                            userOpName + ".CheckReferencedProject(" + nm + ")"
-                                        )
-                                }
-
-                            member x.TryGetLogicalTimeStamp(cache) =
-                                // TODO:
-                                None
-
-                            member x.FileName = nm
-                        }
-        ]
 
     let ComputeFrameworkImports (tcConfig: TcConfig) frameworkDLLs nonFrameworkResolutions =
         let frameworkDLLsKey =
@@ -321,6 +306,40 @@ type internal TransparentCompiler
 
             return tcImports, tcInfo
         }
+
+    let getProjectReferences (project: FSharpProjectSnapshot) userOpName =
+        [
+            for r in project.ReferencedProjects do
+
+                match r with
+                | FSharpReferencedProjectSnapshot.FSharpReference (nm, opts) ->
+                    // Don't use cross-project references for FSharp.Core, since various bits of code
+                    // require a concrete FSharp.Core to exist on-disk. The only solutions that have
+                    // these cross-project references to FSharp.Core are VisualFSharp.sln and FSharp.sln. The ramification
+                    // of this is that you need to build FSharp.Core to get intellisense in those projects.
+
+                    if
+                        (try
+                            Path.GetFileNameWithoutExtension(nm)
+                         with _ ->
+                             "")
+                        <> GetFSharpCoreLibraryName()
+                    then
+                        { new IProjectReference with
+                            member x.EvaluateRawContents() =
+                                node {
+                                    Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "GetAssemblyData", nm)
+
+                                    return! self.GetAssemblyData(opts, userOpName + ".CheckReferencedProject(" + nm + ")")
+                                }
+
+                            member x.TryGetLogicalTimeStamp(cache) =
+                                // TODO:
+                                None
+
+                            member x.FileName = nm
+                        }
+        ]
 
     /// Bootstrap info that does not depend on contents of the files
     let ComputeBootstrapInfoStatic (projectSnapshot: FSharpProjectSnapshot) =
@@ -457,7 +476,7 @@ type internal TransparentCompiler
                 setupConfigFromLoadClosure ()
 
                 let tcConfig = TcConfig.Create(tcConfigB, validate = true)
-                let _outfile, _, assemblyName = tcConfigB.DecideNames sourceFiles
+                let outfile, _, assemblyName = tcConfigB.DecideNames sourceFiles
 
                 // Resolve assemblies and create the framework TcImports. This caches a level of "system" references. No type providers are
                 // included in these references.
@@ -548,14 +567,30 @@ type internal TransparentCompiler
                         importsInvalidatedByTypeProvider
                     )
 
-                return sourceFiles, tcConfig, tcImports, tcGlobals, initialTcInfo, loadClosureOpt, importsInvalidatedByTypeProvider
+                return
+                    assemblyName,
+                    outfile,
+                    sourceFiles,
+                    tcConfig,
+                    tcImports,
+                    tcGlobals,
+                    initialTcInfo,
+                    loadClosureOpt,
+                    importsInvalidatedByTypeProvider
             }
         )
 
     let computeBootstrapInfoInner (projectSnapshot: FSharpProjectSnapshot) =
         node {
-            let! sourceFiles, tcConfig, tcImports, tcGlobals, initialTcInfo, loadClosureOpt, _importsInvalidatedByTypeProvider =
-                ComputeBootstrapInfoStatic projectSnapshot
+            let! assemblyName,
+                 outFile,
+                 sourceFiles,
+                 tcConfig,
+                 tcImports,
+                 tcGlobals,
+                 initialTcInfo,
+                 loadClosureOpt,
+                 _importsInvalidatedByTypeProvider = ComputeBootstrapInfoStatic projectSnapshot
 
             let fileSnapshots = Map [ for f in projectSnapshot.SourceFiles -> f.FileName, f ]
 
@@ -582,6 +617,8 @@ type internal TransparentCompiler
             return
                 Some
                     {
+                        AssemblyName = assemblyName
+                        OutFile = outFile
                         TcConfig = tcConfig
                         TcImports = tcImports
                         TcGlobals = tcGlobals
@@ -667,71 +704,73 @@ type internal TransparentCompiler
             }
         )
 
-    let ComputeDependencyGraph (priorSnapshot: FSharpProjectSnapshot) parsedInputs (tcConfig: TcConfig) =
-        let key = priorSnapshot.SourceFiles |> List.map (fun s -> s.Key)
+    let computeDependencyGraph parsedInputs (tcConfig: TcConfig) (processGraph: Graph<FileIndex> -> Graph<FileIndex>) =
+        node {
+            let sourceFiles: FileInProject array =
+                parsedInputs
+                |> Seq.toArray
+                |> Array.mapi (fun idx (input: ParsedInput) ->
+                    {
+                        Idx = idx
+                        FileName = input.FileName
+                        ParsedInput = input
+                    })
 
-        DependencyGraphCache.Get(
-            key,
-            node {
+            use _ =
+                Activity.start "ComputeDependencyGraph" [| Activity.Tags.fileName, (sourceFiles |> Array.last).FileName |]
 
-                let sourceFiles: FileInProject array =
-                    parsedInputs
-                    |> Seq.toArray
-                    |> Array.mapi (fun idx (input: ParsedInput) ->
-                        {
-                            Idx = idx
-                            FileName = input.FileName
-                            ParsedInput = input
-                        })
+            let filePairs = FilePairMap(sourceFiles)
 
-                use _ =
-                    Activity.start "ComputeDependencyGraph" [| Activity.Tags.fileName, (sourceFiles |> Array.last).FileName |]
+            // TODO: we will probably want to cache and re-use larger graphs if available
+            let graph =
+                DependencyResolution.mkGraph tcConfig.compilingFSharpCore filePairs sourceFiles
+                |> fst
+                |> processGraph
 
-                let filePairs = FilePairMap(sourceFiles)
+            let nodeGraph = TransformDependencyGraph(graph, filePairs)
 
-                // TODO: we will probably want to cache and re-use larger graphs if available
-                let graph =
-                    DependencyResolution.mkGraph tcConfig.compilingFSharpCore filePairs sourceFiles
-                    |> fst
-                    |> Graph.subGraphFor (sourceFiles |> Array.last).Idx
+            let fileNames =
+                parsedInputs
+                |> Seq.mapi (fun idx input -> idx, Path.GetFileName input.FileName)
+                |> Map.ofSeq
 
-                let fileIndexes =
-                    graph.Values |> Seq.collect id |> Seq.append graph.Keys |> Seq.distinct |> Set
+            let debugGraph =
+                nodeGraph
+                |> Graph.map (function
+                    | NodeToTypeCheck.PhysicalFile i -> i, fileNames[i]
+                    | NodeToTypeCheck.ArtificialImplFile i -> -(i + 1), $"AIF : {fileNames[i]}")
+                |> Graph.serialiseToMermaid
 
-                let nodeGraph = TransformDependencyGraph(graph, filePairs)
+            Trace.TraceInformation("\n" + debugGraph)
 
-                let fileNames =
-                    parsedInputs
-                    |> Seq.mapi (fun idx input -> idx, Path.GetFileName input.FileName)
-                    |> Map.ofSeq
+            if Activity.Current <> null then
+                Activity.Current.AddTag("graph", debugGraph) |> ignore
 
-                let debugGraph =
-                    nodeGraph
-                    |> Graph.map (function
-                        | NodeToTypeCheck.PhysicalFile i -> i, fileNames[i]
-                        | NodeToTypeCheck.ArtificialImplFile i -> -(i + 1), $"AIF : {fileNames[i]}")
-                    |> Graph.serialiseToMermaid
+            return nodeGraph, graph
+        }
 
-                Trace.TraceInformation("\n" + debugGraph)
+    let ComputeDependencyGraphForFile (priorSnapshot: FSharpProjectSnapshot) parsedInputs (tcConfig: TcConfig) =
+        let key = priorSnapshot.SourceFiles.Key(), DependencyGraphType.File
+        let lastFileIndex = (parsedInputs |> Array.length) - 1
+        DependencyGraphCache.Get(key, computeDependencyGraph parsedInputs tcConfig (Graph.subGraphFor lastFileIndex))
 
-                if Activity.Current <> null then
-                    Activity.Current.AddTag("graph", debugGraph) |> ignore
-
-                return nodeGraph, fileIndexes
-            }
-        )
+    let ComputeDependencyGraphForProject (projectSnapshot: FSharpProjectSnapshot) parsedInputs (tcConfig: TcConfig) =
+        let key = projectSnapshot.SourceFiles.Key(), DependencyGraphType.Project
+        DependencyGraphCache.Get(key, computeDependencyGraph parsedInputs tcConfig id)
 
     let ComputeTcIntermediate
         (projectSnapshot: FSharpProjectSnapshot)
-        (dependencyFiles: Set<FileIndex>)
+        (dependencyGraph: Graph<FileIndex>)
         (fileIndex: FileIndex)
         (parsedInput: ParsedInput, parseErrors)
         bootstrapInfo
         (prevTcInfo: TcInfo)
         =
 
+        let dependencyFiles = dependencyGraph |> Graph.subGraphFor fileIndex |> Graph.nodes
+
         TcIntermediateCache.Get(
-            projectSnapshot.UpTo(fileIndex).OnlyWith(dependencyFiles).Key,
+            projectSnapshot.OnlyWith(dependencyFiles).Key,
             node {
                 let input = parsedInput
                 let fileName = input.FileName
@@ -797,24 +836,79 @@ type internal TransparentCompiler
         )
 
     let mergeIntermediateResults =
-        Array.fold (fun (tcInfo: TcInfo) (tcIntermediate: TcIntermediate) ->
-            let (tcEnv, topAttribs, _checkImplFileOpt, ccuSigForFile), tcState =
-                tcInfo.tcState |> tcIntermediate.finisher.Invoke
+        Array.fold (fun (tcInfos: TcInfo list) (tcIntermediate: TcIntermediate) ->
+            match tcInfos with
+            | [] -> failwith "need initial tcInfo"
+            | tcInfo :: rest ->
+                let (tcEnv, topAttribs, _checkImplFileOpt, ccuSigForFile), tcState =
+                    tcInfo.tcState |> tcIntermediate.finisher.Invoke
 
-            let tcEnvAtEndOfFile =
-                if keepAllBackgroundResolutions then
-                    tcEnv
-                else
-                    tcState.TcEnvFromImpls
+                let tcEnvAtEndOfFile =
+                    if keepAllBackgroundResolutions then
+                        tcEnv
+                    else
+                        tcState.TcEnvFromImpls
 
-            { tcInfo with
-                tcState = tcState
-                tcEnvAtEndOfFile = tcEnvAtEndOfFile
-                topAttribs = Some topAttribs
-                tcDiagnosticsRev = tcIntermediate.tcDiagnosticsRev @ tcInfo.tcDiagnosticsRev
-                tcDependencyFiles = tcIntermediate.tcDependencyFiles @ tcInfo.tcDependencyFiles
-                latestCcuSigForFile = Some ccuSigForFile
-            })
+                { tcInfo with
+                    tcState = tcState
+                    tcEnvAtEndOfFile = tcEnvAtEndOfFile
+                    topAttribs = Some topAttribs
+                    tcDiagnosticsRev = tcIntermediate.tcDiagnosticsRev @ tcInfo.tcDiagnosticsRev
+                    tcDependencyFiles = tcIntermediate.tcDependencyFiles @ tcInfo.tcDependencyFiles
+                    latestCcuSigForFile = Some ccuSigForFile
+                }
+                :: tcInfo :: rest)
+
+    let typeCheckLayers bootstrapInfo projectSnapshot (parsedInputs: array<_>) graph layers =
+        let rec processLayer (layers: Set<NodeToTypeCheck> list) tcInfos =
+            node {
+                match layers, tcInfos with
+                | [], _ -> return tcInfos
+                | _, [] -> return failwith "need initial tcInfo"
+                | layer :: rest, tcInfo :: _ ->
+                    let! results =
+                        layer
+                        |> Seq.map (fun fileNode ->
+
+                            match fileNode with
+                            | NodeToTypeCheck.PhysicalFile fileIndex ->
+                                let parsedInput, parseErrors, _ = parsedInputs[fileIndex]
+
+                                ComputeTcIntermediate projectSnapshot graph fileIndex (parsedInput, parseErrors) bootstrapInfo tcInfo
+                            | NodeToTypeCheck.ArtificialImplFile fileIndex ->
+
+                                let finisher tcState =
+                                    let parsedInput, _parseErrors, _ = parsedInputs[fileIndex]
+                                    let prefixPathOpt = None
+                                    // Retrieve the type-checked signature information and add it to the TcEnvFromImpls.
+                                    AddSignatureResultToTcImplEnv
+                                        (bootstrapInfo.TcImports,
+                                         bootstrapInfo.TcGlobals,
+                                         prefixPathOpt,
+                                         TcResultsSink.NoSink,
+                                         tcState,
+                                         parsedInput)
+                                        tcState
+
+                                let tcIntermediate =
+                                    {
+                                        finisher = finisher
+                                        moduleNamesDict = tcInfo.moduleNamesDict
+                                        tcDiagnosticsRev = []
+                                        tcDependencyFiles = []
+                                        sink = Unchecked.defaultof<_> // TODO: something nicer
+                                    }
+
+                                node.Return(tcIntermediate))
+                        |> NodeCode.Parallel
+
+                    return! processLayer rest (mergeIntermediateResults tcInfos results)
+            }
+
+        node {
+            let! tcInfo = processLayer layers [ bootstrapInfo.InitialTcInfo ]
+            return tcInfo, graph
+        }
 
     // Type check everything that is needed to check given file
     let ComputeTcPrior (file: FSharpFile) (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshot) =
@@ -837,7 +931,8 @@ type internal TransparentCompiler
 
                 let! parsedInputs = files |> Seq.map (ComputeParseFile bootstrapInfo) |> NodeCode.Parallel
 
-                let! graph, dependencyFiles = ComputeDependencyGraph priorSnapshot (parsedInputs |> Seq.map p13) bootstrapInfo.TcConfig
+                let! graph, dependencyFiles =
+                    ComputeDependencyGraphForFile priorSnapshot (parsedInputs |> Array.map p13) bootstrapInfo.TcConfig
 
                 // layers that can be processed in parallel
                 let layers = Graph.leafSequence graph |> Seq.toList
@@ -845,58 +940,9 @@ type internal TransparentCompiler
                 // remove the final layer, which should be the target file
                 let layers = layers |> List.take (layers.Length - 1)
 
-                let rec processLayer (layers: Set<NodeToTypeCheck> list) tcInfo =
-                    node {
-                        match layers with
-                        | [] -> return tcInfo
-                        | layer :: rest ->
-                            let! results =
-                                layer
-                                |> Seq.map (fun fileNode ->
+                let! tcInfos, graph = typeCheckLayers bootstrapInfo priorSnapshot parsedInputs dependencyFiles layers
 
-                                    match fileNode with
-                                    | NodeToTypeCheck.PhysicalFile fileIndex ->
-                                        let parsedInput, parseErrors, _ = parsedInputs[fileIndex]
-
-                                        ComputeTcIntermediate
-                                            projectSnapshot
-                                            dependencyFiles
-                                            fileIndex
-                                            (parsedInput, parseErrors)
-                                            bootstrapInfo
-                                            tcInfo
-                                    | NodeToTypeCheck.ArtificialImplFile fileIndex ->
-
-                                        let finisher tcState =
-                                            let parsedInput, _parseErrors, _ = parsedInputs[fileIndex]
-                                            let prefixPathOpt = None
-                                            // Retrieve the type-checked signature information and add it to the TcEnvFromImpls.
-                                            AddSignatureResultToTcImplEnv
-                                                (bootstrapInfo.TcImports,
-                                                 bootstrapInfo.TcGlobals,
-                                                 prefixPathOpt,
-                                                 TcResultsSink.NoSink,
-                                                 tcState,
-                                                 parsedInput)
-                                                tcState
-
-                                        let tcIntermediate =
-                                            {
-                                                finisher = finisher
-                                                moduleNamesDict = tcInfo.moduleNamesDict
-                                                tcDiagnosticsRev = []
-                                                tcDependencyFiles = []
-                                                sink = Unchecked.defaultof<_>
-                                            }
-
-                                        node.Return(tcIntermediate))
-                                |> NodeCode.Parallel
-
-                            return! processLayer rest (mergeIntermediateResults tcInfo results)
-                    }
-
-                let! tcInfo = processLayer layers bootstrapInfo.InitialTcInfo
-                return tcInfo, dependencyFiles
+                return tcInfos.Head, graph
             }
         )
 
@@ -981,24 +1027,46 @@ type internal TransparentCompiler
             }
         )
 
+    let ComputeParseAndCheckFullProject (bootstrapInfo: BootstrapInfo) (projectSnapshot: FSharpProjectSnapshot) =
+        ParseAndCheckFullProjectCache.Get(
+            projectSnapshot.Key,
+            node {
+                use _ =
+                    Activity.start
+                        "ComputeParseAndCheckFullProject"
+                        [| Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName |]
+
+                let! parsedInputs =
+                    bootstrapInfo.SourceFiles
+                    |> Seq.map (ComputeParseFile bootstrapInfo)
+                    |> NodeCode.Parallel
+
+                let! graph, dependencyFiles =
+                    ComputeDependencyGraphForProject projectSnapshot (parsedInputs |> Array.map p13) bootstrapInfo.TcConfig
+
+                // layers that can be processed in parallel
+                let layers = Graph.leafSequence graph |> Seq.toList
+
+                let! tcInfos, _ = typeCheckLayers bootstrapInfo projectSnapshot parsedInputs dependencyFiles layers
+                return tcInfos |> List.rev
+            }
+        )
+
     let tryGetSink fileName (projectSnapshot: FSharpProjectSnapshot) =
         node {
-            use _ =
-                Activity.start "ComputeSemanticClassification" [| Activity.Tags.fileName, fileName |> Path.GetFileName |]
-
             match! ComputeBootstrapInfo projectSnapshot with
             | None, _ -> return None
             | Some bootstrapInfo, _creationDiags ->
 
                 let file = bootstrapInfo.GetFile fileName
 
-                let! tcInfo, dependencyFiles = ComputeTcPrior file bootstrapInfo projectSnapshot
+                let! tcInfo, graph = ComputeTcPrior file bootstrapInfo projectSnapshot
                 let! parseTree, parseDiagnostics, _sourceText = ComputeParseFile bootstrapInfo file
 
                 let fileIndex = projectSnapshot.IndexOf fileName
 
                 let! { sink = sink } =
-                    ComputeTcIntermediate projectSnapshot dependencyFiles fileIndex (parseTree, parseDiagnostics) bootstrapInfo tcInfo
+                    ComputeTcIntermediate projectSnapshot graph fileIndex (parseTree, parseDiagnostics) bootstrapInfo tcInfo
 
                 return Some(sink, bootstrapInfo)
         }
@@ -1099,6 +1167,111 @@ type internal TransparentCompiler
             | Some itemKeyStore -> return itemKeyStore.FindAll symbol.Item
         }
 
+    member _.GetAssemblyData(projectSnapshot: FSharpProjectSnapshot, _userOpName) =
+        AssemblyDataCache.Get(
+            projectSnapshot.Key,
+            node {
+
+                match! ComputeBootstrapInfo projectSnapshot with
+                | None, _ -> return ProjectAssemblyDataResult.Unavailable true
+                | Some bootstrapInfo, _creationDiags ->
+
+                    let! tcInfos = ComputeParseAndCheckFullProject bootstrapInfo projectSnapshot
+
+                    let assemblyName = bootstrapInfo.AssemblyName
+                    let tcConfig = bootstrapInfo.TcConfig
+                    let tcGlobals = bootstrapInfo.TcGlobals
+
+                    let results =
+                        [
+                            for tcInfo in tcInfos ->
+                                tcInfo.tcEnvAtEndOfFile, defaultArg tcInfo.topAttribs EmptyTopAttrs, None, tcInfo.latestCcuSigForFile
+                        ]
+
+                    // Get the state at the end of the type-checking of the last file
+                    let finalInfo = List.last tcInfos
+
+                    // Finish the checking
+                    let (_tcEnvAtEndOfLastFile, topAttrs, _mimpls, _), tcState =
+                        CheckMultipleInputsFinish(results, finalInfo.tcState)
+
+                    let tcState, _, ccuContents = CheckClosedInputSetFinish([], tcState)
+
+                    let generatedCcu = tcState.Ccu.CloneWithFinalizedContents(ccuContents)
+
+                    // Compute the identity of the generated assembly based on attributes, options etc.
+                    // Some of this is duplicated from fsc.fs
+                    let ilAssemRef =
+                        let publicKey =
+                            try
+                                let signingInfo = ValidateKeySigningAttributes(tcConfig, tcGlobals, topAttrs)
+
+                                match GetStrongNameSigner signingInfo with
+                                | None -> None
+                                | Some s -> Some(PublicKey.KeyAsToken(s.PublicKey))
+                            with exn ->
+                                errorRecoveryNoRange exn
+                                None
+
+                        let locale =
+                            TryFindFSharpStringAttribute
+                                tcGlobals
+                                (tcGlobals.FindSysAttrib "System.Reflection.AssemblyCultureAttribute")
+                                topAttrs.assemblyAttrs
+
+                        let assemVerFromAttrib =
+                            TryFindFSharpStringAttribute
+                                tcGlobals
+                                (tcGlobals.FindSysAttrib "System.Reflection.AssemblyVersionAttribute")
+                                topAttrs.assemblyAttrs
+                            |> Option.bind (fun v ->
+                                try
+                                    Some(parseILVersion v)
+                                with _ ->
+                                    None)
+
+                        let ver =
+                            match assemVerFromAttrib with
+                            | None -> tcConfig.version.GetVersionInfo(tcConfig.implicitIncludeDir)
+                            | Some v -> v
+
+                        ILAssemblyRef.Create(assemblyName, None, publicKey, false, Some ver, locale)
+
+                    let assemblyDataResult =
+                        try
+                            // Assemblies containing type provider components can not successfully be used via cross-assembly references.
+                            // We return 'None' for the assembly portion of the cross-assembly reference
+                            let hasTypeProviderAssemblyAttrib =
+                                topAttrs.assemblyAttrs
+                                |> List.exists (fun (Attrib (tcref, _, _, _, _, _, _)) ->
+                                    let nm = tcref.CompiledRepresentationForNamedType.BasicQualifiedName
+
+                                    nm = typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>
+                                        .FullName)
+
+                            if tcState.CreatesGeneratedProvidedTypes || hasTypeProviderAssemblyAttrib then
+                                ProjectAssemblyDataResult.Unavailable true
+                            else
+                                ProjectAssemblyDataResult.Available(
+                                    RawFSharpAssemblyDataBackedByLanguageService(
+                                        tcConfig,
+                                        tcGlobals,
+                                        generatedCcu,
+                                        bootstrapInfo.OutFile,
+                                        topAttrs,
+                                        assemblyName,
+                                        ilAssemRef
+                                    )
+                                    :> IRawFSharpAssemblyData
+                                )
+                        with exn ->
+                            errorRecoveryNoRange exn
+                            ProjectAssemblyDataResult.Unavailable true
+
+                    return assemblyDataResult
+            }
+        )
+
     interface IBackgroundCompiler with
 
         member _.CacheEvent = cacheEvent.Publish
@@ -1165,6 +1338,9 @@ type internal TransparentCompiler
 
         member _.GetAssemblyData(options: FSharpProjectOptions, userOpName: string) : NodeCode<ProjectAssemblyDataResult> =
             backgroundCompiler.GetAssemblyData(options, userOpName)
+
+        member this.GetAssemblyData(projectSnapshot: FSharpProjectSnapshot, userOpName: string) : NodeCode<ProjectAssemblyDataResult> =
+            this.GetAssemblyData(projectSnapshot, userOpName)
 
         member _.GetBackgroundCheckResultsForFileInProject
             (

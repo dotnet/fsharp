@@ -10,6 +10,8 @@ module internal Graph =
     /// Build the graph.
     val make: nodeDeps: seq<'Node * 'Node array> -> Graph<'Node> when 'Node: equality
     val map<'T, 'U when 'U: equality> : f: ('T -> 'U) -> graph: Graph<'T> -> Graph<'U>
+    /// Get all nodes of the graph.
+    val nodes: graph: Graph<'Node> -> Set<'Node>
     /// Create a transitive closure of the graph in O(n^2) time (but parallelize it).
     /// The resulting graph contains edge A -> C iff the input graph contains a (directed) non-zero length path from A to C.
     val transitive<'Node when 'Node: equality> : graph: Graph<'Node> -> Graph<'Node>

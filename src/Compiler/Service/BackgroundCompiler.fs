@@ -87,6 +87,9 @@ type internal IBackgroundCompiler =
     abstract member GetAssemblyData:
         options: FSharpProjectOptions * userOpName: string -> NodeCode<FSharp.Compiler.CompilerConfig.ProjectAssemblyDataResult>
 
+    abstract member GetAssemblyData:
+        projectSnapshot: FSharpProjectSnapshot * userOpName: string -> NodeCode<FSharp.Compiler.CompilerConfig.ProjectAssemblyDataResult>
+
     /// Fetch the check information from the background compiler (which checks w.r.t. the FileSystem API)
     abstract member GetBackgroundCheckResultsForFileInProject:
         fileName: string * options: FSharpProjectOptions * userOpName: string -> NodeCode<FSharpParseFileResults * FSharpCheckFileResults>
@@ -1489,6 +1492,9 @@ type internal BackgroundCompiler
 
         member _.GetAssemblyData(options: FSharpProjectOptions, userOpName: string) : NodeCode<ProjectAssemblyDataResult> =
             self.GetAssemblyData(options, userOpName)
+
+        member _.GetAssemblyData(projectSnapshot: FSharpProjectSnapshot, userOpName: string) : NodeCode<ProjectAssemblyDataResult> =
+            self.GetAssemblyData(projectSnapshot.ToOptions(), userOpName)
 
         member _.GetBackgroundCheckResultsForFileInProject
             (

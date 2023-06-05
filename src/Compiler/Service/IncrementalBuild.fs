@@ -578,6 +578,7 @@ module Utilities =
 /// Constructs the build data (IRawFSharpAssemblyData) representing the assembly when used
 /// as a cross-assembly reference.  Note the assembly has not been generated on disk, so this is
 /// a virtualized view of the assembly contents as computed by background checking.
+[<Sealed>]
 type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, generatedCcu: CcuThunk, outfile, topAttrs, assemblyName, ilAssemRef) =
 
     let exportRemapping = MakeExportRemapping generatedCcu generatedCcu.Contents

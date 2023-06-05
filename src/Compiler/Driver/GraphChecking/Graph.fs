@@ -27,6 +27,9 @@ module internal Graph =
         |> Array.map (fun (KeyValue (k, v)) -> k, v)
         |> readOnlyDict
 
+    let nodes (graph: Graph<'Node>) : Set<'Node> =
+        graph.Values |> Seq.collect id |> Seq.append graph.Keys |> Seq.distinct |> Set
+
     /// Find transitive dependencies of a single node.
     let transitiveDeps (node: 'Node) (graph: Graph<'Node>) =
         let visited = HashSet<'Node>()
