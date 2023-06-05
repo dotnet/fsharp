@@ -966,7 +966,7 @@ type FSharpMemberOrFunctionOrValue =
     /// Format the type using the rules of the given display context
     member GetReturnTypeLayout: displayContext: FSharpDisplayContext -> TaggedText[] option
 
-    /// Get the signature text to included this Symbol into an existing signature file.
+    /// Get the signature text to include this Symbol into an existing signature file.
     member GetValSignatureText: displayContext: FSharpDisplayContext * m: range -> string option
 
     /// Check if this method has an entrpoint that accepts witness arguments and if so return
