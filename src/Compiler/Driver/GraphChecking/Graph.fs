@@ -28,7 +28,7 @@ module internal Graph =
         |> readOnlyDict
 
     let nodes (graph: Graph<'Node>) : Set<'Node> =
-        graph.Values |> Seq.collect id |> Seq.append graph.Keys |> Seq.distinct |> Set
+        graph.Values |> Seq.collect id |> Seq.append graph.Keys |> Set
 
     /// Find transitive dependencies of a single node.
     let transitiveDeps (node: 'Node) (graph: Graph<'Node>) =
