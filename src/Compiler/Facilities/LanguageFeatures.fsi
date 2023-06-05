@@ -58,6 +58,7 @@ type LanguageFeature =
     | NestedCopyAndUpdate
     | ExtendedStringInterpolation
     | WarningWhenMultipleRecdTypeChoice
+    | ImprovedImpliedArgumentNames
 
 /// LanguageVersion management
 type LanguageVersion =
