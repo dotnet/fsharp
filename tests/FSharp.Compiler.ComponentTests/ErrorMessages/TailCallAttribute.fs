@@ -78,7 +78,7 @@ let rec fact n acc =
     match n with
     | 0 -> acc
     | _ ->
-        let r = (fact (n-1) (mul n acc))
+        let r = fact (n-1) (mul n acc)
         r + 23
         """
         |> FSharp
@@ -86,23 +86,16 @@ let rec fact n acc =
         |> shouldFail
         |> withResults [
             { Error = Warning 3567
-              Range = { StartLine = 8
-                        StartColumn = 13
-                        EndLine = 8
-                        EndColumn = 35 }
-              Message =
-               "The member or function 'fact' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
-            { Error = Warning 3567
-              Range = { StartLine = 8
-                        StartColumn = 13
-                        EndLine = 8
-                        EndColumn = 17 }
+              Range = { StartLine = 9
+                        StartColumn = 17
+                        EndLine = 9
+                        EndColumn = 21 }
               Message =
                "The member or function 'fact' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]
 
     [<FSharp.Test.FactForNETCOREAPP>]
-    let ``Don't warn for valid tailcall`` () =
+    let ``Don't warn for valid tailcall and bind from toplevel`` () =
         """
 let mul x y = x * y
 
@@ -110,7 +103,10 @@ let mul x y = x * y
 let rec fact n acc =
     if n = 0
     then acc
-    else (fact (n-1) (mul n acc))
+    else fact (n-1) (mul n acc)
+    
+let r = fact 100000 1
+r |> ignore
         """
         |> FSharp
         |> typecheck

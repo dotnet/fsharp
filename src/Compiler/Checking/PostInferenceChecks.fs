@@ -2140,16 +2140,30 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
         
     | _ -> ()
 
-    let _topValInfo, isVoidRet  = 
-        match bind.Var.ValReprInfo with 
-        | Some info -> 
-            let _tps, tau = destTopForallTy g info v.Type
-            let _curriedArgInfos, returnTy = GetTopTauTypeInFSharpForm cenv.g info.ArgInfos tau v.Range
-            info, isUnitTy g returnTy
-        | None -> 
-            ValReprInfo.emptyValData, false
-
-    let isTailCall = IsTailCall.AtMethodOrFunction isVoidRet
+    let isTailCall =
+        let isVoidRet  = 
+            match bind.Var.ValReprInfo with 
+            | Some info -> 
+                let _tps, tau = destTopForallTy g info v.Type
+                let _curriedArgInfos, returnTy = GetTopTauTypeInFSharpForm cenv.g info.ArgInfos tau v.Range
+                isUnitTy g returnTy
+            | None -> false
+        IsTailCall.AtMethodOrFunction isVoidRet
+    
+    match bindRhs with
+    | Expr.App(_funcExpr, _formalType, _typeArgs, _exprs, _range) ->
+        let rec checkTailCall expr =
+            match expr with
+            | Expr.Val(valRef, _valUseFlag, m) ->
+                if not isTop && env.mustTailCall.Contains valRef.Deref then // ToDo: tighter check needed for bindings inside of functions
+                    warning(Error(FSComp.SR.chkNotTailRecursive(valRef.DisplayName), m))
+            | Expr.App(funcExpr, _formalType, _typeArgs, exprs, _range) ->
+                checkTailCall funcExpr
+                exprs |> List.iter checkTailCall
+            | Expr.Link exprRef -> checkTailCall exprRef.Value
+            | _ -> ()
+        checkTailCall _funcExpr
+    | _ -> ()
         
     let valReprInfo  = match bind.Var.ValReprInfo with Some info -> info | _ -> ValReprInfo.emptyValData 
 
