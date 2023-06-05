@@ -474,6 +474,54 @@ type Foo =
           (:? FSharpMemberOrFunctionOrValue as setMfv) ->
             Assert.AreNotEqual(getMfv.CurriedParameterGroups, setMfv.CurriedParameterGroups)
         | _ -> Assert.Fail "Expected symbols to be FSharpMemberOrFunctionOrValue"
+        
+    [<Test>]
+    let ``Multiple symbols are resolved for property`` () =
+        let source = """
+type X(y: string) =
+    member val Y = y with get, set
+"""
+
+        let _, checkResults = getParseAndCheckResults source
+        let symbolUses =
+            checkResults.GetSymbolUsesAtLocation(3, 16, "    member val Y = y with get, set", [ "Y" ])
+            |> List.map (fun su -> su.Symbol)
+
+        match symbolUses with
+        | [ :? FSharpMemberOrFunctionOrValue as setMfv
+            :? FSharpMemberOrFunctionOrValue as getMfv ] ->
+            Assert.AreEqual("set_Y", setMfv.CompiledName)
+            Assert.AreEqual("get_Y", getMfv.CompiledName)
+        | _ -> Assert.Fail "Expected symbols"
+
+    [<Test>]
+    let ``Multiple relevant symbols for type name`` () =
+        let _, checkResults = getParseAndCheckResults """
+// This is a generated file; the original input is 'FSInteractiveSettings.txt'
+namespace FSInteractiveSettings
+
+type internal SR () =
+
+    static let mutable swallowResourceText = false
+
+    /// If set to true, then all error messages will just return the filled 'holes' delimited by ',,,'s - this is for language-neutral testing (e.g. localization-invariant baselines).
+    static member SwallowResourceText with get () = swallowResourceText
+                                        and set (b) = swallowResourceText <- b
+    // END BOILERPLATE
+"""
+
+        let symbols =
+            checkResults.GetSymbolUsesAtLocation(5, 16, "type internal SR () =", [ "" ])
+            |> List.map (fun su -> su.Symbol)
+
+        match symbols with
+        | [ :? FSharpMemberOrFunctionOrValue as cctor
+            :? FSharpMemberOrFunctionOrValue as ctor
+            :? FSharpEntity as entity  ] ->
+            Assert.AreEqual(".cctor", cctor.CompiledName)
+            Assert.AreEqual(".ctor", ctor.CompiledName)
+            Assert.AreEqual("SR", entity.DisplayName)
+        | _ -> Assert.Fail "Expected symbols"
 
 module Expressions =
     [<Test>]

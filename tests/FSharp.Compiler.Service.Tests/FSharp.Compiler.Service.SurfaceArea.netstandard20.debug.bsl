@@ -2005,6 +2005,7 @@ FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Symbols.FSh
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Symbols.FSharpOpenDeclaration[] OpenDeclarations
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Symbols.FSharpOpenDeclaration[] get_OpenDeclarations()
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Text.Range[] GetFormatSpecifierLocations()
+FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpSymbolUse] GetSymbolUsesAtLocation(Int32, Int32, System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpSymbolUse]] GetDeclarationListSymbols(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.FSharpParseFileResults], Int32, System.String, FSharp.Compiler.EditorServices.PartialLongName, Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.EditorServices.AssemblySymbol]]])
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.FSharpSymbolUse] GetSymbolUseAtLocation(Int32, Int32, System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpDisplayContext] GetDisplayContextForPos(FSharp.Compiler.Text.Position)
@@ -5156,14 +5157,14 @@ FSharp.Compiler.Symbols.FSharpUnionCase: Boolean get_HasFields()
 FSharp.Compiler.Symbols.FSharpUnionCase: Boolean get_IsUnresolved()
 FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Symbols.FSharpAccessibility Accessibility
 FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Symbols.FSharpAccessibility get_Accessibility()
+FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Symbols.FSharpEntity DeclaringEntity
+FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Symbols.FSharpEntity get_DeclaringEntity()
 FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Symbols.FSharpType ReturnType
 FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Symbols.FSharpType get_ReturnType()
 FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Symbols.FSharpXmlDoc XmlDoc
 FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Symbols.FSharpXmlDoc get_XmlDoc()
 FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Text.Range DeclarationLocation
 FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Text.Range get_DeclarationLocation()
-FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Symbols.FSharpEntity DeclaringEntity
-FSharp.Compiler.Symbols.FSharpUnionCase: FSharp.Compiler.Symbols.FSharpEntity get_DeclaringEntity()
 FSharp.Compiler.Symbols.FSharpUnionCase: Int32 GetHashCode()
 FSharp.Compiler.Symbols.FSharpUnionCase: System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpAttribute] Attributes
 FSharp.Compiler.Symbols.FSharpUnionCase: System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpAttribute] get_Attributes()
