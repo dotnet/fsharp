@@ -13,7 +13,7 @@ parameters:
   # Optional: Include PublishBuildArtifacts task
   enablePublishBuildArtifacts: false
 
-  # Optional: A defined YAML pool - https://learn.microsoft.com/azure/devops/pipelines/yaml-schema?view=vsts&tabs=schema#pool
+  # Optional: A defined YAML pool - https://docs.microsoft.com/en-us/azure/devops/pipelines/yaml-schema?view=vsts&tabs=schema#pool
   pool: {}
 
   # Optional: should run as a public build even in the internal project
@@ -34,6 +34,7 @@ jobs:
 - job: Asset_Registry_Publish
 
   dependsOn: ${{ parameters.dependsOn }}
+  timeoutInMinutes: 150
 
   ${{ if eq(parameters.publishAssetsImmediately, 'true') }}:
     displayName: Publish Assets
@@ -72,12 +73,6 @@ jobs:
       continueOnError: ${{ parameters.continueOnError }}
     
     - task: NuGetAuthenticate@0
-
-    - task: PowerShell@2 
-      displayName: Enable cross-org NuGet feed authentication 
-      inputs: 
-        filePath: $(Build.SourcesDirectory)/eng/common/enable-cross-org-publishing.ps1 
-        arguments: -token $(dn-bot-all-orgs-artifact-feeds-rw) 
 
     - task: PowerShell@2
       displayName: Publish Build Assets
