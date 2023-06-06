@@ -197,8 +197,20 @@ type IsTailCall =
     | Yes of bool // true indicates "has unit return type and must return void"
     | No
 
-    static member AtMethodOrFunction isVoidRet = 
-        IsTailCall.Yes isVoidRet
+    static member private IsVoidRet (g: TcGlobals) (v: Val) =
+        match v.ValReprInfo with 
+        | Some info ->
+            let _tps, tau = destTopForallTy g info v.Type
+            let _curriedArgInfos, returnTy = GetTopTauTypeInFSharpForm g info.ArgInfos tau v.Range
+            isUnitTy g returnTy
+        | None -> false
+        
+    static member fromVal (g: TcGlobals) (v: Val) = IsTailCall.Yes (IsTailCall.IsVoidRet g v)
+    
+    static member fromExpr (g: TcGlobals) (expr: Expr) =
+        match expr with
+        | Expr.Val(valRef, _valUseFlag, _range) -> IsTailCall.Yes (IsTailCall.IsVoidRet g valRef.Deref)
+        | _ -> IsTailCall.Yes false
 
     member x.AtExprLambda = 
         match x with 
@@ -1648,11 +1660,12 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
         NoLimit
 
     | TOp.Coerce, [tgtTy;srcTy], [x] ->
+        let isTailCall = IsTailCall.fromExpr cenv.g x
         if TypeDefinitelySubsumesTypeNoCoercion 0 g cenv.amap m tgtTy srcTy then
-            CheckExpr cenv env x ctxt IsTailCall.No
+            CheckExpr cenv env x ctxt isTailCall
         else
             CheckTypeInstNoByrefs cenv env m tyargs
-            CheckExprNoByrefs cenv env IsTailCall.No x
+            CheckExprNoByrefs cenv env isTailCall x
             NoLimit
 
     | TOp.Reraise, [_ty1], [] ->
@@ -2140,16 +2153,7 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
         
     | _ -> ()
 
-    let isTailCall =
-        let isVoidRet  = 
-            match bind.Var.ValReprInfo with 
-            | Some info -> 
-                let _tps, tau = destTopForallTy g info v.Type
-                let _curriedArgInfos, returnTy = GetTopTauTypeInFSharpForm cenv.g info.ArgInfos tau v.Range
-                isUnitTy g returnTy
-            | None -> false
-        IsTailCall.AtMethodOrFunction isVoidRet
-    
+    let isTailCall = IsTailCall.fromVal g bind.Var
     let valReprInfo  = match bind.Var.ValReprInfo with Some info -> info | _ -> ValReprInfo.emptyValData 
 
     // If the method has ResumableCode argument or return type it must be inline
