@@ -2150,21 +2150,6 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
             | None -> false
         IsTailCall.AtMethodOrFunction isVoidRet
     
-    match bindRhs with
-    | Expr.App(_funcExpr, _formalType, _typeArgs, _exprs, _range) ->
-        let rec checkTailCall expr =
-            match expr with
-            | Expr.Val(valRef, _valUseFlag, m) ->
-                if not isTop && env.mustTailCall.Contains valRef.Deref then // ToDo: tighter check needed for bindings inside of functions
-                    warning(Error(FSComp.SR.chkNotTailRecursive(valRef.DisplayName), m))
-            | Expr.App(funcExpr, _formalType, _typeArgs, exprs, _range) ->
-                checkTailCall funcExpr
-                exprs |> List.iter checkTailCall
-            | Expr.Link exprRef -> checkTailCall exprRef.Value
-            | _ -> ()
-        checkTailCall _funcExpr
-    | _ -> ()
-        
     let valReprInfo  = match bind.Var.ValReprInfo with Some info -> info | _ -> ValReprInfo.emptyValData 
 
     // If the method has ResumableCode argument or return type it must be inline
@@ -2190,7 +2175,7 @@ and CheckBindings cenv env binds =
         CheckBinding cenv env false PermitByRefExpr.Yes bind |> ignore
 
 // Top binds introduce expression, check they are reraise free.
-let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
+let CheckModuleBinding cenv env (isRec: bool) (TBind(v, e, _) as bind) =
     let g = cenv.g
     let isExplicitEntryPoint = HasFSharpAttribute g g.attrib_EntryPointAttribute v.Attribs
     if isExplicitEntryPoint then 
@@ -2199,6 +2184,29 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
         if not isLastCompiland && cenv.reportErrors  then 
             errorR(Error(FSComp.SR.chkEntryPointUsage(), v.Range)) 
 
+    match bind.Expr with
+    | Expr.Lambda(_unique, _ctorThisValOpt, _baseValOpt, _valParams, bodyExpr, _range, _overallType) ->
+        let rec checkTailCall (insideSubBinding: bool) expr =
+            match expr with
+            | Expr.Val(valRef, _valUseFlag, m) ->
+                if isRec && insideSubBinding && env.mustTailCall.Contains valRef.Deref then
+                    warning(Error(FSComp.SR.chkNotTailRecursive(valRef.DisplayName), m))
+            | Expr.App(funcExpr, _formalType, _typeArgs, exprs, _range) ->
+                checkTailCall insideSubBinding funcExpr
+                exprs |> List.iter (checkTailCall insideSubBinding)
+            | Expr.Link exprRef -> checkTailCall insideSubBinding exprRef.Value
+            | Expr.Lambda(_unique, _ctorThisValOpt, _baseValOpt, _valParams, bodyExpr, _range, _overallType) ->
+                checkTailCall insideSubBinding bodyExpr
+            | Expr.DebugPoint(_debugPointAtLeafExpr, expr) -> checkTailCall insideSubBinding expr
+            | Expr.Let(binding, bodyExpr, _range, _frees) ->
+                checkTailCall true binding.Expr
+                checkTailCall insideSubBinding bodyExpr
+            | Expr.Match(_debugPointAtBinding, _inputRange, _decisionTree, decisionTreeTargets, _fullRange, _exprType) ->
+                decisionTreeTargets |> Array.iter (fun target -> checkTailCall insideSubBinding target.TargetExpression)
+            | _ -> ()
+        checkTailCall false bodyExpr
+    | _ -> ()
+    
     // Analyze the r.h.s. for the "IsCompiledAsStaticPropertyWithoutField" condition
     if // Mutable values always have fields
        not v.IsMutable && 
@@ -2668,10 +2676,10 @@ and CheckDefnInModule cenv env mdef =
         CheckNothingAfterEntryPoint cenv m
         if isRec then BindVals cenv env (allValsOfModDef mdef |> Seq.toList)
         CheckEntityDefns cenv env tycons
-        List.iter (CheckModuleSpec cenv env) mspecs
+        List.iter (CheckModuleSpec cenv env isRec) mspecs
     | TMDefLet(bind, m)  -> 
         CheckNothingAfterEntryPoint cenv m
-        CheckModuleBinding cenv env bind 
+        CheckModuleBinding cenv env false bind 
         BindVal cenv env bind.Var
     | TMDefOpens _ ->
         ()
@@ -2681,11 +2689,11 @@ and CheckDefnInModule cenv env mdef =
         CheckExprNoByrefs cenv env IsTailCall.No e
     | TMDefs defs -> CheckDefnsInModule cenv env defs 
 
-and CheckModuleSpec cenv env mbind =
+and CheckModuleSpec cenv env isRec mbind =
     match mbind with 
     | ModuleOrNamespaceBinding.Binding bind ->
         BindVals cenv env (valsOfBinds [bind])
-        CheckModuleBinding cenv env bind
+        CheckModuleBinding cenv env isRec bind
     | ModuleOrNamespaceBinding.Module (mspec, rhs) ->
         CheckEntityDefn cenv env mspec
         let env = { env with reflect = env.reflect || HasFSharpAttribute cenv.g cenv.g.attrib_ReflectedDefinitionAttribute mspec.Attribs }
