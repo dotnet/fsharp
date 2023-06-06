@@ -1100,6 +1100,21 @@ type MethInfo =
     member x.GetFSharpReturnType(amap, m, minst) =
         x.GetCompiledReturnType(amap, m, minst) |> GetFSharpViewOfReturnType amap.g
 
+    member x.GetParamNames() =
+        match x with
+        | FSMeth (g, _, vref, _) ->
+            ParamNameAndType.FromMember x.IsCSharpStyleExtensionMember g vref |> List.mapSquared (fun (ParamNameAndType (name, _)) -> name |> Option.map (fun x -> x.idText))
+        | ILMeth (ilMethInfo = ilminfo) ->
+            // A single group of tupled arguments
+            [ ilminfo.ParamMetadata |> List.map (fun x -> x.Name) ]
+#if !NO_TYPEPROVIDERS
+        | ProvidedMeth (_, mi, _, m) ->
+            // A single group of tupled arguments
+            [ [ for p in mi.PApplyArray((fun mi -> mi.GetParameters()), "GetParameters", m) do
+                yield p.PUntaint((fun p -> Some p.Name), m) ] ]
+#endif
+        | _ -> []
+
     /// Get the parameter types of a method info
     member x.GetParamTypes(amap, m, minst) =
         match x with

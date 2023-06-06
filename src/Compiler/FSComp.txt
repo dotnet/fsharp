@@ -1573,6 +1573,7 @@ featureNonInlineLiteralsAsPrintfFormat,"String values marked as literals and IL 
 featureNestedCopyAndUpdate,"Nested record field copy-and-update"
 featureExtendedStringInterpolation,"Extended string interpolation similar to C# raw string literals."
 featureWarningWhenMultipleRecdTypeChoice,"Raises warnings when multiple record type matches were found during name resolution because of overlapping field names."
+featureImprovedImpliedArgumentNames,"Improved implied argument names"
 3353,fsiInvalidDirective,"Invalid directive '#%s %s'"
 3354,tcNotAFunctionButIndexerNamedIndexingNotYetEnabled,"This value supports indexing, e.g. '%s.[index]'. The syntax '%s[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation."
 3354,tcNotAFunctionButIndexerIndexingNotYetEnabled,"This expression supports indexing, e.g. 'expr.[index]'. The syntax 'expr[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation."
