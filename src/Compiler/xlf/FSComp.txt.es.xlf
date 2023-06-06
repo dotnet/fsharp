@@ -103,8 +103,8 @@
         <note />
       </trans-unit>
       <trans-unit id="chkNotTailRecursive">
-        <source>The member or function '{0}' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way.</source>
-        <target state="new">The member or function '{0}' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way.</target>
+        <source>The member or function '{0}' has the 'TailCall' attribute, but is not being used in a tail recursive way.</source>
+        <target state="new">The member or function '{0}' has the 'TailCall' attribute, but is not being used in a tail recursive way.</target>
         <note />
       </trans-unit>
       <trans-unit id="containerDeprecated">
@@ -210,6 +210,11 @@
       <trans-unit id="featureCSharpExtensionAttributeNotRequired">
         <source>Allow implicit Extension attribute on declaring types, modules</source>
         <target state="translated">Permitir atributo Extension implícito en tipos declarativo, módulos</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureChkNotTailRecursive">
+        <source>Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way.</source>
+        <target state="new">Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">

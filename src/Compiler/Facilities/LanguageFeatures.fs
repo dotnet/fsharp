@@ -68,6 +68,7 @@ type LanguageFeature =
     | NestedCopyAndUpdate
     | ExtendedStringInterpolation
     | WarningWhenMultipleRecdTypeChoice
+    | WarningWhenTailRecAttributeButNonTailRecUsage
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -159,6 +160,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.NestedCopyAndUpdate, previewVersion
                 LanguageFeature.ExtendedStringInterpolation, previewVersion
                 LanguageFeature.WarningWhenMultipleRecdTypeChoice, previewVersion
+                LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage, previewVersion
 
             ]
 
@@ -282,6 +284,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.NestedCopyAndUpdate -> FSComp.SR.featureNestedCopyAndUpdate ()
         | LanguageFeature.ExtendedStringInterpolation -> FSComp.SR.featureExtendedStringInterpolation ()
         | LanguageFeature.WarningWhenMultipleRecdTypeChoice -> FSComp.SR.featureWarningWhenMultipleRecdTypeChoice ()
+        | LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage -> FSComp.SR.featureChkNotTailRecursive ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

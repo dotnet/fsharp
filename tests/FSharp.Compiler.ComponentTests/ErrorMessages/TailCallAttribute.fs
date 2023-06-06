@@ -2,7 +2,6 @@ namespace FSharp.Compiler.ComponentTests.ErrorMessages
 
 open FSharp.Test.Compiler
 open FSharp.Test.Compiler.Assertions.StructuredResultsAsserts
-open Xunit
 
 module ``TailCall Attribute`` =
 
@@ -18,6 +17,7 @@ let rec fact n acc =
     else (fact (n-1) (mul n acc)) + 23
         """
         |> FSharp
+        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withResults [
@@ -27,14 +27,14 @@ let rec fact n acc =
                         EndLine = 8
                         EndColumn = 33 }
               Message =
-               "The member or function 'fact' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+               "The member or function 'fact' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
             { Error = Warning 3567
               Range = { StartLine = 8
                         StartColumn = 11
                         EndLine = 8
                         EndColumn = 15 }
               Message =
-               "The member or function 'fact' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+               "The member or function 'fact' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
         ]
 
     [<FSharp.Test.FactForNETCOREAPP>]
@@ -49,6 +49,7 @@ let rec fact n acc =
     | _ -> (fact (n-1) (mul n acc)) + 23
         """
         |> FSharp
+        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withResults [
@@ -58,14 +59,14 @@ let rec fact n acc =
                         EndLine = 8
                         EndColumn = 35 }
               Message =
-               "The member or function 'fact' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+               "The member or function 'fact' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
             { Error = Warning 3567
               Range = { StartLine = 8
                         StartColumn = 13
                         EndLine = 8
                         EndColumn = 17 }
               Message =
-               "The member or function 'fact' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+               "The member or function 'fact' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
         ]
     
     [<FSharp.Test.FactForNETCOREAPP>]
@@ -82,6 +83,7 @@ let rec fact n acc =
         r + 23
         """
         |> FSharp
+        |> withLangVersionPreview        
         |> typecheck
         |> shouldFail
         |> withResults [
@@ -91,7 +93,7 @@ let rec fact n acc =
                         EndLine = 9
                         EndColumn = 21 }
               Message =
-               "The member or function 'fact' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+               "The member or function 'fact' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
         ]
 
     [<FSharp.Test.FactForNETCOREAPP>]
@@ -109,6 +111,7 @@ let r = fact 100000 1
 r |> ignore
         """
         |> FSharp
+        |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
 
@@ -139,6 +142,7 @@ and [<TailCall>] baz x =
     bar (x - 1)         // OK: tail-recursive call.
         """
         |> FSharp
+        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withResults [
@@ -148,14 +152,14 @@ and [<TailCall>] baz x =
                         EndLine = 13
                         EndColumn = 20 }
               Message =
-               "The member or function 'bar' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+               "The member or function 'bar' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
             { Error = Warning 3567
               Range = { StartLine = 13
                         StartColumn = 9
                         EndLine = 13
                         EndColumn = 12 }
               Message =
-               "The member or function 'bar' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+               "The member or function 'bar' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
         ]
 
     [<FSharp.Test.FactForNETCOREAPP>]
@@ -166,6 +170,7 @@ type C () =
     member this.M1() = this.M1() + 1
         """
         |> FSharp
+        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withResults [
@@ -175,7 +180,7 @@ type C () =
                         EndLine = 4
                         EndColumn = 33 }
               Message =
-               "The member or function 'M1' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+               "The member or function 'M1' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
         ]
 
     [<FSharp.Test.FactForNETCOREAPP>]
@@ -186,6 +191,7 @@ type C () =
     member this.M1() = this.M1()
         """
         |> FSharp
+        |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
 
@@ -202,6 +208,7 @@ type C () =
         this.M1()     // ok
         """
         |> FSharp
+        |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
 
@@ -218,6 +225,7 @@ type F () =
         this.M1() + 2    // should warn
         """
         |> FSharp
+        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withResults [
@@ -227,14 +235,14 @@ type F () =
                         EndLine = 5
                         EndColumn = 18 }
               Message =
-               "The member or function 'M2' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+               "The member or function 'M2' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
             { Error = Warning 3567
               Range = { StartLine = 9
                         StartColumn = 9
                         EndLine = 9
                         EndColumn = 18 }
               Message =
-               "The member or function 'M1' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+               "The member or function 'M1' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
         ]
 
     [<FSharp.Test.FactForNETCOREAPP>]
@@ -253,6 +261,7 @@ let f () =
     r |> ignore
         """
         |> FSharp
+        |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
 
@@ -268,6 +277,7 @@ let rec f x : seq<int> =
 }
         """
         |> FSharp
+        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withResults [
@@ -277,7 +287,7 @@ let rec f x : seq<int> =
                         EndLine = 5
                         EndColumn = 18 }
               Message =
-               "The member or function 'f' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+               "The member or function 'f' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
         ]
 
     [<FSharp.Test.FactForNETCOREAPP>]
@@ -290,6 +300,7 @@ let rec f x : seq<int> =
 }
         """
         |> FSharp
+        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withResults [
@@ -299,14 +310,14 @@ let rec f x : seq<int> =
                         EndLine = 5
                         EndColumn = 23 }
               Message =
-               "The member or function 'f' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+               "The member or function 'f' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
             { Error = Warning 3567
               Range = { StartLine = 5
                         StartColumn = 16
                         EndLine = 5
                         EndColumn = 17 }
               Message =
-               "The member or function 'f' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+               "The member or function 'f' has the 'TailCall' attribute, but is not being used in a tail recursive way." }
         ]
 
     [<FSharp.Test.FactForNETCOREAPP>]
@@ -316,5 +327,6 @@ let rec f x : seq<int> =
 let rec f x = seq { yield! f (x-1) }
         """
         |> FSharp
+        |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
