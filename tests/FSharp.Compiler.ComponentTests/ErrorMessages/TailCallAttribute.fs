@@ -257,7 +257,7 @@ let f () =
         |> shouldSucceed
 
     [<FSharp.Test.FactForNETCOREAPP>]
-    let ``Warn for invalid tailcalls in seq expression`` () =
+    let ``Warn for invalid tailcalls in seq expression because of bind`` () =
         """
 [<TailCall>]
 let rec f x : seq<int> =
@@ -279,3 +279,42 @@ let rec f x : seq<int> =
               Message =
                "The member or function 'f' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Warn for invalid tailcalls in seq expression because of pipe`` () =
+        """
+[<TailCall>]
+let rec f x : seq<int> =
+    seq {
+        yield! f (x-1) |> Seq.map (fun x -> x + 1)
+}
+        """
+        |> FSharp
+        |> typecheck
+        |> shouldFail
+        |> withResults [
+            { Error = Warning 3567
+              Range = { StartLine = 5
+                        StartColumn = 16
+                        EndLine = 5
+                        EndColumn = 23 }
+              Message =
+               "The member or function 'f' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+            { Error = Warning 3567
+              Range = { StartLine = 5
+                        StartColumn = 16
+                        EndLine = 5
+                        EndColumn = 17 }
+              Message =
+               "The member or function 'f' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+        ]
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Don't warn for valid tailcalls in seq expression`` () =
+        """
+[<TailCall>]
+let rec f x = seq { yield! f (x-1) }
+        """
+        |> FSharp
+        |> typecheck
+        |> shouldSucceed
