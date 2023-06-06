@@ -198,7 +198,7 @@ module rec HashTypes =
     /// Hash a type, taking precedence into account to insert brackets where needed
     let hashTType (g:TcGlobals)  ty =  
       
-        match stripTyparEqns ty with 
+        match stripTyparEqns ty |> (stripTyEqns g) with 
         | TType_ucase (UnionCaseRef(tc, _), args)
         | TType_app (tc, args, _) ->
           args
