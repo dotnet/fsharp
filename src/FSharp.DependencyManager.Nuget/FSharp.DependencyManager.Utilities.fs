@@ -171,7 +171,7 @@ module internal Utilities =
 
         result |> List.ofSeq |> List.map (fun option -> split option)
 
-    let executeTool pathToExe arguments workingDir timeout =
+    let executeTool pathToExe arguments workingDir environment timeout =
         match pathToExe with
         | Some path ->
             let errorsList = ResizeArray()
@@ -195,6 +195,9 @@ module internal Utilities =
             psi.Arguments <- arguments
             psi.CreateNoWindow <- true
             psi.EnvironmentVariables.Remove("MSBuildSDKsPath") // Host can sometimes add this, and it can break things
+            for varname, value in environment do
+                psi.EnvironmentVariables.Add(varname,value) // Host can sometimes add this, and it can break things
+
             psi.UseShellExecute <- false
 
             use p = new Process()
@@ -240,7 +243,7 @@ module internal Utilities =
         let workingDir = Path.GetDirectoryName projectPath
         let dotnetHostPath = getDotnetHostPath ()
         let args = arguments "msbuild -v:quiet"
-        let success, stdOut, stdErr = executeTool dotnetHostPath args workingDir timeout
+        let success, stdOut, stdErr = executeTool dotnetHostPath args workingDir [] timeout
 
 #if DEBUG
         let diagnostics =
@@ -289,7 +292,7 @@ module internal Utilities =
         let args = "nuget list source --format detailed"
 
         let success, stdOut, stdErr =
-            executeTool dotnetHostPath args scriptDirectory timeout
+            executeTool dotnetHostPath args scriptDirectory ["DOTNET_CLI_UI_LANGUAGE", "en-us"] timeout
 #if DEBUG
         let diagnostics =
             [|
