@@ -4,6 +4,7 @@
 /// constraint solving and method overload resolution.
 module internal FSharp.Compiler.TypeRelations
 
+open FSharp.Compiler.Features
 open Internal.Utilities.Collections
 open Internal.Utilities.Library 
 open FSharp.Compiler.DiagnosticsLogger
@@ -182,7 +183,8 @@ let ChooseTyparSolutionAndRange (g: TcGlobals) amap (tp:Typar) =
     match tp.Kind with
     | TyparKind.Type ->
         if not isRefined then
-            informationalWarning(Error(FSComp.SR.typrelNeverRefinedAwayFromTop(), m))
+            let supported = g.langVersion.SupportsFeature LanguageFeature.DiagnosticForObjInference
+            informationalWarning(ErrorEnabledWithLanguageFeature(FSComp.SR.typrelNeverRefinedAwayFromTop(), m, supported))
     | TyparKind.Measure -> ()
 
     maxTy, m
