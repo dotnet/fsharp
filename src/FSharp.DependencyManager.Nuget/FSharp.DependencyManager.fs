@@ -320,7 +320,7 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
                     (path.EndsWith(Path.DirectorySeparatorChar.ToString()))
                     ||  (path.EndsWith(Path.AltDirectorySeparatorChar.ToString()))
                 then
-                    path.Substring(0, path.Length)
+                    path.Substring(0, path.Length - 1)
                 else
                     path
             // Build path to cache root
