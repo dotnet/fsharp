@@ -16,6 +16,18 @@ type MyRecord = {X:string}
 module private PrivateInnerModule = 
     let private add a b = a + b""")>]
 
+[<InlineDataAttribute("NestedPrivateModuleAdded",
+(*BEFORE*)"""module MyTest
+type MyRecord = {X:string}
+module InnerModule = 
+    let xxx = 42"""
+(*AFTER*),"""module MyTest
+type MyRecord = {X:string}
+module InnerModule = 
+    let xxx = 42
+    module private PrivateInnerMostModule = 
+        let add a b = a + b""")>]
+
 [<InlineDataAttribute("OpenSystemAdded",
 (*BEFORE*)"""module MyTest
 type MyRecord = {X:System.IDisposable}"""
@@ -58,6 +70,14 @@ type MyRecord = {X:string}"""
 (*AFTER*),"""module MyTest
 type MyRecord = {X:string}
 let private getValue() = 42""")>]
+
+[<InlineDataAttribute("FunctionAnnotated",
+(*BEFORE*)"""module MyTest
+type MyRecord = {X:string}
+let processRecord myRec = myRec.X"""
+(*AFTER*),"""module MyTest
+type MyRecord = {X:string}
+let processRecord (myRec:MyRecord) = myRec.X""")>]
 
 [<InlineDataAttribute("EnumReordered",
 (*BEFORE*)"""module MyTest
@@ -105,6 +125,29 @@ type MyRecord = {X:string}
 module  PrivateInnerModule = 
     let private add a b = a + b""")>]
 
+[<InlineDataAttribute("FunctionSpecialized",
+(*BEFORE*)"""module MyTest
+let inline add a b = a + b"""
+(*AFTER*),"""module MyTest
+let inline add (a:int) (b:int) = a + b""")>]
+
+[<InlineDataAttribute("SRTP_Condition_Added",
+(*BEFORE*)"""module MyTest
+let inline mySRTPFunc<'a when 'a:(static member Zero: unit -> int)> () = 'a.Zero() + 'a.Zero()"""
+(*AFTER*),"""module MyTest
+let inline mySRTPFunc<'a when 'a:(static member One: unit -> int) and 'a:(static member Zero: unit -> int)> () = 'a.Zero() + 'a.One()""")>]
+
+[<InlineDataAttribute("SRTP_Member_Renamed",
+(*BEFORE*)"""module MyTest
+let inline mySRTPFunc<'a when 'a:(static member Zero: unit -> int)> () = 'a.Zero() + 'a.Zero()"""
+(*AFTER*),"""module MyTest
+let inline mySRTPFunc<'a when 'a:(static member One: unit -> int)> () = 'a.One() + 'a.One()""")>]
+
+[<InlineDataAttribute("SRTP_Type_Changed",
+(*BEFORE*)"""module MyTest
+let inline mySRTPFunc<'a when 'a:(static member Zero: unit -> int)> () = 'a.Zero() + 'a.Zero()"""
+(*AFTER*),"""module MyTest
+let inline mySRTPFunc<'a when 'a:(static member Zero: unit -> byte)> () = 'a.Zero() + 'a.Zero()""")>]
 
 //TODO add a lot more negative tests - in which cases should hash in fact change
 
