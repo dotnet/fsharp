@@ -646,3 +646,17 @@ type Foo() =
     member this.Bar (a:int) (b:int) : int = 0
 """
             (3, 19, "    member this.Bar (a:int) (b:int) : int = 0", "Bar")
+
+    [<Test>]
+    let ``Includes attribute for parameter`` () =
+        assertSignature
+            "val a: [<B>] c: int -> int"
+            """
+module Telplin
+
+type BAttribute() =
+    inherit System.Attribute()
+
+let a ([<B>] c: int) : int = 0
+"""
+            (7, 5, "let a ([<B>] c: int) : int = 0", "a")

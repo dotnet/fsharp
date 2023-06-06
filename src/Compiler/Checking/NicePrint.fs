@@ -997,34 +997,46 @@ module PrintTypes =
     and layoutType denv ty = 
         layoutTypeWithInfo denv SimplifyTypes.typeSimplificationInfo0 ty
 
+    /// Layout '[<attrib1; attrib2>]' for parameters
+    and layoutAttribsOneline denv attribs =
+        match attribs with
+        | [] -> emptyL
+        | attribs ->
+            let attrsL =
+                [ for attr in attribs do layoutAttrib denv attr ]
+
+            squareAngleL (sepListL (rightL (tagPunctuation ";")) attrsL)
+    
     // Format each argument, including its name and type 
     let layoutArgInfo denv env (ty, argInfo: ArgReprInfo) = 
         let g = denv.g
        
         // Detect an optional argument 
         let isOptionalArg = HasFSharpAttribute g g.attrib_OptionalArgumentAttribute argInfo.Attribs
-        let isParamArray = HasFSharpAttribute g g.attrib_ParamArrayAttribute argInfo.Attribs
 
-        match argInfo.Name, isOptionalArg, isParamArray, tryDestOptionTy g ty with 
+        match argInfo.Name, isOptionalArg, tryDestOptionTy g ty with 
         // Layout an optional argument 
-        | Some id, true, _, ValueSome ty -> 
+        | Some id, true, ValueSome ty -> 
             let idL = ConvertValLogicalNameToDisplayLayout false (tagParameter >> rightL) id.idText
+            let attrsLayout =
+                argInfo.Attribs
+                |> List.filter (fun a -> not (IsMatchingFSharpAttribute g g.attrib_OptionalArgumentAttribute a))
+                |> layoutAttribsOneline denv 
+            
+            attrsLayout ^^
             LeftL.questionMark ^^ 
             (idL |> addColonL) ^^
             layoutTypeWithInfoAndPrec denv env 2 ty 
 
-        // Layout an unnamed argument 
-        | None, _, _, _ -> 
+        // Layout an unnamed argument
+        // Cannot have any attributes
+        | None, _, _ -> 
             layoutTypeWithInfoAndPrec denv env 2 ty
 
         // Layout a named argument 
-        | Some id, _, isParamArray, _ -> 
+        | Some id, _, _ -> 
             let idL = ConvertValLogicalNameToDisplayLayout false (tagParameter >> wordL) id.idText
-            let prefix =
-                if isParamArray then
-                    layoutBuiltinAttribute denv g.attrib_ParamArrayAttribute ^^ idL
-                else
-                    idL
+            let prefix = layoutAttribsOneline denv argInfo.Attribs ^^ idL
             (prefix |> addColonL) ^^ layoutTypeWithInfoAndPrec denv env 2 ty
 
     let layoutCurriedArgInfos denv env argInfos =
