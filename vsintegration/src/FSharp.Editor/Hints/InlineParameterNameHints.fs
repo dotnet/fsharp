@@ -147,7 +147,7 @@ type InlineParameterNameHints(parseResults: FSharpParseFileResults) =
         else
             []
 
-    member _.GetHintsForUnionCase (symbol: FSharpUnionCase) (symbolUse: FSharpSymbolUse) =
+    member _.GetHintsForUnionCase (sourceText: SourceText) (symbol: FSharpUnionCase) (symbolUse: FSharpSymbolUse) =
         if isUnionCaseValidForHint symbol symbolUse then
 
             let fields = Seq.toList symbol.Fields
@@ -155,13 +155,17 @@ type InlineParameterNameHints(parseResults: FSharpParseFileResults) =
             let ranges =
                 parseResults.GetAllArgumentsForFunctionApplicationAtPosition symbolUse.Range.Start
 
+            let argumentNames =
+                match ranges with
+                | Some ranges -> (List.map (getSourceTextAtRange sourceText)) ranges
+                | None -> []
             // When not all field values are provided (as the user is typing), don't show anything yet
             match ranges with
             | Some ranges when ranges.Length = fields.Length ->
                 fields
-                |> List.zip ranges
-                |> List.where (snd >> fieldNameExists)
-                |> List.map getFieldHint
+                |> List.zip3 argumentNames ranges
+                |> List.where (fun (argumentName, _, parameter) -> fieldNameExists parameter && argumentName <> parameter.DisplayName)
+                |> List.map (fun (_, range, parameter) -> getFieldHint (range, parameter))
 
             | _ -> []
         else
