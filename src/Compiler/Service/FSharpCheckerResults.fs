@@ -2960,12 +2960,13 @@ type FSharpCheckFileResults
 
     member internal _.CalculateSignatureHash() =
         let visibility = Fsharp.Compiler.SignatureHash.PublicAndInternal
+
         match details with
-        | None -> failwith  "Typechecked details not available for CalculateSignatureHash() operation."
+        | None -> failwith "Typechecked details not available for CalculateSignatureHash() operation."
         | Some (scope, _builderOpt) ->
             scope.ImplementationFile
             |> Option.map (fun implFile ->
-                Fsharp.Compiler.SignatureHash.calculateSignatureHashOfFiles [implFile] scope.TcGlobals visibility)
+                Fsharp.Compiler.SignatureHash.calculateSignatureHashOfFiles [ implFile ] scope.TcGlobals visibility)
 
     member _.ImplementationFile =
         if not keepAssemblyContents then

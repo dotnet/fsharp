@@ -25,7 +25,7 @@ type options =
       dumpDebugInfo: bool
       referenceAssemblyOnly: bool
       referenceAssemblyAttribOpt: ILAttribute option
-      referenceAssemblySignatureHash : int option
+      referenceAssemblySignatureHash: int option
       pathMap: PathMap }
 
 /// Write a binary to the file system.

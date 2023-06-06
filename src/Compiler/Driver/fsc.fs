@@ -842,14 +842,17 @@ let main3
             errorRecoveryNoRange e
             exiter.Exit 1
 
-    let refAssemblySignatureHash = 
+    let refAssemblySignatureHash =
         match tcConfig.emitMetadataAssembly with
         | MetadataAssemblyGeneration.None -> None
         | MetadataAssemblyGeneration.ReferenceOnly
         | MetadataAssemblyGeneration.ReferenceOut _ ->
             try
-                Fsharp.Compiler.SignatureHash.calculateSignatureHashOfFiles typedImplFiles tcGlobals Fsharp.Compiler.SignatureHash.PublicOnly
-                + Fsharp.Compiler.SignatureHash.calculateHashOfAssemblyTopAttributes topAttrs tcConfig.platform           
+                Fsharp.Compiler.SignatureHash.calculateSignatureHashOfFiles
+                    typedImplFiles
+                    tcGlobals
+                    Fsharp.Compiler.SignatureHash.PublicOnly
+                + Fsharp.Compiler.SignatureHash.calculateHashOfAssemblyTopAttributes topAttrs tcConfig.platform
                 |> Some
             with e ->
                 printfn "Unexpected error when hashing implied signature, will hash the all of .NET metadata instead. Error: %O " e
@@ -1057,7 +1060,20 @@ let main5
     AbortOnError(diagnosticsLogger, exiter)
 
     // Pass on only the minimum information required for the next phase
-    Args(ctok, tcConfig, tcImports, tcGlobals, diagnosticsLogger, ilxMainModule, outfile, pdbfile, signingInfo, exiter, ilSourceDocs, refAssemblySignatureHash)
+    Args(
+        ctok,
+        tcConfig,
+        tcImports,
+        tcGlobals,
+        diagnosticsLogger,
+        ilxMainModule,
+        outfile,
+        pdbfile,
+        signingInfo,
+        exiter,
+        ilSourceDocs,
+        refAssemblySignatureHash
+    )
 
 /// Sixth phase of compilation.
 ///   -  write the binaries
