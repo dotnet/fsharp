@@ -348,6 +348,39 @@ let b = Rectangle (1, 2)
         Assert.Equal(expected, actual)
 
     [<Fact>]
+    let ``Hints are not shown for discriminated union case fields with the same names as arguements`` () =
+        let code =
+            """
+type Shape =
+    | Square of side: int
+    | Rectangle of width: int * height: int
+ 
+let width = 5
+let a = Square 1
+let b = Rectangle (width, 2)
+"""
+
+        let document = getFsDocument code
+
+        let expected =
+            [
+                {
+                    Content = "side = "
+                    Location = (6, 16)
+                    Tooltip = "field side"
+                }
+                {
+                    Content = "height = "
+                    Location = (7, 27)
+                    Tooltip = "field height"
+                }
+            ]
+
+        let actual = getParameterNameHints document
+
+        Assert.Equal(expected, actual)
+
+    [<Fact>]
     let ``Hints for discriminated union case fields are not shown when names are generated`` () =
         let code =
             """
