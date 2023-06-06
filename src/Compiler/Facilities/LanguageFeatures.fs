@@ -68,6 +68,8 @@ type LanguageFeature =
     | NestedCopyAndUpdate
     | ExtendedStringInterpolation
     | WarningWhenMultipleRecdTypeChoice
+    | ImprovedImpliedArgumentNames
+    | DiagnosticForObjInference
     | WarningWhenTailRecAttributeButNonTailRecUsage
 
 /// LanguageVersion management
@@ -160,6 +162,8 @@ type LanguageVersion(versionText) =
                 LanguageFeature.NestedCopyAndUpdate, previewVersion
                 LanguageFeature.ExtendedStringInterpolation, previewVersion
                 LanguageFeature.WarningWhenMultipleRecdTypeChoice, previewVersion
+                LanguageFeature.ImprovedImpliedArgumentNames, previewVersion
+                LanguageFeature.DiagnosticForObjInference, previewVersion
                 LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage, previewVersion
 
             ]
@@ -284,6 +288,8 @@ type LanguageVersion(versionText) =
         | LanguageFeature.NestedCopyAndUpdate -> FSComp.SR.featureNestedCopyAndUpdate ()
         | LanguageFeature.ExtendedStringInterpolation -> FSComp.SR.featureExtendedStringInterpolation ()
         | LanguageFeature.WarningWhenMultipleRecdTypeChoice -> FSComp.SR.featureWarningWhenMultipleRecdTypeChoice ()
+        | LanguageFeature.ImprovedImpliedArgumentNames -> FSComp.SR.featureImprovedImpliedArgumentNames ()
+        | LanguageFeature.DiagnosticForObjInference -> FSComp.SR.featureInformationalObjInferenceDiagnostic ()
         | LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage -> FSComp.SR.featureChkNotTailRecursive ()
 
     /// Get a version string associated with the given feature.

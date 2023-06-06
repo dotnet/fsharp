@@ -30,7 +30,7 @@ module HintService =
                 |> Seq.collect (InlineParameterNameHints(parseResults).GetHintsForMemberOrFunctionOrValue sourceText symbol)
             | HintKind.ParameterNameHint, (:? FSharpUnionCase as symbol) ->
                 symbolUses
-                |> Seq.collect (InlineParameterNameHints(parseResults).GetHintsForUnionCase symbol)
+                |> Seq.collect (InlineParameterNameHints(parseResults).GetHintsForUnionCase sourceText symbol)
             | _ -> []
 
         hintKinds |> Set.toList |> List.map getHintsPerKind
