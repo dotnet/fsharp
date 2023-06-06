@@ -324,7 +324,7 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
                 else
                     path
             // Build path to cache root
-            $"{getProfilePath}\\.packagemanagement\\nuget"
+            $"{getProfilePath}/.packagemanagement/nuget"
 
         let path =
             Path.Combine(Process.GetCurrentProcess().Id.ToString() + "--" + Guid.NewGuid().ToString())
